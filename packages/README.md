@@ -1,120 +1,65 @@
 # Packages Futrob — guía
 
-Código compartido del monorepo. Los **bounded contexts de negocio** viven en [`apps/web/src/modules`](/apps/web/src/modules); aquí solo va lo que deben reutilizar web, un futuro worker, el SDK o tests.
+Código compartido del monorepo. La **lógica de negocio** (domain + application + ports) vive en `@futrob/<bounded-context>`. Las apps (`web`, futura `api`, `cli`) componen adapters y HTTP encima.
 
-Documento canónico: [`/docs/architecture/packages-and-sdk.md`](/docs/architecture/packages-and-sdk.md).
+Documento canónico: [`/docs/architecture/packages-and-sdk.md`](/docs/architecture/packages-and-sdk.md) · [ADR-0010](/docs/adr/0010-bounded-context-packages.md).
 
 ## Inventario
 
-| Package                             | npm / pub name          | Rol                                                |
-| ----------------------------------- | ----------------------- | -------------------------------------------------- |
-| [`api-contracts`](./api-contracts/) | `@futrob/api-contracts` | Schemas Zod / OpenAPI de `/api/v1`                 |
-| [`sdk`](./sdk/)                     | `@futrob/sdk`           | Cliente HTTP tipado (TypeScript, estilo Stainless) |
-| [`sdk_dart`](./sdk_dart/)           | `futrob_sdk` (pub)      | Cliente HTTP tipado (Dart, mismo contrato)         |
-| [`ui`](./ui/)                       | `@futrob/ui`            | Tokens y primitivas shadcn/Base UI                 |
-| [`shared-kernel`](./shared-kernel/) | `@futrob/shared-kernel` | Result, IDs, DomainEvent (compartible web/worker)  |
-| [`test-support`](./test-support/)   | `@futrob/test-support`  | Fakes y builders solo para tests                   |
+| Package                                                         | npm / pub               | Rol                                                       |
+| --------------------------------------------------------------- | ----------------------- | --------------------------------------------------------- |
+| [`identity`](./identity/) … [`public-portal`](./public-portal/) | `@futrob/<bc>`          | Domain + application + ports por BC                       |
+| [`api-contracts`](./api-contracts/)                             | `@futrob/api-contracts` | Zod / OpenAPI de `/api/v1`                                |
+| [`sdk`](./sdk/)                                                 | `@futrob/sdk`           | Cliente HTTP TypeScript                                   |
+| [`sdk_dart`](./sdk_dart/)                                       | `futrob_sdk`            | Cliente HTTP Dart                                         |
+| [`ui`](./ui/)                                                   | `@futrob/ui`            | Tokens y primitivas shadcn/Base UI                        |
+| [`shared-kernel`](./shared-kernel/)                             | `@futrob/shared-kernel` | Result, IDs, DomainError, DomainEvent, EventPublisherPort |
+| [`test-support`](./test-support/)                               | `@futrob/test-support`  | Fakes/builders de test                                    |
+
+BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `game-data`, `results`, `statistics`, `analytics`, `notifications`, `public-portal`.
 
 ## Reglas
 
-1. **No** mover `results`, `game-data`, `scheduling`, etc. a `packages/` hasta que un segundo deployable necesite el use case in-process.
-2. El **dominio hexagonal no importa Zod**. Zod vive en `api-contracts` y en adapters/server de web.
-3. Los **SDKs no importan** `apps/web/src/modules` ni adapters. Solo contratos + HTTP hacia Futrob `/api/v1`.
-4. **EA Clubs** vive solo en `apps/web/.../game-data/adapters/providers/ea-clubs/`. Ni `api-contracts` ni los SDKs conocen proclubs.ea.com.
+1. **Domain/application/ports** de cada BC viven en `@futrob/<bc>`, no solo en `apps/web`.
+2. El **dominio no importa Zod**. Zod vive en `api-contracts` y en adapters/server de las apps.
+3. Los **SDKs no importan** `@futrob/<bc>` ni adapters. Solo contratos + HTTP a `/api/v1`.
+4. **EA Clubs** vive en adapters de app (hoy `apps/web/.../game-data/adapters/providers/ea-clubs/`).
 5. **`ui` no conoce** competiciones, EA ni permisos.
-6. Preferir imports por nombre de package (`@futrob/sdk`), no deep-imports a `src/` internos salvo el public `exports` del package.
-7. **No crear `apps/api`** (ADR-0001). `/api/v1` vive en `apps/web` sobre use cases, no sobre el SDK.
+6. Preferir imports `@futrob/<bc>`, no deep-imports a `src/` internos salvo `exports` públicos.
+7. **`apps/api`** (Hono/Node en Railway) ya existe y consume los mismos `@futrob/<bc>`; es dueño de Postgres (`DATABASE_URL`) y del egress Node a EA. No reimplementar use cases en la app; `apps/web` consume el mismo contrato `/api/v1`.
 8. En docs del repo, enlaces con ruta absoluta `/packages/...` o `/docs/...`.
-
-## OpenAPI
-
-Fuente: `@futrob/api-contracts` (`src/v1/openapi/document.ts`).
-
-```bash
-npm run generate:openapi -w @futrob/api-contracts
-```
-
-Artefactos en `packages/api-contracts/openapi/{openapi.json,openapi.yaml}`.
-
-Servidos por `apps/web`:
-
-- `GET /api/v1/openapi.json`
-- `GET /api/v1/openapi.yaml`
 
 ## Quién depende de quién
 
 ```text
-apps/web ─────────────► @futrob/ui
-       └──────────────► @futrob/api-contracts
-       └──────────────► @futrob/shared-kernel   (opcional)
+apps/web ──► @futrob/<bc> + api-contracts + ui + shared-kernel
+apps/api ──► @futrob/<bc> + api-contracts + shared-kernel   (Hono/Node, Railway, dueño de Postgres)
+apps/cli ──► @futrob/<bc> + shared-kernel + sdk (integración)
 
-apps/cli ─────────────► @futrob/shared-kernel
-       └──────────────► @futrob/test-support
-       └──── path @/* ► apps/web/src
+@futrob/results ──► @futrob/game-data
+@futrob/teams   ──► @futrob/game-data
+@futrob/<bc>    ──► @futrob/shared-kernel
 
-@futrob/sdk ──────────► @futrob/api-contracts
-futrob_sdk (Dart) ────► HTTP /api/v1 (mismos contratos)
-
-Flutter / E2E ────────► SDKs
+@futrob/sdk     ──► @futrob/api-contracts ──► HTTP /api/v1
 ```
+
+## Cómo añadir un use case
+
+1. Implementarlo en `packages/<bc>/src/application/<name>/`.
+2. Exportarlo desde `packages/<bc>/src/index.ts`.
+3. Cablear adapters en `apps/web/src/di/` (y luego en `apps/api`).
+4. Exponer HTTP vía `api-contracts` + route/handler de la app que sirva `/api/v1`.
 
 ## Cómo añadir un endpoint
 
-1. Definir request/response en `@futrob/api-contracts` bajo `src/v1/<resource>/`.
-2. Actualizar `src/v1/openapi/document.ts` y regenerar OpenAPI.
-3. Añadir método en `sdk/src/resources/<resource>.ts` y mirror en `sdk_dart`.
-4. Exponerlo en `createFutrobClient` / `FutrobClient`.
-5. Implementar handler en `apps/web/src/routes/api/v1/...` mapeando al use case.
-6. Tests de contrato + smoke SDK con fetch/http fake.
-
-## Cómo usar el SDK TypeScript
-
-```ts
-import { createFutrobClient } from "@futrob/sdk";
-
-const futrob = createFutrobClient({
-  baseUrl: "https://app.example.com/api/v1",
-  getAccessToken: async () => token,
-});
-
-await futrob.meta.ping();
-const { clubs } = await futrob.gameData.clubs.search({ query: "Fera" });
-```
-
-## Cómo usar el SDK Dart
-
-```dart
-final futrob = FutrobClient(
-  baseUrl: 'https://app.example.com/api/v1',
-  getAccessToken: () async => token,
-);
-
-final result = await futrob.gameData.clubs.search(query: 'Fera');
-```
-
-## Scripts desde la raíz
-
-```bash
-npm install
-npm run check
-npm run test
-npm run typecheck
-npm run generate:openapi -w @futrob/api-contracts
-```
-
-Dart (desde `packages/sdk_dart`):
-
-```bash
-dart pub get
-dart analyze
-dart test
-```
+1. Schemas en `@futrob/api-contracts`.
+2. Regenerar OpenAPI.
+3. Método en SDK (+ Dart mirror).
+4. Handler en `apps/web` (hoy) / `apps/api` (futuro) → use case del package.
 
 ## Anti-patrones
 
-- Publicar el SDK como API de terceros en el MVP.
-- Meter lógica de selección oficial o sync EA dentro del SDK.
-- Servir el OpenAPI no oficial de EA como contrato Futrob.
-- Importar D1 / Wrangler bindings desde cualquier package de `packages/`.
-- Deep-import `@futrob/api-contracts/src/v1/.../internal`.
-- Crear `apps/api` que consuma el SDK para servir la misma API.
+- Meter adapters D1/EA/Wrangler dentro de `@futrob/<bc>`.
+- Hacer que el SDK importe dominio de packages.
+- Duplicar use cases en `apps/web` y `apps/api`.
+- Path-alias de `apps/api` hacia `apps/web/src/modules` para dominio.
