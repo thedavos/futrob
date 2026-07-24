@@ -1,5 +1,6 @@
 import { Logo } from "@futrob/ui";
 import { createFileRoute } from "@tanstack/react-router";
+import { ClubSearchPanel } from "@/modules/game-data/presentation/club-search-panel.tsx";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -31,9 +32,9 @@ function HomePage() {
           <div className="mt-8 flex flex-wrap gap-3">
             <a
               className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 font-semibold text-primary-foreground transition-[background-color,transform] duration-180 hover:bg-primary-hover active:scale-[0.96]"
-              href="#match-center"
+              href="#club-search"
             >
-              Ver Match Center
+              Buscar clubs EA
             </a>
             <a
               className="inline-flex min-h-11 items-center justify-center rounded-lg bg-secondary px-5 font-semibold text-secondary-foreground transition-[background-color,transform] duration-180 hover:bg-secondary-hover active:scale-[0.96]"
@@ -44,43 +45,8 @@ function HomePage() {
           </div>
         </div>
 
-        <div
-          className="overflow-hidden rounded-[var(--radius-xl)] bg-surface shadow-[0_0_0_1px_var(--border)]"
-          id="match-center"
-        >
-          <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
-            <div>
-              <p className="type-label text-muted-foreground">Jornada 08 · Partido oficial</p>
-              <h2 className="type-title mt-1">Match Center</h2>
-            </div>
-            <span className="type-label rounded-full bg-accent px-3 py-1 text-accent-foreground">
-              Aprobado
-            </span>
-          </div>
-
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-5 py-10 sm:px-8">
-            <div>
-              <span className="block text-sm text-muted-foreground">Local</span>
-              <strong className="mt-1 block text-base sm:text-lg">Barrio FC</strong>
-            </div>
-            <div className="type-score text-center">
-              3<span className="px-2 text-muted-foreground">:</span>1
-            </div>
-            <div className="text-end">
-              <span className="block text-sm text-muted-foreground">Visitante</span>
-              <strong className="mt-1 block text-base sm:text-lg">Norte XI</strong>
-            </div>
-          </div>
-
-          <div className="border-t border-border bg-muted px-5 py-4 sm:px-6">
-            <div className="grid gap-2 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
-              <p>
-                <span className="font-semibold">2 partidos EA</span>
-                <span className="text-muted-foreground"> seleccionados y confirmados</span>
-              </p>
-              <span className="type-label text-muted-foreground">EA SYNC · 00:42</span>
-            </div>
-          </div>
+        <div id="club-search">
+          <ClubSearchPanel />
         </div>
       </section>
 
