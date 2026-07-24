@@ -21,16 +21,16 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 `billing` está fuera del MVP.
 
-## Capas dentro de un módulo
+## Capas dentro de un BC
 
-| Capa           | Puede                                             | No puede                                    |
-| -------------- | ------------------------------------------------- | ------------------------------------------- |
-| `domain`       | TS, `shared/domain`, tipos propios                | React, Zod, D1, fetch, Wrangler env, Sentry |
-| `application`  | domain + ports                                    | adapters concretos, routes, UI              |
-| `adapters`     | application/domain, `shared/infrastructure`, SDKs | UI de otro módulo; internals ajenos         |
-| `server`       | use cases vía DI context; Zod input               | reglas de dominio                           |
-| `presentation` | view models / server fns públicas                 | repositories concretos, `getDb()`           |
-| `index.ts`     | exportar server fns, types públicos, ports        | adapters, schemas DB, mappers               |
+| Capa               | Dónde                           | Puede                                        | No puede                                |
+| ------------------ | ------------------------------- | -------------------------------------------- | --------------------------------------- |
+| `domain`           | `packages/<bc>`                 | TS, `@futrob/shared-kernel`, tipos propios   | React, Zod, D1, fetch, Wrangler, Sentry |
+| `application`      | `packages/<bc>`                 | domain + ports                               | adapters concretos, routes, UI          |
+| `adapters`         | app (`apps/web` / futura `api`) | application/domain vía package, infra de app | UI de otro módulo; internals ajenos     |
+| `server`           | app                             | use cases vía DI; Zod input                  | reglas de dominio                       |
+| `presentation`     | app                             | view models / server fns públicas            | repositories concretos                  |
+| package `index.ts` | `packages/<bc>`                 | use cases, types, ports                      | adapters, schemas DB, mappers           |
 
 ## Separación crítica
 
@@ -102,6 +102,6 @@ analytics.snapshot-generated
 | `Encounter`, `ProviderMatch`, `OfficialMatchSelection`          | `*Repository`, `*Port` | `SelectOfficialMatchesUseCase` | `D1*Adapter`, `EaClubsGameDataAdapter` |
 | Específicos EA solo en `game-data/adapters/providers/ea-clubs/` |                        |                                |                                        |
 
-## Persistencia Cloudflare
+## Persistencia
 
-Adapters de persistencia usan D1 (no Postgres). Cache/opcional: KV o Cache API. Colas: Cloudflare Queues. Objetos grandes: R2. Los ejemplos con nombres `Postgres*` / `Redis*` / `BullMq*` en discusiones históricas se mapean a `D1*` / `Kv*` / `Queue*`.
+Adapters de persistencia de **web** usan D1 (no Postgres). Cache/opcional: KV o Cache API. Colas: Cloudflare Queues. Objetos grandes: R2. Una futura `apps/api` podrá usar otros adapters de plataforma sin mover el dominio en packages.

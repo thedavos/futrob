@@ -27,22 +27,24 @@ Also: Cloudflare/wrangler, Sentry, TypeScript best practices. See `.cursor/rules
 
 ## Code shape
 
-- Deployable: `apps/web` (TanStack Start → Cloudflare Workers)
-- CLI local: `apps/cli` — playground de dominio/use cases (no deployable de producto); ver `/apps/cli/README.md`
-- Modules: `apps/web/src/modules/<context>/`
-- Composition: `apps/web/src/{di,bootstrap,config,context}/`
-- Shared: `apps/web/src/shared/`
+- Deployable Must: `apps/web` (TanStack Start → Cloudflare Workers)
+- Deployable de API de producto: `apps/api` (Hono/Node en Railway; consume `@futrob/<bc>`, dueño de Postgres `DATABASE_URL` y egress Node a EA)
+- CLI local: `apps/cli` — playground (no deployable de producto); ver `/apps/cli/README.md`
+- Business logic: `packages/<bc>/` (`@futrob/game-data`, `@futrob/results`, …) — domain + application + ports
+- App modules (adapters/server/UI): `apps/web/src/modules/<context>/`
+- Composition web: `apps/web/src/{di,bootstrap,config,context}/`
+- Shared web infra: `apps/web/src/shared/` (reexporta kernel; infra de Workers)
 - Workers: `apps/web/src/workers/`
-- Packages: `packages/{api-contracts,sdk,ui,shared-kernel,test-support}` — ver `/packages/README.md`
+- Packages también: `api-contracts`, `sdk`, `ui`, `shared-kernel`, `test-support` — ver `/packages/README.md`
 
-MVP modules: identity, organizations, competitions, teams, scheduling, **game-data**, results, statistics, analytics, notifications, public-portal. `billing` out of MVP.
+MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**, results, statistics, analytics, notifications, public-portal. `billing` out of MVP.
 
 ## Rules
 
-- Domain pure; adapters own D1/R2/Queues/HTTP/EA.
-- `index.ts` public API only; never export adapters.
-- Cross-module via ports/bridges/events — never foreign tables.
-- EA specifics only in `game-data/adapters/providers/ea-clubs/`.
+- Domain/application en `@futrob/<bc>`; adapters (D1/R2/Queues/EA) solo en apps.
+- `packages/<bc>/src/index.ts` public API only; never export adapters.
+- Cross-module via package public API, ports/bridges, or outbox events — never foreign adapters/tables.
+- EA specifics only in `apps/web/.../game-data/adapters/providers/ea-clubs/` (until api hosts its own egress adapters).
 - Official stats only after `results.official-result-approved`.
 - Organization-scoped D1 queries; no Postgres RLS / Supabase / Vercel as Must.
 

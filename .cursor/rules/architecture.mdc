@@ -6,29 +6,31 @@ alwaysApply: true
 
 # Futrob architecture
 
-Canonical sources: `docs/architecture/overview.md`, `module-boundaries.md`, `dependency-graph.md`, ADRs, and `.cursor/skills/futrob-hexagonal-module/SKILL.md`.
+Canonical sources: `docs/architecture/overview.md`, `module-boundaries.md`, `dependency-graph.md`, ADRs (esp. 0001, 0002, 0010), and `.cursor/skills/futrob-hexagonal-module/SKILL.md`.
 
 ## Shape
 
-- Single deployable: `apps/web` on Cloudflare Workers.
-- Feature modules: `apps/web/src/modules/<context>/` with `domain` / `application` / `adapters` / `server` / `presentation` / `index.ts`.
+- Deployable Must: `apps/web` on Cloudflare Workers.
+- Deployable previsto: `apps/api` (API de producto) consumiendo los mismos `@futrob/<bc>`.
+- Business logic: `packages/<context>/` (`@futrob/<bc>`) = `domain` / `application` / ports.
+- App slice: `apps/web/src/modules/<context>/` = `adapters` / `server` / `presentation` + facade `index.ts`.
 - Composition **only** in `apps/web/src/di/` (with `bootstrap/`, `config/`, `context/` alongside).
-- Shared kernel: `apps/web/src/shared/{domain,application,infrastructure,contracts,presentation}`.
+- Shared: `@futrob/shared-kernel` + `apps/web/src/shared/` (infra web; domain reexports kernel).
 - Queue/Cron thin handlers: `apps/web/src/workers/`.
 - Do not nest composition under `src/app/` — that folder is removed.
 
-MVP modules: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `game-data`, `results`, `statistics`, `analytics`, `notifications`, `public-portal`.
+MVP BCs: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `game-data`, `results`, `statistics`, `analytics`, `notifications`, `public-portal`.
 
 ## Dependency direction
 
 ```text
-routes / UI → module/server → application → domain + ports → adapters → D1/R2/Queues/HTTP
+routes / UI → module/server → @futrob/<bc> application → domain + ports → adapters → D1/R2/Queues/HTTP
 ```
 
 - Domain: no React, Zod, D1, fetch, Wrangler env, Sentry.
 - Application: no concrete adapters.
-- `index.ts`: no adapters, schemas, mappers, HTTP clients.
-- Cross-module: public API, bridges on ports, or outbox events — never foreign adapters/tables.
+- Package `index.ts`: no adapters, schemas DB, mappers, HTTP clients.
+- Cross-module: package public API, bridges on ports, or outbox events — never foreign adapters/tables.
 
 ## Separation
 
@@ -48,5 +50,5 @@ analytics  → premium interpretation
 
 ## Imports and doc links
 
-- TypeScript: always import via `@/` (maps to `apps/web/src/*`). Do not use `../` or `../../` parent-relative imports.
+- TypeScript in web: prefer `@futrob/<bc>` for domain/application; `@/` for app-local paths (`apps/web/src/*`). Do not use `../` parent-relative imports across packages.
 - Markdown in `docs/` and `product/`: link with repo-root absolute paths (`/docs/...`, `/product/...`), not `../`.

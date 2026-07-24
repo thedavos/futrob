@@ -1,8 +1,9 @@
 # Arquitectura canónica de Futrob
 
 Estado: canónica para el MVP  
-Fecha: 2026-07-17  
-Plataforma: Cloudflare Workers + D1 + R2 + Queues + Cron Triggers
+Fecha: 2026-07-23  
+Plataforma web Must: Cloudflare Workers + D1 + R2 + Queues + Cron Triggers  
+Lógica de negocio: packages `@futrob/<bc>` (compartida con futura `apps/api`)
 
 ## Propósito
 
@@ -21,9 +22,10 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 ## Drivers
 
 - TanStack Start + React en `apps/web`, desplegado en **Cloudflare Workers**.
-- Hexagonal **por feature module** (vertical slice). Ensamblaje solo en `src/di/`.
+- Hexagonal por bounded context: domain/application en `packages/@futrob/<bc>`; adapters en la app.
+- Composition de web solo en `apps/web/src/di/`. Futura `apps/api` tendrá su propio `di/`.
 - Better Auth (identidad) + Futrob (autorización/orgs).
-- D1 / R2 / Queues / Cron. Tenancy scoped en aplicación (sin RLS Postgres).
+- D1 / R2 / Queues / Cron en web. Tenancy scoped en aplicación (sin RLS Postgres).
 - shadcn/Base UI, Vite+, Sentry en boundaries.
 - `apps/cli` para ejercitar dominio/use cases en local (no es deployable de producto).
 - `billing` queda fuera del MVP inicial.
@@ -31,59 +33,46 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 ## Forma del sistema
 
 ```text
-apps/cli/                   # playground local — ver apps/cli/README.md
+apps/cli/                   # playground local
+apps/api/                   # futuro: API de producto (Node)
 apps/web/
 ├── wrangler.jsonc
 ├── vite.config.ts
 └── src/
-    ├── di/                     # ÚNICO composition root de módulos
+    ├── di/                     # composition root de web
     ├── bootstrap/
     ├── config/
-    ├── context/                # auth / organization / permissions (per-request identity)
-    ├── modules/                # Bounded contexts (vertical slices)
-    │   ├── identity/
-    │   ├── organizations/
-    │   ├── competitions/
-    │   ├── teams/
-    │   ├── scheduling/
-    │   ├── game-data/
-    │   ├── results/
-    │   ├── statistics/
-    │   ├── analytics/
-    │   ├── notifications/
-    │   └── public-portal/
-    ├── routes/                 # TanStack Router / Start
-    ├── shared/
-    │   ├── domain/
-    │   ├── application/
-    │   ├── infrastructure/     # db, cache, queue, observability, outbox, http
-    │   ├── presentation/
-    │   └── contracts/          # events + read-models versionados
-    └── workers/                # consumers Queue/Cron thin handlers
+    ├── context/
+    ├── modules/                # adapters + server + presentation (+ facade index)
+    ├── routes/
+    ├── shared/                 # infra web; domain reexporta shared-kernel
+    └── workers/
+
+packages/
+├── <bc>/                       # @futrob/<bc> domain + application + ports
+├── shared-kernel/
+├── api-contracts/ sdk/ ui/ …
 ```
 
-Cada módulo:
+Cada BC package:
 
 ```text
-src/modules/<context>/
+packages/<context>/src/
 ├── domain/          # entities, VOs, errors, events, ports
-├── application/     # use cases (un folder por caso)
-├── adapters/        # persistence, bridges, providers, observability
-├── server/          # server functions delgadas
-├── presentation/    # UI del feature
-└── index.ts         # API pública únicamente
+├── application/     # use cases
+└── index.ts         # API pública del package
 ```
 
-`index.ts` no exporta adapters, schemas DB, mappers ni clientes HTTP. Los internals solo se importan desde `src/di/` (alias `@/modules/<ctx>/internal` o path privado).
+En `apps/web`, el módulo de app conserva adapters/server/presentation y reexporta el package.
 
 ## Flujo de dependencias
 
 ```text
 Routes / UI
-  → module/server
-  → application/use-case
+  → module/server (app)
+  → @futrob/<bc> application/use-case
   → domain/entities + domain/ports
-  → adapters
+  → adapters (app)
   → D1 / R2 / Queues / EA HTTP / email / Sentry
 ```
 
