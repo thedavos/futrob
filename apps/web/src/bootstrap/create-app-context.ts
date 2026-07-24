@@ -4,8 +4,10 @@ import type { RuntimeConfig } from "@/config/runtime-config.ts";
 import { SystemClock } from "@/shared/application/clock.ts";
 import { CryptoIdGenerator } from "@/shared/application/id-generator.ts";
 
+import type { AppD1Database } from "@/shared/infrastructure/d1.ts";
+
 export interface CloudflareBindings {
-  readonly APP_DB: unknown;
+  readonly APP_DB: AppD1Database | undefined;
   readonly MEDIA_BUCKET: unknown;
   readonly JOB_QUEUE: unknown;
 }

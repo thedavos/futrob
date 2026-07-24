@@ -2,6 +2,7 @@ export interface AppEnv {
   readonly APP_BASE_URL: string;
   readonly BETTER_AUTH_SECRET: string;
   readonly BETTER_AUTH_URL: string;
+  readonly BETTER_AUTH_TRUSTED_ORIGINS: readonly string[];
   readonly EA_CLUBS_BASE_URL: string;
   readonly INTERNAL_JOB_SECRET: string;
 }
@@ -26,7 +27,16 @@ export function parseAppEnv(source: Record<string, string | undefined>): AppEnv 
     APP_BASE_URL: source.APP_BASE_URL ?? "http://localhost:3000",
     BETTER_AUTH_SECRET: source.BETTER_AUTH_SECRET ?? "",
     BETTER_AUTH_URL: source.BETTER_AUTH_URL ?? "http://localhost:3000",
+    BETTER_AUTH_TRUSTED_ORIGINS: parseTrustedOrigins(source.BETTER_AUTH_TRUSTED_ORIGINS),
     EA_CLUBS_BASE_URL: source.EA_CLUBS_BASE_URL ?? "https://proclubs.ea.com/api/fc",
     INTERNAL_JOB_SECRET: source.INTERNAL_JOB_SECRET ?? "",
   };
+}
+
+function parseTrustedOrigins(raw: string | undefined): readonly string[] {
+  const parsed = (raw ?? "http://localhost:3000")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return parsed.length > 0 ? parsed : ["http://localhost:3000"];
 }
