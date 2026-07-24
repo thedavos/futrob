@@ -1,0 +1,99 @@
+[
+  {
+    "matchId": "336118610940060",
+    "timestamp": 1768624748,
+    "timeAgo": {
+      "number": 5,
+      "unit": "days"
+    },
+    "clubs": {
+      "10754": {
+        "date": "1768624748",
+        "gameNumber": "0",
+        "goals": "2",
+        "goalsAgainst": "3",
+        "losses": "0",
+        "matchType": "5",
+        "result": "0",
+        "score": "2",
+        "season_id": "0",
+        "TEAM": "99160122",
+        "ties": "0",
+        "winnerByDnf": "0",
+        "wins": "0",
+        "details": {
+          "name": "Fera Enjaulada",
+          "clubId": 10754,
+          "regionId": 5456205,
+          "teamId": 267,
+          "customKit": {
+            "stadName": "Tier 2 Stadium",
+            "kitId": "2187265",
+            "customKitId": "7524",
+            "customAwayKitId": "7631",
+            "customThirdKitId": "7543",
+            "customKeeperKitId": "5007",
+            "crestAssetId": "99160122"
+          }
+        }
+      },
+      "2575670": {
+        "date": "1768624748",
+        "gameNumber": "0",
+        "goals": "3",
+        "goalsAgainst": "2",
+        "score": "3",
+        "winnerByDnf": "0",
+        "details": {
+          "name": "Brothers tm",
+          "clubId": 2575670,
+          "regionId": 5456205,
+          "teamId": 114815
+        }
+      }
+    },
+    "players": {
+      "10754": {
+        "922546779": {
+          "archetypeid": "11",
+          "assists": "0",
+          "goals": "0",
+          "goalsconceded": "3",
+          "mom": "0",
+          "passattempts": "19",
+          "passesmade": "14",
+          "pos": "midfielder",
+          "rating": "7.60",
+          "redcards": "0",
+          "shots": "1",
+          "tackleattempts": "9",
+          "tacklesmade": "4",
+          "playername": "Vcaliari"
+        }
+      },
+      "2575670": {
+        "111": {
+          "assists": "1",
+          "goals": "2",
+          "playername": "Rival Cap",
+          "rating": "8.10"
+        }
+      }
+    },
+    "aggregate": {
+      "10754": {
+        "assists": 1,
+        "goals": 2,
+        "goalsconceded": 21,
+        "mom": 0,
+        "passattempts": 110,
+        "passesmade": 83,
+        "rating": 50.4,
+        "redcards": 1,
+        "shots": 11,
+        "tackleattempts": 41,
+        "tacklesmade": 8
+      }
+    }
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "10754": {
+    "name": "Fera Enjaulada",
+    "clubId": 10754,
+    "regionId": 5456205,
+    "teamId": 267,
+    "customKit": {
+      "stadName": "Tier 2 Stadium",
+      "kitId": "2187265",
+      "customKitId": "7524",
+      "customAwayKitId": "7631",
+      "customThirdKitId": "7543",
+      "customKeeperKitId": "5007",
+      "crestAssetId": "99160122"
+    }
+  }
+}

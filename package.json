@@ -20,7 +20,9 @@
     "test:coverage": "vp test run --coverage",
     "typecheck": "vp run -r typecheck",
     "generate:openapi": "npm run generate:openapi -w @futrob/api-contracts",
-    "cli": "npm run cli -w @futrob/cli --"
+    "cli": "npm run cli -w @futrob/cli --",
+    "api": "npm run dev -w @futrob/api",
+    "api:start": "npm run start -w @futrob/api"
   },
   "devDependencies": {
     "@futrob/api-contracts": "^0.1.0",

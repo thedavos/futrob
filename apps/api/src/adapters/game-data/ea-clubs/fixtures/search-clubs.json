@@ -1,0 +1,36 @@
+[
+  {
+    "clubId": "10754",
+    "wins": "23",
+    "losses": "15",
+    "ties": "3",
+    "gamesPlayed": "41",
+    "gamesPlayedPlayoff": "0",
+    "goals": "120",
+    "goalsAgainst": "99",
+    "cleanSheets": "7",
+    "points": "40",
+    "reputationtier": "0",
+    "promotions": "4",
+    "relegations": "1",
+    "bestDivision": "3",
+    "clubInfo": {
+      "name": "Fera Enjaulada",
+      "clubId": 10754,
+      "regionId": 5456205,
+      "teamId": 267,
+      "customKit": {
+        "stadName": "Tier 2 Stadium",
+        "kitId": "2187265",
+        "customKitId": "7524",
+        "customAwayKitId": "7631",
+        "customThirdKitId": "7543",
+        "customKeeperKitId": "5007",
+        "crestAssetId": "99160122"
+      }
+    },
+    "platform": "common-gen5",
+    "clubName": "Fera Enjaulada",
+    "currentDivision": "3"
+  }
+]
