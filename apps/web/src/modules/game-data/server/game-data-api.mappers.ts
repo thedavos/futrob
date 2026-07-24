@@ -1,5 +1,4 @@
-import type { ExternalClub } from "@/modules/game-data/domain/entities/external-club.ts";
-import type { ProviderMatch } from "@/modules/game-data/domain/entities/provider-match.ts";
+import type { ExternalClub, ProviderMatch } from "@futrob/game-data";
 import type { ExternalClubDto, ProviderMatchDto } from "@futrob/api-contracts";
 
 export function toExternalClubDto(club: ExternalClub): ExternalClubDto {

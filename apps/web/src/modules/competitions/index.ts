@@ -1,4 +1,1 @@
-export type {
-  CompetitionMatchRules,
-  ResolutionMode,
-} from "@/modules/competitions/domain/value-objects/resolution-mode.ts";
+export * from "@futrob/competitions";

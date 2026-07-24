@@ -4,8 +4,8 @@ import { InMemoryGameDataProviderRegistry } from "@/modules/game-data/adapters/r
 import type {
   GameDataProviderCapabilities,
   GameDataProviderPort,
-} from "@/modules/game-data/domain/ports/game-data-provider.port.ts";
-import type { GameDataProviderKey } from "@/modules/game-data/domain/value-objects/provider-key.ts";
+  GameDataProviderKey,
+} from "@futrob/game-data";
 
 function fakeProvider(
   key: GameDataProviderKey,

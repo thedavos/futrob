@@ -4,6 +4,20 @@ import {
   type EaClubsHttpError,
 } from "@/modules/game-data/adapters/providers/ea-clubs/errors/ea-clubs.errors.ts";
 
+/**
+ * EA's edge (Akamai) rejects bare API clients with 403 Access Denied.
+ * Browser-like UA + Sec-Fetch-* is enough for the public search endpoints.
+ */
+export const EA_CLUBS_REQUEST_HEADERS = {
+  Accept: "application/json",
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:151.0) Gecko/20100101 Firefox/151.0",
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "none",
+  "Sec-Fetch-User": "?1",
+} as const;
+
 export interface EaClubsHttpClientOptions {
   readonly fetcher: typeof fetch;
   readonly baseUrl: string;
@@ -16,7 +30,9 @@ export class EaClubsHttpClient {
   private readonly timeoutMs: number;
 
   constructor(options: EaClubsHttpClientOptions) {
-    this.fetcher = options.fetcher;
+    // Workers' fetch is not a free function; wrapping preserves `this` binding.
+    const unbound = options.fetcher;
+    this.fetcher = ((input, init) => unbound(input, init)) as typeof fetch;
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.timeoutMs = options.timeoutMs;
   }
@@ -38,7 +54,7 @@ export class EaClubsHttpClient {
     try {
       const response = await this.fetcher(url.toString(), {
         method: "GET",
-        headers: { Accept: "application/json" },
+        headers: { ...EA_CLUBS_REQUEST_HEADERS },
         signal: controller.signal,
       });
 

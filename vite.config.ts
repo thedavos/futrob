@@ -54,6 +54,16 @@ export default defineConfig({
         },
       },
       {
+        // apps/api is a Node HTTP server — startup logging is intentional.
+        files: ["apps/api/**"],
+        env: {
+          node: true,
+        },
+        rules: {
+          "no-console": "off",
+        },
+      },
+      {
         // OpenAPI generator is a Node CLI script — console output is intentional.
         files: ["packages/api-contracts/scripts/**"],
         env: {
@@ -75,6 +85,13 @@ export default defineConfig({
   },
   test: {
     // Per-workspace Vite configs own aliases (e.g. apps/web `@/` → src).
-    projects: ["apps/web", "packages/sdk"],
+    projects: [
+      "apps/web",
+      "apps/api",
+      "packages/sdk",
+      "packages/shared-kernel",
+      "packages/game-data",
+      "packages/results",
+    ],
   },
 });

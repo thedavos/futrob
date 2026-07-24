@@ -4,10 +4,12 @@ import searchClubsFixture from "@/modules/game-data/adapters/providers/ea-clubs/
 import clubInfoFixture from "@/modules/game-data/adapters/providers/ea-clubs/fixtures/club-info.json";
 import clubMatchesFixture from "@/modules/game-data/adapters/providers/ea-clubs/fixtures/club-matches.json";
 
-function createFetch(handler: (url: string) => Response): typeof fetch {
-  return (async (input: string | URL | Request) => {
+function createFetch(
+  handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
+): typeof fetch {
+  return (async (input: string | URL | Request, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    return handler(url);
+    return handler(url, init);
   }) as typeof fetch;
 }
 
@@ -18,9 +20,12 @@ describe("EaClubsGameDataAdapter", () => {
     const adapter = new EaClubsGameDataAdapter({
       baseUrl,
       timeoutMs: 5_000,
-      fetcher: createFetch((url) => {
+      fetcher: createFetch((url, init) => {
         expect(url).toContain("/allTimeLeaderboard/search");
         expect(url).toContain("clubName=Fera");
+        const headers = new Headers(init?.headers);
+        expect(headers.get("User-Agent")).toMatch(/Firefox/);
+        expect(headers.get("Sec-Fetch-Mode")).toBe("navigate");
         return Response.json(searchClubsFixture);
       }),
     });

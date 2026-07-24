@@ -1,8 +1,4 @@
-import type { ExternalClub } from "@/modules/game-data/domain/entities/external-club.ts";
-import type {
-  ProviderMatch,
-  ProviderPlayerMatchStats,
-} from "@/modules/game-data/domain/entities/provider-match.ts";
+import type { ExternalClub, ProviderMatch, ProviderPlayerMatchStats } from "@futrob/game-data";
 import type {
   EaClubInfo,
   EaClubMatch,

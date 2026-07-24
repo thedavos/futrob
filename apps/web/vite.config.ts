@@ -71,6 +71,8 @@ export default defineConfig({
         "src/modules/**/domain/**/*.ts",
         "src/modules/**/application/**/*.ts",
         "src/modules/**/adapters/registry/**/*.ts",
+        "../../packages/*/src/domain/**/*.ts",
+        "../../packages/*/src/application/**/*.ts",
       ],
       exclude: ["**/*.{test,spec}.{ts,tsx}", "**/domain/ports/**", "**/index.ts"],
       thresholds: {

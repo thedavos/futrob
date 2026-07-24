@@ -1,15 +1,14 @@
-import { err, ok, type Result } from "@/shared/domain/result.ts";
-import { domainError } from "@/shared/domain/domain-error.ts";
-import type { ExternalClub } from "@/modules/game-data/domain/entities/external-club.ts";
-import type { ProviderMatch } from "@/modules/game-data/domain/entities/provider-match.ts";
+import { err, ok, type Result, domainError } from "@futrob/shared-kernel";
 import type {
+  ExternalClub,
+  ProviderMatch,
   GameDataProviderPort,
   GetExternalClubInput,
   GetRecentMatchesInput,
   ProviderError,
   SearchExternalClubsInput,
-} from "@/modules/game-data/domain/ports/game-data-provider.port.ts";
-import { EaClubsHttpClient } from "@/modules/game-data/adapters/providers/ea-clubs/http/ea-clubs-http.client.ts";
+} from "@futrob/game-data";
+import { EaClubsHttpClient } from "@/modules/game-data/adapters/providers/ea-clubs/http/ea-clubs-http.ts";
 import {
   eaClubInfoMapSchema,
   eaClubMatchesResponseSchema,

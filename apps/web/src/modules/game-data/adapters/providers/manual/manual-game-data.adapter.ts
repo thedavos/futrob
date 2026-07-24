@@ -1,14 +1,13 @@
-import { err, type Result } from "@/shared/domain/result.ts";
-import { domainError } from "@/shared/domain/domain-error.ts";
-import type { ExternalClub } from "@/modules/game-data/domain/entities/external-club.ts";
-import type { ProviderMatch } from "@/modules/game-data/domain/entities/provider-match.ts";
+import { err, type Result, domainError } from "@futrob/shared-kernel";
 import type {
+  ExternalClub,
+  ProviderMatch,
   GameDataProviderPort,
   GetExternalClubInput,
   GetRecentMatchesInput,
   ProviderError,
   SearchExternalClubsInput,
-} from "@/modules/game-data/domain/ports/game-data-provider.port.ts";
+} from "@futrob/game-data";
 
 export class ManualGameDataAdapter implements GameDataProviderPort {
   readonly key = "manual" as const;

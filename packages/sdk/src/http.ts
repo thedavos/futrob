@@ -14,7 +14,10 @@ export class HttpClient {
   constructor(options: HttpClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.getAccessToken = options.getAccessToken;
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    // Keep a bound/wrapper fetch — bare `fetch` as a method reference throws
+    // "Illegal invocation" in browsers when called as `this.fetchImpl(...)`.
+    const unbound = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
+    this.fetchImpl = ((input, init) => unbound(input, init)) as typeof fetch;
   }
 
   async request<T>(input: {

@@ -1,9 +1,1 @@
-export interface PageRequest {
-  readonly limit: number;
-  readonly cursor?: string;
-}
-
-export interface Page<T> {
-  readonly items: readonly T[];
-  readonly nextCursor?: string;
-}
+export type { Page, PageRequest } from "@futrob/shared-kernel";

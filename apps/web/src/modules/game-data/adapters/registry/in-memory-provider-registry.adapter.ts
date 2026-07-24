@@ -1,9 +1,9 @@
 import type {
   GameDataProviderCapabilities,
   GameDataProviderPort,
-} from "@/modules/game-data/domain/ports/game-data-provider.port.ts";
-import type { GameDataProviderRegistryPort } from "@/modules/game-data/domain/ports/game-data-provider-registry.port.ts";
-import type { GameDataProviderKey } from "@/modules/game-data/domain/value-objects/provider-key.ts";
+  GameDataProviderRegistryPort,
+  GameDataProviderKey,
+} from "@futrob/game-data";
 
 export class InMemoryGameDataProviderRegistry implements GameDataProviderRegistryPort {
   private readonly providers = new Map<GameDataProviderKey, GameDataProviderPort>();
