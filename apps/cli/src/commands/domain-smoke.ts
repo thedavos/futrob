@@ -1,7 +1,6 @@
-import { err, isOk, ok } from "@futrob/shared-kernel";
-import { asCompetitionId, asEncounterId, asTeamId } from "@/shared/domain/identifiers.ts";
-import type { Encounter } from "@/modules/scheduling/domain/entities/encounter.ts";
-import type { SelectionStatus } from "@/modules/results/domain/value-objects/selection-status.ts";
+import { err, isOk, ok, asCompetitionId, asEncounterId, asTeamId } from "@futrob/shared-kernel";
+import type { Encounter } from "@futrob/scheduling";
+import type { SelectionStatus } from "@futrob/results";
 import { print, printJson } from "../lib/print.ts";
 
 /**

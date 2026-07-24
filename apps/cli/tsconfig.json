@@ -12,10 +12,9 @@
     "ignoreDeprecations": "6.0",
     "allowImportingTsExtensions": true,
     "paths": {
-      "@/*": ["../web/src/*"],
       "@cli/*": ["./src/*"]
     },
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "../web/src/modules/**/*.ts", "../web/src/shared/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }
