@@ -1,5 +1,5 @@
 import { serve } from "@hono/node-server";
-import { createPostgresHealth } from "@/adapters/persistence/postgres.ts";
+import { createPostgresHealth, createPostgresPool } from "@/adapters/persistence/postgres.ts";
 import { createApp } from "@/app.ts";
 import { loadEnv } from "@/config/env.ts";
 import { createModules } from "@/di/create-modules.ts";
@@ -8,16 +8,19 @@ import { loadDotEnvFile } from "@/utils/load-dotenv.ts";
 loadDotEnvFile();
 
 const env = loadEnv();
-const dbHealth = createPostgresHealth(env.databaseUrl);
+const pool = createPostgresPool(env.databaseUrl);
+const dbHealth = createPostgresHealth(pool);
 
 const modules = createModules({
   fetcher: fetch,
   eaClubsBaseUrl: env.eaClubsBaseUrl,
+  pool,
 });
 
 const app = createApp({
   modules,
   checkDbHealth: () => dbHealth.check(),
+  internalJobSecret: env.internalJobSecret,
 });
 
 const server = serve({ fetch: app.fetch, port: env.port }, (info) => {

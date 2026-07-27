@@ -9,36 +9,39 @@ export interface PostgresHealth {
 }
 
 /**
- * Lazy Postgres health probe. Without `DATABASE_URL` (local/test) it reports
- * `skipped` so the API boots without a database. The pool opens on first check.
+ * Shared Postgres pool factory. Without `DATABASE_URL` returns undefined so
+ * modules can fall back to in-memory adapters for local/dev.
  */
-export function createPostgresHealth(databaseUrl: string | undefined): PostgresHealth {
+export function createPostgresPool(databaseUrl: string | undefined): Pool | undefined {
   if (!databaseUrl) {
+    return undefined;
+  }
+  return new pg.Pool({ connectionString: databaseUrl, max: 5 });
+}
+
+/**
+ * Lazy Postgres health probe. Without a pool it reports `skipped` so the API
+ * boots without a database.
+ */
+export function createPostgresHealth(pool: Pool | undefined): PostgresHealth {
+  if (!pool) {
     return {
       check: () => Promise.resolve("skipped"),
       close: () => Promise.resolve(),
     };
   }
 
-  let pool: Pool | undefined;
-  const getPool = (): Pool => {
-    pool ??= new pg.Pool({ connectionString: databaseUrl, max: 3 });
-    return pool;
-  };
-
   return {
     async check() {
       try {
-        await getPool().query("SELECT 1");
+        await pool.query("SELECT 1");
         return "ok";
       } catch {
         return "error";
       }
     },
     async close() {
-      if (pool) {
-        await pool.end();
-      }
+      await pool.end();
     },
   };
 }
