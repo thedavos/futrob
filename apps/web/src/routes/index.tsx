@@ -1,5 +1,5 @@
-import { Logo } from "@futrob/ui";
-import { createFileRoute } from "@tanstack/react-router";
+import { buttonVariants, Logo } from "@futrob/ui";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClubSearchPanel } from "@/modules/game-data/presentation/club-search-panel.tsx";
 
 export const Route = createFileRoute("/")({
@@ -12,9 +12,16 @@ function HomePage() {
       <header className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
         <div className="flex items-center gap-3">
           <Logo className="h-9 w-auto" />
-          <span className="type-title tracking-wide">Futrob</span>
+          <span className="type-title tracking-wide max-sm:hidden">Futrob</span>
         </div>
-        <span className="type-label text-muted-foreground">Competition OS</span>
+        <nav aria-label="Acceso" className="flex items-center gap-1">
+          <Link className={buttonVariants({ className: "px-3", variant: "ghost" })} to="/login">
+            Iniciar sesión
+          </Link>
+          <Link className={buttonVariants({ className: "px-3" })} to="/signup">
+            Crear cuenta
+          </Link>
+        </nav>
       </header>
 
       <section className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-16 px-5 py-16 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:py-24">
@@ -30,14 +37,15 @@ function HomePage() {
             experiencia clara para organizadores, capitanes y espectadores.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 font-semibold text-primary-foreground transition-[background-color,transform] duration-180 hover:bg-primary-hover active:scale-[0.96]"
-              href="#club-search"
-            >
+            <a className={buttonVariants({ className: "px-5", size: "lg" })} href="#club-search">
               Buscar clubs EA
             </a>
             <a
-              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-secondary px-5 font-semibold text-secondary-foreground transition-[background-color,transform] duration-180 hover:bg-secondary-hover active:scale-[0.96]"
+              className={buttonVariants({
+                className: "px-5",
+                size: "lg",
+                variant: "secondary",
+              })}
               href="#principios"
             >
               Conocer el sistema

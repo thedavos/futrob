@@ -19,10 +19,12 @@
   --neutral-200: oklch(0.925 0.009 149.579);
   --neutral-300: oklch(0.86 0.011 149.579);
   --neutral-400: oklch(0.71 0.012 149.579);
+  --neutral-450: oklch(0.64 0.012 149.579);
   --neutral-500: oklch(0.56 0.012 149.579);
   --neutral-600: oklch(0.45 0.012 149.579);
   --neutral-700: oklch(0.36 0.012 149.579);
   --neutral-800: oklch(0.275 0.012 149.579);
+  --neutral-850: oklch(0.24 0.012 149.579);
   --neutral-900: oklch(0.205 0.012 149.579);
   --neutral-950: oklch(0.135 0.012 149.579);
   --neutral-1000: oklch(0 0 0);
@@ -109,15 +111,22 @@
   --space-12: 3rem;
   --space-16: 4rem;
   --space-20: 5rem;
-  --radius: 0.5rem;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-full: 9999px;
-  --control-height-sm: 2.25rem;
-  --control-height: 2.75rem;
-  --control-height-lg: 3rem;
+  /* Corner ramp. Single source; apps map it onto Tailwind's --radius-* namespace. */
+  --corner-xs: 0.25rem;
+  --corner-sm: 0.375rem;
+  --corner-md: 0.5rem;
+  --corner-lg: 0.75rem;
+  --corner-xl: 1rem;
+  --corner-2xl: 1.5rem;
+  --corner-3xl: 2rem;
+  --corner-full: 9999px;
+
+  /* Control ramp is compact for desktop operation; touch grows to --control-height-touch. */
+  --control-height-xs: 1.5rem;
+  --control-height-sm: 1.75rem;
+  --control-height-md: 2rem;
+  --control-height-lg: 2.25rem;
+  --control-height-touch: 2.75rem;
   --content-reading: 65ch;
   --content-wide: 90rem;
 
@@ -152,16 +161,17 @@
   --primary: var(--brand-700);
   --primary-hover: var(--brand-800);
   --primary-foreground: var(--neutral-0);
-  --secondary: var(--neutral-100);
-  --secondary-hover: var(--neutral-200);
+  --secondary: var(--neutral-200);
+  --secondary-hover: var(--neutral-300);
   --secondary-foreground: var(--neutral-900);
   --muted: var(--neutral-100);
   --muted-foreground: var(--neutral-600);
   --accent: var(--brand-100);
   --accent-foreground: var(--brand-900);
-  --border: var(--neutral-200);
-  --border-strong: var(--neutral-400);
-  --input: var(--neutral-300);
+  --border-subtle: var(--neutral-200);
+  --border: var(--neutral-300);
+  --border-strong: var(--neutral-450);
+  --input: var(--neutral-450);
   --ring: var(--brand-600);
   --success: var(--brand-700);
   --success-foreground: var(--neutral-0);
@@ -211,13 +221,14 @@
   --secondary: var(--neutral-800);
   --secondary-hover: var(--neutral-700);
   --secondary-foreground: var(--neutral-50);
-  --muted: var(--neutral-900);
+  --muted: var(--neutral-850);
   --muted-foreground: var(--neutral-400);
   --accent: var(--brand-900);
   --accent-foreground: var(--brand-100);
-  --border: var(--neutral-800);
-  --border-strong: var(--neutral-700);
-  --input: var(--neutral-700);
+  --border-subtle: var(--neutral-800);
+  --border: var(--neutral-700);
+  --border-strong: var(--neutral-500);
+  --input: var(--neutral-500);
   --ring: var(--brand-400);
   --success: var(--brand-400);
   --success-foreground: var(--neutral-950);

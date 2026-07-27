@@ -114,7 +114,9 @@ p {
     --background: var(--neutral-0);
     --foreground: var(--neutral-1000);
     --surface: var(--neutral-0);
+    --border-subtle: var(--neutral-200);
     --border: var(--neutral-300);
+    --border-strong: var(--neutral-450);
   }
 
   body {
