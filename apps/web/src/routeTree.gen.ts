@@ -9,23 +9,40 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
+import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as ApiV1OpenapiDotyamlRouteImport } from './routes/api/v1/openapi[.]yaml'
+import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiV1MetaPingRouteImport } from './routes/api/v1/meta/ping'
-import { Route as ApiV1GameDataClubsExternalClubIdRouteImport } from './routes/api/v1/game-data/clubs/$externalClubId'
 import { Route as ApiV1GameDataClubsSearchRouteImport } from './routes/api/v1/game-data/clubs/search'
+import { Route as ApiV1GameDataClubsExternalClubIdRouteImport } from './routes/api/v1/game-data/clubs/$externalClubId'
 import { Route as ApiV1GameDataClubsExternalClubIdMatchesRouteImport } from './routes/api/v1/game-data/clubs/$externalClubId.matches'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
+const AuthSignupRoute = AuthSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AuthRoute,
+} as any)
+const ApiV1OpenapiDotyamlRoute = ApiV1OpenapiDotyamlRouteImport.update({
+  id: '/api/v1/openapi.yaml',
+  path: '/api/v1/openapi.yaml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1OpenapiDotjsonRoute = ApiV1OpenapiDotjsonRouteImport.update({
@@ -33,9 +50,9 @@ const ApiV1OpenapiDotjsonRoute = ApiV1OpenapiDotjsonRouteImport.update({
   path: '/api/v1/openapi.json',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1OpenapiDotyamlRoute = ApiV1OpenapiDotyamlRouteImport.update({
-  id: '/api/v1/openapi.yaml',
-  path: '/api/v1/openapi.yaml',
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1MetaPingRoute = ApiV1MetaPingRouteImport.update({
@@ -43,16 +60,16 @@ const ApiV1MetaPingRoute = ApiV1MetaPingRouteImport.update({
   path: '/api/v1/meta/ping',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1GameDataClubsExternalClubIdRoute =
-  ApiV1GameDataClubsExternalClubIdRouteImport.update({
-    id: '/api/v1/game-data/clubs/$externalClubId',
-    path: '/api/v1/game-data/clubs/$externalClubId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiV1GameDataClubsSearchRoute =
   ApiV1GameDataClubsSearchRouteImport.update({
     id: '/api/v1/game-data/clubs/search',
     path: '/api/v1/game-data/clubs/search',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GameDataClubsExternalClubIdRoute =
+  ApiV1GameDataClubsExternalClubIdRouteImport.update({
+    id: '/api/v1/game-data/clubs/$externalClubId',
+    path: '/api/v1/game-data/clubs/$externalClubId',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1GameDataClubsExternalClubIdMatchesRoute =
@@ -64,6 +81,8 @@ const ApiV1GameDataClubsExternalClubIdMatchesRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof AuthLoginRoute
+  '/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
@@ -74,6 +93,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof AuthLoginRoute
+  '/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
@@ -85,6 +106,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/_auth/login': typeof AuthLoginRoute
+  '/_auth/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
@@ -97,6 +121,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
+    | '/signup'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
@@ -107,6 +133,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
+    | '/signup'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
@@ -117,6 +145,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_auth'
+    | '/_auth/login'
+    | '/_auth/signup'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
@@ -128,6 +159,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
   ApiV1OpenapiDotyamlRoute: typeof ApiV1OpenapiDotyamlRoute
@@ -138,6 +170,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -145,11 +184,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
+    '/_auth/signup': {
+      id: '/_auth/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof AuthSignupRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/api/v1/openapi.yaml': {
+      id: '/api/v1/openapi.yaml'
+      path: '/api/v1/openapi.yaml'
+      fullPath: '/api/v1/openapi.yaml'
+      preLoaderRoute: typeof ApiV1OpenapiDotyamlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/openapi.json': {
@@ -159,11 +212,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1OpenapiDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/openapi.yaml': {
-      id: '/api/v1/openapi.yaml'
-      path: '/api/v1/openapi.yaml'
-      fullPath: '/api/v1/openapi.yaml'
-      preLoaderRoute: typeof ApiV1OpenapiDotyamlRouteImport
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/meta/ping': {
@@ -173,18 +226,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MetaPingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/game-data/clubs/$externalClubId': {
-      id: '/api/v1/game-data/clubs/$externalClubId'
-      path: '/api/v1/game-data/clubs/$externalClubId'
-      fullPath: '/api/v1/game-data/clubs/$externalClubId'
-      preLoaderRoute: typeof ApiV1GameDataClubsExternalClubIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/v1/game-data/clubs/search': {
       id: '/api/v1/game-data/clubs/search'
       path: '/api/v1/game-data/clubs/search'
       fullPath: '/api/v1/game-data/clubs/search'
       preLoaderRoute: typeof ApiV1GameDataClubsSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/game-data/clubs/$externalClubId': {
+      id: '/api/v1/game-data/clubs/$externalClubId'
+      path: '/api/v1/game-data/clubs/$externalClubId'
+      fullPath: '/api/v1/game-data/clubs/$externalClubId'
+      preLoaderRoute: typeof ApiV1GameDataClubsExternalClubIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/game-data/clubs/$externalClubId/matches': {
@@ -196,6 +249,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthRouteChildren {
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthSignupRoute: typeof AuthSignupRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthLoginRoute: AuthLoginRoute,
+  AuthSignupRoute: AuthSignupRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface ApiV1GameDataClubsExternalClubIdRouteChildren {
   ApiV1GameDataClubsExternalClubIdMatchesRoute: typeof ApiV1GameDataClubsExternalClubIdMatchesRoute
@@ -214,6 +279,7 @@ const ApiV1GameDataClubsExternalClubIdRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
   ApiV1OpenapiDotyamlRoute: ApiV1OpenapiDotyamlRoute,
@@ -225,3 +291,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
