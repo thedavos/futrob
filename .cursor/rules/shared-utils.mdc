@@ -1,6 +1,6 @@
 ---
 description: Placement and design rules for shared helpers and shared-kernel primitives
-globs: "{apps,packages}/**/*.{ts,tsx}"
+globs: apps/**/*.ts,apps/**/*.tsx,packages/**/*.ts,packages/**/*.tsx
 alwaysApply: false
 ---
 

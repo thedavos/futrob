@@ -1,6 +1,6 @@
 ---
 description: shadcn with Base UI component rules for Futrob web interfaces
-globs: "{apps/web/src,packages/ui/src}/**/*.{ts,tsx,css}"
+globs: apps/web/src/**/*.ts,apps/web/src/**/*.tsx,apps/web/src/**/*.css,packages/ui/src/**/*.ts,packages/ui/src/**/*.tsx,packages/ui/src/**/*.css
 alwaysApply: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: Better Auth ownership, TanStack Start boundary, and Futrob authorization on D1
-globs: "{apps/web,packages/identity-access}/**/*.{ts,tsx}"
+globs: apps/web/**/*.ts,apps/web/**/*.tsx,packages/identity-access/**/*.ts,packages/identity-access/**/*.tsx
 alwaysApply: false
 ---
 

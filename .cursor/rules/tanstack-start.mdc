@@ -1,6 +1,6 @@
 ---
 description: TanStack Start on Cloudflare Workers routing, server boundaries, and data loading
-globs: "apps/web/**/*.{ts,tsx}"
+globs: apps/web/**/*.ts,apps/web/**/*.tsx
 alwaysApply: false
 ---
 

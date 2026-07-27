@@ -1,6 +1,6 @@
 ---
 description: Vitest strategy for Futrob hexagonal modules on Cloudflare
-globs: "apps/web/**/*.{test,spec}.{ts,tsx}"
+globs: apps/web/**/*.test.ts,apps/web/**/*.test.tsx,apps/web/**/*.spec.ts,apps/web/**/*.spec.tsx
 alwaysApply: true
 ---
 

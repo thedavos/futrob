@@ -1,6 +1,6 @@
 ---
 description: Spanish and English UI localization, dates, and time zones
-globs: "{apps/web,packages}/**/*.{ts,tsx,json}"
+globs: apps/web/**/*.ts,apps/web/**/*.tsx,apps/web/**/*.json,packages/**/*.ts,packages/**/*.tsx,packages/**/*.json
 alwaysApply: false
 ---
 

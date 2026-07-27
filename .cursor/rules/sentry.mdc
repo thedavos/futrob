@@ -1,6 +1,6 @@
 ---
 description: Sentry boundaries, correlation, data minimization, and redaction for Futrob
-globs: "{apps/web,packages}/**/*.{ts,tsx}"
+globs: apps/web/**/*.ts,apps/web/**/*.tsx,packages/**/*.ts,packages/**/*.tsx
 alwaysApply: false
 ---
 

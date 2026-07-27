@@ -1,6 +1,6 @@
 ---
 description: Hexagonal feature modules, DI composition, and Cloudflare platform rules for Futrob
-globs: "apps/web/**/*.{ts,tsx}"
+globs: apps/web/**/*.ts,apps/web/**/*.tsx
 alwaysApply: true
 ---
 
