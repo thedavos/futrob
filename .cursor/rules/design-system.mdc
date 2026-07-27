@@ -1,6 +1,6 @@
 ---
 description: Futrob visual language for landing, operations, Match Center, and public portal
-globs: "{apps/web,packages/ui}/**/*.{ts,tsx,css}"
+globs: apps/web/**/*.ts,apps/web/**/*.tsx,apps/web/**/*.css,packages/ui/**/*.ts,packages/ui/**/*.tsx,packages/ui/**/*.css
 alwaysApply: false
 ---
 
@@ -20,10 +20,13 @@ The canonical specification is `product/design-system-spec.md`. Futrob is a comp
 
 ## Identity and tokens
 
-- Display: Barlow Condensed 600/700 for hero, competition headings, and large scores.
-- UI: Manrope 400–700.
-- Data: IBM Plex Mono 500/600 for scores, time, and short IDs.
+- One self-hosted family: Manrope variable 400–700. Hierarchy comes from the role utilities `type-hero`, `type-title`, `type-body`, `type-label`, and `type-score` — never from a second family.
+- Scores and changing numeric values use `type-score`, which carries `tabular-nums`.
 - Semantic CSS variables are the source of truth for component color.
+- Corner radii come from the `--corner-*` ramp in `packages/ui`; apps map it onto Tailwind's `rounded-*` scale and must not redefine it.
+- Control heights come from the `--control-height-*` ramp. Compact on desktop, `--control-height-touch` (44 px) below the `sm` breakpoint.
+- Border tiers: `--border-subtle` inside groups, `--border` as default separator, `--border-strong` and `--input` for control boundaries that must clear 3:1.
+- Transitions use `--duration-*` and `--ease-*` so the reduced-motion override actually applies. Never hardcode a duration.
 - Green means primary action, approved state, or winner path — not ambient decoration.
 - Dark is the principal sports presentation; light remains fully supported. Target WCAG 2.2 AA.
 - Respect `prefers-reduced-motion`.

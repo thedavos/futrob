@@ -42,8 +42,13 @@ button,
 input,
 select,
 textarea {
-  color: inherit;
   font: inherit;
+}
+
+input,
+select,
+textarea {
+  color: inherit;
 }
 
 button,

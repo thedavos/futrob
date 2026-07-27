@@ -59,6 +59,8 @@ Tokens de rol en [`packages/ui/src/tokens.css`](/packages/ui/src/tokens.css); ut
 - Dark es la presentación deportiva principal; light permanece completo.
 - Objetivo WCAG 2.2 AA.
 - Separación default: borde 1 px; sombra solo en capas modal/popover.
+- Tres niveles de borde: `--border-subtle` dentro de un grupo, `--border` como separador default, `--border-strong` para estructura. `--input` y `--border-strong` cumplen ≥ 3:1 contra su superficie (criterio 1.4.11).
+- `--muted`, `--surface` y `--secondary` son escalones distintos en ambos temas; ninguna zona puede quedar invisible sobre su contenedor.
 - Paleta canónica **Pitch Ops** en OKLCH: escala verde `--brand-50` a `--brand-950`, neutros con tinte de campo y escalas semánticas red/amber/blue.
 - Implementación: [`packages/ui/src/tokens.css`](/packages/ui/src/tokens.css). Uso de logo y activos: [`docs/brand/README.md`](/docs/brand/README.md).
 
@@ -76,6 +78,8 @@ Navegación ligera + hero de marca dominante + una composición de producto. Sin
 - Tablet: rail ~72 px.
 - Mobile: top bar + hasta 5 destinos bottom.
 - El page header no es una card decorativa.
+
+Geometría y controles: la rampa de esquinas `--corner-*` y la rampa de altura `--control-height-*` viven en `packages/ui/src/tokens.css` y son fuente única. Los controles son compactos en desktop (24–36 px) y crecen a `--control-height-touch` (44 px) por debajo del breakpoint `sm`, dentro de la primitiva y no por parche en cada pantalla.
 
 ### Portal público
 

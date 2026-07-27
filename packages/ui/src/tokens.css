@@ -215,9 +215,9 @@
   --card-foreground: var(--neutral-50);
   --popover: var(--neutral-800);
   --popover-foreground: var(--neutral-50);
-  --primary: var(--brand-400);
-  --primary-hover: var(--brand-300);
-  --primary-foreground: var(--neutral-950);
+  --primary: var(--brand-600);
+  --primary-hover: var(--brand-500);
+  --primary-foreground: var(--neutral-0);
   --secondary: var(--neutral-800);
   --secondary-hover: var(--neutral-700);
   --secondary-foreground: var(--neutral-50);

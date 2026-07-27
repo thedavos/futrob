@@ -57,7 +57,7 @@ export function ClubSearchPanel() {
   }
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius-xl)] bg-surface shadow-[0_0_0_1px_var(--border)]">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
         <div>
           <p className="type-label text-muted-foreground">Game data · EA Clubs</p>
@@ -73,7 +73,7 @@ export function ClubSearchPanel() {
           <span className="type-label text-muted-foreground">Nombre del club</span>
           <input
             autoComplete="off"
-            className="min-h-11 rounded-lg border border-border bg-background px-3 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-180 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="min-h-(--control-height-touch) rounded-lg border border-input bg-background px-3 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-(--duration-fast) ease-(--ease-standard) placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-(--control-height-lg)"
             name="query"
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Ej. Cuervos"
@@ -84,7 +84,7 @@ export function ClubSearchPanel() {
         <label className="grid gap-1.5">
           <span className="type-label text-muted-foreground">Plataforma</span>
           <select
-            className="min-h-11 rounded-lg border border-border bg-background px-3 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-180 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="min-h-(--control-height-touch) rounded-lg border border-input bg-background px-3 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-(--duration-fast) ease-(--ease-standard) focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-(--control-height-lg)"
             name="platform"
             onChange={(event) => setPlatform(event.target.value)}
             value={platform}
@@ -97,16 +97,12 @@ export function ClubSearchPanel() {
           </select>
         </label>
 
-        <Button
-          className="min-h-11 w-full sm:w-auto"
-          disabled={loading || !query.trim()}
-          type="submit"
-        >
+        <Button className="w-full sm:w-auto" disabled={loading || !query.trim()} type="submit">
           {loading ? "Buscando…" : "Buscar"}
         </Button>
       </form>
 
-      <div className="border-t border-border bg-muted/40 px-5 py-4 sm:px-6">
+      <div className="border-t border-border bg-muted px-5 py-4 sm:px-6">
         {error ? (
           <p className="text-sm text-danger" role="alert">
             {error}
@@ -121,7 +117,7 @@ export function ClubSearchPanel() {
           <ul className="grid gap-2">
             {clubs.map((club) => (
               <li
-                className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg bg-background px-3 py-2 shadow-[0_0_0_1px_var(--border)]"
+                className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-border-subtle bg-background px-3 py-2"
                 key={`${club.providerKey}:${club.externalClubId}`}
               >
                 <div>

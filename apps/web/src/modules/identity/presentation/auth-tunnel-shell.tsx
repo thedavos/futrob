@@ -19,9 +19,9 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
           />
         </div>
 
-        <div className="relative z-10 max-w-2xl">
+        <div className="relative z-10 flex max-w-2xl flex-col gap-8">
           <p className="type-hero">Tu competición, bajo control.</p>
-          <p className="type-body mt-6 text-lg text-muted-foreground">
+          <p className="type-body text-lg text-muted-foreground">
             Del partido EA al resultado oficial.
           </p>
         </div>
@@ -37,7 +37,7 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
         </p>
       </header>
 
-      <section className="flex min-h-0 items-center justify-center bg-surface px-5 py-10 sm:px-10 lg:px-12 lg:py-16">
+      <section className="auth-form-panel flex min-h-0 items-center justify-center bg-[var(--neutral-0)] px-5 py-10 text-[var(--neutral-950)] sm:px-10 lg:px-12 lg:py-16 [--background:var(--neutral-0)] [--border:var(--neutral-300)] [--border-subtle:var(--neutral-200)] [--destructive:var(--red-700)] [--foreground:var(--neutral-950)] [--input:var(--neutral-450)] [--muted-foreground:var(--neutral-600)] [--primary:var(--brand-700)] [--primary-foreground:var(--neutral-0)] [--ring:var(--brand-600)]">
         <div className="w-full max-w-md">{children}</div>
       </section>
     </main>

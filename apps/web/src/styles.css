@@ -9,7 +9,7 @@
 @source "../../packages/ui/src";
 
 /* cva() class strings in packages/ui are not always detected by the Tailwind scanner. */
-@source inline("bg-primary text-primary-foreground hover:bg-primary/80 bg-secondary text-secondary-foreground hover:bg-secondary bg-destructive/10 text-destructive hover:bg-destructive/20 bg-muted hover:bg-muted hover:text-foreground bg-background border-border border-input dark:bg-input/30 dark:bg-input/50 dark:bg-input/80 dark:hover:bg-input/50 dark:bg-muted/50 dark:bg-destructive/20 dark:bg-destructive/30 dark:hover:bg-destructive/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive aria-invalid:ring-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20");
+@source inline("bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-hover bg-secondary text-secondary-foreground hover:bg-secondary-hover active:bg-secondary-hover bg-transparent bg-destructive/10 text-destructive hover:bg-destructive/20 active:bg-destructive/20 bg-muted hover:bg-muted hover:text-foreground border-border-strong border-transparent active:scale-[0.96] aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 focus-visible:border-destructive/40 focus-visible:ring-destructive/20");
 
 @theme inline {
   --color-background: var(--background);
@@ -130,4 +130,9 @@
   @media (width >= 40rem) {
     font-size: var(--text-5xl);
   }
+}
+
+/* Light auth panel: default (primary) CTAs need white label on brand fill. */
+.auth-form-panel [data-slot="button"].bg-primary {
+  color: var(--neutral-0) !important;
 }
