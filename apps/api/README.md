@@ -9,22 +9,38 @@ Browser/UI → apps/web → HTTP → apps/api (Hono/Node on Railway) → Postgre
                                     ↘ EA Clubs via Node fetch (adapters here)
 ```
 
-Business logic stays in `@futrob/game-data` (+ `@futrob/shared-kernel`,
-`@futrob/api-contracts`). This app only holds adapters, DI, and HTTP wiring.
+Business logic stays in `@futrob/<bc>` packages (`game-data`, `organizations`,
+…). This app only holds adapters, DI, and HTTP wiring.
 
 ## Endpoints (`/api/v1`)
+
+Meta / contract:
 
 - `GET /meta/ping` — service ping (`pingResponseSchema`).
 - `GET /meta/health` — `SELECT 1` against Postgres when `DATABASE_URL` is set,
   otherwise `db: "skipped"`.
 - `GET /openapi.json` and `GET /openapi.yaml` — the `@futrob/api-contracts` document.
+
+Game data (public CORS for the browser SDK today):
+
 - `GET /game-data/clubs/search?query=…` — search external clubs.
 - `GET /game-data/clubs/:externalClubId` — external club info.
 - `GET /game-data/clubs/:externalClubId/matches` — recent provider matches.
 
-Query params (`providerKey`, `platform`, `gameEdition`, `matchType`,
-`maxResultCount`) are validated at the edge with the `@futrob/api-contracts`
-Zod schemas and default to EA Clubs.
+Organizations (service auth from `apps/web` BFF — not browser cookies):
+
+- `GET /organizations/mine`
+- `GET /organizations/post-auth-destination`
+- `POST /organizations`
+- `POST /organizations/:organizationId/invitations`
+- `POST /organizations/invitations/accept`
+
+Requires `Authorization: Bearer <INTERNAL_JOB_SECRET>` and `X-Futrob-Actor-Id`.
+Without `DATABASE_URL`, organizations use an in-memory store (process-local).
+
+Query params for game-data (`providerKey`, `platform`, `gameEdition`, `matchType`,
+`maxResultCount`) are validated at the edge with `@futrob/api-contracts` and
+default to EA Clubs.
 
 ## Run
 
@@ -41,13 +57,14 @@ Default port is `8787`. The app boots without a database. Without
 
 ## Environment
 
-| Variable            | Required       | Default                                       | Purpose                                                 |
-| ------------------- | -------------- | --------------------------------------------- | ------------------------------------------------------- |
-| `PORT`              | no             | `8787`                                        | HTTP listen port                                        |
-| `NODE_ENV`          | no             | `development`                                 | Runtime mode                                            |
-| `DATABASE_URL`      | no (prod: yes) | unset                                         | Postgres connection string (Railway)                    |
-| `EA_CLUBS_BASE_URL` | no             | `https://proclubs.ea.com/api/fc`              | EA Clubs egress base                                    |
-| `CORS_ORIGINS`      | no             | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call the API |
+| Variable              | Required       | Default                                       | Purpose                                                 |
+| --------------------- | -------------- | --------------------------------------------- | ------------------------------------------------------- |
+| `PORT`                | no             | `8787`                                        | HTTP listen port                                        |
+| `NODE_ENV`            | no             | `development`                                 | Runtime mode                                            |
+| `DATABASE_URL`        | no (prod: yes) | unset                                         | Postgres connection string (Railway / Neon)             |
+| `INTERNAL_JOB_SECRET` | yes (orgs)     | unset                                         | Shared with `apps/web` for trusted ActorId org calls    |
+| `EA_CLUBS_BASE_URL`   | no             | `https://proclubs.ea.com/api/fc`              | EA Clubs egress base                                    |
+| `CORS_ORIGINS`        | no             | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call the API |
 
 Local file:
 
@@ -61,7 +78,8 @@ npm run api
 
 ## Railway notes
 
-- Set `DATABASE_URL` (Railway Postgres plugin) and `EA_CLUBS_BASE_URL` as service variables.
+- Apply `migrations/0001_organizations.sql` (and later SQL) to Postgres before relying on org persistence.
+- Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.
 - Start command: `npm run start -w @futrob/api`. Railway injects `PORT`; the app reads it.
 - Health check path: `/api/v1/meta/health`.
 - EA egress relies on browser-like headers (`EA_CLUBS_REQUEST_HEADERS`) so Node
