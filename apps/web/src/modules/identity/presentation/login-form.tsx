@@ -18,6 +18,7 @@ import type {
   AuthFormField,
   AuthFormState,
 } from "@/modules/identity/presentation/auth-form-state.ts";
+import { organizationsBrowserClient } from "@/modules/organizations/presentation/organizations-browser-client.ts";
 
 interface LoginValues {
   email: string;
@@ -92,7 +93,21 @@ export function LoginForm() {
       }
 
       setState({ status: "success" });
-      await navigate({ to: "/" });
+      try {
+        const { destination } = await organizationsBrowserClient.resolvePostAuthDestination();
+        if (destination.kind === "organization") {
+          await navigate({
+            to: "/orgs/$orgId",
+            params: { orgId: destination.organizationId },
+          });
+        } else if (destination.kind === "organizationPicker") {
+          await navigate({ to: "/orgs" });
+        } else {
+          await navigate({ to: "/onboarding" });
+        }
+      } catch {
+        await navigate({ to: "/onboarding" });
+      }
     } catch (error) {
       setState({
         status: "error",

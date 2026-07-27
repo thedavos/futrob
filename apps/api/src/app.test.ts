@@ -3,6 +3,8 @@ import searchClubsFixture from "@/adapters/game-data/ea-clubs/fixtures/search-cl
 import { createApp } from "@/app.ts";
 import { createModules } from "@/di/create-modules.ts";
 
+const INTERNAL_JOB_SECRET = "test-internal-secret";
+
 function createFetch(
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
 ): typeof fetch {
@@ -16,8 +18,21 @@ function buildApp(fetcher: typeof fetch) {
   const modules = createModules({
     fetcher,
     eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
+    pool: undefined,
   });
-  return createApp({ modules, checkDbHealth: () => Promise.resolve("skipped") });
+  return createApp({
+    modules,
+    checkDbHealth: () => Promise.resolve("skipped"),
+    internalJobSecret: INTERNAL_JOB_SECRET,
+  });
+}
+
+function serviceHeaders(actorId = "actor-test-1"): Record<string, string> {
+  return {
+    Authorization: `Bearer ${INTERNAL_JOB_SECRET}`,
+    "X-Futrob-Actor-Id": actorId,
+    "Content-Type": "application/json",
+  };
 }
 
 const stubFetch = createFetch(() => Response.json([]));
@@ -101,5 +116,75 @@ describe("apps/api", () => {
     expect((await res.json()) as { code: string }).toMatchObject({
       code: "game_data.ea_clubs_http_error",
     });
+  });
+
+  it("organizations: create → mine → post-auth destination → invite → accept", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-organizer";
+    const captain = "actor-captain";
+
+    const created = await app.request("/api/v1/organizations", {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ name: "Liga Test" }),
+    });
+    expect(created.status).toBe(201);
+    const createdBody = (await created.json()) as { organizationId: string };
+    expect(createdBody.organizationId).toBeTruthy();
+
+    const mine = await app.request("/api/v1/organizations/mine", {
+      headers: serviceHeaders(organizer),
+    });
+    expect(mine.status).toBe(200);
+    expect(await mine.json()).toMatchObject({
+      memberships: [
+        {
+          organizationId: createdBody.organizationId,
+          organizationName: "Liga Test",
+          role: "organizer",
+        },
+      ],
+    });
+
+    const destination = await app.request("/api/v1/organizations/post-auth-destination", {
+      headers: serviceHeaders(organizer),
+    });
+    expect(destination.status).toBe(200);
+    expect(await destination.json()).toMatchObject({
+      destination: {
+        kind: "organization",
+        organizationId: createdBody.organizationId,
+      },
+    });
+
+    const invite = await app.request(
+      `/api/v1/organizations/${createdBody.organizationId}/invitations`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ role: "captain" }),
+      },
+    );
+    expect(invite.status).toBe(201);
+    const inviteBody = (await invite.json()) as { token: string };
+
+    const accepted = await app.request("/api/v1/organizations/invitations/accept", {
+      method: "POST",
+      headers: serviceHeaders(captain),
+      body: JSON.stringify({ token: inviteBody.token }),
+    });
+    expect(accepted.status).toBe(200);
+    expect(await accepted.json()).toMatchObject({
+      organizationId: createdBody.organizationId,
+      role: "captain",
+    });
+  });
+
+  it("organizations routes reject missing service auth", async () => {
+    const app = buildApp(stubFetch);
+
+    const res = await app.request("/api/v1/organizations/mine");
+
+    expect(res.status).toBe(401);
   });
 });

@@ -1,0 +1,32 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Logo } from "@futrob/ui";
+
+export const Route = createFileRoute("/_app/orgs/$orgId/")({
+  component: OrgHomePage,
+});
+
+function OrgHomePage() {
+  const { orgId } = Route.useParams();
+
+  return (
+    <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8">
+      <header className="mb-8 flex items-center gap-2.5">
+        <Logo className="h-8 w-auto" />
+        <span className="font-semibold tracking-wide">Futrob</span>
+      </header>
+
+      <div className="space-y-4">
+        <h1 className="type-title">Organización</h1>
+        <p className="text-sm text-muted-foreground">
+          Espacio provisional para <span className="font-mono text-foreground">{orgId}</span>. El
+          panel operativo llega en la siguiente entrega.
+        </p>
+        <p>
+          <Link className="text-sm underline-offset-4 hover:underline" to="/orgs">
+            Ver todas las organizaciones
+          </Link>
+        </p>
+      </div>
+    </main>
+  );
+}

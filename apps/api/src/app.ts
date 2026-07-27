@@ -5,10 +5,12 @@ import type { AppModules } from "@/di/create-modules.ts";
 import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
+import { registerOrganizationRoutes } from "@/http/routes/organizations.ts";
 
 export interface AppDeps {
   readonly modules: AppModules;
   readonly checkDbHealth: () => Promise<DbHealthStatus>;
+  readonly internalJobSecret: string;
 }
 
 const DEFAULT_CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"] as const;
@@ -29,8 +31,8 @@ export function createApp(deps: AppDeps): Hono {
     "/api/v1/*",
     cors({
       origin: (origin) => (origin && allowedOrigins.has(origin) ? origin : null),
-      allowMethods: ["GET", "OPTIONS"],
-      allowHeaders: ["Accept", "Authorization", "Content-Type"],
+      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowHeaders: ["Accept", "Authorization", "Content-Type", "X-Futrob-Actor-Id"],
     }),
   );
 
@@ -39,6 +41,7 @@ export function createApp(deps: AppDeps): Hono {
   registerMetaRoutes(v1, deps);
   registerOpenApiRoutes(v1);
   registerGameDataClubRoutes(v1, deps);
+  registerOrganizationRoutes(v1, deps);
 
   app.route("/api/v1", v1);
 

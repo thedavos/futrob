@@ -3,6 +3,7 @@ export interface ApiEnv {
   readonly port: number;
   readonly databaseUrl: string | undefined;
   readonly eaClubsBaseUrl: string;
+  readonly internalJobSecret: string;
 }
 
 const DEFAULT_PORT = 8787;
@@ -16,5 +17,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): ApiEnv {
     port: Number.isFinite(port) && port > 0 ? port : DEFAULT_PORT,
     databaseUrl: source.DATABASE_URL || undefined,
     eaClubsBaseUrl: source.EA_CLUBS_BASE_URL || DEFAULT_EA_CLUBS_BASE_URL,
+    internalJobSecret: source.INTERNAL_JOB_SECRET ?? "",
   };
 }

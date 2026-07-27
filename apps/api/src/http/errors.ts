@@ -26,7 +26,17 @@ function statusForDomainCode(code: string): number {
   if (code.includes("not_found")) {
     return 404;
   }
-  if (code.includes("schema") || code.includes("unsupported") || code.includes("validation")) {
+  if (code.includes("forbidden") || code.includes("unauthorized")) {
+    return 403;
+  }
+  if (
+    code.includes("schema") ||
+    code.includes("unsupported") ||
+    code.includes("validation") ||
+    code.includes("invalid") ||
+    code.includes("expired") ||
+    code.includes("revoked")
+  ) {
     return 400;
   }
   if (code.includes("timeout") || code.includes("http_error") || code.includes("network")) {

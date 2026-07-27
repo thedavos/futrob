@@ -20,6 +20,7 @@ import type {
   AuthFormField,
   AuthFormState,
 } from "@/modules/identity/presentation/auth-form-state.ts";
+import { organizationsBrowserClient } from "@/modules/organizations/presentation/organizations-browser-client.ts";
 
 interface SignupValues {
   name: string;
@@ -116,7 +117,21 @@ export function SignupForm() {
       }
 
       setState({ status: "success" });
-      await navigate({ to: "/" });
+      try {
+        const { destination } = await organizationsBrowserClient.resolvePostAuthDestination();
+        if (destination.kind === "organization") {
+          await navigate({
+            to: "/orgs/$orgId",
+            params: { orgId: destination.organizationId },
+          });
+        } else if (destination.kind === "organizationPicker") {
+          await navigate({ to: "/orgs" });
+        } else {
+          await navigate({ to: "/onboarding" });
+        }
+      } catch {
+        await navigate({ to: "/onboarding" });
+      }
     } catch (error) {
       setState({
         status: "error",
@@ -190,7 +205,7 @@ export function SignupForm() {
         )}
       </div>
 
-      <Button className="w-full" disabled={isSubmitting} size="lg" type="submit">
+      <Button className="w-full" disabled={isSubmitting} size="lg" type="submit" variant="default">
         Crear cuenta
       </Button>
 

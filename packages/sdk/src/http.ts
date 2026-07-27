@@ -3,17 +3,24 @@ import { parseApiErrorBody, FutrobApiError } from "./errors.ts";
 export interface HttpClientOptions {
   readonly baseUrl: string;
   readonly getAccessToken?: () => string | undefined | Promise<string | undefined>;
+  /** Extra headers merged into every request (e.g. X-Futrob-Actor-Id from BFF). */
+  readonly getExtraHeaders?: () =>
+    | Record<string, string>
+    | undefined
+    | Promise<Record<string, string> | undefined>;
   readonly fetchImpl?: typeof fetch;
 }
 
 export class HttpClient {
   private readonly baseUrl: string;
   private readonly getAccessToken?: HttpClientOptions["getAccessToken"];
+  private readonly getExtraHeaders?: HttpClientOptions["getExtraHeaders"];
   private readonly fetchImpl: typeof fetch;
 
   constructor(options: HttpClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.getAccessToken = options.getAccessToken;
+    this.getExtraHeaders = options.getExtraHeaders;
     // Keep a bound/wrapper fetch — bare `fetch` as a method reference throws
     // "Illegal invocation" in browsers when called as `this.fetchImpl(...)`.
     const unbound = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
@@ -29,6 +36,11 @@ export class HttpClient {
     const headers: Record<string, string> = {
       Accept: "application/json",
     };
+
+    const extra = this.getExtraHeaders ? await this.getExtraHeaders() : undefined;
+    if (extra) {
+      Object.assign(headers, extra);
+    }
 
     const token = this.getAccessToken ? await this.getAccessToken() : undefined;
     if (token) {
