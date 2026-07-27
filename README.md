@@ -71,7 +71,9 @@ vp install                 # or npm ci
 npm run check              # vp check
 npm run test               # vp test
 npm run typecheck
-npm run dev                # vp dev apps/web (TanStack Start + Cloudflare)
+npm run dev                # web + api in parallel
+npm run web                # apps/web only (TanStack Start + Cloudflare)
+npm run api                # apps/api only (Hono/Node)
 npm run build              # vp build apps/web
 npm run format             # vp fmt (oxfmt via Vite+)
 npm run lint               # vp lint (oxlint via Vite+)

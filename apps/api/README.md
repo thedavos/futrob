@@ -29,10 +29,11 @@ Zod schemas and default to EA Clubs.
 ## Run
 
 ```bash
-npm run api            # dev with watch (tsx watch), from repo root
+npm run api            # api only (tsx watch), from repo root
 npm run api:start      # run once (tsx)
-npm run typecheck -w @futrob/api
-npm test               # vitest smoke via Vite+ (mocks EA fetch)
+npm run dev            # web + api together
+npm run api:typecheck
+npm run api:test       # vitest smoke via Vite+ (mocks EA fetch)
 ```
 
 Default port is `8787`. The app boots without a database. Without

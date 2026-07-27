@@ -10,14 +10,16 @@ Use root scripts backed by Vite+ (`vp` global CLI + local `vite-plus`). Do not u
 | Task | Command |
 |---|---|
 | Install locked dependencies | `vp install` (or `npm ci`) |
-| Start web development | `npm run dev` → `vp dev apps/web` |
+| Start web + api | `npm run dev` → parallel `@futrob/web` + `@futrob/api` |
+| Start web only | `npm run web` / `npm run dev:web` → `vp dev apps/web` |
+| Start api only | `npm run api` / `npm run dev:api` |
 | Format | `npm run format` → `vp fmt` |
 | Lint | `npm run lint` → `vp lint` |
 | Format, lint, and type-check | `npm run check` → `vp check` |
 | Run Vitest once | `npm test` → `vp test` |
 | Run coverage | `npm run test:coverage` |
-| Build `apps/web` | `npm run build` → `vp build apps/web` |
-| Preview build | `npm run preview` → `vp preview apps/web` |
+| Build `apps/web` | `npm run build` / `npm run web:build` → `vp build apps/web` |
+| Preview build | `npm run preview` / `npm run web:preview` |
 | Workspace typecheck | `npm run typecheck` → `vp run -r typecheck` |
 | CLI playground | `npm run cli -- <cmd>` |
 | Diagnose Vite+ syntax | `vp help` or `vp <command> --help` |

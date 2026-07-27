@@ -61,7 +61,9 @@ vp install          # preferred (or npm ci)
 npm run check       # vp check — fmt + lint + type-aware
 npm run test        # vp test
 npm run typecheck   # tsc across workspaces
-npm run dev         # vp dev apps/web
+npm run dev         # web + api (parallel)
+npm run web         # web only
+npm run api         # api only
 npm run build       # vp build apps/web
 npm run cli -- help
 ```
