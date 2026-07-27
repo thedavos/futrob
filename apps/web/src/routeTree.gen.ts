@@ -10,19 +10,32 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as AppOnboardingRouteImport } from './routes/_app/onboarding'
+import { Route as AppOrgsIndexRouteImport } from './routes/_app/orgs/index'
 import { Route as ApiV1OpenapiDotyamlRouteImport } from './routes/api/v1/openapi[.]yaml'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiV1OrganizationsIndexRouteImport } from './routes/api/v1/organizations/index'
+import { Route as AppOrgsOrgIdIndexRouteImport } from './routes/_app/orgs/$orgId/index'
+import { Route as ApiV1OrganizationsPostAuthDestinationRouteImport } from './routes/api/v1/organizations/post-auth-destination'
+import { Route as ApiV1OrganizationsMineRouteImport } from './routes/api/v1/organizations/mine'
 import { Route as ApiV1MetaPingRouteImport } from './routes/api/v1/meta/ping'
+import { Route as ApiV1OrganizationsInvitationsAcceptRouteImport } from './routes/api/v1/organizations/invitations.accept'
+import { Route as ApiV1OrganizationsOrganizationIdInvitationsRouteImport } from './routes/api/v1/organizations/$organizationId.invitations'
 import { Route as ApiV1GameDataClubsSearchRouteImport } from './routes/api/v1/game-data/clubs/search'
 import { Route as ApiV1GameDataClubsExternalClubIdRouteImport } from './routes/api/v1/game-data/clubs/$externalClubId'
 import { Route as ApiV1GameDataClubsExternalClubIdMatchesRouteImport } from './routes/api/v1/game-data/clubs/$externalClubId.matches'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -40,6 +53,16 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AuthRoute,
 } as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrgsIndexRoute = AppOrgsIndexRouteImport.update({
+  id: '/orgs/',
+  path: '/orgs/',
+  getParentRoute: () => AppRoute,
+} as any)
 const ApiV1OpenapiDotyamlRoute = ApiV1OpenapiDotyamlRouteImport.update({
   id: '/api/v1/openapi.yaml',
   path: '/api/v1/openapi.yaml',
@@ -55,11 +78,44 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1OrganizationsIndexRoute = ApiV1OrganizationsIndexRouteImport.update({
+  id: '/api/v1/organizations/',
+  path: '/api/v1/organizations/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppOrgsOrgIdIndexRoute = AppOrgsOrgIdIndexRouteImport.update({
+  id: '/orgs/$orgId/',
+  path: '/orgs/$orgId/',
+  getParentRoute: () => AppRoute,
+} as any)
+const ApiV1OrganizationsPostAuthDestinationRoute =
+  ApiV1OrganizationsPostAuthDestinationRouteImport.update({
+    id: '/api/v1/organizations/post-auth-destination',
+    path: '/api/v1/organizations/post-auth-destination',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1OrganizationsMineRoute = ApiV1OrganizationsMineRouteImport.update({
+  id: '/api/v1/organizations/mine',
+  path: '/api/v1/organizations/mine',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1MetaPingRoute = ApiV1MetaPingRouteImport.update({
   id: '/api/v1/meta/ping',
   path: '/api/v1/meta/ping',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1OrganizationsInvitationsAcceptRoute =
+  ApiV1OrganizationsInvitationsAcceptRouteImport.update({
+    id: '/api/v1/organizations/invitations/accept',
+    path: '/api/v1/organizations/invitations/accept',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1OrganizationsOrganizationIdInvitationsRoute =
+  ApiV1OrganizationsOrganizationIdInvitationsRouteImport.update({
+    id: '/api/v1/organizations/$organizationId/invitations',
+    path: '/api/v1/organizations/$organizationId/invitations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1GameDataClubsSearchRoute =
   ApiV1GameDataClubsSearchRouteImport.update({
     id: '/api/v1/game-data/clubs/search',
@@ -81,91 +137,147 @@ const ApiV1GameDataClubsExternalClubIdMatchesRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/onboarding': typeof AppOnboardingRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
+  '/orgs/': typeof AppOrgsIndexRoute
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
+  '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
+  '/api/v1/organizations/post-auth-destination': typeof ApiV1OrganizationsPostAuthDestinationRoute
+  '/orgs/$orgId/': typeof AppOrgsOrgIdIndexRoute
+  '/api/v1/organizations/': typeof ApiV1OrganizationsIndexRoute
   '/api/v1/game-data/clubs/$externalClubId': typeof ApiV1GameDataClubsExternalClubIdRouteWithChildren
   '/api/v1/game-data/clubs/search': typeof ApiV1GameDataClubsSearchRoute
+  '/api/v1/organizations/$organizationId/invitations': typeof ApiV1OrganizationsOrganizationIdInvitationsRoute
+  '/api/v1/organizations/invitations/accept': typeof ApiV1OrganizationsInvitationsAcceptRoute
   '/api/v1/game-data/clubs/$externalClubId/matches': typeof ApiV1GameDataClubsExternalClubIdMatchesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/onboarding': typeof AppOnboardingRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
+  '/orgs': typeof AppOrgsIndexRoute
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
+  '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
+  '/api/v1/organizations/post-auth-destination': typeof ApiV1OrganizationsPostAuthDestinationRoute
+  '/orgs/$orgId': typeof AppOrgsOrgIdIndexRoute
+  '/api/v1/organizations': typeof ApiV1OrganizationsIndexRoute
   '/api/v1/game-data/clubs/$externalClubId': typeof ApiV1GameDataClubsExternalClubIdRouteWithChildren
   '/api/v1/game-data/clubs/search': typeof ApiV1GameDataClubsSearchRoute
+  '/api/v1/organizations/$organizationId/invitations': typeof ApiV1OrganizationsOrganizationIdInvitationsRoute
+  '/api/v1/organizations/invitations/accept': typeof ApiV1OrganizationsInvitationsAcceptRoute
   '/api/v1/game-data/clubs/$externalClubId/matches': typeof ApiV1GameDataClubsExternalClubIdMatchesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
+  '/_app/onboarding': typeof AppOnboardingRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
+  '/_app/orgs/': typeof AppOrgsIndexRoute
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
+  '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
+  '/api/v1/organizations/post-auth-destination': typeof ApiV1OrganizationsPostAuthDestinationRoute
+  '/_app/orgs/$orgId/': typeof AppOrgsOrgIdIndexRoute
+  '/api/v1/organizations/': typeof ApiV1OrganizationsIndexRoute
   '/api/v1/game-data/clubs/$externalClubId': typeof ApiV1GameDataClubsExternalClubIdRouteWithChildren
   '/api/v1/game-data/clubs/search': typeof ApiV1GameDataClubsSearchRoute
+  '/api/v1/organizations/$organizationId/invitations': typeof ApiV1OrganizationsOrganizationIdInvitationsRoute
+  '/api/v1/organizations/invitations/accept': typeof ApiV1OrganizationsInvitationsAcceptRoute
   '/api/v1/game-data/clubs/$externalClubId/matches': typeof ApiV1GameDataClubsExternalClubIdMatchesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/onboarding'
     | '/login'
     | '/signup'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
+    | '/orgs/'
     | '/api/v1/meta/ping'
+    | '/api/v1/organizations/mine'
+    | '/api/v1/organizations/post-auth-destination'
+    | '/orgs/$orgId/'
+    | '/api/v1/organizations/'
     | '/api/v1/game-data/clubs/$externalClubId'
     | '/api/v1/game-data/clubs/search'
+    | '/api/v1/organizations/$organizationId/invitations'
+    | '/api/v1/organizations/invitations/accept'
     | '/api/v1/game-data/clubs/$externalClubId/matches'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/onboarding'
     | '/login'
     | '/signup'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
+    | '/orgs'
     | '/api/v1/meta/ping'
+    | '/api/v1/organizations/mine'
+    | '/api/v1/organizations/post-auth-destination'
+    | '/orgs/$orgId'
+    | '/api/v1/organizations'
     | '/api/v1/game-data/clubs/$externalClubId'
     | '/api/v1/game-data/clubs/search'
+    | '/api/v1/organizations/$organizationId/invitations'
+    | '/api/v1/organizations/invitations/accept'
     | '/api/v1/game-data/clubs/$externalClubId/matches'
   id:
     | '__root__'
     | '/'
+    | '/_app'
     | '/_auth'
+    | '/_app/onboarding'
     | '/_auth/login'
     | '/_auth/signup'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
+    | '/_app/orgs/'
     | '/api/v1/meta/ping'
+    | '/api/v1/organizations/mine'
+    | '/api/v1/organizations/post-auth-destination'
+    | '/_app/orgs/$orgId/'
+    | '/api/v1/organizations/'
     | '/api/v1/game-data/clubs/$externalClubId'
     | '/api/v1/game-data/clubs/search'
+    | '/api/v1/organizations/$organizationId/invitations'
+    | '/api/v1/organizations/invitations/accept'
     | '/api/v1/game-data/clubs/$externalClubId/matches'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
   ApiV1OpenapiDotyamlRoute: typeof ApiV1OpenapiDotyamlRoute
   ApiV1MetaPingRoute: typeof ApiV1MetaPingRoute
+  ApiV1OrganizationsMineRoute: typeof ApiV1OrganizationsMineRoute
+  ApiV1OrganizationsPostAuthDestinationRoute: typeof ApiV1OrganizationsPostAuthDestinationRoute
+  ApiV1OrganizationsIndexRoute: typeof ApiV1OrganizationsIndexRoute
   ApiV1GameDataClubsExternalClubIdRoute: typeof ApiV1GameDataClubsExternalClubIdRouteWithChildren
   ApiV1GameDataClubsSearchRoute: typeof ApiV1GameDataClubsSearchRoute
+  ApiV1OrganizationsOrganizationIdInvitationsRoute: typeof ApiV1OrganizationsOrganizationIdInvitationsRoute
+  ApiV1OrganizationsInvitationsAcceptRoute: typeof ApiV1OrganizationsInvitationsAcceptRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -175,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -198,6 +317,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_app/onboarding': {
+      id: '/_app/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/orgs/': {
+      id: '/_app/orgs/'
+      path: '/orgs'
+      fullPath: '/orgs/'
+      preLoaderRoute: typeof AppOrgsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/api/v1/openapi.yaml': {
       id: '/api/v1/openapi.yaml'
       path: '/api/v1/openapi.yaml'
@@ -219,11 +352,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/organizations/': {
+      id: '/api/v1/organizations/'
+      path: '/api/v1/organizations'
+      fullPath: '/api/v1/organizations/'
+      preLoaderRoute: typeof ApiV1OrganizationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/orgs/$orgId/': {
+      id: '/_app/orgs/$orgId/'
+      path: '/orgs/$orgId'
+      fullPath: '/orgs/$orgId/'
+      preLoaderRoute: typeof AppOrgsOrgIdIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/api/v1/organizations/post-auth-destination': {
+      id: '/api/v1/organizations/post-auth-destination'
+      path: '/api/v1/organizations/post-auth-destination'
+      fullPath: '/api/v1/organizations/post-auth-destination'
+      preLoaderRoute: typeof ApiV1OrganizationsPostAuthDestinationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/organizations/mine': {
+      id: '/api/v1/organizations/mine'
+      path: '/api/v1/organizations/mine'
+      fullPath: '/api/v1/organizations/mine'
+      preLoaderRoute: typeof ApiV1OrganizationsMineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/meta/ping': {
       id: '/api/v1/meta/ping'
       path: '/api/v1/meta/ping'
       fullPath: '/api/v1/meta/ping'
       preLoaderRoute: typeof ApiV1MetaPingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/organizations/invitations/accept': {
+      id: '/api/v1/organizations/invitations/accept'
+      path: '/api/v1/organizations/invitations/accept'
+      fullPath: '/api/v1/organizations/invitations/accept'
+      preLoaderRoute: typeof ApiV1OrganizationsInvitationsAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/organizations/$organizationId/invitations': {
+      id: '/api/v1/organizations/$organizationId/invitations'
+      path: '/api/v1/organizations/$organizationId/invitations'
+      fullPath: '/api/v1/organizations/$organizationId/invitations'
+      preLoaderRoute: typeof ApiV1OrganizationsOrganizationIdInvitationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/game-data/clubs/search': {
@@ -249,6 +424,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AppRouteChildren {
+  AppOnboardingRoute: typeof AppOnboardingRoute
+  AppOrgsIndexRoute: typeof AppOrgsIndexRoute
+  AppOrgsOrgIdIndexRoute: typeof AppOrgsOrgIdIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppOnboardingRoute: AppOnboardingRoute,
+  AppOrgsIndexRoute: AppOrgsIndexRoute,
+  AppOrgsOrgIdIndexRoute: AppOrgsOrgIdIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface AuthRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
@@ -279,14 +468,23 @@ const ApiV1GameDataClubsExternalClubIdRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
   ApiV1OpenapiDotyamlRoute: ApiV1OpenapiDotyamlRoute,
   ApiV1MetaPingRoute: ApiV1MetaPingRoute,
+  ApiV1OrganizationsMineRoute: ApiV1OrganizationsMineRoute,
+  ApiV1OrganizationsPostAuthDestinationRoute:
+    ApiV1OrganizationsPostAuthDestinationRoute,
+  ApiV1OrganizationsIndexRoute: ApiV1OrganizationsIndexRoute,
   ApiV1GameDataClubsExternalClubIdRoute:
     ApiV1GameDataClubsExternalClubIdRouteWithChildren,
   ApiV1GameDataClubsSearchRoute: ApiV1GameDataClubsSearchRoute,
+  ApiV1OrganizationsOrganizationIdInvitationsRoute:
+    ApiV1OrganizationsOrganizationIdInvitationsRoute,
+  ApiV1OrganizationsInvitationsAcceptRoute:
+    ApiV1OrganizationsInvitationsAcceptRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
