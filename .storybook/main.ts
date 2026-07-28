@@ -23,12 +23,13 @@ const config: StorybookConfig = {
     viteConfig.resolve = {
       ...viteConfig.resolve,
       alias: [
+        // Match with or without `.ts` — Vite may strip the extension before alias lookup.
         {
-          find: "@/modules/identity/adapters/auth/auth-client.ts",
+          find: /^@\/modules\/identity\/adapters\/auth\/auth-client(?:\.ts)?$/,
           replacement: resolve(configDir, "mocks/auth-client.ts"),
         },
         {
-          find: "@/modules/organizations/presentation/organizations-browser-client.ts",
+          find: /^@\/modules\/organizations\/presentation\/organizations-browser-client(?:\.ts)?$/,
           replacement: resolve(configDir, "mocks/organizations-browser-client.ts"),
         },
         {
