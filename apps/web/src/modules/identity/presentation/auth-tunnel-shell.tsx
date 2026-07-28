@@ -28,10 +28,7 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
       </section>
 
       <header className="flex items-center justify-between gap-5 border-b border-border-subtle bg-background px-5 py-4 lg:hidden">
-        <div className="flex items-center gap-2.5">
-          <Logo className="h-8 w-auto" />
-          <span className="font-semibold tracking-wide">Futrob</span>
-        </div>
+        <Logo className="h-11 w-auto" title="Futrob" />
         <p className="max-w-48 text-right text-xs leading-5 text-muted-foreground">
           Tu torneo, en serio.
         </p>

@@ -7,10 +7,9 @@ interface AuthFormHeaderProps {
 
 export function AuthFormHeader({ title, description }: Readonly<AuthFormHeaderProps>) {
   return (
-    <header className="mb-9">
-      <div className="mb-10 hidden items-center gap-3 lg:flex">
-        <Logo className="h-9 w-auto" />
-        <span className="typo-heading tracking-wide">Futrob</span>
+    <header>
+      <div className="mb-8 hidden lg:block">
+        <Logo className="h-14 w-auto" title="Futrob" />
       </div>
       <h1 className="typo-heading text-3xl">{title}</h1>
       {description == null ? null : (

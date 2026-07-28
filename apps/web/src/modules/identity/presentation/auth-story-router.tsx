@@ -38,7 +38,12 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     path: "/login",
     component: () => (
       <AuthStoryShell>
-        <AuthFormHeader description="Continúa gestionando tu competición." title="Inicia sesión" />
+        <div className="mb-8">
+          <AuthFormHeader
+            description="Continúa gestionando tu competición."
+            title="Inicia sesión"
+          />
+        </div>
         <LoginForm />
       </AuthStoryShell>
     ),
@@ -49,10 +54,12 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     path: "/signup",
     component: () => (
       <AuthStoryShell>
-        <AuthFormHeader
-          description="Empieza gratis y organiza tu competición con más control, orden y transparencia."
-          title="Crea tu cuenta"
-        />
+        <div className="mb-8">
+          <AuthFormHeader
+            description="Empieza gratis y organiza tu competición con más control, orden y transparencia."
+            title="Crea tu cuenta"
+          />
+        </div>
         <SignupForm />
       </AuthStoryShell>
     ),
