@@ -1,5 +1,8 @@
 {
   "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "files.associations": {
+    "**/tokens.css": "css"
+  },
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
