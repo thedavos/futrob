@@ -76,10 +76,9 @@ export function LoginForm() {
       password: readString(formData, "password"),
     };
     const fieldErrors = validateLogin(values);
-    const firstFieldError = fieldErrors.email ?? fieldErrors.password;
 
-    if (firstFieldError != null) {
-      setState({ status: "error", message: firstFieldError, fieldErrors });
+    if (Object.keys(fieldErrors).length > 0) {
+      setState({ status: "error", fieldErrors });
       return;
     }
 
@@ -119,7 +118,7 @@ export function LoginForm() {
 
   return (
     <form aria-busy={isSubmitting} className="space-y-6" noValidate onSubmit={handleSubmit}>
-      {state.status === "error" ? (
+      {state.status === "error" && state.message != null ? (
         <div
           className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
           role="alert"
