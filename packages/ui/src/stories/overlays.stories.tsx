@@ -11,8 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../components/alert-dialog.js";
-import { Button } from "../components/button.js";
+} from "../components/alert-dialog";
+import { Button } from "../components/button";
 import {
   Dialog,
   DialogClose,
@@ -22,15 +22,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../components/dialog.js";
-import { Input } from "../components/input.js";
+} from "../components/dialog";
+import { Input } from "../components/input";
 import {
   Popover,
   PopoverContent,
   PopoverDescription,
   PopoverTitle,
   PopoverTrigger,
-} from "../components/popover.js";
+} from "../components/popover";
 import {
   Sheet,
   SheetBody,
@@ -40,8 +40,8 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "../components/sheet.js";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip.js";
+} from "../components/sheet";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
 
 const meta = {
   title: "Patterns/Overlays",

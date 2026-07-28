@@ -1,16 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { MoreHorizontal } from "lucide-react";
 
-import { Badge } from "../components/badge.js";
-import { Button } from "../components/button.js";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/table.js";
+import { Badge } from "../components/badge";
+import { Button } from "../components/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/table";
 
 const meta = {
   title: "Patterns/Data table",

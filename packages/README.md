@@ -40,7 +40,7 @@ BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`,
 - `ButtonIcon` se reserva para CTA de marketing.
 - Formularios, navegación, tablas/filas y overlays deben componerse desde `@futrob/ui`, no
   duplicarse con elementos estilizados dentro de un módulo.
-- Storybook es el catálogo ejecutable: `npm run ui:storybook`.
+- Storybook es el catálogo ejecutable (root): `npm run storybook`.
 
 Especificación: [`/product/design-system-spec.md`](/product/design-system-spec.md) · guía del
 package: [`/packages/ui/README.md`](/packages/ui/README.md).

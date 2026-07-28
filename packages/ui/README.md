@@ -15,7 +15,6 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 | `src/styles.css`   | Manrope autohospedada, reset y defaults globales                               |
 | `src/components/`  | Primitivas Futrob sobre Base UI                                                |
 | `src/stories/`     | Contratos visuales, de estados y accesibilidad                                 |
-| `.storybook/`      | Configuración React + Vite + Tailwind + addon a11y                             |
 
 ## Contratos
 
@@ -23,7 +22,7 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 - Controles universales de 44 px.
 - `dense` es la única compactación: 40 px en desktop y 44 px en touch.
 - Variantes cerradas. No añadir `xs`/`sm`/`lg` ni colores ad hoc.
-- `typo-label` es el estilo de labels; metadata es la excepción consciente.
+- `typo-label` es el estilo de labels; `typo-caption` cubre metadata y hints; `typo-subtitle` apoya headings.
 - Flat/line en controles y contenido. Solo overlays usan sombras ambientales.
 - `ButtonIcon` es exclusivo de CTA de marketing.
 
@@ -101,13 +100,23 @@ objetivo táctil de 44 px.
 
 ## Storybook
 
+Configuración en el root: `.storybook/`.
+
 ```bash
-npm run ui:storybook        # http://localhost:6006
-npm run ui:storybook:build  # build estático y verificación de integración
+npm run storybook           # http://localhost:6006
+npm run storybook:build     # build estático
 ```
 
+(`ui:storybook` / `ui:storybook:build` siguen como alias.)
+
+Lee stories de:
+
+- `packages/ui/src/**/*.stories.tsx` — primitivas y patrones del design system
+- `apps/web/src/**/*.stories.tsx` — composiciones de producto (alias `@/` → `apps/web/src`)
+
 El addon a11y está habilitado. Toda primitiva o cambio de variante debe actualizar una story con
-sus estados relevantes.
+sus estados relevantes. Las stories de `apps/web` que importen auth/router deben proveer mocks o
+decorators; no asumas que el runtime de Workers está disponible.
 
 ## Añadir o actualizar una primitiva
 
@@ -123,7 +132,7 @@ Después:
 2. Reduce la API a variantes cerradas y aplica los tokens Futrob.
 3. Exporta desde `src/index.ts`.
 4. Añade o actualiza stories.
-5. Ejecuta `npm run typecheck`, `npm run check` y `npm run ui:storybook:build`.
+5. Ejecuta `npm run typecheck`, `npm run check` y `npm run storybook:build`.
 
 Especificación canónica:
 [`/product/design-system-spec.md`](/product/design-system-spec.md).

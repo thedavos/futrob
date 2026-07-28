@@ -128,8 +128,8 @@ npm run dev                # web + api in parallel
 npm run web                # apps/web only
 npm run api                # apps/api only
 npm run build              # vp build apps/web
-npm run ui:storybook       # catálogo UI en :6006
-npm run ui:storybook:build # build estático de Storybook
+npm run storybook          # catálogo UI + web en :6006
+npm run storybook:build    # build estático de Storybook
 npm run format             # vp fmt
 npm run lint               # vp lint
 npm run cli -- help

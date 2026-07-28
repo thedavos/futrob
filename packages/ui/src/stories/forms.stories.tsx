@@ -1,19 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CircleAlert } from "lucide-react";
 
-import { Alert, AlertDescription, AlertTitle } from "../components/alert.js";
-import { Button } from "../components/button.js";
-import { Checkbox } from "../components/checkbox.js";
-import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field.js";
-import { Input } from "../components/input.js";
+import { Alert, AlertDescription, AlertTitle } from "../components/alert";
+import { Button } from "../components/button";
+import { Checkbox } from "../components/checkbox";
+import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";
+import { Input } from "../components/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../components/select.js";
-import { Textarea } from "../components/textarea.js";
+} from "../components/select";
+import { Textarea } from "../components/textarea";
 
 const meta = {
   title: "Patterns/Forms",

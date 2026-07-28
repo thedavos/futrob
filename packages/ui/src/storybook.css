@@ -5,6 +5,7 @@
 @import "./tailwind.css";
 
 @source "./";
+@source "../../../apps/web/src";
 
 #storybook-root {
   color: var(--foreground);

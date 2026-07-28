@@ -7,8 +7,8 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "../components/breadcrumb.js";
-import { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "../components/tabs.js";
+} from "../components/breadcrumb";
+import { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "../components/tabs";
 
 const meta = {
   title: "Patterns/Navigation",

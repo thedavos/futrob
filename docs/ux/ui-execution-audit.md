@@ -26,7 +26,7 @@
   [`/product/design-system-spec.md`](/product/design-system-spec.md).
 - Primitive usage and contribution rules live in
   [`/packages/ui/README.md`](/packages/ui/README.md).
-- Storybook is built with `npm run ui:storybook:build`.
+- Storybook is built with `npm run storybook:build`.
 - New product screens should compose primitives in
   `apps/web/src/modules/<context>/presentation`; domain-specific components do not move into
   `packages/ui`.
