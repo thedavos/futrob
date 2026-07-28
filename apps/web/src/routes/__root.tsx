@@ -16,13 +16,13 @@ export const Route = createRootRoute({
       { title: "Futrob — Competiciones FC Clubs" },
       { name: "description", content: description },
       { name: "application-name", content: "Futrob" },
-      { name: "color-scheme", content: "dark light" },
-      { name: "theme-color", content: "#0b120e", media: "(prefers-color-scheme: dark)" },
+      { name: "color-scheme", content: "light dark" },
       {
         name: "theme-color",
         content: "#f7faf8",
         media: "(prefers-color-scheme: light)",
       },
+      { name: "theme-color", content: "#0b120e", media: "(prefers-color-scheme: dark)" },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "es_ES" },
       { property: "og:site_name", content: "Futrob" },
@@ -67,7 +67,7 @@ function RootComponent() {
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html className="dark" lang="es">
+    <html lang="es">
       <head>
         <HeadContent />
       </head>
