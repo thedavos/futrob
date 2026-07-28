@@ -33,7 +33,7 @@ Also: Cloudflare/wrangler, Sentry, TypeScript best practices. See `.cursor/rules
 - Use flat/line hierarchy; ambient shadows belong only to overlays.
 - Green means brand/primary action. Use the separate `approved` semantic token only for
   officially approved results.
-- Use `typo-label` for labels and navigation; metadata may be sentence-case when clearer.
+- Use `typo-label` for labels and navigation; use `typo-caption` for metadata, hints and secondary sentence-case copy; use `typo-subtitle` for support lines under headings.
 - `ButtonIcon` is marketing CTA language, not an operator/table embellishment.
 - Variants are closed. Do not invent new primitive colors or sizes with `className`.
 - Build forms, navigation, tables/rows and overlays from `@futrob/ui`.
@@ -79,8 +79,8 @@ npm run dev         # web + api (parallel)
 npm run web         # web only
 npm run api         # api only
 npm run build       # vp build apps/web
-npm run ui:storybook
-npm run ui:storybook:build
+npm run storybook
+npm run storybook:build
 npm run cli -- help
 ```
 

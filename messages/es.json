@@ -426,10 +426,15 @@
   "auth_login_title": "Inicia sesión",
   "auth_login_description": "Continúa gestionando tu competición.",
   "auth_signup_title": "Crea tu cuenta",
-  "auth_signup_description": "Empieza a gestionar tu competición.",
-  "auth_name_label": "Nombre",
+  "auth_signup_description": "Empieza gratis y organiza tu competición con más control, orden y transparencia.",
+  "auth_name_label": "Nombre completo",
+  "auth_name_placeholder": "Ingresa tu nombre completo",
   "auth_email_label": "Correo electrónico",
+  "auth_email_placeholder": "ejemplo@correo.com",
   "auth_password_label": "Contraseña",
+  "auth_password_placeholder_login": "Ingresa tu contraseña",
+  "auth_password_placeholder_signup": "Crea una contraseña",
+  "auth_password_hint": "Mínimo 8 caracteres, incluyendo letras y números.",
   "auth_submit_login": "Iniciar sesión",
   "auth_submit_signup": "Crear cuenta",
   "auth_switch_to_signup": "Crear una cuenta",
@@ -442,5 +447,5 @@
   "auth_error_network": "No pudimos conectar con el servicio. Revisa tu conexión e intenta de nuevo.",
   "auth_validation_required": "Este campo es obligatorio.",
   "auth_validation_email": "Ingresa un correo electrónico válido.",
-  "auth_validation_password_min": "La contraseña debe tener al menos 8 caracteres."
+  "auth_validation_password_min": "Mínimo 8 caracteres, incluyendo letras y números."
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Button, Input, Label } from "@futrob/ui";
+import { Button, InputWithIcon, Label } from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { Lock, Mail, UserRound } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import {
   AUTH_ERROR_GENERIC,
@@ -11,8 +12,8 @@ import {
   AUTH_VALIDATION_PASSWORD_MIN,
   AUTH_VALIDATION_REQUIRED,
   EMAIL_PATTERN,
-  MIN_PASSWORD_LENGTH,
   isNetworkError,
+  isPasswordPolicyValid,
   readString,
   type AuthClientError,
 } from "@/modules/identity/presentation/auth-form-helpers.ts";
@@ -43,7 +44,7 @@ function validateSignup(values: SignupValues): Partial<Record<AuthFormField, str
 
   if (values.password.length === 0) {
     fieldErrors.password = AUTH_VALIDATION_REQUIRED;
-  } else if (values.password.length < MIN_PASSWORD_LENGTH) {
+  } else if (!isPasswordPolicyValid(values.password)) {
     fieldErrors.password = AUTH_VALIDATION_PASSWORD_MIN;
   }
 
@@ -88,6 +89,7 @@ export function SignupForm() {
   const emailError = state.status === "error" ? state.fieldErrors?.email : undefined;
   const passwordError = state.status === "error" ? state.fieldErrors?.password : undefined;
   const isSubmitting = state.status === "submitting" || state.status === "success";
+  const passwordHintId = "password-hint";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,14 +154,16 @@ export function SignupForm() {
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="name">Nombre</Label>
-        <Input
+        <Label htmlFor="name">Nombre completo</Label>
+        <InputWithIcon
           aria-describedby={nameError == null ? undefined : "name-error"}
           aria-invalid={nameError != null}
           autoComplete="name"
           disabled={isSubmitting}
+          icon={UserRound}
           id="name"
           name="name"
+          placeholder="Ingresa tu nombre completo"
         />
         {nameError == null ? null : (
           <p className="text-sm text-destructive" id="name-error">
@@ -170,13 +174,15 @@ export function SignupForm() {
 
       <div className="space-y-2">
         <Label htmlFor="email">Correo electrónico</Label>
-        <Input
+        <InputWithIcon
           aria-describedby={emailError == null ? undefined : "email-error"}
           aria-invalid={emailError != null}
           autoComplete="email"
           disabled={isSubmitting}
+          icon={Mail}
           id="email"
           name="email"
+          placeholder="ejemplo@correo.com"
           type="email"
         />
         {emailError == null ? null : (
@@ -188,18 +194,24 @@ export function SignupForm() {
 
       <div className="space-y-2">
         <Label htmlFor="password">Contraseña</Label>
-        <Input
-          aria-describedby={passwordError == null ? undefined : "password-error"}
+        <InputWithIcon
+          aria-describedby={
+            passwordError == null ? passwordHintId : `${passwordHintId} password-error`
+          }
           aria-invalid={passwordError != null}
           autoComplete="new-password"
           disabled={isSubmitting}
+          icon={Lock}
           id="password"
-          minLength={MIN_PASSWORD_LENGTH}
           name="password"
+          placeholder="Crea una contraseña"
           type="password"
         />
+        <p className="text-xs text-muted-foreground" id={passwordHintId}>
+          Mínimo 8 caracteres, incluyendo letras y números.
+        </p>
         {passwordError == null ? null : (
-          <p className="text-sm text-destructive" id="password-error">
+          <p className="text-xs text-destructive" id="password-error">
             {passwordError}
           </p>
         )}
@@ -209,7 +221,7 @@ export function SignupForm() {
         Crear cuenta
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-xs text-muted-foreground">
         ¿Ya tienes una cuenta?{" "}
         <Link
           className="font-medium text-foreground underline-offset-4 hover:underline"

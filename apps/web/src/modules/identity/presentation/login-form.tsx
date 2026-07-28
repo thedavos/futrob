@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Button, Input, Label } from "@futrob/ui";
+import { Button, InputWithIcon, Label } from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { Lock, Mail } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import {
   AUTH_ERROR_GENERIC,
@@ -129,13 +130,15 @@ export function LoginForm() {
 
       <div className="space-y-2">
         <Label htmlFor="email">Correo electrónico</Label>
-        <Input
+        <InputWithIcon
           aria-describedby={emailError == null ? undefined : "email-error"}
           aria-invalid={emailError != null}
           autoComplete="email"
           disabled={isSubmitting}
+          icon={Mail}
           id="email"
           name="email"
+          placeholder="ejemplo@correo.com"
           type="email"
         />
         {emailError == null ? null : (
@@ -147,13 +150,15 @@ export function LoginForm() {
 
       <div className="space-y-2">
         <Label htmlFor="password">Contraseña</Label>
-        <Input
+        <InputWithIcon
           aria-describedby={passwordError == null ? undefined : "password-error"}
           aria-invalid={passwordError != null}
           autoComplete="current-password"
           disabled={isSubmitting}
+          icon={Lock}
           id="password"
           name="password"
+          placeholder="Ingresa tu contraseña"
           type="password"
         />
         {passwordError == null ? null : (

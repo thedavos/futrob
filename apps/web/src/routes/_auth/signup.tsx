@@ -18,7 +18,10 @@ export const Route = createFileRoute("/_auth/signup")({
 function SignupPage() {
   return (
     <>
-      <AuthFormHeader description="Empieza a gestionar tu competición." title="Crea tu cuenta" />
+      <AuthFormHeader
+        description="Empieza gratis y organiza tu competición con más control, orden y transparencia."
+        title="Crea tu cuenta"
+      />
       <SignupForm />
     </>
   );

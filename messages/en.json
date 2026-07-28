@@ -426,10 +426,15 @@
   "auth_login_title": "Sign in",
   "auth_login_description": "Continue managing your competition.",
   "auth_signup_title": "Create your account",
-  "auth_signup_description": "Start managing your competition.",
-  "auth_name_label": "Name",
+  "auth_signup_description": "Start for free and organize your competition with more control, order, and transparency.",
+  "auth_name_label": "Full name",
+  "auth_name_placeholder": "Enter your full name",
   "auth_email_label": "Email",
+  "auth_email_placeholder": "example@email.com",
   "auth_password_label": "Password",
+  "auth_password_placeholder_login": "Enter your password",
+  "auth_password_placeholder_signup": "Create a password",
+  "auth_password_hint": "At least 8 characters, including letters and numbers.",
   "auth_submit_login": "Sign in",
   "auth_submit_signup": "Create account",
   "auth_switch_to_signup": "Create an account",
@@ -442,5 +447,5 @@
   "auth_error_network": "We couldn't reach the service. Check your connection and try again.",
   "auth_validation_required": "This field is required.",
   "auth_validation_email": "Enter a valid email address.",
-  "auth_validation_password_min": "The password must be at least 8 characters."
+  "auth_validation_password_min": "At least 8 characters, including letters and numbers."
 }
