@@ -29,7 +29,7 @@ The canonical specification is `product/design-system-spec.md`. Futrob is a comp
 - Border tiers: `--border-subtle` inside groups, `--border` as default separator, `--border-strong` and `--input` for control boundaries that must clear 3:1.
 - Transitions use `--duration-*` and `--ease-*` so the reduced-motion override actually applies. Never hardcode a duration.
 - Green means primary action, approved state, or winner path — not ambient decoration.
-- Dark is the principal sports presentation; light remains fully supported. Target WCAG 2.2 AA.
+- Light is the default theme across marketing, product, and portal; `:root` is the canonical light theme and the app declares `<html data-theme="light">`. Dark is preserved as an opt-in capability via `.dark`/`[data-theme="dark"]` — never enabled automatically by `prefers-color-scheme`. Target WCAG 2.2 AA.
 - Respect `prefers-reduced-motion`.
 
 ## Shells

@@ -29,6 +29,22 @@ BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`,
 7. **`apps/api`** (Hono/Node en Railway) ya existe y consume los mismos `@futrob/<bc>`; es dueño de Postgres (`DATABASE_URL`) y del egress Node a EA. No reimplementar use cases en la app; `apps/web` consume el mismo contrato `/api/v1`.
 8. En docs del repo, enlaces con ruta absoluta `/packages/...` o `/docs/...`.
 
+## Contrato de `@futrob/ui`
+
+- Light es el tema predeterminado; dark es opt-in explícito.
+- Altura universal de controles: 44 px. `dense` es la única compactación (40 px desktop,
+  44 px touch).
+- Primitivas con variantes cerradas y estilo flat/line.
+- `typo-label` para labels y navegación; metadata puede usar sentence-case.
+- Verde primario = marca/acción; `approved` = resultado oficialmente aprobado.
+- `ButtonIcon` se reserva para CTA de marketing.
+- Formularios, navegación, tablas/filas y overlays deben componerse desde `@futrob/ui`, no
+  duplicarse con elementos estilizados dentro de un módulo.
+- Storybook es el catálogo ejecutable: `npm run ui:storybook`.
+
+Especificación: [`/product/design-system-spec.md`](/product/design-system-spec.md) · guía del
+package: [`/packages/ui/README.md`](/packages/ui/README.md).
+
 ## Quién depende de quién
 
 ```text

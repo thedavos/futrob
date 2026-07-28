@@ -25,6 +25,20 @@ Build Futrob MVP (FC Clubs) per `product/`. Architecture: hexagonal feature modu
 
 Also: Cloudflare/wrangler, Sentry, TypeScript best practices. See `.cursor/rules/agent-skills.mdc`.
 
+## UI system contract
+
+- Read `product/design-system-spec.md` and `packages/ui/README.md` before UI work.
+- Light is the default across marketing, product and public portal. Dark is explicit opt-in.
+- Controls are 44 px. `dense` is the only compact mode: 40 px on desktop and 44 px on touch.
+- Use flat/line hierarchy; ambient shadows belong only to overlays.
+- Green means brand/primary action. Use the separate `approved` semantic token only for
+  officially approved results.
+- Use `typo-label` for labels and navigation; metadata may be sentence-case when clearer.
+- `ButtonIcon` is marketing CTA language, not an operator/table embellishment.
+- Variants are closed. Do not invent new primitive colors or sizes with `className`.
+- Build forms, navigation, tables/rows and overlays from `@futrob/ui`.
+- Update Storybook whenever a primitive contract or state changes.
+
 ## Code shape
 
 - Deployable Must: `apps/web` (TanStack Start → Cloudflare Workers)
@@ -65,6 +79,8 @@ npm run dev         # web + api (parallel)
 npm run web         # web only
 npm run api         # api only
 npm run build       # vp build apps/web
+npm run ui:storybook
+npm run ui:storybook:build
 npm run cli -- help
 ```
 

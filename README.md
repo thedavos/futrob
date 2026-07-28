@@ -57,7 +57,7 @@ analytics    → premium interpretation
 | Auth          | Better Auth (D1) + Futrob organizations (Postgres)       |
 | Data (web)    | D1 (auth/actors), R2, Queues, Cron                       |
 | Data (api)    | Postgres (`DATABASE_URL`)                                |
-| UI            | shadcn / Base UI (`@futrob/ui`)                          |
+| UI            | Sistema light-first Futrob, shadcn / Base UI + Storybook |
 | Tooling       | Vite+ (oxfmt, oxlint, Vitest)                            |
 | Observability | Sentry at boundaries                                     |
 
@@ -109,6 +109,8 @@ Align `INTERNAL_JOB_SECRET` between `apps/web/.dev.vars` and `apps/api/.env` or 
 ## Docs
 
 - [PRD](/product/prd.md)
+- [Design system](/product/design-system-spec.md)
+- [UI primitives](/packages/ui/README.md)
 - [Architecture overview](/docs/architecture/overview.md)
 - [Module boundaries](/docs/architecture/module-boundaries.md)
 - [Packages and SDK](/docs/architecture/packages-and-sdk.md)
@@ -126,6 +128,8 @@ npm run dev                # web + api in parallel
 npm run web                # apps/web only
 npm run api                # apps/api only
 npm run build              # vp build apps/web
+npm run ui:storybook       # catálogo UI en :6006
+npm run ui:storybook:build # build estático de Storybook
 npm run format             # vp fmt
 npm run lint               # vp lint
 npm run cli -- help

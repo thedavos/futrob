@@ -74,3 +74,16 @@
 - Match/Series/Game del modelo anterior sin mapear a Encounter/OfficialMatch/EaMatch.
 - Kapso/WhatsApp/Telegram como requisitos Must del MVP.
 - Entrants 1v1/pair/squad como supuesto universal del dominio Clubs.
+
+## 8. Decisiones resueltas de sistema de diseño
+
+| ID      | Tema                  | Resolución vigente                                                                                                                      |
+| ------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| DEC-060 | Tema predeterminado   | Light en marketing, producto y portal. Dark solo puede activarse de forma explícita; no sigue automáticamente al sistema operativo.     |
+| DEC-061 | Tamaño de controles   | 44 px universal. La única compactación es `dense`: 40 px en desktop operativo y 44 px en touch.                                         |
+| DEC-062 | Lenguaje visual       | Flat/line: jerarquía por espacio, tipografía y bordes; sombras ambientales solo en capas flotantes.                                     |
+| DEC-063 | Semántica del verde   | Verde para marca/acción primaria. `approved` usa un verde distinto y exclusivo para resultados oficialmente aprobados.                  |
+| DEC-064 | Tipografía de labels  | `typo-label` es el default; metadata secundaria puede usar sentence-case cuando uppercase reduzca legibilidad.                          |
+| DEC-065 | CTA de marketing      | `ButtonIcon` es un recurso distintivo de CTA de marketing y no se usa en tablas, toolbars ni formularios operativos.                    |
+| DEC-066 | Variantes             | Las primitivas tienen variantes cerradas. Las pantallas no crean variantes visuales ad hoc mediante `className`.                        |
+| DEC-067 | Prioridad de catálogo | Formularios completos, navegación, data tables/rows y overlays son el núcleo. Storybook es la referencia ejecutable y de accesibilidad. |

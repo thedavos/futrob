@@ -1,133 +1,179 @@
 # Futrob — Especificación del sistema de diseño
 
 **Estado:** canónico para el MVP (producto 2026-07)  
-**Alcance:** landing, aplicación autenticada y portal público responsive  
-**Base técnica:** Tailwind CSS, shadcn sobre Base UI, lucide, light/dark
+**Alcance:** marketing, aplicación autenticada y portal público responsive
+**Base técnica:** Tailwind CSS 4, shadcn sobre Base UI, Lucide y Storybook
 
-## 1. Dirección visual
+## 1. Dirección de producto
 
-### Concepto: mesa de operaciones de competición Clubs
+Futrob es una herramienta operativa y deportiva para el gaming. Ayuda a organizadores y
+staff a construir y gestionar torneos de EA SPORTS FC, y a capitanes y jugadores a consultar,
+auditar y entender partidos, estadísticas y rendimiento.
 
-Futrob debe sentirse como el sistema operativo de una liga EA FC Clubs: preciso para organizadores y capitanes, claro para espectadores, y anclado a datos reales de partidos.
-
-La idea memorable es **“del partido EA al resultado oficial”**. El énfasis visual está en candidatos, selección, marcador y avance competitivo — no en OCR ni evidencia fotográfica.
+La interfaz debe sentirse como una **mesa de operaciones de competición**: precisa, rápida y
+confiable, sin perder el carácter deportivo. La idea de marca es “del partido EA al resultado
+oficial”.
 
 ### Principios
 
-1. **Filas antes que tarjetas.** Enfrentamientos, candidatos EA, plantillas y rankings como listas densas. Cards solo para entidades autónomas o herramientas enmarcadas.
-2. **Marcador como ancla.** Números tabulares, alto contraste, posición estable.
-3. **Densidad graduada.** Operación compacta en desktop; táctil ≥ 44 px en móvil.
-4. **Estado explícito.** Texto + icono/forma; el color es suplementario.
-5. **Espectáculo subordinado a legibilidad.** Hero, live y bracket pueden tener más presencia; formularios y revisión permanecen sobrios.
-6. **Un solo lenguaje de componentes.** shadcn/Base UI para comportamiento; tokens Futrob para identidad.
+1. **Light por defecto.** Marketing, producto y portal arrancan siempre en tema claro. Dark es
+   una opción explícita futura, no una preferencia automática del sistema operativo.
+2. **Flat/line.** La estructura se expresa con espacio, tipografía y bordes de 1 px. Las sombras
+   ambientales se reservan para popovers, diálogos y sheets.
+3. **Filas antes que tarjetas.** Partidos, candidatos, plantillas, auditorías y rankings se
+   modelan como filas o tablas. Cards solo para entidades autónomas.
+4. **Estado explícito.** Texto + icono/forma; el color nunca comunica un estado por sí solo.
+5. **Jerarquía operativa.** Una acción primaria por contexto; las acciones destructivas se
+   separan y confirman.
+6. **Un solo lenguaje.** Base UI aporta comportamiento accesible; los tokens y variantes
+   cerradas de Futrob aportan identidad.
 
 ### Anti-patrones
 
-- Dashboard de cards uniformes sin jerarquía.
-- Gradiente púrpura genérico, glassmorphism global o sombras en cada bloque.
-- Confundir goles de partido con resultado agregado de serie.
+- Dashboard de cards uniformes o cards anidadas.
+- Gradientes decorativos, glassmorphism global y sombras en controles estáticos.
+- Tamaños o colores arbitrarios dentro de pantallas.
 - Badges solo por color.
-- Tratar candidatos EA como resultados oficiales visualmente iguales.
-- Nested cards.
+- Usar el verde de aprobación para selección, sincronización o estados provisionales.
+- Tratar datos candidatos de EA como resultados oficiales.
 
-## 2. Identidad y lenguaje
+## 2. Fundamentos
 
-- Nombre visible: **Futrob**.
-- Promesa: operación confiable de ligas y copas EA SPORTS FC Clubs con datos de EA.
-- Terminología UI (es): Organización, Competición, Equipo, Plantilla, Enfrentamiento, Partido oficial, Partido EA, Candidato, Serie, Reprogramación, Disputa, Tabla, Bracket, Ranking.
-- Estados concretos: “Esperando datos de EA”, “Candidatos disponibles”, “Selección en progreso”, “Esperando confirmación rival”, “Confirmado”, “En disputa”, “En revisión”, “Aprobado”, “Anulado”.
-- Evitar promesas de automatización perfecta del API de EA.
+### Tema
 
-## 3. Tipografía
+`:root` es la fuente canónica del tema claro. La aplicación declara
+`<html data-theme="light">`. El selector `.dark`/`[data-theme="dark"]` se conserva como
+capacidad opt-in, pero ninguna UI debe activarlo mediante `prefers-color-scheme`.
 
-Familia única autohospedada WOFF2: **Manrope** variable. La jerarquía es por rol, no por familia.
+### Color
 
-Pesos canónicos (no usar 200, 300 ni 800):
+- La paleta **Pitch Ops** vive en `packages/ui/src/tokens.css` y usa OKLCH.
+- Verde es marca y acción primaria.
+- `--approved` es una variante verde más profunda y separada de `--primary`; se usa únicamente
+  cuando un resultado ya fue auditado/aprobado.
+- Sync usa azul, selección/revisión usa ámbar, disputa/error usa rojo y cancelación usa neutral.
+- Los componentes consumen tokens semánticos (`--primary`, `--approved`, `--danger`,
+  `--border`, etc.), nunca tonos crudos.
+- Objetivo: WCAG 2.2 AA. El borde de un control debe mantener contraste no textual suficiente
+  contra su superficie.
 
-| Peso | Token                    | Uso típico                                      |
-| ---- | ------------------------ | ----------------------------------------------- |
-| 400  | `--font-weight-regular`  | Cuerpo, copy de apoyo (`typo-body`)             |
-| 500  | `--font-weight-medium`   | Énfasis suave en UI, botones, texto interactivo |
-| 600  | `--font-weight-semibold` | Títulos, labels, marcadores                     |
-| 700  | `--font-weight-bold`     | Display / headlines de marca                    |
+### Tipografía
 
-Roles tipográficos:
+Familia única autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 600 y 700.
 
-| Rol     | Clase Tailwind | Peso | Uso                                              |
-| ------- | -------------- | ---- | ------------------------------------------------ |
-| Display | `typo-display` | 700  | Headline de landing / superficies de marca       |
-| Heading | `typo-heading` | 600  | Títulos de página, competición, paneles          |
-| Body    | `typo-body`    | 400  | Párrafos y copy de apoyo                         |
-| Label   | `typo-label`   | 600  | Labels uppercase densos, estados, metadata corta |
-| Score   | `typo-score`   | 600  | Marcadores y valores numéricos que cambian       |
+| Rol     | Clase          | Uso principal                                      |
+| ------- | -------------- | -------------------------------------------------- |
+| Display | `typo-display` | Headlines de marketing                             |
+| Heading | `typo-heading` | Títulos de página y panel                          |
+| Body    | `typo-body`    | Párrafos y contenido de lectura                    |
+| Label   | `typo-label`   | Labels, navegación, columnas y estados compactos   |
+| Score   | `typo-score`   | Marcadores y valores deportivos con cifras tabular |
 
-Tokens de rol en [`packages/ui/src/tokens.css`](/packages/ui/src/tokens.css); utilidades en [`apps/web/src/styles.css`](/apps/web/src/styles.css) (`@utility`). Marcadores usan `font-variant-numeric: tabular-nums` vía `typo-score`. En componentes, preferir `font-medium` / `font-semibold` / `font-bold` alineados a esta escala.
+`typo-label` es el contrato predeterminado para etiquetas. Metadata técnica o secundaria puede
+usar texto sentence-case de 12–14 px cuando uppercase reduzca legibilidad. Las utilidades viven
+en `packages/ui/src/tailwind.css`; los valores viven en `packages/ui/src/tokens.css`.
 
-## 4. Color y tokens
+### Geometría y densidad
 
-- Tokens semánticos CSS (`--background`, `--foreground`, `--primary`, `--success`, `--warning`, `--danger`, `--muted`, etc.) como única fuente de color de componentes.
-- Verde = acción primaria, estado aprobado o camino ganador; no decoración ambiental.
-- Dark es la presentación deportiva principal; light permanece completo.
-- Objetivo WCAG 2.2 AA.
-- Separación default: borde 1 px; sombra solo en capas modal/popover.
-- Tres niveles de borde: `--border-subtle` dentro de un grupo, `--border` como separador default, `--border-strong` para estructura. `--input` y `--border-strong` cumplen ≥ 3:1 contra su superficie (criterio 1.4.11).
-- `--muted`, `--surface` y `--secondary` son escalones distintos en ambos temas; ninguna zona puede quedar invisible sobre su contenedor.
-- Paleta canónica **Pitch Ops** en OKLCH: escala verde `--brand-50` a `--brand-950`, neutros con tinte de campo y escalas semánticas red/amber/blue.
-- Implementación: [`packages/ui/src/tokens.css`](/packages/ui/src/tokens.css). Uso de logo y activos: [`docs/brand/README.md`](/docs/brand/README.md).
+- Altura universal de controles: `--control-height` = **44 px**.
+- `dense` es la única reducción permitida: `--control-height-dense` = **40 px** en interfaces
+  operativas de desktop.
+- En pantallas touch, `dense` vuelve a **44 px**.
+- No existen tamaños `xs`, `sm` o `lg` para controles. `size` solo expresa forma:
+  `default` o `icon`.
+- Esquinas, espacios, duraciones y capas provienen de tokens. No crear rampas paralelas.
 
-Estados de selección/sync deben mapear a tokens semánticos distintos de “oficial/aprobado”.
+## 3. Contrato de primitivas
 
-## 5. Layout shells
+Las primitivas viven en `@futrob/ui`, no conocen competiciones, EA, roles ni permisos y exponen
+variantes cerradas.
 
-### Landing
+### Formularios
 
-Navegación ligera + hero de marca dominante + una composición de producto. Sin stats inventadas ni cards en el primer viewport.
+- `Field`, `FieldLabel`, `FieldDescription`, `FieldError`
+- `Input`, `Textarea`, `Select`, `Checkbox`
+- `Alert`
 
-### App autenticada
+Cada campo debe tener nombre accesible, descripción/error asociado y estado inválido visible.
+Los formularios muestran validación junto al campo y un resumen solo cuando aporta contexto.
 
-- Desktop: sidebar contextual ~264 px, header de app, header de página, filtros, contenido fluido.
-- Tablet: rail ~72 px.
-- Mobile: top bar + hasta 5 destinos bottom.
-- El page header no es una card decorativa.
+### Navegación
 
-Geometría y controles: la rampa de esquinas `--corner-*` y la rampa de altura `--control-height-*` viven en `packages/ui/src/tokens.css` y son fuente única. Los controles son compactos en desktop (24–36 px) y crecen a `--control-height-touch` (44 px) por debajo del breakpoint `sm`, dentro de la primitiva y no por parche en cada pantalla.
+- `Tabs` con indicador lineal
+- `Breadcrumb`
+- `Sheet` para navegación móvil
 
-### Portal público
+La navegación de producto usa `typo-label`. El estado activo no depende únicamente del color.
 
-Header de competición + tabs horizontales sticky; sin sidebar admin.
+### Datos
 
-## 6. Match Center y filas
+- `Table` y primitivas de fila/celda
+- `Badge` con variante `approved`
+- `EmptyState` y `Skeleton`
 
-### EncounterRow
+`Table dense` es el patrón recomendado para auditoría y operación en desktop. Las cifras usan
+`tabular-nums`. Toda tabla debe tener encabezados y una representación móvil legible.
 
-Zonas desktop: jornada/fecha · Team A · marcador/estado centrado · Team B · metadata/acción.  
-Mobile: dos filas de equipo + contexto de serie/reprogramación/selección.
+### Overlays
 
-### Detalle
+- `Dialog` para tareas reversibles o edición.
+- `AlertDialog` para consecuencias destructivas o irreversibles.
+- `Popover` para contexto interactivo breve.
+- `Tooltip` para ayuda suplementaria, nunca información imprescindible.
+- `Sheet` para navegación o flujos laterales.
 
-Cabecera simétrica de marcador + secciones: Overview, Official matches, EA candidates, Selection, Schedule, Stats, History/Admin.
+Base UI debe conservar focus trap, restauración de foco, Escape y asociación de título y
+descripción. Las capas flotantes son las únicas superficies con sombra ambiental.
 
-La lista de candidatos debe mostrar hora, resultado, duración, local/visitante, jugadores clave y estado de uso (libre / propuesto / asignado / aprobado).
+### Botones
 
-Preview de selección: resultado por partido y, si aplica, agregado etiquetado explícitamente.
+Variantes cerradas: `default`, `secondary`, `outline`, `ghost`, `destructive`, `link`.
 
-## 7. Bracket y rankings
+- `default`: acción primaria de marca.
+- `secondary`/`outline`: acciones de apoyo.
+- `ghost`: acciones de baja prominencia.
+- `destructive`: solo con semántica destructiva; normalmente dentro de confirmación.
+- `ButtonIcon`: isla circular distintiva exclusiva para CTA de marketing. No usarla en tablas,
+  toolbars ni formularios operativos.
 
-- Bracket de eliminación consume grafo semántico; layout es presentación.
-- Debe existir vista lista accesible equivalente.
-- Rankings: tablas densas con elegibilidad visible (“No elegible — minutos insuficientes”).
-- Tabla oficial y ranking de rendimiento nunca comparten el mismo título ambiguo.
+## 4. Composición
 
-## 8. Movimiento y accesibilidad
+- `packages/ui`: tokens y primitivas agnósticas.
+- `apps/web/src/modules/<context>/presentation`: componentes y flujos de negocio.
+- Una pantalla puede decidir composición y contenido, pero no inventar nuevas variantes de
+  primitivas mediante clases.
+- El layout autenticado prioriza navegación contextual, header de página, filtros y contenido
+  fluido. El portal público usa header de competición + tabs, sin sidebar administrativa.
 
-- Respetar `prefers-reduced-motion`.
-- Focus visible; diálogos restauran foco.
-- Estados live/sync no roban foco ni reordenan en silencio.
-- Contraste AA; no transmitir estado solo con color.
-- Locales `es`/`en` sin cambiar reglas de datos EA.
+## 5. Movimiento y accesibilidad
 
-## 9. Referencias de implementación
+- Animar solo `opacity`, `translate`, `scale` y, cuando es imprescindible, tamaño del indicador.
+- Respetar `prefers-reduced-motion`; los tokens de duración pasan a `0ms`.
+- Focus visible en todos los controles.
+- Objetivos táctiles de al menos 44 px.
+- Estados live/sync no roban foco ni reordenan silenciosamente.
+- Debe existir alternativa de lista accesible para brackets visuales.
 
-- Primitivas: `packages/ui` (shadcn/Base UI).
-- Composiciones de negocio: `apps/web/src/features/*`.
-- Criterios UX: [ux-acceptance.md](/product/ux-acceptance.md).
+## 6. Storybook y control de calidad
+
+Storybook es la referencia ejecutable de las primitivas y contiene escenarios de botones,
+formularios, navegación, data tables y overlays.
+
+```bash
+npm run ui:storybook
+npm run ui:storybook:build
+```
+
+Una primitiva nueva o una variante modificada requiere:
+
+1. Story de estado normal, disabled, invalid o empty cuando aplique.
+2. Revisión del tema claro y del modo `dense`.
+3. Panel a11y sin violaciones conocidas.
+4. `npm run typecheck`, `npm run check` y build de Storybook.
+
+## 7. Referencias
+
+- Implementación: [`packages/ui/`](/packages/ui/)
+- Contratos operativos: [`packages/ui/README.md`](/packages/ui/README.md)
+- Criterios UX: [`product/ux-acceptance.md`](/product/ux-acceptance.md)
+- Lenguaje de marca: [`docs/brand/README.md`](/docs/brand/README.md)
