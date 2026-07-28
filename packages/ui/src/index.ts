@@ -3,10 +3,10 @@
  * Primitives live under `src/components` (shadcn / Base UI). Compose business UI in apps/web.
  */
 
-export { Logo } from "./logo.js";
-export type { LogoProps } from "./logo.js";
+export { Logo } from "./logo";
+export type { LogoProps } from "./logo";
 
-export { Alert, AlertDescription, AlertTitle, alertVariants } from "./components/alert.js";
+export { Alert, AlertDescription, AlertTitle, alertVariants } from "./components/alert";
 export {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +17,8 @@ export {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "./components/alert-dialog.js";
-export { Badge, badgeVariants } from "./components/badge.js";
+} from "./components/alert-dialog";
+export { Badge, badgeVariants } from "./components/badge";
 export {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -27,11 +27,11 @@ export {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "./components/breadcrumb.js";
-export { Button, buttonVariants } from "./components/button.js";
-export type { ButtonProps } from "./components/button.js";
-export { ButtonIcon } from "./components/button-icon.js";
-export { Checkbox } from "./components/checkbox.js";
+} from "./components/breadcrumb";
+export { Button, buttonVariants } from "./components/button";
+export type { ButtonProps } from "./components/button";
+export { ButtonIcon } from "./components/button-icon";
+export { Checkbox } from "./components/checkbox";
 export {
   Dialog,
   DialogBackdrop,
@@ -42,19 +42,21 @@ export {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./components/dialog.js";
-export type { DialogContentProps } from "./components/dialog.js";
+} from "./components/dialog";
+export type { DialogContentProps } from "./components/dialog";
 export {
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-} from "./components/empty-state.js";
-export { Field, FieldDescription, FieldError, FieldLabel } from "./components/field.js";
-export { Input } from "./components/input.js";
-export type { InputProps } from "./components/input.js";
-export { Label } from "./components/label.js";
+} from "./components/empty-state";
+export { Field, FieldDescription, FieldError, FieldLabel } from "./components/field";
+export { Input } from "./components/input";
+export type { InputProps } from "./components/input";
+export { InputWithIcon } from "./components/input-with-icon";
+export type { InputWithIconProps } from "./components/input-with-icon";
+export { Label } from "./components/label";
 export {
   Popover,
   PopoverClose,
@@ -62,7 +64,7 @@ export {
   PopoverDescription,
   PopoverTitle,
   PopoverTrigger,
-} from "./components/popover.js";
+} from "./components/popover";
 export {
   Select,
   SelectContent,
@@ -72,9 +74,9 @@ export {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "./components/select.js";
-export type { SelectTriggerProps } from "./components/select.js";
-export { Separator } from "./components/separator.js";
+} from "./components/select";
+export type { SelectTriggerProps } from "./components/select";
+export { Separator } from "./components/separator";
 export {
   Sheet,
   SheetBody,
@@ -86,8 +88,8 @@ export {
   SheetTitle,
   SheetTrigger,
   sheetVariants,
-} from "./components/sheet.js";
-export { Skeleton } from "./components/skeleton.js";
+} from "./components/sheet";
+export { Skeleton } from "./components/skeleton";
 export {
   Table,
   TableBody,
@@ -98,10 +100,10 @@ export {
   TableHead,
   TableHeader,
   TableRow,
-} from "./components/table.js";
-export type { TableProps } from "./components/table.js";
-export { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "./components/tabs.js";
-export { Textarea } from "./components/textarea.js";
-export type { TextareaProps } from "./components/textarea.js";
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/tooltip.js";
-export { cn } from "./lib/utils.js";
+} from "./components/table";
+export type { TableProps } from "./components/table";
+export { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "./components/tabs";
+export { Textarea } from "./components/textarea";
+export type { TextareaProps } from "./components/textarea";
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/tooltip";
+export { cn } from "./lib/utils";

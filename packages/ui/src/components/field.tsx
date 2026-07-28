@@ -30,7 +30,7 @@ function FieldDescription({ className, ...props }: FieldPrimitive.Description.Pr
   return (
     <FieldPrimitive.Description
       data-slot="field-description"
-      className={cn("text-sm leading-relaxed text-muted-foreground", className)}
+      className={cn("typo-caption leading-relaxed text-muted-foreground", className)}
       {...props}
     />
   );
@@ -40,7 +40,7 @@ function FieldError({ children, className, ...props }: FieldPrimitive.Error.Prop
   return (
     <FieldPrimitive.Error
       data-slot="field-error"
-      className={cn("flex items-start gap-1.5 text-sm font-medium text-danger", className)}
+      className={cn("typo-caption flex items-start gap-1.5 font-medium text-danger", className)}
       {...props}
     >
       <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />

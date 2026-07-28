@@ -21,7 +21,7 @@ The canonical specification is `product/design-system-spec.md`. Futrob is a comp
 ## Identity and tokens
 
 - One self-hosted family: Manrope variable. Canonical weights only: **400** (regular), **500** (medium), **600** (semibold), **700** (bold). Do not use 200, 300, or 800.
-- Hierarchy comes from the role utilities `typo-display` (700), `typo-heading` (600), `typo-body` (400), `typo-label` (600), and `typo-score` (600) — never from a second family.
+- Hierarchy comes from the role utilities `typo-display` (700), `typo-heading` (700), `typo-subtitle` (400), `typo-body` (400), `typo-label` (500), `typo-caption` (400), and `typo-score` (600) — never from a second family.
 - Scores and changing numeric values use `typo-score`, which carries `tabular-nums`.
 - Semantic CSS variables are the source of truth for component color.
 - Corner radii come from the `--corner-*` ramp in `packages/ui`; apps map it onto Tailwind's `rounded-*` scale and must not redefine it.

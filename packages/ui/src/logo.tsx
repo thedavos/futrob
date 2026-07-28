@@ -26,6 +26,9 @@ export function Logo({ monochrome = false, title, style, ...props }: Readonly<Lo
       style={{
         color: monochrome ? "currentColor" : "var(--brand-500)",
         display: "block",
+        aspectRatio: "553 / 622",
+        // Global `svg { max-width: 100% }` collapses height-sized marks in shrink-wrapped parents (e.g. Storybook).
+        maxWidth: "none",
         ...style,
       }}
       {...props}

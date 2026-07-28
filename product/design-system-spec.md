@@ -61,17 +61,20 @@ capacidad opt-in, pero ninguna UI debe activarlo mediante `prefers-color-scheme`
 
 Familia única autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 600 y 700.
 
-| Rol     | Clase          | Uso principal                                      |
-| ------- | -------------- | -------------------------------------------------- |
-| Display | `typo-display` | Headlines de marketing                             |
-| Heading | `typo-heading` | Títulos de página y panel                          |
-| Body    | `typo-body`    | Párrafos y contenido de lectura                    |
-| Label   | `typo-label`   | Labels, navegación, columnas y estados compactos   |
-| Score   | `typo-score`   | Marcadores y valores deportivos con cifras tabular |
+| Rol      | Clase           | Uso principal                                                  |
+| -------- | --------------- | -------------------------------------------------------------- |
+| Display  | `typo-display`  | Headlines de marketing                                         |
+| Heading  | `typo-heading`  | Títulos de página y panel                                      |
+| Subtitle | `typo-subtitle` | Frase de apoyo bajo un heading                                 |
+| Body     | `typo-body`     | Párrafos y contenido de lectura                                |
+| Label    | `typo-label`    | Labels de formulario, navegación, columnas y estados compactos |
+| Caption  | `typo-caption`  | Hints, metadata, timestamps y texto secundario sentence-case   |
+| Score    | `typo-score`    | Marcadores y valores deportivos con cifras tabular             |
 
-`typo-label` es el contrato predeterminado para etiquetas. Metadata técnica o secundaria puede
-usar texto sentence-case de 12–14 px cuando uppercase reduzca legibilidad. Las utilidades viven
-en `packages/ui/src/tailwind.css`; los valores viven en `packages/ui/src/tokens.css`.
+`typo-label` es el contrato predeterminado para etiquetas de formulario y navegación.
+`typo-caption` cubre metadata y ayudas; el color secundario se aplica con tokens
+(`text-muted-foreground`), no con otro rol. Las utilidades viven en
+`packages/ui/src/tailwind.css`; los valores viven en `packages/ui/src/tokens.css`.
 
 ### Geometría y densidad
 
@@ -160,8 +163,8 @@ Storybook es la referencia ejecutable de las primitivas y contiene escenarios de
 formularios, navegación, data tables y overlays.
 
 ```bash
-npm run ui:storybook
-npm run ui:storybook:build
+npm run storybook
+npm run storybook:build
 ```
 
 Una primitiva nueva o una variante modificada requiere:

@@ -101,12 +101,18 @@
   text-wrap: balance;
 }
 
+@utility typo-subtitle {
+  font-size: var(--typo-subtitle-size);
+  font-weight: var(--typo-subtitle-weight);
+  line-height: var(--typo-subtitle-leading);
+  letter-spacing: var(--typo-subtitle-tracking);
+  text-wrap: pretty;
+}
+
 @utility typo-label {
   font-size: var(--typo-label-size);
   font-weight: var(--typo-label-weight);
   line-height: var(--typo-label-leading);
-  letter-spacing: var(--typo-label-tracking);
-  text-transform: uppercase;
 }
 
 @utility typo-body {
@@ -114,6 +120,14 @@
   font-weight: var(--typo-body-weight);
   line-height: var(--typo-body-leading);
   letter-spacing: var(--typo-body-tracking);
+  text-wrap: pretty;
+}
+
+@utility typo-caption {
+  font-size: var(--typo-caption-size);
+  font-weight: var(--typo-caption-weight);
+  line-height: var(--typo-caption-leading);
+  letter-spacing: var(--typo-caption-tracking);
   text-wrap: pretty;
 }
 
