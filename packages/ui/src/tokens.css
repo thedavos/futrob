@@ -121,28 +121,14 @@
   --corner-3xl: 2rem;
   --corner-full: 9999px;
 
-  /* Control ramp is compact for desktop operation; touch grows to --control-height-touch. */
-  --control-height-xs: 1.5rem;
-  --control-height-sm: 1.75rem;
-  --control-height-md: 2rem;
-  --control-height-lg: 2.25rem;
+  /* Universal controls. `dense` is the only compact mode and never drops below 40px. */
+  --control-height: 2.75rem;
+  --control-height-dense: 2.5rem;
   --control-height-touch: 2.75rem;
   --content-reading: 65ch;
   --content-wide: 90rem;
 
-  /* Elevation is reserved for floating layers. */
-  --shadow-border:
-    0 0 0 1px oklch(0 0 0 / 0.06), 0 1px 2px -1px oklch(0 0 0 / 0.06),
-    0 2px 4px 0 oklch(0 0 0 / 0.04);
-  --shadow-border-hover:
-    0 0 0 1px oklch(0 0 0 / 0.08), 0 1px 2px -1px oklch(0 0 0 / 0.08),
-    0 2px 4px 0 oklch(0 0 0 / 0.06);
-  /* Machined control haptics — inset only; no ambient drop on fields/buttons. */
-  --highlight-control: inset 0 1px 0 oklch(1 0 0 / 0.2);
-  --highlight-control-subtle: inset 0 1px 0 oklch(1 0 0 / 0.55);
-  --highlight-control-pressed: inset 0 1px 2px oklch(0 0 0 / 0.14);
-  --shadow-inset-control: inset 0 1px 2px oklch(0 0 0 / 0.05);
-  --shadow-inset-control-focus: inset 0 1px 1px oklch(0 0 0 / 0.03);
+  /* Flat/line controls use borders. Ambient elevation is exclusive to floating layers. */
   --shadow-popover: 0 1px 2px oklch(0 0 0 / 0.16), 0 12px 32px oklch(0 0 0 / 0.18);
   --shadow-dialog: 0 2px 4px oklch(0 0 0 / 0.2), 0 24px 64px oklch(0 0 0 / 0.28);
 
@@ -187,6 +173,10 @@
   --ring: var(--brand-600);
   --success: var(--brand-700);
   --success-foreground: var(--neutral-0);
+  --approved: var(--brand-800);
+  --approved-foreground: var(--neutral-0);
+  --approved-subtle: var(--brand-100);
+  --approved-subtle-foreground: var(--brand-900);
   --warning: var(--amber-700);
   --warning-foreground: var(--neutral-0);
   --danger: var(--red-700);
@@ -206,7 +196,7 @@
   --sidebar-ring: var(--ring);
   --status-sync: var(--blue-700);
   --status-selection: var(--amber-700);
-  --status-approved: var(--brand-700);
+  --status-approved: var(--approved);
   --status-dispute: var(--red-700);
   --status-cancelled: var(--neutral-600);
   --chart-1: var(--brand-600);
@@ -229,7 +219,7 @@
   --popover-foreground: var(--neutral-50);
   --primary: var(--brand-600);
   --primary-hover: var(--brand-500);
-  --primary-foreground: var(--neutral-0);
+  --primary-foreground: var(--neutral-950);
   --secondary: var(--neutral-800);
   --secondary-hover: var(--neutral-700);
   --secondary-foreground: var(--neutral-50);
@@ -244,6 +234,10 @@
   --ring: var(--brand-400);
   --success: var(--brand-400);
   --success-foreground: var(--neutral-950);
+  --approved: var(--brand-400);
+  --approved-foreground: var(--neutral-950);
+  --approved-subtle: var(--brand-900);
+  --approved-subtle-foreground: var(--brand-100);
   --warning: var(--amber-300);
   --warning-foreground: var(--neutral-950);
   --danger: var(--red-300);
@@ -262,7 +256,7 @@
   --sidebar-ring: var(--ring);
   --status-sync: var(--blue-300);
   --status-selection: var(--amber-300);
-  --status-approved: var(--brand-400);
+  --status-approved: var(--approved);
   --status-dispute: var(--red-300);
   --status-cancelled: var(--neutral-400);
   --chart-1: var(--brand-400);
@@ -270,13 +264,6 @@
   --chart-3: var(--amber-300);
   --chart-4: var(--red-300);
   --chart-5: var(--neutral-400);
-  --shadow-border: 0 0 0 1px oklch(1 0 0 / 0.08);
-  --shadow-border-hover: 0 0 0 1px oklch(1 0 0 / 0.13);
-  --highlight-control: inset 0 1px 0 oklch(1 0 0 / 0.12);
-  --highlight-control-subtle: inset 0 1px 0 oklch(1 0 0 / 0.08);
-  --highlight-control-pressed: inset 0 2px 4px oklch(0 0 0 / 0.35);
-  --shadow-inset-control: inset 0 1px 2px oklch(0 0 0 / 0.24);
-  --shadow-inset-control-focus: inset 0 1px 1px oklch(0 0 0 / 0.18);
 }
 
 @media (prefers-reduced-motion: reduce) {

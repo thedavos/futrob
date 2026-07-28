@@ -1,0 +1,130 @@
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-approved: var(--approved);
+  --color-approved-foreground: var(--approved-foreground);
+  --color-approved-subtle: var(--approved-subtle);
+  --color-approved-subtle-foreground: var(--approved-subtle-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-status-sync: var(--status-sync);
+  --color-status-selection: var(--status-selection);
+  --color-status-approved: var(--status-approved);
+  --color-status-dispute: var(--status-dispute);
+  --color-status-cancelled: var(--status-cancelled);
+  --radius-xs: var(--corner-xs);
+  --radius-sm: var(--corner-sm);
+  --radius-md: var(--corner-md);
+  --radius-lg: var(--corner-lg);
+  --radius-xl: var(--corner-xl);
+  --radius-2xl: var(--corner-2xl);
+  --radius-3xl: var(--corner-3xl);
+  --font-sans: "Manrope Variable", "Manrope", system-ui, sans-serif;
+}
+
+@utility typo-display {
+  font-size: var(--typo-display-size);
+  font-weight: var(--typo-display-weight);
+  line-height: var(--typo-display-leading);
+  letter-spacing: var(--typo-display-tracking);
+  text-wrap: balance;
+
+  @media (width >= 40rem) {
+    font-size: var(--text-6xl);
+  }
+
+  @media (width >= 64rem) {
+    font-size: var(--text-7xl);
+  }
+}
+
+@utility typo-heading {
+  font-size: var(--typo-heading-size);
+  font-weight: var(--typo-heading-weight);
+  line-height: var(--typo-heading-leading);
+  letter-spacing: var(--typo-heading-tracking);
+  text-wrap: balance;
+}
+
+@utility typo-label {
+  font-size: var(--typo-label-size);
+  font-weight: var(--typo-label-weight);
+  line-height: var(--typo-label-leading);
+  letter-spacing: var(--typo-label-tracking);
+  text-transform: uppercase;
+}
+
+@utility typo-body {
+  font-size: var(--typo-body-size);
+  font-weight: var(--typo-body-weight);
+  line-height: var(--typo-body-leading);
+  letter-spacing: var(--typo-body-tracking);
+  text-wrap: pretty;
+}
+
+@utility typo-score {
+  font-size: var(--typo-score-size);
+  font-weight: var(--typo-score-weight);
+  line-height: var(--typo-score-leading);
+  letter-spacing: var(--typo-score-tracking);
+  font-variant-numeric: tabular-nums;
+
+  @media (width >= 40rem) {
+    font-size: var(--text-5xl);
+  }
+}
