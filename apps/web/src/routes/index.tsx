@@ -12,7 +12,7 @@ function HomePage() {
       <header className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
         <div className="flex items-center gap-3">
           <Logo className="h-9 w-auto" />
-          <span className="type-title tracking-wide max-sm:hidden">Futrob</span>
+          <span className="typo-heading tracking-wide max-sm:hidden">Futrob</span>
         </div>
         <nav aria-label="Acceso" className="flex items-center gap-1">
           <Link className={buttonVariants({ className: "px-3", variant: "ghost" })} to="/login">
@@ -26,13 +26,13 @@ function HomePage() {
 
       <section className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-16 px-5 py-16 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:py-24">
         <div className="max-w-xl">
-          <p className="type-label mb-5 text-primary">Del partido EA al resultado oficial</p>
-          <h1 className="type-hero">
+          <p className="typo-label mb-5 text-primary">Del partido EA al resultado oficial</p>
+          <h1 className="typo-display">
             Tu competición,
             <br />
             bajo control.
           </h1>
-          <p className="type-body mt-6 max-w-[60ch] text-muted-foreground sm:text-lg">
+          <p className="typo-body mt-6 max-w-[60ch] text-muted-foreground sm:text-lg">
             Opera ligas y copas de FC Clubs con datos reales, resultados auditables y una
             experiencia clara para organizadores, capitanes y espectadores.
           </p>

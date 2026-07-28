@@ -51,7 +51,7 @@
   --blue-700: oklch(0.488 0.243 264.376);
   --blue-900: oklch(0.379 0.146 265.522);
 
-  /* Typography — single family (Manrope); hierarchy via role tokens */
+  /* Typography — Manrope; canonical weights 400 / 500 / 600 / 700 */
   --font-ui: "Manrope Variable", "Manrope", system-ui, sans-serif;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -76,27 +76,27 @@
   --tracking-normal: 0;
   --tracking-label: 0.14em;
 
-  /* Type roles (consumed by Tailwind @utility in apps/web) */
-  --type-hero-size: var(--text-5xl);
-  --type-hero-weight: var(--font-weight-bold);
-  --type-hero-leading: 0.96;
-  --type-hero-tracking: var(--tracking-tight);
-  --type-title-size: var(--text-2xl);
-  --type-title-weight: var(--font-weight-semibold);
-  --type-title-leading: var(--leading-tight);
-  --type-title-tracking: var(--tracking-tight);
-  --type-label-size: var(--text-xs);
-  --type-label-weight: var(--font-weight-semibold);
-  --type-label-leading: var(--leading-snug);
-  --type-label-tracking: var(--tracking-label);
-  --type-body-size: var(--text-base);
-  --type-body-weight: var(--font-weight-regular);
-  --type-body-leading: var(--leading-normal);
-  --type-body-tracking: var(--tracking-normal);
-  --type-score-size: var(--text-4xl);
-  --type-score-weight: var(--font-weight-semibold);
-  --type-score-leading: var(--leading-none);
-  --type-score-tracking: var(--tracking-tight);
+  /* Typography roles (consumed by Tailwind @utility in apps/web) */
+  --typo-display-size: var(--text-5xl);
+  --typo-display-weight: var(--font-weight-bold);
+  --typo-display-leading: 0.96;
+  --typo-display-tracking: var(--tracking-tight);
+  --typo-heading-size: var(--text-2xl);
+  --typo-heading-weight: var(--font-weight-semibold);
+  --typo-heading-leading: var(--leading-tight);
+  --typo-heading-tracking: var(--tracking-tight);
+  --typo-label-size: var(--text-xs);
+  --typo-label-weight: var(--font-weight-semibold);
+  --typo-label-leading: var(--leading-snug);
+  --typo-label-tracking: var(--tracking-label);
+  --typo-body-size: var(--text-base);
+  --typo-body-weight: var(--font-weight-regular);
+  --typo-body-leading: var(--leading-normal);
+  --typo-body-tracking: var(--tracking-normal);
+  --typo-score-size: var(--text-4xl);
+  --typo-score-weight: var(--font-weight-semibold);
+  --typo-score-leading: var(--leading-none);
+  --typo-score-tracking: var(--tracking-tight);
 
   /* Spacing and geometry */
   --space-0: 0;

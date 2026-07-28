@@ -20,8 +20,8 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
         </div>
 
         <div className="relative z-10 flex max-w-2xl flex-col gap-8">
-          <p className="type-hero">Tu competición, bajo control.</p>
-          <p className="type-body text-lg text-muted-foreground">
+          <p className="typo-display">Tu competición, bajo control.</p>
+          <p className="typo-body text-lg text-muted-foreground">
             Del partido EA al resultado oficial.
           </p>
         </div>

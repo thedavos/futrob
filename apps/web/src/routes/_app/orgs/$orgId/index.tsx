@@ -16,7 +16,7 @@ function OrgHomePage() {
       </header>
 
       <div className="space-y-4">
-        <h1 className="type-title">Organización</h1>
+        <h1 className="typo-heading">Organización</h1>
         <p className="text-sm text-muted-foreground">
           Espacio provisional para <span className="font-mono text-foreground">{orgId}</span>. El
           panel operativo llega en la siguiente entrega.

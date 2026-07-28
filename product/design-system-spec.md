@@ -40,17 +40,28 @@ La idea memorable es **“del partido EA al resultado oficial”**. El énfasis 
 
 ## 3. Tipografía
 
-Familia única autohospedada WOFF2: **Manrope** (variable 400–700). La jerarquía es por rol, no por familia.
+Familia única autohospedada WOFF2: **Manrope** variable. La jerarquía es por rol, no por familia.
 
-| Rol   | Clase Tailwind | Uso                                              |
-| ----- | -------------- | ------------------------------------------------ |
-| Hero  | `type-hero`    | Headline de landing / superficies de marca       |
-| Title | `type-title`   | Títulos de página, competición, paneles          |
-| Body  | `type-body`    | Párrafos y copy de apoyo                         |
-| Label | `type-label`   | Labels uppercase densos, estados, metadata corta |
-| Score | `type-score`   | Marcadores y valores numéricos que cambian       |
+Pesos canónicos (no usar 200, 300 ni 800):
 
-Tokens de rol en [`packages/ui/src/tokens.css`](/packages/ui/src/tokens.css); utilidades en [`apps/web/src/styles.css`](/apps/web/src/styles.css) (`@utility`). Marcadores usan `font-variant-numeric: tabular-nums` vía `type-score`.
+| Peso | Token                    | Uso típico                                      |
+| ---- | ------------------------ | ----------------------------------------------- |
+| 400  | `--font-weight-regular`  | Cuerpo, copy de apoyo (`typo-body`)             |
+| 500  | `--font-weight-medium`   | Énfasis suave en UI, botones, texto interactivo |
+| 600  | `--font-weight-semibold` | Títulos, labels, marcadores                     |
+| 700  | `--font-weight-bold`     | Display / headlines de marca                    |
+
+Roles tipográficos:
+
+| Rol     | Clase Tailwind | Peso | Uso                                              |
+| ------- | -------------- | ---- | ------------------------------------------------ |
+| Display | `typo-display` | 700  | Headline de landing / superficies de marca       |
+| Heading | `typo-heading` | 600  | Títulos de página, competición, paneles          |
+| Body    | `typo-body`    | 400  | Párrafos y copy de apoyo                         |
+| Label   | `typo-label`   | 600  | Labels uppercase densos, estados, metadata corta |
+| Score   | `typo-score`   | 600  | Marcadores y valores numéricos que cambian       |
+
+Tokens de rol en [`packages/ui/src/tokens.css`](/packages/ui/src/tokens.css); utilidades en [`apps/web/src/styles.css`](/apps/web/src/styles.css) (`@utility`). Marcadores usan `font-variant-numeric: tabular-nums` vía `typo-score`. En componentes, preferir `font-medium` / `font-semibold` / `font-bold` alineados a esta escala.
 
 ## 4. Color y tokens
 

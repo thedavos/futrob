@@ -56,7 +56,7 @@ export function OrgsIndexPage() {
         <span className="font-semibold tracking-wide">Futrob</span>
       </header>
       <div className="mb-6 space-y-2">
-        <h1 className="type-title">Tus organizaciones</h1>
+        <h1 className="typo-heading">Tus organizaciones</h1>
         <p className="text-sm text-muted-foreground">
           Elige con cuál quieres continuar.{" "}
           <Link className="underline-offset-4 hover:underline" to="/onboarding">

@@ -32,10 +32,10 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-size: var(--type-body-size);
-  font-weight: var(--type-body-weight);
-  line-height: var(--type-body-leading);
-  letter-spacing: var(--type-body-tracking);
+  font-size: var(--typo-body-size);
+  font-weight: var(--typo-body-weight);
+  line-height: var(--typo-body-leading);
+  letter-spacing: var(--typo-body-tracking);
 }
 
 button,
@@ -89,9 +89,9 @@ h1,
 h2,
 h3,
 h4 {
-  font-weight: var(--type-title-weight);
-  line-height: var(--type-title-leading);
-  letter-spacing: var(--type-title-tracking);
+  font-weight: var(--typo-heading-weight);
+  line-height: var(--typo-heading-leading);
+  letter-spacing: var(--typo-heading-tracking);
   text-wrap: balance;
 }
 

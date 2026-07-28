@@ -60,17 +60,17 @@ export function ClubSearchPanel() {
     <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
         <div>
-          <p className="type-label text-muted-foreground">Game data · EA Clubs</p>
-          <h2 className="type-title mt-1">Buscar clubs</h2>
+          <p className="typo-label text-muted-foreground">Game data · EA Clubs</p>
+          <h2 className="typo-heading mt-1">Buscar clubs</h2>
         </div>
-        <span className="type-label rounded-full bg-muted px-3 py-1 text-muted-foreground">
+        <span className="typo-label rounded-full bg-muted px-3 py-1 text-muted-foreground">
           Live API
         </span>
       </div>
 
       <form className="grid gap-3 px-5 py-5 sm:px-6" onSubmit={onSubmit}>
         <label className="grid gap-1.5">
-          <span className="type-label text-muted-foreground">Nombre del club</span>
+          <span className="typo-label text-muted-foreground">Nombre del club</span>
           <input
             autoComplete="off"
             className="min-h-(--control-height-touch) rounded-lg border border-input bg-background px-3 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-(--duration-fast) ease-(--ease-standard) placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-(--control-height-lg)"
@@ -82,7 +82,7 @@ export function ClubSearchPanel() {
         </label>
 
         <label className="grid gap-1.5">
-          <span className="type-label text-muted-foreground">Plataforma</span>
+          <span className="typo-label text-muted-foreground">Plataforma</span>
           <select
             className="min-h-(--control-height-touch) rounded-lg border border-input bg-background px-3 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-(--duration-fast) ease-(--ease-standard) focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-(--control-height-lg)"
             name="platform"
@@ -122,7 +122,7 @@ export function ClubSearchPanel() {
               >
                 <div>
                   <strong className="text-sm sm:text-base">{club.name}</strong>
-                  <p className="type-label mt-0.5 text-muted-foreground">
+                  <p className="typo-label mt-0.5 text-muted-foreground">
                     {club.platform} · {club.gameEdition}
                   </p>
                 </div>

@@ -79,12 +79,12 @@
   --font-sans: var(--font-ui);
 }
 
-/* Type roles — Manrope hierarchy (hero → title → body → label → score) */
-@utility type-hero {
-  font-size: var(--type-hero-size);
-  font-weight: var(--type-hero-weight);
-  line-height: var(--type-hero-leading);
-  letter-spacing: var(--type-hero-tracking);
+/* Typography roles — Manrope hierarchy (display → heading → body → label → score) */
+@utility typo-display {
+  font-size: var(--typo-display-size);
+  font-weight: var(--typo-display-weight);
+  line-height: var(--typo-display-leading);
+  letter-spacing: var(--typo-display-tracking);
   text-wrap: balance;
 
   @media (width >= 40rem) {
@@ -96,35 +96,35 @@
   }
 }
 
-@utility type-title {
-  font-size: var(--type-title-size);
-  font-weight: var(--type-title-weight);
-  line-height: var(--type-title-leading);
-  letter-spacing: var(--type-title-tracking);
+@utility typo-heading {
+  font-size: var(--typo-heading-size);
+  font-weight: var(--typo-heading-weight);
+  line-height: var(--typo-heading-leading);
+  letter-spacing: var(--typo-heading-tracking);
   text-wrap: balance;
 }
 
-@utility type-label {
-  font-size: var(--type-label-size);
-  font-weight: var(--type-label-weight);
-  line-height: var(--type-label-leading);
-  letter-spacing: var(--type-label-tracking);
+@utility typo-label {
+  font-size: var(--typo-label-size);
+  font-weight: var(--typo-label-weight);
+  line-height: var(--typo-label-leading);
+  letter-spacing: var(--typo-label-tracking);
   text-transform: uppercase;
 }
 
-@utility type-body {
-  font-size: var(--type-body-size);
-  font-weight: var(--type-body-weight);
-  line-height: var(--type-body-leading);
-  letter-spacing: var(--type-body-tracking);
+@utility typo-body {
+  font-size: var(--typo-body-size);
+  font-weight: var(--typo-body-weight);
+  line-height: var(--typo-body-leading);
+  letter-spacing: var(--typo-body-tracking);
   text-wrap: pretty;
 }
 
-@utility type-score {
-  font-size: var(--type-score-size);
-  font-weight: var(--type-score-weight);
-  line-height: var(--type-score-leading);
-  letter-spacing: var(--type-score-tracking);
+@utility typo-score {
+  font-size: var(--typo-score-size);
+  font-weight: var(--typo-score-weight);
+  line-height: var(--typo-score-leading);
+  letter-spacing: var(--typo-score-tracking);
   font-variant-numeric: tabular-nums;
 
   @media (width >= 40rem) {
