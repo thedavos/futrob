@@ -44,7 +44,7 @@ function SheetContent({
         {children}
         <DialogPrimitive.Close
           aria-label="Cerrar"
-          className="absolute top-4 right-4 inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/35"
+          className="absolute top-4 right-4 inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
         >
           <X aria-hidden="true" className="size-4" />
         </DialogPrimitive.Close>

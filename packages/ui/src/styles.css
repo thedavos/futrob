@@ -38,13 +38,6 @@ body {
   letter-spacing: var(--typo-body-tracking);
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
 input,
 select,
 textarea {
@@ -105,9 +98,23 @@ p {
   color: var(--neutral-950);
 }
 
-:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 3px;
+/* In @layer base so component utilities (e.g. `font-semibold`, `outline-none`) can override. */
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+
+  :focus-visible[aria-invalid="true"] {
+    outline-color: var(--danger);
+  }
 }
 
 .sr-only {

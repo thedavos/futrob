@@ -18,7 +18,7 @@ function SelectTrigger({ children, className, dense = false, ...props }: SelectT
       data-slot="select-trigger"
       data-density={dense ? "dense" : "default"}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-lg border border-input bg-surface px-3 text-left text-base text-foreground transition-[background-color,border-color,box-shadow] duration-(--duration-normal) ease-(--ease-emphasized) outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60 data-placeholder:text-muted-foreground aria-invalid:border-danger aria-invalid:ring-3 aria-invalid:ring-danger/20 sm:text-sm [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "flex w-full items-center justify-between gap-2 rounded-lg border border-input bg-surface px-3 text-left text-base text-foreground transition-[background-color,border-color,box-shadow] duration-(--duration-normal) ease-(--ease-emphasized) outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60 data-placeholder:text-muted-foreground aria-invalid:border-danger aria-invalid:ring-2 aria-invalid:ring-danger/15 aria-invalid:focus-visible:border-danger aria-invalid:focus-visible:ring-danger/25 sm:text-sm [&_svg]:pointer-events-none [&_svg]:shrink-0",
         dense
           ? "h-(--control-height-dense) max-sm:h-(--control-height-touch)"
           : "h-(--control-height)",

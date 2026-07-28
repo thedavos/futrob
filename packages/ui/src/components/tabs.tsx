@@ -22,7 +22,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "typo-label inline-flex min-h-(--control-height) shrink-0 items-center justify-center gap-2 border-b-2 border-transparent px-0 text-muted-foreground transition-colors duration-(--duration-normal) outline-none hover:text-foreground focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/35 disabled:pointer-events-none disabled:opacity-50 data-active:text-foreground",
+        "typo-label inline-flex min-h-(--control-height) shrink-0 items-center justify-center gap-2 border-b-2 border-transparent px-0 text-muted-foreground transition-colors duration-(--duration-normal) outline-none hover:text-foreground focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/25 disabled:pointer-events-none disabled:opacity-50 data-active:text-foreground",
         className,
       )}
       {...props}
@@ -47,7 +47,7 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      className={cn("py-5 outline-none focus-visible:ring-3 focus-visible:ring-ring/35", className)}
+      className={cn("py-5 outline-none focus-visible:ring-2 focus-visible:ring-ring/25", className)}
       {...props}
     />
   );
