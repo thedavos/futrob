@@ -205,7 +205,7 @@ export function SignupForm() {
         )}
       </div>
 
-      <Button className="w-full" disabled={isSubmitting} size="lg" type="submit" variant="default">
+      <Button className="w-full" disabled={isSubmitting} type="submit" variant="default">
         Crear cuenta
       </Button>
 

@@ -163,7 +163,7 @@ export function LoginForm() {
         )}
       </div>
 
-      <Button className="w-full" disabled={isSubmitting} size="lg" type="submit">
+      <Button className="w-full" disabled={isSubmitting} type="submit">
         Iniciar sesión
       </Button>
 

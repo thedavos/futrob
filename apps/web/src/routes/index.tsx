@@ -1,4 +1,5 @@
-import { buttonVariants, Logo } from "@futrob/ui";
+import { ArrowDownRight } from "lucide-react";
+import { Button, ButtonIcon, Logo } from "@futrob/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClubSearchPanel } from "@/modules/game-data/presentation/club-search-panel.tsx";
 
@@ -15,12 +16,10 @@ function HomePage() {
           <span className="typo-heading tracking-wide max-sm:hidden">Futrob</span>
         </div>
         <nav aria-label="Acceso" className="flex items-center gap-1">
-          <Link className={buttonVariants({ className: "px-3", variant: "ghost" })} to="/login">
+          <Button render={<Link to="/login" />} variant="ghost">
             Iniciar sesión
-          </Link>
-          <Link className={buttonVariants({ className: "px-3" })} to="/signup">
-            Crear cuenta
-          </Link>
+          </Button>
+          <Button render={<Link to="/signup" />}>Crear cuenta</Button>
         </nav>
       </header>
 
@@ -37,19 +36,15 @@ function HomePage() {
             experiencia clara para organizadores, capitanes y espectadores.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a className={buttonVariants({ className: "px-5", size: "lg" })} href="#club-search">
+            <Button render={<a href="#club-search" />}>
               Buscar clubs EA
-            </a>
-            <a
-              className={buttonVariants({
-                className: "px-5",
-                size: "lg",
-                variant: "secondary",
-              })}
-              href="#principios"
-            >
+              <ButtonIcon>
+                <ArrowDownRight />
+              </ButtonIcon>
+            </Button>
+            <Button render={<a href="#principios" />} variant="secondary">
               Conocer el sistema
-            </a>
+            </Button>
           </div>
         </div>
 

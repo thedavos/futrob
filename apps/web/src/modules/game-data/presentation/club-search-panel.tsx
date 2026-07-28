@@ -2,7 +2,19 @@
 
 import { useState, type FormEvent } from "react";
 import type { ExternalClubDto } from "@futrob/api-contracts";
-import { Button } from "@futrob/ui";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Field,
+  FieldLabel,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@futrob/ui";
 import { FutrobApiError } from "@futrob/sdk";
 import {
   getFutrobBrowserClient,
@@ -69,33 +81,36 @@ export function ClubSearchPanel() {
       </div>
 
       <form className="grid gap-3 px-5 py-5 sm:px-6" onSubmit={onSubmit}>
-        <label className="grid gap-1.5">
-          <span className="typo-label text-muted-foreground">Nombre del club</span>
-          <input
+        <Field>
+          <FieldLabel>Nombre del club</FieldLabel>
+          <Input
             autoComplete="off"
-            className="min-h-(--control-height-touch) rounded-lg border border-input bg-background px-3 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-(--duration-fast) ease-(--ease-standard) placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-(--control-height-lg)"
             name="query"
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Ej. Cuervos"
             value={query}
           />
-        </label>
+        </Field>
 
-        <label className="grid gap-1.5">
-          <span className="typo-label text-muted-foreground">Plataforma</span>
-          <select
-            className="min-h-(--control-height-touch) rounded-lg border border-input bg-background px-3 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-(--duration-fast) ease-(--ease-standard) focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-(--control-height-lg)"
+        <Field>
+          <FieldLabel>Plataforma</FieldLabel>
+          <Select
             name="platform"
-            onChange={(event) => setPlatform(event.target.value)}
+            onValueChange={(value) => setPlatform(value ?? "nx")}
             value={platform}
           >
-            {PLATFORMS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PLATFORMS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
 
         <Button className="w-full sm:w-auto" disabled={loading || !query.trim()} type="submit">
           {loading ? "Buscando…" : "Buscar"}
@@ -104,9 +119,9 @@ export function ClubSearchPanel() {
 
       <div className="border-t border-border bg-muted px-5 py-4 sm:px-6">
         {error ? (
-          <p className="text-sm text-danger" role="alert">
-            {error}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : null}
 
         {!error && searched && clubs.length === 0 ? (

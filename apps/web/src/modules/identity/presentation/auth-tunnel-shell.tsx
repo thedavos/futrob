@@ -4,25 +4,25 @@ import { Logo } from "@futrob/ui";
 export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <main className="grid min-h-svh grid-rows-[auto_1fr] bg-background text-foreground lg:grid-cols-[minmax(0,1.2fr)_minmax(25rem,1fr)] lg:grid-rows-1">
-      <section className="relative hidden overflow-hidden bg-background lg:flex lg:min-h-svh lg:flex-col lg:justify-end lg:p-14 xl:p-20">
+      <section className="relative hidden overflow-hidden lg:flex lg:min-h-svh lg:flex-col lg:justify-end lg:p-14 xl:p-20">
+        <img
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 size-full object-cover object-[center_30%]"
+          src="/auth/tunnel-hero.jpg"
+        />
         <div
           aria-hidden="true"
-          className="absolute inset-[7%] overflow-hidden border border-border/60"
-        >
-          <div className="absolute inset-y-0 left-1/2 w-px bg-border/60" />
-          <div className="absolute top-1/2 left-1/2 size-40 -translate-1/2 rounded-full border border-border/60" />
-          <div className="absolute top-1/2 -left-px h-52 w-28 -translate-y-1/2 border border-border/60 bg-background/40" />
-          <div className="absolute top-1/2 -right-px h-52 w-28 -translate-y-1/2 border border-border/60 bg-background/40" />
-          <Logo
-            className="absolute top-1/2 left-1/2 h-[72%] w-auto -translate-1/2 text-primary opacity-[0.07]"
-            monochrome
-          />
-        </div>
+          className="absolute inset-0 bg-linear-to-t from-black/80 via-black/35 to-black/15"
+        />
 
-        <div className="relative z-10 flex max-w-2xl flex-col gap-8">
-          <p className="typo-display">Tu competición, bajo control.</p>
-          <p className="typo-body text-lg text-muted-foreground">
-            Del partido EA al resultado oficial.
+        <div className="relative z-10 flex max-w-xl flex-col gap-6 text-white">
+          <p className="typo-display text-balance">
+            Haz que tu torneo se juegue <span className="text-brand-300">en serio</span>.
+          </p>
+          <p className="typo-body text-lg text-pretty text-white/80">
+            Organiza partidos, valida resultados y mantén tu tabla al día con una experiencia
+            pensada para competiciones de fútbol y gaming.
           </p>
         </div>
       </section>
@@ -33,7 +33,7 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
           <span className="font-semibold tracking-wide">Futrob</span>
         </div>
         <p className="max-w-48 text-right text-xs leading-5 text-muted-foreground">
-          Del partido EA al resultado oficial.
+          Tu torneo, en serio.
         </p>
       </header>
 
