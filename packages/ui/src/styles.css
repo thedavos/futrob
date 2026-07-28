@@ -67,6 +67,16 @@ svg {
   max-width: 100%;
 }
 
+img:not([class*="outline"]) {
+  outline: 1px solid oklch(0 0 0 / 0.1);
+  outline-offset: -1px;
+}
+
+.dark img:not([class*="outline"]),
+[data-theme="dark"] img:not([class*="outline"]) {
+  outline-color: oklch(1 0 0 / 0.1);
+}
+
 h1,
 h2,
 h3,

@@ -131,6 +131,18 @@
   --content-wide: 90rem;
 
   /* Elevation is reserved for floating layers. */
+  --shadow-border:
+    0 0 0 1px oklch(0 0 0 / 0.06), 0 1px 2px -1px oklch(0 0 0 / 0.06),
+    0 2px 4px 0 oklch(0 0 0 / 0.04);
+  --shadow-border-hover:
+    0 0 0 1px oklch(0 0 0 / 0.08), 0 1px 2px -1px oklch(0 0 0 / 0.08),
+    0 2px 4px 0 oklch(0 0 0 / 0.06);
+  /* Machined control haptics — inset only; no ambient drop on fields/buttons. */
+  --highlight-control: inset 0 1px 0 oklch(1 0 0 / 0.2);
+  --highlight-control-subtle: inset 0 1px 0 oklch(1 0 0 / 0.55);
+  --highlight-control-pressed: inset 0 1px 2px oklch(0 0 0 / 0.14);
+  --shadow-inset-control: inset 0 1px 2px oklch(0 0 0 / 0.05);
+  --shadow-inset-control-focus: inset 0 1px 1px oklch(0 0 0 / 0.03);
   --shadow-popover: 0 1px 2px oklch(0 0 0 / 0.16), 0 12px 32px oklch(0 0 0 / 0.18);
   --shadow-dialog: 0 2px 4px oklch(0 0 0 / 0.2), 0 24px 64px oklch(0 0 0 / 0.28);
 
@@ -258,6 +270,13 @@
   --chart-3: var(--amber-300);
   --chart-4: var(--red-300);
   --chart-5: var(--neutral-400);
+  --shadow-border: 0 0 0 1px oklch(1 0 0 / 0.08);
+  --shadow-border-hover: 0 0 0 1px oklch(1 0 0 / 0.13);
+  --highlight-control: inset 0 1px 0 oklch(1 0 0 / 0.12);
+  --highlight-control-subtle: inset 0 1px 0 oklch(1 0 0 / 0.08);
+  --highlight-control-pressed: inset 0 2px 4px oklch(0 0 0 / 0.35);
+  --shadow-inset-control: inset 0 1px 2px oklch(0 0 0 / 0.24);
+  --shadow-inset-control-focus: inset 0 1px 1px oklch(0 0 0 / 0.18);
 }
 
 @media (prefers-reduced-motion: reduce) {
