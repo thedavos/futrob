@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Eye, Lock, Mail, Search } from "lucide-react";
 
-import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field.js";
-import { Input } from "../components/input.js";
-import { Label } from "../components/label.js";
+import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";
+import { Input } from "../components/input";
+import { InputWithIcon } from "../components/input-with-icon";
+import { Label } from "../components/label";
 
 const meta = {
   title: "Primitives/Input",
@@ -78,6 +80,40 @@ export const States: Story = {
         <FieldLabel>Código del equipo</FieldLabel>
         <Input aria-invalid="true" defaultValue="@@@" />
         <FieldError match>Usa entre 3 y 12 letras o números.</FieldError>
+      </Field>
+    </div>
+  ),
+};
+
+export const WithIcons: Story = {
+  render: () => (
+    <div className="grid w-[min(24rem,calc(100vw-2rem))] gap-5">
+      <Field name="search">
+        <FieldLabel>Buscar encuentro</FieldLabel>
+        <InputWithIcon icon={Search} placeholder="Equipo, jornada o rival" type="search" />
+      </Field>
+      <Field name="mail">
+        <FieldLabel>Correo</FieldLabel>
+        <InputWithIcon
+          defaultValue="capitan@futrob.app"
+          icon={Mail}
+          placeholder="tu@correo.com"
+          type="email"
+        />
+      </Field>
+      <Field name="password">
+        <FieldLabel>Contraseña</FieldLabel>
+        <div className="relative">
+          <InputWithIcon className="pr-9" defaultValue="••••••••" icon={Lock} type="password" />
+          <button
+            aria-label="Mostrar contraseña"
+            className="absolute top-1/2 right-2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+            type="button"
+          >
+            <Eye aria-hidden="true" className="size-4" />
+          </button>
+        </div>
+        <FieldDescription>Icono inicial decorativo y acción al final.</FieldDescription>
       </Field>
     </div>
   ),
