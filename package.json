@@ -33,6 +33,8 @@
     "test": "vp test",
     "test:coverage": "vp test run --coverage",
     "typecheck": "vp run -r typecheck",
+    "ui:storybook": "npm run storybook -w @futrob/ui",
+    "ui:storybook:build": "npm run build-storybook -w @futrob/ui",
     "generate:openapi": "npm run generate:openapi -w @futrob/api-contracts"
   },
   "devDependencies": {

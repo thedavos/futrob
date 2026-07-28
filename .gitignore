@@ -6,6 +6,7 @@ node_modules/
 dist/
 apps/*/dist/
 packages/*/dist/
+packages/*/storybook-static/
 .wrangler/
 .dev.vars
 coverage/

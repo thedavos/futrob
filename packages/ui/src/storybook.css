@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./styles.css";
+@import "./tailwind.css";
+
+@source "./";
+
+#storybook-root {
+  color: var(--foreground);
+  font-family: var(--font-ui);
+}
