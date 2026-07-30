@@ -68,13 +68,19 @@ La aplicación importa los estilos una sola vez:
 Los componentes se importan desde la API pública:
 
 ```tsx
-import { Button, Field, FieldLabel, Input, Logo } from "@futrob/ui";
+import { Button, Field, FieldLabel, Input, InputWithIcon, Logo } from "@futrob/ui";
+import { CircleCheck, Search } from "lucide-react";
 
 <Logo className="h-8 w-auto" />
 <Field>
   <FieldLabel>Nombre de la competición</FieldLabel>
   <Input name="name" required />
 </Field>
+<InputWithIcon
+  startIcon={Search}
+  endIcon={CircleCheck}
+  placeholder="Equipo, jornada o rival"
+/>
 <Button>Continuar</Button>
 ```
 

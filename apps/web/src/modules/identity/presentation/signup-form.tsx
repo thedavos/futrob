@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Button, InputWithIcon, Label } from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Lock, Mail, UserRound } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import {
   AUTH_ERROR_GENERIC,
@@ -83,6 +83,7 @@ function signupErrorState(error: AuthClientError): AuthFormState {
 export function SignupForm() {
   const navigate = useNavigate();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const nameError = state.status === "error" ? state.fieldErrors?.name : undefined;
   const emailError = state.status === "error" ? state.fieldErrors?.email : undefined;
@@ -144,10 +145,10 @@ export function SignupForm() {
           aria-invalid={nameError != null}
           autoComplete="name"
           disabled={isSubmitting}
-          icon={UserRound}
           id="name"
           name="name"
           placeholder="Ingresa tu nombre completo"
+          startIcon={UserRound}
         />
         {nameError == null ? null : (
           <p className="text-sm text-destructive" id="name-error">
@@ -163,10 +164,10 @@ export function SignupForm() {
           aria-invalid={emailError != null}
           autoComplete="email"
           disabled={isSubmitting}
-          icon={Mail}
           id="email"
           name="email"
           placeholder="ejemplo@correo.com"
+          startIcon={Mail}
           type="email"
         />
         {emailError == null ? null : (
@@ -185,11 +186,41 @@ export function SignupForm() {
           aria-invalid={passwordError != null}
           autoComplete="new-password"
           disabled={isSubmitting}
-          icon={Lock}
+          endAction={
+            <Button
+              aria-label={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+              aria-pressed={isPasswordVisible}
+              className="rounded-l-none text-muted-foreground hover:text-foreground"
+              disabled={isSubmitting}
+              onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
+              size="icon"
+              static
+              type="button"
+              variant="ghost"
+            >
+              <span className="relative size-4" aria-hidden="true">
+                <Eye
+                  className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
+                    isPasswordVisible
+                      ? "scale-[0.25] opacity-0 blur-[4px]"
+                      : "scale-100 opacity-100 blur-0"
+                  }`}
+                />
+                <EyeOff
+                  className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
+                    isPasswordVisible
+                      ? "scale-100 opacity-100 blur-0"
+                      : "scale-[0.25] opacity-0 blur-[4px]"
+                  }`}
+                />
+              </span>
+            </Button>
+          }
           id="password"
           name="password"
           placeholder="Crea una contraseña"
-          type="password"
+          startIcon={Lock}
+          type={isPasswordVisible ? "text" : "password"}
         />
         <p className="text-xs text-muted-foreground" id={passwordHintId}>
           Mínimo 8 caracteres, incluyendo letras y números.

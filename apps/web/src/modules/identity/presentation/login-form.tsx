@@ -136,10 +136,10 @@ export function LoginForm() {
           aria-invalid={emailError != null}
           autoComplete="email"
           disabled={isSubmitting}
-          icon={Mail}
           id="email"
           name="email"
           placeholder="ejemplo@correo.com"
+          startIcon={Mail}
           type="email"
         />
         {emailError == null ? null : (
@@ -156,10 +156,10 @@ export function LoginForm() {
           aria-invalid={passwordError != null}
           autoComplete="current-password"
           disabled={isSubmitting}
-          icon={Lock}
           id="password"
           name="password"
           placeholder="Ingresa tu contraseña"
+          startIcon={Lock}
           type="password"
         />
         {passwordError == null ? null : (
