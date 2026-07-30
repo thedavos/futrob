@@ -1,10 +1,9 @@
 import { domainError, err, ok, type DomainError, type Result } from "@futrob/shared-kernel";
-import type { ActorId } from "@futrob/shared-kernel";
-import type { ClockPort } from "../../domain/ports/clock.port.ts";
+import type { ActorId, ClockPort } from "@futrob/shared-kernel";
 import type { InvitationRepository } from "../../domain/ports/invitation.repository.ts";
+import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
-import type { TokenPort } from "../../domain/ports/token.port.ts";
 import type { MembershipSummary } from "../../domain/value-objects/post-auth-destination.ts";
 
 export interface AcceptInvitationInput {
@@ -19,7 +18,7 @@ export class AcceptInvitationUseCase {
       readonly memberships: MembershipRepository;
       readonly invitations: InvitationRepository;
       readonly clock: ClockPort;
-      readonly tokens: TokenPort;
+      readonly tokens: InvitationTokenPort;
     },
   ) {}
 

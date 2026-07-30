@@ -5,15 +5,14 @@ import {
   type ActorProvisionerPort,
   type IdentityProviderKey,
 } from "@futrob/identity";
-import { asActorId, type ActorId } from "@futrob/shared-kernel";
-import type { IdGenerator } from "@/shared/application/id-generator.ts";
+import { asActorId, type ActorId, type IdGeneratorPort } from "@futrob/shared-kernel";
 import { actors, identitySubjects, type authSchema } from "./drizzle-schema.ts";
 
 export type AuthDb = DrizzleD1Database<typeof authSchema>;
 
 export function createD1ActorProvisioner(input: {
   readonly db: AuthDb;
-  readonly ids: IdGenerator;
+  readonly ids: IdGeneratorPort;
 }): ActorProvisionerPort {
   return {
     async ensureActorForSubject(request) {
@@ -24,7 +23,7 @@ export function createD1ActorProvisioner(input: {
 
 export async function ensureActorForSubject(
   db: AuthDb,
-  ids: IdGenerator,
+  ids: IdGeneratorPort,
   input: {
     readonly provider: IdentityProviderKey;
     readonly subject: string;

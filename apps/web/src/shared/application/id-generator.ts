@@ -1,8 +1,6 @@
-export interface IdGenerator {
-  generate(): string;
-}
+import type { IdGeneratorPort } from "@futrob/shared-kernel";
 
-export class CryptoIdGenerator implements IdGenerator {
+export class CryptoIdGenerator implements IdGeneratorPort {
   generate(): string {
     return crypto.randomUUID();
   }

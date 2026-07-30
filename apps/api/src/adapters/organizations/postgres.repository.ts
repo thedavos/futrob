@@ -1,9 +1,4 @@
-import {
-  asActorId,
-  asOrganizationId,
-  type ActorId,
-  type OrganizationId,
-} from "@futrob/shared-kernel";
+import { asOrganizationId, type ActorId, type OrganizationId } from "@futrob/shared-kernel";
 import type {
   InvitationRepository,
   MembershipRepository,

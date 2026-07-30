@@ -15,12 +15,10 @@ export type {
   PostAuthDestination,
 } from "./domain/value-objects/post-auth-destination.ts";
 
-export type { ClockPort } from "./domain/ports/clock.port.ts";
-export type { IdGeneratorPort } from "./domain/ports/id-generator.port.ts";
 export type { InvitationRepository } from "./domain/ports/invitation.repository.ts";
+export type { InvitationTokenPort } from "./domain/ports/invitation-token.port.ts";
 export type { MembershipRepository } from "./domain/ports/membership.repository.ts";
 export type { OrganizationRepository } from "./domain/ports/organization.repository.ts";
-export type { TokenPort } from "./domain/ports/token.port.ts";
 
 export {
   CreateOrganizationUseCase,

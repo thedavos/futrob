@@ -1,18 +1,17 @@
 import {
   asActorId,
-  asOrganizationId,
   type ActorId,
+  type ClockPort,
+  type IdGeneratorPort,
   type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { Organization } from "../domain/entities/organization.ts";
 import type { OrganizationInvitation } from "../domain/entities/organization-invitation.ts";
 import type { OrganizationMembership } from "../domain/entities/organization-membership.ts";
-import type { ClockPort } from "../domain/ports/clock.port.ts";
-import type { IdGeneratorPort } from "../domain/ports/id-generator.port.ts";
 import type { InvitationRepository } from "../domain/ports/invitation.repository.ts";
+import type { InvitationTokenPort } from "../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../domain/ports/organization.repository.ts";
-import type { TokenPort } from "../domain/ports/token.port.ts";
 import type { MembershipSummary } from "../domain/value-objects/post-auth-destination.ts";
 
 export class FakeClock implements ClockPort {
@@ -28,21 +27,15 @@ export class FakeClock implements ClockPort {
 }
 
 export class FakeIds implements IdGeneratorPort {
-  private orgSeq = 0;
-  private inviteSeq = 0;
+  private sequence = 0;
 
-  organizationId(): OrganizationId {
-    this.orgSeq += 1;
-    return asOrganizationId(`org-${this.orgSeq}`);
-  }
-
-  invitationId(): string {
-    this.inviteSeq += 1;
-    return `invite-${this.inviteSeq}`;
+  generate(): string {
+    this.sequence += 1;
+    return `id-${this.sequence}`;
   }
 }
 
-export class FakeTokens implements TokenPort {
+export class FakeTokens implements InvitationTokenPort {
   private seq = 0;
 
   generatePlainToken(): string {

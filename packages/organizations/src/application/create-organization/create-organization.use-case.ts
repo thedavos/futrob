@@ -1,8 +1,13 @@
-import { domainError, err, ok, type DomainError, type Result } from "@futrob/shared-kernel";
-import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
+import {
+  asOrganizationId,
+  domainError,
+  err,
+  ok,
+  type DomainError,
+  type Result,
+} from "@futrob/shared-kernel";
+import type { ActorId, ClockPort, IdGeneratorPort } from "@futrob/shared-kernel";
 import type { Organization } from "../../domain/entities/organization.ts";
-import type { ClockPort } from "../../domain/ports/clock.port.ts";
-import type { IdGeneratorPort } from "../../domain/ports/id-generator.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
 
@@ -35,7 +40,7 @@ export class CreateOrganizationUseCase {
     }
 
     const now = this.deps.clock.now();
-    const organizationId: OrganizationId = this.deps.ids.organizationId();
+    const organizationId = asOrganizationId(this.deps.ids.generate());
     const organization: Organization = {
       id: organizationId,
       name,

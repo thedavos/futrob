@@ -6,15 +6,15 @@ Documento canónico: [`/docs/architecture/packages-and-sdk.md`](/docs/architectu
 
 ## Inventario
 
-| Package                                                         | npm / pub               | Rol                                                       |
-| --------------------------------------------------------------- | ----------------------- | --------------------------------------------------------- |
-| [`identity`](./identity/) … [`public-portal`](./public-portal/) | `@futrob/<bc>`          | Domain + application + ports por BC                       |
-| [`api-contracts`](./api-contracts/)                             | `@futrob/api-contracts` | Zod / OpenAPI de `/api/v1`                                |
-| [`sdk`](./sdk/)                                                 | `@futrob/sdk`           | Cliente HTTP TypeScript                                   |
-| [`sdk_dart`](./sdk_dart/)                                       | `futrob_sdk`            | Cliente HTTP Dart                                         |
-| [`ui`](./ui/)                                                   | `@futrob/ui`            | Tokens y primitivas shadcn/Base UI                        |
-| [`shared-kernel`](./shared-kernel/)                             | `@futrob/shared-kernel` | Result, IDs, DomainError, DomainEvent, EventPublisherPort |
-| [`test-support`](./test-support/)                               | `@futrob/test-support`  | Fakes/builders de test                                    |
+| Package                                                         | npm / pub               | Rol                                                |
+| --------------------------------------------------------------- | ----------------------- | -------------------------------------------------- |
+| [`identity`](./identity/) … [`public-portal`](./public-portal/) | `@futrob/<bc>`          | Domain + application + ports por BC                |
+| [`api-contracts`](./api-contracts/)                             | `@futrob/api-contracts` | Zod / OpenAPI de `/api/v1`                         |
+| [`sdk`](./sdk/)                                                 | `@futrob/sdk`           | Cliente HTTP TypeScript                            |
+| [`sdk_dart`](./sdk_dart/)                                       | `futrob_sdk`            | Cliente HTTP Dart                                  |
+| [`ui`](./ui/)                                                   | `@futrob/ui`            | Tokens y primitivas shadcn/Base UI                 |
+| [`shared-kernel`](./shared-kernel/)                             | `@futrob/shared-kernel` | Result, IDs, errores/eventos y ports transversales |
+| [`test-support`](./test-support/)                               | `@futrob/test-support`  | Fakes/builders de test                             |
 
 BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `game-data`, `results`, `statistics`, `analytics`, `notifications`, `public-portal`.
 
@@ -28,6 +28,9 @@ BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`,
 6. Preferir imports `@futrob/<bc>`, no deep-imports a `src/` internos salvo `exports` públicos.
 7. **`apps/api`** (Hono/Node en Railway) ya existe y consume los mismos `@futrob/<bc>`; es dueño de Postgres (`DATABASE_URL`) y del egress Node a EA. No reimplementar use cases en la app; `apps/web` consume el mismo contrato `/api/v1`.
 8. En docs del repo, enlaces con ruta absoluta `/packages/...` o `/docs/...`.
+9. Antes de añadir un port genérico, buscar uno equivalente. Ports transversales con la misma
+   semántica pertenecen a `@futrob/shared-kernel`; ports con vocabulario de negocio permanecen
+   en su bounded context.
 
 ## Contrato de `@futrob/ui`
 

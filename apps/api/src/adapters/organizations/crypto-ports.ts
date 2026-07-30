@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
-import { asOrganizationId, type OrganizationId } from "@futrob/shared-kernel";
-import type { ClockPort, IdGeneratorPort, TokenPort } from "@futrob/organizations";
+import type { InvitationTokenPort } from "@futrob/organizations";
+import type { ClockPort, IdGeneratorPort } from "@futrob/shared-kernel";
 
 export class SystemClock implements ClockPort {
   now(): Date {
@@ -9,16 +9,12 @@ export class SystemClock implements ClockPort {
 }
 
 export class CryptoIdGenerator implements IdGeneratorPort {
-  organizationId(): OrganizationId {
-    return asOrganizationId(crypto.randomUUID());
-  }
-
-  invitationId(): string {
+  generate(): string {
     return crypto.randomUUID();
   }
 }
 
-export class Sha256TokenPort implements TokenPort {
+export class Sha256InvitationTokenPort implements InvitationTokenPort {
   generatePlainToken(): string {
     return randomBytes(32).toString("base64url");
   }

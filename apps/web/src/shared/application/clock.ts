@@ -1,5 +1,6 @@
-export interface Clock {
-  now(): Date;
+import type { ClockPort } from "@futrob/shared-kernel";
+
+export interface Clock extends ClockPort {
   isoNow(): string;
 }
 

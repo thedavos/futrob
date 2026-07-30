@@ -57,6 +57,11 @@ MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**
 
 - Domain/application en `@futrob/<bc>`; adapters (D1/R2/Queues/EA) solo en apps.
 - `packages/<bc>/src/index.ts` public API only; never export adapters.
+- Antes de crear un port genérico, buscar contratos equivalentes. Ports transversales y
+  agnósticos de dominio con la misma semántica se definen una sola vez en
+  `@futrob/shared-kernel` (por ejemplo `ClockPort`, `IdGeneratorPort`,
+  `TransactionPort`, `EventPublisherPort`) y se reutilizan desde los BCs y apps.
+  No centralizar ports que expresen vocabulario o reglas propias de un bounded context.
 - Cross-module via package public API, ports/bridges, or outbox events — never foreign adapters/tables.
 - EA specifics only in `apps/web/.../game-data/adapters/providers/ea-clubs/` (until api hosts its own egress adapters).
 - Official stats only after `results.official-result-approved`.

@@ -10,7 +10,7 @@ import {
 import type { Pool } from "pg";
 import {
   CryptoIdGenerator,
-  Sha256TokenPort,
+  Sha256InvitationTokenPort,
   SystemClock,
 } from "@/adapters/organizations/crypto-ports.ts";
 import { createInMemoryOrganizationStore } from "@/adapters/organizations/in-memory.repository.ts";
@@ -27,7 +27,7 @@ export interface OrganizationsModuleDependencies {
 export function createOrganizationsModule(deps: OrganizationsModuleDependencies) {
   const clock = new SystemClock();
   const ids = new CryptoIdGenerator();
-  const tokens = new Sha256TokenPort();
+  const tokens = new Sha256InvitationTokenPort();
 
   let organizations: OrganizationRepository;
   let memberships: MembershipRepository;

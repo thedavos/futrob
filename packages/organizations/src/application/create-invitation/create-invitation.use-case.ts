@@ -1,21 +1,16 @@
 import { domainError, err, ok, type DomainError, type Result } from "@futrob/shared-kernel";
-import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
-import type { ClockPort } from "../../domain/ports/clock.port.ts";
-import type { IdGeneratorPort } from "../../domain/ports/id-generator.port.ts";
+import type { ActorId, ClockPort, IdGeneratorPort, OrganizationId } from "@futrob/shared-kernel";
 import type { InvitationRepository } from "../../domain/ports/invitation.repository.ts";
+import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
-import type { TokenPort } from "../../domain/ports/token.port.ts";
-import {
-  isInviteRole,
-  type InviteRole,
-} from "../../domain/value-objects/organization-membership-role.ts";
+import { isInviteRole } from "../../domain/value-objects/organization-membership-role.ts";
 
 const DEFAULT_EXPIRES_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface CreateInvitationInput {
   readonly organizationId: OrganizationId;
-  readonly role: InviteRole | string;
+  readonly role: string;
   readonly invitedByActorId: ActorId;
   readonly email?: string;
   readonly expiresInMs?: number;
@@ -35,7 +30,7 @@ export class CreateInvitationUseCase {
       readonly invitations: InvitationRepository;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
-      readonly tokens: TokenPort;
+      readonly tokens: InvitationTokenPort;
     },
   ) {}
 
@@ -76,7 +71,7 @@ export class CreateInvitationUseCase {
     const now = this.deps.clock.now();
     const expiresInMs = input.expiresInMs ?? DEFAULT_EXPIRES_IN_MS;
     const expiresAt = new Date(now.getTime() + expiresInMs);
-    const invitationId = this.deps.ids.invitationId();
+    const invitationId = this.deps.ids.generate();
     const token = this.deps.tokens.generatePlainToken();
     const tokenHash = this.deps.tokens.hashToken(token);
 

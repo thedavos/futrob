@@ -3,8 +3,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { drizzle } from "drizzle-orm/d1";
 import type { ActorProvisionerPort } from "@futrob/identity";
+import type { IdGeneratorPort } from "@futrob/shared-kernel";
 import type { AppEnv } from "@/config/env.ts";
-import type { IdGenerator } from "@/shared/application/id-generator.ts";
 import type { AppD1Database } from "@/shared/infrastructure/d1.ts";
 import { authSchema } from "./drizzle-schema.ts";
 import { createD1ActorProvisioner, credentialSubject, type AuthDb } from "./actor-provisioner.ts";
@@ -24,7 +24,7 @@ export function createAuth(input: {
     AppEnv,
     "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL" | "BETTER_AUTH_TRUSTED_ORIGINS"
   >;
-  readonly ids: IdGenerator;
+  readonly ids: IdGeneratorPort;
   readonly actorProvisioner?: ActorProvisionerPort;
 }) {
   if (!input.env.BETTER_AUTH_SECRET) {
