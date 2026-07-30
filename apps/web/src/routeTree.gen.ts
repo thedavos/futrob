@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as AppPlayerRouteImport } from './routes/_app/player'
 import { Route as AppOnboardingRouteImport } from './routes/_app/onboarding'
 import { Route as AppOrgsIndexRouteImport } from './routes/_app/orgs/index'
 import { Route as ApiV1OpenapiDotyamlRouteImport } from './routes/api/v1/openapi[.]yaml'
@@ -24,6 +25,7 @@ import { Route as AppOrgsOrgIdIndexRouteImport } from './routes/_app/orgs/$orgId
 import { Route as ApiV1OrganizationsPostAuthDestinationRouteImport } from './routes/api/v1/organizations/post-auth-destination'
 import { Route as ApiV1OrganizationsMineRouteImport } from './routes/api/v1/organizations/mine'
 import { Route as ApiV1MetaPingRouteImport } from './routes/api/v1/meta/ping'
+import { Route as ApiV1IdentityOnboardingRouteImport } from './routes/api/v1/identity/onboarding'
 import { Route as ApiV1OrganizationsInvitationsAcceptRouteImport } from './routes/api/v1/organizations/invitations.accept'
 import { Route as ApiV1OrganizationsOrganizationIdInvitationsRouteImport } from './routes/api/v1/organizations/$organizationId.invitations'
 import { Route as ApiV1GameDataClubsSearchRouteImport } from './routes/api/v1/game-data/clubs/search'
@@ -52,6 +54,11 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => AuthRoute,
+} as any)
+const AppPlayerRoute = AppPlayerRouteImport.update({
+  id: '/player',
+  path: '/player',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
@@ -104,6 +111,11 @@ const ApiV1MetaPingRoute = ApiV1MetaPingRouteImport.update({
   path: '/api/v1/meta/ping',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1IdentityOnboardingRoute = ApiV1IdentityOnboardingRouteImport.update({
+  id: '/api/v1/identity/onboarding',
+  path: '/api/v1/identity/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1OrganizationsInvitationsAcceptRoute =
   ApiV1OrganizationsInvitationsAcceptRouteImport.update({
     id: '/api/v1/organizations/invitations/accept',
@@ -138,12 +150,14 @@ const ApiV1GameDataClubsExternalClubIdMatchesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof AppOnboardingRoute
+  '/player': typeof AppPlayerRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
   '/orgs/': typeof AppOrgsIndexRoute
+  '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRoute
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
   '/api/v1/organizations/post-auth-destination': typeof ApiV1OrganizationsPostAuthDestinationRoute
@@ -158,12 +172,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof AppOnboardingRoute
+  '/player': typeof AppPlayerRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
   '/orgs': typeof AppOrgsIndexRoute
+  '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRoute
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
   '/api/v1/organizations/post-auth-destination': typeof ApiV1OrganizationsPostAuthDestinationRoute
@@ -181,12 +197,14 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/_app/onboarding': typeof AppOnboardingRoute
+  '/_app/player': typeof AppPlayerRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
   '/_app/orgs/': typeof AppOrgsIndexRoute
+  '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRoute
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
   '/api/v1/organizations/post-auth-destination': typeof ApiV1OrganizationsPostAuthDestinationRoute
@@ -203,12 +221,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/onboarding'
+    | '/player'
     | '/login'
     | '/signup'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
     | '/orgs/'
+    | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
     | '/api/v1/organizations/post-auth-destination'
@@ -223,12 +243,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/onboarding'
+    | '/player'
     | '/login'
     | '/signup'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
     | '/orgs'
+    | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
     | '/api/v1/organizations/post-auth-destination'
@@ -245,12 +267,14 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_auth'
     | '/_app/onboarding'
+    | '/_app/player'
     | '/_auth/login'
     | '/_auth/signup'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
     | '/_app/orgs/'
+    | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
     | '/api/v1/organizations/post-auth-destination'
@@ -270,6 +294,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
   ApiV1OpenapiDotyamlRoute: typeof ApiV1OpenapiDotyamlRoute
+  ApiV1IdentityOnboardingRoute: typeof ApiV1IdentityOnboardingRoute
   ApiV1MetaPingRoute: typeof ApiV1MetaPingRoute
   ApiV1OrganizationsMineRoute: typeof ApiV1OrganizationsMineRoute
   ApiV1OrganizationsPostAuthDestinationRoute: typeof ApiV1OrganizationsPostAuthDestinationRoute
@@ -316,6 +341,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/login'
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/_app/player': {
+      id: '/_app/player'
+      path: '/player'
+      fullPath: '/player'
+      preLoaderRoute: typeof AppPlayerRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/onboarding': {
       id: '/_app/onboarding'
@@ -387,6 +419,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MetaPingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/identity/onboarding': {
+      id: '/api/v1/identity/onboarding'
+      path: '/api/v1/identity/onboarding'
+      fullPath: '/api/v1/identity/onboarding'
+      preLoaderRoute: typeof ApiV1IdentityOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/organizations/invitations/accept': {
       id: '/api/v1/organizations/invitations/accept'
       path: '/api/v1/organizations/invitations/accept'
@@ -427,12 +466,14 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
+  AppPlayerRoute: typeof AppPlayerRoute
   AppOrgsIndexRoute: typeof AppOrgsIndexRoute
   AppOrgsOrgIdIndexRoute: typeof AppOrgsOrgIdIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
+  AppPlayerRoute: AppPlayerRoute,
   AppOrgsIndexRoute: AppOrgsIndexRoute,
   AppOrgsOrgIdIndexRoute: AppOrgsOrgIdIndexRoute,
 }
@@ -473,6 +514,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
   ApiV1OpenapiDotyamlRoute: ApiV1OpenapiDotyamlRoute,
+  ApiV1IdentityOnboardingRoute: ApiV1IdentityOnboardingRoute,
   ApiV1MetaPingRoute: ApiV1MetaPingRoute,
   ApiV1OrganizationsMineRoute: ApiV1OrganizationsMineRoute,
   ApiV1OrganizationsPostAuthDestinationRoute:

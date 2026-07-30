@@ -52,6 +52,43 @@ Además, reejecutar el mismo job de sync o la misma confirmación no crea partid
 - **cuando** un anónimo abre el portal,
 - **entonces** ve tabla/resultados/bracket/rankings públicos y no ve disputas, tokens, payloads crudos ni identificadores internos de plataforma.
 
+### AC-WEB-004 — Jugador sin organización
+
+**Cubre:** FTR-PLAYER-001, FTR-PLAYER-004, FTR-WEB-002.
+
+- **Dado** un usuario que acaba de completar el registro,
+- **cuando** se crea correctamente su cuenta y sesión,
+- **entonces** entra directamente al onboarding sin consultar membresías ni destinos anteriores.
+- **Dado** un usuario existente que inicia sesión,
+- **cuando** la autenticación termina correctamente,
+- **entonces** la plataforma consulta primero su estado en `actor_onboarding`.
+- **y** si está incompleto, entra al onboarding aunque tenga membresías.
+- **y** solo si está completo, la plataforma consulta sus membresías y resuelve `/player`, una organización o el selector.
+- **Dado** un actor en onboarding,
+- **entonces** ve la opción “Continuar como jugador”.
+- **cuando** elige esa opción, entra a su espacio personal de jugador sin crear una organización ni aceptar una invitación.
+- **y** la plataforma persiste que completó el onboarding con fecha, versión y camino `player`.
+- **y** en accesos posteriores sin membresías entra directamente a su espacio personal.
+- **pero** si intenta abrir `/player` antes de completar el onboarding, no ve su contenido y es redirigido al onboarding.
+- **y** puede aceptar una invitación o crear una organización posteriormente sin perder su perfil personal.
+
+### AC-PLAYER-001 — Consulta personal de estadísticas
+
+**Cubre:** FTR-PLAYER-002, FTR-PLAYER-003, FR-18.
+
+- **Dado** un PlayerProfile con identificador de juego confirmado y partidos oficiales aprobados que contienen esa identidad,
+- **cuando** abre Mis partidos o Mis estadísticas,
+- **entonces** ve únicamente su historial y agregados individuales ordenados, con estados de dato incompleto cuando corresponda.
+- **y** no ve candidatos EA, disputas, payloads raw ni datos administrativos privados de organizaciones donde no sea miembro.
+
+### AC-PLAYER-002 — Invitación posterior opcional
+
+**Cubre:** FTR-PLAYER-004.
+
+- **Dado** un jugador con espacio personal e historial propio,
+- **cuando** acepta una invitación de una organización,
+- **entonces** se añade la membresía contextual indicada, conserva el perfil personal y su historial, y obtiene solo los permisos de esa membresía.
+
 ## 4. Equipos y vinculación EA
 
 ### AC-TEAM-001 — Vincular club EA

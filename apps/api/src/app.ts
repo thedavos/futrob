@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import type { DbHealthStatus } from "@/adapters/persistence/postgres.ts";
 import type { AppModules } from "@/di/create-modules.ts";
 import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
+import { registerIdentityRoutes } from "@/http/routes/identity.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
 import { registerOrganizationRoutes } from "@/http/routes/organizations.ts";
@@ -41,6 +42,7 @@ export function createApp(deps: AppDeps): Hono {
   registerMetaRoutes(v1, deps);
   registerOpenApiRoutes(v1);
   registerGameDataClubRoutes(v1, deps);
+  registerIdentityRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);
 
   app.route("/api/v1", v1);

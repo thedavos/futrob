@@ -178,6 +178,71 @@ describe("apps/api", () => {
       organizationId: createdBody.organizationId,
       role: "captain",
     });
+
+    const captainOnboarding = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(captain),
+    });
+    expect(await captainOnboarding.json()).toMatchObject({
+      completed: true,
+      version: 1,
+      path: "invitation",
+    });
+  });
+
+  it("identity: requires onboarding before personal destination and completes idempotently", async () => {
+    const app = buildApp(stubFetch);
+    const actor = "actor-personal";
+
+    const initialStatus = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(actor),
+    });
+    expect(initialStatus.status).toBe(200);
+    expect(await initialStatus.json()).toEqual({
+      completed: false,
+      completedAt: null,
+      version: null,
+      path: null,
+    });
+
+    const initialDestination = await app.request("/api/v1/organizations/post-auth-destination", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await initialDestination.json()).toMatchObject({
+      destination: { kind: "onboarding" },
+    });
+
+    const completed = await app.request("/api/v1/identity/onboarding", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({ path: "player" }),
+    });
+    expect(completed.status).toBe(200);
+    const completedBody = (await completed.json()) as {
+      completedAt: string;
+    };
+    expect(completedBody).toMatchObject({
+      completed: true,
+      version: 1,
+      path: "player",
+    });
+    expect(completedBody.completedAt).toBeTruthy();
+
+    const repeated = await app.request("/api/v1/identity/onboarding", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({ path: "organization" }),
+    });
+    expect(await repeated.json()).toMatchObject({
+      completedAt: completedBody.completedAt,
+      path: "player",
+    });
+
+    const personalDestination = await app.request("/api/v1/organizations/post-auth-destination", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await personalDestination.json()).toMatchObject({
+      destination: { kind: "personal" },
+    });
   });
 
   it("organizations routes reject missing service auth", async () => {

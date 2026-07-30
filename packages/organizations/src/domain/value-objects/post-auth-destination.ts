@@ -9,6 +9,7 @@ export interface MembershipSummary {
 
 export type PostAuthDestination =
   | { readonly kind: "onboarding" }
+  | { readonly kind: "personal" }
   | { readonly kind: "organization"; readonly organizationId: OrganizationId }
   | {
       readonly kind: "organizationPicker";

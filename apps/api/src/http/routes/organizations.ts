@@ -20,7 +20,7 @@ import {
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
-  const { organizations } = deps.modules;
+  const { identity, organizations } = deps.modules;
   const auth = createServiceAuthMiddleware(deps.internalJobSecret);
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
 
@@ -41,8 +41,11 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
 
   secured.get("/organizations/post-auth-destination", async (c) => {
     const actorId = c.get("actorId");
-    const memberships = await organizations.listMembershipsForActor.execute({ actorId });
-    const destination = resolvePostAuthDestination(memberships);
+    const onboarding = await identity.getOnboardingStatus.execute({ actorId });
+    const memberships = onboarding.completed
+      ? await organizations.listMembershipsForActor.execute({ actorId })
+      : [];
+    const destination = resolvePostAuthDestination(memberships, onboarding.completed);
     const body = resolvePostAuthDestinationResponseSchema.parse({
       destination:
         destination.kind === "organizationPicker"
@@ -84,6 +87,11 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
     if (!result.ok) {
       return domainErrorToHttp(result.error);
     }
+
+    await identity.completeOnboarding.execute({
+      actorId,
+      path: "organization",
+    });
 
     const body = createOrganizationResponseSchema.parse({
       organizationId: result.value.organization.id,
@@ -135,6 +143,11 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
     if (!result.ok) {
       return domainErrorToHttp(result.error);
     }
+
+    await identity.completeOnboarding.execute({
+      actorId,
+      path: "invitation",
+    });
 
     const body = acceptInvitationResponseSchema.parse({
       organizationId: result.value.organizationId,

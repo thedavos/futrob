@@ -21,12 +21,18 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 ### 3.1 Acceso, organizaciones y roles
 
-| ID           | Requisito verificable                                                                                                                                                   |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-01        | Crear organizaciones, asignar roles contextuales (superusuario, organizador, staff, capitán, subcapitán, jugador, espectador) y aislar datos privados por organización. |
-| FTR-AUTH-001 | Autenticar usuarios en la web con Better Auth y asociar cada sesión a un actor Futrob verificable.                                                                      |
-| FTR-ORG-002  | Los datos privados deben estar aislados por organización en lectura, escritura, jobs y storage.                                                                         |
-| FTR-RBAC-002 | Un espectador solo consume información publicada; un capitán solo administra su equipo; el organizador/staff opera la competición según permisos granulares.            |
+| ID             | Requisito verificable                                                                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FR-01          | Crear organizaciones, asignar roles contextuales (superusuario, organizador, staff, capitán, subcapitán, jugador, espectador) y aislar datos privados por organización.                                      |
+| FTR-AUTH-001   | Autenticar usuarios en la web con Better Auth y asociar cada sesión a un actor Futrob verificable.                                                                                                           |
+| FTR-AUTH-002   | Después del registro, entrar directamente al onboarding. Después del login, consultar primero si el actor completó el onboarding y solo entonces resolver su destino por membresías.                         |
+| FTR-AUTH-003   | Persistir por actor si completó el onboarding, junto con fecha, versión y camino elegido; si no lo completó, impedir destinos autenticados y redirigirlo al onboarding.                                      |
+| FTR-PLAYER-001 | Permitir que un actor autenticado cree y use un perfil personal de jugador sin organización ni invitación.                                                                                                   |
+| FTR-PLAYER-002 | Permitir vincular una o más cuentas de juego al perfil personal mediante identificador de jugador, plataforma y edición, sin solicitar credenciales de EA.                                                   |
+| FTR-PLAYER-003 | Mostrar al jugador sus partidos y estadísticas individuales derivadas de resultados oficiales aprobados, aunque no tenga membresía de organización.                                                          |
+| FTR-PLAYER-004 | Permitir aceptar posteriormente una invitación y añadir una membresía contextual sin perder el perfil personal ni su historial.                                                                              |
+| FTR-ORG-002    | Los datos privados deben estar aislados por organización en lectura, escritura, jobs y storage.                                                                                                              |
+| FTR-RBAC-002   | Un espectador solo consume información publicada; un jugador personal consulta sus propios datos; un capitán solo administra su equipo; el organizador/staff opera la competición según permisos granulares. |
 
 ### 3.2 Competiciones, ediciones y formatos
 
@@ -90,6 +96,7 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | FR-13       | Guardar estadísticas oficiales de equipo y jugador derivadas de partidos oficiales aprobados.                                                                  |
 | FR-14       | Actualizar tabla, bracket, rankings y premios; las agregaciones deben reconstruirse desde partidos oficiales.                                                  |
+| FR-18       | Proveer un espacio personal autenticado para que un jugador consulte sus partidos, estadísticas y datos individuales sin pertenecer a una organización.        |
 | FR-16       | Publicar portal de competición con información sanitizada (portada, reglamento, equipos, calendario, resultados, tabla, bracket, rankings, perfiles públicos). |
 | FR-17       | Proteger analíticas premium mediante suscripción o permisos.                                                                                                   |
 | FTR-PUB-001 | Datos privados, tokens, identificadores de plataforma internos y payloads EA crudos no llegan al portal público.                                               |
@@ -99,7 +106,7 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 | ID          | Requisito verificable                                                                                                                                                  |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | FTR-WEB-001 | Landing pública responsive con propuesta de valor FC Clubs / datos EA, creación y acceso.                                                                              |
-| FTR-WEB-002 | Shell autenticado con organización, competición, Match Center, fixtures, standings/bracket, equipos, disputas, analytics y settings según permiso.                     |
+| FTR-WEB-002 | Shell autenticado con espacio personal, organización, competición, Match Center, fixtures, standings/bracket, equipos, disputas, analytics y settings según permiso.   |
 | FTR-NTF-001 | Notificar por web y correo: inscripción, partido próximo, reprogramación, candidatos EA, selección propuesta, resultado/disputa, decisión del organizador y sanciones. |
 
 ## 4. Requisitos Should
@@ -127,27 +134,27 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 ## 6. Requisitos no funcionales
 
-| ID     | Requisito                                                                                           |
-| ------ | --------------------------------------------------------------------------------------------------- |
-| NFR-01 | Arquitectura desacoplada del proveedor EA.                                                          |
-| NFR-02 | Procesamiento idempotente de sincronizaciones, selecciones, oficializaciones y notificaciones.      |
-| NFR-03 | Caché, deduplicación, reintentos con backoff y circuit breaker hacia EA.                            |
-| NFR-04 | Persistencia del payload original y capacidad de reprocesar estadísticas sin volver a consultar EA. |
-| NFR-05 | Auditoría de acciones sensibles con actor, motivo, correlación y tiempo.                            |
-| NFR-06 | Control de acceso por organización, competición y equipo.                                           |
-| NFR-07 | Manejo correcto de zonas horarias (IANA).                                                           |
-| NFR-08 | Diseño responsive y accesible (WCAG 2.2 AA).                                                        |
-| NFR-09 | Observabilidad de jobs, errores y salud del proveedor.                                              |
+| ID     | Requisito                                                                                                                            |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| NFR-01 | Arquitectura desacoplada del proveedor EA.                                                                                           |
+| NFR-02 | Procesamiento idempotente de sincronizaciones, selecciones, oficializaciones y notificaciones.                                       |
+| NFR-03 | Caché, deduplicación, reintentos con backoff y circuit breaker hacia EA.                                                             |
+| NFR-04 | Persistencia del payload original y capacidad de reprocesar estadísticas sin volver a consultar EA.                                  |
+| NFR-05 | Auditoría de acciones sensibles con actor, motivo, correlación y tiempo.                                                             |
+| NFR-06 | Control de acceso por organización, competición, equipo y perfil personal; un jugador solo puede leer su propia proyección personal. |
+| NFR-07 | Manejo correcto de zonas horarias (IANA).                                                                                            |
+| NFR-08 | Diseño responsive y accesible (WCAG 2.2 AA).                                                                                         |
+| NFR-09 | Observabilidad de jobs, errores y salud del proveedor.                                                                               |
 
 ## 7. Modelo de datos conceptual
 
 Entidades conceptuales mínimas (nombres de persistencia orientativos):
 
-`organizations`, `organization_memberships`, `users`, `game_editions`, `competitions`, `competition_stages`, `competition_rules`, `rounds`, `teams`, `team_memberships`, `players`, `player_game_accounts`, `competition_entries`, `competition_rosters`, `competition_encounters`, `competition_matches`, `schedule_change_requests`, `schedule_change_proposals`, `ea_club_connections`, `ea_sync_jobs`, `ea_raw_match_observations`, `ea_matches`, `ea_team_match_stats`, `ea_player_match_stats`, `match_candidates`, `official_match_selections`, `match_confirmation_actions`, `match_disputes`, `sanctions`, `team_competition_stats`, `player_competition_stats`, `ranking_snapshots`, `analytics_snapshots`, `provider_health_events`, `audit_logs`.
+`organizations`, `organization_memberships`, `users`, `actors`, `actor_onboarding`, `player_profiles`, `game_editions`, `competitions`, `competition_stages`, `competition_rules`, `rounds`, `teams`, `team_memberships`, `players`, `player_game_accounts`, `competition_entries`, `competition_rosters`, `competition_encounters`, `competition_matches`, `schedule_change_requests`, `schedule_change_proposals`, `ea_club_connections`, `ea_sync_jobs`, `ea_raw_match_observations`, `ea_matches`, `ea_team_match_stats`, `ea_player_match_stats`, `match_candidates`, `official_match_selections`, `match_confirmation_actions`, `match_disputes`, `sanctions`, `team_competition_stats`, `player_competition_stats`, `player_personal_stats`, `ranking_snapshots`, `analytics_snapshots`, `provider_health_events`, `audit_logs`.
 
 ## 8. Roadmap por fases
 
-1. **Fundamentos** — auth, organizaciones, roles, competiciones, equipos y plantillas.
+1. **Fundamentos** — auth, perfiles personales de jugador, organizaciones, roles, competiciones, equipos y plantillas.
 2. **Operación competitiva** — fixtures, enfrentamientos, reprogramaciones, Match Center, portal.
 3. **EA Data Layer** — vinculación, sync, almacenamiento, normalización, observabilidad.
 4. **Resultados oficiales** — candidatos, selección, confirmación, disputas, agregado, proyecciones.

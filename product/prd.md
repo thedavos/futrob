@@ -39,17 +39,32 @@ Una jornada puede programar un enfrentamiento con uno o dos partidos oficiales. 
 
 ## 3. Usuarios y roles
 
-Los roles son contextuales. Un usuario puede ser organizador en una organización, capitán en una competición y espectador en otra.
+Los roles son contextuales. Un usuario puede ser organizador en una organización, capitán en una competición y espectador en otra. El perfil de jugador puede existir sin pertenecer a una organización; la invitación es el camino para competir dentro de una organización, no un requisito para registrarse ni para consultar sus propios datos.
 
-| Rol                      | Responsabilidad principal                                                                               |
-| ------------------------ | ------------------------------------------------------------------------------------------------------- |
-| **Superusuario**         | Administra plataforma, ediciones, suscripciones, integraciones, moderación y auditoría.                 |
-| **Organizador**          | Crea y opera competiciones, aprueba inscripciones, reprograma, revisa disputas y configura publicación. |
-| **Staff de competición** | Permisos granulares: fixtures, resultados, disputas, inscripciones, anuncios, sanciones.                |
-| **Capitán**              | Representa al equipo: club EA, plantilla, reprogramaciones, selección oficial y confirmación.           |
-| **Subcapitán**           | Permisos delegados del capitán.                                                                         |
-| **Jugador**              | Perfil, plantillas, fixtures, disponibilidad y analíticas individuales cuando corresponda.              |
-| **Espectador**           | Solo información pública; sin disputas, evidencias privadas ni datos administrativos.                   |
+| Rol                      | Responsabilidad principal                                                                                                                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Superusuario**         | Administra plataforma, ediciones, suscripciones, integraciones, moderación y auditoría.                                                                                                            |
+| **Organizador**          | Crea y opera competiciones, aprueba inscripciones, reprograma, revisa disputas y configura publicación.                                                                                            |
+| **Staff de competición** | Permisos granulares: fixtures, resultados, disputas, inscripciones, anuncios, sanciones.                                                                                                           |
+| **Capitán**              | Representa al equipo: club EA, plantilla, reprogramaciones, selección oficial y confirmación.                                                                                                      |
+| **Subcapitán**           | Permisos delegados del capitán.                                                                                                                                                                    |
+| **Jugador**              | Mantiene un perfil personal, consulta sus partidos y estadísticas individuales y, cuando corresponde, participa en plantillas, fixtures y analíticas. Puede existir sin membresía de organización. |
+| **Espectador**           | Solo información pública; sin disputas, evidencias privadas ni datos administrativos.                                                                                                              |
+
+### Espacio personal del jugador
+
+Un jugador autenticado puede crear o mantener su perfil personal sin crear una organización ni aceptar una invitación. Desde ese espacio puede vincular su cuenta de juego, consultar sus partidos y visualizar estadísticas individuales derivadas de resultados oficiales aprobados.
+
+La invitación de un organizador o staff es opcional y añade una membresía contextual —por ejemplo, jugador o capitán—, acceso a una competición y capacidades operativas. No reemplaza ni elimina el perfil personal. El espacio personal nunca expone disputas, payloads EA crudos, tokens ni datos administrativos privados de una organización.
+
+Antes de entrar al espacio personal, el actor debe completar el onboarding. Futrob persiste este
+estado de producto —incluyendo fecha, versión y camino elegido— de forma separada a la sesión de
+Better Auth. Un jugador que ya lo completó y no tiene membresías vuelve directamente a su espacio
+personal en accesos posteriores.
+
+El registro y el login tienen secuencias distintas. Un registro exitoso entra directamente al
+onboarding porque crea un actor nuevo. Un login consulta primero `actor_onboarding`; únicamente
+cuando está completo consulta las membresías para resolver el destino autenticado.
 
 ## 4. Edición y modalidad
 
@@ -94,13 +109,13 @@ Lista canónica en [mvp-requirements.md](/product/mvp-requirements.md) (`FR-01`�
 
 ## 19. Modelo de datos conceptual
 
-Incluye, entre otros: organizaciones, membresías, usuarios, ediciones, competiciones, etapas, reglas, jornadas, equipos, plantillas, enfrentamientos, partidos oficiales, solicitudes de reprogramación, conexiones EA, jobs de sync, observaciones raw, partidos EA normalizados, candidatos, selecciones oficiales, disputas, sanciones, stats, rankings, analytics, salud del proveedor y auditoría. Lista completa en [mvp-requirements.md](/product/mvp-requirements.md#modelo-de-datos-conceptual).
+Incluye, entre otros: organizaciones, membresías, usuarios, actores, estado de onboarding del actor, perfiles personales de jugador, ediciones, cuentas de juego, competiciones, etapas, reglas, jornadas, equipos, plantillas, enfrentamientos, partidos oficiales, solicitudes de reprogramación, conexiones EA, jobs de sync, observaciones raw, partidos EA normalizados, candidatos, selecciones oficiales, disputas, sanciones, stats, rankings, analytics, salud del proveedor y auditoría. Lista completa en [mvp-requirements.md](/product/mvp-requirements.md#modelo-de-datos-conceptual).
 
 ## 20. Alcance del MVP
 
 ### Incluido
 
-Aplicación web responsive; auth y perfiles; organizaciones y permisos; competiciones FC Clubs; ediciones configurables; formatos MVP; equipos y plantillas; fixtures y Match Center; 1–2 partidos oficiales; resultados individuales/agregados; reprogramación; vinculación y sync EA; selección/confirmación; disputas básicas; tabla/bracket/stats/rankings esenciales; portal público; auditoría; primera capa de analíticas premium.
+Aplicación web responsive; auth, perfiles personales de jugador y organizaciones/permisos; competiciones FC Clubs; ediciones configurables; formatos MVP; equipos y plantillas; fixtures y Match Center; 1–2 partidos oficiales; resultados individuales/agregados; reprogramación; vinculación y sync EA; selección/confirmación; disputas básicas; espacio personal con partidos y estadísticas individuales; tabla/bracket/stats/rankings esenciales; portal público; auditoría; primera capa de analíticas premium.
 
 ### Fuera del MVP
 
@@ -108,7 +123,7 @@ App nativa; FC Temporadas/Amistosos; marketplace; fantasy; streaming; white-labe
 
 ## 21–23. Métricas, riesgos y roadmap
 
-Ver [open-decisions.md](/product/open-decisions.md) y [mvp-requirements.md](/product/mvp-requirements.md). Fases: Fundamentos → Operación → EA Data Layer → Resultados oficiales → Estadísticas/premium → Expansión.
+Ver [open-decisions.md](/product/open-decisions.md) y [mvp-requirements.md](/product/mvp-requirements.md). Fases: Fundamentos → Perfil personal y acceso → Operación → EA Data Layer → Resultados oficiales → Estadísticas/premium → Expansión.
 
 ## 24. Decisiones pendientes
 

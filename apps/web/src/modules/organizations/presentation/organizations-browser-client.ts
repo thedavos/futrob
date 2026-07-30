@@ -105,6 +105,8 @@ export function pathForPostAuthDestination(destination: PostAuthDestinationDto):
   switch (destination.kind) {
     case "onboarding":
       return "/onboarding";
+    case "personal":
+      return "/player";
     case "organization":
       return `/orgs/${destination.organizationId}`;
     case "organizationPicker":

@@ -5,9 +5,14 @@ import type {
 
 export function resolvePostAuthDestination(
   memberships: readonly MembershipSummary[],
+  onboardingCompleted: boolean,
 ): PostAuthDestination {
-  if (memberships.length === 0) {
+  if (!onboardingCompleted) {
     return { kind: "onboarding" };
+  }
+
+  if (memberships.length === 0) {
+    return { kind: "personal" };
   }
 
   if (memberships.length === 1) {

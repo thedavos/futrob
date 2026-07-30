@@ -24,6 +24,11 @@ Futrob
 │   └── CTA de acceso
 ├── Autenticación
 ├── Aplicación autenticada
+│   ├── Espacio personal del jugador
+│   │   ├── Mis partidos
+│   │   ├── Mis estadísticas
+│   │   ├── Datos de juego
+│   │   └── Invitaciones y organizaciones
 │   ├── Inicio de organización
 │   ├── Competiciones
 │   ├── Equipos y jugadores de organización
@@ -69,6 +74,35 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 4. CTA final.
 
 ## 4. Shell autenticado
+
+### Onboarding autenticado
+
+Después del registro, el usuario pasa directamente por onboarding: al ser una cuenta nueva no se
+consulta estado previo ni membresías. Después del login, la plataforma consulta primero
+`actor_onboarding`; si está incompleto vuelve al onboarding y, solo si está completo, consulta
+membresías para resolver el destino. En onboarding puede:
+
+- crear una organización;
+- aceptar una invitación;
+- continuar como jugador hacia `/player` sin organización.
+
+La tercera opción completa y persiste el onboarding personal; no requiere invitación y deja
+disponibles las otras dos opciones para más adelante. El estado se consulta en cada entrada a
+`/player`: un actor incompleto vuelve a `/onboarding`, mientras que un actor completo y sin
+membresías usa `/player` como destino posterior al acceso.
+
+### Espacio personal del jugador
+
+Es el destino posterior al onboarding cuando el usuario elige continuar como jugador. No requiere
+crear una organización ni aceptar una invitación.
+
+- **Inicio personal:** resumen de partidos recientes, estadísticas destacadas y estado de vinculación de la cuenta de juego.
+- **Mis partidos:** historial individual ordenado por fecha, competición, equipo y resultado; solo partidos permitidos por la proyección personal.
+- **Mis estadísticas:** goles, asistencias, rating, MVP y otras métricas disponibles; se distingue dato oficial de dato incompleto.
+- **Datos de juego:** vincular o actualizar identificador de jugador, plataforma y edición.
+- **Invitaciones y organizaciones:** aceptar una invitación o crear una organización como acciones secundarias.
+
+La vista personal no muestra disputas, payloads EA crudos, tokens ni datos administrativos de organizaciones en las que el actor no sea miembro.
 
 ### Navegación de organización
 
@@ -130,6 +164,15 @@ Encounter → solicitar cambio (encuentro o partido) → rival responde → acep
 
 Sync EA → candidatos → capitán asigna → preview → rival confirma → aprobado → proyecciones.
 
+### Registro de jugador independiente
+
+Registro → onboarding → continuar como jugador → crear perfil personal → vincular identificador de juego (opcional en el primer paso) → espacio personal → consultar partidos/estadísticas cuando existan → aceptar invitación o crear organización más adelante.
+
+### Acceso de usuario existente
+
+Login → consultar `actor_onboarding` → si está incompleto, onboarding → si está completo, consultar
+membresías → resolver espacio personal, organización única o selector de organizaciones.
+
 ## 7. Portal público
 
 Sin sidebar administrativo. Header de competición + tabs horizontales sticky. Solo contenido publicado. Deep links a enfrentamientos muestran proyección pública, nunca candidatos internos ni acciones de capitán.
@@ -138,4 +181,5 @@ Sin sidebar administrativo. Header de competición + tabs horizontales sticky. S
 
 - Ruta no aplicable al formato: omitir.
 - Ruta aplicable sin datos: empty state con siguiente acción.
+- Jugador sin partidos vinculados: empty state que permite configurar o revisar su identificador de juego; no se exige invitación.
 - Sin permiso: 403 con salida segura; no disfrazar como vacío.

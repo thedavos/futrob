@@ -5,19 +5,19 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 ## Bounded contexts (MVP)
 
-| Módulo          | Responsabilidad                                                               |
-| --------------- | ----------------------------------------------------------------------------- |
-| `identity`      | Usuarios, sesiones, autenticación, perfil básico                              |
-| `organizations` | Organizaciones, membresías, roles y permisos                                  |
-| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC                             |
-| `teams`         | Equipos, plantillas, capitanes, jugadores, vínculo club externo               |
-| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones          |
-| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health       |
-| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales |
-| `statistics`    | Stats oficiales, tablas, rankings, premios                                    |
-| `analytics`     | Analíticas premium (equipo, jugador, organizador)                             |
-| `notifications` | Web, email (WhatsApp/push como ampliación)                                    |
-| `public-portal` | Lecturas públicas sanitizadas                                                 |
+| Módulo          | Responsabilidad                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                          |
+| `organizations` | Organizaciones, membresías, roles y permisos                                                |
+| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC                                           |
+| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes, vínculo club externo |
+| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                        |
+| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                     |
+| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales               |
+| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                         |
+| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                           |
+| `notifications` | Web, email (WhatsApp/push como ampliación)                                                  |
+| `public-portal` | Lecturas públicas sanitizadas                                                               |
 
 `billing` está fuera del MVP.
 

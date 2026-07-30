@@ -67,7 +67,18 @@
 | DEC-051 | Tratamiento del API EA | Proveedor no garantizado: caché, retries, circuit breaker, storage propio y revisión manual. | Riesgo #1 del PRD. |
 | DEC-052 | Idiomas UI             | `es` default, `en` soportado. Independiente de datos EA.                                     | Producto bilingüe. |
 
-## 7. Decisiones que no deben reintroducirse sin ADR + cambio de producto
+## 7. Acceso personal del jugador
+
+| ID      | Tema                              | Resolución vigente                                                                                                                                                                             |
+| ------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DEC-070 | Jugador sin organización          | Un jugador puede registrarse, crear un perfil personal y usar la plataforma sin invitación ni membresía de organización.                                                                       |
+| DEC-071 | Invitación de jugador             | La invitación es opcional; al aceptarla se añade una membresía contextual y se conserva el perfil personal y su historial.                                                                     |
+| DEC-072 | Fuente de la vista personal       | Partidos y estadísticas individuales solo se proyectan desde resultados oficiales aprobados; candidatos, disputas y payloads EA raw no se muestran.                                            |
+| DEC-073 | Vinculación de identidad de juego | El jugador registra identificador de jugador, plataforma y edición; no entrega credenciales EA. Ambigüedades o coincidencias requieren confirmación.                                           |
+| DEC-074 | Privacidad de la vista personal   | El jugador puede ver sus propios datos y metadata sanitizada de contexto; no obtiene acceso general a datos privados de organizaciones donde no es miembro.                                    |
+| DEC-075 | Estado de onboarding              | `identity` persiste en `actor_onboarding`, por `ActorId`, finalización, fecha, versión y camino. El registro va directo al onboarding; el login consulta este estado antes que las membresías. |
+
+## 8. Decisiones que no deben reintroducirse sin ADR + cambio de producto
 
 - OCR como camino feliz de oficialización.
 - Evidence Inbox como superficie primaria de resultados.
@@ -75,7 +86,7 @@
 - Kapso/WhatsApp/Telegram como requisitos Must del MVP.
 - Entrants 1v1/pair/squad como supuesto universal del dominio Clubs.
 
-## 8. Decisiones resueltas de sistema de diseño
+## 9. Decisiones resueltas de sistema de diseño
 
 | ID      | Tema                  | Resolución vigente                                                                                                                      |
 | ------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |

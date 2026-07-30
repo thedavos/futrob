@@ -17,8 +17,8 @@ export function OnboardingShell({ children }: Readonly<OnboardingShellProps>) {
         <header className="mb-10 max-w-2xl">
           <h1 className="typo-heading text-3xl sm:text-4xl">Configura tu espacio</h1>
           <p className="typo-body mt-3 text-muted-foreground sm:text-lg">
-            Crea una organización para gestionar tu competición, o acepta una invitación si ya te
-            sumaron a un equipo.
+            Crea una organización, acepta una invitación o continúa como jugador para consultar tus
+            propios partidos y estadísticas.
           </p>
         </header>
 

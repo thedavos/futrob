@@ -68,6 +68,7 @@ export type AcceptInvitationResponse = z.infer<typeof acceptInvitationResponseSc
 
 export const postAuthDestinationSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("onboarding") }),
+  z.object({ kind: z.literal("personal") }),
   z.object({
     kind: z.literal("organization"),
     organizationId: z.string().min(1),

@@ -28,6 +28,9 @@
 - **UX-NAV-005** Volver desde detalle conserva filtros/scroll.
 - **UX-NAV-006** URL directa de Encounter renderiza página completa.
 - **UX-NAV-007** Sin permiso → 403 con salida segura.
+- **UX-NAV-008** Un registro exitoso entra directamente al onboarding; un login exitoso comprueba primero onboarding y, solo si está completo, resuelve organizaciones.
+- **UX-NAV-009** La navegación personal distingue Mis partidos, Mis estadísticas, Datos de juego e Invitaciones sin mostrar una organización ficticia.
+- **UX-NAV-010** `/player` no renderiza el espacio personal hasta confirmar que el actor completó el onboarding; si está incompleto o la comprobación falla, vuelve de forma segura a `/onboarding`.
 
 ## 4. Wizard / creación de competición
 

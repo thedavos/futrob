@@ -35,8 +35,14 @@ Organizations (service auth from `apps/web` BFF — not browser cookies):
 - `POST /organizations/:organizationId/invitations`
 - `POST /organizations/invitations/accept`
 
+Identity product state (same service auth):
+
+- `GET /identity/onboarding`
+- `POST /identity/onboarding` — idempotently records `path`, version and completion time.
+
 Requires `Authorization: Bearer <INTERNAL_JOB_SECRET>` and `X-Futrob-Actor-Id`.
-Without `DATABASE_URL`, organizations use an in-memory store (process-local).
+Without `DATABASE_URL`, organizations and actor onboarding use in-memory stores
+(process-local).
 
 Query params for game-data (`providerKey`, `platform`, `gameEdition`, `matchType`,
 `maxResultCount`) are validated at the edge with `@futrob/api-contracts` and
@@ -78,7 +84,8 @@ npm run api
 
 ## Railway notes
 
-- Apply `migrations/0001_organizations.sql` (and later SQL) to Postgres before relying on org persistence.
+- Apply `migrations/0001_organizations.sql` and `migrations/0002_actor_onboarding.sql`
+  to Postgres before relying on organization or onboarding persistence.
 - Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.
 - Start command: `npm run start -w @futrob/api`. Railway injects `PORT`; the app reads it.
 - Health check path: `/api/v1/meta/health`.
@@ -93,6 +100,7 @@ Imports use the `@/` alias → `src/*` (no `../` parent paths). Configure in
 - `src/config/env.ts` — env parsing with safe defaults.
 - `src/utils/` — generic helpers (dotenv load, HTTP response builders).
 - `src/adapters/game-data/` — EA Clubs, manual, and registry adapters (Node egress).
+- `src/adapters/identity/` — Postgres and in-memory actor-onboarding adapters.
 - `src/adapters/persistence/` — Postgres health probe and an in-memory provider-match stub.
 - `src/di/` — composition root (`createModules`, `createGameDataModule`).
 - `src/http/` — error mapping, DTO mappers, and route registration.

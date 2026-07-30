@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { Button } from "@futrob/ui";
+import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { AcceptInvitationForm } from "@/modules/organizations/presentation/accept-invitation-form.tsx";
 import { CreateOrganizationForm } from "@/modules/organizations/presentation/create-organization-form.tsx";
 import { OnboardingShell } from "@/modules/organizations/presentation/onboarding-shell.tsx";
@@ -10,6 +12,8 @@ import { organizationsBrowserClient } from "@/modules/organizations/presentation
 export function OnboardingPage() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
+  const [isContinuingAsPlayer, setIsContinuingAsPlayer] = useState(false);
+  const [playerError, setPlayerError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +54,18 @@ export function OnboardingPage() {
     );
   }
 
+  async function continueAsPlayer() {
+    setIsContinuingAsPlayer(true);
+    setPlayerError(null);
+    try {
+      await identityBrowserClient.completeOnboarding({ path: "player" });
+      await navigate({ to: "/player" });
+    } catch {
+      setPlayerError("No pudimos guardar tu elección. Inténtalo nuevamente.");
+      setIsContinuingAsPlayer(false);
+    }
+  }
+
   return (
     <OnboardingShell>
       <div className="space-y-5">
@@ -69,6 +85,23 @@ export function OnboardingPage() {
           </p>
         </div>
         <AcceptInvitationForm />
+      </div>
+      <div className="space-y-5 lg:col-span-2">
+        <div className="space-y-1.5">
+          <h2 className="text-lg font-semibold tracking-tight">Continuar como jugador</h2>
+          <p className="text-sm text-muted-foreground">
+            Consulta tu espacio personal, partidos y estadísticas sin pertenecer todavía a una
+            organización. Puedes aceptar una invitación más adelante.
+          </p>
+        </div>
+        {playerError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {playerError}
+          </p>
+        ) : null}
+        <Button disabled={isContinuingAsPlayer} onClick={() => void continueAsPlayer()}>
+          {isContinuingAsPlayer ? "Guardando…" : "Continuar como jugador"}
+        </Button>
       </div>
     </OnboardingShell>
   );

@@ -102,6 +102,8 @@ export function LoginForm() {
           });
         } else if (destination.kind === "organizationPicker") {
           await navigate({ to: "/orgs" });
+        } else if (destination.kind === "personal") {
+          await navigate({ to: "/player" });
         } else {
           await navigate({ to: "/onboarding" });
         }
