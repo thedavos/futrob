@@ -17,9 +17,15 @@ import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AppPlayerRouteImport } from './routes/_app/player'
 import { Route as AppOnboardingRouteImport } from './routes/_app/onboarding'
 import { Route as AppOrgsIndexRouteImport } from './routes/_app/orgs/index'
+import { Route as AppOnboardingIndexRouteImport } from './routes/_app/onboarding/index'
 import { Route as ApiV1OpenapiDotyamlRouteImport } from './routes/api/v1/openapi[.]yaml'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AppOnboardingReviewRouteImport } from './routes/_app/onboarding/review'
+import { Route as AppOnboardingInvitationRouteImport } from './routes/_app/onboarding/invitation'
+import { Route as AppOnboardingIntentionRouteImport } from './routes/_app/onboarding/intention'
+import { Route as AppOnboardingGameAccountRouteImport } from './routes/_app/onboarding/game-account'
+import { Route as AppOnboardingGameRouteImport } from './routes/_app/onboarding/game'
 import { Route as ApiV1OrganizationsIndexRouteImport } from './routes/api/v1/organizations/index'
 import { Route as AppOrgsOrgIdIndexRouteImport } from './routes/_app/orgs/$orgId/index'
 import { Route as ApiV1OrganizationsPostAuthDestinationRouteImport } from './routes/api/v1/organizations/post-auth-destination'
@@ -70,6 +76,11 @@ const AppOrgsIndexRoute = AppOrgsIndexRouteImport.update({
   path: '/orgs/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOnboardingIndexRoute = AppOnboardingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppOnboardingRoute,
+} as any)
 const ApiV1OpenapiDotyamlRoute = ApiV1OpenapiDotyamlRouteImport.update({
   id: '/api/v1/openapi.yaml',
   path: '/api/v1/openapi.yaml',
@@ -84,6 +95,32 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppOnboardingReviewRoute = AppOnboardingReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AppOnboardingRoute,
+} as any)
+const AppOnboardingInvitationRoute = AppOnboardingInvitationRouteImport.update({
+  id: '/invitation',
+  path: '/invitation',
+  getParentRoute: () => AppOnboardingRoute,
+} as any)
+const AppOnboardingIntentionRoute = AppOnboardingIntentionRouteImport.update({
+  id: '/intention',
+  path: '/intention',
+  getParentRoute: () => AppOnboardingRoute,
+} as any)
+const AppOnboardingGameAccountRoute =
+  AppOnboardingGameAccountRouteImport.update({
+    id: '/game-account',
+    path: '/game-account',
+    getParentRoute: () => AppOnboardingRoute,
+  } as any)
+const AppOnboardingGameRoute = AppOnboardingGameRouteImport.update({
+  id: '/game',
+  path: '/game',
+  getParentRoute: () => AppOnboardingRoute,
 } as any)
 const ApiV1OrganizationsIndexRoute = ApiV1OrganizationsIndexRouteImport.update({
   id: '/api/v1/organizations/',
@@ -149,13 +186,19 @@ const ApiV1GameDataClubsExternalClubIdMatchesRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/onboarding': typeof AppOnboardingRoute
+  '/onboarding': typeof AppOnboardingRouteWithChildren
   '/player': typeof AppPlayerRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/onboarding/game': typeof AppOnboardingGameRoute
+  '/onboarding/game-account': typeof AppOnboardingGameAccountRoute
+  '/onboarding/intention': typeof AppOnboardingIntentionRoute
+  '/onboarding/invitation': typeof AppOnboardingInvitationRoute
+  '/onboarding/review': typeof AppOnboardingReviewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
+  '/onboarding/': typeof AppOnboardingIndexRoute
   '/orgs/': typeof AppOrgsIndexRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRoute
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
@@ -171,13 +214,18 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/onboarding': typeof AppOnboardingRoute
   '/player': typeof AppPlayerRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/onboarding/game': typeof AppOnboardingGameRoute
+  '/onboarding/game-account': typeof AppOnboardingGameAccountRoute
+  '/onboarding/intention': typeof AppOnboardingIntentionRoute
+  '/onboarding/invitation': typeof AppOnboardingInvitationRoute
+  '/onboarding/review': typeof AppOnboardingReviewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
+  '/onboarding': typeof AppOnboardingIndexRoute
   '/orgs': typeof AppOrgsIndexRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRoute
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
@@ -196,13 +244,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
-  '/_app/onboarding': typeof AppOnboardingRoute
+  '/_app/onboarding': typeof AppOnboardingRouteWithChildren
   '/_app/player': typeof AppPlayerRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
+  '/_app/onboarding/game': typeof AppOnboardingGameRoute
+  '/_app/onboarding/game-account': typeof AppOnboardingGameAccountRoute
+  '/_app/onboarding/intention': typeof AppOnboardingIntentionRoute
+  '/_app/onboarding/invitation': typeof AppOnboardingInvitationRoute
+  '/_app/onboarding/review': typeof AppOnboardingReviewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
+  '/_app/onboarding/': typeof AppOnboardingIndexRoute
   '/_app/orgs/': typeof AppOrgsIndexRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRoute
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
@@ -224,9 +278,15 @@ export interface FileRouteTypes {
     | '/player'
     | '/login'
     | '/signup'
+    | '/onboarding/game'
+    | '/onboarding/game-account'
+    | '/onboarding/intention'
+    | '/onboarding/invitation'
+    | '/onboarding/review'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
+    | '/onboarding/'
     | '/orgs/'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
@@ -242,13 +302,18 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/onboarding'
     | '/player'
     | '/login'
     | '/signup'
+    | '/onboarding/game'
+    | '/onboarding/game-account'
+    | '/onboarding/intention'
+    | '/onboarding/invitation'
+    | '/onboarding/review'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
+    | '/onboarding'
     | '/orgs'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
@@ -270,9 +335,15 @@ export interface FileRouteTypes {
     | '/_app/player'
     | '/_auth/login'
     | '/_auth/signup'
+    | '/_app/onboarding/game'
+    | '/_app/onboarding/game-account'
+    | '/_app/onboarding/intention'
+    | '/_app/onboarding/invitation'
+    | '/_app/onboarding/review'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
+    | '/_app/onboarding/'
     | '/_app/orgs/'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
@@ -363,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/onboarding/': {
+      id: '/_app/onboarding/'
+      path: '/'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof AppOnboardingIndexRouteImport
+      parentRoute: typeof AppOnboardingRoute
+    }
     '/api/v1/openapi.yaml': {
       id: '/api/v1/openapi.yaml'
       path: '/api/v1/openapi.yaml'
@@ -383,6 +461,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/onboarding/review': {
+      id: '/_app/onboarding/review'
+      path: '/review'
+      fullPath: '/onboarding/review'
+      preLoaderRoute: typeof AppOnboardingReviewRouteImport
+      parentRoute: typeof AppOnboardingRoute
+    }
+    '/_app/onboarding/invitation': {
+      id: '/_app/onboarding/invitation'
+      path: '/invitation'
+      fullPath: '/onboarding/invitation'
+      preLoaderRoute: typeof AppOnboardingInvitationRouteImport
+      parentRoute: typeof AppOnboardingRoute
+    }
+    '/_app/onboarding/intention': {
+      id: '/_app/onboarding/intention'
+      path: '/intention'
+      fullPath: '/onboarding/intention'
+      preLoaderRoute: typeof AppOnboardingIntentionRouteImport
+      parentRoute: typeof AppOnboardingRoute
+    }
+    '/_app/onboarding/game-account': {
+      id: '/_app/onboarding/game-account'
+      path: '/game-account'
+      fullPath: '/onboarding/game-account'
+      preLoaderRoute: typeof AppOnboardingGameAccountRouteImport
+      parentRoute: typeof AppOnboardingRoute
+    }
+    '/_app/onboarding/game': {
+      id: '/_app/onboarding/game'
+      path: '/game'
+      fullPath: '/onboarding/game'
+      preLoaderRoute: typeof AppOnboardingGameRouteImport
+      parentRoute: typeof AppOnboardingRoute
     }
     '/api/v1/organizations/': {
       id: '/api/v1/organizations/'
@@ -464,15 +577,37 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppOnboardingRouteChildren {
+  AppOnboardingGameRoute: typeof AppOnboardingGameRoute
+  AppOnboardingGameAccountRoute: typeof AppOnboardingGameAccountRoute
+  AppOnboardingIntentionRoute: typeof AppOnboardingIntentionRoute
+  AppOnboardingInvitationRoute: typeof AppOnboardingInvitationRoute
+  AppOnboardingReviewRoute: typeof AppOnboardingReviewRoute
+  AppOnboardingIndexRoute: typeof AppOnboardingIndexRoute
+}
+
+const AppOnboardingRouteChildren: AppOnboardingRouteChildren = {
+  AppOnboardingGameRoute: AppOnboardingGameRoute,
+  AppOnboardingGameAccountRoute: AppOnboardingGameAccountRoute,
+  AppOnboardingIntentionRoute: AppOnboardingIntentionRoute,
+  AppOnboardingInvitationRoute: AppOnboardingInvitationRoute,
+  AppOnboardingReviewRoute: AppOnboardingReviewRoute,
+  AppOnboardingIndexRoute: AppOnboardingIndexRoute,
+}
+
+const AppOnboardingRouteWithChildren = AppOnboardingRoute._addFileChildren(
+  AppOnboardingRouteChildren,
+)
+
 interface AppRouteChildren {
-  AppOnboardingRoute: typeof AppOnboardingRoute
+  AppOnboardingRoute: typeof AppOnboardingRouteWithChildren
   AppPlayerRoute: typeof AppPlayerRoute
   AppOrgsIndexRoute: typeof AppOrgsIndexRoute
   AppOrgsOrgIdIndexRoute: typeof AppOrgsOrgIdIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppOnboardingRoute: AppOnboardingRoute,
+  AppOnboardingRoute: AppOnboardingRouteWithChildren,
   AppPlayerRoute: AppPlayerRoute,
   AppOrgsIndexRoute: AppOrgsIndexRoute,
   AppOrgsOrgIdIndexRoute: AppOrgsOrgIdIndexRoute,
