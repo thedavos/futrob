@@ -50,8 +50,9 @@ function Stepper({
               <span
                 aria-hidden="true"
                 className={cn(
-                  "relative z-10 flex size-7 items-center justify-center rounded-full border bg-surface text-xs font-semibold transition-[background-color,border-color,color] duration-(--duration-normal)",
-                  (completed || current) && "border-primary bg-primary text-primary-foreground",
+                  "relative z-10 flex size-7 items-center justify-center rounded-full border border-input bg-surface text-xs font-semibold text-muted-foreground transition-[background-color,border-color,color] duration-(--duration-normal)",
+                  completed && "border-primary bg-primary text-primary-foreground",
+                  current && "border-primary bg-accent text-accent-foreground",
                 )}
               >
                 {completed ? <Check className="size-4" /> : index + 1}
@@ -59,7 +60,9 @@ function Stepper({
               <span
                 className={cn(
                   "typo-caption max-sm:sr-only",
-                  completed || current ? "font-medium text-primary" : "text-muted-foreground",
+                  completed && "font-medium text-muted-foreground",
+                  current && "font-semibold text-foreground",
+                  !completed && !current && "text-muted-foreground",
                 )}
               >
                 {step.label}

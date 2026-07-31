@@ -6,11 +6,11 @@ import { Check } from "lucide-react";
 import { cn } from "#lib/utils";
 
 const choiceGroupItemVariants = cva(
-  "relative flex cursor-pointer items-center border bg-surface text-foreground outline-none transition-[background-color,border-color,color,scale] duration-(--duration-normal) ease-(--ease-emphasized) focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 data-[checked]:border-primary data-[checked]:bg-accent data-[disabled]:pointer-events-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 active:scale-[0.96]",
+  "relative flex cursor-pointer items-center border border-input bg-surface text-foreground outline-none transition-[background-color,border-color,color,scale] duration-(--duration-normal) ease-(--ease-emphasized) hover:bg-muted focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 data-[checked]:border-primary data-[checked]:bg-accent data-[checked]:hover:bg-accent data-[disabled]:pointer-events-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 active:scale-[0.96] [&>svg]:text-muted-foreground [&>svg]:transition-[color] [&>svg]:duration-(--duration-normal) data-[checked]:[&>svg]:text-primary",
   {
     variants: {
       appearance: {
-        tile: "min-h-28 flex-col justify-center gap-3 rounded-xl p-5 text-center",
+        tile: "min-h-24 flex-row justify-start gap-4 rounded-xl py-3 pr-12 pl-4 text-left [&>[data-slot=choice-group-indicator]]:right-4 [&>[data-slot=choice-group-indicator]]:top-1/2 [&>[data-slot=choice-group-indicator]]:-translate-y-1/2 sm:min-h-28 sm:flex-col sm:justify-center sm:gap-3 sm:p-5 sm:text-center sm:[&>[data-slot=choice-group-indicator]]:right-3 sm:[&>[data-slot=choice-group-indicator]]:top-3 sm:[&>[data-slot=choice-group-indicator]]:translate-y-0",
         pill: "min-h-(--control-height) justify-center gap-2 rounded-full px-5 py-2",
       },
     },

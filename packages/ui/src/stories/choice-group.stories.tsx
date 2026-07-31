@@ -23,12 +23,12 @@ export const Playground: Story = {
     <ChoiceGroup {...args}>
       <ChoiceGroupItem value="organization">
         <ChoiceGroupIndicator />
-        <Trophy className="size-7 text-primary" />
+        <Trophy className="size-7" />
         <span className="font-semibold">Organizar</span>
       </ChoiceGroupItem>
       <ChoiceGroupItem value="player">
         <ChoiceGroupIndicator />
-        <UserRound className="size-7 text-primary" />
+        <UserRound className="size-7" />
         <span className="font-semibold">Jugar</span>
       </ChoiceGroupItem>
       <ChoiceGroupItem disabled value="unavailable">
@@ -94,5 +94,36 @@ export const States: Story = {
     selected.focus();
     await userEvent.keyboard("{ArrowRight}");
     await expect(available).toBeChecked();
+  },
+};
+
+export const HoverAndFocus: Story = {
+  render: () => (
+    <ChoiceGroup
+      aria-label="Estados interactivos"
+      className="w-[min(44rem,calc(100vw-2rem))] grid-cols-3"
+      defaultValue="selected"
+    >
+      <ChoiceGroupItem value="selected">
+        <ChoiceGroupIndicator />
+        Seleccionado
+      </ChoiceGroupItem>
+      <ChoiceGroupItem value="available">
+        <ChoiceGroupIndicator />
+        Disponible
+      </ChoiceGroupItem>
+      <ChoiceGroupItem disabled value="disabled">
+        <ChoiceGroupIndicator />
+        Deshabilitado
+      </ChoiceGroupItem>
+    </ChoiceGroup>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const available = canvas.getByRole("radio", { name: "Disponible" });
+    await userEvent.hover(available);
+    available.focus();
+    await expect(available).toHaveFocus();
+    await expect(available).not.toBeChecked();
   },
 };
