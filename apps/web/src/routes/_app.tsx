@@ -1,5 +1,5 @@
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 
 export const Route = createFileRoute("/_app")({
@@ -8,26 +8,15 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
   const navigate = useNavigate();
-  const [ready, setReady] = useState(false);
+  const session = authClient.useSession();
 
   useEffect(() => {
-    let cancelled = false;
-    void authClient.getSession().then((session) => {
-      if (cancelled) {
-        return;
-      }
-      if (session.data?.user == null) {
-        void navigate({ to: "/login" });
-        return;
-      }
-      setReady(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate]);
+    if (!session.isPending && session.data?.user == null) {
+      void navigate({ to: "/login", replace: true });
+    }
+  }, [navigate, session.data?.user, session.isPending]);
 
-  if (!ready) {
+  if (session.isPending || session.data?.user == null) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background text-sm text-muted-foreground">
         Comprobando sesión…
