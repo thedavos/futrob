@@ -15,16 +15,18 @@ import type {
 import type { OnboardingGateway } from "./onboarding-flow.tsx";
 import { OnboardingFlowProvider } from "./onboarding-flow.tsx";
 import {
+  CompetitionStep,
   GameAccountStep,
-  GamePreferencesStep,
   IntentChoiceStep,
   InvitationStep,
   OnboardingReview,
+  OrganizationStep,
 } from "./onboarding-steps.tsx";
 
 type OnboardingStoryPath =
   | "/onboarding/intention"
-  | "/onboarding/game"
+  | "/onboarding/organization"
+  | "/onboarding/competition"
   | "/onboarding/invitation"
   | "/onboarding/game-account"
   | "/onboarding/review";
@@ -37,7 +39,9 @@ export function createFakeOnboardingGateway(input?: {
   path?: OnboardingPathDto | null;
   currentStep?: OnboardingStepDto;
   failSave?: boolean;
+  pendingSave?: boolean;
   failComplete?: boolean;
+  organizationNameAvailable?: boolean;
 }): StoryOnboardingGateway {
   let path = input?.path ?? null;
   let currentStep = input?.currentStep ?? "intention";
@@ -51,8 +55,12 @@ export function createFakeOnboardingGateway(input?: {
         currentStep,
       };
     },
+    async checkOrganizationName() {
+      return { available: input?.organizationNameAvailable ?? true };
+    },
     async saveProgress(next) {
       if (input?.failSave) throw new Error("story.save_failed");
+      if (input?.pendingSave) return await new Promise<OnboardingStatusDto>(() => undefined);
       path = next.path;
       currentStep = next.currentStep;
       return {
@@ -63,18 +71,41 @@ export function createFakeOnboardingGateway(input?: {
         currentStep,
       };
     },
-    async complete(next) {
+    async createOrganization(request) {
       if (input?.failComplete) throw new Error("story.complete_failed");
       return {
-        completed: true,
-        completedAt: "2026-07-30T12:00:00.000Z",
-        version: 1,
-        path: next.path,
-        currentStep: null,
+        organizationId: "org-story",
+        name: request.name,
+        role: "organizer",
+        competition: competitionDraftResponse(request.competition),
+        profile: storyProfile,
+        gameAccount: null,
+        destination: {
+          kind: "competition-setup",
+          organizationId: "org-story",
+          competitionId: "competition-story",
+        },
       };
     },
-    async resolveDestination() {
-      return { kind: "personal" };
+    async acceptInvitation() {
+      if (input?.failComplete) throw new Error("story.complete_failed");
+      return {
+        organizationId: "org-invited",
+        organizationName: "Liga invitante",
+        role: "player",
+        competitionId: "competition-invited",
+        competitionName: "Copa Invitación",
+        profile: storyProfile,
+        gameAccount: null,
+        destination: {
+          kind: "competition",
+          organizationId: "org-invited",
+          competitionId: "competition-invited",
+        },
+      };
+    },
+    async completePlayer() {
+      if (input?.failComplete) throw new Error("story.complete_failed");
     },
   };
 }
@@ -99,8 +130,13 @@ function createOnboardingStoryRouter(
     }),
     createRoute({
       getParentRoute: () => rootRoute,
-      path: "/onboarding/game",
-      component: GamePreferencesStep,
+      path: "/onboarding/organization",
+      component: OrganizationStep,
+    }),
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/onboarding/competition",
+      component: CompetitionStep,
     }),
     createRoute({
       getParentRoute: () => rootRoute,
@@ -136,12 +172,60 @@ function createOnboardingStoryRouter(
       path: "/orgs/$orgId",
       component: () => <main className="p-8">Organización</main>,
     }),
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/orgs/$orgId/competitions/$competitionId/setup",
+      component: () => <main className="p-8">Configurar competición</main>,
+    }),
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/orgs/$orgId/competitions/$competitionId",
+      component: () => <main className="p-8">Competición</main>,
+    }),
   ];
 
   return createRouter({
     routeTree: rootRoute.addChildren(routes),
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
+}
+
+const storyProfile = { id: "profile-story", createdAt: "2026-07-31T12:00:00.000Z" };
+
+function competitionDraftResponse(input: {
+  readonly name: string;
+  readonly gameEdition: string;
+  readonly platform: "playstation" | "xbox" | "pc" | "nintendo-switch-1" | "nintendo-switch-2";
+  readonly region:
+    | "america"
+    | "south-america"
+    | "north-central-america"
+    | "europe"
+    | "africa"
+    | "asia"
+    | "middle-east"
+    | "oceania";
+  readonly timeZone: string;
+  readonly format: "league" | "knockout" | "groups-knockout" | "league-playoffs";
+}) {
+  return {
+    competition: {
+      id: "competition-story",
+      organizationId: "org-story",
+      ...input,
+      status: "draft" as const,
+      modality: "fc-clubs" as const,
+      createdAt: "2026-07-31T12:00:00.000Z",
+      updatedAt: "2026-07-31T12:00:00.000Z",
+    },
+    rules: {
+      version: 1,
+      regularStage: null,
+      knockoutStage: null,
+      awayGoalsEnabled: false as const,
+      createdAt: "2026-07-31T12:00:00.000Z",
+    },
+  };
 }
 
 export function OnboardingStoryRouter({

@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  completeOnboardingRequestSchema,
-  completeOnboardingResponseSchema,
   getOnboardingStatusResponseSchema,
   saveOnboardingProgressRequestSchema,
   saveOnboardingProgressResponseSchema,
@@ -20,30 +18,6 @@ export const Route = createFileRoute("/api/v1/identity/onboarding")({
           const { client } = await createAuthenticatedProductApiClient(request);
           const body = getOnboardingStatusResponseSchema.parse(
             await client.identity.getOnboardingStatus(),
-          );
-          return jsonResponse(body);
-        } catch (error) {
-          return productApiBffErrorResponse(error);
-        }
-      },
-      POST: async ({ request }) => {
-        try {
-          const json: unknown = await request.json().catch(() => null);
-          const parsed = completeOnboardingRequestSchema.safeParse(json);
-          if (!parsed.success) {
-            return jsonResponse(
-              {
-                code: "api.validation_error",
-                messageKey: "errors.api.validation_error",
-                details: { issues: parsed.error.issues },
-              },
-              400,
-            );
-          }
-
-          const { client } = await createAuthenticatedProductApiClient(request);
-          const body = completeOnboardingResponseSchema.parse(
-            await client.identity.completeOnboarding(parsed.data),
           );
           return jsonResponse(body);
         } catch (error) {

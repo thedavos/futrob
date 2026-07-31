@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Button, Input, Label } from "@futrob/ui";
+import { Alert, AlertDescription, Button, Field, FieldLabel, Input } from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
+import { CircleAlert } from "lucide-react";
 import {
   OrganizationsClientError,
   organizationsBrowserClient,
@@ -18,7 +19,7 @@ export function AcceptInvitationForm() {
     event.preventDefault();
     const trimmed = token.trim();
     if (trimmed.length === 0) {
-      setError("El token de invitación es obligatorio.");
+      setError("Escribe el código de invitación.");
       return;
     }
 
@@ -26,7 +27,13 @@ export function AcceptInvitationForm() {
     setError(null);
     try {
       const accepted = await organizationsBrowserClient.acceptInvitation({ token: trimmed });
-      await navigate({ to: "/orgs/$orgId", params: { orgId: accepted.organizationId } });
+      await navigate({
+        to: "/orgs/$orgId/competitions/$competitionId",
+        params: {
+          orgId: accepted.destination.organizationId,
+          competitionId: accepted.destination.competitionId,
+        },
+      });
     } catch (caught) {
       if (caught instanceof OrganizationsClientError) {
         switch (caught.code) {
@@ -52,16 +59,14 @@ export function AcceptInvitationForm() {
   return (
     <form className="space-y-5" noValidate onSubmit={handleSubmit}>
       {error ? (
-        <div
-          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-          role="alert"
-        >
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <CircleAlert aria-hidden="true" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : null}
 
-      <div className="space-y-2">
-        <Label htmlFor="invitation-token">Token de invitación</Label>
+      <Field>
+        <FieldLabel htmlFor="invitation-token">Código de invitación</FieldLabel>
         <Input
           autoComplete="off"
           disabled={submitting}
@@ -70,10 +75,10 @@ export function AcceptInvitationForm() {
           onChange={(event) => setToken(event.target.value)}
           value={token}
         />
-      </div>
+      </Field>
 
-      <Button disabled={submitting} type="submit" variant="secondary">
-        Unirme
+      <Button disabled={submitting} type="submit">
+        Unirme a la competición
       </Button>
     </form>
   );

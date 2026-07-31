@@ -46,10 +46,15 @@ export function OrganizationPicker() {
   if (memberships.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Aún no perteneces a ninguna organización.{" "}
-        <Link className="underline-offset-4 hover:underline" to="/onboarding">
-          Ir a onboarding
+        Aún no perteneces a ninguna organización. Puedes{" "}
+        <Link className="underline-offset-4 hover:underline" to="/orgs/new">
+          crear una
+        </Link>{" "}
+        o{" "}
+        <Link className="underline-offset-4 hover:underline" to="/invitations/accept">
+          aceptar una invitación
         </Link>
+        .
       </p>
     );
   }

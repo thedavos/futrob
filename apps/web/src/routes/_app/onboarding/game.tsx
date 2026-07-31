@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { GamePreferencesStep } from "@/modules/identity/presentation/onboarding/onboarding-steps.tsx";
+import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
 
 export const Route = createFileRoute("/_app/onboarding/game")({
-  component: GamePreferencesStep,
+  head: () => ({ meta: [{ title: "Preparando tu configuración | Futrob" }] }),
+  component: () => <RoutePendingState message="Recuperando tu progreso…" />,
 });

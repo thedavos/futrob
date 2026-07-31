@@ -3,34 +3,79 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import type {
+  CompetitionDraftInputDto,
+  CompetitionFormatDto,
+  CompetitionRegionDto,
+  CompleteInvitationOnboardingRequest,
+  CompleteInvitationOnboardingResponse,
+  CompleteOrganizationOnboardingRequest,
+  CompleteOrganizationOnboardingResponse,
+  GamePlatformDto,
   OnboardingPathDto,
   OnboardingStatusDto,
   OnboardingStepDto,
-  PostAuthDestinationDto,
+  PlayerGameAccountInputDto,
 } from "@futrob/api-contracts";
-import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
-import { organizationsBrowserClient } from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import {
+  IdentityOnboardingClientError,
+  identityBrowserClient,
+} from "@/modules/identity/presentation/identity-browser-client.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
 import { resolveOnboardingStep, routeForOnboardingStep } from "./onboarding-routing.ts";
 
 export interface OnboardingDraft {
-  readonly gameEdition: string | null;
-  readonly platform: string | null;
+  readonly organizationName: string;
+  readonly competitionName: string;
+  readonly competitionPlatform: GamePlatformDto | null;
+  readonly competitionRegion: CompetitionRegionDto | null;
+  readonly competitionTimeZone: string;
+  readonly competitionFormat: CompetitionFormatDto | null;
+  readonly competitionGameEdition: string;
+  readonly customCompetitionGameEdition: boolean;
   readonly invitationToken: string;
   readonly gameAccountIdentifier: string;
+  readonly platform: GamePlatformDto | null;
+  readonly gameEdition: string;
+  readonly customGameEdition: boolean;
+}
+
+function createEmptyDraft(): OnboardingDraft {
+  return {
+    organizationName: "",
+    competitionName: "",
+    competitionPlatform: null,
+    competitionRegion: null,
+    competitionTimeZone: browserTimeZone(),
+    competitionFormat: null,
+    competitionGameEdition: "",
+    customCompetitionGameEdition: false,
+    invitationToken: "",
+    gameAccountIdentifier: "",
+    platform: null,
+    gameEdition: "",
+    customGameEdition: false,
+  };
 }
 
 export interface OnboardingGateway {
+  checkOrganizationName(input: { readonly name: string }): Promise<{ readonly available: boolean }>;
   saveProgress: typeof identityBrowserClient.saveOnboardingProgress;
-  complete: typeof identityBrowserClient.completeOnboarding;
-  resolveDestination(): Promise<PostAuthDestinationDto>;
+  createOrganization(
+    input: CompleteOrganizationOnboardingRequest,
+  ): Promise<CompleteOrganizationOnboardingResponse>;
+  acceptInvitation(
+    input: CompleteInvitationOnboardingRequest,
+  ): Promise<CompleteInvitationOnboardingResponse>;
+  completePlayer(gameAccount: PlayerGameAccountInputDto | null): Promise<void>;
 }
 
 export const browserOnboardingGateway: OnboardingGateway = {
+  checkOrganizationName: (input) => identityBrowserClient.checkOrganizationName(input),
   saveProgress: (input) => identityBrowserClient.saveOnboardingProgress(input),
-  complete: (input) => identityBrowserClient.completeOnboarding(input),
-  async resolveDestination() {
-    return (await organizationsBrowserClient.resolvePostAuthDestination()).destination;
+  createOrganization: (input) => identityBrowserClient.completeOrganizationOnboarding(input),
+  acceptInvitation: (input) => identityBrowserClient.completeInvitationOnboarding(input),
+  async completePlayer(gameAccount) {
+    await identityBrowserClient.completePlayerOnboarding({ gameAccount });
   },
 };
 
@@ -42,6 +87,8 @@ interface OnboardingFlowValue {
   readonly draft: OnboardingDraft;
   setPath(path: OnboardingPathDto): void;
   updateDraft(patch: Partial<OnboardingDraft>): void;
+  clearGameAccount(): void;
+  checkOrganizationName(name: string): Promise<boolean | null>;
   goTo(step: OnboardingStepDto, path?: OnboardingPathDto | null): Promise<void>;
   finish(): Promise<void>;
 }
@@ -66,12 +113,7 @@ export function OnboardingFlowProvider({
   const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(() =>
     resolveOnboardingStep(initialStatus.path, initialStatus.currentStep),
   );
-  const [draft, setDraft] = useState<OnboardingDraft>({
-    gameEdition: null,
-    platform: null,
-    invitationToken: "",
-    gameAccountIdentifier: "",
-  });
+  const [draft, setDraft] = useState<OnboardingDraft>(createEmptyDraft);
 
   const value = useMemo<OnboardingFlowValue>(
     () => ({
@@ -81,13 +123,39 @@ export function OnboardingFlowProvider({
       currentStep,
       draft,
       setPath(nextPath) {
+        if (nextPath !== path) setDraft(createEmptyDraft());
         setPathState(nextPath);
         setError(null);
       },
       updateDraft(patch) {
         setDraft((current) => ({ ...current, ...patch }));
+        setError(null);
+      },
+      clearGameAccount() {
+        setDraft((current) => ({
+          ...current,
+          gameAccountIdentifier: "",
+          platform: null,
+          gameEdition: "",
+          customGameEdition: false,
+        }));
+      },
+      async checkOrganizationName(name) {
+        if (saving) return null;
+        setSaving(true);
+        setError(null);
+        try {
+          const result = await gateway.checkOrganizationName({ name });
+          return result.available;
+        } catch {
+          setError("No pudimos verificar el nombre. Inténtalo nuevamente.");
+          return null;
+        } finally {
+          setSaving(false);
+        }
       },
       async goTo(step, requestedPath = path) {
+        if (saving) return;
         setSaving(true);
         setError(null);
         try {
@@ -102,15 +170,47 @@ export function OnboardingFlowProvider({
         }
       },
       async finish() {
-        if (!path) return;
+        if (!path || saving) return;
         setSaving(true);
         setLeaving(true);
         setError(null);
         try {
-          await gateway.complete({ path });
-          await navigateToDestination(await gateway.resolveDestination(), navigate);
-        } catch {
-          setError("No pudimos finalizar tu configuración. Inténtalo nuevamente.");
+          if (path === "organization") {
+            const competition = competitionFromDraft(draft);
+            if (!competition) throw new Error("Incomplete competition draft");
+            const created = await gateway.createOrganization({
+              name: draft.organizationName.trim(),
+              competition,
+              gameAccount: playerAccountFromDraft(draft),
+            });
+            await navigate({
+              to: "/orgs/$orgId/competitions/$competitionId/setup",
+              params: {
+                orgId: created.destination.organizationId,
+                competitionId: created.destination.competitionId,
+              },
+              replace: true,
+            });
+          } else if (path === "invitation") {
+            const accepted = await gateway.acceptInvitation({
+              token: draft.invitationToken.trim(),
+              gameAccount: playerAccountFromDraft(draft),
+            });
+            await navigate({
+              to: "/orgs/$orgId/competitions/$competitionId",
+              params: {
+                orgId: accepted.destination.organizationId,
+                competitionId: accepted.destination.competitionId,
+              },
+              replace: true,
+            });
+          } else {
+            const account = playerAccountFromDraft(draft);
+            await gateway.completePlayer(account);
+            await navigate({ to: "/player", replace: true });
+          }
+        } catch (caught) {
+          setError(finalizationError(path, caught));
           setLeaving(false);
           setSaving(false);
         }
@@ -120,7 +220,6 @@ export function OnboardingFlowProvider({
   );
 
   const expectedRoute = routeForOnboardingStep(currentStep);
-
   return (
     <OnboardingFlowContext value={value}>
       {!leaving && pathname !== expectedRoute ? (
@@ -135,31 +234,84 @@ export function OnboardingFlowProvider({
   );
 }
 
+export function competitionFromDraft(draft: OnboardingDraft): CompetitionDraftInputDto | null {
+  const name = draft.competitionName.trim();
+  const gameEdition = draft.competitionGameEdition.trim();
+  const timeZone = draft.competitionTimeZone.trim();
+  if (
+    !name ||
+    !gameEdition ||
+    !draft.competitionPlatform ||
+    !draft.competitionRegion ||
+    !timeZone ||
+    !draft.competitionFormat
+  ) {
+    return null;
+  }
+  return {
+    name,
+    gameEdition,
+    platform: draft.competitionPlatform,
+    region: draft.competitionRegion,
+    timeZone,
+    format: draft.competitionFormat,
+  };
+}
+
+function browserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
 export function useOnboardingFlow(): OnboardingFlowValue {
   const value = useContext(OnboardingFlowContext);
   if (!value) throw new Error("useOnboardingFlow must be used within OnboardingFlowProvider");
   return value;
 }
 
-async function navigateToDestination(
-  destination: PostAuthDestinationDto,
-  navigate: ReturnType<typeof useNavigate>,
-) {
-  switch (destination.kind) {
-    case "organization":
-      await navigate({
-        to: "/orgs/$orgId",
-        params: { orgId: destination.organizationId },
-        replace: true,
-      });
-      break;
-    case "organizationPicker":
-      await navigate({ to: "/orgs", replace: true });
-      break;
-    case "personal":
-      await navigate({ to: "/player", replace: true });
-      break;
-    case "onboarding":
-      await navigate({ to: "/onboarding/intention", replace: true });
+export function playerAccountFromDraft(draft: OnboardingDraft): PlayerGameAccountInputDto | null {
+  const identifier = draft.gameAccountIdentifier.trim();
+  const gameEdition = draft.gameEdition.trim();
+  if (!identifier && !draft.platform && !gameEdition) return null;
+  if (!identifier || !draft.platform || !gameEdition) return null;
+  return { identifier, platform: draft.platform, gameEdition };
+}
+
+function finalizationError(path: OnboardingPathDto, caught: unknown): string {
+  if (caught instanceof IdentityOnboardingClientError && path === "invitation") {
+    switch (caught.code) {
+      case "organizations.invitation_not_found":
+        return "No encontramos esa invitación. Revisa el código e inténtalo nuevamente.";
+      case "organizations.invitation_expired":
+        return "La invitación ha caducado. Solicita una nueva al organizador.";
+      case "organizations.invitation_revoked":
+        return "La invitación fue revocada. Solicita una nueva al organizador.";
+      case "organizations.invitation_invalid":
+        return "La invitación ya no está disponible.";
+    }
   }
+  if (caught instanceof IdentityOnboardingClientError && path === "organization") {
+    if (caught.code === "organizations.name_conflict") {
+      return "Ese nombre de organización ya está en uso. Vuelve y elige otro.";
+    }
+    if (caught.code.startsWith("competitions.invalid_")) {
+      return "Los datos de la competición no son válidos. Revísalos e inténtalo nuevamente.";
+    }
+    if (caught.code.startsWith("teams.invalid_")) {
+      return "Los datos de la cuenta de juego no son válidos. Revísalos e inténtalo nuevamente.";
+    }
+    return caught.code === "organizations.invalid_name"
+      ? "El nombre de la organización no es válido."
+      : "No pudimos crear la organización. Inténtalo nuevamente.";
+  }
+  if (caught instanceof IdentityOnboardingClientError && caught.code.startsWith("teams.invalid_")) {
+    return "Los datos de la cuenta de juego no son válidos. Revísalos e inténtalo nuevamente.";
+  }
+  if (caught instanceof IdentityOnboardingClientError && path === "player") {
+    return "No pudimos guardar tu perfil de jugador. Inténtalo nuevamente.";
+  }
+  return "No pudimos finalizar tu configuración. Inténtalo nuevamente.";
 }

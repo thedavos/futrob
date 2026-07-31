@@ -59,7 +59,7 @@ export function OrgsIndexPage() {
         <h1 className="typo-heading">Tus organizaciones</h1>
         <p className="text-sm text-muted-foreground">
           Elige con cuál quieres continuar.{" "}
-          <Link className="underline-offset-4 hover:underline" to="/onboarding">
+          <Link className="underline-offset-4 hover:underline" to="/invitations/accept">
             Unirme a otra
           </Link>
         </p>

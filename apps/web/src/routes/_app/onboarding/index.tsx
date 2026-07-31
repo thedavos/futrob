@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app/onboarding/")({
+  head: () => ({ meta: [{ title: "Preparando tu configuración | Futrob" }] }),
   component: OnboardingIndex,
 });
 

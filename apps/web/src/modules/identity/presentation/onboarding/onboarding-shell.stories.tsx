@@ -4,7 +4,7 @@ import { Button, Card, CardContent } from "@futrob/ui";
 import { OnboardingShell } from "./onboarding-shell.tsx";
 
 const steps = [
-  { id: "intention", label: "Intención" },
+  { id: "intention", label: "Inicio" },
   { id: "game", label: "Juego" },
   { id: "review", label: "Confirmar" },
 ] as const;

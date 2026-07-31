@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Alert, AlertDescription, Logo, Stepper, type StepperStep } from "@futrob/ui";
 import { CircleAlert } from "lucide-react";
 
@@ -19,24 +19,41 @@ export function OnboardingShell({
   error,
   children,
 }: OnboardingShellProps) {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, [currentStepId]);
+
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
+
   return (
-    <main className="min-h-svh bg-background p-0 text-foreground sm:p-5">
-      <div className="mx-auto flex min-h-svh w-full max-w-(--content-wide) flex-col bg-surface px-5 py-7 sm:min-h-[calc(100svh-2.5rem)] sm:rounded-xl sm:border sm:border-border sm:px-8 sm:py-10">
-        <Logo className="mx-auto h-12 w-auto" title="Futrob" />
+    <main className="min-h-svh bg-background text-foreground">
+      <div className="mx-auto flex min-h-svh w-full max-w-5xl flex-col px-5 py-6 sm:px-8 sm:py-10">
+        <Logo className="mx-auto h-10 w-auto" title="Futrob" />
         <Stepper
           aria-label="Progreso del onboarding"
-          className="mx-auto mt-10 max-w-3xl"
+          className="mx-auto mt-6 max-w-xl sm:mt-8"
           currentStepId={currentStepId}
           steps={steps}
         />
 
-        <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col pt-10 sm:pt-12">
-          <header className="mx-auto mb-8 max-w-2xl text-center">
-            <h1 className="typo-heading text-3xl sm:text-4xl">{title}</h1>
-            <p className="typo-subtitle mt-3 text-muted-foreground">{description}</p>
+        <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col pt-8 sm:pt-10">
+          <header className="mx-auto mb-6 grid max-w-2xl gap-3 text-center sm:mb-8">
+            <h1
+              className="typo-heading text-3xl outline-none sm:text-4xl"
+              ref={titleRef}
+              tabIndex={-1}
+            >
+              {title}
+            </h1>
+            <p className="typo-subtitle text-muted-foreground">{description}</p>
           </header>
           {error ? (
-            <Alert className="mb-6" variant="destructive">
+            <Alert className="mb-6 outline-none" ref={errorRef} tabIndex={-1} variant="destructive">
               <CircleAlert />
               <AlertDescription>{error}</AlertDescription>
             </Alert>

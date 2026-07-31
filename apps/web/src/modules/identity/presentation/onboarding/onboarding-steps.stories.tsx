@@ -20,13 +20,43 @@ export const Playground: Story = {
   ),
 };
 
-export const Game: Story = {
+export const IntentSelected: Story = {
   render: () => (
     <OnboardingStoryRouter
-      gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "game" })}
-      initialPath="/onboarding/game"
+      gateway={createFakeOnboardingGateway()}
+      initialPath="/onboarding/intention"
     />
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const invitation = await canvas.findByRole("radio", { name: /Unirme/ });
+    await userEvent.click(invitation);
+    await expect(invitation).toBeChecked();
+  },
+};
+
+export const Organization: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "organization" })}
+      initialPath="/onboarding/organization"
+    />
+  ),
+};
+
+export const OrganizationCompleted: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "organization" })}
+      initialPath="/onboarding/organization"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const name = await canvas.findByRole("textbox", { name: "Nombre de la organización" });
+    await userEvent.type(name, "Liga Barranco");
+    await expect(name).toHaveValue("Liga Barranco");
+  },
 };
 
 export const Invitation: Story = {
@@ -41,6 +71,33 @@ export const Invitation: Story = {
   ),
 };
 
+export const Competition: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "competition" })}
+      initialPath="/onboarding/competition"
+    />
+  ),
+};
+
+export const CompetitionValidationError: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "competition" })}
+      initialPath="/onboarding/competition"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Configurar cuenta" }));
+    const name = canvas.getByRole("textbox", { name: "Nombre de la competición" });
+    const error = canvas.getByText("Escribe el nombre de la competición.");
+    await expect(error).toBeVisible();
+    await expect(name).toHaveAttribute("aria-describedby", error.parentElement?.id);
+    await expect(name).toHaveFocus();
+  },
+};
+
 export const GameAccount: Story = {
   render: () => (
     <OnboardingStoryRouter
@@ -51,6 +108,40 @@ export const GameAccount: Story = {
       initialPath="/onboarding/game-account"
     />
   ),
+  play: async ({ canvasElement }) => {
+    for (const platform of [
+      "playstation",
+      "xbox",
+      "pc",
+      "nintendo-switch-1",
+      "nintendo-switch-2",
+    ]) {
+      await expect(
+        canvasElement.querySelector(`[data-platform-logo="${platform}"]`),
+      ).not.toBeNull();
+    }
+  },
+};
+
+export const GameAccountValidationError: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({
+        path: "player",
+        currentStep: "game-account",
+      })}
+      initialPath="/onboarding/game-account"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Vincular y revisar" }));
+    const identifier = canvas.getByRole("textbox", { name: "Identificador de EA" });
+    const error = canvas.getByText("Escribe tu identificador de EA.");
+    await expect(error).toBeVisible();
+    await expect(identifier).toHaveAttribute("aria-describedby", error.parentElement?.id);
+    await expect(identifier).toHaveFocus();
+  },
 };
 
 export const ReviewWithPendingData: Story = {
@@ -71,19 +162,43 @@ export const ReviewComplete: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole("radio", { name: /Continuar como jugador/ }));
-    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
-    await userEvent.click(await canvas.findByRole("radio", { name: "FC 25" }));
-    await userEvent.click(canvas.getByRole("radio", { name: "PlayStation" }));
+    await userEvent.click(await canvas.findByRole("radio", { name: /Empezar como jugador/ }));
     await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
     await userEvent.type(
-      await canvas.findByRole("textbox", { name: "Identificador de jugador" }),
+      await canvas.findByRole("textbox", { name: "Identificador de EA" }),
       "gamer23",
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
+    await userEvent.click(await canvas.findByRole("radio", { name: "FC 26" }));
+    await userEvent.click(canvas.getByRole("radio", { name: "Nintendo Switch 2" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Revisar cuenta" }));
     await expect(
       await canvas.findByRole("heading", { name: "Confirma tu configuración" }),
     ).toBeVisible();
-    await expect(canvas.getByText("gamer23")).toBeVisible();
+    await expect(canvas.getByText(/gamer23 · Nintendo Switch 2 · FC 26/)).toBeVisible();
+  },
+};
+
+export const ReviewEditNavigation: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway()}
+      initialPath="/onboarding/intention"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("radio", { name: /Empezar como jugador/ }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
+    await userEvent.type(
+      await canvas.findByRole("textbox", { name: "Identificador de EA" }),
+      "gamer23",
+    );
+    await userEvent.click(await canvas.findByRole("radio", { name: "FC 27" }));
+    await userEvent.click(canvas.getByRole("radio", { name: "Nintendo Switch 1" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Revisar cuenta" }));
+    await userEvent.click(await canvas.findByRole("button", { name: "Editar cuenta de juego" }));
+    await expect(
+      await canvas.findByRole("heading", { name: "Configura tus datos de juego" }),
+    ).toBeVisible();
   },
 };
