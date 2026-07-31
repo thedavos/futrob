@@ -2,6 +2,7 @@ import {
   type ActorOnboardingPort,
   CompleteOnboardingUseCase,
   GetOnboardingStatusUseCase,
+  SaveOnboardingProgressUseCase,
 } from "@futrob/identity";
 import type { ClockPort } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
@@ -20,6 +21,7 @@ export function createIdentityModule(deps: IdentityModuleDependencies) {
 
   return {
     getOnboardingStatus: new GetOnboardingStatusUseCase(actorOnboarding),
+    saveOnboardingProgress: new SaveOnboardingProgressUseCase(actorOnboarding, clock),
     completeOnboarding: new CompleteOnboardingUseCase(actorOnboarding, clock),
   };
 }

@@ -2,23 +2,43 @@ import { describe, expect, it } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
 import { CompleteOnboardingUseCase } from "./complete-onboarding/complete-onboarding.use-case.ts";
 import { GetOnboardingStatusUseCase } from "./get-onboarding-status/get-onboarding-status.use-case.ts";
+import { SaveOnboardingProgressUseCase } from "./save-onboarding-progress/save-onboarding-progress.use-case.ts";
 import type { ActorOnboardingPort } from "../domain/ports/actor-onboarding.port.ts";
-import type { CompletedOnboarding } from "../domain/value-objects/onboarding-status.ts";
+import type {
+  ActorOnboardingState,
+  CompletedOnboarding,
+  OnboardingProgress,
+} from "../domain/value-objects/onboarding-status.ts";
 
 class InMemoryActorOnboarding implements ActorOnboardingPort {
-  readonly rows = new Map<string, CompletedOnboarding>();
+  readonly rows = new Map<string, ActorOnboardingState>();
 
-  async findCompletedByActor(actorId: CompletedOnboarding["actorId"]) {
+  async findByActor(actorId: CompletedOnboarding["actorId"]) {
     return this.rows.get(actorId) ?? null;
   }
 
+  async saveProgress(progress: OnboardingProgress) {
+    this.rows.set(progress.actorId, {
+      actorId: progress.actorId,
+      completed: false,
+      completedAt: null,
+      version: null,
+      path: progress.path,
+      currentStep: progress.currentStep,
+    });
+  }
+
   async saveCompleted(onboarding: CompletedOnboarding) {
-    this.rows.set(onboarding.actorId, onboarding);
+    this.rows.set(onboarding.actorId, {
+      ...onboarding,
+      completed: true,
+      currentStep: null,
+    });
   }
 }
 
 describe("identity onboarding", () => {
-  it("reports incomplete when the actor has no profile", async () => {
+  it("reports intention when the actor has no saved progress", async () => {
     const status = await new GetOnboardingStatusUseCase(new InMemoryActorOnboarding()).execute({
       actorId: asActorId("actor-new"),
     });
@@ -28,13 +48,84 @@ describe("identity onboarding", () => {
       completedAt: null,
       version: null,
       path: null,
+      currentStep: "intention",
     });
   });
 
-  it("completes once and preserves the original completion metadata", async () => {
+  it("saves and resumes the current step without form data", async () => {
+    const store = new InMemoryActorOnboarding();
+    const actorId = asActorId("actor-player");
+    const now = new Date("2026-07-29T10:00:00.000Z");
+    await new SaveOnboardingProgressUseCase(store, { now: () => now }).execute({
+      actorId,
+      path: "player",
+      currentStep: "game-account",
+    });
+
+    await expect(new GetOnboardingStatusUseCase(store).execute({ actorId })).resolves.toEqual({
+      completed: false,
+      completedAt: null,
+      version: null,
+      path: "player",
+      currentStep: "game-account",
+    });
+  });
+
+  it.each([
+    ["organization", "intention"],
+    ["organization", "game"],
+    ["organization", "review"],
+    ["invitation", "intention"],
+    ["invitation", "invitation"],
+    ["invitation", "review"],
+    ["player", "intention"],
+    ["player", "game"],
+    ["player", "game-account"],
+    ["player", "review"],
+    [null, "intention"],
+  ] as const)("accepts progress %s → %s", async (path, currentStep) => {
+    const store = new InMemoryActorOnboarding();
+    const status = await new SaveOnboardingProgressUseCase(store, {
+      now: () => new Date(),
+    }).execute({
+      actorId: asActorId("actor-valid"),
+      path,
+      currentStep,
+    });
+
+    expect(status).toMatchObject({ path, currentStep });
+  });
+
+  it.each([
+    ["organization", "invitation"],
+    ["organization", "game-account"],
+    ["invitation", "game"],
+    ["invitation", "game-account"],
+    ["player", "invitation"],
+    [null, "game"],
+    [null, "invitation"],
+    [null, "game-account"],
+    [null, "review"],
+  ] as const)("rejects progress %s → %s", async (path, currentStep) => {
+    const store = new InMemoryActorOnboarding();
+    await expect(
+      new SaveOnboardingProgressUseCase(store, { now: () => new Date() }).execute({
+        actorId: asActorId("actor-invalid"),
+        path,
+        currentStep,
+      }),
+    ).rejects.toThrow("identity.invalid_onboarding_progress");
+  });
+
+  it("completes once, clears progress and preserves original metadata", async () => {
     const actorOnboarding = new InMemoryActorOnboarding();
     const actorId = asActorId("actor-player");
     let now = new Date("2026-07-29T10:00:00.000Z");
+    await new SaveOnboardingProgressUseCase(actorOnboarding, { now: () => now }).execute({
+      actorId,
+      path: "player",
+      currentStep: "review",
+    });
     const useCase = new CompleteOnboardingUseCase(actorOnboarding, { now: () => now });
 
     const first = await useCase.execute({ actorId, path: "player" });
@@ -46,6 +137,7 @@ describe("identity onboarding", () => {
       completedAt: new Date("2026-07-29T10:00:00.000Z"),
       version: 1,
       path: "player",
+      currentStep: null,
     });
     expect(second).toEqual(first);
   });

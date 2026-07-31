@@ -3,6 +3,8 @@ import {
   completeOnboardingRequestSchema,
   completeOnboardingResponseSchema,
   getOnboardingStatusResponseSchema,
+  saveOnboardingProgressRequestSchema,
+  saveOnboardingProgressResponseSchema,
 } from "@futrob/api-contracts";
 import {
   createAuthenticatedProductApiClient,
@@ -42,6 +44,30 @@ export const Route = createFileRoute("/api/v1/identity/onboarding")({
           const { client } = await createAuthenticatedProductApiClient(request);
           const body = completeOnboardingResponseSchema.parse(
             await client.identity.completeOnboarding(parsed.data),
+          );
+          return jsonResponse(body);
+        } catch (error) {
+          return productApiBffErrorResponse(error);
+        }
+      },
+      PATCH: async ({ request }) => {
+        try {
+          const json: unknown = await request.json().catch(() => null);
+          const parsed = saveOnboardingProgressRequestSchema.safeParse(json);
+          if (!parsed.success) {
+            return jsonResponse(
+              {
+                code: "api.validation_error",
+                messageKey: "errors.api.validation_error",
+                details: { issues: parsed.error.issues },
+              },
+              400,
+            );
+          }
+
+          const { client } = await createAuthenticatedProductApiClient(request);
+          const body = saveOnboardingProgressResponseSchema.parse(
+            await client.identity.saveOnboardingProgress(parsed.data),
           );
           return jsonResponse(body);
         } catch (error) {

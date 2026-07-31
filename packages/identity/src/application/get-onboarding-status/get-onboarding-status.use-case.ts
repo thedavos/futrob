@@ -10,22 +10,24 @@ export class GetOnboardingStatusUseCase {
   constructor(private readonly actorOnboarding: ActorOnboardingPort) {}
 
   async execute(input: GetOnboardingStatusInput): Promise<OnboardingStatus> {
-    const completed = await this.actorOnboarding.findCompletedByActor(input.actorId);
+    const state = await this.actorOnboarding.findByActor(input.actorId);
 
-    if (!completed) {
+    if (!state) {
       return {
         completed: false,
         completedAt: null,
         version: null,
         path: null,
+        currentStep: "intention",
       };
     }
 
     return {
-      completed: true,
-      completedAt: completed.completedAt,
-      version: completed.version,
-      path: completed.path,
+      completed: state.completed,
+      completedAt: state.completedAt,
+      version: state.version,
+      path: state.path,
+      currentStep: state.currentStep,
     };
   }
 }

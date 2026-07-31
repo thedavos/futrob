@@ -202,6 +202,30 @@ describe("apps/api", () => {
       completedAt: null,
       version: null,
       path: null,
+      currentStep: "intention",
+    });
+
+    const progress = await app.request("/api/v1/identity/onboarding", {
+      method: "PATCH",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({ path: "player", currentStep: "game-account" }),
+    });
+    expect(progress.status).toBe(200);
+    expect(await progress.json()).toEqual({
+      completed: false,
+      completedAt: null,
+      version: null,
+      path: "player",
+      currentStep: "game-account",
+    });
+
+    const resumed = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await resumed.json()).toMatchObject({
+      completed: false,
+      path: "player",
+      currentStep: "game-account",
     });
 
     const initialDestination = await app.request("/api/v1/organizations/post-auth-destination", {
@@ -224,6 +248,7 @@ describe("apps/api", () => {
       completed: true,
       version: 1,
       path: "player",
+      currentStep: null,
     });
     expect(completedBody.completedAt).toBeTruthy();
 

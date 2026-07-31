@@ -84,7 +84,8 @@ npm run api
 
 ## Railway notes
 
-- Apply `migrations/0001_organizations.sql` and `migrations/0002_actor_onboarding.sql`
+- Apply `migrations/0001_organizations.sql`, `migrations/0002_actor_onboarding.sql` and
+  `migrations/0003_actor_onboarding_progress.sql`
   to Postgres before relying on organization or onboarding persistence.
 - Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.
 - Start command: `npm run start -w @futrob/api`. Railway injects `PORT`; the app reads it.

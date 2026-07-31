@@ -2,9 +2,13 @@ import {
   completeOnboardingRequestSchema,
   completeOnboardingResponseSchema,
   getOnboardingStatusResponseSchema,
+  saveOnboardingProgressRequestSchema,
+  saveOnboardingProgressResponseSchema,
   type CompleteOnboardingRequest,
   type CompleteOnboardingResponse,
   type GetOnboardingStatusResponse,
+  type SaveOnboardingProgressRequest,
+  type SaveOnboardingProgressResponse,
 } from "@futrob/api-contracts";
 import type { HttpClient } from "../http.ts";
 
@@ -15,6 +19,18 @@ export function createIdentityResource(http: HttpClient) {
         path: "/identity/onboarding",
         method: "GET",
         parse: (data) => getOnboardingStatusResponseSchema.parse(data),
+      });
+    },
+
+    async saveOnboardingProgress(
+      input: SaveOnboardingProgressRequest,
+    ): Promise<SaveOnboardingProgressResponse> {
+      const body = saveOnboardingProgressRequestSchema.parse(input);
+      return http.request({
+        path: "/identity/onboarding",
+        method: "PATCH",
+        body,
+        parse: (data) => saveOnboardingProgressResponseSchema.parse(data),
       });
     },
 

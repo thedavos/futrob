@@ -3,6 +3,8 @@ import {
   completeOnboardingRequestSchema,
   completeOnboardingResponseSchema,
   getOnboardingStatusResponseSchema,
+  saveOnboardingProgressRequestSchema,
+  saveOnboardingProgressResponseSchema,
 } from "@futrob/api-contracts";
 import type { AppDeps } from "@/app.ts";
 import { validationErrorResponse } from "@/http/errors.ts";
@@ -45,6 +47,26 @@ export function registerIdentityRoutes(app: Hono, deps: AppDeps): void {
     });
     return jsonResponse(
       completeOnboardingResponseSchema.parse({
+        ...status,
+        completedAt: status.completedAt?.toISOString() ?? null,
+      }),
+    );
+  });
+
+  secured.patch("/identity/onboarding", async (c) => {
+    const json: unknown = await c.req.json().catch(() => null);
+    const parsed = saveOnboardingProgressRequestSchema.safeParse(json);
+    if (!parsed.success) {
+      return validationErrorResponse(parsed.error.issues);
+    }
+
+    const status = await identity.saveOnboardingProgress.execute({
+      actorId: c.get("actorId"),
+      path: parsed.data.path,
+      currentStep: parsed.data.currentStep,
+    });
+    return jsonResponse(
+      saveOnboardingProgressResponseSchema.parse({
         ...status,
         completedAt: status.completedAt?.toISOString() ?? null,
       }),

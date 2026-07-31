@@ -2,13 +2,17 @@ import {
   completeOnboardingRequestSchema,
   completeOnboardingResponseSchema,
   getOnboardingStatusResponseSchema,
+  saveOnboardingProgressRequestSchema,
+  saveOnboardingProgressResponseSchema,
   type CompleteOnboardingRequest,
   type CompleteOnboardingResponse,
   type GetOnboardingStatusResponse,
+  type SaveOnboardingProgressRequest,
+  type SaveOnboardingProgressResponse,
 } from "@futrob/api-contracts";
 
 async function requestJson<T>(input: {
-  readonly method: "GET" | "POST";
+  readonly method: "GET" | "POST" | "PATCH";
   readonly body?: unknown;
   readonly parse: (data: unknown) => T;
 }): Promise<T> {
@@ -33,6 +37,17 @@ export const identityBrowserClient = {
     return requestJson({
       method: "GET",
       parse: (data) => getOnboardingStatusResponseSchema.parse(data),
+    });
+  },
+
+  saveOnboardingProgress(
+    input: SaveOnboardingProgressRequest,
+  ): Promise<SaveOnboardingProgressResponse> {
+    const body = saveOnboardingProgressRequestSchema.parse(input);
+    return requestJson({
+      method: "PATCH",
+      body,
+      parse: (data) => saveOnboardingProgressResponseSchema.parse(data),
     });
   },
 

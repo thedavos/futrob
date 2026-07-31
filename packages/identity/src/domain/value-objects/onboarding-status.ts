@@ -3,12 +3,38 @@ import type { ActorId } from "@futrob/shared-kernel";
 export const CURRENT_ONBOARDING_VERSION = 1;
 
 export type OnboardingPath = "player" | "organization" | "invitation";
+export type OnboardingStep = "intention" | "game" | "invitation" | "game-account" | "review";
+
+const stepsByPath: Record<OnboardingPath, readonly OnboardingStep[]> = {
+  organization: ["intention", "game", "review"],
+  invitation: ["intention", "invitation", "review"],
+  player: ["intention", "game", "game-account", "review"],
+};
+
+export function isOnboardingStepAllowed(
+  path: OnboardingPath | null,
+  step: OnboardingStep,
+): boolean {
+  return path === null ? step === "intention" : stepsByPath[path].includes(step);
+}
 
 export interface OnboardingStatus {
   readonly completed: boolean;
   readonly completedAt: Date | null;
   readonly version: number | null;
   readonly path: OnboardingPath | null;
+  readonly currentStep: OnboardingStep | null;
+}
+
+export interface ActorOnboardingState extends OnboardingStatus {
+  readonly actorId: ActorId;
+}
+
+export interface OnboardingProgress {
+  readonly actorId: ActorId;
+  readonly path: OnboardingPath | null;
+  readonly currentStep: OnboardingStep;
+  readonly updatedAt: Date;
 }
 
 export interface CompletedOnboarding {

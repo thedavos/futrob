@@ -1,12 +1,18 @@
 export {
   onboardingPathSchema,
+  onboardingStepSchema,
   onboardingStatusSchema,
   getOnboardingStatusResponseSchema,
+  saveOnboardingProgressRequestSchema,
+  saveOnboardingProgressResponseSchema,
   completeOnboardingRequestSchema,
   completeOnboardingResponseSchema,
   type OnboardingPathDto,
+  type OnboardingStepDto,
   type OnboardingStatusDto,
   type GetOnboardingStatusResponse,
+  type SaveOnboardingProgressRequest,
+  type SaveOnboardingProgressResponse,
   type CompleteOnboardingRequest,
   type CompleteOnboardingResponse,
 } from "./schemas.ts";
