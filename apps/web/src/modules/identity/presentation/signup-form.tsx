@@ -1,82 +1,66 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { Button, InputWithIcon, Label } from "@futrob/ui";
+import { useState } from "react";
+import {
+  Button,
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldValidity,
+  Form,
+  InputWithIcon,
+  type FormErrors,
+} from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import {
   AUTH_ERROR_GENERIC,
   AUTH_ERROR_NETWORK,
+  AUTH_PASSWORD_HINT,
   AUTH_VALIDATION_EMAIL,
-  AUTH_VALIDATION_PASSWORD_MIN,
-  AUTH_VALIDATION_REQUIRED,
-  EMAIL_PATTERN,
+  AUTH_VALIDATION_PASSWORD_LENGTH,
   isNetworkError,
-  isPasswordPolicyValid,
-  readString,
+  readFormString,
   type AuthClientError,
 } from "@/modules/identity/presentation/auth-form-helpers.ts";
 import type {
   AuthFormField,
   AuthFormState,
 } from "@/modules/identity/presentation/auth-form-state.ts";
+import {
+  validateSignupField,
+  type SignupValues,
+} from "@/modules/identity/presentation/signup-form-validation.ts";
+import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 
-interface SignupValues {
-  name: string;
-  email: string;
-  password: string;
+interface SignupFailure {
+  fieldErrors?: FormErrors<AuthFormField>;
+  message?: string;
 }
 
-function validateSignup(values: SignupValues): Partial<Record<AuthFormField, string>> {
-  const fieldErrors: Partial<Record<AuthFormField, string>> = {};
-
-  if (values.name.length === 0) {
-    fieldErrors.name = AUTH_VALIDATION_REQUIRED;
-  }
-
-  if (values.email.length === 0) {
-    fieldErrors.email = AUTH_VALIDATION_REQUIRED;
-  } else if (!EMAIL_PATTERN.test(values.email)) {
-    fieldErrors.email = AUTH_VALIDATION_EMAIL;
-  }
-
-  if (values.password.length === 0) {
-    fieldErrors.password = AUTH_VALIDATION_REQUIRED;
-  } else if (!isPasswordPolicyValid(values.password)) {
-    fieldErrors.password = AUTH_VALIDATION_PASSWORD_MIN;
-  }
-
-  return fieldErrors;
-}
-
-function signupErrorState(error: AuthClientError): AuthFormState {
+function signupFailure(error: AuthClientError): SignupFailure {
   if (error.status === 0) {
-    return { status: "error", message: AUTH_ERROR_NETWORK };
+    return { message: AUTH_ERROR_NETWORK };
   }
 
   switch (error.code) {
     case "USER_ALREADY_EXISTS":
     case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
       return {
-        status: "error",
-        message: "Ya existe una cuenta con este correo.",
         fieldErrors: { email: "Ya existe una cuenta con este correo." },
       };
     case "INVALID_EMAIL":
       return {
-        status: "error",
-        message: AUTH_VALIDATION_EMAIL,
         fieldErrors: { email: AUTH_VALIDATION_EMAIL },
       };
     case "PASSWORD_TOO_SHORT":
       return {
-        status: "error",
-        message: AUTH_VALIDATION_PASSWORD_MIN,
-        fieldErrors: { password: AUTH_VALIDATION_PASSWORD_MIN },
+        fieldErrors: { password: AUTH_VALIDATION_PASSWORD_LENGTH },
       };
     default:
-      return { status: "error", message: AUTH_ERROR_GENERIC };
+      return { message: AUTH_ERROR_GENERIC };
   }
 }
 
@@ -84,36 +68,33 @@ export function SignupForm() {
   const navigate = useNavigate();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const validation = useFormValidation<AuthFormField>();
 
-  const nameError = state.status === "error" ? state.fieldErrors?.name : undefined;
-  const emailError = state.status === "error" ? state.fieldErrors?.email : undefined;
-  const passwordError = state.status === "error" ? state.fieldErrors?.password : undefined;
   const isSubmitting = state.status === "submitting" || state.status === "success";
-  const passwordHintId = "password-hint";
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
+  async function handleSubmit(formValues: SignupValues) {
     const values: SignupValues = {
-      name: readString(formData, "name").trim(),
-      email: readString(formData, "email").trim(),
-      password: readString(formData, "password"),
+      name: formValues.name.trim(),
+      email: formValues.email.trim(),
+      password: formValues.password,
     };
-    const fieldErrors = validateSignup(values);
 
-    if (Object.keys(fieldErrors).length > 0) {
-      setState({ status: "error", fieldErrors });
-      return;
-    }
-
+    validation.clearServerErrors();
     setState({ status: "submitting" });
 
     try {
       const result = await authClient.signUp.email(values);
 
-      if (result.error != null) {
-        setState(signupErrorState(result.error));
+      if (result.error !== null) {
+        const failure = signupFailure(result.error);
+        if (failure.fieldErrors !== undefined) {
+          validation.applyServerErrors(failure.fieldErrors);
+        }
+        setState(
+          failure.message === undefined
+            ? { status: "error" }
+            : { status: "error", message: failure.message },
+        );
         return;
       }
 
@@ -128,8 +109,13 @@ export function SignupForm() {
   }
 
   return (
-    <form aria-busy={isSubmitting} className="space-y-6" noValidate onSubmit={handleSubmit}>
-      {state.status === "error" && state.message != null ? (
+    <Form<SignupValues>
+      aria-busy={isSubmitting}
+      className="space-y-6"
+      errors={validation.formErrors}
+      onFormSubmit={handleSubmit}
+    >
+      {state.status === "error" && state.message !== undefined ? (
         <div
           className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
           role="alert"
@@ -138,11 +124,14 @@ export function SignupForm() {
         </div>
       ) : null}
 
-      <div className="space-y-2">
-        <Label htmlFor="name">Nombre completo</Label>
+      <Field
+        {...validation.getFieldValidationProps("name")}
+        disabled={isSubmitting}
+        name="name"
+        validate={(value) => validateSignupField("name", readFormString(value))}
+      >
+        <FieldLabel htmlFor="name">Nombre completo</FieldLabel>
         <InputWithIcon
-          aria-describedby={nameError == null ? undefined : "name-error"}
-          aria-invalid={nameError != null}
           autoComplete="name"
           disabled={isSubmitting}
           id="name"
@@ -150,18 +139,17 @@ export function SignupForm() {
           placeholder="Ingresa tu nombre completo"
           startIcon={UserRound}
         />
-        {nameError == null ? null : (
-          <p className="text-sm text-destructive" id="name-error">
-            {nameError}
-          </p>
-        )}
-      </div>
+        <FieldError />
+      </Field>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Correo electrónico</Label>
+      <Field
+        {...validation.getFieldValidationProps("email")}
+        disabled={isSubmitting}
+        name="email"
+        validate={(value) => validateSignupField("email", readFormString(value))}
+      >
+        <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
         <InputWithIcon
-          aria-describedby={emailError == null ? undefined : "email-error"}
-          aria-invalid={emailError != null}
           autoComplete="email"
           disabled={isSubmitting}
           id="email"
@@ -170,20 +158,17 @@ export function SignupForm() {
           startIcon={Mail}
           type="email"
         />
-        {emailError == null ? null : (
-          <p className="text-sm text-destructive" id="email-error">
-            {emailError}
-          </p>
-        )}
-      </div>
+        <FieldError />
+      </Field>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Contraseña</Label>
+      <Field
+        {...validation.getFieldValidationProps("password")}
+        disabled={isSubmitting}
+        name="password"
+        validate={(value) => validateSignupField("password", readFormString(value))}
+      >
+        <FieldLabel htmlFor="password">Contraseña</FieldLabel>
         <InputWithIcon
-          aria-describedby={
-            passwordError == null ? passwordHintId : `${passwordHintId} password-error`
-          }
-          aria-invalid={passwordError != null}
           autoComplete="new-password"
           disabled={isSubmitting}
           endAction={
@@ -222,15 +207,15 @@ export function SignupForm() {
           startIcon={Lock}
           type={isPasswordVisible ? "text" : "password"}
         />
-        <p className="text-xs text-muted-foreground" id={passwordHintId}>
-          Mínimo 8 caracteres, incluyendo letras y números.
-        </p>
-        {passwordError == null ? null : (
-          <p className="text-xs text-destructive" id="password-error">
-            {passwordError}
-          </p>
-        )}
-      </div>
+        <FieldValidity>
+          {({ validity }) =>
+            validity.valid === false ? null : (
+              <FieldDescription>{AUTH_PASSWORD_HINT}</FieldDescription>
+            )
+          }
+        </FieldValidity>
+        <FieldError />
+      </Field>
 
       <Button className="w-full" disabled={isSubmitting} type="submit" variant="default">
         Crear cuenta
@@ -245,6 +230,6 @@ export function SignupForm() {
           Iniciar sesión
         </Link>
       </p>
-    </form>
+    </Form>
   );
 }

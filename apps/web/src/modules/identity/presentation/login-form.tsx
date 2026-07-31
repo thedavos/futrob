@@ -1,46 +1,25 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { Button, InputWithIcon, Label } from "@futrob/ui";
+import { useState } from "react";
+import { Button, Field, FieldError, FieldLabel, Form, InputWithIcon } from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Lock, Mail } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import {
   AUTH_ERROR_GENERIC,
   AUTH_ERROR_NETWORK,
-  AUTH_VALIDATION_EMAIL,
-  AUTH_VALIDATION_REQUIRED,
-  EMAIL_PATTERN,
   isNetworkError,
-  readString,
+  readFormString,
   type AuthClientError,
 } from "@/modules/identity/presentation/auth-form-helpers.ts";
-import type {
-  AuthFormField,
-  AuthFormState,
-} from "@/modules/identity/presentation/auth-form-state.ts";
+import type { AuthFormState } from "@/modules/identity/presentation/auth-form-state.ts";
+import {
+  validateLoginField,
+  type LoginField,
+  type LoginValues,
+} from "@/modules/identity/presentation/login-form-validation.ts";
 import { organizationsBrowserClient } from "@/modules/organizations/presentation/organizations-browser-client.ts";
-
-interface LoginValues {
-  email: string;
-  password: string;
-}
-
-function validateLogin(values: LoginValues): Partial<Record<AuthFormField, string>> {
-  const fieldErrors: Partial<Record<AuthFormField, string>> = {};
-
-  if (values.email.length === 0) {
-    fieldErrors.email = AUTH_VALIDATION_REQUIRED;
-  } else if (!EMAIL_PATTERN.test(values.email)) {
-    fieldErrors.email = AUTH_VALIDATION_EMAIL;
-  }
-
-  if (values.password.length === 0) {
-    fieldErrors.password = AUTH_VALIDATION_REQUIRED;
-  }
-
-  return fieldErrors;
-}
+import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 
 function loginErrorMessage(error: AuthClientError): string {
   if (error.status === 0) {
@@ -62,32 +41,23 @@ function loginErrorMessage(error: AuthClientError): string {
 export function LoginForm() {
   const navigate = useNavigate();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
+  const validation = useFormValidation<LoginField>();
 
-  const emailError = state.status === "error" ? state.fieldErrors?.email : undefined;
-  const passwordError = state.status === "error" ? state.fieldErrors?.password : undefined;
   const isSubmitting = state.status === "submitting" || state.status === "success";
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
+  async function handleSubmit(formValues: LoginValues) {
     const values: LoginValues = {
-      email: readString(formData, "email").trim(),
-      password: readString(formData, "password"),
+      email: formValues.email.trim(),
+      password: formValues.password,
     };
-    const fieldErrors = validateLogin(values);
 
-    if (Object.keys(fieldErrors).length > 0) {
-      setState({ status: "error", fieldErrors });
-      return;
-    }
-
+    validation.clearServerErrors();
     setState({ status: "submitting" });
 
     try {
       const result = await authClient.signIn.email(values);
 
-      if (result.error != null) {
+      if (result.error !== null) {
         setState({ status: "error", message: loginErrorMessage(result.error) });
         return;
       }
@@ -119,8 +89,13 @@ export function LoginForm() {
   }
 
   return (
-    <form aria-busy={isSubmitting} className="space-y-6" noValidate onSubmit={handleSubmit}>
-      {state.status === "error" && state.message != null ? (
+    <Form<LoginValues>
+      aria-busy={isSubmitting}
+      className="space-y-6"
+      errors={validation.formErrors}
+      onFormSubmit={handleSubmit}
+    >
+      {state.status === "error" && state.message !== undefined ? (
         <div
           className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
           role="alert"
@@ -129,11 +104,14 @@ export function LoginForm() {
         </div>
       ) : null}
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Correo electrónico</Label>
+      <Field
+        {...validation.getFieldValidationProps("email")}
+        disabled={isSubmitting}
+        name="email"
+        validate={(value) => validateLoginField("email", readFormString(value))}
+      >
+        <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
         <InputWithIcon
-          aria-describedby={emailError == null ? undefined : "email-error"}
-          aria-invalid={emailError != null}
           autoComplete="email"
           disabled={isSubmitting}
           id="email"
@@ -142,18 +120,17 @@ export function LoginForm() {
           startIcon={Mail}
           type="email"
         />
-        {emailError == null ? null : (
-          <p className="text-sm text-destructive" id="email-error">
-            {emailError}
-          </p>
-        )}
-      </div>
+        <FieldError />
+      </Field>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Contraseña</Label>
+      <Field
+        {...validation.getFieldValidationProps("password")}
+        disabled={isSubmitting}
+        name="password"
+        validate={(value) => validateLoginField("password", readFormString(value))}
+      >
+        <FieldLabel htmlFor="password">Contraseña</FieldLabel>
         <InputWithIcon
-          aria-describedby={passwordError == null ? undefined : "password-error"}
-          aria-invalid={passwordError != null}
           autoComplete="current-password"
           disabled={isSubmitting}
           id="password"
@@ -162,12 +139,8 @@ export function LoginForm() {
           startIcon={Lock}
           type="password"
         />
-        {passwordError == null ? null : (
-          <p className="text-sm text-destructive" id="password-error">
-            {passwordError}
-          </p>
-        )}
-      </div>
+        <FieldError />
+      </Field>
 
       <Button className="w-full" disabled={isSubmitting} type="submit">
         Iniciar sesión
@@ -182,6 +155,6 @@ export function LoginForm() {
           Crear una cuenta
         </Link>
       </p>
-    </form>
+    </Form>
   );
 }

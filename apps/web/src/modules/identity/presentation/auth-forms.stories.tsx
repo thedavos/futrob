@@ -58,12 +58,55 @@ export const SignupFieldValidation: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Crear cuenta" }));
 
     const requiredMessages = canvas.getAllByText("Este campo es obligatorio.");
-    await expect(requiredMessages.length).toBeGreaterThanOrEqual(3);
+    await expect(requiredMessages).toHaveLength(3);
+    for (const message of requiredMessages) {
+      const fieldError = message.closest('[data-slot="field-error"]');
+      await expect(fieldError).not.toBeNull();
+      await expect(fieldError).not.toHaveClass("font-medium");
+      await expect(fieldError?.querySelector("svg")).not.toBeNull();
+    }
     await expect(canvas.queryByRole("alert")).not.toBeInTheDocument();
   },
 };
 
-/** Error de servidor: banner de formulario (+ error de campo cuando aplica). */
+/** El hint cambia a error al salir del campo y se recupera mientras el usuario corrige. */
+export const SignupPasswordValidationMessage: Story = {
+  name: "Signup / Password validation on blur",
+  render: () => <AuthRouterDecorator initialPath="/signup" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const password = canvas.getByLabelText("Contraseña");
+    const passwordHint = "Mínimo 8 caracteres, incluyendo letras y números.";
+
+    await userEvent.type(canvas.getByLabelText("Nombre completo"), "Ana Pérez");
+    await userEvent.type(canvas.getByLabelText("Correo electrónico"), "ana@ejemplo.com");
+    await userEvent.type(password, "12345678");
+    await userEvent.click(canvas.getByRole("button", { name: "Mostrar contraseña" }));
+
+    await expect(canvas.getByText(passwordHint)).toBeVisible();
+    await expect(canvas.queryByText("Incluye al menos una letra.")).not.toBeInTheDocument();
+
+    await userEvent.click(canvas.getByLabelText("Correo electrónico"));
+
+    await expect(canvas.queryByText(passwordHint)).not.toBeInTheDocument();
+    const passwordError = canvas.getByText("Incluye al menos una letra.");
+    await expect(passwordError).toBeVisible();
+    await expect(password).toHaveAttribute(
+      "aria-describedby",
+      passwordError.closest('[data-slot="field-error"]')?.id,
+    );
+    await expect(password).toHaveAttribute("aria-invalid", "true");
+
+    await userEvent.clear(password);
+    await userEvent.type(password, "clave1234");
+
+    await expect(canvas.getByText(passwordHint)).toBeVisible();
+    await expect(canvas.queryByText("Incluye al menos una letra.")).not.toBeInTheDocument();
+    await expect(password).not.toHaveAttribute("aria-invalid");
+  },
+};
+
+/** Error de servidor asociado a un campo: inline y sin banner duplicado. */
 export const SignupServerError: Story = {
   name: "Signup / Server error",
   render: () => <AuthRouterDecorator initialPath="/signup" />,
@@ -81,8 +124,9 @@ export const SignupServerError: Story = {
     await userEvent.type(password, "clave1234");
     await userEvent.click(canvas.getByRole("button", { name: "Crear cuenta" }));
 
-    const alert = await canvas.findByRole("alert");
-    await expect(alert).toHaveTextContent("Ya existe una cuenta con este correo.");
+    await expect(await canvas.findByText("Ya existe una cuenta con este correo.")).toBeVisible();
+    await expect(canvas.queryByRole("alert")).not.toBeInTheDocument();
+    await expect(email).toHaveAttribute("aria-invalid", "true");
   },
 };
 
@@ -98,6 +142,30 @@ export const LoginFieldValidation: Story = {
     const requiredMessages = canvas.getAllByText("Este campo es obligatorio.");
     await expect(requiredMessages.length).toBeGreaterThanOrEqual(2);
     await expect(canvas.queryByRole("alert")).not.toBeInTheDocument();
+  },
+};
+
+/** Login reutiliza el mismo patrón blur → corrección en vivo que signup. */
+export const LoginEmailValidationOnBlur: Story = {
+  name: "Login / Email validation on blur",
+  render: () => <AuthRouterDecorator initialPath="/login" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const email = canvas.getByLabelText("Correo electrónico");
+
+    await userEvent.type(email, "correo-invalido");
+    await userEvent.click(canvas.getByLabelText("Contraseña"));
+
+    await expect(canvas.getByText("Ingresa un correo electrónico válido.")).toBeVisible();
+    await expect(email).toHaveAttribute("aria-invalid", "true");
+
+    await userEvent.clear(email);
+    await userEvent.type(email, "ana@ejemplo.com");
+
+    await expect(
+      canvas.queryByText("Ingresa un correo electrónico válido."),
+    ).not.toBeInTheDocument();
+    await expect(email).not.toHaveAttribute("aria-invalid");
   },
 };
 

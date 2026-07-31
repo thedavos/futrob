@@ -5,8 +5,7 @@ export type AuthFormState =
   | { status: "submitting" }
   | {
       status: "error";
-      /** Form-level banner; omit for field-only client validation. */
+      /** Form-level error only; field errors are owned by Base UI Form. */
       message?: string;
-      fieldErrors?: Partial<Record<AuthFormField, string>>;
     }
   | { status: "success" };
