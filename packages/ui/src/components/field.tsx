@@ -3,6 +3,8 @@ import { CircleAlert } from "lucide-react";
 
 import { cn } from "#lib/utils";
 
+type FieldActions = FieldPrimitive.Root.Actions;
+
 function Field({ className, ...props }: FieldPrimitive.Root.Props) {
   return (
     <FieldPrimitive.Root
@@ -36,17 +38,23 @@ function FieldDescription({ className, ...props }: FieldPrimitive.Description.Pr
   );
 }
 
-function FieldError({ children, className, ...props }: FieldPrimitive.Error.Props) {
+function FieldError({ className, ...props }: Omit<FieldPrimitive.Error.Props, "render">) {
   return (
     <FieldPrimitive.Error
       data-slot="field-error"
-      className={cn("typo-caption flex items-start gap-1.5 font-medium text-danger", className)}
+      className={cn("typo-caption flex items-start gap-1.5 text-danger", className)}
+      render={(elementProps) => (
+        <div {...elementProps}>
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={1.5} />
+          <span>{elementProps.children}</span>
+        </div>
+      )}
       {...props}
-    >
-      <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <span>{children}</span>
-    </FieldPrimitive.Error>
+    />
   );
 }
 
-export { Field, FieldDescription, FieldError, FieldLabel };
+const FieldValidity = FieldPrimitive.Validity;
+
+export { Field, FieldDescription, FieldError, FieldLabel, FieldValidity };
+export type { FieldActions };

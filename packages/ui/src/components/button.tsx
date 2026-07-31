@@ -25,7 +25,7 @@ const buttonVariants = cva(
       },
       static: {
         true: "",
-        false: "active:scale-[0.98]",
+        false: "active:scale-[0.96]",
       },
     },
     defaultVariants: {

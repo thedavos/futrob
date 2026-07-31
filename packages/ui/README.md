@@ -30,18 +30,20 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 
 Formularios:
 
-- `Field`, `FieldLabel`, `FieldDescription`, `FieldError`
+- `Form`
+- `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldValidity`
 - `Input`, `Textarea`, `Select`, `Checkbox`
+- `ChoiceGroup`, `ChoiceGroupItem`, `ChoiceGroupIndicator`
 - `Alert`
 
 Navegación:
 
-- `Tabs`, `Breadcrumb`, `Sheet`
+- `Tabs`, `Breadcrumb`, `Sheet`, `Stepper`
 
 Datos:
 
 - `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `TableEmpty`
-- `Badge`, `EmptyState`, `Skeleton`
+- `Badge`, `Card`, `EmptyState`, `Skeleton`
 
 Overlays:
 
@@ -68,14 +70,20 @@ La aplicación importa los estilos una sola vez:
 Los componentes se importan desde la API pública:
 
 ```tsx
-import { Button, Field, FieldLabel, Input, InputWithIcon, Logo } from "@futrob/ui";
+import { Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo } from "@futrob/ui";
 import { CircleCheck, Search } from "lucide-react";
 
 <Logo className="h-8 w-auto" />
-<Field>
-  <FieldLabel>Nombre de la competición</FieldLabel>
-  <Input name="name" required />
-</Field>
+<Form validationMode="onBlur">
+  <Field
+    name="name"
+    validate={(value) => String(value ?? "").trim() ? null : "Este campo es obligatorio."}
+  >
+    <FieldLabel>Nombre de la competición</FieldLabel>
+    <Input name="name" />
+    <FieldError />
+  </Field>
+</Form>
 <InputWithIcon
   startIcon={Search}
   endIcon={CircleCheck}
@@ -83,6 +91,10 @@ import { CircleCheck, Search } from "lucide-react";
 />
 <Button>Continuar</Button>
 ```
+
+`Form` consolida validación, errores de servidor y foco del primer control inválido. Cada
+`FieldError` debe vivir dentro de su `Field`; las validaciones personalizadas retornan `null`
+cuando el valor es válido, siguiendo el contrato de Base UI.
 
 Para composición polimórfica usa `render` de Base UI; evita envolver un link en un button:
 

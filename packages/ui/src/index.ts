@@ -20,6 +20,21 @@ export {
 } from "./components/alert-dialog";
 export { Badge, badgeVariants } from "./components/badge";
 export {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./components/card";
+export {
+  ChoiceGroup,
+  ChoiceGroupIndicator,
+  ChoiceGroupItem,
+  choiceGroupItemVariants,
+} from "./components/choice-group";
+export type { ChoiceGroupItemProps } from "./components/choice-group";
+export {
   Breadcrumb,
   BreadcrumbEllipsis,
   BreadcrumbItem,
@@ -51,7 +66,10 @@ export {
   EmptyStateIcon,
   EmptyStateTitle,
 } from "./components/empty-state";
-export { Field, FieldDescription, FieldError, FieldLabel } from "./components/field";
+export { Field, FieldDescription, FieldError, FieldLabel, FieldValidity } from "./components/field";
+export type { FieldActions } from "./components/field";
+export { Form } from "./components/form";
+export type { FormErrors, FormProps } from "./components/form";
 export { Input } from "./components/input";
 export type { InputProps } from "./components/input";
 export { InputWithIcon } from "./components/input-with-icon";
@@ -90,6 +108,8 @@ export {
   sheetVariants,
 } from "./components/sheet";
 export { Skeleton } from "./components/skeleton";
+export { Stepper } from "./components/stepper";
+export type { StepperStep } from "./components/stepper";
 export {
   Table,
   TableBody,

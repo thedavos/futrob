@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "../components/alert";
 import { Button } from "../components/button";
 import { Checkbox } from "../components/checkbox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";
+import { Form } from "../components/form";
 import { Input } from "../components/input";
 import {
   Select,
@@ -27,18 +28,26 @@ type Story = StoryObj<typeof meta>;
 
 export const CompleteForm: Story = {
   render: () => (
-    <form
+    <Form
       className="grid w-[min(32rem,calc(100vw-2rem))] gap-5 rounded-xl border border-border bg-surface p-6"
-      onSubmit={(event) => event.preventDefault()}
+      onFormSubmit={() => undefined}
+      validationMode="onBlur"
     >
       <div>
         <p className="typo-label text-primary">Configuración</p>
         <h2 className="mt-1 text-xl font-semibold">Crear competición</h2>
       </div>
-      <Field name="name">
+      <Field
+        name="name"
+        validate={(value) => {
+          const name = typeof value === "string" ? value : "";
+          return name.trim().length === 0 ? "Este campo es obligatorio." : null;
+        }}
+      >
         <FieldLabel>Nombre</FieldLabel>
-        <Input placeholder="Liga Metropolitana" required />
+        <Input placeholder="Liga Metropolitana" />
         <FieldDescription>Será visible para capitanes y jugadores.</FieldDescription>
+        <FieldError />
       </Field>
       <Field name="format">
         <FieldLabel>Formato</FieldLabel>
@@ -72,7 +81,7 @@ export const CompleteForm: Story = {
         </Button>
         <Button type="submit">Crear competición</Button>
       </div>
-    </form>
+    </Form>
   ),
 };
 

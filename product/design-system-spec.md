@@ -93,8 +93,10 @@ variantes cerradas.
 
 ### Formularios
 
-- `Field`, `FieldLabel`, `FieldDescription`, `FieldError`
+- `Form`
+- `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldValidity`
 - `Input`, `Textarea`, `Select`, `Checkbox`
+- `ChoiceGroup` para selección única con apariencias cerradas `tile` y `pill`
 - `Alert`
 
 Cada campo debe tener nombre accesible, descripción/error asociado y estado inválido visible.
@@ -105,6 +107,7 @@ Los formularios muestran validación junto al campo y un resumen solo cuando apo
 - `Tabs` con indicador lineal
 - `Breadcrumb`
 - `Sheet` para navegación móvil
+- `Stepper` para progreso secuencial no interactivo
 
 La navegación de producto usa `typo-label`. El estado activo no depende únicamente del color.
 
@@ -112,6 +115,7 @@ La navegación de producto usa `typo-label`. El estado activo no depende únicam
 
 - `Table` y primitivas de fila/celda
 - `Badge` con variante `approved`
+- `Card` para entidades o resúmenes autónomos
 - `EmptyState` y `Skeleton`
 
 `Table dense` es el patrón recomendado para auditoría y operación en desktop. Las cifras usan

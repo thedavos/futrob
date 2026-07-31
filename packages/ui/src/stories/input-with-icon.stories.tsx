@@ -172,4 +172,13 @@ export const DensityAndStates: Story = {
       </Field>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const errorText = canvas.getByText("Ingresa un correo electrónico válido.");
+    const fieldError = errorText.closest('[data-slot="field-error"]');
+
+    await expect(fieldError).not.toBeNull();
+    await expect(fieldError).not.toHaveClass("font-medium");
+    await expect(fieldError?.querySelector("svg")).not.toBeNull();
+  },
 };
