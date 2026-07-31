@@ -3,10 +3,12 @@ import { Hono } from "hono";
 import type { DbHealthStatus } from "@/adapters/persistence/postgres.ts";
 import type { AppModules } from "@/di/create-modules.ts";
 import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
-import { registerIdentityRoutes } from "@/http/routes/identity.ts";
+import { registerCompetitionRoutes } from "@/http/routes/competitions.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
+import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
 import { registerOrganizationRoutes } from "@/http/routes/organizations.ts";
+import { registerPlayerRoutes } from "@/http/routes/players.ts";
 
 export interface AppDeps {
   readonly modules: AppModules;
@@ -32,7 +34,7 @@ export function createApp(deps: AppDeps): Hono {
     "/api/v1/*",
     cors({
       origin: (origin) => (origin && allowedOrigins.has(origin) ? origin : null),
-      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
       allowHeaders: ["Accept", "Authorization", "Content-Type", "X-Futrob-Actor-Id"],
     }),
   );
@@ -42,8 +44,10 @@ export function createApp(deps: AppDeps): Hono {
   registerMetaRoutes(v1, deps);
   registerOpenApiRoutes(v1);
   registerGameDataClubRoutes(v1, deps);
-  registerIdentityRoutes(v1, deps);
+  registerCompetitionRoutes(v1, deps);
+  registerOnboardingRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);
+  registerPlayerRoutes(v1, deps);
 
   app.route("/api/v1", v1);
 

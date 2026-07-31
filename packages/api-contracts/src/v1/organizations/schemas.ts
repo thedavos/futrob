@@ -36,6 +36,16 @@ export const createOrganizationResponseSchema = z.object({
 
 export type CreateOrganizationResponse = z.infer<typeof createOrganizationResponseSchema>;
 
+export const organizationNameAvailabilityRequestSchema = createOrganizationRequestSchema;
+export type OrganizationNameAvailabilityRequest = z.infer<
+  typeof organizationNameAvailabilityRequestSchema
+>;
+
+export const organizationNameAvailabilityResponseSchema = z.object({ available: z.boolean() });
+export type OrganizationNameAvailabilityResponse = z.infer<
+  typeof organizationNameAvailabilityResponseSchema
+>;
+
 export const createInvitationRequestSchema = z.object({
   role: inviteRoleSchema,
   email: z.string().email().optional(),
@@ -46,6 +56,7 @@ export type CreateInvitationRequest = z.infer<typeof createInvitationRequestSche
 
 export const createInvitationResponseSchema = z.object({
   invitationId: z.string().min(1),
+  competitionId: z.string().min(1).nullable().optional(),
   token: z.string().min(1),
   expiresAt: z.string().datetime(),
 });
@@ -62,6 +73,8 @@ export const acceptInvitationResponseSchema = z.object({
   organizationId: z.string().min(1),
   organizationName: z.string().min(1),
   role: orgMembershipRoleSchema,
+  competitionId: z.string().min(1).nullable().optional(),
+  competitionRole: inviteRoleSchema.optional(),
 });
 
 export type AcceptInvitationResponse = z.infer<typeof acceptInvitationResponseSchema>;

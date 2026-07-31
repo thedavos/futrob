@@ -36,6 +36,14 @@ function serviceHeaders(actorId = "actor-test-1"): Record<string, string> {
 }
 
 const stubFetch = createFetch(() => Response.json([]));
+const onboardingCompetition = {
+  name: "Copa Inicial",
+  gameEdition: "FC 26",
+  platform: "playstation",
+  region: "south-america",
+  timeZone: "America/Lima",
+  format: "league",
+};
 
 describe("apps/api", () => {
   it("GET /api/v1/meta/ping returns the ping contract", async () => {
@@ -118,10 +126,10 @@ describe("apps/api", () => {
     });
   });
 
-  it("organizations: create → mine → post-auth destination → invite → accept", async () => {
+  it("organization resources do not complete onboarding implicitly", async () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-organizer";
-    const captain = "actor-captain";
+    const staff = "actor-staff";
 
     const created = await app.request("/api/v1/organizations", {
       method: "POST",
@@ -151,10 +159,7 @@ describe("apps/api", () => {
     });
     expect(destination.status).toBe(200);
     expect(await destination.json()).toMatchObject({
-      destination: {
-        kind: "organization",
-        organizationId: createdBody.organizationId,
-      },
+      destination: { kind: "onboarding" },
     });
 
     const invite = await app.request(
@@ -162,7 +167,7 @@ describe("apps/api", () => {
       {
         method: "POST",
         headers: serviceHeaders(organizer),
-        body: JSON.stringify({ role: "captain" }),
+        body: JSON.stringify({ role: "staff" }),
       },
     );
     expect(invite.status).toBe(201);
@@ -170,26 +175,133 @@ describe("apps/api", () => {
 
     const accepted = await app.request("/api/v1/organizations/invitations/accept", {
       method: "POST",
-      headers: serviceHeaders(captain),
+      headers: serviceHeaders(staff),
       body: JSON.stringify({ token: inviteBody.token }),
     });
     expect(accepted.status).toBe(200);
     expect(await accepted.json()).toMatchObject({
       organizationId: createdBody.organizationId,
-      role: "captain",
+      role: "staff",
     });
 
-    const captainOnboarding = await app.request("/api/v1/identity/onboarding", {
-      headers: serviceHeaders(captain),
+    const staffOnboarding = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(staff),
     });
-    expect(await captainOnboarding.json()).toMatchObject({
-      completed: true,
-      version: 1,
-      path: "invitation",
+    expect(await staffOnboarding.json()).toMatchObject({
+      completed: false,
+      path: null,
     });
   });
 
-  it("identity: requires onboarding before personal destination and completes idempotently", async () => {
+  it("onboarding: retries organization completion without duplicating it", async () => {
+    const app = buildApp(stubFetch);
+    const actor = "actor-idempotent-organizer";
+    const request = () =>
+      app.request("/api/v1/identity/onboarding/organization", {
+        method: "POST",
+        headers: serviceHeaders(actor),
+        body: JSON.stringify({
+          name: "Liga Única",
+          competition: onboardingCompetition,
+          gameAccount: {
+            identifier: "OrganizerEA",
+            platform: "xbox",
+            gameEdition: "FC 27",
+          },
+        }),
+      });
+
+    const first = await request();
+    const retried = await request();
+    const firstBody = (await first.json()) as {
+      organizationId: string;
+      competition: { competition: { id: string } };
+    };
+    const retriedBody = (await retried.json()) as { organizationId: string };
+    expect(retriedBody.organizationId).toBe(firstBody.organizationId);
+    expect(retriedBody).toMatchObject({
+      competition: { competition: { name: "Copa Inicial", status: "draft" } },
+      destination: { kind: "competition-setup" },
+      gameAccount: {
+        identifier: "OrganizerEA",
+        platform: "xbox",
+        gameEdition: "FC 27",
+      },
+    });
+
+    const draft = await app.request(
+      `/api/v1/organizations/${firstBody.organizationId}/competitions/${firstBody.competition.competition.id}`,
+      { headers: serviceHeaders(actor) },
+    );
+    expect(draft.status).toBe(200);
+    expect(await draft.json()).toMatchObject({
+      competition: { name: "Copa Inicial", organizationId: firstBody.organizationId },
+      rules: { version: 1, awayGoalsEnabled: false },
+    });
+
+    const forbidden = await app.request(
+      `/api/v1/organizations/${firstBody.organizationId}/competitions/${firstBody.competition.competition.id}`,
+      { headers: serviceHeaders("actor-outsider") },
+    );
+    expect(forbidden.status).toBe(403);
+
+    const mine = await app.request("/api/v1/organizations/mine", {
+      headers: serviceHeaders(actor),
+    });
+    const mineBody = (await mine.json()) as { memberships: unknown[] };
+    expect(mineBody.memberships).toHaveLength(1);
+
+    const profile = await app.request("/api/v1/players/me", {
+      headers: serviceHeaders(actor),
+    });
+    const profileBody = (await profile.json()) as { gameAccounts: unknown[] };
+    expect(profileBody.gameAccounts).toHaveLength(1);
+
+    const status = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await status.json()).toMatchObject({
+      completed: true,
+      path: "organization",
+      version: 2,
+    });
+  });
+
+  it("organizations: checks and enforces globally unique normalized names", async () => {
+    const app = buildApp(stubFetch);
+    const firstActor = "actor-name-owner";
+
+    const initiallyAvailable = await app.request("/api/v1/organizations/name-availability", {
+      method: "POST",
+      headers: serviceHeaders(firstActor),
+      body: JSON.stringify({ name: "Liga Global" }),
+    });
+    expect(await initiallyAvailable.json()).toEqual({ available: true });
+
+    const created = await app.request("/api/v1/organizations", {
+      method: "POST",
+      headers: serviceHeaders(firstActor),
+      body: JSON.stringify({ name: "Liga  Global" }),
+    });
+    expect(created.status).toBe(201);
+
+    const unavailable = await app.request("/api/v1/organizations/name-availability", {
+      method: "POST",
+      headers: serviceHeaders("actor-name-contender"),
+      body: JSON.stringify({ name: "  LIGA GLOBAL  " }),
+    });
+    expect(await unavailable.json()).toEqual({ available: false });
+
+    const duplicate = await app.request("/api/v1/organizations", {
+      method: "POST",
+      headers: serviceHeaders("actor-name-contender"),
+      body: JSON.stringify({ name: "liga global" }),
+    });
+    expect(duplicate.status).toBe(409);
+    expect(await duplicate.json()).toMatchObject({ code: "organizations.name_conflict" });
+  });
+
+  it("onboarding: requires completion before personal destination and persists progress", async () => {
     const app = buildApp(stubFetch);
     const actor = "actor-personal";
 
@@ -235,32 +347,13 @@ describe("apps/api", () => {
       destination: { kind: "onboarding" },
     });
 
-    const completed = await app.request("/api/v1/identity/onboarding", {
+    const completed = await app.request("/api/v1/identity/onboarding/player", {
       method: "POST",
       headers: serviceHeaders(actor),
-      body: JSON.stringify({ path: "player" }),
+      body: JSON.stringify({ gameAccount: null }),
     });
     expect(completed.status).toBe(200);
-    const completedBody = (await completed.json()) as {
-      completedAt: string;
-    };
-    expect(completedBody).toMatchObject({
-      completed: true,
-      version: 1,
-      path: "player",
-      currentStep: null,
-    });
-    expect(completedBody.completedAt).toBeTruthy();
-
-    const repeated = await app.request("/api/v1/identity/onboarding", {
-      method: "POST",
-      headers: serviceHeaders(actor),
-      body: JSON.stringify({ path: "organization" }),
-    });
-    expect(await repeated.json()).toMatchObject({
-      completedAt: completedBody.completedAt,
-      path: "player",
-    });
+    expect(await completed.json()).toMatchObject({ destination: "personal", gameAccount: null });
 
     const personalDestination = await app.request("/api/v1/organizations/post-auth-destination", {
       headers: serviceHeaders(actor),
@@ -268,6 +361,174 @@ describe("apps/api", () => {
     expect(await personalDestination.json()).toMatchObject({
       destination: { kind: "personal" },
     });
+  });
+
+  it("onboarding: completes the player path with an idempotent EA game account", async () => {
+    const app = buildApp(stubFetch);
+    const actor = "actor-player-profile";
+    const body = JSON.stringify({
+      gameAccount: {
+        identifier: "Gamer23",
+        platform: "nintendo-switch-2",
+        gameEdition: "FC 26",
+      },
+    });
+
+    const completed = await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body,
+    });
+    expect(completed.status).toBe(200);
+    expect(await completed.json()).toMatchObject({
+      destination: "personal",
+      gameAccount: {
+        identifier: "Gamer23",
+        platform: "nintendo-switch-2",
+        gameEdition: "FC 26",
+      },
+    });
+
+    const retried = await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body,
+    });
+    expect(retried.status).toBe(200);
+
+    const profile = await app.request("/api/v1/players/me", {
+      headers: serviceHeaders(actor),
+    });
+    const profileBody = (await profile.json()) as { gameAccounts: unknown[] };
+    expect(profileBody.gameAccounts).toHaveLength(1);
+
+    const status = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await status.json()).toMatchObject({ completed: true, path: "player" });
+  });
+
+  it("onboarding: accepts an invitation and completes the invitation path", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-inviting-organizer";
+    const player = "actor-invited-player";
+
+    const created = await app.request("/api/v1/identity/onboarding/organization", {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Liga Invitación",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const { organizationId, competition } = (await created.json()) as {
+      organizationId: string;
+      competition: { competition: { id: string } };
+    };
+    const competitionId = competition.competition.id;
+    const organizationInvitation = await app.request(
+      `/api/v1/organizations/${organizationId}/invitations`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ role: "staff" }),
+      },
+    );
+    const organizationToken = (await organizationInvitation.json()) as { token: string };
+    const rejectedOrganizationInvitation = await app.request(
+      "/api/v1/identity/onboarding/invitation",
+      {
+        method: "POST",
+        headers: serviceHeaders("actor-with-organization-invite"),
+        body: JSON.stringify({ token: organizationToken.token }),
+      },
+    );
+    expect(rejectedOrganizationInvitation.status).toBe(400);
+    expect(await rejectedOrganizationInvitation.json()).toMatchObject({
+      code: "organizations.invitation_invalid",
+    });
+
+    const invitation = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competitionId}/invitations`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ role: "player" }),
+      },
+    );
+    expect(invitation.status).toBe(201);
+    const { token } = (await invitation.json()) as { token: string };
+
+    const completed = await app.request("/api/v1/identity/onboarding/invitation", {
+      method: "POST",
+      headers: serviceHeaders(player),
+      body: JSON.stringify({ token }),
+    });
+    expect(completed.status).toBe(200);
+    expect(await completed.json()).toMatchObject({
+      organizationId,
+      role: "player",
+      competitionId,
+      competitionName: "Copa Inicial",
+      profile: { id: expect.any(String) },
+      gameAccount: null,
+      destination: { kind: "competition", organizationId, competitionId },
+    });
+
+    const profile = await app.request("/api/v1/players/me", {
+      headers: serviceHeaders(player),
+    });
+    expect(await profile.json()).toMatchObject({
+      profile: { id: expect.any(String) },
+      gameAccounts: [],
+    });
+
+    const status = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(player),
+    });
+    expect(await status.json()).toMatchObject({ completed: true, path: "invitation" });
+
+    const acceptedAgain = await app.request("/api/v1/competitions/invitations/accept", {
+      method: "POST",
+      headers: serviceHeaders(player),
+      body: JSON.stringify({ token }),
+    });
+    expect(acceptedAgain.status).toBe(200);
+    expect(await acceptedAgain.json()).toMatchObject({
+      competitionId,
+      competitionName: "Copa Inicial",
+      destination: { kind: "competition", organizationId, competitionId },
+    });
+  });
+
+  it("onboarding: rejects a different path after completion without creating side effects", async () => {
+    const app = buildApp(stubFetch);
+    const actor = "actor-completed-player";
+    await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({ gameAccount: null }),
+    });
+
+    const conflicting = await app.request("/api/v1/identity/onboarding/organization", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({
+        name: "No debe existir",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    expect(conflicting.status).toBe(409);
+    expect(await conflicting.json()).toMatchObject({
+      code: "identity.onboarding_path_conflict",
+    });
+
+    const mine = await app.request("/api/v1/organizations/mine", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await mine.json()).toEqual({ memberships: [] });
   });
 
   it("organizations routes reject missing service auth", async () => {

@@ -6,6 +6,8 @@ import {
   createOrganizationRequestSchema,
   createOrganizationResponseSchema,
   listMyMembershipsResponseSchema,
+  organizationNameAvailabilityRequestSchema,
+  organizationNameAvailabilityResponseSchema,
   resolvePostAuthDestinationResponseSchema,
   type AcceptInvitationRequest,
   type AcceptInvitationResponse,
@@ -14,6 +16,8 @@ import {
   type CreateOrganizationRequest,
   type CreateOrganizationResponse,
   type ListMyMembershipsResponse,
+  type OrganizationNameAvailabilityRequest,
+  type OrganizationNameAvailabilityResponse,
   type ResolvePostAuthDestinationResponse,
 } from "@futrob/api-contracts";
 import type { HttpClient } from "../http.ts";
@@ -46,6 +50,18 @@ export function createOrganizationsResource(http: HttpClient) {
       });
     },
 
+    async checkNameAvailability(
+      input: OrganizationNameAvailabilityRequest,
+    ): Promise<OrganizationNameAvailabilityResponse> {
+      const body = organizationNameAvailabilityRequestSchema.parse(input);
+      return http.request({
+        path: "/organizations/name-availability",
+        method: "POST",
+        body,
+        parse: (data) => organizationNameAvailabilityResponseSchema.parse(data),
+      });
+    },
+
     async createInvitation(
       organizationId: string,
       input: CreateInvitationRequest,
@@ -53,6 +69,20 @@ export function createOrganizationsResource(http: HttpClient) {
       const body = createInvitationRequestSchema.parse(input);
       return http.request({
         path: `/organizations/${encodeURIComponent(organizationId)}/invitations`,
+        method: "POST",
+        body,
+        parse: (data) => createInvitationResponseSchema.parse(data),
+      });
+    },
+
+    async createCompetitionInvitation(
+      organizationId: string,
+      competitionId: string,
+      input: CreateInvitationRequest,
+    ): Promise<CreateInvitationResponse> {
+      const body = createInvitationRequestSchema.parse(input);
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/invitations`,
         method: "POST",
         body,
         parse: (data) => createInvitationResponseSchema.parse(data),

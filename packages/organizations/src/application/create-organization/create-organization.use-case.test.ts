@@ -40,4 +40,44 @@ describe("CreateOrganizationUseCase", () => {
     }
     expect(result.error.code).toBe("organizations.invalid_name");
   });
+
+  it("returns the same organization when an onboarding creation is retried", async () => {
+    const harness = createOrgTestHarness();
+    const useCase = new CreateOrganizationUseCase(harness);
+    const input = {
+      name: "Liga Norte",
+      actorId: harness.actor("actor-1"),
+      creationKey: "onboarding:organization:actor-1",
+    };
+
+    const first = await useCase.execute(input);
+    const retried = await useCase.execute(input);
+
+    expect(first.ok && retried.ok && retried.value.organization.id).toBe(
+      first.ok ? first.value.organization.id : "",
+    );
+    expect(harness.organizations.byId.size).toBe(1);
+    expect(harness.memberships.rows).toHaveLength(1);
+  });
+
+  it("rejects an equivalent organization name", async () => {
+    const harness = createOrgTestHarness();
+    const useCase = new CreateOrganizationUseCase(harness);
+
+    const first = await useCase.execute({
+      name: "Liga  Norte",
+      actorId: harness.actor("actor-1"),
+    });
+    const duplicate = await useCase.execute({
+      name: "  LIGA NORTE  ",
+      actorId: harness.actor("actor-2"),
+    });
+
+    expect(first.ok).toBe(true);
+    expect(duplicate.ok).toBe(false);
+    if (duplicate.ok) return;
+    expect(duplicate.error.code).toBe("organizations.name_conflict");
+    expect(harness.organizations.byId.size).toBe(1);
+    expect(harness.memberships.rows).toHaveLength(1);
+  });
 });

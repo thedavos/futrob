@@ -7,6 +7,8 @@ import {
   createOrganizationRequestSchema,
   createOrganizationResponseSchema,
   listMyMembershipsResponseSchema,
+  organizationNameAvailabilityRequestSchema,
+  organizationNameAvailabilityResponseSchema,
   resolvePostAuthDestinationResponseSchema,
 } from "@futrob/api-contracts";
 import { resolvePostAuthDestination } from "@futrob/organizations";
@@ -25,6 +27,18 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
 
   secured.use("*", auth);
+
+  secured.post("/organizations/name-availability", async (c) => {
+    const parsed = organizationNameAvailabilityRequestSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    return jsonResponse(
+      organizationNameAvailabilityResponseSchema.parse(
+        await organizations.checkOrganizationName.execute(parsed.data),
+      ),
+    );
+  });
 
   secured.get("/organizations/mine", async (c) => {
     const actorId = c.get("actorId");
@@ -88,11 +102,6 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
       return domainErrorToHttp(result.error);
     }
 
-    await identity.completeOnboarding.execute({
-      actorId,
-      path: "organization",
-    });
-
     const body = createOrganizationResponseSchema.parse({
       organizationId: result.value.organization.id,
       name: result.value.organization.name,
@@ -122,6 +131,7 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
 
     const body = createInvitationResponseSchema.parse({
       invitationId: result.value.invitationId,
+      competitionId: null,
       token: result.value.token,
       expiresAt: result.value.expiresAt.toISOString(),
     });
@@ -144,15 +154,12 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
       return domainErrorToHttp(result.error);
     }
 
-    await identity.completeOnboarding.execute({
-      actorId,
-      path: "invitation",
-    });
-
     const body = acceptInvitationResponseSchema.parse({
       organizationId: result.value.organizationId,
       organizationName: result.value.organizationName,
       role: result.value.role,
+      competitionId: result.value.competitionId,
+      competitionRole: result.value.competitionRole,
     });
     return jsonResponse(body);
   });

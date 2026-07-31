@@ -29,6 +29,9 @@ function statusForDomainCode(code: string): number {
   if (code.includes("forbidden") || code.includes("unauthorized")) {
     return 403;
   }
+  if (code.includes("conflict")) {
+    return 409;
+  }
   if (
     code.includes("schema") ||
     code.includes("unsupported") ||

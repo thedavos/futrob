@@ -19,22 +19,29 @@ import {
 export class PostgresOrganizationRepository implements OrganizationRepository {
   constructor(private readonly pool: Pool) {}
 
-  async create(organization: Organization): Promise<void> {
-    await this.pool.query(
-      `INSERT INTO organizations (id, name, created_at, created_by_actor_id)
-       VALUES ($1, $2, $3, $4)`,
+  async create(organization: Organization): Promise<Organization | null> {
+    const result = await this.pool.query(
+      `INSERT INTO organizations (
+         id, name, normalized_name, created_at, created_by_actor_id, creation_key
+       ) VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT DO NOTHING
+       RETURNING id, name, normalized_name, created_at, created_by_actor_id, creation_key`,
       [
         organization.id,
         organization.name,
+        organization.normalizedName,
         organization.createdAt.toISOString(),
         organization.createdByActorId,
+        organization.creationKey ?? null,
       ],
     );
+    if (result.rows[0]) return rehydrateOrganization(result.rows[0]);
+    return organization.creationKey ? await this.getByCreationKey(organization.creationKey) : null;
   }
 
   async getById(id: OrganizationId): Promise<Organization | null> {
     const result = await this.pool.query(
-      `SELECT id, name, created_at, created_by_actor_id
+      `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
        FROM organizations WHERE id = $1`,
       [id],
     );
@@ -42,11 +49,31 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
       | {
           id: string;
           name: string;
+          normalized_name: string;
           created_at: Date;
           created_by_actor_id: string;
+          creation_key: string | null;
         }
       | undefined;
     return row ? rehydrateOrganization(row) : null;
+  }
+
+  async getByCreationKey(creationKey: string): Promise<Organization | null> {
+    const result = await this.pool.query(
+      `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
+       FROM organizations WHERE creation_key = $1`,
+      [creationKey],
+    );
+    return result.rows[0] ? rehydrateOrganization(result.rows[0]) : null;
+  }
+
+  async getByNormalizedName(normalizedName: string): Promise<Organization | null> {
+    const result = await this.pool.query(
+      `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
+       FROM organizations WHERE normalized_name = $1`,
+      [normalizedName],
+    );
+    return result.rows[0] ? rehydrateOrganization(result.rows[0]) : null;
   }
 }
 
@@ -118,12 +145,13 @@ export class PostgresInvitationRepository implements InvitationRepository {
   async create(invitation: OrganizationInvitation): Promise<void> {
     await this.pool.query(
       `INSERT INTO organization_invitations (
-         id, organization_id, role, token_hash, email, status,
+         id, organization_id, competition_id, role, token_hash, email, status,
          invited_by_actor_id, expires_at, accepted_by_actor_id, created_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         invitation.id,
         invitation.organizationId,
+        invitation.competitionId ?? null,
         invitation.role,
         invitation.tokenHash,
         invitation.email ?? null,
@@ -138,7 +166,7 @@ export class PostgresInvitationRepository implements InvitationRepository {
 
   async findByTokenHash(tokenHash: string): Promise<OrganizationInvitation | null> {
     const result = await this.pool.query(
-      `SELECT id, organization_id, role, token_hash, email, status,
+      `SELECT id, organization_id, competition_id, role, token_hash, email, status,
               invited_by_actor_id, expires_at, accepted_by_actor_id, created_at
        FROM organization_invitations WHERE token_hash = $1`,
       [tokenHash],
@@ -147,6 +175,7 @@ export class PostgresInvitationRepository implements InvitationRepository {
       | {
           id: string;
           organization_id: string;
+          competition_id: string | null;
           role: string;
           token_hash: string;
           email: string | null;

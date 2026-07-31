@@ -1,11 +1,19 @@
 import {
-  completeOnboardingRequestSchema,
-  completeOnboardingResponseSchema,
+  completeInvitationOnboardingRequestSchema,
+  completeInvitationOnboardingResponseSchema,
+  completeOrganizationOnboardingRequestSchema,
+  completeOrganizationOnboardingResponseSchema,
+  completePlayerOnboardingRequestSchema,
+  completePlayerOnboardingResponseSchema,
   getOnboardingStatusResponseSchema,
   saveOnboardingProgressRequestSchema,
   saveOnboardingProgressResponseSchema,
-  type CompleteOnboardingRequest,
-  type CompleteOnboardingResponse,
+  type CompleteInvitationOnboardingRequest,
+  type CompleteInvitationOnboardingResponse,
+  type CompleteOrganizationOnboardingRequest,
+  type CompleteOrganizationOnboardingResponse,
+  type CompletePlayerOnboardingRequest,
+  type CompletePlayerOnboardingResponse,
   type GetOnboardingStatusResponse,
   type SaveOnboardingProgressRequest,
   type SaveOnboardingProgressResponse,
@@ -34,15 +42,39 @@ export function createIdentityResource(http: HttpClient) {
       });
     },
 
-    async completeOnboarding(
-      input: CompleteOnboardingRequest,
-    ): Promise<CompleteOnboardingResponse> {
-      const body = completeOnboardingRequestSchema.parse(input);
+    async completeOrganizationOnboarding(
+      input: CompleteOrganizationOnboardingRequest,
+    ): Promise<CompleteOrganizationOnboardingResponse> {
+      const body = completeOrganizationOnboardingRequestSchema.parse(input);
       return http.request({
-        path: "/identity/onboarding",
+        path: "/identity/onboarding/organization",
         method: "POST",
         body,
-        parse: (data) => completeOnboardingResponseSchema.parse(data),
+        parse: (data) => completeOrganizationOnboardingResponseSchema.parse(data),
+      });
+    },
+
+    async completeInvitationOnboarding(
+      input: CompleteInvitationOnboardingRequest,
+    ): Promise<CompleteInvitationOnboardingResponse> {
+      const body = completeInvitationOnboardingRequestSchema.parse(input);
+      return http.request({
+        path: "/identity/onboarding/invitation",
+        method: "POST",
+        body,
+        parse: (data) => completeInvitationOnboardingResponseSchema.parse(data),
+      });
+    },
+
+    async completePlayerOnboarding(
+      input: CompletePlayerOnboardingRequest,
+    ): Promise<CompletePlayerOnboardingResponse> {
+      const body = completePlayerOnboardingRequestSchema.parse(input);
+      return http.request({
+        path: "/identity/onboarding/player",
+        method: "POST",
+        body,
+        parse: (data) => completePlayerOnboardingResponseSchema.parse(data),
       });
     },
   };

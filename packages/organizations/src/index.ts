@@ -1,4 +1,4 @@
-export type { Organization } from "./domain/entities/organization.ts";
+export { normalizeOrganizationName, type Organization } from "./domain/entities/organization.ts";
 export type {
   InvitationStatus,
   OrganizationInvitation,
@@ -26,6 +26,11 @@ export {
   type CreateOrganizationResult,
 } from "./application/create-organization/create-organization.use-case.ts";
 export {
+  CheckOrganizationNameUseCase,
+  type CheckOrganizationNameInput,
+  type CheckOrganizationNameResult,
+} from "./application/check-organization-name/check-organization-name.use-case.ts";
+export {
   ListMembershipsForActorUseCase,
   type ListMembershipsForActorInput,
 } from "./application/list-memberships-for-actor/list-memberships-for-actor.use-case.ts";
@@ -37,5 +42,6 @@ export {
 export {
   AcceptInvitationUseCase,
   type AcceptInvitationInput,
+  type AcceptedInvitation,
 } from "./application/accept-invitation/accept-invitation.use-case.ts";
 export { resolvePostAuthDestination } from "./application/resolve-post-auth-destination/resolve-post-auth-destination.ts";

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { asCompetitionId } from "@futrob/shared-kernel";
 import { AcceptInvitationUseCase } from "../accept-invitation/accept-invitation.use-case.ts";
 import { CreateInvitationUseCase } from "./create-invitation.use-case.ts";
 import { CreateOrganizationUseCase } from "../create-organization/create-organization.use-case.ts";
@@ -30,6 +31,26 @@ describe("CreateInvitationUseCase", () => {
     expect(result.error.code).toBe("organizations.invalid_role");
   });
 
+  it("requires competition scope for player and captain invitations", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.ok).toBe(true);
+    if (!org.ok) return;
+
+    for (const role of ["player", "captain"] as const) {
+      const result = await createInvite.execute({
+        organizationId: org.value.organization.id,
+        role,
+        invitedByActorId: organizer,
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.code).toBe("organizations.invalid_role");
+    }
+  });
+
   it("forbids invitations from actors who are not organizer or staff", async () => {
     const harness = createOrgTestHarness();
     const createOrg = new CreateOrganizationUseCase(harness);
@@ -46,6 +67,7 @@ describe("CreateInvitationUseCase", () => {
 
     const invite = await createInvite.execute({
       organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
       role: "player",
       invitedByActorId: organizer,
     });
@@ -59,6 +81,7 @@ describe("CreateInvitationUseCase", () => {
 
     const forbidden = await createInvite.execute({
       organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
       role: "captain",
       invitedByActorId: player,
     });

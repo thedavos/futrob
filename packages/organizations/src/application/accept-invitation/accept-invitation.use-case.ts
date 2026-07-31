@@ -6,9 +6,15 @@ import type { MembershipRepository } from "../../domain/ports/membership.reposit
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
 import type { MembershipSummary } from "../../domain/value-objects/post-auth-destination.ts";
 
+export interface AcceptedInvitation extends MembershipSummary {
+  readonly competitionId: import("@futrob/shared-kernel").CompetitionId | null;
+  readonly competitionRole: import("../../domain/value-objects/organization-membership-role.ts").InviteRole;
+}
+
 export interface AcceptInvitationInput {
   readonly token: string;
   readonly actorId: ActorId;
+  readonly requireCompetition?: boolean;
 }
 
 export class AcceptInvitationUseCase {
@@ -22,12 +28,17 @@ export class AcceptInvitationUseCase {
     },
   ) {}
 
-  async execute(input: AcceptInvitationInput): Promise<Result<MembershipSummary, DomainError>> {
+  async execute(input: AcceptInvitationInput): Promise<Result<AcceptedInvitation, DomainError>> {
     const tokenHash = this.deps.tokens.hashToken(input.token);
     const invitation = await this.deps.invitations.findByTokenHash(tokenHash);
 
     if (!invitation) {
       return err(domainError("organizations.invitation_not_found", "Invitation not found"));
+    }
+    if (input.requireCompetition && !invitation.competitionId) {
+      return err(
+        domainError("organizations.invitation_invalid", "Invitation does not target a competition"),
+      );
     }
 
     const organization = await this.deps.organizations.getById(invitation.organizationId);
@@ -37,18 +48,6 @@ export class AcceptInvitationUseCase {
           organizationId: invitation.organizationId,
         }),
       );
-    }
-
-    const existing = await this.deps.memberships.findByOrgAndActor(
-      invitation.organizationId,
-      input.actorId,
-    );
-    if (existing) {
-      return ok({
-        organizationId: organization.id,
-        organizationName: organization.name,
-        role: existing.role,
-      });
     }
 
     if (invitation.status === "revoked") {
@@ -69,6 +68,8 @@ export class AcceptInvitationUseCase {
           organizationId: organization.id,
           organizationName: organization.name,
           role: invitation.role,
+          competitionId: invitation.competitionId ?? null,
+          competitionRole: invitation.role,
         });
       }
       return err(domainError("organizations.invitation_invalid", "Invitation is no longer valid"));
@@ -78,12 +79,18 @@ export class AcceptInvitationUseCase {
       return err(domainError("organizations.invitation_invalid", "Invitation is no longer valid"));
     }
 
-    await this.deps.memberships.add({
-      organizationId: invitation.organizationId,
-      actorId: input.actorId,
-      role: invitation.role,
-      createdAt: now,
-    });
+    const existing = await this.deps.memberships.findByOrgAndActor(
+      invitation.organizationId,
+      input.actorId,
+    );
+    if (!existing) {
+      await this.deps.memberships.add({
+        organizationId: invitation.organizationId,
+        actorId: input.actorId,
+        role: invitation.role,
+        createdAt: now,
+      });
+    }
 
     await this.deps.invitations.update({
       ...invitation,
@@ -94,7 +101,9 @@ export class AcceptInvitationUseCase {
     return ok({
       organizationId: organization.id,
       organizationName: organization.name,
-      role: invitation.role,
+      role: existing?.role ?? invitation.role,
+      competitionId: invitation.competitionId ?? null,
+      competitionRole: invitation.role,
     });
   }
 }

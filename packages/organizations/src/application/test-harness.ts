@@ -51,12 +51,26 @@ export class FakeTokens implements InvitationTokenPort {
 export class FakeOrganizationRepository implements OrganizationRepository {
   readonly byId = new Map<string, Organization>();
 
-  async create(organization: Organization): Promise<void> {
+  async create(organization: Organization): Promise<Organization | null> {
+    const existing = organization.creationKey
+      ? await this.getByCreationKey(organization.creationKey)
+      : null;
+    if (existing) return existing;
+    if (await this.getByNormalizedName(organization.normalizedName)) return null;
     this.byId.set(organization.id, organization);
+    return organization;
   }
 
   async getById(id: OrganizationId): Promise<Organization | null> {
     return this.byId.get(id) ?? null;
+  }
+
+  async getByCreationKey(creationKey: string): Promise<Organization | null> {
+    return [...this.byId.values()].find((row) => row.creationKey === creationKey) ?? null;
+  }
+
+  async getByNormalizedName(normalizedName: string): Promise<Organization | null> {
+    return [...this.byId.values()].find((row) => row.normalizedName === normalizedName) ?? null;
   }
 }
 
@@ -66,7 +80,14 @@ export class FakeMembershipRepository implements MembershipRepository {
   constructor(private readonly organizations: FakeOrganizationRepository) {}
 
   async add(membership: OrganizationMembership): Promise<void> {
-    this.rows.push(membership);
+    if (
+      !this.rows.some(
+        (row) =>
+          row.organizationId === membership.organizationId && row.actorId === membership.actorId,
+      )
+    ) {
+      this.rows.push(membership);
+    }
   }
 
   async findByActor(actorId: ActorId): Promise<MembershipSummary[]> {

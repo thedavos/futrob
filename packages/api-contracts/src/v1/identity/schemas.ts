@@ -1,8 +1,20 @@
 import { z } from "zod";
+import {
+  acceptInvitationResponseSchema,
+  createOrganizationResponseSchema,
+} from "../organizations/schemas.ts";
+import {
+  playerGameAccountInputSchema,
+  playerGameAccountSchema,
+  playerProfileSchema,
+} from "../teams/schemas.ts";
+import { competitionDraftInputSchema, competitionDraftSchema } from "../competitions/schemas.ts";
 
 export const onboardingPathSchema = z.enum(["player", "organization", "invitation"]);
 export const onboardingStepSchema = z.enum([
   "intention",
+  "organization",
+  "competition",
   "game",
   "invitation",
   "game-account",
@@ -27,8 +39,8 @@ export const getOnboardingStatusResponseSchema = onboardingStatusSchema;
 export type GetOnboardingStatusResponse = z.infer<typeof getOnboardingStatusResponseSchema>;
 
 const allowedStepsByPath: Record<OnboardingPathDto, readonly OnboardingStepDto[]> = {
-  organization: ["intention", "game", "review"],
-  invitation: ["intention", "invitation", "review"],
+  organization: ["intention", "organization", "competition", "game-account", "game", "review"],
+  invitation: ["intention", "invitation", "game-account", "review"],
   player: ["intention", "game", "game-account", "review"],
 };
 
@@ -56,13 +68,64 @@ export type SaveOnboardingProgressRequest = z.infer<typeof saveOnboardingProgres
 export const saveOnboardingProgressResponseSchema = onboardingStatusSchema;
 export type SaveOnboardingProgressResponse = z.infer<typeof saveOnboardingProgressResponseSchema>;
 
-export const completeOnboardingRequestSchema = z.object({
-  path: onboardingPathSchema,
-  version: z.literal(1).optional(),
+export const completeOrganizationOnboardingRequestSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  competition: competitionDraftInputSchema,
+  gameAccount: playerGameAccountInputSchema.nullable().optional(),
 });
+export type CompleteOrganizationOnboardingRequest = z.infer<
+  typeof completeOrganizationOnboardingRequestSchema
+>;
 
-export type CompleteOnboardingRequest = z.infer<typeof completeOnboardingRequestSchema>;
+export const completeOrganizationOnboardingResponseSchema = createOrganizationResponseSchema.extend(
+  {
+    competition: competitionDraftSchema,
+    profile: playerProfileSchema,
+    gameAccount: playerGameAccountSchema.nullable(),
+    destination: z.object({
+      kind: z.literal("competition-setup"),
+      organizationId: z.string().min(1),
+      competitionId: z.string().min(1),
+    }),
+  },
+);
+export type CompleteOrganizationOnboardingResponse = z.infer<
+  typeof completeOrganizationOnboardingResponseSchema
+>;
 
-export const completeOnboardingResponseSchema = onboardingStatusSchema;
+export const completeInvitationOnboardingRequestSchema = z.object({
+  token: z.string().trim().min(1),
+  gameAccount: playerGameAccountInputSchema.nullable().optional(),
+});
+export type CompleteInvitationOnboardingRequest = z.infer<
+  typeof completeInvitationOnboardingRequestSchema
+>;
 
-export type CompleteOnboardingResponse = z.infer<typeof completeOnboardingResponseSchema>;
+export const completeInvitationOnboardingResponseSchema = acceptInvitationResponseSchema.extend({
+  competitionId: z.string().min(1),
+  competitionName: z.string().min(1),
+  profile: playerProfileSchema,
+  gameAccount: playerGameAccountSchema.nullable(),
+  destination: z.object({
+    kind: z.literal("competition"),
+    organizationId: z.string().min(1),
+    competitionId: z.string().min(1),
+  }),
+});
+export type CompleteInvitationOnboardingResponse = z.infer<
+  typeof completeInvitationOnboardingResponseSchema
+>;
+
+export const completePlayerOnboardingRequestSchema = z.object({
+  gameAccount: playerGameAccountInputSchema.nullable().optional(),
+});
+export type CompletePlayerOnboardingRequest = z.infer<typeof completePlayerOnboardingRequestSchema>;
+
+export const completePlayerOnboardingResponseSchema = z.object({
+  profile: playerProfileSchema,
+  gameAccount: playerGameAccountSchema.nullable(),
+  destination: z.literal("personal"),
+});
+export type CompletePlayerOnboardingResponse = z.infer<
+  typeof completePlayerOnboardingResponseSchema
+>;

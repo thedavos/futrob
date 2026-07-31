@@ -1,4 +1,4 @@
-import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
+import type { ActorId, CompetitionId, OrganizationId } from "@futrob/shared-kernel";
 import type { InviteRole } from "../value-objects/organization-membership-role.ts";
 
 export type InvitationStatus = "pending" | "accepted" | "revoked" | "expired";
@@ -6,6 +6,7 @@ export type InvitationStatus = "pending" | "accepted" | "revoked" | "expired";
 export interface OrganizationInvitation {
   readonly id: string;
   readonly organizationId: OrganizationId;
+  readonly competitionId?: CompetitionId | null;
   readonly role: InviteRole;
   readonly tokenHash: string;
   readonly email?: string | null;

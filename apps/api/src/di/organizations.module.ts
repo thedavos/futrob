@@ -1,5 +1,6 @@
 import {
   AcceptInvitationUseCase,
+  CheckOrganizationNameUseCase,
   CreateInvitationUseCase,
   CreateOrganizationUseCase,
   ListMembershipsForActorUseCase,
@@ -48,6 +49,7 @@ export function createOrganizationsModule(deps: OrganizationsModuleDependencies)
 
   return {
     createOrganization: new CreateOrganizationUseCase(ports),
+    checkOrganizationName: new CheckOrganizationNameUseCase(organizations),
     listMembershipsForActor: new ListMembershipsForActorUseCase(memberships),
     createInvitation: new CreateInvitationUseCase(ports),
     acceptInvitation: new AcceptInvitationUseCase(ports),

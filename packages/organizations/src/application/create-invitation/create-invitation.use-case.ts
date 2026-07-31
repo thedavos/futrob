@@ -1,5 +1,11 @@
 import { domainError, err, ok, type DomainError, type Result } from "@futrob/shared-kernel";
-import type { ActorId, ClockPort, IdGeneratorPort, OrganizationId } from "@futrob/shared-kernel";
+import type {
+  ActorId,
+  ClockPort,
+  CompetitionId,
+  IdGeneratorPort,
+  OrganizationId,
+} from "@futrob/shared-kernel";
 import type { InvitationRepository } from "../../domain/ports/invitation.repository.ts";
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
@@ -10,6 +16,7 @@ const DEFAULT_EXPIRES_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface CreateInvitationInput {
   readonly organizationId: OrganizationId;
+  readonly competitionId?: CompetitionId;
   readonly role: string;
   readonly invitedByActorId: ActorId;
   readonly email?: string;
@@ -48,6 +55,15 @@ export class CreateInvitationUseCase {
         ),
       );
     }
+    if (!input.competitionId && input.role !== "staff") {
+      return err(
+        domainError(
+          "organizations.invalid_role",
+          "Captain and player invitations must target a competition",
+          { role: input.role },
+        ),
+      );
+    }
 
     const organization = await this.deps.organizations.getById(input.organizationId);
     if (!organization) {
@@ -78,6 +94,7 @@ export class CreateInvitationUseCase {
     await this.deps.invitations.create({
       id: invitationId,
       organizationId: input.organizationId,
+      competitionId: input.competitionId ?? null,
       role: input.role,
       tokenHash,
       email: input.email ?? null,

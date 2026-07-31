@@ -1,13 +1,20 @@
 import type { ActorId } from "@futrob/shared-kernel";
 
-export const CURRENT_ONBOARDING_VERSION = 1;
+export const CURRENT_ONBOARDING_VERSION = 2;
 
 export type OnboardingPath = "player" | "organization" | "invitation";
-export type OnboardingStep = "intention" | "game" | "invitation" | "game-account" | "review";
+export type OnboardingStep =
+  | "intention"
+  | "organization"
+  | "competition"
+  | "game"
+  | "invitation"
+  | "game-account"
+  | "review";
 
 const stepsByPath: Record<OnboardingPath, readonly OnboardingStep[]> = {
-  organization: ["intention", "game", "review"],
-  invitation: ["intention", "invitation", "review"],
+  organization: ["intention", "organization", "competition", "game-account", "game", "review"],
+  invitation: ["intention", "invitation", "game-account", "review"],
   player: ["intention", "game", "game-account", "review"],
 };
 

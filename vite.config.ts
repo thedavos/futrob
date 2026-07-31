@@ -92,6 +92,7 @@ export default defineConfig({
       "packages/shared-kernel",
       "packages/game-data",
       "packages/organizations",
+      "packages/competitions",
       "packages/results",
     ],
   },

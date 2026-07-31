@@ -12,7 +12,15 @@ interface StoredRow {
   onboarding_completed_at: string | null;
   onboarding_version: number | null;
   onboarding_path: "player" | "organization" | "invitation" | null;
-  onboarding_current_step: "intention" | "game" | "invitation" | "game-account" | "review" | null;
+  onboarding_current_step:
+    | "intention"
+    | "organization"
+    | "competition"
+    | "game"
+    | "invitation"
+    | "game-account"
+    | "review"
+    | null;
 }
 
 class FakeActorOnboardingPool {
