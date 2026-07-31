@@ -5,19 +5,19 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 ## Bounded contexts (MVP)
 
-| Módulo          | Responsabilidad                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------- |
-| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                          |
-| `organizations` | Organizaciones, membresías, roles y permisos                                                |
-| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC                                           |
-| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes, vínculo club externo |
-| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                        |
-| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                     |
-| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales               |
-| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                         |
-| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                           |
-| `notifications` | Web, email (WhatsApp/push como ampliación)                                                  |
-| `public-portal` | Lecturas públicas sanitizadas                                                               |
+| Módulo          | Responsabilidad                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                           |
+| `organizations` | Organizaciones, nombres únicos, membresías de tenant, roles, permisos y tokens de invitación |
+| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC y membresías contextuales de competición   |
+| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes, vínculo club externo  |
+| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                         |
+| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                      |
+| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales                |
+| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                          |
+| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                            |
+| `notifications` | Web, email (WhatsApp/push como ampliación)                                                   |
+| `public-portal` | Lecturas públicas sanitizadas                                                                |
 
 `billing` está fuera del MVP.
 
@@ -58,7 +58,13 @@ statistics worker
 scheduling
   → CompetitionScheduleRulesReaderPort
   → competitions public API
+
+onboarding HTTP orchestration
+  → organizations / competitions / teams public application APIs
+  → identity completeOnboarding last
 ```
+
+Una invitación usada por onboarding siempre referencia una competición. `organizations` valida y consume el token y asegura la membresía mínima del tenant; `competitions` asegura después la membresía contextual. Ninguna de ambas operaciones crea una `CompetitionEntry` ni un `Roster`.
 
 ## Cross-module prohibido
 

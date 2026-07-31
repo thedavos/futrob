@@ -109,8 +109,11 @@ Solo `src/di/*.module.ts` instancia adapters y use cases.
 
 - Better Auth → sesión.
 - `identity` → estado de producto del actor; `apps/api` persiste `actor_onboarding.onboarding_completed`, fecha, versión y camino por `ActorId`.
-- `organizations` → membresías, roles, permisos.
+- `organizations` → organizaciones, nombres únicos, membresías de tenant, roles e invitaciones con alcance opcional de competición.
+- `competitions` → competiciones y membresías contextuales de acceso. Una membresía de competición no sustituye `CompetitionEntry` ni `Roster`.
 - Un `Actor` puede tener un perfil personal de jugador y consultar su propia proyección sin pertenecer a una organización.
+- La ruta HTTP de onboarding orquesta APIs públicas de `organizations`, `competitions` y `teams`;
+  `identity` solo persiste el estado del recorrido y se completa al final.
 - Toda query tenant-scoped filtra por `organizationId` en adapters D1.
 - `public-portal` solo lee proyecciones sanitizadas.
 
@@ -122,19 +125,19 @@ Proveedores MVP: `ea-clubs`, `manual`. Extensiones futuras (`screenshot-ocr`, co
 
 ## Propiedad de datos
 
-| Módulo        | Posee                                                                            |
-| ------------- | -------------------------------------------------------------------------------- |
-| identity      | users/sessions/accounts (vía Better Auth + mapping Actor)                        |
-| organizations | organizations, memberships, permissions                                          |
-| competitions  | competitions, rules, stages, entries                                             |
-| teams         | teams, player profiles, player game accounts, rosters, external club connections |
-| scheduling    | rounds, encounters, official slots, reschedules                                  |
-| game-data     | raw observations, provider matches/clubs, sync jobs, health                      |
-| results       | candidates, selections, confirmations, disputes, official results                |
-| statistics    | standings, official player/team stats, personal player projections, rankings     |
-| analytics     | premium snapshots                                                                |
-| notifications | notification intents/deliveries                                                  |
-| public-portal | read models publicados (o proyecciones propias)                                  |
+| Módulo        | Posee                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| identity      | users/sessions/accounts (vía Better Auth + mapping Actor)                                        |
+| organizations | organizations, normalized organization names, tenant memberships, permissions, invitation tokens |
+| competitions  | competitions, rules, stages, entries, competition memberships                                    |
+| teams         | teams, player profiles, player game accounts, rosters, external club connections                 |
+| scheduling    | rounds, encounters, official slots, reschedules                                                  |
+| game-data     | raw observations, provider matches/clubs, sync jobs, health                                      |
+| results       | candidates, selections, confirmations, disputes, official results                                |
+| statistics    | standings, official player/team stats, personal player projections, rankings                     |
+| analytics     | premium snapshots                                                                                |
+| notifications | notification intents/deliveries                                                                  |
+| public-portal | read models publicados (o proyecciones propias)                                                  |
 
 Un módulo no escribe tablas ajenas; publica eventos / usa ports de lectura.
 

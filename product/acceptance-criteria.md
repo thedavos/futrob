@@ -76,18 +76,33 @@ Además, reejecutar el mismo job de sync o la misma confirmación no crea partid
 
 **Cubre:** FTR-PLAYER-002, FTR-PLAYER-003, FR-18.
 
-- **Dado** un PlayerProfile con identificador de juego confirmado y partidos oficiales aprobados que contienen esa identidad,
+- **Dado** un PlayerProfile con un identificador de EA registrado y partidos oficiales aprobados que contienen ese identificador externo,
 - **cuando** abre Mis partidos o Mis estadísticas,
 - **entonces** ve únicamente su historial y agregados individuales ordenados, con estados de dato incompleto cuando corresponda.
 - **y** no ve candidatos EA, disputas, payloads raw ni datos administrativos privados de organizaciones donde no sea miembro.
+
+### AC-ONB-001 — Consecuencias multirrol del onboarding
+
+**Cubre:** FTR-AUTH-003, FTR-PLAYER-001, FR-01, FR-02, FTR-COMP-001.
+
+- **Dado** un actor que elige Invitación, **cuando** acepta un token válido emitido desde una
+  competición, **entonces** obtiene acceso contextual a esa competición, la membresía mínima de
+  organización y un PlayerProfile, con cuenta EA opcional.
+- **y** aceptar la invitación no incorpora al actor a una plantilla ni le concede elegibilidad.
+- **Dado** un actor que elige Organizar, **cuando** confirma organización, competición y cuenta
+  opcional, **entonces** obtiene membresía `organizer`, PlayerProfile y una Competition `draft`
+  scoped a esa organización.
+- **y** reintentar la finalización no duplica organización, competición, perfil ni cuenta EA.
+- **y** el organizador navega directamente al setup de la competición devuelta por la mutación.
+- **pero** `identity` solo conserva camino, paso, versión y finalización; no almacena los borradores.
 
 ### AC-PLAYER-002 — Invitación posterior opcional
 
 **Cubre:** FTR-PLAYER-004.
 
 - **Dado** un jugador con espacio personal e historial propio,
-- **cuando** acepta una invitación de una organización,
-- **entonces** se añade la membresía contextual indicada, conserva el perfil personal y su historial, y obtiene solo los permisos de esa membresía.
+- **cuando** acepta una invitación de competición,
+- **entonces** se añade la membresía contextual de esa competición y la membresía mínima de organización, conserva el perfil personal y su historial, y obtiene solo los permisos de esas membresías.
 
 ## 4. Equipos y vinculación EA
 

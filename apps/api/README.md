@@ -31,18 +31,44 @@ Organizations (service auth from `apps/web` BFF — not browser cookies):
 
 - `GET /organizations/mine`
 - `GET /organizations/post-auth-destination`
+- `POST /organizations/name-availability`
 - `POST /organizations`
-- `POST /organizations/:organizationId/invitations`
+- `POST /organizations/:organizationId/invitations` — organization-level staff invitations only.
 - `POST /organizations/invitations/accept`
+
+Competitions (service auth, organization-scoped):
+
+- `GET /organizations/:organizationId/competitions/:competitionId` — reads the competition and
+  current rules for authorized organizer/staff members.
+- `POST /organizations/:organizationId/competitions/:competitionId/invitations` — creates a
+  competition-scoped invitation. The organization membership remains the tenant boundary; the
+  accepted actor also receives a contextual competition membership.
+- `POST /competitions/invitations/accept` — accepts a competition-scoped invitation after
+  onboarding and returns the competition destination directly.
 
 Identity product state (same service auth):
 
 - `GET /identity/onboarding`
-- `POST /identity/onboarding` — idempotently records `path`, version and completion time.
+- `PATCH /identity/onboarding` — records only the current path and step.
+- `POST /identity/onboarding/{organization|invitation|player}` — orchestrates the selected path.
+  Organization onboarding creates an idempotent organization and competition draft; every path
+  ensures a personal player profile and may add an optional declared EA account.
 
 Requires `Authorization: Bearer <INTERNAL_JOB_SECRET>` and `X-Futrob-Actor-Id`.
-Without `DATABASE_URL`, organizations and actor onboarding use in-memory stores
+Without `DATABASE_URL`, organizations, competitions, player profiles and actor onboarding use in-memory stores
 (process-local).
+
+### Persistence added by onboarding
+
+| Table                      | Owner           | Purpose                                                                                                                 |
+| -------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `organizations`            | `organizations` | Tenant. `normalized_name` enforces the globally unique organization name; `creation_key` repairs onboarding retries.    |
+| `organization_invitations` | `organizations` | Hashed, expiring invitation token. `competition_id` identifies the competition that issued a player/captain invitation. |
+| `competition_memberships`  | `competitions`  | Contextual actor access to one competition. It does not create a team entry or roster membership.                       |
+
+The onboarding invitation endpoint accepts only invitations with `competition_id`. A successful
+acceptance ensures both the organization membership required for tenant isolation and the
+competition membership used for contextual access.
 
 Query params for game-data (`providerKey`, `platform`, `gameEdition`, `matchType`,
 `maxResultCount`) are validated at the edge with `@futrob/api-contracts` and
@@ -84,9 +110,8 @@ npm run api
 
 ## Railway notes
 
-- Apply `migrations/0001_organizations.sql`, `migrations/0002_actor_onboarding.sql` and
-  `migrations/0003_actor_onboarding_progress.sql`
-  to Postgres before relying on organization or onboarding persistence.
+- Apply migrations `0001` through `0009` in filename order
+  to Postgres before relying on organization, onboarding, or player-profile persistence.
 - Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.
 - Start command: `npm run start -w @futrob/api`. Railway injects `PORT`; the app reads it.
 - Health check path: `/api/v1/meta/health`.
@@ -102,6 +127,8 @@ Imports use the `@/` alias → `src/*` (no `../` parent paths). Configure in
 - `src/utils/` — generic helpers (dotenv load, HTTP response builders).
 - `src/adapters/game-data/` — EA Clubs, manual, and registry adapters (Node egress).
 - `src/adapters/identity/` — Postgres and in-memory actor-onboarding adapters.
+- `src/adapters/competitions/` — organization-scoped Postgres and in-memory competition drafts.
+- `src/adapters/teams/` — personal player profiles and declared game accounts.
 - `src/adapters/persistence/` — Postgres health probe and an in-memory provider-match stub.
 - `src/di/` — composition root (`createModules`, `createGameDataModule`).
 - `src/http/` — error mapping, DTO mappers, and route registration.

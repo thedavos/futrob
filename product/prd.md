@@ -39,7 +39,7 @@ Una jornada puede programar un enfrentamiento con uno o dos partidos oficiales. 
 
 ## 3. Usuarios y roles
 
-Los roles son contextuales. Un usuario puede ser organizador en una organización, capitán en una competición y espectador en otra. El perfil de jugador puede existir sin pertenecer a una organización; la invitación es el camino para competir dentro de una organización, no un requisito para registrarse ni para consultar sus propios datos.
+Los roles son contextuales. Un usuario puede ser organizador en una organización, capitán en una competición y espectador en otra. El perfil de jugador puede existir sin pertenecer a una organización; una invitación de competición concede acceso a esa competición, no es un requisito para registrarse ni para consultar los datos personales.
 
 | Rol                      | Responsabilidad principal                                                                                                                                                                          |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -53,9 +53,14 @@ Los roles son contextuales. Un usuario puede ser organizador en una organizació
 
 ### Espacio personal del jugador
 
-Un jugador autenticado puede crear o mantener su perfil personal sin crear una organización ni aceptar una invitación. Desde ese espacio puede vincular su cuenta de juego, consultar sus partidos y visualizar estadísticas individuales derivadas de resultados oficiales aprobados.
+Un jugador autenticado puede crear o mantener su perfil personal sin crear una organización ni aceptar una invitación. Desde ese espacio puede registrar su identificador de EA, consultar sus partidos y visualizar estadísticas individuales derivadas de resultados oficiales aprobados. Futrob confía en el identificador declarado y no verifica que el actor sea propietario de la cuenta.
 
-La invitación de un organizador o staff es opcional y añade una membresía contextual —por ejemplo, jugador o capitán—, acceso a una competición y capacidades operativas. No reemplaza ni elimina el perfil personal. El espacio personal nunca expone disputas, payloads EA crudos, tokens ni datos administrativos privados de una organización.
+El onboarding asegura este perfil personal en los caminos jugador, invitación y organizador. La
+cuenta EA es opcional en los tres. El camino organizador crea además una primera competición en
+estado `draft`; plataforma y edición de esa competición permanecen separadas de las declaradas en
+la cuenta personal.
+
+La invitación de competición emitida por un organizador o staff es opcional. Al aceptarla, el actor obtiene una membresía mínima de la organización para respetar el aislamiento del tenant y una membresía contextual en la competición —por ejemplo, jugador o capitán—. Esta membresía no lo incorpora por sí sola a la plantilla de un equipo ni le concede elegibilidad competitiva. Tampoco reemplaza ni elimina el perfil personal. El espacio personal nunca expone disputas, payloads EA crudos, tokens ni datos administrativos privados de una organización.
 
 Antes de entrar al espacio personal, el actor debe completar el onboarding. Futrob persiste este
 estado de producto —incluyendo fecha, versión y camino elegido— de forma separada a la sesión de

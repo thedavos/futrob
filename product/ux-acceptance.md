@@ -31,6 +31,8 @@
 - **UX-NAV-008** Un registro exitoso entra directamente al onboarding; un login exitoso comprueba primero onboarding y, solo si está completo, resuelve organizaciones.
 - **UX-NAV-009** La navegación personal distingue Mis partidos, Mis estadísticas, Datos de juego e Invitaciones sin mostrar una organización ficticia.
 - **UX-NAV-010** `/player` no renderiza el espacio personal hasta confirmar que el actor completó el onboarding; si está incompleto o la comprobación falla, vuelve de forma segura a `/onboarding`.
+- **UX-NAV-011** Invitados y organizadores atraviesan Cuenta; omitir los datos EA conserva un perfil personal utilizable.
+- **UX-NAV-012** El organizador termina en la configuración de su competición draft sin una consulta de destino adicional.
 
 ## 4. Wizard / creación de competición
 
@@ -39,6 +41,8 @@
 - **UX-WIZ-003** Cambiar formato o partidos-por-enfrentamiento pide confirmación antes de borrar datos incompatibles.
 - **UX-WIZ-004** Errores junto al campo + resumen enlazable.
 - **UX-WIZ-005** Publicar muestra revisión final de edición, modalidad, formato, reglas y timezone.
+- **UX-WIZ-006** El onboarding del organizador crea un draft con nombre, edición, plataforma, región, timezone y formato, sin generar stages ni fixture.
+- **UX-WIZ-007** El Stepper de cinco pasos no produce scroll horizontal y en móvil anuncia número, total y nombre del paso actual.
 
 ## 5. Match Center
 

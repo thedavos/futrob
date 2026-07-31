@@ -6,21 +6,23 @@
 
 ## 1. Tenancy, identidad y acceso
 
-| Término                          | Definición canónica                                                             | Regla o límite                                                                                          |
-| -------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **User**                         | Identidad autenticable.                                                         | No concede permisos por sí sola.                                                                        |
-| **Actor**                        | Identidad de negocio estable resuelta desde el proveedor de auth.               | Los aggregates referencian `ActorId`, no tablas de auth.                                                |
-| **Organization**                 | Tenant que agrupa marca, staff y competiciones.                                 | Todo dato administrativo privado pertenece a una organización.                                          |
-| **OrganizationMember**           | Relación User/Actor ↔ Organization con rol y estado.                            | Es opcional para un Player; los roles son contextuales y no se comparten entre orgs.                    |
-| **PlatformAdmin / Superusuario** | Opera la plataforma Futrob.                                                     | Acceso excepcional, acotado y auditado.                                                                 |
-| **Organizer**                    | Administra organización o competición.                                          | Crea reglas, fixtures, aprueba inscripciones, resuelve disputas.                                        |
-| **CompetitionStaff**             | Rol delegado con permisos granulares.                                           | No implica ownership de la organización.                                                                |
-| **Captain**                      | Representa un Team en una competición.                                          | Vincula club EA, plantilla, reprogramaciones y selección oficial.                                       |
-| **ViceCaptain / Subcapitán**     | Permisos delegados del capitán.                                                 | Alcance configurable.                                                                                   |
-| **Player**                       | Perfil gamer vinculado a un Actor, con o sin participación en una organización. | Puede consultar su proyección personal; solo ocupa un slot de fixture cuando pertenece a una plantilla. |
-| **Spectator**                    | Consume portal público.                                                         | Sin datos administrativos ni disputas privadas.                                                         |
-| **PlayerProfile**                | Espacio personal de un jugador autenticado.                                     | No requiere organización; expone solo datos propios permitidos.                                         |
-| **ActorOnboarding**              | Estado de onboarding asociado a un Actor.                                       | Persiste finalización, fecha, versión y camino; no pertenece a Better Auth ni al perfil del jugador.    |
+| Término                          | Definición canónica                                                             | Regla o límite                                                                                                                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **User**                         | Identidad autenticable.                                                         | No concede permisos por sí sola.                                                                                                                                                         |
+| **Actor**                        | Identidad de negocio estable resuelta desde el proveedor de auth.               | Los aggregates referencian `ActorId`, no tablas de auth.                                                                                                                                 |
+| **Organization**                 | Tenant que agrupa marca, staff y competiciones.                                 | Todo dato administrativo privado pertenece a una organización.                                                                                                                           |
+| **OrganizationMember**           | Relación User/Actor ↔ Organization con rol y estado.                            | Es opcional para un Player; los roles son contextuales y no se comparten entre orgs.                                                                                                     |
+| **CompetitionInvitation**        | Código emitido desde una Competition para invitar a un Actor.                   | Jugador y capitán siempre requieren este alcance. Al aceptarlo concede acceso a esa competición y la membresía mínima del tenant; el código no se persiste en el progreso de onboarding. |
+| **CompetitionMembership**        | Relación Actor ↔ Competition con rol contextual.                                | Concede acceso operativo a la competición; no equivale a pertenecer a un Team ni a integrar un Roster.                                                                                   |
+| **PlatformAdmin / Superusuario** | Opera la plataforma Futrob.                                                     | Acceso excepcional, acotado y auditado.                                                                                                                                                  |
+| **Organizer**                    | Administra organización o competición.                                          | Crea reglas, fixtures, aprueba inscripciones, resuelve disputas.                                                                                                                         |
+| **CompetitionStaff**             | Rol delegado con permisos granulares.                                           | No implica ownership de la organización.                                                                                                                                                 |
+| **Captain**                      | Representa un Team en una competición.                                          | Vincula club EA, plantilla, reprogramaciones y selección oficial.                                                                                                                        |
+| **ViceCaptain / Subcapitán**     | Permisos delegados del capitán.                                                 | Alcance configurable.                                                                                                                                                                    |
+| **Player**                       | Perfil gamer vinculado a un Actor, con o sin participación en una organización. | Puede consultar su proyección personal; solo ocupa un slot de fixture cuando pertenece a una plantilla.                                                                                  |
+| **Spectator**                    | Consume portal público.                                                         | Sin datos administrativos ni disputas privadas.                                                                                                                                          |
+| **PlayerProfile**                | Espacio personal de un jugador autenticado.                                     | No requiere organización; expone solo datos propios permitidos.                                                                                                                          |
+| **ActorOnboarding**              | Estado de onboarding asociado a un Actor.                                       | Persiste finalización, fecha, versión y camino; no pertenece a Better Auth ni al perfil del jugador.                                                                                     |
 
 ## 2. Edición, modalidad y competición
 
@@ -36,13 +38,13 @@
 
 ## 3. Equipos y plantillas
 
-| Término                        | Definición canónica                                                 | Regla o límite                                                    |
-| ------------------------------ | ------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| **Team**                       | Unidad competitiva que ocupa fixtures, tabla y bracket.             | En MVP FC Clubs es un club/equipo; no se asume 1v1 individual.    |
-| **CompetitionEntry**           | Inscripción de un Team en una Competition.                          | Puede requerir verificación de club EA.                           |
-| **Roster / CompetitionRoster** | Plantilla versionada de jugadores del Team en la competición.       | Elegibilidad contextual y temporal.                               |
-| **PlayerGameAccount**          | Cuenta de juego (gamertag / EA) asociada a un PlayerProfile/Player. | Identificador, plataforma y edición; no requiere credenciales EA. |
-| **EaClubConnection**           | Vínculo entre Team y club EA (id, nombre, plataforma, edición).     | Persistido tras búsqueda y selección del capitán.                 |
+| Término                        | Definición canónica                                                | Regla o límite                                                                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Team**                       | Unidad competitiva que ocupa fixtures, tabla y bracket.            | En MVP FC Clubs es un club/equipo; no se asume 1v1 individual.                                                                                                              |
+| **CompetitionEntry**           | Inscripción de un Team en una Competition.                         | Puede requerir verificación de club EA.                                                                                                                                     |
+| **Roster / CompetitionRoster** | Plantilla versionada de jugadores del Team en la competición.      | Elegibilidad contextual y temporal.                                                                                                                                         |
+| **PlayerGameAccount**          | Identificador externo de EA declarado por un PlayerProfile/Player. | Futrob confía en la declaración y no verifica propiedad. El identificador correlaciona partidos y estadísticas; plataforma y edición contextualizan las consultas a la API. |
+| **EaClubConnection**           | Vínculo entre Team y club EA (id, nombre, plataforma, edición).    | Persistido tras búsqueda y selección del capitán.                                                                                                                           |
 
 ## 4. Jerarquía competitiva
 

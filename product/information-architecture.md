@@ -82,9 +82,20 @@ consulta estado previo ni membresías. Después del login, la plataforma consult
 `actor_onboarding`; si está incompleto vuelve al onboarding y, solo si está completo, consulta
 membresías para resolver el destino. En onboarding puede:
 
-- crear una organización;
-- aceptar una invitación;
+- crear una organización y una primera competición en borrador;
+- aceptar una invitación a una competición y navegar directamente a ella;
 - continuar como jugador hacia `/player` sin organización.
+
+Los tres caminos aseguran un perfil personal de jugador. El identificador de EA es opcional y se
+configura en el paso **Cuenta** o posteriormente desde Datos de juego. Los recorridos son:
+
+- Organizador: Intención → Organización → Competición → Cuenta → Confirmar.
+- Invitación: Intención → Invitación → Cuenta → Confirmar.
+- Jugador: Intención → Cuenta → Confirmar.
+
+La competición inicial solicita identidad, edición, plataforma, región, timezone y formato, nace
+como `draft` con reglas seguras y continúa en su pantalla de configuración. No se publican equipos,
+stages ni fixture durante onboarding.
 
 La tercera opción completa y persiste el onboarding personal; no requiere invitación y deja
 disponibles las otras dos opciones para más adelante. El estado se consulta en cada entrada a
@@ -100,7 +111,7 @@ crear una organización ni aceptar una invitación.
 - **Mis partidos:** historial individual ordenado por fecha, competición, equipo y resultado; solo partidos permitidos por la proyección personal.
 - **Mis estadísticas:** goles, asistencias, rating, MVP y otras métricas disponibles; se distingue dato oficial de dato incompleto.
 - **Datos de juego:** vincular o actualizar identificador de jugador, plataforma y edición.
-- **Invitaciones y organizaciones:** aceptar una invitación o crear una organización como acciones secundarias.
+- **Invitaciones y organizaciones:** aceptar una invitación a una competición o crear una organización como acciones secundarias.
 
 La vista personal no muestra disputas, payloads EA crudos, tokens ni datos administrativos de organizaciones en las que el actor no sea miembro.
 
