@@ -103,3 +103,25 @@ export const acceptCompetitionInvitationResponseSchema = acceptInvitationRespons
 export type AcceptCompetitionInvitationResponse = z.infer<
   typeof acceptCompetitionInvitationResponseSchema
 >;
+
+export const competitionEntryStatusSchema = z.enum(["pending", "approved", "rejected"]);
+export type CompetitionEntryStatusDto = z.infer<typeof competitionEntryStatusSchema>;
+
+export const competitionEntrySchema = z.object({
+  id: z.string().min(1),
+  organizationId: z.string().min(1),
+  competitionId: z.string().min(1),
+  teamId: z.string().min(1),
+  status: competitionEntryStatusSchema,
+  createdAt: z.string().datetime(),
+});
+export type CompetitionEntryDto = z.infer<typeof competitionEntrySchema>;
+
+export const registerTeamEntryRequestSchema = z.object({
+  teamId: z.string().trim().min(1),
+  creationKey: z.string().trim().min(1).max(160).optional(),
+});
+export type RegisterTeamEntryRequest = z.infer<typeof registerTeamEntryRequestSchema>;
+
+export const registerTeamEntryResponseSchema = competitionEntrySchema;
+export type RegisterTeamEntryResponse = z.infer<typeof registerTeamEntryResponseSchema>;
