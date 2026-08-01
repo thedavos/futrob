@@ -28,3 +28,13 @@ export {
   JoinCompetitionUseCase,
   type JoinCompetitionInput,
 } from "./application/join-competition/join-competition.use-case.ts";
+export type {
+  CompetitionEntry,
+  CompetitionEntryStatus,
+} from "./domain/entities/competition-entry.ts";
+export type { CompetitionEntryRepository } from "./domain/ports/competition-entry.repository.ts";
+export {
+  RegisterTeamEntryUseCase,
+  type RegisterTeamEntryInput,
+} from "./application/register-team-entry/register-team-entry.use-case.ts";
+export { GetTeamEntryUseCase } from "./application/get-team-entry/get-team-entry.use-case.ts";
