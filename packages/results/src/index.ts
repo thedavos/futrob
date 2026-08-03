@@ -10,6 +10,12 @@ export type {
 export type { ProviderMatchReaderPort } from "./domain/ports/provider-match-reader.port.ts";
 export type { OfficialResultApprovedEvent } from "./domain/events/official-result-approved.event.ts";
 export {
+  EncounterNotFound,
+  InvalidSelection,
+  DuplicateProviderMatch,
+  type SelectOfficialMatchesError,
+} from "./domain/errors/select-official-matches.errors.ts";
+export {
   SelectOfficialMatchesUseCase,
   type SelectOfficialMatchesInput,
 } from "./application/select-official-matches/select-official-matches.use-case.ts";

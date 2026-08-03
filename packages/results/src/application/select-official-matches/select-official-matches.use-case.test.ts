@@ -2,6 +2,11 @@ import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asEncounterId, asOrganizationId } from "@futrob/shared-kernel";
 import type { EventPublisherPort } from "@futrob/shared-kernel";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import {
+  DuplicateProviderMatch,
+  EncounterNotFound,
+  InvalidSelection,
+} from "../../domain/errors/select-official-matches.errors.ts";
 import { SelectOfficialMatchesUseCase } from "./select-official-matches.use-case.ts";
 
 const publisher: EventPublisherPort = {
@@ -40,14 +45,12 @@ describe("SelectOfficialMatchesUseCase", () => {
       ],
     });
 
-    expect(result).toEqual({
-      ok: false,
-      error: {
-        code: "results.encounter_not_found",
-        message: "Encounter not found",
-        details: { encounterId: "enc-1" },
-      },
-    });
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && EncounterNotFound.is(result.error)).toBe(true);
+    expect(!result.isOk() && result.error.code).toBe("results.encounter_not_found");
+    expect(!result.isOk() && EncounterNotFound.is(result.error) && result.error.encounterId).toBe(
+      "enc-1",
+    );
   });
 
   it("fails when selection count does not match official slots", async () => {
@@ -75,14 +78,10 @@ describe("SelectOfficialMatchesUseCase", () => {
       ],
     });
 
-    expect(result).toEqual({
-      ok: false,
-      error: {
-        code: "results.invalid_selection",
-        message: "Selection count must match official match slots",
-        details: { expected: 2, received: 1 },
-      },
-    });
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && InvalidSelection.is(result.error)).toBe(true);
+    expect(!result.isOk() && InvalidSelection.is(result.error) && result.error.expected).toBe(2);
+    expect(!result.isOk() && InvalidSelection.is(result.error) && result.error.received).toBe(1);
   });
 
   it("fails when the same provider match fills two slots", async () => {
@@ -114,13 +113,9 @@ describe("SelectOfficialMatchesUseCase", () => {
       ],
     });
 
-    expect(result).toEqual({
-      ok: false,
-      error: {
-        code: "results.duplicate_provider_match",
-        message: "The same provider match cannot fill two official slots",
-      },
-    });
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && DuplicateProviderMatch.is(result.error)).toBe(true);
+    expect(!result.isOk() && result.error.code).toBe("results.duplicate_provider_match");
   });
 
   it("returns an awaiting-confirmation selection when valid", async () => {
@@ -148,21 +143,19 @@ describe("SelectOfficialMatchesUseCase", () => {
       ],
     });
 
-    expect(result).toEqual({
-      ok: true,
-      value: {
-        id: "pending",
-        encounterId: "enc-1",
-        status: "awaiting_opponent_confirmation",
-        proposedByActorId: "actor-1",
-        proposedAt: expect.any(Date),
-        slots: [
-          {
-            officialSlot: 1,
-            providerMatchRef: { providerKey: "ea-clubs", externalId: "m-1" },
-          },
-        ],
-      },
+    expect(result.isOk()).toBe(true);
+    expect(result.isOk() && result.value).toEqual({
+      id: "pending",
+      encounterId: "enc-1",
+      status: "awaiting_opponent_confirmation",
+      proposedByActorId: "actor-1",
+      proposedAt: expect.any(Date),
+      slots: [
+        {
+          officialSlot: 1,
+          providerMatchRef: { providerKey: "ea-clubs", externalId: "m-1" },
+        },
+      ],
     });
   });
 });

@@ -1,10 +1,15 @@
 import { err, ok, type Result } from "@futrob/shared-kernel";
-import { domainError, type DomainError } from "@futrob/shared-kernel";
 import type { ActorId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
 import type { EventPublisherPort } from "@futrob/shared-kernel";
 import type { ExternalReference } from "@futrob/game-data";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
+import {
+  DuplicateProviderMatch,
+  EncounterNotFound,
+  InvalidSelection,
+  type SelectOfficialMatchesError,
+} from "../../domain/errors/select-official-matches.errors.ts";
 
 export interface SelectOfficialMatchesInput {
   readonly actorId: ActorId;
@@ -30,11 +35,13 @@ export class SelectOfficialMatchesUseCase {
 
   async execute(
     input: SelectOfficialMatchesInput,
-  ): Promise<Result<OfficialMatchSelection, DomainError>> {
+  ): Promise<Result<OfficialMatchSelection, SelectOfficialMatchesError>> {
     const encounter = await this.deps.encounterReader.getById(input.encounterId);
     if (!encounter) {
       return err(
-        domainError("results.encounter_not_found", "Encounter not found", {
+        new EncounterNotFound({
+          code: "results.encounter_not_found",
+          message: "Encounter not found",
           encounterId: input.encounterId,
         }),
       );
@@ -42,14 +49,12 @@ export class SelectOfficialMatchesUseCase {
 
     if (input.selections.length !== encounter.officialMatchCount) {
       return err(
-        domainError(
-          "results.invalid_selection",
-          "Selection count must match official match slots",
-          {
-            expected: encounter.officialMatchCount,
-            received: input.selections.length,
-          },
-        ),
+        new InvalidSelection({
+          code: "results.invalid_selection",
+          message: "Selection count must match official match slots",
+          expected: encounter.officialMatchCount,
+          received: input.selections.length,
+        }),
       );
     }
 
@@ -57,10 +62,10 @@ export class SelectOfficialMatchesUseCase {
     const keys = new Set(refs.map((r) => `${r.providerKey}:${r.externalId}`));
     if (keys.size !== refs.length) {
       return err(
-        domainError(
-          "results.duplicate_provider_match",
-          "The same provider match cannot fill two official slots",
-        ),
+        new DuplicateProviderMatch({
+          code: "results.duplicate_provider_match",
+          message: "The same provider match cannot fill two official slots",
+        }),
       );
     }
 
