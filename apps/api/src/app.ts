@@ -9,6 +9,7 @@ import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
 import { registerOrganizationRoutes } from "@/http/routes/organizations.ts";
 import { registerPlayerRoutes } from "@/http/routes/players.ts";
+import { registerTeamRoutes } from "@/http/routes/teams.ts";
 
 export interface AppDeps {
   readonly modules: AppModules;
@@ -34,7 +35,7 @@ export function createApp(deps: AppDeps): Hono {
     "/api/v1/*",
     cors({
       origin: (origin) => (origin && allowedOrigins.has(origin) ? origin : null),
-      allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "OPTIONS"],
       allowHeaders: ["Accept", "Authorization", "Content-Type", "X-Futrob-Actor-Id"],
     }),
   );
@@ -48,6 +49,7 @@ export function createApp(deps: AppDeps): Hono {
   registerOnboardingRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);
   registerPlayerRoutes(v1, deps);
+  registerTeamRoutes(v1, deps);
 
   app.route("/api/v1", v1);
 

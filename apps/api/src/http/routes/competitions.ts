@@ -5,8 +5,10 @@ import {
   createInvitationRequestSchema,
   createInvitationResponseSchema,
   getCompetitionDraftResponseSchema,
+  registerTeamEntryRequestSchema,
+  registerTeamEntryResponseSchema,
 } from "@futrob/api-contracts";
-import { asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
+import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
 import { apiErrorResponse, domainErrorToHttp, validationErrorResponse } from "@/http/errors.ts";
 import {
@@ -14,6 +16,7 @@ import {
   type ServiceAuthVariables,
 } from "@/http/middleware/service-auth.ts";
 import { competitionDraftDto } from "@/http/mappers/competition.ts";
+import { competitionEntryDto } from "@/http/mappers/competition-entry.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
@@ -82,6 +85,46 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
       );
     },
   );
+
+  secured.post("/organizations/:organizationId/competitions/:competitionId/entries", async (c) => {
+    const organizationId = asOrganizationId(c.req.param("organizationId"));
+    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+      actorId: c.get("actorId"),
+    });
+    const membership = memberships.find((item) => item.organizationId === organizationId);
+    if (!membership || !["organizer", "staff"].includes(membership.role)) {
+      return apiErrorResponse(403, {
+        code: "competitions.forbidden",
+        messageKey: "errors.competitions.forbidden",
+      });
+    }
+
+    const parsed = registerTeamEntryRequestSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+
+    const team = await deps.modules.teams.getTeam.execute({
+      organizationId,
+      teamId: asTeamId(parsed.data.teamId),
+    });
+    if (!team) {
+      return apiErrorResponse(404, {
+        code: "teams.not_found",
+        messageKey: "errors.teams.not_found",
+      });
+    }
+
+    const result = await deps.modules.competitions.registerTeamEntry.execute({
+      organizationId,
+      competitionId: asCompetitionId(c.req.param("competitionId")),
+      teamId: team.id,
+      creationKey: parsed.data.creationKey,
+    });
+    if (!result.ok) return domainErrorToHttp(result.error);
+    return jsonResponse(
+      registerTeamEntryResponseSchema.parse(competitionEntryDto(result.value)),
+      201,
+    );
+  });
 
   secured.post("/competitions/invitations/accept", async (c) => {
     const parsed = acceptInvitationRequestSchema.safeParse(await c.req.json().catch(() => null));

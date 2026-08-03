@@ -538,4 +538,147 @@ describe("apps/api", () => {
 
     expect(res.status).toBe(401);
   });
+
+  it("teams: creates entry, roster across competitions, active preference, and rejects same-competition conflict", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-roster-org";
+    const player = "actor-roster-player";
+
+    const orgCreated = await app.request("/api/v1/identity/onboarding/organization", {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Roster Org",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    expect(orgCreated.status).toBe(200);
+    const orgBody = (await orgCreated.json()) as {
+      organizationId: string;
+      competition: { competition: { id: string } };
+    };
+    const organizationId = orgBody.organizationId;
+    const competitionA = orgBody.competition.competition.id;
+
+    await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(player),
+      body: JSON.stringify({
+        gameAccount: {
+          identifier: "gamer23",
+          platform: "nintendo-switch-1",
+          gameEdition: "FC 26",
+        },
+      }),
+    });
+    const profileRes = await app.request("/api/v1/players/me", {
+      headers: serviceHeaders(player),
+    });
+    const profileBody = (await profileRes.json()) as {
+      profile: { id: string };
+      gameAccounts: Array<{ id: string }>;
+    };
+
+    const teamA = await app.request(`/api/v1/organizations/${organizationId}/teams`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ name: "Alpha", creationKey: "team:alpha" }),
+    });
+    expect(teamA.status).toBe(201);
+    const teamABody = (await teamA.json()) as { id: string };
+
+    const teamB = await app.request(`/api/v1/organizations/${organizationId}/teams`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ name: "Beta", creationKey: "team:beta" }),
+    });
+    const teamBBody = (await teamB.json()) as { id: string };
+
+    const entryA = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/entries`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ teamId: teamABody.id, creationKey: "entry:alpha" }),
+      },
+    );
+    expect(entryA.status).toBe(201);
+
+    const rosterA = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/teams/${teamABody.id}/roster`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({
+          playerProfileId: profileBody.profile.id,
+          gameAccountId: profileBody.gameAccounts[0]?.id,
+          role: "player",
+        }),
+      },
+    );
+    expect(rosterA.status).toBe(201);
+    const rosterABody = (await rosterA.json()) as { id: string };
+
+    const conflict = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/teams/${teamBBody.id}/roster`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({
+          playerProfileId: profileBody.profile.id,
+          role: "player",
+        }),
+      },
+    );
+    // entry for team B missing → 404 entry_not_found; register then conflict
+    const entryB = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/entries`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ teamId: teamBBody.id }),
+      },
+    );
+    expect(entryB.status).toBe(201);
+    const conflictAfterEntry = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/teams/${teamBBody.id}/roster`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({
+          playerProfileId: profileBody.profile.id,
+          role: "player",
+        }),
+      },
+    );
+    expect(conflict.status).toBe(404);
+    expect(conflictAfterEntry.status).toBe(409);
+    expect(await conflictAfterEntry.json()).toMatchObject({
+      code: "teams.roster_competition_conflict",
+    });
+
+    const active = await app.request("/api/v1/players/me/active-team", {
+      method: "PUT",
+      headers: serviceHeaders(player),
+      body: JSON.stringify({ rosterMembershipId: rosterABody.id }),
+    });
+    expect(active.status).toBe(200);
+
+    const mine = await app.request("/api/v1/players/me/teams", {
+      headers: serviceHeaders(player),
+    });
+    expect(mine.status).toBe(200);
+    expect(await mine.json()).toMatchObject({
+      activeRosterMembershipId: rosterABody.id,
+      teams: [{ team: { id: teamABody.id }, active: true }],
+    });
+
+    const forbidden = await app.request(`/api/v1/organizations/${organizationId}/teams`, {
+      method: "POST",
+      headers: serviceHeaders(player),
+      body: JSON.stringify({ name: "No" }),
+    });
+    expect(forbidden.status).toBe(403);
+  });
 });

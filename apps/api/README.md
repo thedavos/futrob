@@ -60,11 +60,15 @@ Without `DATABASE_URL`, organizations, competitions, player profiles and actor o
 
 ### Persistence added by onboarding
 
-| Table                      | Owner           | Purpose                                                                                                                 |
-| -------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `organizations`            | `organizations` | Tenant. `normalized_name` enforces the globally unique organization name; `creation_key` repairs onboarding retries.    |
-| `organization_invitations` | `organizations` | Hashed, expiring invitation token. `competition_id` identifies the competition that issued a player/captain invitation. |
-| `competition_memberships`  | `competitions`  | Contextual actor access to one competition. It does not create a team entry or roster membership.                       |
+| Table                            | Owner           | Purpose                                                                                                                 |
+| -------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `organizations`                  | `organizations` | Tenant. `normalized_name` enforces the globally unique organization name; `creation_key` repairs onboarding retries.    |
+| `organization_invitations`       | `organizations` | Hashed, expiring invitation token. `competition_id` identifies the competition that issued a player/captain invitation. |
+| `competition_memberships`        | `competitions`  | Contextual actor access to one competition. It does not create a team entry or roster membership.                       |
+| `teams`                          | `teams`         | Organization-scoped competitive unit. `creation_key` repairs create retries.                                            |
+| `competition_entries`            | `competitions`  | Team inscription in a competition (`UNIQUE(competition_id, team_id)`).                                                  |
+| `competition_roster_memberships` | `teams`         | PlayerProfile on a team in a competition (`UNIQUE(player_profile_id, competition_id)`). Optional `game_account_id`.     |
+| `active_team_preferences`        | `teams`         | One active roster membership per actor for personal UI context.                                                         |
 
 The onboarding invitation endpoint accepts only invitations with `competition_id`. A successful
 acceptance ensures both the organization membership required for tenant isolation and the

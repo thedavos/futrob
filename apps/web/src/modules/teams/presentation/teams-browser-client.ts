@@ -2,9 +2,15 @@ import {
   addMyPlayerGameAccountRequestSchema,
   addMyPlayerGameAccountResponseSchema,
   getMyPlayerProfileResponseSchema,
+  getMyTeamsResponseSchema,
+  setActiveTeamRequestSchema,
+  setActiveTeamResponseSchema,
   type AddMyPlayerGameAccountRequest,
   type AddMyPlayerGameAccountResponse,
   type GetMyPlayerProfileResponse,
+  type GetMyTeamsResponse,
+  type SetActiveTeamRequest,
+  type SetActiveTeamResponse,
 } from "@futrob/api-contracts";
 
 export class TeamsClientError extends Error {
@@ -19,7 +25,7 @@ export class TeamsClientError extends Error {
 
 async function requestJson<T>(input: {
   readonly path: string;
-  readonly method: "GET" | "POST";
+  readonly method: "GET" | "POST" | "PUT";
   readonly body?: unknown;
   readonly parse: (data: unknown) => T;
 }): Promise<T> {
@@ -58,6 +64,22 @@ export const teamsBrowserClient = {
       method: "POST",
       body,
       parse: (data) => addMyPlayerGameAccountResponseSchema.parse(data),
+    });
+  },
+  getMyTeams(): Promise<GetMyTeamsResponse> {
+    return requestJson({
+      path: "/api/v1/players/me/teams",
+      method: "GET",
+      parse: (data) => getMyTeamsResponseSchema.parse(data),
+    });
+  },
+  setActiveTeam(input: SetActiveTeamRequest): Promise<SetActiveTeamResponse> {
+    const body = setActiveTeamRequestSchema.parse(input);
+    return requestJson({
+      path: "/api/v1/players/me/active-team",
+      method: "PUT",
+      body,
+      parse: (data) => setActiveTeamResponseSchema.parse(data),
     });
   },
 };

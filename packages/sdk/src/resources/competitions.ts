@@ -2,9 +2,13 @@ import {
   acceptCompetitionInvitationResponseSchema,
   acceptInvitationRequestSchema,
   getCompetitionDraftResponseSchema,
+  registerTeamEntryRequestSchema,
+  registerTeamEntryResponseSchema,
   type AcceptCompetitionInvitationResponse,
   type AcceptInvitationRequest,
   type GetCompetitionDraftResponse,
+  type RegisterTeamEntryRequest,
+  type RegisterTeamEntryResponse,
 } from "@futrob/api-contracts";
 import type { HttpClient } from "../http.ts";
 
@@ -30,6 +34,20 @@ export function createCompetitionsResource(http: HttpClient) {
         method: "POST",
         body,
         parse: (data) => acceptCompetitionInvitationResponseSchema.parse(data),
+      });
+    },
+
+    async registerTeamEntry(
+      organizationId: string,
+      competitionId: string,
+      input: RegisterTeamEntryRequest,
+    ): Promise<RegisterTeamEntryResponse> {
+      const body = registerTeamEntryRequestSchema.parse(input);
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/entries`,
+        method: "POST",
+        body,
+        parse: (data) => registerTeamEntryResponseSchema.parse(data),
       });
     },
   };

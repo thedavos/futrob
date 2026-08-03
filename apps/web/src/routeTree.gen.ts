@@ -40,6 +40,8 @@ import { Route as ApiV1OrganizationsMineRouteImport } from './routes/api/v1/orga
 import { Route as ApiV1MetaPingRouteImport } from './routes/api/v1/meta/ping'
 import { Route as ApiV1IdentityOnboardingRouteImport } from './routes/api/v1/identity/onboarding'
 import { Route as ApiV1PlayersMeGameAccountsRouteImport } from './routes/api/v1/players/me/game-accounts'
+import { Route as ApiV1PlayersMeTeamsRouteImport } from './routes/api/v1/players/me/teams'
+import { Route as ApiV1PlayersMeActiveTeamRouteImport } from './routes/api/v1/players/me/active-team'
 import { Route as ApiV1OrganizationsInvitationsAcceptRouteImport } from './routes/api/v1/organizations/invitations.accept'
 import { Route as ApiV1OrganizationsOrganizationIdInvitationsRouteImport } from './routes/api/v1/organizations/$organizationId.invitations'
 import { Route as ApiV1IdentityOnboardingPlayerRouteImport } from './routes/api/v1/identity/onboarding/player'
@@ -213,6 +215,17 @@ const ApiV1PlayersMeGameAccountsRoute =
     path: '/game-accounts',
     getParentRoute: () => ApiV1PlayersMeRoute,
   } as any)
+const ApiV1PlayersMeTeamsRoute = ApiV1PlayersMeTeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => ApiV1PlayersMeRoute,
+} as any)
+const ApiV1PlayersMeActiveTeamRoute =
+  ApiV1PlayersMeActiveTeamRouteImport.update({
+    id: '/active-team',
+    path: '/active-team',
+    getParentRoute: () => ApiV1PlayersMeRoute,
+  } as any)
 const ApiV1OrganizationsInvitationsAcceptRoute =
   ApiV1OrganizationsInvitationsAcceptRouteImport.update({
     id: '/api/v1/organizations/invitations/accept',
@@ -333,6 +346,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/organizations/$organizationId/invitations': typeof ApiV1OrganizationsOrganizationIdInvitationsRoute
   '/api/v1/organizations/invitations/accept': typeof ApiV1OrganizationsInvitationsAcceptRoute
   '/api/v1/players/me/game-accounts': typeof ApiV1PlayersMeGameAccountsRoute
+  '/api/v1/players/me/teams': typeof ApiV1PlayersMeTeamsRoute
+  '/api/v1/players/me/active-team': typeof ApiV1PlayersMeActiveTeamRoute
   '/orgs/$orgId/competitions/$competitionId/setup': typeof AppOrgsOrgIdCompetitionsCompetitionIdSetupRoute
   '/api/v1/game-data/clubs/$externalClubId/matches': typeof ApiV1GameDataClubsExternalClubIdMatchesRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdRouteWithChildren
@@ -376,6 +391,8 @@ export interface FileRoutesByTo {
   '/api/v1/organizations/$organizationId/invitations': typeof ApiV1OrganizationsOrganizationIdInvitationsRoute
   '/api/v1/organizations/invitations/accept': typeof ApiV1OrganizationsInvitationsAcceptRoute
   '/api/v1/players/me/game-accounts': typeof ApiV1PlayersMeGameAccountsRoute
+  '/api/v1/players/me/teams': typeof ApiV1PlayersMeTeamsRoute
+  '/api/v1/players/me/active-team': typeof ApiV1PlayersMeActiveTeamRoute
   '/orgs/$orgId/competitions/$competitionId/setup': typeof AppOrgsOrgIdCompetitionsCompetitionIdSetupRoute
   '/api/v1/game-data/clubs/$externalClubId/matches': typeof ApiV1GameDataClubsExternalClubIdMatchesRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdRouteWithChildren
@@ -423,6 +440,8 @@ export interface FileRoutesById {
   '/api/v1/organizations/$organizationId/invitations': typeof ApiV1OrganizationsOrganizationIdInvitationsRoute
   '/api/v1/organizations/invitations/accept': typeof ApiV1OrganizationsInvitationsAcceptRoute
   '/api/v1/players/me/game-accounts': typeof ApiV1PlayersMeGameAccountsRoute
+  '/api/v1/players/me/teams': typeof ApiV1PlayersMeTeamsRoute
+  '/api/v1/players/me/active-team': typeof ApiV1PlayersMeActiveTeamRoute
   '/_app/orgs/$orgId/competitions/$competitionId/setup': typeof AppOrgsOrgIdCompetitionsCompetitionIdSetupRoute
   '/api/v1/game-data/clubs/$externalClubId/matches': typeof ApiV1GameDataClubsExternalClubIdMatchesRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdRouteWithChildren
@@ -469,6 +488,8 @@ export interface FileRouteTypes {
     | '/api/v1/organizations/$organizationId/invitations'
     | '/api/v1/organizations/invitations/accept'
     | '/api/v1/players/me/game-accounts'
+    | '/api/v1/players/me/teams'
+    | '/api/v1/players/me/active-team'
     | '/orgs/$orgId/competitions/$competitionId/setup'
     | '/api/v1/game-data/clubs/$externalClubId/matches'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId'
@@ -512,6 +533,8 @@ export interface FileRouteTypes {
     | '/api/v1/organizations/$organizationId/invitations'
     | '/api/v1/organizations/invitations/accept'
     | '/api/v1/players/me/game-accounts'
+    | '/api/v1/players/me/teams'
+    | '/api/v1/players/me/active-team'
     | '/orgs/$orgId/competitions/$competitionId/setup'
     | '/api/v1/game-data/clubs/$externalClubId/matches'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId'
@@ -558,6 +581,8 @@ export interface FileRouteTypes {
     | '/api/v1/organizations/$organizationId/invitations'
     | '/api/v1/organizations/invitations/accept'
     | '/api/v1/players/me/game-accounts'
+    | '/api/v1/players/me/teams'
+    | '/api/v1/players/me/active-team'
     | '/_app/orgs/$orgId/competitions/$competitionId/setup'
     | '/api/v1/game-data/clubs/$externalClubId/matches'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId'
@@ -806,6 +831,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1PlayersMeGameAccountsRouteImport
       parentRoute: typeof ApiV1PlayersMeRoute
     }
+    '/api/v1/players/me/teams': {
+      id: '/api/v1/players/me/teams'
+      path: '/teams'
+      fullPath: '/api/v1/players/me/teams'
+      preLoaderRoute: typeof ApiV1PlayersMeTeamsRouteImport
+      parentRoute: typeof ApiV1PlayersMeRoute
+    }
+    '/api/v1/players/me/active-team': {
+      id: '/api/v1/players/me/active-team'
+      path: '/active-team'
+      fullPath: '/api/v1/players/me/active-team'
+      preLoaderRoute: typeof ApiV1PlayersMeActiveTeamRouteImport
+      parentRoute: typeof ApiV1PlayersMeRoute
+    }
     '/api/v1/organizations/invitations/accept': {
       id: '/api/v1/organizations/invitations/accept'
       path: '/api/v1/organizations/invitations/accept'
@@ -988,10 +1027,14 @@ const ApiV1IdentityOnboardingRouteWithChildren =
 
 interface ApiV1PlayersMeRouteChildren {
   ApiV1PlayersMeGameAccountsRoute: typeof ApiV1PlayersMeGameAccountsRoute
+  ApiV1PlayersMeTeamsRoute: typeof ApiV1PlayersMeTeamsRoute
+  ApiV1PlayersMeActiveTeamRoute: typeof ApiV1PlayersMeActiveTeamRoute
 }
 
 const ApiV1PlayersMeRouteChildren: ApiV1PlayersMeRouteChildren = {
   ApiV1PlayersMeGameAccountsRoute: ApiV1PlayersMeGameAccountsRoute,
+  ApiV1PlayersMeTeamsRoute: ApiV1PlayersMeTeamsRoute,
+  ApiV1PlayersMeActiveTeamRoute: ApiV1PlayersMeActiveTeamRoute,
 }
 
 const ApiV1PlayersMeRouteWithChildren = ApiV1PlayersMeRoute._addFileChildren(

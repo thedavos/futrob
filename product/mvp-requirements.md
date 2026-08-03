@@ -45,11 +45,13 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 ### 3.3 Equipos, clubes EA y plantillas
 
-| ID             | Requisito verificable                                                                                                                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| FR-04          | Registrar equipos, capitanes, subcapitanes y plantillas; vincular el club de EA (búsqueda por nombre, selección, persistencia de identificador, nombre, plataforma y edición). |
-| FTR-TEAM-001   | El organizador puede exigir verificación del club EA antes de aprobar la inscripción.                                                                                          |
-| FTR-ROSTER-001 | La plantilla soporta invitaciones, roles, elegibilidad y alineaciones según reglas de la competición.                                                                          |
+| ID             | Requisito verificable                                                                                                                                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-04          | Registrar equipos, capitanes, subcapitanes y plantillas; vincular el club de EA (búsqueda por nombre, selección, persistencia de identificador, nombre, plataforma y edición).     |
+| FTR-TEAM-001   | El organizador puede exigir verificación del club EA antes de aprobar la inscripción.                                                                                              |
+| FTR-TEAM-002   | Un jugador pertenece como máximo a un Team por Competition; puede pertenecer a varios Teams en competiciones distintas y declarar el mismo identificador EA en varias plataformas. |
+| FTR-ROSTER-001 | La plantilla soporta invitaciones, roles, elegibilidad y alineaciones según reglas de la competición.                                                                              |
+| FTR-ROSTER-002 | El espacio personal permite listar las membresías de plantilla del actor y marcar una como equipo activo (`ActiveTeamPreference`); la preferencia no altera elegibilidad.          |
 
 ### 3.4 Fixtures, enfrentamientos y partidos oficiales
 
@@ -151,7 +153,7 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 Entidades conceptuales mínimas (nombres de persistencia orientativos):
 
-`organizations`, `organization_memberships`, `users`, `actors`, `actor_onboarding`, `player_profiles`, `game_editions`, `competitions`, `competition_stages`, `competition_rules`, `rounds`, `teams`, `team_memberships`, `players`, `player_game_accounts`, `competition_entries`, `competition_rosters`, `competition_encounters`, `competition_matches`, `schedule_change_requests`, `schedule_change_proposals`, `ea_club_connections`, `ea_sync_jobs`, `ea_raw_match_observations`, `ea_matches`, `ea_team_match_stats`, `ea_player_match_stats`, `match_candidates`, `official_match_selections`, `match_confirmation_actions`, `match_disputes`, `sanctions`, `team_competition_stats`, `player_competition_stats`, `player_personal_stats`, `ranking_snapshots`, `analytics_snapshots`, `provider_health_events`, `audit_logs`.
+`organizations`, `organization_memberships`, `users`, `actors`, `actor_onboarding`, `player_profiles`, `game_editions`, `competitions`, `competition_stages`, `competition_rules`, `rounds`, `teams`, `competition_roster_memberships`, `active_team_preferences`, `players`, `player_game_accounts`, `competition_entries`, `competition_encounters`, `competition_matches`, `schedule_change_requests`, `schedule_change_proposals`, `ea_club_connections`, `ea_sync_jobs`, `ea_raw_match_observations`, `ea_matches`, `ea_team_match_stats`, `ea_player_match_stats`, `match_candidates`, `official_match_selections`, `match_confirmation_actions`, `match_disputes`, `sanctions`, `team_competition_stats`, `player_competition_stats`, `player_personal_stats`, `ranking_snapshots`, `analytics_snapshots`, `provider_health_events`, `audit_logs`.
 
 ## 8. Roadmap por fases
 
