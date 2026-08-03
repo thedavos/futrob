@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "../../domain/entities/competition-entry.ts";
+import { CompetitionNotFound } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type {
   CompetitionDraft,
@@ -75,8 +76,8 @@ describe("RegisterTeamEntryUseCase", () => {
       timeZone: "America/Lima",
       format: "league",
     });
-    expect(draft.ok).toBe(true);
-    if (!draft.ok) return;
+    expect(draft.isOk()).toBe(true);
+    if (!draft.isOk()) return;
 
     const useCase = new RegisterTeamEntryUseCase({
       competitions,
@@ -91,8 +92,8 @@ describe("RegisterTeamEntryUseCase", () => {
     };
     const first = await useCase.execute(input);
     const second = await useCase.execute(input);
-    expect(first.ok && second.ok).toBe(true);
-    if (!first.ok || !second.ok) return;
+    expect(first.isOk() && second.isOk()).toBe(true);
+    if (!first.isOk() || !second.isOk()) return;
     expect(second.value.id).toBe(first.value.id);
     expect(entries.rows).toHaveLength(1);
     expect(first.value.status).toBe("pending");
@@ -109,7 +110,7 @@ describe("RegisterTeamEntryUseCase", () => {
       competitionId: asCompetitionId("missing"),
       teamId: asTeamId("team-1"),
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe("competitions.not_found");
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && CompetitionNotFound.is(result.error)).toBe(true);
   });
 });

@@ -19,6 +19,19 @@ export type {
   CompetitionDraft,
   CompetitionRepository,
 } from "./domain/ports/competition.repository.ts";
+
+export {
+  CompetitionNotFound,
+  InvalidCompetitionName,
+  InvalidCompetitionGameEdition,
+  InvalidCompetitionTimeZone,
+  CompetitionCreationKeyConflict,
+  EntryCreationKeyConflict,
+  type CreateCompetitionDraftError,
+  type JoinCompetitionError,
+  type RegisterTeamEntryError,
+} from "./domain/errors/competition.errors.ts";
+
 export {
   CreateCompetitionDraftUseCase,
   type CreateCompetitionDraftInput,

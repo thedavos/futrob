@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
 import type { CompetitionMembership } from "../../domain/entities/competition-membership.ts";
+import { CompetitionNotFound } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionMembershipRepository } from "../../domain/ports/competition-membership.repository.ts";
 import type {
   CompetitionDraft,
@@ -90,7 +91,7 @@ describe("JoinCompetitionUseCase", () => {
     const first = await useCase.execute(input);
     const retried = await useCase.execute(input);
 
-    expect(first.ok).toBe(true);
+    expect(first.isOk()).toBe(true);
     expect(retried).toEqual(first);
     expect(memberships.rows.size).toBe(1);
   });
@@ -109,7 +110,7 @@ describe("JoinCompetitionUseCase", () => {
       role: "player",
     });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe("competitions.not_found");
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && CompetitionNotFound.is(result.error)).toBe(true);
   });
 });

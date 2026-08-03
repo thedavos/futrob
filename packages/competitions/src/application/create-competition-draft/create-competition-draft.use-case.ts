@@ -1,11 +1,9 @@
 import {
   asCompetitionId,
-  domainError,
   err,
   ok,
   type ActorId,
   type ClockPort,
-  type DomainError,
   type IdGeneratorPort,
   type OrganizationId,
   type Result,
@@ -17,6 +15,13 @@ import type {
   CompetitionRegion,
 } from "../../domain/entities/competition.ts";
 import type { CompetitionRules } from "../../domain/entities/competition-rules.ts";
+import {
+  CompetitionCreationKeyConflict,
+  InvalidCompetitionGameEdition,
+  InvalidCompetitionName,
+  InvalidCompetitionTimeZone,
+  type CreateCompetitionDraftError,
+} from "../../domain/errors/competition.errors.ts";
 import type {
   CompetitionDraft,
   CompetitionRepository,
@@ -46,18 +51,33 @@ export class CreateCompetitionDraftUseCase {
 
   async execute(
     input: CreateCompetitionDraftInput,
-  ): Promise<Result<CompetitionDraft, DomainError>> {
+  ): Promise<Result<CompetitionDraft, CreateCompetitionDraftError>> {
     const name = input.name.trim();
     const gameEdition = input.gameEdition.trim();
     const timeZone = input.timeZone.trim();
     if (name.length === 0 || name.length > 120) {
-      return err(domainError("competitions.invalid_name", "Invalid competition name"));
+      return err(
+        new InvalidCompetitionName({
+          code: "competitions.invalid_name",
+          message: "Invalid competition name",
+        }),
+      );
     }
     if (gameEdition.length === 0 || gameEdition.length > 40) {
-      return err(domainError("competitions.invalid_game_edition", "Invalid game edition"));
+      return err(
+        new InvalidCompetitionGameEdition({
+          code: "competitions.invalid_game_edition",
+          message: "Invalid game edition",
+        }),
+      );
     }
     if (!isIanaTimeZone(timeZone)) {
-      return err(domainError("competitions.invalid_time_zone", "Invalid IANA time zone"));
+      return err(
+        new InvalidCompetitionTimeZone({
+          code: "competitions.invalid_time_zone",
+          message: "Invalid IANA time zone",
+        }),
+      );
     }
 
     const existing = input.creationKey
@@ -65,10 +85,10 @@ export class CreateCompetitionDraftUseCase {
       : null;
     if (existing && existing.competition.organizationId !== input.organizationId) {
       return err(
-        domainError(
-          "competitions.creation_key_conflict",
-          "Creation key belongs to another organization",
-        ),
+        new CompetitionCreationKeyConflict({
+          code: "competitions.creation_key_conflict",
+          message: "Creation key belongs to another organization",
+        }),
       );
     }
     if (existing && existing.competition.status !== "draft") {

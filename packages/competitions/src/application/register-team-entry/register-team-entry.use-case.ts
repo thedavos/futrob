@@ -1,16 +1,19 @@
 import {
-  domainError,
   err,
   ok,
   type ClockPort,
   type CompetitionId,
-  type DomainError,
   type IdGeneratorPort,
   type OrganizationId,
   type Result,
   type TeamId,
 } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "../../domain/entities/competition-entry.ts";
+import {
+  CompetitionNotFound,
+  EntryCreationKeyConflict,
+  type RegisterTeamEntryError,
+} from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
 
@@ -31,13 +34,20 @@ export class RegisterTeamEntryUseCase {
     },
   ) {}
 
-  async execute(input: RegisterTeamEntryInput): Promise<Result<CompetitionEntry, DomainError>> {
+  async execute(
+    input: RegisterTeamEntryInput,
+  ): Promise<Result<CompetitionEntry, RegisterTeamEntryError>> {
     const competition = await this.deps.competitions.findById(
       input.organizationId,
       input.competitionId,
     );
     if (!competition) {
-      return err(domainError("competitions.not_found", "Competition not found"));
+      return err(
+        new CompetitionNotFound({
+          code: "competitions.not_found",
+          message: "Competition not found",
+        }),
+      );
     }
 
     if (input.creationKey) {
@@ -45,10 +55,10 @@ export class RegisterTeamEntryUseCase {
       if (byKey) {
         if (byKey.organizationId !== input.organizationId) {
           return err(
-            domainError(
-              "competitions.entry_creation_key_conflict",
-              "Creation key belongs to another organization",
-            ),
+            new EntryCreationKeyConflict({
+              code: "competitions.entry_creation_key_conflict",
+              message: "Creation key belongs to another organization",
+            }),
           );
         }
         return ok(byKey);

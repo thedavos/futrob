@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
+import { InvalidCompetitionTimeZone } from "../../domain/errors/competition.errors.ts";
 import type {
   CompetitionDraft,
   CompetitionRepository,
@@ -58,8 +59,8 @@ describe("CreateCompetitionDraftUseCase", () => {
   it("creates a league draft with safe regular-stage rules", async () => {
     const result = await createHarness().useCase.execute(baseInput);
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk()) return;
     expect(result.value.competition).toMatchObject({
       name: "Liga Futrob",
       status: "draft",
@@ -87,8 +88,8 @@ describe("CreateCompetitionDraftUseCase", () => {
     const first = await useCase.execute(baseInput);
     const retried = await useCase.execute({ ...baseInput, name: "Liga Actualizada" });
 
-    expect(first.ok && retried.ok).toBe(true);
-    if (!first.ok || !retried.ok) return;
+    expect(first.isOk() && retried.isOk()).toBe(true);
+    if (!first.isOk() || !retried.isOk()) return;
     expect(retried.value.competition.id).toBe(first.value.competition.id);
     expect(retried.value.competition.name).toBe("Liga Actualizada");
     expect(competitions.rows.size).toBe(1);
@@ -100,8 +101,8 @@ describe("CreateCompetitionDraftUseCase", () => {
       region: "america",
     });
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk()) return;
     expect(result.value.competition.region).toBe("america");
   });
 
@@ -111,8 +112,7 @@ describe("CreateCompetitionDraftUseCase", () => {
       timeZone: "Lima/not-real",
     });
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error.code).toBe("competitions.invalid_time_zone");
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && InvalidCompetitionTimeZone.is(result.error)).toBe(true);
   });
 });

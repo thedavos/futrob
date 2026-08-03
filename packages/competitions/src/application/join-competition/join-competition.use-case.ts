@@ -1,9 +1,13 @@
-import { domainError, err, ok, type DomainError, type Result } from "@futrob/shared-kernel";
+import { err, ok, type Result } from "@futrob/shared-kernel";
 import type { ActorId, ClockPort, CompetitionId, OrganizationId } from "@futrob/shared-kernel";
 import type {
   CompetitionMembership,
   CompetitionMembershipRole,
 } from "../../domain/entities/competition-membership.ts";
+import {
+  CompetitionNotFound,
+  type JoinCompetitionError,
+} from "../../domain/errors/competition.errors.ts";
 import type { CompetitionMembershipRepository } from "../../domain/ports/competition-membership.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
 
@@ -23,13 +27,20 @@ export class JoinCompetitionUseCase {
     },
   ) {}
 
-  async execute(input: JoinCompetitionInput): Promise<Result<CompetitionMembership, DomainError>> {
+  async execute(
+    input: JoinCompetitionInput,
+  ): Promise<Result<CompetitionMembership, JoinCompetitionError>> {
     const competition = await this.deps.competitions.findById(
       input.organizationId,
       input.competitionId,
     );
     if (!competition) {
-      return err(domainError("competitions.not_found", "Competition not found"));
+      return err(
+        new CompetitionNotFound({
+          code: "competitions.not_found",
+          message: "Competition not found",
+        }),
+      );
     }
     const existing = await this.deps.memberships.findByCompetitionAndActor(
       input.competitionId,
