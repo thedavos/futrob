@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { ProviderHttpFailed } from "@futrob/game-data";
 import { EaClubsGameDataAdapter } from "@/modules/game-data/adapters/providers/ea-clubs/ea-clubs-game-data.adapter.ts";
 import searchClubsFixture from "@/modules/game-data/adapters/providers/ea-clubs/fixtures/search-clubs.json";
 import clubInfoFixture from "@/modules/game-data/adapters/providers/ea-clubs/fixtures/club-info.json";
@@ -36,8 +37,8 @@ describe("EaClubsGameDataAdapter", () => {
       gameEdition: "fc26",
     });
 
-    expect(result.ok).toBe(true);
-    expect(result.ok && result.value[0]?.externalClubId).toBe("10754");
+    expect(result.isOk()).toBe(true);
+    expect(result.isOk() && result.value[0]?.externalClubId).toBe("10754");
   });
 
   it("getClubInfo maps club by id", async () => {
@@ -57,8 +58,8 @@ describe("EaClubsGameDataAdapter", () => {
       gameEdition: "fc26",
     });
 
-    expect(result.ok).toBe(true);
-    expect(result.ok && result.value.name).toBe("Fera Enjaulada");
+    expect(result.isOk()).toBe(true);
+    expect(result.isOk() && result.value.name).toBe("Fera Enjaulada");
   });
 
   it("getRecentMatches maps provider matches", async () => {
@@ -80,9 +81,9 @@ describe("EaClubsGameDataAdapter", () => {
       maxResultCount: 50,
     });
 
-    expect(result.ok).toBe(true);
-    expect(result.ok && result.value).toHaveLength(1);
-    expect(result.ok && result.value[0]?.provider.externalMatchId).toBe("336118610940060");
+    expect(result.isOk()).toBe(true);
+    expect(result.isOk() && result.value).toHaveLength(1);
+    expect(result.isOk() && result.value[0]?.provider.externalMatchId).toBe("336118610940060");
   });
 
   it("returns provider error on non-OK HTTP", async () => {
@@ -98,7 +99,8 @@ describe("EaClubsGameDataAdapter", () => {
       gameEdition: "fc26",
     });
 
-    expect(result.ok).toBe(false);
-    expect(!result.ok && result.error.code).toBe("game_data.ea_clubs_http_error");
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && ProviderHttpFailed.is(result.error)).toBe(true);
+    expect(!result.isOk() && result.error.code).toBe("game_data.ea_clubs_http_error");
   });
 });

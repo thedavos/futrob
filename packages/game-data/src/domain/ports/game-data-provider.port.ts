@@ -1,7 +1,10 @@
-import type { Result, DomainError } from "@futrob/shared-kernel";
+import type { Result } from "@futrob/shared-kernel";
 import type { ExternalClub } from "../entities/external-club.ts";
 import type { ProviderMatch } from "../entities/provider-match.ts";
+import type { ProviderError } from "../errors/provider.errors.ts";
 import type { GameDataProviderKey } from "../value-objects/provider-key.ts";
+
+export type { ProviderError };
 
 export interface GameDataProviderCapabilities {
   readonly searchClubs: boolean;
@@ -30,8 +33,6 @@ export interface GetRecentMatchesInput {
   readonly matchType: string;
   readonly maxResultCount: number;
 }
-
-export type ProviderError = DomainError;
 
 export interface GameDataProviderPort {
   readonly key: GameDataProviderKey;

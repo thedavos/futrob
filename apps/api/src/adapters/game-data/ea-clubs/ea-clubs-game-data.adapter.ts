@@ -1,12 +1,14 @@
-import { err, ok, type Result, domainError } from "@futrob/shared-kernel";
-import type {
-  ExternalClub,
-  ProviderMatch,
-  GameDataProviderPort,
-  GetExternalClubInput,
-  GetRecentMatchesInput,
-  ProviderError,
-  SearchExternalClubsInput,
+import { err, ok, type Result } from "@futrob/shared-kernel";
+import {
+  ExternalClubNotFound,
+  ProviderSchemaError,
+  type ExternalClub,
+  type ProviderMatch,
+  type GameDataProviderPort,
+  type GetExternalClubInput,
+  type GetRecentMatchesInput,
+  type ProviderError,
+  type SearchExternalClubsInput,
 } from "@futrob/game-data";
 import { EaClubsHttpClient } from "./http/ea-clubs-http.ts";
 import {
@@ -57,14 +59,16 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort {
       platform: input.platform,
       clubName: input.query,
     });
-    if (!response.ok) {
-      return response;
+    if (!response.isOk()) {
+      return err(response.error);
     }
 
     const parsed = eaSearchClubsResponseSchema.safeParse(response.value);
     if (!parsed.success) {
       return err(
-        domainError("game_data.ea_clubs_schema_error", "Failed to parse EA search response", {
+        new ProviderSchemaError({
+          code: "game_data.ea_clubs_schema_error",
+          message: "Failed to parse EA search response",
           issues: parsed.error.issues,
         }),
       );
@@ -87,14 +91,16 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort {
       platform: input.platform,
       clubIds: input.externalClubId,
     });
-    if (!response.ok) {
-      return response;
+    if (!response.isOk()) {
+      return err(response.error);
     }
 
     const parsed = eaClubInfoMapSchema.safeParse(response.value);
     if (!parsed.success) {
       return err(
-        domainError("game_data.ea_clubs_schema_error", "Failed to parse EA club info response", {
+        new ProviderSchemaError({
+          code: "game_data.ea_clubs_schema_error",
+          message: "Failed to parse EA club info response",
           issues: parsed.error.issues,
         }),
       );
@@ -103,7 +109,9 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort {
     const info = parsed.data[input.externalClubId];
     if (!info) {
       return err(
-        domainError("game_data.external_club_not_found", "Club not found on EA Clubs", {
+        new ExternalClubNotFound({
+          code: "game_data.external_club_not_found",
+          message: "Club not found on EA Clubs",
           externalClubId: input.externalClubId,
         }),
       );
@@ -126,14 +134,16 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort {
       matchType: input.matchType,
       maxResultCount: input.maxResultCount,
     });
-    if (!response.ok) {
-      return response;
+    if (!response.isOk()) {
+      return err(response.error);
     }
 
     const parsed = eaClubMatchesResponseSchema.safeParse(response.value);
     if (!parsed.success) {
       return err(
-        domainError("game_data.ea_clubs_schema_error", "Failed to parse EA matches response", {
+        new ProviderSchemaError({
+          code: "game_data.ea_clubs_schema_error",
+          message: "Failed to parse EA matches response",
           issues: parsed.error.issues,
         }),
       );

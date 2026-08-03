@@ -1,12 +1,14 @@
-import { err, type Result, domainError } from "@futrob/shared-kernel";
-import type {
-  ExternalClub,
-  ProviderMatch,
-  GameDataProviderPort,
-  GetExternalClubInput,
-  GetRecentMatchesInput,
-  ProviderError,
-  SearchExternalClubsInput,
+import { err, type Result } from "@futrob/shared-kernel";
+import {
+  ProviderNotImplemented,
+  UnsupportedGameDataOperation,
+  type ExternalClub,
+  type ProviderMatch,
+  type GameDataProviderPort,
+  type GetExternalClubInput,
+  type GetRecentMatchesInput,
+  type ProviderError,
+  type SearchExternalClubsInput,
 } from "@futrob/game-data";
 
 export class ManualGameDataAdapter implements GameDataProviderPort {
@@ -24,16 +26,19 @@ export class ManualGameDataAdapter implements GameDataProviderPort {
     _input: SearchExternalClubsInput,
   ): Promise<Result<ExternalClub[], ProviderError>> {
     return err(
-      domainError(
-        "game_data.unsupported_operation",
-        "Manual provider does not support club search",
-      ),
+      new UnsupportedGameDataOperation({
+        code: "game_data.unsupported_operation",
+        message: "Manual provider does not support club search",
+      }),
     );
   }
 
   async getClubInfo(_input: GetExternalClubInput): Promise<Result<ExternalClub, ProviderError>> {
     return err(
-      domainError("game_data.unsupported_operation", "Manual provider does not support club info"),
+      new UnsupportedGameDataOperation({
+        code: "game_data.unsupported_operation",
+        message: "Manual provider does not support club info",
+      }),
     );
   }
 
@@ -41,10 +46,10 @@ export class ManualGameDataAdapter implements GameDataProviderPort {
     _input: GetRecentMatchesInput,
   ): Promise<Result<ProviderMatch[], ProviderError>> {
     return err(
-      domainError(
-        "game_data.provider_not_implemented",
-        "ManualGameDataAdapter.getRecentMatches is not implemented yet",
-      ),
+      new ProviderNotImplemented({
+        code: "game_data.provider_not_implemented",
+        message: "ManualGameDataAdapter.getRecentMatches is not implemented yet",
+      }),
     );
   }
 }

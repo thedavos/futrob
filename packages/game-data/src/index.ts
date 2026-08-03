@@ -14,13 +14,24 @@ export { isGameDataProviderKey } from "./domain/value-objects/provider-key.ts";
 export type { ExternalReference } from "./domain/value-objects/external-reference.ts";
 export { externalReferenceKey } from "./domain/value-objects/external-reference.ts";
 
+export {
+  ProviderHttpFailed,
+  ProviderTimeout,
+  ProviderNetworkError,
+  ProviderSchemaError,
+  ExternalClubNotFound,
+  UnsupportedGameDataOperation,
+  ProviderNotImplemented,
+  type ProviderTransportError,
+  type ProviderError,
+} from "./domain/errors/provider.errors.ts";
+
 export type {
   GameDataProviderPort,
   GameDataProviderCapabilities,
   GetExternalClubInput,
   GetRecentMatchesInput,
   SearchExternalClubsInput,
-  ProviderError,
 } from "./domain/ports/game-data-provider.port.ts";
 export type { GameDataProviderRegistryPort } from "./domain/ports/game-data-provider-registry.port.ts";
 export type { ProviderMatchRepository } from "./domain/ports/provider-match.repository.ts";

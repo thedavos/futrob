@@ -1,8 +1,10 @@
 import { err, ok, type Result } from "@/shared/domain/result.ts";
 import {
-  eaClubsHttpError,
-  type EaClubsHttpError,
-} from "@/modules/game-data/adapters/providers/ea-clubs/errors/ea-clubs.errors.ts";
+  ProviderHttpFailed,
+  ProviderNetworkError,
+  ProviderTimeout,
+  type ProviderTransportError,
+} from "@futrob/game-data";
 
 /**
  * EA's edge (Akamai) rejects bare API clients with 403 Access Denied.
@@ -30,7 +32,6 @@ export class EaClubsHttpClient {
   private readonly timeoutMs: number;
 
   constructor(options: EaClubsHttpClientOptions) {
-    // Workers' fetch is not a free function; wrapping preserves `this` binding.
     const unbound = options.fetcher;
     this.fetcher = ((input, init) => unbound(input, init)) as typeof fetch;
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
@@ -40,7 +41,7 @@ export class EaClubsHttpClient {
   async getJson(
     path: string,
     query: Record<string, string | number | undefined>,
-  ): Promise<Result<unknown, EaClubsHttpError>> {
+  ): Promise<Result<unknown, ProviderTransportError>> {
     const url = new URL(`${this.baseUrl}${path.startsWith("/") ? path : `/${path}`}`);
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined) {
@@ -62,7 +63,9 @@ export class EaClubsHttpClient {
 
       if (!response.ok) {
         return err(
-          eaClubsHttpError("game_data.ea_clubs_http_error", "EA Clubs request failed", {
+          new ProviderHttpFailed({
+            code: "game_data.ea_clubs_http_error",
+            message: "EA Clubs request failed",
             status: response.status,
             path,
             body: raw,
@@ -73,12 +76,21 @@ export class EaClubsHttpClient {
       return ok(raw);
     } catch (cause) {
       const aborted = cause instanceof Error && cause.name === "AbortError";
+      const causeText = cause instanceof Error ? cause.message : String(cause);
       return err(
-        eaClubsHttpError(
-          aborted ? "game_data.ea_clubs_timeout" : "game_data.ea_clubs_network_error",
-          aborted ? "EA Clubs request timed out" : "EA Clubs network error",
-          { path, cause: cause instanceof Error ? cause.message : String(cause) },
-        ),
+        aborted
+          ? new ProviderTimeout({
+              code: "game_data.ea_clubs_timeout",
+              message: "EA Clubs request timed out",
+              path,
+              cause: causeText,
+            })
+          : new ProviderNetworkError({
+              code: "game_data.ea_clubs_network_error",
+              message: "EA Clubs network error",
+              path,
+              cause: causeText,
+            }),
       );
     } finally {
       clearTimeout(timer);
