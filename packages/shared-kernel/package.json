@@ -9,6 +9,9 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "better-result": "^3.0.0"
+  },
   "devDependencies": {
     "typescript": "6.0.2"
   }

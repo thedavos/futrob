@@ -33,7 +33,7 @@ export async function run(): Promise<number> {
   const success = ok({ encounterId: encounter.id, selectionStatus });
   const failure = err({ code: "domain.smoke.example_error" as const });
 
-  if (!isOk(success) || failure.ok) {
+  if (!isOk(success) || failure.isOk()) {
     return 1;
   }
 
