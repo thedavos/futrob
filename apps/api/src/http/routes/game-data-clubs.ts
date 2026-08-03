@@ -8,7 +8,7 @@ import {
   searchClubsResponseSchema,
 } from "@futrob/api-contracts";
 import type { AppDeps } from "@/app.ts";
-import { domainErrorToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import { toExternalClubDto, toProviderMatchDto } from "@/http/mappers/game-data.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
@@ -27,8 +27,8 @@ export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
       platform,
       gameEdition,
     });
-    if (!result.ok) {
-      return domainErrorToHttp(result.error);
+    if (!result.isOk()) {
+      return failureToHttp(result.error);
     }
 
     const body = searchClubsResponseSchema.parse({ clubs: result.value.map(toExternalClubDto) });
@@ -47,8 +47,8 @@ export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
       platform,
       gameEdition,
     });
-    if (!result.ok) {
-      return domainErrorToHttp(result.error);
+    if (!result.isOk()) {
+      return failureToHttp(result.error);
     }
 
     const body = getClubResponseSchema.parse(toExternalClubDto(result.value));
@@ -69,8 +69,8 @@ export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
       matchType,
       maxResultCount,
     });
-    if (!result.ok) {
-      return domainErrorToHttp(result.error);
+    if (!result.isOk()) {
+      return failureToHttp(result.error);
     }
 
     const body = getClubMatchesResponseSchema.parse({

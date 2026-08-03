@@ -8,7 +8,7 @@ import {
   setActiveTeamResponseSchema,
 } from "@futrob/api-contracts";
 import type { AppDeps } from "@/app.ts";
-import { domainErrorToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import { playerGameAccountDto, playerProfileDto } from "@/http/mappers/player.ts";
 import { playerTeamMembershipDto } from "@/http/mappers/team.ts";
 import {
@@ -42,7 +42,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
       playerProfileId: profile.id,
       ...parsed.data,
     });
-    if (!account.ok) return domainErrorToHttp(account.error);
+    if (!account.isOk()) return failureToHttp(account.error);
 
     return jsonResponse(
       addMyPlayerGameAccountResponseSchema.parse({
@@ -98,7 +98,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
       actorId: c.get("actorId"),
       rosterMembershipId: parsed.data.rosterMembershipId,
     });
-    if (!result.ok) return domainErrorToHttp(result.error);
+    if (!result.isOk()) return failureToHttp(result.error);
 
     return jsonResponse(
       setActiveTeamResponseSchema.parse({

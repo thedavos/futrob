@@ -10,7 +10,7 @@ import {
 } from "@futrob/api-contracts";
 import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
-import { apiErrorResponse, domainErrorToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
@@ -74,7 +74,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
         email: parsed.data.email,
         expiresInMs: parsed.data.expiresInMs,
       });
-      if (!result.ok) return domainErrorToHttp(result.error);
+      if (!result.isOk()) return failureToHttp(result.error);
       return jsonResponse(
         createInvitationResponseSchema.parse({
           ...result.value,
@@ -119,7 +119,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
       teamId: team.id,
       creationKey: parsed.data.creationKey,
     });
-    if (!result.ok) return domainErrorToHttp(result.error);
+    if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
       registerTeamEntryResponseSchema.parse(competitionEntryDto(result.value)),
       201,
@@ -135,7 +135,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
       actorId,
       requireCompetition: true,
     });
-    if (!accepted.ok) return domainErrorToHttp(accepted.error);
+    if (!accepted.isOk()) return failureToHttp(accepted.error);
 
     const competitionId = accepted.value.competitionId!;
     const draft = await deps.modules.competitions.getDraft.execute({
@@ -154,7 +154,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
       actorId,
       role: accepted.value.competitionRole,
     });
-    if (!joined.ok) return domainErrorToHttp(joined.error);
+    if (!joined.isOk()) return failureToHttp(joined.error);
 
     return jsonResponse(
       acceptCompetitionInvitationResponseSchema.parse({

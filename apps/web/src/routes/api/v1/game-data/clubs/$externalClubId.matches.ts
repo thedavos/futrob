@@ -6,7 +6,7 @@ import {
 } from "@futrob/api-contracts";
 import {
   apiErrorResponse,
-  domainErrorToHttp,
+  failureToHttp,
   jsonResponse,
   queryRecord,
 } from "@/shared/infrastructure/http/api-response.ts";
@@ -41,8 +41,8 @@ export const Route = createFileRoute("/api/v1/game-data/clubs/$externalClubId/ma
           },
         );
 
-        if (!result.ok) {
-          return domainErrorToHttp(result.error);
+        if (!result.isOk()) {
+          return failureToHttp(result.error);
         }
 
         const body = getClubMatchesResponseSchema.parse({

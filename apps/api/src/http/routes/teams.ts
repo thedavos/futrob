@@ -14,7 +14,7 @@ import {
   type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
-import { apiErrorResponse, domainErrorToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import { rosterMembershipDto, teamDto } from "@/http/mappers/team.ts";
 import {
   createServiceAuthMiddleware,
@@ -58,7 +58,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
       name: parsed.data.name,
       creationKey: parsed.data.creationKey,
     });
-    if (!result.ok) return domainErrorToHttp(result.error);
+    if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(createTeamResponseSchema.parse(teamDto(result.value)), 201);
   });
 
@@ -94,7 +94,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
         gameAccountId: parsed.data.gameAccountId,
         role: parsed.data.role,
       });
-      if (!result.ok) return domainErrorToHttp(result.error);
+      if (!result.isOk()) return failureToHttp(result.error);
       return jsonResponse(addToRosterResponseSchema.parse(rosterMembershipDto(result.value)), 201);
     },
   );

@@ -1,6 +1,11 @@
-import type { DomainError } from "@futrob/shared-kernel";
 import type { ApiErrorBody } from "@futrob/api-contracts";
 import { jsonResponse } from "@/utils/http-response.ts";
+
+/** Wire-facing expected failure: TaggedError (or structural `{ code }`) with stable wire `code`. */
+export type HttpMappableFailure = {
+  readonly code: string;
+  readonly details?: Readonly<Record<string, unknown>>;
+};
 
 export function apiErrorResponse(status: number, body: ApiErrorBody): Response {
   return jsonResponse(body, status);
@@ -14,19 +19,43 @@ export function validationErrorResponse(issues: unknown): Response {
   });
 }
 
-export function domainErrorToHttp(error: DomainError): Response {
-  return apiErrorResponse(statusForDomainCode(error.code), {
+export function failureToHttp(error: HttpMappableFailure): Response {
+  return apiErrorResponse(statusForFailureCode(error.code), {
     code: error.code,
     messageKey: `errors.${error.code}`,
-    details: error.details,
+    details: error.details ?? detailsFromTaggedProps(error),
   });
 }
 
-function statusForDomainCode(code: string): number {
+function detailsFromTaggedProps(
+  error: HttpMappableFailure,
+): Readonly<Record<string, unknown>> | undefined {
+  const details: Record<string, unknown> = {};
+  const copy = (key: string) => {
+    if (key in error && (error as Record<string, unknown>)[key] !== undefined) {
+      details[key] = (error as Record<string, unknown>)[key];
+    }
+  };
+  for (const key of [
+    "organizationId",
+    "role",
+    "status",
+    "path",
+    "body",
+    "issues",
+    "externalClubId",
+    "cause",
+  ] as const) {
+    copy(key);
+  }
+  return Object.keys(details).length > 0 ? details : undefined;
+}
+
+function statusForFailureCode(code: string): number {
   if (code.includes("not_found")) {
     return 404;
   }
-  if (code.includes("forbidden") || code.includes("unauthorized")) {
+  if (code.includes("forbidden") || code.includes("unauthorized") || code.includes("not_owned")) {
     return 403;
   }
   if (code.includes("conflict")) {

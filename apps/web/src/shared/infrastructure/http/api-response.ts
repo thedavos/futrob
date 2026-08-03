@@ -1,5 +1,9 @@
 import type { ApiErrorBody } from "@futrob/api-contracts";
-import type { DomainError } from "@/shared/domain/domain-error.ts";
+
+export type HttpMappableFailure = {
+  readonly code: string;
+  readonly details?: Readonly<Record<string, unknown>>;
+};
 
 export function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -25,20 +29,57 @@ export function apiErrorResponse(status: number, body: ApiErrorBody): Response {
   return jsonResponse(body, status);
 }
 
-export function domainErrorToHttp(error: DomainError): Response {
-  const status = statusForDomainCode(error.code);
+export function failureToHttp(error: HttpMappableFailure): Response {
+  const status = statusForFailureCode(error.code);
   return apiErrorResponse(status, {
     code: error.code,
     messageKey: `errors.${error.code}`,
-    details: error.details,
+    details: error.details ?? detailsFromTaggedProps(error),
   });
 }
 
-function statusForDomainCode(code: string): number {
+function detailsFromTaggedProps(
+  error: HttpMappableFailure,
+): Readonly<Record<string, unknown>> | undefined {
+  const details: Record<string, unknown> = {};
+  const copy = (key: string) => {
+    if (key in error && (error as Record<string, unknown>)[key] !== undefined) {
+      details[key] = (error as Record<string, unknown>)[key];
+    }
+  };
+  for (const key of [
+    "organizationId",
+    "role",
+    "status",
+    "path",
+    "body",
+    "issues",
+    "externalClubId",
+    "cause",
+  ] as const) {
+    copy(key);
+  }
+  return Object.keys(details).length > 0 ? details : undefined;
+}
+
+function statusForFailureCode(code: string): number {
   if (code.includes("not_found")) {
     return 404;
   }
-  if (code.includes("schema") || code.includes("unsupported") || code.includes("validation")) {
+  if (code.includes("forbidden") || code.includes("unauthorized") || code.includes("not_owned")) {
+    return 403;
+  }
+  if (code.includes("conflict")) {
+    return 409;
+  }
+  if (
+    code.includes("schema") ||
+    code.includes("unsupported") ||
+    code.includes("validation") ||
+    code.includes("invalid") ||
+    code.includes("expired") ||
+    code.includes("revoked")
+  ) {
     return 400;
   }
   if (code.includes("timeout") || code.includes("http_error") || code.includes("network")) {

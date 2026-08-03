@@ -12,10 +12,9 @@ import {
   type OnboardingPathDto,
   type PlayerGameAccountInputDto,
 } from "@futrob/api-contracts";
-import type { PlayerGameAccount, PlayerProfile } from "@futrob/teams";
-import type { DomainError } from "@futrob/shared-kernel";
+import type { AddPlayerGameAccountError, PlayerGameAccount, PlayerProfile } from "@futrob/teams";
 import type { AppDeps } from "@/app.ts";
-import { apiErrorResponse, domainErrorToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
@@ -71,7 +70,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
       actorId,
       creationKey: `onboarding:organization:${actorId}`,
     });
-    if (!result.ok) return domainErrorToHttp(result.error);
+    if (!result.isOk()) return failureToHttp(result.error);
 
     const competition = await competitions.createDraft.execute({
       organizationId: result.value.organization.id,
@@ -79,10 +78,10 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
       ...parsed.data.competition,
       creationKey: `onboarding:competition:${actorId}`,
     });
-    if (!competition.ok) return domainErrorToHttp(competition.error);
+    if (!competition.isOk()) return failureToHttp(competition.error);
 
     const player = await ensurePlayer(teams, actorId, parsed.data.gameAccount ?? null);
-    if (!player.ok) return domainErrorToHttp(player.error);
+    if (!player.ok) return failureToHttp(player.error);
 
     await identity.completeOnboarding.execute({ actorId, path: "organization" });
     return jsonResponse(
@@ -116,7 +115,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
       actorId,
       requireCompetition: true,
     });
-    if (!result.ok) return domainErrorToHttp(result.error);
+    if (!result.isOk()) return failureToHttp(result.error);
 
     const competitionId = result.value.competitionId!;
     const competition = await competitions.getDraft.execute({
@@ -135,10 +134,10 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
       actorId,
       role: result.value.competitionRole,
     });
-    if (!joined.ok) return domainErrorToHttp(joined.error);
+    if (!joined.isOk()) return failureToHttp(joined.error);
 
     const player = await ensurePlayer(teams, actorId, parsed.data.gameAccount ?? null);
-    if (!player.ok) return domainErrorToHttp(player.error);
+    if (!player.ok) return failureToHttp(player.error);
 
     await identity.completeOnboarding.execute({ actorId, path: "invitation" });
     return jsonResponse(
@@ -169,7 +168,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     if (conflict) return conflict;
 
     const player = await ensurePlayer(teams, actorId, parsed.data.gameAccount ?? null);
-    if (!player.ok) return domainErrorToHttp(player.error);
+    if (!player.ok) return failureToHttp(player.error);
 
     await identity.completeOnboarding.execute({ actorId, path: "player" });
     return jsonResponse(
@@ -192,7 +191,7 @@ type EnsurePlayerResult =
     }
   | {
       readonly ok: false;
-      readonly error: DomainError;
+      readonly error: AddPlayerGameAccountError;
     };
 
 async function ensurePlayer(
@@ -206,7 +205,7 @@ async function ensurePlayer(
     playerProfileId: profile.id,
     ...gameAccountInput,
   });
-  return added.ok
+  return added.isOk()
     ? { ok: true, profile, gameAccount: added.value }
     : { ok: false, error: added.error };
 }

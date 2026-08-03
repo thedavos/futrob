@@ -14,7 +14,7 @@ import {
 import { resolvePostAuthDestination } from "@futrob/organizations";
 import { asOrganizationId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
-import { domainErrorToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
@@ -98,8 +98,8 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
       name: parsed.data.name,
       actorId,
     });
-    if (!result.ok) {
-      return domainErrorToHttp(result.error);
+    if (!result.isOk()) {
+      return failureToHttp(result.error);
     }
 
     const body = createOrganizationResponseSchema.parse({
@@ -125,8 +125,8 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
       email: parsed.data.email,
       expiresInMs: parsed.data.expiresInMs,
     });
-    if (!result.ok) {
-      return domainErrorToHttp(result.error);
+    if (!result.isOk()) {
+      return failureToHttp(result.error);
     }
 
     const body = createInvitationResponseSchema.parse({
@@ -150,8 +150,8 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
       token: parsed.data.token,
       actorId,
     });
-    if (!result.ok) {
-      return domainErrorToHttp(result.error);
+    if (!result.isOk()) {
+      return failureToHttp(result.error);
     }
 
     const body = acceptInvitationResponseSchema.parse({
