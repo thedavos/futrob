@@ -16,6 +16,23 @@ export type { PlayerGameAccountRepository } from "./domain/ports/player-game-acc
 export type { TeamRepository } from "./domain/ports/team.repository.ts";
 export type { CompetitionRosterMembershipRepository } from "./domain/ports/competition-roster-membership.repository.ts";
 export type { ActiveTeamPreferenceRepository } from "./domain/ports/active-team-preference.repository.ts";
+
+export {
+  TeamNotFound,
+  InvalidTeamName,
+  CreationKeyConflict,
+  RosterCompetitionConflict,
+  GameAccountNotFound,
+  PlayerProfileNotFound,
+  ActiveTeamNotOwned,
+  InvalidGameAccountIdentifier,
+  InvalidGameEdition,
+  type CreateTeamError,
+  type AddToRosterError,
+  type SetActiveTeamError,
+  type AddPlayerGameAccountError,
+} from "./domain/errors/team.errors.ts";
+
 export { EnsurePlayerProfileUseCase } from "./application/ensure-player-profile/ensure-player-profile.use-case.ts";
 export {
   AddPlayerGameAccountUseCase,

@@ -1,6 +1,7 @@
 import { asActorId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import type { PlayerGameAccount } from "../domain/entities/player-game-account.ts";
+import { InvalidGameAccountIdentifier } from "../domain/errors/team.errors.ts";
 import type { PlayerProfile } from "../domain/entities/player-profile.ts";
 import type { PlayerGameAccountRepository } from "../domain/ports/player-game-account.repository.ts";
 import type { PlayerProfileRepository } from "../domain/ports/player-profile.repository.ts";
@@ -73,11 +74,13 @@ describe("player profile use cases", () => {
     const first = await useCase.execute(input);
     const retried = await useCase.execute({ ...input, identifier: "gamer23" });
 
-    expect(first.ok && first.value).toMatchObject({
+    expect(first.isOk() && first.value).toMatchObject({
       identifier: "Gamer23",
       normalizedIdentifier: "gamer23",
     });
-    expect(retried.ok && first.ok && retried.value.id).toBe(first.ok ? first.value.id : "");
+    expect(retried.isOk() && first.isOk() && retried.value.id).toBe(
+      first.isOk() ? first.value.id : "",
+    );
     expect(accounts.rows).toHaveLength(1);
   });
 
@@ -92,6 +95,7 @@ describe("player profile use cases", () => {
       platform: "pc",
       gameEdition: "FC 26",
     });
-    expect(result.ok).toBe(false);
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && InvalidGameAccountIdentifier.is(result.error)).toBe(true);
   });
 });

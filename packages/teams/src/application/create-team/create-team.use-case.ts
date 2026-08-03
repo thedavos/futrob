@@ -1,16 +1,19 @@
 import {
   asTeamId,
-  domainError,
   err,
   ok,
   type ActorId,
   type ClockPort,
-  type DomainError,
   type IdGeneratorPort,
   type OrganizationId,
   type Result,
 } from "@futrob/shared-kernel";
 import type { Team } from "../../domain/entities/team.ts";
+import {
+  CreationKeyConflict,
+  InvalidTeamName,
+  type CreateTeamError,
+} from "../../domain/errors/team.errors.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 
 export interface CreateTeamInput {
@@ -29,10 +32,15 @@ export class CreateTeamUseCase {
     },
   ) {}
 
-  async execute(input: CreateTeamInput): Promise<Result<Team, DomainError>> {
+  async execute(input: CreateTeamInput): Promise<Result<Team, CreateTeamError>> {
     const name = input.name.trim();
     if (name.length === 0 || name.length > 120) {
-      return err(domainError("teams.invalid_name", "Invalid team name"));
+      return err(
+        new InvalidTeamName({
+          code: "teams.invalid_name",
+          message: "Invalid team name",
+        }),
+      );
     }
 
     if (input.creationKey) {
@@ -40,10 +48,10 @@ export class CreateTeamUseCase {
       if (existing) {
         if (existing.organizationId !== input.organizationId) {
           return err(
-            domainError(
-              "teams.creation_key_conflict",
-              "Creation key belongs to another organization",
-            ),
+            new CreationKeyConflict({
+              code: "teams.creation_key_conflict",
+              message: "Creation key belongs to another organization",
+            }),
           );
         }
         return ok(existing);

@@ -1,5 +1,10 @@
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
+import {
+  ActiveTeamNotOwned,
+  GameAccountNotFound,
+  RosterCompetitionConflict,
+} from "../domain/errors/team.errors.ts";
 import type { ActiveTeamPreference } from "../domain/entities/active-team-preference.ts";
 import type { CompetitionRosterMembership } from "../domain/entities/competition-roster-membership.ts";
 import type { PlayerGameAccount } from "../domain/entities/player-game-account.ts";
@@ -137,8 +142,8 @@ describe("team and roster use cases", () => {
     };
     const first = await useCase.execute(input);
     const second = await useCase.execute(input);
-    expect(first.ok && second.ok).toBe(true);
-    if (!first.ok || !second.ok) return;
+    expect(first.isOk() && second.isOk()).toBe(true);
+    if (!first.isOk() || !second.isOk()) return;
     expect(second.value.id).toBe(first.value.id);
     expect(teams.rows).toHaveLength(1);
   });
@@ -165,8 +170,8 @@ describe("team and roster use cases", () => {
       actorId: asActorId("actor-1"),
       name: "Team C",
     });
-    expect(teamA.ok && teamB.ok && teamC.ok).toBe(true);
-    if (!teamA.ok || !teamB.ok || !teamC.ok) return;
+    expect(teamA.isOk() && teamB.isOk() && teamC.isOk()).toBe(true);
+    if (!teamA.isOk() || !teamB.isOk() || !teamC.isOk()) return;
 
     const first = await addToRoster.execute({
       organizationId: orgId,
@@ -197,10 +202,10 @@ describe("team and roster use cases", () => {
       role: "captain",
     });
 
-    expect(first.ok && across.ok).toBe(true);
-    expect(conflict.ok).toBe(false);
-    if (!conflict.ok) expect(conflict.error.code).toBe("teams.roster_competition_conflict");
-    expect(retry.ok && first.ok && retry.value.id).toBe(first.ok ? first.value.id : "");
+    expect(first.isOk() && across.isOk()).toBe(true);
+    expect(conflict.isOk()).toBe(false);
+    expect(!conflict.isOk() && RosterCompetitionConflict.is(conflict.error)).toBe(true);
+    expect(retry.isOk() && first.isOk() && retry.value.id).toBe(first.isOk() ? first.value.id : "");
     expect(
       await new ListRostersForPlayerUseCase(rosters).execute({ playerProfileId: "profile-1" }),
     ).toHaveLength(2);
@@ -223,8 +228,8 @@ describe("team and roster use cases", () => {
       actorId: asActorId("actor-1"),
       name: "Active FC",
     });
-    expect(team.ok).toBe(true);
-    if (!team.ok) return;
+    expect(team.isOk()).toBe(true);
+    if (!team.isOk()) return;
     const membership = await new AddToRosterUseCase({
       teams,
       rosters,
@@ -237,8 +242,8 @@ describe("team and roster use cases", () => {
       playerProfileId: "profile-1",
       role: "player",
     });
-    expect(membership.ok).toBe(true);
-    if (!membership.ok) return;
+    expect(membership.isOk()).toBe(true);
+    if (!membership.isOk()) return;
 
     const setActive = new SetActiveTeamUseCase({
       profiles,
@@ -254,8 +259,9 @@ describe("team and roster use cases", () => {
       actorId: asActorId("actor-1"),
       rosterMembershipId: "missing",
     });
-    expect(saved.ok).toBe(true);
-    expect(foreign.ok).toBe(false);
+    expect(saved.isOk()).toBe(true);
+    expect(foreign.isOk()).toBe(false);
+    expect(!foreign.isOk() && ActiveTeamNotOwned.is(foreign.error)).toBe(true);
     expect(
       await new GetActiveTeamUseCase(preferences).execute({ actorId: asActorId("actor-1") }),
     ).toMatchObject({ rosterMembershipId: membership.value.id });
@@ -271,8 +277,8 @@ describe("team and roster use cases", () => {
       actorId: asActorId("actor-1"),
       name: "Bound FC",
     });
-    expect(team.ok).toBe(true);
-    if (!team.ok) return;
+    expect(team.isOk()).toBe(true);
+    if (!team.isOk()) return;
     const result = await new AddToRosterUseCase({ teams, rosters, accounts, ...deps }).execute({
       organizationId: asOrganizationId("org-1"),
       competitionId: asCompetitionId("comp-1"),
@@ -281,8 +287,8 @@ describe("team and roster use cases", () => {
       gameAccountId: "account-x",
       role: "player",
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe("teams.game_account_not_found");
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && GameAccountNotFound.is(result.error)).toBe(true);
     // silence unused branded helper in case of future assertions
     expect(asTeamId(team.value.id)).toBe(team.value.id);
   });

@@ -1,10 +1,8 @@
 import {
-  domainError,
   err,
   ok,
   type ClockPort,
   type CompetitionId,
-  type DomainError,
   type IdGeneratorPort,
   type OrganizationId,
   type Result,
@@ -14,6 +12,12 @@ import type {
   CompetitionRosterMembership,
   RosterMembershipRole,
 } from "../../domain/entities/competition-roster-membership.ts";
+import {
+  GameAccountNotFound,
+  RosterCompetitionConflict,
+  TeamNotFound,
+  type AddToRosterError,
+} from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterMembershipRepository } from "../../domain/ports/competition-roster-membership.repository.ts";
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
@@ -40,10 +44,15 @@ export class AddToRosterUseCase {
 
   async execute(
     input: AddToRosterInput,
-  ): Promise<Result<CompetitionRosterMembership, DomainError>> {
+  ): Promise<Result<CompetitionRosterMembership, AddToRosterError>> {
     const team = await this.deps.teams.findById(input.organizationId, input.teamId);
     if (!team) {
-      return err(domainError("teams.not_found", "Team not found"));
+      return err(
+        new TeamNotFound({
+          code: "teams.not_found",
+          message: "Team not found",
+        }),
+      );
     }
 
     const sameTeam = await this.deps.rosters.findByTeamPlayerCompetition(
@@ -59,10 +68,10 @@ export class AddToRosterUseCase {
     );
     if (otherTeam) {
       return err(
-        domainError(
-          "teams.roster_competition_conflict",
-          "Player already belongs to a team in this competition",
-        ),
+        new RosterCompetitionConflict({
+          code: "teams.roster_competition_conflict",
+          message: "Player already belongs to a team in this competition",
+        }),
       );
     }
 
@@ -71,10 +80,10 @@ export class AddToRosterUseCase {
       const accounts = await this.deps.accounts.listByProfile(input.playerProfileId);
       if (!accounts.some((account) => account.id === gameAccountId)) {
         return err(
-          domainError(
-            "teams.game_account_not_found",
-            "Game account does not belong to this player profile",
-          ),
+          new GameAccountNotFound({
+            code: "teams.game_account_not_found",
+            message: "Game account does not belong to this player profile",
+          }),
         );
       }
     }
