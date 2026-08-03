@@ -21,6 +21,24 @@ export type { MembershipRepository } from "./domain/ports/membership.repository.
 export type { OrganizationRepository } from "./domain/ports/organization.repository.ts";
 
 export {
+  InvitationNotFound,
+  InvitationInvalid,
+  InvitationExpired,
+  InvitationRevoked,
+  OrganizationNotFound,
+  OrganizationForbidden,
+  InvalidInvitationRole,
+  type AcceptInvitationError,
+  type CreateInvitationError,
+} from "./domain/errors/invitation.errors.ts";
+
+export {
+  InvalidOrganizationName,
+  OrganizationNameConflict,
+  type CreateOrganizationError,
+} from "./domain/errors/organization.errors.ts";
+
+export {
   CreateOrganizationUseCase,
   type CreateOrganizationInput,
   type CreateOrganizationResult,

@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
+import {
+  InvalidOrganizationName,
+  OrganizationNameConflict,
+} from "../../domain/errors/organization.errors.ts";
 import { CreateOrganizationUseCase } from "./create-organization.use-case.ts";
 import { createOrgTestHarness } from "../test-harness.ts";
 
@@ -10,8 +14,8 @@ describe("CreateOrganizationUseCase", () => {
 
     const result = await useCase.execute({ name: "  Liga Norte  ", actorId });
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk()) {
       return;
     }
 
@@ -34,11 +38,8 @@ describe("CreateOrganizationUseCase", () => {
 
     const result = await useCase.execute({ name: "   ", actorId: harness.actor("a") });
 
-    expect(result.ok).toBe(false);
-    if (result.ok) {
-      return;
-    }
-    expect(result.error.code).toBe("organizations.invalid_name");
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && InvalidOrganizationName.is(result.error)).toBe(true);
   });
 
   it("returns the same organization when an onboarding creation is retried", async () => {
@@ -53,8 +54,8 @@ describe("CreateOrganizationUseCase", () => {
     const first = await useCase.execute(input);
     const retried = await useCase.execute(input);
 
-    expect(first.ok && retried.ok && retried.value.organization.id).toBe(
-      first.ok ? first.value.organization.id : "",
+    expect(first.isOk() && retried.isOk() && retried.value.organization.id).toBe(
+      first.isOk() ? first.value.organization.id : "",
     );
     expect(harness.organizations.byId.size).toBe(1);
     expect(harness.memberships.rows).toHaveLength(1);
@@ -73,10 +74,9 @@ describe("CreateOrganizationUseCase", () => {
       actorId: harness.actor("actor-2"),
     });
 
-    expect(first.ok).toBe(true);
-    expect(duplicate.ok).toBe(false);
-    if (duplicate.ok) return;
-    expect(duplicate.error.code).toBe("organizations.name_conflict");
+    expect(first.isOk()).toBe(true);
+    expect(duplicate.isOk()).toBe(false);
+    expect(!duplicate.isOk() && OrganizationNameConflict.is(duplicate.error)).toBe(true);
     expect(harness.organizations.byId.size).toBe(1);
     expect(harness.memberships.rows).toHaveLength(1);
   });

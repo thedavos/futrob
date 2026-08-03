@@ -1,10 +1,18 @@
-import { domainError, err, ok, type DomainError, type Result } from "@futrob/shared-kernel";
+import { err, ok, type Result } from "@futrob/shared-kernel";
 import type { ActorId, ClockPort } from "@futrob/shared-kernel";
 import type { InvitationRepository } from "../../domain/ports/invitation.repository.ts";
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
 import type { MembershipSummary } from "../../domain/value-objects/post-auth-destination.ts";
+import {
+  InvitationExpired,
+  InvitationInvalid,
+  InvitationNotFound,
+  InvitationRevoked,
+  OrganizationNotFound,
+  type AcceptInvitationError,
+} from "../../domain/errors/invitation.errors.ts";
 
 export interface AcceptedInvitation extends MembershipSummary {
   readonly competitionId: import("@futrob/shared-kernel").CompetitionId | null;
@@ -28,30 +36,47 @@ export class AcceptInvitationUseCase {
     },
   ) {}
 
-  async execute(input: AcceptInvitationInput): Promise<Result<AcceptedInvitation, DomainError>> {
+  async execute(
+    input: AcceptInvitationInput,
+  ): Promise<Result<AcceptedInvitation, AcceptInvitationError>> {
     const tokenHash = this.deps.tokens.hashToken(input.token);
     const invitation = await this.deps.invitations.findByTokenHash(tokenHash);
 
     if (!invitation) {
-      return err(domainError("organizations.invitation_not_found", "Invitation not found"));
+      return err(
+        new InvitationNotFound({
+          code: "organizations.invitation_not_found",
+          message: "Invitation not found",
+        }),
+      );
     }
     if (input.requireCompetition && !invitation.competitionId) {
       return err(
-        domainError("organizations.invitation_invalid", "Invitation does not target a competition"),
+        new InvitationInvalid({
+          code: "organizations.invitation_invalid",
+          message: "Invitation does not target a competition",
+        }),
       );
     }
 
     const organization = await this.deps.organizations.getById(invitation.organizationId);
     if (!organization) {
       return err(
-        domainError("organizations.not_found", "Organization not found", {
+        new OrganizationNotFound({
+          code: "organizations.not_found",
+          message: "Organization not found",
           organizationId: invitation.organizationId,
         }),
       );
     }
 
     if (invitation.status === "revoked") {
-      return err(domainError("organizations.invitation_revoked", "Invitation has been revoked"));
+      return err(
+        new InvitationRevoked({
+          code: "organizations.invitation_revoked",
+          message: "Invitation has been revoked",
+        }),
+      );
     }
 
     const now = this.deps.clock.now();
@@ -59,7 +84,12 @@ export class AcceptInvitationUseCase {
       if (invitation.status === "pending") {
         await this.deps.invitations.update({ ...invitation, status: "expired" });
       }
-      return err(domainError("organizations.invitation_expired", "Invitation has expired"));
+      return err(
+        new InvitationExpired({
+          code: "organizations.invitation_expired",
+          message: "Invitation has expired",
+        }),
+      );
     }
 
     if (invitation.status === "accepted") {
@@ -72,11 +102,21 @@ export class AcceptInvitationUseCase {
           competitionRole: invitation.role,
         });
       }
-      return err(domainError("organizations.invitation_invalid", "Invitation is no longer valid"));
+      return err(
+        new InvitationInvalid({
+          code: "organizations.invitation_invalid",
+          message: "Invitation is no longer valid",
+        }),
+      );
     }
 
     if (invitation.status !== "pending") {
-      return err(domainError("organizations.invitation_invalid", "Invitation is no longer valid"));
+      return err(
+        new InvitationInvalid({
+          code: "organizations.invitation_invalid",
+          message: "Invitation is no longer valid",
+        }),
+      );
     }
 
     const existing = await this.deps.memberships.findByOrgAndActor(

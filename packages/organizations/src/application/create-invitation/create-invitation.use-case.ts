@@ -1,4 +1,4 @@
-import { domainError, err, ok, type DomainError, type Result } from "@futrob/shared-kernel";
+import { err, ok, type Result } from "@futrob/shared-kernel";
 import type {
   ActorId,
   ClockPort,
@@ -11,6 +11,12 @@ import type { InvitationTokenPort } from "../../domain/ports/invitation-token.po
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
 import { isInviteRole } from "../../domain/value-objects/organization-membership-role.ts";
+import {
+  InvalidInvitationRole,
+  OrganizationForbidden,
+  OrganizationNotFound,
+  type CreateInvitationError,
+} from "../../domain/errors/invitation.errors.ts";
 
 const DEFAULT_EXPIRES_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -43,32 +49,32 @@ export class CreateInvitationUseCase {
 
   async execute(
     input: CreateInvitationInput,
-  ): Promise<Result<CreateInvitationResult, DomainError>> {
+  ): Promise<Result<CreateInvitationResult, CreateInvitationError>> {
     if (!isInviteRole(input.role)) {
       return err(
-        domainError(
-          "organizations.invalid_role",
-          "Invitation role must be staff, captain, or player",
-          {
-            role: input.role,
-          },
-        ),
+        new InvalidInvitationRole({
+          code: "organizations.invalid_role",
+          message: "Invitation role must be staff, captain, or player",
+          role: input.role,
+        }),
       );
     }
     if (!input.competitionId && input.role !== "staff") {
       return err(
-        domainError(
-          "organizations.invalid_role",
-          "Captain and player invitations must target a competition",
-          { role: input.role },
-        ),
+        new InvalidInvitationRole({
+          code: "organizations.invalid_role",
+          message: "Captain and player invitations must target a competition",
+          role: input.role,
+        }),
       );
     }
 
     const organization = await this.deps.organizations.getById(input.organizationId);
     if (!organization) {
       return err(
-        domainError("organizations.not_found", "Organization not found", {
+        new OrganizationNotFound({
+          code: "organizations.not_found",
+          message: "Organization not found",
           organizationId: input.organizationId,
         }),
       );
@@ -80,7 +86,10 @@ export class CreateInvitationUseCase {
     );
     if (!inviter || (inviter.role !== "organizer" && inviter.role !== "staff")) {
       return err(
-        domainError("organizations.forbidden", "Only organizer or staff can create invitations"),
+        new OrganizationForbidden({
+          code: "organizations.forbidden",
+          message: "Only organizer or staff can create invitations",
+        }),
       );
     }
 

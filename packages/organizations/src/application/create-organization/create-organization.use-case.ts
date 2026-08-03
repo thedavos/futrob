@@ -1,16 +1,14 @@
-import {
-  asOrganizationId,
-  domainError,
-  err,
-  ok,
-  type DomainError,
-  type Result,
-} from "@futrob/shared-kernel";
+import { asOrganizationId, err, ok, type Result } from "@futrob/shared-kernel";
 import type { ActorId, ClockPort, IdGeneratorPort } from "@futrob/shared-kernel";
 import {
   normalizeOrganizationName,
   type Organization,
 } from "../../domain/entities/organization.ts";
+import {
+  InvalidOrganizationName,
+  OrganizationNameConflict,
+  type CreateOrganizationError,
+} from "../../domain/errors/organization.errors.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
 
@@ -37,10 +35,15 @@ export class CreateOrganizationUseCase {
 
   async execute(
     input: CreateOrganizationInput,
-  ): Promise<Result<CreateOrganizationResult, DomainError>> {
+  ): Promise<Result<CreateOrganizationResult, CreateOrganizationError>> {
     const name = input.name.trim();
     if (name.length === 0 || name.length > 120) {
-      return err(domainError("organizations.invalid_name", "Organization name is required"));
+      return err(
+        new InvalidOrganizationName({
+          code: "organizations.invalid_name",
+          message: "Organization name is required",
+        }),
+      );
     }
 
     const idempotent = input.creationKey
@@ -58,7 +61,12 @@ export class CreateOrganizationUseCase {
 
     const normalizedName = normalizeOrganizationName(name);
     if (await this.deps.organizations.getByNormalizedName(normalizedName)) {
-      return err(domainError("organizations.name_conflict", "Organization name is already in use"));
+      return err(
+        new OrganizationNameConflict({
+          code: "organizations.name_conflict",
+          message: "Organization name is already in use",
+        }),
+      );
     }
 
     const now = this.deps.clock.now();
@@ -74,7 +82,12 @@ export class CreateOrganizationUseCase {
 
     const persisted = await this.deps.organizations.create(organization);
     if (!persisted) {
-      return err(domainError("organizations.name_conflict", "Organization name is already in use"));
+      return err(
+        new OrganizationNameConflict({
+          code: "organizations.name_conflict",
+          message: "Organization name is already in use",
+        }),
+      );
     }
     await this.deps.memberships.add({
       organizationId: persisted.id,
