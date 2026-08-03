@@ -29,7 +29,7 @@ apps/web/src/di/             # composition root de web
 # apps/api/src/di/           # composition root de api (cuando exista)
 ```
 
-Kernel compartido: `@futrob/shared-kernel` (Result, IDs, DomainError, DomainEvent, EventPublisherPort, …). `apps/web/src/shared/` reexporta o añade infra solo de web.
+Kernel compartido: `@futrob/shared-kernel` (Result, TaggedError, IDs, DomainEvent, EventPublisherPort, …). `apps/web/src/shared/` reexporta o añade infra solo de web.
 
 ## Consecuencias
 

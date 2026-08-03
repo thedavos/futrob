@@ -15,7 +15,7 @@ El CLI ya consumía dominio vía path alias a `apps/web`. Una API de producto (`
 3. Dependencias cross-BC entre packages están permitidas solo vía API pública del package (p. ej. `@futrob/results` → `@futrob/game-data`).
 4. Adapters, HTTP handlers, UI y Wrangler bindings **no** viven en esos packages.
 5. `apps/web` (hoy) y `apps/api` (futuro) dependen de `@futrob/<bc>` y componen adapters en su `di/`.
-6. `@futrob/shared-kernel` concentra primitivas de dominio compartidas (Result, brands, DomainError, DomainEvent, EventPublisherPort).
+6. `@futrob/shared-kernel` concentra primitivas de dominio compartidas (Result, TaggedError, brands, DomainEvent, EventPublisherPort). Fallos esperados: ver [ADR-0011](/docs/adr/0011-tagged-errors.md).
 7. Facades `apps/web/src/modules/<bc>/index.ts` pueden reexportar `@futrob/<bc>` durante la transición.
 
 ## Consecuencias

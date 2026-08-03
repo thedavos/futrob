@@ -8,7 +8,7 @@ alwaysApply: false
 
 Prefer ownership and colocation over a generic utility bucket.
 
-- Put universal domain semantics such as branded IDs, `Result`, `Clock`, `IdGenerator`, pagination, locale, and time zone in `packages/shared-kernel` only when at least two contexts share identical meaning.
+- Put universal domain semantics such as branded IDs, `Result`, `TaggedError`, `Clock`, `IdGenerator`, pagination, locale, and time zone in `packages/shared-kernel` only when at least two contexts share identical meaning. BC-specific tagged errors live in `packages/<bc>/src/domain/errors/`.
 - Put framework-agnostic technical helpers in the narrow technical package that owns them.
 - Put view-only helpers with the feature in `apps/web/src/features/<context>`.
 - Keep business calculations in the owning domain or application package, even if another context needs them; expose a small public contract instead of copying the helper.

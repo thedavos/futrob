@@ -56,7 +56,8 @@ Never put EA-specific types in `results`/`statistics`/`scheduling`. EA lives und
 ## Checklist for a new use case
 
 1. Place folder under `packages/<bc>/src/application/<kebab-name>/` with `*.use-case.ts` (+ input type).
-2. Add/adjust domain ports and errors in the package.
+2. Add/adjust domain ports and errors in the package. **Expected failures are `TaggedError`
+   classes** under `domain/errors/` (stable `code` for HTTP/i18n). See ADR-0011.
 3. Export from `packages/<bc>/src/index.ts`.
 4. Wire concrete adapters in `apps/web/src/di/<module>.module.ts` only.
 5. Add thin `server/*.server.ts` when exposed to UI/API (validate input, call use case, unwrap Result).

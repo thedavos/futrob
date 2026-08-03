@@ -66,6 +66,10 @@ MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**
 - EA specifics only in `apps/web/.../game-data/adapters/providers/ea-clubs/` (until api hosts its own egress adapters).
 - Official stats only after `results.official-result-approved`.
 - Organization-scoped D1 queries; no Postgres RLS / Supabase / Vercel as Must.
+- **Expected failures:** domain/application/adapter errors use `TaggedError` from
+  `@futrob/shared-kernel` (stable `code` for wire/i18n; see
+  [ADR-0011](/docs/adr/0011-tagged-errors.md)). Zod/`api.*`/auth wire and `Panic`
+  (defects) stay outside TaggedError.
 
 ## Separation
 

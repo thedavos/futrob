@@ -1,6 +1,5 @@
 export * from "./result.ts";
 export type { DomainEvent } from "./domain-event.ts";
-export { domainError, type DomainError, type DomainErrorCode } from "./domain-error.ts";
 export {
   asActorId,
   asOrganizationId,

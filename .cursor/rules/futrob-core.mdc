@@ -30,6 +30,7 @@ Do not use `EaMatch` / `ea-data` as domain names — use ProviderMatch / game-da
 - Only approved official results update standings/rankings/public portal
 - Organization-scoped D1 access; no Postgres RLS
 - No Supabase/Vercel as Must platform
+- Expected failures are `TaggedError`. See ADR-0011.
 
 ## Sources
 
