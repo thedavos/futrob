@@ -42,9 +42,7 @@ export class PostgresPlayerProfileRepository implements PlayerProfileRepository 
   }
 }
 
-export class PostgresPlayerExternalClubAssociationRepository
-  implements PlayerExternalClubAssociationRepository
-{
+export class PostgresPlayerExternalClubAssociationRepository implements PlayerExternalClubAssociationRepository {
   constructor(private readonly pool: Pool) {}
 
   async findByPlayerProfile(

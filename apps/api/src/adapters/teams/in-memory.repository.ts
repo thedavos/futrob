@@ -27,9 +27,7 @@ export class InMemoryPlayerProfileRepository implements PlayerProfileRepository 
   }
 }
 
-export class InMemoryPlayerExternalClubAssociationRepository
-  implements PlayerExternalClubAssociationRepository
-{
+export class InMemoryPlayerExternalClubAssociationRepository implements PlayerExternalClubAssociationRepository {
   readonly rows = new Map<string, PlayerExternalClubAssociation>();
 
   async findByPlayerProfile(

@@ -166,9 +166,7 @@ describe("OnboardingFlowProvider initialization", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar club" }));
 
-    expect(
-      await screen.findByText("No pudimos buscar clubs. Inténtalo nuevamente."),
-    ).toBeTruthy();
+    expect(await screen.findByText("No pudimos buscar clubs. Inténtalo nuevamente.")).toBeTruthy();
   });
 
   it("does not advance while the organization name is already in use", async () => {

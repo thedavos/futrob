@@ -51,9 +51,7 @@ export const playerExternalClubAssociationSchema = z.object({
   gameEdition: z.string().min(1),
   associatedAt: z.string().datetime(),
 });
-export type PlayerExternalClubAssociationDto = z.infer<
-  typeof playerExternalClubAssociationSchema
->;
+export type PlayerExternalClubAssociationDto = z.infer<typeof playerExternalClubAssociationSchema>;
 
 export const getMyPlayerProfileResponseSchema = z.object({
   profile: playerProfileSchema.nullable(),
