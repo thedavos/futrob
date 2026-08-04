@@ -596,6 +596,12 @@ export const futrobOpenApiV1 = {
                   role: { type: "string", enum: ["staff", "captain", "player"] },
                   email: { type: "string", format: "email" },
                   expiresInMs: { type: "integer", minimum: 1 },
+                  redeemPolicy: { type: "string", enum: ["single", "multi"] },
+                  maxRedemptions: {
+                    type: "integer",
+                    minimum: 1,
+                    description: "Required when redeemPolicy is multi",
+                  },
                 },
               },
             },
@@ -608,12 +614,21 @@ export const futrobOpenApiV1 = {
               "application/json": {
                 schema: {
                   type: "object",
-                  required: ["invitationId", "competitionId", "token", "expiresAt"],
+                  required: [
+                    "invitationId",
+                    "competitionId",
+                    "token",
+                    "expiresAt",
+                    "redeemPolicy",
+                    "maxRedemptions",
+                  ],
                   properties: {
                     invitationId: { type: "string" },
                     competitionId: { type: "string" },
                     token: { type: "string" },
                     expiresAt: { type: "string", format: "date-time" },
+                    redeemPolicy: { type: "string", enum: ["single", "multi"] },
+                    maxRedemptions: { type: "integer", minimum: 1, nullable: true },
                   },
                 },
               },
