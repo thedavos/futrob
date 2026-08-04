@@ -579,6 +579,70 @@ describe("apps/api", () => {
     });
   });
 
+  it("onboarding: rejects a lost invitation claim without completing the path", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-claim-organizer";
+    const winner = "actor-claim-winner";
+    const loser = "actor-claim-loser";
+
+    const created = await app.request("/api/v1/identity/onboarding/organization", {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Liga Claim Race",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const { organizationId, competition } = (await created.json()) as {
+      organizationId: string;
+      competition: { competition: { id: string } };
+    };
+    const competitionId = competition.competition.id;
+
+    const invitation = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competitionId}/invitations`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ role: "player" }),
+      },
+    );
+    expect(invitation.status).toBe(201);
+    const { token } = (await invitation.json()) as { token: string };
+
+    const won = await app.request("/api/v1/identity/onboarding/invitation", {
+      method: "POST",
+      headers: serviceHeaders(winner),
+      body: JSON.stringify({ token }),
+    });
+    expect(won.status).toBe(200);
+
+    const lost = await app.request("/api/v1/identity/onboarding/invitation", {
+      method: "POST",
+      headers: serviceHeaders(loser),
+      body: JSON.stringify({ token }),
+    });
+    expect(lost.status).toBe(400);
+    expect(await lost.json()).toMatchObject({
+      code: "organizations.invitation_invalid",
+    });
+
+    const loserStatus = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(loser),
+    });
+    expect(await loserStatus.json()).toMatchObject({ completed: false });
+
+    const loserProfile = await app.request("/api/v1/players/me", {
+      headers: serviceHeaders(loser),
+    });
+    expect(loserProfile.status).toBe(200);
+    expect(await loserProfile.json()).toMatchObject({
+      profile: null,
+      gameAccounts: [],
+    });
+  });
+
   it("onboarding: rejects a different path after completion without creating side effects", async () => {
     const app = buildApp(stubFetch);
     const actor = "actor-completed-player";

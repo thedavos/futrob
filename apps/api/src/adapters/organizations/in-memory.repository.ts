@@ -8,6 +8,7 @@ import type {
   OrganizationRepository,
   OrgMembershipRole,
 } from "@futrob/organizations";
+import { INVITATION_STATUS } from "@futrob/organizations";
 import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
 
@@ -90,6 +91,24 @@ export class InMemoryInvitationRepository implements InvitationRepository {
 
   async update(invitation: OrganizationInvitation): Promise<void> {
     this.byHash.set(invitation.tokenHash, invitation);
+  }
+
+  async claimPending(
+    tokenHash: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<OrganizationInvitation | null> {
+    const current = this.byHash.get(tokenHash);
+    if (!current) return null;
+    if (current.status !== INVITATION_STATUS.pending) return null;
+    if (current.expiresAt.getTime() <= now.getTime()) return null;
+    const accepted: OrganizationInvitation = {
+      ...current,
+      status: INVITATION_STATUS.accepted,
+      acceptedByActorId: actorId,
+    };
+    this.byHash.set(tokenHash, accepted);
+    return accepted;
   }
 }
 

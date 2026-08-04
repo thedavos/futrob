@@ -9,6 +9,7 @@ import type {
   OrganizationRepository,
   OrgMembershipRole,
 } from "@futrob/organizations";
+import { INVITATION_STATUS } from "@futrob/organizations";
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 import {
@@ -204,5 +205,45 @@ export class PostgresInvitationRepository implements InvitationRepository {
         invitation.email ?? null,
       ],
     );
+  }
+
+  async claimPending(
+    tokenHash: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<OrganizationInvitation | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE organization_invitations
+       SET status = $4,
+           accepted_by_actor_id = $2
+       WHERE token_hash = $1
+         AND status = $5
+         AND expires_at > $3
+       RETURNING id, organization_id, competition_id, role, token_hash, email, status,
+                 invited_by_actor_id, expires_at, accepted_by_actor_id, created_at`,
+      [
+        tokenHash,
+        actorId,
+        now.toISOString(),
+        INVITATION_STATUS.accepted,
+        INVITATION_STATUS.pending,
+      ],
+    );
+    const row = result.rows[0] as
+      | {
+          id: string;
+          organization_id: string;
+          competition_id: string | null;
+          role: string;
+          token_hash: string;
+          email: string | null;
+          status: string;
+          invited_by_actor_id: string;
+          expires_at: Date;
+          accepted_by_actor_id: string | null;
+          created_at: Date;
+        }
+      | undefined;
+    return row ? rehydrateInvitation(row) : null;
   }
 }

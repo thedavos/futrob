@@ -6,7 +6,10 @@ import {
   type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { Organization } from "../domain/entities/organization.ts";
-import type { OrganizationInvitation } from "../domain/entities/organization-invitation.ts";
+import {
+  INVITATION_STATUS,
+  type OrganizationInvitation,
+} from "../domain/entities/organization-invitation.ts";
 import type { OrganizationMembership } from "../domain/entities/organization-membership.ts";
 import type { InvitationRepository } from "../domain/ports/invitation.repository.ts";
 import type { InvitationTokenPort } from "../domain/ports/invitation-token.port.ts";
@@ -116,6 +119,8 @@ export class FakeMembershipRepository implements MembershipRepository {
 
 export class FakeInvitationRepository implements InvitationRepository {
   readonly byHash = new Map<string, OrganizationInvitation>();
+  /** Yields before CAS so tests can overlap two accept calls that both saw pending. */
+  beforeClaim: (() => Promise<void>) | null = null;
 
   async create(invitation: OrganizationInvitation): Promise<void> {
     this.byHash.set(invitation.tokenHash, invitation);
@@ -127,6 +132,27 @@ export class FakeInvitationRepository implements InvitationRepository {
 
   async update(invitation: OrganizationInvitation): Promise<void> {
     this.byHash.set(invitation.tokenHash, invitation);
+  }
+
+  async claimPending(
+    tokenHash: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<OrganizationInvitation | null> {
+    if (this.beforeClaim) {
+      await this.beforeClaim();
+    }
+    const current = this.byHash.get(tokenHash);
+    if (!current) return null;
+    if (current.status !== INVITATION_STATUS.pending) return null;
+    if (current.expiresAt.getTime() <= now.getTime()) return null;
+    const accepted: OrganizationInvitation = {
+      ...current,
+      status: INVITATION_STATUS.accepted,
+      acceptedByActorId: actorId,
+    };
+    this.byHash.set(tokenHash, accepted);
+    return accepted;
   }
 }
 

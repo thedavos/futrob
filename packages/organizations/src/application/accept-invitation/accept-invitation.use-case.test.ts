@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { asCompetitionId } from "@futrob/shared-kernel";
+import { INVITATION_STATUS } from "../../domain/entities/organization-invitation.ts";
 import {
   InvitationExpired,
   InvitationInvalid,
@@ -119,7 +120,7 @@ describe("AcceptInvitationUseCase", () => {
     if (!stored) {
       return;
     }
-    await harness.invitations.update({ ...stored, status: "revoked" });
+    await harness.invitations.update({ ...stored, status: INVITATION_STATUS.revoked });
 
     const result = await acceptInvite.execute({
       token: invite.value.token,
@@ -185,5 +186,144 @@ describe("AcceptInvitationUseCase", () => {
       competitionId: "competition-1",
       competitionRole: "player",
     });
+  });
+
+  it("rejects a second distinct actor after the invitation was accepted", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const acceptInvite = new AcceptInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const winner = harness.actor("winner");
+    const loser = harness.actor("loser");
+
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const invite = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+    });
+    expect(invite.isOk()).toBe(true);
+    if (!invite.isOk()) return;
+
+    const first = await acceptInvite.execute({ token: invite.value.token, actorId: winner });
+    const second = await acceptInvite.execute({ token: invite.value.token, actorId: loser });
+
+    expect(first.isOk()).toBe(true);
+    expect(second.isOk()).toBe(false);
+    if (!second.isOk()) {
+      expect(InvitationInvalid.is(second.error)).toBe(true);
+      expect(second.error.code).toBe("organizations.invitation_invalid");
+    }
+    expect(await harness.memberships.findByActor(winner)).toHaveLength(1);
+    expect(await harness.memberships.findByActor(loser)).toHaveLength(0);
+  });
+
+  it("only one of two concurrent distinct actors wins the claim", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const acceptInvite = new AcceptInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const actorA = harness.actor("actor-a");
+    const actorB = harness.actor("actor-b");
+
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const invite = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+    });
+    expect(invite.isOk()).toBe(true);
+    if (!invite.isOk()) return;
+
+    let entered = 0;
+    let releaseFirst: (() => void) | undefined;
+    const firstAtClaim = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    harness.invitations.beforeClaim = async () => {
+      entered += 1;
+      if (entered === 1) {
+        await firstAtClaim;
+      } else {
+        releaseFirst?.();
+      }
+    };
+
+    const [resultA, resultB] = await Promise.all([
+      acceptInvite.execute({ token: invite.value.token, actorId: actorA }),
+      acceptInvite.execute({ token: invite.value.token, actorId: actorB }),
+    ]);
+
+    const outcomes = [resultA, resultB];
+    const winners = outcomes.filter((r) => r.isOk());
+    const losers = outcomes.filter((r) => !r.isOk());
+    expect(winners).toHaveLength(1);
+    expect(losers).toHaveLength(1);
+    if (!losers[0]!.isOk()) {
+      expect(InvitationInvalid.is(losers[0]!.error)).toBe(true);
+      expect(losers[0]!.error.code).toBe("organizations.invitation_invalid");
+    }
+
+    const winnerId = resultA.isOk() ? actorA : actorB;
+    const loserId = resultA.isOk() ? actorB : actorA;
+    expect(await harness.memberships.findByActor(winnerId)).toHaveLength(1);
+    expect(await harness.memberships.findByActor(loserId)).toHaveLength(0);
+  });
+
+  it("is idempotent when the same actor accepts concurrently", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const acceptInvite = new AcceptInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const player = harness.actor("player-1");
+
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const invite = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+    });
+    expect(invite.isOk()).toBe(true);
+    if (!invite.isOk()) return;
+
+    let entered = 0;
+    let releaseFirst: (() => void) | undefined;
+    const firstAtClaim = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    harness.invitations.beforeClaim = async () => {
+      entered += 1;
+      if (entered === 1) {
+        await firstAtClaim;
+      } else {
+        releaseFirst?.();
+      }
+    };
+
+    const [first, second] = await Promise.all([
+      acceptInvite.execute({ token: invite.value.token, actorId: player }),
+      acceptInvite.execute({ token: invite.value.token, actorId: player }),
+    ]);
+
+    expect(first.isOk()).toBe(true);
+    expect(second.isOk()).toBe(true);
+    if (!first.isOk() || !second.isOk()) return;
+    expect(second.value).toEqual(first.value);
+    expect(await harness.memberships.findByActor(player)).toHaveLength(1);
   });
 });

@@ -10,6 +10,7 @@ import type { InvitationRepository } from "../../domain/ports/invitation.reposit
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
+import { INVITATION_STATUS } from "../../domain/entities/organization-invitation.ts";
 import { isInviteRole } from "../../domain/value-objects/organization-membership-role.ts";
 import {
   InvalidInvitationRole,
@@ -107,7 +108,7 @@ export class CreateInvitationUseCase {
       role: input.role,
       tokenHash,
       email: input.email ?? null,
-      status: "pending",
+      status: INVITATION_STATUS.pending,
       invitedByActorId: input.invitedByActorId,
       expiresAt,
       acceptedByActorId: null,

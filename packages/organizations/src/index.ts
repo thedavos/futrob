@@ -1,7 +1,8 @@
 export { normalizeOrganizationName, type Organization } from "./domain/entities/organization.ts";
-export type {
-  InvitationStatus,
-  OrganizationInvitation,
+export {
+  INVITATION_STATUS,
+  type InvitationStatus,
+  type OrganizationInvitation,
 } from "./domain/entities/organization-invitation.ts";
 export type { OrganizationMembership } from "./domain/entities/organization-membership.ts";
 
