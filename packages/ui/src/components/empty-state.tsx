@@ -1,15 +1,33 @@
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "#lib/utils";
 
-function EmptyState({ className, ...props }: React.ComponentProps<"div">) {
+const emptyStateVariants = cva(
+  "flex min-h-56 w-full flex-col items-center justify-center gap-4 rounded-lg bg-surface p-8 text-center",
+  {
+    variants: {
+      variant: {
+        /** Dashed structural border; default empty panels. */
+        flat: "border border-dashed border-border-strong",
+        /** Soft elevation for an isolated empty panel on a flat background. */
+        elevated: "smooth-shadow-ring-md",
+      },
+    },
+    defaultVariants: {
+      variant: "flat",
+    },
+  },
+);
+
+type EmptyStateProps = React.ComponentProps<"div"> & VariantProps<typeof emptyStateVariants>;
+
+function EmptyState({ className, variant = "flat", ...props }: EmptyStateProps) {
   return (
     <div
       data-slot="empty-state"
-      className={cn(
-        "flex min-h-56 w-full flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-border-strong bg-surface p-8 text-center",
-        className,
-      )}
+      data-variant={variant ?? "flat"}
+      className={cn(emptyStateVariants({ variant }), className)}
       {...props}
     />
   );
@@ -59,4 +77,11 @@ function EmptyStateActions({ className, ...props }: React.ComponentProps<"div">)
   );
 }
 
-export { EmptyState, EmptyStateActions, EmptyStateDescription, EmptyStateIcon, EmptyStateTitle };
+export {
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateDescription,
+  EmptyStateIcon,
+  EmptyStateTitle,
+  emptyStateVariants,
+};

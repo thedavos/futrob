@@ -9,16 +9,16 @@ const SheetTrigger = DialogPrimitive.Trigger;
 const SheetClose = DialogPrimitive.Close;
 
 const sheetVariants = cva(
-  "fixed z-50 flex bg-popover text-popover-foreground shadow-[var(--shadow-dialog)] transition-[opacity,translate] duration-(--duration-slow) ease-(--ease-emphasized) outline-none data-ending-style:opacity-0 data-starting-style:opacity-0",
+  "fixed z-50 flex bg-popover text-popover-foreground smooth-shadow-ring-lg transition-[opacity,translate] duration-(--duration-slow) ease-(--ease-emphasized) outline-none data-ending-style:opacity-0 data-starting-style:opacity-0",
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 max-h-[85dvh] flex-col border-b border-border data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
+        top: "inset-x-0 top-0 max-h-[85dvh] flex-col data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
         right:
-          "inset-y-0 right-0 w-[min(26rem,90vw)] flex-col border-l border-border data-ending-style:translate-x-full data-starting-style:translate-x-full",
+          "inset-y-0 right-0 w-[min(26rem,90vw)] flex-col data-ending-style:translate-x-full data-starting-style:translate-x-full",
         bottom:
-          "inset-x-0 bottom-0 max-h-[85dvh] flex-col border-t border-border data-ending-style:translate-y-full data-starting-style:translate-y-full",
-        left: "inset-y-0 left-0 w-[min(26rem,90vw)] flex-col border-r border-border data-ending-style:-translate-x-full data-starting-style:-translate-x-full",
+          "inset-x-0 bottom-0 max-h-[85dvh] flex-col data-ending-style:translate-y-full data-starting-style:translate-y-full",
+        left: "inset-y-0 left-0 w-[min(26rem,90vw)] flex-col data-ending-style:-translate-x-full data-starting-style:-translate-x-full",
       },
     },
     defaultVariants: {

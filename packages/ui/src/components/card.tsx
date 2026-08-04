@@ -1,12 +1,33 @@
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "#lib/utils";
 
-function Card({ className, ...props }: React.ComponentProps<"section">) {
+const cardVariants = cva("rounded-xl bg-surface text-foreground", {
+  variants: {
+    variant: {
+      /** Flat/line default: structural border, no ambient elevation. */
+      flat: "border border-border",
+      /**
+       * Soft elevation via shadow-plugin. Uses a baked-in hairline ring —
+       * never pair with `border-*` / `ring-*` on the same element.
+       */
+      elevated: "smooth-shadow-ring-sm",
+    },
+  },
+  defaultVariants: {
+    variant: "flat",
+  },
+});
+
+type CardProps = React.ComponentProps<"section"> & VariantProps<typeof cardVariants>;
+
+function Card({ className, variant = "flat", ...props }: CardProps) {
   return (
     <section
       data-slot="card"
-      className={cn("rounded-xl border border-border bg-surface text-foreground", className)}
+      data-variant={variant ?? "flat"}
+      className={cn(cardVariants({ variant }), className)}
       {...props}
     />
   );
@@ -46,4 +67,4 @@ function CardFooter({ className, ...props }: React.ComponentProps<"footer">) {
   );
 }
 
-export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, cardVariants };

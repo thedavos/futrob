@@ -23,7 +23,9 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 - `dense` es la única compactación: 40 px en desktop y 44 px en touch.
 - Variantes cerradas. No añadir `xs`/`sm`/`lg` ni colores ad hoc.
 - `typo-label` es el estilo de labels; `typo-caption` cubre metadata y hints; `typo-subtitle` apoya headings.
-- Flat/line en controles y contenido. Solo overlays usan sombras ambientales.
+- Flat/line en controles y contenido. Overlays usan `smooth-shadow-ring-*` por defecto.
+  `Card` / `EmptyState` admiten `variant="elevated"`; `Alert` admite `elevation="elevated"`.
+  No combinar `border`/`ring` con `shadow` en el mismo elemento.
 - `ButtonIcon` es exclusivo de CTA de marketing.
 
 ## Catálogo
@@ -60,6 +62,7 @@ La aplicación importa los estilos una sola vez:
 ```css
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "shadow-plugin";
 @import "shadcn/tailwind.css";
 @import "@futrob/ui/styles.css";
 @import "@futrob/ui/tailwind.css";

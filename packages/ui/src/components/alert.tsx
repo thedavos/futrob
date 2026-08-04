@@ -4,33 +4,49 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "#lib/utils";
 
 const alertVariants = cva(
-  "relative grid w-full grid-cols-[auto_1fr] items-start gap-x-3 gap-y-1 rounded-lg border p-4 text-sm [&>svg]:mt-0.5 [&>svg]:size-4",
+  "relative grid w-full grid-cols-[auto_1fr] items-start gap-x-3 gap-y-1 rounded-lg p-4 text-sm [&>svg]:mt-0.5 [&>svg]:size-4",
   {
     variants: {
       variant: {
-        default: "border-border bg-surface text-foreground",
-        info: "border-info/25 bg-info/8 text-foreground [&>svg]:text-info",
-        success: "border-success/25 bg-success/8 text-foreground [&>svg]:text-success",
-        warning: "border-warning/30 bg-warning/8 text-foreground [&>svg]:text-warning",
-        destructive: "border-danger/25 bg-danger/8 text-foreground [&>svg]:text-danger",
+        default: "bg-surface text-foreground",
+        info: "bg-info/8 text-foreground [&>svg]:text-info",
+        success: "bg-success/8 text-foreground [&>svg]:text-success",
+        warning: "bg-warning/8 text-foreground [&>svg]:text-warning",
+        destructive: "bg-danger/8 text-foreground [&>svg]:text-danger",
+      },
+      elevation: {
+        /** Structural border; default for inline alerts. */
+        flat: "",
+        /** Soft elevation — no border on the same element. */
+        elevated: "smooth-shadow-ring-md",
       },
     },
+    compoundVariants: [
+      { elevation: "flat", variant: "default", class: "border border-border" },
+      { elevation: "flat", variant: "info", class: "border border-info/25" },
+      { elevation: "flat", variant: "success", class: "border border-success/25" },
+      { elevation: "flat", variant: "warning", class: "border border-warning/30" },
+      { elevation: "flat", variant: "destructive", class: "border border-danger/25" },
+    ],
     defaultVariants: {
       variant: "default",
+      elevation: "flat",
     },
   },
 );
 
 function Alert({
   className,
-  variant,
+  elevation = "flat",
+  variant = "default",
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
   return (
     <div
       data-slot="alert"
+      data-elevation={elevation ?? "flat"}
       role="alert"
-      className={cn(alertVariants({ variant }), className)}
+      className={cn(alertVariants({ elevation, variant }), className)}
       {...props}
     />
   );

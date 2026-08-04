@@ -136,9 +136,8 @@
   --content-reading: 65ch;
   --content-wide: 90rem;
 
-  /* Flat/line controls use borders. Ambient elevation is exclusive to floating layers. */
-  --shadow-popover: 0 1px 2px oklch(0 0 0 / 0.16), 0 12px 32px oklch(0 0 0 / 0.18);
-  --shadow-dialog: 0 2px 4px oklch(0 0 0 / 0.2), 0 24px 64px oklch(0 0 0 / 0.28);
+  /* Flat/line controls use borders. Elevated surfaces use shadow-plugin
+     `smooth-shadow-ring-*` (never pair with border/ring on the same element). */
 
   /* Motion */
   --duration-fast: 120ms;

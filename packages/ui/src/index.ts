@@ -26,6 +26,7 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
+  cardVariants,
 } from "./components/card";
 export {
   ChoiceGroup,
@@ -65,6 +66,7 @@ export {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
+  emptyStateVariants,
 } from "./components/empty-state";
 export { Field, FieldDescription, FieldError, FieldLabel, FieldValidity } from "./components/field";
 export type { FieldActions } from "./components/field";
