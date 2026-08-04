@@ -99,7 +99,7 @@ variantes cerradas.
 
 - `Form`
 - `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldValidity`
-- `Input`, `Textarea`, `Select`, `Checkbox`
+- `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`
 - `ChoiceGroup` para selección única con apariencias cerradas `tile` y `pill`
 - `Alert`
   - `variant`: semántica (`default` | `info` | `success` | `warning` | `destructive`).
@@ -115,6 +115,7 @@ Los formularios muestran validación junto al campo y un resumen solo cuando apo
 - `Breadcrumb`
 - `Sheet` para navegación móvil
 - `Stepper` para progreso secuencial no interactivo
+- `Collapsible` para secciones expandibles de detalle (Encounter, filtros, historial)
 
 La navegación de producto usa `typo-label`. El estado activo no depende únicamente del color.
 
@@ -130,6 +131,8 @@ La navegación de producto usa `typo-label`. El estado activo no depende únicam
   - `variant="flat"` (default): borde dashed.
   - `variant="elevated"`: `smooth-shadow-ring-md` para paneles vacíos aislados.
 - `Skeleton`
+- `ScrollArea` para listas densas y overflow controlado
+- `Progress` para sync/jobs con estado explícito (texto + barra; `value={null}` = indeterminado)
 
 `Table dense` es el patrón recomendado para auditoría y operación en desktop. Las cifras usan
 `tabular-nums`. Toda tabla debe tener encabezados y una representación móvil legible.

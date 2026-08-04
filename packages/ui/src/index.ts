@@ -19,6 +19,7 @@ export {
   AlertDialogTrigger,
 } from "./components/alert-dialog";
 export { Badge, badgeVariants } from "./components/badge";
+export { Avatar, AvatarFallback, AvatarImage } from "./components/avatar";
 export {
   Card,
   CardContent,
@@ -48,6 +49,7 @@ export { Button, buttonVariants } from "./components/button";
 export type { ButtonProps } from "./components/button";
 export { ButtonIcon } from "./components/button-icon";
 export { Checkbox } from "./components/checkbox";
+export { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./components/collapsible";
 export {
   Dialog,
   DialogBackdrop,
@@ -87,6 +89,14 @@ export {
   PopoverTrigger,
 } from "./components/popover";
 export {
+  Progress,
+  ProgressIndicator,
+  ProgressLabel,
+  ProgressTrack,
+  ProgressValue,
+} from "./components/progress";
+export { ScrollArea, ScrollAreaContent, ScrollBar } from "./components/scroll-area";
+export {
   Select,
   SelectContent,
   SelectGroup,
@@ -113,6 +123,7 @@ export {
 export { Skeleton } from "./components/skeleton";
 export { Stepper } from "./components/stepper";
 export type { StepperStep } from "./components/stepper";
+export { Switch } from "./components/switch";
 export {
   Table,
   TableBody,

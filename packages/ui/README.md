@@ -34,18 +34,22 @@ Formularios:
 
 - `Form`
 - `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldValidity`
-- `Input`, `Textarea`, `Select`, `Checkbox`
+- `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`
 - `ChoiceGroup`, `ChoiceGroupItem`, `ChoiceGroupIndicator`
 - `Alert`
 
 Navegación:
 
 - `Tabs`, `Breadcrumb`, `Sheet`, `Stepper`
+- `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`
 
 Datos:
 
 - `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `TableEmpty`
+- `Avatar`, `AvatarImage`, `AvatarFallback`
 - `Badge`, `Card`, `EmptyState`, `Skeleton`
+- `ScrollArea`, `ScrollAreaContent`, `ScrollBar`
+- `Progress`, `ProgressLabel`, `ProgressTrack`, `ProgressIndicator`, `ProgressValue`
 
 Overlays:
 
