@@ -2,6 +2,7 @@
 
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerWorkspacePage } from "./player-workspace-page.tsx";
 
 const getMyProfile = vi.fn<() => Promise<unknown>>();
@@ -89,7 +90,11 @@ describe("PlayerWorkspacePage", () => {
       updatedAt: "2026-08-01T01:00:00.000Z",
     });
 
-    render(<PlayerWorkspacePage />);
+    render(
+      <QueryTestProvider>
+        <PlayerWorkspacePage />
+      </QueryTestProvider>,
+    );
 
     expect(await screen.findByText("Alpha FC")).toBeTruthy();
     expect(screen.getByText("Beta FC")).toBeTruthy();

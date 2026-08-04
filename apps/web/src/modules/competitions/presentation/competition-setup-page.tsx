@@ -1,32 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { CompetitionDraftDto } from "@futrob/api-contracts";
 import { Alert, AlertDescription, Badge, Button, Card, CardContent, Logo } from "@futrob/ui";
+import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import { CalendarDays, CircleAlert, ListChecks, RadioTower, type LucideIcon } from "lucide-react";
-import { getCompetitionDraft } from "./competitions-browser-client.ts";
+import { useCompetitionDraftQuery } from "./competition-queries.ts";
 
 export function CompetitionSetupPage({
   organizationId,
   competitionId,
 }: Readonly<{ organizationId: string; competitionId: string }>) {
-  const [draft, setDraft] = useState<CompetitionDraftDto | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    void getCompetitionDraft(organizationId, competitionId)
-      .then((value) => {
-        if (active) setDraft(value);
-      })
-      .catch(() => {
-        if (active) setFailed(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, [competitionId, organizationId]);
+  const draftQuery = useCompetitionDraftQuery(organizationId, competitionId);
+  const draft = draftQuery.data ?? null;
+  const failed = draftQuery.isError;
 
   return (
     <main className="min-h-svh bg-background px-5 py-8 text-foreground sm:px-8 sm:py-10">
@@ -120,11 +107,11 @@ function SetupTask({ icon: Icon, label }: { readonly icon: LucideIcon; readonly 
 
 function platformLabel(value: CompetitionDraftDto["competition"]["platform"]): string {
   return {
-    playstation: "PlayStation",
-    xbox: "Xbox",
-    pc: "PC",
-    "nintendo-switch-1": "Nintendo Switch 1",
-    "nintendo-switch-2": "Nintendo Switch 2",
+    [GAME_PLATFORM.PLAYSTATION]: "PlayStation",
+    [GAME_PLATFORM.XBOX]: "Xbox",
+    [GAME_PLATFORM.PC]: "PC",
+    [GAME_PLATFORM.NINTENDO_SWITCH_1]: "Nintendo Switch 1",
+    [GAME_PLATFORM.NINTENDO_SWITCH_2]: "Nintendo Switch 2",
   }[value];
 }
 

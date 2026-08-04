@@ -1,47 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Logo } from "@futrob/ui";
 import { OrganizationPicker } from "@/modules/organizations/presentation/organization-picker.tsx";
-import { organizationsBrowserClient } from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 
 export function OrgsIndexPage() {
   const navigate = useNavigate();
-  const [ready, setReady] = useState(false);
+  const membershipsQuery = useMyMembershipsQuery();
+  const memberships = membershipsQuery.data?.memberships;
 
   useEffect(() => {
-    let cancelled = false;
-    void organizationsBrowserClient
-      .listMine()
-      .then(({ memberships }) => {
-        if (cancelled) {
-          return;
-        }
-        if (memberships.length === 0) {
-          void navigate({ to: "/onboarding" });
-          return;
-        }
-        if (memberships.length === 1) {
-          void navigate({
-            to: "/orgs/$orgId",
-            params: { orgId: memberships[0]!.organizationId },
-          });
-          return;
-        }
-        setReady(true);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setReady(true);
-        }
+    if (!memberships) {
+      return;
+    }
+    if (memberships.length === 0) {
+      void navigate({ to: "/onboarding" });
+      return;
+    }
+    if (memberships.length === 1) {
+      void navigate({
+        to: "/orgs/$orgId",
+        params: { orgId: memberships[0]!.organizationId },
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate]);
+    }
+  }, [memberships, navigate]);
 
-  if (!ready) {
+  const showPicker = membershipsQuery.isError || (memberships != null && memberships.length > 1);
+
+  if (!showPicker) {
     return (
       <main className="flex min-h-svh items-center justify-center bg-background px-5 text-sm text-muted-foreground">
         Cargando organizaciones…

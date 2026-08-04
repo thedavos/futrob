@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { MembershipSummaryDto } from "@futrob/api-contracts";
-import { organizationsBrowserClient } from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 
 const ROLE_LABEL: Record<MembershipSummaryDto["role"], string> = {
   organizer: "Organizador",
@@ -13,30 +12,11 @@ const ROLE_LABEL: Record<MembershipSummaryDto["role"], string> = {
 };
 
 export function OrganizationPicker() {
-  const [memberships, setMemberships] = useState<MembershipSummaryDto[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const membershipsQuery = useMyMembershipsQuery();
+  const memberships = membershipsQuery.data?.memberships;
 
-  useEffect(() => {
-    let cancelled = false;
-    void organizationsBrowserClient
-      .listMine()
-      .then((response) => {
-        if (!cancelled) {
-          setMemberships(response.memberships);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("No se pudieron cargar tus organizaciones.");
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (error) {
-    return <p className="text-sm text-destructive">{error}</p>;
+  if (membershipsQuery.isError) {
+    return <p className="text-sm text-destructive">No se pudieron cargar tus organizaciones.</p>;
   }
 
   if (memberships == null) {

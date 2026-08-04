@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   AlertDescription,
@@ -23,17 +23,12 @@ import {
   readFormString,
 } from "@futrob/ui";
 import { Link } from "@tanstack/react-router";
-import type { GamePlatformDto, PlayerGameAccountDto } from "@futrob/api-contracts";
+import type { GamePlatformDto } from "@futrob/api-contracts";
+import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
-import { teamsBrowserClient } from "./teams-browser-client.ts";
+import { useAddMyGameAccountMutation, useMyPlayerProfileQuery } from "./player-queries.ts";
 
-const GAME_PLATFORMS = [
-  "playstation",
-  "xbox",
-  "pc",
-  "nintendo-switch-1",
-  "nintendo-switch-2",
-] as const satisfies readonly GamePlatformDto[];
+const GAME_PLATFORMS = GAME_PLATFORM_VALUES;
 
 type AddGameAccountValues = {
   identifier: string;
@@ -48,30 +43,15 @@ function isGamePlatform(value: string): value is GamePlatformDto {
 }
 
 export function PlayerGameAccountsPage() {
-  const [accounts, setAccounts] = useState<PlayerGameAccountDto[]>([]);
   const [formKey, setFormKey] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const validation = useFormValidation<AddGameAccountField>();
+  const profileQuery = useMyPlayerProfileQuery();
+  const addAccount = useAddMyGameAccountMutation();
 
-  useEffect(() => {
-    let cancelled = false;
-    void teamsBrowserClient
-      .getMyProfile()
-      .then((result) => {
-        if (!cancelled) setAccounts(result.gameAccounts);
-      })
-      .catch(() => {
-        if (!cancelled) setError("No pudimos cargar tus cuentas de juego.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const accounts = profileQuery.data?.gameAccounts ?? [];
+  const loading = profileQuery.isPending;
+  const submitting = addAccount.isPending;
 
   async function handleSubmit(formValues: AddGameAccountValues) {
     const identifier = formValues.identifier.trim();
@@ -83,26 +63,19 @@ export function PlayerGameAccountsPage() {
       return;
     }
 
-    setSubmitting(true);
     setError(null);
     validation.clearServerErrors();
 
     try {
-      const result = await teamsBrowserClient.addMyGameAccount({
+      await addAccount.mutateAsync({
         identifier,
         platform,
         gameEdition,
-      });
-      setAccounts((current) => {
-        const withoutExisting = current.filter((account) => account.id !== result.gameAccount.id);
-        return [...withoutExisting, result.gameAccount];
       });
       setFormKey((current) => current + 1);
       validation.clearServerErrors();
     } catch {
       setError("No pudimos guardar la cuenta. Inténtalo nuevamente.");
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -126,9 +99,9 @@ export function PlayerGameAccountsPage() {
         </p>
       </div>
 
-      {error ? (
+      {error || profileQuery.isError ? (
         <Alert className="mb-6" variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{error ?? "No pudimos cargar tus cuentas de juego."}</AlertDescription>
         </Alert>
       ) : null}
 

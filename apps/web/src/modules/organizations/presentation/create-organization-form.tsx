@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { Button, Field, FieldError, FieldLabel, Form, Input, readFormString } from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  OrganizationsClientError,
-  organizationsBrowserClient,
-} from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import { useCreateOrganizationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 
 type CreateOrganizationValues = {
@@ -18,18 +16,18 @@ type CreateOrganizationField = keyof CreateOrganizationValues;
 export function CreateOrganizationForm() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const validation = useFormValidation<CreateOrganizationField>();
+  const createOrganization = useCreateOrganizationMutation();
+  const submitting = createOrganization.isPending;
 
   async function handleSubmit(formValues: CreateOrganizationValues) {
     const trimmed = formValues.name.trim();
 
-    setSubmitting(true);
     setError(null);
     validation.clearServerErrors();
 
     try {
-      const created = await organizationsBrowserClient.create({ name: trimmed });
+      const created = await createOrganization.mutateAsync({ name: trimmed });
       await navigate({ to: "/orgs/$orgId", params: { orgId: created.organizationId } });
     } catch (caught) {
       if (caught instanceof OrganizationsClientError) {
@@ -42,7 +40,6 @@ export function CreateOrganizationForm() {
       } else {
         setError("No se pudo crear la organización. Inténtalo de nuevo.");
       }
-      setSubmitting(false);
     }
   }
 

@@ -14,10 +14,8 @@ import {
 } from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { CircleAlert } from "lucide-react";
-import {
-  OrganizationsClientError,
-  organizationsBrowserClient,
-} from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import { useAcceptInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 
 type AcceptInvitationValues = {
@@ -29,18 +27,18 @@ type AcceptInvitationField = keyof AcceptInvitationValues;
 export function AcceptInvitationForm() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const validation = useFormValidation<AcceptInvitationField>();
+  const acceptInvitation = useAcceptInvitationMutation();
+  const submitting = acceptInvitation.isPending;
 
   async function handleSubmit(formValues: AcceptInvitationValues) {
     const trimmed = formValues.token.trim();
 
-    setSubmitting(true);
     setError(null);
     validation.clearServerErrors();
 
     try {
-      const accepted = await organizationsBrowserClient.acceptInvitation({ token: trimmed });
+      const accepted = await acceptInvitation.mutateAsync({ token: trimmed });
       await navigate({
         to: "/orgs/$orgId/competitions/$competitionId",
         params: {
@@ -66,7 +64,6 @@ export function AcceptInvitationForm() {
       } else {
         setError("No se pudo aceptar la invitación. Inténtalo de nuevo.");
       }
-      setSubmitting(false);
     }
   }
 

@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 import type { ExternalClubDto } from "@futrob/api-contracts";
+import { EA_SEARCH_PLATFORM, EA_SEARCH_PLATFORM_OPTIONS } from "@futrob/api-contracts";
 import {
   Alert,
   AlertDescription,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   Button,
   Field,
   FieldError,
@@ -18,19 +22,20 @@ import {
   SelectValue,
   readFormString,
 } from "@futrob/ui";
-import { FutrobApiError } from "@futrob/sdk";
-import {
-  getFutrobBrowserClient,
-  resolveFutrobApiBaseUrl,
-} from "@/shared/infrastructure/http/futrob-browser-client.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
+import { GameDataClientError } from "./game-data-browser-client.ts";
+import { useSearchClubsMutation } from "./game-data-queries.ts";
 
-const PLATFORMS = [
-  { value: "nx", label: "Nintendo Switch (nx)" },
-  { value: "common-gen5", label: "Cross-gen (common-gen5)" },
-  { value: "ps5", label: "PlayStation 5" },
-  { value: "xbox", label: "Xbox" },
-] as const;
+const PLATFORMS = EA_SEARCH_PLATFORM_OPTIONS.map((option) => ({
+  value: option.value,
+  label:
+    option.value === EA_SEARCH_PLATFORM.NINTENDO
+      ? "Nintendo Switch (nx)"
+      : option.value === EA_SEARCH_PLATFORM.CROSS_GEN
+        ? "Cross-gen (common-gen5)"
+        : option.label,
+}));
 
 type ClubSearchValues = {
   query: string;
@@ -43,8 +48,9 @@ export function ClubSearchPanel() {
   const [clubs, setClubs] = useState<ExternalClubDto[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
-  const [loading, setLoading] = useState(false);
   const validation = useFormValidation<ClubSearchField>();
+  const searchClubs = useSearchClubsMutation();
+  const loading = searchClubs.isPending;
 
   async function handleSubmit(formValues: ClubSearchValues) {
     if (loading) {
@@ -52,14 +58,13 @@ export function ClubSearchPanel() {
     }
 
     const trimmed = formValues.query.trim();
-    const platform = formValues.platform || "nx";
+    const platform = formValues.platform || EA_SEARCH_PLATFORM.NINTENDO;
 
-    setLoading(true);
     setError(null);
     validation.clearServerErrors();
 
     try {
-      const result = await getFutrobBrowserClient().gameData.clubs.search({
+      const result = await searchClubs.mutateAsync({
         query: trimmed,
         platform,
       });
@@ -68,15 +73,11 @@ export function ClubSearchPanel() {
     } catch (cause) {
       setClubs([]);
       setSearched(true);
-      if (cause instanceof FutrobApiError) {
-        setError(`${cause.messageKey} (HTTP ${cause.status})`);
-      } else if (cause instanceof TypeError) {
-        setError(`No se pudo conectar a ${resolveFutrobApiBaseUrl()}. ¿Está corriendo apps/api?`);
+      if (GameDataClientError.is(cause)) {
+        setError(`${cause.code} (HTTP ${cause.status})`);
       } else {
         setError("No se pudo buscar clubs.");
       }
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -117,7 +118,7 @@ export function ClubSearchPanel() {
           name="platform"
         >
           <FieldLabel>Plataforma</FieldLabel>
-          <Select defaultValue="nx" disabled={loading} name="platform">
+          <Select defaultValue={EA_SEARCH_PLATFORM.NINTENDO} disabled={loading} name="platform">
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -151,14 +152,20 @@ export function ClubSearchPanel() {
           <ul className="grid gap-2">
             {clubs.map((club) => (
               <li
-                className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-border-subtle bg-background px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle bg-background px-3 py-2"
                 key={`${club.providerKey}:${club.externalClubId}`}
               >
-                <div>
-                  <strong className="text-sm sm:text-base">{club.name}</strong>
-                  <p className="typo-label mt-0.5 text-muted-foreground">
-                    {club.platform} · {club.gameEdition}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar className="size-8">
+                    {club.imageUrl ? <AvatarImage alt="" src={club.imageUrl} /> : null}
+                    <AvatarFallback>{initialsFromName(club.name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <strong className="text-sm sm:text-base">{club.name}</strong>
+                    <p className="typo-label mt-0.5 text-muted-foreground">
+                      {club.platform} · {club.gameEdition}
+                    </p>
+                  </div>
                 </div>
                 <span className="font-mono text-xs text-muted-foreground">
                   {club.externalClubId}
@@ -170,8 +177,8 @@ export function ClubSearchPanel() {
 
         {!searched && !error ? (
           <p className="text-sm text-muted-foreground">
-            Consume <code className="text-xs">apps/api</code> vía SDK (
-            <code className="text-xs">/game-data/clubs/search</code>).
+            Consume el BFF same-origin (
+            <code className="text-xs">/api/v1/game-data/clubs/search</code>).
           </p>
         ) : null}
       </div>

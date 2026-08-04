@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { AppProviders } from "@/shared/presentation/query/app-providers.tsx";
 import appStyles from "@/styles.css?url";
 
 const description =
@@ -55,7 +56,9 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <RootDocument>
-      <Outlet />
+      <AppProviders>
+        <Outlet />
+      </AppProviders>
     </RootDocument>
   );
 }

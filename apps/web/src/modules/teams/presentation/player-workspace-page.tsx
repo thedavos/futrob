@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Button,
@@ -12,47 +12,30 @@ import {
   Logo,
 } from "@futrob/ui";
 import type { PlayerGameAccountDto, PlayerTeamMembershipDto } from "@futrob/api-contracts";
-import { teamsBrowserClient } from "./teams-browser-client.ts";
+import {
+  useMyPlayerProfileQuery,
+  useMyTeamsQuery,
+  useSetActiveTeamMutation,
+} from "./player-queries.ts";
 
 export function PlayerWorkspacePage() {
-  const [accounts, setAccounts] = useState<PlayerGameAccountDto[]>([]);
-  const [teams, setTeams] = useState<PlayerTeamMembershipDto[]>([]);
-  const [activeId, setActiveId] = useState<string>("");
-  const [savingActive, setSavingActive] = useState(false);
   const [activeError, setActiveError] = useState<string | null>(null);
+  const profileQuery = useMyPlayerProfileQuery();
+  const teamsQuery = useMyTeamsQuery();
+  const setActiveTeam = useSetActiveTeamMutation();
 
-  useEffect(() => {
-    let cancelled = false;
-    void Promise.all([teamsBrowserClient.getMyProfile(), teamsBrowserClient.getMyTeams()])
-      .then(([profile, mine]) => {
-        if (cancelled) return;
-        setAccounts(profile.gameAccounts);
-        setTeams(mine.teams);
-        setActiveId(mine.activeRosterMembershipId ?? "");
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const accounts = profileQuery.data?.gameAccounts ?? [];
+  const teams = teamsQuery.data?.teams ?? [];
+  const activeId = teamsQuery.data?.activeRosterMembershipId ?? "";
+  const savingActive = setActiveTeam.isPending;
 
   async function handleActiveChange(value: string | null) {
     if (!value || value === activeId || savingActive) return;
-    setSavingActive(true);
     setActiveError(null);
     try {
-      await teamsBrowserClient.setActiveTeam({ rosterMembershipId: value });
-      setActiveId(value);
-      setTeams((current) =>
-        current.map((item) => ({
-          ...item,
-          active: item.membership.id === value,
-        })),
-      );
+      await setActiveTeam.mutateAsync({ rosterMembershipId: value });
     } catch {
       setActiveError("No pudimos guardar tu equipo activo. Inténtalo nuevamente.");
-    } finally {
-      setSavingActive(false);
     }
   }
 
