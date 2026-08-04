@@ -1098,7 +1098,7 @@ export function OnboardingReview() {
       steps={stepsByPath[path]}
       title="Confirma tu configuración"
     >
-      <Card className="mx-auto w-full max-w-2xl">
+      <Card className="mx-auto w-full max-w-2xl" variant="elevated">
         <CardContent className="p-0">
           <dl>
             {rows.map((row) => (
