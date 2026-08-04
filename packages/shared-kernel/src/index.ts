@@ -15,6 +15,7 @@ export {
   type OfficialMatchSlotId,
   type ProviderMatchId,
 } from "./identifiers.ts";
+export { GAME_PLATFORM, GAME_PLATFORM_VALUES, type GamePlatform } from "./game-platform.ts";
 export type { Page, PageRequest } from "./pagination.ts";
 export type { EventPublisherPort } from "./event-publisher.ts";
 export type { ClockPort } from "./clock.port.ts";

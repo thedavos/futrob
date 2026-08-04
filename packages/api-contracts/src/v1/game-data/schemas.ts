@@ -1,11 +1,14 @@
 import { z } from "zod";
 
+import { EA_SEARCH_PLATFORM } from "./ea-search-platform.ts";
+
 export const externalClubSchema = z.object({
   providerKey: z.enum(["ea-clubs", "manual", "screenshot-ocr"]),
   externalClubId: z.string(),
   name: z.string(),
   platform: z.string(),
   gameEdition: z.string(),
+  imageUrl: z.string().url().nullable(),
 });
 
 export type ExternalClubDto = z.infer<typeof externalClubSchema>;
@@ -56,7 +59,7 @@ export type GameDataProviderKeyQuery = z.infer<typeof gameDataProviderKeyQuerySc
 export const searchClubsQuerySchema = z.object({
   query: z.string().min(1),
   providerKey: gameDataProviderKeyQuerySchema.default("ea-clubs"),
-  platform: z.string().min(1).default("common-gen5"),
+  platform: z.string().min(1).default(EA_SEARCH_PLATFORM.CROSS_GEN),
   gameEdition: z.string().min(1).default("fc26"),
 });
 
@@ -71,7 +74,7 @@ export type SearchClubsResponse = z.infer<typeof searchClubsResponseSchema>;
 
 export const getClubQuerySchema = z.object({
   providerKey: gameDataProviderKeyQuerySchema.default("ea-clubs"),
-  platform: z.string().min(1).default("common-gen5"),
+  platform: z.string().min(1).default(EA_SEARCH_PLATFORM.CROSS_GEN),
   gameEdition: z.string().min(1).default("fc26"),
 });
 
@@ -84,7 +87,7 @@ export type GetClubResponse = z.infer<typeof getClubResponseSchema>;
 
 export const getClubMatchesQuerySchema = z.object({
   providerKey: gameDataProviderKeyQuerySchema.default("ea-clubs"),
-  platform: z.string().min(1).default("common-gen5"),
+  platform: z.string().min(1).default(EA_SEARCH_PLATFORM.CROSS_GEN),
   gameEdition: z.string().min(1).default("fc26"),
   matchType: z.string().min(1).default("friendlyMatch"),
   maxResultCount: z.coerce.number().int().positive().max(100).default(50),

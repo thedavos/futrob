@@ -1,9 +1,9 @@
 import type { SVGProps } from "react";
-import type { GamePlatformDto } from "@futrob/api-contracts";
+import { GAME_PLATFORM, type GamePlatform } from "@futrob/shared-kernel";
 import { Monitor } from "lucide-react";
 
 type PlatformLogoProps = SVGProps<SVGSVGElement> & {
-  readonly platform: GamePlatformDto;
+  readonly platform: GamePlatform;
 };
 
 export function PlatformLogo({ platform, ...props }: PlatformLogoProps) {
@@ -15,14 +15,14 @@ export function PlatformLogo({ platform, ...props }: PlatformLogoProps) {
   } as const;
 
   switch (platform) {
-    case "playstation":
+    case GAME_PLATFORM.PLAYSTATION:
       return <PlayStationLogo {...sharedProps} />;
-    case "xbox":
+    case GAME_PLATFORM.XBOX:
       return <XboxLogo {...sharedProps} />;
-    case "pc":
+    case GAME_PLATFORM.PC:
       return <Monitor {...sharedProps} />;
-    case "nintendo-switch-1":
-    case "nintendo-switch-2":
+    case GAME_PLATFORM.NINTENDO_SWITCH_1:
+    case GAME_PLATFORM.NINTENDO_SWITCH_2:
       return <NintendoSwitchLogo {...sharedProps} />;
   }
 }

@@ -6,6 +6,7 @@ import {
   providerMatchSchema,
   searchClubsResponseSchema,
 } from "../game-data/schemas.ts";
+import { EA_SEARCH_PLATFORM } from "../game-data/ea-search-platform.ts";
 import {
   completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
@@ -118,7 +119,7 @@ export const futrobOpenApiV1 = {
             name: "platform",
             in: "query",
             required: false,
-            schema: { type: "string", default: "common-gen5" },
+            schema: { type: "string", default: EA_SEARCH_PLATFORM.CROSS_GEN },
           },
           {
             name: "gameEdition",
@@ -167,7 +168,7 @@ export const futrobOpenApiV1 = {
             name: "platform",
             in: "query",
             required: false,
-            schema: { type: "string", default: "common-gen5" },
+            schema: { type: "string", default: EA_SEARCH_PLATFORM.CROSS_GEN },
           },
           {
             name: "gameEdition",
@@ -217,7 +218,7 @@ export const futrobOpenApiV1 = {
             name: "platform",
             in: "query",
             required: false,
-            schema: { type: "string", default: "common-gen5" },
+            schema: { type: "string", default: EA_SEARCH_PLATFORM.CROSS_GEN },
           },
           {
             name: "gameEdition",
@@ -657,7 +658,7 @@ export const futrobOpenApiV1 = {
       },
       ExternalClub: {
         type: "object",
-        required: ["providerKey", "externalClubId", "name", "platform", "gameEdition"],
+        required: ["providerKey", "externalClubId", "name", "platform", "gameEdition", "imageUrl"],
         properties: {
           providerKey: {
             type: "string",
@@ -667,6 +668,7 @@ export const futrobOpenApiV1 = {
           name: { type: "string" },
           platform: { type: "string" },
           gameEdition: { type: "string" },
+          imageUrl: { type: ["string", "null"], format: "uri" },
         },
       },
       ProviderMatch: {

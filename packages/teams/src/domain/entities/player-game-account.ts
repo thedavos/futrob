@@ -1,9 +1,6 @@
-export type GamePlatform =
-  | "playstation"
-  | "xbox"
-  | "pc"
-  | "nintendo-switch-1"
-  | "nintendo-switch-2";
+import type { GamePlatform } from "@futrob/shared-kernel";
+
+export type { GamePlatform };
 
 export interface PlayerGameAccount {
   readonly id: string;

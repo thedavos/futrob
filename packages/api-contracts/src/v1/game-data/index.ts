@@ -23,3 +23,12 @@ export {
   type GetClubMatchesResponse,
   type GameDataProviderKeyQuery,
 } from "./schemas.ts";
+export {
+  EA_SEARCH_PLATFORM,
+  EA_SEARCH_PLATFORM_OPTIONS,
+  EA_SEARCH_PLATFORM_VALUES,
+  asEaSearchPlatform,
+  eaSearchPlatformFromGamePlatform,
+  gamePlatformForEaSearchLogo,
+  type EaSearchPlatform,
+} from "./ea-search-platform.ts";

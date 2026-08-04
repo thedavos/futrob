@@ -1,4 +1,4 @@
-import type { ActorId, CompetitionId, OrganizationId } from "@futrob/shared-kernel";
+import type { ActorId, CompetitionId, OrganizationId, GamePlatform } from "@futrob/shared-kernel";
 
 export type CompetitionStatus = "draft" | "published" | "paused" | "finished" | "archived";
 
@@ -14,12 +14,7 @@ export type CompetitionRegion =
   | "middle-east"
   | "oceania";
 
-export type CompetitionPlatform =
-  | "playstation"
-  | "xbox"
-  | "pc"
-  | "nintendo-switch-1"
-  | "nintendo-switch-2";
+export type CompetitionPlatform = GamePlatform;
 
 export interface Competition {
   readonly id: CompetitionId;
