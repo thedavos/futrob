@@ -30,7 +30,9 @@ Also: Cloudflare/wrangler, Sentry, TypeScript best practices. See `.cursor/rules
 - Read `product/design-system-spec.md` and `packages/ui/README.md` before UI work.
 - Light is the default across marketing, product and public portal. Dark is explicit opt-in.
 - Controls are 44 px. `dense` is the only compact mode: 40 px on desktop and 44 px on touch.
-- Use flat/line hierarchy; ambient shadows belong only to overlays.
+- Use flat/line hierarchy; ambient elevation uses `smooth-shadow-ring-*` on overlays and
+  opt-in `Card`/`EmptyState` `variant="elevated"` / `Alert elevation="elevated"`.
+  Never pair `border`/`ring` with `shadow`.
 - Green means brand/primary action. Use the separate `approved` semantic token only for
   officially approved results.
 - Use `typo-label` for labels and navigation; use `typo-caption` for metadata, hints and secondary sentence-case copy; use `typo-subtitle` for support lines under headings.

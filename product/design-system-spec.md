@@ -19,7 +19,9 @@ oficial”.
 1. **Light por defecto.** Marketing, producto y portal arrancan siempre en tema claro. Dark es
    una opción explícita futura, no una preferencia automática del sistema operativo.
 2. **Flat/line.** La estructura se expresa con espacio, tipografía y bordes de 1 px. Las sombras
-   ambientales se reservan para popovers, diálogos y sheets.
+   ambientales usan `smooth-shadow-ring-*` (shadow-plugin) en overlays por defecto, y en
+   variantes opt-in `elevated` de `Card`, `EmptyState` y `Alert` (vía `elevation`) para
+   superficies aisladas sobre fondo plano.
 3. **Filas antes que tarjetas.** Partidos, candidatos, plantillas, auditorías y rankings se
    modelan como filas o tablas. Cards solo para entidades autónomas.
 4. **Estado explícito.** Texto + icono/forma; el color nunca comunica un estado por sí solo.
@@ -32,6 +34,8 @@ oficial”.
 
 - Dashboard de cards uniformes o cards anidadas.
 - Gradientes decorativos, glassmorphism global y sombras en controles estáticos.
+- Combinar `border-*` / `ring-*` con `shadow-*` en la misma superficie elevada (doble borde).
+  Usar `smooth-shadow-ring-*` (overlays, `Card`/`EmptyState` elevated, `Alert elevation`) en su lugar.
 - Tamaños o colores arbitrarios dentro de pantallas.
 - Badges solo por color.
 - Usar el verde de aprobación para selección, sincronización o estados provisionales.
@@ -98,6 +102,9 @@ variantes cerradas.
 - `Input`, `Textarea`, `Select`, `Checkbox`
 - `ChoiceGroup` para selección única con apariencias cerradas `tile` y `pill`
 - `Alert`
+  - `variant`: semántica (`default` | `info` | `success` | `warning` | `destructive`).
+  - `elevation="flat"` (default) con borde; `elevation="elevated"` usa `smooth-shadow-ring-md`
+    sin border (paneles de aviso aislados, no alerts inline en forms densos).
 
 Cada campo debe tener nombre accesible, descripción/error asociado y estado inválido visible.
 Los formularios muestran validación junto al campo y un resumen solo cuando aporta contexto.
@@ -116,21 +123,26 @@ La navegación de producto usa `typo-label`. El estado activo no depende únicam
 - `Table` y primitivas de fila/celda
 - `Badge` con variante `approved`
 - `Card` para entidades o resúmenes autónomos
-- `EmptyState` y `Skeleton`
+  - `variant="flat"` (default): borde estructural, sin elevación.
+  - `variant="elevated"`: `smooth-shadow-ring-md`. Sin `border`/`ring` en el mismo elemento.
+    Solo entidades autónomas sobre fondo plano. No usar en grids densas, forms ni cards anidadas.
+- `EmptyState`
+  - `variant="flat"` (default): borde dashed.
+  - `variant="elevated"`: `smooth-shadow-ring-md` para paneles vacíos aislados.
+- `Skeleton`
 
 `Table dense` es el patrón recomendado para auditoría y operación en desktop. Las cifras usan
 `tabular-nums`. Toda tabla debe tener encabezados y una representación móvil legible.
 
 ### Overlays
 
-- `Dialog` para tareas reversibles o edición.
-- `AlertDialog` para consecuencias destructivas o irreversibles.
-- `Popover` para contexto interactivo breve.
-- `Tooltip` para ayuda suplementaria, nunca información imprescindible.
-- `Sheet` para navegación o flujos laterales.
+- `Dialog` / `AlertDialog`: `smooth-shadow-ring-lg` (sin border en el popup).
+- `Popover` / `SelectContent`: `smooth-shadow-ring-md`.
+- `Sheet`: `smooth-shadow-ring-lg` (sin border perimetral; divisores internos sí).
+- `Tooltip`: `smooth-shadow-sm` (sin ring; no lleva borde).
 
 Base UI debe conservar focus trap, restauración de foco, Escape y asociación de título y
-descripción. Las capas flotantes son las únicas superficies con sombra ambiental.
+descripción. No mezclar borde + sombra en el mismo elemento.
 
 ### Botones
 
