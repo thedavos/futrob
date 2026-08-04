@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AcceptInvitationRequest, CreateOrganizationRequest } from "@futrob/api-contracts";
+import type {
+  AcceptInvitationRequest,
+  CreateInvitationRequest,
+  CreateOrganizationRequest,
+} from "@futrob/api-contracts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { organizationsBrowserClient } from "./organizations-browser-client.ts";
 
@@ -30,5 +34,15 @@ export function useAcceptInvitationMutation() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.organizations.mine() });
     },
+  });
+}
+
+export function useCreateCompetitionInvitationMutation(
+  organizationId: string,
+  competitionId: string,
+) {
+  return useMutation({
+    mutationFn: (input: CreateInvitationRequest) =>
+      organizationsBrowserClient.createCompetitionInvitation(organizationId, competitionId, input),
   });
 }

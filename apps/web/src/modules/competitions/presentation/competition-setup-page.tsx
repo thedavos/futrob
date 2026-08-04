@@ -5,6 +5,7 @@ import type { CompetitionDraftDto } from "@futrob/api-contracts";
 import { Alert, AlertDescription, Badge, Button, Card, CardContent, Logo } from "@futrob/ui";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import { CalendarDays, CircleAlert, ListChecks, RadioTower, type LucideIcon } from "lucide-react";
+import { CreateCompetitionInvitationPanel } from "@/modules/organizations/presentation/create-competition-invitation-panel.tsx";
 import { useCompetitionDraftQuery } from "./competition-queries.ts";
 
 export function CompetitionSetupPage({
@@ -77,6 +78,11 @@ export function CompetitionSetupPage({
                 Estas configuraciones se habilitarán en el wizard operativo de la competición.
               </p>
             </section>
+
+            <CreateCompetitionInvitationPanel
+              competitionId={competitionId}
+              organizationId={organizationId}
+            />
 
             <div className="mt-10">
               <Button

@@ -1,12 +1,16 @@
 import {
   createOrganizationRequestSchema,
   createOrganizationResponseSchema,
+  createInvitationRequestSchema,
+  createInvitationResponseSchema,
   acceptInvitationRequestSchema,
   acceptCompetitionInvitationResponseSchema,
   resolvePostAuthDestinationResponseSchema,
   listMyMembershipsResponseSchema,
   type CreateOrganizationRequest,
   type CreateOrganizationResponse,
+  type CreateInvitationRequest,
+  type CreateInvitationResponse,
   type AcceptInvitationRequest,
   type AcceptCompetitionInvitationResponse,
   type ResolvePostAuthDestinationResponse,
@@ -97,6 +101,20 @@ export const organizationsBrowserClient = {
       method: "POST",
       body,
       parse: (data) => acceptCompetitionInvitationResponseSchema.parse(data),
+    });
+  },
+
+  createCompetitionInvitation(
+    organizationId: string,
+    competitionId: string,
+    input: CreateInvitationRequest,
+  ): Promise<CreateInvitationResponse> {
+    const body = createInvitationRequestSchema.parse(input);
+    return requestJson({
+      path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/invitations`,
+      method: "POST",
+      body,
+      parse: (data) => createInvitationResponseSchema.parse(data),
     });
   },
 };

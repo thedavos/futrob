@@ -10,7 +10,7 @@ import {
   InputWithIcon,
   readFormString,
 } from "@futrob/ui";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Lock, Mail } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import {
@@ -45,8 +45,9 @@ function loginErrorMessage(error: AuthClientError): string {
   }
 }
 
-export function LoginForm() {
+export function LoginForm({ redirectTo = null }: Readonly<{ redirectTo?: string | null }>) {
   const navigate = useNavigate();
+  const router = useRouter();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const validation = useFormValidation<LoginField>();
 
@@ -70,6 +71,10 @@ export function LoginForm() {
       }
 
       setState({ status: "success" });
+      if (redirectTo) {
+        router.history.push(redirectTo);
+        return;
+      }
       try {
         const { destination } = await organizationsBrowserClient.resolvePostAuthDestination();
         if (destination.kind === "organization") {
@@ -157,6 +162,7 @@ export function LoginForm() {
         ¿Aún no tienes cuenta?{" "}
         <Link
           className="font-medium text-foreground underline-offset-4 hover:underline"
+          search={{ redirectTo: redirectTo ?? null }}
           to="/signup"
         >
           Crear una cuenta

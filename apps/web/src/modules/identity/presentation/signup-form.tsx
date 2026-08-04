@@ -13,7 +13,7 @@ import {
   readFormString,
   type FormErrors,
 } from "@futrob/ui";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import {
@@ -64,8 +64,9 @@ function signupFailure(error: AuthClientError): SignupFailure {
   }
 }
 
-export function SignupForm() {
+export function SignupForm({ redirectTo = null }: Readonly<{ redirectTo?: string | null }>) {
   const navigate = useNavigate();
+  const router = useRouter();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const validation = useFormValidation<AuthFormField>();
@@ -99,6 +100,10 @@ export function SignupForm() {
       }
 
       setState({ status: "success" });
+      if (redirectTo) {
+        router.history.push(redirectTo);
+        return;
+      }
       await navigate({ to: "/onboarding" });
     } catch (error) {
       setState({
@@ -225,6 +230,7 @@ export function SignupForm() {
         ¿Ya tienes una cuenta?{" "}
         <Link
           className="font-medium text-foreground underline-offset-4 hover:underline"
+          search={{ redirectTo: redirectTo ?? null }}
           to="/login"
         >
           Iniciar sesión
