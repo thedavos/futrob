@@ -27,6 +27,7 @@ describe("createFutrobClient gameData", () => {
               name: "Fera Enjaulada",
               platform: "common-gen5",
               gameEdition: "fc26",
+              imageUrl: null,
             },
           ],
         });
@@ -53,6 +54,7 @@ describe("createFutrobClient gameData", () => {
           name: "Fera Enjaulada",
           platform: "common-gen5",
           gameEdition: "fc26",
+          imageUrl: null,
         });
       }) as typeof fetch,
     });

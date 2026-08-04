@@ -6,4 +6,5 @@ export interface ExternalClub {
   readonly name: string;
   readonly platform: string;
   readonly gameEdition: string;
+  readonly imageUrl: string | null;
 }

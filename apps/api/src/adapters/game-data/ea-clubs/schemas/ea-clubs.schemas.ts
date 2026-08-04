@@ -7,13 +7,21 @@ export const eaNumericRequired = z.coerce.number();
 
 export const eaIdAsString = z.union([z.string(), z.number()]).transform((value) => String(value));
 
+export const eaCustomKitSchema = z
+  .object({
+    crestAssetId: eaIdAsString.optional(),
+  })
+  .passthrough();
+
+export type EaCustomKit = z.infer<typeof eaCustomKitSchema>;
+
 export const eaClubInfoSchema = z
   .object({
     name: z.string(),
     clubId: eaIdAsString,
     regionId: z.unknown().optional(),
     teamId: z.unknown().optional(),
-    customKit: z.record(z.string(), z.unknown()).optional(),
+    customKit: eaCustomKitSchema.optional(),
   })
   .passthrough();
 

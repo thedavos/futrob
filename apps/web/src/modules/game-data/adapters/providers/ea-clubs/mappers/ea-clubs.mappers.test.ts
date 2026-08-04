@@ -29,6 +29,8 @@ describe("ea-clubs schemas and mappers", () => {
         name: "Fera Enjaulada",
         platform: "common-gen5",
         gameEdition: "fc26",
+        imageUrl:
+          "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/fcweb/crests/256x256/l99160122.png",
       },
     ]);
   });
@@ -43,6 +45,8 @@ describe("ea-clubs schemas and mappers", () => {
       name: "Fera Enjaulada",
       platform: "common-gen5",
       gameEdition: "fc26",
+      imageUrl:
+        "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/fcweb/crests/256x256/l99160122.png",
     });
   });
 

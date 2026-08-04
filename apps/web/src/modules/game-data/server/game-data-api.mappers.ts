@@ -8,6 +8,7 @@ export function toExternalClubDto(club: ExternalClub): ExternalClubDto {
     name: club.name,
     platform: club.platform,
     gameEdition: club.gameEdition,
+    imageUrl: club.imageUrl,
   };
 }
 

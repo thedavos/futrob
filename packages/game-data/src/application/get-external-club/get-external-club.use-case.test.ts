@@ -13,6 +13,7 @@ describe("GetExternalClubUseCase", () => {
       name: "Fera Enjaulada",
       platform: "common-gen5",
       gameEdition: "fc26",
+      imageUrl: null,
     };
 
     const provider: GameDataProviderPort = {

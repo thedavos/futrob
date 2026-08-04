@@ -4,6 +4,10 @@ import type {
   EaClubMatch,
   EaLeaderboardEntry,
 } from "@/modules/game-data/adapters/providers/ea-clubs/schemas/ea-clubs.schemas.ts";
+import {
+  buildEaClubCrestUrl,
+  crestAssetIdFromCustomKit,
+} from "@/modules/game-data/adapters/providers/ea-clubs/mappers/build-ea-club-crest-url.ts";
 
 export function mapLeaderboardEntryToExternalClub(
   entry: EaLeaderboardEntry,
@@ -22,6 +26,10 @@ export function mapLeaderboardEntryToExternalClub(
     name,
     platform: entry.platform ?? input.platform,
     gameEdition: input.gameEdition,
+    imageUrl: buildEaClubCrestUrl(
+      input.gameEdition,
+      crestAssetIdFromCustomKit(fromInfo?.customKit),
+    ),
   };
 }
 
@@ -35,6 +43,7 @@ export function mapClubInfoToExternalClub(
     name: info.name,
     platform: input.platform,
     gameEdition: input.gameEdition,
+    imageUrl: buildEaClubCrestUrl(input.gameEdition, crestAssetIdFromCustomKit(info.customKit)),
   };
 }
 
