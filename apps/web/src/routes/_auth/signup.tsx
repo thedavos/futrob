@@ -1,14 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AuthFormHeader } from "@/modules/identity/presentation/auth-form-header.tsx";
 import { SignupForm } from "@/modules/identity/presentation/signup-form.tsx";
-import { resolveSafeRedirect } from "@/modules/identity/presentation/safe-redirect.ts";
 
 export const Route = createFileRoute("/_auth/signup")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirectTo: resolveSafeRedirect(
-      typeof search.redirectTo === "string" ? search.redirectTo : null,
-    ),
-  }),
   head: () => ({
     meta: [
       { title: "Crear cuenta | Futrob" },
@@ -22,7 +16,6 @@ export const Route = createFileRoute("/_auth/signup")({
 });
 
 function SignupPage() {
-  const { redirectTo } = Route.useSearch();
   return (
     <>
       <div className="mb-8">
@@ -31,7 +24,7 @@ function SignupPage() {
           title="Crea tu cuenta"
         />
       </div>
-      <SignupForm redirectTo={redirectTo} />
+      <SignupForm />
     </>
   );
 }
