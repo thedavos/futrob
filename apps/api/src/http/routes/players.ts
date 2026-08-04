@@ -9,7 +9,11 @@ import {
 } from "@futrob/api-contracts";
 import type { AppDeps } from "@/app.ts";
 import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
-import { playerGameAccountDto, playerProfileDto } from "@/http/mappers/player.ts";
+import {
+  playerExternalClubAssociationDto,
+  playerGameAccountDto,
+  playerProfileDto,
+} from "@/http/mappers/player.ts";
 import { playerTeamMembershipDto } from "@/http/mappers/team.ts";
 import {
   createServiceAuthMiddleware,
@@ -28,6 +32,9 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
       getMyPlayerProfileResponseSchema.parse({
         profile: details.profile ? playerProfileDto(details.profile) : null,
         gameAccounts: details.gameAccounts.map(playerGameAccountDto),
+        externalClub: details.externalClub
+          ? playerExternalClubAssociationDto(details.externalClub)
+          : null,
       }),
     );
   });

@@ -135,12 +135,69 @@ export const GameAccountValidationError: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole("button", { name: "Vincular y revisar" }));
+    await userEvent.click(await canvas.findByRole("button", { name: "Vincular y continuar" }));
     const identifier = canvas.getByRole("textbox", { name: "Identificador de EA" });
     const error = canvas.getByText("Escribe tu identificador de EA.");
     await expect(error).toBeVisible();
     await expect(identifier).toHaveAttribute("aria-describedby", error.parentElement?.id);
     await expect(identifier).toHaveFocus();
+  },
+};
+
+export const TeamClubSearch: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({ path: "player", currentStep: "team" })}
+      initialPath="/onboarding/team"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByRole("textbox", { name: "Nombre del club" }), "Fera");
+    await userEvent.click(canvas.getByRole("button", { name: "Buscar club" }));
+    const club = await canvas.findByRole("radio", { name: /Fera Enjaulada/ });
+    await userEvent.click(club);
+    await expect(canvas.getByText("Seleccionado")).toBeVisible();
+  },
+};
+
+export const TeamClubEmpty: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({
+        path: "player",
+        currentStep: "team",
+        clubs: [],
+      })}
+      initialPath="/onboarding/team"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByRole("textbox", { name: "Nombre del club" }), "zzz");
+    await userEvent.click(canvas.getByRole("button", { name: "Buscar club" }));
+    await expect(await canvas.findByText(/No encontramos clubs/)).toBeVisible();
+  },
+};
+
+export const TeamClubSearchError: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({
+        path: "player",
+        currentStep: "team",
+        searchError: true,
+      })}
+      initialPath="/onboarding/team"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByRole("textbox", { name: "Nombre del club" }), "Fera");
+    await userEvent.click(canvas.getByRole("button", { name: "Buscar club" }));
+    await expect(
+      await canvas.findByText("No pudimos buscar clubs. Inténtalo nuevamente."),
+    ).toBeVisible();
   },
 };
 
@@ -170,11 +227,16 @@ export const ReviewComplete: Story = {
     );
     await userEvent.click(await canvas.findByRole("radio", { name: "FC 26" }));
     await userEvent.click(canvas.getByRole("radio", { name: "Nintendo Switch 2" }));
-    await userEvent.click(canvas.getByRole("button", { name: "Revisar cuenta" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
+    await userEvent.type(await canvas.findByRole("textbox", { name: "Nombre del club" }), "Fera");
+    await userEvent.click(canvas.getByRole("button", { name: "Buscar club" }));
+    await userEvent.click(await canvas.findByRole("radio", { name: /Fera Enjaulada/ }));
+    await userEvent.click(canvas.getByRole("button", { name: "Revisar club" }));
     await expect(
       await canvas.findByRole("heading", { name: "Confirma tu configuración" }),
     ).toBeVisible();
     await expect(canvas.getByText(/gamer23 · Nintendo Switch 2 · FC 26/)).toBeVisible();
+    await expect(canvas.getByText(/Fera Enjaulada/)).toBeVisible();
   },
 };
 

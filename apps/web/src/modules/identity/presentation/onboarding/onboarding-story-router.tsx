@@ -21,6 +21,7 @@ import {
   InvitationStep,
   OnboardingReview,
   OrganizationStep,
+  TeamStep,
 } from "./onboarding-steps.tsx";
 
 type OnboardingStoryPath =
@@ -29,6 +30,7 @@ type OnboardingStoryPath =
   | "/onboarding/competition"
   | "/onboarding/invitation"
   | "/onboarding/game-account"
+  | "/onboarding/team"
   | "/onboarding/review";
 
 export interface StoryOnboardingGateway extends OnboardingGateway {
@@ -42,6 +44,14 @@ export function createFakeOnboardingGateway(input?: {
   pendingSave?: boolean;
   failComplete?: boolean;
   organizationNameAvailable?: boolean;
+  clubs?: readonly {
+    readonly providerKey: "ea-clubs" | "manual" | "screenshot-ocr";
+    readonly externalClubId: string;
+    readonly name: string;
+    readonly platform: string;
+    readonly gameEdition: string;
+  }[];
+  searchError?: boolean;
 }): StoryOnboardingGateway {
   let path = input?.path ?? null;
   let currentStep = input?.currentStep ?? "intention";
@@ -107,6 +117,27 @@ export function createFakeOnboardingGateway(input?: {
     async completePlayer() {
       if (input?.failComplete) throw new Error("story.complete_failed");
     },
+    async searchExternalClubs(request) {
+      if (input?.searchError) throw new Error("story.search_failed");
+      const clubs = input?.clubs ?? [
+        {
+          providerKey: "ea-clubs" as const,
+          externalClubId: "10754",
+          name: "Fera Enjaulada",
+          platform: request.platform ?? "common-gen5",
+          gameEdition: request.gameEdition ?? "fc26",
+        },
+        {
+          providerKey: "ea-clubs" as const,
+          externalClubId: "22110",
+          name: "Night Owls",
+          platform: request.platform ?? "common-gen5",
+          gameEdition: request.gameEdition ?? "fc26",
+        },
+      ];
+      const query = request.query.trim().toLowerCase();
+      return clubs.filter((club) => club.name.toLowerCase().includes(query));
+    },
   };
 }
 
@@ -147,6 +178,11 @@ function createOnboardingStoryRouter(
       getParentRoute: () => rootRoute,
       path: "/onboarding/game-account",
       component: GameAccountStep,
+    }),
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/onboarding/team",
+      component: TeamStep,
     }),
     createRoute({
       getParentRoute: () => rootRoute,

@@ -25,7 +25,9 @@ import {
 } from "@futrob/ui";
 import {
   CircleAlert,
+  Check,
   Info,
+  Shield,
   Signpost,
   TicketCheck,
   Trophy,
@@ -36,6 +38,7 @@ import {
 import type {
   CompetitionFormatDto,
   CompetitionRegionDto,
+  ExternalClubDto,
   GamePlatformDto,
   OnboardingPathDto,
   OnboardingStepDto,
@@ -68,9 +71,30 @@ const stepsByPath: Record<OnboardingPathDto, readonly StepperStep[]> = {
   player: [
     { id: "intention", label: "Inicio" },
     { id: "game-account", label: "Cuenta" },
+    { id: "team", label: "Club" },
     { id: "review", label: "Confirmar" },
   ],
 };
+
+const eaSearchPlatforms = [
+  { value: "common-gen5", label: "Cross-gen" },
+  { value: "ps5", label: "PlayStation 5" },
+  { value: "xbox", label: "Xbox" },
+  { value: "nx", label: "Nintendo Switch" },
+] as const;
+
+type EaSearchPlatform = (typeof eaSearchPlatforms)[number]["value"];
+
+type ClubSearchState =
+  | { readonly status: "idle" }
+  | { readonly status: "loading"; readonly query: string }
+  | {
+      readonly status: "success";
+      readonly query: string;
+      readonly clubs: readonly ExternalClubDto[];
+    }
+  | { readonly status: "empty"; readonly query: string }
+  | { readonly status: "error"; readonly query: string; readonly message: string };
 
 export function IntentChoiceStep() {
   const flow = useOnboardingFlow();
@@ -635,7 +659,7 @@ export function GameAccountStep() {
           : null
     : null;
 
-  function continueToReview() {
+  function continueAfterAccount() {
     if (!draft.gameAccountIdentifier.trim()) {
       setValidationError("Escribe tu identificador de EA.");
       identifierRef.current?.focus();
@@ -656,7 +680,7 @@ export function GameAccountStep() {
       gameAccountIdentifier: draft.gameAccountIdentifier.trim(),
       gameEdition: draft.gameEdition.trim(),
     });
-    void flow.goTo("review", path);
+    void flow.goTo(path === "player" ? "team" : "review", path);
   }
 
   return (
@@ -815,13 +839,21 @@ export function GameAccountStep() {
             path,
           )
         }
-        onPrimary={continueToReview}
+        onPrimary={continueAfterAccount}
         onSkip={() => {
           flow.clearGameAccount();
           setValidationError(null);
-          void flow.goTo("review", path);
+          void flow.goTo(path === "player" ? "team" : "review", path);
         }}
-        primaryLabel={hasAny ? "Revisar cuenta" : "Vincular y revisar"}
+        primaryLabel={
+          path === "player"
+            ? hasAny
+              ? "Continuar"
+              : "Vincular y continuar"
+            : hasAny
+              ? "Revisar cuenta"
+              : "Vincular y revisar"
+        }
       />
     </OnboardingShell>
   );
@@ -843,6 +875,201 @@ function PlatformChoice({
   );
 }
 
+export function TeamStep() {
+  const flow = useOnboardingFlow();
+  const clubNameId = useId();
+  const statusId = useId();
+  const queryRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [platform, setPlatform] = useState<EaSearchPlatform>("common-gen5");
+  const [search, setSearch] = useState<ClubSearchState>({ status: "idle" });
+  const selected = flow.draft.selectedExternalClub;
+
+  async function searchClubs() {
+    const trimmed = query.trim();
+    if (!trimmed || search.status === "loading" || flow.saving) return;
+    setSearch({ status: "loading", query: trimmed });
+    try {
+      const clubs = await flow.searchExternalClubs({
+        query: trimmed,
+        platform,
+        gameEdition: "fc26",
+      });
+      setSearch(
+        clubs.length > 0
+          ? { status: "success", query: trimmed, clubs }
+          : { status: "empty", query: trimmed },
+      );
+    } catch {
+      setSearch({
+        status: "error",
+        query: trimmed,
+        message: "No pudimos buscar clubs. Inténtalo nuevamente.",
+      });
+    }
+  }
+
+  function selectClub(club: ExternalClubDto) {
+    flow.updateDraft({
+      selectedExternalClub: {
+        providerKey: club.providerKey,
+        externalClubId: club.externalClubId,
+        platform: club.platform,
+        gameEdition: club.gameEdition,
+        name: club.name,
+      },
+    });
+  }
+
+  const liveStatus =
+    search.status === "loading"
+      ? `Buscando clubs para «${search.query}»…`
+      : search.status === "empty"
+        ? `No encontramos clubs para «${search.query}».`
+        : search.status === "success"
+          ? `${search.clubs.length} club${search.clubs.length === 1 ? "" : "s"} encontrado${search.clubs.length === 1 ? "" : "s"}.`
+          : search.status === "error"
+            ? "La búsqueda falló. Puedes intentarlo de nuevo."
+            : null;
+
+  return (
+    <OnboardingShell
+      currentStepId="team"
+      description="Busca tu club de EA Clubs para asociarlo a tu perfil. No crea un equipo de organización."
+      error={flow.error}
+      steps={stepsByPath.player}
+      title="Asocia tu club EA"
+    >
+      <div className="mx-auto grid w-full max-w-2xl gap-6">
+        <fieldset className="m-0 border-0 p-0">
+          <legend className="mb-3 typo-label">Plataforma EA</legend>
+          <ChoiceGroup<EaSearchPlatform>
+            aria-label="Plataforma EA para la búsqueda"
+            className="grid-cols-2 sm:grid-cols-4"
+            onValueChange={(value) => {
+              if (!value) return;
+              setPlatform(value);
+              setSearch({ status: "idle" });
+            }}
+            value={platform}
+          >
+            {eaSearchPlatforms.map((option) => (
+              <ChoiceGroupItem appearance="pill" key={option.value} value={option.value}>
+                <ChoiceGroupIndicator className="static size-5" />
+                {option.label}
+              </ChoiceGroupItem>
+            ))}
+          </ChoiceGroup>
+        </fieldset>
+
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <Field className="gap-3">
+            <FieldLabel htmlFor={clubNameId}>Nombre del club</FieldLabel>
+            <Input
+              autoComplete="off"
+              id={clubNameId}
+              maxLength={80}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                if (search.status !== "idle" && search.status !== "loading") {
+                  setSearch({ status: "idle" });
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void searchClubs();
+                }
+              }}
+              placeholder="ej. Night Owls"
+              ref={queryRef}
+              value={query}
+            />
+          </Field>
+          <Button
+            className="w-full sm:w-auto"
+            disabled={!query.trim() || search.status === "loading" || flow.saving}
+            onClick={() => void searchClubs()}
+            variant="outline"
+          >
+            {search.status === "loading" ? "Buscando…" : "Buscar club"}
+          </Button>
+        </div>
+
+        <div
+          aria-live="polite"
+          className="min-h-5 typo-caption text-muted-foreground"
+          id={statusId}
+        >
+          {liveStatus}
+        </div>
+
+        {search.status === "error" ? (
+          <Alert variant="destructive">
+            <CircleAlert aria-hidden="true" />
+            <AlertDescription>{search.message}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {search.status === "success" ? (
+          <ChoiceGroup
+            aria-describedby={statusId}
+            aria-label="Resultados de clubs EA"
+            className="grid-cols-1"
+            onValueChange={(value: string) => {
+              const club = search.clubs.find((item) => item.externalClubId === value);
+              if (club) selectClub(club);
+            }}
+            value={selected?.externalClubId ?? ""}
+          >
+            {search.clubs.map((club) => {
+              const isSelected = selected?.externalClubId === club.externalClubId;
+              return (
+                <ChoiceGroupItem key={club.externalClubId} value={club.externalClubId}>
+                  <ChoiceGroupIndicator />
+                  <span className="grid min-w-0 flex-1 gap-1 text-left">
+                    <span className="font-semibold">{club.name}</span>
+                    <span className="typo-caption text-muted-foreground">
+                      {eaPlatformLabel(club.platform)} · {club.gameEdition} · ID{" "}
+                      {club.externalClubId}
+                    </span>
+                  </span>
+                  {isSelected ? (
+                    <span className="inline-flex items-center gap-1 typo-caption text-foreground">
+                      <Check aria-hidden="true" className="size-4" strokeWidth={2} />
+                      Seleccionado
+                    </span>
+                  ) : null}
+                </ChoiceGroupItem>
+              );
+            })}
+          </ChoiceGroup>
+        ) : null}
+
+        {selected && search.status !== "success" ? (
+          <p className="typo-caption text-muted-foreground">
+            Club seleccionado: {selected.name} · {eaPlatformLabel(selected.platform)} · ID{" "}
+            {selected.externalClubId}
+          </p>
+        ) : null}
+      </div>
+      <OnboardingActions
+        disabled={!selected}
+        loading={flow.saving}
+        onBack={() => void flow.goTo("game-account", "player")}
+        onPrimary={() => void flow.goTo("review", "player")}
+        onSkip={() => {
+          flow.clearExternalClub();
+          setSearch({ status: "idle" });
+          setQuery("");
+          void flow.goTo("review", "player");
+        }}
+        primaryLabel="Revisar club"
+      />
+    </OnboardingShell>
+  );
+}
+
 export function OnboardingReview() {
   const flow = useOnboardingFlow();
   const path = flow.path ?? "player";
@@ -855,7 +1082,7 @@ export function OnboardingReview() {
       : path === "invitation"
         ? Boolean(flow.draft.invitationToken.trim()) && validOptionalAccount(flow.draft)
         : validOptionalAccount(flow.draft);
-  const previous: OnboardingStepDto = "game-account";
+  const previous: OnboardingStepDto = path === "player" ? "team" : "game-account";
   const primaryLabel =
     path === "organization"
       ? "Crear organización y competición"
@@ -972,7 +1199,7 @@ function reviewRows(flow: ReturnType<typeof useOnboardingFlow>): readonly Onboar
       accountReviewRow(flow),
     ];
   }
-  return [base, accountReviewRow(flow)];
+  return [base, accountReviewRow(flow), clubReviewRow(flow)];
 }
 
 function FieldsetError({
@@ -1002,6 +1229,18 @@ function accountReviewRow(flow: ReturnType<typeof useOnboardingFlow>): Onboardin
   };
 }
 
+function clubReviewRow(flow: ReturnType<typeof useOnboardingFlow>): OnboardingReviewRow {
+  const club = flow.draft.selectedExternalClub;
+  return {
+    label: "Club EA",
+    value: club
+      ? `${club.name} · ${eaPlatformLabel(club.platform)} · ID ${club.externalClubId}`
+      : "Sin club asociado por ahora",
+    icon: Shield,
+    editStep: "team",
+  };
+}
+
 function validOrganizationName(value: string): boolean {
   const length = value.trim().length;
   return length > 0 && length <= 120;
@@ -1024,6 +1263,10 @@ function platformLabel(platform: GamePlatformDto): string {
     "nintendo-switch-1": "Nintendo Switch 1",
     "nintendo-switch-2": "Nintendo Switch 2",
   }[platform];
+}
+
+function eaPlatformLabel(platform: string): string {
+  return eaSearchPlatforms.find((option) => option.value === platform)?.label ?? platform;
 }
 
 function formatLabel(format: CompetitionFormatDto): string {

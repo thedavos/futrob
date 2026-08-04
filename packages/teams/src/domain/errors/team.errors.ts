@@ -52,3 +52,5 @@ export type AddToRosterError = TeamNotFound | RosterCompetitionConflict | GameAc
 export type SetActiveTeamError = PlayerProfileNotFound | ActiveTeamNotOwned;
 
 export type AddPlayerGameAccountError = InvalidGameAccountIdentifier | InvalidGameEdition;
+
+export type AssociatePlayerExternalClubError = PlayerProfileNotFound;

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   AddPlayerGameAccountUseCase,
   AddToRosterUseCase,
+  AssociatePlayerExternalClubUseCase,
   CreateTeamUseCase,
   EnsurePlayerProfileUseCase,
   GetActiveTeamUseCase,
@@ -11,16 +12,19 @@ import {
   SetActiveTeamUseCase,
   type ActiveTeamPreferenceRepository,
   type CompetitionRosterMembershipRepository,
+  type PlayerExternalClubAssociationRepository,
   type PlayerGameAccountRepository,
   type PlayerProfileRepository,
   type TeamRepository,
 } from "@futrob/teams";
 import type { Pool } from "pg";
 import {
+  InMemoryPlayerExternalClubAssociationRepository,
   InMemoryPlayerGameAccountRepository,
   InMemoryPlayerProfileRepository,
 } from "@/adapters/teams/in-memory.repository.ts";
 import {
+  PostgresPlayerExternalClubAssociationRepository,
   PostgresPlayerGameAccountRepository,
   PostgresPlayerProfileRepository,
 } from "@/adapters/teams/postgres.repository.ts";
@@ -36,18 +40,21 @@ import {
 export function createTeamsModule(input: { readonly pool: Pool | undefined }) {
   let profiles: PlayerProfileRepository;
   let accounts: PlayerGameAccountRepository;
+  let associations: PlayerExternalClubAssociationRepository;
   let teams: TeamRepository;
   let rosters: CompetitionRosterMembershipRepository;
   let preferences: ActiveTeamPreferenceRepository;
   if (input.pool) {
     profiles = new PostgresPlayerProfileRepository(input.pool);
     accounts = new PostgresPlayerGameAccountRepository(input.pool);
+    associations = new PostgresPlayerExternalClubAssociationRepository(input.pool);
     teams = new PostgresTeamRepository(input.pool);
     rosters = new PostgresCompetitionRosterMembershipRepository(input.pool);
     preferences = new PostgresActiveTeamPreferenceRepository(input.pool);
   } else {
     profiles = new InMemoryPlayerProfileRepository();
     accounts = new InMemoryPlayerGameAccountRepository();
+    associations = new InMemoryPlayerExternalClubAssociationRepository();
     teams = new InMemoryTeamRepository();
     rosters = new InMemoryCompetitionRosterMembershipRepository();
     preferences = new InMemoryActiveTeamPreferenceRepository();
@@ -56,7 +63,12 @@ export function createTeamsModule(input: { readonly pool: Pool | undefined }) {
   return {
     ensurePlayerProfile: new EnsurePlayerProfileUseCase({ profiles, ...shared }),
     addPlayerGameAccount: new AddPlayerGameAccountUseCase({ accounts, ...shared }),
-    getPlayerProfile: new GetPlayerProfileUseCase(profiles, accounts),
+    associatePlayerExternalClub: new AssociatePlayerExternalClubUseCase({
+      profiles,
+      associations,
+      clock: shared.clock,
+    }),
+    getPlayerProfile: new GetPlayerProfileUseCase(profiles, accounts, associations),
     createTeam: new CreateTeamUseCase({ teams, ...shared }),
     getTeam: new GetTeamUseCase(teams),
     addToRoster: new AddToRosterUseCase({ teams, rosters, accounts, ...shared }),

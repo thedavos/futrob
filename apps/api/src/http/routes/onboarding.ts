@@ -12,19 +12,29 @@ import {
   type OnboardingPathDto,
   type PlayerGameAccountInputDto,
 } from "@futrob/api-contracts";
-import type { AddPlayerGameAccountError, PlayerGameAccount, PlayerProfile } from "@futrob/teams";
+import type { ExternalClub } from "@futrob/game-data";
+import type {
+  AddPlayerGameAccountError,
+  PlayerExternalClubAssociation,
+  PlayerGameAccount,
+  PlayerProfile,
+} from "@futrob/teams";
 import type { AppDeps } from "@/app.ts";
 import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
 } from "@/http/middleware/service-auth.ts";
-import { playerGameAccountDto, playerProfileDto } from "@/http/mappers/player.ts";
+import {
+  playerExternalClubAssociationDto,
+  playerGameAccountDto,
+  playerProfileDto,
+} from "@/http/mappers/player.ts";
 import { competitionDraftDto } from "@/http/mappers/competition.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
-  const { competitions, identity, organizations, teams } = deps.modules;
+  const { competitions, gameData, identity, organizations, teams } = deps.modules;
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
   secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
 
@@ -167,14 +177,37 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     const conflict = await onboardingPathConflict(identity, actorId, "player");
     if (conflict) return conflict;
 
+    const locator = parsed.data.externalClub ?? null;
+    let resolvedClub: ExternalClub | null = null;
+    if (locator) {
+      const resolved = await gameData.getExternalClub.execute(locator.providerKey, {
+        externalClubId: locator.externalClubId,
+        platform: locator.platform,
+        gameEdition: locator.gameEdition,
+      });
+      if (!resolved.isOk()) return failureToHttp(resolved.error);
+      resolvedClub = resolved.value;
+    }
+
     const player = await ensurePlayer(teams, actorId, parsed.data.gameAccount ?? null);
     if (!player.ok) return failureToHttp(player.error);
+
+    let externalClub: PlayerExternalClubAssociation | null = null;
+    if (resolvedClub) {
+      const associated = await teams.associatePlayerExternalClub.execute({
+        playerProfileId: player.profile.id,
+        club: resolvedClub,
+      });
+      if (!associated.isOk()) return failureToHttp(associated.error);
+      externalClub = associated.value;
+    }
 
     await identity.completeOnboarding.execute({ actorId, path: "player" });
     return jsonResponse(
       completePlayerOnboardingResponseSchema.parse({
         profile: playerProfileDto(player.profile),
         gameAccount: player.gameAccount ? playerGameAccountDto(player.gameAccount) : null,
+        externalClub: externalClub ? playerExternalClubAssociationDto(externalClub) : null,
         destination: "personal",
       }),
     );

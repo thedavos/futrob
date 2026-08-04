@@ -5,6 +5,8 @@ describe("onboarding routing", () => {
   it("keeps a persisted step that belongs to its path", () => {
     expect(resolveOnboardingStep("player", "game-account")).toBe("game-account");
     expect(routeForOnboardingStep("game-account")).toBe("/onboarding/game-account");
+    expect(resolveOnboardingStep("player", "team")).toBe("team");
+    expect(routeForOnboardingStep("team")).toBe("/onboarding/team");
     expect(resolveOnboardingStep("organization", "competition")).toBe("competition");
     expect(routeForOnboardingStep("competition")).toBe("/onboarding/competition");
   });
@@ -18,6 +20,8 @@ describe("onboarding routing", () => {
     expect(resolveOnboardingStep("organization", "invitation")).toBe("intention");
     expect(resolveOnboardingStep("invitation", "competition")).toBe("intention");
     expect(resolveOnboardingStep("invitation", "game")).toBe("intention");
+    expect(resolveOnboardingStep("organization", "team")).toBe("intention");
+    expect(resolveOnboardingStep("invitation", "team")).toBe("intention");
   });
 
   it("normalizes the legacy game step by path", () => {
