@@ -926,10 +926,10 @@ export function TeamStep() {
       ? `Buscando clubs para «${search.query}»…`
       : search.status === "empty"
         ? `No encontramos clubs para «${search.query}».`
-        : search.status === "error"
-          ? search.message
-          : search.status === "success"
-            ? `${search.clubs.length} club${search.clubs.length === 1 ? "" : "s"} encontrado${search.clubs.length === 1 ? "" : "s"}.`
+        : search.status === "success"
+          ? `${search.clubs.length} club${search.clubs.length === 1 ? "" : "s"} encontrado${search.clubs.length === 1 ? "" : "s"}.`
+          : search.status === "error"
+            ? "La búsqueda falló. Puedes intentarlo de nuevo."
             : null;
 
   return (
@@ -996,7 +996,11 @@ export function TeamStep() {
           </Button>
         </div>
 
-        <div aria-live="polite" className="min-h-5 typo-caption text-muted-foreground" id={statusId}>
+        <div
+          aria-live="polite"
+          className="min-h-5 typo-caption text-muted-foreground"
+          id={statusId}
+        >
           {liveStatus}
         </div>
 
