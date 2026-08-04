@@ -2,7 +2,8 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-10
-- Actualizada: 2026-07-17
+- Actualizada: 2026-08-03
+- Relacionado: [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md)
 
 ## Contexto
 

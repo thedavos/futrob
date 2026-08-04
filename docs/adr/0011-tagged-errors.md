@@ -3,7 +3,7 @@
 - Estado: Aceptada
 - Fecha: 2026-08-03
 - Actualizada: 2026-08-03
-- Relacionado: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [ADR-0010](/docs/adr/0010-bounded-context-packages.md) · better-result
+- Relacionado: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [ADR-0010](/docs/adr/0010-bounded-context-packages.md) · [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md) · better-result
 
 ## Contexto
 

@@ -152,6 +152,9 @@ Un módulo no escribe tablas ajenas; publica eventos / usa ports de lectura.
 - [ADR-0007](/docs/adr/0007-immutable-provider-observations.md)
 - [ADR-0008](/docs/adr/0008-notifications-web-and-email.md)
 - [ADR-0009](/docs/adr/0009-cloudflare-workers-topology.md)
+- [ADR-0010](/docs/adr/0010-bounded-context-packages.md)
+- [ADR-0011](/docs/adr/0011-tagged-errors.md)
+- [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md)
 - [module-boundaries.md](/docs/architecture/module-boundaries.md)
 - [dependency-graph.md](/docs/architecture/dependency-graph.md)
 
