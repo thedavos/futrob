@@ -56,6 +56,7 @@ export function OrganizationStep() {
               flow.updateDraft({ organizationName: event.target.value });
               setValidationError(null);
             }}
+            placeholder="ej. Liga Nocturna"
             ref={inputRef}
             value={name}
           />

@@ -66,7 +66,7 @@ export function InvitationStep() {
           flow.updateDraft({ invitationToken: "" });
           void flow.goTo("game-account", "player");
         }}
-        primaryLabel="Configurar cuenta"
+        primaryLabel="Revisar invitación"
         skipLabel="Continuar como jugador"
       />
     </OnboardingShell>
