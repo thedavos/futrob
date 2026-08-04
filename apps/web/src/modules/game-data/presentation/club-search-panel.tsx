@@ -1,25 +1,29 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import type { ExternalClubDto } from "@futrob/api-contracts";
 import {
   Alert,
   AlertDescription,
   Button,
   Field,
+  FieldError,
   FieldLabel,
+  Form,
   Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  readFormString,
 } from "@futrob/ui";
 import { FutrobApiError } from "@futrob/sdk";
 import {
   getFutrobBrowserClient,
   resolveFutrobApiBaseUrl,
 } from "@/shared/infrastructure/http/futrob-browser-client.ts";
+import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 
 const PLATFORMS = [
   { value: "nx", label: "Nintendo Switch (nx)" },
@@ -28,23 +32,31 @@ const PLATFORMS = [
   { value: "xbox", label: "Xbox" },
 ] as const;
 
+type ClubSearchValues = {
+  query: string;
+  platform: string;
+};
+
+type ClubSearchField = keyof ClubSearchValues;
+
 export function ClubSearchPanel() {
-  const [query, setQuery] = useState("");
-  const [platform, setPlatform] = useState<string>("nx");
   const [clubs, setClubs] = useState<ExternalClubDto[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const validation = useFormValidation<ClubSearchField>();
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed || loading) {
+  async function handleSubmit(formValues: ClubSearchValues) {
+    if (loading) {
       return;
     }
 
+    const trimmed = formValues.query.trim();
+    const platform = formValues.platform || "nx";
+
     setLoading(true);
     setError(null);
+    validation.clearServerErrors();
 
     try {
       const result = await getFutrobBrowserClient().gameData.clubs.search({
@@ -80,25 +92,32 @@ export function ClubSearchPanel() {
         </span>
       </div>
 
-      <form className="grid gap-3 px-5 py-5 sm:px-6" onSubmit={onSubmit}>
-        <Field>
+      <Form<ClubSearchValues>
+        aria-busy={loading}
+        className="grid gap-3 px-5 py-5 sm:px-6"
+        errors={validation.formErrors}
+        onFormSubmit={handleSubmit}
+      >
+        <Field
+          {...validation.getFieldValidationProps("query")}
+          disabled={loading}
+          name="query"
+          validate={(value) =>
+            readFormString(value).trim().length === 0 ? "Escribe el nombre del club." : null
+          }
+        >
           <FieldLabel>Nombre del club</FieldLabel>
-          <Input
-            autoComplete="off"
-            name="query"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ej. Cuervos"
-            value={query}
-          />
+          <Input autoComplete="off" disabled={loading} name="query" placeholder="Ej. Cuervos" />
+          <FieldError />
         </Field>
 
-        <Field>
+        <Field
+          {...validation.getFieldValidationProps("platform")}
+          disabled={loading}
+          name="platform"
+        >
           <FieldLabel>Plataforma</FieldLabel>
-          <Select
-            name="platform"
-            onValueChange={(value) => setPlatform(value ?? "nx")}
-            value={platform}
-          >
+          <Select defaultValue="nx" disabled={loading} name="platform">
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -112,10 +131,10 @@ export function ClubSearchPanel() {
           </Select>
         </Field>
 
-        <Button className="w-full sm:w-auto" disabled={loading || !query.trim()} type="submit">
+        <Button className="w-full sm:w-auto" disabled={loading} type="submit">
           {loading ? "Buscando…" : "Buscar"}
         </Button>
-      </form>
+      </Form>
 
       <div className="border-t border-border bg-muted px-5 py-4 sm:px-6">
         {error ? (

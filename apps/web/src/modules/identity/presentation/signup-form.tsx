@@ -10,6 +10,7 @@ import {
   FieldValidity,
   Form,
   InputWithIcon,
+  readFormString,
   type FormErrors,
 } from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -22,7 +23,6 @@ import {
   AUTH_VALIDATION_EMAIL,
   AUTH_VALIDATION_PASSWORD_LENGTH,
   isNetworkError,
-  readFormString,
   type AuthClientError,
 } from "@/modules/identity/presentation/auth-form-helpers.ts";
 import type {

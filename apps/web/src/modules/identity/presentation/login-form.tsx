@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Field, FieldError, FieldLabel, Form, InputWithIcon } from "@futrob/ui";
+import {
+  Button,
+  Field,
+  FieldError,
+  FieldLabel,
+  Form,
+  InputWithIcon,
+  readFormString,
+} from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Lock, Mail } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
@@ -9,7 +17,6 @@ import {
   AUTH_ERROR_GENERIC,
   AUTH_ERROR_NETWORK,
   isNetworkError,
-  readFormString,
   type AuthClientError,
 } from "@/modules/identity/presentation/auth-form-helpers.ts";
 import type { AuthFormState } from "@/modules/identity/presentation/auth-form-state.ts";

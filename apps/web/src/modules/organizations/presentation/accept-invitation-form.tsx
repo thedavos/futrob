@@ -1,30 +1,44 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { Alert, AlertDescription, Button, Field, FieldLabel, Input } from "@futrob/ui";
+import { useState } from "react";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Field,
+  FieldError,
+  FieldLabel,
+  Form,
+  Input,
+  readFormString,
+} from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { CircleAlert } from "lucide-react";
 import {
   OrganizationsClientError,
   organizationsBrowserClient,
 } from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+
+type AcceptInvitationValues = {
+  token: string;
+};
+
+type AcceptInvitationField = keyof AcceptInvitationValues;
 
 export function AcceptInvitationForm() {
   const navigate = useNavigate();
-  const [token, setToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const validation = useFormValidation<AcceptInvitationField>();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = token.trim();
-    if (trimmed.length === 0) {
-      setError("Escribe el código de invitación.");
-      return;
-    }
+  async function handleSubmit(formValues: AcceptInvitationValues) {
+    const trimmed = formValues.token.trim();
 
     setSubmitting(true);
     setError(null);
+    validation.clearServerErrors();
+
     try {
       const accepted = await organizationsBrowserClient.acceptInvitation({ token: trimmed });
       await navigate({
@@ -57,7 +71,12 @@ export function AcceptInvitationForm() {
   }
 
   return (
-    <form className="space-y-5" noValidate onSubmit={handleSubmit}>
+    <Form<AcceptInvitationValues>
+      aria-busy={submitting}
+      className="space-y-5"
+      errors={validation.formErrors}
+      onFormSubmit={handleSubmit}
+    >
       {error ? (
         <Alert variant="destructive">
           <CircleAlert aria-hidden="true" />
@@ -65,21 +84,22 @@ export function AcceptInvitationForm() {
         </Alert>
       ) : null}
 
-      <Field>
+      <Field
+        {...validation.getFieldValidationProps("token")}
+        disabled={submitting}
+        name="token"
+        validate={(value) =>
+          readFormString(value).trim().length === 0 ? "Escribe el código de invitación." : null
+        }
+      >
         <FieldLabel htmlFor="invitation-token">Código de invitación</FieldLabel>
-        <Input
-          autoComplete="off"
-          disabled={submitting}
-          id="invitation-token"
-          name="token"
-          onChange={(event) => setToken(event.target.value)}
-          value={token}
-        />
+        <Input autoComplete="off" disabled={submitting} id="invitation-token" name="token" />
+        <FieldError />
       </Field>
 
       <Button disabled={submitting} type="submit">
         Unirme a la competición
       </Button>
-    </form>
+    </Form>
   );
 }

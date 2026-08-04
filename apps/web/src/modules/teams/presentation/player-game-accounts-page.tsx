@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   AlertDescription,
@@ -10,28 +10,50 @@ import {
   CardHeader,
   CardTitle,
   Field,
+  FieldError,
   FieldLabel,
+  Form,
   Input,
-  Label,
   Logo,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  readFormString,
 } from "@futrob/ui";
 import { Link } from "@tanstack/react-router";
 import type { GamePlatformDto, PlayerGameAccountDto } from "@futrob/api-contracts";
+import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { teamsBrowserClient } from "./teams-browser-client.ts";
+
+const GAME_PLATFORMS = [
+  "playstation",
+  "xbox",
+  "pc",
+  "nintendo-switch-1",
+  "nintendo-switch-2",
+] as const satisfies readonly GamePlatformDto[];
+
+type AddGameAccountValues = {
+  identifier: string;
+  platform: string;
+  gameEdition: string;
+};
+
+type AddGameAccountField = keyof AddGameAccountValues;
+
+function isGamePlatform(value: string): value is GamePlatformDto {
+  return (GAME_PLATFORMS as readonly string[]).includes(value);
+}
 
 export function PlayerGameAccountsPage() {
   const [accounts, setAccounts] = useState<PlayerGameAccountDto[]>([]);
-  const [identifier, setIdentifier] = useState("");
-  const [platform, setPlatform] = useState<GamePlatformDto | "">("");
-  const [gameEdition, setGameEdition] = useState("");
+  const [formKey, setFormKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const validation = useFormValidation<AddGameAccountField>();
 
   useEffect(() => {
     let cancelled = false;
@@ -51,27 +73,32 @@ export function PlayerGameAccountsPage() {
     };
   }, []);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!identifier.trim() || !platform || !gameEdition.trim()) {
-      setError("Completa identificador, plataforma y edición.");
+  async function handleSubmit(formValues: AddGameAccountValues) {
+    const identifier = formValues.identifier.trim();
+    const gameEdition = formValues.gameEdition.trim();
+    const platform = formValues.platform;
+
+    if (!isGamePlatform(platform)) {
+      validation.applyServerErrors({ platform: "Selecciona una plataforma." });
       return;
     }
+
     setSubmitting(true);
     setError(null);
+    validation.clearServerErrors();
+
     try {
       const result = await teamsBrowserClient.addMyGameAccount({
-        identifier: identifier.trim(),
+        identifier,
         platform,
-        gameEdition: gameEdition.trim(),
+        gameEdition,
       });
       setAccounts((current) => {
         const withoutExisting = current.filter((account) => account.id !== result.gameAccount.id);
         return [...withoutExisting, result.gameAccount];
       });
-      setIdentifier("");
-      setPlatform("");
-      setGameEdition("");
+      setFormKey((current) => current + 1);
+      validation.clearServerErrors();
     } catch {
       setError("No pudimos guardar la cuenta. Inténtalo nuevamente.");
     } finally {
@@ -110,23 +137,41 @@ export function PlayerGameAccountsPage() {
           <CardTitle>Añadir cuenta</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-5" noValidate onSubmit={handleSubmit}>
-            <Field>
+          <Form<AddGameAccountValues>
+            aria-busy={submitting}
+            className="grid gap-5"
+            errors={validation.formErrors}
+            key={formKey}
+            onFormSubmit={handleSubmit}
+          >
+            <Field
+              {...validation.getFieldValidationProps("identifier")}
+              disabled={submitting}
+              name="identifier"
+              validate={(value) =>
+                readFormString(value).trim().length === 0 ? "Escribe el identificador de EA." : null
+              }
+            >
               <FieldLabel htmlFor="player-account-identifier">Identificador de EA</FieldLabel>
               <Input
+                disabled={submitting}
                 id="player-account-identifier"
                 maxLength={80}
-                onChange={(event) => setIdentifier(event.target.value)}
-                value={identifier}
+                name="identifier"
               />
+              <FieldError />
             </Field>
             <div className="grid gap-5 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="player-account-platform">Plataforma</Label>
-                <Select
-                  onValueChange={(value) => setPlatform(value as GamePlatformDto)}
-                  value={platform}
-                >
+              <Field
+                {...validation.getFieldValidationProps("platform")}
+                disabled={submitting}
+                name="platform"
+                validate={(value) =>
+                  readFormString(value).length === 0 ? "Selecciona una plataforma." : null
+                }
+              >
+                <FieldLabel htmlFor="player-account-platform">Plataforma</FieldLabel>
+                <Select disabled={submitting} name="platform">
                   <SelectTrigger id="player-account-platform">
                     <SelectValue placeholder="Selecciona" />
                   </SelectTrigger>
@@ -138,22 +183,31 @@ export function PlayerGameAccountsPage() {
                     <SelectItem value="nintendo-switch-2">Nintendo Switch 2</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <Field>
+                <FieldError />
+              </Field>
+              <Field
+                {...validation.getFieldValidationProps("gameEdition")}
+                disabled={submitting}
+                name="gameEdition"
+                validate={(value) =>
+                  readFormString(value).trim().length === 0 ? "Escribe la edición." : null
+                }
+              >
                 <FieldLabel htmlFor="player-account-edition">Edición</FieldLabel>
                 <Input
+                  disabled={submitting}
                   id="player-account-edition"
                   maxLength={40}
-                  onChange={(event) => setGameEdition(event.target.value)}
+                  name="gameEdition"
                   placeholder="ej. FC 26"
-                  value={gameEdition}
                 />
+                <FieldError />
               </Field>
             </div>
             <Button className="w-full sm:w-fit" disabled={submitting} type="submit">
               {submitting ? "Guardando…" : "Añadir cuenta"}
             </Button>
-          </form>
+          </Form>
         </CardContent>
       </Card>
 

@@ -6,10 +6,6 @@ export interface AuthClientError {
   status: number;
 }
 
-export function readFormString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
 export function isNetworkError(error: unknown): boolean {
   if (error instanceof TypeError) {
     return true;
