@@ -2,13 +2,14 @@ import type {
   InvitationRepository,
   MembershipRepository,
   MembershipSummary,
+  MultiRedemptionClaim,
   Organization,
   OrganizationInvitation,
   OrganizationMembership,
   OrganizationRepository,
   OrgMembershipRole,
 } from "@futrob/organizations";
-import { INVITATION_STATUS } from "@futrob/organizations";
+import { INVITATION_STATUS, REDEEM_POLICY } from "@futrob/organizations";
 import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
 
@@ -80,6 +81,7 @@ export class InMemoryMembershipRepository implements MembershipRepository {
 
 export class InMemoryInvitationRepository implements InvitationRepository {
   readonly byHash = new Map<string, OrganizationInvitation>();
+  readonly redemptionsByInvitationId = new Map<string, Set<ActorId>>();
 
   async create(invitation: OrganizationInvitation): Promise<void> {
     this.byHash.set(invitation.tokenHash, invitation);
@@ -109,6 +111,42 @@ export class InMemoryInvitationRepository implements InvitationRepository {
     };
     this.byHash.set(tokenHash, accepted);
     return accepted;
+  }
+
+  /**
+   * Mirrors `PostgresInvitationRepository.claimRedemption`'s CAS semantics:
+   * per-actor idempotency via the redemption set, cupo guarded by
+   * `maxRedemptions`, never exceeded even under interleaved concurrent calls
+   * (JS run-to-completion between awaits gives us the same guarantee the
+   * Postgres row lock + guarded UPDATE gives in production).
+   */
+  async claimRedemption(
+    tokenHash: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<MultiRedemptionClaim | null> {
+    const current = this.byHash.get(tokenHash);
+    if (!current) return null;
+    if (current.redeemPolicy !== REDEEM_POLICY.multi) return null;
+    if (current.status !== INVITATION_STATUS.pending) return null;
+    if (current.expiresAt.getTime() <= now.getTime()) return null;
+
+    const redeemers = this.redemptionsByInvitationId.get(current.id) ?? new Set<ActorId>();
+    if (redeemers.has(actorId)) {
+      return { invitation: current, outcome: "already-redeemed" };
+    }
+    if (current.maxRedemptions === null || current.redeemedCount >= current.maxRedemptions) {
+      return null;
+    }
+
+    redeemers.add(actorId);
+    this.redemptionsByInvitationId.set(current.id, redeemers);
+    const updated: OrganizationInvitation = {
+      ...current,
+      redeemedCount: current.redeemedCount + 1,
+    };
+    this.byHash.set(tokenHash, updated);
+    return { invitation: updated, outcome: "claimed" };
   }
 }
 
@@ -152,7 +190,12 @@ export function rehydrateMembership(row: {
   };
 }
 
-export function rehydrateInvitation(row: {
+/** Column list shared by every `organization_invitations` SELECT/RETURNING clause. */
+export const INVITATION_COLUMNS = `id, organization_id, competition_id, role, token_hash, email, status,
+              invited_by_actor_id, expires_at, accepted_by_actor_id, created_at,
+              redeem_policy, max_redemptions, redeemed_count`;
+
+export interface InvitationRow {
   id: string;
   organization_id: string;
   competition_id?: string | null;
@@ -164,7 +207,12 @@ export function rehydrateInvitation(row: {
   expires_at: Date | string;
   accepted_by_actor_id: string | null;
   created_at: Date | string;
-}): OrganizationInvitation {
+  redeem_policy: string;
+  max_redemptions: number | null;
+  redeemed_count: number;
+}
+
+export function rehydrateInvitation(row: InvitationRow): OrganizationInvitation {
   return {
     id: row.id,
     organizationId: asOrganizationId(row.organization_id),
@@ -177,5 +225,8 @@ export function rehydrateInvitation(row: {
     expiresAt: new Date(row.expires_at),
     acceptedByActorId: row.accepted_by_actor_id ? asActorId(row.accepted_by_actor_id) : null,
     createdAt: new Date(row.created_at),
+    redeemPolicy: row.redeem_policy as OrganizationInvitation["redeemPolicy"],
+    maxRedemptions: row.max_redemptions,
+    redeemedCount: row.redeemed_count,
   };
 }

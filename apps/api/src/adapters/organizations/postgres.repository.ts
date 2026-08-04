@@ -3,19 +3,22 @@ import type {
   InvitationRepository,
   MembershipRepository,
   MembershipSummary,
+  MultiRedemptionClaim,
   Organization,
   OrganizationInvitation,
   OrganizationMembership,
   OrganizationRepository,
   OrgMembershipRole,
 } from "@futrob/organizations";
-import { INVITATION_STATUS } from "@futrob/organizations";
+import { INVITATION_STATUS, REDEEM_POLICY } from "@futrob/organizations";
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 import {
+  INVITATION_COLUMNS,
   rehydrateInvitation,
   rehydrateMembership,
   rehydrateOrganization,
+  type InvitationRow,
 } from "./in-memory.repository.ts";
 
 export class PostgresOrganizationRepository implements OrganizationRepository {
@@ -148,8 +151,9 @@ export class PostgresInvitationRepository implements InvitationRepository {
     await getPgExecutor(this.pool).query(
       `INSERT INTO organization_invitations (
          id, organization_id, competition_id, role, token_hash, email, status,
-         invited_by_actor_id, expires_at, accepted_by_actor_id, created_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+         invited_by_actor_id, expires_at, accepted_by_actor_id, created_at,
+         redeem_policy, max_redemptions, redeemed_count
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         invitation.id,
         invitation.organizationId,
@@ -162,32 +166,20 @@ export class PostgresInvitationRepository implements InvitationRepository {
         invitation.expiresAt.toISOString(),
         invitation.acceptedByActorId ?? null,
         invitation.createdAt.toISOString(),
+        invitation.redeemPolicy,
+        invitation.maxRedemptions,
+        invitation.redeemedCount,
       ],
     );
   }
 
   async findByTokenHash(tokenHash: string): Promise<OrganizationInvitation | null> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT id, organization_id, competition_id, role, token_hash, email, status,
-              invited_by_actor_id, expires_at, accepted_by_actor_id, created_at
+      `SELECT ${INVITATION_COLUMNS}
        FROM organization_invitations WHERE token_hash = $1`,
       [tokenHash],
     );
-    const row = result.rows[0] as
-      | {
-          id: string;
-          organization_id: string;
-          competition_id: string | null;
-          role: string;
-          token_hash: string;
-          email: string | null;
-          status: string;
-          invited_by_actor_id: string;
-          expires_at: Date;
-          accepted_by_actor_id: string | null;
-          created_at: Date;
-        }
-      | undefined;
+    const row = result.rows[0] as InvitationRow | undefined;
     return row ? rehydrateInvitation(row) : null;
   }
 
@@ -219,8 +211,7 @@ export class PostgresInvitationRepository implements InvitationRepository {
        WHERE token_hash = $1
          AND status = $5
          AND expires_at > $3
-       RETURNING id, organization_id, competition_id, role, token_hash, email, status,
-                 invited_by_actor_id, expires_at, accepted_by_actor_id, created_at`,
+       RETURNING ${INVITATION_COLUMNS}`,
       [
         tokenHash,
         actorId,
@@ -229,21 +220,78 @@ export class PostgresInvitationRepository implements InvitationRepository {
         INVITATION_STATUS.pending,
       ],
     );
-    const row = result.rows[0] as
-      | {
-          id: string;
-          organization_id: string;
-          competition_id: string | null;
-          role: string;
-          token_hash: string;
-          email: string | null;
-          status: string;
-          invited_by_actor_id: string;
-          expires_at: Date;
-          accepted_by_actor_id: string | null;
-          created_at: Date;
-        }
-      | undefined;
+    const row = result.rows[0] as InvitationRow | undefined;
     return row ? rehydrateInvitation(row) : null;
+  }
+
+  /**
+   * Single statement, atomic under Postgres MVCC: `FOR UPDATE` locks and
+   * serializes concurrent claims on the same invitation row (a second
+   * concurrent caller blocks until the first commits, then re-evaluates
+   * against the committed `redeemed_count`). The guarded `INSERT ... WHERE
+   * redeemed_count < max_redemptions` — with `ON CONFLICT DO NOTHING` on the
+   * `(invitation_id, actor_id)` unique ledger — never lets more than
+   * `max_redemptions` distinct actors through. `already_redeemed` reads the
+   * ledger for a redemption committed by an *earlier* call (same-statement
+   * writes are not visible to each other under Postgres CTE snapshot rules,
+   * which is fine: a same-statement insert is already reported via
+   * `newly_claimed`), making a repeat call by the same actor idempotent
+   * without double-counting the cupo.
+   */
+  async claimRedemption(
+    tokenHash: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<MultiRedemptionClaim | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `WITH invite AS (
+         SELECT id, organization_id, competition_id, role, token_hash, email, status,
+                invited_by_actor_id, expires_at, accepted_by_actor_id, created_at,
+                redeem_policy, max_redemptions, redeemed_count
+         FROM organization_invitations
+         WHERE token_hash = $1
+           AND redeem_policy = $4
+           AND status = $5
+           AND expires_at > $3
+         FOR UPDATE
+       ),
+       ins AS (
+         INSERT INTO organization_invitation_redemptions (invitation_id, actor_id, created_at)
+         SELECT id, $2, $3 FROM invite WHERE redeemed_count < max_redemptions
+         ON CONFLICT (invitation_id, actor_id) DO NOTHING
+         RETURNING invitation_id
+       ),
+       bumped AS (
+         UPDATE organization_invitations o
+         SET redeemed_count = redeemed_count + 1
+         FROM ins
+         WHERE o.id = ins.invitation_id
+         RETURNING o.id
+       )
+       SELECT
+         invite.id, invite.organization_id, invite.competition_id, invite.role,
+         invite.token_hash, invite.email, invite.status, invite.invited_by_actor_id,
+         invite.expires_at, invite.accepted_by_actor_id, invite.created_at,
+         invite.redeem_policy, invite.max_redemptions,
+         invite.redeemed_count + (CASE WHEN bumped.id IS NOT NULL THEN 1 ELSE 0 END)
+           AS redeemed_count,
+         (bumped.id IS NOT NULL) AS newly_claimed,
+         EXISTS (
+           SELECT 1 FROM organization_invitation_redemptions r
+           WHERE r.invitation_id = invite.id AND r.actor_id = $2
+         ) AS already_redeemed
+       FROM invite
+       LEFT JOIN bumped ON bumped.id = invite.id`,
+      [tokenHash, actorId, now.toISOString(), REDEEM_POLICY.multi, INVITATION_STATUS.pending],
+    );
+    const row = result.rows[0] as
+      | (InvitationRow & { newly_claimed: boolean; already_redeemed: boolean })
+      | undefined;
+    if (!row) return null;
+    if (!row.newly_claimed && !row.already_redeemed) return null;
+    return {
+      invitation: rehydrateInvitation(row),
+      outcome: row.newly_claimed ? "claimed" : "already-redeemed",
+    };
   }
 }
