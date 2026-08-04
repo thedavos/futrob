@@ -89,6 +89,9 @@ class Rosters implements CompetitionRosterMembershipRepository {
 
 class Profiles implements PlayerProfileRepository {
   rows: PlayerProfile[] = [];
+  async findById(playerProfileId: string) {
+    return this.rows.find((row) => row.id === playerProfileId) ?? null;
+  }
   async findByActor(actorId: PlayerProfile["actorId"]) {
     return this.rows.find((row) => row.actorId === actorId) ?? null;
   }

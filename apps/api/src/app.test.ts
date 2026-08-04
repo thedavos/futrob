@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import searchClubsFixture from "@/adapters/game-data/ea-clubs/fixtures/search-clubs.json";
+import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import { createApp } from "@/app.ts";
 import { createModules } from "@/di/create-modules.ts";
 
@@ -263,7 +264,7 @@ describe("apps/api", () => {
     expect(await status.json()).toMatchObject({
       completed: true,
       path: "organization",
-      version: 2,
+      version: 3,
     });
   });
 
@@ -353,7 +354,11 @@ describe("apps/api", () => {
       body: JSON.stringify({ gameAccount: null }),
     });
     expect(completed.status).toBe(200);
-    expect(await completed.json()).toMatchObject({ destination: "personal", gameAccount: null });
+    expect(await completed.json()).toMatchObject({
+      destination: "personal",
+      gameAccount: null,
+      externalClub: null,
+    });
 
     const personalDestination = await app.request("/api/v1/organizations/post-auth-destination", {
       headers: serviceHeaders(actor),
@@ -406,6 +411,78 @@ describe("apps/api", () => {
       headers: serviceHeaders(actor),
     });
     expect(await status.json()).toMatchObject({ completed: true, path: "player" });
+  });
+
+  it("onboarding: re-resolves a player club association and ignores forged names", async () => {
+    const app = buildApp(
+      createFetch((url) => {
+        expect(url).toContain("/clubs/info");
+        expect(url).toContain("clubIds=10754");
+        return Response.json(clubInfoFixture);
+      }),
+    );
+    const actor = "actor-player-club";
+
+    const completed = await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({
+        gameAccount: null,
+        externalClub: {
+          providerKey: "ea-clubs",
+          externalClubId: "10754",
+          platform: "common-gen5",
+          gameEdition: "fc26",
+        },
+      }),
+    });
+    expect(completed.status).toBe(200);
+    expect(await completed.json()).toMatchObject({
+      destination: "personal",
+      externalClub: {
+        externalClubId: "10754",
+        externalClubName: "Fera Enjaulada",
+        platform: "common-gen5",
+        gameEdition: "fc26",
+      },
+    });
+
+    const profile = await app.request("/api/v1/players/me", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await profile.json()).toMatchObject({
+      externalClub: {
+        externalClubId: "10754",
+        externalClubName: "Fera Enjaulada",
+      },
+    });
+  });
+
+  it("onboarding: does not complete when the external club cannot be resolved", async () => {
+    const app = buildApp(createFetch(() => Response.json({})));
+    const actor = "actor-player-missing-club";
+
+    const completed = await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({
+        externalClub: {
+          providerKey: "ea-clubs",
+          externalClubId: "missing-club",
+          platform: "ps5",
+          gameEdition: "fc26",
+        },
+      }),
+    });
+    expect(completed.status).toBe(404);
+    expect(await completed.json()).toMatchObject({
+      code: "game_data.external_club_not_found",
+    });
+
+    const status = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await status.json()).toMatchObject({ completed: false });
   });
 
   it("onboarding: accepts an invitation and completes the invitation path", async () => {

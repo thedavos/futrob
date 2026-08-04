@@ -6,6 +6,7 @@ export type OnboardingRoute =
   | "/onboarding/competition"
   | "/onboarding/invitation"
   | "/onboarding/game-account"
+  | "/onboarding/team"
   | "/onboarding/review";
 
 const routeByStep: Record<OnboardingStepDto, OnboardingRoute> = {
@@ -15,13 +16,14 @@ const routeByStep: Record<OnboardingStepDto, OnboardingRoute> = {
   game: "/onboarding/game-account",
   invitation: "/onboarding/invitation",
   "game-account": "/onboarding/game-account",
+  team: "/onboarding/team",
   review: "/onboarding/review",
 };
 
 const allowedStepsByPath: Record<OnboardingPathDto, readonly OnboardingStepDto[]> = {
   organization: ["intention", "organization", "competition", "game-account", "review"],
   invitation: ["intention", "invitation", "game-account", "review"],
-  player: ["intention", "game-account", "review"],
+  player: ["intention", "game-account", "team", "review"],
 };
 
 export function resolveOnboardingStep(

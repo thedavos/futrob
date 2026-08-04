@@ -10,18 +10,27 @@ import type {
   CompleteInvitationOnboardingResponse,
   CompleteOrganizationOnboardingRequest,
   CompleteOrganizationOnboardingResponse,
+  CompletePlayerOnboardingRequest,
+  ExternalClubDto,
   GamePlatformDto,
   OnboardingPathDto,
   OnboardingStatusDto,
   OnboardingStepDto,
+  PlayerExternalClubSelectionInputDto,
   PlayerGameAccountInputDto,
+  SearchClubsQueryInput,
 } from "@futrob/api-contracts";
 import {
   IdentityOnboardingClientError,
   identityBrowserClient,
 } from "@/modules/identity/presentation/identity-browser-client.ts";
+import { getFutrobBrowserClient } from "@/shared/infrastructure/http/futrob-browser-client.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
 import { resolveOnboardingStep, routeForOnboardingStep } from "./onboarding-routing.ts";
+
+export interface SelectedExternalClubDraft extends PlayerExternalClubSelectionInputDto {
+  readonly name: string;
+}
 
 export interface OnboardingDraft {
   readonly organizationName: string;
@@ -37,6 +46,7 @@ export interface OnboardingDraft {
   readonly platform: GamePlatformDto | null;
   readonly gameEdition: string;
   readonly customGameEdition: boolean;
+  readonly selectedExternalClub: SelectedExternalClubDraft | null;
 }
 
 function createEmptyDraft(): OnboardingDraft {
@@ -54,6 +64,7 @@ function createEmptyDraft(): OnboardingDraft {
     platform: null,
     gameEdition: "",
     customGameEdition: false,
+    selectedExternalClub: null,
   };
 }
 
@@ -66,7 +77,8 @@ export interface OnboardingGateway {
   acceptInvitation(
     input: CompleteInvitationOnboardingRequest,
   ): Promise<CompleteInvitationOnboardingResponse>;
-  completePlayer(gameAccount: PlayerGameAccountInputDto | null): Promise<void>;
+  completePlayer(input: CompletePlayerOnboardingRequest): Promise<void>;
+  searchExternalClubs(input: SearchClubsQueryInput): Promise<readonly ExternalClubDto[]>;
 }
 
 export const browserOnboardingGateway: OnboardingGateway = {
@@ -74,8 +86,12 @@ export const browserOnboardingGateway: OnboardingGateway = {
   saveProgress: (input) => identityBrowserClient.saveOnboardingProgress(input),
   createOrganization: (input) => identityBrowserClient.completeOrganizationOnboarding(input),
   acceptInvitation: (input) => identityBrowserClient.completeInvitationOnboarding(input),
-  async completePlayer(gameAccount) {
-    await identityBrowserClient.completePlayerOnboarding({ gameAccount });
+  async completePlayer(input) {
+    await identityBrowserClient.completePlayerOnboarding(input);
+  },
+  async searchExternalClubs(input) {
+    const result = await getFutrobBrowserClient().gameData.clubs.search(input);
+    return result.clubs;
   },
 };
 
@@ -88,7 +104,9 @@ interface OnboardingFlowValue {
   setPath(path: OnboardingPathDto): void;
   updateDraft(patch: Partial<OnboardingDraft>): void;
   clearGameAccount(): void;
+  clearExternalClub(): void;
   checkOrganizationName(name: string): Promise<boolean | null>;
+  searchExternalClubs(input: SearchClubsQueryInput): Promise<readonly ExternalClubDto[]>;
   goTo(step: OnboardingStepDto, path?: OnboardingPathDto | null): Promise<void>;
   finish(): Promise<void>;
 }
@@ -140,6 +158,9 @@ export function OnboardingFlowProvider({
           customGameEdition: false,
         }));
       },
+      clearExternalClub() {
+        setDraft((current) => ({ ...current, selectedExternalClub: null }));
+      },
       async checkOrganizationName(name) {
         if (saving) return null;
         setSaving(true);
@@ -153,6 +174,9 @@ export function OnboardingFlowProvider({
         } finally {
           setSaving(false);
         }
+      },
+      async searchExternalClubs(input) {
+        return gateway.searchExternalClubs(input);
       },
       async goTo(step, requestedPath = path) {
         if (saving) return;
@@ -205,8 +229,10 @@ export function OnboardingFlowProvider({
               replace: true,
             });
           } else {
-            const account = playerAccountFromDraft(draft);
-            await gateway.completePlayer(account);
+            await gateway.completePlayer({
+              gameAccount: playerAccountFromDraft(draft),
+              externalClub: externalClubLocatorFromDraft(draft),
+            });
             await navigate({ to: "/player", replace: true });
           }
         } catch (caught) {
@@ -278,6 +304,19 @@ export function playerAccountFromDraft(draft: OnboardingDraft): PlayerGameAccoun
   if (!identifier && !draft.platform && !gameEdition) return null;
   if (!identifier || !draft.platform || !gameEdition) return null;
   return { identifier, platform: draft.platform, gameEdition };
+}
+
+export function externalClubLocatorFromDraft(
+  draft: OnboardingDraft,
+): PlayerExternalClubSelectionInputDto | null {
+  const selected = draft.selectedExternalClub;
+  if (!selected) return null;
+  return {
+    providerKey: selected.providerKey,
+    externalClubId: selected.externalClubId,
+    platform: selected.platform,
+    gameEdition: selected.gameEdition,
+  };
 }
 
 function finalizationError(path: OnboardingPathDto, caught: unknown): string {

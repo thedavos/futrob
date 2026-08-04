@@ -1,4 +1,5 @@
-/* eslint-disable */
+/
+    * eslint-disable */
 
 // @ts-nocheck
 
@@ -28,6 +29,7 @@ import { Route as AppOnboardingOrganizationRouteImport } from './routes/_app/onb
 import { Route as AppOnboardingInvitationRouteImport } from './routes/_app/onboarding/invitation'
 import { Route as AppOnboardingIntentionRouteImport } from './routes/_app/onboarding/intention'
 import { Route as AppOnboardingGameAccountRouteImport } from './routes/_app/onboarding/game-account'
+import { Route as AppOnboardingTeamRouteImport } from './routes/_app/onboarding/team'
 import { Route as AppOnboardingGameRouteImport } from './routes/_app/onboarding/game'
 import { Route as AppOnboardingCompetitionRouteImport } from './routes/_app/onboarding/competition'
 import { Route as AppInvitationsAcceptRouteImport } from './routes/_app/invitations/accept'
@@ -151,6 +153,11 @@ const AppOnboardingGameAccountRoute =
     path: '/game-account',
     getParentRoute: () => AppOnboardingRoute,
   } as any)
+const AppOnboardingTeamRoute = AppOnboardingTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AppOnboardingRoute,
+} as any)
 const AppOnboardingGameRoute = AppOnboardingGameRouteImport.update({
   id: '/game',
   path: '/game',
@@ -318,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/competition': typeof AppOnboardingCompetitionRoute
   '/onboarding/game': typeof AppOnboardingGameRoute
   '/onboarding/game-account': typeof AppOnboardingGameAccountRoute
+  '/onboarding/team': typeof AppOnboardingTeamRoute
   '/onboarding/intention': typeof AppOnboardingIntentionRoute
   '/onboarding/invitation': typeof AppOnboardingInvitationRoute
   '/onboarding/organization': typeof AppOnboardingOrganizationRoute
@@ -363,6 +371,7 @@ export interface FileRoutesByTo {
   '/onboarding/competition': typeof AppOnboardingCompetitionRoute
   '/onboarding/game': typeof AppOnboardingGameRoute
   '/onboarding/game-account': typeof AppOnboardingGameAccountRoute
+  '/onboarding/team': typeof AppOnboardingTeamRoute
   '/onboarding/intention': typeof AppOnboardingIntentionRoute
   '/onboarding/invitation': typeof AppOnboardingInvitationRoute
   '/onboarding/organization': typeof AppOnboardingOrganizationRoute
@@ -412,6 +421,7 @@ export interface FileRoutesById {
   '/_app/onboarding/competition': typeof AppOnboardingCompetitionRoute
   '/_app/onboarding/game': typeof AppOnboardingGameRoute
   '/_app/onboarding/game-account': typeof AppOnboardingGameAccountRoute
+  '/_app/onboarding/team': typeof AppOnboardingTeamRoute
   '/_app/onboarding/intention': typeof AppOnboardingIntentionRoute
   '/_app/onboarding/invitation': typeof AppOnboardingInvitationRoute
   '/_app/onboarding/organization': typeof AppOnboardingOrganizationRoute
@@ -460,6 +470,7 @@ export interface FileRouteTypes {
     | '/onboarding/competition'
     | '/onboarding/game'
     | '/onboarding/game-account'
+    | '/onboarding/team'
     | '/onboarding/intention'
     | '/onboarding/invitation'
     | '/onboarding/organization'
@@ -505,6 +516,7 @@ export interface FileRouteTypes {
     | '/onboarding/competition'
     | '/onboarding/game'
     | '/onboarding/game-account'
+    | '/onboarding/team'
     | '/onboarding/intention'
     | '/onboarding/invitation'
     | '/onboarding/organization'
@@ -553,6 +565,7 @@ export interface FileRouteTypes {
     | '/_app/onboarding/competition'
     | '/_app/onboarding/game'
     | '/_app/onboarding/game-account'
+    | '/_app/onboarding/team'
     | '/_app/onboarding/intention'
     | '/_app/onboarding/invitation'
     | '/_app/onboarding/organization'
@@ -745,6 +758,13 @@ declare module '@tanstack/react-router' {
       path: '/game-account'
       fullPath: '/onboarding/game-account'
       preLoaderRoute: typeof AppOnboardingGameAccountRouteImport
+      parentRoute: typeof AppOnboardingRoute
+    }
+    '/_app/onboarding/team': {
+      id: '/_app/onboarding/team'
+      path: '/team'
+      fullPath: '/onboarding/team'
+      preLoaderRoute: typeof AppOnboardingTeamRouteImport
       parentRoute: typeof AppOnboardingRoute
     }
     '/_app/onboarding/game': {
@@ -943,6 +963,7 @@ interface AppOnboardingRouteChildren {
   AppOnboardingCompetitionRoute: typeof AppOnboardingCompetitionRoute
   AppOnboardingGameRoute: typeof AppOnboardingGameRoute
   AppOnboardingGameAccountRoute: typeof AppOnboardingGameAccountRoute
+  AppOnboardingTeamRoute: typeof AppOnboardingTeamRoute
   AppOnboardingIntentionRoute: typeof AppOnboardingIntentionRoute
   AppOnboardingInvitationRoute: typeof AppOnboardingInvitationRoute
   AppOnboardingOrganizationRoute: typeof AppOnboardingOrganizationRoute
@@ -954,6 +975,7 @@ const AppOnboardingRouteChildren: AppOnboardingRouteChildren = {
   AppOnboardingCompetitionRoute: AppOnboardingCompetitionRoute,
   AppOnboardingGameRoute: AppOnboardingGameRoute,
   AppOnboardingGameAccountRoute: AppOnboardingGameAccountRoute,
+  AppOnboardingTeamRoute: AppOnboardingTeamRoute,
   AppOnboardingIntentionRoute: AppOnboardingIntentionRoute,
   AppOnboardingInvitationRoute: AppOnboardingInvitationRoute,
   AppOnboardingOrganizationRoute: AppOnboardingOrganizationRoute,

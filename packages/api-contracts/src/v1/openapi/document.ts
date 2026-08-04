@@ -339,6 +339,7 @@ export const futrobOpenApiV1 = {
                       "game",
                       "invitation",
                       "game-account",
+                      "team",
                       "review",
                     ],
                   },
@@ -456,6 +457,12 @@ export const futrobOpenApiV1 = {
                   gameAccount: {
                     anyOf: [
                       { $ref: "#/components/schemas/PlayerGameAccountInput" },
+                      { type: "null" },
+                    ],
+                  },
+                  externalClub: {
+                    anyOf: [
+                      { $ref: "#/components/schemas/PlayerExternalClubSelectionInput" },
                       { type: "null" },
                     ],
                   },
@@ -933,7 +940,7 @@ export const futrobOpenApiV1 = {
       },
       GetMyPlayerProfileResponse: {
         type: "object",
-        required: ["profile", "gameAccounts"],
+        required: ["profile", "gameAccounts", "externalClub"],
         properties: {
           profile: {
             anyOf: [{ $ref: "#/components/schemas/PlayerProfile" }, { type: "null" }],
@@ -942,6 +949,49 @@ export const futrobOpenApiV1 = {
             type: "array",
             items: { $ref: "#/components/schemas/PlayerGameAccount" },
           },
+          externalClub: {
+            anyOf: [
+              { $ref: "#/components/schemas/PlayerExternalClubAssociation" },
+              { type: "null" },
+            ],
+          },
+        },
+      },
+      PlayerExternalClubSelectionInput: {
+        type: "object",
+        required: ["providerKey", "externalClubId", "platform", "gameEdition"],
+        properties: {
+          providerKey: {
+            type: "string",
+            enum: ["ea-clubs", "manual", "screenshot-ocr"],
+          },
+          externalClubId: { type: "string", minLength: 1, maxLength: 80 },
+          platform: { type: "string", minLength: 1, maxLength: 40 },
+          gameEdition: { type: "string", minLength: 1, maxLength: 40 },
+        },
+      },
+      PlayerExternalClubAssociation: {
+        type: "object",
+        required: [
+          "playerProfileId",
+          "providerKey",
+          "externalClubId",
+          "externalClubName",
+          "platform",
+          "gameEdition",
+          "associatedAt",
+        ],
+        properties: {
+          playerProfileId: { type: "string" },
+          providerKey: {
+            type: "string",
+            enum: ["ea-clubs", "manual", "screenshot-ocr"],
+          },
+          externalClubId: { type: "string" },
+          externalClubName: { type: "string" },
+          platform: { type: "string" },
+          gameEdition: { type: "string" },
+          associatedAt: { type: "string", format: "date-time" },
         },
       },
       AddMyPlayerGameAccountResponse: {
@@ -976,6 +1026,7 @@ export const futrobOpenApiV1 = {
                   "game",
                   "invitation",
                   "game-account",
+                  "team",
                   "review",
                 ],
               },
@@ -1078,11 +1129,17 @@ export const futrobOpenApiV1 = {
       },
       CompletePlayerOnboardingResponse: {
         type: "object",
-        required: ["profile", "gameAccount", "destination"],
+        required: ["profile", "gameAccount", "externalClub", "destination"],
         properties: {
           profile: { $ref: "#/components/schemas/PlayerProfile" },
           gameAccount: {
             anyOf: [{ $ref: "#/components/schemas/PlayerGameAccount" }, { type: "null" }],
+          },
+          externalClub: {
+            anyOf: [
+              { $ref: "#/components/schemas/PlayerExternalClubAssociation" },
+              { type: "null" },
+            ],
           },
           destination: { type: "string", const: "personal" },
         },

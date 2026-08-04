@@ -85,6 +85,7 @@ describe("identity onboarding", () => {
     ["player", "intention"],
     ["player", "game"],
     ["player", "game-account"],
+    ["player", "team"],
     ["player", "review"],
     [null, "intention"],
   ] as const)("accepts progress %s → %s", async (path, currentStep) => {
@@ -105,9 +106,12 @@ describe("identity onboarding", () => {
     ["invitation", "game"],
     ["invitation", "competition"],
     ["player", "invitation"],
+    ["organization", "team"],
+    ["invitation", "team"],
     [null, "game"],
     [null, "invitation"],
     [null, "game-account"],
+    [null, "team"],
     [null, "review"],
   ] as const)("rejects progress %s → %s", async (path, currentStep) => {
     const store = new InMemoryActorOnboarding();
@@ -138,7 +142,7 @@ describe("identity onboarding", () => {
     expect(first).toEqual({
       completed: true,
       completedAt: new Date("2026-07-29T10:00:00.000Z"),
-      version: 2,
+      version: 3,
       path: "player",
       currentStep: null,
     });

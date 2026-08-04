@@ -1,4 +1,6 @@
 import type {
+  PlayerExternalClubAssociation,
+  PlayerExternalClubAssociationRepository,
   PlayerGameAccount,
   PlayerGameAccountRepository,
   PlayerProfile,
@@ -9,6 +11,10 @@ import type { ActorId } from "@futrob/shared-kernel";
 export class InMemoryPlayerProfileRepository implements PlayerProfileRepository {
   readonly rows = new Map<string, PlayerProfile>();
 
+  async findById(playerProfileId: string): Promise<PlayerProfile | null> {
+    return this.rows.get(playerProfileId) ?? null;
+  }
+
   async findByActor(actorId: ActorId): Promise<PlayerProfile | null> {
     return [...this.rows.values()].find((row) => row.actorId === actorId) ?? null;
   }
@@ -18,6 +24,25 @@ export class InMemoryPlayerProfileRepository implements PlayerProfileRepository 
     if (existing) return existing;
     this.rows.set(profile.id, profile);
     return profile;
+  }
+}
+
+export class InMemoryPlayerExternalClubAssociationRepository
+  implements PlayerExternalClubAssociationRepository
+{
+  readonly rows = new Map<string, PlayerExternalClubAssociation>();
+
+  async findByPlayerProfile(
+    playerProfileId: string,
+  ): Promise<PlayerExternalClubAssociation | null> {
+    return this.rows.get(playerProfileId) ?? null;
+  }
+
+  async upsertForPlayerProfile(
+    association: PlayerExternalClubAssociation,
+  ): Promise<PlayerExternalClubAssociation> {
+    this.rows.set(association.playerProfileId, association);
+    return association;
   }
 }
 

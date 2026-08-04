@@ -1,6 +1,9 @@
 import { asActorId } from "@futrob/shared-kernel";
+import type { GameDataProviderKey } from "@futrob/game-data";
 import type {
   GamePlatform,
+  PlayerExternalClubAssociation,
+  PlayerExternalClubAssociationRepository,
   PlayerGameAccount,
   PlayerGameAccountRepository,
   PlayerProfile,
@@ -10,6 +13,14 @@ import type { Pool } from "pg";
 
 export class PostgresPlayerProfileRepository implements PlayerProfileRepository {
   constructor(private readonly pool: Pool) {}
+
+  async findById(playerProfileId: string): Promise<PlayerProfile | null> {
+    const result = await this.pool.query(
+      `SELECT id, actor_id, created_at FROM player_profiles WHERE id = $1`,
+      [playerProfileId],
+    );
+    return result.rows[0] ? rehydrateProfile(result.rows[0]) : null;
+  }
 
   async findByActor(actorId: PlayerProfile["actorId"]): Promise<PlayerProfile | null> {
     const result = await this.pool.query(
@@ -28,6 +39,55 @@ export class PostgresPlayerProfileRepository implements PlayerProfileRepository 
       [profile.id, profile.actorId, profile.createdAt.toISOString()],
     );
     return rehydrateProfile(result.rows[0]);
+  }
+}
+
+export class PostgresPlayerExternalClubAssociationRepository
+  implements PlayerExternalClubAssociationRepository
+{
+  constructor(private readonly pool: Pool) {}
+
+  async findByPlayerProfile(
+    playerProfileId: string,
+  ): Promise<PlayerExternalClubAssociation | null> {
+    const result = await this.pool.query(
+      `SELECT player_profile_id, provider_key, external_club_id, external_club_name,
+              platform, game_edition, associated_at
+       FROM player_external_club_associations
+       WHERE player_profile_id = $1`,
+      [playerProfileId],
+    );
+    return result.rows[0] ? rehydrateAssociation(result.rows[0]) : null;
+  }
+
+  async upsertForPlayerProfile(
+    association: PlayerExternalClubAssociation,
+  ): Promise<PlayerExternalClubAssociation> {
+    const result = await this.pool.query(
+      `INSERT INTO player_external_club_associations (
+         player_profile_id, provider_key, external_club_id, external_club_name,
+         platform, game_edition, associated_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (player_profile_id) DO UPDATE SET
+         provider_key = EXCLUDED.provider_key,
+         external_club_id = EXCLUDED.external_club_id,
+         external_club_name = EXCLUDED.external_club_name,
+         platform = EXCLUDED.platform,
+         game_edition = EXCLUDED.game_edition,
+         associated_at = EXCLUDED.associated_at
+       RETURNING player_profile_id, provider_key, external_club_id, external_club_name,
+                 platform, game_edition, associated_at`,
+      [
+        association.playerProfileId,
+        association.providerKey,
+        association.externalClubId,
+        association.externalClubName,
+        association.platform,
+        association.gameEdition,
+        association.associatedAt.toISOString(),
+      ],
+    );
+    return rehydrateAssociation(result.rows[0]);
   }
 }
 
@@ -95,5 +155,25 @@ function rehydrateAccount(row: {
     platform: row.platform as GamePlatform,
     gameEdition: row.game_edition,
     createdAt: new Date(row.created_at),
+  };
+}
+
+function rehydrateAssociation(row: {
+  player_profile_id: string;
+  provider_key: string;
+  external_club_id: string;
+  external_club_name: string;
+  platform: string;
+  game_edition: string;
+  associated_at: Date | string;
+}): PlayerExternalClubAssociation {
+  return {
+    playerProfileId: row.player_profile_id,
+    providerKey: row.provider_key as GameDataProviderKey,
+    externalClubId: row.external_club_id,
+    externalClubName: row.external_club_name,
+    platform: row.platform,
+    gameEdition: row.game_edition,
+    associatedAt: new Date(row.associated_at),
   };
 }

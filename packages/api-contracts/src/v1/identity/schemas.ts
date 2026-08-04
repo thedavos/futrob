@@ -4,6 +4,8 @@ import {
   createOrganizationResponseSchema,
 } from "../organizations/schemas.ts";
 import {
+  playerExternalClubAssociationSchema,
+  playerExternalClubSelectionInputSchema,
   playerGameAccountInputSchema,
   playerGameAccountSchema,
   playerProfileSchema,
@@ -18,6 +20,7 @@ export const onboardingStepSchema = z.enum([
   "game",
   "invitation",
   "game-account",
+  "team",
   "review",
 ]);
 
@@ -41,7 +44,7 @@ export type GetOnboardingStatusResponse = z.infer<typeof getOnboardingStatusResp
 const allowedStepsByPath: Record<OnboardingPathDto, readonly OnboardingStepDto[]> = {
   organization: ["intention", "organization", "competition", "game-account", "game", "review"],
   invitation: ["intention", "invitation", "game-account", "review"],
-  player: ["intention", "game", "game-account", "review"],
+  player: ["intention", "game", "game-account", "team", "review"],
 };
 
 export const saveOnboardingProgressRequestSchema = z
@@ -118,12 +121,14 @@ export type CompleteInvitationOnboardingResponse = z.infer<
 
 export const completePlayerOnboardingRequestSchema = z.object({
   gameAccount: playerGameAccountInputSchema.nullable().optional(),
+  externalClub: playerExternalClubSelectionInputSchema.nullable().optional(),
 });
 export type CompletePlayerOnboardingRequest = z.infer<typeof completePlayerOnboardingRequestSchema>;
 
 export const completePlayerOnboardingResponseSchema = z.object({
   profile: playerProfileSchema,
   gameAccount: playerGameAccountSchema.nullable(),
+  externalClub: playerExternalClubAssociationSchema.nullable(),
   destination: z.literal("personal"),
 });
 export type CompletePlayerOnboardingResponse = z.infer<

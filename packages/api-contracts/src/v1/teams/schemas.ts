@@ -32,9 +32,33 @@ export const playerGameAccountSchema = z.object({
 });
 export type PlayerGameAccountDto = z.infer<typeof playerGameAccountSchema>;
 
+export const playerExternalClubSelectionInputSchema = z.object({
+  providerKey: z.enum(["ea-clubs", "manual", "screenshot-ocr"]),
+  externalClubId: z.string().trim().min(1).max(80),
+  platform: z.string().trim().min(1).max(40),
+  gameEdition: z.string().trim().min(1).max(40),
+});
+export type PlayerExternalClubSelectionInputDto = z.infer<
+  typeof playerExternalClubSelectionInputSchema
+>;
+
+export const playerExternalClubAssociationSchema = z.object({
+  playerProfileId: z.string().min(1),
+  providerKey: z.enum(["ea-clubs", "manual", "screenshot-ocr"]),
+  externalClubId: z.string().min(1),
+  externalClubName: z.string().min(1),
+  platform: z.string().min(1),
+  gameEdition: z.string().min(1),
+  associatedAt: z.string().datetime(),
+});
+export type PlayerExternalClubAssociationDto = z.infer<
+  typeof playerExternalClubAssociationSchema
+>;
+
 export const getMyPlayerProfileResponseSchema = z.object({
   profile: playerProfileSchema.nullable(),
   gameAccounts: z.array(playerGameAccountSchema),
+  externalClub: playerExternalClubAssociationSchema.nullable(),
 });
 export type GetMyPlayerProfileResponse = z.infer<typeof getMyPlayerProfileResponseSchema>;
 

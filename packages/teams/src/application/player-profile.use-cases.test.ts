@@ -1,15 +1,25 @@
 import { asActorId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
+import type { PlayerExternalClubAssociation } from "../domain/entities/player-external-club-association.ts";
 import type { PlayerGameAccount } from "../domain/entities/player-game-account.ts";
-import { InvalidGameAccountIdentifier } from "../domain/errors/team.errors.ts";
+import {
+  InvalidGameAccountIdentifier,
+  PlayerProfileNotFound,
+} from "../domain/errors/team.errors.ts";
 import type { PlayerProfile } from "../domain/entities/player-profile.ts";
+import type { PlayerExternalClubAssociationRepository } from "../domain/ports/player-external-club-association.repository.ts";
 import type { PlayerGameAccountRepository } from "../domain/ports/player-game-account.repository.ts";
 import type { PlayerProfileRepository } from "../domain/ports/player-profile.repository.ts";
 import { AddPlayerGameAccountUseCase } from "./add-player-game-account/add-player-game-account.use-case.ts";
+import { AssociatePlayerExternalClubUseCase } from "./associate-player-external-club/associate-player-external-club.use-case.ts";
 import { EnsurePlayerProfileUseCase } from "./ensure-player-profile/ensure-player-profile.use-case.ts";
+import { GetPlayerProfileUseCase } from "./get-player-profile/get-player-profile.use-case.ts";
 
 class Profiles implements PlayerProfileRepository {
   rows: PlayerProfile[] = [];
+  async findById(playerProfileId: string) {
+    return this.rows.find((row) => row.id === playerProfileId) ?? null;
+  }
   async findByActor(actorId: PlayerProfile["actorId"]) {
     return this.rows.find((row) => row.actorId === actorId) ?? null;
   }
@@ -18,6 +28,17 @@ class Profiles implements PlayerProfileRepository {
     if (existing) return existing;
     this.rows.push(profile);
     return profile;
+  }
+}
+
+class Associations implements PlayerExternalClubAssociationRepository {
+  rows = new Map<string, PlayerExternalClubAssociation>();
+  async findByPlayerProfile(playerProfileId: string) {
+    return this.rows.get(playerProfileId) ?? null;
+  }
+  async upsertForPlayerProfile(association: PlayerExternalClubAssociation) {
+    this.rows.set(association.playerProfileId, association);
+    return association;
   }
 }
 
@@ -97,5 +118,153 @@ describe("player profile use cases", () => {
     });
     expect(result.isOk()).toBe(false);
     expect(!result.isOk() && InvalidGameAccountIdentifier.is(result.error)).toBe(true);
+  });
+
+  it("associates an external club with a player profile", async () => {
+    const profiles = new Profiles();
+    const associations = new Associations();
+    const ensure = new EnsurePlayerProfileUseCase({ profiles, ...dependencies() });
+    const associate = new AssociatePlayerExternalClubUseCase({
+      profiles,
+      associations,
+      clock: dependencies().clock,
+    });
+    const profile = await ensure.execute({ actorId: asActorId("actor-1") });
+
+    const result = await associate.execute({
+      playerProfileId: profile.id,
+      club: {
+        providerKey: "ea-clubs",
+        externalClubId: "club-9",
+        name: "Night Owls",
+        platform: "common-gen5",
+        gameEdition: "fc26",
+      },
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(result.isOk() && result.value).toMatchObject({
+      playerProfileId: profile.id,
+      externalClubId: "club-9",
+      externalClubName: "Night Owls",
+      platform: "common-gen5",
+    });
+  });
+
+  it("upserts the association for the same profile", async () => {
+    const profiles = new Profiles();
+    const associations = new Associations();
+    const ensure = new EnsurePlayerProfileUseCase({ profiles, ...dependencies() });
+    const associate = new AssociatePlayerExternalClubUseCase({
+      profiles,
+      associations,
+      clock: dependencies().clock,
+    });
+    const profile = await ensure.execute({ actorId: asActorId("actor-1") });
+    await associate.execute({
+      playerProfileId: profile.id,
+      club: {
+        providerKey: "ea-clubs",
+        externalClubId: "club-1",
+        name: "First",
+        platform: "common-gen5",
+        gameEdition: "fc26",
+      },
+    });
+
+    const result = await associate.execute({
+      playerProfileId: profile.id,
+      club: {
+        providerKey: "ea-clubs",
+        externalClubId: "club-2",
+        name: "Second",
+        platform: "ps5",
+        gameEdition: "fc26",
+      },
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(result.isOk() && result.value.externalClubId).toBe("club-2");
+    expect(await associations.findByPlayerProfile(profile.id)).toMatchObject({
+      externalClubId: "club-2",
+      externalClubName: "Second",
+    });
+  });
+
+  it("allows two profiles to share the same external club", async () => {
+    const profiles = new Profiles();
+    const associations = new Associations();
+    const ensure = new EnsurePlayerProfileUseCase({ profiles, ...dependencies() });
+    const associate = new AssociatePlayerExternalClubUseCase({
+      profiles,
+      associations,
+      clock: dependencies().clock,
+    });
+    const first = await ensure.execute({ actorId: asActorId("actor-1") });
+    const second = await ensure.execute({ actorId: asActorId("actor-2") });
+    const club = {
+      providerKey: "ea-clubs" as const,
+      externalClubId: "shared-club",
+      name: "Shared FC",
+      platform: "common-gen5",
+      gameEdition: "fc26",
+    };
+
+    const firstResult = await associate.execute({ playerProfileId: first.id, club });
+    const secondResult = await associate.execute({ playerProfileId: second.id, club });
+
+    expect(firstResult.isOk()).toBe(true);
+    expect(secondResult.isOk()).toBe(true);
+    expect(associations.rows.size).toBe(2);
+  });
+
+  it("rejects association for a missing player profile", async () => {
+    const result = await new AssociatePlayerExternalClubUseCase({
+      profiles: new Profiles(),
+      associations: new Associations(),
+      clock: dependencies().clock,
+    }).execute({
+      playerProfileId: "missing",
+      club: {
+        providerKey: "ea-clubs",
+        externalClubId: "club-1",
+        name: "Ghost",
+        platform: "common-gen5",
+        gameEdition: "fc26",
+      },
+    });
+
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && PlayerProfileNotFound.is(result.error)).toBe(true);
+  });
+
+  it("returns the external club association with the player profile", async () => {
+    const profiles = new Profiles();
+    const associations = new Associations();
+    const accounts = new Accounts();
+    const ensure = new EnsurePlayerProfileUseCase({ profiles, ...dependencies() });
+    const associate = new AssociatePlayerExternalClubUseCase({
+      profiles,
+      associations,
+      clock: dependencies().clock,
+    });
+    const getProfile = new GetPlayerProfileUseCase(profiles, accounts, associations);
+    const profile = await ensure.execute({ actorId: asActorId("actor-1") });
+    await associate.execute({
+      playerProfileId: profile.id,
+      club: {
+        providerKey: "ea-clubs",
+        externalClubId: "club-7",
+        name: "Readers FC",
+        platform: "xbox",
+        gameEdition: "fc26",
+      },
+    });
+
+    const details = await getProfile.execute({ actorId: asActorId("actor-1") });
+    expect(details.externalClub).toMatchObject({
+      externalClubId: "club-7",
+      externalClubName: "Readers FC",
+    });
   });
 });
