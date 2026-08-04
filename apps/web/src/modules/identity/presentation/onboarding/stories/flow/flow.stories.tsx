@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 
-import { OnboardingStoryRouter, createFakeOnboardingGateway } from "./onboarding-story-router.tsx";
+import {
+  OnboardingStoryRouter,
+  createFakeOnboardingGateway,
+} from "../../onboarding-story-router.tsx";
 
 const meta = {
   title: "Product/Onboarding/Flow",
@@ -111,6 +114,8 @@ export const PlayerPath: Story = {
     await expect(
       await canvas.findByRole("heading", { name: "Configura tus datos de juego" }),
     ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Omitir por ahora" }));
+    await expect(await canvas.findByRole("heading", { name: "Asocia tu club EA" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Omitir por ahora" }));
     await expect(
       await canvas.findByRole("heading", { name: "Confirma tu configuración" }),

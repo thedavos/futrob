@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
 import { StrictMode } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { OnboardingStoryRouter, createFakeOnboardingGateway } from "./onboarding-story-router.tsx";
@@ -70,6 +71,12 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Nintendo Switch 2" }));
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
     await screen.findByRole("heading", { name: "Asocia tu club EA" });
+    const platformTrigger = screen.getByRole("combobox", {
+      name: "Plataforma EA para la búsqueda",
+    });
+    expect(
+      platformTrigger.querySelector("[data-platform-logo]")?.getAttribute("data-platform-logo"),
+    ).toBe("nintendo-switch-2");
     fireEvent.click(screen.getByRole("button", { name: "Omitir por ahora" }));
     await screen.findByRole("heading", { name: "Confirma tu configuración" });
     fireEvent.click(screen.getByRole("button", { name: "Editar cuenta de juego" }));
@@ -127,9 +134,14 @@ describe("OnboardingFlowProvider initialization", () => {
   });
 
   it("searches and selects an EA club on the player team step", async () => {
+    const searches: Array<{ gameEdition?: string }> = [];
     render(
       <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({ path: "player", currentStep: "team" })}
+        gateway={createFakeOnboardingGateway({
+          path: "player",
+          currentStep: "team",
+          onSearchExternalClubs: (request) => searches.push(request),
+        })}
         initialPath="/onboarding/team"
       />,
     );
@@ -140,13 +152,56 @@ describe("OnboardingFlowProvider initialization", () => {
 
     const club = await screen.findByRole("radio", { name: /Fera Enjaulada/ });
     fireEvent.click(club);
-    expect(screen.getByText("Seleccionado")).toBeTruthy();
+    expect(searches.at(-1)?.gameEdition).toBe("fc26");
+    expect(club.getAttribute("aria-checked")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Revisar club" }));
 
     await screen.findByRole("heading", { name: "Confirma tu configuración" });
     expect(screen.getByText(/Fera Enjaulada/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Editar club ea" }));
     expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
+  });
+
+  it("searches clubs with the draft game edition and clears selection when the platform changes", async () => {
+    const user = userEvent.setup();
+    const searches: Array<{ gameEdition?: string; platform?: string }> = [];
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({
+          path: "player",
+          currentStep: "game-account",
+          onSearchExternalClubs: (request) => searches.push(request),
+        })}
+        initialPath="/onboarding/game-account"
+      />,
+    );
+
+    const account = await screen.findByRole("textbox", { name: "Identificador de EA" });
+    await user.type(account, "gamer23");
+    await user.click(screen.getByRole("radio", { name: "FC 25" }));
+    await user.click(screen.getByRole("radio", { name: "PlayStation" }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+    await screen.findByRole("heading", { name: "Asocia tu club EA" });
+    await user.type(screen.getByRole("textbox", { name: "Nombre del club" }), "Fera");
+    await user.click(screen.getByRole("button", { name: "Buscar club" }));
+
+    const club = await screen.findByRole("radio", { name: /Fera Enjaulada/ });
+    await user.click(club);
+    expect(searches.at(-1)?.gameEdition).toBe("fc25");
+    expect(
+      (screen.getByRole("button", { name: "Revisar club" }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+
+    await user.click(screen.getByRole("combobox", { name: "Plataforma EA para la búsqueda" }));
+    await user.click(await screen.findByRole("option", { name: /Xbox/ }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("radio", { name: /Fera Enjaulada/ })).toBeNull();
+    });
+    expect(
+      (screen.getByRole("button", { name: "Revisar club" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   it("shows a recoverable error when club search fails", async () => {

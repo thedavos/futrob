@@ -24,12 +24,13 @@ import {
   IdentityOnboardingClientError,
   identityBrowserClient,
 } from "@/modules/identity/presentation/identity-browser-client.ts";
-import { getFutrobBrowserClient } from "@/shared/infrastructure/http/futrob-browser-client.ts";
+import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
 import { resolveOnboardingStep, routeForOnboardingStep } from "./onboarding-routing.ts";
 
 export interface SelectedExternalClubDraft extends PlayerExternalClubSelectionInputDto {
   readonly name: string;
+  readonly imageUrl: string | null;
 }
 
 export interface OnboardingDraft {
@@ -90,8 +91,11 @@ export const browserOnboardingGateway: OnboardingGateway = {
     await identityBrowserClient.completePlayerOnboarding(input);
   },
   async searchExternalClubs(input) {
-    const result = await getFutrobBrowserClient().gameData.clubs.search(input);
-    return result.clubs;
+    const result = await gameDataBrowserClient.searchClubs(input);
+    if (!result.isOk()) {
+      throw result.error;
+    }
+    return result.value.clubs;
   },
 };
 

@@ -12,17 +12,16 @@ import type {
   OnboardingStatusDto,
   OnboardingStepDto,
 } from "@futrob/api-contracts";
+import { EA_SEARCH_PLATFORM } from "@futrob/api-contracts";
 import type { OnboardingGateway } from "./onboarding-flow.tsx";
 import { OnboardingFlowProvider } from "./onboarding-flow.tsx";
-import {
-  CompetitionStep,
-  GameAccountStep,
-  IntentChoiceStep,
-  InvitationStep,
-  OnboardingReview,
-  OrganizationStep,
-  TeamStep,
-} from "./onboarding-steps.tsx";
+import { CompetitionStep } from "./steps/competition-step.tsx";
+import { GameAccountStep } from "./steps/game-account-step.tsx";
+import { IntentChoiceStep } from "./steps/intention-step.tsx";
+import { InvitationStep } from "./steps/invitation-step.tsx";
+import { OrganizationStep } from "./steps/organization-step.tsx";
+import { OnboardingReview } from "./steps/review-step.tsx";
+import { TeamStep } from "./steps/team-step.tsx";
 
 type OnboardingStoryPath =
   | "/onboarding/intention"
@@ -37,6 +36,50 @@ export interface StoryOnboardingGateway extends OnboardingGateway {
   readonly initialStatus: OnboardingStatusDto;
 }
 
+export type StoryExternalClub = {
+  readonly providerKey: "ea-clubs" | "manual" | "screenshot-ocr";
+  readonly externalClubId: string;
+  readonly name: string;
+  readonly platform: string;
+  readonly gameEdition: string;
+  readonly imageUrl: string | null;
+};
+
+const FC26_CREST_FERA =
+  "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/fcweb/crests/256x256/l99160122.png";
+
+/** Sample EA clubs for Storybook and tests. Names share "Fera" so one query matches all. */
+export const STORY_EXTERNAL_CLUBS = [
+  {
+    providerKey: "ea-clubs",
+    externalClubId: "10754",
+    name: "Fera Enjaulada",
+    platform: EA_SEARCH_PLATFORM.CROSS_GEN,
+    gameEdition: "fc26",
+    imageUrl: FC26_CREST_FERA,
+  },
+  {
+    providerKey: "ea-clubs",
+    externalClubId: "22110",
+    name: "Fera Night Owls",
+    platform: EA_SEARCH_PLATFORM.CROSS_GEN,
+    gameEdition: "fc26",
+    imageUrl: null,
+  },
+  {
+    providerKey: "ea-clubs",
+    externalClubId: "33021",
+    name: "Fera Barranco",
+    platform: EA_SEARCH_PLATFORM.CROSS_GEN,
+    gameEdition: "fc26",
+    imageUrl: null,
+  },
+] as const satisfies readonly StoryExternalClub[];
+
+export function storyExternalClubs(count: 1 | 2 | 3): readonly StoryExternalClub[] {
+  return STORY_EXTERNAL_CLUBS.slice(0, count);
+}
+
 export function createFakeOnboardingGateway(input?: {
   path?: OnboardingPathDto | null;
   currentStep?: OnboardingStepDto;
@@ -44,14 +87,11 @@ export function createFakeOnboardingGateway(input?: {
   pendingSave?: boolean;
   failComplete?: boolean;
   organizationNameAvailable?: boolean;
-  clubs?: readonly {
-    readonly providerKey: "ea-clubs" | "manual" | "screenshot-ocr";
-    readonly externalClubId: string;
-    readonly name: string;
-    readonly platform: string;
-    readonly gameEdition: string;
-  }[];
+  clubs?: readonly StoryExternalClub[];
   searchError?: boolean;
+  onSearchExternalClubs?: (
+    request: Parameters<OnboardingGateway["searchExternalClubs"]>[0],
+  ) => void;
 }): StoryOnboardingGateway {
   let path = input?.path ?? null;
   let currentStep = input?.currentStep ?? "intention";
@@ -118,25 +158,17 @@ export function createFakeOnboardingGateway(input?: {
       if (input?.failComplete) throw new Error("story.complete_failed");
     },
     async searchExternalClubs(request) {
+      input?.onSearchExternalClubs?.(request);
       if (input?.searchError) throw new Error("story.search_failed");
-      const clubs = input?.clubs ?? [
-        {
-          providerKey: "ea-clubs" as const,
-          externalClubId: "10754",
-          name: "Fera Enjaulada",
-          platform: request.platform ?? "common-gen5",
-          gameEdition: request.gameEdition ?? "fc26",
-        },
-        {
-          providerKey: "ea-clubs" as const,
-          externalClubId: "22110",
-          name: "Night Owls",
-          platform: request.platform ?? "common-gen5",
-          gameEdition: request.gameEdition ?? "fc26",
-        },
-      ];
+      const clubs = input?.clubs ?? [...STORY_EXTERNAL_CLUBS];
       const query = request.query.trim().toLowerCase();
-      return clubs.filter((club) => club.name.toLowerCase().includes(query));
+      return clubs
+        .map((club) => ({
+          ...club,
+          platform: request.platform ?? club.platform,
+          gameEdition: request.gameEdition ?? club.gameEdition,
+        }))
+        .filter((club) => club.name.toLowerCase().includes(query));
     },
   };
 }

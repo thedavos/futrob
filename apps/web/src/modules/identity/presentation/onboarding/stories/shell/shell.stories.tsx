@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button, Card, CardContent } from "@futrob/ui";
 
-import { OnboardingShell } from "./onboarding-shell.tsx";
+import { OnboardingShell } from "../../onboarding-shell.tsx";
 
 const steps = [
   { id: "intention", label: "Inicio" },
