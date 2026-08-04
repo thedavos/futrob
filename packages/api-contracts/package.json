@@ -13,6 +13,7 @@
     "generate:openapi": "tsx scripts/generate-openapi.ts"
   },
   "dependencies": {
+    "@futrob/shared-kernel": "0.1.0",
     "yaml": "^2.8.0",
     "zod": "4.3.6"
   },
