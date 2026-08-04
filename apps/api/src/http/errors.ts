@@ -1,4 +1,5 @@
 import type { ApiErrorBody } from "@futrob/api-contracts";
+import { TaggedError } from "@futrob/shared-kernel";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 /** Wire-facing expected failure: TaggedError (or structural `{ code }`) with stable wire `code`. */
@@ -25,6 +26,15 @@ export function failureToHttp(error: HttpMappableFailure): Response {
     messageKey: `errors.${error.code}`,
     details: error.details ?? detailsFromTaggedProps(error),
   });
+}
+
+/** TaggedError expected failures that carry a stable wire `code`. */
+export function isHttpMappableFailure(error: unknown): error is HttpMappableFailure {
+  return (
+    TaggedError.is(error) &&
+    "code" in error &&
+    typeof (error as { code: unknown }).code === "string"
+  );
 }
 
 function detailsFromTaggedProps(

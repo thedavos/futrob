@@ -10,6 +10,7 @@ import type {
   OrgMembershipRole,
 } from "@futrob/organizations";
 import type { Pool } from "pg";
+import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 import {
   rehydrateInvitation,
   rehydrateMembership,
@@ -20,7 +21,7 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
   constructor(private readonly pool: Pool) {}
 
   async create(organization: Organization): Promise<Organization | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO organizations (
          id, name, normalized_name, created_at, created_by_actor_id, creation_key
        ) VALUES ($1, $2, $3, $4, $5, $6)
@@ -40,7 +41,7 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
   }
 
   async getById(id: OrganizationId): Promise<Organization | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
        FROM organizations WHERE id = $1`,
       [id],
@@ -59,7 +60,7 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
   }
 
   async getByCreationKey(creationKey: string): Promise<Organization | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
        FROM organizations WHERE creation_key = $1`,
       [creationKey],
@@ -68,7 +69,7 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
   }
 
   async getByNormalizedName(normalizedName: string): Promise<Organization | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
        FROM organizations WHERE normalized_name = $1`,
       [normalizedName],
@@ -81,7 +82,7 @@ export class PostgresMembershipRepository implements MembershipRepository {
   constructor(private readonly pool: Pool) {}
 
   async add(membership: OrganizationMembership): Promise<void> {
-    await this.pool.query(
+    await getPgExecutor(this.pool).query(
       `INSERT INTO organization_memberships (organization_id, actor_id, role, created_at)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (organization_id, actor_id) DO NOTHING`,
@@ -95,7 +96,7 @@ export class PostgresMembershipRepository implements MembershipRepository {
   }
 
   async findByActor(actorId: ActorId): Promise<MembershipSummary[]> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT m.organization_id, o.name AS organization_name, m.role
        FROM organization_memberships m
        INNER JOIN organizations o ON o.id = m.organization_id
@@ -121,7 +122,7 @@ export class PostgresMembershipRepository implements MembershipRepository {
     organizationId: OrganizationId,
     actorId: ActorId,
   ): Promise<OrganizationMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT organization_id, actor_id, role, created_at
        FROM organization_memberships
        WHERE organization_id = $1 AND actor_id = $2`,
@@ -143,7 +144,7 @@ export class PostgresInvitationRepository implements InvitationRepository {
   constructor(private readonly pool: Pool) {}
 
   async create(invitation: OrganizationInvitation): Promise<void> {
-    await this.pool.query(
+    await getPgExecutor(this.pool).query(
       `INSERT INTO organization_invitations (
          id, organization_id, competition_id, role, token_hash, email, status,
          invited_by_actor_id, expires_at, accepted_by_actor_id, created_at
@@ -165,7 +166,7 @@ export class PostgresInvitationRepository implements InvitationRepository {
   }
 
   async findByTokenHash(tokenHash: string): Promise<OrganizationInvitation | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, role, token_hash, email, status,
               invited_by_actor_id, expires_at, accepted_by_actor_id, created_at
        FROM organization_invitations WHERE token_hash = $1`,
@@ -190,7 +191,7 @@ export class PostgresInvitationRepository implements InvitationRepository {
   }
 
   async update(invitation: OrganizationInvitation): Promise<void> {
-    await this.pool.query(
+    await getPgExecutor(this.pool).query(
       `UPDATE organization_invitations
        SET status = $2,
            accepted_by_actor_id = $3,

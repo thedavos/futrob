@@ -16,73 +16,90 @@ import {
   type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import {
+  getPgExecutor,
+  isInPgTransaction,
+  type PgExecutor,
+} from "@/adapters/persistence/pg-transaction.ts";
 
 export class PostgresCompetitionRepository implements CompetitionRepository {
   constructor(private readonly pool: Pool) {}
 
   async saveDraft(draft: CompetitionDraft): Promise<CompetitionDraft> {
+    if (isInPgTransaction()) {
+      return this.writeDraft(getPgExecutor(this.pool), draft);
+    }
+
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
-      const competitionResult = await client.query(
-        `INSERT INTO competitions (
-           id, organization_id, name, status, modality, game_edition, platform, region,
-           time_zone, format, created_by_actor_id, creation_key, created_at, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-         ON CONFLICT (creation_key) WHERE creation_key IS NOT NULL DO UPDATE SET
-           name = EXCLUDED.name,
-           game_edition = EXCLUDED.game_edition,
-           platform = EXCLUDED.platform,
-           region = EXCLUDED.region,
-           time_zone = EXCLUDED.time_zone,
-           format = EXCLUDED.format,
-           updated_at = EXCLUDED.updated_at
-         WHERE competitions.status = 'draft'
-         RETURNING *`,
-        [
-          draft.competition.id,
-          draft.competition.organizationId,
-          draft.competition.name,
-          draft.competition.status,
-          draft.competition.modality,
-          draft.competition.gameEdition,
-          draft.competition.platform,
-          draft.competition.region,
-          draft.competition.timeZone,
-          draft.competition.format,
-          draft.competition.createdByActorId,
-          draft.competition.creationKey ?? null,
-          draft.competition.createdAt.toISOString(),
-          draft.competition.updatedAt.toISOString(),
-        ],
-      );
-      const competition = rehydrateCompetition(competitionResult.rows[0]);
-      const rulesResult = await client.query(
-        `INSERT INTO competition_rules (
-           competition_id, version, regular_stage, knockout_stage, away_goals_enabled, created_at
-         ) VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT (competition_id, version) DO UPDATE SET
-           regular_stage = EXCLUDED.regular_stage,
-           knockout_stage = EXCLUDED.knockout_stage,
-           away_goals_enabled = EXCLUDED.away_goals_enabled
-         RETURNING *`,
-        [
-          competition.id,
-          draft.rules.version,
-          draft.rules.regularStage,
-          draft.rules.knockoutStage,
-          draft.rules.awayGoalsEnabled,
-          draft.rules.createdAt.toISOString(),
-        ],
-      );
+      const result = await this.writeDraft(client, draft);
       await client.query("COMMIT");
-      return { competition, rules: rehydrateRules(rulesResult.rows[0]) };
+      return result;
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();
     }
+  }
+
+  private async writeDraft(
+    executor: PgExecutor,
+    draft: CompetitionDraft,
+  ): Promise<CompetitionDraft> {
+    const competitionResult = await executor.query(
+      `INSERT INTO competitions (
+         id, organization_id, name, status, modality, game_edition, platform, region,
+         time_zone, format, created_by_actor_id, creation_key, created_at, updated_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       ON CONFLICT (creation_key) WHERE creation_key IS NOT NULL DO UPDATE SET
+         name = EXCLUDED.name,
+         game_edition = EXCLUDED.game_edition,
+         platform = EXCLUDED.platform,
+         region = EXCLUDED.region,
+         time_zone = EXCLUDED.time_zone,
+         format = EXCLUDED.format,
+         updated_at = EXCLUDED.updated_at
+       WHERE competitions.status = 'draft'
+       RETURNING *`,
+      [
+        draft.competition.id,
+        draft.competition.organizationId,
+        draft.competition.name,
+        draft.competition.status,
+        draft.competition.modality,
+        draft.competition.gameEdition,
+        draft.competition.platform,
+        draft.competition.region,
+        draft.competition.timeZone,
+        draft.competition.format,
+        draft.competition.createdByActorId,
+        draft.competition.creationKey ?? null,
+        draft.competition.createdAt.toISOString(),
+        draft.competition.updatedAt.toISOString(),
+      ],
+    );
+    const competition = rehydrateCompetition(competitionResult.rows[0]);
+    const rulesResult = await executor.query(
+      `INSERT INTO competition_rules (
+         competition_id, version, regular_stage, knockout_stage, away_goals_enabled, created_at
+       ) VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (competition_id, version) DO UPDATE SET
+         regular_stage = EXCLUDED.regular_stage,
+         knockout_stage = EXCLUDED.knockout_stage,
+         away_goals_enabled = EXCLUDED.away_goals_enabled
+       RETURNING *`,
+      [
+        competition.id,
+        draft.rules.version,
+        draft.rules.regularStage,
+        draft.rules.knockoutStage,
+        draft.rules.awayGoalsEnabled,
+        draft.rules.createdAt.toISOString(),
+      ],
+    );
+    return { competition, rules: rehydrateRules(rulesResult.rows[0]) };
   }
 
   async findById(
@@ -103,7 +120,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     where: string,
     values: readonly unknown[],
   ): Promise<CompetitionDraft | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT c.*,
               r.version AS rules_version,
               r.regular_stage,
@@ -135,7 +152,7 @@ export class PostgresCompetitionMembershipRepository implements CompetitionMembe
   constructor(private readonly pool: Pool) {}
 
   async add(membership: CompetitionMembership): Promise<CompetitionMembership> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO competition_memberships (
          organization_id, competition_id, actor_id, role, created_at
        ) VALUES ($1, $2, $3, $4, $5)
@@ -156,7 +173,7 @@ export class PostgresCompetitionMembershipRepository implements CompetitionMembe
     competitionId: CompetitionId,
     actorId: ActorId,
   ): Promise<CompetitionMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT organization_id, competition_id, actor_id, role, created_at
        FROM competition_memberships
        WHERE competition_id = $1 AND actor_id = $2`,

@@ -8,12 +8,13 @@ import type {
 } from "@futrob/identity";
 import { asActorId, type ActorId } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class PostgresActorOnboardingRepository implements ActorOnboardingPort {
   constructor(private readonly pool: Pool) {}
 
   async findByActor(actorId: ActorId): Promise<ActorOnboardingState | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT actor_id, onboarding_completed, onboarding_completed_at,
               onboarding_version, onboarding_path, onboarding_current_step
        FROM actor_onboarding
@@ -46,7 +47,7 @@ export class PostgresActorOnboardingRepository implements ActorOnboardingPort {
 
   async saveProgress(progress: OnboardingProgress): Promise<void> {
     const updatedAt = progress.updatedAt.toISOString();
-    await this.pool.query(
+    await getPgExecutor(this.pool).query(
       `INSERT INTO actor_onboarding (
          actor_id, onboarding_completed, onboarding_completed_at,
          onboarding_version, onboarding_path, onboarding_current_step,
@@ -63,7 +64,7 @@ export class PostgresActorOnboardingRepository implements ActorOnboardingPort {
 
   async saveCompleted(onboarding: CompletedOnboarding): Promise<void> {
     const completedAt = onboarding.completedAt.toISOString();
-    await this.pool.query(
+    await getPgExecutor(this.pool).query(
       `INSERT INTO actor_onboarding (
          actor_id, onboarding_completed, onboarding_completed_at,
          onboarding_version, onboarding_path, onboarding_current_step,

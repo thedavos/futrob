@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import type { CompetitionDraft, CompetitionRepository } from "@futrob/competitions";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { PostgresTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import { InMemoryCompetitionRepository } from "./in-memory.repository.ts";
 import { PostgresCompetitionRepository } from "./postgres.repository.ts";
 
@@ -64,6 +65,25 @@ describe.each(repositoryCases())("competition %s repository", (_name, createRepo
     await expect(
       repository.findById(asOrganizationId("org-other"), asCompetitionId("competition-1")),
     ).resolves.toBeNull();
+    await expect(
+      repository.findByCreationKey("onboarding:competition:actor-1"),
+    ).resolves.toMatchObject({ competition: { id: "competition-1" } });
+  });
+});
+
+describe("PostgresCompetitionRepository nested in TransactionPort", () => {
+  it("joins the outer transaction instead of opening a second BEGIN", async () => {
+    const fakePool = new FakeCompetitionPool();
+    const connectSpy = vi.spyOn(fakePool, "connect");
+    const pool = fakePool as unknown as Pool;
+    const repository = new PostgresCompetitionRepository(pool);
+    const transaction = new PostgresTransactionPort(pool);
+
+    await transaction.runInTransaction(async () => {
+      await repository.saveDraft(draft);
+    });
+
+    expect(connectSpy).toHaveBeenCalledOnce();
     await expect(
       repository.findByCreationKey("onboarding:competition:actor-1"),
     ).resolves.toMatchObject({ competition: { id: "competition-1" } });

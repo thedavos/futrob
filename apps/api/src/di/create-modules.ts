@@ -1,4 +1,6 @@
 import { InMemoryProviderMatchRepository } from "@/adapters/persistence/in-memory-provider-match.repository.ts";
+import { createTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
+import type { TransactionPort } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { createGameDataModule, type GameDataModule } from "./game-data.module.ts";
 import { createIdentityModule, type IdentityModule } from "./identity.module.ts";
@@ -32,8 +34,9 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
   const teams = createTeamsModule({ pool: input.pool });
   const competitions = createCompetitionsModule({ pool: input.pool });
+  const transaction = createTransactionPort(input.pool);
 
-  return { competitions, gameData, identity, organizations, teams };
+  return { competitions, gameData, identity, organizations, teams, transaction };
 }
 
 export interface AppModules {
@@ -42,4 +45,5 @@ export interface AppModules {
   readonly identity: IdentityModule;
   readonly organizations: OrganizationsModule;
   readonly teams: TeamsModule;
+  readonly transaction: TransactionPort;
 }

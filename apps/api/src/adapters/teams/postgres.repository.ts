@@ -10,12 +10,13 @@ import type {
   PlayerProfileRepository,
 } from "@futrob/teams";
 import type { Pool } from "pg";
+import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class PostgresPlayerProfileRepository implements PlayerProfileRepository {
   constructor(private readonly pool: Pool) {}
 
   async findById(playerProfileId: string): Promise<PlayerProfile | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, actor_id, created_at FROM player_profiles WHERE id = $1`,
       [playerProfileId],
     );
@@ -23,7 +24,7 @@ export class PostgresPlayerProfileRepository implements PlayerProfileRepository 
   }
 
   async findByActor(actorId: PlayerProfile["actorId"]): Promise<PlayerProfile | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, actor_id, created_at FROM player_profiles WHERE actor_id = $1`,
       [actorId],
     );
@@ -31,7 +32,7 @@ export class PostgresPlayerProfileRepository implements PlayerProfileRepository 
   }
 
   async saveIfAbsent(profile: PlayerProfile): Promise<PlayerProfile> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO player_profiles (id, actor_id, created_at)
        VALUES ($1, $2, $3)
        ON CONFLICT (actor_id) DO UPDATE SET actor_id = EXCLUDED.actor_id
@@ -48,7 +49,7 @@ export class PostgresPlayerExternalClubAssociationRepository implements PlayerEx
   async findByPlayerProfile(
     playerProfileId: string,
   ): Promise<PlayerExternalClubAssociation | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT player_profile_id, provider_key, external_club_id, external_club_name,
               platform, game_edition, associated_at
        FROM player_external_club_associations
@@ -61,7 +62,7 @@ export class PostgresPlayerExternalClubAssociationRepository implements PlayerEx
   async upsertForPlayerProfile(
     association: PlayerExternalClubAssociation,
   ): Promise<PlayerExternalClubAssociation> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO player_external_club_associations (
          player_profile_id, provider_key, external_club_id, external_club_name,
          platform, game_edition, associated_at
@@ -93,7 +94,7 @@ export class PostgresPlayerGameAccountRepository implements PlayerGameAccountRep
   constructor(private readonly pool: Pool) {}
 
   async listByProfile(playerProfileId: string): Promise<PlayerGameAccount[]> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, player_profile_id, identifier, normalized_identifier, platform,
               game_edition, created_at
        FROM player_game_accounts
@@ -105,7 +106,7 @@ export class PostgresPlayerGameAccountRepository implements PlayerGameAccountRep
   }
 
   async saveIfAbsent(account: PlayerGameAccount): Promise<PlayerGameAccount> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO player_game_accounts (
          id, player_profile_id, identifier, normalized_identifier, platform,
          game_edition, created_at
