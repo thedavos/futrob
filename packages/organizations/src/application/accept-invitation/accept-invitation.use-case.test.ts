@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { asCompetitionId } from "@futrob/shared-kernel";
 import { INVITATION_STATUS } from "../../domain/entities/organization-invitation.ts";
 import {
+  InvitationExhausted,
   InvitationExpired,
   InvitationInvalid,
   InvitationRevoked,
@@ -325,5 +326,179 @@ describe("AcceptInvitationUseCase", () => {
     if (!first.isOk() || !second.isOk()) return;
     expect(second.value).toEqual(first.value);
     expect(await harness.memberships.findByActor(player)).toHaveLength(1);
+  });
+});
+
+describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
+  it("allows up to maxRedemptions distinct actors then rejects the next one", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const acceptInvite = new AcceptInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const invite = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+      redeemPolicy: "multi",
+      maxRedemptions: 2,
+    });
+    expect(invite.isOk()).toBe(true);
+    if (!invite.isOk()) return;
+
+    const actorA = harness.actor("actor-a");
+    const actorB = harness.actor("actor-b");
+    const actorC = harness.actor("actor-c");
+
+    const first = await acceptInvite.execute({ token: invite.value.token, actorId: actorA });
+    const second = await acceptInvite.execute({ token: invite.value.token, actorId: actorB });
+    const third = await acceptInvite.execute({ token: invite.value.token, actorId: actorC });
+
+    expect(first.isOk()).toBe(true);
+    expect(second.isOk()).toBe(true);
+    expect(third.isOk()).toBe(false);
+    if (!third.isOk()) {
+      expect(InvitationExhausted.is(third.error)).toBe(true);
+      expect(third.error.code).toBe("organizations.invitation_exhausted");
+    }
+    expect(await harness.memberships.findByActor(actorA)).toHaveLength(1);
+    expect(await harness.memberships.findByActor(actorB)).toHaveLength(1);
+    expect(await harness.memberships.findByActor(actorC)).toHaveLength(0);
+  });
+
+  it("is idempotent when the same actor redeems the same multi invitation twice", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const acceptInvite = new AcceptInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const player = harness.actor("player-1");
+
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const invite = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+      redeemPolicy: "multi",
+      maxRedemptions: 3,
+    });
+    expect(invite.isOk()).toBe(true);
+    if (!invite.isOk()) return;
+
+    const first = await acceptInvite.execute({ token: invite.value.token, actorId: player });
+    const second = await acceptInvite.execute({ token: invite.value.token, actorId: player });
+
+    expect(first.isOk()).toBe(true);
+    expect(second.isOk()).toBe(true);
+    if (!first.isOk() || !second.isOk()) return;
+    expect(second.value).toEqual(first.value);
+    expect(await harness.memberships.findByActor(player)).toHaveLength(1);
+
+    const stored = await harness.invitations.findByTokenHash(
+      harness.tokens.hashToken(invite.value.token),
+    );
+    expect(stored?.redeemedCount).toBe(1);
+  });
+
+  it("never lets concurrent claims exceed maxRedemptions cupo", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const acceptInvite = new AcceptInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const invite = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+      redeemPolicy: "multi",
+      maxRedemptions: 2,
+    });
+    expect(invite.isOk()).toBe(true);
+    if (!invite.isOk()) return;
+
+    const contenders = ["racer-a", "racer-b", "racer-c"].map((id) => harness.actor(id));
+
+    let entered = 0;
+    let releaseAll: (() => void) | undefined;
+    const barrier = new Promise<void>((resolve) => {
+      releaseAll = resolve;
+    });
+    harness.invitations.beforeRedeem = async () => {
+      entered += 1;
+      if (entered === contenders.length) {
+        releaseAll?.();
+      }
+      await barrier;
+    };
+
+    const results = await Promise.all(
+      contenders.map((actorId) => acceptInvite.execute({ token: invite.value.token, actorId })),
+    );
+
+    const winners = results.filter((result) => result.isOk());
+    const losers = results.filter((result) => !result.isOk());
+    expect(winners).toHaveLength(2);
+    expect(losers).toHaveLength(1);
+    for (const loser of losers) {
+      if (!loser.isOk()) {
+        expect(InvitationExhausted.is(loser.error)).toBe(true);
+        expect(loser.error.code).toBe("organizations.invitation_exhausted");
+      }
+    }
+
+    const stored = await harness.invitations.findByTokenHash(
+      harness.tokens.hashToken(invite.value.token),
+    );
+    expect(stored?.redeemedCount).toBe(2);
+  });
+
+  it("leaves single-mode claim semantics unaffected", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const acceptInvite = new AcceptInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const winner = harness.actor("single-winner");
+    const loser = harness.actor("single-loser");
+
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const invite = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+    });
+    expect(invite.isOk()).toBe(true);
+    if (!invite.isOk()) return;
+    expect(invite.value.redeemPolicy).toBe("single");
+
+    const first = await acceptInvite.execute({ token: invite.value.token, actorId: winner });
+    const second = await acceptInvite.execute({ token: invite.value.token, actorId: loser });
+
+    expect(first.isOk()).toBe(true);
+    expect(second.isOk()).toBe(false);
+    if (!second.isOk()) {
+      expect(InvitationInvalid.is(second.error)).toBe(true);
+      expect(second.error.code).toBe("organizations.invitation_invalid");
+    }
   });
 });

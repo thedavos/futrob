@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { asCompetitionId } from "@futrob/shared-kernel";
+import { REDEEM_POLICY } from "../../domain/entities/organization-invitation.ts";
 import {
+  InvalidInvitationRedeemPolicy,
   InvalidInvitationRole,
   OrganizationForbidden,
 } from "../../domain/errors/invitation.errors.ts";
@@ -100,5 +102,98 @@ describe("CreateInvitationUseCase", () => {
     }
     expect(OrganizationForbidden.is(forbidden.error)).toBe(true);
     expect(forbidden.error.code).toBe("organizations.forbidden");
+  });
+
+  it("defaults create to redeemPolicy single with no maxRedemptions", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const result = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      role: "staff",
+      invitedByActorId: organizer,
+    });
+
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk()) return;
+    expect(result.value.redeemPolicy).toBe(REDEEM_POLICY.single);
+    expect(result.value.maxRedemptions).toBeNull();
+  });
+
+  it("creates a multi invitation with a positive maxRedemptions", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const result = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+      redeemPolicy: "multi",
+      maxRedemptions: 5,
+    });
+
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk()) return;
+    expect(result.value.redeemPolicy).toBe(REDEEM_POLICY.multi);
+    expect(result.value.maxRedemptions).toBe(5);
+  });
+
+  it("rejects multi without a positive maxRedemptions", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    for (const maxRedemptions of [undefined, 0, -1, 1.5] as const) {
+      const result = await createInvite.execute({
+        organizationId: org.value.organization.id,
+        role: "staff",
+        invitedByActorId: organizer,
+        redeemPolicy: "multi",
+        maxRedemptions,
+      });
+      expect(result.isOk()).toBe(false);
+      if (!result.isOk()) {
+        expect(InvalidInvitationRedeemPolicy.is(result.error)).toBe(true);
+        expect(result.error.code).toBe("organizations.invalid_redeem_policy");
+      }
+    }
+  });
+
+  it("rejects maxRedemptions without redeemPolicy multi", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const result = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      role: "staff",
+      invitedByActorId: organizer,
+      maxRedemptions: 3,
+    });
+
+    expect(result.isOk()).toBe(false);
+    if (!result.isOk()) {
+      expect(InvalidInvitationRedeemPolicy.is(result.error)).toBe(true);
+      expect(result.error.code).toBe("organizations.invalid_redeem_policy");
+    }
   });
 });

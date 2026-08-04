@@ -8,10 +8,14 @@ import {
 import type { Organization } from "../domain/entities/organization.ts";
 import {
   INVITATION_STATUS,
+  REDEEM_POLICY,
   type OrganizationInvitation,
 } from "../domain/entities/organization-invitation.ts";
 import type { OrganizationMembership } from "../domain/entities/organization-membership.ts";
-import type { InvitationRepository } from "../domain/ports/invitation.repository.ts";
+import type {
+  InvitationRepository,
+  MultiRedemptionClaim,
+} from "../domain/ports/invitation.repository.ts";
 import type { InvitationTokenPort } from "../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../domain/ports/organization.repository.ts";
@@ -119,8 +123,11 @@ export class FakeMembershipRepository implements MembershipRepository {
 
 export class FakeInvitationRepository implements InvitationRepository {
   readonly byHash = new Map<string, OrganizationInvitation>();
+  readonly redemptionsByInvitationId = new Map<string, Set<ActorId>>();
   /** Yields before CAS so tests can overlap two accept calls that both saw pending. */
   beforeClaim: (() => Promise<void>) | null = null;
+  /** Yields before the multi CAS so tests can overlap concurrent redemptions. */
+  beforeRedeem: (() => Promise<void>) | null = null;
 
   async create(invitation: OrganizationInvitation): Promise<void> {
     this.byHash.set(invitation.tokenHash, invitation);
@@ -153,6 +160,38 @@ export class FakeInvitationRepository implements InvitationRepository {
     };
     this.byHash.set(tokenHash, accepted);
     return accepted;
+  }
+
+  async claimRedemption(
+    tokenHash: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<MultiRedemptionClaim | null> {
+    if (this.beforeRedeem) {
+      await this.beforeRedeem();
+    }
+    const current = this.byHash.get(tokenHash);
+    if (!current) return null;
+    if (current.redeemPolicy !== REDEEM_POLICY.multi) return null;
+    if (current.status !== INVITATION_STATUS.pending) return null;
+    if (current.expiresAt.getTime() <= now.getTime()) return null;
+
+    const redeemers = this.redemptionsByInvitationId.get(current.id) ?? new Set<ActorId>();
+    if (redeemers.has(actorId)) {
+      return { invitation: current, outcome: "already-redeemed" };
+    }
+    if (current.maxRedemptions === null || current.redeemedCount >= current.maxRedemptions) {
+      return null;
+    }
+
+    redeemers.add(actorId);
+    this.redemptionsByInvitationId.set(current.id, redeemers);
+    const updated: OrganizationInvitation = {
+      ...current,
+      redeemedCount: current.redeemedCount + 1,
+    };
+    this.byHash.set(tokenHash, updated);
+    return { invitation: updated, outcome: "claimed" };
   }
 }
 
