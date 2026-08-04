@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import type {
   CompetitionDraftInputDto,
@@ -24,9 +25,15 @@ import {
   IdentityOnboardingClientError,
   identityBrowserClient,
 } from "@/modules/identity/presentation/identity-browser-client.ts";
+import { useSaveOnboardingProgressMutation } from "@/modules/identity/presentation/identity-queries.ts";
 import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-data-browser-client.ts";
+import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
-import { resolveOnboardingStep, routeForOnboardingStep } from "./onboarding-routing.ts";
+import {
+  resolveOnboardingStep,
+  resolvePersistedOnboardingStep,
+  routeForOnboardingStep,
+} from "./onboarding-routing.ts";
 
 export interface SelectedExternalClubDraft extends PlayerExternalClubSelectionInputDto {
   readonly name: string;
@@ -121,21 +128,34 @@ export function OnboardingFlowProvider({
   children,
   initialStatus,
   gateway = browserOnboardingGateway,
+  bootstrap = "cold",
 }: Readonly<{
   children: ReactNode;
   initialStatus: OnboardingStatusDto;
   gateway?: OnboardingGateway;
+  /** Production cold-loads at intention; Storybook/harness may honor persisted step. */
+  bootstrap?: "cold" | "persisted";
 }>) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const queryClient = useQueryClient();
+  const saveProgressMutation = useSaveOnboardingProgressMutation((input) =>
+    gateway.saveProgress(input),
+  );
   const [saving, setSaving] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [path, setPathState] = useState<OnboardingPathDto | null>(() => initialStatus.path);
   const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(() =>
-    resolveOnboardingStep(initialStatus.path, initialStatus.currentStep),
+    bootstrap === "persisted"
+      ? resolvePersistedOnboardingStep(initialStatus.path, initialStatus.currentStep)
+      : resolveOnboardingStep(initialStatus.path, initialStatus.currentStep),
   );
   const [draft, setDraft] = useState<OnboardingDraft>(createEmptyDraft);
+
+  useEffect(() => {
+    queryClient.setQueryData(queryKeys.identity.onboardingStatus(), initialStatus);
+  }, [initialStatus, queryClient]);
 
   const value = useMemo<OnboardingFlowValue>(
     () => ({
@@ -183,18 +203,20 @@ export function OnboardingFlowProvider({
         return gateway.searchExternalClubs(input);
       },
       async goTo(step, requestedPath = path) {
-        if (saving) return;
-        setSaving(true);
+        if (leaving || saving) return;
+        const previousPath = path;
+        const previousStep = currentStep;
         setError(null);
+        setPathState(requestedPath);
+        setCurrentStep(step);
+        await navigate({ to: routeForOnboardingStep(step) });
         try {
-          await gateway.saveProgress({ path: requestedPath, currentStep: step });
-          setPathState(requestedPath);
-          setCurrentStep(step);
-          await navigate({ to: routeForOnboardingStep(step) });
+          await saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step });
         } catch {
           setError("No pudimos guardar tu progreso. Inténtalo nuevamente.");
-        } finally {
-          setSaving(false);
+          setPathState(previousPath);
+          setCurrentStep(previousStep);
+          await navigate({ to: routeForOnboardingStep(previousStep) });
         }
       },
       async finish() {
@@ -246,7 +268,7 @@ export function OnboardingFlowProvider({
         }
       },
     }),
-    [currentStep, draft, error, gateway, navigate, path, saving],
+    [currentStep, draft, error, gateway, leaving, navigate, path, saveProgressMutation, saving],
   );
 
   const expectedRoute = routeForOnboardingStep(currentStep);

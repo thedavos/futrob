@@ -26,7 +26,19 @@ const allowedStepsByPath: Record<OnboardingPathDto, readonly OnboardingStepDto[]
   player: ["intention", "game-account", "team", "review"],
 };
 
+/**
+ * Cold bootstrap without a rehydratable draft always opens at intention.
+ * Server path remains in provider state for analytics / preselect.
+ */
 export function resolveOnboardingStep(
+  _path: OnboardingPathDto | null,
+  _currentStep: OnboardingStepDto | null,
+): OnboardingStepDto {
+  return "intention";
+}
+
+/** Storybook / harness: honor a persisted step when explicitly requested. */
+export function resolvePersistedOnboardingStep(
   path: OnboardingPathDto | null,
   currentStep: OnboardingStepDto | null,
 ): OnboardingStepDto {
@@ -40,6 +52,15 @@ export function resolveOnboardingStep(
         : "intention";
   }
   return allowedStepsByPath[path].includes(currentStep) ? currentStep : "intention";
+}
+
+export function isOnboardingStepAllowedForPath(
+  path: OnboardingPathDto | null,
+  step: OnboardingStepDto,
+): boolean {
+  if (path === null) return step === "intention";
+  if (step === "game") return path === "organization" || path === "player";
+  return allowedStepsByPath[path].includes(step);
 }
 
 export function routeForOnboardingStep(step: OnboardingStepDto): OnboardingRoute {

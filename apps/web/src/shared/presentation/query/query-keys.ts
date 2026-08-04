@@ -1,4 +1,8 @@
 export const queryKeys = {
+  identity: {
+    all: ["identity"] as const,
+    onboardingStatus: () => [...queryKeys.identity.all, "onboarding-status"] as const,
+  },
   players: {
     all: ["players"] as const,
     me: () => [...queryKeys.players.all, "me"] as const,

@@ -13,6 +13,7 @@ import type {
   OnboardingStepDto,
 } from "@futrob/api-contracts";
 import { EA_SEARCH_PLATFORM } from "@futrob/api-contracts";
+import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import type { OnboardingGateway } from "./onboarding-flow.tsx";
 import { OnboardingFlowProvider } from "./onboarding-flow.tsx";
 import { CompetitionStep } from "./steps/competition-step.tsx";
@@ -176,12 +177,19 @@ export function createFakeOnboardingGateway(input?: {
 function createOnboardingStoryRouter(
   initialPath: OnboardingStoryPath,
   gateway: StoryOnboardingGateway,
+  bootstrap: "cold" | "persisted" = "persisted",
 ) {
   const rootRoute = createRootRoute({
     component: () => (
-      <OnboardingFlowProvider gateway={gateway} initialStatus={gateway.initialStatus}>
-        <Outlet />
-      </OnboardingFlowProvider>
+      <QueryTestProvider>
+        <OnboardingFlowProvider
+          bootstrap={bootstrap}
+          gateway={gateway}
+          initialStatus={gateway.initialStatus}
+        >
+          <Outlet />
+        </OnboardingFlowProvider>
+      </QueryTestProvider>
     ),
   });
 
@@ -299,13 +307,15 @@ function competitionDraftResponse(input: {
 export function OnboardingStoryRouter({
   gateway,
   initialPath,
+  bootstrap = "persisted",
 }: {
   gateway: StoryOnboardingGateway;
   initialPath: OnboardingStoryPath;
+  bootstrap?: "cold" | "persisted";
 }) {
   const router = useMemo(
-    () => createOnboardingStoryRouter(initialPath, gateway),
-    [gateway, initialPath],
+    () => createOnboardingStoryRouter(initialPath, gateway, bootstrap),
+    [bootstrap, gateway, initialPath],
   );
   return <RouterProvider router={router} />;
 }

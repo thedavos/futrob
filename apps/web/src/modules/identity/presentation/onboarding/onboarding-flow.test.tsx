@@ -37,7 +37,7 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.queryByText("Recuperando tu progreso…")).toBeNull();
   });
 
-  it("resumes the persisted screen from a new router entry", async () => {
+  it("cold-bootstraps at intention when the server has an advanced step without draft", async () => {
     const gateway = createFakeOnboardingGateway({
       path: "player",
       currentStep: "game-account",
@@ -45,12 +45,16 @@ describe("OnboardingFlowProvider initialization", () => {
 
     render(
       <StrictMode>
-        <OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/intention" />
+        <OnboardingStoryRouter
+          bootstrap="cold"
+          gateway={gateway}
+          initialPath="/onboarding/intention"
+        />
       </StrictMode>,
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Configura tus datos de juego" }),
+      await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
     ).toBeTruthy();
   });
 
@@ -86,23 +90,62 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBeTruthy();
   });
 
-  it("restores an organization review without its draft and requires editing", async () => {
+  it("redirects an empty advanced review resume back to intention", async () => {
     render(
       <OnboardingStoryRouter
+        bootstrap="cold"
         gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "review" })}
         initialPath="/onboarding/review"
       />,
     );
 
-    expect((await screen.findAllByText("Pendiente")).length).toBeGreaterThan(0);
     expect(
-      (
-        screen.getByRole("button", {
-          name: "Crear organización y competición",
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(true);
-    expect(screen.getByRole("button", { name: "Editar organización" })).toBeTruthy();
+      await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
+    ).toBeTruthy();
+  });
+
+  it("navigates optimistically before saveProgress resolves", async () => {
+    let resolveSave: ((value: unknown) => void) | undefined;
+    const gateway = createFakeOnboardingGateway({
+      path: null,
+      currentStep: "intention",
+    });
+    const originalSave = gateway.saveProgress.bind(gateway);
+    gateway.saveProgress = async (input) => {
+      await new Promise((resolve) => {
+        resolveSave = resolve;
+      });
+      return originalSave(input);
+    };
+
+    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/intention" />);
+
+    fireEvent.click(await screen.findByRole("radio", { name: /Empezar como jugador/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Configura tus datos de juego" }),
+    ).toBeTruthy();
+    resolveSave?.(undefined);
+  });
+
+  it("rolls back navigation when saveProgress fails", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ failSave: true })}
+        initialPath="/onboarding/intention"
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("radio", { name: /Empezar como jugador/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(
+      await screen.findByText("No pudimos guardar tu progreso. Inténtalo nuevamente."),
+    ).toBeTruthy();
+    expect(
+      await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
+    ).toBeTruthy();
   });
 
   it("turns an omitted invitation into the player path", async () => {
@@ -392,7 +435,7 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByRole("radio", { name: "FC 26" }).getAttribute("aria-checked")).toBe("true");
   });
 
-  it("keeps the action label while progress is being saved", async () => {
+  it("navigates while saveProgress is still pending", async () => {
     render(
       <OnboardingStoryRouter
         gateway={createFakeOnboardingGateway({ pendingSave: true })}
@@ -400,11 +443,9 @@ describe("OnboardingFlowProvider initialization", () => {
       />,
     );
     fireEvent.click(await screen.findByRole("radio", { name: /Organizar/ }));
-    const action = screen.getByRole("button", { name: "Continuar" });
-    fireEvent.click(action);
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
 
-    expect(action.getAttribute("aria-busy")).toBe("true");
-    expect((action as HTMLButtonElement).disabled).toBe(true);
+    expect(await screen.findByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
     expect(screen.queryByText("Guardando…")).toBeNull();
   });
 });
