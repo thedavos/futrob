@@ -124,6 +124,8 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
       invitedByActorId: actorId,
       email: parsed.data.email,
       expiresInMs: parsed.data.expiresInMs,
+      redeemPolicy: parsed.data.redeemPolicy,
+      maxRedemptions: parsed.data.maxRedemptions,
     });
     if (!result.isOk()) {
       return failureToHttp(result.error);
@@ -134,6 +136,8 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
       competitionId: null,
       token: result.value.token,
       expiresAt: result.value.expiresAt.toISOString(),
+      redeemPolicy: result.value.redeemPolicy,
+      maxRedemptions: result.value.maxRedemptions,
     });
     return jsonResponse(body, 201);
   });

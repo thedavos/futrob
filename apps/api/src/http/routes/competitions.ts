@@ -73,6 +73,8 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
         invitedByActorId: c.get("actorId"),
         email: parsed.data.email,
         expiresInMs: parsed.data.expiresInMs,
+        redeemPolicy: parsed.data.redeemPolicy,
+        maxRedemptions: parsed.data.maxRedemptions,
       });
       if (!result.isOk()) return failureToHttp(result.error);
       return jsonResponse(
