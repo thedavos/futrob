@@ -7,6 +7,7 @@ import { Checkbox } from "../components/checkbox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";
 import { Form } from "../components/form";
 import { Input } from "../components/input";
+import { readFormString } from "../lib/read-form-string";
 import {
   Select,
   SelectContent,
@@ -39,10 +40,9 @@ export const CompleteForm: Story = {
       </div>
       <Field
         name="name"
-        validate={(value) => {
-          const name = typeof value === "string" ? value : "";
-          return name.trim().length === 0 ? "Este campo es obligatorio." : null;
-        }}
+        validate={(value) =>
+          readFormString(value).trim().length === 0 ? "Este campo es obligatorio." : null
+        }
       >
         <FieldLabel>Nombre</FieldLabel>
         <Input placeholder="Liga Metropolitana" />

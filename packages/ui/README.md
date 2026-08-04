@@ -73,14 +73,14 @@ La aplicación importa los estilos una sola vez:
 Los componentes se importan desde la API pública:
 
 ```tsx
-import { Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo } from "@futrob/ui";
+import { Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo, readFormString } from "@futrob/ui";
 import { CircleCheck, Search } from "lucide-react";
 
 <Logo className="h-8 w-auto" />
 <Form validationMode="onBlur">
   <Field
     name="name"
-    validate={(value) => String(value ?? "").trim() ? null : "Este campo es obligatorio."}
+    validate={(value) => readFormString(value).trim() ? null : "Este campo es obligatorio."}
   >
     <FieldLabel>Nombre de la competición</FieldLabel>
     <Input name="name" />
@@ -97,7 +97,8 @@ import { CircleCheck, Search } from "lucide-react";
 
 `Form` consolida validación, errores de servidor y foco del primer control inválido. Cada
 `FieldError` debe vivir dentro de su `Field`; las validaciones personalizadas retornan `null`
-cuando el valor es válido, siguiendo el contrato de Base UI.
+cuando el valor es válido, siguiendo el contrato de Base UI. Usa `readFormString` para
+estrechar el `unknown` de `Field.validate` a string.
 
 Para composición polimórfica usa `render` de Base UI; evita envolver un link en un button:
 
