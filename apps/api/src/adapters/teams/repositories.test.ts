@@ -43,6 +43,7 @@ describe("teams persistence adapters", () => {
       externalClubName: "Night Owls",
       platform: "common-gen5",
       gameEdition: "fc26",
+      imageUrl: "https://example.com/crests/l9.png",
       associatedAt: createdAt,
     };
     expect((await associations.upsertForPlayerProfile(association)).externalClubId).toBe("club-9");
@@ -52,11 +53,13 @@ describe("teams persistence adapters", () => {
           ...association,
           externalClubId: "club-10",
           externalClubName: "Day Owls",
+          imageUrl: null,
         })
       ).externalClubId,
     ).toBe("club-10");
     expect(await associations.findByPlayerProfile(profile.id)).toMatchObject({
       externalClubId: "club-10",
+      imageUrl: null,
     });
   });
 
@@ -88,6 +91,7 @@ describe("teams persistence adapters", () => {
             external_club_name: "Night Owls",
             platform: "common-gen5",
             game_edition: "fc26",
+            image_url: "https://example.com/crests/l9.png",
             associated_at: createdAt,
           },
         ],
@@ -116,6 +120,7 @@ describe("teams persistence adapters", () => {
       externalClubName: "Ghost Name",
       platform: "ps5",
       gameEdition: "fc26",
+      imageUrl: null,
       associatedAt: createdAt,
     });
     expect(profile.actorId).toBe("actor-1");
@@ -123,6 +128,7 @@ describe("teams persistence adapters", () => {
     expect(association).toMatchObject({
       externalClubId: "club-9",
       externalClubName: "Night Owls",
+      imageUrl: "https://example.com/crests/l9.png",
     });
     expect(query).toHaveBeenCalledTimes(3);
   });

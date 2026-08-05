@@ -1110,6 +1110,7 @@ components:
         - externalClubName
         - platform
         - gameEdition
+        - imageUrl
         - associatedAt
       properties:
         playerProfileId:
@@ -1128,6 +1129,11 @@ components:
           type: string
         gameEdition:
           type: string
+        imageUrl:
+          type:
+            - string
+            - "null"
+          format: uri
         associatedAt:
           type: string
           format: date-time

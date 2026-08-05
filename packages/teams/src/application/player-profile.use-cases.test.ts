@@ -139,6 +139,7 @@ describe("player profile use cases", () => {
         name: "Night Owls",
         platform: "common-gen5",
         gameEdition: "fc26",
+        imageUrl: "https://example.com/crests/l9.png",
       },
     });
 
@@ -148,6 +149,7 @@ describe("player profile use cases", () => {
       externalClubId: "club-9",
       externalClubName: "Night Owls",
       platform: "common-gen5",
+      imageUrl: "https://example.com/crests/l9.png",
     });
   });
 
@@ -169,6 +171,7 @@ describe("player profile use cases", () => {
         name: "First",
         platform: "common-gen5",
         gameEdition: "fc26",
+        imageUrl: null,
       },
     });
 
@@ -180,6 +183,7 @@ describe("player profile use cases", () => {
         name: "Second",
         platform: "ps5",
         gameEdition: "fc26",
+        imageUrl: "https://example.com/crests/l2.png",
       },
     });
 
@@ -188,6 +192,7 @@ describe("player profile use cases", () => {
     expect(await associations.findByPlayerProfile(profile.id)).toMatchObject({
       externalClubId: "club-2",
       externalClubName: "Second",
+      imageUrl: "https://example.com/crests/l2.png",
     });
   });
 
@@ -208,6 +213,7 @@ describe("player profile use cases", () => {
       name: "Shared FC",
       platform: "common-gen5",
       gameEdition: "fc26",
+      imageUrl: null as string | null,
     };
 
     const firstResult = await associate.execute({ playerProfileId: first.id, club });
@@ -231,6 +237,7 @@ describe("player profile use cases", () => {
         name: "Ghost",
         platform: "common-gen5",
         gameEdition: "fc26",
+        imageUrl: null,
       },
     });
 
@@ -258,6 +265,7 @@ describe("player profile use cases", () => {
         name: "Readers FC",
         platform: "xbox",
         gameEdition: "fc26",
+        imageUrl: "https://example.com/crests/l7.png",
       },
     });
 
@@ -265,6 +273,7 @@ describe("player profile use cases", () => {
     expect(details.externalClub).toMatchObject({
       externalClubId: "club-7",
       externalClubName: "Readers FC",
+      imageUrl: "https://example.com/crests/l7.png",
     });
   });
 });

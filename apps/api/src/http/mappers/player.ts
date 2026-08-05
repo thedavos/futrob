@@ -27,6 +27,7 @@ export function playerExternalClubAssociationDto(association: PlayerExternalClub
     externalClubName: association.externalClubName,
     platform: association.platform,
     gameEdition: association.gameEdition,
+    imageUrl: association.imageUrl,
     associatedAt: association.associatedAt.toISOString(),
   };
 }

@@ -44,6 +44,7 @@ export const playerExternalClubAssociationSchema = z.object({
   externalClubName: z.string().min(1),
   platform: z.string().min(1),
   gameEdition: z.string().min(1),
+  imageUrl: z.string().url().nullable(),
   associatedAt: z.string().datetime(),
 });
 export type PlayerExternalClubAssociationDto = z.infer<typeof playerExternalClubAssociationSchema>;

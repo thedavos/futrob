@@ -51,7 +51,7 @@ export class PostgresPlayerExternalClubAssociationRepository implements PlayerEx
   ): Promise<PlayerExternalClubAssociation | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT player_profile_id, provider_key, external_club_id, external_club_name,
-              platform, game_edition, associated_at
+              platform, game_edition, image_url, associated_at
        FROM player_external_club_associations
        WHERE player_profile_id = $1`,
       [playerProfileId],
@@ -65,17 +65,18 @@ export class PostgresPlayerExternalClubAssociationRepository implements PlayerEx
     const result = await getPgExecutor(this.pool).query(
       `INSERT INTO player_external_club_associations (
          player_profile_id, provider_key, external_club_id, external_club_name,
-         platform, game_edition, associated_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+         platform, game_edition, image_url, associated_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (player_profile_id) DO UPDATE SET
          provider_key = EXCLUDED.provider_key,
          external_club_id = EXCLUDED.external_club_id,
          external_club_name = EXCLUDED.external_club_name,
          platform = EXCLUDED.platform,
          game_edition = EXCLUDED.game_edition,
+         image_url = EXCLUDED.image_url,
          associated_at = EXCLUDED.associated_at
        RETURNING player_profile_id, provider_key, external_club_id, external_club_name,
-                 platform, game_edition, associated_at`,
+                 platform, game_edition, image_url, associated_at`,
       [
         association.playerProfileId,
         association.providerKey,
@@ -83,6 +84,7 @@ export class PostgresPlayerExternalClubAssociationRepository implements PlayerEx
         association.externalClubName,
         association.platform,
         association.gameEdition,
+        association.imageUrl,
         association.associatedAt.toISOString(),
       ],
     );
@@ -164,6 +166,7 @@ function rehydrateAssociation(row: {
   external_club_name: string;
   platform: string;
   game_edition: string;
+  image_url: string | null;
   associated_at: Date | string;
 }): PlayerExternalClubAssociation {
   return {
@@ -173,6 +176,7 @@ function rehydrateAssociation(row: {
     externalClubName: row.external_club_name,
     platform: row.platform,
     gameEdition: row.game_edition,
+    imageUrl: row.image_url,
     associatedAt: new Date(row.associated_at),
   };
 }

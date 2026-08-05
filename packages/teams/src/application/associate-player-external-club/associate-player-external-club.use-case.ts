@@ -16,6 +16,7 @@ export interface AssociatePlayerExternalClubInput {
     readonly name: string;
     readonly platform: string;
     readonly gameEdition: string;
+    readonly imageUrl: string | null;
   };
 }
 
@@ -48,6 +49,7 @@ export class AssociatePlayerExternalClubUseCase {
       externalClubName: input.club.name,
       platform: input.club.platform,
       gameEdition: input.club.gameEdition,
+      imageUrl: input.club.imageUrl,
       associatedAt: this.deps.clock.now(),
     };
     return ok(await this.deps.associations.upsertForPlayerProfile(association));

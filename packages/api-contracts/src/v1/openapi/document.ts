@@ -1006,6 +1006,7 @@ export const futrobOpenApiV1 = {
           "externalClubName",
           "platform",
           "gameEdition",
+          "imageUrl",
           "associatedAt",
         ],
         properties: {
@@ -1018,6 +1019,7 @@ export const futrobOpenApiV1 = {
           externalClubName: { type: "string" },
           platform: { type: "string" },
           gameEdition: { type: "string" },
+          imageUrl: { type: ["string", "null"], format: "uri" },
           associatedAt: { type: "string", format: "date-time" },
         },
       },
