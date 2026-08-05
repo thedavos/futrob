@@ -51,6 +51,16 @@ export { ButtonIcon } from "./components/button-icon";
 export { Checkbox } from "./components/checkbox";
 export { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./components/collapsible";
 export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./components/dropdown-menu";
+export {
   Dialog,
   DialogBackdrop,
   DialogClose,
@@ -120,6 +130,23 @@ export {
   SheetTrigger,
   sheetVariants,
 } from "./components/sheet";
+export {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuLink,
+  SidebarProvider,
+  SidebarRail,
+  sidebarMenuButtonVariants,
+  useSidebar,
+} from "./components/sidebar";
 export { Skeleton } from "./components/skeleton";
 export { Stepper } from "./components/stepper";
 export type { StepperStep } from "./components/stepper";

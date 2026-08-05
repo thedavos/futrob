@@ -42,6 +42,7 @@ Navegación:
 
 - `Tabs`, `Breadcrumb`, `Sheet`, `Stepper`
 - `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`
+- `Sidebar` (+ header/content/footer/group/menu) y `DropdownMenu`
 
 Datos:
 
