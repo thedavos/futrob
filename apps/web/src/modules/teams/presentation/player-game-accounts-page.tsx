@@ -14,7 +14,6 @@ import {
   FieldLabel,
   Form,
   Input,
-  Logo,
   Select,
   SelectContent,
   SelectItem,
@@ -75,33 +74,31 @@ export function PlayerGameAccountsPage() {
       setFormKey((current) => current + 1);
       validation.clearServerErrors();
     } catch {
-      setError("No pudimos guardar la cuenta. Inténtalo nuevamente.");
+      setError("No se pudo guardar la cuenta. Inténtalo de nuevo.");
     }
   }
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-12">
-      <header className="mb-10 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
-          <Logo className="h-8 w-auto" />
-          <span className="font-semibold tracking-wide">Futrob</span>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <p className="typo-label text-muted-foreground">Espacio personal</p>
+          <h1 className="typo-heading">Datos de juego</h1>
+          <p className="typo-subtitle text-muted-foreground">
+            Registra tus identificadores de EA sin compartir credenciales. Futrob los usará para
+            localizar tus partidos y estadísticas.
+          </p>
         </div>
         <Button render={<Link to="/player" />} variant="link">
           Volver al espacio personal
         </Button>
-      </header>
-      <div className="mb-8 space-y-2">
-        <p className="typo-label text-muted-foreground">Espacio personal</p>
-        <h1 className="typo-heading">Datos de juego</h1>
-        <p className="typo-subtitle text-muted-foreground">
-          Registra tus identificadores de EA sin compartir credenciales. Futrob los usará para
-          localizar tus partidos y estadísticas.
-        </p>
       </div>
 
       {error || profileQuery.isError ? (
         <Alert className="mb-6" variant="destructive">
-          <AlertDescription>{error ?? "No pudimos cargar tus cuentas de juego."}</AlertDescription>
+          <AlertDescription>
+            {error ?? "No se pudieron cargar tus cuentas de juego."}
+          </AlertDescription>
         </Alert>
       ) : null}
 

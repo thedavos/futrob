@@ -9,7 +9,6 @@ import {
   EmptyStateActions,
   EmptyStateDescription,
   EmptyStateTitle,
-  Logo,
 } from "@futrob/ui";
 import type { PlayerGameAccountDto, PlayerTeamMembershipDto } from "@futrob/api-contracts";
 import {
@@ -35,25 +34,20 @@ export function PlayerWorkspacePage() {
     try {
       await setActiveTeam.mutateAsync({ rosterMembershipId: value });
     } catch {
-      setActiveError("No pudimos guardar tu equipo activo. Inténtalo nuevamente.");
+      setActiveError("No se pudo guardar el equipo activo. Inténtalo de nuevo.");
     }
   }
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
-      <header className="mb-10 flex items-center gap-2.5">
-        <Logo className="h-8 w-auto" />
-        <span className="font-semibold tracking-wide">Futrob</span>
-      </header>
-
-      <header className="mb-8 max-w-2xl space-y-2">
+      <div className="mb-8 max-w-2xl space-y-2">
         <p className="typo-label text-muted-foreground">Espacio personal</p>
         <h1 className="typo-heading text-3xl sm:text-4xl">Tu espacio de jugador</h1>
         <p className="typo-body text-muted-foreground">
           Consulta tus partidos y estadísticas individuales sin pertenecer todavía a una
           organización.
         </p>
-      </header>
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <EmptyState>

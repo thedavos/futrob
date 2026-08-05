@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Logo } from "@futrob/ui";
 import { OrganizationPicker } from "@/modules/organizations/presentation/organization-picker.tsx";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 
@@ -38,11 +37,7 @@ export function OrgsIndexPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8">
-      <header className="mb-8 flex items-center gap-2.5">
-        <Logo className="h-8 w-auto" />
-        <span className="font-semibold tracking-wide">Futrob</span>
-      </header>
+    <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
       <div className="mb-6 space-y-2">
         <h1 className="typo-heading">Tus organizaciones</h1>
         <p className="text-sm text-muted-foreground">

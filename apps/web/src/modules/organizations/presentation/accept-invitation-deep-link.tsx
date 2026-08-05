@@ -53,7 +53,7 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
       <div className="mb-8 space-y-2">
         <h1 className="typo-heading">Únete a una competición</h1>
         <p className="typo-subtitle text-muted-foreground">
-          {error ? "No pudimos completar la invitación." : "Estamos validando tu invitación…"}
+          {error ? "No se pudo completar la invitación." : "Estamos validando tu invitación…"}
         </p>
       </div>
       {error ? (

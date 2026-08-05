@@ -2,7 +2,7 @@
 
 import { Link } from "@tanstack/react-router";
 import type { CompetitionDraftDto } from "@futrob/api-contracts";
-import { Alert, AlertDescription, Badge, Button, Card, CardContent, Logo } from "@futrob/ui";
+import { Alert, AlertDescription, Badge, Button, Card, CardContent } from "@futrob/ui";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import { CalendarDays, CircleAlert, ListChecks, RadioTower, type LucideIcon } from "lucide-react";
 import { CreateCompetitionInvitationPanel } from "@/modules/organizations/presentation/create-competition-invitation-panel.tsx";
@@ -17,18 +17,13 @@ export function CompetitionSetupPage({
   const failed = draftQuery.isError;
 
   return (
-    <main className="min-h-svh bg-background px-5 py-8 text-foreground sm:px-8 sm:py-10">
+    <main className="px-5 py-8 text-foreground sm:px-8 sm:py-10">
       <div className="mx-auto w-full max-w-3xl">
-        <header className="mb-10 flex items-center gap-2.5">
-          <Logo className="h-8 w-auto" />
-          <span className="font-semibold tracking-wide">Futrob</span>
-        </header>
-
         {failed ? (
           <Alert variant="destructive">
             <CircleAlert aria-hidden="true" />
             <AlertDescription>
-              No pudimos cargar el borrador de la competición. Inténtalo nuevamente.
+              No se pudo cargar el borrador de la competición. Inténtalo de nuevo.
             </AlertDescription>
           </Alert>
         ) : draft ? (

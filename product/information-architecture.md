@@ -75,6 +75,32 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 
 ## 4. Shell autenticado
 
+### Layout
+
+La app autenticada (fuera de onboarding) usa un marco único:
+
+```text
+sidebar izquierda | navbar arriba + contenido abajo
+```
+
+Orden en la sidebar: Logo → **General** → **Selector** → **Contexto activo** → menú de cuenta.
+
+### Selector de contexto (único)
+
+Un control bajo General agrupa:
+
+- **Espacio personal**
+- **Competiciones** (accesibles al actor)
+- **Organización** (memberships + Crear organización)
+
+Solo un ítem está activo. El valor inicial sigue el `ONBOARDING_PATH` completado:
+
+- `player` → Espacio personal
+- `organization` → organización creada
+- `invitation` → competición de la invitación
+
+Visitas posteriores pueden recordar la última selección en el cliente. La URL y el selector se mantienen alineados.
+
 ### Onboarding autenticado
 
 Después del registro, el usuario pasa directamente por onboarding: al ser una cuenta nueva no se
@@ -107,40 +133,45 @@ membresías usa `/player` como destino posterior al acceso.
 Es el destino posterior al onboarding cuando el usuario elige continuar como jugador. No requiere
 crear una organización ni aceptar una invitación.
 
+**General (personal):** Inicio · Competiciones · Clubes EA · Invitaciones.
+
 - **Inicio personal:** resumen de partidos recientes, estadísticas destacadas y estado de vinculación de la cuenta de juego.
-- **Mis partidos:** historial individual ordenado por fecha, competición, equipo y resultado; solo partidos permitidos por la proyección personal.
-- **Mis estadísticas:** goles, asistencias, rating, MVP y otras métricas disponibles; se distingue dato oficial de dato incompleto.
-- **Datos de juego:** vincular o actualizar identificador de jugador, plataforma y edición.
-- **Invitaciones y organizaciones:** aceptar una invitación a una competición o crear una organización como acciones secundarias.
+- **Competiciones / Clubes EA:** listados; al abrir una entidad se activa el grupo Contexto.
+- **Datos de juego:** vincular o actualizar identificador de jugador (subdestino desde Clubes EA o perfil).
+- **Invitaciones:** aceptar una invitación o crear una organización como acciones secundarias.
 
 La vista personal no muestra disputas, payloads EA crudos, tokens ni datos administrativos de organizaciones en las que el actor no sea miembro.
 
-### Navegación de organización
+### Navegación de organización (General)
 
 - Inicio
 - Competiciones
 - Equipos
 - Jugadores
-- Notificaciones
+- Invitaciones
 - Organización (miembros, roles)
 - Ajustes
 
-### Navegación dentro de competición
+### Navegación dentro de competición (Contexto activo)
 
-| Destino            | Propósito                                       |
-| ------------------ | ----------------------------------------------- |
-| Overview           | Estado operativo, pendientes, salud EA resumida |
-| Fixture / Jornadas | Enfrentamientos programados                     |
-| Match Center       | Detalle operativo del Encounter                 |
-| Standings          | Tabla oficial                                   |
-| Bracket            | Eliminación (si aplica)                         |
-| Rankings           | Goleadores, asistencias, rating, rendimiento    |
-| Teams / Rosters    | Inscripciones y plantillas                      |
-| Disputes           | Desacuerdos y revisión                          |
-| Analytics          | Premium / operativa                             |
-| Rules / Settings   | Reglamento y configuración                      |
+| Destino         | Propósito                                       |
+| --------------- | ----------------------------------------------- |
+| Resumen         | Estado operativo, pendientes, salud EA resumida |
+| Calendario      | Enfrentamientos programados                     |
+| Enfrentamientos | Detalle operativo del Encounter                 |
+| Clasificación   | Tabla oficial                                   |
+| Bracket         | Eliminación (si aplica)                         |
+| Rankings        | Goleadores, asistencias, rating, rendimiento    |
+| Equipos         | Inscripciones y plantillas                      |
+| Disputas        | Desacuerdos y revisión                          |
+| Analíticas      | Premium / operativa                             |
+| Reglamento      | Reglamento y configuración                      |
 
-Mobile: hasta cinco destinos frecuentes + “Más”.
+Mobile: Sheet con la misma sidebar; nada crítico solo en sidebar oculta (selector accesible).
+
+### Menú de cuenta
+
+Al pie de la sidebar: Perfil · Enviar feedback · Contáctanos · Configuración · Cerrar sesión.
 
 ## 5. Match Center (recurso central)
 

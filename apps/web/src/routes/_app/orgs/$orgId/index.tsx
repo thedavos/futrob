@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Logo } from "@futrob/ui";
 
 export const Route = createFileRoute("/_app/orgs/$orgId/")({
   component: OrgHomePage,
@@ -9,12 +8,7 @@ function OrgHomePage() {
   const { orgId } = Route.useParams();
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8">
-      <header className="mb-8 flex items-center gap-2.5">
-        <Logo className="h-8 w-auto" />
-        <span className="font-semibold tracking-wide">Futrob</span>
-      </header>
-
+    <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
       <div className="space-y-4">
         <h1 className="typo-heading">Organización</h1>
         <p className="text-sm text-muted-foreground">
