@@ -1,10 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, AlertDescription, Button, Field, FieldLabel, Input } from "@futrob/ui";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Field,
+  FieldLabel,
+  Input,
+  useCopyToClipboard,
+} from "@futrob/ui";
 import { Check, CircleAlert, Copy, Link2 } from "lucide-react";
 import { buildInvitationShareUrl } from "@/modules/organizations/presentation/invitation-share-url.ts";
-import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
 import { useCreateCompetitionInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 
 export function CreateCompetitionInvitationPanel({
@@ -12,34 +19,28 @@ export function CreateCompetitionInvitationPanel({
   competitionId,
 }: Readonly<{ organizationId: string; competitionId: string }>) {
   const createInvitation = useCreateCompetitionInvitationMutation(organizationId, competitionId);
+  const { isCopied, copyToClipboard, reset: resetCopied } = useCopyToClipboard();
   const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleCreate() {
     setError(null);
-    setCopied(false);
+    resetCopied();
     try {
       const created = await createInvitation.mutateAsync({
         role: "player",
         redeemPolicy: "single",
       });
       setShareUrl(buildInvitationShareUrl(created.token));
-    } catch (caught) {
-      if (caught instanceof OrganizationsClientError) {
-        setError("No se pudo crear la invitación. Inténtalo de nuevo.");
-      } else {
-        setError("No se pudo crear la invitación. Inténtalo de nuevo.");
-      }
+    } catch {
+      setError("No se pudo crear la invitación. Inténtalo de nuevo.");
     }
   }
 
   async function handleCopy() {
     if (!shareUrl) return;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-    } catch {
+    const copied = await copyToClipboard(shareUrl);
+    if (!copied) {
       setError("No pudimos copiar el link. Cópialo manualmente.");
     }
   }
@@ -78,12 +79,12 @@ export function CreateCompetitionInvitationPanel({
             <Input id="invitation-share-url" name="shareUrl" readOnly value={shareUrl} />
           </Field>
           <Button onClick={() => void handleCopy()} type="button" variant="outline">
-            {copied ? (
+            {isCopied ? (
               <Check aria-hidden="true" className="size-4" />
             ) : (
               <Copy aria-hidden="true" className="size-4" />
             )}
-            {copied ? "Copiado" : "Copiar link"}
+            {isCopied ? "Copiado" : "Copiar link"}
           </Button>
         </div>
       ) : null}
