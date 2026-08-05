@@ -299,6 +299,8 @@ function competitionDraftResponse(input: {
       regularStage: null,
       knockoutStage: null,
       awayGoalsEnabled: false as const,
+      maxRosterSize: null,
+      requireVerifiedExternalClub: false,
       createdAt: "2026-07-31T12:00:00.000Z",
     },
   };

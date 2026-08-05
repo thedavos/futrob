@@ -31,6 +31,10 @@ class FakeCompetitionRepository implements CompetitionRepository {
   async findByCreationKey(): Promise<CompetitionDraft | null> {
     return null;
   }
+
+  async findRulesByCompetitionId() {
+    return competitionDraft.rules;
+  }
 }
 
 class FakeMembershipRepository implements CompetitionMembershipRepository {
@@ -74,6 +78,8 @@ const competitionDraft: CompetitionDraft = {
     regularStage: null,
     knockoutStage: null,
     awayGoalsEnabled: false,
+    maxRosterSize: null,
+    requireVerifiedExternalClub: false,
     createdAt,
   },
 };

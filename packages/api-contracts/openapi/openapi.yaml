@@ -949,6 +949,8 @@ components:
         - regularStage
         - knockoutStage
         - awayGoalsEnabled
+        - maxRosterSize
+        - requireVerifiedExternalClub
         - createdAt
       properties:
         version:
@@ -965,6 +967,13 @@ components:
         awayGoalsEnabled:
           type: boolean
           const: false
+        maxRosterSize:
+          anyOf:
+            - type: integer
+              minimum: 1
+            - type: "null"
+        requireVerifiedExternalClub:
+          type: boolean
         createdAt:
           type: string
           format: date-time

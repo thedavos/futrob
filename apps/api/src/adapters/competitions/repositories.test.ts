@@ -40,6 +40,8 @@ const draft: CompetitionDraft = {
     },
     knockoutStage: null,
     awayGoalsEnabled: false,
+    maxRosterSize: null,
+    requireVerifiedExternalClub: false,
     createdAt: new Date("2026-07-31T12:00:00.000Z"),
   },
 };
@@ -129,7 +131,9 @@ class FakeCompetitionPool {
         regular_stage: values[2],
         knockout_stage: values[3],
         away_goals_enabled: values[4],
-        created_at: values[5],
+        max_roster_size: values[5],
+        require_verified_external_club: values[6],
+        created_at: values[7],
       };
       return { rows: [this.rules] };
     }
@@ -147,11 +151,17 @@ class FakeCompetitionPool {
                 regular_stage: this.rules.regular_stage,
                 knockout_stage: this.rules.knockout_stage,
                 away_goals_enabled: this.rules.away_goals_enabled,
+                max_roster_size: this.rules.max_roster_size,
+                require_verified_external_club: this.rules.require_verified_external_club,
                 rules_created_at: this.rules.created_at,
               },
             ]
           : [],
       };
+    }
+    if (text.includes("FROM competition_rules") && text.includes("version = 1")) {
+      if (!this.rules || values[0] !== this.rules.competition_id) return { rows: [] };
+      return { rows: [this.rules] };
     }
     throw new Error(`Unexpected query: ${text}`);
   }

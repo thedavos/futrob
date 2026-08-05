@@ -866,7 +866,15 @@ export const futrobOpenApiV1 = {
       },
       CompetitionRules: {
         type: "object",
-        required: ["version", "regularStage", "knockoutStage", "awayGoalsEnabled", "createdAt"],
+        required: [
+          "version",
+          "regularStage",
+          "knockoutStage",
+          "awayGoalsEnabled",
+          "maxRosterSize",
+          "requireVerifiedExternalClub",
+          "createdAt",
+        ],
         properties: {
           version: { type: "integer", minimum: 1 },
           regularStage: {
@@ -876,6 +884,8 @@ export const futrobOpenApiV1 = {
             anyOf: [{ $ref: "#/components/schemas/CompetitionMatchRules" }, { type: "null" }],
           },
           awayGoalsEnabled: { type: "boolean", const: false },
+          maxRosterSize: { anyOf: [{ type: "integer", minimum: 1 }, { type: "null" }] },
+          requireVerifiedExternalClub: { type: "boolean" },
           createdAt: { type: "string", format: "date-time" },
         },
       },

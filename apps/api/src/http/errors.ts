@@ -68,7 +68,14 @@ function statusForFailureCode(code: string): number {
   if (code.includes("forbidden") || code.includes("unauthorized") || code.includes("not_owned")) {
     return 403;
   }
-  if (code.includes("conflict")) {
+  if (
+    code.includes("conflict") ||
+    code.includes("roster_full") ||
+    code.includes("roster_locked") ||
+    code.includes("already_decided") ||
+    code.includes("captain_already_assigned") ||
+    code.includes("verification_required")
+  ) {
     return 409;
   }
   if (

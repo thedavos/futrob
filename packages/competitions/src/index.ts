@@ -27,9 +27,14 @@ export {
   InvalidCompetitionTimeZone,
   CompetitionCreationKeyConflict,
   EntryCreationKeyConflict,
+  EntryNotFound,
+  EntryAlreadyDecided,
+  ExternalClubVerificationRequired,
   type CreateCompetitionDraftError,
   type JoinCompetitionError,
   type RegisterTeamEntryError,
+  type ApproveCompetitionEntryError,
+  type RejectCompetitionEntryError,
 } from "./domain/errors/competition.errors.ts";
 
 export {
@@ -51,3 +56,12 @@ export {
   type RegisterTeamEntryInput,
 } from "./application/register-team-entry/register-team-entry.use-case.ts";
 export { GetTeamEntryUseCase } from "./application/get-team-entry/get-team-entry.use-case.ts";
+export type { TeamExternalClubVerificationPort } from "./domain/ports/team-external-club-verification.port.ts";
+export {
+  ApproveCompetitionEntryUseCase,
+  type ApproveCompetitionEntryInput,
+} from "./application/approve-competition-entry/approve-competition-entry.use-case.ts";
+export {
+  RejectCompetitionEntryUseCase,
+  type RejectCompetitionEntryInput,
+} from "./application/reject-competition-entry/reject-competition-entry.use-case.ts";

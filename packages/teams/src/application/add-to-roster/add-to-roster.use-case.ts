@@ -15,11 +15,15 @@ import type {
 import {
   GameAccountNotFound,
   RosterCompetitionConflict,
+  RosterFull,
+  RosterLocked,
   TeamNotFound,
   type AddToRosterError,
 } from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterMembershipRepository } from "../../domain/ports/competition-roster-membership.repository.ts";
+import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
+import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 
 export interface AddToRosterInput {
@@ -36,6 +40,8 @@ export class AddToRosterUseCase {
     private readonly deps: {
       readonly teams: TeamRepository;
       readonly rosters: CompetitionRosterMembershipRepository;
+      readonly rosterStates: CompetitionRosterStateRepository;
+      readonly capacity: RosterCapacityPort;
       readonly accounts: PlayerGameAccountRepository;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
@@ -61,6 +67,35 @@ export class AddToRosterUseCase {
       input.competitionId,
     );
     if (sameTeam) return ok(sameTeam);
+
+    const rosterState = await this.deps.rosterStates.get(
+      input.organizationId,
+      input.competitionId,
+      input.teamId,
+    );
+    if (rosterState?.lockedAt) {
+      return err(
+        new RosterLocked({
+          code: "teams.roster_locked",
+          message: "Roster is locked for this competition",
+        }),
+      );
+    }
+
+    const maxSize = await this.deps.capacity.getMaxRosterSize(input.competitionId);
+    const currentMembers = await this.deps.rosters.listByTeam(
+      input.organizationId,
+      input.competitionId,
+      input.teamId,
+    );
+    if (currentMembers.length >= maxSize) {
+      return err(
+        new RosterFull({
+          code: "teams.roster_full",
+          message: "Roster has reached maximum capacity",
+        }),
+      );
+    }
 
     const otherTeam = await this.deps.rosters.findByPlayerAndCompetition(
       input.playerProfileId,

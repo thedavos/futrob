@@ -4,20 +4,31 @@ import {
   ActiveTeamNotOwned,
   GameAccountNotFound,
   RosterCompetitionConflict,
+  RosterFull,
+  RosterLocked,
 } from "../domain/errors/team.errors.ts";
 import type { ActiveTeamPreference } from "../domain/entities/active-team-preference.ts";
 import type { CompetitionRosterMembership } from "../domain/entities/competition-roster-membership.ts";
+import type { CompetitionRosterState } from "../domain/entities/competition-roster-state.ts";
+import type { ExternalClubConnection } from "../domain/entities/external-club-connection.ts";
 import type { PlayerGameAccount } from "../domain/entities/player-game-account.ts";
 import type { PlayerProfile } from "../domain/entities/player-profile.ts";
 import type { Team } from "../domain/entities/team.ts";
 import type { ActiveTeamPreferenceRepository } from "../domain/ports/active-team-preference.repository.ts";
 import type { CompetitionRosterMembershipRepository } from "../domain/ports/competition-roster-membership.repository.ts";
+import type { CompetitionRosterStateRepository } from "../domain/ports/competition-roster-state.repository.ts";
+import type { ExternalClubConnectionRepository } from "../domain/ports/external-club-connection.repository.ts";
 import type { PlayerGameAccountRepository } from "../domain/ports/player-game-account.repository.ts";
 import type { PlayerProfileRepository } from "../domain/ports/player-profile.repository.ts";
+import type { RosterCapacityPort } from "../domain/ports/roster-capacity.port.ts";
 import type { TeamRepository } from "../domain/ports/team.repository.ts";
 import { AddToRosterUseCase } from "./add-to-roster/add-to-roster.use-case.ts";
+import { ChangeRosterRoleUseCase } from "./change-roster-role/change-roster-role.use-case.ts";
+import { CloseRosterUseCase } from "./close-roster/close-roster.use-case.ts";
+import { ConnectTeamExternalClubUseCase } from "./connect-team-external-club/connect-team-external-club.use-case.ts";
 import { CreateTeamUseCase } from "./create-team/create-team.use-case.ts";
 import { GetActiveTeamUseCase } from "./get-active-team/get-active-team.use-case.ts";
+import { GetTeamExternalClubUseCase } from "./get-team-external-club/get-team-external-club.use-case.ts";
 import { ListRostersForPlayerUseCase } from "./list-rosters-for-player/list-rosters-for-player.use-case.ts";
 import { SetActiveTeamUseCase } from "./set-active-team/set-active-team.use-case.ts";
 
@@ -85,6 +96,49 @@ class Rosters implements CompetitionRosterMembershipRepository {
     this.rows.push(membership);
     return membership;
   }
+  async update(membership: CompetitionRosterMembership) {
+    const index = this.rows.findIndex((row) => row.id === membership.id);
+    if (index >= 0) this.rows[index] = membership;
+    return membership;
+  }
+}
+
+class RosterStates implements CompetitionRosterStateRepository {
+  rows = new Map<string, CompetitionRosterState>();
+  key(state: CompetitionRosterState) {
+    return `${state.organizationId}:${state.competitionId}:${state.teamId}`;
+  }
+  async get(
+    organizationId: CompetitionRosterState["organizationId"],
+    competitionId: CompetitionRosterState["competitionId"],
+    teamId: CompetitionRosterState["teamId"],
+  ) {
+    return (
+      this.rows.get(this.key({ organizationId, competitionId, teamId, lockedAt: null })) ?? null
+    );
+  }
+  async save(state: CompetitionRosterState) {
+    this.rows.set(this.key(state), state);
+    return state;
+  }
+}
+
+class Capacity implements RosterCapacityPort {
+  constructor(private readonly maxSize = 11) {}
+  async getMaxRosterSize() {
+    return this.maxSize;
+  }
+}
+
+class Connections implements ExternalClubConnectionRepository {
+  rows = new Map<string, ExternalClubConnection>();
+  async findByTeam(teamId: ExternalClubConnection["teamId"]) {
+    return this.rows.get(teamId) ?? null;
+  }
+  async upsert(connection: ExternalClubConnection) {
+    this.rows.set(connection.teamId, connection);
+    return connection;
+  }
 }
 
 class Profiles implements PlayerProfileRepository {
@@ -133,6 +187,21 @@ function shared() {
   };
 }
 
+function rosterDeps(options?: { maxSize?: number }) {
+  const teams = new Teams();
+  const rosters = new Rosters();
+  const rosterStates = new RosterStates();
+  const capacity = new Capacity(options?.maxSize ?? 11);
+  const accounts = new Accounts();
+  const deps = { teams, rosters, rosterStates, capacity, accounts, ...shared() };
+  return {
+    ...deps,
+    addToRoster: new AddToRosterUseCase(deps),
+    changeRole: new ChangeRosterRoleUseCase(rosters),
+    closeRoster: new CloseRosterUseCase({ teams, rosterStates, clock: deps.clock }),
+  };
+}
+
 describe("team and roster use cases", () => {
   it("creates a team idempotently by creation key", async () => {
     const teams = new Teams();
@@ -152,11 +221,8 @@ describe("team and roster use cases", () => {
   });
 
   it("allows the same player on teams in different competitions and rejects a second team in one competition", async () => {
-    const teams = new Teams();
-    const rosters = new Rosters();
-    const accounts = new Accounts();
+    const { teams, rosters, accounts, addToRoster } = rosterDeps();
     const createTeam = new CreateTeamUseCase({ teams, ...shared() });
-    const addToRoster = new AddToRosterUseCase({ teams, rosters, accounts, ...shared() });
     const orgId = asOrganizationId("org-1");
     const teamA = await createTeam.execute({
       organizationId: orgId,
@@ -215,10 +281,8 @@ describe("team and roster use cases", () => {
   });
 
   it("sets active team only for a membership owned by the actor", async () => {
-    const teams = new Teams();
-    const rosters = new Rosters();
+    const { teams, rosters, accounts, addToRoster } = rosterDeps();
     const profiles = new Profiles();
-    const accounts = new Accounts();
     const preferences = new Preferences();
     const deps = shared();
     await profiles.saveIfAbsent({
@@ -233,12 +297,7 @@ describe("team and roster use cases", () => {
     });
     expect(team.isOk()).toBe(true);
     if (!team.isOk()) return;
-    const membership = await new AddToRosterUseCase({
-      teams,
-      rosters,
-      accounts,
-      ...deps,
-    }).execute({
+    const membership = await addToRoster.execute({
       organizationId: asOrganizationId("org-1"),
       competitionId: asCompetitionId("comp-1"),
       teamId: team.value.id,
@@ -271,9 +330,7 @@ describe("team and roster use cases", () => {
   });
 
   it("rejects a game account that does not belong to the player profile", async () => {
-    const teams = new Teams();
-    const rosters = new Rosters();
-    const accounts = new Accounts();
+    const { teams, rosters, accounts, addToRoster } = rosterDeps();
     const deps = shared();
     const team = await new CreateTeamUseCase({ teams, ...deps }).execute({
       organizationId: asOrganizationId("org-1"),
@@ -282,7 +339,7 @@ describe("team and roster use cases", () => {
     });
     expect(team.isOk()).toBe(true);
     if (!team.isOk()) return;
-    const result = await new AddToRosterUseCase({ teams, rosters, accounts, ...deps }).execute({
+    const result = await addToRoster.execute({
       organizationId: asOrganizationId("org-1"),
       competitionId: asCompetitionId("comp-1"),
       teamId: team.value.id,
@@ -292,7 +349,141 @@ describe("team and roster use cases", () => {
     });
     expect(result.isOk()).toBe(false);
     expect(!result.isOk() && GameAccountNotFound.is(result.error)).toBe(true);
-    // silence unused branded helper in case of future assertions
     expect(asTeamId(team.value.id)).toBe(team.value.id);
+  });
+
+  it("rejects add when roster is full", async () => {
+    const { teams, addToRoster } = rosterDeps({ maxSize: 1 });
+    const createTeam = new CreateTeamUseCase({ teams, ...shared() });
+    const orgId = asOrganizationId("org-1");
+    const compId = asCompetitionId("comp-1");
+    const team = await createTeam.execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Full FC",
+    });
+    expect(team.isOk()).toBe(true);
+    if (!team.isOk()) return;
+    const first = await addToRoster.execute({
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: team.value.id,
+      playerProfileId: "profile-1",
+      role: "player",
+    });
+    const second = await addToRoster.execute({
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: team.value.id,
+      playerProfileId: "profile-2",
+      role: "player",
+    });
+    expect(first.isOk()).toBe(true);
+    expect(second.isOk()).toBe(false);
+    expect(!second.isOk() && RosterFull.is(second.error)).toBe(true);
+  });
+
+  it("blocks add after roster is locked", async () => {
+    const { teams, addToRoster, closeRoster } = rosterDeps();
+    const deps = shared();
+    const orgId = asOrganizationId("org-1");
+    const compId = asCompetitionId("comp-1");
+    const team = await new CreateTeamUseCase({ teams, ...deps }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Locked FC",
+    });
+    expect(team.isOk()).toBe(true);
+    if (!team.isOk()) return;
+    await addToRoster.execute({
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: team.value.id,
+      playerProfileId: "profile-1",
+      role: "player",
+    });
+    const closed = await closeRoster.execute({
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: team.value.id,
+    });
+    expect(closed.isOk()).toBe(true);
+    const blocked = await addToRoster.execute({
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: team.value.id,
+      playerProfileId: "profile-2",
+      role: "player",
+    });
+    expect(blocked.isOk()).toBe(false);
+    expect(!blocked.isOk() && RosterLocked.is(blocked.error)).toBe(true);
+  });
+
+  it("demotes the previous captain when promoting a new one", async () => {
+    const { teams, rosters, addToRoster, changeRole } = rosterDeps();
+    const orgId = asOrganizationId("org-1");
+    const compId = asCompetitionId("comp-1");
+    const team = await new CreateTeamUseCase({ teams, ...shared() }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Captain FC",
+    });
+    expect(team.isOk()).toBe(true);
+    if (!team.isOk()) return;
+    const captain = await addToRoster.execute({
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: team.value.id,
+      playerProfileId: "profile-1",
+      role: "captain",
+    });
+    const player = await addToRoster.execute({
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: team.value.id,
+      playerProfileId: "profile-2",
+      role: "player",
+    });
+    expect(captain.isOk() && player.isOk()).toBe(true);
+    if (!captain.isOk() || !player.isOk()) return;
+    const promoted = await changeRole.execute({
+      rosterMembershipId: player.value.id,
+      role: "captain",
+    });
+    expect(promoted.isOk()).toBe(true);
+    if (!promoted.isOk()) return;
+    const members = await rosters.listByTeam(orgId, compId, team.value.id);
+    expect(members.find((m) => m.id === captain.value.id)?.role).toBe("player");
+    expect(members.find((m) => m.id === player.value.id)?.role).toBe("captain");
+  });
+
+  it("connects and retrieves a team external club", async () => {
+    const teams = new Teams();
+    const connections = new Connections();
+    const deps = shared();
+    const orgId = asOrganizationId("org-1");
+    const team = await new CreateTeamUseCase({ teams, ...deps }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Club FC",
+    });
+    expect(team.isOk()).toBe(true);
+    if (!team.isOk()) return;
+    const connect = new ConnectTeamExternalClubUseCase({ teams, connections });
+    const connected = await connect.execute({
+      organizationId: orgId,
+      teamId: team.value.id,
+      providerKey: "ea-clubs",
+      externalClubId: "club-123",
+      externalClubName: "Club FC",
+      gameEdition: "FC 26",
+      platform: "playstation",
+    });
+    expect(connected.isOk()).toBe(true);
+    if (!connected.isOk()) return;
+    const found = await new GetTeamExternalClubUseCase(connections).execute({
+      teamId: team.value.id,
+    });
+    expect(found?.externalClubId).toBe("club-123");
   });
 });

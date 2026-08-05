@@ -126,6 +126,54 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
+  secured.post(
+    "/organizations/:organizationId/competitions/:competitionId/entries/:entryId/approve",
+    async (c) => {
+      const organizationId = asOrganizationId(c.req.param("organizationId"));
+      const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+        actorId: c.get("actorId"),
+      });
+      const membership = memberships.find((item) => item.organizationId === organizationId);
+      if (!membership || !["organizer", "staff"].includes(membership.role)) {
+        return apiErrorResponse(403, {
+          code: "competitions.forbidden",
+          messageKey: "errors.competitions.forbidden",
+        });
+      }
+
+      const result = await deps.modules.competitions.approveTeamEntry.execute({
+        organizationId,
+        entryId: c.req.param("entryId"),
+      });
+      if (!result.isOk()) return failureToHttp(result.error);
+      return jsonResponse(registerTeamEntryResponseSchema.parse(competitionEntryDto(result.value)));
+    },
+  );
+
+  secured.post(
+    "/organizations/:organizationId/competitions/:competitionId/entries/:entryId/reject",
+    async (c) => {
+      const organizationId = asOrganizationId(c.req.param("organizationId"));
+      const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+        actorId: c.get("actorId"),
+      });
+      const membership = memberships.find((item) => item.organizationId === organizationId);
+      if (!membership || !["organizer", "staff"].includes(membership.role)) {
+        return apiErrorResponse(403, {
+          code: "competitions.forbidden",
+          messageKey: "errors.competitions.forbidden",
+        });
+      }
+
+      const result = await deps.modules.competitions.rejectTeamEntry.execute({
+        organizationId,
+        entryId: c.req.param("entryId"),
+      });
+      if (!result.isOk()) return failureToHttp(result.error);
+      return jsonResponse(registerTeamEntryResponseSchema.parse(competitionEntryDto(result.value)));
+    },
+  );
+
   secured.post("/competitions/invitations/accept", async (c) => {
     const parsed = acceptInvitationRequestSchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);

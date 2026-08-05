@@ -27,6 +27,10 @@ export class InMemoryCompetitionRepository implements CompetitionRepository {
       [...this.byId.values()].find((draft) => draft.competition.creationKey === creationKey) ?? null
     );
   }
+
+  async findRulesByCompetitionId(competitionId: CompetitionId) {
+    return this.byId.get(competitionId)?.rules ?? null;
+  }
 }
 
 export class InMemoryCompetitionMembershipRepository implements CompetitionMembershipRepository {

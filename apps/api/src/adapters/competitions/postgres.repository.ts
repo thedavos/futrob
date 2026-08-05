@@ -83,12 +83,15 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     const competition = rehydrateCompetition(competitionResult.rows[0]);
     const rulesResult = await executor.query(
       `INSERT INTO competition_rules (
-         competition_id, version, regular_stage, knockout_stage, away_goals_enabled, created_at
-       ) VALUES ($1, $2, $3, $4, $5, $6)
+         competition_id, version, regular_stage, knockout_stage, away_goals_enabled,
+         max_roster_size, require_verified_external_club, created_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (competition_id, version) DO UPDATE SET
          regular_stage = EXCLUDED.regular_stage,
          knockout_stage = EXCLUDED.knockout_stage,
-         away_goals_enabled = EXCLUDED.away_goals_enabled
+         away_goals_enabled = EXCLUDED.away_goals_enabled,
+         max_roster_size = EXCLUDED.max_roster_size,
+         require_verified_external_club = EXCLUDED.require_verified_external_club
        RETURNING *`,
       [
         competition.id,
@@ -96,6 +99,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         draft.rules.regularStage,
         draft.rules.knockoutStage,
         draft.rules.awayGoalsEnabled,
+        draft.rules.maxRosterSize,
+        draft.rules.requireVerifiedExternalClub,
         draft.rules.createdAt.toISOString(),
       ],
     );
@@ -116,6 +121,17 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     return this.findOne(`WHERE c.creation_key = $1`, [creationKey]);
   }
 
+  async findRulesByCompetitionId(competitionId: CompetitionId): Promise<CompetitionRules | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT competition_id, version, regular_stage, knockout_stage, away_goals_enabled,
+              max_roster_size, require_verified_external_club, created_at
+       FROM competition_rules
+       WHERE competition_id = $1 AND version = 1`,
+      [competitionId],
+    );
+    return result.rows[0] ? rehydrateRules(result.rows[0]) : null;
+  }
+
   private async findOne(
     where: string,
     values: readonly unknown[],
@@ -126,6 +142,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
               r.regular_stage,
               r.knockout_stage,
               r.away_goals_enabled,
+              r.max_roster_size,
+              r.require_verified_external_club,
               r.created_at AS rules_created_at
        FROM competitions c
        INNER JOIN competition_rules r ON r.competition_id = c.id AND r.version = 1
@@ -142,6 +160,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         regular_stage: row.regular_stage,
         knockout_stage: row.knockout_stage,
         away_goals_enabled: row.away_goals_enabled,
+        max_roster_size: row.max_roster_size,
+        require_verified_external_club: row.require_verified_external_club,
         created_at: row.rules_created_at,
       }),
     };
@@ -219,6 +239,8 @@ function rehydrateRules(row: Record<string, unknown>): CompetitionRules {
     regularStage: (row.regular_stage as CompetitionMatchRules | null) ?? null,
     knockoutStage: (row.knockout_stage as CompetitionMatchRules | null) ?? null,
     awayGoalsEnabled: false,
+    maxRosterSize: (row.max_roster_size as number | null) ?? null,
+    requireVerifiedExternalClub: Boolean(row.require_verified_external_club ?? false),
     createdAt: new Date(String(row.created_at)),
   };
 }

@@ -1,5 +1,8 @@
 import { InMemoryProviderMatchRepository } from "@/adapters/persistence/in-memory-provider-match.repository.ts";
 import { createTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
+import { ExternalClubVerificationAdapter } from "@/adapters/teams/external-club-connection.repository.ts";
+import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
+import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import type { TransactionPort } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { createGameDataModule, type GameDataModule } from "./game-data.module.ts";
@@ -32,8 +35,20 @@ export function createModules(input: CreateModulesInput): AppModules {
   const identity = createIdentityModule({
     pool: input.pool,
   });
-  const teams = createTeamsModule({ pool: input.pool });
-  const competitions = createCompetitionsModule({ pool: input.pool });
+
+  const competitionRepository = input.pool
+    ? new PostgresCompetitionRepository(input.pool)
+    : new InMemoryCompetitionRepository();
+
+  const teams = createTeamsModule({
+    pool: input.pool,
+    competitions: competitionRepository,
+  });
+  const competitions = createCompetitionsModule({
+    pool: input.pool,
+    competitions: competitionRepository,
+    externalClubVerification: new ExternalClubVerificationAdapter(teams.externalClubConnections),
+  });
   const transaction = createTransactionPort(input.pool);
 
   return { competitions, gameData, identity, organizations, teams, transaction };

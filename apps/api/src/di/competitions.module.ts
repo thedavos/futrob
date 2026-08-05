@@ -1,13 +1,16 @@
 import { randomUUID } from "node:crypto";
 import {
+  ApproveCompetitionEntryUseCase,
   CreateCompetitionDraftUseCase,
   GetCompetitionDraftUseCase,
   GetTeamEntryUseCase,
   JoinCompetitionUseCase,
   RegisterTeamEntryUseCase,
+  RejectCompetitionEntryUseCase,
   type CompetitionEntryRepository,
   type CompetitionMembershipRepository,
   type CompetitionRepository,
+  type TeamExternalClubVerificationPort,
 } from "@futrob/competitions";
 import type { Pool } from "pg";
 import {
@@ -23,10 +26,16 @@ import {
   PostgresCompetitionRepository,
 } from "@/adapters/competitions/postgres.repository.ts";
 
-export function createCompetitionsModule(input: { readonly pool: Pool | undefined }) {
-  const competitions: CompetitionRepository = input.pool
-    ? new PostgresCompetitionRepository(input.pool)
-    : new InMemoryCompetitionRepository();
+export function createCompetitionsModule(input: {
+  readonly pool: Pool | undefined;
+  readonly competitions?: CompetitionRepository;
+  readonly externalClubVerification: TeamExternalClubVerificationPort;
+}) {
+  const competitions: CompetitionRepository =
+    input.competitions ??
+    (input.pool
+      ? new PostgresCompetitionRepository(input.pool)
+      : new InMemoryCompetitionRepository());
   const memberships: CompetitionMembershipRepository = input.pool
     ? new PostgresCompetitionMembershipRepository(input.pool)
     : new InMemoryCompetitionMembershipRepository();
@@ -35,6 +44,7 @@ export function createCompetitionsModule(input: { readonly pool: Pool | undefine
     : new InMemoryCompetitionEntryRepository();
   const shared = { clock: { now: () => new Date() }, ids: { generate: () => randomUUID() } };
   return {
+    repository: competitions,
     createDraft: new CreateCompetitionDraftUseCase({ competitions, ...shared }),
     getDraft: new GetCompetitionDraftUseCase(competitions),
     join: new JoinCompetitionUseCase({ competitions, memberships, clock: shared.clock }),
@@ -44,6 +54,12 @@ export function createCompetitionsModule(input: { readonly pool: Pool | undefine
       ...shared,
     }),
     getTeamEntry: new GetTeamEntryUseCase(entries),
+    approveTeamEntry: new ApproveCompetitionEntryUseCase({
+      entries,
+      competitions,
+      externalClubVerification: input.externalClubVerification,
+    }),
+    rejectTeamEntry: new RejectCompetitionEntryUseCase(entries),
   };
 }
 

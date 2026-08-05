@@ -62,6 +62,8 @@ export const competitionRulesSchema = z.object({
   regularStage: competitionMatchRulesSchema.nullable(),
   knockoutStage: competitionMatchRulesSchema.nullable(),
   awayGoalsEnabled: z.literal(false),
+  maxRosterSize: z.number().int().positive().nullable(),
+  requireVerifiedExternalClub: z.boolean(),
   createdAt: z.string().datetime(),
 });
 export type CompetitionRulesDto = z.infer<typeof competitionRulesSchema>;
@@ -125,3 +127,6 @@ export type RegisterTeamEntryRequest = z.infer<typeof registerTeamEntryRequestSc
 
 export const registerTeamEntryResponseSchema = competitionEntrySchema;
 export type RegisterTeamEntryResponse = z.infer<typeof registerTeamEntryResponseSchema>;
+
+export const decideTeamEntryResponseSchema = competitionEntrySchema;
+export type DecideTeamEntryResponse = z.infer<typeof decideTeamEntryResponseSchema>;

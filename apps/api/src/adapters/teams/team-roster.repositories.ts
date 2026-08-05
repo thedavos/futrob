@@ -93,6 +93,11 @@ export class InMemoryCompetitionRosterMembershipRepository implements Competitio
     this.rows.set(membership.id, membership);
     return membership;
   }
+
+  async update(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership> {
+    this.rows.set(membership.id, membership);
+    return membership;
+  }
 }
 
 export class InMemoryActiveTeamPreferenceRepository implements ActiveTeamPreferenceRepository {
@@ -241,6 +246,18 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
         membership.role,
         membership.createdAt.toISOString(),
       ],
+    );
+    return rehydrateRoster(result.rows[0]);
+  }
+
+  async update(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership> {
+    const result = await this.pool.query(
+      `UPDATE competition_roster_memberships
+       SET role = $2, game_account_id = $3
+       WHERE id = $1
+       RETURNING id, organization_id, competition_id, team_id, player_profile_id,
+                 game_account_id, role, created_at`,
+      [membership.id, membership.role, membership.gameAccountId],
     );
     return rehydrateRoster(result.rows[0]);
   }

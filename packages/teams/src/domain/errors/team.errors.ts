@@ -20,6 +20,26 @@ export class RosterCompetitionConflict extends TaggedError("RosterCompetitionCon
   message: string;
 }> {}
 
+export class RosterLocked extends TaggedError("RosterLocked")<{
+  code: "teams.roster_locked";
+  message: string;
+}> {}
+
+export class RosterFull extends TaggedError("RosterFull")<{
+  code: "teams.roster_full";
+  message: string;
+}> {}
+
+export class RosterMembershipNotFound extends TaggedError("RosterMembershipNotFound")<{
+  code: "teams.roster_membership_not_found";
+  message: string;
+}> {}
+
+export class CaptainAlreadyAssigned extends TaggedError("CaptainAlreadyAssigned")<{
+  code: "teams.captain_already_assigned";
+  message: string;
+}> {}
+
 export class GameAccountNotFound extends TaggedError("GameAccountNotFound")<{
   code: "teams.game_account_not_found";
   message: string;
@@ -47,7 +67,20 @@ export class InvalidGameEdition extends TaggedError("InvalidGameEdition")<{
 
 export type CreateTeamError = InvalidTeamName | CreationKeyConflict;
 
-export type AddToRosterError = TeamNotFound | RosterCompetitionConflict | GameAccountNotFound;
+export type AddToRosterError =
+  | TeamNotFound
+  | RosterCompetitionConflict
+  | GameAccountNotFound
+  | RosterLocked
+  | RosterFull;
+
+export type ChangeRosterRoleError = RosterMembershipNotFound;
+
+export type CloseRosterError = TeamNotFound;
+
+export type OpenRosterError = TeamNotFound;
+
+export type ConnectTeamExternalClubError = TeamNotFound;
 
 export type SetActiveTeamError = PlayerProfileNotFound | ActiveTeamNotOwned;
 
