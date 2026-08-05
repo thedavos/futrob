@@ -3,6 +3,7 @@
 import { ChoiceGroup, ChoiceGroupIndicator, ChoiceGroupItem } from "@futrob/ui";
 import { TicketCheck, Trophy, UserRound, type LucideIcon } from "lucide-react";
 import type { OnboardingPathDto } from "@futrob/api-contracts";
+import { ONBOARDING_PATH } from "@futrob/identity";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
@@ -24,13 +25,13 @@ export function IntentChoiceStep() {
         onValueChange={(value) => value && flow.setPath(value)}
         value={flow.path ?? ""}
       >
-        <IntentChoice icon={Trophy} label="Organizar" value="organization">
+        <IntentChoice icon={Trophy} label="Organizar" value={ONBOARDING_PATH.organization}>
           Crea una organización y una competición.
         </IntentChoice>
-        <IntentChoice icon={TicketCheck} label="Unirme" value="invitation">
+        <IntentChoice icon={TicketCheck} label="Unirme" value={ONBOARDING_PATH.invitation}>
           Accede a una competición con tu código.
         </IntentChoice>
-        <IntentChoice icon={UserRound} label="Empezar como jugador" value="player">
+        <IntentChoice icon={UserRound} label="Empezar como jugador" value={ONBOARDING_PATH.player}>
           Crea tu espacio personal.
         </IntentChoice>
       </ChoiceGroup>
@@ -40,9 +41,9 @@ export function IntentChoiceStep() {
         onPrimary={() => {
           if (!flow.path) return;
           const next =
-            flow.path === "organization"
+            flow.path === ONBOARDING_PATH.organization
               ? "organization"
-              : flow.path === "invitation"
+              : flow.path === ONBOARDING_PATH.invitation
                 ? "invitation"
                 : "game-account";
           void flow.goTo(next, flow.path);

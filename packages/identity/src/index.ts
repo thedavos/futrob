@@ -7,6 +7,7 @@ export {
 } from "./domain/value-objects/identity-provider.ts";
 export {
   CURRENT_ONBOARDING_VERSION,
+  ONBOARDING_PATH,
   isOnboardingStepAllowed,
   type ActorOnboardingState,
   type CompletedOnboarding,

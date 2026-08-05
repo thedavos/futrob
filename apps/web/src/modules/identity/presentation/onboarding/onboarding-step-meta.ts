@@ -6,6 +6,7 @@ import type {
   OnboardingPathDto,
 } from "@futrob/api-contracts";
 import { EA_SEARCH_PLATFORM_OPTIONS } from "@futrob/api-contracts";
+import { ONBOARDING_PATH } from "@futrob/identity";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 
 export const intentionSteps: readonly StepperStep[] = [
@@ -15,20 +16,20 @@ export const intentionSteps: readonly StepperStep[] = [
 ];
 
 export const stepsByPath: Record<OnboardingPathDto, readonly StepperStep[]> = {
-  organization: [
+  [ONBOARDING_PATH.organization]: [
     { id: "intention", label: "Inicio" },
     { id: "organization", label: "Organización" },
     { id: "competition", label: "Competición" },
     { id: "game-account", label: "Cuenta" },
     { id: "review", label: "Confirmar" },
   ],
-  invitation: [
+  [ONBOARDING_PATH.invitation]: [
     { id: "intention", label: "Inicio" },
     { id: "invitation", label: "Invitación" },
     { id: "game-account", label: "Cuenta" },
     { id: "review", label: "Confirmar" },
   ],
-  player: [
+  [ONBOARDING_PATH.player]: [
     { id: "intention", label: "Inicio" },
     { id: "game-account", label: "Cuenta" },
     { id: "team", label: "Club" },
