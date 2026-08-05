@@ -23,6 +23,8 @@ import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppRosterInvitationsAcceptRouteImport } from './routes/_app/roster-invitations/accept'
 import { Route as AppPlayerGameAccountsRouteImport } from './routes/_app/player_.game-accounts'
+import { Route as AppPlayerEaClubsRouteImport } from './routes/_app/player_.ea-clubs'
+import { Route as AppPlayerCompetitionsRouteImport } from './routes/_app/player_.competitions'
 import { Route as AppOrgsNewRouteImport } from './routes/_app/orgs/new'
 import { Route as AppOnboardingTeamRouteImport } from './routes/_app/onboarding/team'
 import { Route as AppOnboardingReviewRouteImport } from './routes/_app/onboarding/review'
@@ -128,6 +130,16 @@ const AppRosterInvitationsAcceptRoute =
 const AppPlayerGameAccountsRoute = AppPlayerGameAccountsRouteImport.update({
   id: '/player_/game-accounts',
   path: '/player/game-accounts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPlayerEaClubsRoute = AppPlayerEaClubsRouteImport.update({
+  id: '/player_/ea-clubs',
+  path: '/player/ea-clubs',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPlayerCompetitionsRoute = AppPlayerCompetitionsRouteImport.update({
+  id: '/player_/competitions',
+  path: '/player/competitions',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOrgsNewRoute = AppOrgsNewRouteImport.update({
@@ -358,6 +370,8 @@ export interface FileRoutesByFullPath {
   '/onboarding/review': typeof AppOnboardingReviewRoute
   '/onboarding/team': typeof AppOnboardingTeamRoute
   '/orgs/new': typeof AppOrgsNewRoute
+  '/player/competitions': typeof AppPlayerCompetitionsRoute
+  '/player/ea-clubs': typeof AppPlayerEaClubsRoute
   '/player/game-accounts': typeof AppPlayerGameAccountsRoute
   '/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -408,6 +422,8 @@ export interface FileRoutesByTo {
   '/onboarding/review': typeof AppOnboardingReviewRoute
   '/onboarding/team': typeof AppOnboardingTeamRoute
   '/orgs/new': typeof AppOrgsNewRoute
+  '/player/competitions': typeof AppPlayerCompetitionsRoute
+  '/player/ea-clubs': typeof AppPlayerEaClubsRoute
   '/player/game-accounts': typeof AppPlayerGameAccountsRoute
   '/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -462,6 +478,8 @@ export interface FileRoutesById {
   '/_app/onboarding/review': typeof AppOnboardingReviewRoute
   '/_app/onboarding/team': typeof AppOnboardingTeamRoute
   '/_app/orgs/new': typeof AppOrgsNewRoute
+  '/_app/player_/competitions': typeof AppPlayerCompetitionsRoute
+  '/_app/player_/ea-clubs': typeof AppPlayerEaClubsRoute
   '/_app/player_/game-accounts': typeof AppPlayerGameAccountsRoute
   '/_app/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -515,6 +533,8 @@ export interface FileRouteTypes {
     | '/onboarding/review'
     | '/onboarding/team'
     | '/orgs/new'
+    | '/player/competitions'
+    | '/player/ea-clubs'
     | '/player/game-accounts'
     | '/roster-invitations/accept'
     | '/api/auth/$'
@@ -565,6 +585,8 @@ export interface FileRouteTypes {
     | '/onboarding/review'
     | '/onboarding/team'
     | '/orgs/new'
+    | '/player/competitions'
+    | '/player/ea-clubs'
     | '/player/game-accounts'
     | '/roster-invitations/accept'
     | '/api/auth/$'
@@ -618,6 +640,8 @@ export interface FileRouteTypes {
     | '/_app/onboarding/review'
     | '/_app/onboarding/team'
     | '/_app/orgs/new'
+    | '/_app/player_/competitions'
+    | '/_app/player_/ea-clubs'
     | '/_app/player_/game-accounts'
     | '/_app/roster-invitations/accept'
     | '/api/auth/$'
@@ -776,6 +800,20 @@ declare module '@tanstack/react-router' {
       path: '/player/game-accounts'
       fullPath: '/player/game-accounts'
       preLoaderRoute: typeof AppPlayerGameAccountsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/player_/ea-clubs': {
+      id: '/_app/player_/ea-clubs'
+      path: '/player/ea-clubs'
+      fullPath: '/player/ea-clubs'
+      preLoaderRoute: typeof AppPlayerEaClubsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/player_/competitions': {
+      id: '/_app/player_/competitions'
+      path: '/player/competitions'
+      fullPath: '/player/competitions'
+      preLoaderRoute: typeof AppPlayerCompetitionsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/orgs/new': {
@@ -1086,6 +1124,8 @@ interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRouteWithChildren
   AppPlayerRoute: typeof AppPlayerRoute
   AppOrgsNewRoute: typeof AppOrgsNewRoute
+  AppPlayerCompetitionsRoute: typeof AppPlayerCompetitionsRoute
+  AppPlayerEaClubsRoute: typeof AppPlayerEaClubsRoute
   AppPlayerGameAccountsRoute: typeof AppPlayerGameAccountsRoute
   AppRosterInvitationsAcceptRoute: typeof AppRosterInvitationsAcceptRouteWithChildren
   AppOrgsIndexRoute: typeof AppOrgsIndexRoute
@@ -1100,6 +1140,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppOnboardingRoute: AppOnboardingRouteWithChildren,
   AppPlayerRoute: AppPlayerRoute,
   AppOrgsNewRoute: AppOrgsNewRoute,
+  AppPlayerCompetitionsRoute: AppPlayerCompetitionsRoute,
+  AppPlayerEaClubsRoute: AppPlayerEaClubsRoute,
   AppPlayerGameAccountsRoute: AppPlayerGameAccountsRoute,
   AppRosterInvitationsAcceptRoute: AppRosterInvitationsAcceptRouteWithChildren,
   AppOrgsIndexRoute: AppOrgsIndexRoute,
@@ -1224,3 +1266,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
