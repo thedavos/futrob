@@ -4,8 +4,12 @@ import { isSafeAppRedirect, resolveSafeRedirect } from "./safe-redirect.ts";
 describe("safe app redirect", () => {
   it("allows invitation deep links and other app paths", () => {
     expect(isSafeAppRedirect("/invitations/accept/plainToken")).toBe(true);
+    expect(isSafeAppRedirect("/roster-invitations/accept/token")).toBe(true);
     expect(isSafeAppRedirect("/orgs/abc")).toBe(true);
     expect(resolveSafeRedirect("/invitations/accept/x")).toBe("/invitations/accept/x");
+    expect(resolveSafeRedirect("/roster-invitations/accept/t")).toBe(
+      "/roster-invitations/accept/t",
+    );
   });
 
   it("rejects open redirects and auth/api loops", () => {

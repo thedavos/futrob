@@ -2,22 +2,45 @@ import { randomUUID } from "node:crypto";
 import {
   AddPlayerGameAccountUseCase,
   AddToRosterUseCase,
+  AcceptRosterInvitationUseCase,
   AssociatePlayerExternalClubUseCase,
+  ChangeRosterRoleUseCase,
+  CloseRosterUseCase,
+  ConnectTeamExternalClubUseCase,
+  CreateRosterInvitationUseCase,
   CreateTeamUseCase,
   EnsurePlayerProfileUseCase,
   GetActiveTeamUseCase,
   GetPlayerProfileUseCase,
+  GetTeamExternalClubUseCase,
   GetTeamUseCase,
+  ListRosterForTeamUseCase,
   ListRostersForPlayerUseCase,
+  OpenRosterUseCase,
   SetActiveTeamUseCase,
   type ActiveTeamPreferenceRepository,
   type CompetitionRosterMembershipRepository,
+  type CompetitionRosterStateRepository,
+  type ExternalClubConnectionRepository,
   type PlayerExternalClubAssociationRepository,
   type PlayerGameAccountRepository,
   type PlayerProfileRepository,
+  type RosterCapacityPort,
+  type RosterInvitationRepository,
+  type RosterInvitationTokenPort,
   type TeamRepository,
 } from "@futrob/teams";
+import type { CompetitionRepository } from "@futrob/competitions";
 import type { Pool } from "pg";
+import {
+  InMemoryExternalClubConnectionRepository,
+  PostgresExternalClubConnectionRepository,
+} from "@/adapters/teams/external-club-connection.repository.ts";
+import {
+  CompetitionRulesRosterCapacityPort,
+  InMemoryCompetitionRosterStateRepository,
+  PostgresCompetitionRosterStateRepository,
+} from "@/adapters/teams/roster-state.repository.ts";
 import {
   InMemoryPlayerExternalClubAssociationRepository,
   InMemoryPlayerGameAccountRepository,
@@ -29,6 +52,11 @@ import {
   PostgresPlayerProfileRepository,
 } from "@/adapters/teams/postgres.repository.ts";
 import {
+  InMemoryRosterInvitationRepository,
+  PostgresRosterInvitationRepository,
+} from "@/adapters/teams/roster-invitation.repository.ts";
+import { Sha256RosterInvitationTokenPort } from "@/adapters/teams/roster-invitation-token.port.ts";
+import {
   InMemoryActiveTeamPreferenceRepository,
   InMemoryCompetitionRosterMembershipRepository,
   InMemoryTeamRepository,
@@ -37,13 +65,20 @@ import {
   PostgresTeamRepository,
 } from "@/adapters/teams/team-roster.repositories.ts";
 
-export function createTeamsModule(input: { readonly pool: Pool | undefined }) {
+export function createTeamsModule(input: {
+  readonly pool: Pool | undefined;
+  readonly competitions: CompetitionRepository;
+}) {
   let profiles: PlayerProfileRepository;
   let accounts: PlayerGameAccountRepository;
   let associations: PlayerExternalClubAssociationRepository;
   let teams: TeamRepository;
   let rosters: CompetitionRosterMembershipRepository;
   let preferences: ActiveTeamPreferenceRepository;
+  let rosterStates: CompetitionRosterStateRepository;
+  let connections: ExternalClubConnectionRepository;
+  let rosterInvitations: RosterInvitationRepository;
+  let rosterInvitationTokens: RosterInvitationTokenPort;
   if (input.pool) {
     profiles = new PostgresPlayerProfileRepository(input.pool);
     accounts = new PostgresPlayerGameAccountRepository(input.pool);
@@ -51,6 +86,9 @@ export function createTeamsModule(input: { readonly pool: Pool | undefined }) {
     teams = new PostgresTeamRepository(input.pool);
     rosters = new PostgresCompetitionRosterMembershipRepository(input.pool);
     preferences = new PostgresActiveTeamPreferenceRepository(input.pool);
+    rosterStates = new PostgresCompetitionRosterStateRepository(input.pool);
+    connections = new PostgresExternalClubConnectionRepository(input.pool);
+    rosterInvitations = new PostgresRosterInvitationRepository(input.pool);
   } else {
     profiles = new InMemoryPlayerProfileRepository();
     accounts = new InMemoryPlayerGameAccountRepository();
@@ -58,10 +96,28 @@ export function createTeamsModule(input: { readonly pool: Pool | undefined }) {
     teams = new InMemoryTeamRepository();
     rosters = new InMemoryCompetitionRosterMembershipRepository();
     preferences = new InMemoryActiveTeamPreferenceRepository();
+    rosterStates = new InMemoryCompetitionRosterStateRepository();
+    connections = new InMemoryExternalClubConnectionRepository();
+    rosterInvitations = new InMemoryRosterInvitationRepository();
   }
+  rosterInvitationTokens = new Sha256RosterInvitationTokenPort();
   const shared = { clock: { now: () => new Date() }, ids: { generate: () => randomUUID() } };
+  const capacity: RosterCapacityPort = new CompetitionRulesRosterCapacityPort(input.competitions);
+  const eventPublisher = {
+    publish: async () => {},
+    publishMany: async () => {},
+  };
+  const ensurePlayerProfile = new EnsurePlayerProfileUseCase({ profiles, ...shared });
+  const addToRoster = new AddToRosterUseCase({
+    teams,
+    rosters,
+    rosterStates,
+    capacity,
+    accounts,
+    ...shared,
+  });
   return {
-    ensurePlayerProfile: new EnsurePlayerProfileUseCase({ profiles, ...shared }),
+    ensurePlayerProfile,
     addPlayerGameAccount: new AddPlayerGameAccountUseCase({ accounts, ...shared }),
     associatePlayerExternalClub: new AssociatePlayerExternalClubUseCase({
       profiles,
@@ -71,7 +127,22 @@ export function createTeamsModule(input: { readonly pool: Pool | undefined }) {
     getPlayerProfile: new GetPlayerProfileUseCase(profiles, accounts, associations),
     createTeam: new CreateTeamUseCase({ teams, ...shared }),
     getTeam: new GetTeamUseCase(teams),
-    addToRoster: new AddToRosterUseCase({ teams, rosters, accounts, ...shared }),
+    addToRoster,
+    listRosterForTeam: new ListRosterForTeamUseCase(rosters),
+    changeRosterRole: new ChangeRosterRoleUseCase(rosters),
+    closeRoster: new CloseRosterUseCase({
+      teams,
+      rosterStates,
+      clock: shared.clock,
+      eventPublisher,
+    }),
+    openRoster: new OpenRosterUseCase({ teams, rosterStates }),
+    connectTeamExternalClub: new ConnectTeamExternalClubUseCase({
+      teams,
+      connections,
+      eventPublisher,
+    }),
+    getTeamExternalClub: new GetTeamExternalClubUseCase(connections),
     listRostersForPlayer: new ListRostersForPlayerUseCase(rosters),
     setActiveTeam: new SetActiveTeamUseCase({
       profiles,
@@ -80,6 +151,26 @@ export function createTeamsModule(input: { readonly pool: Pool | undefined }) {
       clock: shared.clock,
     }),
     getActiveTeam: new GetActiveTeamUseCase(preferences),
+    createRosterInvitation: new CreateRosterInvitationUseCase({
+      teams,
+      invitations: rosterInvitations,
+      tokens: rosterInvitationTokens,
+      ...shared,
+    }),
+    acceptRosterInvitation: new AcceptRosterInvitationUseCase({
+      teams,
+      rosters,
+      rosterStates,
+      capacity,
+      profiles,
+      invitations: rosterInvitations,
+      tokens: rosterInvitationTokens,
+      ensurePlayerProfile,
+      addToRoster,
+      clock: shared.clock,
+    }),
+    /** Exposed for competitions approve-entry verification bridge. */
+    externalClubConnections: connections,
   };
 }
 

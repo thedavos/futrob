@@ -19,4 +19,5 @@ export interface CompetitionRosterMembershipRepository {
     teamId: TeamId,
   ): Promise<readonly CompetitionRosterMembership[]>;
   add(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership>;
+  update(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership>;
 }

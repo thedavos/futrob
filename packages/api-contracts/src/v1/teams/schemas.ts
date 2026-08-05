@@ -106,6 +106,62 @@ export type AddToRosterRequest = z.infer<typeof addToRosterRequestSchema>;
 export const addToRosterResponseSchema = competitionRosterMembershipSchema;
 export type AddToRosterResponse = z.infer<typeof addToRosterResponseSchema>;
 
+export const listRosterResponseSchema = z.object({
+  memberships: z.array(competitionRosterMembershipSchema),
+});
+export type ListRosterResponse = z.infer<typeof listRosterResponseSchema>;
+
+export const changeRosterRoleRequestSchema = z.object({
+  role: rosterMembershipRoleSchema,
+});
+export type ChangeRosterRoleRequest = z.infer<typeof changeRosterRoleRequestSchema>;
+
+export const changeRosterRoleResponseSchema = competitionRosterMembershipSchema;
+export type ChangeRosterRoleResponse = z.infer<typeof changeRosterRoleResponseSchema>;
+
+export const rosterStateSchema = z.object({
+  organizationId: z.string().min(1),
+  competitionId: z.string().min(1),
+  teamId: z.string().min(1),
+  lockedAt: z.string().datetime().nullable(),
+});
+export type RosterStateDto = z.infer<typeof rosterStateSchema>;
+
+export const closeRosterResponseSchema = rosterStateSchema;
+export type CloseRosterResponse = z.infer<typeof closeRosterResponseSchema>;
+
+export const openRosterResponseSchema = rosterStateSchema;
+export type OpenRosterResponse = z.infer<typeof openRosterResponseSchema>;
+
+export const connectTeamExternalClubRequestSchema = z.object({
+  providerKey: z.enum(["ea-clubs", "manual", "screenshot-ocr"]),
+  externalClubId: z.string().trim().min(1).max(80),
+  externalClubName: z.string().trim().min(1).max(120),
+  platform: z.string().trim().min(1).max(40),
+  gameEdition: z.string().trim().min(1).max(40),
+  verifiedAt: z.string().datetime().nullable().optional(),
+  verifiedBy: z.string().trim().min(1).nullable().optional(),
+});
+export type ConnectTeamExternalClubRequest = z.infer<typeof connectTeamExternalClubRequestSchema>;
+
+export const teamExternalClubConnectionSchema = z.object({
+  teamId: z.string().min(1),
+  providerKey: z.enum(["ea-clubs", "manual", "screenshot-ocr"]),
+  externalClubId: z.string().min(1),
+  externalClubName: z.string().min(1),
+  platform: z.string().min(1),
+  gameEdition: z.string().min(1),
+  verifiedAt: z.string().datetime().nullable(),
+  verifiedBy: z.string().min(1).nullable(),
+});
+export type TeamExternalClubConnectionDto = z.infer<typeof teamExternalClubConnectionSchema>;
+
+export const connectTeamExternalClubResponseSchema = teamExternalClubConnectionSchema;
+export type ConnectTeamExternalClubResponse = z.infer<typeof connectTeamExternalClubResponseSchema>;
+
+export const getTeamExternalClubResponseSchema = teamExternalClubConnectionSchema.nullable();
+export type GetTeamExternalClubResponse = z.infer<typeof getTeamExternalClubResponseSchema>;
+
 export const playerTeamMembershipSchema = z.object({
   membership: competitionRosterMembershipSchema,
   team: teamSchema,
@@ -130,3 +186,38 @@ export const setActiveTeamResponseSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 export type SetActiveTeamResponse = z.infer<typeof setActiveTeamResponseSchema>;
+
+export const createRosterInvitationRequestSchema = z.object({
+  role: rosterMembershipRoleSchema.default("player"),
+  expiresInMs: z.number().int().positive().optional(),
+  redeemPolicy: z.enum(["single", "multi"]).default("single"),
+});
+export type CreateRosterInvitationRequest = z.infer<typeof createRosterInvitationRequestSchema>;
+export type CreateRosterInvitationRequestInput = z.input<
+  typeof createRosterInvitationRequestSchema
+>;
+
+export const rosterInvitationMetaSchema = z.object({
+  invitationId: z.string().min(1),
+  organizationId: z.string().min(1),
+  competitionId: z.string().min(1),
+  teamId: z.string().min(1),
+  role: rosterMembershipRoleSchema,
+  status: z.enum(["pending", "accepted", "revoked", "expired"]),
+  expiresAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
+});
+export type RosterInvitationMetaDto = z.infer<typeof rosterInvitationMetaSchema>;
+
+export const createRosterInvitationResponseSchema = rosterInvitationMetaSchema.extend({
+  token: z.string().min(1),
+});
+export type CreateRosterInvitationResponse = z.infer<typeof createRosterInvitationResponseSchema>;
+
+export const acceptRosterInvitationRequestSchema = z.object({
+  token: z.string().trim().min(1),
+});
+export type AcceptRosterInvitationRequest = z.infer<typeof acceptRosterInvitationRequestSchema>;
+
+export const acceptRosterInvitationResponseSchema = competitionRosterMembershipSchema;
+export type AcceptRosterInvitationResponse = z.infer<typeof acceptRosterInvitationResponseSchema>;

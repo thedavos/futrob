@@ -38,4 +38,29 @@ export type CreateCompetitionDraftError =
 
 export type JoinCompetitionError = CompetitionNotFound;
 
+export class EntryNotFound extends TaggedError("EntryNotFound")<{
+  code: "competitions.entry_not_found";
+  message: string;
+}> {}
+
+export class EntryAlreadyDecided extends TaggedError("EntryAlreadyDecided")<{
+  code: "competitions.entry_already_decided";
+  message: string;
+}> {}
+
+export class ExternalClubVerificationRequired extends TaggedError(
+  "ExternalClubVerificationRequired",
+)<{
+  code: "competitions.external_club_verification_required";
+  message: string;
+}> {}
+
 export type RegisterTeamEntryError = CompetitionNotFound | EntryCreationKeyConflict;
+
+export type ApproveCompetitionEntryError =
+  | EntryNotFound
+  | EntryAlreadyDecided
+  | ExternalClubVerificationRequired
+  | CompetitionNotFound;
+
+export type RejectCompetitionEntryError = EntryNotFound | EntryAlreadyDecided;

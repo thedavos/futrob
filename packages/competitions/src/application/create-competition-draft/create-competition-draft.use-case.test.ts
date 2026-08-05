@@ -28,6 +28,10 @@ class FakeCompetitionRepository implements CompetitionRepository {
       [...this.rows.values()].find((row) => row.competition.creationKey === creationKey) ?? null
     );
   }
+
+  async findRulesByCompetitionId(competitionId: ReturnType<typeof asCompetitionId>) {
+    return this.rows.get(competitionId)?.rules ?? null;
+  }
 }
 
 function createHarness() {
@@ -70,6 +74,8 @@ describe("CreateCompetitionDraftUseCase", () => {
     expect(result.value.rules).toMatchObject({
       version: 1,
       awayGoalsEnabled: false,
+      maxRosterSize: null,
+      requireVerifiedExternalClub: false,
       knockoutStage: null,
       regularStage: {
         officialMatchesPerEncounter: 1,

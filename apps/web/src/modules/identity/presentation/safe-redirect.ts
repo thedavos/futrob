@@ -1,6 +1,6 @@
 /**
  * Same-origin relative app paths only. Blocks open redirects and API/auth
- * surfaces. Invitation deep links (`/invitations/accept/<token>`) are allowed.
+ * surfaces. Invitation deep links (`/invitations/accept/<token>`, `/roster-invitations/accept/<token>`) are allowed.
  */
 export function isSafeAppRedirect(value: string): boolean {
   if (!value.startsWith("/")) return false;

@@ -22,6 +22,8 @@ export function competitionDraftDto(draft: CompetitionDraft): CompetitionDraftDt
       regularStage: draft.rules.regularStage,
       knockoutStage: draft.rules.knockoutStage,
       awayGoalsEnabled: draft.rules.awayGoalsEnabled,
+      maxRosterSize: draft.rules.maxRosterSize,
+      requireVerifiedExternalClub: draft.rules.requireVerifiedExternalClub,
       createdAt: draft.rules.createdAt.toISOString(),
     },
   };

@@ -28,6 +28,10 @@ class FakeCompetitionRepository implements CompetitionRepository {
       [...this.rows.values()].find((row) => row.competition.creationKey === creationKey) ?? null
     );
   }
+
+  async findRulesByCompetitionId(competitionId: ReturnType<typeof asCompetitionId>) {
+    return this.rows.get(competitionId)?.rules ?? null;
+  }
 }
 
 class FakeEntryRepository implements CompetitionEntryRepository {
