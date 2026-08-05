@@ -70,6 +70,7 @@ function statusForFailureCode(code: string): number {
   }
   if (
     code.includes("conflict") ||
+    code.includes("exhausted") ||
     code.includes("roster_full") ||
     code.includes("roster_locked") ||
     code.includes("already_decided") ||

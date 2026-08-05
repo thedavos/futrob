@@ -10,9 +10,10 @@ import {
   InputWithIcon,
   readFormString,
 } from "@futrob/ui";
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Lock, Mail } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
+import { useAuthResume } from "@/modules/identity/presentation/auth-resume.tsx";
 import {
   AUTH_ERROR_GENERIC,
   AUTH_ERROR_NETWORK,
@@ -25,8 +26,6 @@ import {
   type LoginField,
   type LoginValues,
 } from "@/modules/identity/presentation/login-form-validation.ts";
-import { organizationsBrowserClient } from "@/modules/organizations/presentation/organizations-browser-client.ts";
-import { sanitizePostAuthRedirect } from "@/shared/presentation/auth/post-auth-redirect.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 
 function loginErrorMessage(error: AuthClientError): string {
@@ -46,9 +45,8 @@ function loginErrorMessage(error: AuthClientError): string {
   }
 }
 
-export function LoginForm(props: { readonly redirect?: string }) {
-  const navigate = useNavigate();
-  const router = useRouter();
+export function LoginForm() {
+  const { redirectTo, afterAuthenticated } = useAuthResume();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const validation = useFormValidation<LoginField>();
 
@@ -72,28 +70,7 @@ export function LoginForm(props: { readonly redirect?: string }) {
       }
 
       setState({ status: "success" });
-      const redirect = sanitizePostAuthRedirect(props.redirect);
-      if (redirect) {
-        router.history.push(redirect);
-        return;
-      }
-      try {
-        const { destination } = await organizationsBrowserClient.resolvePostAuthDestination();
-        if (destination.kind === "organization") {
-          await navigate({
-            to: "/orgs/$orgId",
-            params: { orgId: destination.organizationId },
-          });
-        } else if (destination.kind === "organizationPicker") {
-          await navigate({ to: "/orgs" });
-        } else if (destination.kind === "personal") {
-          await navigate({ to: "/player" });
-        } else {
-          await navigate({ to: "/onboarding" });
-        }
-      } catch {
-        await navigate({ to: "/onboarding" });
-      }
+      await afterAuthenticated("login");
     } catch (error) {
       setState({
         status: "error",
@@ -164,8 +141,8 @@ export function LoginForm(props: { readonly redirect?: string }) {
         ¿Aún no tienes cuenta?{" "}
         <Link
           className="font-medium text-foreground underline-offset-4 hover:underline"
+          search={{ redirectTo }}
           to="/signup"
-          search={props.redirect ? { redirect: props.redirect } : undefined}
         >
           Crear una cuenta
         </Link>

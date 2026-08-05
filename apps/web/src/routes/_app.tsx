@@ -1,7 +1,6 @@
 import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
-import { loginSearchWithRedirect } from "@/shared/presentation/auth/post-auth-redirect.ts";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -16,7 +15,7 @@ function AppLayout() {
     if (!session.isPending && session.data?.user == null) {
       void navigate({
         to: "/login",
-        search: loginSearchWithRedirect(location.pathname),
+        search: { redirectTo: location.pathname },
         replace: true,
       });
     }

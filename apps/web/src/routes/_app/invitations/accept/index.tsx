@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Logo } from "@futrob/ui";
 import { AcceptInvitationForm } from "@/modules/organizations/presentation/accept-invitation-form.tsx";
 
-export const Route = createFileRoute("/_app/invitations/accept")({
+export const Route = createFileRoute("/_app/invitations/accept/")({
   component: AcceptInvitationPage,
 });
 

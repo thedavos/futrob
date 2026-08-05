@@ -58,6 +58,7 @@ Overlays:
 Acciones y soporte:
 
 - `Button`, `ButtonIcon`, `Separator`, `Logo`
+- `useCopyToClipboard` (hook: Clipboard API + feedback `isCopied`)
 
 ## Uso
 

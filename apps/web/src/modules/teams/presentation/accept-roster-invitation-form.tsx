@@ -14,9 +14,9 @@ import {
 } from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CircleAlert, CircleCheck } from "lucide-react";
+import { resolveSafeRedirect } from "@/modules/identity/presentation/safe-redirect.ts";
 import { TeamsClientError } from "@/modules/teams/presentation/teams-browser-client.ts";
 import { useAcceptRosterInvitationMutation } from "@/modules/teams/presentation/player-queries.ts";
-import { sanitizePostAuthRedirect } from "@/shared/presentation/auth/post-auth-redirect.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 
 type AcceptRosterInvitationValues = {
@@ -159,8 +159,8 @@ export function AcceptRosterInvitationForm(props: {
   );
 }
 
-function signupSearchWithCurrentPath(): { redirect?: string } {
+function signupSearchWithCurrentPath(): { redirectTo?: string } {
   if (typeof window === "undefined") return {};
-  const redirect = sanitizePostAuthRedirect(window.location.pathname);
-  return redirect ? { redirect } : {};
+  const redirectTo = resolveSafeRedirect(window.location.pathname);
+  return redirectTo == null ? {} : { redirectTo };
 }

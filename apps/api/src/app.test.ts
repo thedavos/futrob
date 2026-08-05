@@ -194,6 +194,55 @@ describe("apps/api", () => {
     });
   });
 
+  it("organization invitations: a multi redeemPolicy invitation admits up to maxRedemptions distinct actors", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-multi-organizer";
+
+    const created = await app.request("/api/v1/organizations", {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ name: "Liga Multi" }),
+    });
+    expect(created.status).toBe(201);
+    const { organizationId } = (await created.json()) as { organizationId: string };
+
+    const invite = await app.request(`/api/v1/organizations/${organizationId}/invitations`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ role: "staff", redeemPolicy: "multi", maxRedemptions: 2 }),
+    });
+    expect(invite.status).toBe(201);
+    const inviteBody = (await invite.json()) as {
+      token: string;
+      redeemPolicy: string;
+      maxRedemptions: number | null;
+    };
+    expect(inviteBody).toMatchObject({ redeemPolicy: "multi", maxRedemptions: 2 });
+
+    const acceptAs = (actorId: string) =>
+      app.request("/api/v1/organizations/invitations/accept", {
+        method: "POST",
+        headers: serviceHeaders(actorId),
+        body: JSON.stringify({ token: inviteBody.token }),
+      });
+
+    const first = await acceptAs("actor-multi-staff-1");
+    expect(first.status).toBe(200);
+    expect(await first.json()).toMatchObject({ organizationId, role: "staff" });
+
+    const second = await acceptAs("actor-multi-staff-2");
+    expect(second.status).toBe(200);
+    expect(await second.json()).toMatchObject({ organizationId, role: "staff" });
+
+    const third = await acceptAs("actor-multi-staff-3");
+    expect(third.status).toBe(409);
+    expect(await third.json()).toMatchObject({ code: "organizations.invitation_exhausted" });
+
+    const firstAgain = await acceptAs("actor-multi-staff-1");
+    expect(firstAgain.status).toBe(200);
+    expect(await firstAgain.json()).toMatchObject({ organizationId, role: "staff" });
+  });
+
   it("onboarding: retries organization completion without duplicating it", async () => {
     const app = buildApp(stubFetch);
     const actor = "actor-idempotent-organizer";

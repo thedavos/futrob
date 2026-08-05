@@ -8,9 +8,11 @@ import type { MembershipSummary } from "../../domain/value-objects/post-auth-des
 import type { Organization } from "../../domain/entities/organization.ts";
 import {
   INVITATION_STATUS,
+  REDEEM_POLICY,
   type OrganizationInvitation,
 } from "../../domain/entities/organization-invitation.ts";
 import {
+  InvitationExhausted,
   InvitationExpired,
   InvitationInvalid,
   InvitationNotFound,
@@ -116,38 +118,92 @@ export class AcceptInvitationUseCase {
       );
     }
 
-    const claimed = await this.deps.invitations.claimPending(tokenHash, input.actorId, now);
-    if (!claimed) {
-      const current = await this.deps.invitations.findByTokenHash(tokenHash);
-      if (!current) {
-        return err(
-          new InvitationNotFound({
-            code: "organizations.invitation_not_found",
-            message: "Invitation not found",
-          }),
-        );
-      }
-      if (current.status === INVITATION_STATUS.revoked) {
-        return err(
-          new InvitationRevoked({
-            code: "organizations.invitation_revoked",
-            message: "Invitation has been revoked",
-          }),
-        );
-      }
-      if (
-        current.status === INVITATION_STATUS.expired ||
-        current.expiresAt.getTime() <= now.getTime()
-      ) {
-        return err(
-          new InvitationExpired({
-            code: "organizations.invitation_expired",
-            message: "Invitation has expired",
-          }),
-        );
-      }
-      if (current.status === INVITATION_STATUS.accepted) {
-        return this.acceptedResult(organization, current, input.actorId);
+    const claimed =
+      invitation.redeemPolicy === REDEEM_POLICY.multi
+        ? await this.claimMulti(tokenHash, input.actorId, now)
+        : await this.claimSingle(tokenHash, input.actorId, now);
+    if (!claimed.isOk()) {
+      return claimed;
+    }
+
+    return this.finalizeAcceptance(organization, claimed.value, input.actorId, now);
+  }
+
+  private async claimSingle(
+    tokenHash: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<Result<OrganizationInvitation, AcceptInvitationError>> {
+    const claimed = await this.deps.invitations.claimPending(tokenHash, actorId, now);
+    if (claimed) return ok(claimed);
+
+    const current = await this.deps.invitations.findByTokenHash(tokenHash);
+    return this.diagnoseClaimFailure(current, actorId, now);
+  }
+
+  private async claimMulti(
+    tokenHash: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<Result<OrganizationInvitation, AcceptInvitationError>> {
+    const claim = await this.deps.invitations.claimRedemption(tokenHash, actorId, now);
+    if (claim) return ok(claim.invitation);
+
+    const current = await this.deps.invitations.findByTokenHash(tokenHash);
+    if (
+      current &&
+      current.status === INVITATION_STATUS.pending &&
+      current.expiresAt.getTime() > now.getTime() &&
+      current.redeemPolicy === REDEEM_POLICY.multi &&
+      current.maxRedemptions !== null &&
+      current.redeemedCount >= current.maxRedemptions
+    ) {
+      return err(
+        new InvitationExhausted({
+          code: "organizations.invitation_exhausted",
+          message: "Invitation has reached its maximum number of redemptions",
+        }),
+      );
+    }
+    return this.diagnoseClaimFailure(current, actorId, now);
+  }
+
+  /** Shared diagnosis once an atomic claim primitive reports no eligible row. */
+  private diagnoseClaimFailure(
+    current: OrganizationInvitation | null,
+    actorId: ActorId,
+    now: Date,
+  ): Result<OrganizationInvitation, AcceptInvitationError> {
+    if (!current) {
+      return err(
+        new InvitationNotFound({
+          code: "organizations.invitation_not_found",
+          message: "Invitation not found",
+        }),
+      );
+    }
+    if (current.status === INVITATION_STATUS.revoked) {
+      return err(
+        new InvitationRevoked({
+          code: "organizations.invitation_revoked",
+          message: "Invitation has been revoked",
+        }),
+      );
+    }
+    if (
+      current.status === INVITATION_STATUS.expired ||
+      current.expiresAt.getTime() <= now.getTime()
+    ) {
+      return err(
+        new InvitationExpired({
+          code: "organizations.invitation_expired",
+          message: "Invitation has expired",
+        }),
+      );
+    }
+    if (current.status === INVITATION_STATUS.accepted) {
+      if (current.acceptedByActorId === actorId) {
+        return ok(current);
       }
       return err(
         new InvitationInvalid({
@@ -156,15 +212,25 @@ export class AcceptInvitationUseCase {
         }),
       );
     }
-
-    const existing = await this.deps.memberships.findByOrgAndActor(
-      claimed.organizationId,
-      input.actorId,
+    return err(
+      new InvitationInvalid({
+        code: "organizations.invitation_invalid",
+        message: "Invitation is no longer valid",
+      }),
     );
+  }
+
+  private async finalizeAcceptance(
+    organization: Organization,
+    claimed: OrganizationInvitation,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<Result<AcceptedInvitation, AcceptInvitationError>> {
+    const existing = await this.deps.memberships.findByOrgAndActor(claimed.organizationId, actorId);
     if (!existing) {
       await this.deps.memberships.add({
         organizationId: claimed.organizationId,
-        actorId: input.actorId,
+        actorId,
         role: claimed.role,
         createdAt: now,
       });

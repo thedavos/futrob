@@ -140,4 +140,5 @@ export { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "./compo
 export { Textarea } from "./components/textarea";
 export type { TextareaProps } from "./components/textarea";
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/tooltip";
+export { useCopyToClipboard } from "./hooks/use-copy-to-clipboard";
 export { cn } from "./lib/utils";

@@ -13,9 +13,10 @@ import {
   readFormString,
   type FormErrors,
 } from "@futrob/ui";
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
+import { useAuthResume } from "@/modules/identity/presentation/auth-resume.tsx";
 import {
   AUTH_ERROR_GENERIC,
   AUTH_ERROR_NETWORK,
@@ -34,7 +35,6 @@ import {
   type SignupValues,
 } from "@/modules/identity/presentation/signup-form-validation.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
-import { sanitizePostAuthRedirect } from "@/shared/presentation/auth/post-auth-redirect.ts";
 
 interface SignupFailure {
   fieldErrors?: FormErrors<AuthFormField>;
@@ -65,9 +65,8 @@ function signupFailure(error: AuthClientError): SignupFailure {
   }
 }
 
-export function SignupForm(props: { readonly redirect?: string }) {
-  const navigate = useNavigate();
-  const router = useRouter();
+export function SignupForm() {
+  const { redirectTo, afterAuthenticated } = useAuthResume();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const validation = useFormValidation<AuthFormField>();
@@ -101,12 +100,7 @@ export function SignupForm(props: { readonly redirect?: string }) {
       }
 
       setState({ status: "success" });
-      const redirect = sanitizePostAuthRedirect(props.redirect);
-      if (redirect) {
-        router.history.push(redirect);
-        return;
-      }
-      await navigate({ to: "/onboarding" });
+      await afterAuthenticated("signup");
     } catch (error) {
       setState({
         status: "error",
@@ -232,8 +226,8 @@ export function SignupForm(props: { readonly redirect?: string }) {
         ¿Ya tienes una cuenta?{" "}
         <Link
           className="font-medium text-foreground underline-offset-4 hover:underline"
+          search={{ redirectTo }}
           to="/login"
-          search={props.redirect ? { redirect: props.redirect } : undefined}
         >
           Iniciar sesión
         </Link>
