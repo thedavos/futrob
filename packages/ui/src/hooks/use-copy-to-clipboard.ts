@@ -58,6 +58,7 @@ export function useCopyToClipboard({ timeout = 2000, onCopy }: UseCopyToClipboar
 
   async function copyToClipboard(value: string): Promise<boolean> {
     if (typeof window === "undefined" || value.length === 0) {
+      reset();
       return false;
     }
 
@@ -75,6 +76,7 @@ export function useCopyToClipboard({ timeout = 2000, onCopy }: UseCopyToClipboar
     }
 
     if (!hasCopied) {
+      reset();
       return false;
     }
 

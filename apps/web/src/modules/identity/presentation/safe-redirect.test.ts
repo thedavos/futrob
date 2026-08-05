@@ -16,6 +16,8 @@ describe("safe app redirect", () => {
     expect(isSafeAppRedirect("https://evil.test/x")).toBe(false);
     expect(isSafeAppRedirect("//evil.test")).toBe(false);
     expect(isSafeAppRedirect("/api/v1/meta/ping")).toBe(false);
+    expect(isSafeAppRedirect("/api")).toBe(false);
+    expect(isSafeAppRedirect("/api?x=1")).toBe(false);
     expect(isSafeAppRedirect("/login")).toBe(false);
     expect(resolveSafeRedirect("//evil")).toBeNull();
   });

@@ -118,6 +118,14 @@ export class AcceptInvitationUseCase {
       );
     }
 
+    const existingMembership = await this.deps.memberships.findByOrgAndActor(
+      invitation.organizationId,
+      input.actorId,
+    );
+    if (existingMembership) {
+      return this.finalizeAcceptance(organization, invitation, input.actorId, now);
+    }
+
     const claimed =
       invitation.redeemPolicy === REDEEM_POLICY.multi
         ? await this.claimMulti(tokenHash, input.actorId, now)

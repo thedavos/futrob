@@ -7,8 +7,10 @@ export function isSafeAppRedirect(value: string): boolean {
   if (value.startsWith("//")) return false;
   if (value.includes("://")) return false;
   if (value.includes("\\")) return false;
-  if (value.startsWith("/api/")) return false;
-  if (value.startsWith("/login") || value.startsWith("/signup")) return false;
+
+  const path = value.split(/[?#]/, 1)[0] ?? value;
+  if (path === "/api" || path.startsWith("/api/")) return false;
+  if (path.startsWith("/login") || path.startsWith("/signup")) return false;
   return true;
 }
 

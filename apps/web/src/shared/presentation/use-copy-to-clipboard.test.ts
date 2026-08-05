@@ -56,4 +56,38 @@ describe("useCopyToClipboard", () => {
     expect(copied).toBe(false);
     expect(result.current.isCopied).toBe(false);
   });
+
+  it("clears isCopied when a later copy fails or the value is empty", async () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useCopyToClipboard({ timeout: 0 }));
+
+    await act(async () => {
+      await result.current.copyToClipboard("first");
+    });
+    expect(result.current.isCopied).toBe(true);
+
+    await act(async () => {
+      await result.current.copyToClipboard("");
+    });
+    expect(result.current.isCopied).toBe(false);
+
+    await act(async () => {
+      await result.current.copyToClipboard("second");
+    });
+    expect(result.current.isCopied).toBe(true);
+
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("denied"));
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: vi.fn().mockReturnValue(false),
+    });
+
+    let copied = true;
+    await act(async () => {
+      copied = await result.current.copyToClipboard("third");
+    });
+    expect(copied).toBe(false);
+    expect(result.current.isCopied).toBe(false);
+    vi.useRealTimers();
+  });
 });
