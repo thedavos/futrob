@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 
@@ -8,13 +8,18 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const session = authClient.useSession();
 
   useEffect(() => {
     if (!session.isPending && session.data?.user == null) {
-      void navigate({ to: "/login", replace: true });
+      void navigate({
+        to: "/login",
+        search: { redirectTo: location.pathname },
+        replace: true,
+      });
     }
-  }, [navigate, session.data?.user, session.isPending]);
+  }, [location.pathname, navigate, session.data?.user, session.isPending]);
 
   if (session.isPending || session.data?.user == null) {
     return (

@@ -13,6 +13,7 @@ export {
   acceptInvitationResponseSchema,
   postAuthDestinationSchema,
   resolvePostAuthDestinationResponseSchema,
+  redeemPolicySchema,
   type OrgMembershipRoleDto,
   type InviteRoleDto,
   type MembershipSummaryDto,
@@ -27,4 +28,5 @@ export {
   type AcceptInvitationResponse,
   type PostAuthDestinationDto,
   type ResolvePostAuthDestinationResponse,
+  type RedeemPolicyDto,
 } from "./schemas.ts";

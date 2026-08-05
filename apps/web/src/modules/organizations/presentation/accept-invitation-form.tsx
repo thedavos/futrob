@@ -14,7 +14,7 @@ import {
 } from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { CircleAlert } from "lucide-react";
-import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
 import { useAcceptInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 
@@ -24,7 +24,7 @@ type AcceptInvitationValues = {
 
 type AcceptInvitationField = keyof AcceptInvitationValues;
 
-export function AcceptInvitationForm() {
+export function AcceptInvitationForm({ initialToken = "" }: Readonly<{ initialToken?: string }>) {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const validation = useFormValidation<AcceptInvitationField>();
@@ -39,31 +39,22 @@ export function AcceptInvitationForm() {
 
     try {
       const accepted = await acceptInvitation.mutateAsync({ token: trimmed });
+      if (accepted.destination.kind === "competition") {
+        await navigate({
+          to: "/orgs/$orgId/competitions/$competitionId",
+          params: {
+            orgId: accepted.destination.organizationId,
+            competitionId: accepted.destination.competitionId,
+          },
+        });
+        return;
+      }
       await navigate({
-        to: "/orgs/$orgId/competitions/$competitionId",
-        params: {
-          orgId: accepted.destination.organizationId,
-          competitionId: accepted.destination.competitionId,
-        },
+        to: "/orgs/$orgId",
+        params: { orgId: accepted.organizationId },
       });
     } catch (caught) {
-      if (caught instanceof OrganizationsClientError) {
-        switch (caught.code) {
-          case "organizations.invitation_not_found":
-            setError("No encontramos esa invitación.");
-            break;
-          case "organizations.invitation_expired":
-            setError("La invitación ha caducado.");
-            break;
-          case "organizations.invitation_revoked":
-            setError("La invitación fue revocada.");
-            break;
-          default:
-            setError("No se pudo aceptar la invitación. Inténtalo de nuevo.");
-        }
-      } else {
-        setError("No se pudo aceptar la invitación. Inténtalo de nuevo.");
-      }
+      setError(invitationAcceptErrorMessage(caught));
     }
   }
 
@@ -90,7 +81,13 @@ export function AcceptInvitationForm() {
         }
       >
         <FieldLabel htmlFor="invitation-token">Código de invitación</FieldLabel>
-        <Input autoComplete="off" disabled={submitting} id="invitation-token" name="token" />
+        <Input
+          autoComplete="off"
+          defaultValue={initialToken}
+          disabled={submitting}
+          id="invitation-token"
+          name="token"
+        />
         <FieldError />
       </Field>
 

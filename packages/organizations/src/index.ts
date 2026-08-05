@@ -1,8 +1,10 @@
 export { normalizeOrganizationName, type Organization } from "./domain/entities/organization.ts";
 export {
   INVITATION_STATUS,
+  REDEEM_POLICY,
   type InvitationStatus,
   type OrganizationInvitation,
+  type RedeemPolicy,
 } from "./domain/entities/organization-invitation.ts";
 export type { OrganizationMembership } from "./domain/entities/organization-membership.ts";
 
@@ -16,7 +18,10 @@ export type {
   PostAuthDestination,
 } from "./domain/value-objects/post-auth-destination.ts";
 
-export type { InvitationRepository } from "./domain/ports/invitation.repository.ts";
+export type {
+  InvitationRepository,
+  MultiRedemptionClaim,
+} from "./domain/ports/invitation.repository.ts";
 export type { InvitationTokenPort } from "./domain/ports/invitation-token.port.ts";
 export type { MembershipRepository } from "./domain/ports/membership.repository.ts";
 export type { OrganizationRepository } from "./domain/ports/organization.repository.ts";
@@ -26,9 +31,11 @@ export {
   InvitationInvalid,
   InvitationExpired,
   InvitationRevoked,
+  InvitationExhausted,
   OrganizationNotFound,
   OrganizationForbidden,
   InvalidInvitationRole,
+  InvalidInvitationRedeemPolicy,
   type AcceptInvitationError,
   type CreateInvitationError,
 } from "./domain/errors/invitation.errors.ts";

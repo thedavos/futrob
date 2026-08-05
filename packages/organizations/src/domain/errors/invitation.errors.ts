@@ -37,14 +37,27 @@ export class InvalidInvitationRole extends TaggedError("InvalidInvitationRole")<
   role: string;
 }> {}
 
+/** Multi-redeem cupo (`maxRedemptions`) is fully consumed by other actors. */
+export class InvitationExhausted extends TaggedError("InvitationExhausted")<{
+  code: "organizations.invitation_exhausted";
+  message: string;
+}> {}
+
+export class InvalidInvitationRedeemPolicy extends TaggedError("InvalidInvitationRedeemPolicy")<{
+  code: "organizations.invalid_redeem_policy";
+  message: string;
+}> {}
+
 export type AcceptInvitationError =
   | InvitationNotFound
   | InvitationInvalid
   | InvitationExpired
   | InvitationRevoked
+  | InvitationExhausted
   | OrganizationNotFound;
 
 export type CreateInvitationError =
   | InvalidInvitationRole
+  | InvalidInvitationRedeemPolicy
   | OrganizationNotFound
   | OrganizationForbidden;

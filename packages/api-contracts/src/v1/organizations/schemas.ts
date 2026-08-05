@@ -46,11 +46,26 @@ export type OrganizationNameAvailabilityResponse = z.infer<
   typeof organizationNameAvailabilityResponseSchema
 >;
 
-export const createInvitationRequestSchema = z.object({
-  role: inviteRoleSchema,
-  email: z.string().email().optional(),
-  expiresInMs: z.number().int().positive().optional(),
-});
+export const redeemPolicySchema = z.enum(["single", "multi"]);
+
+export type RedeemPolicyDto = z.infer<typeof redeemPolicySchema>;
+
+export const createInvitationRequestSchema = z
+  .object({
+    role: inviteRoleSchema,
+    email: z.string().email().optional(),
+    expiresInMs: z.number().int().positive().optional(),
+    redeemPolicy: redeemPolicySchema.optional(),
+    maxRedemptions: z.number().int().positive().max(100_000).optional(),
+  })
+  .refine((value) => value.redeemPolicy !== "multi" || value.maxRedemptions !== undefined, {
+    message: "maxRedemptions is required when redeemPolicy is multi",
+    path: ["maxRedemptions"],
+  })
+  .refine((value) => value.maxRedemptions === undefined || value.redeemPolicy === "multi", {
+    message: "maxRedemptions requires redeemPolicy multi",
+    path: ["redeemPolicy"],
+  });
 
 export type CreateInvitationRequest = z.infer<typeof createInvitationRequestSchema>;
 
@@ -59,6 +74,8 @@ export const createInvitationResponseSchema = z.object({
   competitionId: z.string().min(1).nullable().optional(),
   token: z.string().min(1),
   expiresAt: z.string().datetime(),
+  redeemPolicy: redeemPolicySchema,
+  maxRedemptions: z.number().int().positive().nullable(),
 });
 
 export type CreateInvitationResponse = z.infer<typeof createInvitationResponseSchema>;

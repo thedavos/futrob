@@ -68,7 +68,7 @@ function statusForFailureCode(code: string): number {
   if (code.includes("forbidden") || code.includes("unauthorized") || code.includes("not_owned")) {
     return 403;
   }
-  if (code.includes("conflict")) {
+  if (code.includes("conflict") || code.includes("exhausted")) {
     return 409;
   }
   if (

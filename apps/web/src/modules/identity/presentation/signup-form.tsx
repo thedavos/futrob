@@ -13,9 +13,10 @@ import {
   readFormString,
   type FormErrors,
 } from "@futrob/ui";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
+import { useAuthResume } from "@/modules/identity/presentation/auth-resume.tsx";
 import {
   AUTH_ERROR_GENERIC,
   AUTH_ERROR_NETWORK,
@@ -65,7 +66,7 @@ function signupFailure(error: AuthClientError): SignupFailure {
 }
 
 export function SignupForm() {
-  const navigate = useNavigate();
+  const { redirectTo, afterAuthenticated } = useAuthResume();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const validation = useFormValidation<AuthFormField>();
@@ -99,7 +100,7 @@ export function SignupForm() {
       }
 
       setState({ status: "success" });
-      await navigate({ to: "/onboarding" });
+      await afterAuthenticated("signup");
     } catch (error) {
       setState({
         status: "error",
@@ -225,6 +226,7 @@ export function SignupForm() {
         ¿Ya tienes una cuenta?{" "}
         <Link
           className="font-medium text-foreground underline-offset-4 hover:underline"
+          search={{ redirectTo }}
           to="/login"
         >
           Iniciar sesión

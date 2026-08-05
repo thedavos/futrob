@@ -10,9 +10,14 @@ import type { InvitationRepository } from "../../domain/ports/invitation.reposit
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
-import { INVITATION_STATUS } from "../../domain/entities/organization-invitation.ts";
+import {
+  INVITATION_STATUS,
+  REDEEM_POLICY,
+  type RedeemPolicy,
+} from "../../domain/entities/organization-invitation.ts";
 import { isInviteRole } from "../../domain/value-objects/organization-membership-role.ts";
 import {
+  InvalidInvitationRedeemPolicy,
   InvalidInvitationRole,
   OrganizationForbidden,
   OrganizationNotFound,
@@ -28,12 +33,18 @@ export interface CreateInvitationInput {
   readonly invitedByActorId: ActorId;
   readonly email?: string;
   readonly expiresInMs?: number;
+  /** Defaults to `single` (current 1:1 behavior) when omitted. */
+  readonly redeemPolicy?: RedeemPolicy;
+  /** Required and must be a positive integer when `redeemPolicy` is `multi`. */
+  readonly maxRedemptions?: number;
 }
 
 export interface CreateInvitationResult {
   readonly invitationId: string;
   readonly token: string;
   readonly expiresAt: Date;
+  readonly redeemPolicy: RedeemPolicy;
+  readonly maxRedemptions: number | null;
 }
 
 export class CreateInvitationUseCase {
@@ -70,6 +81,25 @@ export class CreateInvitationUseCase {
       );
     }
 
+    const redeemPolicy = input.redeemPolicy ?? REDEEM_POLICY.single;
+    if (redeemPolicy === REDEEM_POLICY.multi) {
+      if (!Number.isInteger(input.maxRedemptions) || (input.maxRedemptions as number) < 1) {
+        return err(
+          new InvalidInvitationRedeemPolicy({
+            code: "organizations.invalid_redeem_policy",
+            message: "maxRedemptions must be a positive integer when redeemPolicy is multi",
+          }),
+        );
+      }
+    } else if (input.maxRedemptions !== undefined) {
+      return err(
+        new InvalidInvitationRedeemPolicy({
+          code: "organizations.invalid_redeem_policy",
+          message: "maxRedemptions requires redeemPolicy multi",
+        }),
+      );
+    }
+
     const organization = await this.deps.organizations.getById(input.organizationId);
     if (!organization) {
       return err(
@@ -100,6 +130,8 @@ export class CreateInvitationUseCase {
     const invitationId = this.deps.ids.generate();
     const token = this.deps.tokens.generatePlainToken();
     const tokenHash = this.deps.tokens.hashToken(token);
+    const maxRedemptions =
+      redeemPolicy === REDEEM_POLICY.multi ? (input.maxRedemptions as number) : null;
 
     await this.deps.invitations.create({
       id: invitationId,
@@ -113,8 +145,11 @@ export class CreateInvitationUseCase {
       expiresAt,
       acceptedByActorId: null,
       createdAt: now,
+      redeemPolicy,
+      maxRedemptions,
+      redeemedCount: 0,
     });
 
-    return ok({ invitationId, token, expiresAt });
+    return ok({ invitationId, token, expiresAt, redeemPolicy, maxRedemptions });
   }
 }
