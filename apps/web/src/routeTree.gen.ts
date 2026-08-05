@@ -21,6 +21,7 @@ import { Route as AppOnboardingIndexRouteImport } from './routes/_app/onboarding
 import { Route as ApiV1OpenapiDotyamlRouteImport } from './routes/api/v1/openapi[.]yaml'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AppRosterInvitationsAcceptRouteImport } from './routes/_app/roster-invitations/accept'
 import { Route as AppPlayerGameAccountsRouteImport } from './routes/_app/player_.game-accounts'
 import { Route as AppOrgsNewRouteImport } from './routes/_app/orgs/new'
 import { Route as AppOnboardingTeamRouteImport } from './routes/_app/onboarding/team'
@@ -34,12 +35,14 @@ import { Route as AppOnboardingCompetitionRouteImport } from './routes/_app/onbo
 import { Route as AppInvitationsAcceptRouteImport } from './routes/_app/invitations/accept'
 import { Route as ApiV1OrganizationsIndexRouteImport } from './routes/api/v1/organizations/index'
 import { Route as AppOrgsOrgIdIndexRouteImport } from './routes/_app/orgs/$orgId/index'
+import { Route as ApiV1RosterInvitationsAcceptRouteImport } from './routes/api/v1/roster-invitations/accept'
 import { Route as ApiV1PlayersMeRouteImport } from './routes/api/v1/players/me'
 import { Route as ApiV1OrganizationsPostAuthDestinationRouteImport } from './routes/api/v1/organizations/post-auth-destination'
 import { Route as ApiV1OrganizationsNameAvailabilityRouteImport } from './routes/api/v1/organizations/name-availability'
 import { Route as ApiV1OrganizationsMineRouteImport } from './routes/api/v1/organizations/mine'
 import { Route as ApiV1MetaPingRouteImport } from './routes/api/v1/meta/ping'
 import { Route as ApiV1IdentityOnboardingRouteImport } from './routes/api/v1/identity/onboarding'
+import { Route as AppRosterInvitationsAcceptTokenRouteImport } from './routes/_app/roster-invitations/accept.$token'
 import { Route as ApiV1PlayersMeTeamsRouteImport } from './routes/api/v1/players/me/teams'
 import { Route as ApiV1PlayersMeGameAccountsRouteImport } from './routes/api/v1/players/me/game-accounts'
 import { Route as ApiV1PlayersMeActiveTeamRouteImport } from './routes/api/v1/players/me/active-team'
@@ -115,6 +118,12 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRosterInvitationsAcceptRoute =
+  AppRosterInvitationsAcceptRouteImport.update({
+    id: '/roster-invitations/accept',
+    path: '/roster-invitations/accept',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppPlayerGameAccountsRoute = AppPlayerGameAccountsRouteImport.update({
   id: '/player_/game-accounts',
   path: '/player/game-accounts',
@@ -183,6 +192,12 @@ const AppOrgsOrgIdIndexRoute = AppOrgsOrgIdIndexRouteImport.update({
   path: '/orgs/$orgId/',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiV1RosterInvitationsAcceptRoute =
+  ApiV1RosterInvitationsAcceptRouteImport.update({
+    id: '/api/v1/roster-invitations/accept',
+    path: '/api/v1/roster-invitations/accept',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1PlayersMeRoute = ApiV1PlayersMeRouteImport.update({
   id: '/api/v1/players/me',
   path: '/api/v1/players/me',
@@ -215,6 +230,12 @@ const ApiV1IdentityOnboardingRoute = ApiV1IdentityOnboardingRouteImport.update({
   path: '/api/v1/identity/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRosterInvitationsAcceptTokenRoute =
+  AppRosterInvitationsAcceptTokenRouteImport.update({
+    id: '/$token',
+    path: '/$token',
+    getParentRoute: () => AppRosterInvitationsAcceptRoute,
+  } as any)
 const ApiV1PlayersMeTeamsRoute = ApiV1PlayersMeTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
@@ -331,17 +352,20 @@ export interface FileRoutesByFullPath {
   '/onboarding/team': typeof AppOnboardingTeamRoute
   '/orgs/new': typeof AppOrgsNewRoute
   '/player/game-accounts': typeof AppPlayerGameAccountsRoute
+  '/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
   '/onboarding/': typeof AppOnboardingIndexRoute
   '/orgs/': typeof AppOrgsIndexRoute
+  '/roster-invitations/accept/$token': typeof AppRosterInvitationsAcceptTokenRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRouteWithChildren
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
   '/api/v1/organizations/name-availability': typeof ApiV1OrganizationsNameAvailabilityRoute
   '/api/v1/organizations/post-auth-destination': typeof ApiV1OrganizationsPostAuthDestinationRoute
   '/api/v1/players/me': typeof ApiV1PlayersMeRouteWithChildren
+  '/api/v1/roster-invitations/accept': typeof ApiV1RosterInvitationsAcceptRoute
   '/orgs/$orgId/': typeof AppOrgsOrgIdIndexRoute
   '/api/v1/organizations/': typeof ApiV1OrganizationsIndexRoute
   '/api/v1/competitions/invitations/accept': typeof ApiV1CompetitionsInvitationsAcceptRoute
@@ -377,17 +401,20 @@ export interface FileRoutesByTo {
   '/onboarding/team': typeof AppOnboardingTeamRoute
   '/orgs/new': typeof AppOrgsNewRoute
   '/player/game-accounts': typeof AppPlayerGameAccountsRoute
+  '/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
   '/onboarding': typeof AppOnboardingIndexRoute
   '/orgs': typeof AppOrgsIndexRoute
+  '/roster-invitations/accept/$token': typeof AppRosterInvitationsAcceptTokenRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRouteWithChildren
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
   '/api/v1/organizations/name-availability': typeof ApiV1OrganizationsNameAvailabilityRoute
   '/api/v1/organizations/post-auth-destination': typeof ApiV1OrganizationsPostAuthDestinationRoute
   '/api/v1/players/me': typeof ApiV1PlayersMeRouteWithChildren
+  '/api/v1/roster-invitations/accept': typeof ApiV1RosterInvitationsAcceptRoute
   '/orgs/$orgId': typeof AppOrgsOrgIdIndexRoute
   '/api/v1/organizations': typeof ApiV1OrganizationsIndexRoute
   '/api/v1/competitions/invitations/accept': typeof ApiV1CompetitionsInvitationsAcceptRoute
@@ -427,17 +454,20 @@ export interface FileRoutesById {
   '/_app/onboarding/team': typeof AppOnboardingTeamRoute
   '/_app/orgs/new': typeof AppOrgsNewRoute
   '/_app/player_/game-accounts': typeof AppPlayerGameAccountsRoute
+  '/_app/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/api/v1/openapi.yaml': typeof ApiV1OpenapiDotyamlRoute
   '/_app/onboarding/': typeof AppOnboardingIndexRoute
   '/_app/orgs/': typeof AppOrgsIndexRoute
+  '/_app/roster-invitations/accept/$token': typeof AppRosterInvitationsAcceptTokenRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRouteWithChildren
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
   '/api/v1/organizations/name-availability': typeof ApiV1OrganizationsNameAvailabilityRoute
   '/api/v1/organizations/post-auth-destination': typeof ApiV1OrganizationsPostAuthDestinationRoute
   '/api/v1/players/me': typeof ApiV1PlayersMeRouteWithChildren
+  '/api/v1/roster-invitations/accept': typeof ApiV1RosterInvitationsAcceptRoute
   '/_app/orgs/$orgId/': typeof AppOrgsOrgIdIndexRoute
   '/api/v1/organizations/': typeof ApiV1OrganizationsIndexRoute
   '/api/v1/competitions/invitations/accept': typeof ApiV1CompetitionsInvitationsAcceptRoute
@@ -476,17 +506,20 @@ export interface FileRouteTypes {
     | '/onboarding/team'
     | '/orgs/new'
     | '/player/game-accounts'
+    | '/roster-invitations/accept'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
     | '/onboarding/'
     | '/orgs/'
+    | '/roster-invitations/accept/$token'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
     | '/api/v1/organizations/name-availability'
     | '/api/v1/organizations/post-auth-destination'
     | '/api/v1/players/me'
+    | '/api/v1/roster-invitations/accept'
     | '/orgs/$orgId/'
     | '/api/v1/organizations/'
     | '/api/v1/competitions/invitations/accept'
@@ -522,17 +555,20 @@ export interface FileRouteTypes {
     | '/onboarding/team'
     | '/orgs/new'
     | '/player/game-accounts'
+    | '/roster-invitations/accept'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
     | '/onboarding'
     | '/orgs'
+    | '/roster-invitations/accept/$token'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
     | '/api/v1/organizations/name-availability'
     | '/api/v1/organizations/post-auth-destination'
     | '/api/v1/players/me'
+    | '/api/v1/roster-invitations/accept'
     | '/orgs/$orgId'
     | '/api/v1/organizations'
     | '/api/v1/competitions/invitations/accept'
@@ -571,17 +607,20 @@ export interface FileRouteTypes {
     | '/_app/onboarding/team'
     | '/_app/orgs/new'
     | '/_app/player_/game-accounts'
+    | '/_app/roster-invitations/accept'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
     | '/api/v1/openapi.yaml'
     | '/_app/onboarding/'
     | '/_app/orgs/'
+    | '/_app/roster-invitations/accept/$token'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
     | '/api/v1/organizations/name-availability'
     | '/api/v1/organizations/post-auth-destination'
     | '/api/v1/players/me'
+    | '/api/v1/roster-invitations/accept'
     | '/_app/orgs/$orgId/'
     | '/api/v1/organizations/'
     | '/api/v1/competitions/invitations/accept'
@@ -615,6 +654,7 @@ export interface RootRouteChildren {
   ApiV1OrganizationsNameAvailabilityRoute: typeof ApiV1OrganizationsNameAvailabilityRoute
   ApiV1OrganizationsPostAuthDestinationRoute: typeof ApiV1OrganizationsPostAuthDestinationRoute
   ApiV1PlayersMeRoute: typeof ApiV1PlayersMeRouteWithChildren
+  ApiV1RosterInvitationsAcceptRoute: typeof ApiV1RosterInvitationsAcceptRoute
   ApiV1OrganizationsIndexRoute: typeof ApiV1OrganizationsIndexRoute
   ApiV1CompetitionsInvitationsAcceptRoute: typeof ApiV1CompetitionsInvitationsAcceptRoute
   ApiV1GameDataClubsExternalClubIdRoute: typeof ApiV1GameDataClubsExternalClubIdRouteWithChildren
@@ -710,6 +750,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/roster-invitations/accept': {
+      id: '/_app/roster-invitations/accept'
+      path: '/roster-invitations/accept'
+      fullPath: '/roster-invitations/accept'
+      preLoaderRoute: typeof AppRosterInvitationsAcceptRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/player_/game-accounts': {
       id: '/_app/player_/game-accounts'
       path: '/player/game-accounts'
@@ -801,6 +848,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgsOrgIdIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/v1/roster-invitations/accept': {
+      id: '/api/v1/roster-invitations/accept'
+      path: '/api/v1/roster-invitations/accept'
+      fullPath: '/api/v1/roster-invitations/accept'
+      preLoaderRoute: typeof ApiV1RosterInvitationsAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/players/me': {
       id: '/api/v1/players/me'
       path: '/api/v1/players/me'
@@ -842,6 +896,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/identity/onboarding'
       preLoaderRoute: typeof ApiV1IdentityOnboardingRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/roster-invitations/accept/$token': {
+      id: '/_app/roster-invitations/accept/$token'
+      path: '/$token'
+      fullPath: '/roster-invitations/accept/$token'
+      preLoaderRoute: typeof AppRosterInvitationsAcceptTokenRouteImport
+      parentRoute: typeof AppRosterInvitationsAcceptRoute
     }
     '/api/v1/players/me/teams': {
       id: '/api/v1/players/me/teams'
@@ -986,12 +1047,27 @@ const AppOnboardingRouteWithChildren = AppOnboardingRoute._addFileChildren(
   AppOnboardingRouteChildren,
 )
 
+interface AppRosterInvitationsAcceptRouteChildren {
+  AppRosterInvitationsAcceptTokenRoute: typeof AppRosterInvitationsAcceptTokenRoute
+}
+
+const AppRosterInvitationsAcceptRouteChildren: AppRosterInvitationsAcceptRouteChildren =
+  {
+    AppRosterInvitationsAcceptTokenRoute: AppRosterInvitationsAcceptTokenRoute,
+  }
+
+const AppRosterInvitationsAcceptRouteWithChildren =
+  AppRosterInvitationsAcceptRoute._addFileChildren(
+    AppRosterInvitationsAcceptRouteChildren,
+  )
+
 interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRouteWithChildren
   AppPlayerRoute: typeof AppPlayerRoute
   AppInvitationsAcceptRoute: typeof AppInvitationsAcceptRoute
   AppOrgsNewRoute: typeof AppOrgsNewRoute
   AppPlayerGameAccountsRoute: typeof AppPlayerGameAccountsRoute
+  AppRosterInvitationsAcceptRoute: typeof AppRosterInvitationsAcceptRouteWithChildren
   AppOrgsIndexRoute: typeof AppOrgsIndexRoute
   AppOrgsOrgIdIndexRoute: typeof AppOrgsOrgIdIndexRoute
   AppOrgsOrgIdCompetitionsCompetitionIdSetupRoute: typeof AppOrgsOrgIdCompetitionsCompetitionIdSetupRoute
@@ -1004,6 +1080,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInvitationsAcceptRoute: AppInvitationsAcceptRoute,
   AppOrgsNewRoute: AppOrgsNewRoute,
   AppPlayerGameAccountsRoute: AppPlayerGameAccountsRoute,
+  AppRosterInvitationsAcceptRoute: AppRosterInvitationsAcceptRouteWithChildren,
   AppOrgsIndexRoute: AppOrgsIndexRoute,
   AppOrgsOrgIdIndexRoute: AppOrgsOrgIdIndexRoute,
   AppOrgsOrgIdCompetitionsCompetitionIdSetupRoute:
@@ -1107,6 +1184,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1OrganizationsPostAuthDestinationRoute:
     ApiV1OrganizationsPostAuthDestinationRoute,
   ApiV1PlayersMeRoute: ApiV1PlayersMeRouteWithChildren,
+  ApiV1RosterInvitationsAcceptRoute: ApiV1RosterInvitationsAcceptRoute,
   ApiV1OrganizationsIndexRoute: ApiV1OrganizationsIndexRoute,
   ApiV1CompetitionsInvitationsAcceptRoute:
     ApiV1CompetitionsInvitationsAcceptRoute,

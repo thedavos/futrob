@@ -1,10 +1,14 @@
 import {
+  acceptRosterInvitationRequestSchema,
+  acceptRosterInvitationResponseSchema,
   addMyPlayerGameAccountRequestSchema,
   addMyPlayerGameAccountResponseSchema,
   getMyPlayerProfileResponseSchema,
   getMyTeamsResponseSchema,
   setActiveTeamRequestSchema,
   setActiveTeamResponseSchema,
+  type AcceptRosterInvitationRequest,
+  type AcceptRosterInvitationResponse,
   type AddMyPlayerGameAccountRequest,
   type AddMyPlayerGameAccountResponse,
   type GetMyPlayerProfileResponse,
@@ -80,6 +84,17 @@ export const teamsBrowserClient = {
       method: "PUT",
       body,
       parse: (data) => setActiveTeamResponseSchema.parse(data),
+    });
+  },
+  acceptRosterInvitation(
+    input: AcceptRosterInvitationRequest,
+  ): Promise<AcceptRosterInvitationResponse> {
+    const body = acceptRosterInvitationRequestSchema.parse(input);
+    return requestJson({
+      path: "/api/v1/roster-invitations/accept",
+      method: "POST",
+      body,
+      parse: (data) => acceptRosterInvitationResponseSchema.parse(data),
     });
   },
 };

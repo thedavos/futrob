@@ -13,7 +13,7 @@ import {
   readFormString,
   type FormErrors,
 } from "@futrob/ui";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import {
@@ -34,6 +34,7 @@ import {
   type SignupValues,
 } from "@/modules/identity/presentation/signup-form-validation.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import { sanitizePostAuthRedirect } from "@/shared/presentation/auth/post-auth-redirect.ts";
 
 interface SignupFailure {
   fieldErrors?: FormErrors<AuthFormField>;
@@ -64,8 +65,9 @@ function signupFailure(error: AuthClientError): SignupFailure {
   }
 }
 
-export function SignupForm() {
+export function SignupForm(props: { readonly redirect?: string }) {
   const navigate = useNavigate();
+  const router = useRouter();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const validation = useFormValidation<AuthFormField>();
@@ -99,6 +101,11 @@ export function SignupForm() {
       }
 
       setState({ status: "success" });
+      const redirect = sanitizePostAuthRedirect(props.redirect);
+      if (redirect) {
+        router.history.push(redirect);
+        return;
+      }
       await navigate({ to: "/onboarding" });
     } catch (error) {
       setState({
@@ -226,6 +233,7 @@ export function SignupForm() {
         <Link
           className="font-medium text-foreground underline-offset-4 hover:underline"
           to="/login"
+          search={props.redirect ? { redirect: props.redirect } : undefined}
         >
           Iniciar sesión
         </Link>
