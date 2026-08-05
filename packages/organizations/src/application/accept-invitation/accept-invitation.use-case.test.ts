@@ -410,6 +410,57 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     expect(stored?.redeemedCount).toBe(1);
   });
 
+  it("does not burn cupo when an existing org member accepts a multi invitation", async () => {
+    const harness = createOrgTestHarness();
+    const createOrg = new CreateOrganizationUseCase(harness);
+    const createInvite = new CreateInvitationUseCase(harness);
+    const acceptInvite = new AcceptInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const newcomer = harness.actor("newcomer");
+
+    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    expect(org.isOk()).toBe(true);
+    if (!org.isOk()) return;
+
+    const invite = await createInvite.execute({
+      organizationId: org.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+      redeemPolicy: "multi",
+      maxRedemptions: 1,
+    });
+    expect(invite.isOk()).toBe(true);
+    if (!invite.isOk()) return;
+
+    const existingMember = await acceptInvite.execute({
+      token: invite.value.token,
+      actorId: organizer,
+    });
+    expect(existingMember.isOk()).toBe(true);
+    if (!existingMember.isOk()) return;
+    expect(existingMember.value.role).toBe("organizer");
+    expect(existingMember.value.competitionRole).toBe("player");
+
+    const storedAfterMember = await harness.invitations.findByTokenHash(
+      harness.tokens.hashToken(invite.value.token),
+    );
+    expect(storedAfterMember?.redeemedCount).toBe(0);
+
+    const firstRealRedeem = await acceptInvite.execute({
+      token: invite.value.token,
+      actorId: newcomer,
+    });
+    expect(firstRealRedeem.isOk()).toBe(true);
+    if (!firstRealRedeem.isOk()) return;
+    expect(firstRealRedeem.value.role).toBe("player");
+
+    const storedAfterNewcomer = await harness.invitations.findByTokenHash(
+      harness.tokens.hashToken(invite.value.token),
+    );
+    expect(storedAfterNewcomer?.redeemedCount).toBe(1);
+  });
+
   it("never lets concurrent claims exceed maxRedemptions cupo", async () => {
     const harness = createOrgTestHarness();
     const createOrg = new CreateOrganizationUseCase(harness);
