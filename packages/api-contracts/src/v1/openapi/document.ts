@@ -554,6 +554,64 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/organizations/{organizationId}/competitions": {
+      get: {
+        operationId: "listOrganizationCompetitions",
+        tags: ["competitions"],
+        summary: "List competitions in an organization",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Organization competitions newest-first",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["competitions"],
+                  properties: {
+                    competitions: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Competition" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+      post: {
+        operationId: "createCompetitionDraft",
+        tags: ["competitions"],
+        summary: "Create a competition draft in an organization",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CompetitionDraftInput" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Competition draft created",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/CompetitionDraft" } },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     "/organizations/{organizationId}/competitions/{competitionId}": {
       get: {
         operationId: "getCompetitionDraft",

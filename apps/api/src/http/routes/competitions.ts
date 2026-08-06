@@ -2,9 +2,12 @@ import { Hono } from "hono";
 import {
   acceptCompetitionInvitationResponseSchema,
   acceptInvitationRequestSchema,
+  createCompetitionDraftRequestSchema,
+  createCompetitionDraftResponseSchema,
   createInvitationRequestSchema,
   createInvitationResponseSchema,
   getCompetitionDraftResponseSchema,
+  listOrganizationCompetitionsResponseSchema,
   registerTeamEntryRequestSchema,
   registerTeamEntryResponseSchema,
 } from "@futrob/api-contracts";
@@ -15,13 +18,66 @@ import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
 } from "@/http/middleware/service-auth.ts";
-import { competitionDraftDto } from "@/http/mappers/competition.ts";
+import { competitionDto, competitionDraftDto } from "@/http/mappers/competition.ts";
 import { competitionEntryDto } from "@/http/mappers/competition-entry.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
   secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+
+  secured.get("/organizations/:organizationId/competitions", async (c) => {
+    const organizationId = asOrganizationId(c.req.param("organizationId"));
+    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+      actorId: c.get("actorId"),
+    });
+    const membership = memberships.find((item) => item.organizationId === organizationId);
+    if (!membership || !["organizer", "staff"].includes(membership.role)) {
+      return apiErrorResponse(403, {
+        code: "competitions.forbidden",
+        messageKey: "errors.competitions.forbidden",
+      });
+    }
+
+    const competitions = await deps.modules.competitions.listByOrganization.execute({
+      organizationId,
+    });
+    return jsonResponse(
+      listOrganizationCompetitionsResponseSchema.parse({
+        competitions: competitions.map(competitionDto),
+      }),
+    );
+  });
+
+  secured.post("/organizations/:organizationId/competitions", async (c) => {
+    const parsed = createCompetitionDraftRequestSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+
+    const organizationId = asOrganizationId(c.req.param("organizationId"));
+    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+      actorId: c.get("actorId"),
+    });
+    const membership = memberships.find((item) => item.organizationId === organizationId);
+    if (!membership || !["organizer", "staff"].includes(membership.role)) {
+      return apiErrorResponse(403, {
+        code: "competitions.forbidden",
+        messageKey: "errors.competitions.forbidden",
+      });
+    }
+
+    const result = await deps.modules.competitions.createDraft.execute({
+      organizationId,
+      actorId: c.get("actorId"),
+      ...parsed.data,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      createCompetitionDraftResponseSchema.parse(competitionDraftDto(result.value)),
+      201,
+    );
+  });
 
   secured.get("/organizations/:organizationId/competitions/:competitionId", async (c) => {
     const organizationId = asOrganizationId(c.req.param("organizationId"));

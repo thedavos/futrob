@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  isOnboardingPathname,
   isOnboardingStepAllowedForPath,
   resolveOnboardingStep,
   resolvePersistedOnboardingStep,
@@ -29,6 +30,14 @@ describe("onboarding routing", () => {
     expect(routeForOnboardingStep("game-account")).toBe("/onboarding/game-account");
     expect(routeForOnboardingStep("team")).toBe("/onboarding/team");
     expect(routeForOnboardingStep("competition")).toBe("/onboarding/competition");
+  });
+
+  it("recognizes onboarding pathnames only", () => {
+    expect(isOnboardingPathname("/onboarding")).toBe(true);
+    expect(isOnboardingPathname("/onboarding/")).toBe(true);
+    expect(isOnboardingPathname("/onboarding/intention")).toBe(true);
+    expect(isOnboardingPathname("/player")).toBe(false);
+    expect(isOnboardingPathname("/orgs/abc")).toBe(false);
   });
 
   it("validates in-session steps against path", () => {

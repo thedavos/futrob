@@ -32,6 +32,13 @@ class FakeCompetitionRepository implements CompetitionRepository {
   async findRulesByCompetitionId(competitionId: ReturnType<typeof asCompetitionId>) {
     return this.rows.get(competitionId)?.rules ?? null;
   }
+
+  async listByOrganization(organizationId: ReturnType<typeof asOrganizationId>) {
+    return [...this.rows.values()]
+      .map((row) => row.competition)
+      .filter((competition) => competition.organizationId === organizationId)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
 }
 
 class FakeEntryRepository implements CompetitionEntryRepository {

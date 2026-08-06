@@ -66,3 +66,7 @@ export function isOnboardingStepAllowedForPath(
 export function routeForOnboardingStep(step: OnboardingStepDto): OnboardingRoute {
   return routeByStep[step];
 }
+
+export function isOnboardingPathname(pathname: string): boolean {
+  return pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+}

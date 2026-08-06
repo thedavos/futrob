@@ -14,6 +14,8 @@ export const queryKeys = {
   },
   competitions: {
     all: ["competitions"] as const,
+    byOrganization: (organizationId: string) =>
+      [...queryKeys.competitions.all, "by-organization", organizationId] as const,
     draft: (organizationId: string, competitionId: string) =>
       [...queryKeys.competitions.all, "draft", organizationId, competitionId] as const,
   },

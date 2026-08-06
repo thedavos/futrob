@@ -491,6 +491,66 @@ paths:
           $ref: "#/components/responses/ApiError"
         "404":
           $ref: "#/components/responses/ApiError"
+  /organizations/{organizationId}/competitions:
+    get:
+      operationId: listOrganizationCompetitions
+      tags:
+        - competitions
+      summary: List competitions in an organization
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Organization competitions newest-first
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - competitions
+                properties:
+                  competitions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Competition"
+        "401":
+          $ref: "#/components/responses/ApiError"
+        "403":
+          $ref: "#/components/responses/ApiError"
+    post:
+      operationId: createCompetitionDraft
+      tags:
+        - competitions
+      summary: Create a competition draft in an organization
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompetitionDraftInput"
+      responses:
+        "201":
+          description: Competition draft created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionDraft"
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "401":
+          $ref: "#/components/responses/ApiError"
+        "403":
+          $ref: "#/components/responses/ApiError"
   /organizations/{organizationId}/competitions/{competitionId}:
     get:
       operationId: getCompetitionDraft
@@ -559,6 +619,15 @@ paths:
                 expiresInMs:
                   type: integer
                   minimum: 1
+                redeemPolicy:
+                  type: string
+                  enum:
+                    - single
+                    - multi
+                maxRedemptions:
+                  type: integer
+                  minimum: 1
+                  description: Required when redeemPolicy is multi
       responses:
         "201":
           description: Competition invitation created
@@ -571,6 +640,8 @@ paths:
                   - competitionId
                   - token
                   - expiresAt
+                  - redeemPolicy
+                  - maxRedemptions
                 properties:
                   invitationId:
                     type: string
@@ -581,6 +652,15 @@ paths:
                   expiresAt:
                     type: string
                     format: date-time
+                  redeemPolicy:
+                    type: string
+                    enum:
+                      - single
+                      - multi
+                  maxRedemptions:
+                    type: integer
+                    minimum: 1
+                    nullable: true
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
@@ -636,6 +716,7 @@ components:
         - name
         - platform
         - gameEdition
+        - imageUrl
       properties:
         providerKey:
           type: string
@@ -651,6 +732,11 @@ components:
           type: string
         gameEdition:
           type: string
+        imageUrl:
+          type:
+            - string
+            - "null"
+          format: uri
     ProviderMatch:
       type: object
       required:

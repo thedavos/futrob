@@ -31,6 +31,13 @@ export class InMemoryCompetitionRepository implements CompetitionRepository {
   async findRulesByCompetitionId(competitionId: CompetitionId) {
     return this.byId.get(competitionId)?.rules ?? null;
   }
+
+  async listByOrganization(organizationId: OrganizationId) {
+    return [...this.byId.values()]
+      .map((draft) => draft.competition)
+      .filter((competition) => competition.organizationId === organizationId)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
 }
 
 export class InMemoryCompetitionMembershipRepository implements CompetitionMembershipRepository {

@@ -71,6 +71,15 @@ describe.each(repositoryCases())("competition %s repository", (_name, createRepo
       repository.findByCreationKey("onboarding:competition:actor-1"),
     ).resolves.toMatchObject({ competition: { id: "competition-1" } });
   });
+
+  it("lists competitions for an organization newest-first", async () => {
+    const repository = createRepository();
+    await repository.saveDraft(draft);
+    const listed = await repository.listByOrganization(asOrganizationId("org-1"));
+    expect(listed).toHaveLength(1);
+    expect(listed[0]?.name).toBe("Liga Futrob");
+    await expect(repository.listByOrganization(asOrganizationId("org-other"))).resolves.toEqual([]);
+  });
 });
 
 describe("PostgresCompetitionRepository nested in TransactionPort", () => {
@@ -136,6 +145,12 @@ class FakeCompetitionPool {
         created_at: values[7],
       };
       return { rows: [this.rules] };
+    }
+    if (text.includes("FROM competitions") && text.includes("WHERE organization_id")) {
+      if (!this.competition || values[0] !== this.competition.organization_id) {
+        return { rows: [] };
+      }
+      return { rows: [this.competition] };
     }
     if (text.includes("SELECT c.*")) {
       if (!this.competition || !this.rules) return { rows: [] };

@@ -43,6 +43,10 @@ export {
 } from "./application/create-competition-draft/create-competition-draft.use-case.ts";
 export { GetCompetitionDraftUseCase } from "./application/get-competition-draft/get-competition-draft.use-case.ts";
 export {
+  ListOrganizationCompetitionsUseCase,
+  type ListOrganizationCompetitionsInput,
+} from "./application/list-organization-competitions/list-organization-competitions.use-case.ts";
+export {
   JoinCompetitionUseCase,
   type JoinCompetitionInput,
 } from "./application/join-competition/join-competition.use-case.ts";

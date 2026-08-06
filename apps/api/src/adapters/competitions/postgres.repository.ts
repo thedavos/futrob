@@ -132,6 +132,18 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     return result.rows[0] ? rehydrateRules(result.rows[0]) : null;
   }
 
+  async listByOrganization(organizationId: OrganizationId): Promise<Competition[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, organization_id, name, status, modality, game_edition, platform, region,
+              time_zone, format, created_by_actor_id, creation_key, created_at, updated_at
+       FROM competitions
+       WHERE organization_id = $1
+       ORDER BY updated_at DESC`,
+      [organizationId],
+    );
+    return result.rows.map((row) => rehydrateCompetition(row));
+  }
+
   private async findOne(
     where: string,
     values: readonly unknown[],

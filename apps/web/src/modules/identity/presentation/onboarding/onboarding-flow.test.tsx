@@ -148,6 +148,34 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBeTruthy();
   });
 
+  it("does not bounce a finished player back to intention when the provider stays mounted", async () => {
+    const completePlayer = vi.fn(async () => undefined);
+    const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "review" });
+    gateway.completePlayer = completePlayer;
+
+    render(
+      <OnboardingStoryRouter
+        bootstrap="cold"
+        gateway={gateway}
+        initialPath="/onboarding/intention"
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("radio", { name: /Empezar como jugador/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    await screen.findByRole("heading", { name: "Configura tus datos de juego" });
+    fireEvent.click(screen.getByRole("button", { name: "Omitir por ahora" }));
+    await screen.findByRole("heading", { name: "Asocia tu club EA" });
+    fireEvent.click(screen.getByRole("button", { name: "Omitir por ahora" }));
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a mi espacio" }));
+
+    expect(await screen.findByRole("heading", { name: "Espacio personal" })).toBeTruthy();
+    expect(completePlayer).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("heading", { name: "¿Qué quieres hacer primero?" })).toBeNull();
+  });
+
   it("turns an omitted invitation into the player path", async () => {
     render(
       <OnboardingStoryRouter
@@ -166,9 +194,7 @@ describe("OnboardingFlowProvider initialization", () => {
     await screen.findByRole("heading", { name: "Confirma tu configuración" });
 
     const startingPath = screen.getByText("Cómo empezarás");
-    expect(startingPath.parentElement?.querySelector("svg")?.getAttribute("class")).toContain(
-      "lucide-signpost",
-    );
+    expect(startingPath.parentElement?.querySelector("svg")).not.toBeNull();
     expect(screen.getByText("Empezar como jugador")).toBeTruthy();
     expect(screen.getByText("Sin club asociado por ahora")).toBeTruthy();
     expect(

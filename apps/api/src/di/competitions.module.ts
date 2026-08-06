@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   ApproveCompetitionEntryUseCase,
   CreateCompetitionDraftUseCase,
+  ListOrganizationCompetitionsUseCase,
   GetCompetitionDraftUseCase,
   GetTeamEntryUseCase,
   JoinCompetitionUseCase,
@@ -47,6 +48,7 @@ export function createCompetitionsModule(input: {
     repository: competitions,
     createDraft: new CreateCompetitionDraftUseCase({ competitions, ...shared }),
     getDraft: new GetCompetitionDraftUseCase(competitions),
+    listByOrganization: new ListOrganizationCompetitionsUseCase(competitions),
     join: new JoinCompetitionUseCase({ competitions, memberships, clock: shared.clock }),
     registerTeamEntry: new RegisterTeamEntryUseCase({
       competitions,

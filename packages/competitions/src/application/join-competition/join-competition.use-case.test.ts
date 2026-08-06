@@ -35,6 +35,10 @@ class FakeCompetitionRepository implements CompetitionRepository {
   async findRulesByCompetitionId() {
     return competitionDraft.rules;
   }
+
+  async listByOrganization() {
+    return [competitionDraft.competition];
+  }
 }
 
 class FakeMembershipRepository implements CompetitionMembershipRepository {

@@ -1,22 +1,26 @@
-import type { CompetitionDraft } from "@futrob/competitions";
-import type { CompetitionDraftDto } from "@futrob/api-contracts";
+import type { Competition, CompetitionDraft } from "@futrob/competitions";
+import type { CompetitionDraftDto, CompetitionDto } from "@futrob/api-contracts";
+
+export function competitionDto(competition: Competition): CompetitionDto {
+  return {
+    id: competition.id,
+    organizationId: competition.organizationId,
+    name: competition.name,
+    status: competition.status,
+    modality: competition.modality,
+    gameEdition: competition.gameEdition,
+    platform: competition.platform,
+    region: competition.region,
+    timeZone: competition.timeZone,
+    format: competition.format,
+    createdAt: competition.createdAt.toISOString(),
+    updatedAt: competition.updatedAt.toISOString(),
+  };
+}
 
 export function competitionDraftDto(draft: CompetitionDraft): CompetitionDraftDto {
   return {
-    competition: {
-      id: draft.competition.id,
-      organizationId: draft.competition.organizationId,
-      name: draft.competition.name,
-      status: draft.competition.status,
-      modality: draft.competition.modality,
-      gameEdition: draft.competition.gameEdition,
-      platform: draft.competition.platform,
-      region: draft.competition.region,
-      timeZone: draft.competition.timeZone,
-      format: draft.competition.format,
-      createdAt: draft.competition.createdAt.toISOString(),
-      updatedAt: draft.competition.updatedAt.toISOString(),
-    },
+    competition: competitionDto(draft.competition),
     rules: {
       version: draft.rules.version,
       regularStage: draft.rules.regularStage,

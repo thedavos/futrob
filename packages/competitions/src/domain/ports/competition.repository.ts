@@ -15,4 +15,5 @@ export interface CompetitionRepository {
   ): Promise<CompetitionDraft | null>;
   findByCreationKey(creationKey: string): Promise<CompetitionDraft | null>;
   findRulesByCompetitionId(competitionId: CompetitionId): Promise<CompetitionRules | null>;
+  listByOrganization(organizationId: OrganizationId): Promise<Competition[]>;
 }

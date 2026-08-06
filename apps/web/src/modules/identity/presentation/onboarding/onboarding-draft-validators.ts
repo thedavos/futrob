@@ -1,5 +1,7 @@
 import type { OnboardingDraft } from "./onboarding-flow.tsx";
 
+export { isIanaTimeZone } from "@/modules/competitions/presentation/validate-competition-draft-input.ts";
+
 export function validOrganizationName(value: string): boolean {
   const length = value.trim().length;
   return length > 0 && length <= 120;
@@ -21,14 +23,4 @@ export function providerGameEditionFromDraft(gameEdition: string, fallback = "fc
     .toLowerCase()
     .replace(/[\s_-]+/g, "");
   return normalized.length > 0 ? normalized : fallback;
-}
-
-export function isIanaTimeZone(value: string): boolean {
-  if (!value.trim()) return false;
-  try {
-    new Intl.DateTimeFormat("es", { timeZone: value.trim() }).format();
-    return true;
-  } catch {
-    return false;
-  }
 }

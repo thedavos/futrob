@@ -1,7 +1,15 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import type {
   CompetitionDraftInputDto,
@@ -30,6 +38,7 @@ import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-dat
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
 import {
+  isOnboardingPathname,
   resolveOnboardingStep,
   resolvePersistedOnboardingStep,
   routeForOnboardingStep,
@@ -144,6 +153,7 @@ export function OnboardingFlowProvider({
   );
   const [saving, setSaving] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const finishingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [path, setPathState] = useState<OnboardingPathDto | null>(() => initialStatus.path);
   const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(() =>
@@ -203,7 +213,7 @@ export function OnboardingFlowProvider({
         return gateway.searchExternalClubs(input);
       },
       async goTo(step, requestedPath = path) {
-        if (leaving || saving) return;
+        if (leaving || saving || finishingRef.current) return;
         const previousPath = path;
         const previousStep = currentStep;
         setError(null);
@@ -220,7 +230,8 @@ export function OnboardingFlowProvider({
         }
       },
       async finish() {
-        if (!path || saving) return;
+        if (!path || saving || finishingRef.current) return;
+        finishingRef.current = true;
         setSaving(true);
         setLeaving(true);
         setError(null);
@@ -233,6 +244,7 @@ export function OnboardingFlowProvider({
               competition,
               gameAccount: playerAccountFromDraft(draft),
             });
+            markOnboardingCompletedInCache(queryClient, path);
             await navigate({
               to: "/orgs/$orgId/competitions/$competitionId/setup",
               params: {
@@ -246,6 +258,7 @@ export function OnboardingFlowProvider({
               token: draft.invitationToken.trim(),
               gameAccount: playerAccountFromDraft(draft),
             });
+            markOnboardingCompletedInCache(queryClient, path);
             await navigate({
               to: "/orgs/$orgId/competitions/$competitionId",
               params: {
@@ -259,22 +272,39 @@ export function OnboardingFlowProvider({
               gameAccount: playerAccountFromDraft(draft),
               externalClub: externalClubLocatorFromDraft(draft),
             });
+            markOnboardingCompletedInCache(queryClient, path);
             await navigate({ to: "/player", replace: true });
           }
         } catch (caught) {
+          finishingRef.current = false;
           setError(finalizationError(path, caught));
           setLeaving(false);
           setSaving(false);
         }
       },
     }),
-    [currentStep, draft, error, gateway, leaving, navigate, path, saveProgressMutation, saving],
+    [
+      currentStep,
+      draft,
+      error,
+      gateway,
+      leaving,
+      navigate,
+      path,
+      queryClient,
+      saveProgressMutation,
+      saving,
+    ],
   );
 
   const expectedRoute = routeForOnboardingStep(currentStep);
+  // Only correct the URL while we are still inside onboarding. During exit
+  // transitions the provider can briefly see pathname=/player with a remounted
+  // cold state (intention); navigating then loops the user back to the start.
+  const shouldSyncRoute = !leaving && isOnboardingPathname(pathname) && pathname !== expectedRoute;
   return (
     <OnboardingFlowContext value={value}>
-      {!leaving && pathname !== expectedRoute ? (
+      {shouldSyncRoute ? (
         <>
           <Navigate to={expectedRoute} replace />
           <RoutePendingState message="Recuperando tu progreso…" />
@@ -284,6 +314,19 @@ export function OnboardingFlowProvider({
       )}
     </OnboardingFlowContext>
   );
+}
+
+function markOnboardingCompletedInCache(queryClient: QueryClient, path: OnboardingPathDto): void {
+  const previous = queryClient.getQueryData<OnboardingStatusDto>(
+    queryKeys.identity.onboardingStatus(),
+  );
+  queryClient.setQueryData(queryKeys.identity.onboardingStatus(), {
+    completed: true,
+    completedAt: previous?.completedAt ?? new Date().toISOString(),
+    version: previous?.version ?? 1,
+    path,
+    currentStep: null,
+  } satisfies OnboardingStatusDto);
 }
 
 export function competitionFromDraft(draft: OnboardingDraft): CompetitionDraftInputDto | null {

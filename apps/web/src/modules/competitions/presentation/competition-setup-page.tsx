@@ -1,10 +1,13 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import type { CompetitionDraftDto } from "@futrob/api-contracts";
-import { Alert, AlertDescription, Badge, Button, Card, CardContent } from "@futrob/ui";
-import { GAME_PLATFORM } from "@futrob/shared-kernel";
-import { CalendarDays, CircleAlert, ListChecks, RadioTower, type LucideIcon } from "lucide-react";
+import { Alert, AlertDescription, Badge, Button, Card, CardContent, type Icon } from "@futrob/ui";
+import { Broadcast, CalendarDots, ListChecks, WarningCircle } from "@phosphor-icons/react";
+import {
+  competitionFormatLabel,
+  competitionPlatformLabel,
+  competitionRegionLabel,
+} from "@/modules/competitions/presentation/competition-draft-meta.ts";
 import { CreateCompetitionInvitationPanel } from "@/modules/organizations/presentation/create-competition-invitation-panel.tsx";
 import { useCompetitionDraftQuery } from "./competition-queries.ts";
 
@@ -21,7 +24,7 @@ export function CompetitionSetupPage({
       <div className="mx-auto w-full max-w-3xl">
         {failed ? (
           <Alert variant="destructive">
-            <CircleAlert aria-hidden="true" />
+            <WarningCircle aria-hidden="true" />
             <AlertDescription>
               No se pudo cargar el borrador de la competición. Inténtalo de nuevo.
             </AlertDescription>
@@ -43,10 +46,10 @@ export function CompetitionSetupPage({
               <CardContent className="grid gap-0 p-0 sm:grid-cols-2">
                 {[
                   ["Edición", draft.competition.gameEdition],
-                  ["Plataforma", platformLabel(draft.competition.platform)],
-                  ["Región", regionLabel(draft.competition.region)],
+                  ["Plataforma", competitionPlatformLabel(draft.competition.platform)],
+                  ["Región", competitionRegionLabel(draft.competition.region)],
                   ["Zona horaria", draft.competition.timeZone],
-                  ["Formato", formatLabel(draft.competition.format)],
+                  ["Formato", competitionFormatLabel(draft.competition.format)],
                   ["Reglas", `Versión ${draft.rules.version}`],
                 ].map(([label, value], index) => (
                   <div
@@ -66,8 +69,8 @@ export function CompetitionSetupPage({
               </h2>
               <div className="divide-y divide-border-subtle border-y border-border-subtle">
                 <SetupTask icon={ListChecks} label="Revisar reglas" />
-                <SetupTask icon={CalendarDays} label="Configurar calendario" />
-                <SetupTask icon={RadioTower} label="Preparar publicación" />
+                <SetupTask icon={CalendarDots} label="Configurar calendario" />
+                <SetupTask icon={Broadcast} label="Preparar publicación" />
               </div>
               <p className="mt-4 typo-caption text-muted-foreground">
                 Estas configuraciones se habilitarán en el wizard operativo de la competición.
@@ -96,7 +99,7 @@ export function CompetitionSetupPage({
   );
 }
 
-function SetupTask({ icon: Icon, label }: { readonly icon: LucideIcon; readonly label: string }) {
+function SetupTask({ icon: Icon, label }: { readonly icon: Icon; readonly label: string }) {
   return (
     <div className="flex min-h-16 items-center gap-4 py-4">
       <Icon aria-hidden="true" className="size-5 text-muted-foreground" />
@@ -104,36 +107,4 @@ function SetupTask({ icon: Icon, label }: { readonly icon: LucideIcon; readonly 
       <Badge variant="neutral">Pendiente</Badge>
     </div>
   );
-}
-
-function platformLabel(value: CompetitionDraftDto["competition"]["platform"]): string {
-  return {
-    [GAME_PLATFORM.PLAYSTATION]: "PlayStation",
-    [GAME_PLATFORM.XBOX]: "Xbox",
-    [GAME_PLATFORM.PC]: "PC",
-    [GAME_PLATFORM.NINTENDO_SWITCH_1]: "Nintendo Switch 1",
-    [GAME_PLATFORM.NINTENDO_SWITCH_2]: "Nintendo Switch 2",
-  }[value];
-}
-
-function regionLabel(value: CompetitionDraftDto["competition"]["region"]): string {
-  return {
-    america: "América",
-    "south-america": "Sudamérica",
-    "north-central-america": "Norte y Centroamérica",
-    europe: "Europa",
-    africa: "África",
-    asia: "Asia",
-    "middle-east": "Medio Oriente",
-    oceania: "Oceanía",
-  }[value];
-}
-
-function formatLabel(value: CompetitionDraftDto["competition"]["format"]): string {
-  return {
-    league: "Liga",
-    knockout: "Eliminación directa",
-    "groups-knockout": "Grupos + eliminación",
-    "league-playoffs": "Liga + playoffs",
-  }[value];
 }

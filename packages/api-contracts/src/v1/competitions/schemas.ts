@@ -93,6 +93,19 @@ export type CompetitionDraftDto = z.infer<typeof competitionDraftSchema>;
 export const getCompetitionDraftResponseSchema = competitionDraftSchema;
 export type GetCompetitionDraftResponse = z.infer<typeof getCompetitionDraftResponseSchema>;
 
+export const createCompetitionDraftRequestSchema = competitionDraftInputSchema;
+export type CreateCompetitionDraftRequest = z.infer<typeof createCompetitionDraftRequestSchema>;
+
+export const createCompetitionDraftResponseSchema = competitionDraftSchema;
+export type CreateCompetitionDraftResponse = z.infer<typeof createCompetitionDraftResponseSchema>;
+
+export const listOrganizationCompetitionsResponseSchema = z.object({
+  competitions: z.array(competitionSchema),
+});
+export type ListOrganizationCompetitionsResponse = z.infer<
+  typeof listOrganizationCompetitionsResponseSchema
+>;
+
 export const acceptCompetitionInvitationResponseSchema = acceptInvitationResponseSchema.extend({
   competitionId: z.string().min(1),
   competitionName: z.string().min(1),

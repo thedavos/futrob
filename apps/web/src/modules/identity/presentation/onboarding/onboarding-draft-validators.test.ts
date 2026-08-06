@@ -2,7 +2,6 @@ import { describe, expect, it } from "vite-plus/test";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import type { OnboardingDraft } from "./onboarding-flow.tsx";
 import {
-  isIanaTimeZone,
   providerGameEditionFromDraft,
   validCompleteAccount,
   validOptionalAccount,
@@ -80,14 +79,5 @@ describe("providerGameEditionFromDraft", () => {
   it("falls back when the edition is blank", () => {
     expect(providerGameEditionFromDraft("")).toBe("fc26");
     expect(providerGameEditionFromDraft("   ", "fc25")).toBe("fc25");
-  });
-});
-
-describe("isIanaTimeZone", () => {
-  it("accepts known IANA zones and rejects blanks or garbage", () => {
-    expect(isIanaTimeZone("America/Lima")).toBe(true);
-    expect(isIanaTimeZone("UTC")).toBe(true);
-    expect(isIanaTimeZone("")).toBe(false);
-    expect(isIanaTimeZone("Not/A_Zone")).toBe(false);
   });
 });

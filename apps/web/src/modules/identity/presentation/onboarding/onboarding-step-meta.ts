@@ -1,13 +1,15 @@
 import type { StepperStep } from "@futrob/ui";
-import type {
-  CompetitionFormatDto,
-  CompetitionRegionDto,
-  GamePlatformDto,
-  OnboardingPathDto,
-} from "@futrob/api-contracts";
+import type { GamePlatformDto, OnboardingPathDto } from "@futrob/api-contracts";
 import { EA_SEARCH_PLATFORM_OPTIONS } from "@futrob/api-contracts";
 import { ONBOARDING_PATH } from "@futrob/identity";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
+import {
+  competitionFormatLabel,
+  competitionFormats,
+  competitionRegions,
+  competitionTimeZones,
+} from "@/modules/competitions/presentation/competition-draft-meta.ts";
+import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
 
 export const intentionSteps: readonly StepperStep[] = [
   { id: "intention", label: "Inicio" },
@@ -42,42 +44,7 @@ export const eaSearchPlatforms = EA_SEARCH_PLATFORM_OPTIONS;
 /** Hard cap on clubs shown after an EA Clubs search in onboarding. */
 export const MAX_EXTERNAL_CLUB_SEARCH_RESULTS = 3;
 
-export const knownGameEditions = ["FC 25", "FC 26"] as const;
-
-export const competitionRegions: readonly { value: CompetitionRegionDto; label: string }[] = [
-  { value: "america", label: "América" },
-  { value: "south-america", label: "Sudamérica" },
-  { value: "north-central-america", label: "Norte y Centroamérica" },
-  { value: "europe", label: "Europa" },
-  { value: "africa", label: "África" },
-  { value: "asia", label: "Asia" },
-  { value: "middle-east", label: "Medio Oriente" },
-  { value: "oceania", label: "Oceanía" },
-];
-
-export const competitionFormats: readonly { value: CompetitionFormatDto; label: string }[] = [
-  { value: "league", label: "Liga" },
-  { value: "knockout", label: "Eliminación directa" },
-  { value: "groups-knockout", label: "Grupos + eliminación" },
-  { value: "league-playoffs", label: "Liga + playoffs" },
-];
-
-const fallbackCompetitionTimeZones = [
-  "America/Lima",
-  "America/Bogota",
-  "America/Mexico_City",
-  "America/New_York",
-  "America/Santiago",
-  "America/Sao_Paulo",
-  "Europe/London",
-  "Europe/Madrid",
-  "Africa/Johannesburg",
-  "Asia/Dubai",
-  "Asia/Tokyo",
-  "Australia/Sydney",
-] as const;
-
-export const competitionTimeZones = getCompetitionTimeZones();
+export { knownGameEditions, competitionFormats, competitionRegions, competitionTimeZones };
 
 export function platformLabel(platform: GamePlatformDto): string {
   return {
@@ -101,23 +68,6 @@ export function formatProviderGameEdition(edition: string): string {
   return trimmed;
 }
 
-export function formatLabel(format: CompetitionFormatDto): string {
-  return competitionFormats.find((option) => option.value === format)?.label ?? format;
-}
-
-function getCompetitionTimeZones(): readonly { value: string; label: string }[] {
-  let values: readonly string[] = fallbackCompetitionTimeZones;
-  let localTimeZone = "UTC";
-  try {
-    localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    if (typeof Intl.supportedValuesOf === "function") {
-      values = Intl.supportedValuesOf("timeZone");
-    }
-  } catch {
-    values = fallbackCompetitionTimeZones;
-  }
-  return [...new Set(["UTC", localTimeZone, ...values])].map((value) => ({
-    value,
-    label: value.replaceAll("_", " "),
-  }));
+export function formatLabel(format: Parameters<typeof competitionFormatLabel>[0]): string {
+  return competitionFormatLabel(format);
 }
