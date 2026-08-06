@@ -95,7 +95,7 @@
 | ID      | Tema                  | Resolución vigente                                                                                                                      |
 | ------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | DEC-060 | Tema predeterminado   | Light en marketing, producto y portal. Dark solo puede activarse de forma explícita; no sigue automáticamente al sistema operativo.     |
-| DEC-061 | Tamaño de controles   | 44 px universal. La única compactación es `dense`: 40 px en desktop operativo y 44 px en touch.                                         |
+| DEC-061 | Tamaño de controles   | 44 px universal. La única compactación es `dense`: 36 px en desktop operativo y 44 px en touch.                                         |
 | DEC-062 | Lenguaje visual       | Flat/line: jerarquía por espacio, tipografía y bordes; sombras ambientales solo en capas flotantes.                                     |
 | DEC-063 | Semántica del verde   | Verde para marca/acción primaria. `approved` usa un verde distinto y exclusivo para resultados oficialmente aprobados.                  |
 | DEC-064 | Tipografía de labels  | `typo-label` es el default; metadata secundaria puede usar sentence-case cuando uppercase reduzca legibilidad.                          |

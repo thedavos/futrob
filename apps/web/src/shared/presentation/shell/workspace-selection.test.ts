@@ -85,6 +85,10 @@ describe("workspaceSelectionFromPathname", () => {
       organizationId: "org-1",
       competitionId: "comp-2",
     });
+    expect(workspaceSelectionFromPathname("/orgs/org-1/competitions/new")).toEqual({
+      kind: WORKSPACE_SELECTION_KIND.organization,
+      organizationId: "org-1",
+    });
   });
 });
 
@@ -114,7 +118,18 @@ describe("nav registries", () => {
       organizationId: "org-1",
     });
     expect(section.items.map((item) => item.id)).toContain("teams");
+    expect(section.items.map((item) => item.id)).not.toContain("pro-stats");
     expect(section.items[0]?.href).toBe("/orgs/org-1");
+  });
+
+  it("includes Pro Stats in personal general nav", () => {
+    const section = generalNavFor({ kind: WORKSPACE_SELECTION_KIND.personal });
+    const proStats = section.items.find((item) => item.id === "pro-stats");
+    expect(proStats).toMatchObject({
+      label: "Pro Stats",
+      href: "/player/pro-stats",
+      stub: true,
+    });
   });
 
   it("returns competition context items", () => {
@@ -125,6 +140,19 @@ describe("nav registries", () => {
     });
     expect(section.items.length).toBeGreaterThan(0);
     expect(section.items.some((item) => item.id === "standings")).toBe(true);
+  });
+
+  it("prefers context nav over general when competition is selected", () => {
+    const selection = {
+      kind: WORKSPACE_SELECTION_KIND.competition,
+      organizationId: "org-1",
+      competitionId: "comp-2",
+    } as const;
+    const context = contextNavFor(selection);
+    const general = generalNavFor(selection);
+    const footerItems = context.items.length > 0 ? context.items : general.items;
+    expect(footerItems.map((item) => item.id)).toContain("standings");
+    expect(footerItems.map((item) => item.id)).not.toContain("ea-clubs");
   });
 
   it("marks active nav items by pathname prefix", () => {

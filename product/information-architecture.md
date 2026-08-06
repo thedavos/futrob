@@ -80,14 +80,22 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 La app autenticada (fuera de onboarding) usa un marco único:
 
 ```text
-sidebar izquierda | navbar arriba + contenido abajo
+sidebar izquierda | command bar + contenido con scroll + action bar opcional
 ```
 
-Orden en la sidebar: Logo → **General** → **Selector** → **Contexto activo** → menú de cuenta.
+Regiones de la sidebar (scroll independiente del contenido central):
+
+1. **Header sticky:** fila de cuenta (avatar + nombre abreviado + colapsar) y selector de contexto.
+2. **Content (scroll):** cola de tareas (placeholder hasta que existan colas de dominio).
+3. **Footer sticky:** navegación General (Inicio, Competiciones, …).
+
+Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive en el header de la sidebar. Mobile usa Sheet con las mismas regiones.
+
+El command bar muestra el título de página y acciones contextuales (stubs cuando el handler aún no existe). La action bar inferior solo aparece cuando una página registra acciones.
 
 ### Selector de contexto (único)
 
-Un control bajo General agrupa:
+Un control en el header de la sidebar agrupa:
 
 - **Espacio personal**
 - **Competiciones** (accesibles al actor)
@@ -171,7 +179,9 @@ Mobile: Sheet con la misma sidebar; nada crítico solo en sidebar oculta (select
 
 ### Menú de cuenta
 
-Al pie de la sidebar: Perfil · Enviar feedback · Contáctanos · Configuración · Cerrar sesión.
+En la cabecera de la sidebar: Perfil · Enviar feedback · Contáctanos · Configuración · Cerrar sesión.
+
+La navegación General vive en el footer sticky de la sidebar.
 
 ## 5. Match Center (recurso central)
 

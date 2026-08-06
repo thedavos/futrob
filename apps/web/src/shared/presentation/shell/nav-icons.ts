@@ -1,23 +1,25 @@
-import type { LucideIcon } from "lucide-react";
+import type { Icon } from "@futrob/ui";
 import {
-  Building2,
-  Gamepad2,
-  Home,
-  Settings,
-  TicketCheck,
+  Buildings,
+  ChartBar,
+  GameController,
+  Gear,
+  House,
+  Ticket,
   Trophy,
   Users,
-  UsersRound,
-} from "lucide-react";
+  UsersThree,
+} from "@phosphor-icons/react";
 import type { ShellNavIconId } from "./nav-registry.ts";
 
-export const SHELL_NAV_ICONS: Record<ShellNavIconId, LucideIcon> = {
-  home: Home,
+export const SHELL_NAV_ICONS: Record<ShellNavIconId, Icon> = {
+  home: House,
   competitions: Trophy,
-  "ea-clubs": Gamepad2,
-  invitations: TicketCheck,
+  "ea-clubs": GameController,
+  "pro-stats": ChartBar,
+  invitations: Ticket,
   teams: Users,
-  players: UsersRound,
-  organization: Building2,
-  settings: Settings,
+  players: UsersThree,
+  organization: Buildings,
+  settings: Gear,
 };

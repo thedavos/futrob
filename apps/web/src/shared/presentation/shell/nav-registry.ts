@@ -12,6 +12,7 @@ export type ShellNavIconId =
   | "home"
   | "competitions"
   | "ea-clubs"
+  | "pro-stats"
   | "invitations"
   | "teams"
   | "players"
@@ -42,6 +43,13 @@ function personalGeneralNav(): readonly ShellNavItem[] {
       icon: "competitions",
     },
     { id: "ea-clubs", label: "Clubes EA", href: "/player/ea-clubs", icon: "ea-clubs" },
+    {
+      id: "pro-stats",
+      label: "Pro Stats",
+      href: "/player/pro-stats",
+      icon: "pro-stats",
+      stub: true,
+    },
     { id: "invitations", label: "Invitaciones", href: "/invitations/accept", icon: "invitations" },
   ];
 }
@@ -55,7 +63,6 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       label: "Competiciones",
       href: `${base}/competitions`,
       icon: "competitions",
-      stub: true,
     },
     { id: "teams", label: "Equipos", href: `${base}/teams`, icon: "teams", stub: true },
     { id: "players", label: "Jugadores", href: `${base}/players`, icon: "players", stub: true },

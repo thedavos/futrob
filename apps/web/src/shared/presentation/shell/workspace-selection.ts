@@ -70,7 +70,7 @@ const orgPath = /^\/orgs\/([^/]+)(?:\/|$)/;
 
 export function workspaceSelectionFromPathname(pathname: string): WorkspaceSelection | null {
   const competitionMatch = orgCompetitionPath.exec(pathname);
-  if (competitionMatch) {
+  if (competitionMatch && competitionMatch[2] !== "new") {
     return {
       kind: WORKSPACE_SELECTION_KIND.competition,
       organizationId: competitionMatch[1]!,

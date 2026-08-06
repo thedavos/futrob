@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { ONBOARDING_PATH } from "@futrob/identity";
+import { listOrganizationCompetitions } from "@/modules/competitions/presentation/competitions-browser-client.ts";
 import { useOnboardingStatusQuery } from "@/modules/identity/presentation/identity-queries.ts";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 import { useMyPlayerProfileQuery } from "@/modules/teams/presentation/player-queries.ts";
+import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
   WORKSPACE_SELECTION_KIND,
   type CompetitionSelectorOption,
@@ -25,7 +28,16 @@ export function useWorkspaceSelection() {
   const profileQuery = useMyPlayerProfileQuery();
   const [override, setOverride] = useState<WorkspaceSelection | null>(null);
 
-  const associatedClubName = profileQuery.data?.externalClub?.externalClubName ?? null;
+  const associatedClub = useMemo(() => {
+    const club = profileQuery.data?.externalClub;
+    if (!club) return null;
+    return {
+      name: club.externalClubName,
+      imageUrl: club.imageUrl ?? null,
+    };
+  }, [profileQuery.data?.externalClub]);
+
+  const associatedClubName = associatedClub?.name ?? null;
 
   const memberships: readonly OrganizationSelectorOption[] = useMemo(
     () =>
@@ -36,20 +48,40 @@ export function useWorkspaceSelection() {
     [membershipsQuery.data?.memberships],
   );
 
-  // Competition list API is not wired yet; keep empty and enrich from the active URL.
+  const competitionQueries = useQueries({
+    queries: memberships.map((membership) => ({
+      queryKey: queryKeys.competitions.byOrganization(membership.organizationId),
+      queryFn: () => listOrganizationCompetitions(membership.organizationId),
+    })),
+  });
+
   const competitions: readonly CompetitionSelectorOption[] = useMemo(() => {
-    const fromPath = workspaceSelectionFromPathname(pathname);
-    if (fromPath?.kind === WORKSPACE_SELECTION_KIND.competition && fromPath.organizationId) {
-      return [
-        {
-          competitionId: fromPath.competitionId,
-          organizationId: fromPath.organizationId,
-          name: fromPath.label ?? "Competición activa",
-        },
-      ];
+    const byId = new Map<string, CompetitionSelectorOption>();
+    for (const query of competitionQueries) {
+      for (const competition of query.data?.competitions ?? []) {
+        byId.set(competition.id, {
+          competitionId: competition.id,
+          organizationId: competition.organizationId,
+          name: competition.name,
+        });
+      }
     }
-    return [];
-  }, [pathname]);
+
+    const fromPath = workspaceSelectionFromPathname(pathname);
+    if (
+      fromPath?.kind === WORKSPACE_SELECTION_KIND.competition &&
+      fromPath.organizationId &&
+      !byId.has(fromPath.competitionId)
+    ) {
+      byId.set(fromPath.competitionId, {
+        competitionId: fromPath.competitionId,
+        organizationId: fromPath.organizationId,
+        name: fromPath.label ?? "Competición activa",
+      });
+    }
+
+    return [...byId.values()];
+  }, [competitionQueries, pathname]);
 
   const selection = useMemo(() => {
     const fromPath = workspaceSelectionFromPathname(pathname);
@@ -95,6 +127,7 @@ export function useWorkspaceSelection() {
     selection,
     memberships,
     competitions,
+    associatedClub,
     associatedClubName,
     select,
     isSame: (other: WorkspaceSelection) => isSameWorkspaceSelection(selection, other),

@@ -22,19 +22,38 @@ import {
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
-  const { teams } = deps.modules;
+  const { gameData, teams } = deps.modules;
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
   secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
 
   secured.get("/players/me", async (c) => {
     const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
+    let externalClub = details.externalClub;
+
+    // Associations created before crest persistence (or when EA omitted crestAssetId)
+    // stay imageUrl=null; hydrate once from game-data and persist.
+    if (externalClub && !externalClub.imageUrl) {
+      const resolved = await gameData.getExternalClub.execute(externalClub.providerKey, {
+        externalClubId: externalClub.externalClubId,
+        platform: externalClub.platform,
+        gameEdition: externalClub.gameEdition,
+      });
+      if (resolved.isOk() && resolved.value.imageUrl) {
+        const associated = await teams.associatePlayerExternalClub.execute({
+          playerProfileId: externalClub.playerProfileId,
+          club: resolved.value,
+        });
+        if (associated.isOk()) {
+          externalClub = associated.value;
+        }
+      }
+    }
+
     return jsonResponse(
       getMyPlayerProfileResponseSchema.parse({
         profile: details.profile ? playerProfileDto(details.profile) : null,
         gameAccounts: details.gameAccounts.map(playerGameAccountDto),
-        externalClub: details.externalClub
-          ? playerExternalClubAssociationDto(details.externalClub)
-          : null,
+        externalClub: externalClub ? playerExternalClubAssociationDto(externalClub) : null,
       }),
     );
   });

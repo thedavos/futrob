@@ -82,7 +82,9 @@ function AssociatedClub({ club }: { readonly club: PlayerExternalClubAssociation
       className="flex flex-col gap-6 rounded-xl border border-border-subtle bg-surface p-6 sm:flex-row sm:items-start sm:gap-8 sm:p-8"
     >
       <Avatar className="size-20 shrink-0 outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10">
-        {club.imageUrl ? <AvatarImage alt="" src={club.imageUrl} /> : null}
+        {club.imageUrl ? (
+          <AvatarImage alt="" referrerPolicy="no-referrer" src={club.imageUrl} />
+        ) : null}
         <AvatarFallback className="text-lg">
           {initialsFromName(club.externalClubName)}
         </AvatarFallback>
