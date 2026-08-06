@@ -9,7 +9,7 @@
 | ------------------------------ | ---------------------------------------------------------------------- |
 | Theme                          | Light default; dark remains explicit opt-in                            |
 | Foundations                    | Pitch Ops OKLCH tokens, Manrope roles, semantic Tailwind mapping       |
-| Sizing                         | Universal 44 px controls; `dense` 40 px desktop / 44 px touch          |
+| Sizing                         | Universal 44 px controls; `dense` 36 px desktop / 44 px touch          |
 | Visual language                | Flat/line; ambient elevation limited to floating layers                |
 | Forms                          | Field, Input, Textarea, Select, Checkbox, validation and Alert         |
 | Navigation                     | Tabs, Breadcrumb and mobile Sheet                                      |

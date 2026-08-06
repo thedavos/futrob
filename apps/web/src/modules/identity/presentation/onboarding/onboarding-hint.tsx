@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Info } from "lucide-react";
+import { Info } from "@phosphor-icons/react";
 
 export function OnboardingHint({ children }: Readonly<{ children: ReactNode }>) {
   return (

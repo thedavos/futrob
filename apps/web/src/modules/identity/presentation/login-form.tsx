@@ -11,7 +11,7 @@ import {
   readFormString,
 } from "@futrob/ui";
 import { Link } from "@tanstack/react-router";
-import { Lock, Mail } from "lucide-react";
+import { Lock, EnvelopeSimple } from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import { useAuthResume } from "@/modules/identity/presentation/auth-resume.tsx";
 import {
@@ -108,7 +108,7 @@ export function LoginForm() {
           id="email"
           name="email"
           placeholder="ejemplo@correo.com"
-          startIcon={Mail}
+          startIcon={EnvelopeSimple}
           type="email"
         />
         <FieldError />

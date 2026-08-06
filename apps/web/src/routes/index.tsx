@@ -1,4 +1,4 @@
-import { ArrowDownRight } from "lucide-react";
+import { ArrowDownRight } from "@phosphor-icons/react";
 import { Button, ButtonIcon, Logo } from "@futrob/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClubSearchPanel } from "@/modules/game-data/presentation/club-search-panel.tsx";

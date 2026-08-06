@@ -13,7 +13,7 @@ import {
   readFormString,
 } from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
-import { CircleAlert } from "lucide-react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
 import { useAcceptInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
@@ -67,7 +67,7 @@ export function AcceptInvitationForm({ initialToken = "" }: Readonly<{ initialTo
     >
       {error ? (
         <Alert variant="destructive">
-          <CircleAlert aria-hidden="true" />
+          <WarningCircle aria-hidden="true" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}

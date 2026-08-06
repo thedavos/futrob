@@ -1,15 +1,7 @@
 "use client";
 
-import { Badge, Button, Card, CardContent } from "@futrob/ui";
-import {
-  Shield,
-  Signpost,
-  TicketCheck,
-  Trophy,
-  UserRound,
-  UsersRound,
-  type LucideIcon,
-} from "lucide-react";
+import { Badge, Button, Card, CardContent, type Icon } from "@futrob/ui";
+import { Shield, Signpost, Ticket, Trophy, User, UsersThree } from "@phosphor-icons/react";
 import type { OnboardingStepDto } from "@futrob/api-contracts";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import {
@@ -106,7 +98,7 @@ export function OnboardingReview() {
 interface OnboardingReviewRow {
   readonly label: string;
   readonly value: string | null;
-  readonly icon: LucideIcon;
+  readonly icon: Icon;
   readonly editStep?: OnboardingStepDto;
 }
 
@@ -129,7 +121,7 @@ function reviewRows(flow: ReturnType<typeof useOnboardingFlow>): readonly Onboar
       {
         label: "Organización",
         value: flow.draft.organizationName.trim() || null,
-        icon: UsersRound,
+        icon: UsersThree,
         editStep: "organization",
       },
       {
@@ -149,7 +141,7 @@ function reviewRows(flow: ReturnType<typeof useOnboardingFlow>): readonly Onboar
       {
         label: "Competición",
         value: flow.draft.invitationToken.trim() ? "Invitación lista para validar" : null,
-        icon: TicketCheck,
+        icon: Ticket,
         editStep: "invitation",
       },
       accountReviewRow(flow),
@@ -165,7 +157,7 @@ function accountReviewRow(flow: ReturnType<typeof useOnboardingFlow>): Onboardin
     value: accountComplete
       ? `${flow.draft.gameAccountIdentifier.trim()} · ${platformLabel(flow.draft.platform!)} · ${flow.draft.gameEdition.trim()}`
       : "Perfil de jugador listo · Datos EA para después",
-    icon: UserRound,
+    icon: User,
     editStep: "game-account",
   };
 }

@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 import { GAME_PLATFORM, type GamePlatform } from "@futrob/shared-kernel";
-import { Monitor } from "lucide-react";
+import { Monitor } from "@phosphor-icons/react";
 
 type PlatformLogoProps = SVGProps<SVGSVGElement> & {
   readonly platform: GamePlatform;

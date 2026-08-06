@@ -11,16 +11,17 @@ import {
   FieldLabel,
   Input,
 } from "@futrob/ui";
-import { Info } from "lucide-react";
+import { Info } from "@phosphor-icons/react";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
-import { FieldsetError } from "../fields/fieldset-error.tsx";
-import { GameEditionField } from "../fields/game-edition-field.tsx";
-import { PlatformChoice } from "../fields/platform-choice.tsx";
+import { FieldsetError } from "@/shared/presentation/forms/fieldset-error.tsx";
+import { GameEditionField } from "@/shared/presentation/forms/game-edition-field.tsx";
+import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
+import { PlatformChoice } from "@/shared/presentation/forms/platform-choice.tsx";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
-import { knownGameEditions, stepsByPath } from "../onboarding-step-meta.ts";
+import { stepsByPath } from "../onboarding-step-meta.ts";
 
 export function GameAccountStep() {
   const flow = useOnboardingFlow();

@@ -14,7 +14,7 @@ import {
   type FormErrors,
 } from "@futrob/ui";
 import { Link } from "@tanstack/react-router";
-import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
+import { Eye, EyeSlash, Lock, EnvelopeSimple, User } from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import { useAuthResume } from "@/modules/identity/presentation/auth-resume.tsx";
 import {
@@ -138,7 +138,7 @@ export function SignupForm() {
           id="name"
           name="name"
           placeholder="Ingresa tu nombre completo"
-          startIcon={UserRound}
+          startIcon={User}
         />
         <FieldError />
       </Field>
@@ -156,7 +156,7 @@ export function SignupForm() {
           id="email"
           name="email"
           placeholder="ejemplo@correo.com"
-          startIcon={Mail}
+          startIcon={EnvelopeSimple}
           type="email"
         />
         <FieldError />
@@ -192,7 +192,7 @@ export function SignupForm() {
                       : "scale-100 opacity-100 blur-0"
                   }`}
                 />
-                <EyeOff
+                <EyeSlash
                   className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
                     isPasswordVisible
                       ? "scale-100 opacity-100 blur-0"

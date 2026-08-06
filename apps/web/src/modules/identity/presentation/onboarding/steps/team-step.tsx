@@ -24,7 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@futrob/ui";
-import { CircleAlert, RotateCcw } from "lucide-react";
+import { WarningCircle, ArrowCounterClockwise } from "@phosphor-icons/react";
 import type { EaSearchPlatform, ExternalClubDto } from "@futrob/api-contracts";
 import {
   asEaSearchPlatform,
@@ -178,7 +178,7 @@ export function TeamStep() {
                     />
                   }
                 >
-                  <RotateCcw aria-hidden="true" strokeWidth={2} />
+                  <ArrowCounterClockwise aria-hidden="true" strokeWidth={2} />
                 </TooltipTrigger>
                 <TooltipContent>Restablecer búsqueda</TooltipContent>
               </Tooltip>
@@ -195,7 +195,7 @@ export function TeamStep() {
             >
               <SelectTrigger
                 aria-label="Plataforma EA para la búsqueda"
-                className="size-(--control-height) max-sm:size-(--control-height-touch) shrink-0 cursor-pointer justify-center gap-0 border-border-strong p-0 [&_.lucide-chevron-down]:hidden"
+                className="size-(--control-height) max-sm:size-(--control-height-touch) shrink-0 cursor-pointer justify-center gap-0 border-border-strong p-0 [&_[data-slot=select-trigger-icon]]:hidden"
               >
                 <PlatformLogo className="size-4" platform={gamePlatformForEaSearchLogo(platform)} />
               </SelectTrigger>
@@ -234,7 +234,7 @@ export function TeamStep() {
 
         {search.status === "error" ? (
           <Alert variant="destructive">
-            <CircleAlert aria-hidden="true" />
+            <WarningCircle aria-hidden="true" />
             <AlertDescription>{search.message}</AlertDescription>
           </Alert>
         ) : null}
@@ -303,7 +303,7 @@ function ClubCrest({
 }) {
   return (
     <Avatar className="size-12 shrink-0 outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10">
-      {imageUrl ? <AvatarImage alt="" src={imageUrl} /> : null}
+      {imageUrl ? <AvatarImage alt="" referrerPolicy="no-referrer" src={imageUrl} /> : null}
       <AvatarFallback className="text-sm">{initialsFromName(name)}</AvatarFallback>
     </Avatar>
   );

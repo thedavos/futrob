@@ -11,7 +11,7 @@ import {
   EmptyStateIcon,
   EmptyStateTitle,
 } from "@futrob/ui";
-import { Trophy } from "lucide-react";
+import { Trophy } from "@phosphor-icons/react";
 import { useMyTeamsQuery } from "./player-queries.ts";
 
 type PlayerCompetitionRow = {

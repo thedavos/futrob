@@ -10,7 +10,7 @@ import {
   Input,
   useCopyToClipboard,
 } from "@futrob/ui";
-import { Check, CircleAlert, Copy, Link2 } from "lucide-react";
+import { Check, WarningCircle, Copy, LinkSimple } from "@phosphor-icons/react";
 import { buildInvitationShareUrl } from "@/modules/organizations/presentation/invitation-share-url.ts";
 import { useCreateCompetitionInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 
@@ -58,7 +58,7 @@ export function CreateCompetitionInvitationPanel({
 
       {error ? (
         <Alert variant="destructive">
-          <CircleAlert aria-hidden="true" />
+          <WarningCircle aria-hidden="true" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
@@ -68,7 +68,7 @@ export function CreateCompetitionInvitationPanel({
         onClick={() => void handleCreate()}
         type="button"
       >
-        <Link2 aria-hidden="true" className="size-4" />
+        <LinkSimple aria-hidden="true" className="size-4" />
         Generar link de invitación
       </Button>
 
