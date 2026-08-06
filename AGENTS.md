@@ -98,6 +98,18 @@ npm run cli -- help
 
 `apps/cli` has no local Vite+ app config — only root fmt/lint. Do not claim Workers/EA integrations work without direct evidence.
 
+## Cursor Cloud specific instructions
+
+Standard commands live in the `## Commands` section above and in `README.md` / `apps/api/README.md`; only the non-obvious startup caveats are captured here.
+
+- **Node 24 is required** (`engines.node >=24`). The base image also has an older node 22 at `/exec-daemon/node` that would otherwise win on `PATH`; `~/.bashrc` forces nvm's node 24 ahead of it. New shells get node 24 automatically — if `node --version` ever shows 22, run `source ~/.bashrc`.
+- **`vp` is not installed globally.** Run tooling through the root `npm run` scripts (`dev`, `check`, `test`, `build`, `web`, `api`); npm puts `node_modules/.bin/vp` on `PATH` for them. For a direct call use `./node_modules/.bin/vp`, never `npx vp`.
+- **Local env files are gitignored and must exist to run the app**: `apps/web/.dev.vars` and `apps/api/.env`. Their `INTERNAL_JOB_SECRET` values **must match**, or the web BFF → API org/onboarding calls fail with 401. Create `apps/api/.env` from `apps/api/.env.example`; `apps/web/.dev.vars` needs at least `BETTER_AUTH_SECRET` and the matching `INTERNAL_JOB_SECRET` (see `.env.example` / root `README.md`).
+- **D1 (auth) local state** lives at `apps/web/.wrangler/state` and is shared by the `vp dev` Cloudflare plugin. If it's reset, re-run `cd apps/web && npx wrangler d1 migrations apply futrob-app --local` (runs non-interactively). Sign-up/login need this migration applied.
+- **Postgres is optional locally.** Without `DATABASE_URL`, `apps/api` uses process-local in-memory stores (`/api/v1/meta/health` reports `db: "skipped"`). Consequence: organizations/onboarding data is lost whenever the API restarts — and `apps/api` runs under `tsx watch`, so editing API files hot-restarts it and wipes those in-memory orgs. Set `DATABASE_URL` + apply `apps/api/migrations/*.sql` for durable data.
+- **npm 11 install-script gate**: native deps (`workerd`, `esbuild`, `sharp`) need their install scripts. The user-level `~/.npmrc` sets `dangerously-allow-all-scripts=true` so `npm ci` builds them non-interactively; `package.json` also pins an `allowScripts` allowlist. If a fresh `npm ci` warns about blocked install scripts, the Workers dev server will fail to boot until they are rebuilt.
+- **Ports**: web `http://localhost:3000`, api `http://localhost:8787` (`/api/v1`). `npm run dev` runs both in parallel.
+
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web
