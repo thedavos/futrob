@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Info, Menu } from "lucide-react";
+import { Info, List } from "@phosphor-icons/react";
 
 import {
   AlertDialog,
@@ -108,7 +108,7 @@ export const OverlaySet: Story = {
           <SheetTrigger
             render={<Button aria-label="Abrir navegación" size="icon" variant="outline" />}
           >
-            <Menu />
+            <List />
           </SheetTrigger>
           <SheetContent>
             <SheetHeader>

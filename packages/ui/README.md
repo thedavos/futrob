@@ -20,7 +20,7 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 
 - Tema claro por defecto. Dark solo con `.dark` o `[data-theme="dark"]` explícito.
 - Controles universales de 44 px.
-- `dense` es la única compactación: 40 px en desktop y 44 px en touch.
+- `dense` es la única compactación: 36 px en desktop y 44 px en touch.
 - Variantes cerradas. No añadir `xs`/`sm`/`lg` ni colores ad hoc.
 - `typo-label` es el estilo de labels; `typo-caption` cubre metadata y hints; `typo-subtitle` apoya headings.
 - Flat/line en controles y contenido. Overlays usan `smooth-shadow-ring-*` por defecto.
@@ -42,7 +42,12 @@ Navegación:
 
 - `Tabs`, `Breadcrumb`, `Sheet`, `Stepper`
 - `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`
-- `Sidebar` (+ header/content/footer/group/menu) y `DropdownMenu`
+- `Sidebar` (+ header/content/footer/group/menu, collapse via `SidebarProvider`) y `DropdownMenu`
+- `MasterDetail` (lista + detalle con scroll independiente; mobile muestra detalle a pantalla completa cuando hay `selectedId`)
+
+Composición de shell:
+
+- `ActionBar`, `ActionBarStart`, `ActionBarEnd` (barra sticky inferior de acciones de página)
 
 Datos:
 
@@ -60,6 +65,7 @@ Acciones y soporte:
 
 - `Button`, `ButtonIcon`, `Separator`, `Logo`
 - `useCopyToClipboard` (hook: Clipboard API + feedback `isCopied`)
+- Iconos: Phosphor (`FUTROB_ICON_CATALOG`, Storybook `Primitives/Icons`)
 
 ## Uso
 
@@ -80,7 +86,7 @@ Los componentes se importan desde la API pública:
 
 ```tsx
 import { Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo, readFormString } from "@futrob/ui";
-import { CircleCheck, Search } from "lucide-react";
+import { CheckCircle, MagnifyingGlass } from "@phosphor-icons/react";
 
 <Logo className="h-8 w-auto" />
 <Form validationMode="onBlur">
@@ -94,8 +100,8 @@ import { CircleCheck, Search } from "lucide-react";
   </Field>
 </Form>
 <InputWithIcon
-  startIcon={Search}
-  endIcon={CircleCheck}
+  startIcon={MagnifyingGlass}
+  endIcon={CheckCircle}
   placeholder="Equipo, jornada o rival"
 />
 <Button>Continuar</Button>
@@ -106,6 +112,10 @@ import { CircleCheck, Search } from "lucide-react";
 cuando el valor es válido, siguiendo el contrato de Base UI. Usa `readFormString` para
 estrechar el `unknown` de `Field.validate` a string.
 
+Los iconos del producto usan **Phosphor** (`@phosphor-icons/react`) con peso `regular`. Tipa
+props de icono con `Icon` reexportado desde `@futrob/ui`. El inventario vive en Storybook
+(`Primitives/Icons`).
+
 Para composición polimórfica usa `render` de Base UI; evita envolver un link en un button:
 
 ```tsx
@@ -115,7 +125,8 @@ Para composición polimórfica usa `render` de Base UI; evita envolver un link e
 ## Densidad
 
 El tamaño universal es el default. Usa `dense` solo en tablas, filtros y toolbars de escritorio
-con alta frecuencia de uso.
+con alta frecuencia de uso. El shell autenticado de producto aplica `data-density="dense"` y
+controles densos de forma contextual; onboarding y marketing se quedan en altura universal.
 
 ```tsx
 <Input dense />

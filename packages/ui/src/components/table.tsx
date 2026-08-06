@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "#lib/utils";
 
 type TableProps = React.ComponentProps<"table"> & {
-  /** Reduces row height to 40px on desktop. Touch layouts remain comfortable. */
+  /** Reduces row height to 36px on desktop. Touch layouts remain comfortable. */
   dense?: boolean;
   containerClassName?: string;
 };

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { ArrowUpRight, Plus, Search, Settings } from "lucide-react";
+import { ArrowUpRight, Plus, MagnifyingGlass, Gear } from "@phosphor-icons/react";
 
 import { Button } from "../components/button";
 import { ButtonIcon } from "../components/button-icon";
@@ -44,7 +44,7 @@ export const ClosedVariants: Story = {
       <Button variant="destructive">Eliminar</Button>
       <Button variant="link">Ver reglamento</Button>
       <Button aria-label="Buscar" size="icon" variant="outline">
-        <Search />
+        <MagnifyingGlass />
       </Button>
     </div>
   ),
@@ -57,22 +57,22 @@ export const UniversalAndDense: Story = {
         <p className="typo-label text-muted-foreground">Universal · 44 px</p>
         <div className="flex flex-wrap items-center gap-2">
           <Button>
-            <Settings />
+            <Gear />
             Configurar torneo
           </Button>
           <Button aria-label="Configuración" size="icon" variant="outline">
-            <Settings />
+            <Gear />
           </Button>
         </div>
       </div>
       <div className="grid gap-2">
-        <p className="typo-label text-muted-foreground">Dense · 40 px en desktop</p>
+        <p className="typo-label text-muted-foreground">Dense · 36 px en desktop</p>
         <div className="flex flex-wrap items-center gap-2">
           <Button dense variant="outline">
             Editar fila
           </Button>
           <Button aria-label="Editar configuración" dense size="icon" variant="ghost">
-            <Settings />
+            <Gear />
           </Button>
         </div>
       </div>

@@ -73,7 +73,7 @@ Walk the component API and mark what applies. Create named exports for each rele
 ### Visual / API contract
 
 - [ ] Closed variants (`variant`, `size`, `dense`, `monochrome`, etc.) — each visible, labeled if not obvious
-- [ ] Density: universal 44 px vs `dense` (40 px desktop / 44 px touch) when the primitive supports it
+- [ ] Density: universal 44 px vs `dense` (36 px desktop / 44 px touch) when the primitive supports it
 - [ ] Light theme default surface (`bg-surface` / Futrob light background). Do not invent dark demos unless the task asks
 - [ ] Real Futrob copy in **Spanish** for labels/placeholders (product language); keep English only if the story is explicitly i18n-focused
 - [ ] No cards-in-hero / purple gradients / ad-hoc colors — use tokens and `@futrob/ui` only

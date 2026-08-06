@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { MoreHorizontal } from "lucide-react";
+import { DotsThree } from "@phosphor-icons/react";
 
 import { Badge } from "../components/badge";
 import { Button } from "../components/button";
@@ -59,7 +59,7 @@ export const MatchAuditRows: Story = {
               </TableCell>
               <TableCell>
                 <Button aria-label={`Acciones para ${match.id}`} dense size="icon" variant="ghost">
-                  <MoreHorizontal />
+                  <DotsThree />
                 </Button>
               </TableCell>
             </TableRow>

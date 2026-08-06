@@ -22,7 +22,7 @@ Prefer component primitives for buttons, fields, selects, dialogs, sheets, popov
 - Menus, tooltips, and popovers must remain keyboard operable.
 - Do not hide unavailable permission actions only as a security measure; server use cases still authorize.
 - Loading, empty-first-use, empty-filter, recoverable error, permission error, offline/stale, and success states follow `product/design-system-spec.md`.
-- Use Lucide consistently and provide accessible names for icon-only actions.
+- Use Phosphor Icons consistently (`@phosphor-icons/react`, weight `regular` by default) and provide accessible names for icon-only actions.
 
 ## Installation and verification
 

@@ -1,6 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { ChevronDown, Gamepad2, Home, Settings, TicketCheck, Trophy } from "lucide-react";
+import {
+  CaretDown,
+  CheckSquareOffset,
+  GameController,
+  House,
+  Plus,
+  Sidebar as SidebarExpandIcon,
+  SidebarSimple,
+  Ticket,
+  Trophy,
+} from "@phosphor-icons/react";
+import { useState } from "react";
 
+import { ActionBar, ActionBarEnd, ActionBarStart } from "../components/action-bar";
+import { Avatar, AvatarFallback } from "../components/avatar";
 import { Button } from "../components/button";
 import {
   DropdownMenu,
@@ -23,8 +36,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  useSidebar,
 } from "../components/sidebar";
-import { Logo } from "../logo";
 
 const meta = {
   title: "Patterns/App shell",
@@ -36,96 +49,247 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const SidebarWithGroups: Story = {
-  render: () => (
-    <SidebarProvider className="h-svh min-h-svh">
+function HeaderCollapseToggle() {
+  const { collapsed, toggleCollapsed } = useSidebar();
+  return (
+    <Button
+      aria-label={collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
+      className={collapsed ? undefined : "ml-auto shrink-0"}
+      dense
+      onClick={toggleCollapsed}
+      size="icon"
+      variant="ghost"
+    >
+      {collapsed ? <SidebarExpandIcon aria-hidden="true" /> : <SidebarSimple aria-hidden="true" />}
+    </Button>
+  );
+}
+
+function AccountAndCollapseRow({ compact = false }: { readonly compact?: boolean }) {
+  return (
+    <div className={`flex w-full items-center gap-1 ${compact ? "flex-col" : ""}`}>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label="Abrir menú de cuenta"
+          render={
+            <Button
+              className={
+                compact
+                  ? "group justify-center px-0"
+                  : "group w-auto max-w-full justify-start px-1.5"
+              }
+              dense
+              size={compact ? "icon" : "default"}
+              variant="ghost"
+            />
+          }
+        >
+          <span className={`flex min-w-0 items-center gap-2 ${compact ? "gap-0" : ""}`}>
+            <Avatar className="size-6 shrink-0">
+              <AvatarFallback className="text-xs! leading-none">DV</AvatarFallback>
+            </Avatar>
+            {compact ? null : (
+              <span className="flex min-w-0 items-center gap-1">
+                <span className="truncate text-sm font-medium">David</span>
+                <CaretDown
+                  aria-hidden="true"
+                  className="size-3 shrink-0 text-muted-foreground transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
+                  weight="bold"
+                />
+              </span>
+            )}
+          </span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuItem>Perfil</DropdownMenuItem>
+          <DropdownMenuItem>Configuración</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem>Cerrar sesión</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <HeaderCollapseToggle />
+    </div>
+  );
+}
+
+function WorkspaceSelectorDemo() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button className="group w-full justify-between font-medium" dense variant="outline" />
+        }
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <Trophy aria-hidden="true" className="size-4 shrink-0" />
+          <span className="truncate">La Copa del Barrio</span>
+        </span>
+        <CaretDown
+          aria-hidden="true"
+          className="size-4 shrink-0 transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Competiciones</DropdownMenuLabel>
+          <DropdownMenuItem>
+            <Trophy aria-hidden="true" className="size-4" />
+            La Copa del Barrio
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Clubes EA</DropdownMenuLabel>
+          <DropdownMenuItem>
+            <Plus aria-hidden="true" className="size-4" />
+            Asociar club
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Organizaciones</DropdownMenuLabel>
+          <DropdownMenuItem>
+            <Plus aria-hidden="true" className="size-4" />
+            Crear organización
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean }) {
+  return (
+    <SidebarProvider className="h-svh" data-density="dense" defaultCollapsed={false}>
       <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center gap-2.5 px-1">
-            <Logo className="h-7 w-auto" />
-            <span className="font-semibold tracking-wide">Futrob</span>
-          </div>
+        <SidebarHeader className="gap-3">
+          <AccountAndCollapseRow />
+          <WorkspaceSelectorDemo />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>General</SidebarGroupLabel>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton active dense>
-                  <Home aria-hidden="true" className="size-4" />
-                  Inicio
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton dense>
-                  <Trophy aria-hidden="true" className="size-4" />
-                  Competiciones
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton dense>
-                  <Gamepad2 aria-hidden="true" className="size-4" />
-                  Clubes EA
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton dense>
-                  <TicketCheck aria-hidden="true" className="size-4" />
-                  Invitaciones
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-          <SidebarGroup>
-            <SidebarGroupLabel>Mi Competición</SidebarGroupLabel>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={<Button className="w-full justify-between" dense variant="outline" />}
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <Trophy aria-hidden="true" className="size-4 shrink-0" />
-                  <span className="truncate">La Copa del Barrio</span>
-                </span>
-                <ChevronDown aria-hidden="true" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Competiciones</DropdownMenuLabel>
-                  <DropdownMenuItem>
-                    <Trophy aria-hidden="true" className="size-4" />
-                    La Copa del Barrio
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Clubes EA</DropdownMenuLabel>
-                  <DropdownMenuItem>
-                    <Gamepad2 aria-hidden="true" className="size-4" />
-                    Asociar club
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Organizaciones</DropdownMenuLabel>
-                  <DropdownMenuItem>Crear organización</DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SidebarGroupLabel>Cola</SidebarGroupLabel>
+            <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
+              <p className="text-sm font-medium">Sin tareas pendientes</p>
+              <p className="typo-caption text-muted-foreground">
+                Las tareas del espacio activo aparecerán aquí.
+              </p>
+            </div>
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <SidebarMenuButton className="justify-between" dense>
-            <span>Cuenta</span>
-            <Settings aria-hidden="true" />
-          </SidebarMenuButton>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton active dense>
+                <House aria-hidden="true" className="size-4" />
+                Inicio
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton dense>
+                <Trophy aria-hidden="true" className="size-4" />
+                Competiciones
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton dense>
+                <GameController aria-hidden="true" className="size-4" />
+                Clubes EA
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton dense>
+                <Ticket aria-hidden="true" className="size-4" />
+                Invitaciones
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="border-b border-border px-5 py-4">
-          <h1 className="typo-heading text-xl">Inicio</h1>
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
+          <h1 className="typo-heading flex-1 text-lg">Inicio</h1>
+          <Button dense disabled variant="outline">
+            Sync EA
+          </Button>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto p-5 text-sm text-muted-foreground">
+          <p>Contenido de la página con scroll independiente.</p>
+          <div className="mt-4 space-y-2">
+            {Array.from({ length: 24 }, (_, index) => (
+              <p key={index}>Fila de contenido {index + 1}</p>
+            ))}
+          </div>
         </div>
-        <div className="flex-1 p-5 text-sm text-muted-foreground">Contenido de la página.</div>
+        {showActionBar ? (
+          <ActionBar>
+            <ActionBarStart>
+              <span className="typo-caption text-muted-foreground">Cambios sin guardar</span>
+            </ActionBarStart>
+            <ActionBarEnd>
+              <Button dense variant="outline">
+                Cancelar
+              </Button>
+              <Button dense>Guardar</Button>
+            </ActionBarEnd>
+          </ActionBar>
+        ) : null}
       </SidebarInset>
     </SidebarProvider>
-  ),
+  );
+}
+
+export const SidebarWithGroups: Story = {
+  render: () => <ShellDemo />,
+};
+
+export const WithActionBar: Story = {
+  render: () => <ShellDemo showActionBar />,
+};
+
+export const CollapsedRail: Story = {
+  render: () => {
+    const [collapsed, setCollapsed] = useState(true);
+    return (
+      <SidebarProvider
+        className="h-svh"
+        collapsed={collapsed}
+        data-density="dense"
+        onCollapsedChange={setCollapsed}
+      >
+        <Sidebar>
+          <SidebarHeader className="items-center gap-2 p-2">
+            <AccountAndCollapseRow compact />
+          </SidebarHeader>
+          <SidebarContent className="items-center p-2">
+            <SidebarMenuButton aria-label="Cola" className="justify-center px-0" dense>
+              <CheckSquareOffset aria-hidden="true" />
+            </SidebarMenuButton>
+          </SidebarContent>
+          <SidebarFooter className="items-center p-2">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton active aria-label="Inicio" className="justify-center px-0" dense>
+                  <House aria-hidden="true" />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton aria-label="Competiciones" className="justify-center px-0" dense>
+                  <Trophy aria-hidden="true" />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
+            <h1 className="typo-heading text-lg">Focus mode</h1>
+          </header>
+          <div className="flex-1 p-5 text-sm text-muted-foreground">
+            Icon rail colapsado. Expandir restaura selector y cola.
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  },
 };

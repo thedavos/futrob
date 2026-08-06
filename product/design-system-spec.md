@@ -2,7 +2,7 @@
 
 **Estado:** canónico para el MVP (producto 2026-07)  
 **Alcance:** marketing, aplicación autenticada y portal público responsive
-**Base técnica:** Tailwind CSS 4, shadcn sobre Base UI, Lucide y Storybook
+**Base técnica:** Tailwind CSS 4, shadcn sobre Base UI, Phosphor Icons y Storybook
 
 ## 1. Dirección de producto
 
@@ -83,7 +83,7 @@ Familia única autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 
 ### Geometría y densidad
 
 - Altura universal de controles: `--control-height` = **44 px**.
-- `dense` es la única reducción permitida: `--control-height-dense` = **40 px** en interfaces
+- `dense` es la única reducción permitida: `--control-height-dense` = **36 px** en interfaces
   operativas de desktop.
 - En pantallas touch, `dense` vuelve a **44 px**.
 - No existen tamaños `xs`, `sm` o `lg` para controles. `size` solo expresa forma:
@@ -157,6 +157,13 @@ Variantes cerradas: `default`, `secondary`, `outline`, `ghost`, `destructive`, `
 - `destructive`: solo con semántica destructiva; normalmente dentro de confirmación.
 - `ButtonIcon`: isla circular distintiva exclusiva para CTA de marketing. No usarla en tablas,
   toolbars ni formularios operativos.
+
+### Iconos
+
+- Librería canónica: **Phosphor Icons** (`@phosphor-icons/react`).
+- Peso por defecto: `regular`. No mezclar `duotone`/`fill` en UI operativa sin decisión de diseño.
+- Tipar props de icono con `Icon` reexportado desde `@futrob/ui`.
+- Inventario ejecutable: Storybook `Primitives/Icons` (`FUTROB_ICON_CATALOG`).
 
 ## 4. Composición
 

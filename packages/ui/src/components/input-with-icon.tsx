@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
 
 import { Input, type InputProps } from "#components/input";
+import type { Icon } from "#lib/icon";
 import { cn } from "#lib/utils";
 
 type EndAdornment =
   | {
       /** Decorative icon rendered at the end of the input. */
-      endIcon?: LucideIcon;
+      endIcon?: Icon;
       endAction?: never;
     }
   | {
@@ -19,7 +19,7 @@ type EndAdornment =
 type InputWithIconProps = InputProps &
   EndAdornment & {
     /** Decorative icon rendered at the start of the input. */
-    startIcon?: LucideIcon;
+    startIcon?: Icon;
   };
 
 function InputWithIcon({

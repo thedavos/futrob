@@ -55,7 +55,7 @@ export const Density: Story = {
         <Input placeholder="Buscar encuentro" />
       </div>
       <div className="grid gap-2">
-        <p className="typo-label text-muted-foreground">Dense · 40 px en desktop</p>
+        <p className="typo-label text-muted-foreground">Dense · 36 px en desktop</p>
         <Input dense placeholder="Filtrar filas" />
       </div>
     </div>

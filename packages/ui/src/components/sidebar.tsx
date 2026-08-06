@@ -7,6 +7,9 @@ type SidebarContextValue = {
   readonly openMobile: boolean;
   readonly setOpenMobile: (open: boolean) => void;
   readonly toggleMobile: () => void;
+  readonly collapsed: boolean;
+  readonly setCollapsed: (collapsed: boolean) => void;
+  readonly toggleCollapsed: () => void;
 };
 
 const SidebarContext = React.createContext<SidebarContextValue | null>(null);
@@ -19,22 +22,52 @@ function useSidebar(): SidebarContextValue {
   return value;
 }
 
-function SidebarProvider({ children, className, ...props }: React.ComponentProps<"div">) {
+type SidebarProviderProps = React.ComponentProps<"div"> & {
+  readonly collapsed?: boolean;
+  readonly defaultCollapsed?: boolean;
+  readonly onCollapsedChange?: (collapsed: boolean) => void;
+};
+
+function SidebarProvider({
+  children,
+  className,
+  collapsed: collapsedProp,
+  defaultCollapsed = false,
+  onCollapsedChange,
+  ...props
+}: SidebarProviderProps) {
   const [openMobile, setOpenMobile] = React.useState(false);
+  const [collapsedUncontrolled, setCollapsedUncontrolled] = React.useState(defaultCollapsed);
+  const collapsed = collapsedProp ?? collapsedUncontrolled;
+
+  const setCollapsed = React.useCallback(
+    (next: boolean) => {
+      if (collapsedProp === undefined) {
+        setCollapsedUncontrolled(next);
+      }
+      onCollapsedChange?.(next);
+    },
+    [collapsedProp, onCollapsedChange],
+  );
+
   const value = React.useMemo(
     () => ({
       openMobile,
       setOpenMobile,
       toggleMobile: () => setOpenMobile((current) => !current),
+      collapsed,
+      setCollapsed,
+      toggleCollapsed: () => setCollapsed(!collapsed),
     }),
-    [openMobile],
+    [openMobile, collapsed, setCollapsed],
   );
 
   return (
     <SidebarContext.Provider value={value}>
       <div
         data-slot="sidebar-provider"
-        className={cn("flex min-h-svh w-full bg-background text-foreground", className)}
+        data-collapsed={collapsed ? "true" : undefined}
+        className={cn("flex h-svh w-full overflow-hidden bg-background text-foreground", className)}
         {...props}
       >
         {children}
@@ -44,11 +77,15 @@ function SidebarProvider({ children, className, ...props }: React.ComponentProps
 }
 
 function Sidebar({ className, ...props }: React.ComponentProps<"aside">) {
+  const { collapsed } = useSidebar();
+
   return (
     <aside
       data-slot="sidebar"
+      data-collapsed={collapsed ? "true" : undefined}
       className={cn(
-        "hidden w-64 shrink-0 flex-col border-r border-border bg-surface md:flex",
+        "hidden h-full min-h-0 shrink-0 flex-col border-r border-border bg-surface md:flex",
+        collapsed ? "w-14" : "w-64",
         className,
       )}
       {...props}
@@ -60,7 +97,7 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sidebar-header"
-      className={cn("flex flex-col gap-3 border-b border-border-subtle p-4", className)}
+      className={cn("flex shrink-0 flex-col gap-3 border-b border-border-subtle p-3", className)}
       {...props}
     />
   );
@@ -80,7 +117,7 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sidebar-footer"
-      className={cn("mt-auto border-t border-border-subtle p-3", className)}
+      className={cn("mt-auto shrink-0 border-t border-border-subtle p-3", className)}
       {...props}
     />
   );
@@ -171,7 +208,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sidebar-inset"
-      className={cn("flex min-w-0 flex-1 flex-col", className)}
+      className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", className)}
       {...props}
     />
   );
@@ -182,7 +219,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-rail"
       className={cn(
-        "flex h-14 items-center gap-2 border-b border-border px-4 md:hidden",
+        "flex h-14 shrink-0 items-center gap-2 border-b border-border px-4 md:hidden",
         className,
       )}
       {...props}

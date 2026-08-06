@@ -1,5 +1,5 @@
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, CaretDown } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
 
@@ -28,7 +28,11 @@ function SelectTrigger({ children, className, dense = false, ...props }: SelectT
     >
       {children}
       <SelectPrimitive.Icon>
-        <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground" />
+        <CaretDown
+          aria-hidden="true"
+          className="size-4 text-muted-foreground"
+          data-slot="select-trigger-icon"
+        />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );

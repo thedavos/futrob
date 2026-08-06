@@ -35,7 +35,7 @@ BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`,
 ## Contrato de `@futrob/ui`
 
 - Light es el tema predeterminado; dark es opt-in explícito.
-- Altura universal de controles: 44 px. `dense` es la única compactación (40 px desktop,
+- Altura universal de controles: 44 px. `dense` es la única compactación (36 px desktop,
   44 px touch).
 - Primitivas con variantes cerradas y estilo flat/line.
 - `typo-label` para labels y navegación; metadata puede usar sentence-case.

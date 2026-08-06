@@ -129,9 +129,9 @@
   --corner-3xl: 2rem;
   --corner-full: 9999px;
 
-  /* Universal controls. `dense` is the only compact mode and never drops below 40px. */
+  /* Universal controls. `dense` is the only compact mode and never drops below 36px. */
   --control-height: 2.75rem;
-  --control-height-dense: 2.5rem;
+  --control-height-dense: 2.25rem;
   --control-height-touch: 2.75rem;
   --content-reading: 65ch;
   --content-wide: 90rem;

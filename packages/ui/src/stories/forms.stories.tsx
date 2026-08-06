@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { CircleAlert } from "lucide-react";
+import { WarningCircle } from "@phosphor-icons/react";
 
 import { Alert, AlertDescription, AlertTitle } from "../components/alert";
 import { Button } from "../components/button";
@@ -94,7 +94,7 @@ export const ValidationAndStatus: Story = {
         <FieldError match>Usa entre 3 y 12 letras o números.</FieldError>
       </Field>
       <Alert variant="warning">
-        <CircleAlert />
+        <WarningCircle />
         <AlertTitle>Datos incompletos</AlertTitle>
         <AlertDescription>Dos jugadores todavía no vincularon su cuenta de EA.</AlertDescription>
       </Alert>

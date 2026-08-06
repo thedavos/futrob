@@ -29,7 +29,7 @@ Also: Cloudflare/wrangler, Sentry, TypeScript best practices. See `.cursor/rules
 
 - Read `product/design-system-spec.md` and `packages/ui/README.md` before UI work.
 - Light is the default across marketing, product and public portal. Dark is explicit opt-in.
-- Controls are 44 px. `dense` is the only compact mode: 40 px on desktop and 44 px on touch.
+- Controls are 44 px. `dense` is the only compact mode: 36 px on desktop and 44 px on touch.
 - Use flat/line hierarchy; ambient elevation uses `smooth-shadow-ring-*` on overlays and
   opt-in `Card`/`EmptyState` `variant="elevated"` / `Alert elevation="elevated"`.
   Never pair `border`/`ring` with `shadow`.
@@ -38,6 +38,7 @@ Also: Cloudflare/wrangler, Sentry, TypeScript best practices. See `.cursor/rules
 - Use `typo-label` for labels and navigation; use `typo-caption` for metadata, hints and secondary sentence-case copy; use `typo-subtitle` for support lines under headings.
 - `ButtonIcon` is marketing CTA language, not an operator/table embellishment.
 - Variants are closed. Do not invent new primitive colors or sizes with `className`.
+- Icons: Phosphor (`@phosphor-icons/react`), weight `regular`. Type icon props with `Icon` from `@futrob/ui`.
 - Build forms, navigation, tables/rows and overlays from `@futrob/ui`.
 - Update Storybook whenever a primitive contract or state changes.
 

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Menu } from "lucide-react";
+import { List } from "@phosphor-icons/react";
 
 import { Button } from "../components/button";
 import {
@@ -26,7 +26,7 @@ export const Playground: Story = {
   render: () => (
     <Sheet>
       <SheetTrigger render={<Button aria-label="Abrir navegación" size="icon" variant="outline" />}>
-        <Menu />
+        <List />
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>

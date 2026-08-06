@@ -6,6 +6,7 @@
 export { Logo } from "./logo";
 export type { LogoProps } from "./logo";
 
+export { ActionBar, ActionBarEnd, ActionBarStart } from "./components/action-bar";
 export { Alert, AlertDescription, AlertTitle, alertVariants } from "./components/alert";
 export {
   AlertDialog,
@@ -90,6 +91,8 @@ export type { InputProps } from "./components/input";
 export { InputWithIcon } from "./components/input-with-icon";
 export type { InputWithIconProps } from "./components/input-with-icon";
 export { Label } from "./components/label";
+export { MasterDetail } from "./components/master-detail";
+export type { MasterDetailProps } from "./components/master-detail";
 export {
   Popover,
   PopoverClose,
@@ -168,4 +171,7 @@ export { Textarea } from "./components/textarea";
 export type { TextareaProps } from "./components/textarea";
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/tooltip";
 export { useCopyToClipboard } from "./hooks/use-copy-to-clipboard";
+export type { Icon, IconProps, IconWeight } from "./lib/icon";
+export { FUTROB_ICON_CATALOG } from "./icons/catalog";
+export type { FutrobIconEntry } from "./icons/catalog";
 export { cn } from "./lib/utils";

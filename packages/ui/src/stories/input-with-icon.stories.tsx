@@ -1,6 +1,13 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { CircleCheck, Eye, EyeOff, Lock, Mail, Search } from "lucide-react";
+import {
+  CheckCircle,
+  Eye,
+  EyeSlash,
+  Lock,
+  EnvelopeSimple,
+  MagnifyingGlass,
+} from "@phosphor-icons/react";
 import { expect, userEvent, within } from "storybook/test";
 
 import { Button } from "../components/button";
@@ -17,7 +24,7 @@ const meta = {
     dense: false,
     disabled: false,
     placeholder: "Equipo, jornada o rival",
-    startIcon: Search,
+    startIcon: MagnifyingGlass,
     type: "search",
   },
   argTypes: {
@@ -52,12 +59,12 @@ export const AdornmentPositions: Story = {
     <div className="grid w-[min(24rem,calc(100vw-2rem))] gap-5">
       <Field name="start-icon">
         <FieldLabel>Icono inicial</FieldLabel>
-        <InputWithIcon placeholder="Buscar equipo" startIcon={Search} type="search" />
+        <InputWithIcon placeholder="Buscar equipo" startIcon={MagnifyingGlass} type="search" />
       </Field>
 
       <Field name="end-icon">
         <FieldLabel>Icono final</FieldLabel>
-        <InputWithIcon defaultValue="capitan@futrob.app" endIcon={CircleCheck} type="email" />
+        <InputWithIcon defaultValue="capitan@futrob.app" endIcon={CheckCircle} type="email" />
         <FieldDescription>Los iconos decorativos no reciben el foco.</FieldDescription>
       </Field>
 
@@ -65,8 +72,8 @@ export const AdornmentPositions: Story = {
         <FieldLabel>Iconos a ambos lados</FieldLabel>
         <InputWithIcon
           defaultValue="capitan@futrob.app"
-          endIcon={CircleCheck}
-          startIcon={Mail}
+          endIcon={CheckCircle}
+          startIcon={EnvelopeSimple}
           type="email"
         />
       </Field>
@@ -99,7 +106,7 @@ function PasswordWithVisibilityAction() {
                   isVisible ? "scale-[0.25] opacity-0 blur-[4px]" : "scale-100 opacity-100 blur-0"
                 }`}
               />
-              <EyeOff
+              <EyeSlash
                 className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
                   isVisible ? "scale-100 opacity-100 blur-0" : "scale-[0.25] opacity-0 blur-[4px]"
                 }`}
@@ -142,12 +149,12 @@ export const DensityAndStates: Story = {
     <div className="grid w-[min(24rem,calc(100vw-2rem))] gap-5">
       <Field name="universal">
         <FieldLabel>Universal · 44 px</FieldLabel>
-        <InputWithIcon endIcon={CircleCheck} startIcon={Mail} type="email" />
+        <InputWithIcon endIcon={CheckCircle} startIcon={EnvelopeSimple} type="email" />
       </Field>
 
       <Field name="dense">
-        <FieldLabel>Dense · 40 px en desktop</FieldLabel>
-        <InputWithIcon dense endIcon={CircleCheck} startIcon={Mail} type="email" />
+        <FieldLabel>Dense · 36 px en desktop</FieldLabel>
+        <InputWithIcon dense endIcon={CheckCircle} startIcon={EnvelopeSimple} type="email" />
       </Field>
 
       <Field disabled name="disabled">
@@ -155,8 +162,8 @@ export const DensityAndStates: Story = {
         <InputWithIcon
           defaultValue="FC Atlas Pro"
           disabled
-          endIcon={CircleCheck}
-          startIcon={Search}
+          endIcon={CheckCircle}
+          startIcon={MagnifyingGlass}
         />
       </Field>
 
@@ -165,7 +172,7 @@ export const DensityAndStates: Story = {
         <InputWithIcon
           aria-invalid="true"
           defaultValue="correo-invalido"
-          startIcon={Mail}
+          startIcon={EnvelopeSimple}
           type="email"
         />
         <FieldError match>Ingresa un correo electrónico válido.</FieldError>
