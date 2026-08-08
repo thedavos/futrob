@@ -53,7 +53,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
          id, organization_id, name, status, modality, game_edition, platform, region,
          time_zone, format, created_by_actor_id, creation_key, created_at, updated_at
        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-       ON CONFLICT (creation_key) WHERE creation_key IS NOT NULL DO UPDATE SET
+       ON CONFLICT (id) DO UPDATE SET
          name = EXCLUDED.name,
          game_edition = EXCLUDED.game_edition,
          platform = EXCLUDED.platform,
@@ -61,7 +61,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
          time_zone = EXCLUDED.time_zone,
          format = EXCLUDED.format,
          updated_at = EXCLUDED.updated_at
-       WHERE competitions.status = 'draft'
+       WHERE competitions.status = 'draft' AND competitions.organization_id = EXCLUDED.organization_id
        RETURNING *`,
       [
         draft.competition.id,
@@ -84,14 +84,13 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     const rulesResult = await executor.query(
       `INSERT INTO competition_rules (
          competition_id, version, regular_stage, knockout_stage, away_goals_enabled,
-         max_roster_size, require_verified_external_club, created_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         max_roster_size, created_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (competition_id, version) DO UPDATE SET
          regular_stage = EXCLUDED.regular_stage,
          knockout_stage = EXCLUDED.knockout_stage,
          away_goals_enabled = EXCLUDED.away_goals_enabled,
-         max_roster_size = EXCLUDED.max_roster_size,
-         require_verified_external_club = EXCLUDED.require_verified_external_club
+         max_roster_size = EXCLUDED.max_roster_size
        RETURNING *`,
       [
         competition.id,
@@ -100,11 +99,26 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         draft.rules.knockoutStage,
         draft.rules.awayGoalsEnabled,
         draft.rules.maxRosterSize,
-        draft.rules.requireVerifiedExternalClub,
         draft.rules.createdAt.toISOString(),
       ],
     );
     return { competition, rules: rehydrateRules(rulesResult.rows[0]) };
+  }
+
+  async publish(draft: CompetitionDraft): Promise<CompetitionDraft> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE competitions
+       SET status = 'published', updated_at = $3
+       WHERE id = $1 AND organization_id = $2 AND status = 'draft'
+       RETURNING *`,
+      [
+        draft.competition.id,
+        draft.competition.organizationId,
+        draft.competition.updatedAt.toISOString(),
+      ],
+    );
+    if (!result.rows[0]) return draft;
+    return { ...draft, competition: rehydrateCompetition(result.rows[0]) };
   }
 
   async findById(
@@ -124,7 +138,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
   async findRulesByCompetitionId(competitionId: CompetitionId): Promise<CompetitionRules | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT competition_id, version, regular_stage, knockout_stage, away_goals_enabled,
-              max_roster_size, require_verified_external_club, created_at
+              max_roster_size, created_at
        FROM competition_rules
        WHERE competition_id = $1 AND version = 1`,
       [competitionId],
@@ -155,7 +169,6 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
               r.knockout_stage,
               r.away_goals_enabled,
               r.max_roster_size,
-              r.require_verified_external_club,
               r.created_at AS rules_created_at
        FROM competitions c
        INNER JOIN competition_rules r ON r.competition_id = c.id AND r.version = 1
@@ -173,7 +186,6 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         knockout_stage: row.knockout_stage,
         away_goals_enabled: row.away_goals_enabled,
         max_roster_size: row.max_roster_size,
-        require_verified_external_club: row.require_verified_external_club,
         created_at: row.rules_created_at,
       }),
     };
@@ -252,7 +264,6 @@ function rehydrateRules(row: Record<string, unknown>): CompetitionRules {
     knockoutStage: (row.knockout_stage as CompetitionMatchRules | null) ?? null,
     awayGoalsEnabled: false,
     maxRosterSize: (row.max_roster_size as number | null) ?? null,
-    requireVerifiedExternalClub: Boolean(row.require_verified_external_club ?? false),
     createdAt: new Date(String(row.created_at)),
   };
 }

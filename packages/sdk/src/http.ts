@@ -59,7 +59,7 @@ export class HttpClient {
       body,
     });
 
-    const raw: unknown = await response.json().catch(() => null);
+    const raw: unknown = response.status === 204 ? null : await response.json().catch(() => null);
 
     if (!response.ok) {
       const apiError = parseApiErrorBody(raw);

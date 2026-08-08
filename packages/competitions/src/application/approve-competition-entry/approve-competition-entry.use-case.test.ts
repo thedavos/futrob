@@ -1,16 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "../../domain/entities/competition-entry.ts";
-import {
-  EntryAlreadyDecided,
-  ExternalClubVerificationRequired,
-} from "../../domain/errors/competition.errors.ts";
+import { EntryAlreadyDecided } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type {
   CompetitionDraft,
   CompetitionRepository,
 } from "../../domain/ports/competition.repository.ts";
-import type { TeamExternalClubVerificationPort } from "../../domain/ports/team-external-club-verification.port.ts";
 import { CreateCompetitionDraftUseCase } from "../create-competition-draft/create-competition-draft.use-case.ts";
 import { ApproveCompetitionEntryUseCase } from "./approve-competition-entry.use-case.ts";
 
@@ -74,13 +70,9 @@ class FakeEntryRepository implements CompetitionEntryRepository {
   }
 }
 
-function createHarness(options?: { verified?: boolean; requireVerified?: boolean }) {
+function createHarness() {
   const competitions = new FakeCompetitionRepository();
   const entries = new FakeEntryRepository();
-  const verified = options?.verified ?? true;
-  const externalClubVerification: TeamExternalClubVerificationPort = {
-    isVerified: async () => verified,
-  };
   let nextId = 0;
   const shared = {
     clock: { now: () => new Date("2026-08-01T12:00:00.000Z") },
@@ -93,9 +85,8 @@ function createHarness(options?: { verified?: boolean; requireVerified?: boolean
     approve: new ApproveCompetitionEntryUseCase({
       entries,
       competitions,
-      externalClubVerification,
     }),
-    async seedEntry(requireVerifiedExternalClub = options?.requireVerified ?? false) {
+    seedEntry: async () => {
       const draft = await new CreateCompetitionDraftUseCase({ competitions, ...shared }).execute({
         organizationId: asOrganizationId("org-1"),
         actorId: asActorId("actor-1"),
@@ -108,12 +99,6 @@ function createHarness(options?: { verified?: boolean; requireVerified?: boolean
       });
       expect(draft.isOk()).toBe(true);
       if (!draft.isOk()) throw new Error("draft failed");
-      if (requireVerifiedExternalClub) {
-        await competitions.saveDraft({
-          ...draft.value,
-          rules: { ...draft.value.rules, requireVerifiedExternalClub: true },
-        });
-      }
       const entry: CompetitionEntry = {
         id: "entry-1",
         organizationId: asOrganizationId("org-1"),
@@ -130,7 +115,7 @@ function createHarness(options?: { verified?: boolean; requireVerified?: boolean
 }
 
 describe("ApproveCompetitionEntryUseCase", () => {
-  it("approves a pending entry when verification is not required", async () => {
+  it("approves a pending entry without consulting an external provider", async () => {
     const { approve, seedEntry } = createHarness();
     const entry = await seedEntry();
     const result = await approve.execute({
@@ -140,17 +125,6 @@ describe("ApproveCompetitionEntryUseCase", () => {
     expect(result.isOk()).toBe(true);
     if (!result.isOk()) return;
     expect(result.value.status).toBe("approved");
-  });
-
-  it("rejects approval when external club verification is required but missing", async () => {
-    const { approve, seedEntry } = createHarness({ verified: false, requireVerified: true });
-    const entry = await seedEntry(true);
-    const result = await approve.execute({
-      organizationId: asOrganizationId("org-1"),
-      entryId: entry.id,
-    });
-    expect(result.isOk()).toBe(false);
-    expect(!result.isOk() && ExternalClubVerificationRequired.is(result.error)).toBe(true);
   });
 
   it("rejects approval when entry is already decided", async () => {

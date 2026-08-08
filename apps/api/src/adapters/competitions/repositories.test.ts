@@ -41,7 +41,6 @@ const draft: CompetitionDraft = {
     knockoutStage: null,
     awayGoalsEnabled: false,
     maxRosterSize: null,
-    requireVerifiedExternalClub: false,
     createdAt: new Date("2026-07-31T12:00:00.000Z"),
   },
 };
@@ -141,8 +140,7 @@ class FakeCompetitionPool {
         knockout_stage: values[3],
         away_goals_enabled: values[4],
         max_roster_size: values[5],
-        require_verified_external_club: values[6],
-        created_at: values[7],
+        created_at: values[6],
       };
       return { rows: [this.rules] };
     }
@@ -167,7 +165,6 @@ class FakeCompetitionPool {
                 knockout_stage: this.rules.knockout_stage,
                 away_goals_enabled: this.rules.away_goals_enabled,
                 max_roster_size: this.rules.max_roster_size,
-                require_verified_external_club: this.rules.require_verified_external_club,
                 rules_created_at: this.rules.created_at,
               },
             ]

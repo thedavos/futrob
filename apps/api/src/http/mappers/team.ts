@@ -72,8 +72,6 @@ export function teamExternalClubDto(
     externalClubName: connection.externalClubName,
     platform: connection.platform,
     gameEdition: connection.gameEdition,
-    verifiedAt: connection.verifiedAt?.toISOString() ?? null,
-    verifiedBy: connection.verifiedBy,
   };
 }
 

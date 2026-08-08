@@ -8,10 +8,13 @@ import {
   JoinCompetitionUseCase,
   RegisterTeamEntryUseCase,
   RejectCompetitionEntryUseCase,
+  UpdateCompetitionDraftUseCase,
+  PublishCompetitionUseCase,
+  ListCompetitionParticipantsUseCase,
+  RemoveCompetitionParticipantUseCase,
   type CompetitionEntryRepository,
   type CompetitionMembershipRepository,
   type CompetitionRepository,
-  type TeamExternalClubVerificationPort,
 } from "@futrob/competitions";
 import type { Pool } from "pg";
 import {
@@ -30,7 +33,6 @@ import {
 export function createCompetitionsModule(input: {
   readonly pool: Pool | undefined;
   readonly competitions?: CompetitionRepository;
-  readonly externalClubVerification: TeamExternalClubVerificationPort;
 }) {
   const competitions: CompetitionRepository =
     input.competitions ??
@@ -47,6 +49,7 @@ export function createCompetitionsModule(input: {
   return {
     repository: competitions,
     createDraft: new CreateCompetitionDraftUseCase({ competitions, ...shared }),
+    updateDraft: new UpdateCompetitionDraftUseCase({ competitions, clock: shared.clock }),
     getDraft: new GetCompetitionDraftUseCase(competitions),
     listByOrganization: new ListOrganizationCompetitionsUseCase(competitions),
     join: new JoinCompetitionUseCase({ competitions, memberships, clock: shared.clock }),
@@ -55,11 +58,13 @@ export function createCompetitionsModule(input: {
       entries,
       ...shared,
     }),
+    listParticipants: new ListCompetitionParticipantsUseCase(entries),
+    removeParticipant: new RemoveCompetitionParticipantUseCase({ competitions, entries }),
+    publish: new PublishCompetitionUseCase({ competitions, entries, clock: shared.clock }),
     getTeamEntry: new GetTeamEntryUseCase(entries),
     approveTeamEntry: new ApproveCompetitionEntryUseCase({
       entries,
       competitions,
-      externalClubVerification: input.externalClubVerification,
     }),
     rejectTeamEntry: new RejectCompetitionEntryUseCase(entries),
   };

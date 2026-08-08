@@ -18,6 +18,7 @@ import type {
   TeamRepository,
 } from "@futrob/teams";
 import type { Pool } from "pg";
+import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class InMemoryTeamRepository implements TeamRepository {
   readonly rows = new Map<TeamId, Team>();
@@ -29,6 +30,12 @@ export class InMemoryTeamRepository implements TeamRepository {
 
   async findByCreationKey(creationKey: string): Promise<Team | null> {
     return [...this.rows.values()].find((row) => row.creationKey === creationKey) ?? null;
+  }
+
+  async listByOrganization(organizationId: OrganizationId) {
+    return [...this.rows.values()]
+      .filter((team) => team.organizationId === organizationId)
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async save(team: Team): Promise<Team> {
@@ -117,7 +124,7 @@ export class PostgresTeamRepository implements TeamRepository {
   constructor(private readonly pool: Pool) {}
 
   async findById(organizationId: OrganizationId, teamId: TeamId): Promise<Team | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, name, created_at, created_by_actor_id, creation_key
        FROM teams WHERE id = $1 AND organization_id = $2`,
       [teamId, organizationId],
@@ -126,7 +133,7 @@ export class PostgresTeamRepository implements TeamRepository {
   }
 
   async findByCreationKey(creationKey: string): Promise<Team | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, name, created_at, created_by_actor_id, creation_key
        FROM teams WHERE creation_key = $1`,
       [creationKey],
@@ -135,7 +142,7 @@ export class PostgresTeamRepository implements TeamRepository {
   }
 
   async save(team: Team): Promise<Team> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO teams (
          id, organization_id, name, created_at, created_by_actor_id, creation_key
        ) VALUES ($1, $2, $3, $4, $5, $6)
@@ -151,6 +158,15 @@ export class PostgresTeamRepository implements TeamRepository {
       ],
     );
     return rehydrateTeam(result.rows[0]);
+  }
+
+  async listByOrganization(organizationId: OrganizationId) {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, organization_id, name, created_at, created_by_actor_id, creation_key
+       FROM teams WHERE organization_id = $1 ORDER BY name ASC`,
+      [organizationId],
+    );
+    return result.rows.map(rehydrateTeam);
   }
 }
 

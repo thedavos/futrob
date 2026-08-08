@@ -118,7 +118,6 @@ export class CreateCompetitionDraftUseCase {
       ...rulesPreset(input.format),
       awayGoalsEnabled: false,
       maxRosterSize: null,
-      requireVerifiedExternalClub: false,
       createdAt: existing?.rules.createdAt ?? now,
     };
 

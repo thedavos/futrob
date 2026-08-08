@@ -4,12 +4,10 @@ import {
   CompetitionNotFound,
   EntryAlreadyDecided,
   EntryNotFound,
-  ExternalClubVerificationRequired,
   type ApproveCompetitionEntryError,
 } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
-import type { TeamExternalClubVerificationPort } from "../../domain/ports/team-external-club-verification.port.ts";
 
 export interface ApproveCompetitionEntryInput {
   readonly organizationId: OrganizationId;
@@ -21,7 +19,6 @@ export class ApproveCompetitionEntryUseCase {
     private readonly deps: {
       readonly entries: CompetitionEntryRepository;
       readonly competitions: CompetitionRepository;
-      readonly externalClubVerification: TeamExternalClubVerificationPort;
     },
   ) {}
 
@@ -55,21 +52,6 @@ export class ApproveCompetitionEntryUseCase {
           message: "Competition not found",
         }),
       );
-    }
-
-    if (draft.rules.requireVerifiedExternalClub) {
-      const verified = await this.deps.externalClubVerification.isVerified(
-        input.organizationId,
-        entry.teamId,
-      );
-      if (!verified) {
-        return err(
-          new ExternalClubVerificationRequired({
-            code: "competitions.external_club_verification_required",
-            message: "Team external club must be verified before approval",
-          }),
-        );
-      }
     }
 
     return ok(

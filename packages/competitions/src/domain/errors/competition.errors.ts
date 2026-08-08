@@ -36,6 +36,20 @@ export type CreateCompetitionDraftError =
   | InvalidCompetitionTimeZone
   | CompetitionCreationKeyConflict;
 
+export type UpdateCompetitionDraftError =
+  | CompetitionNotFound
+  | CompetitionNotEditable
+  | InvalidCompetitionName
+  | InvalidCompetitionGameEdition
+  | InvalidCompetitionTimeZone
+  | InvalidCompetitionRules;
+
+export type PublishCompetitionError =
+  | CompetitionNotFound
+  | CompetitionNotEditable
+  | InvalidCompetitionRules
+  | CompetitionPublishBlocked;
+
 export type JoinCompetitionError = CompetitionNotFound;
 
 export class EntryNotFound extends TaggedError("EntryNotFound")<{
@@ -48,19 +62,34 @@ export class EntryAlreadyDecided extends TaggedError("EntryAlreadyDecided")<{
   message: string;
 }> {}
 
-export class ExternalClubVerificationRequired extends TaggedError(
-  "ExternalClubVerificationRequired",
-)<{
-  code: "competitions.external_club_verification_required";
+export class CompetitionNotEditable extends TaggedError("CompetitionNotEditable")<{
+  code: "competitions.not_editable";
   message: string;
 }> {}
 
-export type RegisterTeamEntryError = CompetitionNotFound | EntryCreationKeyConflict;
+export class InvalidCompetitionRules extends TaggedError("InvalidCompetitionRules")<{
+  code: "competitions.invalid_rules";
+  message: string;
+}> {}
+
+export class CompetitionPublishBlocked extends TaggedError("CompetitionPublishBlocked")<{
+  code: "competitions.publish_blocked";
+  message: string;
+}> {}
+
+export type RegisterTeamEntryError =
+  | CompetitionNotFound
+  | CompetitionNotEditable
+  | EntryCreationKeyConflict;
+
+export type RemoveCompetitionParticipantError =
+  | CompetitionNotFound
+  | CompetitionNotEditable
+  | EntryNotFound;
 
 export type ApproveCompetitionEntryError =
   | EntryNotFound
   | EntryAlreadyDecided
-  | ExternalClubVerificationRequired
   | CompetitionNotFound;
 
 export type RejectCompetitionEntryError = EntryNotFound | EntryAlreadyDecided;

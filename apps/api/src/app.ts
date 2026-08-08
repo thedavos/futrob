@@ -35,7 +35,7 @@ export function createApp(deps: AppDeps): Hono {
     "/api/v1/*",
     cors({
       origin: (origin) => (origin && allowedOrigins.has(origin) ? origin : null),
-      allowMethods: ["GET", "POST", "PUT", "PATCH", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowHeaders: ["Accept", "Authorization", "Content-Type", "X-Futrob-Actor-Id"],
     }),
   );

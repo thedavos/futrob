@@ -14,6 +14,11 @@ export class InMemoryCompetitionRepository implements CompetitionRepository {
     return draft;
   }
 
+  async publish(draft: CompetitionDraft): Promise<CompetitionDraft> {
+    this.byId.set(draft.competition.id, draft);
+    return draft;
+  }
+
   async findById(
     organizationId: OrganizationId,
     competitionId: CompetitionId,

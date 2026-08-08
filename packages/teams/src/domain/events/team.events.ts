@@ -16,6 +16,5 @@ export type ExternalClubConnectedEvent = DomainEvent<
     readonly teamId: string;
     readonly providerKey: string;
     readonly externalClubId: string;
-    readonly verifiedAt: string | null;
   }
 >;

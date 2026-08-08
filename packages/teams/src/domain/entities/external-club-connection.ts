@@ -8,6 +8,4 @@ export interface ExternalClubConnection {
   readonly externalClubName: string;
   readonly gameEdition: string;
   readonly platform: string;
-  readonly verifiedAt: Date | null;
-  readonly verifiedBy: string | null;
 }

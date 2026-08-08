@@ -24,8 +24,6 @@ export interface ConnectTeamExternalClubInput {
   readonly externalClubName: string;
   readonly gameEdition: string;
   readonly platform: string;
-  readonly verifiedAt?: Date | null;
-  readonly verifiedBy?: string | null;
 }
 
 export class ConnectTeamExternalClubUseCase {
@@ -57,8 +55,6 @@ export class ConnectTeamExternalClubUseCase {
       externalClubName: input.externalClubName,
       gameEdition: input.gameEdition,
       platform: input.platform,
-      verifiedAt: input.verifiedAt ?? null,
-      verifiedBy: input.verifiedBy ?? null,
     };
     const saved = await this.deps.connections.upsert(connection);
 
@@ -70,7 +66,6 @@ export class ConnectTeamExternalClubUseCase {
           teamId: input.teamId,
           providerKey: input.providerKey,
           externalClubId: input.externalClubId,
-          verifiedAt: saved.verifiedAt?.toISOString() ?? null,
         },
       };
       await this.deps.eventPublisher.publish(event);

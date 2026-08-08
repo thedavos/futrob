@@ -44,7 +44,7 @@ export const competitionDraftInputSchema = z.object({
 });
 export type CompetitionDraftInputDto = z.infer<typeof competitionDraftInputSchema>;
 
-const competitionMatchRulesSchema = z.object({
+export const competitionMatchRulesSchema = z.object({
   officialMatchesPerEncounter: z.union([z.literal(1), z.literal(2)]),
   resolutionMode: z.enum(["independent_matches", "aggregate_score"]),
   winPoints: z.number(),
@@ -56,6 +56,7 @@ const competitionMatchRulesSchema = z.object({
   rescheduleRequiresOpponentApproval: z.boolean(),
   rescheduleRequiresOrganizerApproval: z.boolean(),
 });
+export type CompetitionMatchRulesDto = z.infer<typeof competitionMatchRulesSchema>;
 
 export const competitionRulesSchema = z.object({
   version: z.number().int().positive(),
@@ -63,10 +64,18 @@ export const competitionRulesSchema = z.object({
   knockoutStage: competitionMatchRulesSchema.nullable(),
   awayGoalsEnabled: z.literal(false),
   maxRosterSize: z.number().int().positive().nullable(),
-  requireVerifiedExternalClub: z.boolean(),
   createdAt: z.string().datetime(),
 });
 export type CompetitionRulesDto = z.infer<typeof competitionRulesSchema>;
+
+export const updateCompetitionDraftRequestSchema = competitionDraftInputSchema.extend({
+  rules: z.object({
+    regularStage: competitionMatchRulesSchema.nullable(),
+    knockoutStage: competitionMatchRulesSchema.nullable(),
+    maxRosterSize: z.number().int().positive().nullable(),
+  }),
+});
+export type UpdateCompetitionDraftRequest = z.infer<typeof updateCompetitionDraftRequestSchema>;
 
 export const competitionSchema = z.object({
   id: z.string().min(1),
@@ -89,6 +98,9 @@ export const competitionDraftSchema = z.object({
   rules: competitionRulesSchema,
 });
 export type CompetitionDraftDto = z.infer<typeof competitionDraftSchema>;
+
+export const updateCompetitionDraftResponseSchema = competitionDraftSchema;
+export type UpdateCompetitionDraftResponse = z.infer<typeof updateCompetitionDraftResponseSchema>;
 
 export const getCompetitionDraftResponseSchema = competitionDraftSchema;
 export type GetCompetitionDraftResponse = z.infer<typeof getCompetitionDraftResponseSchema>;
@@ -131,6 +143,31 @@ export const competitionEntrySchema = z.object({
   createdAt: z.string().datetime(),
 });
 export type CompetitionEntryDto = z.infer<typeof competitionEntrySchema>;
+
+export const competitionParticipantInputSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("existing-team"), teamId: z.string().trim().min(1) }),
+  z.object({
+    kind: z.literal("new-team"),
+    name: z.string().trim().min(1).max(120),
+    creationKey: z.string().trim().min(1).max(160),
+  }),
+]);
+export type CompetitionParticipantInput = z.infer<typeof competitionParticipantInputSchema>;
+
+export const listCompetitionParticipantsResponseSchema = z.object({
+  participants: z.array(competitionEntrySchema),
+});
+export type ListCompetitionParticipantsResponse = z.infer<
+  typeof listCompetitionParticipantsResponseSchema
+>;
+
+export const addCompetitionParticipantResponseSchema = competitionEntrySchema;
+export type AddCompetitionParticipantResponse = z.infer<
+  typeof addCompetitionParticipantResponseSchema
+>;
+
+export const publishCompetitionResponseSchema = competitionDraftSchema;
+export type PublishCompetitionResponse = z.infer<typeof publishCompetitionResponseSchema>;
 
 export const registerTeamEntryRequestSchema = z.object({
   teamId: z.string().trim().min(1),

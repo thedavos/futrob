@@ -75,7 +75,8 @@ function statusForFailureCode(code: string): number {
     code.includes("roster_locked") ||
     code.includes("already_decided") ||
     code.includes("captain_already_assigned") ||
-    code.includes("verification_required")
+    code.includes("not_editable") ||
+    code.includes("publish_blocked")
   ) {
     return 409;
   }

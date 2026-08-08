@@ -17,6 +17,7 @@ import {
   getMyPlayerProfileResponseSchema,
   getMyTeamsResponseSchema,
   getTeamExternalClubResponseSchema,
+  listOrganizationTeamsResponseSchema,
   listRosterResponseSchema,
   openRosterResponseSchema,
   setActiveTeamRequestSchema,
@@ -39,6 +40,7 @@ import {
   type GetMyPlayerProfileResponse,
   type GetMyTeamsResponse,
   type GetTeamExternalClubResponse,
+  type ListOrganizationTeamsResponse,
   type ListRosterResponse,
   type OpenRosterResponse,
   type SetActiveTeamRequest,
@@ -96,6 +98,14 @@ export function createTeamsResource(http: HttpClient) {
         method: "POST",
         body,
         parse: (data) => createTeamResponseSchema.parse(data),
+      });
+    },
+
+    async listByOrganization(organizationId: string): Promise<ListOrganizationTeamsResponse> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/teams`,
+        method: "GET",
+        parse: (data) => listOrganizationTeamsResponseSchema.parse(data),
       });
     },
 

@@ -75,7 +75,6 @@ describe("ListOrganizationCompetitionsUseCase", () => {
         knockoutStage: null,
         awayGoalsEnabled: false,
         maxRosterSize: null,
-        requireVerifiedExternalClub: false,
         createdAt: new Date("2026-07-01T00:00:00.000Z"),
       },
     });
@@ -92,7 +91,6 @@ describe("ListOrganizationCompetitionsUseCase", () => {
         knockoutStage: null,
         awayGoalsEnabled: false,
         maxRosterSize: null,
-        requireVerifiedExternalClub: false,
         createdAt: new Date("2026-08-01T00:00:00.000Z"),
       },
     });
@@ -110,7 +108,6 @@ describe("ListOrganizationCompetitionsUseCase", () => {
         knockoutStage: null,
         awayGoalsEnabled: false,
         maxRosterSize: null,
-        requireVerifiedExternalClub: false,
         createdAt: new Date("2026-08-02T00:00:00.000Z"),
       },
     });

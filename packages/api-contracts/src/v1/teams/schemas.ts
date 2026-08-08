@@ -85,6 +85,9 @@ export type CreateTeamRequest = z.infer<typeof createTeamRequestSchema>;
 export const createTeamResponseSchema = teamSchema;
 export type CreateTeamResponse = z.infer<typeof createTeamResponseSchema>;
 
+export const listOrganizationTeamsResponseSchema = z.object({ teams: z.array(teamSchema) });
+export type ListOrganizationTeamsResponse = z.infer<typeof listOrganizationTeamsResponseSchema>;
+
 export const competitionRosterMembershipSchema = z.object({
   id: z.string().min(1),
   organizationId: z.string().min(1),
@@ -140,8 +143,6 @@ export const connectTeamExternalClubRequestSchema = z.object({
   externalClubName: z.string().trim().min(1).max(120),
   platform: z.string().trim().min(1).max(40),
   gameEdition: z.string().trim().min(1).max(40),
-  verifiedAt: z.string().datetime().nullable().optional(),
-  verifiedBy: z.string().trim().min(1).nullable().optional(),
 });
 export type ConnectTeamExternalClubRequest = z.infer<typeof connectTeamExternalClubRequestSchema>;
 
@@ -152,8 +153,6 @@ export const teamExternalClubConnectionSchema = z.object({
   externalClubName: z.string().min(1),
   platform: z.string().min(1),
   gameEdition: z.string().min(1),
-  verifiedAt: z.string().datetime().nullable(),
-  verifiedBy: z.string().min(1).nullable(),
 });
 export type TeamExternalClubConnectionDto = z.infer<typeof teamExternalClubConnectionSchema>;
 

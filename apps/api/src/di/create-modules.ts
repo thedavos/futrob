@@ -1,6 +1,5 @@
 import { InMemoryProviderMatchRepository } from "@/adapters/persistence/in-memory-provider-match.repository.ts";
 import { createTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
-import { ExternalClubVerificationAdapter } from "@/adapters/teams/external-club-connection.repository.ts";
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import type { TransactionPort } from "@futrob/shared-kernel";
@@ -47,7 +46,6 @@ export function createModules(input: CreateModulesInput): AppModules {
   const competitions = createCompetitionsModule({
     pool: input.pool,
     competitions: competitionRepository,
-    externalClubVerification: new ExternalClubVerificationAdapter(teams.externalClubConnections),
   });
   const transaction = createTransactionPort(input.pool);
 

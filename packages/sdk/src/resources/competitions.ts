@@ -15,6 +15,18 @@ import {
   type ListOrganizationCompetitionsResponse,
   type RegisterTeamEntryRequest,
   type RegisterTeamEntryResponse,
+  updateCompetitionDraftRequestSchema,
+  updateCompetitionDraftResponseSchema,
+  competitionParticipantInputSchema,
+  listCompetitionParticipantsResponseSchema,
+  addCompetitionParticipantResponseSchema,
+  publishCompetitionResponseSchema,
+  type UpdateCompetitionDraftRequest,
+  type UpdateCompetitionDraftResponse,
+  type CompetitionParticipantInput,
+  type ListCompetitionParticipantsResponse,
+  type AddCompetitionParticipantResponse,
+  type PublishCompetitionResponse,
 } from "@futrob/api-contracts";
 import type { HttpClient } from "../http.ts";
 
@@ -49,6 +61,68 @@ export function createCompetitionsResource(http: HttpClient) {
         path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}`,
         method: "GET",
         parse: (data) => getCompetitionDraftResponseSchema.parse(data),
+      });
+    },
+
+    async updateDraft(
+      organizationId: string,
+      competitionId: string,
+      input: UpdateCompetitionDraftRequest,
+    ): Promise<UpdateCompetitionDraftResponse> {
+      const body = updateCompetitionDraftRequestSchema.parse(input);
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}`,
+        method: "PATCH",
+        body,
+        parse: (data) => updateCompetitionDraftResponseSchema.parse(data),
+      });
+    },
+
+    async listParticipants(
+      organizationId: string,
+      competitionId: string,
+    ): Promise<ListCompetitionParticipantsResponse> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/participants`,
+        method: "GET",
+        parse: (data) => listCompetitionParticipantsResponseSchema.parse(data),
+      });
+    },
+
+    async addParticipant(
+      organizationId: string,
+      competitionId: string,
+      input: CompetitionParticipantInput,
+    ): Promise<AddCompetitionParticipantResponse> {
+      const body = competitionParticipantInputSchema.parse(input);
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/participants`,
+        method: "POST",
+        body,
+        parse: (data) => addCompetitionParticipantResponseSchema.parse(data),
+      });
+    },
+
+    async removeParticipant(
+      organizationId: string,
+      competitionId: string,
+      entryId: string,
+    ): Promise<void> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/participants/${encodeURIComponent(entryId)}`,
+        method: "DELETE",
+        parse: () => undefined,
+      });
+    },
+
+    async publish(
+      organizationId: string,
+      competitionId: string,
+    ): Promise<PublishCompetitionResponse> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/publish`,
+        method: "POST",
+        parse: (data) => publishCompetitionResponseSchema.parse(data),
       });
     },
 

@@ -12,6 +12,7 @@ import type {
   CompetitionEntryStatus,
 } from "@futrob/competitions";
 import type { Pool } from "pg";
+import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class InMemoryCompetitionEntryRepository implements CompetitionEntryRepository {
   readonly rows = new Map<string, CompetitionEntry>();
@@ -43,6 +44,17 @@ export class InMemoryCompetitionEntryRepository implements CompetitionEntryRepos
     this.rows.set(entry.id, entry);
     return entry;
   }
+
+  async listByCompetition(organizationId: OrganizationId, competitionId: CompetitionId) {
+    return [...this.rows.values()].filter(
+      (entry) => entry.organizationId === organizationId && entry.competitionId === competitionId,
+    );
+  }
+
+  async remove(organizationId: OrganizationId, entryId: string): Promise<boolean> {
+    const entry = this.rows.get(entryId);
+    return entry?.organizationId === organizationId ? this.rows.delete(entryId) : false;
+  }
 }
 
 export class PostgresCompetitionEntryRepository implements CompetitionEntryRepository {
@@ -52,7 +64,7 @@ export class PostgresCompetitionEntryRepository implements CompetitionEntryRepos
     organizationId: OrganizationId,
     entryId: string,
   ): Promise<CompetitionEntry | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, status, created_at, creation_key
        FROM competition_entries WHERE id = $1 AND organization_id = $2`,
       [entryId, organizationId],
@@ -64,7 +76,7 @@ export class PostgresCompetitionEntryRepository implements CompetitionEntryRepos
     competitionId: CompetitionId,
     teamId: TeamId,
   ): Promise<CompetitionEntry | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, status, created_at, creation_key
        FROM competition_entries WHERE competition_id = $1 AND team_id = $2`,
       [competitionId, teamId],
@@ -73,7 +85,7 @@ export class PostgresCompetitionEntryRepository implements CompetitionEntryRepos
   }
 
   async findByCreationKey(creationKey: string): Promise<CompetitionEntry | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, status, created_at, creation_key
        FROM competition_entries WHERE creation_key = $1`,
       [creationKey],
@@ -82,12 +94,16 @@ export class PostgresCompetitionEntryRepository implements CompetitionEntryRepos
   }
 
   async save(entry: CompetitionEntry): Promise<CompetitionEntry> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO competition_entries (
          id, organization_id, competition_id, team_id, status, created_at, creation_key
        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (competition_id, team_id) DO UPDATE
-       SET status = competition_entries.status
+       SET status = CASE
+         WHEN competition_entries.status = 'pending' AND EXCLUDED.status = 'approved'
+         THEN 'approved'
+         ELSE competition_entries.status
+       END
        RETURNING id, organization_id, competition_id, team_id, status, created_at, creation_key`,
       [
         entry.id,
@@ -100,6 +116,25 @@ export class PostgresCompetitionEntryRepository implements CompetitionEntryRepos
       ],
     );
     return rehydrateEntry(result.rows[0]);
+  }
+
+  async listByCompetition(organizationId: OrganizationId, competitionId: CompetitionId) {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, organization_id, competition_id, team_id, status, created_at, creation_key
+       FROM competition_entries
+       WHERE organization_id = $1 AND competition_id = $2
+       ORDER BY created_at ASC`,
+      [organizationId, competitionId],
+    );
+    return result.rows.map(rehydrateEntry);
+  }
+
+  async remove(organizationId: OrganizationId, entryId: string): Promise<boolean> {
+    const result = await getPgExecutor(this.pool).query(
+      `DELETE FROM competition_entries WHERE organization_id = $1 AND id = $2`,
+      [organizationId, entryId],
+    );
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

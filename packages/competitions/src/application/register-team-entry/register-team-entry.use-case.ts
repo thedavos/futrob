@@ -11,6 +11,7 @@ import {
 import type { CompetitionEntry } from "../../domain/entities/competition-entry.ts";
 import {
   CompetitionNotFound,
+  CompetitionNotEditable,
   EntryCreationKeyConflict,
   type RegisterTeamEntryError,
 } from "../../domain/errors/competition.errors.ts";
@@ -22,6 +23,7 @@ export interface RegisterTeamEntryInput {
   readonly competitionId: CompetitionId;
   readonly teamId: TeamId;
   readonly creationKey?: string;
+  readonly approved?: boolean;
 }
 
 export class RegisterTeamEntryUseCase {
@@ -49,6 +51,14 @@ export class RegisterTeamEntryUseCase {
         }),
       );
     }
+    if (competition.competition.status !== "draft") {
+      return err(
+        new CompetitionNotEditable({
+          code: "competitions.not_editable",
+          message: "Competition participants cannot be changed after publication",
+        }),
+      );
+    }
 
     if (input.creationKey) {
       const byKey = await this.deps.entries.findByCreationKey(input.creationKey);
@@ -61,7 +71,11 @@ export class RegisterTeamEntryUseCase {
             }),
           );
         }
-        return ok(byKey);
+        return ok(
+          input.approved && byKey.status === "pending"
+            ? await this.deps.entries.save({ ...byKey, status: "approved" })
+            : byKey,
+        );
       }
     }
 
@@ -69,7 +83,13 @@ export class RegisterTeamEntryUseCase {
       input.competitionId,
       input.teamId,
     );
-    if (existing) return ok(existing);
+    if (existing) {
+      return ok(
+        input.approved && existing.status === "pending"
+          ? await this.deps.entries.save({ ...existing, status: "approved" })
+          : existing,
+      );
+    }
 
     return ok(
       await this.deps.entries.save({
@@ -77,7 +97,7 @@ export class RegisterTeamEntryUseCase {
         organizationId: input.organizationId,
         competitionId: input.competitionId,
         teamId: input.teamId,
-        status: "pending",
+        status: input.approved ? "approved" : "pending",
         createdAt: this.deps.clock.now(),
         creationKey: input.creationKey ?? null,
       }),

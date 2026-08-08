@@ -9,6 +9,5 @@ export interface CompetitionRules {
   readonly awayGoalsEnabled: false;
   /** null means use default roster size (11) at evaluation time in teams */
   readonly maxRosterSize: number | null;
-  readonly requireVerifiedExternalClub: boolean;
   readonly createdAt: Date;
 }

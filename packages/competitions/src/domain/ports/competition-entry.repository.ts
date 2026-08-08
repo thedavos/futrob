@@ -8,5 +8,10 @@ export interface CompetitionEntryRepository {
     teamId: TeamId,
   ): Promise<CompetitionEntry | null>;
   findByCreationKey(creationKey: string): Promise<CompetitionEntry | null>;
+  listByCompetition?(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+  ): Promise<readonly CompetitionEntry[]>;
   save(entry: CompetitionEntry): Promise<CompetitionEntry>;
+  remove?(organizationId: OrganizationId, entryId: string): Promise<boolean>;
 }

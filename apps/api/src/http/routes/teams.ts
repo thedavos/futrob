@@ -215,8 +215,6 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
       externalClubName: parsed.data.externalClubName,
       platform: parsed.data.platform,
       gameEdition: parsed.data.gameEdition,
-      verifiedAt: parsed.data.verifiedAt ? new Date(parsed.data.verifiedAt) : null,
-      verifiedBy: parsed.data.verifiedBy ?? null,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(

@@ -9,6 +9,7 @@ export interface CompetitionDraft {
 
 export interface CompetitionRepository {
   saveDraft(draft: CompetitionDraft): Promise<CompetitionDraft>;
+  publish?(draft: CompetitionDraft): Promise<CompetitionDraft>;
   findById(
     organizationId: OrganizationId,
     competitionId: CompetitionId,

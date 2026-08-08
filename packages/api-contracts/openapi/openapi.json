@@ -860,6 +860,300 @@
             "$ref": "#/components/responses/ApiError"
           }
         }
+      },
+      "patch": {
+        "operationId": "updateCompetitionDraft",
+        "tags": ["competitions"],
+        "summary": "Update the editable structure and rules of a competition draft",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompetitionDraftInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved draft",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionDraft"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/teams": {
+      "get": {
+        "operationId": "listOrganizationTeams",
+        "tags": ["teams"],
+        "summary": "List teams available to the organization operator",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Teams",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["teams"],
+                  "properties": {
+                    "teams": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Team"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/participants": {
+      "get": {
+        "operationId": "listCompetitionParticipants",
+        "tags": ["competitions"],
+        "summary": "List draft participants",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Participants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["participants"],
+                  "properties": {
+                    "participants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CompetitionEntry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "addCompetitionParticipant",
+        "tags": ["competitions"],
+        "summary": "Add an approved existing or inline-created Team",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompetitionParticipantInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Approved participant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/participants/{entryId}": {
+      "delete": {
+        "operationId": "removeCompetitionParticipant",
+        "tags": ["competitions"],
+        "summary": "Remove a participant while the competition is a draft",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Participant removed"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/publish": {
+      "post": {
+        "operationId": "publishCompetition",
+        "tags": ["competitions"],
+        "summary": "Publish and structurally lock a valid draft with at least two approved participants",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Published competition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionDraft"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
       }
     },
     "/organizations/{organizationId}/competitions/{competitionId}/invitations": {
@@ -1362,7 +1656,6 @@
           "knockoutStage",
           "awayGoalsEnabled",
           "maxRosterSize",
-          "requireVerifiedExternalClub",
           "createdAt"
         ],
         "properties": {
@@ -1405,9 +1698,6 @@
               }
             ]
           },
-          "requireVerifiedExternalClub": {
-            "type": "boolean"
-          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -1425,6 +1715,138 @@
             "$ref": "#/components/schemas/CompetitionRules"
           }
         }
+      },
+      "UpdateCompetitionDraftInput": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CompetitionDraftInput"
+          },
+          {
+            "type": "object",
+            "required": ["rules"],
+            "properties": {
+              "rules": {
+                "type": "object",
+                "required": ["regularStage", "knockoutStage", "maxRosterSize"],
+                "properties": {
+                  "regularStage": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/CompetitionMatchRules"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "knockoutStage": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/CompetitionMatchRules"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "maxRosterSize": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Team": {
+        "type": "object",
+        "required": ["id", "organizationId", "name", "createdAt"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CompetitionEntry": {
+        "type": "object",
+        "required": ["id", "organizationId", "competitionId", "teamId", "status", "createdAt"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "competitionId": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CompetitionParticipantInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["kind", "teamId"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "existing-team"
+              },
+              "teamId": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["kind", "name", "creationKey"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "new-team"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "creationKey": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              }
+            }
+          }
+        ]
       },
       "PlayerProfile": {
         "type": "object",

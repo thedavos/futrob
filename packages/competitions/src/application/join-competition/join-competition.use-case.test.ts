@@ -83,7 +83,6 @@ const competitionDraft: CompetitionDraft = {
     knockoutStage: null,
     awayGoalsEnabled: false,
     maxRosterSize: null,
-    requireVerifiedExternalClub: false,
     createdAt,
   },
 };

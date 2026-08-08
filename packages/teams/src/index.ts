@@ -92,6 +92,7 @@ export {
   type CreateTeamInput,
 } from "./application/create-team/create-team.use-case.ts";
 export { GetTeamUseCase } from "./application/get-team/get-team.use-case.ts";
+export { ListOrganizationTeamsUseCase } from "./application/list-organization-teams/list-organization-teams.use-case.ts";
 export {
   AddToRosterUseCase,
   type AddToRosterInput,

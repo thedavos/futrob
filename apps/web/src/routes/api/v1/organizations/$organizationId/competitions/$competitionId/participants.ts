@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  getCompetitionDraftResponseSchema,
-  updateCompetitionDraftRequestSchema,
-  updateCompetitionDraftResponseSchema,
+  addCompetitionParticipantResponseSchema,
+  competitionParticipantInputSchema,
+  listCompetitionParticipantsResponseSchema,
 } from "@futrob/api-contracts";
 import {
   createAuthenticatedProductApiClient,
@@ -11,7 +11,7 @@ import {
 import { apiErrorResponse, jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
 
 export const Route = createFileRoute(
-  "/api/v1/organizations/$organizationId/competitions/$competitionId",
+  "/api/v1/organizations/$organizationId/competitions/$competitionId/participants",
 )({
   server: {
     handlers: {
@@ -19,17 +19,20 @@ export const Route = createFileRoute(
         try {
           const { client } = await createAuthenticatedProductApiClient(request);
           return jsonResponse(
-            getCompetitionDraftResponseSchema.parse(
-              await client.competitions.getDraft(params.organizationId, params.competitionId),
+            listCompetitionParticipantsResponseSchema.parse(
+              await client.competitions.listParticipants(
+                params.organizationId,
+                params.competitionId,
+              ),
             ),
           );
         } catch (error) {
           return productApiBffErrorResponse(error);
         }
       },
-      PATCH: async ({ request, params }) => {
+      POST: async ({ request, params }) => {
         try {
-          const parsed = updateCompetitionDraftRequestSchema.safeParse(
+          const parsed = competitionParticipantInputSchema.safeParse(
             await request.json().catch(() => null),
           );
           if (!parsed.success)
@@ -40,13 +43,14 @@ export const Route = createFileRoute(
             });
           const { client } = await createAuthenticatedProductApiClient(request);
           return jsonResponse(
-            updateCompetitionDraftResponseSchema.parse(
-              await client.competitions.updateDraft(
+            addCompetitionParticipantResponseSchema.parse(
+              await client.competitions.addParticipant(
                 params.organizationId,
                 params.competitionId,
                 parsed.data,
               ),
             ),
+            201,
           );
         } catch (error) {
           return productApiBffErrorResponse(error);
