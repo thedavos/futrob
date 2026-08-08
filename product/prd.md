@@ -77,6 +77,8 @@ Futrob modela la edición del juego como entidad configurable (`FC 25`, `FC 26`,
 
 Cada competición queda vinculada a una edición y modalidad desde su creación. Esos valores no deben cambiar después de iniciar la competición.
 
+El setup se guarda como borrador reanudable en cinco pasos: información, formato, reglas, participantes y revisión. Publicar requiere reglas coherentes con el formato y al menos dos participantes aprobados; después bloquea la estructura. La asociación de un Team con un club EA es declarativa y operativa para localizar partidos: no existe verificación de cuenta o propiedad mediante EA.
+
 ## 5. Formatos
 
 ### MVP

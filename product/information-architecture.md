@@ -206,7 +206,7 @@ Ruta conceptual: `/orgs/:orgId/competitions/:competitionId/encounters/:encounter
 
 ### Inscripción y club EA
 
-Equipos → crear/editar Team → buscar club EA → seleccionar → esperar aprobación del organizador.
+Equipos → crear/editar Team → buscar club EA → seleccionar asociación operativa → gestionar inscripción. La selección no verifica cuenta ni propiedad.
 
 ### Reprogramación
 

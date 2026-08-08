@@ -81,6 +81,8 @@
 | DEC-077 | Un equipo por competición       | Un `PlayerProfile` puede integrar como máximo un Team por Competition (`UNIQUE(player_profile_id, competition_id)` en la plantilla). Varios equipos solo entre competiciones distintas. La membresía de competición no sustituye la plantilla.                                  |
 | DEC-078 | Equipo activo personal          | `ActiveTeamPreference` guarda un único `roster_membership_id` por actor. Es preferencia de UI/contexto personal, no elegibilidad competitiva. Puede apuntar a cualquier membresía de plantilla del actor; reemplazarla es idempotente.                                          |
 | DEC-079 | Plantilla y cuenta de juego     | Una membresía de plantilla puede amarrarse opcionalmente a un `PlayerGameAccount` del mismo perfil para fijar plataforma y edición al sincronizar. El mismo identificador EA en varias plataformas sigue siendo filas distintas de cuenta.                                      |
+| DEC-080 | Asociación de club EA           | `ExternalClubConnection` conserva provider, club, edición y plataforma como asociación operativa del Team para localizar partidos. EA no ofrece una API de propiedad utilizable: Futrob no verifica, aprueba ni bloquea por propiedad del club.                                 |
+| DEC-081 | Publicación de competición      | El draft se puede guardar y reanudar. Publicar exige reglas válidas y al menos dos participantes aprobados; la publicación bloquea identidad, formato, reglas y participantes. La materialización de Stage/Encounter/OfficialMatch permanece en Fase 2.                         |
 
 ## 8. Decisiones que no deben reintroducirse sin ADR + cambio de producto
 
@@ -89,6 +91,7 @@
 - Match/Series/Game del modelo anterior sin mapear a Encounter/OfficialMatch/EaMatch.
 - Kapso/WhatsApp/Telegram como requisitos Must del MVP.
 - Entrants 1v1/pair/squad como supuesto universal del dominio Clubs.
+- Verificación o aprobación de propiedad de cuenta/club EA.
 
 ## 9. Decisiones resueltas de sistema de diseño
 

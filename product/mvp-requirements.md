@@ -37,21 +37,21 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 ### 3.2 Competiciones, ediciones y formatos
 
-| ID           | Requisito verificable                                                                                                                                                                |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| FR-02        | Crear competiciones vinculadas a edición del juego, modalidad (FC Clubs en MVP), plataforma/generación, región y zona horaria. Esos vínculos no cambian tras iniciar la competición. |
-| FR-03        | Configurar formatos MVP (liga, eliminación directa, grupos + eliminación, liga con playoffs), etapas, jornadas/rondas y criterios de desempate.                                      |
-| FTR-COMP-001 | Un organizador debe poder crear una competición como borrador, publicarla, pausarla, finalizarla y archivarla.                                                                       |
+| ID           | Requisito verificable                                                                                                                                                                                                                     |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-02        | Crear competiciones vinculadas a edición del juego, modalidad (FC Clubs en MVP), plataforma/generación, región y zona horaria. Esos vínculos no cambian tras iniciar la competición.                                                      |
+| FR-03        | Configurar formatos MVP (liga, eliminación directa, grupos + eliminación, liga con playoffs), etapas, jornadas/rondas y criterios de desempate.                                                                                           |
+| FTR-COMP-001 | Un organizador debe poder guardar y reanudar identidad, formato, reglas y participantes de una competición en borrador; publicarla con al menos dos participantes aprobados; y, desde ese momento, tratar su estructura como no editable. |
 
 ### 3.3 Equipos, clubes EA y plantillas
 
-| ID             | Requisito verificable                                                                                                                                                              |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-04          | Registrar equipos, capitanes, subcapitanes y plantillas; vincular el club de EA (búsqueda por nombre, selección, persistencia de identificador, nombre, plataforma y edición).     |
-| FTR-TEAM-001   | El organizador puede exigir verificación del club EA antes de aprobar la inscripción.                                                                                              |
-| FTR-TEAM-002   | Un jugador pertenece como máximo a un Team por Competition; puede pertenecer a varios Teams en competiciones distintas y declarar el mismo identificador EA en varias plataformas. |
-| FTR-ROSTER-001 | La plantilla soporta invitaciones, roles, elegibilidad y alineaciones según reglas de la competición.                                                                              |
-| FTR-ROSTER-002 | El espacio personal permite listar las membresías de plantilla del actor y marcar una como equipo activo (`ActiveTeamPreference`); la preferencia no altera elegibilidad.          |
+| ID             | Requisito verificable                                                                                                                                                                                                |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-04          | Registrar equipos, capitanes, subcapitanes y plantillas; asociar operativamente el club de EA (búsqueda por nombre, selección, persistencia de identificador, nombre, plataforma y edición) para localizar partidos. |
+| FTR-TEAM-001   | La asociación Team ↔ club EA es declarativa y no afirma ni verifica cuenta o propiedad; no condiciona la aprobación de la inscripción.                                                                               |
+| FTR-TEAM-002   | Un jugador pertenece como máximo a un Team por Competition; puede pertenecer a varios Teams en competiciones distintas y declarar el mismo identificador EA en varias plataformas.                                   |
+| FTR-ROSTER-001 | La plantilla soporta invitaciones, roles, elegibilidad y alineaciones según reglas de la competición.                                                                                                                |
+| FTR-ROSTER-002 | El espacio personal permite listar las membresías de plantilla del actor y marcar una como equipo activo (`ActiveTeamPreference`); la preferencia no altera elegibilidad.                                            |
 
 ### 3.4 Fixtures, enfrentamientos y partidos oficiales
 

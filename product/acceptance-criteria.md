@@ -110,9 +110,19 @@ Además, reejecutar el mismo job de sync o la misma confirmación no crea partid
 
 **Cubre:** FR-04, FTR-TEAM-001.
 
-- **Dado** un capitán con inscripción pendiente,
+- **Dado** un Team de la organización,
 - **cuando** busca un club por nombre, selecciona el correcto y guarda,
-- **entonces** Futrob persiste identificador, nombre, plataforma y edición, y el organizador puede exigir verificación antes de aprobar.
+- **entonces** Futrob persiste identificador, nombre, plataforma y edición como asociación operativa para localizar partidos, sin afirmar ni verificar propiedad y sin bloquear la aprobación.
+
+### AC-COMP-002 — Reanudar y publicar configuración
+
+**Cubre:** FTR-COMP-001, FR-02, FR-03.
+
+- **Dado** un organizador o staff con una competición en borrador,
+- **cuando** guarda identidad, formato, reglas y participantes y vuelve más tarde,
+- **entonces** el wizard rehidrata el último draft persistido,
+- **y cuando** existen reglas válidas y al menos dos participantes aprobados puede publicar,
+- **y después de publicar** cualquier mutación estructural falla con `competitions.not_editable`.
 
 ## 5. Fixtures y modos de serie
 
