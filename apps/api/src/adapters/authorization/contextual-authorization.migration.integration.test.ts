@@ -80,6 +80,51 @@ suite("0017 contextual authorization migration", () => {
       expect(invitation.rows[0]).toEqual({ role: "member" });
     });
   });
+
+  it("keeps competition invitation roles while remapping ambiguous org invites", async () => {
+    await withSchema(async (client) => {
+      await applyMigrations(client, 16);
+      await client.query(
+        `INSERT INTO organizations (
+           id, name, normalized_name, created_at, created_by_actor_id
+         ) VALUES ('org-legacy', 'Legacy', 'legacy', NOW(), 'organizer')`,
+      );
+      await client.query(
+        `INSERT INTO competitions (
+           id, organization_id, name, status, modality, game_edition, platform,
+           region, time_zone, format, created_by_actor_id, created_at, updated_at
+         ) VALUES (
+           'comp-legacy', 'org-legacy', 'Legacy Cup', 'draft', 'fc-clubs', 'fc26',
+           'playstation', 'south-america', 'America/Lima', 'league', 'organizer',
+           NOW(), NOW()
+         )`,
+      );
+      await client.query(
+        `INSERT INTO organization_invitations (
+           id, organization_id, competition_id, role, token_hash, status,
+           invited_by_actor_id, expires_at, created_at
+         ) VALUES
+           (
+             'invite-org-player', 'org-legacy', NULL, 'player', 'org-hash', 'pending',
+             'organizer', NOW() + INTERVAL '1 day', NOW()
+           ),
+           (
+             'invite-comp-captain', 'org-legacy', 'comp-legacy', 'captain', 'comp-hash',
+             'pending', 'organizer', NOW() + INTERVAL '1 day', NOW()
+           )`,
+      );
+
+      await applyMigrations(client, 17, 17);
+
+      const invitations = await client.query(
+        `SELECT id, role FROM organization_invitations ORDER BY id`,
+      );
+      expect(invitations.rows).toEqual([
+        { id: "invite-comp-captain", role: "captain" },
+        { id: "invite-org-player", role: "member" },
+      ]);
+    });
+  });
 });
 
 async function withSchema(run: (client: PoolClient) => Promise<void>): Promise<void> {
