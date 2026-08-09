@@ -54,6 +54,7 @@ Datos:
 - `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `TableEmpty`
 - `Avatar`, `AvatarImage`, `AvatarFallback`
 - `Badge`, `Card`, `EmptyState`, `Skeleton`
+- `Stat`, `StatLabel`, `StatValue`, `StatHint`, `StatGroup`
 - `ScrollArea`, `ScrollAreaContent`, `ScrollBar`
 - `Progress`, `ProgressLabel`, `ProgressTrack`, `ProgressIndicator`, `ProgressValue`
 

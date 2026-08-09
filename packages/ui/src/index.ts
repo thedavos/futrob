@@ -151,6 +151,16 @@ export {
   useSidebar,
 } from "./components/sidebar";
 export { Skeleton } from "./components/skeleton";
+export {
+  Stat,
+  StatGroup,
+  StatHint,
+  StatLabel,
+  StatValue,
+  statValueVariants,
+  statVariants,
+} from "./components/stat";
+export type { StatProps, StatValueProps } from "./components/stat";
 export { Stepper } from "./components/stepper";
 export type { StepperStep } from "./components/stepper";
 export { Switch } from "./components/switch";
