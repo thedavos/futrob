@@ -5,19 +5,19 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 ## Bounded contexts (MVP)
 
-| Módulo          | Responsabilidad                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                           |
-| `organizations` | Organizaciones, nombres únicos, membresías de tenant, roles, permisos y tokens de invitación |
-| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC y membresías contextuales de competición   |
-| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes, vínculo club externo  |
-| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                         |
-| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                      |
-| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales                |
-| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                          |
-| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                            |
-| `notifications` | Web, email (WhatsApp/push como ampliación)                                                   |
-| `public-portal` | Lecturas públicas sanitizadas                                                                |
+| Módulo          | Responsabilidad                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                          |
+| `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación               |
+| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC y membresías contextuales de competición  |
+| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes, vínculo club externo |
+| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                        |
+| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                     |
+| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales               |
+| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                         |
+| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                           |
+| `notifications` | Web, email (WhatsApp/push como ampliación)                                                  |
+| `public-portal` | Lecturas públicas sanitizadas                                                               |
 
 `billing` está fuera del MVP.
 
@@ -62,9 +62,21 @@ scheduling
 onboarding HTTP orchestration
   → organizations / competitions / teams public application APIs
   → identity completeOnboarding last
+
+private use case
+  → AuthorizationPort (shared-kernel)
+  → contextual resolver (apps/api composition)
+  → role membership + owning BC permission catalog + scoped grant ledger
 ```
 
-Una invitación usada por onboarding siempre referencia una competición. `organizations` valida y consume el token y asegura la membresía mínima del tenant; `competitions` asegura después la membresía contextual. Ninguna de ambas operaciones crea una `CompetitionEntry` ni un `Roster`.
+Una invitación usada por onboarding siempre referencia una competición. `organizations` valida y
+consume el token y asegura una membresía `member` mínima del tenant; `competitions` persiste después
+`staff | captain | player` exclusivamente en la competición. Ninguna operación eleva ese rol a la
+organización ni crea una `CompetitionEntry` o un `Roster`.
+
+Los catálogos de permisos y bundles permanecen en `organizations`, `competitions`, `teams`,
+`scheduling` y `results`. El resolver valida la cadena organización → competición → Team → Encounter;
+un `deny` vence dentro del mismo scope y una decisión más específica vence a la heredada.
 
 ## Cross-module prohibido
 
@@ -73,6 +85,7 @@ results → game-data/adapters/providers/ea-clubs/*
 statistics → results/adapters/persistence/schemas
 teams → identity DB tables
 routes → getDb() / env.APP_DB
+routes → role string comparisons
 presentation → repository concrete
 ```
 

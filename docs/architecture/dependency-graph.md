@@ -29,6 +29,10 @@ flowchart TD
   PublicPortal["public-portal"] --> Statistics
   PublicPortal --> Competitions
   Organizations["organizations"] --> Identity
+  PrivateUseCases["private use cases"] -->|"AuthorizationPort"| AuthResolver["apps/api contextual resolver"]
+  AuthResolver --> Organizations
+  AuthResolver --> Competitions
+  AuthResolver --> Teams
 ```
 
 Los edges entre módulos son **APIs públicas / ports / eventos**, nunca imports de adapters.
