@@ -70,6 +70,87 @@ describe("authorization SDK resource", () => {
       },
     ]);
   });
+
+  it("keeps invitation management off the authorization resource", async () => {
+    const paths: string[] = [];
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: (async (input) => {
+        const path = new URL(requestUrl(input)).pathname;
+        paths.push(path);
+        if (path.includes("roster-invitations")) {
+          return Response.json({
+            invitationId: "roster-invite-1",
+            organizationId: "org-1",
+            competitionId: "competition-1",
+            teamId: "team-1",
+            role: "player",
+            status: "pending",
+            expiresAt: "2026-08-08T12:00:00.000Z",
+            createdAt: "2026-08-07T12:00:00.000Z",
+            token: "roster-token-1",
+          });
+        }
+        return Response.json({
+          invitationId: "invite-1",
+          competitionId: null,
+          token: "token-1",
+          expiresAt: "2026-08-08T12:00:00.000Z",
+          redeemPolicy: "single",
+          maxRedemptions: 1,
+        });
+      }) as typeof fetch,
+    });
+
+    await client.organizations.createInvitation("org-1", { role: "member" });
+    await client.teams.createRosterInvitation("org-1", "competition-1", "team-1", {
+      role: "player",
+    });
+
+    expect(paths).toEqual([
+      "/api/v1/organizations/org-1/invitations",
+      "/api/v1/organizations/org-1/competitions/competition-1/teams/team-1/roster-invitations",
+    ]);
+    expect(Object.keys(client.authorization)).not.toContain("createInvitation");
+  });
+
+  it("parses EffectiveAccess permissions for allow and deny rows", async () => {
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: (async () =>
+        Response.json({
+          actorId: "actor-1",
+          scope: { organizationId: "org-1", competitionId: "competition-1" },
+          roles: [
+            { scopeType: "organization", scopeId: "org-1", role: "member" },
+            { scopeType: "competition", scopeId: "competition-1", role: "player" },
+          ],
+          permissions: [
+            {
+              permission: "competitions.read",
+              allowed: true,
+              decidedAt: "competition",
+            },
+            {
+              permission: "competitions.update",
+              allowed: false,
+              decidedAt: "competition",
+            },
+          ],
+        })) as typeof fetch,
+    });
+
+    const access = await client.authorization.getEffectiveAccess(
+      { organizationId: "org-1", competitionId: "competition-1" },
+      ["competitions.read", "competitions.update"],
+    );
+
+    expect(access.roles).toHaveLength(2);
+    expect(access.permissions).toEqual([
+      { permission: "competitions.read", allowed: true, decidedAt: "competition" },
+      { permission: "competitions.update", allowed: false, decidedAt: "competition" },
+    ]);
+  });
 });
 
 function requestUrl(input: string | URL | Request): string {
