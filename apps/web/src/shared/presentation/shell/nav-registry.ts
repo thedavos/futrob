@@ -1,3 +1,7 @@
+import type { Permission } from "@futrob/shared-kernel";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
+import { TEAM_PERMISSION } from "@futrob/teams";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
 
 export const NAV_SECTION = {
@@ -25,7 +29,7 @@ export type ShellNavItem = {
   readonly href: string;
   readonly icon?: ShellNavIconId;
   readonly stub?: boolean;
-  readonly requiredPermission?: string;
+  readonly requiredPermission?: Permission;
 };
 
 export type ShellNavSection = {
@@ -63,14 +67,14 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       label: "Inicio",
       href: base,
       icon: "home",
-      requiredPermission: "organizations.read",
+      requiredPermission: ORGANIZATION_PERMISSION.read,
     },
     {
       id: "competitions",
       label: "Competiciones",
       href: `${base}/competitions`,
       icon: "competitions",
-      requiredPermission: "competitions.read",
+      requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "teams",
@@ -78,7 +82,7 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       href: `${base}/teams`,
       icon: "teams",
       stub: true,
-      requiredPermission: "teams.read",
+      requiredPermission: TEAM_PERMISSION.read,
     },
     {
       id: "players",
@@ -86,7 +90,7 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       href: `${base}/players`,
       icon: "players",
       stub: true,
-      requiredPermission: "organizations.memberships.read",
+      requiredPermission: ORGANIZATION_PERMISSION.membershipsRead,
     },
     {
       id: "invitations",
@@ -94,7 +98,7 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       href: `${base}/invitations`,
       icon: "invitations",
       stub: true,
-      requiredPermission: "organizations.invitations.manage",
+      requiredPermission: ORGANIZATION_PERMISSION.invitationsManage,
     },
     {
       id: "organization",
@@ -102,7 +106,7 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       href: `${base}/settings/members`,
       icon: "organization",
       stub: true,
-      requiredPermission: "authorization.roles.manage",
+      requiredPermission: ORGANIZATION_PERMISSION.rolesManage,
     },
     {
       id: "settings",
@@ -110,7 +114,7 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       href: `${base}/settings`,
       icon: "settings",
       stub: true,
-      requiredPermission: "organizations.update",
+      requiredPermission: ORGANIZATION_PERMISSION.update,
     },
   ];
 }
@@ -126,7 +130,13 @@ function personalCompetitionContext(
     { id: "overview", label: "Resumen", href: base, stub: true },
     { id: "matches", label: "Partidos", href: `${base}/matches`, stub: true },
     { id: "stats", label: "Estadísticas", href: `${base}/stats`, stub: true },
-    { id: "team", label: "Mi equipo", href: `${base}/team`, stub: true },
+    {
+      id: "team",
+      label: "Mi equipo",
+      href: `${base}/team`,
+      stub: true,
+      requiredPermission: TEAM_PERMISSION.read,
+    },
   ];
 }
 
@@ -136,69 +146,74 @@ function organizationCompetitionContext(
 ): readonly ShellNavItem[] {
   const base = `/orgs/${organizationId}/competitions/${competitionId}`;
   return [
-    { id: "overview", label: "Resumen", href: base, requiredPermission: "competitions.read" },
+    {
+      id: "overview",
+      label: "Resumen",
+      href: base,
+      requiredPermission: COMPETITION_PERMISSION.read,
+    },
     {
       id: "fixture",
       label: "Calendario",
       href: `${base}/fixture`,
       stub: true,
-      requiredPermission: "competitions.read",
+      requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "encounters",
       label: "Enfrentamientos",
       href: `${base}/encounters`,
       stub: true,
-      requiredPermission: "competitions.read",
+      requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "standings",
       label: "Clasificación",
       href: `${base}/standings`,
       stub: true,
-      requiredPermission: "competitions.read",
+      requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "bracket",
       label: "Bracket",
       href: `${base}/bracket`,
       stub: true,
-      requiredPermission: "competitions.read",
+      requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "rankings",
       label: "Rankings",
       href: `${base}/rankings`,
       stub: true,
-      requiredPermission: "competitions.read",
+      requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "teams",
       label: "Equipos",
       href: `${base}/teams`,
       stub: true,
-      requiredPermission: "teams.read",
+      requiredPermission: TEAM_PERMISSION.read,
     },
     {
       id: "disputes",
       label: "Disputas",
       href: `${base}/disputes`,
       stub: true,
-      requiredPermission: "competitions.read",
+      requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "analytics",
       label: "Analíticas",
       href: `${base}/analytics`,
       stub: true,
-      requiredPermission: "competitions.read",
+      requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "rules",
       label: "Reglamento",
       href: `${base}/rules`,
       stub: true,
-      requiredPermission: "competitions.read",
+      requiredPermission: COMPETITION_PERMISSION.read,
     },
   ];
 }
@@ -231,7 +246,8 @@ export function contextNavFor(
 ): ShellNavSection {
   if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
     const isOrgOperator =
-      selection.organizationId != null && allowedPermissions?.has("competitions.update") === true;
+      selection.organizationId != null &&
+      allowedPermissions?.has(COMPETITION_PERMISSION.update) === true;
     const items = isOrgOperator
       ? organizationCompetitionContext(selection.organizationId!, selection.competitionId)
       : personalCompetitionContext(selection.organizationId, selection.competitionId);

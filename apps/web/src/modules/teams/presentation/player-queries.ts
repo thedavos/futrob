@@ -4,6 +4,7 @@ import type {
   AddMyPlayerGameAccountRequest,
   SetActiveTeamRequest,
 } from "@futrob/api-contracts";
+import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { teamsBrowserClient } from "./teams-browser-client.ts";
 
@@ -40,6 +41,7 @@ export function useSetActiveTeamMutation() {
     mutationFn: (input: SetActiveTeamRequest) => teamsBrowserClient.setActiveTeam(input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() });
+      await invalidateEffectiveAccessQueries(queryClient);
     },
   });
 }
@@ -53,6 +55,7 @@ export function useAcceptRosterInvitationMutation() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() });
       await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
+      await invalidateEffectiveAccessQueries(queryClient);
     },
   });
 }

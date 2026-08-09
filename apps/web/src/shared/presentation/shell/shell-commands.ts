@@ -1,3 +1,6 @@
+import type { Permission } from "@futrob/shared-kernel";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { TEAM_PERMISSION } from "@futrob/teams";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
 
 export type ShellCommand = {
@@ -5,7 +8,7 @@ export type ShellCommand = {
   readonly label: string;
   readonly disabled?: boolean;
   readonly href?: string;
-  readonly requiredPermission?: string;
+  readonly requiredPermission?: Permission;
 };
 
 export function commandsFor(
@@ -21,7 +24,13 @@ export function commandsFor(
         id: "publish",
         label: "Publicar",
         disabled: true,
-        requiredPermission: "competitions.publish",
+        requiredPermission: COMPETITION_PERMISSION.publish,
+      },
+      {
+        id: "manage-roster",
+        label: "Gestionar plantilla",
+        disabled: true,
+        requiredPermission: TEAM_PERMISSION.rosterManage,
       },
     ];
   } else if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
@@ -30,7 +39,7 @@ export function commandsFor(
         id: "new-competition",
         label: "Nueva competición",
         href: `/orgs/${selection.organizationId}/competitions/new`,
-        requiredPermission: "competitions.update",
+        requiredPermission: COMPETITION_PERMISSION.update,
       },
     ];
   } else if (pathname.startsWith("/player/competitions")) {

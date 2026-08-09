@@ -14,7 +14,8 @@ import {
   EmptyStateTitle,
 } from "@futrob/ui";
 import { Trophy } from "@phosphor-icons/react";
-import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { useOrganizationCompetitionsQuery } from "./competition-queries.ts";
 
 export function OrganizationCompetitionsPage({
@@ -24,8 +25,8 @@ export function OrganizationCompetitionsPage({
 }) {
   const competitionsQuery = useOrganizationCompetitionsQuery(organizationId);
   const competitions = competitionsQuery.data?.competitions ?? [];
-  const permissions = useEffectivePermissions({ organizationId }, ["competitions.update"]);
-  const canCreate = permissions.allowed.has("competitions.update");
+  const create = useCan({ organizationId }, COMPETITION_PERMISSION.update);
+  const canCreate = create.allowed;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8 sm:py-14">

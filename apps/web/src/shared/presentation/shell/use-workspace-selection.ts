@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { ONBOARDING_PATH } from "@futrob/identity";
 import {
@@ -8,13 +8,19 @@ import {
 } from "@/modules/competitions/presentation/competitions-browser-client.ts";
 import { useOnboardingStatusQuery } from "@/modules/identity/presentation/identity-queries.ts";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
-import { useMyPlayerProfileQuery } from "@/modules/teams/presentation/player-queries.ts";
-import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import {
+  useMyPlayerProfileQuery,
+  useMyTeamsQuery,
+} from "@/modules/teams/presentation/player-queries.ts";
 import {
   SHELL_PERMISSIONS,
-  allowedPermissionSet,
+  allowedFromCapabilityState,
+  capabilityStateFromQuery,
   getEffectiveAccess,
 } from "@/context/permissions.ts";
+import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
+import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import { teamIdForCompetition } from "./team-scope.ts";
 import {
   WORKSPACE_SELECTION_KIND,
   type CompetitionSelectorOption,
@@ -28,12 +34,13 @@ import {
   readStoredWorkspaceSelection,
   writeStoredWorkspaceSelection,
 } from "./workspace-selection-storage.ts";
-
 export function useWorkspaceSelection() {
+  const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const onboardingQuery = useOnboardingStatusQuery();
   const membershipsQuery = useMyMembershipsQuery();
   const profileQuery = useMyPlayerProfileQuery();
+  const teamsQuery = useMyTeamsQuery();
   const [override, setOverride] = useState<WorkspaceSelection | null>(null);
 
   const associatedClub = useMemo(() => {
@@ -149,27 +156,39 @@ export function useWorkspaceSelection() {
       return { organizationId: selection.organizationId };
     }
     if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
+      const teamId = teamIdForCompetition(selection.competitionId, teamsQuery.data);
       return {
         organizationId: selection.organizationId ?? undefined,
         competitionId: selection.competitionId,
+        ...(teamId ? { teamId } : {}),
       };
     }
     return {};
-  }, [selection]);
+  }, [selection, teamsQuery.data]);
   const effectiveAccessQuery = useQuery({
     queryKey: queryKeys.authorization.effectiveAccess(authorizationScope, SHELL_PERMISSIONS),
     queryFn: () => getEffectiveAccess(authorizationScope),
     enabled: selection.kind !== WORKSPACE_SELECTION_KIND.personal,
     staleTime: 30_000,
   });
-  const allowedPermissions = useMemo(
-    () => allowedPermissionSet(effectiveAccessQuery.data),
-    [effectiveAccessQuery.data],
+  const capability = useMemo(
+    () =>
+      capabilityStateFromQuery({
+        fetchStatus: effectiveAccessQuery.isError
+          ? "error"
+          : effectiveAccessQuery.isPending
+            ? "pending"
+            : "success",
+        data: effectiveAccessQuery.data,
+      }),
+    [effectiveAccessQuery.data, effectiveAccessQuery.isError, effectiveAccessQuery.isPending],
   );
+  const allowedPermissions = useMemo(() => allowedFromCapabilityState(capability), [capability]);
 
   function select(next: WorkspaceSelection) {
     writeStoredWorkspaceSelection(next);
     setOverride(next);
+    void invalidateEffectiveAccessQueries(queryClient);
   }
 
   return {
@@ -179,6 +198,7 @@ export function useWorkspaceSelection() {
     associatedClub,
     associatedClubName,
     allowedPermissions,
+    capability,
     effectiveAccessQuery,
     select,
     isSame: (other: WorkspaceSelection) => isSameWorkspaceSelection(selection, other),

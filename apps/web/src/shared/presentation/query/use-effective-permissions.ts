@@ -1,7 +1,12 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { AuthorizationScopeDto, PermissionDto } from "@futrob/api-contracts";
-import { allowedPermissionSet, getEffectiveAccess } from "@/context/permissions.ts";
+import {
+  allowedFromCapabilityState,
+  capabilityStateFromQuery,
+  getEffectiveAccess,
+  type CapabilityState,
+} from "@/context/permissions.ts";
 import { queryKeys } from "./query-keys.ts";
 
 export function useEffectivePermissions(
@@ -13,6 +18,14 @@ export function useEffectivePermissions(
     queryFn: () => getEffectiveAccess(scope, permissions),
     staleTime: 30_000,
   });
-  const allowed = useMemo(() => allowedPermissionSet(query.data), [query.data]);
-  return { allowed, query };
+  const capability: CapabilityState = useMemo(
+    () =>
+      capabilityStateFromQuery({
+        fetchStatus: query.isError ? "error" : query.isPending ? "pending" : "success",
+        data: query.data,
+      }),
+    [query.data, query.isError, query.isPending],
+  );
+  const allowed = useMemo(() => allowedFromCapabilityState(capability), [capability]);
+  return { allowed, capability, query };
 }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ONBOARDING_PATH } from "@futrob/identity";
+import { TEAM_PERMISSION } from "@futrob/teams";
 import {
   WORKSPACE_SELECTION_KIND,
   isSameWorkspaceSelection,
@@ -139,7 +141,7 @@ describe("nav registries", () => {
         organizationId: "org-1",
         competitionId: "comp-2",
       },
-      new Set(["competitions.update", "competitions.read", "teams.read"]),
+      new Set([COMPETITION_PERMISSION.update, COMPETITION_PERMISSION.read, TEAM_PERMISSION.read]),
     );
     expect(section.items.length).toBeGreaterThan(0);
     expect(section.items.some((item) => item.id === "standings")).toBe(true);
@@ -153,7 +155,7 @@ describe("nav registries", () => {
     } as const;
     const context = contextNavFor(
       selection,
-      new Set(["competitions.update", "competitions.read", "teams.read"]),
+      new Set([COMPETITION_PERMISSION.update, COMPETITION_PERMISSION.read, TEAM_PERMISSION.read]),
     );
     const general = generalNavFor(selection);
     const footerItems = context.items.length > 0 ? context.items : general.items;
@@ -168,7 +170,11 @@ describe("nav registries", () => {
         organizationId: "org-1",
         competitionId: "comp-2",
       },
-      new Set(["competitions.read", "competitions.participants.read"]),
+      new Set([
+        COMPETITION_PERMISSION.read,
+        COMPETITION_PERMISSION.participantsRead,
+        TEAM_PERMISSION.read,
+      ]),
     );
     expect(context.items.map((item) => item.id)).toContain("team");
     expect(context.items.map((item) => item.id)).not.toContain("standings");

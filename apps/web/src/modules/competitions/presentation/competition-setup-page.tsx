@@ -31,7 +31,8 @@ import type {
   UpdateCompetitionDraftRequest,
 } from "@futrob/api-contracts";
 import { WarningCircle } from "@phosphor-icons/react";
-import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
 import {
   competitionFormats,
   competitionRegions,
@@ -57,6 +58,12 @@ const steps = [
 ] as const;
 const platforms = ["playstation", "xbox", "pc", "nintendo-switch-1", "nintendo-switch-2"] as const;
 
+const SETUP_CAPABILITIES = {
+  update: COMPETITION_PERMISSION.update,
+  manageParticipants: COMPETITION_PERMISSION.participantsManage,
+  publish: COMPETITION_PERMISSION.publish,
+} as const;
+
 export function CompetitionSetupPage({
   organizationId,
   competitionId,
@@ -75,11 +82,7 @@ export function CompetitionSetupPage({
   const add = useAddCompetitionParticipantMutation(organizationId, competitionId);
   const remove = useRemoveCompetitionParticipantMutation(organizationId, competitionId);
   const publish = usePublishCompetitionMutation(organizationId, competitionId);
-  const permissions = useEffectivePermissions({ organizationId, competitionId }, [
-    "competitions.update",
-    "competitions.participants.manage",
-    "competitions.publish",
-  ]);
+  const caps = useCapabilities({ organizationId, competitionId }, SETUP_CAPABILITIES);
   const [form, setForm] = useState<UpdateCompetitionDraftRequest | null>(null);
   const [newTeamName, setNewTeamName] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState("");
@@ -97,9 +100,9 @@ export function CompetitionSetupPage({
   );
   const approvedParticipantCount =
     participantsQuery.data?.participants.filter((entry) => entry.status === "approved").length ?? 0;
-  const canUpdate = permissions.allowed.has("competitions.update");
-  const canManageParticipants = permissions.allowed.has("competitions.participants.manage");
-  const canPublish = permissions.allowed.has("competitions.publish");
+  const canUpdate = caps.update;
+  const canManageParticipants = caps.manageParticipants;
+  const canPublish = caps.publish;
   const readOnly = draft?.competition.status !== "draft" || !canUpdate;
   const busy = update.isPending || add.isPending || remove.isPending || publish.isPending;
   const error = update.error ?? add.error ?? remove.error ?? publish.error;
