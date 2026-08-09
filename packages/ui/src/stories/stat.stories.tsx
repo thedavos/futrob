@@ -127,6 +127,53 @@ export const NumericStates: Story = {
   ),
 };
 
+export const Tones: Story = {
+  render: () => (
+    <div className="w-full max-w-3xl space-y-4 rounded-xl border border-border bg-surface p-6">
+      <p className="typo-caption text-muted-foreground">
+        El color refuerza el valor; el label y el hint siguen comunicando el significado.
+      </p>
+      <StatGroup>
+        <Stat>
+          <StatLabel>default</StatLabel>
+          <StatValue size="compact" tone="default">
+            12
+          </StatValue>
+          <StatHint>Goles</StatHint>
+        </Stat>
+        <Stat>
+          <StatLabel>muted</StatLabel>
+          <StatValue size="compact" tone="muted">
+            —
+          </StatValue>
+          <StatHint>Sin datos</StatHint>
+        </Stat>
+        <Stat>
+          <StatLabel>success</StatLabel>
+          <StatValue size="compact" tone="success">
+            +4
+          </StatValue>
+          <StatHint>Diferencia positiva</StatHint>
+        </Stat>
+        <Stat>
+          <StatLabel>warning</StatLabel>
+          <StatValue size="compact" tone="warning">
+            3
+          </StatValue>
+          <StatHint>Partidos pendientes</StatHint>
+        </Stat>
+        <Stat>
+          <StatLabel>error</StatLabel>
+          <StatValue size="compact" tone="error">
+            −2
+          </StatValue>
+          <StatHint>Racha negativa</StatHint>
+        </Stat>
+      </StatGroup>
+    </div>
+  ),
+};
+
 export const EmptyAndUnavailable: Story = {
   name: "Empty and unavailable",
   render: () => (

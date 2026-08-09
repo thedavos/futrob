@@ -27,6 +27,9 @@ const statValueVariants = cva("min-w-0 max-w-full truncate text-foreground", {
     tone: {
       default: "text-foreground",
       muted: "text-muted-foreground",
+      success: "text-success",
+      warning: "text-warning",
+      error: "text-danger",
     },
   },
   defaultVariants: {

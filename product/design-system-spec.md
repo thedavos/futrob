@@ -133,8 +133,9 @@ La navegación de producto usa `typo-label`. El estado activo no depende únicam
 - `Skeleton`
 - `Stat` (KPI): `StatLabel` + `StatValue` + `StatHint` opcional; `StatGroup` para strips.
   - `StatValue` size: `default` (`typo-score`) | `compact` (strip denso).
-  - `tone="muted"` para valores no disponibles (`—`). El formateo (locale, `%`, miles) es
-    responsabilidad de la presentación; el primitivo no conoce competiciones ni stats de dominio.
+  - `tone`: `default` | `muted` | `success` | `warning` | `error` (`error` → token danger).
+    `muted` para valores no disponibles (`—`). El color no comunica solo; acompaña label/hint.
+    El formateo (locale, `%`, miles) es de la presentación; el primitivo no conoce dominio.
 - `ScrollArea` para listas densas y overflow controlado
 - `Progress` para sync/jobs con estado explícito (texto + barra; `value={null}` = indeterminado)
 
