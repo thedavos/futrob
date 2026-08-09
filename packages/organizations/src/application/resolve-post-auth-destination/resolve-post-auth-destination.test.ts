@@ -7,7 +7,7 @@ function membership(id: string, name: string): MembershipSummary {
   return {
     organizationId: asOrganizationId(id),
     organizationName: name,
-    role: "player",
+    role: "member",
   };
 }
 

@@ -9,6 +9,7 @@ import type {
 } from "../../domain/ports/competition.repository.ts";
 import { CreateCompetitionDraftUseCase } from "../create-competition-draft/create-competition-draft.use-case.ts";
 import { RegisterTeamEntryUseCase } from "./register-team-entry.use-case.ts";
+import { allowAllAuthorization } from "../allow-all-authorization.test-helper.ts";
 
 class FakeCompetitionRepository implements CompetitionRepository {
   readonly rows = new Map<string, CompetitionDraft>();
@@ -49,11 +50,17 @@ class FakeEntryRepository implements CompetitionEntryRepository {
     );
   }
   async findByCompetitionAndTeam(
+    organizationId: ReturnType<typeof asOrganizationId>,
     competitionId: ReturnType<typeof asCompetitionId>,
     teamId: ReturnType<typeof asTeamId>,
   ) {
     return (
-      this.rows.find((row) => row.competitionId === competitionId && row.teamId === teamId) ?? null
+      this.rows.find(
+        (row) =>
+          row.organizationId === organizationId &&
+          row.competitionId === competitionId &&
+          row.teamId === teamId,
+      ) ?? null
     );
   }
   async findByCreationKey(creationKey: string) {
@@ -73,6 +80,7 @@ describe("RegisterTeamEntryUseCase", () => {
     const shared = {
       clock: { now: () => new Date("2026-08-01T12:00:00.000Z") },
       ids: { generate: () => `id-${++nextId}` },
+      authorization: allowAllAuthorization,
     };
     const draft = await new CreateCompetitionDraftUseCase({
       competitions,
@@ -96,6 +104,7 @@ describe("RegisterTeamEntryUseCase", () => {
       ...shared,
     });
     const input = {
+      actorId: asActorId("actor-1"),
       organizationId: asOrganizationId("org-1"),
       competitionId: draft.value.competition.id,
       teamId: asTeamId("team-1"),
@@ -116,7 +125,9 @@ describe("RegisterTeamEntryUseCase", () => {
       entries: new FakeEntryRepository(),
       clock: { now: () => new Date() },
       ids: { generate: () => "id-1" },
+      authorization: allowAllAuthorization,
     }).execute({
+      actorId: asActorId("actor-1"),
       organizationId: asOrganizationId("org-1"),
       competitionId: asCompetitionId("missing"),
       teamId: asTeamId("team-1"),

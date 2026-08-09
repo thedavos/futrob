@@ -2,6 +2,8 @@ import {
   err,
   ok,
   type ClockPort,
+  type ActorId,
+  type AuthorizationPort,
   type CompetitionId,
   type EventPublisherPort,
   type OrganizationId,
@@ -13,8 +15,11 @@ import type { RosterLockedEvent } from "../../domain/events/team.events.ts";
 import { TeamNotFound, type CloseRosterError } from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
+import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import { teamPermissionError } from "../require-team-permission.ts";
 
 export interface CloseRosterInput {
+  readonly actorId: ActorId;
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
   readonly teamId: TeamId;
@@ -27,12 +32,24 @@ export class CloseRosterUseCase {
       readonly rosterStates: CompetitionRosterStateRepository;
       readonly clock: ClockPort;
       readonly eventPublisher?: EventPublisherPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
   async execute(
     input: CloseRosterInput,
   ): Promise<Result<CompetitionRosterState, CloseRosterError>> {
+    const forbidden = await teamPermissionError({
+      authorization: this.deps.authorization,
+      actorId: input.actorId,
+      permission: TEAM_PERMISSION.rosterManage,
+      scope: {
+        organizationId: input.organizationId,
+        competitionId: input.competitionId,
+        teamId: input.teamId,
+      },
+    });
+    if (forbidden) return err(forbidden);
     const team = await this.deps.teams.findById(input.organizationId, input.teamId);
     if (!team) {
       return err(

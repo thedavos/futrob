@@ -3,6 +3,7 @@ import {
   err,
   ok,
   type ActorId,
+  type AuthorizationPort,
   type ClockPort,
   type IdGeneratorPort,
   type OrganizationId,
@@ -27,6 +28,8 @@ import type {
   CompetitionRepository,
 } from "../../domain/ports/competition.repository.ts";
 import type { CompetitionMatchRules } from "../../domain/value-objects/resolution-mode.ts";
+import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
+import { competitionPermissionError } from "../require-competition-permission.ts";
 
 export interface CreateCompetitionDraftInput {
   readonly organizationId: OrganizationId;
@@ -46,12 +49,20 @@ export class CreateCompetitionDraftUseCase {
       readonly competitions: CompetitionRepository;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
   async execute(
     input: CreateCompetitionDraftInput,
   ): Promise<Result<CompetitionDraft, CreateCompetitionDraftError>> {
+    const forbidden = await competitionPermissionError({
+      authorization: this.deps.authorization,
+      actorId: input.actorId,
+      permission: COMPETITION_PERMISSION.update,
+      scope: { organizationId: input.organizationId },
+    });
+    if (forbidden) return err(forbidden);
     const name = input.name.trim();
     const gameEdition = input.gameEdition.trim();
     const timeZone = input.timeZone.trim();

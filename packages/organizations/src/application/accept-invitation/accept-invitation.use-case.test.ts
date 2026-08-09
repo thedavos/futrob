@@ -47,7 +47,8 @@ describe("AcceptInvitationUseCase", () => {
       return;
     }
 
-    expect(first.value.role).toBe("captain");
+    expect(first.value.role).toBe("member");
+    expect(first.value.competitionRole).toBe("captain");
     expect(second.value).toEqual(first.value);
     expect(await harness.memberships.findByActor(captain)).toHaveLength(1);
   });
@@ -410,7 +411,7 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     expect(stored?.redeemedCount).toBe(1);
   });
 
-  it("does not burn cupo when an existing org member accepts a multi invitation", async () => {
+  it("claims cupo when an existing org member accepts a contextual multi invitation", async () => {
     const harness = createOrgTestHarness();
     const createOrg = new CreateOrganizationUseCase(harness);
     const createInvite = new CreateInvitationUseCase(harness);
@@ -445,15 +446,16 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     const storedAfterMember = await harness.invitations.findByTokenHash(
       harness.tokens.hashToken(invite.value.token),
     );
-    expect(storedAfterMember?.redeemedCount).toBe(0);
+    expect(storedAfterMember?.redeemedCount).toBe(1);
 
     const firstRealRedeem = await acceptInvite.execute({
       token: invite.value.token,
       actorId: newcomer,
     });
-    expect(firstRealRedeem.isOk()).toBe(true);
-    if (!firstRealRedeem.isOk()) return;
-    expect(firstRealRedeem.value.role).toBe("player");
+    expect(firstRealRedeem.isErr()).toBe(true);
+    if (firstRealRedeem.isErr()) {
+      expect(firstRealRedeem.error.code).toBe("organizations.invitation_exhausted");
+    }
 
     const storedAfterNewcomer = await harness.invitations.findByTokenHash(
       harness.tokens.hashToken(invite.value.token),

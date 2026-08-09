@@ -22,9 +22,12 @@ import type { PlayerGameAccountRepository } from "../domain/ports/player-game-ac
 import type { PlayerProfileRepository } from "../domain/ports/player-profile.repository.ts";
 import type { RosterCapacityPort } from "../domain/ports/roster-capacity.port.ts";
 import type { TeamRepository } from "../domain/ports/team.repository.ts";
-import { AddToRosterUseCase } from "./add-to-roster/add-to-roster.use-case.ts";
+import {
+  AddToRosterUseCase,
+  type AddToRosterInput,
+} from "./add-to-roster/add-to-roster.use-case.ts";
 import { ChangeRosterRoleUseCase } from "./change-roster-role/change-roster-role.use-case.ts";
-import { CloseRosterUseCase } from "./close-roster/close-roster.use-case.ts";
+import { CloseRosterUseCase, type CloseRosterInput } from "./close-roster/close-roster.use-case.ts";
 import { ConnectTeamExternalClubUseCase } from "./connect-team-external-club/connect-team-external-club.use-case.ts";
 import { CreateTeamUseCase } from "./create-team/create-team.use-case.ts";
 import { GetActiveTeamUseCase } from "./get-active-team/get-active-team.use-case.ts";
@@ -52,6 +55,22 @@ class Rosters implements CompetitionRosterMembershipRepository {
   rows: CompetitionRosterMembership[] = [];
   async findById(id: string) {
     return this.rows.find((row) => row.id === id) ?? null;
+  }
+  async findByIdInScope(
+    organizationId: CompetitionRosterMembership["organizationId"],
+    competitionId: CompetitionRosterMembership["competitionId"],
+    teamId: CompetitionRosterMembership["teamId"],
+    id: string,
+  ) {
+    return (
+      this.rows.find(
+        (row) =>
+          row.id === id &&
+          row.organizationId === organizationId &&
+          row.competitionId === competitionId &&
+          row.teamId === teamId,
+      ) ?? null
+    );
   }
   async findByPlayerAndCompetition(
     playerProfileId: string,
@@ -179,11 +198,17 @@ class Preferences implements ActiveTeamPreferenceRepository {
   }
 }
 
+const allowAllAuthorization: import("@futrob/shared-kernel").AuthorizationPort = {
+  decide: async (request) => ({ ...request, allowed: true, reason: "allowed" }),
+  getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
+};
+
 function shared() {
   let sequence = 0;
   return {
     clock: { now: () => new Date("2026-08-01T12:00:00.000Z") },
     ids: { generate: () => `id-${++sequence}` },
+    authorization: allowAllAuthorization,
   };
 }
 
@@ -194,11 +219,24 @@ function rosterDeps(options?: { maxSize?: number }) {
   const capacity = new Capacity(options?.maxSize ?? 11);
   const accounts = new Accounts();
   const deps = { teams, rosters, rosterStates, capacity, accounts, ...shared() };
+  const addToRoster = new AddToRosterUseCase(deps);
+  const closeRoster = new CloseRosterUseCase({
+    teams,
+    rosterStates,
+    clock: deps.clock,
+    authorization: allowAllAuthorization,
+  });
   return {
     ...deps,
-    addToRoster: new AddToRosterUseCase(deps),
-    changeRole: new ChangeRosterRoleUseCase(rosters),
-    closeRoster: new CloseRosterUseCase({ teams, rosterStates, clock: deps.clock }),
+    addToRoster: {
+      execute: (input: Omit<AddToRosterInput, "actorId">) =>
+        addToRoster.execute({ actorId: asActorId("manager"), ...input }),
+    },
+    changeRole: new ChangeRosterRoleUseCase({ authorization: allowAllAuthorization, rosters }),
+    closeRoster: {
+      execute: (input: Omit<CloseRosterInput, "actorId">) =>
+        closeRoster.execute({ actorId: asActorId("manager"), ...input }),
+    },
   };
 }
 
@@ -447,6 +485,10 @@ describe("team and roster use cases", () => {
     expect(captain.isOk() && player.isOk()).toBe(true);
     if (!captain.isOk() || !player.isOk()) return;
     const promoted = await changeRole.execute({
+      actorId: asActorId("actor-1"),
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: team.value.id,
       rosterMembershipId: player.value.id,
       role: "captain",
     });
@@ -455,6 +497,44 @@ describe("team and roster use cases", () => {
     const members = await rosters.listByTeam(orgId, compId, team.value.id);
     expect(members.find((m) => m.id === captain.value.id)?.role).toBe("player");
     expect(members.find((m) => m.id === player.value.id)?.role).toBe("captain");
+  });
+
+  it("cannot mutate a roster membership through another Team scope", async () => {
+    const { teams, addToRoster, changeRole } = rosterDeps();
+    const orgId = asOrganizationId("org-1");
+    const compId = asCompetitionId("comp-1");
+    const createTeam = new CreateTeamUseCase({ teams, ...shared() });
+    const createdA = await createTeam.execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Team A",
+    });
+    const createdB = await createTeam.execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Team B",
+    });
+    if (!createdA.isOk() || !createdB.isOk()) throw new Error("team setup failed");
+    const membership = await addToRoster.execute({
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: createdA.value.id,
+      playerProfileId: "profile-1",
+      role: "player",
+    });
+    if (!membership.isOk()) throw membership.error;
+
+    const result = await changeRole.execute({
+      actorId: asActorId("actor-1"),
+      organizationId: orgId,
+      competitionId: compId,
+      teamId: createdB.value.id,
+      rosterMembershipId: membership.value.id,
+      role: "captain",
+    });
+
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) expect(result.error.code).toBe("teams.roster_membership_not_found");
   });
 
   it("connects and retrieves a team external club", async () => {
@@ -469,8 +549,13 @@ describe("team and roster use cases", () => {
     });
     expect(team.isOk()).toBe(true);
     if (!team.isOk()) return;
-    const connect = new ConnectTeamExternalClubUseCase({ teams, connections });
+    const connect = new ConnectTeamExternalClubUseCase({
+      teams,
+      connections,
+      authorization: allowAllAuthorization,
+    });
     const connected = await connect.execute({
+      actorId: asActorId("manager"),
       organizationId: orgId,
       teamId: team.value.id,
       providerKey: "ea-clubs",

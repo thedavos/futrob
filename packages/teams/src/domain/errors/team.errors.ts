@@ -1,4 +1,4 @@
-import { TaggedError } from "@futrob/shared-kernel";
+import { TaggedError, type Permission } from "@futrob/shared-kernel";
 
 export class TeamNotFound extends TaggedError("TeamNotFound")<{
   code: "teams.not_found";
@@ -35,6 +35,12 @@ export class RosterMembershipNotFound extends TaggedError("RosterMembershipNotFo
   message: string;
 }> {}
 
+export class TeamAuthorizationForbidden extends TaggedError("TeamAuthorizationForbidden")<{
+  code: "authorization.forbidden";
+  message: string;
+  permission: Permission;
+}> {}
+
 export class CaptainAlreadyAssigned extends TaggedError("CaptainAlreadyAssigned")<{
   code: "teams.captain_already_assigned";
   message: string;
@@ -65,22 +71,23 @@ export class InvalidGameEdition extends TaggedError("InvalidGameEdition")<{
   message: string;
 }> {}
 
-export type CreateTeamError = InvalidTeamName | CreationKeyConflict;
+export type CreateTeamError = InvalidTeamName | CreationKeyConflict | TeamAuthorizationForbidden;
 
 export type AddToRosterError =
   | TeamNotFound
   | RosterCompetitionConflict
   | GameAccountNotFound
   | RosterLocked
-  | RosterFull;
+  | RosterFull
+  | TeamAuthorizationForbidden;
 
-export type ChangeRosterRoleError = RosterMembershipNotFound;
+export type ChangeRosterRoleError = RosterMembershipNotFound | TeamAuthorizationForbidden;
 
-export type CloseRosterError = TeamNotFound;
+export type CloseRosterError = TeamNotFound | TeamAuthorizationForbidden;
 
-export type OpenRosterError = TeamNotFound;
+export type OpenRosterError = TeamNotFound | TeamAuthorizationForbidden;
 
-export type ConnectTeamExternalClubError = TeamNotFound;
+export type ConnectTeamExternalClubError = TeamNotFound | TeamAuthorizationForbidden;
 
 export type SetActiveTeamError = PlayerProfileNotFound | ActiveTeamNotOwned;
 

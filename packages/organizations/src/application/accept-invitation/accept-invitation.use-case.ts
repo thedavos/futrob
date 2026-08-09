@@ -23,7 +23,9 @@ import {
 
 export interface AcceptedInvitation extends MembershipSummary {
   readonly competitionId: import("@futrob/shared-kernel").CompetitionId | null;
-  readonly competitionRole: import("../../domain/value-objects/organization-membership-role.ts").InviteRole;
+  readonly competitionRole:
+    | import("../../domain/value-objects/organization-membership-role.ts").CompetitionInviteRole
+    | null;
 }
 
 export interface AcceptInvitationInput {
@@ -116,14 +118,6 @@ export class AcceptInvitationUseCase {
           message: "Invitation is no longer valid",
         }),
       );
-    }
-
-    const existingMembership = await this.deps.memberships.findByOrgAndActor(
-      invitation.organizationId,
-      input.actorId,
-    );
-    if (existingMembership) {
-      return this.finalizeAcceptance(organization, invitation, input.actorId, now);
     }
 
     const claimed =
@@ -235,11 +229,12 @@ export class AcceptInvitationUseCase {
     now: Date,
   ): Promise<Result<AcceptedInvitation, AcceptInvitationError>> {
     const existing = await this.deps.memberships.findByOrgAndActor(claimed.organizationId, actorId);
+    const membershipRole = claimed.competitionId ? "member" : claimed.role;
     if (!existing) {
       await this.deps.memberships.add({
         organizationId: claimed.organizationId,
         actorId,
-        role: claimed.role,
+        role: membershipRole as import("../../domain/value-objects/organization-membership-role.ts").OrgMembershipRole,
         createdAt: now,
       });
     }
@@ -247,9 +242,13 @@ export class AcceptInvitationUseCase {
     return ok({
       organizationId: organization.id,
       organizationName: organization.name,
-      role: existing?.role ?? claimed.role,
+      role:
+        existing?.role ??
+        (membershipRole as import("../../domain/value-objects/organization-membership-role.ts").OrgMembershipRole),
       competitionId: claimed.competitionId ?? null,
-      competitionRole: claimed.role,
+      competitionRole: claimed.competitionId
+        ? (claimed.role as import("../../domain/value-objects/organization-membership-role.ts").CompetitionInviteRole)
+        : null,
     });
   }
 
@@ -262,9 +261,13 @@ export class AcceptInvitationUseCase {
       return ok({
         organizationId: organization.id,
         organizationName: organization.name,
-        role: invitation.role,
+        role: invitation.competitionId
+          ? "member"
+          : (invitation.role as import("../../domain/value-objects/organization-membership-role.ts").OrgMembershipRole),
         competitionId: invitation.competitionId ?? null,
-        competitionRole: invitation.role,
+        competitionRole: invitation.competitionId
+          ? (invitation.role as import("../../domain/value-objects/organization-membership-role.ts").CompetitionInviteRole)
+          : null,
       });
     }
     return err(

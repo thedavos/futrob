@@ -6,6 +6,7 @@ import type {
   CompetitionRepository,
 } from "../../domain/ports/competition.repository.ts";
 import { CreateCompetitionDraftUseCase } from "./create-competition-draft.use-case.ts";
+import { allowAllAuthorization } from "../allow-all-authorization.test-helper.ts";
 
 class FakeCompetitionRepository implements CompetitionRepository {
   readonly rows = new Map<string, CompetitionDraft>();
@@ -50,6 +51,7 @@ function createHarness() {
       competitions,
       clock: { now: () => new Date("2026-07-31T12:00:00.000Z") },
       ids: { generate: () => `competition-${++nextId}` },
+      authorization: allowAllAuthorization,
     }),
   };
 }

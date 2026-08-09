@@ -3,6 +3,12 @@ import type { CompetitionRosterMembership } from "../entities/competition-roster
 
 export interface CompetitionRosterMembershipRepository {
   findById(id: string): Promise<CompetitionRosterMembership | null>;
+  findByIdInScope(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+    teamId: TeamId,
+    id: string,
+  ): Promise<CompetitionRosterMembership | null>;
   findByPlayerAndCompetition(
     playerProfileId: string,
     competitionId: CompetitionId,

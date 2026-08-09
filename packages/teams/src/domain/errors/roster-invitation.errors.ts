@@ -4,6 +4,7 @@ import type {
   RosterFull,
   RosterLocked,
   TeamNotFound,
+  TeamAuthorizationForbidden,
 } from "./team.errors.ts";
 
 export type { RosterCompetitionConflict, RosterFull, RosterLocked, TeamNotFound };
@@ -34,7 +35,10 @@ export class InvalidRosterInvitationRole extends TaggedError("InvalidRosterInvit
   role: string;
 }> {}
 
-export type CreateRosterInvitationError = InvalidRosterInvitationRole | TeamNotFound;
+export type CreateRosterInvitationError =
+  | InvalidRosterInvitationRole
+  | TeamNotFound
+  | TeamAuthorizationForbidden;
 
 export type AcceptRosterInvitationError =
   | RosterInvitationNotFound

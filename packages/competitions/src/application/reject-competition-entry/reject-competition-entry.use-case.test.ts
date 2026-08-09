@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
+import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "../../domain/entities/competition-entry.ts";
 import { EntryAlreadyDecided } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
@@ -30,6 +30,18 @@ class FakeEntryRepository implements CompetitionEntryRepository {
 }
 
 describe("RejectCompetitionEntryUseCase", () => {
+  const authorization = {
+    decide: async (
+      request: Parameters<import("@futrob/shared-kernel").AuthorizationPort["decide"]>[0],
+    ) => ({
+      ...request,
+      allowed: true,
+      reason: "allowed" as const,
+    }),
+    getEffectiveAccess: async (
+      input: Parameters<import("@futrob/shared-kernel").AuthorizationPort["getEffectiveAccess"]>[0],
+    ) => ({ ...input, roles: [], permissions: [] }),
+  };
   it("rejects a pending entry", async () => {
     const entries = new FakeEntryRepository();
     const entry: CompetitionEntry = {
@@ -42,8 +54,10 @@ describe("RejectCompetitionEntryUseCase", () => {
       creationKey: null,
     };
     await entries.save(entry);
-    const result = await new RejectCompetitionEntryUseCase(entries).execute({
+    const result = await new RejectCompetitionEntryUseCase({ entries, authorization }).execute({
+      actorId: asActorId("actor-1"),
       organizationId: asOrganizationId("org-1"),
+      competitionId: entry.competitionId,
       entryId: entry.id,
     });
     expect(result.isOk()).toBe(true);
@@ -63,8 +77,10 @@ describe("RejectCompetitionEntryUseCase", () => {
       creationKey: null,
     };
     await entries.save(entry);
-    const result = await new RejectCompetitionEntryUseCase(entries).execute({
+    const result = await new RejectCompetitionEntryUseCase({ entries, authorization }).execute({
+      actorId: asActorId("actor-1"),
       organizationId: asOrganizationId("org-1"),
+      competitionId: entry.competitionId,
       entryId: entry.id,
     });
     expect(result.isOk()).toBe(false);

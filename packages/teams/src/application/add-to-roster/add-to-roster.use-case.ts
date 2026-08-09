@@ -2,6 +2,8 @@ import {
   err,
   ok,
   type ClockPort,
+  type ActorId,
+  type AuthorizationPort,
   type CompetitionId,
   type IdGeneratorPort,
   type OrganizationId,
@@ -25,14 +27,111 @@ import type { CompetitionRosterStateRepository } from "../../domain/ports/compet
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
+import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import { teamPermissionError } from "../require-team-permission.ts";
 
 export interface AddToRosterInput {
+  readonly actorId: ActorId;
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
   readonly teamId: TeamId;
   readonly playerProfileId: string;
   readonly gameAccountId?: string | null;
   readonly role: RosterMembershipRole;
+}
+
+type AddToRosterCoreInput = Omit<AddToRosterInput, "actorId">;
+type AddToRosterCoreDependencies = {
+  readonly teams: TeamRepository;
+  readonly rosters: CompetitionRosterMembershipRepository;
+  readonly rosterStates: CompetitionRosterStateRepository;
+  readonly capacity: RosterCapacityPort;
+  readonly accounts: PlayerGameAccountRepository;
+  readonly clock: ClockPort;
+  readonly ids: IdGeneratorPort;
+};
+
+/** Package-internal core used after a trusted invitation has been claimed. */
+export async function addToRosterUnchecked(
+  deps: AddToRosterCoreDependencies,
+  input: AddToRosterCoreInput,
+): Promise<Result<CompetitionRosterMembership, AddToRosterError>> {
+  const team = await deps.teams.findById(input.organizationId, input.teamId);
+  if (!team) {
+    return err(new TeamNotFound({ code: "teams.not_found", message: "Team not found" }));
+  }
+
+  const sameTeam = await deps.rosters.findByTeamPlayerCompetition(
+    input.teamId,
+    input.playerProfileId,
+    input.competitionId,
+  );
+  if (sameTeam) return ok(sameTeam);
+
+  const rosterState = await deps.rosterStates.get(
+    input.organizationId,
+    input.competitionId,
+    input.teamId,
+  );
+  if (rosterState?.lockedAt) {
+    return err(
+      new RosterLocked({
+        code: "teams.roster_locked",
+        message: "Roster is locked for this competition",
+      }),
+    );
+  }
+
+  const maxSize = await deps.capacity.getMaxRosterSize(input.competitionId);
+  const currentMembers = await deps.rosters.listByTeam(
+    input.organizationId,
+    input.competitionId,
+    input.teamId,
+  );
+  if (currentMembers.length >= maxSize) {
+    return err(
+      new RosterFull({ code: "teams.roster_full", message: "Roster has reached maximum capacity" }),
+    );
+  }
+
+  const otherTeam = await deps.rosters.findByPlayerAndCompetition(
+    input.playerProfileId,
+    input.competitionId,
+  );
+  if (otherTeam) {
+    return err(
+      new RosterCompetitionConflict({
+        code: "teams.roster_competition_conflict",
+        message: "Player already belongs to a team in this competition",
+      }),
+    );
+  }
+
+  const gameAccountId: string | null = input.gameAccountId ?? null;
+  if (gameAccountId) {
+    const accounts = await deps.accounts.listByProfile(input.playerProfileId);
+    if (!accounts.some((account) => account.id === gameAccountId)) {
+      return err(
+        new GameAccountNotFound({
+          code: "teams.game_account_not_found",
+          message: "Game account does not belong to this player profile",
+        }),
+      );
+    }
+  }
+
+  return ok(
+    await deps.rosters.add({
+      id: deps.ids.generate(),
+      organizationId: input.organizationId,
+      competitionId: input.competitionId,
+      teamId: input.teamId,
+      playerProfileId: input.playerProfileId,
+      gameAccountId,
+      role: input.role,
+      createdAt: deps.clock.now(),
+    }),
+  );
 }
 
 export class AddToRosterUseCase {
@@ -45,95 +144,24 @@ export class AddToRosterUseCase {
       readonly accounts: PlayerGameAccountRepository;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
   async execute(
     input: AddToRosterInput,
   ): Promise<Result<CompetitionRosterMembership, AddToRosterError>> {
-    const team = await this.deps.teams.findById(input.organizationId, input.teamId);
-    if (!team) {
-      return err(
-        new TeamNotFound({
-          code: "teams.not_found",
-          message: "Team not found",
-        }),
-      );
-    }
-
-    const sameTeam = await this.deps.rosters.findByTeamPlayerCompetition(
-      input.teamId,
-      input.playerProfileId,
-      input.competitionId,
-    );
-    if (sameTeam) return ok(sameTeam);
-
-    const rosterState = await this.deps.rosterStates.get(
-      input.organizationId,
-      input.competitionId,
-      input.teamId,
-    );
-    if (rosterState?.lockedAt) {
-      return err(
-        new RosterLocked({
-          code: "teams.roster_locked",
-          message: "Roster is locked for this competition",
-        }),
-      );
-    }
-
-    const maxSize = await this.deps.capacity.getMaxRosterSize(input.competitionId);
-    const currentMembers = await this.deps.rosters.listByTeam(
-      input.organizationId,
-      input.competitionId,
-      input.teamId,
-    );
-    if (currentMembers.length >= maxSize) {
-      return err(
-        new RosterFull({
-          code: "teams.roster_full",
-          message: "Roster has reached maximum capacity",
-        }),
-      );
-    }
-
-    const otherTeam = await this.deps.rosters.findByPlayerAndCompetition(
-      input.playerProfileId,
-      input.competitionId,
-    );
-    if (otherTeam) {
-      return err(
-        new RosterCompetitionConflict({
-          code: "teams.roster_competition_conflict",
-          message: "Player already belongs to a team in this competition",
-        }),
-      );
-    }
-
-    let gameAccountId: string | null = input.gameAccountId ?? null;
-    if (gameAccountId) {
-      const accounts = await this.deps.accounts.listByProfile(input.playerProfileId);
-      if (!accounts.some((account) => account.id === gameAccountId)) {
-        return err(
-          new GameAccountNotFound({
-            code: "teams.game_account_not_found",
-            message: "Game account does not belong to this player profile",
-          }),
-        );
-      }
-    }
-
-    return ok(
-      await this.deps.rosters.add({
-        id: this.deps.ids.generate(),
+    const forbidden = await teamPermissionError({
+      authorization: this.deps.authorization,
+      actorId: input.actorId,
+      permission: TEAM_PERMISSION.rosterManage,
+      scope: {
         organizationId: input.organizationId,
         competitionId: input.competitionId,
         teamId: input.teamId,
-        playerProfileId: input.playerProfileId,
-        gameAccountId,
-        role: input.role,
-        createdAt: this.deps.clock.now(),
-      }),
-    );
+      },
+    });
+    if (forbidden) return err(forbidden);
+    return addToRosterUnchecked(this.deps, input);
   }
 }

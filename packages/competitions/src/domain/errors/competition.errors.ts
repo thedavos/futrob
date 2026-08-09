@@ -1,4 +1,4 @@
-import { TaggedError } from "@futrob/shared-kernel";
+import { TaggedError, type Permission } from "@futrob/shared-kernel";
 
 export class CompetitionNotFound extends TaggedError("CompetitionNotFound")<{
   code: "competitions.not_found";
@@ -34,7 +34,8 @@ export type CreateCompetitionDraftError =
   | InvalidCompetitionName
   | InvalidCompetitionGameEdition
   | InvalidCompetitionTimeZone
-  | CompetitionCreationKeyConflict;
+  | CompetitionCreationKeyConflict
+  | CompetitionAuthorizationForbidden;
 
 export type UpdateCompetitionDraftError =
   | CompetitionNotFound
@@ -42,15 +43,35 @@ export type UpdateCompetitionDraftError =
   | InvalidCompetitionName
   | InvalidCompetitionGameEdition
   | InvalidCompetitionTimeZone
-  | InvalidCompetitionRules;
+  | InvalidCompetitionRules
+  | CompetitionAuthorizationForbidden;
 
 export type PublishCompetitionError =
   | CompetitionNotFound
   | CompetitionNotEditable
   | InvalidCompetitionRules
-  | CompetitionPublishBlocked;
+  | CompetitionPublishBlocked
+  | CompetitionAuthorizationForbidden;
 
 export type JoinCompetitionError = CompetitionNotFound;
+
+export class CompetitionMembershipNotFound extends TaggedError("CompetitionMembershipNotFound")<{
+  code: "competitions.membership_not_found";
+  message: string;
+}> {}
+
+export class CompetitionAuthorizationForbidden extends TaggedError(
+  "CompetitionAuthorizationForbidden",
+)<{
+  code: "authorization.forbidden";
+  message: string;
+  permission: Permission;
+}> {}
+
+export type ChangeCompetitionMembershipRoleError =
+  | CompetitionNotFound
+  | CompetitionMembershipNotFound
+  | CompetitionAuthorizationForbidden;
 
 export class EntryNotFound extends TaggedError("EntryNotFound")<{
   code: "competitions.entry_not_found";
@@ -80,16 +101,22 @@ export class CompetitionPublishBlocked extends TaggedError("CompetitionPublishBl
 export type RegisterTeamEntryError =
   | CompetitionNotFound
   | CompetitionNotEditable
-  | EntryCreationKeyConflict;
+  | EntryCreationKeyConflict
+  | CompetitionAuthorizationForbidden;
 
 export type RemoveCompetitionParticipantError =
   | CompetitionNotFound
   | CompetitionNotEditable
-  | EntryNotFound;
+  | EntryNotFound
+  | CompetitionAuthorizationForbidden;
 
 export type ApproveCompetitionEntryError =
   | EntryNotFound
   | EntryAlreadyDecided
-  | CompetitionNotFound;
+  | CompetitionNotFound
+  | CompetitionAuthorizationForbidden;
 
-export type RejectCompetitionEntryError = EntryNotFound | EntryAlreadyDecided;
+export type RejectCompetitionEntryError =
+  | EntryNotFound
+  | EntryAlreadyDecided
+  | CompetitionAuthorizationForbidden;

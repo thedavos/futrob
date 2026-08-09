@@ -7,12 +7,29 @@ export {
   type RedeemPolicy,
 } from "./domain/entities/organization-invitation.ts";
 export type { OrganizationMembership } from "./domain/entities/organization-membership.ts";
+export type {
+  AccessGrant,
+  AuthorizationAuditEntry,
+  GrantEffect,
+  PlatformRoleAssignment,
+} from "./domain/entities/access-grant.ts";
 
 export type {
+  CompetitionInviteRole,
   InviteRole,
   OrgMembershipRole,
+  OrganizationInviteRole,
 } from "./domain/value-objects/organization-membership-role.ts";
-export { isInviteRole } from "./domain/value-objects/organization-membership-role.ts";
+export {
+  isCompetitionInviteRole,
+  isInviteRole,
+  isOrganizationInviteRole,
+} from "./domain/value-objects/organization-membership-role.ts";
+export {
+  ORGANIZATION_PERMISSION,
+  ORGANIZATION_PERMISSIONS,
+  ORGANIZATION_ROLE_PERMISSIONS,
+} from "./domain/policies/organization-permissions.ts";
 export type {
   MembershipSummary,
   PostAuthDestination,
@@ -25,6 +42,11 @@ export type {
 export type { InvitationTokenPort } from "./domain/ports/invitation-token.port.ts";
 export type { MembershipRepository } from "./domain/ports/membership.repository.ts";
 export type { OrganizationRepository } from "./domain/ports/organization.repository.ts";
+export type {
+  AccessGrantRepository,
+  AuthorizationAuditRepository,
+  PlatformRoleRepository,
+} from "./domain/ports/access-grant.repository.ts";
 
 export {
   InvitationNotFound,
@@ -45,6 +67,18 @@ export {
   OrganizationNameConflict,
   type CreateOrganizationError,
 } from "./domain/errors/organization.errors.ts";
+export {
+  AccessGrantNotFound,
+  AuthorizationForbidden,
+  AuthorizationScopeNotFound,
+  LastSuperuserProtected,
+  PlatformRoleNotFound,
+  LastOrganizerProtected,
+  OrganizationMembershipNotFound,
+  type ManageAccessGrantError,
+  type ManageOrganizationRoleError,
+  type ManageSuperuserError,
+} from "./domain/errors/authorization.errors.ts";
 
 export {
   CreateOrganizationUseCase,
@@ -71,3 +105,19 @@ export {
   type AcceptedInvitation,
 } from "./application/accept-invitation/accept-invitation.use-case.ts";
 export { resolvePostAuthDestination } from "./application/resolve-post-auth-destination/resolve-post-auth-destination.ts";
+export {
+  GetEffectiveAccessUseCase,
+  type GetEffectiveAccessInput,
+} from "./application/get-effective-access/get-effective-access.use-case.ts";
+export { RequirePermissionUseCase } from "./application/require-permission/require-permission.use-case.ts";
+export {
+  DeleteAccessGrantUseCase,
+  ListAccessGrantsUseCase,
+  UpsertAccessGrantUseCase,
+  type UpsertAccessGrantInput,
+} from "./application/manage-access-grant/manage-access-grant.use-case.ts";
+export {
+  AssignSuperuserUseCase,
+  ChangeOrganizationRoleUseCase,
+  RevokeSuperuserUseCase,
+} from "./application/manage-roles/manage-roles.use-case.ts";

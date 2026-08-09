@@ -2,6 +2,8 @@ import {
   err,
   ok,
   type ClockPort,
+  type ActorId,
+  type AuthorizationPort,
   type CompetitionId,
   type IdGeneratorPort,
   type OrganizationId,
@@ -17,8 +19,11 @@ import {
 } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
+import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
+import { competitionPermissionError } from "../require-competition-permission.ts";
 
 export interface RegisterTeamEntryInput {
+  readonly actorId: ActorId;
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
   readonly teamId: TeamId;
@@ -33,12 +38,20 @@ export class RegisterTeamEntryUseCase {
       readonly entries: CompetitionEntryRepository;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
   async execute(
     input: RegisterTeamEntryInput,
   ): Promise<Result<CompetitionEntry, RegisterTeamEntryError>> {
+    const forbidden = await competitionPermissionError({
+      authorization: this.deps.authorization,
+      actorId: input.actorId,
+      permission: COMPETITION_PERMISSION.participantsManage,
+      scope: { organizationId: input.organizationId, competitionId: input.competitionId },
+    });
+    if (forbidden) return err(forbidden);
     const competition = await this.deps.competitions.findById(
       input.organizationId,
       input.competitionId,
@@ -80,6 +93,7 @@ export class RegisterTeamEntryUseCase {
     }
 
     const existing = await this.deps.entries.findByCompetitionAndTeam(
+      input.organizationId,
       input.competitionId,
       input.teamId,
     );

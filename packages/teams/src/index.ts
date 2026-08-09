@@ -39,6 +39,11 @@ export type {
 export type { RosterInvitationTokenPort } from "./domain/ports/roster-invitation-token.port.ts";
 export type { ActiveTeamPreferenceRepository } from "./domain/ports/active-team-preference.repository.ts";
 export type { RosterLockedEvent, ExternalClubConnectedEvent } from "./domain/events/team.events.ts";
+export {
+  ROSTER_ROLE_PERMISSIONS,
+  TEAM_PERMISSION,
+  TEAM_PERMISSIONS,
+} from "./domain/policies/team-permissions.ts";
 
 export {
   TeamNotFound,
@@ -48,6 +53,7 @@ export {
   RosterLocked,
   RosterFull,
   RosterMembershipNotFound,
+  TeamAuthorizationForbidden,
   CaptainAlreadyAssigned,
   GameAccountNotFound,
   PlayerProfileNotFound,

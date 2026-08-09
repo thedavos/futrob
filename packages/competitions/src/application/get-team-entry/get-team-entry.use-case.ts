@@ -10,7 +10,11 @@ export class GetTeamEntryUseCase {
     readonly competitionId: CompetitionId;
     readonly teamId: TeamId;
   }): Promise<CompetitionEntry | null> {
-    const entry = await this.entries.findByCompetitionAndTeam(input.competitionId, input.teamId);
+    const entry = await this.entries.findByCompetitionAndTeam(
+      input.organizationId,
+      input.competitionId,
+      input.teamId,
+    );
     return entry?.organizationId === input.organizationId ? entry : null;
   }
 }

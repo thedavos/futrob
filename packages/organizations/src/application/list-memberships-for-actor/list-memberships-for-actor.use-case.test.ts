@@ -16,6 +16,9 @@ describe("ListMembershipsForActorUseCase", () => {
       add: async () => undefined,
       findByActor: async (receivedActorId) => (receivedActorId === actorId ? memberships : []),
       findByOrgAndActor: async () => null,
+      updateRole: async (membership) => membership,
+      updateRoleProtectingLastOrganizer: async (membership) => membership,
+      countByRole: async () => 0,
     });
 
     await expect(useCase.execute({ actorId })).resolves.toEqual(memberships);

@@ -15,6 +15,11 @@ export type {
   CompetitionMembershipRole,
 } from "./domain/entities/competition-membership.ts";
 export type { CompetitionMembershipRepository } from "./domain/ports/competition-membership.repository.ts";
+export {
+  COMPETITION_PERMISSION,
+  COMPETITION_PERMISSIONS,
+  COMPETITION_ROLE_PERMISSIONS,
+} from "./domain/policies/competition-permissions.ts";
 export type {
   CompetitionDraft,
   CompetitionRepository,
@@ -32,6 +37,8 @@ export {
   CompetitionNotEditable,
   InvalidCompetitionRules,
   CompetitionPublishBlocked,
+  CompetitionMembershipNotFound,
+  CompetitionAuthorizationForbidden,
   type CreateCompetitionDraftError,
   type JoinCompetitionError,
   type RegisterTeamEntryError,
@@ -40,6 +47,7 @@ export {
   type UpdateCompetitionDraftError,
   type PublishCompetitionError,
   type RemoveCompetitionParticipantError,
+  type ChangeCompetitionMembershipRoleError,
 } from "./domain/errors/competition.errors.ts";
 
 export {
@@ -80,3 +88,8 @@ export {
 export { PublishCompetitionUseCase } from "./application/publish-competition/publish-competition.use-case.ts";
 export { ListCompetitionParticipantsUseCase } from "./application/list-competition-participants/list-competition-participants.use-case.ts";
 export { RemoveCompetitionParticipantUseCase } from "./application/remove-competition-participant/remove-competition-participant.use-case.ts";
+export { ChangeCompetitionMembershipRoleUseCase } from "./application/change-competition-membership-role/change-competition-membership-role.use-case.ts";
+export {
+  ListAccessibleCompetitionsUseCase,
+  type AccessibleCompetition,
+} from "./application/list-accessible-competitions/list-accessible-competitions.use-case.ts";

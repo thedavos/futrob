@@ -15,6 +15,7 @@ import { CreateCompetitionDraftUseCase } from "./create-competition-draft/create
 import { PublishCompetitionUseCase } from "./publish-competition/publish-competition.use-case.ts";
 import { RegisterTeamEntryUseCase } from "./register-team-entry/register-team-entry.use-case.ts";
 import { UpdateCompetitionDraftUseCase } from "./update-competition-draft/update-competition-draft.use-case.ts";
+import { allowAllAuthorization } from "./allow-all-authorization.test-helper.ts";
 
 class Competitions implements CompetitionRepository {
   draft: CompetitionDraft | null = null;
@@ -55,12 +56,17 @@ class Entries implements CompetitionEntryRepository {
     );
   }
   async findByCompetitionAndTeam(
+    organizationId: ReturnType<typeof asOrganizationId>,
     competitionId: ReturnType<typeof asCompetitionId>,
     teamId: ReturnType<typeof asTeamId>,
   ) {
     return (
-      this.rows.find((entry) => entry.competitionId === competitionId && entry.teamId === teamId) ??
-      null
+      this.rows.find(
+        (entry) =>
+          entry.organizationId === organizationId &&
+          entry.competitionId === competitionId &&
+          entry.teamId === teamId,
+      ) ?? null
     );
   }
   async findByCreationKey(creationKey: string) {
@@ -86,7 +92,12 @@ async function harness() {
   let id = 0;
   const clock = { now: () => new Date("2026-08-07T12:00:00.000Z") };
   const ids = { generate: () => `id-${++id}` };
-  const created = await new CreateCompetitionDraftUseCase({ competitions, clock, ids }).execute({
+  const created = await new CreateCompetitionDraftUseCase({
+    competitions,
+    clock,
+    ids,
+    authorization: allowAllAuthorization,
+  }).execute({
     organizationId: asOrganizationId("org-1"),
     actorId: asActorId("actor-1"),
     name: "Liga",
@@ -103,7 +114,12 @@ async function harness() {
 describe("competition setup", () => {
   it("rejects incompatible stage and points rules", async () => {
     const { competitions, clock, draft } = await harness();
-    const result = await new UpdateCompetitionDraftUseCase({ competitions, clock }).execute({
+    const result = await new UpdateCompetitionDraftUseCase({
+      competitions,
+      clock,
+      authorization: allowAllAuthorization,
+    }).execute({
+      actorId: asActorId("actor-1"),
       organizationId: draft.competition.organizationId,
       competitionId: draft.competition.id,
       name: draft.competition.name,
@@ -123,15 +139,28 @@ describe("competition setup", () => {
 
   it("requires two approved participants and locks structure after publishing", async () => {
     const { competitions, entries, clock, ids, draft } = await harness();
-    const publish = new PublishCompetitionUseCase({ competitions, entries, clock });
+    const publish = new PublishCompetitionUseCase({
+      competitions,
+      entries,
+      clock,
+      authorization: allowAllAuthorization,
+    });
     const blocked = await publish.execute({
+      actorId: asActorId("actor-1"),
       organizationId: draft.competition.organizationId,
       competitionId: draft.competition.id,
     });
     expect(!blocked.isOk() && CompetitionPublishBlocked.is(blocked.error)).toBe(true);
-    const register = new RegisterTeamEntryUseCase({ competitions, entries, clock, ids });
+    const register = new RegisterTeamEntryUseCase({
+      competitions,
+      entries,
+      clock,
+      ids,
+      authorization: allowAllAuthorization,
+    });
     for (const teamId of ["team-1", "team-2"]) {
       const added = await register.execute({
+        actorId: asActorId("actor-1"),
         organizationId: draft.competition.organizationId,
         competitionId: draft.competition.id,
         teamId: asTeamId(teamId),
@@ -140,11 +169,13 @@ describe("competition setup", () => {
       expect(added.isOk() && added.value.status).toBe("approved");
     }
     const published = await publish.execute({
+      actorId: asActorId("actor-1"),
       organizationId: draft.competition.organizationId,
       competitionId: draft.competition.id,
     });
     expect(published.isOk() && published.value.competition.status).toBe("published");
     const lateParticipant = await register.execute({
+      actorId: asActorId("actor-1"),
       organizationId: draft.competition.organizationId,
       competitionId: draft.competition.id,
       teamId: asTeamId("team-3"),

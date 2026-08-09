@@ -16,7 +16,6 @@ import type { CompetitionRosterStateRepository } from "../../domain/ports/compet
 import type { PlayerProfileRepository } from "../../domain/ports/player-profile.repository.ts";
 import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
-import { AddToRosterUseCase } from "../add-to-roster/add-to-roster.use-case.ts";
 import { EnsurePlayerProfileUseCase } from "../ensure-player-profile/ensure-player-profile.use-case.ts";
 import { createRosterInvitationTestHarness } from "../roster-invitation-test-harness.ts";
 import { AcceptRosterInvitationUseCase } from "./accept-roster-invitation.use-case.ts";
@@ -42,6 +41,22 @@ class Rosters implements CompetitionRosterMembershipRepository {
   rows: CompetitionRosterMembership[] = [];
   async findById(id: string) {
     return this.rows.find((row) => row.id === id) ?? null;
+  }
+  async findByIdInScope(
+    organizationId: CompetitionRosterMembership["organizationId"],
+    competitionId: CompetitionRosterMembership["competitionId"],
+    teamId: CompetitionRosterMembership["teamId"],
+    id: string,
+  ) {
+    return (
+      this.rows.find(
+        (row) =>
+          row.id === id &&
+          row.organizationId === organizationId &&
+          row.competitionId === competitionId &&
+          row.teamId === teamId,
+      ) ?? null
+    );
   }
   async findByPlayerAndCompetition(
     playerProfileId: string,
@@ -144,22 +159,20 @@ function buildHarness(options?: { maxSize?: number }) {
   const capacity = new Capacity(options?.maxSize ?? 11);
   const profiles = new Profiles();
   const shared = { clock: harness.clock, ids: harness.ids };
+  const authorization: import("@futrob/shared-kernel").AuthorizationPort = {
+    decide: async (request) => ({ ...request, allowed: true, reason: "allowed" }),
+    getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
+  };
   const ensurePlayerProfile = new EnsurePlayerProfileUseCase({ profiles, ...shared });
-  const addToRoster = new AddToRosterUseCase({
-    teams,
-    rosters,
-    rosterStates,
-    capacity,
-    accounts: {
-      listByProfile: async () => [],
-      saveIfAbsent: async (account) => account,
-    },
-    ...shared,
-  });
+  const accounts = {
+    listByProfile: async () => [],
+    saveIfAbsent: async <T>(account: T) => account,
+  };
   const createInvitation = new CreateRosterInvitationUseCase({
     teams,
     invitations: harness.invitations,
     tokens: harness.tokens,
+    authorization,
     ...shared,
   });
   const acceptInvitation = new AcceptRosterInvitationUseCase({
@@ -171,7 +184,8 @@ function buildHarness(options?: { maxSize?: number }) {
     invitations: harness.invitations,
     tokens: harness.tokens,
     ensurePlayerProfile,
-    addToRoster,
+    accounts,
+    ids: harness.ids,
     clock: harness.clock,
   });
 

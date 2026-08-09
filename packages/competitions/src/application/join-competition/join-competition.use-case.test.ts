@@ -52,11 +52,20 @@ class FakeMembershipRepository implements CompetitionMembershipRepository {
     return membership;
   }
 
+  async updateRole(membership: CompetitionMembership): Promise<CompetitionMembership> {
+    this.rows.set(`${membership.competitionId}:${membership.actorId}`, membership);
+    return membership;
+  }
+
   async findByCompetitionAndActor(
     requestedCompetitionId: typeof competitionId,
     requestedActorId: typeof actorId,
   ): Promise<CompetitionMembership | null> {
     return this.rows.get(`${requestedCompetitionId}:${requestedActorId}`) ?? null;
+  }
+
+  async listByActor(requestedActorId: typeof actorId) {
+    return [...this.rows.values()].filter((membership) => membership.actorId === requestedActorId);
   }
 }
 

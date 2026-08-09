@@ -5,6 +5,7 @@ import type {
   CompetitionId,
   IdGeneratorPort,
   OrganizationId,
+  AuthorizationPort,
 } from "@futrob/shared-kernel";
 import type { InvitationRepository } from "../../domain/ports/invitation.repository.ts";
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
@@ -15,7 +16,10 @@ import {
   REDEEM_POLICY,
   type RedeemPolicy,
 } from "../../domain/entities/organization-invitation.ts";
-import { isInviteRole } from "../../domain/value-objects/organization-membership-role.ts";
+import {
+  isCompetitionInviteRole,
+  isOrganizationInviteRole,
+} from "../../domain/value-objects/organization-membership-role.ts";
 import {
   InvalidInvitationRedeemPolicy,
   InvalidInvitationRole,
@@ -52,6 +56,7 @@ export class CreateInvitationUseCase {
     private readonly deps: {
       readonly organizations: OrganizationRepository;
       readonly memberships: MembershipRepository;
+      readonly authorization: AuthorizationPort;
       readonly invitations: InvitationRepository;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
@@ -62,20 +67,16 @@ export class CreateInvitationUseCase {
   async execute(
     input: CreateInvitationInput,
   ): Promise<Result<CreateInvitationResult, CreateInvitationError>> {
-    if (!isInviteRole(input.role)) {
+    const validRole = input.competitionId
+      ? isCompetitionInviteRole(input.role)
+      : isOrganizationInviteRole(input.role);
+    if (!validRole) {
       return err(
         new InvalidInvitationRole({
           code: "organizations.invalid_role",
-          message: "Invitation role must be staff, captain, or player",
-          role: input.role,
-        }),
-      );
-    }
-    if (!input.competitionId && input.role !== "staff") {
-      return err(
-        new InvalidInvitationRole({
-          code: "organizations.invalid_role",
-          message: "Captain and player invitations must target a competition",
+          message: input.competitionId
+            ? "Competition invitation role must be staff, captain, or player"
+            : "Organization invitation role must be staff or member",
           role: input.role,
         }),
       );
@@ -111,15 +112,21 @@ export class CreateInvitationUseCase {
       );
     }
 
-    const inviter = await this.deps.memberships.findByOrgAndActor(
-      input.organizationId,
-      input.invitedByActorId,
-    );
-    if (!inviter || (inviter.role !== "organizer" && inviter.role !== "staff")) {
+    const authorization = await this.deps.authorization.decide({
+      actorId: input.invitedByActorId,
+      permission: input.competitionId
+        ? "competitions.invitations.manage"
+        : "organizations.invitations.manage",
+      scope: {
+        organizationId: input.organizationId,
+        competitionId: input.competitionId,
+      },
+    });
+    if (!authorization.allowed) {
       return err(
         new OrganizationForbidden({
           code: "organizations.forbidden",
-          message: "Only organizer or staff can create invitations",
+          message: "The actor cannot create invitations in this scope",
         }),
       );
     }
@@ -137,7 +144,7 @@ export class CreateInvitationUseCase {
       id: invitationId,
       organizationId: input.organizationId,
       competitionId: input.competitionId ?? null,
-      role: input.role,
+      role: input.role as import("../../domain/value-objects/organization-membership-role.ts").InviteRole,
       tokenHash,
       email: input.email ?? null,
       status: INVITATION_STATUS.pending,

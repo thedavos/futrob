@@ -2,6 +2,8 @@ import {
   err,
   ok,
   type ClockPort,
+  type ActorId,
+  type AuthorizationPort,
   type CompetitionId,
   type OrganizationId,
   type Result,
@@ -27,8 +29,11 @@ import type {
   CompetitionRepository,
 } from "../../domain/ports/competition.repository.ts";
 import { isValidCompetitionRules } from "../competition-draft-validation.ts";
+import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
+import { competitionPermissionError } from "../require-competition-permission.ts";
 
 export interface UpdateCompetitionDraftInput {
+  readonly actorId: ActorId;
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
   readonly name: string;
@@ -45,12 +50,20 @@ export class UpdateCompetitionDraftUseCase {
     private readonly deps: {
       readonly competitions: CompetitionRepository;
       readonly clock: ClockPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
   async execute(
     input: UpdateCompetitionDraftInput,
   ): Promise<Result<CompetitionDraft, UpdateCompetitionDraftError>> {
+    const forbidden = await competitionPermissionError({
+      authorization: this.deps.authorization,
+      actorId: input.actorId,
+      permission: COMPETITION_PERMISSION.update,
+      scope: { organizationId: input.organizationId, competitionId: input.competitionId },
+    });
+    if (forbidden) return err(forbidden);
     const current = await this.deps.competitions.findById(
       input.organizationId,
       input.competitionId,

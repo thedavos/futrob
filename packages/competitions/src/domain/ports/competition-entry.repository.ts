@@ -4,6 +4,7 @@ import type { CompetitionEntry } from "../entities/competition-entry.ts";
 export interface CompetitionEntryRepository {
   findById(organizationId: OrganizationId, entryId: string): Promise<CompetitionEntry | null>;
   findByCompetitionAndTeam(
+    organizationId: OrganizationId,
     competitionId: CompetitionId,
     teamId: TeamId,
   ): Promise<CompetitionEntry | null>;

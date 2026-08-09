@@ -2,6 +2,8 @@ import {
   err,
   ok,
   type EventPublisherPort,
+  type ActorId,
+  type AuthorizationPort,
   type OrganizationId,
   type Result,
   type TeamId,
@@ -15,8 +17,11 @@ import {
 } from "../../domain/errors/team.errors.ts";
 import type { ExternalClubConnectionRepository } from "../../domain/ports/external-club-connection.repository.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
+import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import { teamPermissionError } from "../require-team-permission.ts";
 
 export interface ConnectTeamExternalClubInput {
+  readonly actorId: ActorId;
   readonly organizationId: OrganizationId;
   readonly teamId: TeamId;
   readonly providerKey: GameDataProviderKey;
@@ -32,12 +37,20 @@ export class ConnectTeamExternalClubUseCase {
       readonly teams: TeamRepository;
       readonly connections: ExternalClubConnectionRepository;
       readonly eventPublisher?: EventPublisherPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
   async execute(
     input: ConnectTeamExternalClubInput,
   ): Promise<Result<ExternalClubConnection, ConnectTeamExternalClubError>> {
+    const forbidden = await teamPermissionError({
+      authorization: this.deps.authorization,
+      actorId: input.actorId,
+      permission: TEAM_PERMISSION.externalClubManage,
+      scope: { organizationId: input.organizationId, teamId: input.teamId },
+    });
+    if (forbidden) return err(forbidden);
     const team = await this.deps.teams.findById(input.organizationId, input.teamId);
     if (!team) {
       return err(

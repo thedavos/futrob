@@ -2,6 +2,7 @@ import {
   err,
   ok,
   type ClockPort,
+  type AuthorizationPort,
   type CompetitionId,
   type IdGeneratorPort,
   type OrganizationId,
@@ -24,6 +25,8 @@ import { TeamNotFound } from "../../domain/errors/team.errors.ts";
 import type { RosterInvitationRepository } from "../../domain/ports/roster-invitation.repository.ts";
 import type { RosterInvitationTokenPort } from "../../domain/ports/roster-invitation-token.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
+import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import { teamPermissionError } from "../require-team-permission.ts";
 
 const DEFAULT_EXPIRES_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -57,12 +60,24 @@ export class CreateRosterInvitationUseCase {
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
       readonly tokens: RosterInvitationTokenPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
   async execute(
     input: CreateRosterInvitationInput,
   ): Promise<Result<CreateRosterInvitationResult, CreateRosterInvitationError>> {
+    const forbidden = await teamPermissionError({
+      authorization: this.deps.authorization,
+      actorId: input.invitedByActorId,
+      permission: TEAM_PERMISSION.invitationsManage,
+      scope: {
+        organizationId: input.organizationId,
+        competitionId: input.competitionId,
+        teamId: input.teamId,
+      },
+    });
+    if (forbidden) return err(forbidden);
     const role = input.role ?? "player";
     if (!isRosterMembershipRole(role)) {
       return err(

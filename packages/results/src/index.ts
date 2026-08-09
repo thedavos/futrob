@@ -9,9 +9,11 @@ export type {
 } from "./domain/ports/encounter-reader.port.ts";
 export type { ProviderMatchReaderPort } from "./domain/ports/provider-match-reader.port.ts";
 export type { OfficialResultApprovedEvent } from "./domain/events/official-result-approved.event.ts";
+export { RESULT_PERMISSION, RESULT_PERMISSIONS } from "./domain/policies/result-permissions.ts";
 export {
   EncounterNotFound,
   InvalidSelection,
+  OfficialSelectionForbidden,
   DuplicateProviderMatch,
   type SelectOfficialMatchesError,
 } from "./domain/errors/select-official-matches.errors.ts";

@@ -4,6 +4,9 @@ import {
   type ClockPort,
   type IdGeneratorPort,
   type OrganizationId,
+  type AuthorizationPort,
+  type AuthorizationRequest,
+  type EffectiveAccess,
 } from "@futrob/shared-kernel";
 import type { Organization } from "../domain/entities/organization.ts";
 import {
@@ -119,6 +122,39 @@ export class FakeMembershipRepository implements MembershipRepository {
       null
     );
   }
+
+  async updateRole(membership: OrganizationMembership): Promise<OrganizationMembership> {
+    const index = this.rows.findIndex(
+      (row) =>
+        row.organizationId === membership.organizationId && row.actorId === membership.actorId,
+    );
+    if (index >= 0) this.rows[index] = membership;
+    return membership;
+  }
+
+  async updateRoleProtectingLastOrganizer(
+    membership: OrganizationMembership,
+  ): Promise<OrganizationMembership | null> {
+    const current = this.rows.find(
+      (row) =>
+        row.organizationId === membership.organizationId && row.actorId === membership.actorId,
+    );
+    if (
+      current?.role === "organizer" &&
+      membership.role !== "organizer" &&
+      this.rows.filter(
+        (row) => row.organizationId === membership.organizationId && row.role === "organizer",
+      ).length <= 1
+    ) {
+      return null;
+    }
+    return this.updateRole(membership);
+  }
+
+  async countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number> {
+    return this.rows.filter((row) => row.organizationId === organizationId && row.role === role)
+      .length;
+  }
 }
 
 export class FakeInvitationRepository implements InvitationRepository {
@@ -202,6 +238,23 @@ export function createOrgTestHarness() {
   const organizations = new FakeOrganizationRepository();
   const memberships = new FakeMembershipRepository(organizations);
   const invitations = new FakeInvitationRepository();
+  const authorization: AuthorizationPort = {
+    async decide(request: AuthorizationRequest) {
+      const membership = request.scope.organizationId
+        ? await memberships.findByOrgAndActor(request.scope.organizationId, request.actorId)
+        : null;
+      const allowed = membership?.role === "organizer" || membership?.role === "staff";
+      return {
+        allowed,
+        permission: request.permission,
+        scope: request.scope,
+        reason: allowed ? "allowed" : "no-assignment",
+      };
+    },
+    async getEffectiveAccess(input): Promise<EffectiveAccess> {
+      return { actorId: input.actorId, scope: input.scope, roles: [], permissions: [] };
+    },
+  };
 
   return {
     clock,
@@ -210,6 +263,7 @@ export function createOrgTestHarness() {
     organizations,
     memberships,
     invitations,
+    authorization,
     actor: (value: string) => asActorId(value),
   };
 }

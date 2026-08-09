@@ -18,7 +18,13 @@ export class DuplicateProviderMatch extends TaggedError("DuplicateProviderMatch"
   message: string;
 }> {}
 
+export class OfficialSelectionForbidden extends TaggedError("OfficialSelectionForbidden")<{
+  code: "results.official_selection_forbidden";
+  message: string;
+}> {}
+
 export type SelectOfficialMatchesError =
   | EncounterNotFound
+  | OfficialSelectionForbidden
   | InvalidSelection
   | DuplicateProviderMatch;

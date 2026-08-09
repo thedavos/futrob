@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
-import { asActorId, asEncounterId, asOrganizationId } from "@futrob/shared-kernel";
+import {
+  asActorId,
+  asCompetitionId,
+  asEncounterId,
+  asOrganizationId,
+  asTeamId,
+  type AuthorizationPort,
+} from "@futrob/shared-kernel";
 import type { EventPublisherPort } from "@futrob/shared-kernel";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
 import {
@@ -12,6 +19,20 @@ import { SelectOfficialMatchesUseCase } from "./select-official-matches.use-case
 const publisher: EventPublisherPort = {
   publish: async () => undefined,
   publishMany: async () => undefined,
+};
+
+const authorization: AuthorizationPort = {
+  async decide(request) {
+    return {
+      allowed: true,
+      permission: request.permission,
+      scope: request.scope,
+      reason: "allowed",
+    };
+  },
+  async getEffectiveAccess(input) {
+    return { actorId: input.actorId, scope: input.scope, roles: [], permissions: [] };
+  },
 };
 
 function readerWith(
@@ -33,6 +54,7 @@ describe("SelectOfficialMatchesUseCase", () => {
     const useCase = new SelectOfficialMatchesUseCase({
       encounterReader: readerWith(null),
       eventPublisher: publisher,
+      authorization,
     });
 
     const result = await useCase.execute({
@@ -57,8 +79,10 @@ describe("SelectOfficialMatchesUseCase", () => {
     const useCase = new SelectOfficialMatchesUseCase({
       encounterReader: readerWith({
         encounterId: asEncounterId("enc-1"),
-        homeTeamId: "home",
-        awayTeamId: "away",
+        organizationId: asOrganizationId("org-1"),
+        competitionId: asCompetitionId("competition-1"),
+        homeTeamId: asTeamId("home"),
+        awayTeamId: asTeamId("away"),
         scheduledStartAt: new Date("2026-07-01T20:00:00.000Z"),
         officialMatchCount: 2,
         homeExternalClubId: "h",
@@ -66,6 +90,7 @@ describe("SelectOfficialMatchesUseCase", () => {
         providerKey: "ea-clubs",
       }),
       eventPublisher: publisher,
+      authorization,
     });
 
     const result = await useCase.execute({
@@ -88,8 +113,10 @@ describe("SelectOfficialMatchesUseCase", () => {
     const useCase = new SelectOfficialMatchesUseCase({
       encounterReader: readerWith({
         encounterId: asEncounterId("enc-1"),
-        homeTeamId: "home",
-        awayTeamId: "away",
+        organizationId: asOrganizationId("org-1"),
+        competitionId: asCompetitionId("competition-1"),
+        homeTeamId: asTeamId("home"),
+        awayTeamId: asTeamId("away"),
         scheduledStartAt: new Date("2026-07-01T20:00:00.000Z"),
         officialMatchCount: 2,
         homeExternalClubId: "h",
@@ -97,6 +124,7 @@ describe("SelectOfficialMatchesUseCase", () => {
         providerKey: "ea-clubs",
       }),
       eventPublisher: publisher,
+      authorization,
     });
 
     const result = await useCase.execute({
@@ -122,8 +150,10 @@ describe("SelectOfficialMatchesUseCase", () => {
     const useCase = new SelectOfficialMatchesUseCase({
       encounterReader: readerWith({
         encounterId: asEncounterId("enc-1"),
-        homeTeamId: "home",
-        awayTeamId: "away",
+        organizationId: asOrganizationId("org-1"),
+        competitionId: asCompetitionId("competition-1"),
+        homeTeamId: asTeamId("home"),
+        awayTeamId: asTeamId("away"),
         scheduledStartAt: new Date("2026-07-01T20:00:00.000Z"),
         officialMatchCount: 1,
         homeExternalClubId: "h",
@@ -131,6 +161,7 @@ describe("SelectOfficialMatchesUseCase", () => {
         providerKey: "ea-clubs",
       }),
       eventPublisher: publisher,
+      authorization,
     });
 
     const result = await useCase.execute({

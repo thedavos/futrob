@@ -9,6 +9,7 @@ import type {
 } from "../../domain/ports/competition.repository.ts";
 import { CreateCompetitionDraftUseCase } from "../create-competition-draft/create-competition-draft.use-case.ts";
 import { ApproveCompetitionEntryUseCase } from "./approve-competition-entry.use-case.ts";
+import { allowAllAuthorization } from "../allow-all-authorization.test-helper.ts";
 
 class FakeCompetitionRepository implements CompetitionRepository {
   readonly rows = new Map<string, CompetitionDraft>();
@@ -49,11 +50,17 @@ class FakeEntryRepository implements CompetitionEntryRepository {
     );
   }
   async findByCompetitionAndTeam(
+    organizationId: ReturnType<typeof asOrganizationId>,
     competitionId: ReturnType<typeof asCompetitionId>,
     teamId: ReturnType<typeof asTeamId>,
   ) {
     return (
-      this.rows.find((row) => row.competitionId === competitionId && row.teamId === teamId) ?? null
+      this.rows.find(
+        (row) =>
+          row.organizationId === organizationId &&
+          row.competitionId === competitionId &&
+          row.teamId === teamId,
+      ) ?? null
     );
   }
   async findByCreationKey(creationKey: string) {
@@ -85,9 +92,17 @@ function createHarness() {
     approve: new ApproveCompetitionEntryUseCase({
       entries,
       competitions,
+      authorization: {
+        decide: async (request) => ({ ...request, allowed: true, reason: "allowed" as const }),
+        getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
+      },
     }),
     seedEntry: async () => {
-      const draft = await new CreateCompetitionDraftUseCase({ competitions, ...shared }).execute({
+      const draft = await new CreateCompetitionDraftUseCase({
+        competitions,
+        authorization: allowAllAuthorization,
+        ...shared,
+      }).execute({
         organizationId: asOrganizationId("org-1"),
         actorId: asActorId("actor-1"),
         name: "Liga",
@@ -119,7 +134,9 @@ describe("ApproveCompetitionEntryUseCase", () => {
     const { approve, seedEntry } = createHarness();
     const entry = await seedEntry();
     const result = await approve.execute({
+      actorId: asActorId("actor-1"),
       organizationId: asOrganizationId("org-1"),
+      competitionId: entry.competitionId,
       entryId: entry.id,
     });
     expect(result.isOk()).toBe(true);
@@ -132,10 +149,27 @@ describe("ApproveCompetitionEntryUseCase", () => {
     const entry = await seedEntry();
     await entries.save({ ...entry, status: "approved" });
     const result = await approve.execute({
+      actorId: asActorId("actor-1"),
       organizationId: asOrganizationId("org-1"),
+      competitionId: entry.competitionId,
       entryId: entry.id,
     });
     expect(result.isOk()).toBe(false);
     expect(!result.isOk() && EntryAlreadyDecided.is(result.error)).toBe(true);
+  });
+
+  it("does not approve an entry through a sibling competition id", async () => {
+    const { approve, entries, seedEntry } = createHarness();
+    const entry = await seedEntry();
+    const result = await approve.execute({
+      actorId: asActorId("actor-1"),
+      organizationId: asOrganizationId("org-1"),
+      competitionId: asCompetitionId("sibling-competition"),
+      entryId: entry.id,
+    });
+
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) expect(result.error.code).toBe("competitions.entry_not_found");
+    expect((await entries.findById(entry.organizationId, entry.id))?.status).toBe("pending");
   });
 });

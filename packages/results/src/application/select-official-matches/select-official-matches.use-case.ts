@@ -1,5 +1,10 @@
 import { err, ok, type Result } from "@futrob/shared-kernel";
-import type { ActorId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
+import type {
+  ActorId,
+  AuthorizationPort,
+  EncounterId,
+  OrganizationId,
+} from "@futrob/shared-kernel";
 import type { EventPublisherPort } from "@futrob/shared-kernel";
 import type { ExternalReference } from "@futrob/game-data";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
@@ -8,6 +13,7 @@ import {
   DuplicateProviderMatch,
   EncounterNotFound,
   InvalidSelection,
+  OfficialSelectionForbidden,
   type SelectOfficialMatchesError,
 } from "../../domain/errors/select-official-matches.errors.ts";
 
@@ -30,6 +36,7 @@ export class SelectOfficialMatchesUseCase {
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
       readonly eventPublisher: EventPublisherPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
@@ -43,6 +50,32 @@ export class SelectOfficialMatchesUseCase {
           code: "results.encounter_not_found",
           message: "Encounter not found",
           encounterId: input.encounterId,
+        }),
+      );
+    }
+    if (encounter.organizationId !== input.organizationId) {
+      return err(
+        new EncounterNotFound({
+          code: "results.encounter_not_found",
+          message: "Encounter not found",
+          encounterId: input.encounterId,
+        }),
+      );
+    }
+    const authorization = await this.deps.authorization.decide({
+      actorId: input.actorId,
+      permission: "encounters.official-selection.propose",
+      scope: {
+        organizationId: encounter.organizationId,
+        competitionId: encounter.competitionId,
+        encounterId: encounter.encounterId,
+      },
+    });
+    if (!authorization.allowed) {
+      return err(
+        new OfficialSelectionForbidden({
+          code: "results.official_selection_forbidden",
+          message: "The actor cannot propose an official selection for this encounter",
         }),
       );
     }

@@ -3,6 +3,7 @@ import {
   err,
   ok,
   type ActorId,
+  type AuthorizationPort,
   type ClockPort,
   type IdGeneratorPort,
   type OrganizationId,
@@ -15,6 +16,8 @@ import {
   type CreateTeamError,
 } from "../../domain/errors/team.errors.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
+import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import { teamPermissionError } from "../require-team-permission.ts";
 
 export interface CreateTeamInput {
   readonly organizationId: OrganizationId;
@@ -29,10 +32,18 @@ export class CreateTeamUseCase {
       readonly teams: TeamRepository;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
   async execute(input: CreateTeamInput): Promise<Result<Team, CreateTeamError>> {
+    const forbidden = await teamPermissionError({
+      authorization: this.deps.authorization,
+      actorId: input.actorId,
+      permission: TEAM_PERMISSION.create,
+      scope: { organizationId: input.organizationId },
+    });
+    if (forbidden) return err(forbidden);
     const name = input.name.trim();
     if (name.length === 0 || name.length > 120) {
       return err(

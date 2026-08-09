@@ -17,11 +17,13 @@ import {
 import type { CompetitionRosterMembershipRepository } from "../../domain/ports/competition-roster-membership.repository.ts";
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
 import type { PlayerProfileRepository } from "../../domain/ports/player-profile.repository.ts";
+import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
 import type { RosterInvitationRepository } from "../../domain/ports/roster-invitation.repository.ts";
 import type { RosterInvitationTokenPort } from "../../domain/ports/roster-invitation-token.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
-import { AddToRosterUseCase } from "../add-to-roster/add-to-roster.use-case.ts";
+import { addToRosterUnchecked } from "../add-to-roster/add-to-roster.use-case.ts";
+import type { IdGeneratorPort } from "@futrob/shared-kernel";
 import { EnsurePlayerProfileUseCase } from "../ensure-player-profile/ensure-player-profile.use-case.ts";
 
 export interface AcceptRosterInvitationInput {
@@ -49,7 +51,8 @@ export class AcceptRosterInvitationUseCase {
       readonly clock: ClockPort;
       readonly tokens: RosterInvitationTokenPort;
       readonly ensurePlayerProfile: EnsurePlayerProfileUseCase;
-      readonly addToRoster: AddToRosterUseCase;
+      readonly accounts: PlayerGameAccountRepository;
+      readonly ids: IdGeneratorPort;
     },
   ) {}
 
@@ -123,7 +126,7 @@ export class AcceptRosterInvitationUseCase {
     }
 
     const profile = await this.deps.ensurePlayerProfile.execute({ actorId: input.actorId });
-    const added = await this.deps.addToRoster.execute({
+    const added = await addToRosterUnchecked(this.deps, {
       organizationId: claimed.organizationId,
       competitionId: claimed.competitionId,
       teamId: claimed.teamId,
@@ -324,7 +327,7 @@ export class AcceptRosterInvitationUseCase {
       if (existing) {
         return ok(existing);
       }
-      const added = await this.deps.addToRoster.execute({
+      const added = await addToRosterUnchecked(this.deps, {
         organizationId: invitation.organizationId,
         competitionId: invitation.competitionId,
         teamId: invitation.teamId,
