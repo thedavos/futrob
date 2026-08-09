@@ -698,6 +698,72 @@ describe("apps/api", () => {
     });
   });
 
+  it("onboarding: rejects missing and expired invitations with typed codes", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-typed-invite-organizer";
+    const missingActor = "actor-typed-invite-missing";
+    const expiredActor = "actor-typed-invite-expired";
+
+    const missing = await app.request("/api/v1/identity/onboarding/invitation", {
+      method: "POST",
+      headers: serviceHeaders(missingActor),
+      body: JSON.stringify({ token: "does-not-exist" }),
+    });
+    expect(missing.status).toBe(404);
+    expect(await missing.json()).toMatchObject({
+      code: "organizations.invitation_not_found",
+    });
+    expect(
+      await (
+        await app.request("/api/v1/identity/onboarding", {
+          headers: serviceHeaders(missingActor),
+        })
+      ).json(),
+    ).toMatchObject({ completed: false });
+
+    const created = await app.request("/api/v1/identity/onboarding/organization", {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Liga Expirada",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const { organizationId, competition } = (await created.json()) as {
+      organizationId: string;
+      competition: { competition: { id: string } };
+    };
+    const invitation = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competition.competition.id}/invitations`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ role: "player", expiresInMs: 1 }),
+      },
+    );
+    expect(invitation.status).toBe(201);
+    const { token } = (await invitation.json()) as { token: string };
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    const expired = await app.request("/api/v1/identity/onboarding/invitation", {
+      method: "POST",
+      headers: serviceHeaders(expiredActor),
+      body: JSON.stringify({ token }),
+    });
+    expect(expired.status).toBe(400);
+    expect(await expired.json()).toMatchObject({
+      code: "organizations.invitation_expired",
+    });
+    expect(
+      await (
+        await app.request("/api/v1/identity/onboarding", {
+          headers: serviceHeaders(expiredActor),
+        })
+      ).json(),
+    ).toMatchObject({ completed: false });
+  });
+
   it("onboarding: rejects a different path after completion without creating side effects", async () => {
     const app = buildApp(stubFetch);
     const actor = "actor-completed-player";

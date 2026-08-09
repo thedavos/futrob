@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { OnboardingStoryRouter, createFakeOnboardingGateway } from "./onboarding-story-router.tsx";
+import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 
 beforeEach(() => {
   vi.stubGlobal("PointerEvent", MouseEvent);
@@ -174,6 +175,45 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(await screen.findByRole("heading", { name: "Espacio personal" })).toBeTruthy();
     expect(completePlayer).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("heading", { name: "¿Qué quieres hacer primero?" })).toBeNull();
+  });
+
+  it.each([
+    [
+      "organizations.invitation_not_found",
+      "No encontramos esa invitación. Revisa el código e inténtalo nuevamente.",
+    ],
+    [
+      "organizations.invitation_expired",
+      "La invitación ha caducado. Solicita una nueva al organizador.",
+    ],
+    [
+      "organizations.invitation_revoked",
+      "La invitación fue revocada. Solicita una nueva al organizador.",
+    ],
+  ] as const)("shows typed invitation finish error for %s", async (code, message) => {
+    const user = userEvent.setup();
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({
+          completeError: new IdentityOnboardingClientError(400, code),
+        })}
+        initialPath="/onboarding/intention"
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("radio", { name: /Unirme/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    await screen.findByRole("heading", { name: "Únete a una competición" });
+    await user.type(screen.getByLabelText("Código de invitación"), "invite-token");
+    fireEvent.click(screen.getByRole("button", { name: "Revisar invitación" }));
+    await screen.findByRole("heading", { name: "Configura tus datos de juego" });
+    fireEvent.click(screen.getByRole("button", { name: "Omitir por ahora" }));
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Aceptar invitación" }));
+
+    expect(await screen.findByText(message)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Confirma tu configuración" })).toBeTruthy();
   });
 
   it("turns an omitted invitation into the player path", async () => {

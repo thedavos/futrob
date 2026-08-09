@@ -13,6 +13,7 @@ import type {
   OnboardingStepDto,
 } from "@futrob/api-contracts";
 import { EA_SEARCH_PLATFORM } from "@futrob/api-contracts";
+import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import type { OnboardingGateway } from "./onboarding-flow.tsx";
 import { OnboardingFlowProvider } from "./onboarding-flow.tsx";
@@ -87,6 +88,8 @@ export function createFakeOnboardingGateway(input?: {
   failSave?: boolean;
   pendingSave?: boolean;
   failComplete?: boolean;
+  /** Typed finish failure for invitation/org/player complete calls. */
+  completeError?: IdentityOnboardingClientError;
   organizationNameAvailable?: boolean;
   clubs?: readonly StoryExternalClub[];
   searchError?: boolean;
@@ -96,6 +99,10 @@ export function createFakeOnboardingGateway(input?: {
 }): StoryOnboardingGateway {
   let path = input?.path ?? null;
   let currentStep = input?.currentStep ?? "intention";
+  const throwCompleteFailure = () => {
+    if (input?.completeError) throw input.completeError;
+    if (input?.failComplete) throw new Error("story.complete_failed");
+  };
   return {
     get initialStatus() {
       return {
@@ -123,7 +130,7 @@ export function createFakeOnboardingGateway(input?: {
       };
     },
     async createOrganization(request) {
-      if (input?.failComplete) throw new Error("story.complete_failed");
+      throwCompleteFailure();
       return {
         organizationId: "org-story",
         name: request.name,
@@ -139,7 +146,7 @@ export function createFakeOnboardingGateway(input?: {
       };
     },
     async acceptInvitation() {
-      if (input?.failComplete) throw new Error("story.complete_failed");
+      throwCompleteFailure();
       return {
         organizationId: "org-invited",
         organizationName: "Liga invitante",
@@ -157,7 +164,7 @@ export function createFakeOnboardingGateway(input?: {
       };
     },
     async completePlayer() {
-      if (input?.failComplete) throw new Error("story.complete_failed");
+      throwCompleteFailure();
     },
     async searchExternalClubs(request) {
       input?.onSearchExternalClubs?.(request);
