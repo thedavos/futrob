@@ -142,6 +142,51 @@ export class PostgresMembershipRepository implements MembershipRepository {
       | undefined;
     return row ? rehydrateMembership(row) : null;
   }
+
+  async updateRole(membership: OrganizationMembership): Promise<OrganizationMembership> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE organization_memberships SET role = $3
+       WHERE organization_id = $1 AND actor_id = $2
+       RETURNING organization_id, actor_id, role, created_at`,
+      [membership.organizationId, membership.actorId, membership.role],
+    );
+    return rehydrateMembership(result.rows[0]);
+  }
+
+  async updateRoleProtectingLastOrganizer(
+    membership: OrganizationMembership,
+  ): Promise<OrganizationMembership | null> {
+    const executor = getPgExecutor(this.pool);
+    await executor.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [
+      membership.organizationId,
+    ]);
+    const result = await executor.query(
+      `UPDATE organization_memberships
+       SET role = $3
+       WHERE organization_id = $1
+         AND actor_id = $2
+         AND (
+           role <> 'organizer'
+           OR $3 = 'organizer'
+           OR (
+             SELECT COUNT(*) FROM organization_memberships
+             WHERE organization_id = $1 AND role = 'organizer'
+           ) > 1
+         )
+       RETURNING organization_id, actor_id, role, created_at`,
+      [membership.organizationId, membership.actorId, membership.role],
+    );
+    return result.rows[0] ? rehydrateMembership(result.rows[0]) : null;
+  }
+
+  async countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT COUNT(*)::int AS count FROM organization_memberships
+       WHERE organization_id = $1 AND role = $2`,
+      [organizationId, role],
+    );
+    return Number(result.rows[0]?.count ?? 0);
+  }
 }
 
 export class PostgresInvitationRepository implements InvitationRepository {

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import {
   acceptInvitationRequestSchema,
   acceptInvitationResponseSchema,
-  createInvitationRequestSchema,
+  createOrganizationInvitationRequestSchema,
   createInvitationResponseSchema,
   createOrganizationRequestSchema,
   createOrganizationResponseSchema,
@@ -113,7 +113,7 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
   secured.post("/organizations/:organizationId/invitations", async (c) => {
     const actorId = c.get("actorId");
     const json: unknown = await c.req.json().catch(() => null);
-    const parsed = createInvitationRequestSchema.safeParse(json);
+    const parsed = createOrganizationInvitationRequestSchema.safeParse(json);
     if (!parsed.success) {
       return validationErrorResponse(parsed.error.issues);
     }

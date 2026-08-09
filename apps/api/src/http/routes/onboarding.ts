@@ -156,7 +156,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
           organizationId: result.value.organizationId,
           competitionId,
           actorId,
-          role: result.value.competitionRole,
+          role: result.value.competitionRole!,
         });
         if (!joined.isOk()) throw joined.error;
 
@@ -168,6 +168,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
           organizationId: result.value.organizationId,
           organizationName: result.value.organizationName,
           role: result.value.role,
+          competitionRole: result.value.competitionRole,
           competitionId,
           competitionName: competition.competition.name,
           profile: playerProfileDto(player.profile),
@@ -278,6 +279,6 @@ async function onboardingPathConflict(
   return apiErrorResponse(409, {
     code: "identity.onboarding_path_conflict",
     messageKey: "errors.identity.onboarding_path_conflict",
-    details: { completedPath: status.path, requestedPath },
+    details: { completedPath: status.path ?? undefined, requestedPath },
   });
 }

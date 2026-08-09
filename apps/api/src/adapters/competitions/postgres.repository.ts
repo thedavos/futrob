@@ -213,6 +213,17 @@ export class PostgresCompetitionMembershipRepository implements CompetitionMembe
     return rehydrateCompetitionMembership(result.rows[0]);
   }
 
+  async updateRole(membership: CompetitionMembership): Promise<CompetitionMembership> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE competition_memberships
+       SET role = $4
+       WHERE organization_id = $1 AND competition_id = $2 AND actor_id = $3
+       RETURNING organization_id, competition_id, actor_id, role, created_at`,
+      [membership.organizationId, membership.competitionId, membership.actorId, membership.role],
+    );
+    return rehydrateCompetitionMembership(result.rows[0]);
+  }
+
   async findByCompetitionAndActor(
     competitionId: CompetitionId,
     actorId: ActorId,
@@ -225,45 +236,91 @@ export class PostgresCompetitionMembershipRepository implements CompetitionMembe
     );
     return result.rows[0] ? rehydrateCompetitionMembership(result.rows[0]) : null;
   }
+
+  async listByActor(actorId: ActorId): Promise<readonly CompetitionMembership[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT organization_id, competition_id, actor_id, role, created_at
+       FROM competition_memberships
+       WHERE actor_id = $1
+       ORDER BY created_at DESC`,
+      [actorId],
+    );
+    return result.rows.map(rehydrateCompetitionMembership);
+  }
 }
 
-function rehydrateCompetitionMembership(row: Record<string, unknown>): CompetitionMembership {
+export interface CompetitionMembershipRow {
+  organization_id: string;
+  competition_id: string;
+  actor_id: string;
+  role: string;
+  created_at: Date | string;
+}
+
+export interface CompetitionRow {
+  id: string;
+  organization_id: string;
+  name: string;
+  status: string;
+  modality?: string;
+  game_edition: string;
+  platform: string;
+  region: string;
+  time_zone: string;
+  format: string;
+  created_by_actor_id: string;
+  creation_key: string | null;
+  created_at: Date | string;
+  updated_at: Date | string;
+}
+
+export interface CompetitionRulesRow {
+  competition_id: string;
+  version: number;
+  regular_stage: CompetitionMatchRules | null;
+  knockout_stage: CompetitionMatchRules | null;
+  away_goals_enabled?: boolean;
+  max_roster_size: number | null;
+  created_at: Date | string;
+}
+
+function rehydrateCompetitionMembership(row: CompetitionMembershipRow): CompetitionMembership {
   return {
-    organizationId: asOrganizationId(String(row.organization_id)),
-    competitionId: asCompetitionId(String(row.competition_id)),
-    actorId: asActorId(String(row.actor_id)),
+    organizationId: asOrganizationId(row.organization_id),
+    competitionId: asCompetitionId(row.competition_id),
+    actorId: asActorId(row.actor_id),
     role: row.role as CompetitionMembership["role"],
-    createdAt: new Date(String(row.created_at)),
+    createdAt: new Date(row.created_at),
   };
 }
 
-function rehydrateCompetition(row: Record<string, unknown>): Competition {
+function rehydrateCompetition(row: CompetitionRow): Competition {
   return {
-    id: asCompetitionId(String(row.id)),
-    organizationId: asOrganizationId(String(row.organization_id)),
-    name: String(row.name),
+    id: asCompetitionId(row.id),
+    organizationId: asOrganizationId(row.organization_id),
+    name: row.name,
     status: row.status as Competition["status"],
     modality: "fc-clubs",
-    gameEdition: String(row.game_edition),
+    gameEdition: row.game_edition,
     platform: row.platform as Competition["platform"],
     region: row.region as Competition["region"],
-    timeZone: String(row.time_zone),
+    timeZone: row.time_zone,
     format: row.format as Competition["format"],
-    createdByActorId: asActorId(String(row.created_by_actor_id)),
-    creationKey: typeof row.creation_key === "string" ? row.creation_key : undefined,
-    createdAt: new Date(String(row.created_at)),
-    updatedAt: new Date(String(row.updated_at)),
+    createdByActorId: asActorId(row.created_by_actor_id),
+    creationKey: row.creation_key ?? undefined,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
   };
 }
 
-function rehydrateRules(row: Record<string, unknown>): CompetitionRules {
+function rehydrateRules(row: CompetitionRulesRow): CompetitionRules {
   return {
-    competitionId: asCompetitionId(String(row.competition_id)),
+    competitionId: asCompetitionId(row.competition_id),
     version: Number(row.version),
-    regularStage: (row.regular_stage as CompetitionMatchRules | null) ?? null,
-    knockoutStage: (row.knockout_stage as CompetitionMatchRules | null) ?? null,
+    regularStage: row.regular_stage ?? null,
+    knockoutStage: row.knockout_stage ?? null,
     awayGoalsEnabled: false,
-    maxRosterSize: (row.max_roster_size as number | null) ?? null,
-    createdAt: new Date(String(row.created_at)),
+    maxRosterSize: row.max_roster_size ?? null,
+    createdAt: new Date(row.created_at),
   };
 }

@@ -4,6 +4,7 @@ import { createApp } from "@/app.ts";
 import { loadEnv } from "@/config/env.ts";
 import { createModules } from "@/di/create-modules.ts";
 import { loadDotEnvFile } from "@/utils/load-dotenv.ts";
+import { asActorId } from "@futrob/shared-kernel";
 
 loadDotEnvFile();
 
@@ -16,6 +17,9 @@ const modules = createModules({
   eaClubsBaseUrl: env.eaClubsBaseUrl,
   pool,
 });
+if (env.initialSuperuserActorId) {
+  await modules.authorization.bootstrapInitialSuperuser(asActorId(env.initialSuperuserActorId));
+}
 
 const app = createApp({
   modules,

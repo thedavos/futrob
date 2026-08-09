@@ -93,14 +93,15 @@ Default port is `8787`. The app boots without a database. Without
 
 ## Environment
 
-| Variable              | Required       | Default                                       | Purpose                                                 |
-| --------------------- | -------------- | --------------------------------------------- | ------------------------------------------------------- |
-| `PORT`                | no             | `8787`                                        | HTTP listen port                                        |
-| `NODE_ENV`            | no             | `development`                                 | Runtime mode                                            |
-| `DATABASE_URL`        | no (prod: yes) | unset                                         | Postgres connection string (Railway / Neon)             |
-| `INTERNAL_JOB_SECRET` | yes (orgs)     | unset                                         | Shared with `apps/web` for trusted ActorId org calls    |
-| `EA_CLUBS_BASE_URL`   | no             | `https://proclubs.ea.com/api/fc`              | EA Clubs egress base                                    |
-| `CORS_ORIGINS`        | no             | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call the API |
+| Variable                     | Required       | Default                                       | Purpose                                                            |
+| ---------------------------- | -------------- | --------------------------------------------- | ------------------------------------------------------------------ |
+| `PORT`                       | no             | `8787`                                        | HTTP listen port                                                   |
+| `NODE_ENV`                   | no             | `development`                                 | Runtime mode                                                       |
+| `DATABASE_URL`               | no (prod: yes) | unset                                         | Postgres connection string (Railway / Neon)                        |
+| `INTERNAL_JOB_SECRET`        | yes (orgs)     | unset                                         | Shared with `apps/web` for trusted ActorId org calls               |
+| `INITIAL_SUPERUSER_ACTOR_ID` | no             | unset                                         | Seeds and audits the first persisted superuser; ignored afterwards |
+| `EA_CLUBS_BASE_URL`          | no             | `https://proclubs.ea.com/api/fc`              | EA Clubs egress base                                               |
+| `CORS_ORIGINS`               | no             | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call the API            |
 
 Local file:
 
@@ -114,7 +115,9 @@ npm run api
 
 ## Railway notes
 
-- Apply migrations `0001` through `0009` in filename order
+- Apply migrations `0001` through `0017` in filename order.
+- Set `TEST_DATABASE_URL` to run the clean/legacy migration integration suite; it creates and
+  removes a uniquely named schema without touching existing schemas.
   to Postgres before relying on organization, onboarding, or player-profile persistence.
 - Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.
 - Start command: `npm run start -w @futrob/api`. Railway injects `PORT`; the app reads it.

@@ -33,6 +33,7 @@ import {
 } from "@futrob/teams";
 import type { CompetitionRepository } from "@futrob/competitions";
 import type { Pool } from "pg";
+import type { AuthorizationPort } from "@futrob/shared-kernel";
 import {
   InMemoryExternalClubConnectionRepository,
   PostgresExternalClubConnectionRepository,
@@ -69,6 +70,7 @@ import {
 export function createTeamsModule(input: {
   readonly pool: Pool | undefined;
   readonly competitions: CompetitionRepository;
+  readonly authorization: AuthorizationPort;
 }) {
   let profiles: PlayerProfileRepository;
   let accounts: PlayerGameAccountRepository;
@@ -115,6 +117,7 @@ export function createTeamsModule(input: {
     rosterStates,
     capacity,
     accounts,
+    authorization: input.authorization,
     ...shared,
   });
   return {
@@ -126,23 +129,32 @@ export function createTeamsModule(input: {
       clock: shared.clock,
     }),
     getPlayerProfile: new GetPlayerProfileUseCase(profiles, accounts, associations),
-    createTeam: new CreateTeamUseCase({ teams, ...shared }),
+    createTeam: new CreateTeamUseCase({ teams, authorization: input.authorization, ...shared }),
     getTeam: new GetTeamUseCase(teams),
     listByOrganization: new ListOrganizationTeamsUseCase(teams),
     addToRoster,
     listRosterForTeam: new ListRosterForTeamUseCase(rosters),
-    changeRosterRole: new ChangeRosterRoleUseCase(rosters),
+    changeRosterRole: new ChangeRosterRoleUseCase({
+      authorization: input.authorization,
+      rosters,
+    }),
     closeRoster: new CloseRosterUseCase({
       teams,
       rosterStates,
       clock: shared.clock,
       eventPublisher,
+      authorization: input.authorization,
     }),
-    openRoster: new OpenRosterUseCase({ teams, rosterStates }),
+    openRoster: new OpenRosterUseCase({
+      teams,
+      rosterStates,
+      authorization: input.authorization,
+    }),
     connectTeamExternalClub: new ConnectTeamExternalClubUseCase({
       teams,
       connections,
       eventPublisher,
+      authorization: input.authorization,
     }),
     getTeamExternalClub: new GetTeamExternalClubUseCase(connections),
     listRostersForPlayer: new ListRostersForPlayerUseCase(rosters),
@@ -157,6 +169,7 @@ export function createTeamsModule(input: {
       teams,
       invitations: rosterInvitations,
       tokens: rosterInvitationTokens,
+      authorization: input.authorization,
       ...shared,
     }),
     acceptRosterInvitation: new AcceptRosterInvitationUseCase({
@@ -168,11 +181,13 @@ export function createTeamsModule(input: {
       invitations: rosterInvitations,
       tokens: rosterInvitationTokens,
       ensurePlayerProfile,
-      addToRoster,
+      accounts,
+      ids: shared.ids,
       clock: shared.clock,
     }),
     /** Exposed for competitions approve-entry verification bridge. */
     externalClubConnections: connections,
+    repositories: { profiles, teams, rosters },
   };
 }
 

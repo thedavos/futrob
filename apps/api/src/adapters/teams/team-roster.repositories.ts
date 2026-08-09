@@ -51,6 +51,20 @@ export class InMemoryCompetitionRosterMembershipRepository implements Competitio
     return this.rows.get(id) ?? null;
   }
 
+  async findByIdInScope(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+    teamId: TeamId,
+    id: string,
+  ): Promise<CompetitionRosterMembership | null> {
+    const row = this.rows.get(id);
+    return row?.organizationId === organizationId &&
+      row.competitionId === competitionId &&
+      row.teamId === teamId
+      ? row
+      : null;
+  }
+
   async findByPlayerAndCompetition(
     playerProfileId: string,
     competitionId: CompetitionId,
@@ -183,6 +197,22 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     return result.rows[0] ? rehydrateRoster(result.rows[0]) : null;
   }
 
+  async findByIdInScope(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+    teamId: TeamId,
+    id: string,
+  ): Promise<CompetitionRosterMembership | null> {
+    const result = await this.pool.query(
+      `SELECT id, organization_id, competition_id, team_id, player_profile_id,
+              game_account_id, role, created_at
+       FROM competition_roster_memberships
+       WHERE id = $1 AND organization_id = $2 AND competition_id = $3 AND team_id = $4`,
+      [id, organizationId, competitionId, teamId],
+    );
+    return result.rows[0] ? rehydrateRoster(result.rows[0]) : null;
+  }
+
   async findByPlayerAndCompetition(
     playerProfileId: string,
     competitionId: CompetitionId,
@@ -270,10 +300,17 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     const result = await this.pool.query(
       `UPDATE competition_roster_memberships
        SET role = $2, game_account_id = $3
-       WHERE id = $1
+       WHERE id = $1 AND organization_id = $4 AND competition_id = $5 AND team_id = $6
        RETURNING id, organization_id, competition_id, team_id, player_profile_id,
                  game_account_id, role, created_at`,
-      [membership.id, membership.role, membership.gameAccountId],
+      [
+        membership.id,
+        membership.role,
+        membership.gameAccountId,
+        membership.organizationId,
+        membership.competitionId,
+        membership.teamId,
+      ],
     );
     return rehydrateRoster(result.rows[0]);
   }

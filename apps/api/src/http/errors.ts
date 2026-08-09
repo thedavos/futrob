@@ -1,12 +1,25 @@
-import type { ApiErrorBody } from "@futrob/api-contracts";
+import type { ApiErrorBody, ApiErrorDetails } from "@futrob/api-contracts";
 import { TaggedError } from "@futrob/shared-kernel";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 /** Wire-facing expected failure: TaggedError (or structural `{ code }`) with stable wire `code`. */
 export type HttpMappableFailure = {
   readonly code: string;
-  readonly details?: Readonly<Record<string, unknown>>;
+  readonly details?: ApiErrorDetails;
 };
+
+const DETAIL_KEYS = [
+  "organizationId",
+  "role",
+  "status",
+  "path",
+  "body",
+  "issues",
+  "externalClubId",
+  "cause",
+  "completedPath",
+  "requestedPath",
+] as const satisfies readonly (keyof ApiErrorDetails)[];
 
 export function apiErrorResponse(status: number, body: ApiErrorBody): Response {
   return jsonResponse(body, status);
@@ -37,26 +50,14 @@ export function isHttpMappableFailure(error: unknown): error is HttpMappableFail
   );
 }
 
-function detailsFromTaggedProps(
-  error: HttpMappableFailure,
-): Readonly<Record<string, unknown>> | undefined {
-  const details: Record<string, unknown> = {};
-  const copy = (key: string) => {
-    if (key in error && (error as Record<string, unknown>)[key] !== undefined) {
-      details[key] = (error as Record<string, unknown>)[key];
+function detailsFromTaggedProps(error: HttpMappableFailure): ApiErrorDetails | undefined {
+  const details: Partial<ApiErrorDetails> = {};
+  for (const key of DETAIL_KEYS) {
+    if (!Object.hasOwn(error, key)) continue;
+    const value = Reflect.get(error, key);
+    if (value !== undefined) {
+      Object.assign(details, { [key]: value });
     }
-  };
-  for (const key of [
-    "organizationId",
-    "role",
-    "status",
-    "path",
-    "body",
-    "issues",
-    "externalClubId",
-    "cause",
-  ] as const) {
-    copy(key);
   }
   return Object.keys(details).length > 0 ? details : undefined;
 }
@@ -76,7 +77,9 @@ function statusForFailureCode(code: string): number {
     code.includes("already_decided") ||
     code.includes("captain_already_assigned") ||
     code.includes("not_editable") ||
-    code.includes("publish_blocked")
+    code.includes("publish_blocked") ||
+    code.includes("last_organizer") ||
+    code.includes("last_superuser")
   ) {
     return 409;
   }

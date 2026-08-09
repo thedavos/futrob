@@ -77,6 +77,44 @@ export class InMemoryMembershipRepository implements MembershipRepository {
       null
     );
   }
+
+  async updateRole(membership: OrganizationMembership): Promise<OrganizationMembership> {
+    const index = this.rows.findIndex(
+      (row) =>
+        row.organizationId === membership.organizationId && row.actorId === membership.actorId,
+    );
+    if (index >= 0) this.rows[index] = membership;
+    return membership;
+  }
+
+  async updateRoleProtectingLastOrganizer(
+    membership: OrganizationMembership,
+  ): Promise<OrganizationMembership | null> {
+    const current = this.rows.find(
+      (row) =>
+        row.organizationId === membership.organizationId && row.actorId === membership.actorId,
+    );
+    if (
+      current?.role === "organizer" &&
+      membership.role !== "organizer" &&
+      this.rows.filter(
+        (row) => row.organizationId === membership.organizationId && row.role === "organizer",
+      ).length <= 1
+    ) {
+      return null;
+    }
+    const index = this.rows.findIndex(
+      (row) =>
+        row.organizationId === membership.organizationId && row.actorId === membership.actorId,
+    );
+    if (index >= 0) this.rows[index] = membership;
+    return membership;
+  }
+
+  async countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number> {
+    return this.rows.filter((row) => row.organizationId === organizationId && row.role === role)
+      .length;
+  }
 }
 
 export class InMemoryInvitationRepository implements InvitationRepository {

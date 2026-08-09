@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import type { CompetitionRulesDto } from "@futrob/api-contracts";
 import searchClubsFixture from "@/adapters/game-data/ea-clubs/fixtures/search-clubs.json";
 import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import { createApp } from "@/app.ts";
@@ -598,7 +599,8 @@ describe("apps/api", () => {
     expect(completed.status).toBe(200);
     expect(await completed.json()).toMatchObject({
       organizationId,
-      role: "player",
+      role: "member",
+      competitionRole: "player",
       competitionId,
       competitionName: "Copa Inicial",
       profile: { id: expect.any(String) },
@@ -748,7 +750,7 @@ describe("apps/api", () => {
     });
     const body = (await created.json()) as {
       organizationId: string;
-      competition: { competition: { id: string }; rules: Record<string, unknown> };
+      competition: { competition: { id: string }; rules: CompetitionRulesDto };
     };
     const organizationId = body.organizationId;
     const competitionId = body.competition.competition.id;
@@ -887,11 +889,11 @@ describe("apps/api", () => {
     const teamBBody = (await teamB.json()) as { id: string };
 
     const entryA = await app.request(
-      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/entries`,
+      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/participants`,
       {
         method: "POST",
         headers: serviceHeaders(organizer),
-        body: JSON.stringify({ teamId: teamABody.id, creationKey: "entry:alpha" }),
+        body: JSON.stringify({ kind: "existing-team", teamId: teamABody.id }),
       },
     );
     expect(entryA.status).toBe(201);
@@ -922,13 +924,13 @@ describe("apps/api", () => {
         }),
       },
     );
-    // entry for team B missing → 404 entry_not_found; register then conflict
+    // Team B is not a participant yet; the contextual resolver rejects the chain.
     const entryB = await app.request(
-      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/entries`,
+      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/participants`,
       {
         method: "POST",
         headers: serviceHeaders(organizer),
-        body: JSON.stringify({ teamId: teamBBody.id }),
+        body: JSON.stringify({ kind: "existing-team", teamId: teamBBody.id }),
       },
     );
     expect(entryB.status).toBe(201);
@@ -943,7 +945,7 @@ describe("apps/api", () => {
         }),
       },
     );
-    expect(conflict.status).toBe(404);
+    expect(conflict.status).toBe(403);
     expect(conflictAfterEntry.status).toBe(409);
     expect(await conflictAfterEntry.json()).toMatchObject({
       code: "teams.roster_competition_conflict",
@@ -1076,11 +1078,11 @@ describe("apps/api", () => {
     const teamBody = (await teamRes.json()) as { id: string };
 
     const entry = await app.request(
-      `/api/v1/organizations/${organizationId}/competitions/${competitionId}/entries`,
+      `/api/v1/organizations/${organizationId}/competitions/${competitionId}/participants`,
       {
         method: "POST",
         headers: serviceHeaders(organizer),
-        body: JSON.stringify({ teamId: teamBody.id, creationKey: "entry:invite" }),
+        body: JSON.stringify({ kind: "existing-team", teamId: teamBody.id }),
       },
     );
     expect(entry.status).toBe(201);
@@ -1105,6 +1107,19 @@ describe("apps/api", () => {
     const membership = (await accepted.json()) as { teamId: string; role: string };
     expect(membership).toMatchObject({ teamId: teamBody.id, role: "player" });
 
+    const discoverable = await app.request("/api/v1/competitions/mine", {
+      headers: serviceHeaders(player),
+    });
+    expect(discoverable.status).toBe(200);
+    expect(await discoverable.json()).toMatchObject({
+      competitions: [
+        {
+          competition: { id: competitionId, organizationId },
+          role: "player",
+        },
+      ],
+    });
+
     const acceptedAgain = await app.request("/api/v1/roster-invitations/accept", {
       method: "POST",
       headers: serviceHeaders(player),
@@ -1120,5 +1135,80 @@ describe("apps/api", () => {
     expect(await roster.json()).toMatchObject({
       memberships: [{ teamId: teamBody.id, role: "player" }],
     });
+  });
+
+  it("authorization: resolves grants without crossing tenant scopes", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-auth-organizer";
+    const member = "actor-auth-member";
+    const otherOrganizer = "actor-auth-other-organizer";
+
+    const created = await app.request("/api/v1/organizations", {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ name: "Authorization Org" }),
+    });
+    const { organizationId } = (await created.json()) as { organizationId: string };
+    const invitation = await app.request(`/api/v1/organizations/${organizationId}/invitations`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ role: "member" }),
+    });
+    const { token } = (await invitation.json()) as { token: string };
+    await app.request("/api/v1/organizations/invitations/accept", {
+      method: "POST",
+      headers: serviceHeaders(member),
+      body: JSON.stringify({ token }),
+    });
+
+    const denied = await app.request(
+      `/api/v1/authorization/effective-access?organizationId=${organizationId}&permissions=organizations.update`,
+      { headers: serviceHeaders(member) },
+    );
+    expect(await denied.json()).toMatchObject({
+      permissions: [{ permission: "organizations.update", allowed: false }],
+    });
+
+    const granted = await app.request("/api/v1/authorization/grants", {
+      method: "PUT",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        targetActorId: member,
+        organizationId,
+        permission: "organizations.update",
+        effect: "allow",
+        scopeType: "organization",
+        scopeId: organizationId,
+      }),
+    });
+    expect(granted.status).toBe(200);
+    const grant = (await granted.json()) as { id: string };
+    const listed = await app.request(
+      `/api/v1/authorization/grants?organizationId=${organizationId}&scopeType=organization&scopeId=${organizationId}&targetActorId=${member}`,
+      { headers: serviceHeaders(organizer) },
+    );
+    expect(await listed.json()).toMatchObject({
+      grants: [{ id: grant.id, actorId: member, permission: "organizations.update" }],
+    });
+
+    const allowed = await app.request(
+      `/api/v1/authorization/effective-access?organizationId=${organizationId}&permissions=organizations.update`,
+      { headers: serviceHeaders(member) },
+    );
+    expect(await allowed.json()).toMatchObject({
+      permissions: [{ permission: "organizations.update", allowed: true }],
+    });
+
+    const other = await app.request("/api/v1/organizations", {
+      method: "POST",
+      headers: serviceHeaders(otherOrganizer),
+      body: JSON.stringify({ name: "Other Authorization Org" }),
+    });
+    const otherOrganizationId = ((await other.json()) as { organizationId: string }).organizationId;
+    const crossTenantDelete = await app.request(
+      `/api/v1/authorization/grants/${grant.id}?organizationId=${otherOrganizationId}`,
+      { method: "DELETE", headers: serviceHeaders(otherOrganizer) },
+    );
+    expect(crossTenantDelete.status).toBe(404);
   });
 });

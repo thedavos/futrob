@@ -26,12 +26,16 @@ export class InMemoryCompetitionEntryRepository implements CompetitionEntryRepos
   }
 
   async findByCompetitionAndTeam(
+    organizationId: OrganizationId,
     competitionId: CompetitionId,
     teamId: TeamId,
   ): Promise<CompetitionEntry | null> {
     return (
       [...this.rows.values()].find(
-        (row) => row.competitionId === competitionId && row.teamId === teamId,
+        (row) =>
+          row.organizationId === organizationId &&
+          row.competitionId === competitionId &&
+          row.teamId === teamId,
       ) ?? null
     );
   }
@@ -73,13 +77,15 @@ export class PostgresCompetitionEntryRepository implements CompetitionEntryRepos
   }
 
   async findByCompetitionAndTeam(
+    organizationId: OrganizationId,
     competitionId: CompetitionId,
     teamId: TeamId,
   ): Promise<CompetitionEntry | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, status, created_at, creation_key
-       FROM competition_entries WHERE competition_id = $1 AND team_id = $2`,
-      [competitionId, teamId],
+       FROM competition_entries
+       WHERE organization_id = $1 AND competition_id = $2 AND team_id = $3`,
+      [organizationId, competitionId, teamId],
     );
     return result.rows[0] ? rehydrateEntry(result.rows[0]) : null;
   }

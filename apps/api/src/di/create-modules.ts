@@ -9,6 +9,9 @@ import { createIdentityModule, type IdentityModule } from "./identity.module.ts"
 import { createOrganizationsModule, type OrganizationsModule } from "./organizations.module.ts";
 import { createCompetitionsModule, type CompetitionsModule } from "./competitions.module.ts";
 import { createTeamsModule, type TeamsModule } from "./teams.module.ts";
+import { createAuthorizationModule, type AuthorizationModule } from "./authorization.module.ts";
+import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
+import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
 
 /**
  * Composition root for apps/api — the only place that wires adapters to use
@@ -28,8 +31,11 @@ export function createModules(input: CreateModulesInput): AppModules {
     enableManualProvider: true,
   });
 
+  const deferredAuthorization = new DeferredAuthorizationPort();
+  const transaction = createTransactionPort(input.pool);
   const organizations = createOrganizationsModule({
     pool: input.pool,
+    authorization: deferredAuthorization,
   });
   const identity = createIdentityModule({
     pool: input.pool,
@@ -42,21 +48,62 @@ export function createModules(input: CreateModulesInput): AppModules {
   const teams = createTeamsModule({
     pool: input.pool,
     competitions: competitionRepository,
+    authorization: deferredAuthorization,
   });
   const competitions = createCompetitionsModule({
     pool: input.pool,
     competitions: competitionRepository,
+    authorization: deferredAuthorization,
+    organizationMemberships: organizations.repositories.memberships,
+    audit: organizations.repositories.audit,
+    transaction,
+    mutationLock: organizations.repositories.mutationLock,
   });
-  const transaction = createTransactionPort(input.pool);
+  const scheduling = createSchedulingModule({
+    pool: input.pool,
+    authorization: deferredAuthorization,
+    participants: {
+      async isApprovedParticipant({ organizationId, competitionId, teamId }) {
+        const [team, entry] = await Promise.all([
+          teams.repositories.teams.findById(organizationId, teamId),
+          competitions.entryRepository.findByCompetitionAndTeam(
+            organizationId,
+            competitionId,
+            teamId,
+          ),
+        ]);
+        return Boolean(team && entry?.status === "approved");
+      },
+    },
+  });
+  const authorization = createAuthorizationModule({
+    organizations,
+    competitions,
+    teams,
+    transaction,
+    scheduling,
+  });
+  deferredAuthorization.bind(authorization.port);
 
-  return { competitions, gameData, identity, organizations, teams, transaction };
+  return {
+    authorization,
+    competitions,
+    gameData,
+    identity,
+    organizations,
+    scheduling,
+    teams,
+    transaction,
+  };
 }
 
 export interface AppModules {
+  readonly authorization: AuthorizationModule;
   readonly competitions: CompetitionsModule;
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
   readonly organizations: OrganizationsModule;
+  readonly scheduling: SchedulingModule;
   readonly teams: TeamsModule;
   readonly transaction: TransactionPort;
 }

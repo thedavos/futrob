@@ -4,7 +4,11 @@ import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-ker
 import type { Pool } from "pg";
 import { PostgresTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import { InMemoryCompetitionRepository } from "./in-memory.repository.ts";
-import { PostgresCompetitionRepository } from "./postgres.repository.ts";
+import {
+  PostgresCompetitionRepository,
+  type CompetitionRow,
+  type CompetitionRulesRow,
+} from "./postgres.repository.ts";
 
 const draft: CompetitionDraft = {
   competition: {
@@ -101,8 +105,8 @@ describe("PostgresCompetitionRepository nested in TransactionPort", () => {
 });
 
 class FakeCompetitionPool {
-  private competition: Record<string, unknown> | null = null;
-  private rules: Record<string, unknown> | null = null;
+  private competition: CompetitionRow | null = null;
+  private rules: CompetitionRulesRow | null = null;
 
   async connect() {
     return {
@@ -115,32 +119,32 @@ class FakeCompetitionPool {
     if (["BEGIN", "COMMIT", "ROLLBACK"].includes(text)) return { rows: [] };
     if (text.includes("INSERT INTO competitions")) {
       this.competition = {
-        id: values[0],
-        organization_id: values[1],
-        name: values[2],
-        status: values[3],
-        modality: values[4],
-        game_edition: values[5],
-        platform: values[6],
-        region: values[7],
-        time_zone: values[8],
-        format: values[9],
-        created_by_actor_id: values[10],
-        creation_key: values[11],
-        created_at: values[12],
-        updated_at: values[13],
+        id: String(values[0]),
+        organization_id: String(values[1]),
+        name: String(values[2]),
+        status: String(values[3]),
+        modality: String(values[4]),
+        game_edition: String(values[5]),
+        platform: String(values[6]),
+        region: String(values[7]),
+        time_zone: String(values[8]),
+        format: String(values[9]),
+        created_by_actor_id: String(values[10]),
+        creation_key: values[11] == null ? null : String(values[11]),
+        created_at: values[12] as Date | string,
+        updated_at: values[13] as Date | string,
       };
       return { rows: [this.competition] };
     }
     if (text.includes("INSERT INTO competition_rules")) {
       this.rules = {
-        competition_id: values[0],
-        version: values[1],
-        regular_stage: values[2],
-        knockout_stage: values[3],
-        away_goals_enabled: values[4],
-        max_roster_size: values[5],
-        created_at: values[6],
+        competition_id: String(values[0]),
+        version: Number(values[1]),
+        regular_stage: (values[2] as CompetitionRulesRow["regular_stage"]) ?? null,
+        knockout_stage: (values[3] as CompetitionRulesRow["knockout_stage"]) ?? null,
+        away_goals_enabled: Boolean(values[4]),
+        max_roster_size: values[5] == null ? null : Number(values[5]),
+        created_at: values[6] as Date | string,
       };
       return { rows: [this.rules] };
     }

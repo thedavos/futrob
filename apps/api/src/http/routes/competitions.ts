@@ -4,10 +4,11 @@ import {
   acceptInvitationRequestSchema,
   createCompetitionDraftRequestSchema,
   createCompetitionDraftResponseSchema,
-  createInvitationRequestSchema,
+  createCompetitionInvitationRequestSchema,
   createInvitationResponseSchema,
   getCompetitionDraftResponseSchema,
   listOrganizationCompetitionsResponseSchema,
+  listAccessibleCompetitionsResponseSchema,
   registerTeamEntryRequestSchema,
   registerTeamEntryResponseSchema,
   updateCompetitionDraftRequestSchema,
@@ -18,6 +19,8 @@ import {
   publishCompetitionResponseSchema,
   listOrganizationTeamsResponseSchema,
 } from "@futrob/api-contracts";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { TEAM_PERMISSION } from "@futrob/teams";
 import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
 import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
@@ -29,23 +32,34 @@ import { competitionDto, competitionDraftDto } from "@/http/mappers/competition.
 import { competitionEntryDto } from "@/http/mappers/competition-entry.ts";
 import { teamDto } from "@/http/mappers/team.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
+import { requireApiPermission } from "@/http/require-api-permission.ts";
 
 export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
   secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
 
-  secured.get("/organizations/:organizationId/competitions", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+  secured.get("/competitions/mine", async (c) => {
+    const competitions = await deps.modules.authorization.listAccessibleCompetitions.execute({
       actorId: c.get("actorId"),
     });
-    const membership = memberships.find((item) => item.organizationId === organizationId);
-    if (!membership || !["organizer", "staff"].includes(membership.role)) {
-      return apiErrorResponse(403, {
-        code: "competitions.forbidden",
-        messageKey: "errors.competitions.forbidden",
-      });
-    }
+    return jsonResponse(
+      listAccessibleCompetitionsResponseSchema.parse({
+        competitions: competitions.map((item) => ({
+          competition: competitionDto(item.competition),
+          role: item.role,
+        })),
+      }),
+    );
+  });
+
+  secured.get("/organizations/:organizationId/competitions", async (c) => {
+    const organizationId = asOrganizationId(c.req.param("organizationId"));
+    const forbidden = await requireApiPermission(deps, {
+      actorId: c.get("actorId"),
+      permission: COMPETITION_PERMISSION.read,
+      scope: { organizationId },
+    });
+    if (forbidden) return forbidden;
 
     const competitions = await deps.modules.competitions.listByOrganization.execute({
       organizationId,
@@ -64,17 +78,6 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
 
     const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
-      actorId: c.get("actorId"),
-    });
-    const membership = memberships.find((item) => item.organizationId === organizationId);
-    if (!membership || !["organizer", "staff"].includes(membership.role)) {
-      return apiErrorResponse(403, {
-        code: "competitions.forbidden",
-        messageKey: "errors.competitions.forbidden",
-      });
-    }
-
     const result = await deps.modules.competitions.createDraft.execute({
       organizationId,
       actorId: c.get("actorId"),
@@ -89,35 +92,29 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
 
   secured.get("/organizations/:organizationId/teams", async (c) => {
     const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+    const forbidden = await requireApiPermission(deps, {
       actorId: c.get("actorId"),
+      permission: TEAM_PERMISSION.read,
+      scope: { organizationId },
     });
-    const membership = memberships.find((item) => item.organizationId === organizationId);
-    if (!membership || !["organizer", "staff"].includes(membership.role))
-      return apiErrorResponse(403, {
-        code: "teams.forbidden",
-        messageKey: "errors.teams.forbidden",
-      });
+    if (forbidden) return forbidden;
     const teams = await deps.modules.teams.listByOrganization.execute({ organizationId });
     return jsonResponse(listOrganizationTeamsResponseSchema.parse({ teams: teams.map(teamDto) }));
   });
 
   secured.get("/organizations/:organizationId/competitions/:competitionId", async (c) => {
     const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+    const competitionId = asCompetitionId(c.req.param("competitionId"));
+    const forbidden = await requireApiPermission(deps, {
       actorId: c.get("actorId"),
+      permission: COMPETITION_PERMISSION.read,
+      scope: { organizationId, competitionId },
     });
-    const membership = memberships.find((item) => item.organizationId === organizationId);
-    if (!membership || !["organizer", "staff"].includes(membership.role)) {
-      return apiErrorResponse(403, {
-        code: "competitions.forbidden",
-        messageKey: "errors.competitions.forbidden",
-      });
-    }
+    if (forbidden) return forbidden;
 
     const draft = await deps.modules.competitions.getDraft.execute({
       organizationId,
-      competitionId: asCompetitionId(c.req.param("competitionId")),
+      competitionId,
     });
     if (!draft) {
       return apiErrorResponse(404, {
@@ -134,18 +131,11 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
     const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
-      actorId: c.get("actorId"),
-    });
-    const membership = memberships.find((item) => item.organizationId === organizationId);
-    if (!membership || !["organizer", "staff"].includes(membership.role))
-      return apiErrorResponse(403, {
-        code: "competitions.forbidden",
-        messageKey: "errors.competitions.forbidden",
-      });
+    const competitionId = asCompetitionId(c.req.param("competitionId"));
     const result = await deps.modules.competitions.updateDraft.execute({
+      actorId: c.get("actorId"),
       organizationId,
-      competitionId: asCompetitionId(c.req.param("competitionId")),
+      competitionId,
       ...parsed.data,
     });
     if (!result.isOk()) return failureToHttp(result.error);
@@ -158,18 +148,16 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     "/organizations/:organizationId/competitions/:competitionId/participants",
     async (c) => {
       const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+      const competitionId = asCompetitionId(c.req.param("competitionId"));
+      const forbidden = await requireApiPermission(deps, {
         actorId: c.get("actorId"),
+        permission: COMPETITION_PERMISSION.participantsRead,
+        scope: { organizationId, competitionId },
       });
-      const membership = memberships.find((item) => item.organizationId === organizationId);
-      if (!membership || !["organizer", "staff"].includes(membership.role))
-        return apiErrorResponse(403, {
-          code: "competitions.forbidden",
-          messageKey: "errors.competitions.forbidden",
-        });
+      if (forbidden) return forbidden;
       const participants = await deps.modules.competitions.listParticipants.execute({
         organizationId,
-        competitionId: asCompetitionId(c.req.param("competitionId")),
+        competitionId,
       });
       return jsonResponse(
         listCompetitionParticipantsResponseSchema.parse({
@@ -188,15 +176,12 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
       if (!parsed.success) return validationErrorResponse(parsed.error.issues);
       const organizationId = asOrganizationId(c.req.param("organizationId"));
       const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
+      const forbidden = await requireApiPermission(deps, {
         actorId: c.get("actorId"),
+        permission: COMPETITION_PERMISSION.participantsManage,
+        scope: { organizationId, competitionId },
       });
-      const membership = memberships.find((item) => item.organizationId === organizationId);
-      if (!membership || !["organizer", "staff"].includes(membership.role))
-        return apiErrorResponse(403, {
-          code: "competitions.forbidden",
-          messageKey: "errors.competitions.forbidden",
-        });
+      if (forbidden) return forbidden;
       const result = await deps.modules.transaction.runInTransaction(async () => {
         if (parsed.data.kind === "existing-team") {
           const team = await deps.modules.teams.getTeam.execute({
@@ -205,6 +190,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
           });
           if (!team) return null;
           return deps.modules.competitions.registerTeamEntry.execute({
+            actorId: c.get("actorId"),
             organizationId,
             competitionId,
             teamId: team.id,
@@ -219,6 +205,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
         });
         if (!team.isOk()) return team;
         return deps.modules.competitions.registerTeamEntry.execute({
+          actorId: c.get("actorId"),
           organizationId,
           competitionId,
           teamId: team.value.id,
@@ -243,18 +230,11 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     "/organizations/:organizationId/competitions/:competitionId/participants/:entryId",
     async (c) => {
       const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
-        actorId: c.get("actorId"),
-      });
-      const membership = memberships.find((item) => item.organizationId === organizationId);
-      if (!membership || !["organizer", "staff"].includes(membership.role))
-        return apiErrorResponse(403, {
-          code: "competitions.forbidden",
-          messageKey: "errors.competitions.forbidden",
-        });
+      const competitionId = asCompetitionId(c.req.param("competitionId"));
       const result = await deps.modules.competitions.removeParticipant.execute({
+        actorId: c.get("actorId"),
         organizationId,
-        competitionId: asCompetitionId(c.req.param("competitionId")),
+        competitionId,
         entryId: c.req.param("entryId"),
       });
       if (!result.isOk()) return failureToHttp(result.error);
@@ -264,19 +244,12 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
 
   secured.post("/organizations/:organizationId/competitions/:competitionId/publish", async (c) => {
     const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
-      actorId: c.get("actorId"),
-    });
-    const membership = memberships.find((item) => item.organizationId === organizationId);
-    if (!membership || !["organizer", "staff"].includes(membership.role))
-      return apiErrorResponse(403, {
-        code: "competitions.forbidden",
-        messageKey: "errors.competitions.forbidden",
-      });
+    const competitionId = asCompetitionId(c.req.param("competitionId"));
     const result = await deps.modules.transaction.runInTransaction(() =>
       deps.modules.competitions.publish.execute({
+        actorId: c.get("actorId"),
         organizationId,
-        competitionId: asCompetitionId(c.req.param("competitionId")),
+        competitionId,
       }),
     );
     if (!result.isOk()) return failureToHttp(result.error);
@@ -286,10 +259,18 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
   secured.post(
     "/organizations/:organizationId/competitions/:competitionId/invitations",
     async (c) => {
-      const parsed = createInvitationRequestSchema.safeParse(await c.req.json().catch(() => null));
+      const parsed = createCompetitionInvitationRequestSchema.safeParse(
+        await c.req.json().catch(() => null),
+      );
       if (!parsed.success) return validationErrorResponse(parsed.error.issues);
       const organizationId = asOrganizationId(c.req.param("organizationId"));
       const competitionId = asCompetitionId(c.req.param("competitionId"));
+      const forbidden = await requireApiPermission(deps, {
+        actorId: c.get("actorId"),
+        permission: COMPETITION_PERMISSION.invitationsManage,
+        scope: { organizationId, competitionId },
+      });
+      if (forbidden) return forbidden;
       const draft = await deps.modules.competitions.getDraft.execute({
         organizationId,
         competitionId,
@@ -324,17 +305,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
 
   secured.post("/organizations/:organizationId/competitions/:competitionId/entries", async (c) => {
     const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
-      actorId: c.get("actorId"),
-    });
-    const membership = memberships.find((item) => item.organizationId === organizationId);
-    if (!membership || !["organizer", "staff"].includes(membership.role)) {
-      return apiErrorResponse(403, {
-        code: "competitions.forbidden",
-        messageKey: "errors.competitions.forbidden",
-      });
-    }
-
+    const competitionId = asCompetitionId(c.req.param("competitionId"));
     const parsed = registerTeamEntryRequestSchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
 
@@ -350,8 +321,9 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     }
 
     const result = await deps.modules.competitions.registerTeamEntry.execute({
+      actorId: c.get("actorId"),
       organizationId,
-      competitionId: asCompetitionId(c.req.param("competitionId")),
+      competitionId,
       teamId: team.id,
       creationKey: parsed.data.creationKey,
     });
@@ -366,19 +338,11 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     "/organizations/:organizationId/competitions/:competitionId/entries/:entryId/approve",
     async (c) => {
       const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
-        actorId: c.get("actorId"),
-      });
-      const membership = memberships.find((item) => item.organizationId === organizationId);
-      if (!membership || !["organizer", "staff"].includes(membership.role)) {
-        return apiErrorResponse(403, {
-          code: "competitions.forbidden",
-          messageKey: "errors.competitions.forbidden",
-        });
-      }
-
+      const competitionId = asCompetitionId(c.req.param("competitionId"));
       const result = await deps.modules.competitions.approveTeamEntry.execute({
+        actorId: c.get("actorId"),
         organizationId,
+        competitionId,
         entryId: c.req.param("entryId"),
       });
       if (!result.isOk()) return failureToHttp(result.error);
@@ -390,19 +354,11 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     "/organizations/:organizationId/competitions/:competitionId/entries/:entryId/reject",
     async (c) => {
       const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const memberships = await deps.modules.organizations.listMembershipsForActor.execute({
-        actorId: c.get("actorId"),
-      });
-      const membership = memberships.find((item) => item.organizationId === organizationId);
-      if (!membership || !["organizer", "staff"].includes(membership.role)) {
-        return apiErrorResponse(403, {
-          code: "competitions.forbidden",
-          messageKey: "errors.competitions.forbidden",
-        });
-      }
-
+      const competitionId = asCompetitionId(c.req.param("competitionId"));
       const result = await deps.modules.competitions.rejectTeamEntry.execute({
+        actorId: c.get("actorId"),
         organizationId,
+        competitionId,
         entryId: c.req.param("entryId"),
       });
       if (!result.isOk()) return failureToHttp(result.error);
@@ -436,7 +392,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
       organizationId: accepted.value.organizationId,
       competitionId,
       actorId,
-      role: accepted.value.competitionRole,
+      role: accepted.value.competitionRole!,
     });
     if (!joined.isOk()) return failureToHttp(joined.error);
 
