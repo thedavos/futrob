@@ -22,7 +22,17 @@ import {
   competitionDraftInputSchema,
   competitionDraftSchema,
   getCompetitionDraftResponseSchema,
+  listAccessibleCompetitionsResponseSchema,
 } from "../competitions/schemas.ts";
+import { encounterScheduleSnapshotSchema } from "../encounters/schemas.ts";
+import {
+  accessGrantSchema,
+  changeCompetitionRoleRequestSchema,
+  competitionRoleAssignmentSchema,
+  effectiveAccessSchema,
+  listAccessGrantsQuerySchema,
+  upsertAccessGrantRequestSchema,
+} from "../authorization/schemas.ts";
 
 /** OpenAPI 3.1 document for Futrob private `/api/v1`. Regenerated via `npm run generate:openapi -w @futrob/api-contracts`. */
 export const futrobOpenApiV1 = {
@@ -45,6 +55,8 @@ export const futrobOpenApiV1 = {
     { name: "organizations", description: "Organizations and tenant memberships" },
     { name: "players", description: "Personal player profile and game accounts" },
     { name: "competitions", description: "Organization-scoped competition drafts" },
+    { name: "authorization", description: "Contextual roles, grants and effective access" },
+    { name: "encounters", description: "Persisted encounter schedule read models" },
   ],
   paths: {
     "/meta/ping": {
@@ -612,6 +624,93 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/competitions/mine": {
+      get: {
+        operationId: "listAccessibleCompetitions",
+        tags: ["competitions"],
+        summary: "List competitions where the actor has a contextual membership",
+        responses: {
+          "200": {
+            description: "Only competitions directly accessible to the actor",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ListAccessibleCompetitionsResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/encounters/{encounterId}/schedule-snapshot": {
+      get: {
+        operationId: "getEncounterScheduleSnapshot",
+        tags: ["encounters"],
+        summary: "Get the authorized persisted scheduling snapshot for an encounter",
+        parameters: [
+          { name: "encounterId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Encounter scope and participating teams",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/EncounterScheduleSnapshot" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+      put: {
+        operationId: "upsertEncounterScheduleSnapshot",
+        tags: ["encounters"],
+        summary: "Create or update the persisted scheduling projection",
+        parameters: [
+          { name: "encounterId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: [
+                  "organizationId",
+                  "competitionId",
+                  "homeTeamId",
+                  "awayTeamId",
+                  "scheduledStartAt",
+                  "officialMatchCount",
+                ],
+                properties: {
+                  organizationId: { type: "string" },
+                  competitionId: { type: "string" },
+                  homeTeamId: { type: "string" },
+                  awayTeamId: { type: "string" },
+                  scheduledStartAt: { type: "string", format: "date-time" },
+                  officialMatchCount: { type: "integer", enum: [1, 2] },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Persisted scheduling projection",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/EncounterScheduleSnapshot" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     "/organizations/{organizationId}/competitions/{competitionId}": {
       get: {
         operationId: "getCompetitionDraft",
@@ -855,6 +954,201 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/authorization/effective-access": {
+      get: {
+        operationId: "getEffectiveAccess",
+        tags: ["authorization"],
+        summary: "Resolve the authenticated actor's effective permissions",
+        parameters: [
+          { name: "organizationId", in: "query", schema: { type: "string" } },
+          { name: "competitionId", in: "query", schema: { type: "string" } },
+          { name: "teamId", in: "query", schema: { type: "string" } },
+          { name: "encounterId", in: "query", schema: { type: "string" } },
+          { name: "permissions", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Effective access",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/EffectiveAccess" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/authorization/grants": {
+      get: {
+        operationId: "listAccessGrants",
+        tags: ["authorization"],
+        summary: "List contextual grants in an authorized scope",
+        parameters: [
+          { name: "organizationId", in: "query", schema: { type: "string" } },
+          { name: "competitionId", in: "query", schema: { type: "string" } },
+          { name: "teamId", in: "query", schema: { type: "string" } },
+          { name: "encounterId", in: "query", schema: { type: "string" } },
+          { name: "targetActorId", in: "query", schema: { type: "string" } },
+          {
+            name: "scopeType",
+            in: "query",
+            required: true,
+            schema: {
+              type: "string",
+              enum: ["platform", "organization", "competition", "team", "encounter"],
+            },
+          },
+          { name: "scopeId", in: "query", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Contextual grants",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["grants"],
+                  properties: {
+                    grants: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/AccessGrant" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+      put: {
+        operationId: "upsertAccessGrant",
+        tags: ["authorization"],
+        summary: "Create or replace a contextual allow/deny override",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpsertAccessGrantRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Persisted grant",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/AccessGrant" } },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/authorization/grants/{grantId}": {
+      delete: {
+        operationId: "deleteAccessGrant",
+        tags: ["authorization"],
+        summary: "Delete a contextual override",
+        parameters: [
+          { name: "grantId", in: "path", required: true, schema: { type: "string" } },
+          { name: "organizationId", in: "query", schema: { type: "string" } },
+          { name: "competitionId", in: "query", schema: { type: "string" } },
+          { name: "teamId", in: "query", schema: { type: "string" } },
+          { name: "encounterId", in: "query", schema: { type: "string" } },
+          { name: "reason", in: "query", schema: { type: "string", maxLength: 500 } },
+        ],
+        responses: {
+          "204": { description: "Grant deleted" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}/members/{actorId}/role": {
+      patch: {
+        operationId: "changeOrganizationRole",
+        tags: ["authorization"],
+        summary: "Change an organization membership role",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "actorId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ChangeOrganizationRoleRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "Updated role" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/members/{actorId}/role": {
+      patch: {
+        operationId: "changeCompetitionRole",
+        tags: ["authorization"],
+        summary: "Change a competition membership role",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+          { name: "actorId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ChangeCompetitionRoleRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Updated competition role",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/CompetitionRoleAssignment" },
+              },
+            },
+          },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/authorization/superusers/{actorId}": {
+      put: {
+        operationId: "assignSuperuser",
+        tags: ["authorization"],
+        summary: "Assign an audited platform superuser",
+        parameters: [{ name: "actorId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Assigned superuser" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+      delete: {
+        operationId: "revokeSuperuser",
+        tags: ["authorization"],
+        summary: "Revoke an audited platform superuser",
+        parameters: [{ name: "actorId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "204": { description: "Revoked superuser" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {
@@ -866,6 +1160,138 @@ export const futrobOpenApiV1 = {
       },
     },
     schemas: {
+      EffectiveAccess: {
+        type: "object",
+        required: ["actorId", "scope", "roles", "permissions"],
+        properties: {
+          actorId: { type: "string" },
+          scope: {
+            type: "object",
+            properties: {
+              organizationId: { type: "string" },
+              competitionId: { type: "string" },
+              teamId: { type: "string" },
+              encounterId: { type: "string" },
+            },
+          },
+          roles: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["scopeType", "scopeId", "role"],
+              properties: {
+                scopeType: {
+                  type: "string",
+                  enum: ["platform", "organization", "competition", "team", "encounter"],
+                },
+                scopeId: { type: "string" },
+                role: { type: "string" },
+              },
+            },
+          },
+          permissions: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["permission", "allowed", "decidedAt"],
+              properties: {
+                permission: { type: "string" },
+                allowed: { type: "boolean" },
+                decidedAt: {
+                  type: "string",
+                  enum: ["platform", "organization", "competition", "team", "encounter"],
+                },
+              },
+            },
+          },
+        },
+      },
+      UpsertAccessGrantRequest: {
+        type: "object",
+        required: [
+          "targetActorId",
+          "organizationId",
+          "permission",
+          "effect",
+          "scopeType",
+          "scopeId",
+        ],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          targetActorId: { type: "string" },
+          organizationId: { type: ["string", "null"] },
+          competitionId: { type: "string" },
+          teamId: { type: "string" },
+          encounterId: { type: "string" },
+          permission: { type: "string" },
+          effect: { type: "string", enum: ["allow", "deny"] },
+          scopeType: {
+            type: "string",
+            enum: ["platform", "organization", "competition", "team", "encounter"],
+          },
+          scopeId: { type: "string" },
+          reason: { type: "string", maxLength: 500 },
+        },
+      },
+      AccessGrant: {
+        type: "object",
+        required: [
+          "id",
+          "organizationId",
+          "actorId",
+          "permission",
+          "effect",
+          "scopeType",
+          "scopeId",
+          "grantedByActorId",
+          "reason",
+          "createdAt",
+          "updatedAt",
+        ],
+        properties: {
+          id: { type: "string" },
+          organizationId: { type: ["string", "null"] },
+          actorId: { type: "string" },
+          permission: { type: "string" },
+          effect: { type: "string", enum: ["allow", "deny"] },
+          scopeType: {
+            type: "string",
+            enum: ["platform", "organization", "competition", "team", "encounter"],
+          },
+          scopeId: { type: "string" },
+          grantedByActorId: { type: "string" },
+          reason: { type: ["string", "null"] },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      ChangeOrganizationRoleRequest: {
+        type: "object",
+        required: ["role"],
+        properties: {
+          role: { type: "string", enum: ["organizer", "staff", "member"] },
+          reason: { type: "string", maxLength: 500 },
+        },
+      },
+      ChangeCompetitionRoleRequest: {
+        type: "object",
+        required: ["role"],
+        properties: {
+          role: { type: "string", enum: ["staff", "captain", "player"] },
+          reason: { type: "string", maxLength: 500 },
+        },
+      },
+      CompetitionRoleAssignment: {
+        type: "object",
+        required: ["organizationId", "competitionId", "actorId", "role", "createdAt"],
+        properties: {
+          organizationId: { type: "string" },
+          competitionId: { type: "string" },
+          actorId: { type: "string" },
+          role: { type: "string", enum: ["staff", "captain", "player"] },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
       PingResponse: {
         type: "object",
         required: ["ok", "service", "apiVersion"],
@@ -882,7 +1308,22 @@ export const futrobOpenApiV1 = {
           code: { type: "string" },
           messageKey: { type: "string" },
           requestId: { type: "string" },
-          details: { type: "object", additionalProperties: true },
+          details: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              organizationId: { type: "string" },
+              role: { type: "string" },
+              status: { type: "string" },
+              path: { type: "string" },
+              body: {},
+              issues: {},
+              externalClubId: { type: "string" },
+              cause: {},
+              completedPath: { type: "string" },
+              requestedPath: { type: "string" },
+            },
+          },
         },
       },
       ExternalClub: {
@@ -1091,6 +1532,53 @@ export const futrobOpenApiV1 = {
           },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      ListAccessibleCompetitionsResponse: {
+        type: "object",
+        required: ["competitions"],
+        properties: {
+          competitions: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["competition", "role"],
+              properties: {
+                competition: { $ref: "#/components/schemas/Competition" },
+                role: {
+                  type: "string",
+                  enum: ["staff", "captain", "vice_captain", "player"],
+                },
+              },
+            },
+          },
+        },
+      },
+      EncounterScheduleSnapshot: {
+        type: "object",
+        required: [
+          "encounterId",
+          "organizationId",
+          "competitionId",
+          "homeTeamId",
+          "awayTeamId",
+          "scheduledStartAt",
+          "officialMatchCount",
+          "homeExternalClubId",
+          "awayExternalClubId",
+          "providerKey",
+        ],
+        properties: {
+          encounterId: { type: "string" },
+          organizationId: { type: "string" },
+          competitionId: { type: "string" },
+          homeTeamId: { type: "string" },
+          awayTeamId: { type: "string" },
+          scheduledStartAt: { type: "string", format: "date-time" },
+          officialMatchCount: { type: "integer", enum: [1, 2] },
+          homeExternalClubId: { type: ["string", "null"] },
+          awayExternalClubId: { type: ["string", "null"] },
+          providerKey: { type: ["string", "null"] },
         },
       },
       CompetitionRules: {
@@ -1395,7 +1883,7 @@ export const futrobOpenApiV1 = {
         properties: {
           organizationId: { type: "string" },
           organizationName: { type: "string" },
-          role: { type: "string", enum: ["organizer", "staff", "captain", "player"] },
+          role: { type: "string", enum: ["organizer", "staff", "member"] },
           competitionId: { type: "string" },
           competitionName: { type: "string" },
           profile: { $ref: "#/components/schemas/PlayerProfile" },
@@ -1426,7 +1914,7 @@ export const futrobOpenApiV1 = {
         properties: {
           organizationId: { type: "string" },
           organizationName: { type: "string" },
-          role: { type: "string", enum: ["organizer", "staff", "captain", "player"] },
+          role: { type: "string", enum: ["organizer", "staff", "member"] },
           competitionId: { type: "string" },
           competitionName: { type: "string" },
           competitionRole: { type: "string", enum: ["staff", "captain", "player"] },
@@ -1491,3 +1979,11 @@ void competitionDraftInputSchema;
 void competitionDraftSchema;
 void getCompetitionDraftResponseSchema;
 void acceptCompetitionInvitationResponseSchema;
+void effectiveAccessSchema;
+void listAccessGrantsQuerySchema;
+void upsertAccessGrantRequestSchema;
+void accessGrantSchema;
+void changeCompetitionRoleRequestSchema;
+void competitionRoleAssignmentSchema;
+void listAccessibleCompetitionsResponseSchema;
+void encounterScheduleSnapshotSchema;

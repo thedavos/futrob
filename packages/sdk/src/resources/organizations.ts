@@ -1,7 +1,8 @@
 import {
   acceptInvitationRequestSchema,
   acceptInvitationResponseSchema,
-  createInvitationRequestSchema,
+  createCompetitionInvitationRequestSchema,
+  createOrganizationInvitationRequestSchema,
   createInvitationResponseSchema,
   createOrganizationRequestSchema,
   createOrganizationResponseSchema,
@@ -11,7 +12,8 @@ import {
   resolvePostAuthDestinationResponseSchema,
   type AcceptInvitationRequest,
   type AcceptInvitationResponse,
-  type CreateInvitationRequest,
+  type CreateCompetitionInvitationRequest,
+  type CreateOrganizationInvitationRequest,
   type CreateInvitationResponse,
   type CreateOrganizationRequest,
   type CreateOrganizationResponse,
@@ -64,9 +66,9 @@ export function createOrganizationsResource(http: HttpClient) {
 
     async createInvitation(
       organizationId: string,
-      input: CreateInvitationRequest,
+      input: CreateOrganizationInvitationRequest,
     ): Promise<CreateInvitationResponse> {
-      const body = createInvitationRequestSchema.parse(input);
+      const body = createOrganizationInvitationRequestSchema.parse(input);
       return http.request({
         path: `/organizations/${encodeURIComponent(organizationId)}/invitations`,
         method: "POST",
@@ -78,9 +80,9 @@ export function createOrganizationsResource(http: HttpClient) {
     async createCompetitionInvitation(
       organizationId: string,
       competitionId: string,
-      input: CreateInvitationRequest,
+      input: CreateCompetitionInvitationRequest,
     ): Promise<CreateInvitationResponse> {
-      const body = createInvitationRequestSchema.parse(input);
+      const body = createCompetitionInvitationRequestSchema.parse(input);
       return http.request({
         path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/invitations`,
         method: "POST",

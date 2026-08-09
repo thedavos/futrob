@@ -89,7 +89,8 @@ describe("createFutrobClient identity", () => {
           return Response.json({
             organizationId: "org-2",
             organizationName: "Liga invitante",
-            role: "player",
+            role: "member",
+            competitionRole: "player",
             competitionId: "competition-2",
             competitionName: "Copa invitante",
             profile,

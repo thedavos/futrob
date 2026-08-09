@@ -5,6 +5,7 @@ import {
   createCompetitionDraftResponseSchema,
   getCompetitionDraftResponseSchema,
   listOrganizationCompetitionsResponseSchema,
+  listAccessibleCompetitionsResponseSchema,
   registerTeamEntryRequestSchema,
   registerTeamEntryResponseSchema,
   type AcceptCompetitionInvitationResponse,
@@ -13,6 +14,7 @@ import {
   type CreateCompetitionDraftResponse,
   type GetCompetitionDraftResponse,
   type ListOrganizationCompetitionsResponse,
+  type ListAccessibleCompetitionsResponse,
   type RegisterTeamEntryRequest,
   type RegisterTeamEntryResponse,
   updateCompetitionDraftRequestSchema,
@@ -32,6 +34,14 @@ import type { HttpClient } from "../http.ts";
 
 export function createCompetitionsResource(http: HttpClient) {
   return {
+    async listMine(): Promise<ListAccessibleCompetitionsResponse> {
+      return http.request({
+        path: "/competitions/mine",
+        method: "GET",
+        parse: (data) => listAccessibleCompetitionsResponseSchema.parse(data),
+      });
+    },
+
     async list(organizationId: string): Promise<ListOrganizationCompetitionsResponse> {
       return http.request({
         path: `/organizations/${encodeURIComponent(organizationId)}/competitions`,

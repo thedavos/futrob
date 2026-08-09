@@ -118,6 +118,18 @@ export type ListOrganizationCompetitionsResponse = z.infer<
   typeof listOrganizationCompetitionsResponseSchema
 >;
 
+export const accessibleCompetitionSchema = z.object({
+  competition: competitionSchema,
+  role: z.enum(["staff", "captain", "vice_captain", "player"]),
+});
+export const listAccessibleCompetitionsResponseSchema = z.object({
+  competitions: z.array(accessibleCompetitionSchema),
+});
+export type AccessibleCompetitionDto = z.infer<typeof accessibleCompetitionSchema>;
+export type ListAccessibleCompetitionsResponse = z.infer<
+  typeof listAccessibleCompetitionsResponseSchema
+>;
+
 export const acceptCompetitionInvitationResponseSchema = acceptInvitationResponseSchema.extend({
   competitionId: z.string().min(1),
   competitionName: z.string().min(1),
