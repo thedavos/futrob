@@ -26,7 +26,6 @@ export function writeStoredShellChrome(state: ShellChromeState): void {
 
 function parseStoredShellChrome(value: unknown): ShellChromeState | null {
   if (!value || typeof value !== "object") return null;
-  const record = value as Record<string, unknown>;
-  if (typeof record.collapsed !== "boolean") return null;
-  return { collapsed: record.collapsed };
+  if (!("collapsed" in value) || typeof value.collapsed !== "boolean") return null;
+  return { collapsed: value.collapsed };
 }

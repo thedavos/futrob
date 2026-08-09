@@ -1,9 +1,22 @@
-import type { ApiErrorBody } from "@futrob/api-contracts";
+import type { ApiErrorBody, ApiErrorDetails } from "@futrob/api-contracts";
 
 export type HttpMappableFailure = {
   readonly code: string;
-  readonly details?: Readonly<Record<string, unknown>>;
+  readonly details?: ApiErrorDetails;
 };
+
+const DETAIL_KEYS = [
+  "organizationId",
+  "role",
+  "status",
+  "path",
+  "body",
+  "issues",
+  "externalClubId",
+  "cause",
+  "completedPath",
+  "requestedPath",
+] as const satisfies readonly (keyof ApiErrorDetails)[];
 
 export function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -38,26 +51,14 @@ export function failureToHttp(error: HttpMappableFailure): Response {
   });
 }
 
-function detailsFromTaggedProps(
-  error: HttpMappableFailure,
-): Readonly<Record<string, unknown>> | undefined {
-  const details: Record<string, unknown> = {};
-  const copy = (key: string) => {
-    if (key in error && (error as Record<string, unknown>)[key] !== undefined) {
-      details[key] = (error as Record<string, unknown>)[key];
+function detailsFromTaggedProps(error: HttpMappableFailure): ApiErrorDetails | undefined {
+  const details: Partial<ApiErrorDetails> = {};
+  for (const key of DETAIL_KEYS) {
+    if (!Object.hasOwn(error, key)) continue;
+    const value = Reflect.get(error, key);
+    if (value !== undefined) {
+      Object.assign(details, { [key]: value });
     }
-  };
-  for (const key of [
-    "organizationId",
-    "role",
-    "status",
-    "path",
-    "body",
-    "issues",
-    "externalClubId",
-    "cause",
-  ] as const) {
-    copy(key);
   }
   return Object.keys(details).length > 0 ? details : undefined;
 }
@@ -88,7 +89,7 @@ function statusForFailureCode(code: string): number {
   return 500;
 }
 
-export function queryRecord(url: URL): Record<string, string> {
+export function queryRecord(url: URL): Readonly<Record<string, string>> {
   const out: Record<string, string> = {};
   for (const [key, value] of url.searchParams.entries()) {
     out[key] = value;

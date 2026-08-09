@@ -1,12 +1,20 @@
 import { useMemo, useState } from "react";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { ONBOARDING_PATH } from "@futrob/identity";
-import { listOrganizationCompetitions } from "@/modules/competitions/presentation/competitions-browser-client.ts";
+import {
+  listMyAccessibleCompetitions,
+  listOrganizationCompetitions,
+} from "@/modules/competitions/presentation/competitions-browser-client.ts";
 import { useOnboardingStatusQuery } from "@/modules/identity/presentation/identity-queries.ts";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 import { useMyPlayerProfileQuery } from "@/modules/teams/presentation/player-queries.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import {
+  SHELL_PERMISSIONS,
+  allowedPermissionSet,
+  getEffectiveAccess,
+} from "@/context/permissions.ts";
 import {
   WORKSPACE_SELECTION_KIND,
   type CompetitionSelectorOption,
@@ -47,16 +55,34 @@ export function useWorkspaceSelection() {
       })),
     [membershipsQuery.data?.memberships],
   );
+  const organizationPortfolioIds = useMemo(
+    () =>
+      (membershipsQuery.data?.memberships ?? [])
+        .filter((membership) => membership.role === "organizer" || membership.role === "staff")
+        .map((membership) => membership.organizationId),
+    [membershipsQuery.data?.memberships],
+  );
 
   const competitionQueries = useQueries({
-    queries: memberships.map((membership) => ({
-      queryKey: queryKeys.competitions.byOrganization(membership.organizationId),
-      queryFn: () => listOrganizationCompetitions(membership.organizationId),
+    queries: organizationPortfolioIds.map((organizationId) => ({
+      queryKey: queryKeys.competitions.byOrganization(organizationId),
+      queryFn: () => listOrganizationCompetitions(organizationId),
     })),
+  });
+  const accessibleCompetitionsQuery = useQuery({
+    queryKey: queryKeys.competitions.mine(),
+    queryFn: listMyAccessibleCompetitions,
   });
 
   const competitions: readonly CompetitionSelectorOption[] = useMemo(() => {
     const byId = new Map<string, CompetitionSelectorOption>();
+    for (const item of accessibleCompetitionsQuery.data?.competitions ?? []) {
+      byId.set(item.competition.id, {
+        competitionId: item.competition.id,
+        organizationId: item.competition.organizationId,
+        name: item.competition.name,
+      });
+    }
     for (const query of competitionQueries) {
       for (const competition of query.data?.competitions ?? []) {
         byId.set(competition.id, {
@@ -81,7 +107,7 @@ export function useWorkspaceSelection() {
     }
 
     return [...byId.values()];
-  }, [competitionQueries, pathname]);
+  }, [accessibleCompetitionsQuery.data?.competitions, competitionQueries, pathname]);
 
   const selection = useMemo(() => {
     const fromPath = workspaceSelectionFromPathname(pathname);
@@ -118,6 +144,29 @@ export function useWorkspaceSelection() {
     return withLabels(defaults, memberships, competitions);
   }, [competitions, memberships, onboardingQuery.data?.path, override, pathname]);
 
+  const authorizationScope = useMemo(() => {
+    if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
+      return { organizationId: selection.organizationId };
+    }
+    if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
+      return {
+        organizationId: selection.organizationId ?? undefined,
+        competitionId: selection.competitionId,
+      };
+    }
+    return {};
+  }, [selection]);
+  const effectiveAccessQuery = useQuery({
+    queryKey: queryKeys.authorization.effectiveAccess(authorizationScope, SHELL_PERMISSIONS),
+    queryFn: () => getEffectiveAccess(authorizationScope),
+    enabled: selection.kind !== WORKSPACE_SELECTION_KIND.personal,
+    staleTime: 30_000,
+  });
+  const allowedPermissions = useMemo(
+    () => allowedPermissionSet(effectiveAccessQuery.data),
+    [effectiveAccessQuery.data],
+  );
+
   function select(next: WorkspaceSelection) {
     writeStoredWorkspaceSelection(next);
     setOverride(next);
@@ -129,6 +178,8 @@ export function useWorkspaceSelection() {
     competitions,
     associatedClub,
     associatedClubName,
+    allowedPermissions,
+    effectiveAccessQuery,
     select,
     isSame: (other: WorkspaceSelection) => isSameWorkspaceSelection(selection, other),
   };
@@ -159,8 +210,5 @@ function isStoredSelectionValid(
   if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
     return memberships.some((item) => item.organizationId === selection.organizationId);
   }
-  return (
-    competitions.some((item) => item.competitionId === selection.competitionId) ||
-    Boolean(selection.competitionId)
-  );
+  return competitions.some((item) => item.competitionId === selection.competitionId);
 }

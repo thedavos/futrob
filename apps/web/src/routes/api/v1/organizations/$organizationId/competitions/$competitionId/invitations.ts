@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  createInvitationRequestSchema,
+  createCompetitionInvitationRequestSchema,
   createInvitationResponseSchema,
 } from "@futrob/api-contracts";
 import {
@@ -16,7 +16,7 @@ export const Route = createFileRoute(
     handlers: {
       POST: async ({ request, params }) => {
         try {
-          const parsed = createInvitationRequestSchema.safeParse(
+          const parsed = createCompetitionInvitationRequestSchema.safeParse(
             await request.json().catch(() => null),
           );
           if (!parsed.success) {

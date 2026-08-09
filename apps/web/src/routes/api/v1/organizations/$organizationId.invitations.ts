@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  createInvitationRequestSchema,
+  createOrganizationInvitationRequestSchema,
   createInvitationResponseSchema,
 } from "@futrob/api-contracts";
 import { apiErrorResponse, jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/v1/organizations/$organizationId/invi
       POST: async ({ request, params }) => {
         try {
           const json: unknown = await request.json().catch(() => null);
-          const parsed = createInvitationRequestSchema.safeParse(json);
+          const parsed = createOrganizationInvitationRequestSchema.safeParse(json);
           if (!parsed.success) {
             return apiErrorResponse(400, {
               code: "api.validation_error",

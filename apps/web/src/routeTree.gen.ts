@@ -44,6 +44,8 @@ import { Route as ApiV1OrganizationsNameAvailabilityRouteImport } from './routes
 import { Route as ApiV1OrganizationsMineRouteImport } from './routes/api/v1/organizations/mine'
 import { Route as ApiV1MetaPingRouteImport } from './routes/api/v1/meta/ping'
 import { Route as ApiV1IdentityOnboardingRouteImport } from './routes/api/v1/identity/onboarding'
+import { Route as ApiV1CompetitionsMineRouteImport } from './routes/api/v1/competitions/mine'
+import { Route as ApiV1AuthorizationEffectiveAccessRouteImport } from './routes/api/v1/authorization/effective-access'
 import { Route as AppRosterInvitationsAcceptTokenRouteImport } from './routes/_app/roster-invitations/accept.$token'
 import { Route as AppInvitationsAcceptPlainTokenRouteImport } from './routes/_app/invitations/accept/$plainToken'
 import { Route as AppOrgsOrgIdCompetitionsIndexRouteImport } from './routes/_app/orgs/$orgId/competitions/index'
@@ -251,6 +253,17 @@ const ApiV1IdentityOnboardingRoute = ApiV1IdentityOnboardingRouteImport.update({
   path: '/api/v1/identity/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1CompetitionsMineRoute = ApiV1CompetitionsMineRouteImport.update({
+  id: '/api/v1/competitions/mine',
+  path: '/api/v1/competitions/mine',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthorizationEffectiveAccessRoute =
+  ApiV1AuthorizationEffectiveAccessRouteImport.update({
+    id: '/api/v1/authorization/effective-access',
+    path: '/api/v1/authorization/effective-access',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppRosterInvitationsAcceptTokenRoute =
   AppRosterInvitationsAcceptTokenRouteImport.update({
     id: '/$token',
@@ -439,6 +452,8 @@ export interface FileRoutesByFullPath {
   '/orgs/': typeof AppOrgsIndexRoute
   '/invitations/accept/$plainToken': typeof AppInvitationsAcceptPlainTokenRoute
   '/roster-invitations/accept/$token': typeof AppRosterInvitationsAcceptTokenRoute
+  '/api/v1/authorization/effective-access': typeof ApiV1AuthorizationEffectiveAccessRoute
+  '/api/v1/competitions/mine': typeof ApiV1CompetitionsMineRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRouteWithChildren
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
@@ -498,6 +513,8 @@ export interface FileRoutesByTo {
   '/orgs': typeof AppOrgsIndexRoute
   '/invitations/accept/$plainToken': typeof AppInvitationsAcceptPlainTokenRoute
   '/roster-invitations/accept/$token': typeof AppRosterInvitationsAcceptTokenRoute
+  '/api/v1/authorization/effective-access': typeof ApiV1AuthorizationEffectiveAccessRoute
+  '/api/v1/competitions/mine': typeof ApiV1CompetitionsMineRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRouteWithChildren
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
@@ -561,6 +578,8 @@ export interface FileRoutesById {
   '/_app/orgs/': typeof AppOrgsIndexRoute
   '/_app/invitations/accept/$plainToken': typeof AppInvitationsAcceptPlainTokenRoute
   '/_app/roster-invitations/accept/$token': typeof AppRosterInvitationsAcceptTokenRoute
+  '/api/v1/authorization/effective-access': typeof ApiV1AuthorizationEffectiveAccessRoute
+  '/api/v1/competitions/mine': typeof ApiV1CompetitionsMineRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRouteWithChildren
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
@@ -623,6 +642,8 @@ export interface FileRouteTypes {
     | '/orgs/'
     | '/invitations/accept/$plainToken'
     | '/roster-invitations/accept/$token'
+    | '/api/v1/authorization/effective-access'
+    | '/api/v1/competitions/mine'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
@@ -682,6 +703,8 @@ export interface FileRouteTypes {
     | '/orgs'
     | '/invitations/accept/$plainToken'
     | '/roster-invitations/accept/$token'
+    | '/api/v1/authorization/effective-access'
+    | '/api/v1/competitions/mine'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
@@ -744,6 +767,8 @@ export interface FileRouteTypes {
     | '/_app/orgs/'
     | '/_app/invitations/accept/$plainToken'
     | '/_app/roster-invitations/accept/$token'
+    | '/api/v1/authorization/effective-access'
+    | '/api/v1/competitions/mine'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
@@ -786,6 +811,8 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
   ApiV1OpenapiDotyamlRoute: typeof ApiV1OpenapiDotyamlRoute
+  ApiV1AuthorizationEffectiveAccessRoute: typeof ApiV1AuthorizationEffectiveAccessRoute
+  ApiV1CompetitionsMineRoute: typeof ApiV1CompetitionsMineRoute
   ApiV1IdentityOnboardingRoute: typeof ApiV1IdentityOnboardingRouteWithChildren
   ApiV1MetaPingRoute: typeof ApiV1MetaPingRoute
   ApiV1OrganizationsMineRoute: typeof ApiV1OrganizationsMineRoute
@@ -1048,6 +1075,20 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/identity/onboarding'
       fullPath: '/api/v1/identity/onboarding'
       preLoaderRoute: typeof ApiV1IdentityOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/competitions/mine': {
+      id: '/api/v1/competitions/mine'
+      path: '/api/v1/competitions/mine'
+      fullPath: '/api/v1/competitions/mine'
+      preLoaderRoute: typeof ApiV1CompetitionsMineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/authorization/effective-access': {
+      id: '/api/v1/authorization/effective-access'
+      path: '/api/v1/authorization/effective-access'
+      fullPath: '/api/v1/authorization/effective-access'
+      preLoaderRoute: typeof ApiV1AuthorizationEffectiveAccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/roster-invitations/accept/$token': {
@@ -1431,6 +1472,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
   ApiV1OpenapiDotyamlRoute: ApiV1OpenapiDotyamlRoute,
+  ApiV1AuthorizationEffectiveAccessRoute:
+    ApiV1AuthorizationEffectiveAccessRoute,
+  ApiV1CompetitionsMineRoute: ApiV1CompetitionsMineRoute,
   ApiV1IdentityOnboardingRoute: ApiV1IdentityOnboardingRouteWithChildren,
   ApiV1MetaPingRoute: ApiV1MetaPingRoute,
   ApiV1OrganizationsMineRoute: ApiV1OrganizationsMineRoute,

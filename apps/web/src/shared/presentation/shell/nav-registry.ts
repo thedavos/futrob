@@ -25,6 +25,7 @@ export type ShellNavItem = {
   readonly href: string;
   readonly icon?: ShellNavIconId;
   readonly stub?: boolean;
+  readonly requiredPermission?: string;
 };
 
 export type ShellNavSection = {
@@ -57,21 +58,43 @@ function personalGeneralNav(): readonly ShellNavItem[] {
 function organizationGeneralNav(organizationId: string): readonly ShellNavItem[] {
   const base = `/orgs/${organizationId}`;
   return [
-    { id: "home", label: "Inicio", href: base, icon: "home" },
+    {
+      id: "home",
+      label: "Inicio",
+      href: base,
+      icon: "home",
+      requiredPermission: "organizations.read",
+    },
     {
       id: "competitions",
       label: "Competiciones",
       href: `${base}/competitions`,
       icon: "competitions",
+      requiredPermission: "competitions.read",
     },
-    { id: "teams", label: "Equipos", href: `${base}/teams`, icon: "teams", stub: true },
-    { id: "players", label: "Jugadores", href: `${base}/players`, icon: "players", stub: true },
+    {
+      id: "teams",
+      label: "Equipos",
+      href: `${base}/teams`,
+      icon: "teams",
+      stub: true,
+      requiredPermission: "teams.read",
+    },
+    {
+      id: "players",
+      label: "Jugadores",
+      href: `${base}/players`,
+      icon: "players",
+      stub: true,
+      requiredPermission: "organizations.memberships.read",
+    },
     {
       id: "invitations",
       label: "Invitaciones",
       href: `${base}/invitations`,
       icon: "invitations",
       stub: true,
+      requiredPermission: "organizations.invitations.manage",
     },
     {
       id: "organization",
@@ -79,8 +102,16 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       href: `${base}/settings/members`,
       icon: "organization",
       stub: true,
+      requiredPermission: "authorization.roles.manage",
     },
-    { id: "settings", label: "Ajustes", href: `${base}/settings`, icon: "settings", stub: true },
+    {
+      id: "settings",
+      label: "Ajustes",
+      href: `${base}/settings`,
+      icon: "settings",
+      stub: true,
+      requiredPermission: "organizations.update",
+    },
   ];
 }
 
@@ -105,25 +136,85 @@ function organizationCompetitionContext(
 ): readonly ShellNavItem[] {
   const base = `/orgs/${organizationId}/competitions/${competitionId}`;
   return [
-    { id: "overview", label: "Resumen", href: base },
-    { id: "fixture", label: "Calendario", href: `${base}/fixture`, stub: true },
-    { id: "encounters", label: "Enfrentamientos", href: `${base}/encounters`, stub: true },
-    { id: "standings", label: "Clasificación", href: `${base}/standings`, stub: true },
-    { id: "bracket", label: "Bracket", href: `${base}/bracket`, stub: true },
-    { id: "rankings", label: "Rankings", href: `${base}/rankings`, stub: true },
-    { id: "teams", label: "Equipos", href: `${base}/teams`, stub: true },
-    { id: "disputes", label: "Disputas", href: `${base}/disputes`, stub: true },
-    { id: "analytics", label: "Analíticas", href: `${base}/analytics`, stub: true },
-    { id: "rules", label: "Reglamento", href: `${base}/rules`, stub: true },
+    { id: "overview", label: "Resumen", href: base, requiredPermission: "competitions.read" },
+    {
+      id: "fixture",
+      label: "Calendario",
+      href: `${base}/fixture`,
+      stub: true,
+      requiredPermission: "competitions.read",
+    },
+    {
+      id: "encounters",
+      label: "Enfrentamientos",
+      href: `${base}/encounters`,
+      stub: true,
+      requiredPermission: "competitions.read",
+    },
+    {
+      id: "standings",
+      label: "Clasificación",
+      href: `${base}/standings`,
+      stub: true,
+      requiredPermission: "competitions.read",
+    },
+    {
+      id: "bracket",
+      label: "Bracket",
+      href: `${base}/bracket`,
+      stub: true,
+      requiredPermission: "competitions.read",
+    },
+    {
+      id: "rankings",
+      label: "Rankings",
+      href: `${base}/rankings`,
+      stub: true,
+      requiredPermission: "competitions.read",
+    },
+    {
+      id: "teams",
+      label: "Equipos",
+      href: `${base}/teams`,
+      stub: true,
+      requiredPermission: "teams.read",
+    },
+    {
+      id: "disputes",
+      label: "Disputas",
+      href: `${base}/disputes`,
+      stub: true,
+      requiredPermission: "competitions.read",
+    },
+    {
+      id: "analytics",
+      label: "Analíticas",
+      href: `${base}/analytics`,
+      stub: true,
+      requiredPermission: "competitions.read",
+    },
+    {
+      id: "rules",
+      label: "Reglamento",
+      href: `${base}/rules`,
+      stub: true,
+      requiredPermission: "competitions.read",
+    },
   ];
 }
 
-export function generalNavFor(selection: WorkspaceSelection): ShellNavSection {
+export function generalNavFor(
+  selection: WorkspaceSelection,
+  allowedPermissions?: ReadonlySet<string>,
+): ShellNavSection {
   if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
     return {
       id: NAV_SECTION.general,
       label: "General",
-      items: organizationGeneralNav(selection.organizationId),
+      items: filterByPermission(
+        organizationGeneralNav(selection.organizationId),
+        allowedPermissions,
+      ),
     };
   }
 
@@ -134,9 +225,13 @@ export function generalNavFor(selection: WorkspaceSelection): ShellNavSection {
   };
 }
 
-export function contextNavFor(selection: WorkspaceSelection): ShellNavSection {
+export function contextNavFor(
+  selection: WorkspaceSelection,
+  allowedPermissions?: ReadonlySet<string>,
+): ShellNavSection {
   if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
-    const isOrgOperator = selection.organizationId != null;
+    const isOrgOperator =
+      selection.organizationId != null && allowedPermissions?.has("competitions.update") === true;
     const items = isOrgOperator
       ? organizationCompetitionContext(selection.organizationId!, selection.competitionId)
       : personalCompetitionContext(selection.organizationId, selection.competitionId);
@@ -144,7 +239,7 @@ export function contextNavFor(selection: WorkspaceSelection): ShellNavSection {
     return {
       id: NAV_SECTION.context,
       label: "Contexto activo",
-      items,
+      items: filterByPermission(items, allowedPermissions),
     };
   }
 
@@ -153,6 +248,16 @@ export function contextNavFor(selection: WorkspaceSelection): ShellNavSection {
     label: "Contexto activo",
     items: [],
   };
+}
+
+function filterByPermission(
+  items: readonly ShellNavItem[],
+  allowedPermissions: ReadonlySet<string> | undefined,
+): readonly ShellNavItem[] {
+  if (!allowedPermissions) return items;
+  return items.filter(
+    (item) => !item.requiredPermission || allowedPermissions.has(item.requiredPermission),
+  );
 }
 
 export function accountNavItems(): readonly ShellNavItem[] {

@@ -23,30 +23,34 @@ export function writeStoredWorkspaceSelection(selection: WorkspaceSelection): vo
 }
 
 function parseStoredWorkspaceSelection(value: unknown): WorkspaceSelection | null {
-  if (!value || typeof value !== "object") return null;
-  const record = value as Record<string, unknown>;
-  if (record.kind === WORKSPACE_SELECTION_KIND.personal) {
+  if (!value || typeof value !== "object" || !("kind" in value)) return null;
+  if (value.kind === WORKSPACE_SELECTION_KIND.personal) {
     return { kind: WORKSPACE_SELECTION_KIND.personal };
   }
   if (
-    record.kind === WORKSPACE_SELECTION_KIND.organization &&
-    typeof record.organizationId === "string"
+    value.kind === WORKSPACE_SELECTION_KIND.organization &&
+    "organizationId" in value &&
+    typeof value.organizationId === "string"
   ) {
     return {
       kind: WORKSPACE_SELECTION_KIND.organization,
-      organizationId: record.organizationId,
-      label: typeof record.label === "string" ? record.label : undefined,
+      organizationId: value.organizationId,
+      label: "label" in value && typeof value.label === "string" ? value.label : undefined,
     };
   }
   if (
-    record.kind === WORKSPACE_SELECTION_KIND.competition &&
-    typeof record.competitionId === "string"
+    value.kind === WORKSPACE_SELECTION_KIND.competition &&
+    "competitionId" in value &&
+    typeof value.competitionId === "string"
   ) {
     return {
       kind: WORKSPACE_SELECTION_KIND.competition,
-      competitionId: record.competitionId,
-      organizationId: typeof record.organizationId === "string" ? record.organizationId : null,
-      label: typeof record.label === "string" ? record.label : undefined,
+      competitionId: value.competitionId,
+      organizationId:
+        "organizationId" in value && typeof value.organizationId === "string"
+          ? value.organizationId
+          : null,
+      label: "label" in value && typeof value.label === "string" ? value.label : undefined,
     };
   }
   return null;

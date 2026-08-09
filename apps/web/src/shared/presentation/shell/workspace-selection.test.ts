@@ -133,11 +133,14 @@ describe("nav registries", () => {
   });
 
   it("returns competition context items", () => {
-    const section = contextNavFor({
-      kind: WORKSPACE_SELECTION_KIND.competition,
-      organizationId: "org-1",
-      competitionId: "comp-2",
-    });
+    const section = contextNavFor(
+      {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        organizationId: "org-1",
+        competitionId: "comp-2",
+      },
+      new Set(["competitions.update", "competitions.read", "teams.read"]),
+    );
     expect(section.items.length).toBeGreaterThan(0);
     expect(section.items.some((item) => item.id === "standings")).toBe(true);
   });
@@ -148,11 +151,27 @@ describe("nav registries", () => {
       organizationId: "org-1",
       competitionId: "comp-2",
     } as const;
-    const context = contextNavFor(selection);
+    const context = contextNavFor(
+      selection,
+      new Set(["competitions.update", "competitions.read", "teams.read"]),
+    );
     const general = generalNavFor(selection);
     const footerItems = context.items.length > 0 ? context.items : general.items;
     expect(footerItems.map((item) => item.id)).toContain("standings");
     expect(footerItems.map((item) => item.id)).not.toContain("ea-clubs");
+  });
+
+  it("uses personal competition navigation when the actor lacks operator capabilities", () => {
+    const context = contextNavFor(
+      {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        organizationId: "org-1",
+        competitionId: "comp-2",
+      },
+      new Set(["competitions.read", "competitions.participants.read"]),
+    );
+    expect(context.items.map((item) => item.id)).toContain("team");
+    expect(context.items.map((item) => item.id)).not.toContain("standings");
   });
 
   it("marks active nav items by pathname prefix", () => {

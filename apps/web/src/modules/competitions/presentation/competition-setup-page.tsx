@@ -31,6 +31,7 @@ import type {
   UpdateCompetitionDraftRequest,
 } from "@futrob/api-contracts";
 import { WarningCircle } from "@phosphor-icons/react";
+import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
 import {
   competitionFormats,
   competitionRegions,
@@ -74,6 +75,11 @@ export function CompetitionSetupPage({
   const add = useAddCompetitionParticipantMutation(organizationId, competitionId);
   const remove = useRemoveCompetitionParticipantMutation(organizationId, competitionId);
   const publish = usePublishCompetitionMutation(organizationId, competitionId);
+  const permissions = useEffectivePermissions({ organizationId, competitionId }, [
+    "competitions.update",
+    "competitions.participants.manage",
+    "competitions.publish",
+  ]);
   const [form, setForm] = useState<UpdateCompetitionDraftRequest | null>(null);
   const [newTeamName, setNewTeamName] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState("");
@@ -91,7 +97,10 @@ export function CompetitionSetupPage({
   );
   const approvedParticipantCount =
     participantsQuery.data?.participants.filter((entry) => entry.status === "approved").length ?? 0;
-  const readOnly = draft?.competition.status !== "draft";
+  const canUpdate = permissions.allowed.has("competitions.update");
+  const canManageParticipants = permissions.allowed.has("competitions.participants.manage");
+  const canPublish = permissions.allowed.has("competitions.publish");
+  const readOnly = draft?.competition.status !== "draft" || !canUpdate;
   const busy = update.isPending || add.isPending || remove.isPending || publish.isPending;
   const error = update.error ?? add.error ?? remove.error ?? publish.error;
 
@@ -181,7 +190,7 @@ export function CompetitionSetupPage({
             {currentStep === "participants" ? (
               <ParticipantsStep
                 availableTeams={availableTeams}
-                disabled={readOnly || busy}
+                disabled={readOnly || busy || !canManageParticipants}
                 newTeamName={newTeamName}
                 onAdd={addParticipant}
                 onNameChange={setNewTeamName}
@@ -215,7 +224,7 @@ export function CompetitionSetupPage({
               <Button disabled={busy} onClick={() => void continueNext()}>
                 Continuar
               </Button>
-            ) : !readOnly ? (
+            ) : !readOnly && canPublish ? (
               <Button
                 disabled={busy || approvedParticipantCount < 2}
                 onClick={() => void publish.mutateAsync()}

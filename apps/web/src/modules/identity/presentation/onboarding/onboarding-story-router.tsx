@@ -143,7 +143,8 @@ export function createFakeOnboardingGateway(input?: {
       return {
         organizationId: "org-invited",
         organizationName: "Liga invitante",
-        role: "player",
+        role: "member",
+        competitionRole: "player",
         competitionId: "competition-invited",
         competitionName: "Copa Invitación",
         profile: storyProfile,

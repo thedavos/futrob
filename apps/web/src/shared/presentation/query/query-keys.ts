@@ -12,8 +12,21 @@ export const queryKeys = {
     all: ["organizations"] as const,
     mine: () => [...queryKeys.organizations.all, "mine"] as const,
   },
+  authorization: {
+    all: ["authorization"] as const,
+    effectiveAccess: (
+      scope: {
+        readonly organizationId?: string;
+        readonly competitionId?: string;
+        readonly teamId?: string;
+        readonly encounterId?: string;
+      },
+      permissions?: readonly string[],
+    ) => [...queryKeys.authorization.all, "effective-access", scope, permissions] as const,
+  },
   competitions: {
     all: ["competitions"] as const,
+    mine: () => [...queryKeys.competitions.all, "mine"] as const,
     byOrganization: (organizationId: string) =>
       [...queryKeys.competitions.all, "by-organization", organizationId] as const,
     draft: (organizationId: string, competitionId: string) =>

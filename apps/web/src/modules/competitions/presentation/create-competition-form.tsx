@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { CompetitionDraftFields } from "@/modules/competitions/presentation/competition-draft-fields.tsx";
 import { CompetitionsClientError } from "@/modules/competitions/presentation/competitions-browser-client.ts";
 import { useCreateCompetitionDraftMutation } from "@/modules/competitions/presentation/competition-queries.ts";
+import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
 import {
   type CompetitionDraftFieldError,
   type CompetitionDraftFieldsValue,
@@ -32,10 +33,12 @@ function emptyDraftFields(): CompetitionDraftFieldsValue {
 export function CreateCompetitionForm({ organizationId }: { readonly organizationId: string }) {
   const navigate = useNavigate();
   const createDraft = useCreateCompetitionDraftMutation(organizationId);
+  const permissions = useEffectivePermissions({ organizationId }, ["competitions.update"]);
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<CompetitionDraftFieldError | null>(null);
   const [fields, setFields] = useState<CompetitionDraftFieldsValue>(emptyDraftFields);
   const submitting = createDraft.isPending;
+  const canCreate = permissions.allowed.has("competitions.update");
 
   async function handleSubmit() {
     setError(null);
@@ -96,16 +99,22 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
       ) : null}
 
       <CompetitionDraftFields
-        disabled={submitting}
+        disabled={submitting || !canCreate}
         fieldError={fieldError}
         onChange={(patch) => setFields((current) => ({ ...current, ...patch }))}
         onClearFieldError={() => setFieldError(null)}
         value={fields}
       />
 
-      <Button disabled={submitting} type="submit">
-        {submitting ? "Creando…" : "Crear competición"}
-      </Button>
+      {canCreate ? (
+        <Button disabled={submitting} type="submit">
+          {submitting ? "Creando…" : "Crear competición"}
+        </Button>
+      ) : permissions.query.isPending ? null : (
+        <p className="typo-caption text-muted-foreground">
+          No tienes permiso para crear competiciones en esta organización.
+        </p>
+      )}
     </Form>
   );
 }

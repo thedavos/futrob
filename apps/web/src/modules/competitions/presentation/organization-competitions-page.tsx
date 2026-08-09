@@ -14,6 +14,7 @@ import {
   EmptyStateTitle,
 } from "@futrob/ui";
 import { Trophy } from "@phosphor-icons/react";
+import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
 import { useOrganizationCompetitionsQuery } from "./competition-queries.ts";
 
 export function OrganizationCompetitionsPage({
@@ -23,6 +24,8 @@ export function OrganizationCompetitionsPage({
 }) {
   const competitionsQuery = useOrganizationCompetitionsQuery(organizationId);
   const competitions = competitionsQuery.data?.competitions ?? [];
+  const permissions = useEffectivePermissions({ organizationId }, ["competitions.update"]);
+  const canCreate = permissions.allowed.has("competitions.update");
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8 sm:py-14">
@@ -54,15 +57,17 @@ export function OrganizationCompetitionsPage({
               Crea un borrador para definir edición, plataforma, región y formato. Después podrás
               completar el setup operativo.
             </EmptyStateDescription>
-            <EmptyStateActions>
-              <Button
-                render={
-                  <Link params={{ orgId: organizationId }} to="/orgs/$orgId/competitions/new" />
-                }
-              >
-                Nueva competición
-              </Button>
-            </EmptyStateActions>
+            {canCreate ? (
+              <EmptyStateActions>
+                <Button
+                  render={
+                    <Link params={{ orgId: organizationId }} to="/orgs/$orgId/competitions/new" />
+                  }
+                >
+                  Nueva competición
+                </Button>
+              </EmptyStateActions>
+            ) : null}
           </EmptyState>
         ) : (
           <ul className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface">

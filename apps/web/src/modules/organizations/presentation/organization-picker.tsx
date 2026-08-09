@@ -7,8 +7,7 @@ import { useMyMembershipsQuery } from "@/modules/organizations/presentation/orga
 const ROLE_LABEL: Record<MembershipSummaryDto["role"], string> = {
   organizer: "Organizador",
   staff: "Staff",
-  captain: "Capitán",
-  player: "Jugador",
+  member: "Miembro",
 };
 
 export function OrganizationPicker() {

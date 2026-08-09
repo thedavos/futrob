@@ -83,7 +83,11 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
   const selectionState = useWorkspaceSelection();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const title = pageTitleFor(pathname, selectionState.selection);
-  const commands = commandsFor(pathname, selectionState.selection);
+  const commands = commandsFor(
+    pathname,
+    selectionState.selection,
+    selectionState.allowedPermissions,
+  );
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
@@ -111,6 +115,7 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
         </a>
         <DesktopSidebar
           associatedClub={selectionState.associatedClub}
+          allowedPermissions={selectionState.allowedPermissions}
           competitions={selectionState.competitions}
           memberships={selectionState.memberships}
           onSelect={selectionState.select}
@@ -121,6 +126,7 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
           <SidebarRail>
             <MobileNav
               associatedClub={selectionState.associatedClub}
+              allowedPermissions={selectionState.allowedPermissions}
               competitions={selectionState.competitions}
               memberships={selectionState.memberships}
               onSelect={selectionState.select}
@@ -208,6 +214,7 @@ function DesktopSidebar(props: {
   readonly memberships: readonly OrganizationSelectorOption[];
   readonly competitions: readonly CompetitionSelectorOption[];
   readonly associatedClub: AssociatedClubSummary | null;
+  readonly allowedPermissions: ReadonlySet<string>;
   readonly onSelect: (selection: WorkspaceSelection) => void;
 }) {
   return (
@@ -223,6 +230,7 @@ function MobileNav(props: {
   readonly memberships: readonly OrganizationSelectorOption[];
   readonly competitions: readonly CompetitionSelectorOption[];
   readonly associatedClub: AssociatedClubSummary | null;
+  readonly allowedPermissions: ReadonlySet<string>;
   readonly onSelect: (selection: WorkspaceSelection) => void;
   readonly title: string;
 }) {
@@ -265,6 +273,7 @@ function ShellSidebarBody({
   memberships,
   competitions,
   associatedClub,
+  allowedPermissions,
   onSelect,
   forceExpanded = false,
 }: {
@@ -273,13 +282,14 @@ function ShellSidebarBody({
   readonly memberships: readonly OrganizationSelectorOption[];
   readonly competitions: readonly CompetitionSelectorOption[];
   readonly associatedClub: AssociatedClubSummary | null;
+  readonly allowedPermissions: ReadonlySet<string>;
   readonly onSelect: (selection: WorkspaceSelection) => void;
   readonly forceExpanded?: boolean;
 }) {
   const { collapsed, toggleCollapsed } = useSidebar();
   const compact = collapsed && !forceExpanded;
-  const general = generalNavFor(selection);
-  const context = contextNavFor(selection);
+  const general = generalNavFor(selection, allowedPermissions);
+  const context = contextNavFor(selection, allowedPermissions);
   const footerItems = context.items.length > 0 ? context.items : general.items;
   const showCollapseControl = !forceExpanded;
 

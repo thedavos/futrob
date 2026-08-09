@@ -3,10 +3,12 @@ import {
   createCompetitionDraftResponseSchema,
   getCompetitionDraftResponseSchema,
   listOrganizationCompetitionsResponseSchema,
+  listAccessibleCompetitionsResponseSchema,
   type CreateCompetitionDraftRequest,
   type CreateCompetitionDraftResponse,
   type GetCompetitionDraftResponse,
   type ListOrganizationCompetitionsResponse,
+  type ListAccessibleCompetitionsResponse,
   updateCompetitionDraftRequestSchema,
   updateCompetitionDraftResponseSchema,
   competitionParticipantInputSchema,
@@ -31,6 +33,18 @@ export class CompetitionsClientError extends Error {
     super(message ?? code);
     this.name = "CompetitionsClientError";
   }
+}
+
+export async function listMyAccessibleCompetitions(): Promise<ListAccessibleCompetitionsResponse> {
+  const response = await fetch("/api/v1/competitions/mine", {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+  });
+  const json: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new CompetitionsClientError(errorCode(json, "competitions.mine_failed"));
+  }
+  return listAccessibleCompetitionsResponseSchema.parse(json);
 }
 
 export async function listOrganizationCompetitions(

@@ -4,6 +4,7 @@ import { createResultsModule } from "@/di/results.module.ts";
 import type { EventPublisherPort } from "@/shared/application/event-publisher.ts";
 import type { EncounterReaderPort } from "@/modules/results";
 import type { ProviderMatchRepository } from "@/modules/game-data";
+import type { AuthorizationPort } from "@futrob/shared-kernel";
 
 /**
  * Composition root entry — only place that wires adapters to use cases.
@@ -15,6 +16,7 @@ export function createModules(input: {
   readonly eventPublisher: EventPublisherPort;
   readonly encounterReader: EncounterReaderPort;
   readonly providerMatches: ProviderMatchRepository;
+  readonly authorization: AuthorizationPort;
 }) {
   const gameData = createGameDataModule({
     fetcher: input.fetcher,
@@ -26,6 +28,7 @@ export function createModules(input: {
   const results = createResultsModule({
     encounterReader: input.encounterReader,
     eventPublisher: input.eventPublisher,
+    authorization: input.authorization,
   });
 
   return {
