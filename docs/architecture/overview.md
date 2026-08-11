@@ -116,6 +116,12 @@ Solo `src/di/*.module.ts` instancia adapters y use cases.
   verificable para el Team y la competición solicitados.
 - `AuthorizationPort` vive en `shared-kernel`; cada BC publica su catálogo/bundles y `apps/api`
   compone la decisión efectiva. Las rutas solo adaptan HTTP: los casos de uso exigen capacidades.
+- En `apps/web`, la UI consume `EffectiveAccess` del servidor (fail-closed ante loading/403).
+  Presentation usa `can` / `useCan` / `useCapabilities` en
+  `apps/web/src/shared/presentation/permissions/` y constantes de BC
+  (`COMPETITION_PERMISSION`, `ORGANIZATION_PERMISSION`, `TEAM_PERMISSION`), no literales ni
+  nombres de rol. Nav, shell commands y pantallas de competición ocultan acciones; el backend
+  sigue siendo la barrera real.
 - Un `Actor` puede tener un perfil personal de jugador y consultar su propia proyección sin pertenecer a una organización.
 - La ruta HTTP de onboarding orquesta APIs públicas de `organizations`, `competitions` y `teams`;
   `identity` solo persiste el estado del recorrido y se completa al final.

@@ -78,6 +78,10 @@ Los catálogos de permisos y bundles permanecen en `organizations`, `competition
 `scheduling` y `results`. El resolver valida la cadena organización → competición → Team → Encounter;
 un `deny` vence dentro del mismo scope y una decisión más específica vence a la heredada.
 
+En presentation (`apps/web`), gatear UI solo con el set `allowed` de EffectiveAccess vía
+`can` / `useCan` / `useCapabilities` y las constantes exportadas por cada BC. No comparar roles
+en React ni inventar strings de permiso fuera del catálogo del BC.
+
 ## Cross-module prohibido
 
 ```text
@@ -87,6 +91,7 @@ teams → identity DB tables
 routes → getDb() / env.APP_DB
 routes → role string comparisons
 presentation → repository concrete
+presentation → role string comparisons / permission string literals
 ```
 
 ## Eventos versionados (contratos)
