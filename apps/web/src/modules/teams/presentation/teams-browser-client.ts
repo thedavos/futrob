@@ -15,6 +15,12 @@ import {
   type GetMyTeamsResponse,
   type SetActiveTeamRequest,
   type SetActiveTeamResponse,
+  competitionTeamManagementDetailResponseSchema,
+  competitionTeamManagementListQuerySchema,
+  competitionTeamManagementListResponseSchema,
+  type CompetitionTeamManagementDetailResponse,
+  type CompetitionTeamManagementListQuery,
+  type CompetitionTeamManagementListResponse,
   type RequestId,
 } from "@futrob/api-contracts";
 import { readBrowserApiError } from "@/shared/infrastructure/http/browser-api-error.ts";
@@ -60,6 +66,31 @@ async function requestJson<T>(input: {
 }
 
 export const teamsBrowserClient = {
+  listCompetitionManagement(
+    organizationId: string,
+    competitionId: string,
+    query: CompetitionTeamManagementListQuery = { limit: 25 },
+  ): Promise<CompetitionTeamManagementListResponse> {
+    const parsed = competitionTeamManagementListQuerySchema.parse(query);
+    const search = new URLSearchParams({ limit: String(parsed.limit) });
+    if (parsed.cursor) search.set("cursor", parsed.cursor);
+    return requestJson({
+      path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management?${search.toString()}`,
+      method: "GET",
+      parse: (data) => competitionTeamManagementListResponseSchema.parse(data),
+    });
+  },
+  getCompetitionTeamManagement(
+    organizationId: string,
+    competitionId: string,
+    teamId: string,
+  ): Promise<CompetitionTeamManagementDetailResponse> {
+    return requestJson({
+      path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management/${encodeURIComponent(teamId)}`,
+      method: "GET",
+      parse: (data) => competitionTeamManagementDetailResponseSchema.parse(data),
+    });
+  },
   getMyProfile(): Promise<GetMyPlayerProfileResponse> {
     return requestJson({
       path: "/api/v1/players/me",
