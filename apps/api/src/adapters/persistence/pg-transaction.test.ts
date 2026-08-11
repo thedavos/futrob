@@ -49,7 +49,8 @@ describe("PostgresTransactionPort", () => {
 
     expect(value).toBe(42);
     expect(client.queries).toEqual(["BEGIN", "SELECT 1", "COMMIT"]);
-    expect(client.release).toHaveBeenCalledOnce();
+    const release = client.release;
+    expect(release).toHaveBeenCalledOnce();
     expect(isInPgTransaction()).toBe(false);
   });
 
@@ -82,7 +83,8 @@ describe("PostgresTransactionPort", () => {
     ).rejects.toThrow("boom");
 
     expect(client.queries).toEqual(["BEGIN", "INSERT INTO x DEFAULT VALUES", "ROLLBACK"]);
-    expect(client.release).toHaveBeenCalledOnce();
+    const release = client.release;
+    expect(release).toHaveBeenCalledOnce();
   });
 
   it("reuses the outer client for nested runInTransaction calls", async () => {
@@ -96,7 +98,8 @@ describe("PostgresTransactionPort", () => {
       });
     });
 
-    expect(pool.connect).toHaveBeenCalledOnce();
+    const connect = pool.connect;
+    expect(connect).toHaveBeenCalledOnce();
     expect(client.queries).toEqual(["BEGIN", "SELECT nested", "COMMIT"]);
   });
 });

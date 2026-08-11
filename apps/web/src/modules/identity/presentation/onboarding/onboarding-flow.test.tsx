@@ -150,7 +150,7 @@ describe("OnboardingFlowProvider initialization", () => {
   });
 
   it("does not bounce a finished player back to intention when the provider stays mounted", async () => {
-    const completePlayer = vi.fn(async () => undefined);
+    const completePlayer = vi.fn<() => Promise<void>>(async () => undefined);
     const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "review" });
     gateway.completePlayer = completePlayer;
 
