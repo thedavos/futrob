@@ -1,4 +1,4 @@
-import type { Hono } from "hono";
+import { Hono } from "hono";
 import {
   getClubMatchesQuerySchema,
   getClubMatchesResponseSchema,
@@ -10,12 +10,18 @@ import {
 import type { AppDeps } from "@/app.ts";
 import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import { toExternalClubDto, toProviderMatchDto } from "@/http/mappers/game-data.ts";
+import {
+  createServiceAuthMiddleware,
+  type ServiceAuthVariables,
+} from "@/http/middleware/service-auth.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
   const { gameData } = deps.modules;
+  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
+  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
 
-  app.get("/game-data/clubs/search", async (c) => {
+  secured.get("/game-data/clubs/search", async (c) => {
     const parsed = searchClubsQuerySchema.safeParse(c.req.query());
     if (!parsed.success) {
       return validationErrorResponse(parsed.error.issues);
@@ -35,7 +41,7 @@ export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(body);
   });
 
-  app.get("/game-data/clubs/:externalClubId", async (c) => {
+  secured.get("/game-data/clubs/:externalClubId", async (c) => {
     const parsed = getClubQuerySchema.safeParse(c.req.query());
     if (!parsed.success) {
       return validationErrorResponse(parsed.error.issues);
@@ -55,7 +61,7 @@ export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(body);
   });
 
-  app.get("/game-data/clubs/:externalClubId/matches", async (c) => {
+  secured.get("/game-data/clubs/:externalClubId/matches", async (c) => {
     const parsed = getClubMatchesQuerySchema.safeParse(c.req.query());
     if (!parsed.success) {
       return validationErrorResponse(parsed.error.issues);
@@ -78,4 +84,6 @@ export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
     });
     return jsonResponse(body);
   });
+
+  app.route("/", secured);
 }
