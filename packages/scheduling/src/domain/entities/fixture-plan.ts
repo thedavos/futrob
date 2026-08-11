@@ -55,6 +55,7 @@ export interface FixtureStage {
 
 export interface FixturePlan {
   readonly id: string;
+  readonly revision: number;
   readonly generationKey: string;
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;

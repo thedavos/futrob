@@ -111,6 +111,7 @@ export function generateFixturePlan(spec: FixtureGenerationSpec): FixturePlan {
 
   return {
     id: planId,
+    revision: 1,
     generationKey,
     organizationId: spec.organizationId,
     competitionId: spec.competitionId,
