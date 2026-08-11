@@ -185,6 +185,37 @@ describe("D1BffRateLimiter", () => {
     expect(staleRows.count).toBe(0);
   });
 
+  it("retains active short-policy windows when policy lengths do not divide evenly", async () => {
+    const policies: BffRateLimitPolicies = {
+      ...TEST_POLICIES,
+      [BFF_RATE_LIMIT_POLICY.invitationAccept]: {
+        windowSeconds: 901,
+        actorMaxAttempts: 1,
+        ipMaxAttempts: 1,
+      },
+    };
+    const { database, limiter } = createLimiter(policies);
+    database.sqlite
+      .prepare(
+        `INSERT INTO app_rate_limit_windows
+          (policy, subject_kind, subject_fingerprint, window_started_at, request_count)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(BFF_RATE_LIMIT_POLICY.eaClubSearch, "ip", "1".repeat(64), 1_800_000, 2);
+
+    await limiter.check(attempt({ nowMs: 1_805_000 }));
+
+    const activeWindow = database.sqlite
+      .prepare(
+        `SELECT request_count FROM app_rate_limit_windows
+         WHERE policy = ? AND subject_kind = ? AND subject_fingerprint = ? AND window_started_at = ?`,
+      )
+      .get(BFF_RATE_LIMIT_POLICY.eaClubSearch, "ip", "1".repeat(64), 1_800_000) as
+      | { request_count: number }
+      | undefined;
+    expect(activeWindow?.request_count).toBe(3);
+  });
+
   it("atomically counts concurrent attempts without storing actor or IP subjects", async () => {
     const policies: BffRateLimitPolicies = {
       ...TEST_POLICIES,
