@@ -17,6 +17,11 @@ export type {
   SucceededProviderSyncJob,
   DeadProviderSyncJob,
 } from "./domain/entities/provider-sync-job.ts";
+export type {
+  ProviderHealthEvent,
+  ProviderHealthOutcome,
+  ProviderHealthSnapshot,
+} from "./domain/entities/provider-health.ts";
 export { providerSyncDedupeKey } from "./domain/entities/provider-sync-job.ts";
 
 export type { GameDataProviderKey } from "./domain/value-objects/provider-key.ts";
@@ -48,6 +53,7 @@ export type { GameDataProviderRegistryPort } from "./domain/ports/game-data-prov
 export type { ProviderMatchRepository } from "./domain/ports/provider-match.repository.ts";
 export type { RawObservationRepository } from "./domain/ports/raw-observation.repository.ts";
 export type { ProviderSyncJobRepository } from "./domain/ports/provider-sync-job.repository.ts";
+export type { ProviderHealthPort } from "./domain/ports/provider-health.port.ts";
 export type {
   ProviderMatchIngestionPort,
   ProviderMatchObservationDraft,
@@ -71,3 +77,4 @@ export {
   ExecuteProviderSyncJobUseCase,
   isRetryableProviderError,
 } from "./application/execute-provider-sync-job/execute-provider-sync-job.use-case.ts";
+export { GetProviderHealthUseCase } from "./application/get-provider-health/get-provider-health.use-case.ts";

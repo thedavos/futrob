@@ -3,6 +3,7 @@ import {
   ExecuteProviderSyncJobUseCase,
   GetExternalClubUseCase,
   GetRecentProviderMatchesUseCase,
+  GetProviderHealthUseCase,
   ListMatchesBetweenClubsUseCase,
   SearchExternalClubsUseCase,
   SyncRecentProviderMatchesUseCase,
@@ -11,6 +12,7 @@ import {
   type ProviderMatchRepository,
   type RawObservationRepository,
   type ProviderSyncJobRepository,
+  type ProviderHealthPort,
 } from "@futrob/game-data";
 import type { ClockPort, IdGeneratorPort, TransactionPort } from "@futrob/shared-kernel";
 import { InMemoryGameDataProviderRegistry } from "@/adapters/game-data/internal.ts";
@@ -25,6 +27,7 @@ export interface GameDataModuleDependencies {
   readonly clock: ClockPort;
   readonly maxJobAttempts: number;
   readonly transaction: TransactionPort;
+  readonly health: ProviderHealthPort;
 }
 
 export function createGameDataModule(deps: GameDataModuleDependencies) {
@@ -43,6 +46,7 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
     searchExternalClubs: new SearchExternalClubsUseCase(registry),
     getExternalClub: new GetExternalClubUseCase(registry),
     getRecentProviderMatches: new GetRecentProviderMatchesUseCase(registry),
+    getProviderHealth: new GetProviderHealthUseCase(deps.health),
     listMatchesBetweenClubs: new ListMatchesBetweenClubsUseCase(deps.providerMatches),
     syncRecentProviderMatches,
     enqueueProviderSyncJob: new EnqueueProviderSyncJobUseCase({

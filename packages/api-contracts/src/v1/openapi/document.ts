@@ -273,6 +273,33 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/internal/game-data/providers/{providerKey}/health": {
+      get: {
+        operationId: "getProviderHealth",
+        tags: ["game-data"],
+        summary: "Get a sanitized provider health snapshot",
+        parameters: [
+          {
+            name: "providerKey",
+            in: "path",
+            required: true,
+            schema: { type: "string", enum: ["ea-clubs", "manual", "screenshot-ocr"] },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Sanitized provider health",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ProviderHealthResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     "/players/me": {
       get: {
         operationId: "getMyPlayerProfile",
@@ -1707,6 +1734,47 @@ export const futrobOpenApiV1 = {
           matches: {
             type: "array",
             items: { $ref: "#/components/schemas/ProviderMatch" },
+          },
+        },
+      },
+      ProviderHealthResponse: {
+        type: "object",
+        required: [
+          "providerKey",
+          "status",
+          "circuitState",
+          "observedAt",
+          "lastSuccessfulAt",
+          "lastFailureAt",
+          "averageLatencyMs",
+          "successCount",
+          "failureCount",
+          "cache",
+        ],
+        properties: {
+          providerKey: {
+            type: "string",
+            enum: ["ea-clubs", "manual", "screenshot-ocr"],
+          },
+          status: {
+            type: "string",
+            enum: ["healthy", "degraded", "unavailable", "unknown"],
+          },
+          circuitState: { type: "string", enum: ["closed", "open", "half_open"] },
+          observedAt: { type: "string", format: "date-time" },
+          lastSuccessfulAt: { type: ["string", "null"], format: "date-time" },
+          lastFailureAt: { type: ["string", "null"], format: "date-time" },
+          averageLatencyMs: { type: ["integer", "null"], minimum: 0 },
+          successCount: { type: "integer", minimum: 0 },
+          failureCount: { type: "integer", minimum: 0 },
+          cache: {
+            type: "object",
+            required: ["hits", "misses", "stale"],
+            properties: {
+              hits: { type: "integer", minimum: 0 },
+              misses: { type: "integer", minimum: 0 },
+              stale: { type: "integer", minimum: 0 },
+            },
           },
         },
       },

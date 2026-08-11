@@ -5,9 +5,16 @@ import {
   ProviderNetworkError,
   ProviderTimeout,
   ProviderUnavailable,
+  type ProviderHealthOutcome,
+  type ProviderHealthPort,
   type ProviderTransportError,
 } from "@futrob/game-data";
-import { logCorrelatedError, logCorrelatedInfo } from "@/context/request-correlation.ts";
+import {
+  currentRequestCorrelation,
+  currentJobCorrelation,
+  logCorrelatedError,
+  logCorrelatedInfo,
+} from "@/context/request-correlation.ts";
 import {
   InMemoryProviderCircuitBreaker,
   type ProviderCircuitBreaker,
@@ -40,6 +47,7 @@ export interface EaClubsHttpClientOptions {
   };
   readonly circuit?: ProviderCircuitBreaker;
   readonly clock?: { now(): Date };
+  readonly health?: ProviderHealthPort;
 }
 
 export class EaClubsHttpClient {
@@ -49,6 +57,7 @@ export class EaClubsHttpClient {
   private readonly retry: NonNullable<EaClubsHttpClientOptions["retry"]>;
   private readonly circuit: ProviderCircuitBreaker;
   private readonly clock: { now(): Date };
+  private readonly health: ProviderHealthPort | undefined;
 
   constructor(options: EaClubsHttpClientOptions) {
     const unbound = options.fetcher;
@@ -66,6 +75,7 @@ export class EaClubsHttpClient {
       } satisfies NonNullable<EaClubsHttpClientOptions["retry"]>);
     this.circuit = options.circuit ?? new InMemoryProviderCircuitBreaker();
     this.clock = options.clock ?? { now: () => new Date() };
+    this.health = options.health;
   }
 
   async getJson(
@@ -79,6 +89,7 @@ export class EaClubsHttpClient {
       }
     }
 
+    const operationStartedAt = performance.now();
     const circuitKey = `ea-clubs:${path}`;
     const now = this.clock.now();
     const permission = await this.circuit.beforeRequest({
@@ -88,6 +99,7 @@ export class EaClubsHttpClient {
       probeLeaseExpiresAt: new Date(now.getTime() + 10_000),
     });
     if (!permission.allowed) {
+      await this.recordHealth(path, "circuit_open", operationStartedAt);
       return err(
         new ProviderUnavailable({
           code: "game_data.provider_unavailable",
@@ -96,12 +108,16 @@ export class EaClubsHttpClient {
         }),
       );
     }
+    if (permission.state === "half_open") {
+      await this.recordHealth(path, "circuit_half_open", operationStartedAt);
+    }
 
     let lastError: ProviderTransportError | undefined;
     for (let attempt = 1; attempt <= this.retry.maxAttempts; attempt += 1) {
       const result = await this.requestOnce(url, path, attempt);
       if (result.isOk()) {
         await this.circuit.recordSuccess({ key: circuitKey, now: this.clock.now() });
+        await this.recordHealth(path, "success", operationStartedAt);
         return result;
       }
       lastError = result.error;
@@ -124,7 +140,30 @@ export class EaClubsHttpClient {
         cooldownMs: 60_000,
       });
     }
+    await this.recordHealth(path, healthOutcome(lastError), operationStartedAt);
     return err(lastError);
+  }
+
+  private async recordHealth(
+    operation: string,
+    outcome: ProviderHealthOutcome,
+    startedAt: number,
+  ): Promise<void> {
+    if (!this.health) return;
+    try {
+      await this.health.record({
+        id: randomUUID(),
+        providerKey: "ea-clubs",
+        operation,
+        outcome,
+        latencyMs: Math.max(0, Math.round(performance.now() - startedAt)),
+        occurredAt: this.clock.now(),
+        requestId: currentRequestCorrelation()?.requestId ?? null,
+        jobId: currentJobCorrelation() ?? null,
+      });
+    } catch {
+      logCorrelatedError("provider.health.record_failed", { provider: "ea-clubs", operation });
+    }
   }
 
   private async requestOnce(
@@ -211,4 +250,12 @@ function parseRetryAfter(value: string | null, now: Date): number | undefined {
   if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1_000;
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? Math.max(0, timestamp - now.getTime()) : undefined;
+}
+
+function healthOutcome(error: ProviderTransportError): ProviderHealthOutcome {
+  if (ProviderTimeout.is(error)) return "timeout";
+  if (ProviderNetworkError.is(error)) return "network";
+  if (ProviderUnavailable.is(error)) return "circuit_open";
+  if (error.status === 429) return "rate_limited";
+  return error.status >= 500 ? "upstream_5xx" : "upstream_4xx";
 }

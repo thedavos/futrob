@@ -2,8 +2,10 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   createRequestCorrelation,
   currentRequestCorrelation,
+  currentJobCorrelation,
   logCorrelatedInfo,
   runWithRequestCorrelation,
+  runWithJobCorrelation,
   type CorrelationLogEntry,
 } from "./request-correlation.ts";
 
@@ -35,6 +37,21 @@ describe("request correlation context", () => {
     );
 
     expect(entries).toEqual([{ event: "job.attempt.completed", requestId: correlation.requestId }]);
+  });
+
+  it("nests a job ID without changing the request correlation", async () => {
+    const correlation = createRequestCorrelation("722e421d-56d9-4335-94d2-07f5057d7cc0");
+
+    await runWithRequestCorrelation(
+      correlation,
+      { info: () => undefined, error: () => undefined },
+      () =>
+        runWithJobCorrelation("job-1", async () => {
+          await Promise.resolve();
+          expect(currentJobCorrelation()).toBe("job-1");
+          expect(currentRequestCorrelation()).toEqual(correlation);
+        }),
+    );
   });
 
   it("does not let log fields replace the active request ID", () => {

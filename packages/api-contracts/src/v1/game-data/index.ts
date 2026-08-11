@@ -9,6 +9,7 @@ export {
   getClubResponseSchema,
   getClubMatchesQuerySchema,
   getClubMatchesResponseSchema,
+  providerHealthResponseSchema,
   gameDataProviderKeyQuerySchema,
   type ExternalClubDto,
   type ProviderMatchDto,
@@ -21,6 +22,7 @@ export {
   type GetClubMatchesQuery,
   type GetClubMatchesQueryInput,
   type GetClubMatchesResponse,
+  type ProviderHealthResponse,
   type GameDataProviderKeyQuery,
 } from "./schemas.ts";
 export {

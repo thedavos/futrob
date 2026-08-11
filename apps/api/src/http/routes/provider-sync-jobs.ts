@@ -2,7 +2,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { ProviderSyncJob } from "@futrob/game-data";
 import type { AppDeps } from "@/app.ts";
-import { currentRequestCorrelation } from "@/context/request-correlation.ts";
+import {
+  currentRequestCorrelation,
+  logCorrelatedInfo,
+  runWithJobCorrelation,
+} from "@/context/request-correlation.ts";
 import { validationErrorResponse } from "@/http/errors.ts";
 import { createInternalJobAuthMiddleware } from "@/http/middleware/service-auth.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
@@ -41,7 +45,16 @@ export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
   });
 
   internal.post("/internal/game-data/sync-jobs/:jobId/run", async (c) => {
-    const job = await deps.modules.gameData.executeProviderSyncJob.execute(c.req.param("jobId"));
+    const jobId = c.req.param("jobId");
+    logCorrelatedInfo("provider.sync_job.started", { jobId });
+    const job = await runWithJobCorrelation(jobId, () =>
+      deps.modules.gameData.executeProviderSyncJob.execute(jobId),
+    );
+    logCorrelatedInfo("provider.sync_job.completed", {
+      jobId,
+      status: job?.status ?? "not_claimable",
+      attempt: job?.attempt ?? null,
+    });
     return job
       ? jsonResponse(toSyncJobDto(job))
       : jsonResponse({ code: "game_data.sync_job_not_claimable" }, 409);

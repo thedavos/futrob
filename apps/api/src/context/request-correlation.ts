@@ -17,6 +17,7 @@ export interface CorrelationLogger {
 type RequestCorrelationContext = Readonly<{
   correlation: RequestCorrelation;
   logger: CorrelationLogger;
+  jobId?: string;
 }>;
 
 const requestCorrelationStorage = new AsyncLocalStorage<RequestCorrelationContext>();
@@ -36,6 +37,15 @@ export function runWithRequestCorrelation<T>(
 
 export function currentRequestCorrelation(): RequestCorrelation | undefined {
   return requestCorrelationStorage.getStore()?.correlation;
+}
+
+export function currentJobCorrelation(): string | undefined {
+  return requestCorrelationStorage.getStore()?.jobId;
+}
+
+export function runWithJobCorrelation<T>(jobId: string, operation: () => T): T {
+  const context = requestCorrelationStorage.getStore();
+  return context ? requestCorrelationStorage.run({ ...context, jobId }, operation) : operation();
 }
 
 export function logCorrelatedInfo(event: string, fields: Readonly<Record<string, unknown>> = {}) {

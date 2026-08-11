@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { err, ok, type Result } from "@futrob/shared-kernel";
 import {
   ExternalClubNotFound,
@@ -11,10 +11,16 @@ import {
   type ProviderMatch,
   type ProviderMatchIngestionPort,
   type ProviderError,
+  type ProviderHealthPort,
   type SearchExternalClubsInput,
 } from "@futrob/game-data";
 import { EaClubsHttpClient } from "./http/ea-clubs-http.ts";
 import type { ProviderCircuitBreaker } from "@/adapters/game-data/resilience/provider-circuit-breaker.ts";
+import {
+  currentJobCorrelation,
+  currentRequestCorrelation,
+  logCorrelatedError,
+} from "@/context/request-correlation.ts";
 import {
   eaClubInfoMapSchema,
   eaClubMatchesResponseSchema,
@@ -49,6 +55,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
       readonly timeoutMs: number;
       readonly circuit?: ProviderCircuitBreaker;
       readonly clock?: { now(): Date };
+      readonly health?: ProviderHealthPort;
     },
   ) {
     this.http = new EaClubsHttpClient({
@@ -57,6 +64,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
       timeoutMs: deps.timeoutMs,
       circuit: deps.circuit,
       clock: deps.clock,
+      health: deps.health,
     });
   }
 
@@ -73,6 +81,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
 
     const parsed = eaSearchClubsResponseSchema.safeParse(response.value);
     if (!parsed.success) {
+      await this.recordSchemaError("/allTimeLeaderboard/search");
       return err(
         new ProviderSchemaError({
           code: "game_data.ea_clubs_schema_error",
@@ -105,6 +114,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
 
     const parsed = eaClubInfoMapSchema.safeParse(response.value);
     if (!parsed.success) {
+      await this.recordSchemaError("/clubs/info");
       return err(
         new ProviderSchemaError({
           code: "game_data.ea_clubs_schema_error",
@@ -158,6 +168,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
 
     const parsed = eaClubMatchesResponseSchema.safeParse(response.value);
     if (!parsed.success) {
+      await this.recordSchemaError(MATCH_ENDPOINT);
       return err(
         new ProviderSchemaError({
           code: "game_data.ea_clubs_schema_error",
@@ -197,6 +208,24 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
       .filter((match): match is ProviderMatch => match !== null);
 
     return ok({ observations, matches });
+  }
+
+  private async recordSchemaError(operation: string): Promise<void> {
+    if (!this.deps.health) return;
+    try {
+      await this.deps.health.record({
+        id: randomUUID(),
+        providerKey: this.key,
+        operation,
+        outcome: "schema",
+        latencyMs: 0,
+        occurredAt: this.deps.clock?.now() ?? new Date(),
+        requestId: currentRequestCorrelation()?.requestId ?? null,
+        jobId: currentJobCorrelation() ?? null,
+      });
+    } catch {
+      logCorrelatedError("provider.health.record_failed", { provider: this.key, operation });
+    }
   }
 }
 

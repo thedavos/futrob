@@ -8,11 +8,19 @@ import {
   type GetRecentMatchesInput,
   type IngestedProviderMatches,
   type ProviderError,
+  type ProviderHealthOutcome,
+  type ProviderHealthPort,
   type ProviderMatch,
   type ProviderMatchIngestionPort,
   type SearchExternalClubsInput,
 } from "@futrob/game-data";
 import type { ProviderCacheEntry, ProviderResponseCache } from "./provider-response-cache.ts";
+import {
+  currentRequestCorrelation,
+  currentJobCorrelation,
+  logCorrelatedError,
+  logCorrelatedInfo,
+} from "@/context/request-correlation.ts";
 
 export class CachedGameDataProviderAdapter
   implements GameDataProviderPort, ProviderMatchIngestionPort
@@ -30,6 +38,7 @@ export class CachedGameDataProviderAdapter
       readonly searchTtlMs: number;
       readonly clubTtlMs: number;
       readonly staleMs: number;
+      readonly health?: ProviderHealthPort;
     },
   ) {
     this.key = provider.key;
@@ -67,7 +76,11 @@ export class CachedGameDataProviderAdapter
     const key = cacheKey(this.key, operation, normalizedInput);
     const now = this.deps.clock.now();
     let cached = await this.deps.cache.read<T>(key);
-    if (cached && cached.freshUntil > now) return cachedResult(cached);
+    if (cached && cached.freshUntil > now) {
+      await this.recordCache(operation, "cache_hit");
+      return cachedResult(cached);
+    }
+    await this.recordCache(operation, "cache_miss");
 
     const token = this.deps.ids.generate();
     const acquired = await this.deps.cache.tryAcquireRefresh({
@@ -82,9 +95,15 @@ export class CachedGameDataProviderAdapter
       for (let attempt = 0; attempt < 20; attempt += 1) {
         await this.deps.sleep(10);
         cached = await this.deps.cache.read<T>(key);
-        if (cached && cached.freshUntil > this.deps.clock.now()) return cachedResult(cached);
+        if (cached && cached.freshUntil > this.deps.clock.now()) {
+          await this.recordCache(operation, "cache_hit");
+          return cachedResult(cached);
+        }
       }
-      if (cached && cached.staleUntil > this.deps.clock.now()) return cachedResult(cached);
+      if (cached && cached.staleUntil > this.deps.clock.now()) {
+        await this.recordCache(operation, "cache_stale");
+        return cachedResult(cached);
+      }
       return err(
         new ProviderUnavailable({
           code: "game_data.provider_unavailable",
@@ -97,9 +116,11 @@ export class CachedGameDataProviderAdapter
     try {
       const result = await load();
       if (!result.isOk()) {
-        return cached && cached.staleUntil > now && isRetryableProviderError(result.error)
-          ? cachedResult(cached)
-          : result;
+        if (cached && cached.staleUntil > now && isRetryableProviderError(result.error)) {
+          await this.recordCache(operation, "cache_stale");
+          return cachedResult(cached);
+        }
+        return result;
       }
       const refreshedAt = this.deps.clock.now();
       await this.deps.cache.write({
@@ -115,6 +136,28 @@ export class CachedGameDataProviderAdapter
       return result;
     } finally {
       await this.deps.cache.release(key, token);
+    }
+  }
+
+  private async recordCache(
+    operation: string,
+    outcome: Extract<ProviderHealthOutcome, "cache_hit" | "cache_miss" | "cache_stale">,
+  ): Promise<void> {
+    logCorrelatedInfo("provider.cache", { provider: this.key, operation, outcome });
+    if (!this.deps.health) return;
+    try {
+      await this.deps.health.record({
+        id: this.deps.ids.generate(),
+        providerKey: this.key,
+        operation,
+        outcome,
+        latencyMs: 0,
+        occurredAt: this.deps.clock.now(),
+        requestId: currentRequestCorrelation()?.requestId ?? null,
+        jobId: currentJobCorrelation() ?? null,
+      });
+    } catch {
+      logCorrelatedError("provider.health.record_failed", { provider: this.key, operation });
     }
   }
 }

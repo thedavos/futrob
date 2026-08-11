@@ -113,3 +113,22 @@ export const getClubMatchesResponseSchema = z.object({
 });
 
 export type GetClubMatchesResponse = z.infer<typeof getClubMatchesResponseSchema>;
+
+export const providerHealthResponseSchema = z.object({
+  providerKey: gameDataProviderKeyQuerySchema,
+  status: z.enum(["healthy", "degraded", "unavailable", "unknown"]),
+  circuitState: z.enum(["closed", "open", "half_open"]),
+  observedAt: z.string().datetime(),
+  lastSuccessfulAt: z.string().datetime().nullable(),
+  lastFailureAt: z.string().datetime().nullable(),
+  averageLatencyMs: z.number().int().nonnegative().nullable(),
+  successCount: z.number().int().nonnegative(),
+  failureCount: z.number().int().nonnegative(),
+  cache: z.object({
+    hits: z.number().int().nonnegative(),
+    misses: z.number().int().nonnegative(),
+    stale: z.number().int().nonnegative(),
+  }),
+});
+
+export type ProviderHealthResponse = z.infer<typeof providerHealthResponseSchema>;
