@@ -167,6 +167,24 @@ describe("D1BffRateLimiter", () => {
     ).resolves.toEqual({ outcome: "allowed" });
   });
 
+  it("purges windows older than the longest active policy window", async () => {
+    const { database, limiter } = createLimiter();
+    database.sqlite
+      .prepare(
+        `INSERT INTO app_rate_limit_windows
+          (policy, subject_kind, subject_fingerprint, window_started_at, request_count)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(BFF_RATE_LIMIT_POLICY.eaClubSearch, "actor", "a".repeat(64), 0, 1);
+
+    await limiter.check(attempt({ nowMs: 1_800_000 }));
+
+    const staleRows = database.sqlite
+      .prepare("SELECT COUNT(*) AS count FROM app_rate_limit_windows WHERE window_started_at = 0")
+      .get() as { count: number };
+    expect(staleRows.count).toBe(0);
+  });
+
   it("atomically counts concurrent attempts without storing actor or IP subjects", async () => {
     const policies: BffRateLimitPolicies = {
       ...TEST_POLICIES,
