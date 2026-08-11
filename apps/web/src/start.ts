@@ -14,6 +14,15 @@ export function correlateBffApiRequest(
   return withBffRequestCorrelation(request, async () => next());
 }
 
+export function shouldValidateCsrfRequest(handlerType: "router" | "serverFn"): boolean {
+  return handlerType === "serverFn";
+}
+
 export const startInstance = createStart(() => ({
-  requestMiddleware: [bffRequestCorrelation, createCsrfMiddleware()],
+  requestMiddleware: [
+    bffRequestCorrelation,
+    createCsrfMiddleware({
+      filter: ({ handlerType }) => shouldValidateCsrfRequest(handlerType),
+    }),
+  ],
 }));

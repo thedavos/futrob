@@ -51,7 +51,7 @@ describe("BFF request correlation", () => {
     });
   });
 
-  it("uses one correlation for nested route wrappers and repairs a mismatched error body", async () => {
+  it("repairs a mismatched error body with the BFF request ID", async () => {
     const requestId = "866b422f-3134-4548-9954-7316c3b0c921";
     const logger = {
       info: vi.fn<(entry: unknown) => void>(),
@@ -61,18 +61,17 @@ describe("BFF request correlation", () => {
 
     const response = await withBffRequestCorrelation(
       request,
-      () =>
-        withBffRequestCorrelation(request, async ({ requestId: nestedRequestId }) => {
-          expect(nestedRequestId).toBe(requestId);
-          return Response.json(
-            {
-              code: "auth.unauthenticated",
-              messageKey: "errors.auth.unauthenticated",
-              requestId: "6a057207-52e1-447a-a232-58d9afd9bd77",
-            },
-            { status: 401 },
-          );
-        }),
+      async ({ requestId: handlerRequestId }) => {
+        expect(handlerRequestId).toBe(requestId);
+        return Response.json(
+          {
+            code: "auth.unauthenticated",
+            messageKey: "errors.auth.unauthenticated",
+            requestId: "6a057207-52e1-447a-a232-58d9afd9bd77",
+          },
+          { status: 401 },
+        );
+      },
       { generateRequestId: () => requestId, logger },
     );
 

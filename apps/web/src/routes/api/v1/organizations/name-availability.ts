@@ -8,38 +8,32 @@ import {
   productApiBffErrorResponse,
 } from "@/context/create-authenticated-product-api-client.ts";
 import { apiErrorResponse, jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
-import { withBffRequestCorrelation } from "@/shared/infrastructure/http/request-correlation.ts";
 
 export const Route = createFileRoute("/api/v1/organizations/name-availability")({
   server: {
     handlers: {
-      POST: ({ request }) =>
-        withBffRequestCorrelation(request, async ({ requestId }) => {
-          try {
-            const parsed = organizationNameAvailabilityRequestSchema.safeParse(
-              await request.json().catch(() => null),
-            );
-            if (!parsed.success) {
-              return apiErrorResponse(
-                400,
-                {
-                  code: "api.validation_error",
-                  messageKey: "errors.api.validation_error",
-                  details: { issues: parsed.error.issues },
-                },
-                requestId,
-              );
-            }
-            const { client } = await createAuthenticatedProductApiClient(request, requestId);
-            return jsonResponse(
-              organizationNameAvailabilityResponseSchema.parse(
-                await client.organizations.checkNameAvailability(parsed.data),
-              ),
-            );
-          } catch (error) {
-            return productApiBffErrorResponse(error, requestId);
+      POST: async ({ request }) => {
+        try {
+          const parsed = organizationNameAvailabilityRequestSchema.safeParse(
+            await request.json().catch(() => null),
+          );
+          if (!parsed.success) {
+            return apiErrorResponse(400, {
+              code: "api.validation_error",
+              messageKey: "errors.api.validation_error",
+              details: { issues: parsed.error.issues },
+            });
           }
-        }),
+          const { client } = await createAuthenticatedProductApiClient(request);
+          return jsonResponse(
+            organizationNameAvailabilityResponseSchema.parse(
+              await client.organizations.checkNameAvailability(parsed.data),
+            ),
+          );
+        } catch (error) {
+          return productApiBffErrorResponse(error);
+        }
+      },
     },
   },
 });

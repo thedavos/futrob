@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { correlateBffApiRequest } from "./start.ts";
+import { correlateBffApiRequest, shouldValidateCsrfRequest } from "./start.ts";
 
 describe("global BFF request correlation", () => {
   it("correlates a players route that previously omitted request IDs", async () => {
@@ -30,5 +30,10 @@ describe("global BFF request correlation", () => {
     );
 
     expect(response.headers.get("x-request-id")).toBeNull();
+  });
+
+  it("keeps router API requests outside server-function CSRF validation", () => {
+    expect(shouldValidateCsrfRequest("router")).toBe(false);
+    expect(shouldValidateCsrfRequest("serverFn")).toBe(true);
   });
 });
