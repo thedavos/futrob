@@ -211,12 +211,13 @@ export function createTeamsResource(http: HttpClient) {
 
     async connectExternalClub(
       organizationId: string,
+      competitionId: string,
       teamId: string,
       input: ConnectTeamExternalClubRequest,
     ): Promise<ConnectTeamExternalClubResponse> {
       const body = connectTeamExternalClubRequestSchema.parse(input);
       return http.request({
-        path: `/organizations/${organizationId}/teams/${teamId}/external-club`,
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/teams/${encodeURIComponent(teamId)}/external-club`,
         method: "PUT",
         body,
         parse: (data) => connectTeamExternalClubResponseSchema.parse(data),
@@ -225,10 +226,11 @@ export function createTeamsResource(http: HttpClient) {
 
     async getExternalClub(
       organizationId: string,
+      competitionId: string,
       teamId: string,
     ): Promise<GetTeamExternalClubResponse> {
       return http.request({
-        path: `/organizations/${organizationId}/teams/${teamId}/external-club`,
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/teams/${encodeURIComponent(teamId)}/external-club`,
         method: "GET",
         parse: (data) => getTeamExternalClubResponseSchema.parse(data),
       });

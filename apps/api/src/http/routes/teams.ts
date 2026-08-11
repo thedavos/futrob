@@ -264,6 +264,51 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
+  secured.put(
+    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/external-club",
+    async (c) => {
+      const organizationId = asOrganizationId(c.req.param("organizationId"));
+      const competitionId = asCompetitionId(c.req.param("competitionId"));
+      const teamId = asTeamId(c.req.param("teamId"));
+      const parsed = connectTeamExternalClubRequestSchema.safeParse(
+        await c.req.json().catch(() => null),
+      );
+      if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+      const result = await deps.modules.teams.connectTeamExternalClub.execute({
+        actorId: asActorId(c.get("actorId")),
+        organizationId,
+        competitionId,
+        teamId,
+        ...parsed.data,
+      });
+      if (!result.isOk()) return failureToHttp(result.error);
+      return jsonResponse(
+        connectTeamExternalClubResponseSchema.parse(teamExternalClubDto(result.value)),
+      );
+    },
+  );
+
+  secured.get(
+    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/external-club",
+    async (c) => {
+      const organizationId = asOrganizationId(c.req.param("organizationId"));
+      const competitionId = asCompetitionId(c.req.param("competitionId"));
+      const teamId = asTeamId(c.req.param("teamId"));
+      const forbidden = await requireApiPermission(deps, {
+        actorId: asActorId(c.get("actorId")),
+        permission: TEAM_PERMISSION.externalClubRead,
+        scope: { organizationId, competitionId, teamId },
+      });
+      if (forbidden) return forbidden;
+      const connection = await deps.modules.teams.getTeamExternalClub.execute({ teamId });
+      return jsonResponse(
+        getTeamExternalClubResponseSchema.parse(
+          connection ? teamExternalClubDto(connection) : null,
+        ),
+      );
+    },
+  );
+
   secured.post(
     "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/roster-invitations",
     async (c) => {

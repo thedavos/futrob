@@ -56,7 +56,8 @@ describe("teamsBrowserClient management reads", () => {
 describe("teamsBrowserClient management commands", () => {
   it("uses competition-scoped roster and club endpoints", async () => {
     const fetchMock = vi.fn<typeof fetch>(async (input) => {
-      const path = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const path =
+        typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       if (path.endsWith("/roster/member-1")) {
         return Response.json({
           id: "member-1",
@@ -80,13 +81,9 @@ describe("teamsBrowserClient management commands", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await teamsBrowserClient.changeRosterRole(
-      "org-1",
-      "competition-1",
-      "team-1",
-      "member-1",
-      { role: "captain" },
-    );
+    await teamsBrowserClient.changeRosterRole("org-1", "competition-1", "team-1", "member-1", {
+      role: "captain",
+    });
     await teamsBrowserClient.connectExternalClub("org-1", "competition-1", "team-1", {
       providerKey: "ea-clubs",
       externalClubId: "club-1",

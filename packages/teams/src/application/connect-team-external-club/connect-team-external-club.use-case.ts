@@ -4,6 +4,7 @@ import {
   type EventPublisherPort,
   type ActorId,
   type AuthorizationPort,
+  type CompetitionId,
   type OrganizationId,
   type Result,
   type TeamId,
@@ -23,6 +24,7 @@ import { teamPermissionError } from "../require-team-permission.ts";
 export interface ConnectTeamExternalClubInput {
   readonly actorId: ActorId;
   readonly organizationId: OrganizationId;
+  readonly competitionId?: CompetitionId;
   readonly teamId: TeamId;
   readonly providerKey: GameDataProviderKey;
   readonly externalClubId: string;
@@ -48,7 +50,11 @@ export class ConnectTeamExternalClubUseCase {
       authorization: this.deps.authorization,
       actorId: input.actorId,
       permission: TEAM_PERMISSION.externalClubManage,
-      scope: { organizationId: input.organizationId, teamId: input.teamId },
+      scope: {
+        organizationId: input.organizationId,
+        competitionId: input.competitionId,
+        teamId: input.teamId,
+      },
     });
     if (forbidden) return err(forbidden);
     const team = await this.deps.teams.findById(input.organizationId, input.teamId);
