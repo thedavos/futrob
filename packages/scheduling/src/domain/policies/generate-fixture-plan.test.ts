@@ -66,6 +66,17 @@ describe("generateFixturePlan", () => {
     }
   });
 
+  it("creates one encounter for the minimum two-participant league", () => {
+    const plan = generateFixturePlan({
+      ...baseInput(),
+      format: "league",
+      seed: teams.slice(0, 2),
+    });
+
+    expect(plan.stages[0]?.rounds).toHaveLength(1);
+    expect(plan.stages[0]?.rounds[0]?.encounters).toHaveLength(1);
+  });
+
   it("swaps home and away in the return leg", () => {
     const plan = generateFixturePlan({
       ...baseInput(),
