@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { FutrobApiError } from "@futrob/sdk";
 import { productApiBffErrorResponse } from "./product-api-bff-error-response.ts";
+import { BffRateLimitUnavailableError } from "@/shared/infrastructure/rate-limit/enforce-bff-rate-limit.ts";
 
 describe("productApiBffErrorResponse", () => {
   it("keeps the BFF request ID when the downstream error disagrees", async () => {
@@ -32,6 +33,19 @@ describe("productApiBffErrorResponse", () => {
     expect(await response.json()).toEqual({
       code: "api.unexpected_error",
       messageKey: "errors.api.unexpected_error",
+      requestId,
+    });
+  });
+
+  it("returns a sanitized 503 when rate-limit infrastructure is unavailable", async () => {
+    const requestId = "6128b21e-92a7-4dd7-b4df-5b044325203b";
+
+    const response = productApiBffErrorResponse(new BffRateLimitUnavailableError(), requestId);
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      code: "api.rate_limit_unavailable",
+      messageKey: "errors.api.rate_limit_unavailable",
       requestId,
     });
   });
