@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { CompetitionTeamsView, type CompetitionTeamsViewProps } from "./competition-teams-view.tsx";
 import { teamManagementFixture, teamSummaryFixture } from "./competition-teams-view.fixtures.ts";
 
@@ -75,11 +75,13 @@ export const InvitationCreated: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "Invitar" }));
-    await expect(
-      within(document.body).getByText(
-        "https://app.futrob.com/roster-invitations/accept/roster-token",
-      ),
-    ).toBeVisible();
+    await waitFor(async () => {
+      await expect(
+        within(document.body).getByText(
+          "https://app.futrob.com/roster-invitations/accept/roster-token",
+        ),
+      ).toBeVisible();
+    });
   },
 };
 
