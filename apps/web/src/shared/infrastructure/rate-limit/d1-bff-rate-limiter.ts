@@ -62,8 +62,7 @@ export class D1BffRateLimiter implements BffRateLimiter {
       "actor",
       attempt.actorId,
     );
-    const retentionCutoff =
-      Math.floor(attempt.nowMs / this.maxPolicyWindowMs) * this.maxPolicyWindowMs;
+    const retentionCutoff = attempt.nowMs - this.maxPolicyWindowMs;
     const [, actor, ip] = await this.database.batch<CounterResult>([
       this.database.prepare(PURGE_EXPIRED_WINDOWS_SQL).bind(retentionCutoff),
       this.database
