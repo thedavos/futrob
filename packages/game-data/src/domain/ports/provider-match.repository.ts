@@ -4,6 +4,11 @@ import type { GameDataProviderKey } from "../value-objects/provider-key.ts";
 export interface ProviderMatchRepository {
   upsertMany(matches: readonly ProviderMatch[]): Promise<void>;
 
+  findByExternalId(input: {
+    readonly providerKey: GameDataProviderKey;
+    readonly externalMatchId: string;
+  }): Promise<ProviderMatch | null>;
+
   listBetweenClubs(input: {
     readonly providerKey: GameDataProviderKey;
     readonly homeExternalClubId: string;

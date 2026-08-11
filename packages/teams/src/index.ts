@@ -86,6 +86,11 @@ export {
   type AddPlayerGameAccountInput,
 } from "./application/add-player-game-account/add-player-game-account.use-case.ts";
 export {
+  LinkProviderExternalPlayerIdUseCase,
+  type LinkProviderExternalPlayerIdInput,
+  type LinkProviderExternalPlayerIdError,
+} from "./application/link-provider-external-player-id/link-provider-external-player-id.use-case.ts";
+export {
   AssociatePlayerExternalClubUseCase,
   type AssociatePlayerExternalClubInput,
 } from "./application/associate-player-external-club/associate-player-external-club.use-case.ts";

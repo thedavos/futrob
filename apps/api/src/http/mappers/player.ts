@@ -13,6 +13,7 @@ export function playerGameAccountDto(account: PlayerGameAccount) {
     id: account.id,
     playerProfileId: account.playerProfileId,
     identifier: account.identifier,
+    providerExternalPlayerId: account.providerExternalPlayerId,
     platform: account.platform,
     gameEdition: account.gameEdition,
     createdAt: account.createdAt.toISOString(),

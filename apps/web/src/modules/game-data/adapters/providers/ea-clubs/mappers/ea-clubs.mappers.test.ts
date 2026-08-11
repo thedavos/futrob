@@ -68,4 +68,55 @@ describe("ea-clubs schemas and mappers", () => {
     expect(match?.occurredAt.toISOString()).toBe(new Date(1768624748 * 1000).toISOString());
     expect(match?.players.length).toBeGreaterThan(0);
   });
+
+  it("maps full player stats and preserves zero versus absent fields", () => {
+    const parsed = eaClubMatchesResponseSchema.parse(clubMatchesFixture);
+    const match = mapClubMatchToProviderMatch(parsed[0]!, {
+      ...context,
+      matchType: "friendlyMatch",
+      focalExternalClubId: "10754",
+    });
+
+    const complete = match?.players.find((player) => player.externalPlayerId === "922546779");
+    expect(complete).toEqual({
+      externalPlayerId: "922546779",
+      displayName: "Vcaliari",
+      externalClubId: "10754",
+      position: "midfielder",
+      minutesPlayed: null,
+      goals: 0,
+      assists: 0,
+      shots: 1,
+      passAttempts: 19,
+      passesMade: 14,
+      tackleAttempts: 9,
+      tacklesMade: 4,
+      saves: null,
+      yellowCards: null,
+      redCards: 0,
+      isMvp: false,
+      rating: 7.6,
+    });
+
+    const partial = match?.players.find((player) => player.externalPlayerId === "111");
+    expect(partial).toEqual({
+      externalPlayerId: "111",
+      displayName: "Rival Cap",
+      externalClubId: "2575670",
+      position: null,
+      minutesPlayed: null,
+      goals: 2,
+      assists: 1,
+      shots: null,
+      passAttempts: null,
+      passesMade: null,
+      tackleAttempts: null,
+      tacklesMade: null,
+      saves: null,
+      yellowCards: null,
+      redCards: null,
+      isMvp: null,
+      rating: 8.1,
+    });
+  });
 });

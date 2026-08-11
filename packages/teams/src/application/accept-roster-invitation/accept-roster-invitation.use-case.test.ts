@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { CompetitionRosterMembership } from "../../domain/entities/competition-roster-membership.ts";
 import type { CompetitionRosterState } from "../../domain/entities/competition-roster-state.ts";
+import type { PlayerGameAccount } from "../../domain/entities/player-game-account.ts";
 import type { PlayerProfile } from "../../domain/entities/player-profile.ts";
 import type { Team } from "../../domain/entities/team.ts";
 import { ROSTER_INVITATION_STATUS } from "../../domain/entities/roster-invitation.ts";
@@ -13,6 +14,7 @@ import {
 import { RosterFull, RosterLocked } from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterMembershipRepository } from "../../domain/ports/competition-roster-membership.repository.ts";
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
+import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 import type { PlayerProfileRepository } from "../../domain/ports/player-profile.repository.ts";
 import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
@@ -164,9 +166,11 @@ function buildHarness(options?: { maxSize?: number }) {
     getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
   };
   const ensurePlayerProfile = new EnsurePlayerProfileUseCase({ profiles, ...shared });
-  const accounts = {
+  const accounts: PlayerGameAccountRepository = {
     listByProfile: async () => [],
-    saveIfAbsent: async <T>(account: T) => account,
+    saveIfAbsent: async (account: PlayerGameAccount) => account,
+    setProviderExternalPlayerId: async () => null,
+    findByCorrelation: async () => [],
   };
   const createInvitation = new CreateRosterInvitationUseCase({
     teams,

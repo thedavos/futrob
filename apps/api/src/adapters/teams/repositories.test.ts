@@ -29,12 +29,26 @@ describe("teams persistence adapters", () => {
       playerProfileId: profile.id,
       identifier: "Gamer23",
       normalizedIdentifier: "gamer23",
+      providerExternalPlayerId: null,
       platform: "playstation" as const,
       gameEdition: "FC 26",
       createdAt,
     };
     expect((await accounts.saveIfAbsent(account)).id).toBe("account-1");
     expect((await accounts.saveIfAbsent({ ...account, id: "account-2" })).id).toBe("account-1");
+    const linked = await accounts.setProviderExternalPlayerId({
+      accountId: account.id,
+      providerExternalPlayerId: "provider-player-23",
+    });
+    expect(linked?.providerExternalPlayerId).toBe("provider-player-23");
+    expect(
+      await accounts.findByCorrelation({
+        platform: account.platform,
+        gameEdition: account.gameEdition,
+        providerExternalPlayerId: "provider-player-23",
+        normalizedIdentifier: account.normalizedIdentifier,
+      }),
+    ).toEqual([linked]);
 
     const association = {
       playerProfileId: profile.id,
@@ -76,6 +90,7 @@ describe("teams persistence adapters", () => {
             player_profile_id: "profile-1",
             identifier: "Gamer23",
             normalized_identifier: "gamer23",
+            provider_external_player_id: null,
             platform: "playstation",
             game_edition: "FC 26",
             created_at: createdAt,
@@ -107,6 +122,7 @@ describe("teams persistence adapters", () => {
       playerProfileId: profile.id,
       identifier: "Gamer23",
       normalizedIdentifier: "gamer23",
+      providerExternalPlayerId: null,
       platform: "playstation",
       gameEdition: "FC 26",
       createdAt,
@@ -131,5 +147,44 @@ describe("teams persistence adapters", () => {
       imageUrl: "https://example.com/crests/l9.png",
     });
     expect(query).toHaveBeenCalledTimes(3);
+  });
+
+  it("updates and finds a Postgres account by provider correlation", async () => {
+    const row = {
+      id: "account-1",
+      player_profile_id: "profile-1",
+      identifier: "Gamer23",
+      normalized_identifier: "gamer23",
+      provider_external_player_id: "provider-player-23",
+      platform: "playstation",
+      game_edition: "FC 26",
+      created_at: createdAt,
+    };
+    const query = vi
+      .fn()
+      .mockResolvedValueOnce({ rows: [row] })
+      .mockResolvedValueOnce({ rows: [row] });
+    const repository = new PostgresPlayerGameAccountRepository({
+      query,
+    } as unknown as Pool);
+
+    const linked = await repository.setProviderExternalPlayerId({
+      accountId: row.id,
+      providerExternalPlayerId: row.provider_external_player_id,
+    });
+    const matches = await repository.findByCorrelation({
+      platform: "playstation",
+      gameEdition: "FC 26",
+      providerExternalPlayerId: row.provider_external_player_id,
+    });
+
+    expect(linked?.providerExternalPlayerId).toBe(row.provider_external_player_id);
+    expect(matches).toEqual([linked]);
+    expect(query.mock.calls[1]?.[1]).toEqual([
+      "playstation",
+      "FC 26",
+      row.provider_external_player_id,
+      null,
+    ]);
   });
 });

@@ -63,4 +63,32 @@ export class InMemoryPlayerGameAccountRepository implements PlayerGameAccountRep
     this.rows.set(account.id, account);
     return account;
   }
+
+  async setProviderExternalPlayerId(input: {
+    readonly accountId: string;
+    readonly providerExternalPlayerId: string;
+  }): Promise<PlayerGameAccount | null> {
+    const account = this.rows.get(input.accountId);
+    if (!account) return null;
+    const updated = { ...account, providerExternalPlayerId: input.providerExternalPlayerId };
+    this.rows.set(updated.id, updated);
+    return updated;
+  }
+
+  async findByCorrelation(input: {
+    readonly platform: PlayerGameAccount["platform"];
+    readonly gameEdition: string;
+    readonly providerExternalPlayerId?: string;
+    readonly normalizedIdentifier?: string;
+  }): Promise<PlayerGameAccount[]> {
+    return [...this.rows.values()].filter(
+      (row) =>
+        row.platform === input.platform &&
+        row.gameEdition === input.gameEdition &&
+        ((input.providerExternalPlayerId !== undefined &&
+          row.providerExternalPlayerId === input.providerExternalPlayerId) ||
+          (input.normalizedIdentifier !== undefined &&
+            row.normalizedIdentifier === input.normalizedIdentifier)),
+    );
+  }
 }

@@ -26,6 +26,9 @@ class NoopEventPublisher implements EventPublisherPort {
 
 class UnimplementedProviderMatchRepository implements ProviderMatchRepository {
   async upsertMany(): Promise<void> {}
+  async findByExternalId() {
+    return null;
+  }
   async listBetweenClubs() {
     return [];
   }

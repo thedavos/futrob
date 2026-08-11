@@ -36,6 +36,12 @@ export type {
 export type { GameDataProviderRegistryPort } from "./domain/ports/game-data-provider-registry.port.ts";
 export type { ProviderMatchRepository } from "./domain/ports/provider-match.repository.ts";
 export type { RawObservationRepository } from "./domain/ports/raw-observation.repository.ts";
+export type {
+  ProviderMatchIngestionPort,
+  ProviderMatchObservationDraft,
+  IngestedProviderMatches,
+} from "./domain/ports/provider-match-ingestion.port.ts";
+export type { ProviderMatchIngestionRegistryPort } from "./domain/ports/provider-match-ingestion-registry.port.ts";
 
 export {
   ListMatchesBetweenClubsUseCase,
@@ -44,3 +50,4 @@ export {
 export { SearchExternalClubsUseCase } from "./application/search-external-clubs/search-external-clubs.use-case.ts";
 export { GetExternalClubUseCase } from "./application/get-external-club/get-external-club.use-case.ts";
 export { GetRecentProviderMatchesUseCase } from "./application/get-recent-provider-matches/get-recent-provider-matches.use-case.ts";
+export { SyncRecentProviderMatchesUseCase } from "./application/sync-recent-provider-matches/sync-recent-provider-matches.use-case.ts";

@@ -94,6 +94,8 @@ export default defineConfig({
       "packages/organizations",
       "packages/competitions",
       "packages/results",
+      "packages/scheduling",
+      "packages/statistics",
       "packages/teams",
     ],
   },

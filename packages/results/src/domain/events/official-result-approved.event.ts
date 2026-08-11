@@ -7,5 +7,7 @@ export type OfficialResultApprovedEvent = DomainEvent<
     readonly organizationId: string;
     readonly competitionId: string;
     readonly approvedBy: string;
+    readonly officialResultId: string;
+    readonly revision: number;
   }
 >;

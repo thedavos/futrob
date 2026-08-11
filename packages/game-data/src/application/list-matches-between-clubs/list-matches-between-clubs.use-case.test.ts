@@ -9,6 +9,7 @@ describe("ListMatchesBetweenClubsUseCase", () => {
     let received: unknown;
     const repo: ProviderMatchRepository = {
       upsertMany: async () => undefined,
+      findByExternalId: async () => null,
       listBetweenClubs: async (input) => {
         received = input;
         return matches;

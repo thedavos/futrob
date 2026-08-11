@@ -14,8 +14,8 @@ export interface RawProviderObservation {
   readonly externalResourceId: string;
   readonly endpointKey: string;
   readonly payloadHash: string;
-  /** Object key in R2 when payload is large; otherwise inline JSON path in D1. */
   readonly storageRef: string;
+  readonly payload: unknown;
   readonly observedAt: Date;
   readonly httpStatus: number | null;
   readonly schemaVersion: string;

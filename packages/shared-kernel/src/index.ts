@@ -6,6 +6,7 @@ export {
   asCompetitionId,
   asTeamId,
   asEncounterId,
+  asOfficialMatchSlotId,
   type Brand,
   type ActorId,
   type OrganizationId,
