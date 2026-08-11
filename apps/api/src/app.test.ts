@@ -1159,7 +1159,7 @@ describe("apps/api", () => {
     expect(forbidden.status).toBe(403);
 
     const club = await app.request(
-      `/api/v1/organizations/${organizationId}/teams/${teamABody.id}/external-club`,
+      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/teams/${teamABody.id}/external-club`,
       {
         method: "PUT",
         headers: serviceHeaders(organizer),
@@ -1181,6 +1181,12 @@ describe("apps/api", () => {
       platform: "ps5",
       gameEdition: "FC 26",
     });
+    const scopedClub = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competitionA}/teams/${teamABody.id}/external-club`,
+      { headers: serviceHeaders(organizer) },
+    );
+    expect(scopedClub.status).toBe(200);
+    expect(await scopedClub.json()).toMatchObject({ externalClubId: "club-1" });
 
     const listed = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionA}/teams/${teamABody.id}/roster`,
