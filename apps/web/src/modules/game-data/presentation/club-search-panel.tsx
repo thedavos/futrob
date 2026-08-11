@@ -22,6 +22,7 @@ import {
 } from "@futrob/ui";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
+import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 import {
   SupportErrorAlert,
   type SupportError,
@@ -52,10 +53,11 @@ export function ClubSearchPanel() {
   const [searched, setSearched] = useState(false);
   const validation = useFormValidation<ClubSearchField>();
   const searchClubs = useSearchClubsMutation();
+  const retry = useRetryAfterCountdown();
   const loading = searchClubs.isPending;
 
   async function handleSubmit(formValues: ClubSearchValues) {
-    if (loading) {
+    if (loading || retry.blocked) {
       return;
     }
 
@@ -76,9 +78,13 @@ export function ClubSearchPanel() {
       setClubs([]);
       setSearched(true);
       if (GameDataClientError.is(cause)) {
+        retry.start(cause.retryAfterSeconds);
         setError({
-          message: "No pudimos buscar clubs. Inténtalo nuevamente.",
+          message: cause.retryAfterSeconds
+            ? "Alcanzaste el límite temporal de búsquedas."
+            : "No pudimos buscar clubs. Inténtalo nuevamente.",
           requestId: cause.requestId,
+          retryAfterSeconds: cause.retryAfterSeconds,
         });
       } else {
         setError({ message: "No pudimos buscar clubs. Inténtalo nuevamente." });
@@ -137,13 +143,24 @@ export function ClubSearchPanel() {
           </Select>
         </Field>
 
-        <Button className="w-full sm:w-auto" disabled={loading} type="submit">
-          {loading ? "Buscando…" : "Buscar"}
+        <Button className="w-full sm:w-auto" disabled={loading || retry.blocked} type="submit">
+          {loading
+            ? "Buscando…"
+            : retry.blocked
+              ? `Reintentar en ${retry.remainingSeconds} s`
+              : "Buscar"}
         </Button>
       </Form>
 
       <div className="border-t border-border bg-muted px-5 py-4 sm:px-6">
-        {error ? <SupportErrorAlert error={error} /> : null}
+        {error ? (
+          <SupportErrorAlert
+            error={{
+              ...error,
+              retryAfterSeconds: retry.remainingSeconds || undefined,
+            }}
+          />
+        ) : null}
 
         {!error && searched && clubs.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sin resultados para esa búsqueda.</p>

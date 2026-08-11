@@ -4,8 +4,17 @@ import type { SupportError } from "@/shared/presentation/support-error-alert.tsx
 
 export function finalizationError(path: OnboardingPathDto, caught: unknown): SupportError {
   const requestId = caught instanceof IdentityOnboardingClientError ? caught.requestId : undefined;
-  const present = (message: string): SupportError =>
-    requestId ? { message, requestId } : { message };
+  const retryAfterSeconds =
+    caught instanceof IdentityOnboardingClientError ? caught.retryAfterSeconds : undefined;
+  const present = (message: string): SupportError => ({
+    message,
+    ...(requestId ? { requestId } : {}),
+    ...(retryAfterSeconds ? { retryAfterSeconds } : {}),
+  });
+
+  if (caught instanceof IdentityOnboardingClientError && caught.code === "api.rate_limited") {
+    return present("Alcanzaste el límite temporal. Espera antes de intentarlo nuevamente.");
+  }
 
   if (caught instanceof IdentityOnboardingClientError && path === "invitation") {
     switch (caught.code) {
