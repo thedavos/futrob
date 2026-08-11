@@ -150,13 +150,11 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
   const statistics = createStatisticsModule({
     pool: input.pool ?? null,
-    resultReader: results.officialResultReader,
+    officialResults: results.results,
     accounts: teams.repositories.accounts,
   });
   eventPublisher.bind(async (officialResultId) => {
-    const projected = await statistics.useCases.projectApprovedOfficialResult.execute({
-      officialResultId,
-    });
+    const projected = await statistics.projectOfficialResultFromEvent({ officialResultId });
     if (!projected.isOk()) throw projected.error;
   });
 

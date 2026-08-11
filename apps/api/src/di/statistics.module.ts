@@ -6,7 +6,7 @@ import {
   type PlayerMatchContributionRepository,
   type PlayerPersonalStatsRepository,
 } from "@futrob/statistics";
-import type { OfficialResultReaderPort } from "@futrob/results";
+import type { OfficialResultApprovedEvent, OfficialResultRepository } from "@futrob/results";
 import type { PlayerGameAccountRepository } from "@futrob/teams";
 import { SystemClock } from "@/adapters/organizations/crypto-ports";
 import { TeamsPlayerIdentityResolver } from "@/adapters/statistics/player-identity-resolver";
@@ -20,6 +20,7 @@ import {
   PostgresPlayerMatchContributionRepository,
   PostgresPlayerPersonalStatsRepository,
 } from "@/adapters/statistics/postgres.repositories";
+import { RepositoryOfficialResultReader } from "@/adapters/statistics/official-result-reader";
 
 export type StatisticsModule = {
   useCases: {
@@ -33,11 +34,14 @@ export type StatisticsModule = {
   ports: {
     identities: PlayerIdentityResolverPort;
   };
+  projectOfficialResultFromEvent(
+    payload: Pick<OfficialResultApprovedEvent["payload"], "officialResultId">,
+  ): ReturnType<ProjectApprovedOfficialResultUseCase["execute"]>;
 };
 
 export function createStatisticsModule(deps: {
   pool: Pool | null;
-  resultReader: OfficialResultReaderPort;
+  officialResults: OfficialResultRepository;
   accounts: PlayerGameAccountRepository;
 }): StatisticsModule {
   const contributions: PlayerMatchContributionRepository =
@@ -53,17 +57,18 @@ export function createStatisticsModule(deps: {
       ? new InMemoryPlayerPersonalStatsRepository()
       : new PostgresPlayerPersonalStatsRepository(deps.pool);
   const identities = new TeamsPlayerIdentityResolver(deps.accounts);
+  const projectApprovedOfficialResult = new ProjectApprovedOfficialResultUseCase({
+    officialResults: new RepositoryOfficialResultReader(deps.officialResults),
+    identities,
+    contributions,
+    competitionStats,
+    personalStats,
+    clock: new SystemClock(),
+  });
 
   return {
     useCases: {
-      projectApprovedOfficialResult: new ProjectApprovedOfficialResultUseCase({
-        officialResults: deps.resultReader,
-        identities,
-        contributions,
-        competitionStats,
-        personalStats,
-        clock: new SystemClock(),
-      }),
+      projectApprovedOfficialResult,
     },
     repositories: {
       contributions,
@@ -72,6 +77,11 @@ export function createStatisticsModule(deps: {
     },
     ports: {
       identities,
+    },
+    projectOfficialResultFromEvent(payload) {
+      return projectApprovedOfficialResult.execute({
+        officialResultId: payload.officialResultId,
+      });
     },
   };
 }
