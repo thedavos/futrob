@@ -22,8 +22,20 @@ export const providerMatchTeamSchema = z.object({
 export const providerPlayerMatchStatsSchema = z.object({
   externalPlayerId: z.string(),
   displayName: z.string(),
+  externalClubId: z.string(),
+  position: z.string().nullable(),
+  minutesPlayed: z.number().nullable(),
   goals: z.number().nullable(),
   assists: z.number().nullable(),
+  shots: z.number().nullable(),
+  passAttempts: z.number().nullable(),
+  passesMade: z.number().nullable(),
+  tackleAttempts: z.number().nullable(),
+  tacklesMade: z.number().nullable(),
+  saves: z.number().nullable(),
+  yellowCards: z.number().nullable(),
+  redCards: z.number().nullable(),
+  isMvp: z.boolean().nullable(),
   rating: z.number().nullable(),
 });
 

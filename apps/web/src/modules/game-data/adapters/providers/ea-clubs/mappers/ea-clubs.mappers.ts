@@ -78,18 +78,59 @@ function pickHomeAway(
   };
 }
 
+function optionalNumber(value: number | undefined): number | null {
+  return value === undefined ? null : value;
+}
+
+function mapMinutesPlayed(stats: {
+  readonly secondsPlayed?: number;
+  readonly secondsplayed?: number;
+}): number | null {
+  const seconds = stats.secondsPlayed ?? stats.secondsplayed;
+  if (seconds === undefined) {
+    return null;
+  }
+  return Math.floor(seconds / 60);
+}
+
+function mapIsMvp(mom: number | undefined): boolean | null {
+  if (mom === undefined) {
+    return null;
+  }
+  return mom > 0;
+}
+
+function mapPosition(pos: string | number | undefined): string | null {
+  if (pos === undefined) {
+    return null;
+  }
+  return String(pos);
+}
+
 function mapPlayers(match: EaClubMatch): ProviderPlayerMatchStats[] {
   const players: ProviderPlayerMatchStats[] = [];
   const byClub = match.players ?? {};
 
-  for (const clubPlayers of Object.values(byClub)) {
+  for (const [externalClubId, clubPlayers] of Object.entries(byClub)) {
     for (const [externalPlayerId, stats] of Object.entries(clubPlayers)) {
       players.push({
         externalPlayerId,
         displayName: stats.playername ?? externalPlayerId,
-        goals: stats.goals ?? null,
-        assists: stats.assists ?? null,
-        rating: stats.rating ?? null,
+        externalClubId,
+        position: mapPosition(stats.pos),
+        minutesPlayed: mapMinutesPlayed(stats),
+        goals: optionalNumber(stats.goals),
+        assists: optionalNumber(stats.assists),
+        shots: optionalNumber(stats.shots),
+        passAttempts: optionalNumber(stats.passattempts),
+        passesMade: optionalNumber(stats.passesmade),
+        tackleAttempts: optionalNumber(stats.tackleattempts),
+        tacklesMade: optionalNumber(stats.tacklesmade),
+        saves: optionalNumber(stats.saves),
+        yellowCards: optionalNumber(stats.yellowcards),
+        redCards: optionalNumber(stats.redcards),
+        isMvp: mapIsMvp(stats.mom),
+        rating: optionalNumber(stats.rating),
       });
     }
   }

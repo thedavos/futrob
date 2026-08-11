@@ -62,6 +62,18 @@ export const eaPlayerMatchStatsSchema = z
     goals: eaNumeric,
     assists: eaNumeric,
     rating: eaNumeric,
+    pos: z.union([z.string(), z.number()]).optional().catch(undefined),
+    shots: eaNumeric,
+    passattempts: eaNumeric,
+    passesmade: eaNumeric,
+    tackleattempts: eaNumeric,
+    tacklesmade: eaNumeric,
+    saves: eaNumeric,
+    yellowcards: eaNumeric,
+    redcards: eaNumeric,
+    mom: eaNumeric,
+    secondsPlayed: eaNumeric,
+    secondsplayed: eaNumeric,
   })
   .passthrough();
 
