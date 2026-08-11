@@ -2,3 +2,11 @@
 export { EaClubsGameDataAdapter } from "./ea-clubs/ea-clubs-game-data.adapter.ts";
 export { ManualGameDataAdapter } from "./manual/manual-game-data.adapter.ts";
 export { InMemoryGameDataProviderRegistry } from "./registry/in-memory-provider-registry.adapter.ts";
+export {
+  InMemoryProviderMatchRepository,
+  InMemoryRawObservationRepository,
+} from "./persistence/in-memory.repository.ts";
+export {
+  PostgresProviderMatchRepository,
+  PostgresRawObservationRepository,
+} from "./persistence/postgres.repository.ts";

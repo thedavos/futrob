@@ -1,7 +1,15 @@
-import { InMemoryProviderMatchRepository } from "@/adapters/persistence/in-memory-provider-match.repository.ts";
+import {
+  InMemoryProviderMatchRepository,
+  InMemoryRawObservationRepository,
+} from "@/adapters/game-data/persistence/in-memory.repository.ts";
+import {
+  PostgresProviderMatchRepository,
+  PostgresRawObservationRepository,
+} from "@/adapters/game-data/persistence/postgres.repository.ts";
 import { createTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
+import { CryptoIdGenerator } from "@/adapters/organizations/crypto-ports.ts";
 import type { TransactionPort } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { createGameDataModule, type GameDataModule } from "./game-data.module.ts";
@@ -24,10 +32,20 @@ export interface CreateModulesInput {
 }
 
 export function createModules(input: CreateModulesInput): AppModules {
+  const ids = new CryptoIdGenerator();
+  const providerMatches = input.pool
+    ? new PostgresProviderMatchRepository(input.pool)
+    : new InMemoryProviderMatchRepository();
+  const rawObservations = input.pool
+    ? new PostgresRawObservationRepository(input.pool)
+    : new InMemoryRawObservationRepository();
+
   const gameData = createGameDataModule({
     fetcher: input.fetcher,
     eaClubsBaseUrl: input.eaClubsBaseUrl,
-    providerMatches: new InMemoryProviderMatchRepository(),
+    providerMatches,
+    rawObservations,
+    ids,
     enableManualProvider: true,
   });
 

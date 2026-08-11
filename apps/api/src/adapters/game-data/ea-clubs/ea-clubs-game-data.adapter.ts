@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { err, ok, type Result } from "@futrob/shared-kernel";
 import {
   ExternalClubNotFound,
@@ -5,6 +6,8 @@ import {
   type ExternalClub,
   type ProviderMatch,
   type GameDataProviderPort,
+  type ProviderMatchIngestionPort,
+  type IngestedProviderMatches,
   type GetExternalClubInput,
   type GetRecentMatchesInput,
   type ProviderError,
@@ -15,6 +18,7 @@ import {
   eaClubInfoMapSchema,
   eaClubMatchesResponseSchema,
   eaSearchClubsResponseSchema,
+  type EaClubMatch,
 } from "./schemas/ea-clubs.schemas.ts";
 import {
   mapClubInfoToExternalClub,
@@ -22,10 +26,13 @@ import {
   mapLeaderboardEntryToExternalClub,
 } from "./mappers/ea-clubs.mappers.ts";
 
+const MATCH_ENDPOINT = "/clubs/matches";
+const MATCH_SCHEMA_VERSION = "ea-clubs.match.v1";
+
 /**
  * EA Clubs adapter — the only place that may know proclubs.ea.com shapes.
  */
-export class EaClubsGameDataAdapter implements GameDataProviderPort {
+export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMatchIngestionPort {
   readonly key = "ea-clubs" as const;
 
   readonly capabilities = {
@@ -128,7 +135,17 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort {
   async getRecentMatches(
     input: GetRecentMatchesInput,
   ): Promise<Result<ProviderMatch[], ProviderError>> {
-    const response = await this.http.getJson("/clubs/matches", {
+    const ingested = await this.ingestRecentMatches(input);
+    if (!ingested.isOk()) {
+      return err(ingested.error);
+    }
+    return ok(ingested.value.matches);
+  }
+
+  async ingestRecentMatches(
+    input: GetRecentMatchesInput,
+  ): Promise<Result<IngestedProviderMatches, ProviderError>> {
+    const response = await this.http.getJson(MATCH_ENDPOINT, {
       platform: input.platform,
       clubIds: input.externalClubId,
       matchType: input.matchType,
@@ -149,6 +166,20 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort {
       );
     }
 
+    const observedAt = new Date();
+    const observations = parsed.data.map((payload) => ({
+      providerKey: this.key,
+      resourceType: "match" as const,
+      externalResourceId: payload.matchId,
+      endpointKey: MATCH_ENDPOINT,
+      payloadHash: hashPayload(payload),
+      storageRef: "inline",
+      payload,
+      observedAt,
+      httpStatus: 200,
+      schemaVersion: MATCH_SCHEMA_VERSION,
+    }));
+
     const matches = parsed.data
       .map((match) =>
         mapClubMatchToProviderMatch(match, {
@@ -160,6 +191,10 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort {
       )
       .filter((match): match is ProviderMatch => match !== null);
 
-    return ok(matches);
+    return ok({ observations, matches });
   }
+}
+
+function hashPayload(payload: EaClubMatch): string {
+  return createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 }

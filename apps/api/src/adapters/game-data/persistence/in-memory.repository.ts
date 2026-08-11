@@ -2,14 +2,29 @@ import type {
   ProviderMatch,
   ProviderMatchRepository,
   GameDataProviderKey,
+  RawObservationRepository,
+  RawProviderObservation,
 } from "@futrob/game-data";
 import { externalReferenceKey } from "@futrob/game-data";
 
-/**
- * In-memory stub for `ProviderMatchRepository`. Domain match tables are not
- * modelled in Postgres yet; game-data today is EA HTTP plus ports. This keeps
- * the composition root honest until a real adapter lands.
- */
+export class InMemoryRawObservationRepository implements RawObservationRepository {
+  readonly rows: RawProviderObservation[] = [];
+
+  append(observation: RawProviderObservation): Promise<void> {
+    const duplicate = this.rows.some(
+      (row) =>
+        row.providerKey === observation.providerKey &&
+        row.resourceType === observation.resourceType &&
+        row.externalResourceId === observation.externalResourceId &&
+        row.payloadHash === observation.payloadHash,
+    );
+    if (!duplicate) {
+      this.rows.push(observation);
+    }
+    return Promise.resolve();
+  }
+}
+
 export class InMemoryProviderMatchRepository implements ProviderMatchRepository {
   private readonly byKey = new Map<string, ProviderMatch>();
 
