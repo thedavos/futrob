@@ -24,15 +24,29 @@ describe("request correlation contract", () => {
     });
   });
 
-  it.each([
-    ["search clubs", futrobOpenApiV1.paths["/game-data/clubs/search"].get],
-    ["organization finish", futrobOpenApiV1.paths["/identity/onboarding/organization"].post],
-    ["invitation finish", futrobOpenApiV1.paths["/identity/onboarding/invitation"].post],
-    ["player finish", futrobOpenApiV1.paths["/identity/onboarding/player"].post],
-  ] as const)("documents correlation for %s", (_name, operation) => {
-    expect(operation.parameters).toContainEqual({ $ref: "#/components/parameters/RequestId" });
-    expect(operation.responses["200"].headers).toEqual({
-      "X-Request-ID": { $ref: "#/components/headers/RequestId" },
-    });
+  it("documents correlation for every operation and inline response", () => {
+    let operationCount = 0;
+
+    for (const pathItem of Object.values(futrobOpenApiV1.paths)) {
+      for (const method of ["get", "post", "put", "patch", "delete"]) {
+        const operation = Reflect.get(pathItem, method) as object | undefined;
+        if (!operation) continue;
+        operationCount += 1;
+
+        expect(Reflect.get(operation, "parameters")).toContainEqual({
+          $ref: "#/components/parameters/RequestId",
+        });
+
+        const responses = Reflect.get(operation, "responses") as Record<string, object>;
+        for (const response of Object.values(responses)) {
+          if ("$ref" in response) continue;
+          expect(Reflect.get(response, "headers")).toMatchObject({
+            "X-Request-ID": { $ref: "#/components/headers/RequestId" },
+          });
+        }
+      }
+    }
+
+    expect(operationCount).toBeGreaterThan(30);
   });
 });

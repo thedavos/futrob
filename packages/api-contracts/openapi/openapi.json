@@ -66,9 +66,19 @@
                   "$ref": "#/components/schemas/PingResponse"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/openapi.json": {
@@ -86,9 +96,19 @@
                   "type": "object"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/openapi.yaml": {
@@ -106,9 +126,19 @@
                   "type": "string"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/game-data/clubs/search": {
@@ -161,16 +191,16 @@
         "responses": {
           "200": {
             "description": "Matching clubs",
-            "headers": {
-              "X-Request-ID": {
-                "$ref": "#/components/headers/RequestId"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SearchClubsResponse"
                 }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
               }
             }
           },
@@ -232,16 +262,16 @@
         "responses": {
           "200": {
             "description": "Club",
-            "headers": {
-              "X-Request-ID": {
-                "$ref": "#/components/headers/RequestId"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExternalClub"
                 }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
               }
             }
           },
@@ -326,16 +356,16 @@
         "responses": {
           "200": {
             "description": "Matches",
-            "headers": {
-              "X-Request-ID": {
-                "$ref": "#/components/headers/RequestId"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetClubMatchesResponse"
                 }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
               }
             }
           },
@@ -362,12 +392,22 @@
                   "$ref": "#/components/schemas/GetMyPlayerProfileResponse"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/players/me/game-accounts": {
@@ -394,6 +434,11 @@
                   "$ref": "#/components/schemas/AddMyPlayerGameAccountResponse"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -402,7 +447,12 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/players/me/statistics": {
@@ -419,12 +469,22 @@
                   "$ref": "#/components/schemas/GetMyStatisticsResponse"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/players/me/matches": {
@@ -433,6 +493,9 @@
         "tags": ["players"],
         "summary": "List personal match contributions projected from approved official results",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "competitionId",
             "in": "query",
@@ -472,6 +535,11 @@
                   "$ref": "#/components/schemas/GetMyMatchesResponse"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -488,41 +556,36 @@
         "operationId": "getOnboardingStatus",
         "tags": ["onboarding"],
         "summary": "Get the authenticated actor onboarding state",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/RequestId"
-          }
-        ],
         "responses": {
           "200": {
             "description": "Current onboarding state",
-            "headers": {
-              "X-Request-ID": {
-                "$ref": "#/components/headers/RequestId"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OnboardingStatus"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       },
       "patch": {
         "operationId": "saveOnboardingProgress",
         "tags": ["onboarding"],
         "summary": "Persist the current onboarding path and step without draft data",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/RequestId"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -563,16 +626,16 @@
         "responses": {
           "200": {
             "description": "Saved onboarding state",
-            "headers": {
-              "X-Request-ID": {
-                "$ref": "#/components/headers/RequestId"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OnboardingStatus"
                 }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
               }
             }
           },
@@ -582,7 +645,12 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/identity/onboarding/organization": {
@@ -590,11 +658,6 @@
         "operationId": "completeOrganizationOnboarding",
         "tags": ["onboarding"],
         "summary": "Create an organization and complete the organization onboarding path",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/RequestId"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -629,16 +692,16 @@
         "responses": {
           "200": {
             "description": "Completed organization onboarding",
-            "headers": {
-              "X-Request-ID": {
-                "$ref": "#/components/headers/RequestId"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CompleteOrganizationOnboardingResponse"
                 }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
               }
             }
           },
@@ -651,7 +714,12 @@
           "409": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/identity/onboarding/invitation": {
@@ -659,11 +727,6 @@
         "operationId": "completeInvitationOnboarding",
         "tags": ["onboarding"],
         "summary": "Accept an invitation and complete the invitation onboarding path",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/RequestId"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -694,16 +757,16 @@
         "responses": {
           "200": {
             "description": "Completed invitation onboarding",
-            "headers": {
-              "X-Request-ID": {
-                "$ref": "#/components/headers/RequestId"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CompleteInvitationOnboardingResponse"
                 }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
               }
             }
           },
@@ -719,7 +782,12 @@
           "409": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/identity/onboarding/player": {
@@ -727,11 +795,6 @@
         "operationId": "completePlayerOnboarding",
         "tags": ["onboarding"],
         "summary": "Create a personal profile and complete the player onboarding path",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/RequestId"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -767,16 +830,16 @@
         "responses": {
           "200": {
             "description": "Completed player onboarding",
-            "headers": {
-              "X-Request-ID": {
-                "$ref": "#/components/headers/RequestId"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CompletePlayerOnboardingResponse"
                 }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
               }
             }
           },
@@ -789,7 +852,12 @@
           "409": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/organizations/name-availability": {
@@ -797,11 +865,6 @@
         "operationId": "checkOrganizationNameAvailability",
         "tags": ["organizations"],
         "summary": "Check whether a normalized organization name is globally available",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/RequestId"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -823,11 +886,6 @@
         "responses": {
           "200": {
             "description": "Name availability",
-            "headers": {
-              "X-Request-ID": {
-                "$ref": "#/components/headers/RequestId"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -840,6 +898,11 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -848,7 +911,12 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/competitions/invitations/accept": {
@@ -882,6 +950,11 @@
                   "$ref": "#/components/schemas/AcceptCompetitionInvitationResponse"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -893,7 +966,12 @@
           "404": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/organizations/{organizationId}/competitions": {
@@ -902,6 +980,9 @@
         "tags": ["competitions"],
         "summary": "List competitions in an organization",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -929,6 +1010,11 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "401": {
@@ -944,6 +1030,9 @@
         "tags": ["competitions"],
         "summary": "Create a competition draft in an organization",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -971,6 +1060,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/CompetitionDraft"
                 }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
               }
             }
           },
@@ -1000,12 +1094,22 @@
                   "$ref": "#/components/schemas/ListAccessibleCompetitionsResponse"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/encounters/{encounterId}/schedule-snapshot": {
@@ -1014,6 +1118,9 @@
         "tags": ["encounters"],
         "summary": "Get the authorized persisted scheduling snapshot for an encounter",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "encounterId",
             "in": "path",
@@ -1032,6 +1139,11 @@
                   "$ref": "#/components/schemas/EncounterScheduleSnapshot"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "401": {
@@ -1047,6 +1159,9 @@
         "tags": ["encounters"],
         "summary": "Create or update the persisted scheduling projection",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "encounterId",
             "in": "path",
@@ -1105,6 +1220,11 @@
                   "$ref": "#/components/schemas/EncounterScheduleSnapshot"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -1125,6 +1245,9 @@
         "tags": ["competitions"],
         "summary": "Get an organization-scoped competition draft",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1151,6 +1274,11 @@
                   "$ref": "#/components/schemas/CompetitionDraft"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "401": {
@@ -1169,6 +1297,9 @@
         "tags": ["competitions"],
         "summary": "Update the editable structure and rules of a competition draft",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1205,6 +1336,11 @@
                   "$ref": "#/components/schemas/CompetitionDraft"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -1228,6 +1364,9 @@
         "tags": ["teams"],
         "summary": "List teams available to the organization operator",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1255,6 +1394,11 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "403": {
@@ -1269,6 +1413,9 @@
         "tags": ["competitions"],
         "summary": "List draft participants",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1304,6 +1451,11 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "403": {
@@ -1316,6 +1468,9 @@
         "tags": ["competitions"],
         "summary": "Add an approved existing or inline-created Team",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1352,6 +1507,11 @@
                   "$ref": "#/components/schemas/CompetitionEntry"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -1372,6 +1532,9 @@
         "tags": ["competitions"],
         "summary": "Remove a participant while the competition is a draft",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1399,7 +1562,12 @@
         ],
         "responses": {
           "204": {
-            "description": "Participant removed"
+            "description": "Participant removed",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -1419,6 +1587,9 @@
         "tags": ["competitions"],
         "summary": "Publish and structurally lock a valid draft with at least two approved participants",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1445,6 +1616,11 @@
                   "$ref": "#/components/schemas/CompetitionDraft"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "403": {
@@ -1465,6 +1641,9 @@
         "tags": ["competitions"],
         "summary": "Create an invitation scoped to a competition",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1557,6 +1736,11 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -1580,6 +1764,9 @@
         "tags": ["authorization"],
         "summary": "Resolve the authenticated actor's effective permissions",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "query",
@@ -1625,6 +1812,11 @@
                   "$ref": "#/components/schemas/EffectiveAccess"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -1642,6 +1834,9 @@
         "tags": ["authorization"],
         "summary": "List contextual grants in an authorized scope",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "query",
@@ -1713,6 +1908,11 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "403": {
@@ -1746,6 +1946,11 @@
                   "$ref": "#/components/schemas/AccessGrant"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "400": {
@@ -1757,7 +1962,12 @@
           "404": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/authorization/grants/{grantId}": {
@@ -1766,6 +1976,9 @@
         "tags": ["authorization"],
         "summary": "Delete a contextual override",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "grantId",
             "in": "path",
@@ -1813,7 +2026,12 @@
         ],
         "responses": {
           "204": {
-            "description": "Grant deleted"
+            "description": "Grant deleted",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -1830,6 +2048,9 @@
         "tags": ["authorization"],
         "summary": "Change an organization membership role",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1859,7 +2080,12 @@
         },
         "responses": {
           "200": {
-            "description": "Updated role"
+            "description": "Updated role",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -1879,6 +2105,9 @@
         "tags": ["authorization"],
         "summary": "Change a competition membership role",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "organizationId",
             "in": "path",
@@ -1923,6 +2152,11 @@
                   "$ref": "#/components/schemas/CompetitionRoleAssignment"
                 }
               }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
             }
           },
           "403": {
@@ -1941,6 +2175,9 @@
         "summary": "Assign an audited platform superuser",
         "parameters": [
           {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
             "name": "actorId",
             "in": "path",
             "required": true,
@@ -1951,7 +2188,12 @@
         ],
         "responses": {
           "200": {
-            "description": "Assigned superuser"
+            "description": "Assigned superuser",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -1964,6 +2206,9 @@
         "summary": "Revoke an audited platform superuser",
         "parameters": [
           {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
             "name": "actorId",
             "in": "path",
             "required": true,
@@ -1974,7 +2219,12 @@
         ],
         "responses": {
           "204": {
-            "description": "Revoked superuser"
+            "description": "Revoked superuser",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
