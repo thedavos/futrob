@@ -158,4 +158,38 @@ describe("GenerateCompetitionFixtureUseCase", () => {
     expect(result.error.code).toBe("authorization.forbidden");
     expect(fixtures.saves).toBe(0);
   });
+
+  it("rolls back fixture persistence when event publication fails", async () => {
+    const fixtures = new FixturePlans();
+    const useCase = new GenerateCompetitionFixtureUseCase({
+      authorization: authorization(true),
+      clock: { now: () => new Date("2026-08-11T22:00:00.000Z") },
+      eventPublisher: {
+        publish: async () => {},
+        publishMany: async () => {
+          throw new Error("outbox unavailable");
+        },
+      },
+      fixtures,
+      source: source(),
+      transaction: {
+        runInTransaction: async (operation) => {
+          const snapshot = new Map(fixtures.rows);
+          const saves = fixtures.saves;
+          try {
+            return await operation();
+          } catch (error) {
+            fixtures.rows.clear();
+            for (const [key, value] of snapshot) fixtures.rows.set(key, value);
+            fixtures.saves = saves;
+            throw error;
+          }
+        },
+      },
+    });
+
+    await expect(useCase.execute(input())).rejects.toThrow("outbox unavailable");
+    expect(fixtures.rows.size).toBe(0);
+    expect(fixtures.saves).toBe(0);
+  });
 });

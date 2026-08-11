@@ -112,13 +112,16 @@ describe("EditFixtureEncounterUseCase", () => {
       competitionId,
       fixturePlanId: original.id,
       encounterId: encounter.id,
-      scheduledStartAt: new Date("2026-09-02T01:00:00.000Z"),
-      reason: "Broadcast window",
+      scheduledStartAt: new Date("2026-09-03T01:00:00.000Z"),
+      reason: "Conflicting retry payload",
       requestId: "request-1",
     });
 
     expect(changed.isOk()).toBe(true);
     expect(replay.isOk()).toBe(true);
+    expect(replay.isOk() && replay.value.scheduledStartAt.toISOString()).toBe(
+      "2026-09-02T01:00:00.000Z",
+    );
     expect(harness.audits).toHaveLength(1);
     expect(harness.stored.revision).toBe(2);
     expect(harness.events.map((event) => event.eventName)).toEqual([

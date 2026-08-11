@@ -6,6 +6,7 @@ import type {
   FixturePlan,
   FixturePlanRepository,
   FixtureStage,
+  EncounterScheduleRepository,
 } from "@futrob/scheduling";
 import {
   asCompetitionId,
@@ -23,6 +24,8 @@ export class InMemoryFixturePlanRepository
 {
   readonly rows = new Map<string, FixturePlan>();
   private readonly generationKeys = new Map<string, string>();
+
+  constructor(private readonly encounters?: EncounterScheduleRepository) {}
 
   async findByGenerationKey(
     organizationId: OrganizationId,
@@ -52,6 +55,7 @@ export class InMemoryFixturePlanRepository
     if (existingId) return { plan: this.rows.get(existingId) as FixturePlan, created: false };
     this.rows.set(plan.id, plan);
     this.generationKeys.set(generationKey, plan.id);
+    await this.syncEncounterSnapshots(plan);
     return { plan, created: true };
   }
 
@@ -67,7 +71,28 @@ export class InMemoryFixturePlanRepository
     }
     const updated = { ...plan, revision: plan.revision + 1 };
     this.rows.set(plan.id, updated);
+    await this.syncEncounterSnapshots(updated);
     return updated;
+  }
+
+  private async syncEncounterSnapshots(plan: FixturePlan): Promise<void> {
+    if (!this.encounters) return;
+    for (const stage of plan.stages) {
+      for (const round of stage.rounds) {
+        for (const encounter of round.encounters) {
+          if (encounter.home.kind !== "team" || encounter.away.kind !== "team") continue;
+          await this.encounters.upsert({
+            encounterId: encounter.id,
+            organizationId: plan.organizationId,
+            competitionId: plan.competitionId,
+            homeTeamId: encounter.home.teamId,
+            awayTeamId: encounter.away.teamId,
+            scheduledStartAt: encounter.scheduledStartAt,
+            officialMatchCount: encounter.officialMatchCount,
+          });
+        }
+      }
+    }
   }
 }
 

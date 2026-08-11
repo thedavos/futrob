@@ -43,6 +43,7 @@ import { createCompetitionsModule, type CompetitionsModule } from "./competition
 import { createTeamsModule, type TeamsModule } from "./teams.module.ts";
 import { createAuthorizationModule, type AuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
+import { CompetitionFixtureSourceAdapter } from "@/adapters/scheduling/competition-fixture-source.ts";
 import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
 import { createResultsModule, type ResultsModule } from "./results.module.ts";
 import { createStatisticsModule, type StatisticsModule } from "./statistics.module.ts";
@@ -116,6 +117,7 @@ export function createModules(input: CreateModulesInput): AppModules {
 
   const deferredAuthorization = new DeferredAuthorizationPort();
   const entryGate = new DeferredRosterEntryGate();
+  const eventPublisher = new NoopEventPublisher();
   const organizations = createOrganizationsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
@@ -147,6 +149,12 @@ export function createModules(input: CreateModulesInput): AppModules {
   const scheduling = createSchedulingModule({
     pool: input.pool,
     authorization: deferredAuthorization,
+    eventPublisher,
+    transaction,
+    fixtureSource: new CompetitionFixtureSourceAdapter({
+      competitions: competitionRepository,
+      entries: competitions.entryRepository,
+    }),
     participants: {
       async isApprovedParticipant({ organizationId, competitionId, teamId }) {
         const [team, entry] = await Promise.all([
@@ -197,7 +205,6 @@ export function createModules(input: CreateModulesInput): AppModules {
     get: new GetTeamRosterManagementUseCase(teamManagementDeps),
   };
 
-  const eventPublisher = new NoopEventPublisher();
   const results = createResultsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
