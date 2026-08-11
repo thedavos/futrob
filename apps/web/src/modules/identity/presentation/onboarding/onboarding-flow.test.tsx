@@ -192,10 +192,11 @@ describe("OnboardingFlowProvider initialization", () => {
     ],
   ] as const)("shows typed invitation finish error for %s", async (code, message) => {
     const user = userEvent.setup();
+    const requestId = "2170e2f6-a47e-4338-83c3-27c054630800";
     render(
       <OnboardingStoryRouter
         gateway={createFakeOnboardingGateway({
-          completeError: new IdentityOnboardingClientError(400, code),
+          completeError: new IdentityOnboardingClientError(400, code, requestId),
         })}
         initialPath="/onboarding/intention"
       />,
@@ -213,6 +214,8 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.click(screen.getByRole("button", { name: "Aceptar invitación" }));
 
     expect(await screen.findByText(message)).toBeTruthy();
+    expect(screen.getByText(requestId)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Copiar código de soporte" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Confirma tu configuración" })).toBeTruthy();
   });
 

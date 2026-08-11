@@ -2,8 +2,6 @@
 
 import { useId, useRef, useState } from "react";
 import {
-  Alert,
-  AlertDescription,
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -24,8 +22,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@futrob/ui";
-import { WarningCircleIcon, ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
-import type { EaSearchPlatform, ExternalClubDto } from "@futrob/api-contracts";
+import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
+import type { EaSearchPlatform, ExternalClubDto, RequestId } from "@futrob/api-contracts";
 import {
   asEaSearchPlatform,
   eaSearchPlatformFromGamePlatform,
@@ -45,6 +43,8 @@ import {
   stepsByPath,
 } from "../onboarding-step-meta.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
+import { SupportErrorAlert } from "@/shared/presentation/support-error-alert.tsx";
+import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 
 const clubResultItemClassName =
   "min-h-0 flex-row items-center justify-start gap-4 rounded-xl py-3 pr-14 pl-3 text-left sm:min-h-0 sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:p-3 sm:pr-14 sm:text-left";
@@ -58,7 +58,12 @@ type ClubSearchState =
       readonly clubs: readonly ExternalClubDto[];
     }
   | { readonly status: "empty"; readonly query: string }
-  | { readonly status: "error"; readonly query: string; readonly message: string };
+  | {
+      readonly status: "error";
+      readonly query: string;
+      readonly message: string;
+      readonly requestId?: RequestId;
+    };
 
 export function TeamStep() {
   const flow = useOnboardingFlow();
@@ -89,11 +94,12 @@ export function TeamStep() {
           ? { status: "success", query: trimmed, clubs }
           : { status: "empty", query: trimmed },
       );
-    } catch {
+    } catch (cause) {
       setSearch({
         status: "error",
         query: trimmed,
         message: "No pudimos buscar clubs. Inténtalo nuevamente.",
+        requestId: GameDataClientError.is(cause) ? cause.requestId : undefined,
       });
     }
   }
@@ -232,12 +238,7 @@ export function TeamStep() {
           {liveStatus}
         </div>
 
-        {search.status === "error" ? (
-          <Alert variant="destructive">
-            <WarningCircleIcon aria-hidden="true" />
-            <AlertDescription>{search.message}</AlertDescription>
-          </Alert>
-        ) : null}
+        {search.status === "error" ? <SupportErrorAlert error={search} /> : null}
 
         {search.status === "success" ? (
           <ChoiceGroup
