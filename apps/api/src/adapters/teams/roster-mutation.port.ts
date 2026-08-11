@@ -4,7 +4,7 @@ import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 function scopeKey(scope: RosterMutationScope): string {
-  return `${scope.organizationId}:${scope.competitionId}:${scope.teamId}`;
+  return `${scope.organizationId}:${scope.competitionId}`;
 }
 
 export class InMemoryRosterMutationPort implements RosterMutationPort {

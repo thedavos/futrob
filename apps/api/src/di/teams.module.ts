@@ -157,11 +157,13 @@ export function createTeamsModule(input: {
       clock: shared.clock,
       eventPublisher,
       authorization: input.authorization,
+      mutations: rosterMutations,
     }),
     openRoster: new OpenRosterUseCase({
       teams,
       rosterStates,
       authorization: input.authorization,
+      mutations: rosterMutations,
     }),
     connectTeamExternalClub: new ConnectTeamExternalClubUseCase({
       teams,

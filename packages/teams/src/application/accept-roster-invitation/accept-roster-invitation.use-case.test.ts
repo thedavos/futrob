@@ -11,7 +11,11 @@ import {
   RosterInvitationInvalid,
   RosterInvitationRevoked,
 } from "../../domain/errors/roster-invitation.errors.ts";
-import { RosterFull, RosterLocked } from "../../domain/errors/team.errors.ts";
+import {
+  RosterCompetitionConflict,
+  RosterFull,
+  RosterLocked,
+} from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterMembershipRepository } from "../../domain/ports/competition-roster-membership.repository.ts";
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
@@ -26,6 +30,7 @@ import { EnsurePlayerProfileUseCase } from "../ensure-player-profile/ensure-play
 import { createRosterInvitationTestHarness } from "../roster-invitation-test-harness.ts";
 import { AcceptRosterInvitationUseCase } from "./accept-roster-invitation.use-case.ts";
 import { CreateRosterInvitationUseCase } from "../create-roster-invitation/create-roster-invitation.use-case.ts";
+import { CloseRosterUseCase } from "../close-roster/close-roster.use-case.ts";
 
 class Teams implements TeamRepository {
   rows: Team[] = [];
@@ -104,6 +109,12 @@ class Rosters implements CompetitionRosterMembershipRepository {
     );
   }
   async add(membership: CompetitionRosterMembership) {
+    const existing = await this.findByPlayerAndCompetition(
+      membership.playerProfileId,
+      membership.competitionId,
+    );
+    if (existing && existing.teamId !== membership.teamId) return null;
+    if (existing) return existing;
     this.rows.push(membership);
     return membership;
   }
@@ -223,6 +234,8 @@ function buildHarness(options?: { maxSize?: number }) {
     rosters,
     rosterStates,
     profiles,
+    authorization,
+    mutations,
     createInvitation,
     acceptInvitation,
   };
@@ -585,6 +598,104 @@ describe("AcceptRosterInvitationUseCase multi policy", () => {
       expect(RosterFull.is(losers[0]!.error)).toBe(true);
     }
     expect(ctx.rosters.rows).toHaveLength(1);
+  });
+
+  it("keeps the losing token pending when one actor accepts invitations to two Teams", async () => {
+    const ctx = buildHarness();
+    const first = await seedTeam(ctx);
+    const secondTeamId = asTeamId("team-2");
+    ctx.teams.rows.push({
+      id: secondTeamId,
+      organizationId: first.orgId,
+      name: "FC Beta",
+      createdAt: ctx.clock.now(),
+      createdByActorId: ctx.actor("staff-1"),
+      creationKey: null,
+    });
+    const invitations = await Promise.all(
+      [first.teamId, secondTeamId].map((teamId) =>
+        ctx.createInvitation.execute({
+          organizationId: first.orgId,
+          competitionId: first.competitionId,
+          teamId,
+          invitedByActorId: ctx.actor("staff-1"),
+        }),
+      ),
+    );
+    const [inviteA, inviteB] = invitations;
+    if (!inviteA?.isOk() || !inviteB?.isOk()) {
+      throw new Error("invitation setup failed");
+    }
+    const acceptedInvitations = [inviteA.value, inviteB.value];
+    const actorId = ctx.actor("player-1");
+
+    const results = await Promise.all(
+      acceptedInvitations.map((invitation) =>
+        ctx.acceptInvitation.execute({ token: invitation.token, actorId }),
+      ),
+    );
+
+    expect(results.filter((result) => result.isOk())).toHaveLength(1);
+    const rejected = results.find((result) => result.isErr());
+    expect(rejected?.isErr() && RosterCompetitionConflict.is(rejected.error)).toBe(true);
+    expect(ctx.rosters.rows).toHaveLength(1);
+    const stored = await Promise.all(
+      acceptedInvitations.map((invitation) =>
+        ctx.invitations.findByTokenHash(ctx.tokens.hashToken(invitation.token)),
+      ),
+    );
+    expect(stored.filter((invitation) => invitation?.status === "accepted")).toHaveLength(1);
+    expect(stored.filter((invitation) => invitation?.status === "pending")).toHaveLength(1);
+  });
+
+  it("finishes an acceptance before a concurrent close of the same roster", async () => {
+    const ctx = buildHarness();
+    const { orgId, teamId, competitionId } = await seedTeam(ctx);
+    const invitation = await ctx.createInvitation.execute({
+      organizationId: orgId,
+      competitionId,
+      teamId,
+      invitedByActorId: ctx.actor("staff-1"),
+    });
+    if (!invitation.isOk()) throw invitation.error;
+    let releaseClaim: () => void = () => undefined;
+    let reachedClaim: () => void = () => undefined;
+    const claimReached = new Promise<void>((resolve) => {
+      reachedClaim = resolve;
+    });
+    const continueClaim = new Promise<void>((resolve) => {
+      releaseClaim = resolve;
+    });
+    ctx.invitations.beforeClaim = async () => {
+      reachedClaim();
+      await continueClaim;
+    };
+    const closeRoster = new CloseRosterUseCase({
+      teams: ctx.teams,
+      rosterStates: ctx.rosterStates,
+      clock: ctx.clock,
+      authorization: ctx.authorization,
+      mutations: ctx.mutations,
+    });
+
+    const accepting = ctx.acceptInvitation.execute({
+      token: invitation.value.token,
+      actorId: ctx.actor("player-1"),
+    });
+    await claimReached;
+    const closing = closeRoster.execute({
+      actorId: ctx.actor("staff-1"),
+      organizationId: orgId,
+      competitionId,
+      teamId,
+    });
+    releaseClaim();
+    const [accepted, closed] = await Promise.all([accepting, closing]);
+
+    expect(accepted.isOk()).toBe(true);
+    expect(closed.isOk()).toBe(true);
+    expect(ctx.rosters.rows).toHaveLength(1);
+    expect((await ctx.rosterStates.get(orgId, competitionId, teamId))?.lockedAt).not.toBeNull();
   });
 });
 

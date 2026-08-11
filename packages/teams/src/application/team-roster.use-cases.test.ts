@@ -37,6 +37,7 @@ import { CreateTeamUseCase } from "./create-team/create-team.use-case.ts";
 import { GetActiveTeamUseCase } from "./get-active-team/get-active-team.use-case.ts";
 import { GetTeamExternalClubUseCase } from "./get-team-external-club/get-team-external-club.use-case.ts";
 import { ListRostersForPlayerUseCase } from "./list-rosters-for-player/list-rosters-for-player.use-case.ts";
+import { OpenRosterUseCase } from "./open-roster/open-roster.use-case.ts";
 import { SetActiveTeamUseCase } from "./set-active-team/set-active-team.use-case.ts";
 
 class Teams implements TeamRepository {
@@ -116,6 +117,12 @@ class Rosters implements CompetitionRosterMembershipRepository {
     );
   }
   async add(membership: CompetitionRosterMembership) {
+    const existing = await this.findByPlayerAndCompetition(
+      membership.playerProfileId,
+      membership.competitionId,
+    );
+    if (existing && existing.teamId !== membership.teamId) return null;
+    if (existing) return existing;
     this.rows.push(membership);
     return membership;
   }
@@ -277,6 +284,13 @@ function rosterDeps(options?: { maxSize?: number }) {
     rosterStates,
     clock: deps.clock,
     authorization: allowAllAuthorization,
+    mutations,
+  });
+  const openRoster = new OpenRosterUseCase({
+    teams,
+    rosterStates,
+    authorization: allowAllAuthorization,
+    mutations,
   });
   return {
     ...deps,
@@ -292,6 +306,10 @@ function rosterDeps(options?: { maxSize?: number }) {
     closeRoster: {
       execute: (input: Omit<CloseRosterInput, "actorId">) =>
         closeRoster.execute({ actorId: asActorId("manager"), ...input }),
+    },
+    openRoster: {
+      execute: (input: Omit<CloseRosterInput, "actorId">) =>
+        openRoster.execute({ actorId: asActorId("manager"), ...input }),
     },
   };
 }
@@ -511,6 +529,28 @@ describe("team and roster use cases", () => {
     });
     expect(blocked.isOk()).toBe(false);
     expect(!blocked.isOk() && RosterLocked.is(blocked.error)).toBe(true);
+  });
+
+  it("orders concurrent close and open mutations for the same roster", async () => {
+    const { teams, closeRoster, openRoster, rosterStates } = rosterDeps();
+    const orgId = asOrganizationId("org-1");
+    const compId = asCompetitionId("comp-1");
+    const team = await new CreateTeamUseCase({ teams, ...shared() }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Ordered FC",
+    });
+    if (!team.isOk()) throw team.error;
+    const input = { organizationId: orgId, competitionId: compId, teamId: team.value.id };
+
+    const [closed, opened] = await Promise.all([
+      closeRoster.execute(input),
+      openRoster.execute(input),
+    ]);
+
+    expect(closed.isOk()).toBe(true);
+    expect(opened.isOk()).toBe(true);
+    expect((await rosterStates.get(orgId, compId, team.value.id))?.lockedAt).toBeNull();
   });
 
   it("demotes the previous captain when promoting a new one", async () => {

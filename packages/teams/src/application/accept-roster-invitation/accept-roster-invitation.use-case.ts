@@ -73,14 +73,26 @@ export class AcceptRosterInvitationUseCase {
       );
     }
 
-    return this.deps.mutations.runExclusive(
-      {
-        organizationId: invitation.organizationId,
-        competitionId: invitation.competitionId,
-        teamId: invitation.teamId,
-      },
-      () => this.acceptLocked(input, tokenHash),
-    );
+    try {
+      return await this.deps.mutations.runExclusive(
+        {
+          organizationId: invitation.organizationId,
+          competitionId: invitation.competitionId,
+          teamId: invitation.teamId,
+        },
+        () => this.acceptLocked(input, tokenHash),
+      );
+    } catch (error) {
+      if (
+        TeamNotFound.is(error) ||
+        RosterFull.is(error) ||
+        RosterLocked.is(error) ||
+        RosterCompetitionConflict.is(error)
+      ) {
+        return err(error);
+      }
+      throw error;
+    }
   }
 
   private async acceptLocked(

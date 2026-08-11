@@ -14,6 +14,7 @@ import type { CompetitionRosterState } from "../../domain/entities/competition-r
 import type { RosterLockedEvent } from "../../domain/events/team.events.ts";
 import { TeamNotFound, type CloseRosterError } from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
+import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
 import { teamPermissionError } from "../require-team-permission.ts";
@@ -33,6 +34,7 @@ export class CloseRosterUseCase {
       readonly clock: ClockPort;
       readonly eventPublisher?: EventPublisherPort;
       readonly authorization: AuthorizationPort;
+      readonly mutations: RosterMutationPort;
     },
   ) {}
 
@@ -50,6 +52,19 @@ export class CloseRosterUseCase {
       },
     });
     if (forbidden) return err(forbidden);
+    return this.deps.mutations.runExclusive(
+      {
+        organizationId: input.organizationId,
+        competitionId: input.competitionId,
+        teamId: input.teamId,
+      },
+      () => this.close(input),
+    );
+  }
+
+  private async close(
+    input: CloseRosterInput,
+  ): Promise<Result<CompetitionRosterState, CloseRosterError>> {
     const team = await this.deps.teams.findById(input.organizationId, input.teamId);
     if (!team) {
       return err(

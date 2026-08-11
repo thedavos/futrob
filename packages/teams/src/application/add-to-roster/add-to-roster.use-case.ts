@@ -128,18 +128,24 @@ export async function addToRosterUnchecked(
     }
   }
 
-  return ok(
-    await deps.rosters.add({
-      id: deps.ids.generate(),
-      organizationId: input.organizationId,
-      competitionId: input.competitionId,
-      teamId: input.teamId,
-      playerProfileId: input.playerProfileId,
-      gameAccountId,
-      role: input.role,
-      createdAt: deps.clock.now(),
-    }),
-  );
+  const added = await deps.rosters.add({
+    id: deps.ids.generate(),
+    organizationId: input.organizationId,
+    competitionId: input.competitionId,
+    teamId: input.teamId,
+    playerProfileId: input.playerProfileId,
+    gameAccountId,
+    role: input.role,
+    createdAt: deps.clock.now(),
+  });
+  return added
+    ? ok(added)
+    : err(
+        new RosterCompetitionConflict({
+          code: "teams.roster_competition_conflict",
+          message: "Player already belongs to a team in this competition",
+        }),
+      );
 }
 
 export class AddToRosterUseCase {
