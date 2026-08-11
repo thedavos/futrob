@@ -1,3 +1,4 @@
+import { REQUEST_ID_HEADER, requestIdSchema } from "@futrob/api-contracts";
 import { parseApiErrorBody, FutrobApiError } from "./errors.ts";
 
 export interface HttpClientOptions {
@@ -62,15 +63,25 @@ export class HttpClient {
     const raw: unknown = response.status === 204 ? null : await response.json().catch(() => null);
 
     if (!response.ok) {
+      const responseRequestId = requestIdSchema.safeParse(response.headers.get(REQUEST_ID_HEADER));
       const apiError = parseApiErrorBody(raw);
       if (apiError) {
-        throw new FutrobApiError({ status: response.status, body: apiError });
+        throw new FutrobApiError({
+          status: response.status,
+          body: {
+            ...apiError,
+            requestId:
+              apiError.requestId ??
+              (responseRequestId.success ? responseRequestId.data : undefined),
+          },
+        });
       }
       throw new FutrobApiError({
         status: response.status,
         body: {
           code: "sdk.http_error",
           messageKey: "errors.http",
+          requestId: responseRequestId.success ? responseRequestId.data : undefined,
         },
       });
     }

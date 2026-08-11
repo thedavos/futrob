@@ -7,20 +7,17 @@ import {
   type GetClubResponse,
   type SearchClubsQueryInput,
   type SearchClubsResponse,
+  type RequestId,
 } from "@futrob/api-contracts";
 import { err, ok, TaggedError, type Result } from "@futrob/shared-kernel";
+import { readBrowserApiError } from "@/shared/infrastructure/http/browser-api-error.ts";
 
 export class GameDataClientError extends TaggedError("GameDataClientError")<{
   code: string;
   message: string;
+  requestId?: RequestId;
   status: number;
 }> {}
-
-function readErrorCode(raw: unknown, fallback: string): string {
-  return raw && typeof raw === "object" && "code" in raw && typeof raw.code === "string"
-    ? raw.code
-    : fallback;
-}
 
 /** Browser client for same-origin game-data BFF (session cookies). */
 export const gameDataBrowserClient = {
@@ -44,10 +41,12 @@ export const gameDataBrowserClient = {
       const raw: unknown = await response.json().catch(() => null);
 
       if (!response.ok) {
+        const error = readBrowserApiError(response, raw, "game_data.client_error");
         return err(
           new GameDataClientError({
-            code: readErrorCode(raw, "game_data.client_error"),
-            message: readErrorCode(raw, "game_data.client_error"),
+            code: error.code,
+            message: error.code,
+            requestId: error.requestId,
             status: response.status,
           }),
         );
@@ -100,10 +99,12 @@ export const gameDataBrowserClient = {
       const raw: unknown = await response.json().catch(() => null);
 
       if (!response.ok) {
+        const error = readBrowserApiError(response, raw, "game_data.client_error");
         return err(
           new GameDataClientError({
-            code: readErrorCode(raw, "game_data.client_error"),
-            message: readErrorCode(raw, "game_data.client_error"),
+            code: error.code,
+            message: error.code,
+            requestId: error.requestId,
             status: response.status,
           }),
         );

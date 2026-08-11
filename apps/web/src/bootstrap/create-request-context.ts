@@ -2,6 +2,7 @@ import type { ActorId, OrganizationId } from "@/shared/domain/identifiers.ts";
 import type { AppContext } from "@/bootstrap/create-app-context.ts";
 import { createModules, type AppModules } from "@/di/create-modules.ts";
 import type { EventPublisherPort } from "@/shared/application/event-publisher.ts";
+import { createBffRequestCorrelation } from "@/shared/infrastructure/http/request-correlation.ts";
 import type { ProviderMatchRepository } from "@/modules/game-data";
 import { createProductApiClient } from "@/context/product-api-client.ts";
 import { ProductApiAuthorizationPort } from "@/context/product-api-authorization.port.ts";
@@ -42,6 +43,7 @@ export function createRequestContext(input: {
   const productApi = createProductApiClient({
     actorId: input.identity.actorId,
     internalJobSecret: input.app.config.env.INTERNAL_JOB_SECRET,
+    requestId: createBffRequestCorrelation(new Request("http://internal.futrob")).requestId,
     fetchImpl: input.fetcher,
   });
   const modules = createModules({

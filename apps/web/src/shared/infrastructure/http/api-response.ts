@@ -1,4 +1,9 @@
-import type { ApiErrorBody, ApiErrorDetails } from "@futrob/api-contracts";
+import {
+  REQUEST_ID_HEADER,
+  type ApiErrorBody,
+  type ApiErrorDetails,
+  type RequestId,
+} from "@futrob/api-contracts";
 
 export type HttpMappableFailure = {
   readonly code: string;
@@ -38,8 +43,18 @@ export function textResponse(body: string, contentType: string, status = 200): R
   });
 }
 
-export function apiErrorResponse(status: number, body: ApiErrorBody): Response {
-  return jsonResponse(body, status);
+export function apiErrorResponse(
+  status: number,
+  body: ApiErrorBody,
+  requestId?: RequestId,
+): Response {
+  const resolvedRequestId = requestId ?? body.requestId;
+  const response = jsonResponse(
+    resolvedRequestId ? { ...body, requestId: resolvedRequestId } : body,
+    status,
+  );
+  if (resolvedRequestId) response.headers.set(REQUEST_ID_HEADER, resolvedRequestId);
+  return response;
 }
 
 export function failureToHttp(error: HttpMappableFailure): Response {
