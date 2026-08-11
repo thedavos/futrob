@@ -6,6 +6,7 @@ import {
   type ClockPort,
   type CompetitionId,
   type EncounterId,
+  type EncounterMutationLockPort,
   type EventPublisherPort,
   type OrganizationId,
   type Result,
@@ -57,6 +58,7 @@ export class EditFixtureEncounterUseCase {
       readonly editGuard: FixtureEncounterEditGuardPort;
       readonly eventPublisher: EventPublisherPort;
       readonly fixtures: EditableFixturePlanRepository;
+      readonly mutationLock: EncounterMutationLockPort;
       readonly source: CompetitionFixtureSourcePort;
       readonly transaction: TransactionPort;
     },
@@ -95,121 +97,123 @@ export class EditFixtureEncounterUseCase {
       return err(invalid("The edit requires a reason, request ID, and valid schedule or pairing"));
     }
 
-    return this.deps.transaction.runInTransaction(async () => {
-      const plan = await this.deps.fixtures.findById(
-        input.organizationId,
-        input.competitionId,
-        input.fixturePlanId,
-      );
-      if (!plan) {
-        return err(
-          new FixturePlanNotFound({
-            code: "scheduling.fixture_plan_not_found",
-            message: "Fixture plan not found",
-            competitionId: input.competitionId,
-          }),
+    return this.deps.transaction.runInTransaction(() =>
+      this.deps.mutationLock.runExclusive(input.encounterId, async () => {
+        const plan = await this.deps.fixtures.findById(
+          input.organizationId,
+          input.competitionId,
+          input.fixturePlanId,
         );
-      }
-      const before = findEncounter(plan, input.encounterId);
-      if (!before) {
-        return err(
-          new FixtureEncounterNotFound({
-            code: "scheduling.fixture_encounter_not_found",
-            message: "Fixture encounter not found",
-            encounterId: input.encounterId,
-          }),
-        );
-      }
-      const prior = await this.deps.audit.findByRequestId(
-        input.organizationId,
-        input.competitionId,
-        input.requestId,
-      );
-      if (prior) {
-        if (
-          prior.fixturePlanId !== input.fixturePlanId ||
-          prior.encounterId !== input.encounterId
-        ) {
-          return err(invalid("requestId was already used for a different fixture edit"));
+        if (!plan) {
+          return err(
+            new FixturePlanNotFound({
+              code: "scheduling.fixture_plan_not_found",
+              message: "Fixture plan not found",
+              competitionId: input.competitionId,
+            }),
+          );
         }
-        return ok(plan);
-      }
-      if (!(await this.deps.editGuard.canEdit(input))) {
-        return err(
-          new FixtureEncounterNotEditable({
-            code: "scheduling.fixture_encounter_not_editable",
-            message: "An encounter with an approved or final result cannot be edited",
-            encounterId: input.encounterId,
-          }),
+        const before = findEncounter(plan, input.encounterId);
+        if (!before) {
+          return err(
+            new FixtureEncounterNotFound({
+              code: "scheduling.fixture_encounter_not_found",
+              message: "Fixture encounter not found",
+              encounterId: input.encounterId,
+            }),
+          );
+        }
+        const prior = await this.deps.audit.findByRequestId(
+          input.organizationId,
+          input.competitionId,
+          input.requestId,
         );
-      }
+        if (prior) {
+          if (
+            prior.fixturePlanId !== input.fixturePlanId ||
+            prior.encounterId !== input.encounterId
+          ) {
+            return err(invalid("requestId was already used for a different fixture edit"));
+          }
+          return ok(plan);
+        }
+        if (!(await this.deps.editGuard.canEdit(input))) {
+          return err(
+            new FixtureEncounterNotEditable({
+              code: "scheduling.fixture_encounter_not_editable",
+              message: "An encounter with an approved or final result cannot be edited",
+              encounterId: input.encounterId,
+            }),
+          );
+        }
 
-      if (input.homeTeamId && input.awayTeamId) {
-        const pairingError = await validatePairingChange(
-          this.deps.source,
-          plan,
-          before,
-          input,
-          input.homeTeamId,
-          input.awayTeamId,
-        );
-        if (pairingError) return err(pairingError);
-      }
+        if (input.homeTeamId && input.awayTeamId) {
+          const pairingError = await validatePairingChange(
+            this.deps.source,
+            plan,
+            before,
+            input,
+            input.homeTeamId,
+            input.awayTeamId,
+          );
+          if (pairingError) return err(pairingError);
+        }
 
-      const after: FixtureEncounter = {
-        ...before,
-        ...(input.scheduledStartAt ? { scheduledStartAt: input.scheduledStartAt } : {}),
-        ...(input.homeTeamId && input.awayTeamId
-          ? {
-              home: { kind: "team" as const, teamId: input.homeTeamId },
-              away: { kind: "team" as const, teamId: input.awayTeamId },
-            }
-          : {}),
-      };
-      if (encountersEqual(before, after)) return ok(plan);
-      if (hasTeamCollision(plan, after)) {
-        return err(invalid("A Team cannot have two encounters at the same scheduled time"));
-      }
-
-      const updated = await this.deps.fixtures.update(replaceEncounter(plan, after));
-      if (!updated) {
-        return err(
-          new FixtureUpdateConflict({
-            code: "scheduling.fixture_update_conflict",
-            message: "The fixture changed concurrently",
-          }),
-        );
-      }
-      const occurredAt = this.deps.clock.now();
-      await this.deps.audit.append({
-        organizationId: input.organizationId,
-        competitionId: input.competitionId,
-        fixturePlanId: input.fixturePlanId,
-        encounterId: input.encounterId,
-        actorId: input.actorId,
-        requestId: input.requestId,
-        reason,
-        occurredAt,
-        before,
-        after,
-      });
-      if (before.scheduledStartAt.getTime() !== after.scheduledStartAt.getTime()) {
-        const event: EncounterRescheduledEvent = {
-          eventName: "scheduling.encounter-rescheduled",
-          occurredAt: occurredAt.toISOString(),
-          correlationId: input.requestId,
-          payload: {
-            encounterId: input.encounterId,
-            previousStartAt: before.scheduledStartAt.toISOString(),
-            newStartAt: after.scheduledStartAt.toISOString(),
-            scope: { type: "entire_encounter" },
-            approvedBy: input.actorId,
-          },
+        const after: FixtureEncounter = {
+          ...before,
+          ...(input.scheduledStartAt ? { scheduledStartAt: input.scheduledStartAt } : {}),
+          ...(input.homeTeamId && input.awayTeamId
+            ? {
+                home: { kind: "team" as const, teamId: input.homeTeamId },
+                away: { kind: "team" as const, teamId: input.awayTeamId },
+              }
+            : {}),
         };
-        await this.deps.eventPublisher.publish(event);
-      }
-      return ok(updated);
-    });
+        if (encountersEqual(before, after)) return ok(plan);
+        if (hasTeamCollision(plan, after)) {
+          return err(invalid("A Team cannot have two encounters at the same scheduled time"));
+        }
+
+        const updated = await this.deps.fixtures.update(replaceEncounter(plan, after));
+        if (!updated) {
+          return err(
+            new FixtureUpdateConflict({
+              code: "scheduling.fixture_update_conflict",
+              message: "The fixture changed concurrently",
+            }),
+          );
+        }
+        const occurredAt = this.deps.clock.now();
+        await this.deps.audit.append({
+          organizationId: input.organizationId,
+          competitionId: input.competitionId,
+          fixturePlanId: input.fixturePlanId,
+          encounterId: input.encounterId,
+          actorId: input.actorId,
+          requestId: input.requestId,
+          reason,
+          occurredAt,
+          before,
+          after,
+        });
+        if (before.scheduledStartAt.getTime() !== after.scheduledStartAt.getTime()) {
+          const event: EncounterRescheduledEvent = {
+            eventName: "scheduling.encounter-rescheduled",
+            occurredAt: occurredAt.toISOString(),
+            correlationId: input.requestId,
+            payload: {
+              encounterId: input.encounterId,
+              previousStartAt: before.scheduledStartAt.toISOString(),
+              newStartAt: after.scheduledStartAt.toISOString(),
+              scope: { type: "entire_encounter" },
+              approvedBy: input.actorId,
+            },
+          };
+          await this.deps.eventPublisher.publish(event);
+        }
+        return ok(updated);
+      }),
+    );
   }
 }
 

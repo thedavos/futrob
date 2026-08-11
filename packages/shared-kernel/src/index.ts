@@ -22,6 +22,7 @@ export type { EventPublisherPort } from "./event-publisher.ts";
 export type { ClockPort } from "./clock.port.ts";
 export type { IdGeneratorPort } from "./id-generator.port.ts";
 export type { TransactionPort } from "./transaction.port.ts";
+export type { EncounterMutationLockPort } from "./encounter-mutation-lock.port.ts";
 export type {
   AuthorizationDecision,
   AuthorizationDecisionReason,

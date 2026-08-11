@@ -72,6 +72,7 @@ function createUseCase(input: {
           return stored;
         },
       },
+      mutationLock: { runExclusive: async (_encounterId, operation) => operation() },
       source: {
         load: async () => ({
           organizationId,
@@ -231,5 +232,53 @@ describe("EditFixtureEncounterUseCase", () => {
     expect(result.isErr()).toBe(true);
     if (result.isOk()) return;
     expect(result.error.code).toBe("scheduling.fixture_encounter_not_editable");
+  });
+
+  it("does not turn a bye into an unaudited series through manual pairing edit", async () => {
+    const plan = generateFixturePlan({
+      organizationId,
+      competitionId,
+      generationVersion: 2,
+      rulesVersion: 1,
+      format: "league",
+      timeZone: "America/Lima",
+      startsAt: new Date("2026-09-01T01:00:00.000Z"),
+      roundIntervalDays: 7,
+      officialMatchCounts: { regular: 1, knockout: 2 },
+      resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
+      seed,
+      homeAndAway: false,
+    });
+    const bye = plan.stages[0]?.rounds[0]?.encounters.find(
+      (encounter) => encounter.home.kind === "bye" || encounter.away.kind === "bye",
+    );
+    expect(bye).toBeDefined();
+    if (!bye) return;
+
+    const result = await new EditFixtureEncounterUseCase({
+      authorization: authorization(),
+      audit: { findByRequestId: async () => null, append: async () => {} },
+      clock: { now: () => new Date() },
+      editGuard: { canEdit: async () => true },
+      eventPublisher: { publish: async () => {}, publishMany: async () => {} },
+      fixtures: { findById: async () => plan, update: async () => plan },
+      mutationLock: { runExclusive: async (_encounterId, operation) => operation() },
+      source: { load: async () => null },
+      transaction: { runInTransaction: async (operation) => operation() },
+    }).execute({
+      actorId: asActorId("staff-1"),
+      organizationId,
+      competitionId,
+      fixturePlanId: plan.id,
+      encounterId: bye.id,
+      homeTeamId: asTeamId("team-a"),
+      awayTeamId: asTeamId("team-b"),
+      reason: "Replace bye",
+      requestId: "request-bye",
+    });
+
+    expect(result.isErr()).toBe(true);
+    if (result.isOk()) return;
+    expect(result.error.code).toBe("scheduling.invalid_fixture_configuration");
   });
 });

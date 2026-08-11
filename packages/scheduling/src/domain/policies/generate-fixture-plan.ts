@@ -251,7 +251,7 @@ function fixtureEncounter(input: {
     scheduledStartAt: input.scheduledStartAt,
     officialMatchCount: input.officialMatchCount,
     series:
-      input.home.kind !== "bye" && input.away.kind !== "bye"
+      input.home.kind === "team" && input.away.kind === "team"
         ? {
             id: `${encounterId}:series`,
             resolutionMode: input.resolutionMode,

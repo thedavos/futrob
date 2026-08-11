@@ -128,6 +128,7 @@ describe("generateFixturePlan", () => {
         ({ home, away }) => home.kind === "winner" && away.kind === "winner",
       ),
     ).toBe(true);
+    expect(rounds[1]?.encounters.every((encounter) => encounter.series === null)).toBe(true);
     expect(
       rounds[0]?.encounters.find(({ home, away }) => home.kind === "team" && away.kind === "team")
         ?.series,

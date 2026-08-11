@@ -48,6 +48,10 @@ import { createTeamsModule, type TeamsModule } from "./teams.module.ts";
 import { createAuthorizationModule, type AuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
 import { CompetitionFixtureSourceAdapter } from "@/adapters/scheduling/competition-fixture-source.ts";
+import {
+  InMemoryEncounterMutationLock,
+  PostgresEncounterMutationLock,
+} from "@/adapters/scheduling/encounter-mutation-lock.ts";
 import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
 import { createResultsModule, type ResultsModule } from "./results.module.ts";
 import { createStatisticsModule, type StatisticsModule } from "./statistics.module.ts";
@@ -122,6 +126,9 @@ export function createModules(input: CreateModulesInput): AppModules {
   const deferredAuthorization = new DeferredAuthorizationPort();
   const entryGate = new DeferredRosterEntryGate();
   const eventPublisher = new NoopEventPublisher();
+  const encounterMutationLock = input.pool
+    ? new PostgresEncounterMutationLock(input.pool)
+    : new InMemoryEncounterMutationLock();
   const organizations = createOrganizationsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
@@ -159,6 +166,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     eventPublisher,
     transaction,
     officialResults,
+    encounterMutationLock,
     fixtureSource: new CompetitionFixtureSourceAdapter({
       competitions: competitionRepository,
       entries: competitions.entryRepository,
@@ -239,13 +247,15 @@ export function createModules(input: CreateModulesInput): AppModules {
   const confirmOfficialSelectionAndProject = {
     async execute(input: ConfirmOfficialSelectionInput) {
       return transaction.runInTransaction(async () => {
-        const confirmed = await results.confirmOfficialSelection.execute(input);
-        if (!confirmed.isOk()) return confirmed;
-        const projected = await statistics.useCases.projectApprovedOfficialResult.execute({
-          officialResultId: confirmed.value.id,
+        return encounterMutationLock.runExclusive(input.encounterId, async () => {
+          const confirmed = await results.confirmOfficialSelection.execute(input);
+          if (!confirmed.isOk()) return confirmed;
+          const projected = await statistics.useCases.projectApprovedOfficialResult.execute({
+            officialResultId: confirmed.value.id,
+          });
+          if (!projected.isOk()) throw projected.error;
+          return confirmed;
         });
-        if (!projected.isOk()) throw projected.error;
-        return confirmed;
       });
     },
   };

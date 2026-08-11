@@ -13,7 +13,12 @@ import {
   type FixturePlanRepository,
   type OfficialMatchRepository,
 } from "@futrob/scheduling";
-import type { AuthorizationPort, EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
+import type {
+  AuthorizationPort,
+  EncounterMutationLockPort,
+  EventPublisherPort,
+  TransactionPort,
+} from "@futrob/shared-kernel";
 import type { OfficialResultRepository } from "@futrob/results";
 import type { Pool } from "pg";
 import {
@@ -43,6 +48,7 @@ export function createSchedulingModule(input: {
   readonly eventPublisher: EventPublisherPort;
   readonly transaction: TransactionPort;
   readonly officialResults: Pick<OfficialResultRepository, "findApprovedByEncounter">;
+  readonly encounterMutationLock: EncounterMutationLockPort;
 }) {
   const encounters: EncounterScheduleRepository = input.pool
     ? new PostgresEncounterScheduleRepository(input.pool)
@@ -79,6 +85,7 @@ export function createSchedulingModule(input: {
       editGuard: new OfficialResultFixtureEditGuard(officialMatches, input.officialResults),
       eventPublisher: input.eventPublisher,
       fixtures: fixturePlans,
+      mutationLock: input.encounterMutationLock,
       source: input.fixtureSource,
       transaction: input.transaction,
     }),

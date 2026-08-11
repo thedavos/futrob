@@ -1,7 +1,18 @@
 import type { OfficialResult } from "@futrob/results";
-import type { OfficialMatch } from "@futrob/scheduling";
-import { asActorId, asCompetitionId, asEncounterId, asOrganizationId } from "@futrob/shared-kernel";
+import {
+  EditFixtureEncounterUseCase,
+  generateFixturePlan,
+  type OfficialMatch,
+} from "@futrob/scheduling";
+import {
+  asActorId,
+  asCompetitionId,
+  asEncounterId,
+  asOrganizationId,
+  asTeamId,
+} from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
+import { InMemoryEncounterMutationLock } from "./encounter-mutation-lock.ts";
 import { OfficialResultFixtureEditGuard } from "./fixture-editing.adapters.ts";
 
 const encounterId = asEncounterId("encounter-1");
@@ -47,5 +58,85 @@ describe("OfficialResultFixtureEditGuard", () => {
         competitionId: asCompetitionId("competition-1"),
       }),
     ).resolves.toBe(true);
+  });
+
+  it("serializes result approval ahead of a concurrent fixture edit", async () => {
+    const organizationId = asOrganizationId("org-1");
+    const competitionId = asCompetitionId("competition-1");
+    const plan = generateFixturePlan({
+      organizationId,
+      competitionId,
+      generationVersion: 1,
+      rulesVersion: 1,
+      format: "league",
+      timeZone: "America/Lima",
+      startsAt: new Date("2026-09-01T01:00:00.000Z"),
+      roundIntervalDays: 7,
+      officialMatchCounts: { regular: 1, knockout: 2 },
+      resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
+      seed: [asTeamId("team-a"), asTeamId("team-b")],
+      homeAndAway: false,
+    });
+    const encounter = plan.stages[0]?.rounds[0]?.encounters[0];
+    expect(encounter).toBeDefined();
+    if (!encounter) return;
+    const lock = new InMemoryEncounterMutationLock();
+    let approved = false;
+    let guardChecks = 0;
+    let approvalEntered!: () => void;
+    let releaseApproval!: () => void;
+    const entered = new Promise<void>((resolve) => {
+      approvalEntered = resolve;
+    });
+    const release = new Promise<void>((resolve) => {
+      releaseApproval = resolve;
+    });
+    const approval = lock.runExclusive(encounter.id, async () => {
+      approvalEntered();
+      await release;
+      approved = true;
+    });
+    await entered;
+
+    const edit = new EditFixtureEncounterUseCase({
+      authorization: {
+        decide: async (request) => ({ ...request, allowed: true, reason: "allowed" }),
+        getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
+      },
+      audit: { findByRequestId: async () => null, append: async () => {} },
+      clock: { now: () => new Date() },
+      editGuard: {
+        canEdit: async () => {
+          guardChecks += 1;
+          return !approved;
+        },
+      },
+      eventPublisher: { publish: async () => {}, publishMany: async () => {} },
+      fixtures: { findById: async () => plan, update: async () => plan },
+      mutationLock: lock,
+      source: { load: async () => null },
+      transaction: { runInTransaction: async (operation) => operation() },
+    }).execute({
+      actorId: asActorId("staff-1"),
+      organizationId,
+      competitionId,
+      fixturePlanId: plan.id,
+      encounterId: encounter.id,
+      scheduledStartAt: new Date("2026-09-02T01:00:00.000Z"),
+      reason: "Concurrent edit",
+      requestId: "request-concurrent-edit",
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(guardChecks).toBe(0);
+
+    releaseApproval();
+    await approval;
+    const result = await edit;
+
+    expect(result.isErr()).toBe(true);
+    if (result.isOk()) return;
+    expect(result.error.code).toBe("scheduling.fixture_encounter_not_editable");
+    expect(guardChecks).toBe(1);
   });
 });
