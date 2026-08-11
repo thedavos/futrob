@@ -78,10 +78,6 @@ function pickHomeAway(
   };
 }
 
-function optionalNumber(value: number | undefined): number | null {
-  return value === undefined ? null : value;
-}
-
 function mapMinutesPlayed(stats: {
   readonly secondsPlayed?: number;
   readonly secondsplayed?: number;
@@ -119,18 +115,18 @@ function mapPlayers(match: EaClubMatch): ProviderPlayerMatchStats[] {
         externalClubId,
         position: mapPosition(stats.pos),
         minutesPlayed: mapMinutesPlayed(stats),
-        goals: optionalNumber(stats.goals),
-        assists: optionalNumber(stats.assists),
-        shots: optionalNumber(stats.shots),
-        passAttempts: optionalNumber(stats.passattempts),
-        passesMade: optionalNumber(stats.passesmade),
-        tackleAttempts: optionalNumber(stats.tackleattempts),
-        tacklesMade: optionalNumber(stats.tacklesmade),
-        saves: optionalNumber(stats.saves),
-        yellowCards: optionalNumber(stats.yellowcards),
-        redCards: optionalNumber(stats.redcards),
+        goals: stats.goals ?? null,
+        assists: stats.assists ?? null,
+        shots: stats.shots ?? null,
+        passAttempts: stats.passattempts ?? null,
+        passesMade: stats.passesmade ?? null,
+        tackleAttempts: stats.tackleattempts ?? null,
+        tacklesMade: stats.tacklesmade ?? null,
+        saves: stats.saves ?? null,
+        yellowCards: stats.yellowcards ?? null,
+        redCards: stats.redcards ?? null,
         isMvp: mapIsMvp(stats.mom),
-        rating: optionalNumber(stats.rating),
+        rating: stats.rating ?? null,
       });
     }
   }
