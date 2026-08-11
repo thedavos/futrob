@@ -16,6 +16,7 @@ export class GameDataClientError extends TaggedError("GameDataClientError")<{
   code: string;
   message: string;
   requestId?: RequestId;
+  retryAfterSeconds?: number;
   status: number;
 }> {}
 
@@ -47,6 +48,7 @@ export const gameDataBrowserClient = {
             code: error.code,
             message: error.code,
             requestId: error.requestId,
+            retryAfterSeconds: error.retryAfterSeconds,
             status: response.status,
           }),
         );
@@ -105,6 +107,7 @@ export const gameDataBrowserClient = {
             code: error.code,
             message: error.code,
             requestId: error.requestId,
+            retryAfterSeconds: error.retryAfterSeconds,
             status: response.status,
           }),
         );

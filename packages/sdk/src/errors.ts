@@ -4,6 +4,7 @@ export class FutrobApiError extends Error {
   readonly code: string;
   readonly messageKey: string;
   readonly requestId?: string;
+  readonly retryAfterSeconds?: number;
   readonly details?: ApiErrorBody["details"];
   readonly status: number;
 
@@ -14,6 +15,7 @@ export class FutrobApiError extends Error {
     this.code = input.body.code;
     this.messageKey = input.body.messageKey;
     this.requestId = input.body.requestId;
+    this.retryAfterSeconds = input.body.retryAfterSeconds;
     this.details = input.body.details;
   }
 }

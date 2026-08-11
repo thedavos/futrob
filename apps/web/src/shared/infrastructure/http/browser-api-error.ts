@@ -4,6 +4,7 @@ import { parseApiErrorBody } from "@futrob/sdk";
 export type BrowserApiError = Readonly<{
   code: string;
   requestId?: RequestId;
+  retryAfterSeconds?: number;
 }>;
 
 export function readBrowserApiError(
@@ -16,5 +17,13 @@ export function readBrowserApiError(
   return {
     code: body?.code ?? fallbackCode,
     requestId: body?.requestId ?? (header.success ? header.data : undefined),
+    retryAfterSeconds:
+      body?.retryAfterSeconds ?? parseRetryAfter(response.headers.get("Retry-After")),
   };
+}
+
+function parseRetryAfter(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  const seconds = Number(raw);
+  return Number.isSafeInteger(seconds) && seconds > 0 ? seconds : undefined;
 }

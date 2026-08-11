@@ -150,6 +150,7 @@ export const futrobOpenApiV1 = {
             },
           },
           "400": { $ref: "#/components/responses/ApiError" },
+          "429": { $ref: "#/components/responses/RateLimited" },
           "502": { $ref: "#/components/responses/ApiError" },
         },
       },
@@ -509,6 +510,54 @@ export const futrobOpenApiV1 = {
           "401": { $ref: "#/components/responses/ApiError" },
           "404": { $ref: "#/components/responses/ApiError" },
           "409": { $ref: "#/components/responses/ApiError" },
+          "429": { $ref: "#/components/responses/RateLimited" },
+        },
+      },
+    },
+    "/organizations/invitations/accept": {
+      post: {
+        operationId: "acceptOrganizationInvitation",
+        tags: ["organizations"],
+        summary: "Accept an organization invitation",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["token"],
+                properties: { token: { type: "string", minLength: 1 } },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Organization invitation accepted",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["organizationId", "organizationName", "role"],
+                  properties: {
+                    organizationId: { type: "string" },
+                    organizationName: { type: "string" },
+                    role: { type: "string", enum: ["organizer", "staff", "member"] },
+                    competitionId: { type: ["string", "null"] },
+                    competitionRole: {
+                      type: ["string", "null"],
+                      enum: ["staff", "captain", "player", null],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+          "429": { $ref: "#/components/responses/RateLimited" },
         },
       },
     },
@@ -620,6 +669,66 @@ export const futrobOpenApiV1 = {
           "400": { $ref: "#/components/responses/ApiError" },
           "401": { $ref: "#/components/responses/ApiError" },
           "404": { $ref: "#/components/responses/ApiError" },
+          "429": { $ref: "#/components/responses/RateLimited" },
+        },
+      },
+    },
+    "/roster-invitations/accept": {
+      post: {
+        operationId: "acceptRosterInvitation",
+        tags: ["players"],
+        summary: "Accept an invitation to a competition roster",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["token"],
+                properties: { token: { type: "string", minLength: 1 } },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Roster invitation accepted",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: [
+                    "id",
+                    "organizationId",
+                    "competitionId",
+                    "teamId",
+                    "playerProfileId",
+                    "gameAccountId",
+                    "role",
+                    "createdAt",
+                  ],
+                  properties: {
+                    id: { type: "string" },
+                    organizationId: { type: "string" },
+                    competitionId: { type: "string" },
+                    teamId: { type: "string" },
+                    playerProfileId: { type: "string" },
+                    gameAccountId: { type: ["string", "null"] },
+                    role: {
+                      type: "string",
+                      enum: ["player", "captain", "vice_captain"],
+                    },
+                    createdAt: { type: "string", format: "date-time" },
+                  },
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+          "429": { $ref: "#/components/responses/RateLimited" },
         },
       },
     },
@@ -1231,6 +1340,10 @@ export const futrobOpenApiV1 = {
         description: "Correlation UUID for support and operational diagnostics.",
         schema: { type: "string", format: "uuid" },
       },
+      RetryAfter: {
+        description: "Seconds until this rate-limited operation can be retried.",
+        schema: { type: "integer", minimum: 1 },
+      },
     },
     schemas: {
       EffectiveAccess: {
@@ -1381,6 +1494,7 @@ export const futrobOpenApiV1 = {
           code: { type: "string" },
           messageKey: { type: "string" },
           requestId: { type: "string", format: "uuid" },
+          retryAfterSeconds: { type: "integer", minimum: 1 },
           details: {
             type: "object",
             additionalProperties: false,
@@ -2212,6 +2326,18 @@ export const futrobOpenApiV1 = {
         description: "API error",
         headers: {
           "X-Request-ID": { $ref: "#/components/headers/RequestId" },
+        },
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/ApiError" },
+          },
+        },
+      },
+      RateLimited: {
+        description: "Rate limit exceeded",
+        headers: {
+          "X-Request-ID": { $ref: "#/components/headers/RequestId" },
+          "Retry-After": { $ref: "#/components/headers/RetryAfter" },
         },
         content: {
           "application/json": {

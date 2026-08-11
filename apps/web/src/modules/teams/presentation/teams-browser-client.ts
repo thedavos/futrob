@@ -15,12 +15,16 @@ import {
   type GetMyTeamsResponse,
   type SetActiveTeamRequest,
   type SetActiveTeamResponse,
+  type RequestId,
 } from "@futrob/api-contracts";
+import { readBrowserApiError } from "@/shared/infrastructure/http/browser-api-error.ts";
 
 export class TeamsClientError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
+    readonly requestId?: RequestId,
+    readonly retryAfterSeconds?: number,
   ) {
     super(code);
     this.name = "TeamsClientError";
@@ -44,11 +48,13 @@ async function requestJson<T>(input: {
   });
   const raw: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const code =
-      raw && typeof raw === "object" && "code" in raw && typeof raw.code === "string"
-        ? raw.code
-        : "teams.client_error";
-    throw new TeamsClientError(response.status, code);
+    const error = readBrowserApiError(response, raw, "teams.client_error");
+    throw new TeamsClientError(
+      response.status,
+      error.code,
+      error.requestId,
+      error.retryAfterSeconds,
+    );
   }
   return input.parse(raw);
 }
