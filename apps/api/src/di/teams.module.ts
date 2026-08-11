@@ -17,6 +17,7 @@ import {
   ListRosterForTeamUseCase,
   ListOrganizationTeamsUseCase,
   ListRostersForPlayerUseCase,
+  LinkProviderExternalPlayerIdUseCase,
   OpenRosterUseCase,
   SetActiveTeamUseCase,
   type ActiveTeamPreferenceRepository,
@@ -123,6 +124,7 @@ export function createTeamsModule(input: {
   return {
     ensurePlayerProfile,
     addPlayerGameAccount: new AddPlayerGameAccountUseCase({ accounts, ...shared }),
+    linkProviderExternalPlayerId: new LinkProviderExternalPlayerIdUseCase({ accounts }),
     associatePlayerExternalClub: new AssociatePlayerExternalClubUseCase({
       profiles,
       associations,

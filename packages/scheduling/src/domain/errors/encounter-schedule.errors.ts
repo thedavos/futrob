@@ -1,4 +1,4 @@
-import { TaggedError, type Permission } from "@futrob/shared-kernel";
+import { TaggedError, type EncounterId, type Permission } from "@futrob/shared-kernel";
 
 export class EncounterScheduleAuthorizationForbidden extends TaggedError(
   "EncounterScheduleAuthorizationForbidden",
@@ -13,6 +13,16 @@ export class InvalidEncounterSchedule extends TaggedError("InvalidEncounterSched
   message: string;
 }> {}
 
+export class EncounterScheduleNotFound extends TaggedError("EncounterScheduleNotFound")<{
+  code: "scheduling.encounter_schedule_not_found";
+  message: string;
+  encounterId: EncounterId;
+}> {}
+
 export type UpsertEncounterScheduleError =
   | EncounterScheduleAuthorizationForbidden
   | InvalidEncounterSchedule;
+
+export type MaterializeOfficialMatchesError =
+  | EncounterScheduleAuthorizationForbidden
+  | EncounterScheduleNotFound;

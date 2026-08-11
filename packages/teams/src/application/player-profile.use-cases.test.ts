@@ -14,6 +14,7 @@ import { AddPlayerGameAccountUseCase } from "./add-player-game-account/add-playe
 import { AssociatePlayerExternalClubUseCase } from "./associate-player-external-club/associate-player-external-club.use-case.ts";
 import { EnsurePlayerProfileUseCase } from "./ensure-player-profile/ensure-player-profile.use-case.ts";
 import { GetPlayerProfileUseCase } from "./get-player-profile/get-player-profile.use-case.ts";
+import { LinkProviderExternalPlayerIdUseCase } from "./link-provider-external-player-id/link-provider-external-player-id.use-case.ts";
 
 class Profiles implements PlayerProfileRepository {
   rows: PlayerProfile[] = [];
@@ -59,6 +60,32 @@ class Accounts implements PlayerGameAccountRepository {
     this.rows.push(account);
     return account;
   }
+  async setProviderExternalPlayerId(input: {
+    readonly accountId: string;
+    readonly providerExternalPlayerId: string;
+  }) {
+    const index = this.rows.findIndex((row) => row.id === input.accountId);
+    if (index < 0) return null;
+    const updated = { ...this.rows[index], providerExternalPlayerId: input.providerExternalPlayerId };
+    this.rows[index] = updated;
+    return updated;
+  }
+  async findByCorrelation(input: {
+    readonly platform: PlayerGameAccount["platform"];
+    readonly gameEdition: string;
+    readonly providerExternalPlayerId?: string;
+    readonly normalizedIdentifier?: string;
+  }) {
+    return this.rows.filter(
+      (row) =>
+        row.platform === input.platform &&
+        row.gameEdition === input.gameEdition &&
+        ((input.providerExternalPlayerId !== undefined &&
+          row.providerExternalPlayerId === input.providerExternalPlayerId) ||
+          (input.normalizedIdentifier !== undefined &&
+            row.normalizedIdentifier === input.normalizedIdentifier)),
+    );
+  }
 }
 
 function dependencies() {
@@ -90,6 +117,7 @@ describe("player profile use cases", () => {
       identifier: "  Gamer23 ",
       platform: "playstation" as const,
       gameEdition: " FC 26 ",
+      providerExternalPlayerId: "  provider-player-23 ",
     };
 
     const first = await useCase.execute(input);
@@ -98,11 +126,36 @@ describe("player profile use cases", () => {
     expect(first.isOk() && first.value).toMatchObject({
       identifier: "Gamer23",
       normalizedIdentifier: "gamer23",
+      providerExternalPlayerId: "provider-player-23",
     });
     expect(retried.isOk() && first.isOk() && retried.value.id).toBe(
       first.isOk() ? first.value.id : "",
     );
     expect(accounts.rows).toHaveLength(1);
+  });
+
+  it("links a provider external player id to an existing account", async () => {
+    const accounts = new Accounts();
+    const added = await new AddPlayerGameAccountUseCase({
+      accounts,
+      ...dependencies(),
+    }).execute({
+      playerProfileId: "profile-1",
+      identifier: "Gamer23",
+      platform: "playstation",
+      gameEdition: "FC 26",
+    });
+    expect(added.isOk()).toBe(true);
+    if (!added.isOk()) return;
+
+    const linked = await new LinkProviderExternalPlayerIdUseCase({ accounts }).execute({
+      accountId: added.value.id,
+      providerExternalPlayerId: " provider-player-23 ",
+    });
+
+    expect(linked.isOk()).toBe(true);
+    expect(linked.isOk() && linked.value.providerExternalPlayerId).toBe("provider-player-23");
+    expect(accounts.rows[0]?.providerExternalPlayerId).toBe("provider-player-23");
   });
 
   it("rejects incomplete account values", async () => {

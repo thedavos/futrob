@@ -27,3 +27,7 @@ export function asTeamId(value: string): TeamId {
 export function asEncounterId(value: string): EncounterId {
   return value as EncounterId;
 }
+
+export function asOfficialMatchSlotId(value: string): OfficialMatchSlotId {
+  return value as OfficialMatchSlotId;
+}

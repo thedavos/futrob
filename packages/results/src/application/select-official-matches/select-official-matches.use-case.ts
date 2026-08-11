@@ -1,14 +1,19 @@
-import { err, ok, type Result } from "@futrob/shared-kernel";
-import type {
-  ActorId,
-  AuthorizationPort,
-  EncounterId,
-  OrganizationId,
+import {
+  err,
+  ok,
+  type ActorId,
+  type AuthorizationPort,
+  type ClockPort,
+  type EncounterId,
+  type EventPublisherPort,
+  type IdGeneratorPort,
+  type OrganizationId,
+  type Result,
 } from "@futrob/shared-kernel";
-import type { EventPublisherPort } from "@futrob/shared-kernel";
 import type { ExternalReference } from "@futrob/game-data";
-import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
+import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { OfficialMatchSelectionRepository } from "../../domain/ports/official-result.repository.ts";
 import {
   DuplicateProviderMatch,
   EncounterNotFound,
@@ -27,16 +32,15 @@ export interface SelectOfficialMatchesInput {
   }>;
 }
 
-/**
- * Stub use case — validates slot cardinality against encounter snapshot.
- * Persistence and confirmation flow land in a later iteration.
- */
 export class SelectOfficialMatchesUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly selections: OfficialMatchSelectionRepository;
       readonly eventPublisher: EventPublisherPort;
       readonly authorization: AuthorizationPort;
+      readonly ids: IdGeneratorPort;
+      readonly clock: ClockPort;
     },
   ) {}
 
@@ -44,7 +48,7 @@ export class SelectOfficialMatchesUseCase {
     input: SelectOfficialMatchesInput,
   ): Promise<Result<OfficialMatchSelection, SelectOfficialMatchesError>> {
     const encounter = await this.deps.encounterReader.getById(input.encounterId);
-    if (!encounter) {
+    if (!encounter || encounter.organizationId !== input.organizationId) {
       return err(
         new EncounterNotFound({
           code: "results.encounter_not_found",
@@ -53,15 +57,7 @@ export class SelectOfficialMatchesUseCase {
         }),
       );
     }
-    if (encounter.organizationId !== input.organizationId) {
-      return err(
-        new EncounterNotFound({
-          code: "results.encounter_not_found",
-          message: "Encounter not found",
-          encounterId: input.encounterId,
-        }),
-      );
-    }
+
     const authorization = await this.deps.authorization.decide({
       actorId: input.actorId,
       permission: "encounters.official-selection.propose",
@@ -103,15 +99,25 @@ export class SelectOfficialMatchesUseCase {
     }
 
     const selection: OfficialMatchSelection = {
-      id: "pending",
+      id: this.deps.ids.generate(),
       encounterId: input.encounterId,
       status: "awaiting_opponent_confirmation",
       slots: input.selections,
       proposedByActorId: input.actorId,
-      proposedAt: new Date(),
+      proposedAt: this.deps.clock.now(),
     };
 
-    void this.deps.eventPublisher;
-    return ok(selection);
+    const saved = await this.deps.selections.save(selection);
+    await this.deps.eventPublisher.publish({
+      eventName: "results.official-matches-selected",
+      occurredAt: this.deps.clock.now().toISOString(),
+      payload: {
+        encounterId: input.encounterId,
+        organizationId: encounter.organizationId,
+        competitionId: encounter.competitionId,
+        selectionId: saved.id,
+      },
+    });
+    return ok(saved);
   }
 }

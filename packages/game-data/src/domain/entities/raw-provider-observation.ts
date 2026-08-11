@@ -14,7 +14,6 @@ export interface RawProviderObservation {
   readonly externalResourceId: string;
   readonly endpointKey: string;
   readonly payloadHash: string;
-  /** `"inline"` when payload JSON lives with the row; otherwise an object store key. */
   readonly storageRef: string;
   readonly payload: unknown;
   readonly observedAt: Date;

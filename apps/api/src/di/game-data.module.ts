@@ -4,39 +4,24 @@ import {
   ListMatchesBetweenClubsUseCase,
   SearchExternalClubsUseCase,
   SyncRecentProviderMatchesUseCase,
+  type GameDataProviderPort,
   type ProviderMatchIngestionPort,
   type ProviderMatchRepository,
   type RawObservationRepository,
 } from "@futrob/game-data";
 import type { IdGeneratorPort } from "@futrob/shared-kernel";
-import {
-  EaClubsGameDataAdapter,
-  InMemoryGameDataProviderRegistry,
-  ManualGameDataAdapter,
-} from "@/adapters/game-data/internal.ts";
+import { InMemoryGameDataProviderRegistry } from "@/adapters/game-data/internal.ts";
 
 export interface GameDataModuleDependencies {
-  readonly fetcher: typeof fetch;
-  readonly eaClubsBaseUrl: string;
+  readonly providers: readonly GameDataProviderPort[];
+  readonly ingestion: ProviderMatchIngestionPort;
   readonly providerMatches: ProviderMatchRepository;
   readonly rawObservations: RawObservationRepository;
   readonly ids: IdGeneratorPort;
-  readonly enableManualProvider: boolean;
 }
 
 export function createGameDataModule(deps: GameDataModuleDependencies) {
-  const eaProvider = new EaClubsGameDataAdapter({
-    fetcher: deps.fetcher,
-    baseUrl: deps.eaClubsBaseUrl,
-    timeoutMs: 10_000,
-  });
-
-  const providers = deps.enableManualProvider
-    ? [eaProvider, new ManualGameDataAdapter()]
-    : [eaProvider];
-
-  const registry = new InMemoryGameDataProviderRegistry(providers);
-  const ingestions = new Map<string, ProviderMatchIngestionPort>([[eaProvider.key, eaProvider]]);
+  const registry = new InMemoryGameDataProviderRegistry(deps.providers);
 
   return {
     searchExternalClubs: new SearchExternalClubsUseCase(registry),
@@ -45,7 +30,7 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
     listMatchesBetweenClubs: new ListMatchesBetweenClubsUseCase(deps.providerMatches),
     syncRecentProviderMatches: new SyncRecentProviderMatchesUseCase({
       ingestions: {
-        get: (key) => ingestions.get(key) ?? null,
+        get: (key) => (deps.ingestion.key === key ? deps.ingestion : null),
       },
       rawObservations: deps.rawObservations,
       matches: deps.providerMatches,

@@ -4,12 +4,12 @@ import {
   ExternalClubNotFound,
   ProviderSchemaError,
   type ExternalClub,
-  type ProviderMatch,
   type GameDataProviderPort,
-  type ProviderMatchIngestionPort,
-  type IngestedProviderMatches,
   type GetExternalClubInput,
   type GetRecentMatchesInput,
+  type IngestedProviderMatches,
+  type ProviderMatch,
+  type ProviderMatchIngestionPort,
   type ProviderError,
   type SearchExternalClubsInput,
 } from "@futrob/game-data";
@@ -18,7 +18,6 @@ import {
   eaClubInfoMapSchema,
   eaClubMatchesResponseSchema,
   eaSearchClubsResponseSchema,
-  type EaClubMatch,
 } from "./schemas/ea-clubs.schemas.ts";
 import {
   mapClubInfoToExternalClub,
@@ -29,9 +28,6 @@ import {
 const MATCH_ENDPOINT = "/clubs/matches";
 const MATCH_SCHEMA_VERSION = "ea-clubs.match.v1";
 
-/**
- * EA Clubs adapter — the only place that may know proclubs.ea.com shapes.
- */
 export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMatchIngestionPort {
   readonly key = "ea-clubs" as const;
 
@@ -139,7 +135,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
     if (!ingested.isOk()) {
       return err(ingested.error);
     }
-    return ok(ingested.value.matches);
+    return ok([...ingested.value.matches]);
   }
 
   async ingestRecentMatches(
@@ -166,19 +162,23 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
       );
     }
 
+    const rawPayloads = Array.isArray(response.value) ? response.value : [];
     const observedAt = new Date();
-    const observations = parsed.data.map((payload) => ({
-      providerKey: this.key,
-      resourceType: "match" as const,
-      externalResourceId: payload.matchId,
-      endpointKey: MATCH_ENDPOINT,
-      payloadHash: hashPayload(payload),
-      storageRef: "inline",
-      payload,
-      observedAt,
-      httpStatus: 200,
-      schemaVersion: MATCH_SCHEMA_VERSION,
-    }));
+    const observations = parsed.data.map((match, index) => {
+      const payload = rawPayloads[index];
+      return {
+        providerKey: this.key,
+        resourceType: "match" as const,
+        externalResourceId: match.matchId,
+        endpointKey: MATCH_ENDPOINT,
+        payloadHash: hashPayload(payload),
+        storageRef: "inline",
+        payload,
+        observedAt,
+        httpStatus: 200,
+        schemaVersion: MATCH_SCHEMA_VERSION,
+      };
+    });
 
     const matches = parsed.data
       .map((match) =>
@@ -195,6 +195,10 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
   }
 }
 
-function hashPayload(payload: EaClubMatch): string {
-  return createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+function hashPayload(payload: unknown): string {
+  const json = JSON.stringify(payload);
+  if (json === undefined) {
+    throw new TypeError("EA match payload is not JSON serializable");
+  }
+  return createHash("sha256").update(json).digest("hex");
 }

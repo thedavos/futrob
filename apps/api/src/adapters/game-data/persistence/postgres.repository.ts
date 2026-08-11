@@ -88,6 +88,23 @@ export class PostgresProviderMatchRepository implements ProviderMatchRepository 
     }
   }
 
+  async findByExternalId(input: {
+    readonly providerKey: GameDataProviderKey;
+    readonly externalMatchId: string;
+  }): Promise<ProviderMatch | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, provider_key, external_match_id, game_edition, platform, mode, occurred_at,
+              home_external_club_id, home_name, home_goals,
+              away_external_club_id, away_name, away_goals,
+              players, metadata
+       FROM provider_matches
+       WHERE provider_key = $1 AND external_match_id = $2`,
+      [input.providerKey, input.externalMatchId],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateMatch(row) : null;
+  }
+
   async listBetweenClubs(input: {
     readonly providerKey: GameDataProviderKey;
     readonly homeExternalClubId: string;

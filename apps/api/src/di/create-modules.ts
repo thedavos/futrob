@@ -6,11 +6,16 @@ import {
   PostgresProviderMatchRepository,
   PostgresRawObservationRepository,
 } from "@/adapters/game-data/persistence/postgres.repository.ts";
+import { EaClubsGameDataAdapter, ManualGameDataAdapter } from "@/adapters/game-data/internal.ts";
+import {
+  RepositoryProviderMatchReader,
+  SchedulingEncounterReader,
+} from "@/adapters/results/bridges.ts";
 import { createTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { CryptoIdGenerator } from "@/adapters/organizations/crypto-ports.ts";
-import type { TransactionPort } from "@futrob/shared-kernel";
+import type { EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { createGameDataModule, type GameDataModule } from "./game-data.module.ts";
 import { createIdentityModule, type IdentityModule } from "./identity.module.ts";
@@ -20,6 +25,12 @@ import { createTeamsModule, type TeamsModule } from "./teams.module.ts";
 import { createAuthorizationModule, type AuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
 import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
+import { createResultsModule, type ResultsModule } from "./results.module.ts";
+
+class InProcessEventPublisher implements EventPublisherPort {
+  async publish(): Promise<void> {}
+  async publishMany(): Promise<void> {}
+}
 
 /**
  * Composition root for apps/api — the only place that wires adapters to use
@@ -39,14 +50,18 @@ export function createModules(input: CreateModulesInput): AppModules {
   const rawObservations = input.pool
     ? new PostgresRawObservationRepository(input.pool)
     : new InMemoryRawObservationRepository();
+  const eaProvider = new EaClubsGameDataAdapter({
+    fetcher: input.fetcher,
+    baseUrl: input.eaClubsBaseUrl,
+    timeoutMs: 10_000,
+  });
 
   const gameData = createGameDataModule({
-    fetcher: input.fetcher,
-    eaClubsBaseUrl: input.eaClubsBaseUrl,
+    providers: [eaProvider, new ManualGameDataAdapter()],
+    ingestion: eaProvider,
     providerMatches,
     rawObservations,
     ids,
-    enableManualProvider: true,
   });
 
   const deferredAuthorization = new DeferredAuthorizationPort();
@@ -103,12 +118,23 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
   deferredAuthorization.bind(authorization.port);
 
+  const eventPublisher = new InProcessEventPublisher();
+  const results = createResultsModule({
+    pool: input.pool,
+    authorization: deferredAuthorization,
+    eventPublisher,
+    encounterReader: new SchedulingEncounterReader(scheduling.encounters),
+    providerMatches: new RepositoryProviderMatchReader(providerMatches, scheduling.encounters),
+    ids,
+  });
+
   return {
     authorization,
     competitions,
     gameData,
     identity,
     organizations,
+    results,
     scheduling,
     teams,
     transaction,
@@ -121,6 +147,7 @@ export interface AppModules {
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
   readonly organizations: OrganizationsModule;
+  readonly results: ResultsModule;
   readonly scheduling: SchedulingModule;
   readonly teams: TeamsModule;
   readonly transaction: TransactionPort;

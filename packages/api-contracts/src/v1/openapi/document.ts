@@ -1744,17 +1744,33 @@ export const futrobOpenApiV1 = {
             maxLength: 40,
             description: "Game edition context required by the EA API",
           },
+          providerExternalPlayerId: {
+            type: ["string", "null"],
+            description: "Stable EA player id from match payloads when known",
+          },
         },
       },
       PlayerGameAccount: {
         type: "object",
-        required: ["id", "playerProfileId", "identifier", "platform", "gameEdition", "createdAt"],
+        required: [
+          "id",
+          "playerProfileId",
+          "identifier",
+          "providerExternalPlayerId",
+          "platform",
+          "gameEdition",
+          "createdAt",
+        ],
         properties: {
           id: { type: "string" },
           playerProfileId: { type: "string" },
           identifier: {
             type: "string",
             description: "EA player identifier used to correlate matches and statistics",
+          },
+          providerExternalPlayerId: {
+            type: ["string", "null"],
+            description: "Stable EA player id distinct from the declared gamertag",
           },
           platform: {
             type: "string",

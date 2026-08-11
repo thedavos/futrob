@@ -59,8 +59,25 @@ class MemoryMatches implements ProviderMatchRepository {
       this.byId.set(row.id, row);
     }
   }
-  async listBetweenClubs() {
-    return [...this.byId.values()];
+  async findByExternalId(input: Parameters<ProviderMatchRepository["findByExternalId"]>[0]) {
+    return (
+      [...this.byId.values()].find(
+        (row) =>
+          row.provider.key === input.providerKey &&
+          row.provider.externalMatchId === input.externalMatchId,
+      ) ?? null
+    );
+  }
+  async listBetweenClubs(input: Parameters<ProviderMatchRepository["listBetweenClubs"]>[0]) {
+    const clubs = new Set([input.homeExternalClubId, input.awayExternalClubId]);
+    return [...this.byId.values()].filter(
+      (row) =>
+        row.provider.key === input.providerKey &&
+        clubs.has(row.home.externalClubId) &&
+        clubs.has(row.away.externalClubId) &&
+        row.occurredAt >= input.from &&
+        row.occurredAt <= input.to,
+    );
   }
 }
 
@@ -108,6 +125,14 @@ describe("SyncRecentProviderMatchesUseCase", () => {
     expect(second.isOk()).toBe(true);
     expect(ingestion.calls).toBe(2);
     expect(raw.rows).toHaveLength(1);
-    expect(matches.byId.get("ea-clubs:1")).toMatchObject({ id: "ea-clubs:1" });
+    await expect(
+      matches.listBetweenClubs({
+        providerKey: "ea-clubs",
+        homeExternalClubId: "a",
+        awayExternalClubId: "b",
+        from: new Date("2025-12-31T23:59:59.000Z"),
+        to: new Date("2026-01-01T00:00:01.000Z"),
+      }),
+    ).resolves.toEqual([match]);
   });
 });

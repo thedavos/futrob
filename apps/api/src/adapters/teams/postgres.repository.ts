@@ -97,8 +97,8 @@ export class PostgresPlayerGameAccountRepository implements PlayerGameAccountRep
 
   async listByProfile(playerProfileId: string): Promise<PlayerGameAccount[]> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT id, player_profile_id, identifier, normalized_identifier, platform,
-              game_edition, created_at
+      `SELECT id, player_profile_id, identifier, normalized_identifier,
+              provider_external_player_id, platform, game_edition, created_at
        FROM player_game_accounts
        WHERE player_profile_id = $1
        ORDER BY created_at ASC`,
@@ -110,24 +110,72 @@ export class PostgresPlayerGameAccountRepository implements PlayerGameAccountRep
   async saveIfAbsent(account: PlayerGameAccount): Promise<PlayerGameAccount> {
     const result = await getPgExecutor(this.pool).query(
       `INSERT INTO player_game_accounts (
-         id, player_profile_id, identifier, normalized_identifier, platform,
-         game_edition, created_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+         id, player_profile_id, identifier, normalized_identifier,
+         provider_external_player_id, platform, game_edition, created_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (player_profile_id, normalized_identifier, platform, game_edition)
-       DO UPDATE SET identifier = EXCLUDED.identifier
-       RETURNING id, player_profile_id, identifier, normalized_identifier, platform,
-                 game_edition, created_at`,
+       DO UPDATE SET
+         identifier = EXCLUDED.identifier,
+         provider_external_player_id = COALESCE(
+           player_game_accounts.provider_external_player_id,
+           EXCLUDED.provider_external_player_id
+         )
+       RETURNING id, player_profile_id, identifier, normalized_identifier,
+                 provider_external_player_id, platform, game_edition, created_at`,
       [
         account.id,
         account.playerProfileId,
         account.identifier,
         account.normalizedIdentifier,
+        account.providerExternalPlayerId,
         account.platform,
         account.gameEdition,
         account.createdAt.toISOString(),
       ],
     );
     return rehydrateAccount(result.rows[0]);
+  }
+
+  async setProviderExternalPlayerId(input: {
+    readonly accountId: string;
+    readonly providerExternalPlayerId: string;
+  }): Promise<PlayerGameAccount | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE player_game_accounts
+       SET provider_external_player_id = $2
+       WHERE id = $1
+       RETURNING id, player_profile_id, identifier, normalized_identifier,
+                 provider_external_player_id, platform, game_edition, created_at`,
+      [input.accountId, input.providerExternalPlayerId],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateAccount(row) : null;
+  }
+
+  async findByCorrelation(input: {
+    readonly platform: GamePlatform;
+    readonly gameEdition: string;
+    readonly providerExternalPlayerId?: string;
+    readonly normalizedIdentifier?: string;
+  }): Promise<PlayerGameAccount[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, player_profile_id, identifier, normalized_identifier,
+              provider_external_player_id, platform, game_edition, created_at
+       FROM player_game_accounts
+       WHERE platform = $1
+         AND game_edition = $2
+         AND (
+           ($3::text IS NOT NULL AND provider_external_player_id = $3)
+           OR ($4::text IS NOT NULL AND normalized_identifier = $4)
+         )`,
+      [
+        input.platform,
+        input.gameEdition,
+        input.providerExternalPlayerId ?? null,
+        input.normalizedIdentifier ?? null,
+      ],
+    );
+    return result.rows.map(rehydrateAccount);
   }
 }
 
@@ -144,6 +192,7 @@ function rehydrateAccount(row: {
   player_profile_id: string;
   identifier: string;
   normalized_identifier: string;
+  provider_external_player_id: string | null;
   platform: string;
   game_edition: string;
   created_at: Date | string;
@@ -153,6 +202,7 @@ function rehydrateAccount(row: {
     playerProfileId: row.player_profile_id,
     identifier: row.identifier,
     normalizedIdentifier: row.normalized_identifier,
+    providerExternalPlayerId: row.provider_external_player_id,
     platform: row.platform as GamePlatform,
     gameEdition: row.game_edition,
     createdAt: new Date(row.created_at),

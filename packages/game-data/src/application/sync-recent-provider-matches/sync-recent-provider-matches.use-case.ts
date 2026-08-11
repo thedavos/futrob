@@ -22,7 +22,7 @@ export class SyncRecentProviderMatchesUseCase {
   async execute(
     providerKey: GameDataProviderKey,
     input: GetRecentMatchesInput,
-  ): Promise<Result<ProviderMatch[], ProviderError>> {
+  ): Promise<Result<readonly ProviderMatch[], ProviderError>> {
     const ingestion = this.deps.ingestions.get(providerKey);
     if (!ingestion) {
       return err(

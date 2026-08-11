@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@futrob/results": "0.1.0",
     "@futrob/shared-kernel": "0.1.0"
   },
   "devDependencies": {

@@ -39,6 +39,17 @@ export class InMemoryProviderMatchRepository implements ProviderMatchRepository 
     return Promise.resolve();
   }
 
+  findByExternalId(input: {
+    readonly providerKey: GameDataProviderKey;
+    readonly externalMatchId: string;
+  }): Promise<ProviderMatch | null> {
+    const key = externalReferenceKey({
+      providerKey: input.providerKey,
+      externalId: input.externalMatchId,
+    });
+    return Promise.resolve(this.byKey.get(key) ?? null);
+  }
+
   listBetweenClubs(input: {
     readonly providerKey: GameDataProviderKey;
     readonly homeExternalClubId: string;

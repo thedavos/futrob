@@ -185,6 +185,32 @@ class Accounts implements PlayerGameAccountRepository {
     this.rows.push(account);
     return account;
   }
+  async setProviderExternalPlayerId(input: {
+    readonly accountId: string;
+    readonly providerExternalPlayerId: string;
+  }) {
+    const index = this.rows.findIndex((row) => row.id === input.accountId);
+    if (index < 0) return null;
+    const updated = { ...this.rows[index], providerExternalPlayerId: input.providerExternalPlayerId };
+    this.rows[index] = updated;
+    return updated;
+  }
+  async findByCorrelation(input: {
+    readonly platform: PlayerGameAccount["platform"];
+    readonly gameEdition: string;
+    readonly providerExternalPlayerId?: string;
+    readonly normalizedIdentifier?: string;
+  }) {
+    return this.rows.filter(
+      (row) =>
+        row.platform === input.platform &&
+        row.gameEdition === input.gameEdition &&
+        ((input.providerExternalPlayerId !== undefined &&
+          row.providerExternalPlayerId === input.providerExternalPlayerId) ||
+          (input.normalizedIdentifier !== undefined &&
+            row.normalizedIdentifier === input.normalizedIdentifier)),
+    );
+  }
 }
 
 class Preferences implements ActiveTeamPreferenceRepository {
