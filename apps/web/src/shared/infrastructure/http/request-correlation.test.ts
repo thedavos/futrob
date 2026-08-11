@@ -35,4 +35,15 @@ describe("BFF request correlation", () => {
 
     expect(createBffRequestCorrelation(request)).toEqual({ requestId });
   });
+
+  it("replaces an overlong request ID", () => {
+    const generated = "325fc3e4-c655-48af-b425-c5f16409ec59";
+    const request = new Request("https://futrob.test/api/v1/game-data/clubs/search", {
+      headers: { "X-Request-ID": "a".repeat(500) },
+    });
+
+    expect(createBffRequestCorrelation(request, () => generated)).toEqual({
+      requestId: generated,
+    });
+  });
 });

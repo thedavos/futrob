@@ -8,7 +8,7 @@ import {
   createAuthenticatedProductApiClient,
   productApiBffErrorResponse,
 } from "@/context/create-authenticated-product-api-client.ts";
-import { jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
+import { apiErrorResponse, jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
 import { withBffRequestCorrelation } from "@/shared/infrastructure/http/request-correlation.ts";
 
 export const Route = createFileRoute("/api/v1/identity/onboarding")({
@@ -32,14 +32,14 @@ export const Route = createFileRoute("/api/v1/identity/onboarding")({
             const json: unknown = await request.json().catch(() => null);
             const parsed = saveOnboardingProgressRequestSchema.safeParse(json);
             if (!parsed.success) {
-              return jsonResponse(
+              return apiErrorResponse(
+                400,
                 {
                   code: "api.validation_error",
                   messageKey: "errors.api.validation_error",
-                  requestId,
                   details: { issues: parsed.error.issues },
                 },
-                400,
+                requestId,
               );
             }
 

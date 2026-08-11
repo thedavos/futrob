@@ -8,6 +8,18 @@ import {
 } from "./request-correlation.ts";
 
 describe("request correlation context", () => {
+  it.each(["not-a-uuid", "a".repeat(500), "unsafe\nvalue"])(
+    "replaces an untrusted request ID: %j",
+    (candidate) => {
+      const correlation = createRequestCorrelation(candidate);
+
+      expect(correlation.requestId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
+      expect(correlation.requestId).not.toBe(candidate);
+    },
+  );
+
   it("keeps a generated job correlation ID stable across async work", async () => {
     const correlation = createRequestCorrelation();
     const entries: CorrelationLogEntry[] = [];
