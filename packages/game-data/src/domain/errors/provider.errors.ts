@@ -7,7 +7,7 @@ export class ProviderHttpFailed extends TaggedError("ProviderHttpFailed")<{
   message: string;
   status: number;
   path: string;
-  body: unknown;
+  retryAfterMs?: number;
 }> {}
 
 export class ProviderTimeout extends TaggedError("ProviderTimeout")<{
@@ -46,7 +46,17 @@ export class ProviderNotImplemented extends TaggedError("ProviderNotImplemented"
   message: string;
 }> {}
 
-export type ProviderTransportError = ProviderHttpFailed | ProviderTimeout | ProviderNetworkError;
+export class ProviderUnavailable extends TaggedError("ProviderUnavailable")<{
+  code: "game_data.provider_unavailable";
+  message: string;
+  retryAfterSeconds: number;
+}> {}
+
+export type ProviderTransportError =
+  | ProviderHttpFailed
+  | ProviderTimeout
+  | ProviderNetworkError
+  | ProviderUnavailable;
 
 export type ProviderError =
   | ProviderTransportError

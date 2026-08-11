@@ -14,6 +14,7 @@ import {
   type SearchExternalClubsInput,
 } from "@futrob/game-data";
 import { EaClubsHttpClient } from "./http/ea-clubs-http.ts";
+import type { ProviderCircuitBreaker } from "@/adapters/game-data/resilience/provider-circuit-breaker.ts";
 import {
   eaClubInfoMapSchema,
   eaClubMatchesResponseSchema,
@@ -46,12 +47,16 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
       readonly fetcher: typeof fetch;
       readonly baseUrl: string;
       readonly timeoutMs: number;
+      readonly circuit?: ProviderCircuitBreaker;
+      readonly clock?: { now(): Date };
     },
   ) {
     this.http = new EaClubsHttpClient({
       fetcher: deps.fetcher,
       baseUrl: deps.baseUrl,
       timeoutMs: deps.timeoutMs,
+      circuit: deps.circuit,
+      clock: deps.clock,
     });
   }
 

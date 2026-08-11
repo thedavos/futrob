@@ -32,6 +32,7 @@ export {
   ExternalClubNotFound,
   UnsupportedGameDataOperation,
   ProviderNotImplemented,
+  ProviderUnavailable,
   type ProviderTransportError,
   type ProviderError,
 } from "./domain/errors/provider.errors.ts";
