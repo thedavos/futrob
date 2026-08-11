@@ -93,7 +93,9 @@ export function CompetitionTeamsConsole({
       detail={detail.data ?? null}
       error={error ? teamConsoleError(error) : null}
       invitationUrl={invitation?.teamId === selectedTeamId ? invitation.url : null}
-      items={list.data?.items ?? []}
+      hasMoreTeams={list.hasNextPage}
+      items={list.data?.pages.flatMap((page) => page.items) ?? []}
+      loadingMoreTeams={list.isFetchingNextPage}
       loadingDetail={detail.isLoading}
       loadingList={list.isLoading}
       onChangeRole={async (membershipId: string, role: RosterMembershipRoleDto) => {
@@ -131,6 +133,9 @@ export function CompetitionTeamsConsole({
         return result.clubs;
       }}
       onSelectTeam={onSelectTeam}
+      onLoadMoreTeams={async () => {
+        await list.fetchNextPage();
+      }}
       onSetRosterOpen={async (open) => {
         await setRosterOpen.mutateAsync(open);
       }}

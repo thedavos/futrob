@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import type {
   ChangeRosterRoleRequest,
   ConnectTeamExternalClubRequest,
@@ -8,10 +14,15 @@ import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { teamsBrowserClient } from "./teams-browser-client.ts";
 
 export function useCompetitionTeamManagementQuery(organizationId: string, competitionId: string) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
-    queryFn: () =>
-      teamsBrowserClient.listCompetitionManagement(organizationId, competitionId, { limit: 25 }),
+    queryFn: ({ pageParam }) =>
+      teamsBrowserClient.listCompetitionManagement(organizationId, competitionId, {
+        cursor: pageParam,
+        limit: 25,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: organizationId.length > 0 && competitionId.length > 0,
   });
 }

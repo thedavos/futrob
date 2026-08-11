@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type {
   CompetitionTeamManagementDetailResponse,
   CompetitionTeamManagementSummaryDto,
@@ -10,41 +9,16 @@ import type {
 import {
   Alert,
   AlertDescription,
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
   Avatar,
   AvatarFallback,
   AvatarImage,
   Badge,
   Button,
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
   EmptyState,
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  Field,
-  FieldLabel,
-  Input,
   MasterDetail,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Skeleton,
   Stat,
   StatGroup,
@@ -58,18 +32,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  useCopyToClipboard,
 } from "@futrob/ui";
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
-  CheckIcon,
   ClockCountdownIcon,
-  CopyIcon,
-  LinkIcon,
   LockIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
   UsersThreeIcon,
   XCircleIcon,
 } from "@phosphor-icons/react";
@@ -78,6 +46,13 @@ import {
   SupportErrorAlert,
   type SupportError,
 } from "@/shared/presentation/support-error-alert.tsx";
+import {
+  ConfirmAction,
+  ExternalClubDialog,
+  InvitationDialog,
+  roleLabel,
+  RosterRoleEditor,
+} from "./competition-team-actions.tsx";
 
 export type TeamConsoleCapabilities = {
   readonly manageRoster: boolean;
@@ -94,11 +69,14 @@ export type CompetitionTeamsViewProps = {
   readonly selectedTeamId: string | null;
   readonly loadingList?: boolean;
   readonly loadingDetail?: boolean;
+  readonly hasMoreTeams?: boolean;
+  readonly loadingMoreTeams?: boolean;
   readonly busy?: boolean;
   readonly error?: SupportError | null;
   readonly capabilities: TeamConsoleCapabilities;
   readonly invitationUrl?: string | null;
   readonly onSelectTeam: (teamId: string | null) => void;
+  readonly onLoadMoreTeams?: () => Promise<void>;
   readonly onChangeRole: (membershipId: string, role: RosterMembershipRoleDto) => Promise<void>;
   readonly onSetRosterOpen: (open: boolean) => Promise<void>;
   readonly onCreateInvitation: (input: {
@@ -108,12 +86,6 @@ export type CompetitionTeamsViewProps = {
   readonly onSearchClubs: (query: string) => Promise<readonly ExternalClubDto[]>;
   readonly onConnectClub: (club: ExternalClubDto) => Promise<void>;
   readonly onDecideEntry: (decision: "approve" | "reject") => Promise<void>;
-};
-
-const roleLabel: Record<RosterMembershipRoleDto, string> = {
-  player: "Jugador",
-  captain: "Capitán",
-  vice_captain: "Subcapitán",
 };
 
 export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
@@ -145,7 +117,15 @@ export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
   );
 }
 
-function TeamList({ items, loadingList, selectedTeamId, onSelectTeam }: CompetitionTeamsViewProps) {
+function TeamList({
+  items,
+  loadingList,
+  selectedTeamId,
+  onSelectTeam,
+  hasMoreTeams,
+  loadingMoreTeams,
+  onLoadMoreTeams,
+}: CompetitionTeamsViewProps) {
   if (loadingList) {
     return (
       <div aria-label="Cargando equipos" className="grid gap-3 p-4">
@@ -169,27 +149,39 @@ function TeamList({ items, loadingList, selectedTeamId, onSelectTeam }: Competit
     );
   }
   return (
-    <nav aria-label="Equipos inscritos" className="grid gap-1 p-3">
-      {items.map((item) => (
-        <button
-          aria-current={selectedTeamId === item.team.id ? "page" : undefined}
-          className="min-h-16 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 aria-[current=page]:bg-primary/8"
-          key={item.team.id}
-          onClick={() => onSelectTeam(item.team.id)}
-          type="button"
-        >
-          <span className="flex items-start justify-between gap-3">
-            <span className="min-w-0">
-              <strong className="block truncate text-sm">{item.team.name}</strong>
-              <span className="typo-caption mt-1 block text-muted-foreground">
-                {item.roster.memberCount}/{item.roster.maxSize} jugadores · {rosterState(item)}
+    <div className="grid gap-3 p-3">
+      <nav aria-label="Equipos inscritos" className="grid gap-1">
+        {items.map((item) => (
+          <button
+            aria-current={selectedTeamId === item.team.id ? "page" : undefined}
+            className="min-h-16 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 aria-[current=page]:bg-primary/8"
+            key={item.team.id}
+            onClick={() => onSelectTeam(item.team.id)}
+            type="button"
+          >
+            <span className="flex items-start justify-between gap-3">
+              <span className="min-w-0">
+                <strong className="block truncate text-sm">{item.team.name}</strong>
+                <span className="typo-caption mt-1 block text-muted-foreground">
+                  {item.roster.memberCount}/{item.roster.maxSize} jugadores · {rosterState(item)}
+                </span>
               </span>
+              <EntryBadge status={item.entry.status} />
             </span>
-            <EntryBadge status={item.entry.status} />
-          </span>
-        </button>
-      ))}
-    </nav>
+          </button>
+        ))}
+      </nav>
+      {hasMoreTeams && onLoadMoreTeams ? (
+        <Button
+          className="w-full"
+          disabled={loadingMoreTeams}
+          onClick={() => runAction(onLoadMoreTeams)}
+          variant="outline"
+        >
+          {loadingMoreTeams ? "Cargando…" : "Cargar más equipos"}
+        </Button>
+      ) : null}
+    </div>
   );
 }
 
@@ -239,8 +231,19 @@ function TeamDetail(props: CompetitionTeamsViewProps) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {capabilities.manageInvitations ? <InvitationDialog {...props} /> : null}
-          {capabilities.manageExternalClub ? <ExternalClubDialog {...props} /> : null}
+          {capabilities.manageInvitations ? (
+            <InvitationDialog
+              busy={props.busy}
+              invitationUrl={props.invitationUrl}
+              onCreateInvitation={props.onCreateInvitation}
+            />
+          ) : null}
+          {capabilities.manageExternalClub ? (
+            <ExternalClubDialog
+              onConnectClub={props.onConnectClub}
+              onSearchClubs={props.onSearchClubs}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -318,29 +321,13 @@ function TeamDetail(props: CompetitionTeamsViewProps) {
                 </TableCell>
                 <TableCell>
                   {capabilities.manageRoles ? (
-                    <Select
-                      disabled={props.busy}
-                      onValueChange={(role) =>
-                        runAction(() =>
-                          props.onChangeRole(member.membership.id, role as RosterMembershipRoleDto),
-                        )
-                      }
-                      value={member.membership.role}
-                    >
-                      <SelectTrigger
-                        aria-label={`Rol de ${member.presentation.displayName}`}
-                        className="w-40"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(roleLabel).map(([role, label]) => (
-                          <SelectItem key={role} value={role}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <RosterRoleEditor
+                      busy={props.busy}
+                      displayName={member.presentation.displayName}
+                      membershipId={member.membership.id}
+                      onChangeRole={props.onChangeRole}
+                      role={member.membership.role}
+                    />
                   ) : (
                     <span>{roleLabel[member.membership.role]}</span>
                   )}
@@ -379,198 +366,6 @@ function TeamDetail(props: CompetitionTeamsViewProps) {
         </section>
       ) : null}
     </div>
-  );
-}
-
-function InvitationDialog(props: CompetitionTeamsViewProps) {
-  const [role, setRole] = useState<RosterMembershipRoleDto>("player");
-  const [policy, setPolicy] = useState<"single" | "multi">("single");
-  const { copyToClipboard, isCopied } = useCopyToClipboard();
-  return (
-    <Dialog>
-      <DialogTrigger render={<Button variant="outline" />}>
-        <PlusIcon aria-hidden="true" /> Invitar
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Crear invitación de plantilla</DialogTitle>
-          <DialogDescription>
-            El enlace solo da acceso a este Team y respeta el cupo y estado actuales.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-5 grid gap-4">
-          <Field name="invitation-role">
-            <FieldLabel>Rol inicial</FieldLabel>
-            <Select
-              onValueChange={(value) => setRole(value as RosterMembershipRoleDto)}
-              value={role}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(roleLabel).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field name="invitation-policy">
-            <FieldLabel>Usos</FieldLabel>
-            <Select
-              onValueChange={(value) => setPolicy(value as "single" | "multi")}
-              value={policy}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Un solo uso</SelectItem>
-                <SelectItem value="multi">Varios usos</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-          {props.invitationUrl ? (
-            <div className="rounded-lg bg-muted p-3">
-              <p className="typo-label text-muted-foreground">Enlace creado</p>
-              <p className="mt-1 break-all text-sm">{props.invitationUrl}</p>
-              <Button
-                className="mt-3"
-                onClick={() => void copyToClipboard(props.invitationUrl!)}
-                variant="outline"
-              >
-                {isCopied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
-                {isCopied ? "Copiado" : "Copiar enlace"}
-              </Button>
-              <span aria-live="polite" className="sr-only">
-                {isCopied ? "Enlace copiado" : ""}
-              </span>
-            </div>
-          ) : null}
-        </div>
-        <DialogFooter>
-          <DialogClose render={<Button variant="ghost" />}>Cancelar</DialogClose>
-          <Button
-            disabled={props.busy}
-            onClick={() =>
-              runAction(() => props.onCreateInvitation({ role, redeemPolicy: policy }))
-            }
-          >
-            Crear invitación
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ExternalClubDialog(props: CompetitionTeamsViewProps) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<readonly ExternalClubDto[]>([]);
-  const [searching, setSearching] = useState(false);
-  async function search() {
-    if (!query.trim() || searching) return;
-    setSearching(true);
-    try {
-      setResults(await props.onSearchClubs(query.trim()));
-    } catch {
-      setResults([]);
-    } finally {
-      setSearching(false);
-    }
-  }
-  return (
-    <Dialog>
-      <DialogTrigger render={<Button variant="outline" />}>
-        <LinkIcon aria-hidden="true" /> Vincular club
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Buscar club EA</DialogTitle>
-          <DialogDescription>
-            Esta asociación es operativa para localizar partidos. No verifica propiedad.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-5 flex gap-2">
-          <Input
-            aria-label="Nombre del club EA"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ej. Cuervos"
-            value={query}
-          />
-          <Button disabled={!query.trim() || searching} onClick={() => runAction(search)}>
-            <MagnifyingGlassIcon aria-hidden="true" /> {searching ? "Buscando…" : "Buscar"}
-          </Button>
-        </div>
-        <ul className="mt-4 grid max-h-72 gap-2 overflow-y-auto">
-          {results.map((club) => (
-            <li
-              className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
-              key={`${club.providerKey}:${club.externalClubId}`}
-            >
-              <span className="min-w-0">
-                <strong className="block truncate text-sm">{club.name}</strong>
-                <span className="typo-caption text-muted-foreground">
-                  {club.platform} · {club.gameEdition}
-                </span>
-              </span>
-              <DialogClose
-                render={<Button variant="outline" />}
-                onClick={() => runAction(() => props.onConnectClub(club))}
-              >
-                Vincular
-              </DialogClose>
-            </li>
-          ))}
-        </ul>
-        {results.length === 0 ? (
-          <p className="typo-caption mt-4 text-muted-foreground">
-            Busca por nombre para elegir un club.
-          </p>
-        ) : null}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ConfirmAction({
-  triggerLabel,
-  confirmLabel,
-  description,
-  disabled,
-  onConfirm,
-  variant = "outline",
-}: Readonly<{
-  triggerLabel: string;
-  confirmLabel: string;
-  description: string;
-  disabled?: boolean;
-  onConfirm: () => Promise<void>;
-  variant?: "outline" | "destructive";
-}>) {
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger disabled={disabled} render={<Button variant={variant} />}>
-        {triggerLabel}
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{confirmLabel}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="ghost" />}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction
-            render={<Button variant={variant} />}
-            onClick={() => runAction(onConfirm)}
-          >
-            {confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   );
 }
 
