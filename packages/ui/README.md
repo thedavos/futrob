@@ -87,7 +87,7 @@ Los componentes se importan desde la API pública:
 
 ```tsx
 import { Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo, readFormString } from "@futrob/ui";
-import { CheckCircle, MagnifyingGlass } from "@phosphor-icons/react";
+import { CheckCircleIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 
 <Logo className="h-8 w-auto" />
 <Form validationMode="onBlur">
@@ -101,8 +101,8 @@ import { CheckCircle, MagnifyingGlass } from "@phosphor-icons/react";
   </Field>
 </Form>
 <InputWithIcon
-  startIcon={MagnifyingGlass}
-  endIcon={CheckCircle}
+  startIcon={MagnifyingGlassIcon}
+  endIcon={CheckCircleIcon}
   placeholder="Equipo, jornada o rival"
 />
 <Button>Continuar</Button>
@@ -113,9 +113,9 @@ import { CheckCircle, MagnifyingGlass } from "@phosphor-icons/react";
 cuando el valor es válido, siguiendo el contrato de Base UI. Usa `readFormString` para
 estrechar el `unknown` de `Field.validate` a string.
 
-Los iconos del producto usan **Phosphor** (`@phosphor-icons/react`) con peso `regular`. Tipa
-props de icono con `Icon` reexportado desde `@futrob/ui`. El inventario vive en Storybook
-(`Primitives/Icons`).
+Los iconos del producto usan **Phosphor** (`@phosphor-icons/react`) con peso `regular`. Importa
+siempre el export con sufijo `Icon` (p. ej. `MagnifyingGlassIcon`). Tipa props de icono con
+`Icon` reexportado desde `@futrob/ui`. El inventario vive en Storybook (`Primitives/Icons`).
 
 Para composición polimórfica usa `render` de Base UI; evita envolver un link en un button:
 

@@ -24,7 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@futrob/ui";
-import { WarningCircle, ArrowCounterClockwise } from "@phosphor-icons/react";
+import { WarningCircleIcon, ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import type { EaSearchPlatform, ExternalClubDto } from "@futrob/api-contracts";
 import {
   asEaSearchPlatform,
@@ -178,7 +178,7 @@ export function TeamStep() {
                     />
                   }
                 >
-                  <ArrowCounterClockwise aria-hidden="true" strokeWidth={2} />
+                  <ArrowCounterClockwiseIcon aria-hidden="true" strokeWidth={2} />
                 </TooltipTrigger>
                 <TooltipContent>Restablecer búsqueda</TooltipContent>
               </Tooltip>
@@ -234,7 +234,7 @@ export function TeamStep() {
 
         {search.status === "error" ? (
           <Alert variant="destructive">
-            <WarningCircle aria-hidden="true" />
+            <WarningCircleIcon aria-hidden="true" />
             <AlertDescription>{search.message}</AlertDescription>
           </Alert>
         ) : null}

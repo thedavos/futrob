@@ -1,7 +1,7 @@
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Check } from "@phosphor-icons/react";
+import { CheckIcon } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
 
@@ -52,7 +52,7 @@ function ChoiceGroupIndicator({ className, ...props }: Radio.Indicator.Props) {
       )}
       {...props}
     >
-      <Check aria-hidden="true" className="size-4" strokeWidth={2.5} />
+      <CheckIcon aria-hidden="true" className="size-4" strokeWidth={2.5} />
     </Radio.Indicator>
   );
 }

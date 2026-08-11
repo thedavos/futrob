@@ -166,6 +166,8 @@ Variantes cerradas: `default`, `secondary`, `outline`, `ghost`, `destructive`, `
 ### Iconos
 
 - Librería canónica: **Phosphor Icons** (`@phosphor-icons/react`).
+- Importar siempre el export con sufijo `Icon` (p. ej. `EnvelopeSimpleIcon`). Los nombres
+  sin sufijo están deprecados en Phosphor ≥ 2.1.8.
 - Peso por defecto: `regular`. No mezclar `duotone`/`fill` en UI operativa sin decisión de diseño.
 - Tipar props de icono con `Icon` reexportado desde `@futrob/ui`.
 - Inventario ejecutable: Storybook `Primitives/Icons` (`FUTROB_ICON_CATALOG`).

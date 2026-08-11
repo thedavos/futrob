@@ -34,14 +34,14 @@ import {
   useSidebar,
 } from "@futrob/ui";
 import {
-  Buildings,
-  CaretDown,
-  CheckSquareOffset,
-  List,
-  Plus,
-  Sidebar as SidebarExpandIcon,
-  SidebarSimple,
-  Trophy,
+  BuildingsIcon,
+  CaretDownIcon,
+  CheckSquareOffsetIcon,
+  ListIcon,
+  PlusIcon,
+  SidebarIcon as SidebarExpandIcon,
+  SidebarSimpleIcon,
+  TrophyIcon,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
@@ -242,7 +242,7 @@ function MobileNav(props: {
         <SheetTrigger
           render={<Button aria-label="Abrir navegación" size="icon" variant="outline" />}
         >
-          <List aria-hidden="true" />
+          <ListIcon aria-hidden="true" />
         </SheetTrigger>
         <SheetContent className="w-[min(20rem,90vw)] p-0" side="left">
           <SheetHeader>
@@ -310,7 +310,7 @@ function ShellSidebarBody({
               {collapsed ? (
                 <SidebarExpandIcon aria-hidden="true" />
               ) : (
-                <SidebarSimple aria-hidden="true" />
+                <SidebarSimpleIcon aria-hidden="true" />
               )}
             </Button>
           ) : null}
@@ -335,7 +335,7 @@ function ShellSidebarBody({
             title="Expandir barra lateral"
             variant="ghost"
           >
-            <CheckSquareOffset aria-hidden="true" />
+            <CheckSquareOffsetIcon aria-hidden="true" />
           </Button>
         </SidebarContent>
       ) : (
@@ -458,7 +458,7 @@ function WorkspaceSelector({
           <SelectorTriggerIcon associatedClub={associatedClub} selection={selection} />
           <span className="truncate">{selectorTriggerLabel(selection, personalLabel)}</span>
         </span>
-        <CaretDown
+        <CaretDownIcon
           aria-hidden="true"
           className="size-4 shrink-0 transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
         />
@@ -481,7 +481,7 @@ function WorkspaceSelector({
                   })
                 }
               >
-                <Trophy aria-hidden="true" className="size-4 shrink-0" />
+                <TrophyIcon aria-hidden="true" className="size-4 shrink-0" />
                 <span className="truncate">{competition.name}</span>
               </DropdownMenuItem>
             ))
@@ -509,7 +509,7 @@ function WorkspaceSelector({
                 })
               }
             >
-              <Buildings aria-hidden="true" className="size-4 shrink-0" />
+              <BuildingsIcon aria-hidden="true" className="size-4 shrink-0" />
               <span className="truncate">{membership.name}</span>
             </DropdownMenuItem>
           ))}
@@ -518,7 +518,7 @@ function WorkspaceSelector({
               void navigate({ to: "/orgs/new" });
             }}
           >
-            <Plus aria-hidden="true" className="size-4 shrink-0" />
+            <PlusIcon aria-hidden="true" className="size-4 shrink-0" />
             Crear organización
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -529,7 +529,7 @@ function WorkspaceSelector({
 
 function ClubMenuIcon({ club }: { readonly club: AssociatedClubSummary | null }) {
   if (!club) {
-    return <Plus aria-hidden="true" className="size-4 shrink-0" />;
+    return <PlusIcon aria-hidden="true" className="size-4 shrink-0" />;
   }
   return <ClubCrestAvatar imageUrl={club.imageUrl} name={club.name} />;
 }
@@ -569,7 +569,7 @@ function AccountMenu({ compact = false }: { readonly compact?: boolean }) {
               <span className="truncate text-sm font-medium" title={name}>
                 {shortName}
               </span>
-              <CaretDown
+              <CaretDownIcon
                 aria-hidden="true"
                 className="size-3 shrink-0 text-muted-foreground transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
                 weight="bold"
@@ -628,9 +628,9 @@ function SelectorTriggerIcon({
     case WORKSPACE_SELECTION_KIND.personal:
       return <ClubMenuIcon club={associatedClub} />;
     case WORKSPACE_SELECTION_KIND.organization:
-      return <Buildings aria-hidden="true" className={className} />;
+      return <BuildingsIcon aria-hidden="true" className={className} />;
     case WORKSPACE_SELECTION_KIND.competition:
-      return <Trophy aria-hidden="true" className={className} />;
+      return <TrophyIcon aria-hidden="true" className={className} />;
   }
 }
 

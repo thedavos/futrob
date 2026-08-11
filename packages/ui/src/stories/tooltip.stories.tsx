@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Info } from "@phosphor-icons/react";
+import { InfoIcon } from "@phosphor-icons/react";
 
 import { Button } from "../components/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
@@ -26,7 +26,7 @@ export const Playground: Story = {
       <TooltipTrigger
         render={<Button aria-label="Información de auditoría" size="icon" variant="ghost" />}
       >
-        <Info />
+        <InfoIcon />
       </TooltipTrigger>
       <TooltipContent>La auditoría compara el reporte con los datos de EA.</TooltipContent>
     </Tooltip>

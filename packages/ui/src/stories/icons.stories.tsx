@@ -47,7 +47,7 @@ export const Playground: Story = {
 export const Weights: Story = {
   name: "Pesos",
   render: () => {
-    const sample = FUTROB_ICON_CATALOG.find((entry) => entry.name === "Trophy")!;
+    const sample = FUTROB_ICON_CATALOG.find((entry) => entry.name === "TrophyIcon")!;
     const weights = ["thin", "light", "regular", "bold", "fill", "duotone"] as const;
     return (
       <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-6">
@@ -71,7 +71,7 @@ export const Weights: Story = {
 export const Sizes: Story = {
   name: "Tamaños",
   render: () => {
-    const sample = FUTROB_ICON_CATALOG.find((entry) => entry.name === "GameController")!;
+    const sample = FUTROB_ICON_CATALOG.find((entry) => entry.name === "GameControllerIcon")!;
     const sizes = [
       { className: "size-3.5", label: "14px · denso" },
       { className: "size-4", label: "16px · input / inline" },

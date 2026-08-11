@@ -11,7 +11,7 @@ import {
   FieldLabel,
   Input,
 } from "@futrob/ui";
-import { Info } from "@phosphor-icons/react";
+import { InfoIcon } from "@phosphor-icons/react";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import { FieldsetError } from "@/shared/presentation/forms/fieldset-error.tsx";
@@ -86,7 +86,7 @@ export function GameAccountStep() {
             className="sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-x-4 sm:[&>svg]:mt-0"
             variant="info"
           >
-            <Info aria-hidden="true" />
+            <InfoIcon aria-hidden="true" />
             <AlertDescription>
               La cuenta es personal, pero puedes usar la misma edición y plataforma de la
               competición.

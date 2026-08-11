@@ -1,5 +1,5 @@
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
-import { Check, Minus } from "@phosphor-icons/react";
+import { CheckIcon, MinusIcon } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
 
@@ -17,12 +17,12 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
         data-slot="checkbox-indicator"
         className="group/checkbox-indicator flex items-center justify-center"
       >
-        <Check
+        <CheckIcon
           aria-hidden="true"
           className="size-3.5 group-data-[indeterminate]/checkbox-indicator:hidden"
           strokeWidth={2.5}
         />
-        <Minus
+        <MinusIcon
           aria-hidden="true"
           className="hidden size-3.5 group-data-[indeterminate]/checkbox-indicator:block"
           strokeWidth={2.5}

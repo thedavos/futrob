@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
-  CaretDown,
-  CheckSquareOffset,
-  GameController,
-  House,
-  Plus,
-  Sidebar as SidebarExpandIcon,
-  SidebarSimple,
-  Ticket,
-  Trophy,
+  CaretDownIcon,
+  CheckSquareOffsetIcon,
+  GameControllerIcon,
+  HouseIcon,
+  PlusIcon,
+  SidebarIcon as SidebarExpandIcon,
+  SidebarSimpleIcon,
+  TicketIcon,
+  TrophyIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
 
@@ -60,7 +60,11 @@ function HeaderCollapseToggle() {
       size="icon"
       variant="ghost"
     >
-      {collapsed ? <SidebarExpandIcon aria-hidden="true" /> : <SidebarSimple aria-hidden="true" />}
+      {collapsed ? (
+        <SidebarExpandIcon aria-hidden="true" />
+      ) : (
+        <SidebarSimpleIcon aria-hidden="true" />
+      )}
     </Button>
   );
 }
@@ -91,7 +95,7 @@ function AccountAndCollapseRow({ compact = false }: { readonly compact?: boolean
             {compact ? null : (
               <span className="flex min-w-0 items-center gap-1">
                 <span className="truncate text-sm font-medium">David</span>
-                <CaretDown
+                <CaretDownIcon
                   aria-hidden="true"
                   className="size-3 shrink-0 text-muted-foreground transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
                   weight="bold"
@@ -121,10 +125,10 @@ function WorkspaceSelectorDemo() {
         }
       >
         <span className="flex min-w-0 items-center gap-2">
-          <Trophy aria-hidden="true" className="size-4 shrink-0" />
+          <TrophyIcon aria-hidden="true" className="size-4 shrink-0" />
           <span className="truncate">La Copa del Barrio</span>
         </span>
-        <CaretDown
+        <CaretDownIcon
           aria-hidden="true"
           className="size-4 shrink-0 transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
         />
@@ -133,7 +137,7 @@ function WorkspaceSelectorDemo() {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Competiciones</DropdownMenuLabel>
           <DropdownMenuItem>
-            <Trophy aria-hidden="true" className="size-4" />
+            <TrophyIcon aria-hidden="true" className="size-4" />
             La Copa del Barrio
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -141,7 +145,7 @@ function WorkspaceSelectorDemo() {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Clubes EA</DropdownMenuLabel>
           <DropdownMenuItem>
-            <Plus aria-hidden="true" className="size-4" />
+            <PlusIcon aria-hidden="true" className="size-4" />
             Asociar club
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -149,7 +153,7 @@ function WorkspaceSelectorDemo() {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Organizaciones</DropdownMenuLabel>
           <DropdownMenuItem>
-            <Plus aria-hidden="true" className="size-4" />
+            <PlusIcon aria-hidden="true" className="size-4" />
             Crear organización
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -181,25 +185,25 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton active dense>
-                <House aria-hidden="true" className="size-4" />
+                <HouseIcon aria-hidden="true" className="size-4" />
                 Inicio
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton dense>
-                <Trophy aria-hidden="true" className="size-4" />
+                <TrophyIcon aria-hidden="true" className="size-4" />
                 Competiciones
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton dense>
-                <GameController aria-hidden="true" className="size-4" />
+                <GameControllerIcon aria-hidden="true" className="size-4" />
                 Clubes EA
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton dense>
-                <Ticket aria-hidden="true" className="size-4" />
+                <TicketIcon aria-hidden="true" className="size-4" />
                 Invitaciones
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -263,19 +267,19 @@ export const CollapsedRail: Story = {
           </SidebarHeader>
           <SidebarContent className="items-center p-2">
             <SidebarMenuButton aria-label="Cola" className="justify-center px-0" dense>
-              <CheckSquareOffset aria-hidden="true" />
+              <CheckSquareOffsetIcon aria-hidden="true" />
             </SidebarMenuButton>
           </SidebarContent>
           <SidebarFooter className="items-center p-2">
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton active aria-label="Inicio" className="justify-center px-0" dense>
-                  <House aria-hidden="true" />
+                  <HouseIcon aria-hidden="true" />
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton aria-label="Competiciones" className="justify-center px-0" dense>
-                  <Trophy aria-hidden="true" />
+                  <TrophyIcon aria-hidden="true" />
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

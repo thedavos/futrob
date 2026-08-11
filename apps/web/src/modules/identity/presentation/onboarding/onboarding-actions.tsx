@@ -1,5 +1,5 @@
 import { Button } from "@futrob/ui";
-import { CircleNotch } from "@phosphor-icons/react";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 
 interface OnboardingActionsProps {
   readonly primaryLabel: string;
@@ -30,7 +30,7 @@ export function OnboardingActions({
           onClick={onPrimary}
         >
           {loading ? (
-            <CircleNotch
+            <CircleNotchIcon
               aria-hidden="true"
               className="size-4 animate-spin"
               data-icon="inline-start"

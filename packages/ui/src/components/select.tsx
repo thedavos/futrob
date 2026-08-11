@@ -1,5 +1,5 @@
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { Check, CaretDown } from "@phosphor-icons/react";
+import { CheckIcon, CaretDownIcon } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
 
@@ -28,7 +28,7 @@ function SelectTrigger({ children, className, dense = false, ...props }: SelectT
     >
       {children}
       <SelectPrimitive.Icon>
-        <CaretDown
+        <CaretDownIcon
           aria-hidden="true"
           className="size-4 text-muted-foreground"
           data-slot="select-trigger-icon"
@@ -92,7 +92,7 @@ function SelectItem({ children, className, ...props }: SelectPrimitive.Item.Prop
     >
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator className="absolute right-2 inline-flex size-4 items-center justify-center">
-        <Check aria-hidden="true" className="size-4" />
+        <CheckIcon aria-hidden="true" className="size-4" />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   );

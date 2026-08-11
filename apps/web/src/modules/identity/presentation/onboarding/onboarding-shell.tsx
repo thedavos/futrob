@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Alert, AlertDescription, Logo, Stepper, type StepperStep } from "@futrob/ui";
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 
 interface OnboardingShellProps {
   readonly steps: readonly StepperStep[];
@@ -54,7 +54,7 @@ export function OnboardingShell({
           </header>
           {error ? (
             <Alert className="mb-6 outline-none" ref={errorRef} tabIndex={-1} variant="destructive">
-              <WarningCircle />
+              <WarningCircleIcon />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}

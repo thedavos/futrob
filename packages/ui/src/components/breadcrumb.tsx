@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CaretRight, DotsThree } from "@phosphor-icons/react";
+import { CaretRightIcon, DotsThreeIcon } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
 
@@ -63,7 +63,7 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
       className={cn("[&>svg]:size-3.5", className)}
       {...props}
     >
-      {children ?? <CaretRight />}
+      {children ?? <CaretRightIcon />}
     </li>
   );
 }
@@ -77,7 +77,7 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<"span"
       className={cn("flex size-8 items-center justify-center", className)}
       {...props}
     >
-      <DotsThree className="size-4" />
+      <DotsThreeIcon className="size-4" />
       <span className="sr-only">Más</span>
     </span>
   );

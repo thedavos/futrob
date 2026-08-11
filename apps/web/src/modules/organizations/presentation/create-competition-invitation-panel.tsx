@@ -10,7 +10,7 @@ import {
   Input,
   useCopyToClipboard,
 } from "@futrob/ui";
-import { Check, WarningCircle, Copy, LinkSimple } from "@phosphor-icons/react";
+import { CheckIcon, WarningCircleIcon, CopyIcon, LinkSimpleIcon } from "@phosphor-icons/react";
 import { buildInvitationShareUrl } from "@/modules/organizations/presentation/invitation-share-url.ts";
 import { useCreateCompetitionInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 
@@ -58,7 +58,7 @@ export function CreateCompetitionInvitationPanel({
 
       {error ? (
         <Alert variant="destructive">
-          <WarningCircle aria-hidden="true" />
+          <WarningCircleIcon aria-hidden="true" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
@@ -68,7 +68,7 @@ export function CreateCompetitionInvitationPanel({
         onClick={() => void handleCreate()}
         type="button"
       >
-        <LinkSimple aria-hidden="true" className="size-4" />
+        <LinkSimpleIcon aria-hidden="true" className="size-4" />
         Generar link de invitación
       </Button>
 
@@ -80,9 +80,9 @@ export function CreateCompetitionInvitationPanel({
           </Field>
           <Button onClick={() => void handleCopy()} type="button" variant="outline">
             {isCopied ? (
-              <Check aria-hidden="true" className="size-4" />
+              <CheckIcon aria-hidden="true" className="size-4" />
             ) : (
-              <Copy aria-hidden="true" className="size-4" />
+              <CopyIcon aria-hidden="true" className="size-4" />
             )}
             {isCopied ? "Copiado" : "Copiar link"}
           </Button>

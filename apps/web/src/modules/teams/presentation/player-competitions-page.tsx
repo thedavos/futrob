@@ -11,7 +11,7 @@ import {
   EmptyStateIcon,
   EmptyStateTitle,
 } from "@futrob/ui";
-import { Trophy } from "@phosphor-icons/react";
+import { TrophyIcon } from "@phosphor-icons/react";
 import { useMyTeamsQuery } from "./player-queries.ts";
 
 type PlayerCompetitionRow = {
@@ -49,7 +49,7 @@ export function PlayerCompetitionsPage() {
         ) : competitions.length === 0 ? (
           <EmptyState>
             <EmptyStateIcon>
-              <Trophy aria-hidden="true" />
+              <TrophyIcon aria-hidden="true" />
             </EmptyStateIcon>
             <EmptyStateTitle>Sin competiciones todavía</EmptyStateTitle>
             <EmptyStateDescription>

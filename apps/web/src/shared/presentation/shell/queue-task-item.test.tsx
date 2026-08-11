@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { CheckSquare, WarningCircle } from "@phosphor-icons/react";
+import { CheckSquareIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
@@ -14,7 +14,7 @@ describe("QueueTaskItem", () => {
   it("renders title, subtitle, meta and decorative icon", () => {
     const { container } = render(
       <QueueTaskItem
-        icon={CheckSquare}
+        icon={CheckSquareIcon}
         meta="14h"
         subtitle="Nova FC vs Atlas · J4"
         title="Confirmar selección"
@@ -30,22 +30,24 @@ describe("QueueTaskItem", () => {
 
   it("exposes closed tone variants via data attributes", () => {
     const { rerender, container } = render(
-      <QueueTaskItem icon={CheckSquare} title="Tarea" tone="default" />,
+      <QueueTaskItem icon={CheckSquareIcon} title="Tarea" tone="default" />,
     );
     expect(container.querySelector('[data-tone="default"]')).toBeTruthy();
 
-    rerender(<QueueTaskItem icon={WarningCircle} title="Urgente" tone="urgent" />);
+    rerender(<QueueTaskItem icon={WarningCircleIcon} title="Urgente" tone="urgent" />);
     expect(container.querySelector('[data-tone="urgent"]')).toBeTruthy();
 
-    rerender(<QueueTaskItem icon={CheckSquare} title="Espera" tone="waiting" />);
+    rerender(<QueueTaskItem icon={CheckSquareIcon} title="Espera" tone="waiting" />);
     expect(container.querySelector('[data-tone="waiting"]')).toBeTruthy();
 
-    rerender(<QueueTaskItem disabled icon={CheckSquare} title="Hecha" tone="resolved" />);
+    rerender(<QueueTaskItem disabled icon={CheckSquareIcon} title="Hecha" tone="resolved" />);
     expect(container.querySelector('[data-tone="resolved"]')).toBeTruthy();
   });
 
   it("marks dense and active states for shell density contracts", () => {
-    const { container } = render(<QueueTaskItem active dense icon={CheckSquare} title="Activa" />);
+    const { container } = render(
+      <QueueTaskItem active dense icon={CheckSquareIcon} title="Activa" />,
+    );
 
     const trigger = container.querySelector('[data-slot="queue-task-item-trigger"]');
     expect(trigger?.getAttribute("data-density")).toBe("dense");
@@ -56,7 +58,7 @@ describe("QueueTaskItem", () => {
     render(
       <QueueTaskItem
         compact
-        icon={CheckSquare}
+        icon={CheckSquareIcon}
         subtitle="Nova FC vs Atlas · J4"
         title="Confirmar selección"
       />,
@@ -72,7 +74,7 @@ describe("QueueTaskItem", () => {
 
   it("invokes onClick when used as a button", () => {
     const onClick = vi.fn();
-    render(<QueueTaskItem icon={CheckSquare} onClick={onClick} title="Confirmar selección" />);
+    render(<QueueTaskItem icon={CheckSquareIcon} onClick={onClick} title="Confirmar selección" />);
 
     fireEvent.click(screen.getByRole("button", { name: /Confirmar selección/ }));
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -82,7 +84,7 @@ describe("QueueTaskItem", () => {
     render(
       <QueueTaskItem
         href="/encounters/enc_1/selection"
-        icon={CheckSquare}
+        icon={CheckSquareIcon}
         title="Confirmar selección"
       />,
     );
@@ -94,7 +96,12 @@ describe("QueueTaskItem", () => {
   it("does not fire onClick when disabled", () => {
     const onClick = vi.fn();
     render(
-      <QueueTaskItem disabled icon={CheckSquare} onClick={onClick} title="Confirmar selección" />,
+      <QueueTaskItem
+        disabled
+        icon={CheckSquareIcon}
+        onClick={onClick}
+        title="Confirmar selección"
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Confirmar selección/ }));

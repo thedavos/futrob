@@ -1,4 +1,4 @@
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 
 export function FieldsetError({
   id,
@@ -9,7 +9,7 @@ export function FieldsetError({
 }) {
   return (
     <p className="mt-3 flex items-start gap-1.5 typo-caption text-danger" id={id}>
-      <WarningCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={1.5} />
+      <WarningCircleIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={1.5} />
       <span>{children}</span>
     </p>
   );

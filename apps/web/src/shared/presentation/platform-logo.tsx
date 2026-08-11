@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 import { GAME_PLATFORM, type GamePlatform } from "@futrob/shared-kernel";
-import { Monitor } from "@phosphor-icons/react";
+import { MonitorIcon } from "@phosphor-icons/react";
 
 type PlatformLogoProps = SVGProps<SVGSVGElement> & {
   readonly platform: GamePlatform;
@@ -20,7 +20,7 @@ export function PlatformLogo({ platform, ...props }: PlatformLogoProps) {
     case GAME_PLATFORM.XBOX:
       return <XboxLogo {...sharedProps} />;
     case GAME_PLATFORM.PC:
-      return <Monitor {...sharedProps} />;
+      return <MonitorIcon {...sharedProps} />;
     case GAME_PLATFORM.NINTENDO_SWITCH_1:
     case GAME_PLATFORM.NINTENDO_SWITCH_2:
       return <NintendoSwitchLogo {...sharedProps} />;

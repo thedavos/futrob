@@ -13,7 +13,7 @@ import {
   EmptyStateIcon,
   EmptyStateTitle,
 } from "@futrob/ui";
-import { Trophy } from "@phosphor-icons/react";
+import { TrophyIcon } from "@phosphor-icons/react";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { useOrganizationCompetitionsQuery } from "./competition-queries.ts";
@@ -51,7 +51,7 @@ export function OrganizationCompetitionsPage({
         ) : competitions.length === 0 ? (
           <EmptyState>
             <EmptyStateIcon>
-              <Trophy aria-hidden="true" />
+              <TrophyIcon aria-hidden="true" />
             </EmptyStateIcon>
             <EmptyStateTitle>Sin competiciones todavía</EmptyStateTitle>
             <EmptyStateDescription>

@@ -14,7 +14,13 @@ import {
   type FormErrors,
 } from "@futrob/ui";
 import { Link } from "@tanstack/react-router";
-import { Eye, EyeSlash, Lock, EnvelopeSimple, User } from "@phosphor-icons/react";
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  LockIcon,
+  EnvelopeSimpleIcon,
+  UserIcon,
+} from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import { useAuthResume } from "@/modules/identity/presentation/auth-resume.tsx";
 import {
@@ -138,7 +144,7 @@ export function SignupForm() {
           id="name"
           name="name"
           placeholder="Ingresa tu nombre completo"
-          startIcon={User}
+          startIcon={UserIcon}
         />
         <FieldError />
       </Field>
@@ -156,7 +162,7 @@ export function SignupForm() {
           id="email"
           name="email"
           placeholder="ejemplo@correo.com"
-          startIcon={EnvelopeSimple}
+          startIcon={EnvelopeSimpleIcon}
           type="email"
         />
         <FieldError />
@@ -185,14 +191,14 @@ export function SignupForm() {
               variant="ghost"
             >
               <span className="relative size-4" aria-hidden="true">
-                <Eye
+                <EyeIcon
                   className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
                     isPasswordVisible
                       ? "scale-[0.25] opacity-0 blur-[4px]"
                       : "scale-100 opacity-100 blur-0"
                   }`}
                 />
-                <EyeSlash
+                <EyeSlashIcon
                   className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
                     isPasswordVisible
                       ? "scale-100 opacity-100 blur-0"
@@ -205,7 +211,7 @@ export function SignupForm() {
           id="password"
           name="password"
           placeholder="Crea una contraseña"
-          startIcon={Lock}
+          startIcon={LockIcon}
           type={isPasswordVisible ? "text" : "password"}
         />
         <FieldValidity>

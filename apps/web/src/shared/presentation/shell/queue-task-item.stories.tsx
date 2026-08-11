@@ -1,18 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
-  ArrowsClockwise,
-  ArrowsLeftRight,
-  CheckSquare,
-  CircleDashed,
-  EnvelopeSimple,
-  MagnifyingGlass,
-  PencilSimple,
-  Plugs,
-  Plus,
-  SealWarning,
-  SquaresFour,
-  UserPlus,
-  WarningCircle,
+  ArrowsClockwiseIcon,
+  ArrowsLeftRightIcon,
+  CheckSquareIcon,
+  CircleDashedIcon,
+  EnvelopeSimpleIcon,
+  MagnifyingGlassIcon,
+  PencilSimpleIcon,
+  PlugsIcon,
+  PlusIcon,
+  SealWarningIcon,
+  SquaresFourIcon,
+  UserPlusIcon,
+  WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@futrob/ui";
 import type { ComponentProps, ReactNode } from "react";
@@ -26,7 +26,7 @@ const meta = {
   component: QueueTaskItem,
   parameters: { layout: "padded" },
   args: {
-    icon: CheckSquare,
+    icon: CheckSquareIcon,
     title: "Confirmar selección",
     subtitle: "Nova FC vs Atlas · J4",
     meta: "14h",
@@ -66,28 +66,28 @@ export const States: Story = {
     <div className="flex flex-col gap-6">
       <QueuePanel label="default / active / disabled / resolved">
         <QueueTaskItem
-          icon={CheckSquare}
+          icon={CheckSquareIcon}
           meta="14h"
           subtitle="Nova FC vs Atlas · J4"
           title="Confirmar selección"
         />
         <QueueTaskItem
           active
-          icon={CheckSquare}
+          icon={CheckSquareIcon}
           meta="14h"
           subtitle="Nova FC vs Atlas · J4"
           title="Confirmar selección"
         />
         <QueueTaskItem
           disabled
-          icon={CheckSquare}
+          icon={CheckSquareIcon}
           meta="14h"
           subtitle="Nova FC vs Atlas · J4"
           title="Confirmar selección"
         />
         <QueueTaskItem
           disabled
-          icon={CheckSquare}
+          icon={CheckSquareIcon}
           meta="hecha"
           subtitle="Esta tarea ya no está pendiente"
           title="Confirmar selección"
@@ -96,21 +96,21 @@ export const States: Story = {
       </QueuePanel>
       <QueuePanel label="tone">
         <QueueTaskItem
-          icon={CheckSquare}
+          icon={CheckSquareIcon}
           meta="14h"
           subtitle="Nova FC vs Atlas · J4"
           title="default"
           tone="default"
         />
         <QueueTaskItem
-          icon={WarningCircle}
+          icon={WarningCircleIcon}
           meta="urg"
           subtitle="Nova FC vs Atlas · J4"
           title="urgent"
           tone="urgent"
         />
         <QueueTaskItem
-          icon={CircleDashed}
+          icon={CircleDashedIcon}
           meta="18h"
           subtitle="Nova FC vs Atlas · J4"
           title="waiting"
@@ -118,7 +118,7 @@ export const States: Story = {
         />
         <QueueTaskItem
           disabled
-          icon={CheckSquare}
+          icon={CheckSquareIcon}
           meta="hecha"
           subtitle="Nova FC vs Atlas · J4"
           title="resolved"
@@ -136,7 +136,7 @@ export const Density: Story = {
       <QueuePanel label="dense (default shell)">
         <QueueTaskItem
           dense
-          icon={CheckSquare}
+          icon={CheckSquareIcon}
           meta="14h"
           subtitle="Nova FC vs Atlas · J4"
           title="Confirmar selección"
@@ -145,7 +145,7 @@ export const Density: Story = {
       <QueuePanel label="default control height">
         <QueueTaskItem
           dense={false}
-          icon={CheckSquare}
+          icon={CheckSquareIcon}
           meta="14h"
           subtitle="Nova FC vs Atlas · J4"
           title="Confirmar selección"
@@ -154,19 +154,19 @@ export const Density: Story = {
       <QueuePanel className="w-14" label="compact / icon rail">
         <QueueTaskItem
           compact
-          icon={CheckSquare}
+          icon={CheckSquareIcon}
           subtitle="Nova FC vs Atlas · J4"
           title="Confirmar selección"
         />
         <QueueTaskItem
           compact
-          icon={ArrowsClockwise}
+          icon={ArrowsClockwiseIcon}
           subtitle="Titans vs Orion · P1"
           title="Responder reprogramación"
         />
         <QueueTaskItem
           compact
-          icon={WarningCircle}
+          icon={WarningCircleIcon}
           subtitle="Nova FC vs Atlas · J4"
           title="Resolver desacuerdo"
           tone="urgent"
@@ -183,7 +183,7 @@ export const AsLink: Story = {
     title: "Confirmar selección",
     subtitle: "Nova FC vs Atlas · J4",
     meta: "14h",
-    icon: CheckSquare,
+    icon: CheckSquareIcon,
   },
   decorators: [
     (Story) => (
@@ -199,19 +199,19 @@ export const PersonalContext: Story = {
   render: () => (
     <QueuePanel label="Espacio personal">
       <QueueTaskItem
-        icon={EnvelopeSimple}
+        icon={EnvelopeSimpleIcon}
         meta="3d"
         subtitle="Liga Nocturna · Nova FC"
         title="Aceptar invitación"
       />
       <QueueTaskItem
-        icon={Plugs}
+        icon={PlugsIcon}
         meta="·"
         subtitle="EA Sports FC · Clubs"
         title="Vincular cuenta de juego"
       />
       <QueueTaskItem
-        icon={PencilSimple}
+        icon={PencilSimpleIcon}
         meta="·"
         subtitle="Falta nombre público"
         title="Completar perfil de jugador"
@@ -225,19 +225,19 @@ export const OrganizationContext: Story = {
   render: () => (
     <QueuePanel label="Organización">
       <QueueTaskItem
-        icon={Plus}
+        icon={PlusIcon}
         meta="·"
         subtitle="Copa Primavera"
         title="Completar competición borrador"
       />
       <QueueTaskItem
-        icon={UserPlus}
+        icon={UserPlusIcon}
         meta="2d"
         subtitle="marco@ejemplo.com · staff"
         title="Aprobar membresía"
       />
       <QueueTaskItem
-        icon={EnvelopeSimple}
+        icon={EnvelopeSimpleIcon}
         meta="·"
         subtitle="3 pendientes de aceptación"
         title="Revisar invitaciones enviadas"
@@ -251,65 +251,65 @@ export const CaptainContext: Story = {
   render: () => (
     <QueuePanel label="Competición · capitán">
       <QueueTaskItem
-        icon={SquaresFour}
+        icon={SquaresFourIcon}
         meta="·"
         subtitle="Nova FC vs Atlas · J4"
         title="Elegir partidos oficiales"
       />
       <QueueTaskItem
-        icon={CircleDashed}
+        icon={CircleDashedIcon}
         meta="18h"
         subtitle="Nova FC vs Atlas · J4"
         title="Esperando confirmación rival"
         tone="waiting"
       />
       <QueueTaskItem
-        icon={CheckSquare}
+        icon={CheckSquareIcon}
         meta="14h"
         subtitle="Nova FC vs Atlas · J4"
         title="Confirmar selección"
       />
       <QueueTaskItem
-        icon={ArrowsLeftRight}
+        icon={ArrowsLeftRightIcon}
         meta="9h"
         subtitle="Nova FC vs Atlas · J4"
         title="Revisar contrapropuesta"
       />
       <QueueTaskItem
-        icon={ArrowsClockwise}
+        icon={ArrowsClockwiseIcon}
         meta="6h"
         subtitle="Nova FC vs Atlas · partido 2"
         title="Responder reprogramación"
       />
       <QueueTaskItem
-        icon={CircleDashed}
+        icon={CircleDashedIcon}
         meta="20h"
         subtitle="Titans vs Orion · encuentro"
         title="Esperando rival (horario)"
         tone="waiting"
       />
       <QueueTaskItem
-        icon={WarningCircle}
+        icon={WarningCircleIcon}
         meta="·"
         subtitle="Titans vs Orion · J5"
         title="Disputa en revisión"
         tone="urgent"
       />
       <QueueTaskItem
-        icon={MagnifyingGlass}
+        icon={MagnifyingGlassIcon}
         meta="·"
         subtitle="Nova FC vs Atlas · selección"
         title="Ver decisión del organizador"
       />
       <QueueTaskItem
-        icon={SealWarning}
+        icon={SealWarningIcon}
         meta="·"
         subtitle="Plantilla · jugador inelegible"
         title="Revisar sanción"
         tone="urgent"
       />
       <QueueTaskItem
-        icon={CircleDashed}
+        icon={CircleDashedIcon}
         meta="·"
         subtitle="Club EA · verificación"
         title="Inscripción pendiente de org"
@@ -324,52 +324,52 @@ export const OrganizerContext: Story = {
   render: () => (
     <QueuePanel label="Competición · organizador">
       <QueueTaskItem
-        icon={WarningCircle}
+        icon={WarningCircleIcon}
         meta="urg"
         subtitle="Nova FC vs Atlas · J4"
         title="Resolver desacuerdo"
         tone="urgent"
       />
       <QueueTaskItem
-        icon={WarningCircle}
+        icon={WarningCircleIcon}
         meta="urg"
         subtitle="Titans vs Orion · J5"
         title="Revisar disputa"
         tone="urgent"
       />
       <QueueTaskItem
-        icon={CheckSquare}
+        icon={CheckSquareIcon}
         meta="2d"
         subtitle="Rivals United · club EA"
         title="Aprobar inscripción equipo"
       />
       <QueueTaskItem
-        icon={ArrowsClockwise}
+        icon={ArrowsClockwiseIcon}
         meta="1d"
         subtitle="Nova FC vs Atlas · P1"
         title="Resolver reprogramación"
       />
       <QueueTaskItem
-        icon={Plugs}
+        icon={PlugsIcon}
         meta="·"
         subtitle="Fallos recientes · Clubs"
         title="Revisar sync EA"
       />
       <QueueTaskItem
-        icon={SquaresFour}
+        icon={SquaresFourIcon}
         meta="·"
         subtitle="4 enfrentamientos · J3"
         title="Revisar candidatos sin asignar"
       />
       <QueueTaskItem
-        icon={SealWarning}
+        icon={SealWarningIcon}
         meta="·"
         subtitle="Orion FC · walkover"
         title="Aplicar sanción"
         tone="urgent"
       />
       <QueueTaskItem
-        icon={PencilSimple}
+        icon={PencilSimpleIcon}
         meta="·"
         subtitle="Sigue en borrador"
         title="Publicar competición"

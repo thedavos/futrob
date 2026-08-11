@@ -1,5 +1,5 @@
 import { Field as FieldPrimitive } from "@base-ui/react/field";
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
 
@@ -45,7 +45,11 @@ function FieldError({ className, ...props }: Omit<FieldPrimitive.Error.Props, "r
       className={cn("typo-caption flex items-start gap-1.5 text-danger", className)}
       render={(elementProps) => (
         <div {...elementProps}>
-          <WarningCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={1.5} />
+          <WarningCircleIcon
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0"
+            strokeWidth={1.5}
+          />
           <span>{elementProps.children}</span>
         </div>
       )}

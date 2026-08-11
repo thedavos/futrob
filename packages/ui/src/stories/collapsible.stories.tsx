@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { CaretRight } from "@phosphor-icons/react";
+import { CaretRightIcon } from "@phosphor-icons/react";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/collapsible";
 
@@ -28,7 +28,7 @@ export const Playground: Story = {
     >
       <CollapsibleTrigger className="typo-label border-0 px-2 hover:bg-muted">
         Candidatos EA
-        <CaretRight
+        <CaretRightIcon
           aria-hidden="true"
           className="size-4 text-muted-foreground transition-transform duration-(--duration-normal) group-data-panel-open/collapsible-trigger:rotate-90"
         />
@@ -58,7 +58,7 @@ export const Sections: Story = {
         <Collapsible key={title} className="rounded-xl border border-border bg-surface p-2">
           <CollapsibleTrigger className="typo-label border-0 px-2 hover:bg-muted">
             {title}
-            <CaretRight
+            <CaretRightIcon
               aria-hidden="true"
               className="size-4 text-muted-foreground transition-transform duration-(--duration-normal) group-data-panel-open/collapsible-trigger:rotate-90"
             />
@@ -80,7 +80,7 @@ export const Disabled: Story = {
     >
       <CollapsibleTrigger className="typo-label border-0 px-2">
         Historial (sin permiso)
-        <CaretRight aria-hidden="true" className="size-4 text-muted-foreground" />
+        <CaretRightIcon aria-hidden="true" className="size-4 text-muted-foreground" />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <p className="typo-caption px-2 py-3 text-muted-foreground">

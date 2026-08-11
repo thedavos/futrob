@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
-import { GameController, Trophy, User } from "@phosphor-icons/react";
+import { GameControllerIcon, TrophyIcon, UserIcon } from "@phosphor-icons/react";
 
 import { ChoiceGroup, ChoiceGroupIndicator, ChoiceGroupItem } from "../components/choice-group";
 
@@ -23,17 +23,17 @@ export const Playground: Story = {
     <ChoiceGroup {...args}>
       <ChoiceGroupItem value="organization">
         <ChoiceGroupIndicator />
-        <Trophy className="size-7" />
+        <TrophyIcon className="size-7" />
         <span className="font-semibold">Organizar</span>
       </ChoiceGroupItem>
       <ChoiceGroupItem value="player">
         <ChoiceGroupIndicator />
-        <User className="size-7" />
+        <UserIcon className="size-7" />
         <span className="font-semibold">Jugar</span>
       </ChoiceGroupItem>
       <ChoiceGroupItem disabled value="unavailable">
         <ChoiceGroupIndicator />
-        <GameController className="size-7" />
+        <GameControllerIcon className="size-7" />
         <span className="font-semibold">Próximamente</span>
       </ChoiceGroupItem>
     </ChoiceGroup>

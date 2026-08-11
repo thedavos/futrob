@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Tray } from "@phosphor-icons/react";
+import { TrayIcon } from "@phosphor-icons/react";
 
 import { Button } from "../components/button";
 import {
@@ -33,7 +33,7 @@ export const Playground: Story = {
   render: (args) => (
     <EmptyState {...args}>
       <EmptyStateIcon>
-        <Tray />
+        <TrayIcon />
       </EmptyStateIcon>
       <EmptyStateTitle>Sin partidos sincronizados</EmptyStateTitle>
       <EmptyStateDescription>
@@ -52,7 +52,7 @@ export const Flat: Story = {
   render: (args) => (
     <EmptyState {...args}>
       <EmptyStateIcon>
-        <Tray />
+        <TrayIcon />
       </EmptyStateIcon>
       <EmptyStateTitle>Sin resultados</EmptyStateTitle>
       <EmptyStateDescription>Ajusta los filtros o limpia la búsqueda.</EmptyStateDescription>
@@ -65,7 +65,7 @@ export const Elevated: Story = {
   render: (args) => (
     <EmptyState {...args}>
       <EmptyStateIcon>
-        <Tray />
+        <TrayIcon />
       </EmptyStateIcon>
       <EmptyStateTitle>Aún no hay encuentros</EmptyStateTitle>
       <EmptyStateDescription>
@@ -83,14 +83,14 @@ export const Compare: Story = {
     <div className="mx-auto grid w-full max-w-4xl gap-8 sm:grid-cols-2">
       <EmptyState variant="flat">
         <EmptyStateIcon>
-          <Tray />
+          <TrayIcon />
         </EmptyStateIcon>
         <EmptyStateTitle>flat</EmptyStateTitle>
         <EmptyStateDescription>Borde dashed · paneles embebidos.</EmptyStateDescription>
       </EmptyState>
       <EmptyState variant="elevated">
         <EmptyStateIcon>
-          <Tray />
+          <TrayIcon />
         </EmptyStateIcon>
         <EmptyStateTitle>elevated</EmptyStateTitle>
         <EmptyStateDescription>smooth-shadow-ring-md · panel aislado.</EmptyStateDescription>

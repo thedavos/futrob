@@ -13,7 +13,7 @@ import {
   readFormString,
 } from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { WarningCircle, CheckCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon, CheckCircleIcon } from "@phosphor-icons/react";
 import { resolveSafeRedirect } from "@/modules/identity/presentation/safe-redirect.ts";
 import { TeamsClientError } from "@/modules/teams/presentation/teams-browser-client.ts";
 import { useAcceptRosterInvitationMutation } from "@/modules/teams/presentation/player-queries.ts";
@@ -91,7 +91,7 @@ export function AcceptRosterInvitationForm(props: {
   if (accepted) {
     return (
       <Alert>
-        <CheckCircle aria-hidden="true" />
+        <CheckCircleIcon aria-hidden="true" />
         <AlertDescription>Te uniste a la plantilla. Redirigiendo…</AlertDescription>
       </Alert>
     );
@@ -114,7 +114,7 @@ export function AcceptRosterInvitationForm(props: {
     >
       {error ? (
         <Alert variant="destructive">
-          <WarningCircle aria-hidden="true" />
+          <WarningCircleIcon aria-hidden="true" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}

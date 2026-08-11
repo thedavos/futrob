@@ -30,7 +30,7 @@ import type {
   TeamDto,
   UpdateCompetitionDraftRequest,
 } from "@futrob/api-contracts";
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
 import {
@@ -716,7 +716,7 @@ function StepHeading({ title, copy }: { title: string; copy: string }) {
 function PageAlert({ children }: { children: ReactNode }) {
   return (
     <Alert className="mb-5" variant="destructive">
-      <WarningCircle aria-hidden="true" />
+      <WarningCircleIcon aria-hidden="true" />
       <AlertDescription>{children}</AlertDescription>
     </Alert>
   );

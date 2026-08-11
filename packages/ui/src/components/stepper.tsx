@@ -1,4 +1,4 @@
-import { Check } from "@phosphor-icons/react";
+import { CheckIcon } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
 
@@ -55,7 +55,7 @@ function Stepper({
                   current && "border-primary bg-accent text-accent-foreground",
                 )}
               >
-                {completed ? <Check className="size-4" /> : index + 1}
+                {completed ? <CheckIcon className="size-4" /> : index + 1}
               </span>
               <span
                 className={cn(

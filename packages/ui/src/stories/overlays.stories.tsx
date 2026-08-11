@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Info, List } from "@phosphor-icons/react";
+import { InfoIcon, ListIcon } from "@phosphor-icons/react";
 
 import {
   AlertDialog,
@@ -108,7 +108,7 @@ export const OverlaySet: Story = {
           <SheetTrigger
             render={<Button aria-label="Abrir navegación" size="icon" variant="outline" />}
           >
-            <List />
+            <ListIcon />
           </SheetTrigger>
           <SheetContent>
             <SheetHeader>
@@ -138,7 +138,7 @@ export const OverlaySet: Story = {
           <TooltipTrigger
             render={<Button aria-label="Información de auditoría" size="icon" variant="ghost" />}
           >
-            <Info />
+            <InfoIcon />
           </TooltipTrigger>
           <TooltipContent>La auditoría compara el reporte con los datos de EA.</TooltipContent>
         </Tooltip>

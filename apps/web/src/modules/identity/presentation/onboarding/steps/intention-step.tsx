@@ -1,7 +1,7 @@
 "use client";
 
 import { ChoiceGroup, ChoiceGroupIndicator, ChoiceGroupItem, type Icon } from "@futrob/ui";
-import { Ticket, Trophy, User } from "@phosphor-icons/react";
+import { TicketIcon, TrophyIcon, UserIcon } from "@phosphor-icons/react";
 import type { OnboardingPathDto } from "@futrob/api-contracts";
 import { ONBOARDING_PATH } from "@futrob/identity";
 import { OnboardingActions } from "../onboarding-actions.tsx";
@@ -25,13 +25,13 @@ export function IntentChoiceStep() {
         onValueChange={(value) => value && flow.setPath(value)}
         value={flow.path ?? ""}
       >
-        <IntentChoice icon={Trophy} label="Organizar" value={ONBOARDING_PATH.organization}>
+        <IntentChoice icon={TrophyIcon} label="Organizar" value={ONBOARDING_PATH.organization}>
           Crea una organización y una competición.
         </IntentChoice>
-        <IntentChoice icon={Ticket} label="Unirme" value={ONBOARDING_PATH.invitation}>
+        <IntentChoice icon={TicketIcon} label="Unirme" value={ONBOARDING_PATH.invitation}>
           Accede a una competición con tu código.
         </IntentChoice>
-        <IntentChoice icon={User} label="Empezar como jugador" value={ONBOARDING_PATH.player}>
+        <IntentChoice icon={UserIcon} label="Empezar como jugador" value={ONBOARDING_PATH.player}>
           Crea tu espacio personal.
         </IntentChoice>
       </ChoiceGroup>

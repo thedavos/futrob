@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, Logo } from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
 import { useAcceptInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 
@@ -58,7 +58,7 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
       </div>
       {error ? (
         <Alert variant="destructive">
-          <WarningCircle aria-hidden="true" />
+          <WarningCircleIcon aria-hidden="true" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : (

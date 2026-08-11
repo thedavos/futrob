@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
-  CaretDown,
-  CheckSquareOffset,
-  GameController,
-  House,
-  Plus,
-  Sidebar as SidebarExpandIcon,
-  SidebarSimple,
-  Ticket,
-  Trophy,
+  CaretDownIcon,
+  CheckSquareOffsetIcon,
+  GameControllerIcon,
+  HouseIcon,
+  PlusIcon,
+  SidebarIcon as SidebarExpandIcon,
+  SidebarSimpleIcon,
+  TicketIcon,
+  TrophyIcon,
 } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 
@@ -68,7 +68,11 @@ function HeaderCollapseControl() {
       size="icon"
       variant="ghost"
     >
-      {collapsed ? <SidebarExpandIcon aria-hidden="true" /> : <SidebarSimple aria-hidden="true" />}
+      {collapsed ? (
+        <SidebarExpandIcon aria-hidden="true" />
+      ) : (
+        <SidebarSimpleIcon aria-hidden="true" />
+      )}
     </Button>
   );
 }
@@ -109,7 +113,7 @@ function DemoAccountRow({
                 <span className="truncate text-sm font-medium" title="David Vargas">
                   {shortName}
                 </span>
-                <CaretDown
+                <CaretDownIcon
                   aria-hidden="true"
                   className="size-3 shrink-0 text-muted-foreground transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
                   weight="bold"
@@ -143,10 +147,10 @@ function DemoWorkspaceSelector({ dense = true }: { readonly dense?: boolean }) {
         }
       >
         <span className="flex min-w-0 items-center gap-2">
-          <Trophy aria-hidden="true" className="size-4 shrink-0" />
+          <TrophyIcon aria-hidden="true" className="size-4 shrink-0" />
           <span className="truncate">La Copa del Barrio</span>
         </span>
-        <CaretDown
+        <CaretDownIcon
           aria-hidden="true"
           className="size-4 shrink-0 transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
         />
@@ -155,7 +159,7 @@ function DemoWorkspaceSelector({ dense = true }: { readonly dense?: boolean }) {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Competiciones</DropdownMenuLabel>
           <DropdownMenuItem>
-            <Trophy aria-hidden="true" className="size-4" />
+            <TrophyIcon aria-hidden="true" className="size-4" />
             La Copa del Barrio
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -163,7 +167,7 @@ function DemoWorkspaceSelector({ dense = true }: { readonly dense?: boolean }) {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Clubes EA</DropdownMenuLabel>
           <DropdownMenuItem>
-            <Plus aria-hidden="true" className="size-4" />
+            <PlusIcon aria-hidden="true" className="size-4" />
             Asociar club
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -171,7 +175,7 @@ function DemoWorkspaceSelector({ dense = true }: { readonly dense?: boolean }) {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Organizaciones</DropdownMenuLabel>
           <DropdownMenuItem>
-            <Plus aria-hidden="true" className="size-4" />
+            <PlusIcon aria-hidden="true" className="size-4" />
             Crear organización
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -213,7 +217,7 @@ function DemoShell({
             {showRail ? (
               <SidebarRail className="flex">
                 <Button aria-label="Abrir navegación" dense size="icon" variant="outline">
-                  <House aria-hidden="true" />
+                  <HouseIcon aria-hidden="true" />
                 </Button>
                 <span className="truncate text-sm font-medium">Inicio</span>
               </SidebarRail>
@@ -263,7 +267,7 @@ function DemoSidebar({
             className="justify-center px-0"
             dense={dense}
           >
-            <CheckSquareOffset aria-hidden="true" />
+            <CheckSquareOffsetIcon aria-hidden="true" />
           </SidebarMenuButton>
         </SidebarContent>
       ) : (
@@ -279,7 +283,7 @@ function DemoSidebar({
             {longContent
               ? Array.from({ length: 20 }, (_, index) => (
                   <SidebarMenuButton dense={dense} key={index}>
-                    <CheckSquareOffset aria-hidden="true" />
+                    <CheckSquareOffsetIcon aria-hidden="true" />
                     Tarea {index + 1}
                   </SidebarMenuButton>
                 ))
@@ -296,7 +300,7 @@ function DemoSidebar({
               className={compact ? "justify-center px-0" : undefined}
               dense={dense}
             >
-              <House aria-hidden="true" />
+              <HouseIcon aria-hidden="true" />
               {compact ? null : "Inicio"}
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -306,7 +310,7 @@ function DemoSidebar({
               className={compact ? "justify-center px-0" : undefined}
               dense={dense}
             >
-              <Trophy aria-hidden="true" />
+              <TrophyIcon aria-hidden="true" />
               {compact ? null : "Competiciones"}
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -316,7 +320,7 @@ function DemoSidebar({
               className={compact ? "justify-center px-0" : undefined}
               dense={dense}
             >
-              <GameController aria-hidden="true" />
+              <GameControllerIcon aria-hidden="true" />
               {compact ? null : "Clubes EA"}
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -326,7 +330,7 @@ function DemoSidebar({
               className={compact ? "justify-center px-0" : undefined}
               dense={dense}
             >
-              <Ticket aria-hidden="true" />
+              <TicketIcon aria-hidden="true" />
               {compact ? null : "Invitaciones"}
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -364,7 +368,7 @@ export const Regions: Story = {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton active dense>
-                <House aria-hidden="true" />
+                <HouseIcon aria-hidden="true" />
                 Inicio
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -414,28 +418,28 @@ export const MenuButtonStates: Story = {
       <div className="grid gap-2">
         <p className="typo-label text-muted-foreground">Default</p>
         <SidebarMenuButton>
-          <House aria-hidden="true" />
+          <HouseIcon aria-hidden="true" />
           Inicio
         </SidebarMenuButton>
       </div>
       <div className="grid gap-2">
         <p className="typo-label text-muted-foreground">Active</p>
         <SidebarMenuButton active>
-          <Trophy aria-hidden="true" />
+          <TrophyIcon aria-hidden="true" />
           Competiciones
         </SidebarMenuButton>
       </div>
       <div className="grid gap-2">
         <p className="typo-label text-muted-foreground">Disabled</p>
         <SidebarMenuButton disabled title="Próximamente">
-          <GameController aria-hidden="true" />
+          <GameControllerIcon aria-hidden="true" />
           Clubes EA
         </SidebarMenuButton>
       </div>
       <div className="grid gap-2">
         <p className="typo-label text-muted-foreground">Icon-only · aria-label</p>
         <SidebarMenuButton aria-label="Invitaciones" className="w-10 justify-center px-0" dense>
-          <Ticket aria-hidden="true" />
+          <TicketIcon aria-hidden="true" />
         </SidebarMenuButton>
       </div>
     </div>
@@ -450,13 +454,13 @@ export const MenuLink: Story = {
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuLink active dense href="#inicio">
-            <House aria-hidden="true" />
+            <HouseIcon aria-hidden="true" />
             Inicio
           </SidebarMenuLink>
         </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuLink dense href="#competiciones">
-            <Trophy aria-hidden="true" />
+            <TrophyIcon aria-hidden="true" />
             Competiciones
           </SidebarMenuLink>
         </SidebarMenuItem>
@@ -467,7 +471,7 @@ export const MenuLink: Story = {
             dense
             href="#stub"
           >
-            <Ticket aria-hidden="true" />
+            <TicketIcon aria-hidden="true" />
             Invitaciones
           </SidebarMenuLink>
         </SidebarMenuItem>
@@ -485,13 +489,13 @@ export const Density: Story = {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton active>
-              <House aria-hidden="true" />
+              <HouseIcon aria-hidden="true" />
               Inicio
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton>
-              <Trophy aria-hidden="true" />
+              <TrophyIcon aria-hidden="true" />
               Competiciones
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -502,13 +506,13 @@ export const Density: Story = {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton active dense>
-              <House aria-hidden="true" />
+              <HouseIcon aria-hidden="true" />
               Inicio
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton dense>
-              <Trophy aria-hidden="true" />
+              <TrophyIcon aria-hidden="true" />
               Competiciones
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -562,7 +566,7 @@ export const EmptyQueue: Story = {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton active dense>
-                <House aria-hidden="true" />
+                <HouseIcon aria-hidden="true" />
                 Inicio
               </SidebarMenuButton>
             </SidebarMenuItem>

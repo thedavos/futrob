@@ -38,7 +38,7 @@ Also: Cloudflare/wrangler, Sentry, TypeScript best practices. See `.cursor/rules
 - Use `typo-label` for labels and navigation; use `typo-caption` for metadata, hints and secondary sentence-case copy; use `typo-subtitle` for support lines under headings.
 - `ButtonIcon` is marketing CTA language, not an operator/table embellishment.
 - Variants are closed. Do not invent new primitive colors or sizes with `className`.
-- Icons: Phosphor (`@phosphor-icons/react`), weight `regular`. Type icon props with `Icon` from `@futrob/ui`.
+- Icons: Phosphor (`@phosphor-icons/react`, exports `*Icon`, weight `regular`). Type icon props with `Icon` from `@futrob/ui`.
 - Build forms, navigation, tables/rows and overlays from `@futrob/ui`.
 - Update Storybook whenever a primitive contract or state changes.
 

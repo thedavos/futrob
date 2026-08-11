@@ -1,6 +1,6 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cva, type VariantProps } from "class-variance-authority";
-import { X } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
 
@@ -46,7 +46,7 @@ function SheetContent({
           aria-label="Cerrar"
           className="absolute top-4 right-4 inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
         >
-          <X aria-hidden="true" className="size-4" />
+          <XIcon aria-hidden="true" className="size-4" />
         </DialogPrimitive.Close>
       </DialogPrimitive.Popup>
     </DialogPrimitive.Portal>

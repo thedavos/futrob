@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { WarningCircle, CheckCircle, Info, Warning } from "@phosphor-icons/react";
+import { WarningCircleIcon, CheckCircleIcon, InfoIcon, WarningIcon } from "@phosphor-icons/react";
 
 import { Alert, AlertDescription, AlertTitle } from "../components/alert";
 
@@ -30,7 +30,7 @@ type Story = StoryObj<typeof meta>;
 export const Playground: Story = {
   render: (args) => (
     <Alert {...args}>
-      <Info />
+      <InfoIcon />
       <AlertTitle>Sincronización pendiente</AlertTitle>
       <AlertDescription>
         Los partidos de EA todavía no se han sincronizado para esta jornada.
@@ -43,27 +43,27 @@ export const ClosedVariants: Story = {
   render: () => (
     <div className="grid w-[min(28rem,calc(100vw-2rem))] gap-4">
       <Alert variant="default">
-        <Info />
+        <InfoIcon />
         <AlertTitle>Aviso</AlertTitle>
         <AlertDescription>Revisa la configuración antes de publicar.</AlertDescription>
       </Alert>
       <Alert variant="info">
-        <Info />
+        <InfoIcon />
         <AlertTitle>Sincronización</AlertTitle>
         <AlertDescription>La cola de sync está activa.</AlertDescription>
       </Alert>
       <Alert variant="success">
-        <CheckCircle />
+        <CheckCircleIcon />
         <AlertTitle>Resultado aprobado</AlertTitle>
         <AlertDescription>El marcador ya alimenta estadísticas oficiales.</AlertDescription>
       </Alert>
       <Alert variant="warning">
-        <Warning />
+        <WarningIcon />
         <AlertTitle>Datos incompletos</AlertTitle>
         <AlertDescription>Dos jugadores todavía no vincularon su cuenta.</AlertDescription>
       </Alert>
       <Alert variant="destructive">
-        <WarningCircle />
+        <WarningCircleIcon />
         <AlertTitle>Disputa abierta</AlertTitle>
         <AlertDescription>
           El staff debe resolver el conflicto antes de oficializar.
@@ -77,12 +77,12 @@ export const Elevation: Story = {
   render: () => (
     <div className="grid w-[min(40rem,calc(100vw-2rem))] gap-6 sm:grid-cols-2">
       <Alert elevation="flat" variant="warning">
-        <Warning />
+        <WarningIcon />
         <AlertTitle>flat</AlertTitle>
         <AlertDescription>Borde semántico · alerts inline en forms.</AlertDescription>
       </Alert>
       <Alert elevation="elevated" variant="warning">
-        <Warning />
+        <WarningIcon />
         <AlertTitle>elevated</AlertTitle>
         <AlertDescription>smooth-shadow-ring-md · panel aislado.</AlertDescription>
       </Alert>

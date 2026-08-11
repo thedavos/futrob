@@ -1,4 +1,4 @@
-import { ArrowDownRight } from "@phosphor-icons/react";
+import { ArrowDownRightIcon } from "@phosphor-icons/react";
 import { Button, ButtonIcon, Logo } from "@futrob/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClubSearchPanel } from "@/modules/game-data/presentation/club-search-panel.tsx";
@@ -39,7 +39,7 @@ function HomePage() {
             <Button render={<a href="#club-search" />}>
               Buscar clubs EA
               <ButtonIcon>
-                <ArrowDownRight />
+                <ArrowDownRightIcon />
               </ButtonIcon>
             </Button>
             <Button render={<a href="#principios" />} variant="secondary">

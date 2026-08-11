@@ -1,7 +1,14 @@
 "use client";
 
 import { Badge, Button, Card, CardContent, type Icon } from "@futrob/ui";
-import { Shield, Signpost, Ticket, Trophy, User, UsersThree } from "@phosphor-icons/react";
+import {
+  ShieldIcon,
+  SignpostIcon,
+  TicketIcon,
+  TrophyIcon,
+  UserIcon,
+  UsersThreeIcon,
+} from "@phosphor-icons/react";
 import type { OnboardingStepDto } from "@futrob/api-contracts";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import {
@@ -112,7 +119,7 @@ function reviewRows(flow: ReturnType<typeof useOnboardingFlow>): readonly Onboar
   const base: OnboardingReviewRow = {
     label: "Cómo empezarás",
     value: intention,
-    icon: Signpost,
+    icon: SignpostIcon,
     editStep: "intention",
   };
   if (flow.path === "organization") {
@@ -121,7 +128,7 @@ function reviewRows(flow: ReturnType<typeof useOnboardingFlow>): readonly Onboar
       {
         label: "Organización",
         value: flow.draft.organizationName.trim() || null,
-        icon: UsersThree,
+        icon: UsersThreeIcon,
         editStep: "organization",
       },
       {
@@ -129,7 +136,7 @@ function reviewRows(flow: ReturnType<typeof useOnboardingFlow>): readonly Onboar
         value: competitionFromDraft(flow.draft)
           ? `${flow.draft.competitionName.trim()} · ${formatLabel(flow.draft.competitionFormat!)} · ${platformLabel(flow.draft.competitionPlatform!)}`
           : null,
-        icon: Trophy,
+        icon: TrophyIcon,
         editStep: "competition",
       },
       accountReviewRow(flow),
@@ -141,7 +148,7 @@ function reviewRows(flow: ReturnType<typeof useOnboardingFlow>): readonly Onboar
       {
         label: "Competición",
         value: flow.draft.invitationToken.trim() ? "Invitación lista para validar" : null,
-        icon: Ticket,
+        icon: TicketIcon,
         editStep: "invitation",
       },
       accountReviewRow(flow),
@@ -157,7 +164,7 @@ function accountReviewRow(flow: ReturnType<typeof useOnboardingFlow>): Onboardin
     value: accountComplete
       ? `${flow.draft.gameAccountIdentifier.trim()} · ${platformLabel(flow.draft.platform!)} · ${flow.draft.gameEdition.trim()}`
       : "Perfil de jugador listo · Datos EA para después",
-    icon: User,
+    icon: UserIcon,
     editStep: "game-account",
   };
 }
@@ -169,7 +176,7 @@ function clubReviewRow(flow: ReturnType<typeof useOnboardingFlow>): OnboardingRe
     value: club
       ? `${club.name} · ${eaPlatformLabel(club.platform)} · ID ${club.externalClubId}`
       : "Sin club asociado por ahora",
-    icon: Shield,
+    icon: ShieldIcon,
     editStep: "team",
   };
 }

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { ArrowUpRight, Plus, MagnifyingGlass, Gear } from "@phosphor-icons/react";
+import { ArrowUpRightIcon, PlusIcon, MagnifyingGlassIcon, GearIcon } from "@phosphor-icons/react";
 
 import { Button } from "../components/button";
 import { ButtonIcon } from "../components/button-icon";
@@ -35,7 +35,7 @@ export const ClosedVariants: Story = {
   render: () => (
     <div className="flex max-w-2xl flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-6">
       <Button>
-        <Plus />
+        <PlusIcon />
         Crear competición
       </Button>
       <Button variant="secondary">Guardar borrador</Button>
@@ -44,7 +44,7 @@ export const ClosedVariants: Story = {
       <Button variant="destructive">Eliminar</Button>
       <Button variant="link">Ver reglamento</Button>
       <Button aria-label="Buscar" size="icon" variant="outline">
-        <MagnifyingGlass />
+        <MagnifyingGlassIcon />
       </Button>
     </div>
   ),
@@ -57,11 +57,11 @@ export const UniversalAndDense: Story = {
         <p className="typo-label text-muted-foreground">Universal · 44 px</p>
         <div className="flex flex-wrap items-center gap-2">
           <Button>
-            <Gear />
+            <GearIcon />
             Configurar torneo
           </Button>
           <Button aria-label="Configuración" size="icon" variant="outline">
-            <Gear />
+            <GearIcon />
           </Button>
         </div>
       </div>
@@ -72,7 +72,7 @@ export const UniversalAndDense: Story = {
             Editar fila
           </Button>
           <Button aria-label="Editar configuración" dense size="icon" variant="ghost">
-            <Gear />
+            <GearIcon />
           </Button>
         </div>
       </div>
@@ -86,7 +86,7 @@ export const MarketingCta: Story = {
       <Button>
         Organiza tu torneo
         <ButtonIcon>
-          <ArrowUpRight />
+          <ArrowUpRightIcon />
         </ButtonIcon>
       </Button>
     </div>
