@@ -16,14 +16,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createFakePool(client: PoolClient): Pool {
+function createFakePool(client: ReturnType<typeof createFakeClient>) {
   return {
-    connect: vi.fn(async () => client),
+    connect: vi.fn<() => Promise<PoolClient>>(async () => client as unknown as PoolClient),
     query: vi.fn(),
-  } as unknown as Pool;
+  };
 }
 
-function createFakeClient(): PoolClient & { queries: string[] } {
+function createFakeClient() {
   const queries: string[] = [];
   return {
     queries,
@@ -31,33 +31,32 @@ function createFakeClient(): PoolClient & { queries: string[] } {
       queries.push(text);
       return { rows: [], rowCount: 0 };
     }),
-    release: vi.fn(),
-  } as unknown as PoolClient & { queries: string[] };
+    release: vi.fn<() => void>(),
+  };
 }
 
 describe("PostgresTransactionPort", () => {
   it("commits when the operation succeeds", async () => {
     const client = createFakeClient();
     const pool = createFakePool(client);
-    const port = new PostgresTransactionPort(pool);
+    const port = new PostgresTransactionPort(pool as unknown as Pool);
 
     const value = await port.runInTransaction(async () => {
       expect(isInPgTransaction()).toBe(true);
-      await getPgExecutor(pool).query("SELECT 1");
+      await getPgExecutor(pool as unknown as Pool).query("SELECT 1");
       return 42;
     });
 
     expect(value).toBe(42);
     expect(client.queries).toEqual(["BEGIN", "SELECT 1", "COMMIT"]);
-    const release = client.release;
-    expect(release).toHaveBeenCalledOnce();
+    expect(client.release).toHaveBeenCalledOnce();
     expect(isInPgTransaction()).toBe(false);
   });
 
   it("logs a committed transaction with the active request ID", async () => {
     const client = createFakeClient();
     const pool = createFakePool(client);
-    const port = new PostgresTransactionPort(pool);
+    const port = new PostgresTransactionPort(pool as unknown as Pool);
     const entries: CorrelationLogEntry[] = [];
     const requestId = "c67ed142-17da-4dc1-9239-1671fb10adbb";
 
@@ -73,33 +72,31 @@ describe("PostgresTransactionPort", () => {
   it("rolls back when the operation throws", async () => {
     const client = createFakeClient();
     const pool = createFakePool(client);
-    const port = new PostgresTransactionPort(pool);
+    const port = new PostgresTransactionPort(pool as unknown as Pool);
 
     await expect(
       port.runInTransaction(async () => {
-        await getPgExecutor(pool).query("INSERT INTO x DEFAULT VALUES");
+        await getPgExecutor(pool as unknown as Pool).query("INSERT INTO x DEFAULT VALUES");
         throw new Error("boom");
       }),
     ).rejects.toThrow("boom");
 
     expect(client.queries).toEqual(["BEGIN", "INSERT INTO x DEFAULT VALUES", "ROLLBACK"]);
-    const release = client.release;
-    expect(release).toHaveBeenCalledOnce();
+    expect(client.release).toHaveBeenCalledOnce();
   });
 
   it("reuses the outer client for nested runInTransaction calls", async () => {
     const client = createFakeClient();
     const pool = createFakePool(client);
-    const port = new PostgresTransactionPort(pool);
+    const port = new PostgresTransactionPort(pool as unknown as Pool);
 
     await port.runInTransaction(async () => {
       await port.runInTransaction(async () => {
-        await getPgExecutor(pool).query("SELECT nested");
+        await getPgExecutor(pool as unknown as Pool).query("SELECT nested");
       });
     });
 
-    const connect = pool.connect;
-    expect(connect).toHaveBeenCalledOnce();
+    expect(pool.connect).toHaveBeenCalledOnce();
     expect(client.queries).toEqual(["BEGIN", "SELECT nested", "COMMIT"]);
   });
 });
