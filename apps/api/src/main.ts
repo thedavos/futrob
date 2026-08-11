@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { createPostgresHealth, createPostgresPool } from "@/adapters/persistence/postgres.ts";
 import { createApp } from "@/app.ts";
 import { loadEnv } from "@/config/env.ts";
+import { consoleCorrelationLogger } from "@/context/request-correlation.ts";
 import { createModules } from "@/di/create-modules.ts";
 import { loadDotEnvFile } from "@/utils/load-dotenv.ts";
 import { asActorId } from "@futrob/shared-kernel";
@@ -25,6 +26,7 @@ const app = createApp({
   modules,
   checkDbHealth: () => dbHealth.check(),
   internalJobSecret: env.internalJobSecret,
+  correlationLogger: consoleCorrelationLogger,
 });
 
 const server = serve({ fetch: app.fetch, port: env.port }, (info) => {

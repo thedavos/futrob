@@ -1,7 +1,11 @@
 import { cors } from "hono/cors";
 import { Hono } from "hono";
+import { REQUEST_ID_HEADER } from "@futrob/api-contracts";
 import type { DbHealthStatus } from "@/adapters/persistence/postgres.ts";
+import { logCorrelatedError, type CorrelationLogger } from "@/context/request-correlation.ts";
 import type { AppModules } from "@/di/create-modules.ts";
+import { apiErrorResponse } from "@/http/errors.ts";
+import { createRequestCorrelationMiddleware } from "@/http/middleware/request-correlation.ts";
 import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
 import { registerCompetitionRoutes } from "@/http/routes/competitions.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
@@ -17,6 +21,7 @@ export interface AppDeps {
   readonly modules: AppModules;
   readonly checkDbHealth: () => Promise<DbHealthStatus>;
   readonly internalJobSecret: string;
+  readonly correlationLogger: CorrelationLogger;
 }
 
 const DEFAULT_CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"] as const;
@@ -38,9 +43,25 @@ export function createApp(deps: AppDeps): Hono {
     cors({
       origin: (origin) => (origin && allowedOrigins.has(origin) ? origin : null),
       allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowHeaders: ["Accept", "Authorization", "Content-Type", "X-Futrob-Actor-Id"],
+      allowHeaders: [
+        "Accept",
+        "Authorization",
+        "Content-Type",
+        "X-Futrob-Actor-Id",
+        REQUEST_ID_HEADER,
+      ],
+      exposeHeaders: [REQUEST_ID_HEADER],
     }),
   );
+  app.use("/api/v1/*", createRequestCorrelationMiddleware(deps.correlationLogger));
+
+  app.onError((error) => {
+    logCorrelatedError("http.request.failed", { errorName: error.name });
+    return apiErrorResponse(500, {
+      code: "api.unexpected_error",
+      messageKey: "errors.api.unexpected_error",
+    });
+  });
 
   const v1 = new Hono();
 

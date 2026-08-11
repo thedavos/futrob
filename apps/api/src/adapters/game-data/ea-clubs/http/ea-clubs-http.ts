@@ -5,6 +5,7 @@ import {
   ProviderTimeout,
   type ProviderTransportError,
 } from "@futrob/game-data";
+import { logCorrelatedError, logCorrelatedInfo } from "@/context/request-correlation.ts";
 
 /**
  * EA's edge (Akamai) rejects bare API clients with 403 Access Denied.
@@ -51,6 +52,7 @@ export class EaClubsHttpClient {
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const startedAt = performance.now();
 
     try {
       const response = await this.fetcher(url.toString(), {
@@ -60,6 +62,12 @@ export class EaClubsHttpClient {
       });
 
       const raw: unknown = await response.json().catch(() => null);
+      logCorrelatedInfo("provider.request.completed", {
+        provider: "ea-clubs",
+        operation: path,
+        status: response.status,
+        durationMs: Math.round(performance.now() - startedAt),
+      });
 
       if (!response.ok) {
         return err(
@@ -77,6 +85,12 @@ export class EaClubsHttpClient {
     } catch (cause) {
       const aborted = cause instanceof Error && cause.name === "AbortError";
       const causeText = cause instanceof Error ? cause.message : String(cause);
+      logCorrelatedError("provider.request.failed", {
+        provider: "ea-clubs",
+        operation: path,
+        errorName: aborted ? "TimeoutError" : cause instanceof Error ? cause.name : "UnknownError",
+        durationMs: Math.round(performance.now() - startedAt),
+      });
       return err(
         aborted
           ? new ProviderTimeout({

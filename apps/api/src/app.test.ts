@@ -3,9 +3,11 @@ import type { CompetitionRulesDto } from "@futrob/api-contracts";
 import searchClubsFixture from "@/adapters/game-data/ea-clubs/fixtures/search-clubs.json";
 import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import { createApp } from "@/app.ts";
+import type { CorrelationLogEntry } from "@/context/request-correlation.ts";
 import { createModules } from "@/di/create-modules.ts";
 
 const INTERNAL_JOB_SECRET = "test-internal-secret";
+const correlationLogEntries: CorrelationLogEntry[] = [];
 
 function createFetch(
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
@@ -26,6 +28,10 @@ function buildApp(fetcher: typeof fetch) {
     modules,
     checkDbHealth: () => Promise.resolve("skipped"),
     internalJobSecret: INTERNAL_JOB_SECRET,
+    correlationLogger: {
+      info: (entry) => correlationLogEntries.push(entry),
+      error: (entry) => correlationLogEntries.push(entry),
+    },
   });
 }
 
@@ -65,11 +71,14 @@ describe("apps/api", () => {
       headers: {
         Origin: "http://localhost:3000",
         "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "X-Request-ID",
       },
     });
 
     expect(res.status).toBe(204);
     expect(res.headers.get("access-control-allow-origin")).toBe("http://localhost:3000");
+    expect(res.headers.get("access-control-allow-headers")).toContain("X-Request-ID");
+    expect(res.headers.get("access-control-expose-headers")).toContain("X-Request-ID");
   });
 
   it("GET /api/v1/meta/health reports db skipped without DATABASE_URL", async () => {
@@ -92,6 +101,7 @@ describe("apps/api", () => {
   });
 
   it("GET /api/v1/game-data/clubs/search maps EA results to DTOs", async () => {
+    const requestId = "2d81f9de-55a8-4f4b-9962-86f63145def0";
     const app = buildApp(
       createFetch((url) => {
         expect(url).toContain("/allTimeLeaderboard/search");
@@ -100,32 +110,69 @@ describe("apps/api", () => {
       }),
     );
 
-    const res = await app.request("/api/v1/game-data/clubs/search?query=Fera");
+    const res = await app.request("/api/v1/game-data/clubs/search?query=Fera", {
+      headers: { "X-Request-ID": requestId },
+    });
 
     expect(res.status).toBe(200);
+    expect(res.headers.get("x-request-id")).toBe(requestId);
     const body = (await res.json()) as { clubs: Array<{ externalClubId: string; name: string }> };
     expect(body.clubs[0]?.externalClubId).toBe("10754");
     expect(body.clubs[0]?.name).toBe("Fera Enjaulada");
+    expect(correlationLogEntries).toContainEqual(
+      expect.objectContaining({
+        event: "provider.request.completed",
+        provider: "ea-clubs",
+        requestId,
+        status: 200,
+      }),
+    );
   });
 
   it("GET /api/v1/game-data/clubs/search rejects a missing query with 400", async () => {
     const app = buildApp(stubFetch);
 
-    const res = await app.request("/api/v1/game-data/clubs/search");
+    const res = await app.request("/api/v1/game-data/clubs/search", {
+      headers: { "X-Request-ID": "not-a-safe-request-id" },
+    });
 
     expect(res.status).toBe(400);
-    expect((await res.json()) as { code: string }).toMatchObject({ code: "api.validation_error" });
+    const body = (await res.json()) as { code: string; requestId?: string };
+    expect(body).toMatchObject({ code: "api.validation_error" });
+    expect(body.requestId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    expect(res.headers.get("x-request-id")).toBe(body.requestId);
+    expect(body.requestId).not.toBe("not-a-safe-request-id");
   });
 
   it("GET /api/v1/game-data/clubs/search surfaces EA HTTP failures as 502", async () => {
+    const requestId = "2f0bb3a7-a7fb-446a-a6c7-81747db676b6";
     const app = buildApp(createFetch(() => new Response("nope", { status: 503 })));
 
-    const res = await app.request("/api/v1/game-data/clubs/search?query=Fera");
+    const res = await app.request("/api/v1/game-data/clubs/search?query=Fera", {
+      headers: { "X-Request-ID": requestId },
+    });
 
     expect(res.status).toBe(502);
+    expect(res.headers.get("x-request-id")).toBe(requestId);
     expect((await res.json()) as { code: string }).toMatchObject({
       code: "game_data.ea_clubs_http_error",
+      requestId,
     });
+  });
+
+  it("includes request correlation on onboarding authentication errors", async () => {
+    const requestId = "c0d7d9f3-e73b-4ccf-8780-7f647356f506";
+    const app = buildApp(stubFetch);
+
+    const res = await app.request("/api/v1/identity/onboarding", {
+      headers: { "X-Request-ID": requestId },
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.headers.get("x-request-id")).toBe(requestId);
+    expect(await res.json()).toMatchObject({ code: "api.unauthorized", requestId });
   });
 
   it("organization resources do not complete onboarding implicitly", async () => {

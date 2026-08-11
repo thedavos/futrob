@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type { Pool, PoolClient } from "pg";
 import {
+  createRequestCorrelation,
+  runWithRequestCorrelation,
+  type CorrelationLogEntry,
+} from "@/context/request-correlation.ts";
+import {
   getPgExecutor,
   isInPgTransaction,
   NoopTransactionPort,
@@ -46,6 +51,22 @@ describe("PostgresTransactionPort", () => {
     expect(client.queries).toEqual(["BEGIN", "SELECT 1", "COMMIT"]);
     expect(client.release).toHaveBeenCalledOnce();
     expect(isInPgTransaction()).toBe(false);
+  });
+
+  it("logs a committed transaction with the active request ID", async () => {
+    const client = createFakeClient();
+    const pool = createFakePool(client);
+    const port = new PostgresTransactionPort(pool);
+    const entries: CorrelationLogEntry[] = [];
+    const requestId = "c67ed142-17da-4dc1-9239-1671fb10adbb";
+
+    await runWithRequestCorrelation(
+      createRequestCorrelation(requestId),
+      { info: (entry) => entries.push(entry), error: (entry) => entries.push(entry) },
+      () => port.runInTransaction(async () => undefined),
+    );
+
+    expect(entries).toContainEqual({ event: "db.transaction.committed", requestId });
   });
 
   it("rolls back when the operation throws", async () => {

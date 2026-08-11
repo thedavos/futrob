@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { TransactionPort } from "@futrob/shared-kernel";
 import type { Pool, PoolClient } from "pg";
+import { logCorrelatedError, logCorrelatedInfo } from "@/context/request-correlation.ts";
 
 const pgTxStorage = new AsyncLocalStorage<PoolClient>();
 
@@ -29,6 +30,7 @@ export class PostgresTransactionPort implements TransactionPort {
       await client.query("BEGIN");
       const result = await pgTxStorage.run(client, operation);
       await client.query("COMMIT");
+      logCorrelatedInfo("db.transaction.committed");
       return result;
     } catch (error) {
       try {
@@ -36,6 +38,9 @@ export class PostgresTransactionPort implements TransactionPort {
       } catch {
         // Prefer the original failure over a secondary rollback error.
       }
+      logCorrelatedError("db.transaction.rolled_back", {
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      });
       throw error;
     } finally {
       client.release();
