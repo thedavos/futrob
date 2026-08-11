@@ -19,6 +19,7 @@
     "@futrob/analytics": "0.1.0",
     "@futrob/api-contracts": "0.1.0",
     "@futrob/competitions": "0.1.0",
+    "@futrob/ea-clubs": "0.1.0",
     "@futrob/game-data": "0.1.0",
     "@futrob/identity": "0.1.0",
     "@futrob/notifications": "0.1.0",

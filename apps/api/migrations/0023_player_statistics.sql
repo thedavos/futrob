@@ -53,13 +53,25 @@ CREATE TABLE IF NOT EXISTS player_competition_stats (
   player_profile_id TEXT NOT NULL REFERENCES player_profiles (id) ON DELETE CASCADE,
   competition_id TEXT NOT NULL REFERENCES competitions (id) ON DELETE CASCADE,
   organization_id TEXT NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
-  payload JSONB NOT NULL,
+  matches_played INTEGER NOT NULL,
+  minutes DOUBLE PRECISION NOT NULL,
+  totals JSONB NOT NULL,
+  averages JSONB NOT NULL,
+  per90 JSONB NOT NULL,
+  partial JSONB NOT NULL,
+  source_revision_max INTEGER NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
   PRIMARY KEY (player_profile_id, competition_id)
 );
 
 CREATE TABLE IF NOT EXISTS player_personal_stats (
   player_profile_id TEXT PRIMARY KEY REFERENCES player_profiles (id) ON DELETE CASCADE,
-  payload JSONB NOT NULL,
+  matches_played INTEGER NOT NULL,
+  minutes DOUBLE PRECISION NOT NULL,
+  totals JSONB NOT NULL,
+  averages JSONB NOT NULL,
+  per90 JSONB NOT NULL,
+  partial JSONB NOT NULL,
+  source_revision_max INTEGER NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );

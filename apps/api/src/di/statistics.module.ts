@@ -1,13 +1,13 @@
 import type { Pool } from "pg";
 import {
+  GetMyPersonalStatisticsUseCase,
+  ListMyMatchContributionsUseCase,
   ProjectApprovedOfficialResultUseCase,
-  type PlayerCompetitionStatsRepository,
   type PlayerIdentityResolverPort,
-  type PlayerMatchContributionRepository,
-  type PlayerPersonalStatsRepository,
 } from "@futrob/statistics";
-import type { OfficialResultApprovedEvent, OfficialResultRepository } from "@futrob/results";
+import type { OfficialResultReaderPort } from "@futrob/results";
 import type { PlayerGameAccountRepository } from "@futrob/teams";
+import type { TransactionPort } from "@futrob/shared-kernel";
 import { SystemClock } from "@/adapters/organizations/crypto-ports";
 import { TeamsPlayerIdentityResolver } from "@/adapters/statistics/player-identity-resolver";
 import {
@@ -20,68 +20,54 @@ import {
   PostgresPlayerMatchContributionRepository,
   PostgresPlayerPersonalStatsRepository,
 } from "@/adapters/statistics/postgres.repositories";
-import { RepositoryOfficialResultReader } from "@/adapters/statistics/official-result-reader";
 
 export type StatisticsModule = {
   useCases: {
     projectApprovedOfficialResult: ProjectApprovedOfficialResultUseCase;
-  };
-  repositories: {
-    contributions: PlayerMatchContributionRepository;
-    competitionStats: PlayerCompetitionStatsRepository;
-    personalStats: PlayerPersonalStatsRepository;
+    getMyPersonalStatistics: GetMyPersonalStatisticsUseCase;
+    listMyMatchContributions: ListMyMatchContributionsUseCase;
   };
   ports: {
     identities: PlayerIdentityResolverPort;
   };
-  projectOfficialResultFromEvent(
-    payload: Pick<OfficialResultApprovedEvent["payload"], "officialResultId">,
-  ): ReturnType<ProjectApprovedOfficialResultUseCase["execute"]>;
 };
 
 export function createStatisticsModule(deps: {
   pool: Pool | null;
-  officialResults: OfficialResultRepository;
+  resultReader: OfficialResultReaderPort;
   accounts: PlayerGameAccountRepository;
+  transaction: TransactionPort;
 }): StatisticsModule {
-  const contributions: PlayerMatchContributionRepository =
+  const contributions =
     deps.pool === null
       ? new InMemoryPlayerMatchContributionRepository()
       : new PostgresPlayerMatchContributionRepository(deps.pool);
-  const competitionStats: PlayerCompetitionStatsRepository =
+  const competitionStats =
     deps.pool === null
       ? new InMemoryPlayerCompetitionStatsRepository()
       : new PostgresPlayerCompetitionStatsRepository(deps.pool);
-  const personalStats: PlayerPersonalStatsRepository =
+  const personalStats =
     deps.pool === null
       ? new InMemoryPlayerPersonalStatsRepository()
       : new PostgresPlayerPersonalStatsRepository(deps.pool);
   const identities = new TeamsPlayerIdentityResolver(deps.accounts);
-  const projectApprovedOfficialResult = new ProjectApprovedOfficialResultUseCase({
-    officialResults: new RepositoryOfficialResultReader(deps.officialResults),
-    identities,
-    contributions,
-    competitionStats,
-    personalStats,
-    clock: new SystemClock(),
-  });
 
   return {
     useCases: {
-      projectApprovedOfficialResult,
-    },
-    repositories: {
-      contributions,
-      competitionStats,
-      personalStats,
+      projectApprovedOfficialResult: new ProjectApprovedOfficialResultUseCase({
+        officialResults: deps.resultReader,
+        identities,
+        contributions,
+        competitionStats,
+        personalStats,
+        transaction: deps.transaction,
+        clock: new SystemClock(),
+      }),
+      getMyPersonalStatistics: new GetMyPersonalStatisticsUseCase(personalStats),
+      listMyMatchContributions: new ListMyMatchContributionsUseCase(contributions),
     },
     ports: {
       identities,
-    },
-    projectOfficialResultFromEvent(payload) {
-      return projectApprovedOfficialResult.execute({
-        officialResultId: payload.officialResultId,
-      });
     },
   };
 }

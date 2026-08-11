@@ -66,6 +66,31 @@ class ContributionRepository implements PlayerMatchContributionRepository {
     return [...this.rows.values()].filter((row) => row.encounterId === encounterId);
   }
 
+  async listMatchedPage(input: {
+    readonly playerProfileId: string;
+    readonly competitionId?: PlayerMatchContribution["competitionId"];
+    readonly cursor?: string;
+    readonly limit: number;
+  }): Promise<{
+    readonly items: PlayerMatchContribution[];
+    readonly nextCursor: string | null;
+  }> {
+    const matched = [...this.rows.values()]
+      .filter(
+        (row) =>
+          row.correlationStatus === "matched" &&
+          row.playerProfileId === input.playerProfileId &&
+          (input.competitionId === undefined || row.competitionId === input.competitionId) &&
+          (input.cursor === undefined || row.id > input.cursor),
+      )
+      .sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+    const items = matched.slice(0, input.limit);
+    return {
+      items,
+      nextCursor: items.length === input.limit ? (items.at(-1)?.id ?? null) : null,
+    };
+  }
+
   private deleteMatching(predicate: (row: PlayerMatchContribution) => boolean): void {
     for (const [key, row] of this.rows) {
       if (predicate(row)) this.rows.delete(key);
@@ -135,6 +160,7 @@ function makeHarness(input: {
     contributions,
     competitionStats,
     personalStats,
+    transaction: { runInTransaction: async (operation) => operation() },
     clock: { now: () => new Date("2026-08-11T07:00:00.000Z") },
   });
   return { byId, project, contributions, competitionStats, personalStats };

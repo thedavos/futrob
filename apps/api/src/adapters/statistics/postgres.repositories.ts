@@ -6,6 +6,9 @@ import type {
   PlayerMatchContributionRepository,
   PlayerPersonalStats,
   PlayerPersonalStatsRepository,
+  PlayerStatisticPartialFlags,
+  PlayerStatisticRates,
+  PlayerStatisticTotals,
 } from "@futrob/statistics";
 import {
   asCompetitionId,
@@ -16,83 +19,92 @@ import {
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
+const CONTRIBUTION_COLUMNS = 29;
+
 export class PostgresPlayerMatchContributionRepository implements PlayerMatchContributionRepository {
   constructor(private readonly pool: Pool) {}
 
   async saveMany(contributions: readonly PlayerMatchContribution[]): Promise<void> {
-    for (const contribution of contributions) {
-      await getPgExecutor(this.pool).query(
-        `INSERT INTO player_match_contributions (
-           id, official_result_id, revision, encounter_id, competition_id, organization_id,
-           official_slot, player_profile_id, game_account_id, correlation_status,
-           external_player_id, display_name, external_club_id, platform, game_edition,
-           position, minutes_played, goals, assists, shots, pass_attempts, passes_made,
-           tackle_attempts, tackles_made, saves, yellow_cards, red_cards, is_mvp, rating
-         ) VALUES (
-           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-           $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-           $21, $22, $23, $24, $25, $26, $27, $28, $29
-         )
-         ON CONFLICT (official_result_id, revision, official_slot, external_player_id)
-         DO UPDATE SET
-           id = EXCLUDED.id,
-           encounter_id = EXCLUDED.encounter_id,
-           competition_id = EXCLUDED.competition_id,
-           organization_id = EXCLUDED.organization_id,
-           player_profile_id = EXCLUDED.player_profile_id,
-           game_account_id = EXCLUDED.game_account_id,
-           correlation_status = EXCLUDED.correlation_status,
-           display_name = EXCLUDED.display_name,
-           external_club_id = EXCLUDED.external_club_id,
-           platform = EXCLUDED.platform,
-           game_edition = EXCLUDED.game_edition,
-           position = EXCLUDED.position,
-           minutes_played = EXCLUDED.minutes_played,
-           goals = EXCLUDED.goals,
-           assists = EXCLUDED.assists,
-           shots = EXCLUDED.shots,
-           pass_attempts = EXCLUDED.pass_attempts,
-           passes_made = EXCLUDED.passes_made,
-           tackle_attempts = EXCLUDED.tackle_attempts,
-           tackles_made = EXCLUDED.tackles_made,
-           saves = EXCLUDED.saves,
-           yellow_cards = EXCLUDED.yellow_cards,
-           red_cards = EXCLUDED.red_cards,
-           is_mvp = EXCLUDED.is_mvp,
-           rating = EXCLUDED.rating`,
-        [
-          contribution.id,
-          contribution.officialResultId,
-          contribution.revision,
-          contribution.encounterId,
-          contribution.competitionId,
-          contribution.organizationId,
-          contribution.officialSlot,
-          contribution.playerProfileId,
-          contribution.gameAccountId,
-          contribution.correlationStatus,
-          contribution.externalPlayerId,
-          contribution.displayName,
-          contribution.externalClubId,
-          contribution.platform,
-          contribution.gameEdition,
-          contribution.position,
-          contribution.minutesPlayed,
-          contribution.goals,
-          contribution.assists,
-          contribution.shots,
-          contribution.passAttempts,
-          contribution.passesMade,
-          contribution.tackleAttempts,
-          contribution.tacklesMade,
-          contribution.saves,
-          contribution.yellowCards,
-          contribution.redCards,
-          contribution.isMvp,
-          contribution.rating,
-        ],
+    if (contributions.length === 0) return;
+
+    const values: unknown[] = [];
+    const placeholders: string[] = [];
+    for (let index = 0; index < contributions.length; index += 1) {
+      const contribution = contributions[index]!;
+      const offset = index * CONTRIBUTION_COLUMNS;
+      placeholders.push(
+        `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15}, $${offset + 16}, $${offset + 17}, $${offset + 18}, $${offset + 19}, $${offset + 20}, $${offset + 21}, $${offset + 22}, $${offset + 23}, $${offset + 24}, $${offset + 25}, $${offset + 26}, $${offset + 27}, $${offset + 28}, $${offset + 29})`,
+      );
+      values.push(
+        contribution.id,
+        contribution.officialResultId,
+        contribution.revision,
+        contribution.encounterId,
+        contribution.competitionId,
+        contribution.organizationId,
+        contribution.officialSlot,
+        contribution.playerProfileId,
+        contribution.gameAccountId,
+        contribution.correlationStatus,
+        contribution.externalPlayerId,
+        contribution.displayName,
+        contribution.externalClubId,
+        contribution.platform,
+        contribution.gameEdition,
+        contribution.position,
+        contribution.minutesPlayed,
+        contribution.goals,
+        contribution.assists,
+        contribution.shots,
+        contribution.passAttempts,
+        contribution.passesMade,
+        contribution.tackleAttempts,
+        contribution.tacklesMade,
+        contribution.saves,
+        contribution.yellowCards,
+        contribution.redCards,
+        contribution.isMvp,
+        contribution.rating,
       );
     }
+
+    await getPgExecutor(this.pool).query(
+      `INSERT INTO player_match_contributions (
+         id, official_result_id, revision, encounter_id, competition_id, organization_id,
+         official_slot, player_profile_id, game_account_id, correlation_status,
+         external_player_id, display_name, external_club_id, platform, game_edition,
+         position, minutes_played, goals, assists, shots, pass_attempts, passes_made,
+         tackle_attempts, tackles_made, saves, yellow_cards, red_cards, is_mvp, rating
+       ) VALUES ${placeholders.join(", ")}
+       ON CONFLICT (official_result_id, revision, official_slot, external_player_id)
+       DO UPDATE SET
+         id = EXCLUDED.id,
+         encounter_id = EXCLUDED.encounter_id,
+         competition_id = EXCLUDED.competition_id,
+         organization_id = EXCLUDED.organization_id,
+         player_profile_id = EXCLUDED.player_profile_id,
+         game_account_id = EXCLUDED.game_account_id,
+         correlation_status = EXCLUDED.correlation_status,
+         display_name = EXCLUDED.display_name,
+         external_club_id = EXCLUDED.external_club_id,
+         platform = EXCLUDED.platform,
+         game_edition = EXCLUDED.game_edition,
+         position = EXCLUDED.position,
+         minutes_played = EXCLUDED.minutes_played,
+         goals = EXCLUDED.goals,
+         assists = EXCLUDED.assists,
+         shots = EXCLUDED.shots,
+         pass_attempts = EXCLUDED.pass_attempts,
+         passes_made = EXCLUDED.passes_made,
+         tackle_attempts = EXCLUDED.tackle_attempts,
+         tackles_made = EXCLUDED.tackles_made,
+         saves = EXCLUDED.saves,
+         yellow_cards = EXCLUDED.yellow_cards,
+         red_cards = EXCLUDED.red_cards,
+         is_mvp = EXCLUDED.is_mvp,
+         rating = EXCLUDED.rating`,
+      values,
+    );
   }
 
   async deleteByOfficialResultRevision(input: {
@@ -165,6 +177,43 @@ export class PostgresPlayerMatchContributionRepository implements PlayerMatchCon
     );
     return result.rows.map(rehydrateContribution);
   }
+
+  async listMatchedPage(input: {
+    readonly playerProfileId: string;
+    readonly competitionId?: CompetitionId;
+    readonly cursor?: string;
+    readonly limit: number;
+  }): Promise<{
+    readonly items: PlayerMatchContribution[];
+    readonly nextCursor: string | null;
+  }> {
+    const params: unknown[] = [input.playerProfileId];
+    const filters = [`player_profile_id = $1`, `correlation_status = 'matched'`];
+
+    if (input.competitionId) {
+      params.push(input.competitionId);
+      filters.push(`competition_id = $${params.length}`);
+    }
+    if (input.cursor) {
+      params.push(input.cursor);
+      filters.push(`id > $${params.length}`);
+    }
+    params.push(input.limit);
+
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT *
+       FROM player_match_contributions
+       WHERE ${filters.join(" AND ")}
+       ORDER BY id ASC
+       LIMIT $${params.length}`,
+      params,
+    );
+    const items = result.rows.map(rehydrateContribution);
+    return {
+      items,
+      nextCursor: items.length === input.limit ? (items.at(-1)?.id ?? null) : null,
+    };
+  }
 }
 
 export class PostgresPlayerCompetitionStatsRepository implements PlayerCompetitionStatsRepository {
@@ -173,17 +222,31 @@ export class PostgresPlayerCompetitionStatsRepository implements PlayerCompetiti
   async upsert(stats: PlayerCompetitionStats): Promise<void> {
     await getPgExecutor(this.pool).query(
       `INSERT INTO player_competition_stats (
-         player_profile_id, competition_id, organization_id, payload, updated_at
-       ) VALUES ($1, $2, $3, $4::jsonb, $5)
+         player_profile_id, competition_id, organization_id,
+         matches_played, minutes, totals, averages, per90, partial,
+         source_revision_max, updated_at
+       ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10, $11)
        ON CONFLICT (player_profile_id, competition_id) DO UPDATE SET
          organization_id = EXCLUDED.organization_id,
-         payload = EXCLUDED.payload,
+         matches_played = EXCLUDED.matches_played,
+         minutes = EXCLUDED.minutes,
+         totals = EXCLUDED.totals,
+         averages = EXCLUDED.averages,
+         per90 = EXCLUDED.per90,
+         partial = EXCLUDED.partial,
+         source_revision_max = EXCLUDED.source_revision_max,
          updated_at = EXCLUDED.updated_at`,
       [
         stats.playerProfileId,
         stats.competitionId,
         stats.organizationId,
-        JSON.stringify(stats),
+        stats.matchesPlayed,
+        stats.minutes,
+        JSON.stringify(stats.totals),
+        JSON.stringify(stats.averages),
+        JSON.stringify(stats.per90),
+        JSON.stringify(stats.partial),
+        stats.sourceRevisionMax,
         stats.updatedAt.toISOString(),
       ],
     );
@@ -194,24 +257,24 @@ export class PostgresPlayerCompetitionStatsRepository implements PlayerCompetiti
     competitionId: CompetitionId,
   ): Promise<PlayerCompetitionStats | null> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT payload
+      `SELECT *
        FROM player_competition_stats
        WHERE player_profile_id = $1 AND competition_id = $2`,
       [playerProfileId, competitionId],
     );
     const row = result.rows[0];
-    return row ? rehydrateCompetitionStats(row.payload) : null;
+    return row ? rehydrateCompetitionStats(row) : null;
   }
 
   async listByPlayer(playerProfileId: string): Promise<PlayerCompetitionStats[]> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT payload
+      `SELECT *
        FROM player_competition_stats
        WHERE player_profile_id = $1
        ORDER BY competition_id`,
       [playerProfileId],
     );
-    return result.rows.map((row) => rehydrateCompetitionStats(row.payload));
+    return result.rows.map(rehydrateCompetitionStats);
   }
 }
 
@@ -220,24 +283,42 @@ export class PostgresPlayerPersonalStatsRepository implements PlayerPersonalStat
 
   async upsert(stats: PlayerPersonalStats): Promise<void> {
     await getPgExecutor(this.pool).query(
-      `INSERT INTO player_personal_stats (player_profile_id, payload, updated_at)
-       VALUES ($1, $2::jsonb, $3)
+      `INSERT INTO player_personal_stats (
+         player_profile_id, matches_played, minutes, totals, averages, per90, partial,
+         source_revision_max, updated_at
+       ) VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb, $8, $9)
        ON CONFLICT (player_profile_id) DO UPDATE SET
-         payload = EXCLUDED.payload,
+         matches_played = EXCLUDED.matches_played,
+         minutes = EXCLUDED.minutes,
+         totals = EXCLUDED.totals,
+         averages = EXCLUDED.averages,
+         per90 = EXCLUDED.per90,
+         partial = EXCLUDED.partial,
+         source_revision_max = EXCLUDED.source_revision_max,
          updated_at = EXCLUDED.updated_at`,
-      [stats.playerProfileId, JSON.stringify(stats), stats.updatedAt.toISOString()],
+      [
+        stats.playerProfileId,
+        stats.matchesPlayed,
+        stats.minutes,
+        JSON.stringify(stats.totals),
+        JSON.stringify(stats.averages),
+        JSON.stringify(stats.per90),
+        JSON.stringify(stats.partial),
+        stats.sourceRevisionMax,
+        stats.updatedAt.toISOString(),
+      ],
     );
   }
 
   async findByPlayerProfile(playerProfileId: string): Promise<PlayerPersonalStats | null> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT payload
+      `SELECT *
        FROM player_personal_stats
        WHERE player_profile_id = $1`,
       [playerProfileId],
     );
     const row = result.rows[0];
-    return row ? rehydratePersonalStats(row.payload) : null;
+    return row ? rehydratePersonalStats(row) : null;
   }
 }
 
@@ -271,6 +352,23 @@ interface ContributionRow {
   readonly red_cards: number | string | null;
   readonly is_mvp: boolean | null;
   readonly rating: number | string | null;
+}
+
+interface AggregateStatsRow {
+  readonly player_profile_id: string;
+  readonly matches_played: number | string;
+  readonly minutes: number | string;
+  readonly totals: PlayerStatisticTotals | string;
+  readonly averages: PlayerStatisticRates | string;
+  readonly per90: PlayerStatisticRates | string;
+  readonly partial: PlayerStatisticPartialFlags | string;
+  readonly source_revision_max: number | string;
+  readonly updated_at: string | Date;
+}
+
+interface CompetitionStatsRow extends AggregateStatsRow {
+  readonly competition_id: string;
+  readonly organization_id: string;
 }
 
 function rehydrateContribution(row: ContributionRow): PlayerMatchContribution {
@@ -307,20 +405,38 @@ function rehydrateContribution(row: ContributionRow): PlayerMatchContribution {
   };
 }
 
-type StoredCompetitionStats = Omit<PlayerCompetitionStats, "updatedAt"> & {
-  readonly updatedAt: string | Date;
-};
-
-function rehydrateCompetitionStats(payload: StoredCompetitionStats): PlayerCompetitionStats {
-  return { ...payload, updatedAt: parseDate(payload.updatedAt) };
+function rehydrateCompetitionStats(row: CompetitionStatsRow): PlayerCompetitionStats {
+  return {
+    playerProfileId: row.player_profile_id,
+    competitionId: asCompetitionId(row.competition_id),
+    organizationId: asOrganizationId(row.organization_id),
+    matchesPlayed: Number(row.matches_played),
+    minutes: Number(row.minutes),
+    totals: parseJsonRecord(row.totals),
+    averages: parseJsonRecord(row.averages),
+    per90: parseJsonRecord(row.per90),
+    partial: parseJsonRecord(row.partial),
+    sourceRevisionMax: Number(row.source_revision_max),
+    updatedAt: parseDate(row.updated_at),
+  };
 }
 
-type StoredPersonalStats = Omit<PlayerPersonalStats, "updatedAt"> & {
-  readonly updatedAt: string | Date;
-};
+function rehydratePersonalStats(row: AggregateStatsRow): PlayerPersonalStats {
+  return {
+    playerProfileId: row.player_profile_id,
+    matchesPlayed: Number(row.matches_played),
+    minutes: Number(row.minutes),
+    totals: parseJsonRecord(row.totals),
+    averages: parseJsonRecord(row.averages),
+    per90: parseJsonRecord(row.per90),
+    partial: parseJsonRecord(row.partial),
+    sourceRevisionMax: Number(row.source_revision_max),
+    updatedAt: parseDate(row.updated_at),
+  };
+}
 
-function rehydratePersonalStats(payload: StoredPersonalStats): PlayerPersonalStats {
-  return { ...payload, updatedAt: parseDate(payload.updatedAt) };
+function parseJsonRecord<T>(value: T | string): T {
+  return typeof value === "string" ? (JSON.parse(value) as T) : value;
 }
 
 function nullableNumber(value: number | string | null): number | null {

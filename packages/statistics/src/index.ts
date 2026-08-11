@@ -30,4 +30,10 @@ export {
   type ProjectApprovedOfficialResultInput,
   type ProjectApprovedOfficialResultOutput,
 } from "./application/project-approved-official-result/project-approved-official-result.use-case.ts";
+export { GetMyPersonalStatisticsUseCase } from "./application/get-my-personal-statistics/get-my-personal-statistics.use-case.ts";
+export {
+  ListMyMatchContributionsUseCase,
+  type ListMyMatchContributionsInput,
+  type ListMyMatchContributionsOutput,
+} from "./application/list-my-match-contributions/list-my-match-contributions.use-case.ts";
 export type { OfficialResultReaderPort } from "@futrob/results";

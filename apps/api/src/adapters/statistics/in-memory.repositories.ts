@@ -62,6 +62,33 @@ export class InMemoryPlayerMatchContributionRepository implements PlayerMatchCon
       (contribution) => contribution.encounterId === encounterId,
     );
   }
+
+  async listMatchedPage(input: {
+    readonly playerProfileId: string;
+    readonly competitionId?: CompetitionId;
+    readonly cursor?: string;
+    readonly limit: number;
+  }): Promise<{
+    readonly items: PlayerMatchContribution[];
+    readonly nextCursor: string | null;
+  }> {
+    const items = [...this.rows.values()]
+      .filter(
+        (contribution) =>
+          contribution.playerProfileId === input.playerProfileId &&
+          contribution.correlationStatus === "matched" &&
+          (input.competitionId === undefined ||
+            contribution.competitionId === input.competitionId) &&
+          (input.cursor === undefined || contribution.id > input.cursor),
+      )
+      .sort((left, right) => left.id.localeCompare(right.id))
+      .slice(0, input.limit);
+
+    return {
+      items,
+      nextCursor: items.length === input.limit ? (items.at(-1)?.id ?? null) : null,
+    };
+  }
 }
 
 export class InMemoryPlayerCompetitionStatsRepository implements PlayerCompetitionStatsRepository {

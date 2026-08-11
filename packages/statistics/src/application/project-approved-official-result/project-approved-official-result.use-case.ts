@@ -1,5 +1,5 @@
 import type { OfficialResult, OfficialResultReaderPort } from "@futrob/results";
-import { err, ok, type ClockPort, type Result } from "@futrob/shared-kernel";
+import { err, ok, type ClockPort, type Result, type TransactionPort } from "@futrob/shared-kernel";
 import type { PlayerCompetitionStatsRepository } from "../../domain/ports/player-competition-stats.repository.ts";
 import type { PlayerIdentityResolverPort } from "../../domain/ports/player-identity-resolver.port.ts";
 import type { PlayerMatchContributionRepository } from "../../domain/ports/player-match-contribution.repository.ts";
@@ -29,6 +29,7 @@ export interface ProjectApprovedOfficialResultDependencies {
   readonly contributions: PlayerMatchContributionRepository;
   readonly competitionStats: PlayerCompetitionStatsRepository;
   readonly personalStats: PlayerPersonalStatsRepository;
+  readonly transaction: TransactionPort;
   readonly clock: ClockPort;
 }
 
@@ -80,41 +81,43 @@ export class ProjectApprovedOfficialResultUseCase {
     addMatchedProfiles(affectedPlayerProfiles, previous);
     addMatchedProfiles(affectedPlayerProfiles, next);
 
-    await this.deps.contributions.deleteByEncounterRevision({
-      encounterId: officialResult.encounterId,
-      revision: "all",
+    await this.deps.transaction.runInTransaction(async () => {
+      await this.deps.contributions.deleteByEncounterRevision({
+        encounterId: officialResult.encounterId,
+        revision: "all",
+      });
+      await this.deps.contributions.saveMany(next);
+
+      const updatedAt = this.deps.clock.now();
+      for (const playerProfileId of affectedPlayerProfiles) {
+        const allPlayerContributions =
+          await this.deps.contributions.listByPlayerProfile(playerProfileId);
+        const competitionContributions = allPlayerContributions.filter(
+          (contribution) =>
+            contribution.correlationStatus === "matched" &&
+            contribution.playerProfileId === playerProfileId &&
+            contribution.competitionId === officialResult.competitionId,
+        );
+        await this.deps.competitionStats.upsert({
+          playerProfileId,
+          competitionId: officialResult.competitionId,
+          organizationId: officialResult.organizationId,
+          ...aggregatePlayerContributions(competitionContributions),
+          updatedAt,
+        });
+
+        const personalContributions = allPlayerContributions.filter(
+          (contribution) =>
+            contribution.correlationStatus === "matched" &&
+            contribution.playerProfileId === playerProfileId,
+        );
+        await this.deps.personalStats.upsert({
+          playerProfileId,
+          ...aggregatePlayerContributions(personalContributions),
+          updatedAt,
+        });
+      }
     });
-    await this.deps.contributions.saveMany(next);
-
-    const updatedAt = this.deps.clock.now();
-    for (const playerProfileId of affectedPlayerProfiles) {
-      const allPlayerContributions =
-        await this.deps.contributions.listByPlayerProfile(playerProfileId);
-      const competitionContributions = allPlayerContributions.filter(
-        (contribution) =>
-          contribution.correlationStatus === "matched" &&
-          contribution.playerProfileId === playerProfileId &&
-          contribution.competitionId === officialResult.competitionId,
-      );
-      await this.deps.competitionStats.upsert({
-        playerProfileId,
-        competitionId: officialResult.competitionId,
-        organizationId: officialResult.organizationId,
-        ...aggregatePlayerContributions(competitionContributions),
-        updatedAt,
-      });
-
-      const personalContributions = allPlayerContributions.filter(
-        (contribution) =>
-          contribution.correlationStatus === "matched" &&
-          contribution.playerProfileId === playerProfileId,
-      );
-      await this.deps.personalStats.upsert({
-        playerProfileId,
-        ...aggregatePlayerContributions(personalContributions),
-        updatedAt,
-      });
-    }
 
     return ok({
       officialResultId: officialResult.id,
@@ -134,11 +137,6 @@ export class ProjectApprovedOfficialResultUseCase {
           externalPlayerId: player.externalPlayerId,
           platform: slot.platform,
           gameEdition: slot.gameEdition,
-          competitionId: officialResult.competitionId,
-          teamContext: {
-            externalClubId: player.externalClubId,
-            officialSlot: slot.officialSlot,
-          },
         });
         contributions.push({
           id: contributionId({

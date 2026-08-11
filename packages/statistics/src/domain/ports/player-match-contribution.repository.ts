@@ -1,4 +1,4 @@
-import type { EncounterId } from "@futrob/shared-kernel";
+import type { CompetitionId, EncounterId } from "@futrob/shared-kernel";
 import type { PlayerMatchContribution } from "../entities/player-match-contribution.ts";
 
 export interface PlayerMatchContributionRepository {
@@ -14,4 +14,13 @@ export interface PlayerMatchContributionRepository {
   listByPlayerProfile(playerProfileId: string): Promise<PlayerMatchContribution[]>;
   listByOfficialResult(officialResultId: string): Promise<PlayerMatchContribution[]>;
   listByEncounter(encounterId: EncounterId): Promise<PlayerMatchContribution[]>;
+  listMatchedPage(input: {
+    readonly playerProfileId: string;
+    readonly competitionId?: CompetitionId;
+    readonly cursor?: string;
+    readonly limit: number;
+  }): Promise<{
+    readonly items: PlayerMatchContribution[];
+    readonly nextCursor: string | null;
+  }>;
 }

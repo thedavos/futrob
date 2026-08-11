@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { PlayerMatchContribution } from "@futrob/statistics";
+import { asCompetitionId } from "@futrob/shared-kernel";
 import {
   addMyPlayerGameAccountRequestSchema,
   addMyPlayerGameAccountResponseSchema,
@@ -89,9 +90,9 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     if (!details.profile) {
       return jsonResponse(getMyStatisticsResponseSchema.parse({ statistics: null }));
     }
-    const stats = await statistics.repositories.personalStats.findByPlayerProfile(
-      details.profile.id,
-    );
+    const stats = await statistics.useCases.getMyPersonalStatistics.execute({
+      playerProfileId: details.profile.id,
+    });
     return jsonResponse(
       getMyStatisticsResponseSchema.parse({
         statistics: stats
@@ -125,21 +126,17 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
       return jsonResponse(getMyMatchesResponseSchema.parse({ matches: [], nextCursor: null }));
     }
 
-    let rows: PlayerMatchContribution[] =
-      await statistics.repositories.contributions.listByPlayerProfile(details.profile.id);
-    rows = rows.filter((row) => row.correlationStatus === "matched");
-    if (parsed.data.competitionId) {
-      rows = rows.filter((row) => row.competitionId === parsed.data.competitionId);
-    }
-    rows.sort((a, b) => a.id.localeCompare(b.id));
-    const start = parsed.data.cursor
-      ? rows.findIndex((row) => row.id === parsed.data.cursor) + 1
-      : 0;
-    const page = rows.slice(Math.max(start, 0), Math.max(start, 0) + parsed.data.limit);
-    const next = page.length === parsed.data.limit ? (page.at(-1)?.id ?? null) : null;
+    const page = await statistics.useCases.listMyMatchContributions.execute({
+      playerProfileId: details.profile.id,
+      competitionId: parsed.data.competitionId
+        ? asCompetitionId(parsed.data.competitionId)
+        : undefined,
+      cursor: parsed.data.cursor,
+      limit: parsed.data.limit,
+    });
     return jsonResponse(
       getMyMatchesResponseSchema.parse({
-        matches: page.map((row: PlayerMatchContribution) => ({
+        matches: page.items.map((row: PlayerMatchContribution) => ({
           id: row.id,
           officialResultId: row.officialResultId,
           revision: row.revision,
@@ -168,7 +165,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
           isMvp: row.isMvp,
           rating: row.rating,
         })),
-        nextCursor: next,
+        nextCursor: page.nextCursor,
       }),
     );
   });

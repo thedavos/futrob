@@ -1,5 +1,3 @@
-import type { CompetitionId } from "@futrob/shared-kernel";
-
 export type PlayerIdentityResolution =
   | {
       readonly status: "matched";
@@ -14,10 +12,5 @@ export interface PlayerIdentityResolverPort {
     readonly externalPlayerId: string;
     readonly platform: string;
     readonly gameEdition: string;
-    readonly competitionId?: CompetitionId;
-    readonly teamContext?: {
-      readonly externalClubId: string;
-      readonly officialSlot: 1 | 2;
-    };
   }): Promise<PlayerIdentityResolution>;
 }

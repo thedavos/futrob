@@ -3,10 +3,11 @@ import { asActorId, asCompetitionId, asEncounterId, asOrganizationId } from "@fu
 import type { OfficialResult } from "@futrob/results";
 import { InMemoryOfficialResultRepository } from "@/adapters/results/official-result.repository";
 import { InMemoryPlayerGameAccountRepository } from "@/adapters/teams/in-memory.repository";
+import { NoopTransactionPort } from "@/adapters/persistence/pg-transaction";
 import { createStatisticsModule } from "./statistics.module";
 
-describe("statistics module event handler", () => {
-  it("projects an approved result through repository bridges", async () => {
+describe("statistics module projection", () => {
+  it("projects an approved result through the official result reader", async () => {
     const officialResults = new InMemoryOfficialResultRepository();
     const accounts = new InMemoryPlayerGameAccountRepository();
     accounts.rows.set("account-1", {
@@ -23,16 +24,25 @@ describe("statistics module event handler", () => {
     await officialResults.save(result);
     const statistics = createStatisticsModule({
       pool: null,
-      officialResults,
+      resultReader: {
+        getApprovedByEncounter: (encounterId) =>
+          officialResults.findApprovedByEncounter(encounterId),
+        getById: (officialResultId) => officialResults.findById(officialResultId),
+      },
       accounts,
+      transaction: new NoopTransactionPort(),
     });
 
-    const projected = await statistics.projectOfficialResultFromEvent({
+    const projected = await statistics.useCases.projectApprovedOfficialResult.execute({
       officialResultId: result.id,
     });
 
     expect(projected.isOk()).toBe(true);
-    expect(await statistics.repositories.contributions.listByOfficialResult(result.id)).toEqual([
+    const contributions = await statistics.useCases.listMyMatchContributions.execute({
+      playerProfileId: "profile-1",
+      limit: 20,
+    });
+    expect(contributions.items).toEqual([
       expect.objectContaining({
         correlationStatus: "matched",
         playerProfileId: "profile-1",

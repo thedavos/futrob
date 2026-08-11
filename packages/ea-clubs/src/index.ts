@@ -1,4 +1,3 @@
-/** @deprecated Import from `@futrob/ea-clubs` — re-export kept for local adapter paths. */
 export {
   eaNumeric,
   eaNumericRequired,
@@ -19,4 +18,10 @@ export {
   type EaMatchClub,
   type EaPlayerMatchStats,
   type EaClubMatch,
-} from "@futrob/ea-clubs";
+} from "./schemas.ts";
+export { buildEaClubCrestUrl, crestAssetIdFromCustomKit } from "./crest-url.ts";
+export {
+  mapLeaderboardEntryToExternalClub,
+  mapClubInfoToExternalClub,
+  mapClubMatchToProviderMatch,
+} from "./mappers.ts";
