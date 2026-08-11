@@ -16,7 +16,7 @@ import { NoopEventPublisher } from "@/adapters/events/noop-event-publisher.ts";
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { CryptoIdGenerator } from "@/adapters/organizations/crypto-ports.ts";
-import type { TransactionPort } from "@futrob/shared-kernel";
+import type { CompetitionId, OrganizationId, TransactionPort } from "@futrob/shared-kernel";
 import type { ConfirmOfficialSelectionInput } from "@futrob/results";
 import type { Pool } from "pg";
 import { createGameDataModule, type GameDataModule } from "./game-data.module.ts";
@@ -29,6 +29,10 @@ import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
 import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
 import { createResultsModule, type ResultsModule } from "./results.module.ts";
 import { createStatisticsModule, type StatisticsModule } from "./statistics.module.ts";
+import {
+  GetTeamRosterManagementUseCase,
+  ListTeamRosterManagementUseCase,
+} from "@/application/teams/team-roster-management.use-case.ts";
 
 /**
  * Composition root for apps/api — the only place that wires adapters to use
@@ -116,6 +120,29 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
   deferredAuthorization.bind(authorization.port);
 
+  const teamManagementDeps = {
+    authorization: deferredAuthorization,
+    entries: {
+      list: (organizationId: OrganizationId, competitionId: CompetitionId) =>
+        competitions.entryRepository.listByCompetition?.(organizationId, competitionId) ??
+        Promise.resolve([]),
+    },
+    teams: { find: teams.repositories.teams.findById.bind(teams.repositories.teams) },
+    rosters: { list: teams.repositories.rosters.listByTeam.bind(teams.repositories.rosters) },
+    rosterStates: {
+      get: teams.repositories.rosterStates.get.bind(teams.repositories.rosterStates),
+    },
+    externalClubs: {
+      get: teams.repositories.connections.findByTeam.bind(teams.repositories.connections),
+    },
+    capacity: teams.repositories.capacity,
+    accounts: teams.repositories.accounts,
+  };
+  const teamManagement = {
+    list: new ListTeamRosterManagementUseCase(teamManagementDeps),
+    get: new GetTeamRosterManagementUseCase(teamManagementDeps),
+  };
+
   const eventPublisher = new NoopEventPublisher();
   const results = createResultsModule({
     pool: input.pool,
@@ -164,6 +191,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     scheduling,
     statistics,
     teams,
+    teamManagement,
     transaction,
   };
 }
@@ -183,5 +211,9 @@ export interface AppModules {
   readonly scheduling: SchedulingModule;
   readonly statistics: StatisticsModule;
   readonly teams: TeamsModule;
+  readonly teamManagement: {
+    readonly list: ListTeamRosterManagementUseCase;
+    readonly get: GetTeamRosterManagementUseCase;
+  };
   readonly transaction: TransactionPort;
 }

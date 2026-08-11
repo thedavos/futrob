@@ -1,9 +1,9 @@
-import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import { z } from "zod";
 import { competitionEntrySchema } from "../competitions/schemas.ts";
+import { gamePlatformSchema } from "../game-platform.ts";
 
-export const gamePlatformSchema = z.enum(GAME_PLATFORM_VALUES);
-export type GamePlatformDto = z.infer<typeof gamePlatformSchema>;
+export { gamePlatformSchema };
+export type { GamePlatformDto } from "../game-platform.ts";
 
 export const playerGameAccountInputSchema = z.object({
   identifier: z.string().trim().min(1).max(80),
