@@ -8,7 +8,10 @@ export interface CompetitionFixtureSourceSnapshot {
   readonly format: FixtureFormat;
   readonly timeZone: string;
   readonly rulesVersion: number;
-  readonly officialMatchCount: 1 | 2;
+  readonly officialMatchCounts: {
+    readonly regular: 1 | 2;
+    readonly knockout: 1 | 2;
+  };
   readonly approvedParticipants: readonly TeamId[];
 }
 

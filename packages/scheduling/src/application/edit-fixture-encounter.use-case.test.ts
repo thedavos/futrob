@@ -23,7 +23,7 @@ const original = generateFixturePlan({
   timeZone: "America/Lima",
   startsAt: new Date("2026-09-01T01:00:00.000Z"),
   roundIntervalDays: 7,
-  officialMatchCount: 1,
+  officialMatchCounts: { regular: 1, knockout: 2 },
   seed,
   homeAndAway: false,
 });
@@ -67,7 +67,7 @@ describe("EditFixtureEncounterUseCase", () => {
           format: "league",
           timeZone: "America/Lima",
           rulesVersion: 1,
-          officialMatchCount: 1,
+          officialMatchCounts: { regular: 1, knockout: 2 },
           approvedParticipants: seed,
         }),
       },

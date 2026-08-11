@@ -159,6 +159,7 @@ function generateLeagueStage(input: {
               home,
               away,
               scheduledStartAt,
+              officialMatchCount: input.spec.officialMatchCounts.regular,
             }),
           );
         }
@@ -211,6 +212,7 @@ function generateKnockoutStage(input: {
           home,
           away,
           scheduledStartAt,
+          officialMatchCount: input.spec.officialMatchCounts.knockout,
         }),
       );
     }
@@ -236,6 +238,7 @@ function fixtureEncounter(input: {
   readonly home: FixtureParticipantSlot;
   readonly away: FixtureParticipantSlot;
   readonly scheduledStartAt: Date;
+  readonly officialMatchCount: 1 | 2;
 }): FixtureEncounter {
   return {
     id: asEncounterId(`${input.roundId}:encounter:${input.order}`),
@@ -246,7 +249,7 @@ function fixtureEncounter(input: {
     home: input.home,
     away: input.away,
     scheduledStartAt: input.scheduledStartAt,
-    officialMatchCount: input.spec.officialMatchCount,
+    officialMatchCount: input.officialMatchCount,
   };
 }
 

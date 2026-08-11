@@ -194,7 +194,7 @@ function buildSpec(
     timeZone: source.timeZone,
     startsAt: input.startsAt,
     roundIntervalDays: input.roundIntervalDays,
-    officialMatchCount: source.officialMatchCount,
+    officialMatchCounts: source.officialMatchCounts,
     seed,
     homeAndAway: input.homeAndAway,
     ...(input.groups ? { groups: input.groups } : {}),

@@ -13,7 +13,7 @@ function baseInput() {
     timeZone: "America/Lima",
     startsAt: new Date("2026-09-01T01:00:00.000Z"),
     roundIntervalDays: 7,
-    officialMatchCount: 1 as const,
+    officialMatchCounts: { regular: 1 as const, knockout: 2 as const },
     seed: teams,
     homeAndAway: false,
   };
@@ -131,6 +131,8 @@ describe("generateFixturePlan", () => {
     ]);
     const qualifierRound = plan.stages[1]?.rounds[0];
     expect(qualifierRound?.encounters).toHaveLength(2);
+    expect(plan.stages[0]?.rounds[0]?.encounters[0]?.officialMatchCount).toBe(1);
+    expect(qualifierRound?.encounters[0]?.officialMatchCount).toBe(2);
     expect(qualifierRound?.encounters.flatMap(({ home, away }) => [home.kind, away.kind])).toEqual([
       "group-rank",
       "group-rank",

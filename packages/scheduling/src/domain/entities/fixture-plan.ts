@@ -75,7 +75,10 @@ export interface FixtureGenerationSpec {
   readonly timeZone: string;
   readonly startsAt: Date;
   readonly roundIntervalDays: number;
-  readonly officialMatchCount: 1 | 2;
+  readonly officialMatchCounts: {
+    readonly regular: 1 | 2;
+    readonly knockout: 1 | 2;
+  };
   readonly seed: readonly TeamId[];
   readonly homeAndAway: boolean;
   readonly groups?: {

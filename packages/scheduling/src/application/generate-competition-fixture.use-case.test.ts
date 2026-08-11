@@ -21,7 +21,7 @@ const sourceSnapshot = {
   format: "league" as const,
   timeZone: "America/Lima",
   rulesVersion: 2,
-  officialMatchCount: 1 as const,
+  officialMatchCounts: { regular: 1 as const, knockout: 2 as const },
   approvedParticipants: [asTeamId("team-a"), asTeamId("team-b")],
 };
 
