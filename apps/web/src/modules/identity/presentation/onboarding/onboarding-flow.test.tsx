@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 
 import { StrictMode } from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { OnboardingStoryRouter, createFakeOnboardingGateway } from "./onboarding-story-router.tsx";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
+import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 
 beforeEach(() => {
   vi.stubGlobal("PointerEvent", MouseEvent);
@@ -219,6 +220,52 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByRole("heading", { name: "Confirma tu configuración" })).toBeTruthy();
   });
 
+  it("keeps invitation input and unlocks finish after a rate-limit wait", async () => {
+    const gateway = createFakeOnboardingGateway({
+      completeError: new IdentityOnboardingClientError(
+        429,
+        "api.rate_limited",
+        "2170e2f6-a47e-4338-83c3-27c054630800",
+        2,
+      ),
+    });
+    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/intention" />);
+
+    fireEvent.click(await screen.findByRole("radio", { name: /Unirme/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    await screen.findByRole("heading", { name: "Únete a una competición" });
+    fireEvent.change(screen.getByLabelText("Código de invitación"), {
+      target: { value: "invite-token" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Revisar invitación" }));
+    await screen.findByRole("heading", { name: "Configura tus datos de juego" });
+    fireEvent.click(screen.getByRole("button", { name: "Omitir por ahora" }));
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Aceptar invitación" }));
+      await act(async () => Promise.resolve());
+
+      expect(screen.getByText("Podrás reintentar en 2 s.")).toBeTruthy();
+      expect(
+        (screen.getByRole("button", { name: "Reintentar en 2 s" }) as HTMLButtonElement).disabled,
+      ).toBe(true);
+
+      void act(() => vi.advanceTimersByTime(2_000));
+      expect(
+        (screen.getByRole("button", { name: "Aceptar invitación" }) as HTMLButtonElement).disabled,
+      ).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar competición" }));
+    expect(((await screen.findByLabelText("Código de invitación")) as HTMLInputElement).value).toBe(
+      "invite-token",
+    );
+  });
+
   it("turns an omitted invitation into the player path", async () => {
     render(
       <OnboardingStoryRouter
@@ -272,6 +319,41 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByText(/Fera Enjaulada/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Editar club ea" }));
     expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
+  });
+
+  it("preserves the club query and enables retry after a rate-limit wait", async () => {
+    const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "team" });
+    gateway.searchExternalClubs = async () => {
+      throw new GameDataClientError({
+        code: "api.rate_limited",
+        message: "api.rate_limited",
+        requestId: "2170e2f6-a47e-4338-83c3-27c054630800",
+        retryAfterSeconds: 2,
+        status: 429,
+      });
+    };
+    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/team" />);
+
+    const query = await screen.findByRole("textbox", { name: "Nombre del club" });
+    fireEvent.change(query, { target: { value: "Fera" } });
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Buscar club" }));
+      await act(async () => Promise.resolve());
+
+      expect((query as HTMLInputElement).value).toBe("Fera");
+      expect(screen.getByText("Podrás reintentar en 2 s.")).toBeTruthy();
+      expect(
+        (screen.getByRole("button", { name: "Reintentar en 2 s" }) as HTMLButtonElement).disabled,
+      ).toBe(true);
+
+      void act(() => vi.advanceTimersByTime(2_000));
+      expect(
+        (screen.getByRole("button", { name: "Buscar club" }) as HTMLButtonElement).disabled,
+      ).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("searches clubs with the draft game edition and clears selection when the platform changes", async () => {
