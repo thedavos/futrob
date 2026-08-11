@@ -321,9 +321,8 @@ function TeamDetail(props: CompetitionTeamsViewProps) {
                     <Select
                       disabled={props.busy}
                       onValueChange={(role) =>
-                        void props.onChangeRole(
-                          member.membership.id,
-                          role as RosterMembershipRoleDto,
+                        runAction(() =>
+                          props.onChangeRole(member.membership.id, role as RosterMembershipRoleDto),
                         )
                       }
                       value={member.membership.role}
@@ -455,7 +454,9 @@ function InvitationDialog(props: CompetitionTeamsViewProps) {
           <DialogClose render={<Button variant="ghost" />}>Cancelar</DialogClose>
           <Button
             disabled={props.busy}
-            onClick={() => void props.onCreateInvitation({ role, redeemPolicy: policy })}
+            onClick={() =>
+              runAction(() => props.onCreateInvitation({ role, redeemPolicy: policy }))
+            }
           >
             Crear invitación
           </Button>
@@ -474,6 +475,8 @@ function ExternalClubDialog(props: CompetitionTeamsViewProps) {
     setSearching(true);
     try {
       setResults(await props.onSearchClubs(query.trim()));
+    } catch {
+      setResults([]);
     } finally {
       setSearching(false);
     }
@@ -497,7 +500,7 @@ function ExternalClubDialog(props: CompetitionTeamsViewProps) {
             placeholder="Ej. Cuervos"
             value={query}
           />
-          <Button disabled={!query.trim() || searching} onClick={() => void search()}>
+          <Button disabled={!query.trim() || searching} onClick={() => runAction(search)}>
             <MagnifyingGlassIcon aria-hidden="true" /> {searching ? "Buscando…" : "Buscar"}
           </Button>
         </div>
@@ -515,7 +518,7 @@ function ExternalClubDialog(props: CompetitionTeamsViewProps) {
               </span>
               <DialogClose
                 render={<Button variant="outline" />}
-                onClick={() => void props.onConnectClub(club)}
+                onClick={() => runAction(() => props.onConnectClub(club))}
               >
                 Vincular
               </DialogClose>
@@ -559,7 +562,10 @@ function ConfirmAction({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel render={<Button variant="ghost" />}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction render={<Button variant={variant} />} onClick={() => void onConfirm()}>
+          <AlertDialogAction
+            render={<Button variant={variant} />}
+            onClick={() => runAction(onConfirm)}
+          >
             {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -595,4 +601,8 @@ function entryStatusLabel(status: "pending" | "approved" | "rejected"): string {
 
 function rosterState(item: CompetitionTeamManagementSummaryDto): string {
   return item.roster.state === "open" ? "abierta" : "cerrada";
+}
+
+function runAction(action: () => Promise<void>): void {
+  void action().catch(() => undefined);
 }
