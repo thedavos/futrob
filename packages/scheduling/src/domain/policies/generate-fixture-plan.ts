@@ -14,7 +14,11 @@ import {
 import { arrangeOpeningKnockoutSlots } from "./arrange-opening-knockout-slots.ts";
 import { fixtureGenerationKey, fixtureSpecFingerprint } from "./fixture-generation-key.ts";
 
-export { fixtureGenerationKey, fixtureSpecFingerprint } from "./fixture-generation-key.ts";
+export {
+  fixtureGenerationKey,
+  fixtureSpecFingerprint,
+  fixtureSpecFingerprint as fixtureGenerationFingerprint,
+} from "./fixture-generation-key.ts";
 
 interface GeneratedStage {
   readonly stage: FixtureStage;

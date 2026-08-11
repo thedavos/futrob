@@ -176,6 +176,10 @@ describe("generateFixturePlan", () => {
         expect(encounter.home.groupId).not.toBe(encounter.away.groupId);
       }
     }
+    expect(qualifierRound?.encounters.every((encounter) => encounter.series === null)).toBe(true);
+    expect(
+      plan.stages[1]?.rounds[1]?.encounters.every((encounter) => encounter.series === null),
+    ).toBe(true);
   });
 
   it("avoids same-group opening knockout rematches when qualifiers are not a power of two", () => {
