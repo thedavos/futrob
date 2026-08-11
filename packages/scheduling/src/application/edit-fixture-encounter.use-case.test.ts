@@ -7,7 +7,6 @@ import {
   type DomainEvent,
 } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
-import type { FixturePlan } from "../domain/entities/fixture-plan.ts";
 import type { FixtureAuditEntry } from "../domain/ports/fixture-editing.ports.ts";
 import { generateFixturePlan } from "../domain/policies/generate-fixture-plan.ts";
 import { EditFixtureEncounterUseCase } from "./edit-fixture-encounter.use-case.ts";
