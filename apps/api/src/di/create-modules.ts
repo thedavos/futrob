@@ -15,7 +15,7 @@ import { createTransactionPort } from "@/adapters/persistence/pg-transaction.ts"
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { CryptoIdGenerator } from "@/adapters/organizations/crypto-ports.ts";
-import type { EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
+import type { DomainEvent, EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { createGameDataModule, type GameDataModule } from "./game-data.module.ts";
 import { createIdentityModule, type IdentityModule } from "./identity.module.ts";
@@ -26,10 +26,31 @@ import { createAuthorizationModule, type AuthorizationModule } from "./authoriza
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
 import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
 import { createResultsModule, type ResultsModule } from "./results.module.ts";
+import { createStatisticsModule, type StatisticsModule } from "./statistics.module.ts";
 
-class InProcessEventPublisher implements EventPublisherPort {
-  async publish(): Promise<void> {}
-  async publishMany(): Promise<void> {}
+class ProjectingEventPublisher implements EventPublisherPort {
+  private project: ((officialResultId: string) => Promise<void>) | null = null;
+
+  bind(project: (officialResultId: string) => Promise<void>) {
+    this.project = project;
+  }
+
+  async publish(event: DomainEvent): Promise<void> {
+    const payload = event.payload as Record<string, unknown>;
+    if (
+      event.eventName === "results.official-result-approved" &&
+      typeof payload.officialResultId === "string" &&
+      this.project
+    ) {
+      await this.project(payload.officialResultId);
+    }
+  }
+
+  async publishMany(events: readonly DomainEvent[]): Promise<void> {
+    for (const event of events) {
+      await this.publish(event);
+    }
+  }
 }
 
 /**
@@ -118,7 +139,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
   deferredAuthorization.bind(authorization.port);
 
-  const eventPublisher = new InProcessEventPublisher();
+  const eventPublisher = new ProjectingEventPublisher();
   const results = createResultsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
@@ -126,6 +147,17 @@ export function createModules(input: CreateModulesInput): AppModules {
     encounterReader: new SchedulingEncounterReader(scheduling.encounters),
     providerMatches: new RepositoryProviderMatchReader(providerMatches, scheduling.encounters),
     ids,
+  });
+  const statistics = createStatisticsModule({
+    pool: input.pool ?? null,
+    resultReader: results.officialResultReader,
+    accounts: teams.repositories.accounts,
+  });
+  eventPublisher.bind(async (officialResultId) => {
+    const projected = await statistics.useCases.projectApprovedOfficialResult.execute({
+      officialResultId,
+    });
+    if (!projected.isOk()) throw projected.error;
   });
 
   return {
@@ -136,6 +168,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     organizations,
     results,
     scheduling,
+    statistics,
     teams,
     transaction,
   };
@@ -149,6 +182,7 @@ export interface AppModules {
   readonly organizations: OrganizationsModule;
   readonly results: ResultsModule;
   readonly scheduling: SchedulingModule;
+  readonly statistics: StatisticsModule;
   readonly teams: TeamsModule;
   readonly transaction: TransactionPort;
 }

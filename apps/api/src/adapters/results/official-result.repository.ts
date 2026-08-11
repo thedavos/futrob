@@ -177,10 +177,15 @@ function rehydrateOfficialResult(row: {
     competitionId: asCompetitionId(row.competition_id),
     revision: Number(row.revision),
     status: row.status,
-    slots: row.slots.map((slot) => ({
-      ...(slot as OfficialResult["slots"][number]),
-      occurredAt: new Date(String(slot.occurredAt)),
-    })),
+    slots: row.slots.map((slot) => {
+      const snapshot = slot as unknown as OfficialResult["slots"][number] & {
+        occurredAt: string | Date;
+      };
+      return {
+        ...snapshot,
+        occurredAt: new Date(snapshot.occurredAt),
+      };
+    }),
     approvedAt: new Date(row.approved_at),
     approvedBy: asActorId(row.approved_by),
   };

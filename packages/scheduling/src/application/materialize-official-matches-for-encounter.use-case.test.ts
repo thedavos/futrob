@@ -92,4 +92,24 @@ describe("MaterializeOfficialMatchesForEncounterUseCase", () => {
     );
     expect(matches.rows.size).toBe(2);
   });
+
+  it("returns a tagged error when the encounter schedule is missing", async () => {
+    const matches = new OfficialMatches();
+    const result = await new MaterializeOfficialMatchesForEncounterUseCase({
+      authorization,
+      clock: { now: () => new Date("2026-08-11T07:00:00.000Z") },
+      encounters: new EncounterSchedules(null),
+      ids: { generate: () => "unused" },
+      matches,
+    }).execute({
+      actorId: asActorId("staff-1"),
+      encounterId: snapshot.encounterId,
+      organizationId: snapshot.organizationId,
+    });
+
+    expect(result.isErr()).toBe(true);
+    if (result.isOk()) return;
+    expect(result.error.code).toBe("scheduling.encounter_schedule_not_found");
+    expect(matches.rows.size).toBe(0);
+  });
 });

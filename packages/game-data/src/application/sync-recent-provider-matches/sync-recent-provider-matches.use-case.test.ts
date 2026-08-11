@@ -124,6 +124,7 @@ describe("SyncRecentProviderMatchesUseCase", () => {
     expect(first.isOk()).toBe(true);
     expect(second.isOk()).toBe(true);
     expect(ingestion.calls).toBe(2);
+    expect(ids).toBe(2);
     expect(raw.rows).toHaveLength(1);
     await expect(
       matches.listBetweenClubs({

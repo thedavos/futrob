@@ -4,10 +4,7 @@ import type { PlayerGameAccount } from "../entities/player-game-account.ts";
 export interface PlayerGameAccountRepository {
   listByProfile(playerProfileId: string): Promise<PlayerGameAccount[]>;
   saveIfAbsent(account: PlayerGameAccount): Promise<PlayerGameAccount>;
-  /**
-   * Updates providerExternalPlayerId when absent or matching; returns null if
-   * the account does not exist.
-   */
+  /** Updates providerExternalPlayerId; returns null if the account does not exist. */
   setProviderExternalPlayerId(input: {
     readonly accountId: string;
     readonly providerExternalPlayerId: string;

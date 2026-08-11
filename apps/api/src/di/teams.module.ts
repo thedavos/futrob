@@ -189,7 +189,7 @@ export function createTeamsModule(input: {
     }),
     /** Exposed for competitions approve-entry verification bridge. */
     externalClubConnections: connections,
-    repositories: { profiles, teams, rosters },
+    repositories: { profiles, teams, rosters, accounts },
   };
 }
 

@@ -53,7 +53,10 @@ export class AddPlayerGameAccountUseCase {
         }),
       );
     }
-    if (providerExternalPlayerId !== null && providerExternalPlayerId.length === 0) {
+    if (
+      providerExternalPlayerId !== null &&
+      (providerExternalPlayerId.length === 0 || providerExternalPlayerId.length > 80)
+    ) {
       return err(
         new InvalidGameAccountIdentifier({
           code: "teams.invalid_game_account_identifier",

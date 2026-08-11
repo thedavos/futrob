@@ -8,7 +8,7 @@ export const playerGameAccountInputSchema = z.object({
   identifier: z.string().trim().min(1).max(80),
   platform: gamePlatformSchema,
   gameEdition: z.string().trim().min(1).max(40),
-  providerExternalPlayerId: z.string().trim().min(1).max(80).nullable().optional(),
+  providerExternalPlayerId: z.string().trim().min(1).max(80).optional(),
 });
 export type PlayerGameAccountInputDto = z.infer<typeof playerGameAccountInputSchema>;
 

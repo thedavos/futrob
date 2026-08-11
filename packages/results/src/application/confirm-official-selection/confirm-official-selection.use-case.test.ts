@@ -166,8 +166,30 @@ describe("ConfirmOfficialSelectionUseCase", () => {
     expect(events[0]?.eventName).toBe("results.official-result-approved");
     expect(selection.status).toBe("approved");
 
-    selection.status = "awaiting_opponent_confirmation";
-    const second = await useCase.execute({
+    const selectionForRetry: OfficialMatchSelection = {
+      ...selection,
+      status: "awaiting_opponent_confirmation",
+    };
+    const selectionsRetry: OfficialMatchSelectionRepository = {
+      async save(row) {
+        Object.assign(selection, row);
+        return selection;
+      },
+      async findLatestByEncounter() {
+        return selectionForRetry;
+      },
+    };
+    const retryUseCase = new ConfirmOfficialSelectionUseCase({
+      encounterReader,
+      selections: selectionsRetry,
+      results,
+      providerMatches,
+      eventPublisher: publisher,
+      authorization,
+      ids: { generate: () => "result-2" },
+      clock: { now: () => new Date("2026-07-01T22:00:00.000Z") },
+    });
+    const second = await retryUseCase.execute({
       actorId: asActorId("actor-2"),
       organizationId: asOrganizationId("org-1"),
       encounterId: asEncounterId("enc-1"),

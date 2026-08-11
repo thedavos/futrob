@@ -12,6 +12,7 @@ export * from "./organizations/index.ts";
 export * from "./teams/index.ts";
 export * from "./authorization/index.ts";
 export * from "./encounters/index.ts";
+export * from "./statistics/index.ts";
 export { futrobOpenApiV1 } from "./openapi/document.ts";
 export { getOpenApiJsonDocument, getOpenApiJsonText, getOpenApiYamlText } from "./openapi/serve.ts";
 

@@ -18,6 +18,7 @@
     "@futrob/results": "0.1.0",
     "@futrob/scheduling": "0.1.0",
     "@futrob/shared-kernel": "0.1.0",
+    "@futrob/statistics": "0.1.0",
     "@futrob/teams": "0.1.0",
     "@hono/node-server": "^1.13.7",
     "hono": "^4.6.14",

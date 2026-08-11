@@ -1,8 +1,12 @@
 import { Hono } from "hono";
+import type { PlayerMatchContribution } from "@futrob/statistics";
 import {
   addMyPlayerGameAccountRequestSchema,
   addMyPlayerGameAccountResponseSchema,
+  getMyMatchesQuerySchema,
+  getMyMatchesResponseSchema,
   getMyPlayerProfileResponseSchema,
+  getMyStatisticsResponseSchema,
   getMyTeamsResponseSchema,
   setActiveTeamRequestSchema,
   setActiveTeamResponseSchema,
@@ -22,7 +26,7 @@ import {
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
-  const { gameData, teams } = deps.modules;
+  const { gameData, teams, statistics } = deps.modules;
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
   secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
 
@@ -76,6 +80,96 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
         gameAccount: playerGameAccountDto(account.value),
       }),
       201,
+    );
+  });
+
+  secured.get("/players/me/statistics", async (c) => {
+    const actorId = c.get("actorId");
+    const details = await teams.getPlayerProfile.execute({ actorId });
+    if (!details.profile) {
+      return jsonResponse(getMyStatisticsResponseSchema.parse({ statistics: null }));
+    }
+    const stats = await statistics.repositories.personalStats.findByPlayerProfile(
+      details.profile.id,
+    );
+    return jsonResponse(
+      getMyStatisticsResponseSchema.parse({
+        statistics: stats
+          ? {
+              playerProfileId: stats.playerProfileId,
+              matchesPlayed: stats.matchesPlayed,
+              minutes: stats.minutes,
+              totals: stats.totals,
+              averages: stats.averages,
+              per90: stats.per90,
+              partial: stats.partial,
+              sourceRevisionMax: stats.sourceRevisionMax,
+              updatedAt: stats.updatedAt.toISOString(),
+            }
+          : null,
+      }),
+    );
+  });
+
+  secured.get("/players/me/matches", async (c) => {
+    const parsed = getMyMatchesQuerySchema.safeParse({
+      competitionId: c.req.query("competitionId") ?? undefined,
+      cursor: c.req.query("cursor") ?? undefined,
+      limit: c.req.query("limit") ?? undefined,
+    });
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+
+    const actorId = c.get("actorId");
+    const details = await teams.getPlayerProfile.execute({ actorId });
+    if (!details.profile) {
+      return jsonResponse(getMyMatchesResponseSchema.parse({ matches: [], nextCursor: null }));
+    }
+
+    let rows: PlayerMatchContribution[] =
+      await statistics.repositories.contributions.listByPlayerProfile(details.profile.id);
+    rows = rows.filter((row) => row.correlationStatus === "matched");
+    if (parsed.data.competitionId) {
+      rows = rows.filter((row) => row.competitionId === parsed.data.competitionId);
+    }
+    rows.sort((a, b) => a.id.localeCompare(b.id));
+    const start = parsed.data.cursor
+      ? rows.findIndex((row) => row.id === parsed.data.cursor) + 1
+      : 0;
+    const page = rows.slice(Math.max(start, 0), Math.max(start, 0) + parsed.data.limit);
+    const next = page.length === parsed.data.limit ? (page.at(-1)?.id ?? null) : null;
+    return jsonResponse(
+      getMyMatchesResponseSchema.parse({
+        matches: page.map((row: PlayerMatchContribution) => ({
+          id: row.id,
+          officialResultId: row.officialResultId,
+          revision: row.revision,
+          encounterId: row.encounterId,
+          competitionId: row.competitionId,
+          organizationId: row.organizationId,
+          officialSlot: row.officialSlot,
+          correlationStatus: row.correlationStatus,
+          externalPlayerId: row.externalPlayerId,
+          displayName: row.displayName,
+          externalClubId: row.externalClubId,
+          platform: row.platform,
+          gameEdition: row.gameEdition,
+          position: row.position,
+          minutesPlayed: row.minutesPlayed,
+          goals: row.goals,
+          assists: row.assists,
+          shots: row.shots,
+          passAttempts: row.passAttempts,
+          passesMade: row.passesMade,
+          tackleAttempts: row.tackleAttempts,
+          tacklesMade: row.tacklesMade,
+          saves: row.saves,
+          yellowCards: row.yellowCards,
+          redCards: row.redCards,
+          isMvp: row.isMvp,
+          rating: row.rating,
+        })),
+        nextCursor: next,
+      }),
     );
   });
 

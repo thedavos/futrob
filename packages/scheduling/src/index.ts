@@ -1,9 +1,6 @@
 export type { Encounter, OfficialMatchSlot } from "./domain/entities/encounter.ts";
 export type { EncounterScheduleSnapshot } from "./domain/entities/encounter-schedule-snapshot.ts";
-export type {
-  OfficialMatch,
-  OfficialMatchStatus,
-} from "./domain/entities/official-match.ts";
+export type { OfficialMatch, OfficialMatchStatus } from "./domain/entities/official-match.ts";
 export type {
   EncounterParticipantValidationPort,
   EncounterScheduleRepository,
