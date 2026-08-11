@@ -35,6 +35,10 @@ import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 import type { CompetitionId, OrganizationId, TransactionPort } from "@futrob/shared-kernel";
 import type { ConfirmOfficialSelectionInput } from "@futrob/results";
+import {
+  InMemoryOfficialResultRepository,
+  PostgresOfficialResultRepository,
+} from "@/adapters/results/official-result.repository.ts";
 import type { Pool } from "pg";
 import { createGameDataModule, type GameDataModule } from "./game-data.module.ts";
 import { createIdentityModule, type IdentityModule } from "./identity.module.ts";
@@ -129,6 +133,9 @@ export function createModules(input: CreateModulesInput): AppModules {
   const competitionRepository = input.pool
     ? new PostgresCompetitionRepository(input.pool)
     : new InMemoryCompetitionRepository();
+  const officialResults = input.pool
+    ? new PostgresOfficialResultRepository(input.pool)
+    : new InMemoryOfficialResultRepository();
 
   const teams = createTeamsModule({
     pool: input.pool,
@@ -151,6 +158,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     authorization: deferredAuthorization,
     eventPublisher,
     transaction,
+    officialResults,
     fixtureSource: new CompetitionFixtureSourceAdapter({
       competitions: competitionRepository,
       entries: competitions.entryRepository,
@@ -218,6 +226,7 @@ export function createModules(input: CreateModulesInput): AppModules {
       scheduling.encounters,
       teams.externalClubConnections,
     ),
+    results: officialResults,
     ids,
   });
   const statistics = createStatisticsModule({

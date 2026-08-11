@@ -7,10 +7,13 @@ import type {
   FixturePlanRepository,
   FixtureStage,
   EncounterScheduleRepository,
+  FixtureEncounterOwnershipPort,
+  OfficialMatchRepository,
 } from "@futrob/scheduling";
 import {
   asCompetitionId,
   asEncounterId,
+  asOfficialMatchSlotId,
   asOrganizationId,
   asTeamId,
   type CompetitionId,
@@ -20,12 +23,15 @@ import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class InMemoryFixturePlanRepository
-  implements FixturePlanRepository, EditableFixturePlanRepository
+  implements FixturePlanRepository, EditableFixturePlanRepository, FixtureEncounterOwnershipPort
 {
   readonly rows = new Map<string, FixturePlan>();
   private readonly generationKeys = new Map<string, string>();
 
-  constructor(private readonly encounters?: EncounterScheduleRepository) {}
+  constructor(
+    private readonly encounters?: EncounterScheduleRepository,
+    private readonly matches?: OfficialMatchRepository,
+  ) {}
 
   async findByGenerationKey(
     organizationId: OrganizationId,
@@ -45,6 +51,29 @@ export class InMemoryFixturePlanRepository
     return plan?.organizationId === organizationId && plan.competitionId === competitionId
       ? plan
       : null;
+  }
+
+  async containsEncounter(
+    input: Parameters<FixtureEncounterOwnershipPort["containsEncounter"]>[0],
+  ): Promise<boolean> {
+    for (const plan of this.rows.values()) {
+      if (
+        plan.organizationId !== input.organizationId ||
+        plan.competitionId !== input.competitionId
+      ) {
+        continue;
+      }
+      if (
+        plan.stages.some((stage) =>
+          stage.rounds.some((round) =>
+            round.encounters.some((encounter) => encounter.id === input.encounterId),
+          ),
+        )
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   async save(
@@ -76,12 +105,13 @@ export class InMemoryFixturePlanRepository
   }
 
   private async syncEncounterSnapshots(plan: FixturePlan): Promise<void> {
-    if (!this.encounters) return;
+    if (!this.encounters && !this.matches) return;
+    const createdAt = new Date();
     for (const stage of plan.stages) {
       for (const round of stage.rounds) {
         for (const encounter of round.encounters) {
           if (encounter.home.kind !== "team" || encounter.away.kind !== "team") continue;
-          await this.encounters.upsert({
+          await this.encounters?.upsert({
             encounterId: encounter.id,
             organizationId: plan.organizationId,
             competitionId: plan.competitionId,
@@ -90,6 +120,18 @@ export class InMemoryFixturePlanRepository
             scheduledStartAt: encounter.scheduledStartAt,
             officialMatchCount: encounter.officialMatchCount,
           });
+          if (encounter.series) {
+            await this.matches?.upsertMany(
+              encounter.series.officialMatches.map((match) => ({
+                ...match,
+                encounterId: encounter.id,
+                organizationId: plan.organizationId,
+                competitionId: plan.competitionId,
+                status: "scheduled",
+                createdAt,
+              })),
+            );
+          }
         }
       }
     }
@@ -97,7 +139,7 @@ export class InMemoryFixturePlanRepository
 }
 
 export class PostgresFixturePlanRepository
-  implements FixturePlanRepository, EditableFixturePlanRepository
+  implements FixturePlanRepository, EditableFixturePlanRepository, FixtureEncounterOwnershipPort
 {
   constructor(private readonly pool: Pool) {}
 
@@ -122,7 +164,8 @@ export class PostgresFixturePlanRepository
   ): Promise<FixturePlan | null> {
     const executor = getPgExecutor(this.pool);
     const planResult = await executor.query(
-      `SELECT id, revision, generation_key, organization_id, competition_id, rules_version,
+      `SELECT id, revision, generation_key, generation_fingerprint, organization_id,
+              competition_id, rules_version,
               generation_version, format, time_zone, seed
        FROM fixture_plans
        WHERE id = $1 AND organization_id = $2 AND competition_id = $3`,
@@ -142,14 +185,30 @@ export class PostgresFixturePlanRepository
         [fixturePlanId],
       ),
       executor.query(
-        `SELECT id, stage_id, round_id, encounter_order, group_id, home_slot, away_slot,
-                scheduled_start_at, official_match_count
-         FROM fixture_encounters
-         WHERE fixture_plan_id = $1 ORDER BY round_id, encounter_order`,
+        `SELECT encounter.id, encounter.stage_id, encounter.round_id,
+                encounter.encounter_order, encounter.group_id, encounter.home_slot,
+                encounter.away_slot, encounter.scheduled_start_at,
+                encounter.official_match_count, series.id AS series_id,
+                series.resolution_mode
+         FROM fixture_encounters encounter
+         LEFT JOIN encounter_series series ON series.encounter_id = encounter.id
+         WHERE encounter.fixture_plan_id = $1
+         ORDER BY encounter.round_id, encounter.encounter_order`,
         [fixturePlanId],
       ),
     ]);
     return rehydratePlan(planRow, stageResult.rows, roundResult.rows, encounterResult.rows);
+  }
+
+  async containsEncounter(
+    input: Parameters<FixtureEncounterOwnershipPort["containsEncounter"]>[0],
+  ): Promise<boolean> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT 1 FROM fixture_encounters
+       WHERE id = $1 AND organization_id = $2 AND competition_id = $3`,
+      [input.encounterId, input.organizationId, input.competitionId],
+    );
+    return Boolean(result.rows[0]);
   }
 
   async save(
@@ -158,15 +217,16 @@ export class PostgresFixturePlanRepository
     const executor = getPgExecutor(this.pool);
     const inserted = await executor.query(
       `INSERT INTO fixture_plans (
-         id, revision, generation_key, organization_id, competition_id, rules_version,
-         generation_version, format, time_zone, seed
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+         id, revision, generation_key, generation_fingerprint, organization_id, competition_id,
+         rules_version, generation_version, format, time_zone, seed
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
        ON CONFLICT (organization_id, competition_id, generation_key) DO NOTHING
        RETURNING id`,
       [
         plan.id,
         plan.revision,
         plan.generationKey,
+        plan.generationFingerprint,
         plan.organizationId,
         plan.competitionId,
         plan.rulesVersion,
@@ -243,6 +303,7 @@ export class PostgresFixturePlanRepository
             ],
           );
           await upsertEncounterSnapshot(executor, plan, encounter);
+          await upsertFixtureOfficialMatches(executor, plan, encounter);
         }
       }
     }
@@ -278,6 +339,42 @@ async function insertEncounter(
     ],
   );
   await upsertEncounterSnapshot(executor, plan, encounter);
+  if (!encounter.series) return;
+  await executor.query(
+    `INSERT INTO encounter_series (
+       id, encounter_id, fixture_plan_id, organization_id, competition_id,
+       resolution_mode, official_match_count
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      encounter.series.id,
+      encounter.id,
+      plan.id,
+      plan.organizationId,
+      plan.competitionId,
+      encounter.series.resolutionMode,
+      encounter.series.officialMatches.length,
+    ],
+  );
+  await upsertFixtureOfficialMatches(executor, plan, encounter);
+}
+
+async function upsertFixtureOfficialMatches(
+  executor: Executor,
+  plan: FixturePlan,
+  encounter: FixtureEncounter,
+): Promise<void> {
+  if (!encounter.series || encounter.home.kind !== "team" || encounter.away.kind !== "team") {
+    return;
+  }
+  for (const match of encounter.series.officialMatches) {
+    await executor.query(
+      `INSERT INTO official_matches (
+         id, encounter_id, organization_id, competition_id, slot, status, created_at
+       ) VALUES ($1, $2, $3, $4, $5, 'scheduled', now())
+       ON CONFLICT (encounter_id, slot) DO NOTHING`,
+      [match.id, encounter.id, plan.organizationId, plan.competitionId, match.slot],
+    );
+  }
 }
 
 async function upsertEncounterSnapshot(
@@ -340,6 +437,7 @@ function rehydratePlan(
     id: row.id,
     revision: Number(row.revision),
     generationKey: row.generation_key,
+    generationFingerprint: row.generation_fingerprint,
     organizationId: asOrganizationId(row.organization_id),
     competitionId: asCompetitionId(row.competition_id),
     rulesVersion: Number(row.rules_version),
@@ -352,8 +450,11 @@ function rehydratePlan(
 }
 
 function rehydrateEncounter(row: EncounterRow): FixtureEncounter {
+  const id = asEncounterId(row.id);
+  const officialMatchCount = Number(row.official_match_count) as 1 | 2;
+  const slots: readonly (1 | 2)[] = officialMatchCount === 1 ? [1] : [1, 2];
   return {
-    id: asEncounterId(row.id),
+    id,
     stageId: row.stage_id as FixtureEncounter["stageId"],
     roundId: row.round_id as FixtureEncounter["roundId"],
     order: Number(row.encounter_order),
@@ -361,7 +462,18 @@ function rehydrateEncounter(row: EncounterRow): FixtureEncounter {
     home: slot(row.home_slot),
     away: slot(row.away_slot),
     scheduledStartAt: new Date(row.scheduled_start_at),
-    officialMatchCount: Number(row.official_match_count) as 1 | 2,
+    officialMatchCount,
+    series:
+      row.series_id && row.resolution_mode
+        ? {
+            id: row.series_id,
+            resolutionMode: row.resolution_mode,
+            officialMatches: slots.map((slot) => ({
+              id: asOfficialMatchSlotId(`${id}:official-match:${slot}`),
+              slot,
+            })),
+          }
+        : null,
   };
 }
 
@@ -428,6 +540,7 @@ interface PlanRow {
   id: string;
   revision: number;
   generation_key: string;
+  generation_fingerprint: string;
   organization_id: string;
   competition_id: string;
   rules_version: number;
@@ -460,4 +573,6 @@ interface EncounterRow {
   away_slot: unknown;
   scheduled_start_at: Date | string;
   official_match_count: number;
+  series_id: string | null;
+  resolution_mode: NonNullable<FixtureEncounter["series"]>["resolutionMode"] | null;
 }

@@ -70,6 +70,10 @@ describe("CompetitionFixtureSourceAdapter", () => {
 
     expect(source?.approvedParticipants).toEqual([asTeamId("team-a"), asTeamId("team-b")]);
     expect(source?.officialMatchCounts).toEqual({ regular: 1, knockout: 2 });
+    expect(source?.resolutionModes).toEqual({
+      regular: "independent_matches",
+      knockout: "aggregate_score",
+    });
   });
 });
 

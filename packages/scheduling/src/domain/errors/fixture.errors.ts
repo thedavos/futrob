@@ -51,11 +51,17 @@ export class FixtureUpdateConflict extends TaggedError("FixtureUpdateConflict")<
   message: string;
 }> {}
 
+export class FixtureGenerationConflict extends TaggedError("FixtureGenerationConflict")<{
+  code: "scheduling.fixture_generation_conflict";
+  message: string;
+}> {}
+
 export type GenerateCompetitionFixtureError =
   | FixtureAuthorizationForbidden
   | FixtureSourceNotFound
   | FixtureSourceNotPublished
-  | InvalidFixtureConfiguration;
+  | InvalidFixtureConfiguration
+  | FixtureGenerationConflict;
 
 export type EditFixtureEncounterError =
   | FixtureAuthorizationForbidden

@@ -64,7 +64,7 @@ export class EditFixtureEncounterUseCase {
 
   async execute(
     input: EditFixtureEncounterInput,
-  ): Promise<Result<FixtureEncounter, EditFixtureEncounterError>> {
+  ): Promise<Result<FixturePlan, EditFixtureEncounterError>> {
     const decision = await this.deps.authorization.decide({
       actorId: input.actorId,
       permission: ENCOUNTER_PERMISSION.scheduleManage,
@@ -96,21 +96,6 @@ export class EditFixtureEncounterUseCase {
     }
 
     return this.deps.transaction.runInTransaction(async () => {
-      const prior = await this.deps.audit.findByRequestId(
-        input.organizationId,
-        input.competitionId,
-        input.requestId,
-      );
-      if (prior) {
-        if (
-          prior.fixturePlanId !== input.fixturePlanId ||
-          prior.encounterId !== input.encounterId
-        ) {
-          return err(invalid("requestId was already used for a different fixture edit"));
-        }
-        return ok(prior.after);
-      }
-
       const plan = await this.deps.fixtures.findById(
         input.organizationId,
         input.competitionId,
@@ -134,6 +119,20 @@ export class EditFixtureEncounterUseCase {
             encounterId: input.encounterId,
           }),
         );
+      }
+      const prior = await this.deps.audit.findByRequestId(
+        input.organizationId,
+        input.competitionId,
+        input.requestId,
+      );
+      if (prior) {
+        if (
+          prior.fixturePlanId !== input.fixturePlanId ||
+          prior.encounterId !== input.encounterId
+        ) {
+          return err(invalid("requestId was already used for a different fixture edit"));
+        }
+        return ok(plan);
       }
       if (!(await this.deps.editGuard.canEdit(input))) {
         return err(
@@ -167,7 +166,7 @@ export class EditFixtureEncounterUseCase {
             }
           : {}),
       };
-      if (encountersEqual(before, after)) return ok(before);
+      if (encountersEqual(before, after)) return ok(plan);
       if (hasTeamCollision(plan, after)) {
         return err(invalid("A Team cannot have two encounters at the same scheduled time"));
       }
@@ -209,7 +208,7 @@ export class EditFixtureEncounterUseCase {
         };
         await this.deps.eventPublisher.publish(event);
       }
-      return ok(after);
+      return ok(updated);
     });
   }
 }
@@ -255,7 +254,6 @@ function findEncounter(plan: FixturePlan, encounterId: EncounterId): FixtureEnco
 function replaceEncounter(plan: FixturePlan, replacement: FixtureEncounter): FixturePlan {
   return {
     ...plan,
-    revision: plan.revision + 1,
     stages: plan.stages.map((stage) => ({
       ...stage,
       rounds: stage.rounds.map((round) => ({

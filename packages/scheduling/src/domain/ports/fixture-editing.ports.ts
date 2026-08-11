@@ -18,6 +18,14 @@ export interface FixtureEncounterEditGuardPort {
   }): Promise<boolean>;
 }
 
+export interface FixtureEncounterOwnershipPort {
+  containsEncounter(input: {
+    readonly organizationId: OrganizationId;
+    readonly competitionId: CompetitionId;
+    readonly encounterId: EncounterId;
+  }): Promise<boolean>;
+}
+
 export interface FixtureAuditEntry {
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;

@@ -46,11 +46,14 @@ function participants(approvedTeamIds: readonly string[] = ["home-1", "away-1"])
   };
 }
 
+const independentEncounter = { containsEncounter: async () => false };
+
 describe("UpsertEncounterScheduleSnapshotUseCase", () => {
   it("persists the projection used by authorization and results", async () => {
     const encounters = new Encounters();
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
       encounters,
+      fixtureOwnership: independentEncounter,
       authorization: authorization(true),
       participants: participants(),
     }).execute({ actorId: asActorId("staff-1"), snapshot });
@@ -62,6 +65,7 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
   it("rejects an unauthorized producer", async () => {
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
       encounters: new Encounters(),
+      fixtureOwnership: independentEncounter,
       authorization: authorization(false),
       participants: participants(),
     }).execute({ actorId: asActorId("player-1"), snapshot });
@@ -75,6 +79,7 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
     await encounters.upsert(snapshot);
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
       encounters,
+      fixtureOwnership: independentEncounter,
       authorization: authorization(true),
       participants: participants(),
     }).execute({
@@ -91,6 +96,7 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
   it("rejects a Team owned by another tenant", async () => {
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
       encounters: new Encounters(),
+      fixtureOwnership: independentEncounter,
       authorization: authorization(true),
       participants: participants(["home-1"]),
     }).execute({ actorId: asActorId("staff-1"), snapshot });
@@ -102,10 +108,26 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
     const unapproved = { ...snapshot, awayTeamId: asTeamId("pending-team") };
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
       encounters: new Encounters(),
+      fixtureOwnership: independentEncounter,
       authorization: authorization(true),
       participants: participants(["home-1"]),
     }).execute({ actorId: asActorId("staff-1"), snapshot: unapproved });
 
     expect(result.isErr()).toBe(true);
+  });
+
+  it("rejects the legacy snapshot writer for a fixture-managed encounter", async () => {
+    const encounters = new Encounters();
+    const result = await new UpsertEncounterScheduleSnapshotUseCase({
+      encounters,
+      fixtureOwnership: { containsEncounter: async () => true },
+      authorization: authorization(true),
+      participants: participants(),
+    }).execute({ actorId: asActorId("staff-1"), snapshot });
+
+    expect(result.isErr()).toBe(true);
+    if (result.isOk()) return;
+    expect(result.error.code).toBe("scheduling.fixture_managed_conflict");
+    expect(await encounters.findById(snapshot.encounterId)).toBeNull();
   });
 });

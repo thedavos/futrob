@@ -45,6 +45,20 @@ export const fixtureParticipantSlotSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
+export const fixtureSeriesSchema = z.object({
+  id: z.string().min(1),
+  resolutionMode: z.enum(["independent_matches", "aggregate_score"]),
+  officialMatches: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        slot: z.union([z.literal(1), z.literal(2)]),
+      }),
+    )
+    .min(1)
+    .max(2),
+});
+
 export const fixtureEncounterSchema = z.object({
   id: z.string().min(1),
   stageId: z.string().min(1),
@@ -55,6 +69,7 @@ export const fixtureEncounterSchema = z.object({
   away: fixtureParticipantSlotSchema,
   scheduledStartAt: z.string().datetime(),
   officialMatchCount: z.union([z.literal(1), z.literal(2)]),
+  series: fixtureSeriesSchema.nullable(),
 });
 
 export const fixtureRoundSchema = z.object({

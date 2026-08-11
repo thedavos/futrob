@@ -28,11 +28,12 @@ suite("0025 competition fixtures migration", () => {
          WHERE table_schema = current_schema()
            AND table_name IN (
              'fixture_plans', 'fixture_stages', 'fixture_rounds',
-             'fixture_encounters', 'fixture_encounter_audit'
+             'fixture_encounters', 'fixture_encounter_audit', 'encounter_series'
            )
          ORDER BY table_name`,
       );
       expect(result.rows.map((row) => row.table_name)).toEqual([
+        "encounter_series",
         "fixture_encounter_audit",
         "fixture_encounters",
         "fixture_plans",
@@ -99,9 +100,9 @@ async function insertPlan(
 ): Promise<void> {
   await client.query(
     `INSERT INTO fixture_plans (
-       id, revision, generation_key, organization_id, competition_id, rules_version,
-       generation_version, format, time_zone, seed
-     ) VALUES ($1, 1, $2, $3, $4, 1, 1, 'league', 'America/Lima', '["team-a","team-b"]')`,
+       id, revision, generation_key, generation_fingerprint, organization_id, competition_id,
+       rules_version, generation_version, format, time_zone, seed
+     ) VALUES ($1, 1, $2, $2, $3, $4, 1, 1, 'league', 'America/Lima', '["team-a","team-b"]')`,
     [id, generationKey, organizationId, competitionId],
   );
 }

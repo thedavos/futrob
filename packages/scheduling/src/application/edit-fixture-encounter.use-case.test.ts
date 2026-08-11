@@ -24,6 +24,7 @@ const original = generateFixturePlan({
   startsAt: new Date("2026-09-01T01:00:00.000Z"),
   roundIntervalDays: 7,
   officialMatchCounts: { regular: 1, knockout: 2 },
+  resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
   seed,
   homeAndAway: false,
 });
@@ -66,9 +67,9 @@ function createUseCase(input: {
       fixtures: {
         findById: async () => stored,
         update: async (plan) => {
-          if (plan.revision !== stored.revision + 1) return null;
-          stored = plan;
-          return plan;
+          if (plan.revision !== stored.revision) return null;
+          stored = { ...plan, revision: plan.revision + 1 };
+          return stored;
         },
       },
       source: {
@@ -80,6 +81,7 @@ function createUseCase(input: {
           timeZone: "America/Lima",
           rulesVersion: 1,
           officialMatchCounts: { regular: 1, knockout: 2 },
+          resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
           approvedParticipants: seed,
         }),
       },
@@ -118,9 +120,10 @@ describe("EditFixtureEncounterUseCase", () => {
 
     expect(changed.isOk()).toBe(true);
     expect(replay.isOk()).toBe(true);
-    expect(replay.isOk() && replay.value.scheduledStartAt.toISOString()).toBe(
-      "2026-09-02T01:00:00.000Z",
-    );
+    expect(
+      replay.isOk() &&
+        replay.value.stages[0]?.rounds[0]?.encounters[0]?.scheduledStartAt.toISOString(),
+    ).toBe("2026-09-02T01:00:00.000Z");
     expect(harness.audits).toHaveLength(1);
     expect(harness.stored.revision).toBe(2);
     expect(harness.events.map((event) => event.eventName)).toEqual([
@@ -181,6 +184,7 @@ describe("EditFixtureEncounterUseCase", () => {
       startsAt: new Date("2026-09-01T01:00:00.000Z"),
       roundIntervalDays: 7,
       officialMatchCounts: { regular: 1, knockout: 2 },
+      resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
       seed: [asTeamId("team-a"), asTeamId("team-b"), asTeamId("team-c")],
       homeAndAway: false,
     });

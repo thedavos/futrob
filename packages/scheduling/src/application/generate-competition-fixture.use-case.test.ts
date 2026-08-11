@@ -22,6 +22,10 @@ const sourceSnapshot = {
   timeZone: "America/Lima",
   rulesVersion: 2,
   officialMatchCounts: { regular: 1 as const, knockout: 2 as const },
+  resolutionModes: {
+    regular: "independent_matches" as const,
+    knockout: "aggregate_score" as const,
+  },
   approvedParticipants: [asTeamId("team-a"), asTeamId("team-b")],
 };
 
@@ -144,12 +148,18 @@ describe("GenerateCompetitionFixtureUseCase", () => {
 
   it("requires scheduleManage permission", async () => {
     const fixtures = new FixturePlans();
+    let sourceReads = 0;
     const result = await new GenerateCompetitionFixtureUseCase({
       authorization: authorization(false),
       clock: { now: () => new Date() },
       eventPublisher: { publish: async () => {}, publishMany: async () => {} },
       fixtures,
-      source: source(),
+      source: {
+        load: async () => {
+          sourceReads += 1;
+          return sourceSnapshot;
+        },
+      },
       transaction: { runInTransaction: async (operation) => operation() },
     }).execute(input());
 
@@ -157,6 +167,7 @@ describe("GenerateCompetitionFixtureUseCase", () => {
     if (result.isOk()) return;
     expect(result.error.code).toBe("authorization.forbidden");
     expect(fixtures.saves).toBe(0);
+    expect(sourceReads).toBe(0);
   });
 
   it("rolls back fixture persistence when event publication fails", async () => {

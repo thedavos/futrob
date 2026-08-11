@@ -78,12 +78,7 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
         officialMatchCount: parsed.data.officialMatchCount,
       },
     });
-    if (result.isErr()) {
-      return apiErrorResponse(result.error.code === "authorization.forbidden" ? 403 : 400, {
-        code: result.error.code,
-        messageKey: `errors.${result.error.code}`,
-      });
-    }
+    if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(
       encounterScheduleSnapshotSchema.parse({
         ...result.value,
@@ -120,29 +115,14 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
     async (c) => {
       const organizationId = asOrganizationId(c.req.param("organizationId"));
       const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const plan = await deps.modules.scheduling.fixturePlans.findById(
+      const result = await deps.modules.scheduling.getFixture.execute({
+        actorId: c.get("actorId"),
         organizationId,
         competitionId,
-        c.req.param("fixturePlanId"),
-      );
-      if (!plan) {
-        return apiErrorResponse(404, {
-          code: "scheduling.fixture_plan_not_found",
-          messageKey: "errors.scheduling.fixture_plan_not_found",
-        });
-      }
-      const decision = await deps.modules.authorization.port.decide({
-        actorId: c.get("actorId"),
-        permission: ENCOUNTER_PERMISSION.read,
-        scope: { organizationId, competitionId },
+        fixturePlanId: c.req.param("fixturePlanId"),
       });
-      if (!decision.allowed) {
-        return apiErrorResponse(404, {
-          code: "scheduling.fixture_plan_not_found",
-          messageKey: "errors.scheduling.fixture_plan_not_found",
-        });
-      }
-      return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(plan)));
+      if (result.isErr()) return failureToHttp(result.error);
+      return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));
     },
   );
 
@@ -170,18 +150,7 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
         requestId: c.req.header("X-Request-ID") ?? randomUUID(),
       });
       if (result.isErr()) return failureToHttp(result.error);
-      const plan = await deps.modules.scheduling.fixturePlans.findById(
-        asOrganizationId(c.req.param("organizationId")),
-        asCompetitionId(c.req.param("competitionId")),
-        c.req.param("fixturePlanId"),
-      );
-      if (!plan) {
-        return apiErrorResponse(409, {
-          code: "scheduling.fixture_update_conflict",
-          messageKey: "errors.scheduling.fixture_update_conflict",
-        });
-      }
-      return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(plan)));
+      return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));
     },
   );
 

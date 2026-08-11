@@ -3,6 +3,7 @@ import { generateFixturePlan } from "@futrob/scheduling";
 import { describe, expect, it } from "vite-plus/test";
 import { InMemoryEncounterScheduleRepository } from "./encounter-schedule.repository.ts";
 import { InMemoryFixturePlanRepository } from "./fixture-plan.repository.ts";
+import { InMemoryOfficialMatchRepository } from "./official-match.repository.ts";
 
 function plan(organization = "org-1") {
   const seed = [asTeamId("team-a"), asTeamId("team-b")];
@@ -16,6 +17,7 @@ function plan(organization = "org-1") {
     startsAt: new Date("2026-09-01T01:00:00.000Z"),
     roundIntervalDays: 7,
     officialMatchCounts: { regular: 1, knockout: 2 },
+    resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
     seed,
     homeAndAway: false,
   });
@@ -51,7 +53,8 @@ describe("InMemoryFixturePlanRepository", () => {
 
   it("materializes concrete pairings for the official-match workflow and skips byes", async () => {
     const encounters = new InMemoryEncounterScheduleRepository();
-    const repository = new InMemoryFixturePlanRepository(encounters);
+    const matches = new InMemoryOfficialMatchRepository();
+    const repository = new InMemoryFixturePlanRepository(encounters, matches);
     const fixture = generateFixturePlan({
       organizationId: asOrganizationId("org-1"),
       competitionId: asCompetitionId("competition-1"),
@@ -62,6 +65,7 @@ describe("InMemoryFixturePlanRepository", () => {
       startsAt: new Date("2026-09-01T01:00:00.000Z"),
       roundIntervalDays: 7,
       officialMatchCounts: { regular: 1, knockout: 2 },
+      resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
       seed: [asTeamId("team-a"), asTeamId("team-b"), asTeamId("team-c")],
       homeAndAway: false,
     });
@@ -84,5 +88,11 @@ describe("InMemoryFixturePlanRepository", () => {
       competitionId: fixture.competitionId,
     });
     expect(await encounters.findById(bye!.id)).toBeNull();
+    expect(await matches.listByEncounter(concrete!.id)).toEqual(
+      concrete!.series!.officialMatches.map((match) =>
+        expect.objectContaining({ id: match.id, slot: match.slot, status: "scheduled" }),
+      ),
+    );
+    expect(await matches.listByEncounter(bye!.id)).toEqual([]);
   });
 });

@@ -14,6 +14,10 @@ function baseInput() {
     startsAt: new Date("2026-09-01T01:00:00.000Z"),
     roundIntervalDays: 7,
     officialMatchCounts: { regular: 1 as const, knockout: 2 as const },
+    resolutionModes: {
+      regular: "independent_matches" as const,
+      knockout: "aggregate_score" as const,
+    },
     seed: teams,
     homeAndAway: false,
   };
@@ -36,6 +40,10 @@ describe("generateFixturePlan", () => {
       stage.rounds.flatMap((round) => round.encounters),
     );
     expect(encounters).toHaveLength(6);
+    expect(encounters[0]?.series).toMatchObject({
+      resolutionMode: "independent_matches",
+      officialMatches: [{ slot: 1 }],
+    });
     expect(
       new Set(
         encounters.map((encounter) =>
@@ -63,6 +71,11 @@ describe("generateFixturePlan", () => {
           (encounter) => encounter.home.kind === "bye" || encounter.away.kind === "bye",
         ),
       ).toHaveLength(1);
+      expect(
+        round.encounters.find(
+          (encounter) => encounter.home.kind === "bye" || encounter.away.kind === "bye",
+        )?.series,
+      ).toBeNull();
     }
   });
 
@@ -115,6 +128,13 @@ describe("generateFixturePlan", () => {
         ({ home, away }) => home.kind === "winner" && away.kind === "winner",
       ),
     ).toBe(true);
+    expect(
+      rounds[0]?.encounters.find(({ home, away }) => home.kind === "team" && away.kind === "team")
+        ?.series,
+    ).toMatchObject({
+      resolutionMode: "aggregate_score",
+      officialMatches: [{ slot: 1 }, { slot: 2 }],
+    });
   });
 
   it("combines stable groups with a reproducible qualifier bracket", () => {

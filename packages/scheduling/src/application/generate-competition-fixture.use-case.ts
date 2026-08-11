@@ -14,6 +14,7 @@ import {
 import type { FixtureGenerationSpec, FixturePlan } from "../domain/entities/fixture-plan.ts";
 import {
   FixtureAuthorizationForbidden,
+  FixtureGenerationConflict,
   FixtureSourceNotFound,
   FixtureSourceNotPublished,
   InvalidFixtureConfiguration,
@@ -65,29 +66,6 @@ export class GenerateCompetitionFixtureUseCase {
   async execute(
     input: GenerateCompetitionFixtureInput,
   ): Promise<Result<FixturePlan, GenerateCompetitionFixtureError>> {
-    const source = await this.deps.source.load(input);
-    if (!source) {
-      return err(
-        new FixtureSourceNotFound({
-          code: "scheduling.fixture_source_not_found",
-          message: "Competition fixture source not found",
-          competitionId: input.competitionId,
-        }),
-      );
-    }
-    if (
-      source.organizationId !== input.organizationId ||
-      source.competitionId !== input.competitionId
-    ) {
-      return err(
-        new FixtureSourceNotFound({
-          code: "scheduling.fixture_source_not_found",
-          message: "Competition fixture source not found",
-          competitionId: input.competitionId,
-        }),
-      );
-    }
-
     const decision = await this.deps.authorization.decide({
       actorId: input.actorId,
       permission: ENCOUNTER_PERMISSION.scheduleManage,
@@ -105,6 +83,20 @@ export class GenerateCompetitionFixtureUseCase {
         }),
       );
     }
+    const source = await this.deps.source.load(input);
+    if (
+      !source ||
+      source.organizationId !== input.organizationId ||
+      source.competitionId !== input.competitionId
+    ) {
+      return err(
+        new FixtureSourceNotFound({
+          code: "scheduling.fixture_source_not_found",
+          message: "Competition fixture source not found",
+          competitionId: input.competitionId,
+        }),
+      );
+    }
     if (source.status !== "published") {
       return err(
         new FixtureSourceNotPublished({
@@ -118,6 +110,7 @@ export class GenerateCompetitionFixtureUseCase {
     const spec = buildSpec(input, source);
     if (spec instanceof InvalidFixtureConfiguration) return err(spec);
     const generationKey = fixtureGenerationKey(spec);
+    const candidate = generateFixturePlan(spec);
 
     return this.deps.transaction.runInTransaction(async () => {
       const existing = await this.deps.fixtures.findByGenerationKey(
@@ -125,9 +118,16 @@ export class GenerateCompetitionFixtureUseCase {
         input.competitionId,
         generationKey,
       );
-      if (existing) return ok(existing);
+      if (existing) {
+        return existing.generationFingerprint === candidate.generationFingerprint
+          ? ok(existing)
+          : generationConflict();
+      }
 
-      const saved = await this.deps.fixtures.save(generateFixturePlan(spec));
+      const saved = await this.deps.fixtures.save(candidate);
+      if (!saved.created && saved.plan.generationFingerprint !== candidate.generationFingerprint) {
+        return generationConflict();
+      }
       if (saved.created) {
         await this.deps.eventPublisher.publishMany(
           encounterCreatedEvents(saved.plan, this.deps.clock.now(), input.requestId),
@@ -136,6 +136,15 @@ export class GenerateCompetitionFixtureUseCase {
       return ok(saved.plan);
     });
   }
+}
+
+function generationConflict(): Result<never, FixtureGenerationConflict> {
+  return err(
+    new FixtureGenerationConflict({
+      code: "scheduling.fixture_generation_conflict",
+      message: "This generation version was already used with a different fixture spec",
+    }),
+  );
 }
 
 function buildSpec(
@@ -195,6 +204,7 @@ function buildSpec(
     startsAt: input.startsAt,
     roundIntervalDays: input.roundIntervalDays,
     officialMatchCounts: source.officialMatchCounts,
+    resolutionModes: source.resolutionModes,
     seed,
     homeAndAway: input.homeAndAway,
     ...(input.groups ? { groups: input.groups } : {}),

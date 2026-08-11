@@ -9,8 +9,10 @@ export {
   type FixturePlan,
   type FixtureRound,
   type FixtureRoundId,
+  type FixtureSeries,
   type FixtureStage,
   type FixtureStageId,
+  type SeriesResolutionMode,
 } from "./domain/entities/fixture-plan.ts";
 export type { EncounterScheduleSnapshot } from "./domain/entities/encounter-schedule-snapshot.ts";
 export type { OfficialMatch, OfficialMatchStatus } from "./domain/entities/official-match.ts";
@@ -29,6 +31,7 @@ export type {
   FixtureAuditEntry,
   FixtureAuditPort,
   FixtureEncounterEditGuardPort,
+  FixtureEncounterOwnershipPort,
 } from "./domain/ports/fixture-editing.ports.ts";
 export { UpsertEncounterScheduleSnapshotUseCase } from "./application/upsert-encounter-schedule-snapshot.use-case.ts";
 export {
@@ -43,10 +46,12 @@ export {
   EditFixtureEncounterUseCase,
   type EditFixtureEncounterInput,
 } from "./application/edit-fixture-encounter.use-case.ts";
+export { GetCompetitionFixtureUseCase } from "./application/get-competition-fixture.use-case.ts";
 export {
   EncounterScheduleAuthorizationForbidden,
   InvalidEncounterSchedule,
   EncounterScheduleNotFound,
+  FixtureManagedEncounterConflict,
   type UpsertEncounterScheduleError,
   type MaterializeOfficialMatchesError,
 } from "./domain/errors/encounter-schedule.errors.ts";
@@ -58,12 +63,14 @@ export {
   FixtureEncounterNotFound,
   FixtureEncounterNotEditable,
   FixtureUpdateConflict,
+  FixtureGenerationConflict,
   InvalidFixtureConfiguration,
   type EditFixtureEncounterError,
   type GenerateCompetitionFixtureError,
 } from "./domain/errors/fixture.errors.ts";
 export type { EncounterCreatedEvent } from "./domain/events/encounter-created.event.ts";
 export {
+  fixtureGenerationFingerprint,
   fixtureGenerationKey,
   generateFixturePlan,
 } from "./domain/policies/generate-fixture-plan.ts";

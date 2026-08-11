@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS fixture_plans (
   id TEXT PRIMARY KEY,
   revision INTEGER NOT NULL CHECK (revision >= 1),
   generation_key TEXT NOT NULL,
+  generation_fingerprint TEXT NOT NULL,
   organization_id TEXT NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
   competition_id TEXT NOT NULL REFERENCES competitions (id) ON DELETE CASCADE,
   rules_version INTEGER NOT NULL CHECK (rules_version >= 1),
@@ -73,6 +74,22 @@ CREATE TABLE IF NOT EXISTS fixture_encounters (
     REFERENCES fixture_rounds (id, fixture_plan_id, stage_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS encounter_series (
+  id TEXT PRIMARY KEY,
+  encounter_id TEXT NOT NULL UNIQUE,
+  fixture_plan_id TEXT NOT NULL,
+  organization_id TEXT NOT NULL,
+  competition_id TEXT NOT NULL,
+  resolution_mode TEXT NOT NULL CHECK (
+    resolution_mode IN ('independent_matches', 'aggregate_score')
+  ),
+  official_match_count INTEGER NOT NULL CHECK (official_match_count IN (1, 2)),
+  FOREIGN KEY (encounter_id, fixture_plan_id)
+    REFERENCES fixture_encounters (id, fixture_plan_id) ON DELETE CASCADE,
+  FOREIGN KEY (fixture_plan_id, organization_id, competition_id)
+    REFERENCES fixture_plans (id, organization_id, competition_id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS fixture_encounter_audit (
   id BIGSERIAL PRIMARY KEY,
   organization_id TEXT NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
@@ -85,7 +102,7 @@ CREATE TABLE IF NOT EXISTS fixture_encounter_audit (
   occurred_at TIMESTAMPTZ NOT NULL,
   before_state JSONB NOT NULL,
   after_state JSONB NOT NULL,
-  UNIQUE (organization_id, request_id, encounter_id),
+  UNIQUE (organization_id, competition_id, request_id),
   FOREIGN KEY (fixture_plan_id, organization_id, competition_id)
     REFERENCES fixture_plans (id, organization_id, competition_id) ON DELETE CASCADE,
   FOREIGN KEY (encounter_id, fixture_plan_id)
@@ -98,3 +115,5 @@ CREATE INDEX IF NOT EXISTS fixture_encounters_schedule_index
   ON fixture_encounters (organization_id, competition_id, scheduled_start_at);
 CREATE INDEX IF NOT EXISTS fixture_audit_tenant_index
   ON fixture_encounter_audit (organization_id, competition_id, encounter_id, occurred_at);
+CREATE INDEX IF NOT EXISTS encounter_series_tenant_index
+  ON encounter_series (organization_id, competition_id, encounter_id);

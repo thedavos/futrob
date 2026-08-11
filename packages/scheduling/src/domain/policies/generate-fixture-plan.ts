@@ -1,4 +1,4 @@
-import { asEncounterId, type TeamId } from "@futrob/shared-kernel";
+import { asEncounterId, asOfficialMatchSlotId, type TeamId } from "@futrob/shared-kernel";
 import {
   asFixtureRoundId,
   asFixtureStageId,
@@ -9,9 +9,10 @@ import {
   type FixtureRound,
   type FixtureStage,
   type FixtureStageId,
+  type SeriesResolutionMode,
 } from "../entities/fixture-plan.ts";
 import { arrangeOpeningKnockoutSlots } from "./arrange-opening-knockout-slots.ts";
-import { fixtureGenerationKey } from "./fixture-generation-key.ts";
+import { fixtureGenerationKey, fixtureSpecFingerprint } from "./fixture-generation-key.ts";
 
 export { fixtureGenerationKey, fixtureSpecFingerprint } from "./fixture-generation-key.ts";
 
@@ -109,6 +110,7 @@ export function generateFixturePlan(spec: FixtureGenerationSpec): FixturePlan {
     id: planId,
     revision: 1,
     generationKey,
+    generationFingerprint: fixtureSpecFingerprint(spec),
     organizationId: spec.organizationId,
     competitionId: spec.competitionId,
     rulesVersion: spec.rulesVersion,
@@ -157,6 +159,7 @@ function generateLeagueStage(input: {
               away,
               scheduledStartAt,
               officialMatchCount: input.spec.officialMatchCounts.regular,
+              resolutionMode: input.spec.resolutionModes.regular,
             }),
           );
         }
@@ -206,6 +209,7 @@ function generateKnockoutStage(input: {
           away,
           scheduledStartAt,
           officialMatchCount: input.spec.officialMatchCounts.knockout,
+          resolutionMode: input.spec.resolutionModes.knockout,
         }),
       );
     }
@@ -232,9 +236,12 @@ function fixtureEncounter(input: {
   readonly away: FixtureParticipantSlot;
   readonly scheduledStartAt: Date;
   readonly officialMatchCount: 1 | 2;
+  readonly resolutionMode: SeriesResolutionMode;
 }): FixtureEncounter {
+  const encounterId = asEncounterId(`${input.roundId}:encounter:${input.order}`);
+  const slots: readonly (1 | 2)[] = input.officialMatchCount === 1 ? [1] : [1, 2];
   return {
-    id: asEncounterId(`${input.roundId}:encounter:${input.order}`),
+    id: encounterId,
     stageId: input.stageId,
     roundId: input.roundId,
     order: input.order,
@@ -243,6 +250,17 @@ function fixtureEncounter(input: {
     away: input.away,
     scheduledStartAt: input.scheduledStartAt,
     officialMatchCount: input.officialMatchCount,
+    series:
+      input.home.kind !== "bye" && input.away.kind !== "bye"
+        ? {
+            id: `${encounterId}:series`,
+            resolutionMode: input.resolutionMode,
+            officialMatches: slots.map((slot) => ({
+              id: asOfficialMatchSlotId(`${encounterId}:official-match:${slot}`),
+              slot,
+            })),
+          }
+        : null,
   };
 }
 

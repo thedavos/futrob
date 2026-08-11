@@ -167,6 +167,11 @@ function fixturePlan() {
                 away: { kind: "team", teamId: "team-b" },
                 scheduledStartAt: "2026-09-01T01:00:00.000Z",
                 officialMatchCount: 1,
+                series: {
+                  id: "series-1",
+                  resolutionMode: "independent_matches",
+                  officialMatches: [{ id: "official-match-1", slot: 1 }],
+                },
               },
             ],
           },

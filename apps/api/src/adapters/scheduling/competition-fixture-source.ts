@@ -35,6 +35,11 @@ export class CompetitionFixtureSourceAdapter implements CompetitionFixtureSource
       draft.rules.knockoutStage?.officialMatchesPerEncounter ??
       draft.rules.regularStage?.officialMatchesPerEncounter;
     if (!regular || !knockout) return null;
+    const regularResolution =
+      draft.rules.regularStage?.resolutionMode ?? draft.rules.knockoutStage?.resolutionMode;
+    const knockoutResolution =
+      draft.rules.knockoutStage?.resolutionMode ?? draft.rules.regularStage?.resolutionMode;
+    if (!regularResolution || !knockoutResolution) return null;
 
     return {
       organizationId: draft.competition.organizationId,
@@ -44,6 +49,7 @@ export class CompetitionFixtureSourceAdapter implements CompetitionFixtureSource
       timeZone: draft.competition.timeZone,
       rulesVersion: draft.rules.version,
       officialMatchCounts: { regular, knockout },
+      resolutionModes: { regular: regularResolution, knockout: knockoutResolution },
       approvedParticipants,
     };
   }

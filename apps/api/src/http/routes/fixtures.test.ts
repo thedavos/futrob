@@ -89,8 +89,12 @@ describe("apps/api http fixtures", () => {
         rounds: Array<{
           encounters: Array<{
             id: string;
-            home: { kind: string };
-            away: { kind: string };
+            home: { kind: string; teamId?: string };
+            away: { kind: string; teamId?: string };
+            series: null | {
+              resolutionMode: string;
+              officialMatches: Array<{ id: string; slot: number }>;
+            };
           }>;
         }>;
       }>;
@@ -116,6 +120,30 @@ describe("apps/api http fixtures", () => {
     );
     expect(readableEncounter).toBeDefined();
     if (!readableEncounter) return;
+    expect(readableEncounter.series).toMatchObject({
+      resolutionMode: "independent_matches",
+      officialMatches: [{ slot: 1 }],
+    });
+    const legacyOverwrite = await app.request(
+      `/api/v1/encounters/${encodeURIComponent(readableEncounter.id)}/schedule-snapshot`,
+      {
+        method: "PUT",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({
+          organizationId,
+          competitionId,
+          homeTeamId: readableEncounter.home.teamId,
+          awayTeamId: readableEncounter.away.teamId,
+          scheduledStartAt: "2026-09-04T01:00:00.000Z",
+          officialMatchCount: 1,
+        }),
+      },
+    );
+    const legacyOverwriteBody = await legacyOverwrite.json();
+    expect({ status: legacyOverwrite.status, body: legacyOverwriteBody }).toMatchObject({
+      status: 409,
+      body: { code: "scheduling.fixture_managed_conflict" },
+    });
     const edited = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/fixtures/${encodeURIComponent(fixture.id)}/encounters/${encodeURIComponent(readableEncounter.id)}`,
       {

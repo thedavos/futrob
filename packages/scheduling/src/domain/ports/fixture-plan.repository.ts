@@ -1,5 +1,6 @@
 import type { CompetitionId, OrganizationId, TeamId } from "@futrob/shared-kernel";
 import type { FixtureFormat, FixturePlan } from "../entities/fixture-plan.ts";
+import type { SeriesResolutionMode } from "../entities/fixture-plan.ts";
 
 export interface CompetitionFixtureSourceSnapshot {
   readonly organizationId: OrganizationId;
@@ -11,6 +12,10 @@ export interface CompetitionFixtureSourceSnapshot {
   readonly officialMatchCounts: {
     readonly regular: 1 | 2;
     readonly knockout: 1 | 2;
+  };
+  readonly resolutionModes: {
+    readonly regular: SeriesResolutionMode;
+    readonly knockout: SeriesResolutionMode;
   };
   readonly approvedParticipants: readonly TeamId[];
 }

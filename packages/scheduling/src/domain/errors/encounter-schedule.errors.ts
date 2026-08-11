@@ -19,9 +19,18 @@ export class EncounterScheduleNotFound extends TaggedError("EncounterScheduleNot
   encounterId: EncounterId;
 }> {}
 
+export class FixtureManagedEncounterConflict extends TaggedError(
+  "FixtureManagedEncounterConflict",
+)<{
+  code: "scheduling.fixture_managed_conflict";
+  message: string;
+  encounterId: EncounterId;
+}> {}
+
 export type UpsertEncounterScheduleError =
   | EncounterScheduleAuthorizationForbidden
-  | InvalidEncounterSchedule;
+  | InvalidEncounterSchedule
+  | FixtureManagedEncounterConflict;
 
 export type MaterializeOfficialMatchesError =
   | EncounterScheduleAuthorizationForbidden

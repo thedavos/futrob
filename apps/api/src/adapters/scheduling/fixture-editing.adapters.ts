@@ -4,6 +4,7 @@ import type {
   FixtureEncounterEditGuardPort,
   OfficialMatchRepository,
 } from "@futrob/scheduling";
+import type { OfficialResultRepository } from "@futrob/results";
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
@@ -12,14 +13,14 @@ export class InMemoryFixtureAuditPort implements FixtureAuditPort {
 
   async findByRequestId(
     organizationId: FixtureAuditEntry["organizationId"],
-    encounterId: FixtureAuditEntry["encounterId"],
+    competitionId: FixtureAuditEntry["competitionId"],
     requestId: string,
   ): Promise<FixtureAuditEntry | null> {
     return (
       this.rows.find(
         (row) =>
           row.organizationId === organizationId &&
-          row.encounterId === encounterId &&
+          row.competitionId === competitionId &&
           row.requestId === requestId,
       ) ?? null
     );
@@ -30,8 +31,8 @@ export class InMemoryFixtureAuditPort implements FixtureAuditPort {
       this.rows.some(
         (row) =>
           row.organizationId === entry.organizationId &&
-          row.requestId === entry.requestId &&
-          row.encounterId === entry.encounterId,
+          row.competitionId === entry.competitionId &&
+          row.requestId === entry.requestId,
       )
     ) {
       return;
@@ -45,15 +46,15 @@ export class PostgresFixtureAuditPort implements FixtureAuditPort {
 
   async findByRequestId(
     organizationId: FixtureAuditEntry["organizationId"],
-    encounterId: FixtureAuditEntry["encounterId"],
+    competitionId: FixtureAuditEntry["competitionId"],
     requestId: string,
   ): Promise<FixtureAuditEntry | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT organization_id, competition_id, fixture_plan_id, encounter_id, actor_id,
               request_id, reason, occurred_at, before_state, after_state
        FROM fixture_encounter_audit
-       WHERE organization_id = $1 AND encounter_id = $2 AND request_id = $3`,
-      [organizationId, encounterId, requestId],
+       WHERE organization_id = $1 AND competition_id = $2 AND request_id = $3`,
+      [organizationId, competitionId, requestId],
     );
     const row = result.rows[0] as AuditRow | undefined;
     return row
@@ -78,7 +79,7 @@ export class PostgresFixtureAuditPort implements FixtureAuditPort {
          organization_id, competition_id, fixture_plan_id, encounter_id, actor_id,
          request_id, reason, occurred_at, before_state, after_state
        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb)
-       ON CONFLICT (organization_id, request_id, encounter_id) DO NOTHING`,
+       ON CONFLICT (organization_id, competition_id, request_id) DO NOTHING`,
       [
         entry.organizationId,
         entry.competitionId,
@@ -115,11 +116,20 @@ function fixtureEncounter(
   return { ...parsed, scheduledStartAt: new Date(parsed.scheduledStartAt) };
 }
 
-export class OfficialMatchFixtureEditGuard implements FixtureEncounterEditGuardPort {
-  constructor(private readonly matches: OfficialMatchRepository) {}
+export class OfficialResultFixtureEditGuard implements FixtureEncounterEditGuardPort {
+  constructor(
+    private readonly matches: OfficialMatchRepository,
+    private readonly results: Pick<OfficialResultRepository, "findApprovedByEncounter">,
+  ) {}
 
   async canEdit(input: Parameters<FixtureEncounterEditGuardPort["canEdit"]>[0]): Promise<boolean> {
-    const matches = await this.matches.listByEncounter(input.encounterId);
-    return matches.every((match) => match.status !== "completed" && match.status !== "voided");
+    const [matches, approvedResult] = await Promise.all([
+      this.matches.listByEncounter(input.encounterId),
+      this.results.findApprovedByEncounter(input.encounterId),
+    ]);
+    return (
+      !approvedResult &&
+      matches.every((match) => match.status !== "completed" && match.status !== "voided")
+    );
   }
 }

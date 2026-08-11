@@ -2,6 +2,7 @@ import type {
   Brand,
   CompetitionId,
   EncounterId,
+  OfficialMatchSlotId,
   OrganizationId,
   TeamId,
 } from "@futrob/shared-kernel";
@@ -9,6 +10,16 @@ import type {
 export type FixtureFormat = "league" | "knockout" | "groups-knockout" | "league-playoffs";
 export type FixtureStageId = Brand<string, "FixtureStageId">;
 export type FixtureRoundId = Brand<string, "FixtureRoundId">;
+export type SeriesResolutionMode = "independent_matches" | "aggregate_score";
+
+export interface FixtureSeries {
+  readonly id: string;
+  readonly resolutionMode: SeriesResolutionMode;
+  readonly officialMatches: readonly {
+    readonly id: OfficialMatchSlotId;
+    readonly slot: 1 | 2;
+  }[];
+}
 
 export type FixtureParticipantSlot =
   | { readonly kind: "team"; readonly teamId: TeamId }
@@ -36,6 +47,7 @@ export interface FixtureEncounter {
   readonly away: FixtureParticipantSlot;
   readonly scheduledStartAt: Date;
   readonly officialMatchCount: 1 | 2;
+  readonly series: FixtureSeries | null;
 }
 
 export interface FixtureRound {
@@ -57,6 +69,7 @@ export interface FixturePlan {
   readonly id: string;
   readonly revision: number;
   readonly generationKey: string;
+  readonly generationFingerprint: string;
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
   readonly rulesVersion: number;
@@ -79,6 +92,10 @@ export interface FixtureGenerationSpec {
   readonly officialMatchCounts: {
     readonly regular: 1 | 2;
     readonly knockout: 1 | 2;
+  };
+  readonly resolutionModes: {
+    readonly regular: SeriesResolutionMode;
+    readonly knockout: SeriesResolutionMode;
   };
   readonly seed: readonly TeamId[];
   readonly homeAndAway: boolean;
