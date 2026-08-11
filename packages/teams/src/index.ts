@@ -33,6 +33,10 @@ export type { CompetitionRosterStateRepository } from "./domain/ports/competitio
 export type { ExternalClubConnectionRepository } from "./domain/ports/external-club-connection.repository.ts";
 export type { RosterCapacityPort } from "./domain/ports/roster-capacity.port.ts";
 export type {
+  RosterMutationPort,
+  RosterMutationScope,
+} from "./domain/ports/roster-mutation.port.ts";
+export type {
   RosterInvitationRepository,
   ClaimPendingOptions,
 } from "./domain/ports/roster-invitation.repository.ts";

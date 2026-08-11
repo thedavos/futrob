@@ -188,7 +188,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
   constructor(private readonly pool: Pool) {}
 
   async findById(id: string): Promise<CompetitionRosterMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships WHERE id = $1`,
@@ -203,7 +203,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     teamId: TeamId,
     id: string,
   ): Promise<CompetitionRosterMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -217,7 +217,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     playerProfileId: string,
     competitionId: CompetitionId,
   ): Promise<CompetitionRosterMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -232,7 +232,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     playerProfileId: string,
     competitionId: CompetitionId,
   ): Promise<CompetitionRosterMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -245,7 +245,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
   async listByPlayerProfile(
     playerProfileId: string,
   ): Promise<readonly CompetitionRosterMembership[]> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -261,7 +261,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     competitionId: CompetitionId,
     teamId: TeamId,
   ): Promise<readonly CompetitionRosterMembership[]> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -273,7 +273,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
   }
 
   async add(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO competition_roster_memberships (
          id, organization_id, competition_id, team_id, player_profile_id,
          game_account_id, role, created_at
@@ -297,7 +297,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
   }
 
   async update(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `UPDATE competition_roster_memberships
        SET role = $2, game_account_id = $3
        WHERE id = $1 AND organization_id = $4 AND competition_id = $5 AND team_id = $6

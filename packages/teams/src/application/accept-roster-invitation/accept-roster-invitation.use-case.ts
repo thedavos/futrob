@@ -21,6 +21,7 @@ import type { PlayerGameAccountRepository } from "../../domain/ports/player-game
 import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
 import type { RosterInvitationRepository } from "../../domain/ports/roster-invitation.repository.ts";
 import type { RosterInvitationTokenPort } from "../../domain/ports/roster-invitation-token.port.ts";
+import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { addToRosterUnchecked } from "../add-to-roster/add-to-roster.use-case.ts";
 import type { IdGeneratorPort } from "@futrob/shared-kernel";
@@ -53,6 +54,7 @@ export class AcceptRosterInvitationUseCase {
       readonly ensurePlayerProfile: EnsurePlayerProfileUseCase;
       readonly accounts: PlayerGameAccountRepository;
       readonly ids: IdGeneratorPort;
+      readonly mutations: RosterMutationPort;
     },
   ) {}
 
@@ -60,6 +62,31 @@ export class AcceptRosterInvitationUseCase {
     input: AcceptRosterInvitationInput,
   ): Promise<Result<CompetitionRosterMembership, AcceptRosterInvitationError>> {
     const tokenHash = this.deps.tokens.hashToken(input.token);
+    const invitation = await this.deps.invitations.findByTokenHash(tokenHash);
+
+    if (!invitation) {
+      return err(
+        new RosterInvitationNotFound({
+          code: "teams.roster_invitation_not_found",
+          message: "Roster invitation not found",
+        }),
+      );
+    }
+
+    return this.deps.mutations.runExclusive(
+      {
+        organizationId: invitation.organizationId,
+        competitionId: invitation.competitionId,
+        teamId: invitation.teamId,
+      },
+      () => this.acceptLocked(input, tokenHash),
+    );
+  }
+
+  private async acceptLocked(
+    input: AcceptRosterInvitationInput,
+    tokenHash: string,
+  ): Promise<Result<CompetitionRosterMembership, AcceptRosterInvitationError>> {
     const invitation = await this.deps.invitations.findByTokenHash(tokenHash);
 
     if (!invitation) {

@@ -18,6 +18,7 @@ import {
   type ChangeRosterRoleError,
 } from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterMembershipRepository } from "../../domain/ports/competition-roster-membership.repository.ts";
+import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
 
 export interface ChangeRosterRoleInput {
@@ -34,6 +35,7 @@ export class ChangeRosterRoleUseCase {
     private readonly deps: {
       readonly authorization: AuthorizationPort;
       readonly rosters: CompetitionRosterMembershipRepository;
+      readonly mutations: RosterMutationPort;
     },
   ) {}
 
@@ -58,6 +60,19 @@ export class ChangeRosterRoleUseCase {
         }),
       );
     }
+    return this.deps.mutations.runExclusive(
+      {
+        organizationId: input.organizationId,
+        competitionId: input.competitionId,
+        teamId: input.teamId,
+      },
+      () => this.updateRole(input),
+    );
+  }
+
+  private async updateRole(
+    input: ChangeRosterRoleInput,
+  ): Promise<Result<CompetitionRosterMembership, ChangeRosterRoleError>> {
     const membership = await this.deps.rosters.findByIdInScope(
       input.organizationId,
       input.competitionId,

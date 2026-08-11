@@ -26,6 +26,7 @@ import type { CompetitionRosterMembershipRepository } from "../../domain/ports/c
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
+import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
 import { teamPermissionError } from "../require-team-permission.ts";
@@ -120,6 +121,13 @@ export async function addToRosterUnchecked(
     }
   }
 
+  if (input.role === "captain") {
+    const previousCaptain = currentMembers.find((member) => member.role === "captain");
+    if (previousCaptain) {
+      await deps.rosters.update({ ...previousCaptain, role: "player" });
+    }
+  }
+
   return ok(
     await deps.rosters.add({
       id: deps.ids.generate(),
@@ -145,6 +153,7 @@ export class AddToRosterUseCase {
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
       readonly authorization: AuthorizationPort;
+      readonly mutations: RosterMutationPort;
     },
   ) {}
 
@@ -162,6 +171,13 @@ export class AddToRosterUseCase {
       },
     });
     if (forbidden) return err(forbidden);
-    return addToRosterUnchecked(this.deps, input);
+    return this.deps.mutations.runExclusive(
+      {
+        organizationId: input.organizationId,
+        competitionId: input.competitionId,
+        teamId: input.teamId,
+      },
+      () => addToRosterUnchecked(this.deps, input),
+    );
   }
 }

@@ -84,6 +84,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     pool: input.pool,
     competitions: competitionRepository,
     authorization: deferredAuthorization,
+    transaction,
   });
   const competitions = createCompetitionsModule({
     pool: input.pool,
