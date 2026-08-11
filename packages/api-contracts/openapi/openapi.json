@@ -54,9 +54,7 @@
     "/meta/ping": {
       "get": {
         "operationId": "metaPing",
-        "tags": [
-          "meta"
-        ],
+        "tags": ["meta"],
         "summary": "Health ping",
         "security": [],
         "responses": {
@@ -76,9 +74,7 @@
     "/openapi.json": {
       "get": {
         "operationId": "getOpenApiJson",
-        "tags": [
-          "meta"
-        ],
+        "tags": ["meta"],
         "summary": "OpenAPI document (JSON)",
         "security": [],
         "responses": {
@@ -98,9 +94,7 @@
     "/openapi.yaml": {
       "get": {
         "operationId": "getOpenApiYaml",
-        "tags": [
-          "meta"
-        ],
+        "tags": ["meta"],
         "summary": "OpenAPI document (YAML)",
         "security": [],
         "responses": {
@@ -120,11 +114,12 @@
     "/game-data/clubs/search": {
       "get": {
         "operationId": "searchExternalClubs",
-        "tags": [
-          "game-data"
-        ],
+        "tags": ["game-data"],
         "summary": "Search external clubs via a game-data provider",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "query",
             "in": "query",
@@ -140,11 +135,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "ea-clubs",
-                "manual",
-                "screenshot-ocr"
-              ],
+              "enum": ["ea-clubs", "manual", "screenshot-ocr"],
               "default": "ea-clubs"
             }
           },
@@ -170,6 +161,11 @@
         "responses": {
           "200": {
             "description": "Matching clubs",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -190,11 +186,12 @@
     "/game-data/clubs/{externalClubId}": {
       "get": {
         "operationId": "getExternalClub",
-        "tags": [
-          "game-data"
-        ],
+        "tags": ["game-data"],
         "summary": "Get external club info",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "externalClubId",
             "in": "path",
@@ -209,11 +206,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "ea-clubs",
-                "manual",
-                "screenshot-ocr"
-              ],
+              "enum": ["ea-clubs", "manual", "screenshot-ocr"],
               "default": "ea-clubs"
             }
           },
@@ -239,6 +232,11 @@
         "responses": {
           "200": {
             "description": "Club",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -262,11 +260,12 @@
     "/game-data/clubs/{externalClubId}/matches": {
       "get": {
         "operationId": "getRecentProviderMatches",
-        "tags": [
-          "game-data"
-        ],
+        "tags": ["game-data"],
         "summary": "List recent provider matches for a club",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
           {
             "name": "externalClubId",
             "in": "path",
@@ -281,11 +280,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "ea-clubs",
-                "manual",
-                "screenshot-ocr"
-              ],
+              "enum": ["ea-clubs", "manual", "screenshot-ocr"],
               "default": "ea-clubs"
             }
           },
@@ -331,6 +326,11 @@
         "responses": {
           "200": {
             "description": "Matches",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -351,9 +351,7 @@
     "/players/me": {
       "get": {
         "operationId": "getMyPlayerProfile",
-        "tags": [
-          "players"
-        ],
+        "tags": ["players"],
         "summary": "Get the authenticated actor player profile",
         "responses": {
           "200": {
@@ -375,9 +373,7 @@
     "/players/me/game-accounts": {
       "post": {
         "operationId": "addMyPlayerGameAccount",
-        "tags": [
-          "players"
-        ],
+        "tags": ["players"],
         "summary": "Add a declared EA game identifier to the personal profile",
         "requestBody": {
           "required": true,
@@ -412,9 +408,7 @@
     "/players/me/statistics": {
       "get": {
         "operationId": "getMyStatistics",
-        "tags": [
-          "players"
-        ],
+        "tags": ["players"],
         "summary": "Get personal official statistics for the authenticated player",
         "responses": {
           "200": {
@@ -436,9 +430,7 @@
     "/players/me/matches": {
       "get": {
         "operationId": "getMyMatches",
-        "tags": [
-          "players"
-        ],
+        "tags": ["players"],
         "summary": "List personal match contributions projected from approved official results",
         "parameters": [
           {
@@ -494,13 +486,21 @@
     "/identity/onboarding": {
       "get": {
         "operationId": "getOnboardingStatus",
-        "tags": [
-          "onboarding"
-        ],
+        "tags": ["onboarding"],
         "summary": "Get the authenticated actor onboarding state",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Current onboarding state",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -516,30 +516,26 @@
       },
       "patch": {
         "operationId": "saveOnboardingProgress",
-        "tags": [
-          "onboarding"
-        ],
+        "tags": ["onboarding"],
         "summary": "Persist the current onboarding path and step without draft data",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "path",
-                  "currentStep"
-                ],
+                "required": ["path", "currentStep"],
                 "properties": {
                   "path": {
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [
-                          "player",
-                          "organization",
-                          "invitation"
-                        ]
+                        "enum": ["player", "organization", "invitation"]
                       },
                       {
                         "type": "null"
@@ -567,6 +563,11 @@
         "responses": {
           "200": {
             "description": "Saved onboarding state",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -587,20 +588,20 @@
     "/identity/onboarding/organization": {
       "post": {
         "operationId": "completeOrganizationOnboarding",
-        "tags": [
-          "onboarding"
-        ],
+        "tags": ["onboarding"],
         "summary": "Create an organization and complete the organization onboarding path",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "competition"
-                ],
+                "required": ["name", "competition"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -628,6 +629,11 @@
         "responses": {
           "200": {
             "description": "Completed organization onboarding",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -651,19 +657,20 @@
     "/identity/onboarding/invitation": {
       "post": {
         "operationId": "completeInvitationOnboarding",
-        "tags": [
-          "onboarding"
-        ],
+        "tags": ["onboarding"],
         "summary": "Accept an invitation and complete the invitation onboarding path",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "token"
-                ],
+                "required": ["token"],
                 "properties": {
                   "token": {
                     "type": "string",
@@ -687,6 +694,11 @@
         "responses": {
           "200": {
             "description": "Completed invitation onboarding",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -713,10 +725,13 @@
     "/identity/onboarding/player": {
       "post": {
         "operationId": "completePlayerOnboarding",
-        "tags": [
-          "onboarding"
-        ],
+        "tags": ["onboarding"],
         "summary": "Create a personal profile and complete the player onboarding path",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -752,6 +767,11 @@
         "responses": {
           "200": {
             "description": "Completed player onboarding",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -775,19 +795,20 @@
     "/organizations/name-availability": {
       "post": {
         "operationId": "checkOrganizationNameAvailability",
-        "tags": [
-          "organizations"
-        ],
+        "tags": ["organizations"],
         "summary": "Check whether a normalized organization name is globally available",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name"
-                ],
+                "required": ["name"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -802,13 +823,16 @@
         "responses": {
           "200": {
             "description": "Name availability",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "available"
-                  ],
+                  "required": ["available"],
                   "properties": {
                     "available": {
                       "type": "boolean"
@@ -830,9 +854,7 @@
     "/competitions/invitations/accept": {
       "post": {
         "operationId": "acceptCompetitionInvitation",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "Accept a competition invitation and join its contextual membership",
         "requestBody": {
           "required": true,
@@ -840,9 +862,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "token"
-                ],
+                "required": ["token"],
                 "properties": {
                   "token": {
                     "type": "string",
@@ -879,9 +899,7 @@
     "/organizations/{organizationId}/competitions": {
       "get": {
         "operationId": "listOrganizationCompetitions",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "List competitions in an organization",
         "parameters": [
           {
@@ -900,9 +918,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "competitions"
-                  ],
+                  "required": ["competitions"],
                   "properties": {
                     "competitions": {
                       "type": "array",
@@ -925,9 +941,7 @@
       },
       "post": {
         "operationId": "createCompetitionDraft",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "Create a competition draft in an organization",
         "parameters": [
           {
@@ -975,9 +989,7 @@
     "/competitions/mine": {
       "get": {
         "operationId": "listAccessibleCompetitions",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "List competitions where the actor has a contextual membership",
         "responses": {
           "200": {
@@ -999,9 +1011,7 @@
     "/encounters/{encounterId}/schedule-snapshot": {
       "get": {
         "operationId": "getEncounterScheduleSnapshot",
-        "tags": [
-          "encounters"
-        ],
+        "tags": ["encounters"],
         "summary": "Get the authorized persisted scheduling snapshot for an encounter",
         "parameters": [
           {
@@ -1034,9 +1044,7 @@
       },
       "put": {
         "operationId": "upsertEncounterScheduleSnapshot",
-        "tags": [
-          "encounters"
-        ],
+        "tags": ["encounters"],
         "summary": "Create or update the persisted scheduling projection",
         "parameters": [
           {
@@ -1081,10 +1089,7 @@
                   },
                   "officialMatchCount": {
                     "type": "integer",
-                    "enum": [
-                      1,
-                      2
-                    ]
+                    "enum": [1, 2]
                   }
                 }
               }
@@ -1117,9 +1122,7 @@
     "/organizations/{organizationId}/competitions/{competitionId}": {
       "get": {
         "operationId": "getCompetitionDraft",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "Get an organization-scoped competition draft",
         "parameters": [
           {
@@ -1163,9 +1166,7 @@
       },
       "patch": {
         "operationId": "updateCompetitionDraft",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "Update the editable structure and rules of a competition draft",
         "parameters": [
           {
@@ -1224,9 +1225,7 @@
     "/organizations/{organizationId}/teams": {
       "get": {
         "operationId": "listOrganizationTeams",
-        "tags": [
-          "teams"
-        ],
+        "tags": ["teams"],
         "summary": "List teams available to the organization operator",
         "parameters": [
           {
@@ -1245,9 +1244,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "teams"
-                  ],
+                  "required": ["teams"],
                   "properties": {
                     "teams": {
                       "type": "array",
@@ -1269,9 +1266,7 @@
     "/organizations/{organizationId}/competitions/{competitionId}/participants": {
       "get": {
         "operationId": "listCompetitionParticipants",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "List draft participants",
         "parameters": [
           {
@@ -1298,9 +1293,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "participants"
-                  ],
+                  "required": ["participants"],
                   "properties": {
                     "participants": {
                       "type": "array",
@@ -1320,9 +1313,7 @@
       },
       "post": {
         "operationId": "addCompetitionParticipant",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "Add an approved existing or inline-created Team",
         "parameters": [
           {
@@ -1378,9 +1369,7 @@
     "/organizations/{organizationId}/competitions/{competitionId}/participants/{entryId}": {
       "delete": {
         "operationId": "removeCompetitionParticipant",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "Remove a participant while the competition is a draft",
         "parameters": [
           {
@@ -1427,9 +1416,7 @@
     "/organizations/{organizationId}/competitions/{competitionId}/publish": {
       "post": {
         "operationId": "publishCompetition",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "Publish and structurally lock a valid draft with at least two approved participants",
         "parameters": [
           {
@@ -1475,9 +1462,7 @@
     "/organizations/{organizationId}/competitions/{competitionId}/invitations": {
       "post": {
         "operationId": "createCompetitionInvitation",
-        "tags": [
-          "competitions"
-        ],
+        "tags": ["competitions"],
         "summary": "Create an invitation scoped to a competition",
         "parameters": [
           {
@@ -1503,17 +1488,11 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "role"
-                ],
+                "required": ["role"],
                 "properties": {
                   "role": {
                     "type": "string",
-                    "enum": [
-                      "staff",
-                      "captain",
-                      "player"
-                    ]
+                    "enum": ["staff", "captain", "player"]
                   },
                   "email": {
                     "type": "string",
@@ -1525,10 +1504,7 @@
                   },
                   "redeemPolicy": {
                     "type": "string",
-                    "enum": [
-                      "single",
-                      "multi"
-                    ]
+                    "enum": ["single", "multi"]
                   },
                   "maxRedemptions": {
                     "type": "integer",
@@ -1571,10 +1547,7 @@
                     },
                     "redeemPolicy": {
                       "type": "string",
-                      "enum": [
-                        "single",
-                        "multi"
-                      ]
+                      "enum": ["single", "multi"]
                     },
                     "maxRedemptions": {
                       "type": "integer",
@@ -1604,9 +1577,7 @@
     "/authorization/effective-access": {
       "get": {
         "operationId": "getEffectiveAccess",
-        "tags": [
-          "authorization"
-        ],
+        "tags": ["authorization"],
         "summary": "Resolve the authenticated actor's effective permissions",
         "parameters": [
           {
@@ -1668,9 +1639,7 @@
     "/authorization/grants": {
       "get": {
         "operationId": "listAccessGrants",
-        "tags": [
-          "authorization"
-        ],
+        "tags": ["authorization"],
         "summary": "List contextual grants in an authorized scope",
         "parameters": [
           {
@@ -1714,13 +1683,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "platform",
-                "organization",
-                "competition",
-                "team",
-                "encounter"
-              ]
+              "enum": ["platform", "organization", "competition", "team", "encounter"]
             }
           },
           {
@@ -1739,9 +1702,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "grants"
-                  ],
+                  "required": ["grants"],
                   "properties": {
                     "grants": {
                       "type": "array",
@@ -1764,9 +1725,7 @@
       },
       "put": {
         "operationId": "upsertAccessGrant",
-        "tags": [
-          "authorization"
-        ],
+        "tags": ["authorization"],
         "summary": "Create or replace a contextual allow/deny override",
         "requestBody": {
           "required": true,
@@ -1804,9 +1763,7 @@
     "/authorization/grants/{grantId}": {
       "delete": {
         "operationId": "deleteAccessGrant",
-        "tags": [
-          "authorization"
-        ],
+        "tags": ["authorization"],
         "summary": "Delete a contextual override",
         "parameters": [
           {
@@ -1870,9 +1827,7 @@
     "/organizations/{organizationId}/members/{actorId}/role": {
       "patch": {
         "operationId": "changeOrganizationRole",
-        "tags": [
-          "authorization"
-        ],
+        "tags": ["authorization"],
         "summary": "Change an organization membership role",
         "parameters": [
           {
@@ -1921,9 +1876,7 @@
     "/organizations/{organizationId}/competitions/{competitionId}/members/{actorId}/role": {
       "patch": {
         "operationId": "changeCompetitionRole",
-        "tags": [
-          "authorization"
-        ],
+        "tags": ["authorization"],
         "summary": "Change a competition membership role",
         "parameters": [
           {
@@ -1984,9 +1937,7 @@
     "/authorization/superusers/{actorId}": {
       "put": {
         "operationId": "assignSuperuser",
-        "tags": [
-          "authorization"
-        ],
+        "tags": ["authorization"],
         "summary": "Assign an audited platform superuser",
         "parameters": [
           {
@@ -2009,9 +1960,7 @@
       },
       "delete": {
         "operationId": "revokeSuperuser",
-        "tags": [
-          "authorization"
-        ],
+        "tags": ["authorization"],
         "summary": "Revoke an audited platform superuser",
         "parameters": [
           {
@@ -2046,15 +1995,31 @@
         "description": "Optional in MVP scaffold; required when identity is wired."
       }
     },
+    "parameters": {
+      "RequestId": {
+        "name": "X-Request-ID",
+        "in": "header",
+        "required": false,
+        "description": "Optional caller-supplied UUID. Invalid values are replaced; the effective value is returned in the response.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "headers": {
+      "RequestId": {
+        "description": "Correlation UUID for support and operational diagnostics.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
     "schemas": {
       "EffectiveAccess": {
         "type": "object",
-        "required": [
-          "actorId",
-          "scope",
-          "roles",
-          "permissions"
-        ],
+        "required": ["actorId", "scope", "roles", "permissions"],
         "properties": {
           "actorId": {
             "type": "string"
@@ -2080,21 +2045,11 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "scopeType",
-                "scopeId",
-                "role"
-              ],
+              "required": ["scopeType", "scopeId", "role"],
               "properties": {
                 "scopeType": {
                   "type": "string",
-                  "enum": [
-                    "platform",
-                    "organization",
-                    "competition",
-                    "team",
-                    "encounter"
-                  ]
+                  "enum": ["platform", "organization", "competition", "team", "encounter"]
                 },
                 "scopeId": {
                   "type": "string"
@@ -2109,11 +2064,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "permission",
-                "allowed",
-                "decidedAt"
-              ],
+              "required": ["permission", "allowed", "decidedAt"],
               "properties": {
                 "permission": {
                   "type": "string"
@@ -2123,13 +2074,7 @@
                 },
                 "decidedAt": {
                   "type": "string",
-                  "enum": [
-                    "platform",
-                    "organization",
-                    "competition",
-                    "team",
-                    "encounter"
-                  ]
+                  "enum": ["platform", "organization", "competition", "team", "encounter"]
                 }
               }
             }
@@ -2155,10 +2100,7 @@
             "type": "string"
           },
           "organizationId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "competitionId": {
             "type": "string"
@@ -2174,20 +2116,11 @@
           },
           "effect": {
             "type": "string",
-            "enum": [
-              "allow",
-              "deny"
-            ]
+            "enum": ["allow", "deny"]
           },
           "scopeType": {
             "type": "string",
-            "enum": [
-              "platform",
-              "organization",
-              "competition",
-              "team",
-              "encounter"
-            ]
+            "enum": ["platform", "organization", "competition", "team", "encounter"]
           },
           "scopeId": {
             "type": "string"
@@ -2218,10 +2151,7 @@
             "type": "string"
           },
           "organizationId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "actorId": {
             "type": "string"
@@ -2231,20 +2161,11 @@
           },
           "effect": {
             "type": "string",
-            "enum": [
-              "allow",
-              "deny"
-            ]
+            "enum": ["allow", "deny"]
           },
           "scopeType": {
             "type": "string",
-            "enum": [
-              "platform",
-              "organization",
-              "competition",
-              "team",
-              "encounter"
-            ]
+            "enum": ["platform", "organization", "competition", "team", "encounter"]
           },
           "scopeId": {
             "type": "string"
@@ -2253,10 +2174,7 @@
             "type": "string"
           },
           "reason": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "createdAt": {
             "type": "string",
@@ -2270,17 +2188,11 @@
       },
       "ChangeOrganizationRoleRequest": {
         "type": "object",
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "properties": {
           "role": {
             "type": "string",
-            "enum": [
-              "organizer",
-              "staff",
-              "member"
-            ]
+            "enum": ["organizer", "staff", "member"]
           },
           "reason": {
             "type": "string",
@@ -2290,17 +2202,11 @@
       },
       "ChangeCompetitionRoleRequest": {
         "type": "object",
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "properties": {
           "role": {
             "type": "string",
-            "enum": [
-              "staff",
-              "captain",
-              "player"
-            ]
+            "enum": ["staff", "captain", "player"]
           },
           "reason": {
             "type": "string",
@@ -2310,13 +2216,7 @@
       },
       "CompetitionRoleAssignment": {
         "type": "object",
-        "required": [
-          "organizationId",
-          "competitionId",
-          "actorId",
-          "role",
-          "createdAt"
-        ],
+        "required": ["organizationId", "competitionId", "actorId", "role", "createdAt"],
         "properties": {
           "organizationId": {
             "type": "string"
@@ -2329,11 +2229,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "staff",
-              "captain",
-              "player"
-            ]
+            "enum": ["staff", "captain", "player"]
           },
           "createdAt": {
             "type": "string",
@@ -2343,11 +2239,7 @@
       },
       "PingResponse": {
         "type": "object",
-        "required": [
-          "ok",
-          "service",
-          "apiVersion"
-        ],
+        "required": ["ok", "service", "apiVersion"],
         "properties": {
           "ok": {
             "type": "boolean",
@@ -2365,10 +2257,7 @@
       },
       "ApiError": {
         "type": "object",
-        "required": [
-          "code",
-          "messageKey"
-        ],
+        "required": ["code", "messageKey"],
         "properties": {
           "code": {
             "type": "string"
@@ -2377,7 +2266,8 @@
             "type": "string"
           },
           "requestId": {
-            "type": "string"
+            "type": "string",
+            "format": "uuid"
           },
           "details": {
             "type": "object",
@@ -2424,11 +2314,7 @@
         "properties": {
           "providerKey": {
             "type": "string",
-            "enum": [
-              "ea-clubs",
-              "manual",
-              "screenshot-ocr"
-            ]
+            "enum": ["ea-clubs", "manual", "screenshot-ocr"]
           },
           "externalClubId": {
             "type": "string"
@@ -2443,44 +2329,25 @@
             "type": "string"
           },
           "imageUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "uri"
           }
         }
       },
       "ProviderMatch": {
         "type": "object",
-        "required": [
-          "id",
-          "provider",
-          "game",
-          "occurredAt",
-          "home",
-          "away",
-          "players",
-          "metadata"
-        ],
+        "required": ["id", "provider", "game", "occurredAt", "home", "away", "players", "metadata"],
         "properties": {
           "id": {
             "type": "string"
           },
           "provider": {
             "type": "object",
-            "required": [
-              "key",
-              "externalMatchId"
-            ],
+            "required": ["key", "externalMatchId"],
             "properties": {
               "key": {
                 "type": "string",
-                "enum": [
-                  "ea-clubs",
-                  "manual",
-                  "screenshot-ocr"
-                ]
+                "enum": ["ea-clubs", "manual", "screenshot-ocr"]
               },
               "externalMatchId": {
                 "type": "string"
@@ -2489,11 +2356,7 @@
           },
           "game": {
             "type": "object",
-            "required": [
-              "edition",
-              "platform",
-              "mode"
-            ],
+            "required": ["edition", "platform", "mode"],
             "properties": {
               "edition": {
                 "type": "string"
@@ -2524,18 +2387,10 @@
           },
           "metadata": {
             "type": "object",
-            "required": [
-              "durationSeconds",
-              "wasDisconnected",
-              "winnerByForfeit",
-              "completeness"
-            ],
+            "required": ["durationSeconds", "wasDisconnected", "winnerByForfeit", "completeness"],
             "properties": {
               "durationSeconds": {
-                "type": [
-                  "number",
-                  "null"
-                ]
+                "type": ["number", "null"]
               },
               "wasDisconnected": {
                 "type": "boolean"
@@ -2545,11 +2400,7 @@
               },
               "completeness": {
                 "type": "string",
-                "enum": [
-                  "complete",
-                  "partial",
-                  "unknown"
-                ]
+                "enum": ["complete", "partial", "unknown"]
               }
             }
           }
@@ -2557,11 +2408,7 @@
       },
       "ProviderMatchTeam": {
         "type": "object",
-        "required": [
-          "externalClubId",
-          "name",
-          "goals"
-        ],
+        "required": ["externalClubId", "name", "goals"],
         "properties": {
           "externalClubId": {
             "type": "string"
@@ -2606,96 +2453,52 @@
             "type": "string"
           },
           "position": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "minutesPlayed": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "goals": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "assists": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "shots": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "passAttempts": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "passesMade": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "tackleAttempts": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "tacklesMade": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "saves": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "yellowCards": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "redCards": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "isMvp": {
-            "type": [
-              "boolean",
-              "null"
-            ]
+            "type": ["boolean", "null"]
           },
           "rating": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           }
         }
       },
       "SearchClubsResponse": {
         "type": "object",
-        "required": [
-          "clubs"
-        ],
+        "required": ["clubs"],
         "properties": {
           "clubs": {
             "type": "array",
@@ -2707,9 +2510,7 @@
       },
       "GetClubMatchesResponse": {
         "type": "object",
-        "required": [
-          "matches"
-        ],
+        "required": ["matches"],
         "properties": {
           "matches": {
             "type": "array",
@@ -2721,14 +2522,7 @@
       },
       "CompetitionDraftInput": {
         "type": "object",
-        "required": [
-          "name",
-          "gameEdition",
-          "platform",
-          "region",
-          "timeZone",
-          "format"
-        ],
+        "required": ["name", "gameEdition", "platform", "region", "timeZone", "format"],
         "properties": {
           "name": {
             "type": "string",
@@ -2742,13 +2536,7 @@
           },
           "platform": {
             "type": "string",
-            "enum": [
-              "playstation",
-              "xbox",
-              "pc",
-              "nintendo-switch-1",
-              "nintendo-switch-2"
-            ]
+            "enum": ["playstation", "xbox", "pc", "nintendo-switch-1", "nintendo-switch-2"]
           },
           "region": {
             "type": "string",
@@ -2770,12 +2558,7 @@
           },
           "format": {
             "type": "string",
-            "enum": [
-              "league",
-              "knockout",
-              "groups-knockout",
-              "league-playoffs"
-            ]
+            "enum": ["league", "knockout", "groups-knockout", "league-playoffs"]
           }
         }
       },
@@ -2796,17 +2579,11 @@
         "properties": {
           "officialMatchesPerEncounter": {
             "type": "integer",
-            "enum": [
-              1,
-              2
-            ]
+            "enum": [1, 2]
           },
           "resolutionMode": {
             "type": "string",
-            "enum": [
-              "independent_matches",
-              "aggregate_score"
-            ]
+            "enum": ["independent_matches", "aggregate_score"]
           },
           "winPoints": {
             "type": "number"
@@ -2821,10 +2598,7 @@
             "type": "boolean"
           },
           "maxReschedulesPerTeam": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "minimum": 0
           },
           "minimumRescheduleNoticeHours": {
@@ -2867,13 +2641,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published",
-              "paused",
-              "finished",
-              "archived"
-            ]
+            "enum": ["draft", "published", "paused", "finished", "archived"]
           },
           "modality": {
             "type": "string",
@@ -2884,13 +2652,7 @@
           },
           "platform": {
             "type": "string",
-            "enum": [
-              "playstation",
-              "xbox",
-              "pc",
-              "nintendo-switch-1",
-              "nintendo-switch-2"
-            ]
+            "enum": ["playstation", "xbox", "pc", "nintendo-switch-1", "nintendo-switch-2"]
           },
           "region": {
             "type": "string",
@@ -2910,12 +2672,7 @@
           },
           "format": {
             "type": "string",
-            "enum": [
-              "league",
-              "knockout",
-              "groups-knockout",
-              "league-playoffs"
-            ]
+            "enum": ["league", "knockout", "groups-knockout", "league-playoffs"]
           },
           "createdAt": {
             "type": "string",
@@ -2929,30 +2686,20 @@
       },
       "ListAccessibleCompetitionsResponse": {
         "type": "object",
-        "required": [
-          "competitions"
-        ],
+        "required": ["competitions"],
         "properties": {
           "competitions": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "competition",
-                "role"
-              ],
+              "required": ["competition", "role"],
               "properties": {
                 "competition": {
                   "$ref": "#/components/schemas/Competition"
                 },
                 "role": {
                   "type": "string",
-                  "enum": [
-                    "staff",
-                    "captain",
-                    "vice_captain",
-                    "player"
-                  ]
+                  "enum": ["staff", "captain", "vice_captain", "player"]
                 }
               }
             }
@@ -2995,28 +2742,16 @@
           },
           "officialMatchCount": {
             "type": "integer",
-            "enum": [
-              1,
-              2
-            ]
+            "enum": [1, 2]
           },
           "homeExternalClubId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "awayExternalClubId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "providerKey": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
@@ -3078,10 +2813,7 @@
       },
       "CompetitionDraft": {
         "type": "object",
-        "required": [
-          "competition",
-          "rules"
-        ],
+        "required": ["competition", "rules"],
         "properties": {
           "competition": {
             "$ref": "#/components/schemas/Competition"
@@ -3098,17 +2830,11 @@
           },
           {
             "type": "object",
-            "required": [
-              "rules"
-            ],
+            "required": ["rules"],
             "properties": {
               "rules": {
                 "type": "object",
-                "required": [
-                  "regularStage",
-                  "knockoutStage",
-                  "maxRosterSize"
-                ],
+                "required": ["regularStage", "knockoutStage", "maxRosterSize"],
                 "properties": {
                   "regularStage": {
                     "anyOf": [
@@ -3149,12 +2875,7 @@
       },
       "Team": {
         "type": "object",
-        "required": [
-          "id",
-          "organizationId",
-          "name",
-          "createdAt"
-        ],
+        "required": ["id", "organizationId", "name", "createdAt"],
         "properties": {
           "id": {
             "type": "string"
@@ -3173,14 +2894,7 @@
       },
       "CompetitionEntry": {
         "type": "object",
-        "required": [
-          "id",
-          "organizationId",
-          "competitionId",
-          "teamId",
-          "status",
-          "createdAt"
-        ],
+        "required": ["id", "organizationId", "competitionId", "teamId", "status", "createdAt"],
         "properties": {
           "id": {
             "type": "string"
@@ -3196,11 +2910,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "pending",
-              "approved",
-              "rejected"
-            ]
+            "enum": ["pending", "approved", "rejected"]
           },
           "createdAt": {
             "type": "string",
@@ -3212,10 +2922,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "kind",
-              "teamId"
-            ],
+            "required": ["kind", "teamId"],
             "properties": {
               "kind": {
                 "type": "string",
@@ -3228,11 +2935,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "kind",
-              "name",
-              "creationKey"
-            ],
+            "required": ["kind", "name", "creationKey"],
             "properties": {
               "kind": {
                 "type": "string",
@@ -3254,10 +2957,7 @@
       },
       "PlayerProfile": {
         "type": "object",
-        "required": [
-          "id",
-          "createdAt"
-        ],
+        "required": ["id", "createdAt"],
         "properties": {
           "id": {
             "type": "string"
@@ -3270,11 +2970,7 @@
       },
       "PlayerGameAccountInput": {
         "type": "object",
-        "required": [
-          "identifier",
-          "platform",
-          "gameEdition"
-        ],
+        "required": ["identifier", "platform", "gameEdition"],
         "properties": {
           "identifier": {
             "type": "string",
@@ -3284,13 +2980,7 @@
           },
           "platform": {
             "type": "string",
-            "enum": [
-              "playstation",
-              "xbox",
-              "pc",
-              "nintendo-switch-1",
-              "nintendo-switch-2"
-            ],
+            "enum": ["playstation", "xbox", "pc", "nintendo-switch-1", "nintendo-switch-2"],
             "description": "Platform context required by the EA API"
           },
           "gameEdition": {
@@ -3330,21 +3020,12 @@
             "description": "EA player identifier used to correlate matches and statistics"
           },
           "providerExternalPlayerId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "description": "Stable EA player id distinct from the declared gamertag"
           },
           "platform": {
             "type": "string",
-            "enum": [
-              "playstation",
-              "xbox",
-              "pc",
-              "nintendo-switch-1",
-              "nintendo-switch-2"
-            ],
+            "enum": ["playstation", "xbox", "pc", "nintendo-switch-1", "nintendo-switch-2"],
             "description": "Platform context used for EA API requests"
           },
           "gameEdition": {
@@ -3359,11 +3040,7 @@
       },
       "GetMyPlayerProfileResponse": {
         "type": "object",
-        "required": [
-          "profile",
-          "gameAccounts",
-          "externalClub"
-        ],
+        "required": ["profile", "gameAccounts", "externalClub"],
         "properties": {
           "profile": {
             "anyOf": [
@@ -3445,19 +3122,13 @@
           "averages": {
             "type": "object",
             "additionalProperties": {
-              "type": [
-                "number",
-                "null"
-              ]
+              "type": ["number", "null"]
             }
           },
           "per90": {
             "type": "object",
             "additionalProperties": {
-              "type": [
-                "number",
-                "null"
-              ]
+              "type": ["number", "null"]
             }
           },
           "partial": {
@@ -3478,9 +3149,7 @@
       },
       "GetMyStatisticsResponse": {
         "type": "object",
-        "required": [
-          "statistics"
-        ],
+        "required": ["statistics"],
         "properties": {
           "statistics": {
             "anyOf": [
@@ -3547,18 +3216,11 @@
           },
           "officialSlot": {
             "type": "integer",
-            "enum": [
-              1,
-              2
-            ]
+            "enum": [1, 2]
           },
           "correlationStatus": {
             "type": "string",
-            "enum": [
-              "matched",
-              "unmatched",
-              "ambiguous"
-            ]
+            "enum": ["matched", "unmatched", "ambiguous"]
           },
           "externalPlayerId": {
             "type": "string"
@@ -3576,97 +3238,52 @@
             "type": "string"
           },
           "position": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "minutesPlayed": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "goals": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "assists": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "shots": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "passAttempts": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "passesMade": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "tackleAttempts": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "tacklesMade": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "saves": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "yellowCards": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "redCards": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "isMvp": {
-            "type": [
-              "boolean",
-              "null"
-            ]
+            "type": ["boolean", "null"]
           },
           "rating": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           }
         }
       },
       "GetMyMatchesResponse": {
         "type": "object",
-        "required": [
-          "matches",
-          "nextCursor"
-        ],
+        "required": ["matches", "nextCursor"],
         "properties": {
           "matches": {
             "type": "array",
@@ -3675,29 +3292,17 @@
             }
           },
           "nextCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
       "PlayerExternalClubSelectionInput": {
         "type": "object",
-        "required": [
-          "providerKey",
-          "externalClubId",
-          "platform",
-          "gameEdition"
-        ],
+        "required": ["providerKey", "externalClubId", "platform", "gameEdition"],
         "properties": {
           "providerKey": {
             "type": "string",
-            "enum": [
-              "ea-clubs",
-              "manual",
-              "screenshot-ocr"
-            ]
+            "enum": ["ea-clubs", "manual", "screenshot-ocr"]
           },
           "externalClubId": {
             "type": "string",
@@ -3734,11 +3339,7 @@
           },
           "providerKey": {
             "type": "string",
-            "enum": [
-              "ea-clubs",
-              "manual",
-              "screenshot-ocr"
-            ]
+            "enum": ["ea-clubs", "manual", "screenshot-ocr"]
           },
           "externalClubId": {
             "type": "string"
@@ -3753,10 +3354,7 @@
             "type": "string"
           },
           "imageUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "uri"
           },
           "associatedAt": {
@@ -3767,10 +3365,7 @@
       },
       "AddMyPlayerGameAccountResponse": {
         "type": "object",
-        "required": [
-          "profile",
-          "gameAccount"
-        ],
+        "required": ["profile", "gameAccount"],
         "properties": {
           "profile": {
             "$ref": "#/components/schemas/PlayerProfile"
@@ -3782,40 +3377,24 @@
       },
       "OnboardingStatus": {
         "type": "object",
-        "required": [
-          "completed",
-          "completedAt",
-          "version",
-          "path",
-          "currentStep"
-        ],
+        "required": ["completed", "completedAt", "version", "path", "currentStep"],
         "properties": {
           "completed": {
             "type": "boolean"
           },
           "completedAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "version": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "minimum": 1
           },
           "path": {
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "player",
-                  "organization",
-                  "invitation"
-                ]
+                "enum": ["player", "organization", "invitation"]
               },
               {
                 "type": "null"
@@ -3884,11 +3463,7 @@
           },
           "destination": {
             "type": "object",
-            "required": [
-              "kind",
-              "organizationId",
-              "competitionId"
-            ],
+            "required": ["kind", "organizationId", "competitionId"],
             "properties": {
               "kind": {
                 "type": "string",
@@ -3925,11 +3500,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "organizer",
-              "staff",
-              "member"
-            ]
+            "enum": ["organizer", "staff", "member"]
           },
           "competitionId": {
             "type": "string"
@@ -3952,11 +3523,7 @@
           },
           "destination": {
             "type": "object",
-            "required": [
-              "kind",
-              "organizationId",
-              "competitionId"
-            ],
+            "required": ["kind", "organizationId", "competitionId"],
             "properties": {
               "kind": {
                 "type": "string",
@@ -3991,11 +3558,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "organizer",
-              "staff",
-              "member"
-            ]
+            "enum": ["organizer", "staff", "member"]
           },
           "competitionId": {
             "type": "string"
@@ -4005,19 +3568,11 @@
           },
           "competitionRole": {
             "type": "string",
-            "enum": [
-              "staff",
-              "captain",
-              "player"
-            ]
+            "enum": ["staff", "captain", "player"]
           },
           "destination": {
             "type": "object",
-            "required": [
-              "kind",
-              "organizationId",
-              "competitionId"
-            ],
+            "required": ["kind", "organizationId", "competitionId"],
             "properties": {
               "kind": {
                 "type": "string",
@@ -4035,12 +3590,7 @@
       },
       "CompletePlayerOnboardingResponse": {
         "type": "object",
-        "required": [
-          "profile",
-          "gameAccount",
-          "externalClub",
-          "destination"
-        ],
+        "required": ["profile", "gameAccount", "externalClub", "destination"],
         "properties": {
           "profile": {
             "$ref": "#/components/schemas/PlayerProfile"
@@ -4075,6 +3625,11 @@
     "responses": {
       "ApiError": {
         "description": "API error",
+        "headers": {
+          "X-Request-ID": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
         "content": {
           "application/json": {
             "schema": {

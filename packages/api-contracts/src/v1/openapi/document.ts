@@ -111,6 +111,7 @@ export const futrobOpenApiV1 = {
         tags: ["game-data"],
         summary: "Search external clubs via a game-data provider",
         parameters: [
+          { $ref: "#/components/parameters/RequestId" },
           {
             name: "query",
             in: "query",
@@ -143,6 +144,7 @@ export const futrobOpenApiV1 = {
         responses: {
           "200": {
             description: "Matching clubs",
+            headers: { "X-Request-ID": { $ref: "#/components/headers/RequestId" } },
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/SearchClubsResponse" },
@@ -160,6 +162,7 @@ export const futrobOpenApiV1 = {
         tags: ["game-data"],
         summary: "Get external club info",
         parameters: [
+          { $ref: "#/components/parameters/RequestId" },
           {
             name: "externalClubId",
             in: "path",
@@ -192,6 +195,7 @@ export const futrobOpenApiV1 = {
         responses: {
           "200": {
             description: "Club",
+            headers: { "X-Request-ID": { $ref: "#/components/headers/RequestId" } },
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ExternalClub" },
@@ -210,6 +214,7 @@ export const futrobOpenApiV1 = {
         tags: ["game-data"],
         summary: "List recent provider matches for a club",
         parameters: [
+          { $ref: "#/components/parameters/RequestId" },
           {
             name: "externalClubId",
             in: "path",
@@ -254,6 +259,7 @@ export const futrobOpenApiV1 = {
         responses: {
           "200": {
             description: "Matches",
+            headers: { "X-Request-ID": { $ref: "#/components/headers/RequestId" } },
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/GetClubMatchesResponse" },
@@ -372,9 +378,11 @@ export const futrobOpenApiV1 = {
         operationId: "getOnboardingStatus",
         tags: ["onboarding"],
         summary: "Get the authenticated actor onboarding state",
+        parameters: [{ $ref: "#/components/parameters/RequestId" }],
         responses: {
           "200": {
             description: "Current onboarding state",
+            headers: { "X-Request-ID": { $ref: "#/components/headers/RequestId" } },
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/OnboardingStatus" } },
             },
@@ -386,6 +394,7 @@ export const futrobOpenApiV1 = {
         operationId: "saveOnboardingProgress",
         tags: ["onboarding"],
         summary: "Persist the current onboarding path and step without draft data",
+        parameters: [{ $ref: "#/components/parameters/RequestId" }],
         requestBody: {
           required: true,
           content: {
@@ -421,6 +430,7 @@ export const futrobOpenApiV1 = {
         responses: {
           "200": {
             description: "Saved onboarding state",
+            headers: { "X-Request-ID": { $ref: "#/components/headers/RequestId" } },
             content: {
               "application/json": { schema: { $ref: "#/components/schemas/OnboardingStatus" } },
             },
@@ -435,6 +445,7 @@ export const futrobOpenApiV1 = {
         operationId: "completeOrganizationOnboarding",
         tags: ["onboarding"],
         summary: "Create an organization and complete the organization onboarding path",
+        parameters: [{ $ref: "#/components/parameters/RequestId" }],
         requestBody: {
           required: true,
           content: {
@@ -459,6 +470,7 @@ export const futrobOpenApiV1 = {
         responses: {
           "200": {
             description: "Completed organization onboarding",
+            headers: { "X-Request-ID": { $ref: "#/components/headers/RequestId" } },
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/CompleteOrganizationOnboardingResponse" },
@@ -476,6 +488,7 @@ export const futrobOpenApiV1 = {
         operationId: "completeInvitationOnboarding",
         tags: ["onboarding"],
         summary: "Accept an invitation and complete the invitation onboarding path",
+        parameters: [{ $ref: "#/components/parameters/RequestId" }],
         requestBody: {
           required: true,
           content: {
@@ -499,6 +512,7 @@ export const futrobOpenApiV1 = {
         responses: {
           "200": {
             description: "Completed invitation onboarding",
+            headers: { "X-Request-ID": { $ref: "#/components/headers/RequestId" } },
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/CompleteInvitationOnboardingResponse" },
@@ -517,6 +531,7 @@ export const futrobOpenApiV1 = {
         operationId: "completePlayerOnboarding",
         tags: ["onboarding"],
         summary: "Create a personal profile and complete the player onboarding path",
+        parameters: [{ $ref: "#/components/parameters/RequestId" }],
         requestBody: {
           required: true,
           content: {
@@ -544,6 +559,7 @@ export const futrobOpenApiV1 = {
         responses: {
           "200": {
             description: "Completed player onboarding",
+            headers: { "X-Request-ID": { $ref: "#/components/headers/RequestId" } },
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/CompletePlayerOnboardingResponse" },
@@ -561,6 +577,7 @@ export const futrobOpenApiV1 = {
         operationId: "checkOrganizationNameAvailability",
         tags: ["organizations"],
         summary: "Check whether a normalized organization name is globally available",
+        parameters: [{ $ref: "#/components/parameters/RequestId" }],
         requestBody: {
           required: true,
           content: {
@@ -576,6 +593,7 @@ export const futrobOpenApiV1 = {
         responses: {
           "200": {
             description: "Name availability",
+            headers: { "X-Request-ID": { $ref: "#/components/headers/RequestId" } },
             content: {
               "application/json": {
                 schema: {
@@ -1216,6 +1234,22 @@ export const futrobOpenApiV1 = {
         description: "Optional in MVP scaffold; required when identity is wired.",
       },
     },
+    parameters: {
+      RequestId: {
+        name: "X-Request-ID",
+        in: "header",
+        required: false,
+        description:
+          "Optional caller-supplied UUID. Invalid values are replaced; the effective value is returned in the response.",
+        schema: { type: "string", format: "uuid" },
+      },
+    },
+    headers: {
+      RequestId: {
+        description: "Correlation UUID for support and operational diagnostics.",
+        schema: { type: "string", format: "uuid" },
+      },
+    },
     schemas: {
       EffectiveAccess: {
         type: "object",
@@ -1364,7 +1398,7 @@ export const futrobOpenApiV1 = {
         properties: {
           code: { type: "string" },
           messageKey: { type: "string" },
-          requestId: { type: "string" },
+          requestId: { type: "string", format: "uuid" },
           details: {
             type: "object",
             additionalProperties: false,
@@ -2194,6 +2228,9 @@ export const futrobOpenApiV1 = {
     responses: {
       ApiError: {
         description: "API error",
+        headers: {
+          "X-Request-ID": { $ref: "#/components/headers/RequestId" },
+        },
         content: {
           "application/json": {
             schema: { $ref: "#/components/schemas/ApiError" },

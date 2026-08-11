@@ -76,6 +76,7 @@ paths:
         - game-data
       summary: Search external clubs via a game-data provider
       parameters:
+        - $ref: "#/components/parameters/RequestId"
         - name: query
           in: query
           required: true
@@ -107,6 +108,9 @@ paths:
       responses:
         "200":
           description: Matching clubs
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -122,6 +126,7 @@ paths:
         - game-data
       summary: Get external club info
       parameters:
+        - $ref: "#/components/parameters/RequestId"
         - name: externalClubId
           in: path
           required: true
@@ -152,6 +157,9 @@ paths:
       responses:
         "200":
           description: Club
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -169,6 +177,7 @@ paths:
         - game-data
       summary: List recent provider matches for a club
       parameters:
+        - $ref: "#/components/parameters/RequestId"
         - name: externalClubId
           in: path
           required: true
@@ -213,6 +222,9 @@ paths:
       responses:
         "200":
           description: Matches
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -319,9 +331,14 @@ paths:
       tags:
         - onboarding
       summary: Get the authenticated actor onboarding state
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
       responses:
         "200":
           description: Current onboarding state
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -333,6 +350,8 @@ paths:
       tags:
         - onboarding
       summary: Persist the current onboarding path and step without draft data
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
       requestBody:
         required: true
         content:
@@ -365,6 +384,9 @@ paths:
       responses:
         "200":
           description: Saved onboarding state
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -379,6 +401,8 @@ paths:
       tags:
         - onboarding
       summary: Create an organization and complete the organization onboarding path
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
       requestBody:
         required: true
         content:
@@ -402,6 +426,9 @@ paths:
       responses:
         "200":
           description: Completed organization onboarding
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -418,6 +445,8 @@ paths:
       tags:
         - onboarding
       summary: Accept an invitation and complete the invitation onboarding path
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
       requestBody:
         required: true
         content:
@@ -437,6 +466,9 @@ paths:
       responses:
         "200":
           description: Completed invitation onboarding
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -455,6 +487,8 @@ paths:
       tags:
         - onboarding
       summary: Create a personal profile and complete the player onboarding path
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
       requestBody:
         required: true
         content:
@@ -473,6 +507,9 @@ paths:
       responses:
         "200":
           description: Completed player onboarding
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -489,6 +526,8 @@ paths:
       tags:
         - organizations
       summary: Check whether a normalized organization name is globally available
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
       requestBody:
         required: true
         content:
@@ -505,6 +544,9 @@ paths:
       responses:
         "200":
           description: Name availability
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -1290,6 +1332,22 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Optional in MVP scaffold; required when identity is wired.
+  parameters:
+    RequestId:
+      name: X-Request-ID
+      in: header
+      required: false
+      description: Optional caller-supplied UUID. Invalid values are replaced; the
+        effective value is returned in the response.
+      schema:
+        type: string
+        format: uuid
+  headers:
+    RequestId:
+      description: Correlation UUID for support and operational diagnostics.
+      schema:
+        type: string
+        format: uuid
   schemas:
     EffectiveAccess:
       type: object
@@ -1531,6 +1589,7 @@ components:
           type: string
         requestId:
           type: string
+          format: uuid
         details:
           type: object
           additionalProperties: false
@@ -2712,6 +2771,9 @@ components:
   responses:
     ApiError:
       description: API error
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
       content:
         application/json:
           schema:
