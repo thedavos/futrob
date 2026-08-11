@@ -13,11 +13,16 @@ import {
   readFormString,
 } from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { WarningCircleIcon, CheckCircleIcon } from "@phosphor-icons/react";
+import { CheckCircleIcon } from "@phosphor-icons/react";
 import { resolveSafeRedirect } from "@/modules/identity/presentation/safe-redirect.ts";
 import { TeamsClientError } from "@/modules/teams/presentation/teams-browser-client.ts";
 import { useAcceptRosterInvitationMutation } from "@/modules/teams/presentation/player-queries.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import {
+  SupportErrorAlert,
+  type SupportError,
+} from "@/shared/presentation/support-error-alert.tsx";
+import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 
 type AcceptRosterInvitationValues = {
   token: string;
@@ -51,16 +56,17 @@ export function AcceptRosterInvitationForm(props: {
   readonly autoAccept?: boolean;
 }) {
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SupportError | null>(null);
   const [accepted, setAccepted] = useState(false);
   const validation = useFormValidation<AcceptRosterInvitationField>();
   const acceptInvitation = useAcceptRosterInvitationMutation();
   const submitting = acceptInvitation.isPending;
   const autoAttempted = useRef(false);
+  const retry = useRetryAfterCountdown();
 
   async function acceptToken(token: string) {
     const trimmed = token.trim();
-    if (trimmed.length === 0) return;
+    if (trimmed.length === 0 || retry.blocked) return;
 
     setError(null);
     validation.clearServerErrors();
@@ -71,9 +77,16 @@ export function AcceptRosterInvitationForm(props: {
       await navigate({ to: "/player" });
     } catch (caught) {
       if (caught instanceof TeamsClientError) {
-        setError(rosterInvitationErrorMessage(caught.code));
+        retry.start(caught.retryAfterSeconds);
+        setError({
+          message: caught.retryAfterSeconds
+            ? "Alcanzaste el límite temporal de invitaciones."
+            : rosterInvitationErrorMessage(caught.code),
+          requestId: caught.requestId,
+          retryAfterSeconds: caught.retryAfterSeconds,
+        });
       } else {
-        setError("No se pudo unirte a la plantilla. Inténtalo de nuevo.");
+        setError({ message: "No se pudo unirte a la plantilla. Inténtalo de nuevo." });
       }
     }
   }
@@ -86,6 +99,10 @@ export function AcceptRosterInvitationForm(props: {
 
   async function handleSubmit(formValues: AcceptRosterInvitationValues) {
     await acceptToken(formValues.token);
+  }
+
+  function retryInitialToken() {
+    if (props.initialToken !== undefined) void acceptToken(props.initialToken);
   }
 
   if (accepted) {
@@ -113,10 +130,9 @@ export function AcceptRosterInvitationForm(props: {
       onFormSubmit={handleSubmit}
     >
       {error ? (
-        <Alert variant="destructive">
-          <WarningCircleIcon aria-hidden="true" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <SupportErrorAlert
+          error={{ ...error, retryAfterSeconds: retry.remainingSeconds || undefined }}
+        />
       ) : null}
 
       {props.initialToken === undefined ? (
@@ -141,8 +157,18 @@ export function AcceptRosterInvitationForm(props: {
         </Field>
       ) : null}
 
-      <Button disabled={submitting} type="submit">
-        Unirme a la plantilla
+      <Button
+        disabled={submitting || retry.blocked}
+        onClick={props.initialToken === undefined ? undefined : retryInitialToken}
+        type={props.initialToken === undefined ? "submit" : "button"}
+      >
+        {submitting
+          ? "Procesando…"
+          : retry.blocked
+            ? `Reintentar en ${retry.remainingSeconds} s`
+            : error && props.initialToken !== undefined
+              ? "Reintentar invitación"
+              : "Unirme a la plantilla"}
       </Button>
 
       <p className="typo-caption text-muted-foreground">

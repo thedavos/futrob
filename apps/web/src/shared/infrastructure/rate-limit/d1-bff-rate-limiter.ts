@@ -21,6 +21,11 @@ DO UPDATE SET request_count = request_count + 1
 RETURNING request_count
 `;
 
+const PURGE_EXPIRED_WINDOWS_SQL = `
+DELETE FROM app_rate_limit_windows
+WHERE window_started_at < ?
+`;
+
 type CounterResult = Readonly<{
   results: readonly Readonly<{ request_count: number }>[];
 }>;
@@ -29,6 +34,7 @@ export class D1BffRateLimiter implements BffRateLimiter {
   private readonly database: AppD1Database;
   private readonly fingerprintSecret: string;
   private readonly policies: BffRateLimitPolicies;
+  private readonly maxPolicyWindowMs: number;
 
   constructor(
     input: Readonly<{
@@ -40,6 +46,8 @@ export class D1BffRateLimiter implements BffRateLimiter {
     this.database = input.database;
     this.fingerprintSecret = input.fingerprintSecret;
     this.policies = input.policies;
+    this.maxPolicyWindowMs =
+      Math.max(...Object.values(input.policies).map((policy) => policy.windowSeconds)) * 1000;
   }
 
   async check(attempt: RateLimitAttempt): Promise<RateLimitDecision> {
@@ -54,7 +62,10 @@ export class D1BffRateLimiter implements BffRateLimiter {
       "actor",
       attempt.actorId,
     );
-    const [actor, ip] = await this.database.batch<CounterResult>([
+    const retentionCutoff =
+      Math.floor(attempt.nowMs / this.maxPolicyWindowMs) * this.maxPolicyWindowMs;
+    const [, actor, ip] = await this.database.batch<CounterResult>([
+      this.database.prepare(PURGE_EXPIRED_WINDOWS_SQL).bind(retentionCutoff),
       this.database
         .prepare(INCREMENT_WINDOW_SQL)
         .bind(attempt.policy, "actor", actorFingerprint, windowStartedAt),

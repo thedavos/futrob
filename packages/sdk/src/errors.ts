@@ -24,3 +24,9 @@ export function parseApiErrorBody(data: unknown): ApiErrorBody | null {
   const parsed = apiErrorSchema.safeParse(data);
   return parsed.success ? parsed.data : null;
 }
+
+export function parseRetryAfterSeconds(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  const seconds = Number(raw);
+  return Number.isSafeInteger(seconds) && seconds > 0 ? seconds : undefined;
+}
