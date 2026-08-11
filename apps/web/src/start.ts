@@ -18,11 +18,10 @@ export function shouldValidateCsrfRequest(handlerType: "router" | "serverFn"): b
   return handlerType === "serverFn";
 }
 
+export const csrfMiddleware = createCsrfMiddleware({
+  filter: ({ handlerType }) => shouldValidateCsrfRequest(handlerType),
+});
+
 export const startInstance = createStart(() => ({
-  requestMiddleware: [
-    bffRequestCorrelation,
-    createCsrfMiddleware({
-      filter: ({ handlerType }) => shouldValidateCsrfRequest(handlerType),
-    }),
-  ],
+  requestMiddleware: [bffRequestCorrelation, csrfMiddleware],
 }));

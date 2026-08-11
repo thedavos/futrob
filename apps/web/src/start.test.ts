@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { correlateBffApiRequest, shouldValidateCsrfRequest } from "./start.ts";
+import { correlateBffApiRequest, csrfMiddleware, shouldValidateCsrfRequest } from "./start.ts";
 
 describe("global BFF request correlation", () => {
   it("correlates a players route that previously omitted request IDs", async () => {
@@ -32,7 +32,28 @@ describe("global BFF request correlation", () => {
     expect(response.headers.get("x-request-id")).toBeNull();
   });
 
-  it("keeps router API requests outside server-function CSRF validation", () => {
+  it("lets an API router request without browser origin headers pass CSRF", async () => {
+    const request = new Request("https://futrob.test/api/v1/meta/ping");
+    const pathname = "/api/v1/meta/ping";
+    const runCsrf = csrfMiddleware.options.server;
+    if (!runCsrf) throw new Error("CSRF middleware is not configured");
+
+    const result = await runCsrf({
+      request,
+      pathname,
+      handlerType: "router",
+      context: undefined,
+      next: async () => ({
+        request,
+        pathname,
+        context: undefined,
+        response: Response.json({ ok: true }),
+      }),
+    } as never);
+    const response = result instanceof Response ? result : result.response;
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
     expect(shouldValidateCsrfRequest("router")).toBe(false);
     expect(shouldValidateCsrfRequest("serverFn")).toBe(true);
   });
