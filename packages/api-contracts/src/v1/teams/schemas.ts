@@ -1,5 +1,6 @@
 import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import { z } from "zod";
+import { competitionEntrySchema } from "../competitions/schemas.ts";
 
 export const gamePlatformSchema = z.enum(GAME_PLATFORM_VALUES);
 export type GamePlatformDto = z.infer<typeof gamePlatformSchema>;
@@ -223,3 +224,58 @@ export type AcceptRosterInvitationRequest = z.infer<typeof acceptRosterInvitatio
 
 export const acceptRosterInvitationResponseSchema = competitionRosterMembershipSchema;
 export type AcceptRosterInvitationResponse = z.infer<typeof acceptRosterInvitationResponseSchema>;
+
+export const competitionTeamManagementListQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(25),
+});
+export type CompetitionTeamManagementListQuery = z.infer<
+  typeof competitionTeamManagementListQuerySchema
+>;
+
+export const competitionTeamManagementRosterSchema = z.object({
+  state: z.enum(["open", "closed"]),
+  memberCount: z.number().int().nonnegative(),
+  maxSize: z.number().int().positive(),
+  lockedAt: z.string().datetime().nullable(),
+});
+export type CompetitionTeamManagementRosterDto = z.infer<
+  typeof competitionTeamManagementRosterSchema
+>;
+
+export const competitionTeamManagementSummarySchema = z.object({
+  team: teamSchema,
+  entry: competitionEntrySchema,
+  roster: competitionTeamManagementRosterSchema,
+  externalClub: teamExternalClubConnectionSchema.nullable(),
+});
+export type CompetitionTeamManagementSummaryDto = z.infer<
+  typeof competitionTeamManagementSummarySchema
+>;
+
+export const competitionTeamManagementMemberSchema = z.object({
+  membership: competitionRosterMembershipSchema,
+  presentation: z.object({
+    displayName: z.string().min(1),
+    avatarUrl: z.string().url().nullable(),
+  }),
+});
+export type CompetitionTeamManagementMemberDto = z.infer<
+  typeof competitionTeamManagementMemberSchema
+>;
+
+export const competitionTeamManagementListResponseSchema = z.object({
+  items: z.array(competitionTeamManagementSummarySchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+export type CompetitionTeamManagementListResponse = z.infer<
+  typeof competitionTeamManagementListResponseSchema
+>;
+
+export const competitionTeamManagementDetailResponseSchema =
+  competitionTeamManagementSummarySchema.extend({
+    members: z.array(competitionTeamManagementMemberSchema),
+  });
+export type CompetitionTeamManagementDetailResponse = z.infer<
+  typeof competitionTeamManagementDetailResponseSchema
+>;
