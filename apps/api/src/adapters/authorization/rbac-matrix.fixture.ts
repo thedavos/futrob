@@ -76,6 +76,7 @@ export type RbacMatrixIds = {
 
 export type RbacMatrixFixture = {
   readonly authorization: ContextualAuthorizationAdapter;
+  readonly entries: InMemoryCompetitionEntryRepository;
   readonly grants: ReturnType<typeof createInMemoryAuthorizationStore>["grants"];
   readonly ids: RbacMatrixIds;
   readonly actors: Record<RbacActorKey, ActorId>;
@@ -392,5 +393,5 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
     }
   };
 
-  return { authorization, grants: store.grants, ids, actors, scope };
+  return { authorization, entries, grants: store.grants, ids, actors, scope };
 }
