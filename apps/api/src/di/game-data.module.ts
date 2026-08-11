@@ -7,12 +7,15 @@ import {
   ListMatchesBetweenClubsUseCase,
   SearchExternalClubsUseCase,
   SyncRecentProviderMatchesUseCase,
+  ProviderHttpFailed,
+  ProviderUnavailable,
   type GameDataProviderPort,
   type ProviderMatchIngestionPort,
   type ProviderMatchRepository,
   type RawObservationRepository,
   type ProviderSyncJobRepository,
   type ProviderHealthPort,
+  type ProviderError,
 } from "@futrob/game-data";
 import type { ClockPort, IdGeneratorPort, TransactionPort } from "@futrob/shared-kernel";
 import { InMemoryGameDataProviderRegistry } from "@/adapters/game-data/internal.ts";
@@ -40,6 +43,7 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
     rawObservations: deps.rawObservations,
     matches: deps.providerMatches,
     ids: deps.ids,
+    transaction: deps.transaction,
   });
 
   return {
@@ -58,15 +62,12 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
     executeProviderSyncJob: new ExecuteProviderSyncJobUseCase({
       jobs: deps.jobs,
       sync: {
-        execute: (providerKey, input) =>
-          deps.transaction.runInTransaction(() =>
-            syncRecentProviderMatches.execute(providerKey, input),
-          ),
+        execute: (providerKey, input) => syncRecentProviderMatches.execute(providerKey, input),
       },
       ids: deps.ids,
       clock: deps.clock,
-      leaseMs: 30_000,
-      retryDelayMs: (_error, attempt) => Math.min(30_000, 1_000 * 2 ** (attempt - 1)),
+      leaseMs: 90_000,
+      retryDelayMs: providerJobRetryDelayMs,
     }),
     jobs: deps.jobs,
     registry,
@@ -74,3 +75,11 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
 }
 
 export type GameDataModule = ReturnType<typeof createGameDataModule>;
+
+export function providerJobRetryDelayMs(error: ProviderError, attempt: number): number {
+  if (ProviderUnavailable.is(error)) return error.retryAfterSeconds * 1_000;
+  if (ProviderHttpFailed.is(error) && error.retryAfterMs !== undefined) {
+    return error.retryAfterMs;
+  }
+  return Math.min(30_000, 1_000 * 2 ** (attempt - 1));
+}

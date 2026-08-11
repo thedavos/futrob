@@ -99,7 +99,7 @@ export class EaClubsHttpClient {
       probeLeaseExpiresAt: new Date(now.getTime() + 10_000),
     });
     if (!permission.allowed) {
-      await this.recordHealth(path, "circuit_open", operationStartedAt);
+      this.recordHealth(path, "circuit_open", operationStartedAt);
       return err(
         new ProviderUnavailable({
           code: "game_data.provider_unavailable",
@@ -109,15 +109,21 @@ export class EaClubsHttpClient {
       );
     }
     if (permission.state === "half_open") {
-      await this.recordHealth(path, "circuit_half_open", operationStartedAt);
+      this.recordHealth(path, "circuit_half_open", operationStartedAt);
     }
 
     let lastError: ProviderTransportError | undefined;
     for (let attempt = 1; attempt <= this.retry.maxAttempts; attempt += 1) {
       const result = await this.requestOnce(url, path, attempt);
       if (result.isOk()) {
-        await this.circuit.recordSuccess({ key: circuitKey, now: this.clock.now() });
-        await this.recordHealth(path, "success", operationStartedAt);
+        await this.circuit.recordSuccess({
+          key: circuitKey,
+          now: this.clock.now(),
+          ...(permission.state === "half_open"
+            ? { probeLeaseToken: permission.probeLeaseToken }
+            : {}),
+        });
+        this.recordHealth(path, "success", operationStartedAt);
         return result;
       }
       lastError = result.error;
@@ -129,6 +135,7 @@ export class EaClubsHttpClient {
         this.retry.maxDelayMs,
         this.retry.baseDelayMs * 2 ** (attempt - 1),
       );
+      if (retryAfterMs !== undefined && retryAfterMs > this.retry.maxDelayMs) break;
       await this.retry.sleep(retryAfterMs ?? Math.floor(exponential * this.retry.random()));
     }
     if (!lastError) throw new TypeError("Provider request completed without a result");
@@ -138,32 +145,30 @@ export class EaClubsHttpClient {
         now: this.clock.now(),
         failureThreshold: 3,
         cooldownMs: 60_000,
+        ...(permission.state === "half_open"
+          ? { probeLeaseToken: permission.probeLeaseToken }
+          : {}),
       });
     }
-    await this.recordHealth(path, healthOutcome(lastError), operationStartedAt);
+    this.recordHealth(path, healthOutcome(lastError), operationStartedAt);
     return err(lastError);
   }
 
-  private async recordHealth(
-    operation: string,
-    outcome: ProviderHealthOutcome,
-    startedAt: number,
-  ): Promise<void> {
+  private recordHealth(operation: string, outcome: ProviderHealthOutcome, startedAt: number): void {
     if (!this.health) return;
-    try {
-      await this.health.record({
-        id: randomUUID(),
-        providerKey: "ea-clubs",
-        operation,
-        outcome,
-        latencyMs: Math.max(0, Math.round(performance.now() - startedAt)),
-        occurredAt: this.clock.now(),
-        requestId: currentRequestCorrelation()?.requestId ?? null,
-        jobId: currentJobCorrelation() ?? null,
-      });
-    } catch {
+    const write = this.health.record({
+      id: randomUUID(),
+      providerKey: "ea-clubs",
+      operation,
+      outcome,
+      latencyMs: Math.max(0, Math.round(performance.now() - startedAt)),
+      occurredAt: this.clock.now(),
+      requestId: currentRequestCorrelation()?.requestId ?? null,
+      jobId: currentJobCorrelation() ?? null,
+    });
+    void write.catch(() => {
       logCorrelatedError("provider.health.record_failed", { provider: "ea-clubs", operation });
-    }
+    });
   }
 
   private async requestOnce(

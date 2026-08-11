@@ -7,6 +7,14 @@ import type {
 } from "@futrob/game-data";
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
+import type {
+  ProviderCircuitBreaker,
+  ProviderCircuitState,
+} from "@/adapters/game-data/resilience/provider-circuit-breaker.ts";
+
+const HEALTH_WINDOW_MS = 24 * 60 * 60 * 1_000;
+const HEALTH_RETENTION_DAYS = 30;
+const HEALTH_SAMPLE_LIMIT = 1_000;
 
 const failureOutcomes = new Set<ProviderHealthOutcome>([
   "timeout",
@@ -21,18 +29,31 @@ const failureOutcomes = new Set<ProviderHealthOutcome>([
 export class InMemoryProviderHealthRepository implements ProviderHealthPort {
   readonly events: ProviderHealthEvent[] = [];
 
+  constructor(
+    private readonly circuit?: ProviderCircuitBreaker,
+    private readonly clock: { now(): Date } = { now: () => new Date() },
+  ) {}
+
   record(event: ProviderHealthEvent): Promise<void> {
     this.events.push(event);
     return Promise.resolve();
   }
 
-  getSnapshot(providerKey: GameDataProviderKey): Promise<ProviderHealthSnapshot> {
-    return Promise.resolve(snapshotFromEvents(providerKey, this.events));
+  async getSnapshot(providerKey: GameDataProviderKey): Promise<ProviderHealthSnapshot> {
+    const now = this.clock.now();
+    return snapshotFromEvents(providerKey, this.events, {
+      now,
+      circuitState: await this.circuit?.getProviderState(providerKey, now),
+    });
   }
 }
 
 export class PostgresProviderHealthRepository implements ProviderHealthPort {
-  constructor(private readonly pool: Pool) {}
+  constructor(
+    private readonly pool: Pool,
+    private readonly circuit: ProviderCircuitBreaker,
+    private readonly clock: { now(): Date },
+  ) {}
 
   async record(event: ProviderHealthEvent): Promise<void> {
     await getPgExecutor(this.pool).query(
@@ -54,13 +75,20 @@ export class PostgresProviderHealthRepository implements ProviderHealthPort {
   }
 
   async getSnapshot(providerKey: GameDataProviderKey): Promise<ProviderHealthSnapshot> {
-    const result = await getPgExecutor(this.pool).query(
+    const executor = getPgExecutor(this.pool);
+    const now = this.clock.now();
+    await executor.query(
+      `DELETE FROM provider_health_events
+       WHERE occurred_at < $1::timestamptz - make_interval(days => $2)`,
+      [now.toISOString(), HEALTH_RETENTION_DAYS],
+    );
+    const result = await executor.query(
       `SELECT id, provider_key, operation, outcome, latency_ms, occurred_at, request_id, job_id
        FROM provider_health_events
-       WHERE provider_key = $1
+       WHERE provider_key = $1 AND occurred_at >= $2
        ORDER BY occurred_at DESC
-       LIMIT 1000`,
-      [providerKey],
+       LIMIT $3`,
+      [providerKey, new Date(now.getTime() - HEALTH_WINDOW_MS).toISOString(), HEALTH_SAMPLE_LIMIT],
     );
     return snapshotFromEvents(
       providerKey,
@@ -74,6 +102,10 @@ export class PostgresProviderHealthRepository implements ProviderHealthPort {
         requestId: row.request_id ? String(row.request_id) : null,
         jobId: row.job_id ? String(row.job_id) : null,
       })),
+      {
+        now,
+        circuitState: await this.circuit.getProviderState(providerKey, now),
+      },
     );
   }
 }
@@ -81,12 +113,21 @@ export class PostgresProviderHealthRepository implements ProviderHealthPort {
 export function snapshotFromEvents(
   providerKey: GameDataProviderKey,
   allEvents: readonly ProviderHealthEvent[],
+  options: { readonly now?: Date; readonly circuitState?: ProviderCircuitState } = {},
 ): ProviderHealthSnapshot {
-  const events = allEvents
-    .filter((event) => event.providerKey === providerKey)
+  const providerEvents = allEvents.filter((event) => event.providerKey === providerKey);
+  const now =
+    options.now ??
+    providerEvents.reduce(
+      (latest, event) => (event.occurredAt > latest ? event.occurredAt : latest),
+      new Date(0),
+    );
+  const windowStartedAt = new Date(now.getTime() - HEALTH_WINDOW_MS);
+  const events = providerEvents
+    .filter((event) => event.occurredAt >= windowStartedAt)
     .slice()
     .sort((left, right) => left.occurredAt.getTime() - right.occurredAt.getTime());
-  const observedAt = events.at(-1)?.occurredAt ?? new Date(0);
+  const observedAt = now;
   const successes = events.filter((event) => event.outcome === "success");
   const failures = events.filter((event) => failureOutcomes.has(event.outcome));
   const latestSuccess = successes.at(-1)?.occurredAt ?? null;
@@ -100,11 +141,13 @@ export function snapshotFromEvents(
     if (event.outcome === "success") circuitByOperation.set(event.operation, "closed");
   }
   const circuitStates = [...circuitByOperation.values()];
-  const circuitState = circuitStates.includes("open")
-    ? "open"
-    : circuitStates.includes("half_open")
-      ? "half_open"
-      : "closed";
+  const circuitState =
+    options.circuitState ??
+    (circuitStates.includes("open")
+      ? "open"
+      : circuitStates.includes("half_open")
+        ? "half_open"
+        : "closed");
   const unavailable = circuitState === "open";
   const degraded = Boolean(
     latestFailure && (!latestSuccess || latestFailure.getTime() > latestSuccess.getTime()),
@@ -120,16 +163,17 @@ export function snapshotFromEvents(
 
   return {
     providerKey,
-    status:
-      events.length === 0
-        ? "unknown"
-        : unavailable
-          ? "unavailable"
-          : degraded || circuitState === "half_open"
-            ? "degraded"
-            : "healthy",
+    status: unavailable
+      ? "unavailable"
+      : circuitState === "half_open" || degraded
+        ? "degraded"
+        : events.length === 0
+          ? "unknown"
+          : "healthy",
     circuitState,
     observedAt,
+    windowStartedAt,
+    sampleSize: events.length,
     lastSuccessfulAt: latestSuccess,
     lastFailureAt: latestFailure,
     averageLatencyMs,

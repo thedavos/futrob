@@ -30,6 +30,8 @@ export interface ProviderHealthSnapshot {
   readonly status: "healthy" | "degraded" | "unavailable" | "unknown";
   readonly circuitState: "closed" | "open" | "half_open";
   readonly observedAt: Date;
+  readonly windowStartedAt: Date;
+  readonly sampleSize: number;
   readonly lastSuccessfulAt: Date | null;
   readonly lastFailureAt: Date | null;
   readonly averageLatencyMs: number | null;

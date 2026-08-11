@@ -17,3 +17,6 @@ CREATE TABLE IF NOT EXISTS provider_health_events (
 
 CREATE INDEX IF NOT EXISTS provider_health_events_provider_time
   ON provider_health_events (provider_key, occurred_at DESC);
+
+CREATE INDEX IF NOT EXISTS provider_health_events_retention
+  ON provider_health_events (occurred_at);

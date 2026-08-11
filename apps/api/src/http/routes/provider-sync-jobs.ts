@@ -1,5 +1,8 @@
 import { Hono } from "hono";
-import { z } from "zod";
+import {
+  enqueueProviderSyncJobRequestSchema,
+  providerSyncJobResponseSchema,
+} from "@futrob/api-contracts";
 import type { ProviderSyncJob } from "@futrob/game-data";
 import type { AppDeps } from "@/app.ts";
 import {
@@ -11,22 +14,14 @@ import { validationErrorResponse } from "@/http/errors.ts";
 import { createInternalJobAuthMiddleware } from "@/http/middleware/service-auth.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
-const enqueueSchema = z.object({
-  organizationId: z.string().trim().min(1),
-  providerKey: z.literal("ea-clubs"),
-  externalClubId: z.string().trim().min(1),
-  platform: z.string().trim().min(1),
-  gameEdition: z.string().trim().min(1),
-  matchType: z.string().trim().min(1),
-  maxResultCount: z.number().int().min(1).max(100),
-});
-
 export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
   const internal = new Hono();
   internal.use("*", createInternalJobAuthMiddleware(deps.internalJobSecret));
 
   internal.post("/internal/game-data/sync-jobs", async (c) => {
-    const parsed = enqueueSchema.safeParse(await c.req.json().catch(() => null));
+    const parsed = enqueueProviderSyncJobRequestSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
     const input = parsed.data;
     const job = await deps.modules.gameData.enqueueProviderSyncJob.execute({
@@ -42,6 +37,11 @@ export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
       },
     });
     return jsonResponse(toSyncJobDto(job), 202);
+  });
+
+  internal.post("/internal/game-data/sync-jobs/run-next", async () => {
+    const job = await deps.modules.gameData.executeProviderSyncJob.execute();
+    return job ? jsonResponse(toSyncJobDto(job)) : new Response(null, { status: 204 });
   });
 
   internal.post("/internal/game-data/sync-jobs/:jobId/run", async (c) => {
@@ -64,7 +64,7 @@ export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
 }
 
 function toSyncJobDto(job: ProviderSyncJob) {
-  return {
+  return providerSyncJobResponseSchema.parse({
     id: job.id,
     organizationId: job.organizationId,
     providerKey: job.providerKey,
@@ -72,9 +72,14 @@ function toSyncJobDto(job: ProviderSyncJob) {
     attempt: job.attempt,
     maxAttempts: job.maxAttempts,
     requestId: job.requestId,
+    availableAt:
+      job.status === "queued" || job.status === "retry_scheduled"
+        ? job.availableAt.toISOString()
+        : null,
+    leaseExpiresAt: job.status === "running" ? job.leaseExpiresAt.toISOString() : null,
     updatedAt: job.updatedAt.toISOString(),
     ...(job.status === "retry_scheduled" || job.status === "dead"
       ? { lastErrorCode: job.lastErrorCode }
       : {}),
-  };
+  });
 }

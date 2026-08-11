@@ -1,4 +1,10 @@
-import { err, ok, type IdGeneratorPort, type Result } from "@futrob/shared-kernel";
+import {
+  err,
+  ok,
+  type IdGeneratorPort,
+  type Result,
+  type TransactionPort,
+} from "@futrob/shared-kernel";
 import type { ProviderMatch } from "../../domain/entities/provider-match.ts";
 import type { RawProviderObservation } from "../../domain/entities/raw-provider-observation.ts";
 import type { ProviderError } from "../../domain/errors/provider.errors.ts";
@@ -16,6 +22,7 @@ export class SyncRecentProviderMatchesUseCase {
       readonly rawObservations: RawObservationRepository;
       readonly matches: ProviderMatchRepository;
       readonly ids: IdGeneratorPort;
+      readonly transaction: TransactionPort;
     },
   ) {}
 
@@ -38,24 +45,26 @@ export class SyncRecentProviderMatchesUseCase {
       return err(ingested.error);
     }
 
-    for (const draft of ingested.value.observations) {
-      const observation: RawProviderObservation = {
-        id: this.deps.ids.generate(),
-        providerKey: draft.providerKey,
-        resourceType: draft.resourceType,
-        externalResourceId: draft.externalResourceId,
-        endpointKey: draft.endpointKey,
-        payloadHash: draft.payloadHash,
-        storageRef: draft.storageRef,
-        payload: draft.payload,
-        observedAt: draft.observedAt,
-        httpStatus: draft.httpStatus,
-        schemaVersion: draft.schemaVersion,
-      };
-      await this.deps.rawObservations.append(observation);
-    }
+    await this.deps.transaction.runInTransaction(async () => {
+      for (const draft of ingested.value.observations) {
+        const observation: RawProviderObservation = {
+          id: this.deps.ids.generate(),
+          providerKey: draft.providerKey,
+          resourceType: draft.resourceType,
+          externalResourceId: draft.externalResourceId,
+          endpointKey: draft.endpointKey,
+          payloadHash: draft.payloadHash,
+          storageRef: draft.storageRef,
+          payload: draft.payload,
+          observedAt: draft.observedAt,
+          httpStatus: draft.httpStatus,
+          schemaVersion: draft.schemaVersion,
+        };
+        await this.deps.rawObservations.append(observation);
+      }
 
-    await this.deps.matches.upsertMany(ingested.value.matches);
+      await this.deps.matches.upsertMany(ingested.value.matches);
+    });
     return ok(ingested.value.matches);
   }
 }

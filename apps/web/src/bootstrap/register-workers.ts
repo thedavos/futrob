@@ -6,7 +6,7 @@ import {
 export interface QueueMessage<T> {
   readonly body: T;
   ack(): void;
-  retry(): void;
+  retry(options?: { readonly delaySeconds?: number }): void;
 }
 
 export interface QueueBatch {
@@ -17,6 +17,7 @@ export function registerWorkers(deps: {
   readonly fetcher: typeof fetch;
   readonly apiBaseUrl: string;
   readonly internalJobSecret: string;
+  readonly now?: () => Date;
 }) {
   return {
     async queue(batch: QueueBatch): Promise<void> {
@@ -27,8 +28,12 @@ export function registerWorkers(deps: {
             return;
           }
           try {
-            await handleGameDataSyncJob(message.body, deps);
-            message.ack();
+            const result = await handleGameDataSyncJob(message.body, deps);
+            if (result.action === "ack") {
+              message.ack();
+            } else {
+              message.retry({ delaySeconds: result.delaySeconds });
+            }
           } catch {
             message.retry();
           }

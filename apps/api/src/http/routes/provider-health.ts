@@ -31,6 +31,7 @@ export function registerProviderHealthRoutes(app: Hono, deps: AppDeps): void {
       providerHealthResponseSchema.parse({
         ...snapshot,
         observedAt: snapshot.observedAt.toISOString(),
+        windowStartedAt: snapshot.windowStartedAt.toISOString(),
         lastSuccessfulAt: snapshot.lastSuccessfulAt?.toISOString() ?? null,
         lastFailureAt: snapshot.lastFailureAt?.toISOString() ?? null,
       }),

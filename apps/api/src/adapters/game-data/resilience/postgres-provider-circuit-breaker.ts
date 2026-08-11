@@ -9,6 +9,28 @@ import type {
 export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
   constructor(private readonly pool: Pool) {}
 
+  async getProviderState(providerKey: string, now: Date): Promise<ProviderCircuitState> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT state, opened_until
+       FROM provider_circuit_state
+       WHERE circuit_key LIKE $1 ESCAPE '\\'`,
+      [`${escapeLike(providerKey)}:%`],
+    );
+    const states = result.rows.map((row) => {
+      if (
+        row.state === "open" &&
+        row.opened_until &&
+        new Date(row.opened_until).getTime() <= now.getTime()
+      ) {
+        return "half_open";
+      }
+      return row.state as ProviderCircuitState;
+    });
+    if (states.includes("open")) return "open";
+    if (states.includes("half_open")) return "half_open";
+    return "closed";
+  }
+
   async beforeRequest(
     input: Parameters<ProviderCircuitBreaker["beforeRequest"]>[0],
   ): Promise<ProviderCircuitPermission> {
@@ -36,7 +58,13 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
         input.probeLeaseExpiresAt.toISOString(),
       ],
     );
-    if (probe.rows[0]) return { allowed: true, state: "half_open" };
+    if (probe.rows[0]) {
+      return {
+        allowed: true,
+        state: "half_open",
+        probeLeaseToken: input.probeLeaseToken,
+      };
+    }
 
     const result = await executor.query(
       `SELECT state, opened_until, probe_lease_expires_at
@@ -63,13 +91,24 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
   async recordSuccess(
     input: Parameters<ProviderCircuitBreaker["recordSuccess"]>[0],
   ): Promise<void> {
+    if (input.probeLeaseToken) {
+      await getPgExecutor(this.pool).query(
+        `UPDATE provider_circuit_state
+         SET state = 'closed', consecutive_failures = 0, opened_until = NULL,
+             probe_lease_token = NULL, probe_lease_expires_at = NULL, updated_at = $2
+         WHERE circuit_key = $1 AND state = 'half_open' AND probe_lease_token = $3`,
+        [input.key, input.now.toISOString(), input.probeLeaseToken],
+      );
+      return;
+    }
     await getPgExecutor(this.pool).query(
       `INSERT INTO provider_circuit_state (
          circuit_key, state, consecutive_failures, updated_at
        ) VALUES ($1, 'closed', 0, $2)
        ON CONFLICT (circuit_key) DO UPDATE SET
          state = 'closed', consecutive_failures = 0, opened_until = NULL,
-         probe_lease_token = NULL, probe_lease_expires_at = NULL, updated_at = $2`,
+         probe_lease_token = NULL, probe_lease_expires_at = NULL, updated_at = $2
+       WHERE provider_circuit_state.state = 'closed'`,
       [input.key, input.now.toISOString()],
     );
   }
@@ -77,6 +116,22 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
   async recordTransientFailure(
     input: Parameters<ProviderCircuitBreaker["recordTransientFailure"]>[0],
   ): Promise<void> {
+    if (input.probeLeaseToken) {
+      await getPgExecutor(this.pool).query(
+        `UPDATE provider_circuit_state
+         SET state = 'open', consecutive_failures = consecutive_failures + 1,
+             opened_until = $3, probe_lease_token = NULL,
+             probe_lease_expires_at = NULL, updated_at = $2
+         WHERE circuit_key = $1 AND state = 'half_open' AND probe_lease_token = $4`,
+        [
+          input.key,
+          input.now.toISOString(),
+          new Date(input.now.getTime() + input.cooldownMs).toISOString(),
+          input.probeLeaseToken,
+        ],
+      );
+      return;
+    }
     await getPgExecutor(this.pool).query(
       `INSERT INTO provider_circuit_state (
          circuit_key, state, consecutive_failures, opened_until, updated_at
@@ -99,7 +154,8 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
            THEN $4 ELSE NULL END,
          probe_lease_token = NULL,
          probe_lease_expires_at = NULL,
-         updated_at = $2`,
+         updated_at = $2
+       WHERE provider_circuit_state.state = 'closed'`,
       [
         input.key,
         input.now.toISOString(),
@@ -108,4 +164,8 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
       ],
     );
   }
+}
+
+function escapeLike(value: string): string {
+  return value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
 }

@@ -22,6 +22,9 @@ import {
   logCorrelatedInfo,
 } from "@/context/request-correlation.ts";
 
+const REFRESH_LEASE_MS = 45_000;
+const FOLLOWER_WAIT_MS = 35_000;
+
 export class CachedGameDataProviderAdapter
   implements GameDataProviderPort, ProviderMatchIngestionPort
 {
@@ -77,10 +80,10 @@ export class CachedGameDataProviderAdapter
     const now = this.deps.clock.now();
     let cached = await this.deps.cache.read<T>(key);
     if (cached && cached.freshUntil > now) {
-      await this.recordCache(operation, "cache_hit");
+      this.recordCache(operation, "cache_hit");
       return cachedResult(cached);
     }
-    await this.recordCache(operation, "cache_miss");
+    this.recordCache(operation, "cache_miss");
 
     const token = this.deps.ids.generate();
     const acquired = await this.deps.cache.tryAcquireRefresh({
@@ -89,19 +92,27 @@ export class CachedGameDataProviderAdapter
       operation,
       token,
       now,
-      leaseExpiresAt: new Date(now.getTime() + 10_000),
+      leaseExpiresAt: new Date(now.getTime() + REFRESH_LEASE_MS),
     });
     if (!acquired) {
-      for (let attempt = 0; attempt < 20; attempt += 1) {
-        await this.deps.sleep(10);
+      if (cached && cached.staleUntil > this.deps.clock.now()) {
+        this.recordCache(operation, "cache_stale");
+        return cachedResult(cached);
+      }
+      let waitedMs = 0;
+      let pollMs = 25;
+      while (waitedMs < FOLLOWER_WAIT_MS) {
+        await this.deps.sleep(pollMs);
+        waitedMs += pollMs;
         cached = await this.deps.cache.read<T>(key);
         if (cached && cached.freshUntil > this.deps.clock.now()) {
-          await this.recordCache(operation, "cache_hit");
+          this.recordCache(operation, "cache_hit");
           return cachedResult(cached);
         }
+        pollMs = Math.min(1_000, pollMs * 2);
       }
       if (cached && cached.staleUntil > this.deps.clock.now()) {
-        await this.recordCache(operation, "cache_stale");
+        this.recordCache(operation, "cache_stale");
         return cachedResult(cached);
       }
       return err(
@@ -117,7 +128,7 @@ export class CachedGameDataProviderAdapter
       const result = await load();
       if (!result.isOk()) {
         if (cached && cached.staleUntil > now && isRetryableProviderError(result.error)) {
-          await this.recordCache(operation, "cache_stale");
+          this.recordCache(operation, "cache_stale");
           return cachedResult(cached);
         }
         return result;
@@ -139,26 +150,25 @@ export class CachedGameDataProviderAdapter
     }
   }
 
-  private async recordCache(
+  private recordCache(
     operation: string,
     outcome: Extract<ProviderHealthOutcome, "cache_hit" | "cache_miss" | "cache_stale">,
-  ): Promise<void> {
+  ): void {
     logCorrelatedInfo("provider.cache", { provider: this.key, operation, outcome });
     if (!this.deps.health) return;
-    try {
-      await this.deps.health.record({
-        id: this.deps.ids.generate(),
-        providerKey: this.key,
-        operation,
-        outcome,
-        latencyMs: 0,
-        occurredAt: this.deps.clock.now(),
-        requestId: currentRequestCorrelation()?.requestId ?? null,
-        jobId: currentJobCorrelation() ?? null,
-      });
-    } catch {
+    const write = this.deps.health.record({
+      id: this.deps.ids.generate(),
+      providerKey: this.key,
+      operation,
+      outcome,
+      latencyMs: 0,
+      occurredAt: this.deps.clock.now(),
+      requestId: currentRequestCorrelation()?.requestId ?? null,
+      jobId: currentJobCorrelation() ?? null,
+    });
+    void write.catch(() => {
       logCorrelatedError("provider.health.record_failed", { provider: this.key, operation });
-    }
+    });
   }
 }
 

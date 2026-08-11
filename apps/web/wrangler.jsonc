@@ -6,7 +6,7 @@
   "main": "src/server.ts",
   "vars": {
     "APP_BASE_URL": "https://futrob.app",
-    "FUTROB_API_BASE_URL": "https://api.futrob.app",
+    "FUTROB_API_BASE_URL": "https://api.futrob.app/api/v1",
   },
   "d1_databases": [
     {
@@ -22,6 +22,7 @@
       "bucket_name": "futrob-media",
     },
   ],
+  "triggers": { "crons": ["* * * * *"] },
   "queues": {
     "producers": [{ "binding": "JOB_QUEUE", "queue": "futrob-job-queue" }],
     "consumers": [

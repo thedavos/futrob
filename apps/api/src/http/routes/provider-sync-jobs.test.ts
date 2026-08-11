@@ -85,4 +85,37 @@ describe("provider sync job routes", () => {
     expect(response.status).toBe(401);
     expect(providerCalls).toBe(0);
   });
+
+  it("lets the recovery scheduler drain queued work when publication was interrupted", async () => {
+    let providerCalls = 0;
+    const app = buildApp(() => {
+      providerCalls += 1;
+    });
+    await app.request("/api/v1/internal/game-data/sync-jobs", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({
+        organizationId: "org-recovery",
+        providerKey: "ea-clubs",
+        externalClubId: "10754",
+        platform: "common-gen5",
+        gameEdition: "fc26",
+        matchType: "friendlyMatch",
+        maxResultCount: 10,
+      }),
+    });
+
+    const run = await app.request("/api/v1/internal/game-data/sync-jobs/run-next", {
+      method: "POST",
+      headers: headers(),
+    });
+    const empty = await app.request("/api/v1/internal/game-data/sync-jobs/run-next", {
+      method: "POST",
+      headers: headers(),
+    });
+
+    expect(await run.json()).toMatchObject({ status: "succeeded" });
+    expect(empty.status).toBe(204);
+    expect(providerCalls).toBe(1);
+  });
 });

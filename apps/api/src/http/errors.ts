@@ -8,6 +8,7 @@ export type HttpMappableFailure = {
   readonly code: string;
   readonly details?: ApiErrorDetails;
   readonly retryAfterSeconds?: number;
+  readonly retryAfterMs?: number;
 };
 
 const DETAIL_KEYS = [
@@ -37,14 +38,19 @@ export function validationErrorResponse(issues: unknown): Response {
 }
 
 export function failureToHttp(error: HttpMappableFailure): Response {
+  const retryAfterSeconds =
+    error.retryAfterSeconds ??
+    (error.retryAfterMs === undefined
+      ? undefined
+      : Math.max(1, Math.ceil(error.retryAfterMs / 1_000)));
   const response = apiErrorResponse(statusForFailureCode(error.code), {
     code: error.code,
     messageKey: `errors.${error.code}`,
-    retryAfterSeconds: error.retryAfterSeconds,
+    retryAfterSeconds,
     details: error.details ?? detailsFromTaggedProps(error),
   });
-  if (error.retryAfterSeconds) {
-    response.headers.set("Retry-After", String(error.retryAfterSeconds));
+  if (retryAfterSeconds) {
+    response.headers.set("Retry-After", String(retryAfterSeconds));
   }
   return response;
 }
@@ -59,6 +65,7 @@ export function isHttpMappableFailure(error: unknown): error is HttpMappableFail
 }
 
 function detailsFromTaggedProps(error: HttpMappableFailure): ApiErrorDetails | undefined {
+  if (error.code.startsWith("game_data.ea_clubs_")) return undefined;
   const details: Partial<ApiErrorDetails> = {};
   for (const key of DETAIL_KEYS) {
     if (!Object.hasOwn(error, key)) continue;

@@ -1,7 +1,8 @@
 export type ProviderCircuitState = "closed" | "open" | "half_open";
 
 export type ProviderCircuitPermission =
-  | { readonly allowed: true; readonly state: "closed" | "half_open" }
+  | { readonly allowed: true; readonly state: "closed" }
+  | { readonly allowed: true; readonly state: "half_open"; readonly probeLeaseToken: string }
   | {
       readonly allowed: false;
       readonly state: "open" | "half_open";
@@ -9,18 +10,24 @@ export type ProviderCircuitPermission =
     };
 
 export interface ProviderCircuitBreaker {
+  getProviderState(providerKey: string, now: Date): Promise<ProviderCircuitState>;
   beforeRequest(input: {
     readonly key: string;
     readonly now: Date;
     readonly probeLeaseToken: string;
     readonly probeLeaseExpiresAt: Date;
   }): Promise<ProviderCircuitPermission>;
-  recordSuccess(input: { readonly key: string; readonly now: Date }): Promise<void>;
+  recordSuccess(input: {
+    readonly key: string;
+    readonly now: Date;
+    readonly probeLeaseToken?: string;
+  }): Promise<void>;
   recordTransientFailure(input: {
     readonly key: string;
     readonly now: Date;
     readonly failureThreshold: number;
     readonly cooldownMs: number;
+    readonly probeLeaseToken?: string;
   }): Promise<void>;
 }
 
@@ -34,6 +41,15 @@ interface CircuitRecord {
 
 export class InMemoryProviderCircuitBreaker implements ProviderCircuitBreaker {
   private readonly records = new Map<string, CircuitRecord>();
+
+  getProviderState(providerKey: string, now: Date): Promise<ProviderCircuitState> {
+    const states = [...this.records.entries()]
+      .filter(([key]) => key.startsWith(`${providerKey}:`))
+      .map(([, record]) => currentState(record, now));
+    if (states.includes("open")) return Promise.resolve("open");
+    if (states.includes("half_open")) return Promise.resolve("half_open");
+    return Promise.resolve("closed");
+  }
 
   beforeRequest(
     input: Parameters<ProviderCircuitBreaker["beforeRequest"]>[0],
@@ -49,7 +65,11 @@ export class InMemoryProviderCircuitBreaker implements ProviderCircuitBreaker {
         probeLeaseToken: input.probeLeaseToken,
         probeLeaseExpiresAt: input.probeLeaseExpiresAt,
       });
-      return Promise.resolve({ allowed: true, state: "half_open" });
+      return Promise.resolve({
+        allowed: true,
+        state: "half_open",
+        probeLeaseToken: input.probeLeaseToken,
+      });
     }
     if (
       record.state === "half_open" &&
@@ -60,7 +80,11 @@ export class InMemoryProviderCircuitBreaker implements ProviderCircuitBreaker {
         probeLeaseToken: input.probeLeaseToken,
         probeLeaseExpiresAt: input.probeLeaseExpiresAt,
       });
-      return Promise.resolve({ allowed: true, state: "half_open" });
+      return Promise.resolve({
+        allowed: true,
+        state: "half_open",
+        probeLeaseToken: input.probeLeaseToken,
+      });
     }
     const retryAt = record.state === "open" ? record.openedUntil : record.probeLeaseExpiresAt;
     return Promise.resolve({
@@ -71,6 +95,14 @@ export class InMemoryProviderCircuitBreaker implements ProviderCircuitBreaker {
   }
 
   recordSuccess(input: Parameters<ProviderCircuitBreaker["recordSuccess"]>[0]): Promise<void> {
+    const current = this.records.get(input.key);
+    if (input.probeLeaseToken) {
+      if (current?.state !== "half_open" || current.probeLeaseToken !== input.probeLeaseToken) {
+        return Promise.resolve();
+      }
+    } else if (current && current.state !== "closed") {
+      return Promise.resolve();
+    }
     this.records.set(input.key, {
       state: "closed",
       consecutiveFailures: 0,
@@ -85,6 +117,13 @@ export class InMemoryProviderCircuitBreaker implements ProviderCircuitBreaker {
     input: Parameters<ProviderCircuitBreaker["recordTransientFailure"]>[0],
   ): Promise<void> {
     const current = this.records.get(input.key);
+    if (input.probeLeaseToken) {
+      if (current?.state !== "half_open" || current.probeLeaseToken !== input.probeLeaseToken) {
+        return Promise.resolve();
+      }
+    } else if (current && current.state !== "closed") {
+      return Promise.resolve();
+    }
     const failures = (current?.consecutiveFailures ?? 0) + 1;
     const shouldOpen = current?.state === "half_open" || failures >= input.failureThreshold;
     this.records.set(input.key, {
@@ -96,4 +135,11 @@ export class InMemoryProviderCircuitBreaker implements ProviderCircuitBreaker {
     });
     return Promise.resolve();
   }
+}
+
+function currentState(record: CircuitRecord, now: Date): ProviderCircuitState {
+  if (record.state === "open" && record.openedUntil && record.openedUntil <= now) {
+    return "half_open";
+  }
+  return record.state;
 }

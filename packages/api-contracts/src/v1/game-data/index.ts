@@ -9,6 +9,8 @@ export {
   getClubResponseSchema,
   getClubMatchesQuerySchema,
   getClubMatchesResponseSchema,
+  enqueueProviderSyncJobRequestSchema,
+  providerSyncJobResponseSchema,
   providerHealthResponseSchema,
   gameDataProviderKeyQuerySchema,
   type ExternalClubDto,
@@ -22,6 +24,8 @@ export {
   type GetClubMatchesQuery,
   type GetClubMatchesQueryInput,
   type GetClubMatchesResponse,
+  type EnqueueProviderSyncJobRequest,
+  type ProviderSyncJobResponse,
   type ProviderHealthResponse,
   type GameDataProviderKeyQuery,
 } from "./schemas.ts";

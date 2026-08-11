@@ -34,11 +34,23 @@ Provider operations (service-authenticated):
 - `GET /internal/game-data/providers/:providerKey/health` — sanitized snapshot for platform
   administrators. Raw payloads, upstream bodies, queries and external club IDs are never returned.
 
+The web BFF exposes `POST /api/v1/game-data/sync-jobs`. It authenticates the actor, persists through
+the internal API, and publishes only `jobId` and `requestId` to `JOB_QUEUE`. Queue deliveries use the
+durable `availableAt` value for delayed retries, stop after the configured attempts, and fall through
+to `futrob-job-dlq`. A one-minute Cron calls the service-only `run-next` recovery endpoint so a job
+survives an interrupted publication or Queue delivery. Replaying a message is safe because claim and
+completion are lease-token guarded.
+
 The API caches successful club searches for 30 seconds and club details for five minutes. A
 five-minute stale window is used only after transient provider failures. Recent matches are not
 served stale; immutable observations and normalized matches remain the durable source. Retries are
 limited to timeout, network, 408, 429 and 5xx responses. The shared circuit opens after three final
 transient failures, waits 60 seconds, then grants one ten-second half-open probe.
+
+Provider health is a rolling 24-hour window capped at 1,000 samples. The response includes
+`windowStartedAt` and `sampleSize`. Events older than 30 days are pruned when an administrator reads
+health; the `occurred_at` retention index keeps that operation bounded. Telemetry writes are
+best-effort and never delay a provider response.
 
 Organizations (same service auth):
 

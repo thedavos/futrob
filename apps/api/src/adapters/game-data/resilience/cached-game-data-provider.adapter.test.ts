@@ -45,11 +45,15 @@ describe("CachedGameDataProviderAdapter", () => {
       ingestRecentMatches: async () => ok({ observations: [], matches: [] }),
     } satisfies GameDataProviderPort & ProviderMatchIngestionPort;
     const cache = new InMemoryProviderResponseCache();
+    let followerWaitedMs = 0;
     const adapter = new CachedGameDataProviderAdapter(provider, {
       cache,
       clock: { now: () => new Date("2026-08-11T20:00:00.000Z") },
       ids: { generate: () => "refresh-lease" },
-      sleep: async () => Promise.resolve(),
+      sleep: async (delayMs) => {
+        followerWaitedMs += delayMs;
+        if (followerWaitedMs >= 300) release?.();
+      },
       searchTtlMs: 30_000,
       clubTtlMs: 300_000,
       staleMs: 300_000,
@@ -65,10 +69,9 @@ describe("CachedGameDataProviderAdapter", () => {
       platform: "common-gen5",
       gameEdition: "fc26",
     });
-    release?.();
-
     expect((await first).isOk()).toBe(true);
     expect((await concurrent).isOk()).toBe(true);
+    expect(followerWaitedMs).toBeGreaterThanOrEqual(300);
     expect(calls).toBe(1);
     await adapter.searchClubs({
       query: "otro",

@@ -81,7 +81,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
 
     const parsed = eaSearchClubsResponseSchema.safeParse(response.value);
     if (!parsed.success) {
-      await this.recordSchemaError("/allTimeLeaderboard/search");
+      this.recordSchemaError("/allTimeLeaderboard/search");
       return err(
         new ProviderSchemaError({
           code: "game_data.ea_clubs_schema_error",
@@ -114,7 +114,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
 
     const parsed = eaClubInfoMapSchema.safeParse(response.value);
     if (!parsed.success) {
-      await this.recordSchemaError("/clubs/info");
+      this.recordSchemaError("/clubs/info");
       return err(
         new ProviderSchemaError({
           code: "game_data.ea_clubs_schema_error",
@@ -168,7 +168,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
 
     const parsed = eaClubMatchesResponseSchema.safeParse(response.value);
     if (!parsed.success) {
-      await this.recordSchemaError(MATCH_ENDPOINT);
+      this.recordSchemaError(MATCH_ENDPOINT);
       return err(
         new ProviderSchemaError({
           code: "game_data.ea_clubs_schema_error",
@@ -210,22 +210,21 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
     return ok({ observations, matches });
   }
 
-  private async recordSchemaError(operation: string): Promise<void> {
+  private recordSchemaError(operation: string): void {
     if (!this.deps.health) return;
-    try {
-      await this.deps.health.record({
-        id: randomUUID(),
-        providerKey: this.key,
-        operation,
-        outcome: "schema",
-        latencyMs: 0,
-        occurredAt: this.deps.clock?.now() ?? new Date(),
-        requestId: currentRequestCorrelation()?.requestId ?? null,
-        jobId: currentJobCorrelation() ?? null,
-      });
-    } catch {
+    const write = this.deps.health.record({
+      id: randomUUID(),
+      providerKey: this.key,
+      operation,
+      outcome: "schema",
+      latencyMs: 0,
+      occurredAt: this.deps.clock?.now() ?? new Date(),
+      requestId: currentRequestCorrelation()?.requestId ?? null,
+      jobId: currentJobCorrelation() ?? null,
+    });
+    void write.catch(() => {
       logCorrelatedError("provider.health.record_failed", { provider: this.key, operation });
-    }
+    });
   }
 }
 

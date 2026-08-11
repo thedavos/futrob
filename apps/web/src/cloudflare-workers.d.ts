@@ -6,7 +6,7 @@ declare module "cloudflare:workers" {
   export const env: {
     APP_DB: import("./shared/infrastructure/d1.ts").AppD1Database;
     MEDIA_BUCKET?: unknown;
-    JOB_QUEUE?: unknown;
+    JOB_QUEUE?: import("./workers/provider-sync-job.producer.ts").ProviderSyncJobQueue;
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
     BETTER_AUTH_TRUSTED_ORIGINS?: string;

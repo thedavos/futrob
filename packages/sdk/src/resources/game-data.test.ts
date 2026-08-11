@@ -66,4 +66,40 @@ describe("createFutrobClient gameData", () => {
     expect(urls[1]).toContain("/game-data/clubs/10754/matches?");
     expect(urls[1]).toContain("matchType=friendlyMatch");
   });
+
+  it("validates and persists a provider sync job through the internal API", async () => {
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: (async (input, init) => {
+        expect(requestUrl(input as string | URL | Request)).toBe(
+          "https://api.example.com/api/v1/internal/game-data/sync-jobs",
+        );
+        expect(init?.method).toBe("POST");
+        return Response.json({
+          id: "job-1",
+          organizationId: "org-1",
+          providerKey: "ea-clubs",
+          status: "queued",
+          attempt: 0,
+          maxAttempts: 4,
+          requestId: "486bb851-47f4-4e20-9266-0b413df54f74",
+          availableAt: "2026-08-11T20:00:00.000Z",
+          leaseExpiresAt: null,
+          updatedAt: "2026-08-11T20:00:00.000Z",
+        });
+      }) as typeof fetch,
+    });
+
+    await expect(
+      client.gameData.syncJobs.enqueue({
+        organizationId: "org-1",
+        providerKey: "ea-clubs",
+        externalClubId: "10754",
+        platform: "common-gen5",
+        gameEdition: "fc26",
+        matchType: "friendlyMatch",
+        maxResultCount: 10,
+      }),
+    ).resolves.toMatchObject({ id: "job-1", status: "queued" });
+  });
 });

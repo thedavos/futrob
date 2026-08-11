@@ -81,8 +81,8 @@ export function createModules(input: CreateModulesInput): AppModules {
     ? new PostgresProviderResponseCache(input.pool)
     : new InMemoryProviderResponseCache();
   const providerHealth = input.pool
-    ? new PostgresProviderHealthRepository(input.pool)
-    : new InMemoryProviderHealthRepository();
+    ? new PostgresProviderHealthRepository(input.pool, providerCircuit, clock)
+    : new InMemoryProviderHealthRepository(providerCircuit, clock);
   const eaAdapter = new EaClubsGameDataAdapter({
     fetcher: input.fetcher,
     baseUrl: input.eaClubsBaseUrl,

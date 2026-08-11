@@ -38,6 +38,7 @@ describe("provider health route", () => {
     expect(JSON.parse(body)).toMatchObject({
       providerKey: "ea-clubs",
       status: "healthy",
+      sampleSize: 2,
       successCount: 1,
       cache: { misses: 1 },
     });

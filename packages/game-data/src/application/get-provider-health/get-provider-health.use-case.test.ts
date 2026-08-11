@@ -9,6 +9,8 @@ describe("GetProviderHealthUseCase", () => {
         status: "degraded",
         circuitState: "closed",
         observedAt: new Date("2026-08-11T20:00:00.000Z"),
+        windowStartedAt: new Date("2026-08-10T20:00:00.000Z"),
+        sampleSize: 10,
         lastSuccessfulAt: new Date("2026-08-11T19:59:00.000Z"),
         lastFailureAt: new Date("2026-08-11T19:59:30.000Z"),
         averageLatencyMs: 420,
