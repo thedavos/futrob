@@ -42,3 +42,21 @@ export function createServiceAuthMiddleware(internalJobSecret: string) {
     await next();
   });
 }
+
+export function createInternalJobAuthMiddleware(internalJobSecret: string) {
+  return createMiddleware(async (c, next) => {
+    if (!internalJobSecret) {
+      return apiErrorResponse(503, {
+        code: "api.service_auth_unconfigured",
+        messageKey: "errors.api.service_auth_unconfigured",
+      });
+    }
+    if (c.req.header("authorization") !== `Bearer ${internalJobSecret}`) {
+      return apiErrorResponse(401, {
+        code: "api.unauthorized",
+        messageKey: "errors.api.unauthorized",
+      });
+    }
+    await next();
+  });
+}

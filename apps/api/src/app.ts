@@ -16,6 +16,7 @@ import { registerPlayerRoutes } from "@/http/routes/players.ts";
 import { registerTeamRoutes } from "@/http/routes/teams.ts";
 import { registerAuthorizationRoutes } from "@/http/routes/authorization.ts";
 import { registerEncounterRoutes } from "@/http/routes/encounters.ts";
+import { registerProviderSyncJobRoutes } from "@/http/routes/provider-sync-jobs.ts";
 
 export interface AppDeps {
   readonly modules: AppModules;
@@ -67,6 +68,7 @@ export function createApp(deps: AppDeps): Hono {
 
   registerMetaRoutes(v1, deps);
   registerOpenApiRoutes(v1);
+  registerProviderSyncJobRoutes(v1, deps);
   registerGameDataClubRoutes(v1, deps);
   registerCompetitionRoutes(v1, deps);
   registerOnboardingRoutes(v1, deps);
