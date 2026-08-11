@@ -1,12 +1,17 @@
 import {
+  editFixtureEncounterRequestSchema,
   encounterScheduleSnapshotSchema,
+  fixturePlanSchema,
+  generateCompetitionFixtureRequestSchema,
   upsertEncounterScheduleSnapshotRequestSchema,
 } from "@futrob/api-contracts";
 import { ENCOUNTER_PERMISSION } from "@futrob/scheduling";
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { Hono } from "hono";
+import { randomUUID } from "node:crypto";
 import type { AppDeps } from "@/app.ts";
-import { apiErrorResponse } from "@/http/errors.ts";
+import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { fixturePlanDto } from "@/http/mappers/fixture.ts";
 import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
@@ -89,6 +94,96 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
       }),
     );
   });
+
+  secured.post("/organizations/:organizationId/competitions/:competitionId/fixture", async (c) => {
+    const parsed = generateCompetitionFixtureRequestSchema.safeParse(await c.req.json());
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    const result = await deps.modules.scheduling.generateFixture.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(c.req.param("organizationId")),
+      competitionId: asCompetitionId(c.req.param("competitionId")),
+      generationVersion: parsed.data.generationVersion,
+      startsAt: new Date(parsed.data.startsAt),
+      roundIntervalDays: parsed.data.roundIntervalDays,
+      homeAndAway: parsed.data.homeAndAway,
+      ...(parsed.data.seed ? { seed: parsed.data.seed.map(asTeamId) } : {}),
+      ...(parsed.data.groups ? { groups: parsed.data.groups } : {}),
+      ...(parsed.data.playoffs ? { playoffs: parsed.data.playoffs } : {}),
+      requestId: c.req.header("X-Request-ID") ?? randomUUID(),
+    });
+    if (result.isErr()) return failureToHttp(result.error);
+    return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));
+  });
+
+  secured.get(
+    "/organizations/:organizationId/competitions/:competitionId/fixtures/:fixturePlanId",
+    async (c) => {
+      const organizationId = asOrganizationId(c.req.param("organizationId"));
+      const competitionId = asCompetitionId(c.req.param("competitionId"));
+      const plan = await deps.modules.scheduling.fixturePlans.findById(
+        organizationId,
+        competitionId,
+        c.req.param("fixturePlanId"),
+      );
+      if (!plan) {
+        return apiErrorResponse(404, {
+          code: "scheduling.fixture_plan_not_found",
+          messageKey: "errors.scheduling.fixture_plan_not_found",
+        });
+      }
+      const decision = await deps.modules.authorization.port.decide({
+        actorId: c.get("actorId"),
+        permission: ENCOUNTER_PERMISSION.read,
+        scope: { organizationId, competitionId },
+      });
+      if (!decision.allowed) {
+        return apiErrorResponse(404, {
+          code: "scheduling.fixture_plan_not_found",
+          messageKey: "errors.scheduling.fixture_plan_not_found",
+        });
+      }
+      return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(plan)));
+    },
+  );
+
+  secured.patch(
+    "/organizations/:organizationId/competitions/:competitionId/fixtures/:fixturePlanId/encounters/:encounterId",
+    async (c) => {
+      const parsed = editFixtureEncounterRequestSchema.safeParse(await c.req.json());
+      if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+      const result = await deps.modules.scheduling.editFixtureEncounter.execute({
+        actorId: c.get("actorId"),
+        organizationId: asOrganizationId(c.req.param("organizationId")),
+        competitionId: asCompetitionId(c.req.param("competitionId")),
+        fixturePlanId: c.req.param("fixturePlanId"),
+        encounterId: asEncounterId(c.req.param("encounterId")),
+        ...(parsed.data.scheduledStartAt
+          ? { scheduledStartAt: new Date(parsed.data.scheduledStartAt) }
+          : {}),
+        ...(parsed.data.homeTeamId && parsed.data.awayTeamId
+          ? {
+              homeTeamId: asTeamId(parsed.data.homeTeamId),
+              awayTeamId: asTeamId(parsed.data.awayTeamId),
+            }
+          : {}),
+        reason: parsed.data.reason,
+        requestId: c.req.header("X-Request-ID") ?? randomUUID(),
+      });
+      if (result.isErr()) return failureToHttp(result.error);
+      const plan = await deps.modules.scheduling.fixturePlans.findById(
+        asOrganizationId(c.req.param("organizationId")),
+        asCompetitionId(c.req.param("competitionId")),
+        c.req.param("fixturePlanId"),
+      );
+      if (!plan) {
+        return apiErrorResponse(409, {
+          code: "scheduling.fixture_update_conflict",
+          messageKey: "errors.scheduling.fixture_update_conflict",
+        });
+      }
+      return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(plan)));
+    },
+  );
 
   app.route("/", secured);
 }
