@@ -26,7 +26,7 @@ suite("PostgresInvitationRepository.claimRedemption", () => {
   it.each([1, 3])(
     "keeps concurrent retries by the same actor idempotent with capacity %s",
     async (maxRedemptions) => {
-      await withSchema(async (pool) => {
+      await withSchema(async (pool, applicationName) => {
         await pool.query(
           `INSERT INTO organizations (
              id, name, normalized_name, created_at, created_by_actor_id
@@ -46,15 +46,30 @@ suite("PostgresInvitationRepository.claimRedemption", () => {
         const transaction = new PostgresTransactionPort(pool);
         const actorId = asActorId("same-actor");
         const now = new Date();
-
-        const results = await Promise.all([
+        const blocker = await pool.connect();
+        await blocker.query("BEGIN");
+        await blocker.query(
+          `SELECT id FROM organization_invitations
+           WHERE token_hash = 'hash:race-token' FOR UPDATE`,
+        );
+        const claims = [
           transaction.runInTransaction(() =>
             invitations.claimRedemption("hash:race-token", actorId, now),
           ),
           transaction.runInTransaction(() =>
             invitations.claimRedemption("hash:race-token", actorId, now),
           ),
-        ]);
+        ] as const;
+        let results: Awaited<(typeof claims)[number]>[];
+        try {
+          await waitForBlockedClaims(pool, applicationName);
+          await blocker.query("COMMIT");
+          results = await Promise.all(claims);
+        } finally {
+          await blocker.query("ROLLBACK").catch(() => undefined);
+          blocker.release();
+          await Promise.allSettled(claims);
+        }
 
         expect(results.every(Boolean)).toBe(true);
         expect(
@@ -77,7 +92,9 @@ suite("PostgresInvitationRepository.claimRedemption", () => {
   );
 });
 
-async function withSchema(run: (pool: Pool) => Promise<void>): Promise<void> {
+async function withSchema(
+  run: (pool: Pool, applicationName: string) => Promise<void>,
+): Promise<void> {
   const admin = new Pool({ connectionString: databaseUrl });
   const client = await admin.connect();
   const schema = `invitation_redemption_${randomUUID().replaceAll("-", "")}`;
@@ -91,12 +108,35 @@ async function withSchema(run: (pool: Pool) => Promise<void>): Promise<void> {
     await admin.end();
   }
 
-  const pool = new Pool({ connectionString: databaseUrl, options: `-c search_path=${schema}` });
+  const applicationName = `t07_${schema}`;
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    options: `-c search_path=${schema}`,
+    application_name: applicationName,
+  });
   try {
-    await run(pool);
+    await run(pool, applicationName);
   } finally {
     await pool.end();
   }
+}
+
+async function waitForBlockedClaims(pool: Pool, applicationName: string): Promise<void> {
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    const result = await pool.query(
+      `SELECT COUNT(*)::integer AS count
+       FROM pg_stat_activity
+       WHERE application_name = $1
+         AND state = 'active'
+         AND wait_event_type = 'Lock'
+         AND query LIKE '%organization_invitation_redemptions%'`,
+      [applicationName],
+    );
+    if (result.rows[0]?.count === 2) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error("Concurrent redemption claims did not reach the lock barrier");
 }
 
 async function applyMigrations(client: PoolClient): Promise<void> {

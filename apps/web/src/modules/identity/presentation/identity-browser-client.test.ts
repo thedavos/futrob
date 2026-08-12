@@ -7,7 +7,7 @@ afterEach(() => {
 
 describe("identityBrowserClient", () => {
   it("requests a sanitized invitation preview", async () => {
-    const fetchMock = vi.fn(async () =>
+    const fetchMock = vi.fn<() => Promise<Response>>(async () =>
       Response.json({
         organizationId: "org-1",
         organizationName: "Liga",
