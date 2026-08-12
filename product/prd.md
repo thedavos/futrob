@@ -55,6 +55,12 @@ Los roles son contextuales. Un usuario puede ser organizador en una organizació
 
 Un jugador autenticado puede crear o mantener su perfil personal sin crear una organización ni aceptar una invitación. Desde ese espacio puede registrar su identificador de EA, consultar sus partidos y visualizar estadísticas individuales derivadas de resultados oficiales aprobados. Futrob confía en el identificador declarado y no verifica que el actor sea propietario de la cuenta.
 
+El jugador también puede asociar un `ExternalClub` a su `PlayerProfile`. Esta
+`PlayerExternalClubAssociation` es opcional y declarativa. Guarda la referencia del proveedor y
+no crea una organización, un `Team`, una entrada de competición ni una membresía de `Roster`.
+Tampoco prueba que el jugador sea propietario del club. La asociación operativa
+`ExternalClubConnection` pertenece a un `Team` de competición y es un concepto distinto.
+
 El onboarding asegura este perfil personal en los caminos jugador, invitación y organizador. La
 cuenta EA es opcional en los tres. El camino organizador crea además una primera competición en
 estado `draft`; plataforma y edición de esa competición permanecen separadas de las declaradas en

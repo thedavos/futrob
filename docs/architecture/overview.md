@@ -114,6 +114,8 @@ Solo `src/di/*.module.ts` instancia adapters y use cases.
 - `competitions` → competiciones y membresías contextuales de acceso. Una membresía de competición no sustituye `CompetitionEntry` ni `Roster`.
 - `teams` → la autoridad `captain | vice_captain | player` se deriva siempre de un `Roster`
   verificable para el Team y la competición solicitados.
+- `teams` también posee `PlayerExternalClubAssociation`, la referencia opcional de un
+  `PlayerProfile` a un club externo. No se interpreta como Team, Roster o propiedad verificada.
 - `AuthorizationPort` vive en `shared-kernel`; cada BC publica su catálogo/bundles y `apps/api`
   compone la decisión efectiva. Las rutas solo adaptan HTTP: los casos de uso exigen capacidades.
 - En `apps/web`, la UI consume `EffectiveAccess` del servidor (fail-closed ante loading/403).

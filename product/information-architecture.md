@@ -125,7 +125,11 @@ configura en el paso **Cuenta** o posteriormente desde Datos de juego. Los recor
 
 - Organizador: Intención → Organización → Competición → Cuenta → Confirmar.
 - Invitación: Intención → Invitación → Cuenta → Confirmar.
-- Jugador: Intención → Cuenta → Confirmar.
+- Jugador: Intención → Cuenta → Club → Confirmar.
+
+El paso **Club** permite asociar un `ExternalClub` al `PlayerProfile`. Es opcional y no crea un
+Team de competición, una inscripción ni una membresía de plantilla. `/onboarding/club` es la ruta
+canónica. `/onboarding/team` solo redirige para recuperar sesiones o marcadores anteriores.
 
 La competición inicial solicita identidad, edición, plataforma, región, timezone y formato, nace
 como `draft` con reglas seguras y continúa en su pantalla de configuración. No se publican equipos,
@@ -218,7 +222,7 @@ Sync EA → candidatos → capitán asigna → preview → rival confirma → ap
 
 ### Registro de jugador independiente
 
-Registro → onboarding → continuar como jugador → crear perfil personal → vincular identificador de juego (opcional en el primer paso) → espacio personal → consultar partidos/estadísticas cuando existan → aceptar invitación o crear organización más adelante.
+Registro → onboarding → continuar como jugador → vincular identificador de juego y club externo (ambos opcionales) → confirmar → crear o asegurar el perfil personal → espacio personal → consultar partidos/estadísticas cuando existan → aceptar invitación o crear organización más adelante.
 
 ### Acceso de usuario existente
 
