@@ -28,6 +28,8 @@ const es = {
   "support.copy.success": "Código copiado",
   "support.copy.failure": "No se pudo copiar el código",
   "onboarding.shell.progress": "Progreso del onboarding",
+  "onboarding.shell.stepSummary": ({ current, label, total }) =>
+    `Paso ${current} de ${total} · ${label}`,
   "onboarding.step.start": "Inicio",
   "onboarding.step.configure": "Configurar",
   "onboarding.step.review": "Confirmar",
@@ -212,6 +214,8 @@ const en: Catalog = {
   "support.copy.success": "Code copied",
   "support.copy.failure": "The support code could not be copied",
   "onboarding.shell.progress": "Onboarding progress",
+  "onboarding.shell.stepSummary": ({ current, label, total }) =>
+    `Step ${current} of ${total} · ${label}`,
   "onboarding.step.start": "Start",
   "onboarding.step.configure": "Set up",
   "onboarding.step.review": "Confirm",

@@ -64,6 +64,9 @@ export function OnboardingShell({
           aria-label={t("onboarding.shell.progress")}
           className="mx-auto mt-6 max-w-xl sm:mt-8"
           currentStepId={currentStepId}
+          mobileSummary={(current, total, label) =>
+            t("onboarding.shell.stepSummary", { current, label, total })
+          }
           steps={steps}
         />
 

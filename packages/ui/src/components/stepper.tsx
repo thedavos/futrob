@@ -12,12 +12,14 @@ interface StepperProps {
   readonly currentStepId: string;
   readonly className?: string;
   readonly "aria-label"?: string;
+  readonly mobileSummary?: (current: number, total: number, label: string) => string;
 }
 
 function Stepper({
   steps,
   currentStepId,
   className,
+  mobileSummary = defaultMobileSummary,
   "aria-label": ariaLabel = "Progreso",
 }: StepperProps) {
   const currentIndex = Math.max(
@@ -72,10 +74,14 @@ function Stepper({
         })}
       </ol>
       <p className="typo-caption mt-3 text-center text-muted-foreground sm:hidden">
-        Paso {currentIndex + 1} de {steps.length} · {steps[currentIndex]?.label}
+        {mobileSummary(currentIndex + 1, steps.length, steps[currentIndex]?.label ?? "")}
       </p>
     </nav>
   );
+}
+
+function defaultMobileSummary(current: number, total: number, label: string): string {
+  return `Paso ${current} de ${total} · ${label}`;
 }
 
 export { Stepper };

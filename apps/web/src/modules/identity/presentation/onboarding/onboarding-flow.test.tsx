@@ -69,6 +69,7 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByRole("radio", { name: "PlayStation" }).getAttribute("aria-checked")).toBe(
       "true",
     );
+    expect(screen.getByText("Step 2 of 4 · Account")).toBeTruthy();
     expect(document.documentElement.lang).toBe("en");
   });
 
