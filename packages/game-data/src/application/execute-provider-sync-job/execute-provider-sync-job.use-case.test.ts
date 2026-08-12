@@ -127,7 +127,6 @@ describe("ExecuteProviderSyncJobUseCase", () => {
               message: "unavailable",
               status: 503,
               path: "/clubs/matches",
-              body: null,
             }),
           ),
       },

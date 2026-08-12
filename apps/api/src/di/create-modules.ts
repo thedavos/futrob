@@ -8,6 +8,13 @@ import {
 } from "@/adapters/game-data/persistence/postgres.repository.ts";
 import { InMemoryProviderSyncJobRepository } from "@/adapters/game-data/jobs/in-memory-provider-sync-job.repository.ts";
 import { PostgresProviderSyncJobRepository } from "@/adapters/game-data/jobs/postgres-provider-sync-job.repository.ts";
+import { CachedGameDataProviderAdapter } from "@/adapters/game-data/resilience/cached-game-data-provider.adapter.ts";
+import { InMemoryProviderCircuitBreaker } from "@/adapters/game-data/resilience/provider-circuit-breaker.ts";
+import { PostgresProviderCircuitBreaker } from "@/adapters/game-data/resilience/postgres-provider-circuit-breaker.ts";
+import {
+  InMemoryProviderResponseCache,
+  PostgresProviderResponseCache,
+} from "@/adapters/game-data/resilience/provider-response-cache.ts";
 import { EaClubsGameDataAdapter, ManualGameDataAdapter } from "@/adapters/game-data/internal.ts";
 import {
   RepositoryProviderMatchReader,
@@ -63,10 +70,27 @@ export function createModules(input: CreateModulesInput): AppModules {
   const providerSyncJobs = input.pool
     ? new PostgresProviderSyncJobRepository(input.pool)
     : new InMemoryProviderSyncJobRepository();
-  const eaProvider = new EaClubsGameDataAdapter({
+  const providerCircuit = input.pool
+    ? new PostgresProviderCircuitBreaker(input.pool)
+    : new InMemoryProviderCircuitBreaker();
+  const providerCache = input.pool
+    ? new PostgresProviderResponseCache(input.pool)
+    : new InMemoryProviderResponseCache();
+  const eaAdapter = new EaClubsGameDataAdapter({
     fetcher: input.fetcher,
     baseUrl: input.eaClubsBaseUrl,
     timeoutMs: 10_000,
+    circuit: providerCircuit,
+    clock,
+  });
+  const eaProvider = new CachedGameDataProviderAdapter(eaAdapter, {
+    cache: providerCache,
+    clock,
+    ids,
+    sleep: (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)),
+    searchTtlMs: 30_000,
+    clubTtlMs: 300_000,
+    staleMs: 300_000,
   });
 
   const gameData = createGameDataModule({

@@ -5,6 +5,7 @@ import {
   ProviderHttpFailed,
   ProviderNetworkError,
   ProviderTimeout,
+  ProviderUnavailable,
   type ProviderError,
 } from "../../domain/errors/provider.errors.ts";
 import type { GetRecentMatchesInput } from "../../domain/ports/game-data-provider.port.ts";
@@ -77,7 +78,8 @@ export class ExecuteProviderSyncJobUseCase {
 }
 
 export function isRetryableProviderError(error: ProviderError): boolean {
-  if (ProviderTimeout.is(error) || ProviderNetworkError.is(error)) return true;
+  if (ProviderTimeout.is(error) || ProviderNetworkError.is(error) || ProviderUnavailable.is(error))
+    return true;
   return (
     ProviderHttpFailed.is(error) &&
     (error.status === 408 || error.status === 429 || error.status >= 500)

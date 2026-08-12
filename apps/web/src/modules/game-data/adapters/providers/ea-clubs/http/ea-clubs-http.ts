@@ -59,8 +59,6 @@ export class EaClubsHttpClient {
         signal: controller.signal,
       });
 
-      const raw: unknown = await response.json().catch(() => null);
-
       if (!response.ok) {
         return err(
           new ProviderHttpFailed({
@@ -68,11 +66,11 @@ export class EaClubsHttpClient {
             message: "EA Clubs request failed",
             status: response.status,
             path,
-            body: raw,
           }),
         );
       }
 
+      const raw: unknown = await response.json().catch(() => null);
       return ok(raw);
     } catch (cause) {
       const aborted = cause instanceof Error && cause.name === "AbortError";

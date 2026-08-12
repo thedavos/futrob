@@ -7,6 +7,7 @@ import { jsonResponse } from "@/utils/http-response.ts";
 export type HttpMappableFailure = {
   readonly code: string;
   readonly details?: ApiErrorDetails;
+  readonly retryAfterSeconds?: number;
 };
 
 const DETAIL_KEYS = [
@@ -36,11 +37,16 @@ export function validationErrorResponse(issues: unknown): Response {
 }
 
 export function failureToHttp(error: HttpMappableFailure): Response {
-  return apiErrorResponse(statusForFailureCode(error.code), {
+  const response = apiErrorResponse(statusForFailureCode(error.code), {
     code: error.code,
     messageKey: `errors.${error.code}`,
+    retryAfterSeconds: error.retryAfterSeconds,
     details: error.details ?? detailsFromTaggedProps(error),
   });
+  if (error.retryAfterSeconds) {
+    response.headers.set("Retry-After", String(error.retryAfterSeconds));
+  }
+  return response;
 }
 
 /** TaggedError expected failures that carry a stable wire `code`. */
@@ -65,6 +71,9 @@ function detailsFromTaggedProps(error: HttpMappableFailure): ApiErrorDetails | u
 }
 
 function statusForFailureCode(code: string): number {
+  if (code === "game_data.provider_unavailable") {
+    return 503;
+  }
   if (code.includes("not_found")) {
     return 404;
   }
