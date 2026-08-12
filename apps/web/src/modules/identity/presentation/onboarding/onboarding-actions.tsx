@@ -1,5 +1,6 @@
 import { Button } from "@futrob/ui";
 import { CircleNotchIcon } from "@phosphor-icons/react";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 interface OnboardingActionsProps {
   readonly primaryLabel: string;
@@ -18,8 +19,9 @@ export function OnboardingActions({
   loading,
   onBack,
   onSkip,
-  skipLabel = "Omitir por ahora",
+  skipLabel,
 }: OnboardingActionsProps) {
+  const { t } = useI18n();
   return (
     <div className="mt-8 flex w-full flex-col gap-2 sm:mt-12 sm:flex-row-reverse sm:items-center sm:justify-between sm:gap-4">
       <div className="flex flex-col gap-2 sm:flex-row-reverse sm:items-center sm:gap-3">
@@ -40,13 +42,13 @@ export function OnboardingActions({
         </Button>
         {onSkip ? (
           <Button className="w-full sm:w-auto" disabled={loading} onClick={onSkip} variant="ghost">
-            {skipLabel}
+            {skipLabel ?? t("common.skip")}
           </Button>
         ) : null}
       </div>
       {onBack ? (
         <Button className="w-full sm:w-auto" disabled={loading} onClick={onBack} variant="link">
-          Volver
+          {t("common.back")}
         </Button>
       ) : null}
     </div>

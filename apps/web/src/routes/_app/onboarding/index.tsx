@@ -1,14 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 export const Route = createFileRoute("/_app/onboarding/")({
-  head: () => ({ meta: [{ title: "Preparando tu configuración | Futrob" }] }),
   component: OnboardingIndex,
 });
 
 function OnboardingIndex() {
-  return (
-    <main className="flex min-h-svh items-center justify-center bg-background px-5 text-sm text-muted-foreground">
-      Recuperando tu progreso…
-    </main>
-  );
+  const { t } = useI18n();
+  return <RoutePendingState message={t("onboarding.loading.progress")} />;
 }

@@ -38,7 +38,9 @@ import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-dat
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
 import type { SupportError } from "@/shared/presentation/support-error-alert.tsx";
+import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { finalizationError } from "./onboarding-finalization-errors.ts";
 import {
   isOnboardingPathname,
@@ -150,6 +152,7 @@ export function OnboardingFlowProvider({
   /** Production cold-loads at intention; Storybook/harness may honor persisted step. */
   bootstrap?: "cold" | "persisted";
 }>) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const queryClient = useQueryClient();
@@ -159,7 +162,9 @@ export function OnboardingFlowProvider({
   const [saving, setSaving] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const finishingRef = useRef(false);
-  const [error, setError] = useState<SupportError | null>(null);
+  const [error, setError] = useState<
+    (Omit<SupportError, "message"> & { readonly messageKey: ParameterlessMessageKey }) | null
+  >(null);
   const retry = useRetryAfterCountdown();
   const [path, setPathState] = useState<OnboardingPathDto | null>(() => initialStatus.path);
   const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(() =>
@@ -176,10 +181,15 @@ export function OnboardingFlowProvider({
   const value = useMemo<OnboardingFlowValue>(
     () => ({
       saving,
-      error:
-        error && error.retryAfterSeconds
-          ? { ...error, retryAfterSeconds: retry.remainingSeconds || undefined }
-          : error,
+      error: error
+        ? {
+            message: t(error.messageKey),
+            ...(error.requestId ? { requestId: error.requestId } : {}),
+            ...(error.retryAfterSeconds
+              ? { retryAfterSeconds: retry.remainingSeconds || undefined }
+              : {}),
+          }
+        : null,
       retryBlocked: retry.blocked,
       retryAfterSeconds: retry.remainingSeconds,
       path,
@@ -214,9 +224,10 @@ export function OnboardingFlowProvider({
           const result = await gateway.checkOrganizationName({ name });
           return result.available;
         } catch (caught) {
-          setError(
-            supportErrorFromCaught(caught, "No pudimos verificar el nombre. Inténtalo nuevamente."),
-          );
+          setError({
+            messageKey: "errors.onboarding.organizationCheck",
+            ...supportFieldsFromCaught(caught),
+          });
           return null;
         } finally {
           setSaving(false);
@@ -236,9 +247,10 @@ export function OnboardingFlowProvider({
         try {
           await saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step });
         } catch (caught) {
-          setError(
-            supportErrorFromCaught(caught, "No pudimos guardar tu progreso. Inténtalo nuevamente."),
-          );
+          setError({
+            messageKey: "errors.onboarding.saveProgress",
+            ...supportFieldsFromCaught(caught),
+          });
           setPathState(previousPath);
           setCurrentStep(previousStep);
           await navigate({ to: routeForOnboardingStep(previousStep) });
@@ -314,6 +326,7 @@ export function OnboardingFlowProvider({
       retry.start,
       saveProgressMutation,
       saving,
+      t,
     ],
   );
 
@@ -327,7 +340,7 @@ export function OnboardingFlowProvider({
       {shouldSyncRoute ? (
         <>
           <Navigate to={expectedRoute} replace />
-          <RoutePendingState message="Recuperando tu progreso…" />
+          <RoutePendingState message={t("onboarding.loading.progress")} />
         </>
       ) : (
         children
@@ -336,14 +349,13 @@ export function OnboardingFlowProvider({
   );
 }
 
-function supportErrorFromCaught(caught: unknown, message: string): SupportError {
-  const requestId = caught instanceof IdentityOnboardingClientError ? caught.requestId : undefined;
-  const retryAfterSeconds =
-    caught instanceof IdentityOnboardingClientError ? caught.retryAfterSeconds : undefined;
+function supportFieldsFromCaught(
+  caught: unknown,
+): Pick<SupportError, "requestId" | "retryAfterSeconds"> {
+  if (!(caught instanceof IdentityOnboardingClientError)) return {};
   return {
-    message,
-    ...(requestId ? { requestId } : {}),
-    ...(retryAfterSeconds ? { retryAfterSeconds } : {}),
+    ...(caught.requestId ? { requestId: caught.requestId } : {}),
+    ...(caught.retryAfterSeconds ? { retryAfterSeconds: caught.retryAfterSeconds } : {}),
   };
 }
 

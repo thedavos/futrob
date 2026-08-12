@@ -4,40 +4,49 @@ import { EA_SEARCH_PLATFORM_OPTIONS } from "@futrob/api-contracts";
 import { ONBOARDING_PATH } from "@futrob/identity";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import {
-  competitionFormatLabel,
   competitionFormats,
   competitionRegions,
   competitionTimeZones,
 } from "@/modules/competitions/presentation/competition-draft-meta.ts";
 import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 
-export const intentionSteps: readonly StepperStep[] = [
-  { id: "intention", label: "Inicio" },
-  { id: "configure", label: "Configurar" },
-  { id: "review", label: "Confirmar" },
-];
+export function intentionSteps(t: Translator): readonly StepperStep[] {
+  return [
+    { id: "intention", label: t("onboarding.step.start") },
+    { id: "configure", label: t("onboarding.step.configure") },
+    { id: "review", label: t("onboarding.step.review") },
+  ];
+}
 
-export const stepsByPath: Record<OnboardingPathDto, readonly StepperStep[]> = {
-  [ONBOARDING_PATH.organization]: [
-    { id: "intention", label: "Inicio" },
-    { id: "organization", label: "Organización" },
-    { id: "competition", label: "Competición" },
-    { id: "game-account", label: "Cuenta" },
-    { id: "review", label: "Confirmar" },
-  ],
-  [ONBOARDING_PATH.invitation]: [
-    { id: "intention", label: "Inicio" },
-    { id: "invitation", label: "Invitación" },
-    { id: "game-account", label: "Cuenta" },
-    { id: "review", label: "Confirmar" },
-  ],
-  [ONBOARDING_PATH.player]: [
-    { id: "intention", label: "Inicio" },
-    { id: "game-account", label: "Cuenta" },
-    { id: "club", label: "Club" },
-    { id: "review", label: "Confirmar" },
-  ],
-};
+export function stepsForPath(t: Translator, path: OnboardingPathDto): readonly StepperStep[] {
+  const common = {
+    intention: { id: "intention", label: t("onboarding.step.start") },
+    account: { id: "game-account", label: t("onboarding.step.account") },
+    review: { id: "review", label: t("onboarding.step.review") },
+  } satisfies Record<string, StepperStep>;
+  return {
+    [ONBOARDING_PATH.organization]: [
+      common.intention,
+      { id: "organization", label: t("onboarding.step.organization") },
+      { id: "competition", label: t("onboarding.step.competition") },
+      common.account,
+      common.review,
+    ],
+    [ONBOARDING_PATH.invitation]: [
+      common.intention,
+      { id: "invitation", label: t("onboarding.step.invitation") },
+      common.account,
+      common.review,
+    ],
+    [ONBOARDING_PATH.player]: [
+      common.intention,
+      common.account,
+      { id: "club", label: t("onboarding.step.club") },
+      common.review,
+    ],
+  }[path];
+}
 
 export const eaSearchPlatforms = EA_SEARCH_PLATFORM_OPTIONS;
 
@@ -45,6 +54,27 @@ export const eaSearchPlatforms = EA_SEARCH_PLATFORM_OPTIONS;
 export const MAX_EXTERNAL_CLUB_SEARCH_RESULTS = 3;
 
 export { knownGameEditions, competitionFormats, competitionRegions, competitionTimeZones };
+
+export function localizedCompetitionRegions(t: Translator): typeof competitionRegions {
+  const labels = {
+    america: t("onboarding.region.america"),
+    "south-america": t("onboarding.region.southAmerica"),
+    "north-central-america": t("onboarding.region.northCentralAmerica"),
+    europe: t("onboarding.region.europe"),
+    africa: t("onboarding.region.africa"),
+    asia: t("onboarding.region.asia"),
+    "middle-east": t("onboarding.region.middleEast"),
+    oceania: t("onboarding.region.oceania"),
+  } satisfies Record<(typeof competitionRegions)[number]["value"], string>;
+  return competitionRegions.map((option) => ({ ...option, label: labels[option.value] }));
+}
+
+export function localizedCompetitionFormats(t: Translator): typeof competitionFormats {
+  return competitionFormats.map((option) => ({
+    ...option,
+    label: formatLabel(option.value, t),
+  }));
+}
 
 export function platformLabel(platform: GamePlatformDto): string {
   return {
@@ -68,6 +98,14 @@ export function formatProviderGameEdition(edition: string): string {
   return trimmed;
 }
 
-export function formatLabel(format: Parameters<typeof competitionFormatLabel>[0]): string {
-  return competitionFormatLabel(format);
+export function formatLabel(
+  format: (typeof competitionFormats)[number]["value"],
+  t: Translator,
+): string {
+  return {
+    league: t("onboarding.format.league"),
+    knockout: t("onboarding.format.knockout"),
+    "groups-knockout": t("onboarding.format.groupsKnockout"),
+    "league-playoffs": t("onboarding.format.leaguePlayoffs"),
+  }[format];
 }

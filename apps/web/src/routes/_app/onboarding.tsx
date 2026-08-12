@@ -3,6 +3,7 @@ import type { PostAuthDestinationDto } from "@futrob/api-contracts";
 import { OnboardingFlowProvider } from "@/modules/identity/presentation/onboarding/onboarding-flow.tsx";
 import { getOnboardingBootstrap } from "@/modules/identity/server/get-onboarding-bootstrap.functions.ts";
 import { RouteLoadError, RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 export const Route = createFileRoute("/_app/onboarding")({
   loader: async () => {
@@ -15,12 +16,20 @@ export const Route = createFileRoute("/_app/onboarding")({
     return { initialStatus: bootstrap.status };
   },
   shouldReload: ({ cause }) => cause === "enter",
-  pendingComponent: () => <RoutePendingState message="Recuperando tu progreso…" />,
-  errorComponent: (props) => (
-    <RouteLoadError {...props} message="No pudimos recuperar tu progreso. Inténtalo nuevamente." />
-  ),
+  pendingComponent: OnboardingPending,
+  errorComponent: OnboardingLoadError,
   component: OnboardingLayout,
 });
+
+function OnboardingPending() {
+  const { t } = useI18n();
+  return <RoutePendingState message={t("onboarding.loading.progress")} />;
+}
+
+function OnboardingLoadError(props: Parameters<typeof RouteLoadError>[0]) {
+  const { t } = useI18n();
+  return <RouteLoadError {...props} message={t("onboarding.loading.error")} />;
+}
 
 function OnboardingLayout() {
   const { initialStatus } = Route.useLoaderData();

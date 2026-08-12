@@ -26,6 +26,76 @@ afterEach(() => {
 });
 
 describe("OnboardingFlowProvider initialization", () => {
+  it("renders the player path in English", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway()}
+        initialPath="/onboarding/intention"
+        locale="en"
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("radio", { name: /Start as a player/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await screen.findByRole("heading", { name: "Set up your game details" });
+    fireEvent.click(screen.getByRole("button", { name: "Skip for now" }));
+    await screen.findByRole("heading", { name: "Link your EA club" });
+    fireEvent.click(screen.getByRole("button", { name: "Skip for now" }));
+
+    expect(await screen.findByRole("heading", { name: "Confirm your setup" })).toBeTruthy();
+    expect(screen.getByText("No club linked yet")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Enter my personal space" })).toBeTruthy();
+  });
+
+  it("keeps the onboarding draft when the language changes", async () => {
+    const user = userEvent.setup();
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ path: "player", currentStep: "game-account" })}
+        initialPath="/onboarding/game-account"
+      />,
+    );
+
+    const identifier = await screen.findByRole("textbox", { name: "Identificador de EA" });
+    await user.type(identifier, "gamer23");
+    await user.click(screen.getByRole("radio", { name: "PlayStation" }));
+    await user.click(screen.getByRole("combobox", { name: "Idioma" }));
+    await user.click(await screen.findByRole("option", { name: "Inglés" }));
+
+    expect(await screen.findByRole("heading", { name: "Set up your game details" })).toBeTruthy();
+    expect((screen.getByRole("textbox", { name: "EA identifier" }) as HTMLInputElement).value).toBe(
+      "gamer23",
+    );
+    expect(screen.getByRole("radio", { name: "PlayStation" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+    expect(screen.getByText("Step 2 of 4 · Account")).toBeTruthy();
+    expect(document.documentElement.lang).toBe("en");
+  });
+
+  it("pluralizes English club results without translating provider data", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({
+          path: "player",
+          currentStep: "club",
+          clubs: STORY_EXTERNAL_CLUBS.slice(0, 2),
+        })}
+        initialPath="/onboarding/club"
+        locale="en"
+      />,
+    );
+
+    fireEvent.change(await screen.findByRole("textbox", { name: "Club name" }), {
+      target: { value: "Fera" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Search clubs" }));
+
+    expect(await screen.findByText("2 clubs found.")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: /Fera Enjaulada/ })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: /Fera Night Owls/ })).toBeTruthy();
+  });
+
   it("renders a legacy actor from route data under StrictMode", async () => {
     const gateway = createFakeOnboardingGateway({
       path: null,
@@ -207,6 +277,27 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByText(requestId)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Copiar código de soporte" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
+  });
+
+  it("retranslates a visible save error when the locale changes", async () => {
+    const user = userEvent.setup();
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ failSave: true })}
+        initialPath="/onboarding/intention"
+      />,
+    );
+
+    await user.click(await screen.findByRole("radio", { name: /Empezar como jugador/ }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    expect(
+      await screen.findByText("No pudimos guardar tu progreso. Inténtalo nuevamente."),
+    ).toBeTruthy();
+
+    await user.click(screen.getByRole("combobox", { name: "Idioma" }));
+    await user.click(await screen.findByRole("option", { name: "Inglés" }));
+
+    expect(await screen.findByText("We couldn't save your progress. Try again.")).toBeTruthy();
   });
 
   it("does not bounce a finished player back to intention when the provider stays mounted", async () => {

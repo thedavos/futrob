@@ -57,3 +57,19 @@ export const Mobile: Story = {
     viewport: { defaultViewport: "mobile1" },
   },
 };
+
+export const EnglishMobile: Story = {
+  args: {
+    currentStepId: "account",
+    mobileSummary: (current, total, label) => `Step ${current} of ${total} · ${label}`,
+    steps: [
+      { id: "intention", label: "Start" },
+      { id: "game", label: "Game" },
+      { id: "account", label: "Account" },
+      { id: "review", label: "Confirm" },
+    ],
+  },
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
+};

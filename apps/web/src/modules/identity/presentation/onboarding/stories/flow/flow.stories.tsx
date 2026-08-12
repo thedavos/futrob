@@ -23,6 +23,26 @@ export const Playground: Story = {
   ),
 };
 
+export const EnglishPlayerPath: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway()}
+      initialPath="/onboarding/intention"
+      locale="en"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("radio", { name: /Start as a player/ }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await expect(
+      await canvas.findByRole("heading", { name: "Set up your game details" }),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Skip for now" }));
+    await expect(await canvas.findByRole("heading", { name: "Link your EA club" })).toBeVisible();
+  },
+};
+
 export const OrganizationPath: Story = {
   render: () => (
     <OnboardingStoryRouter

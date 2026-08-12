@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button, Card, CardContent } from "@futrob/ui";
 
 import { OnboardingShell } from "../../onboarding-shell.tsx";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 const steps = [
   { id: "intention", label: "Inicio" },
@@ -13,6 +14,13 @@ const meta = {
   title: "Product/Onboarding/Shell",
   component: OnboardingShell,
   parameters: { layout: "fullscreen" },
+  decorators: [
+    (Story) => (
+      <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+        <Story />
+      </I18nProvider>
+    ),
+  ],
   args: {
     steps,
     currentStepId: "game",
@@ -48,6 +56,27 @@ export const Desktop: Story = {
 
 export const Mobile: Story = {
   parameters: { viewport: { defaultViewport: "mobile1" } },
+};
+
+export const English: Story = {
+  render: () => (
+    <I18nProvider initialLocale="en" persistLocale={async () => undefined}>
+      <OnboardingShell
+        currentStepId="game"
+        description="Choose the edition and platform where you compete."
+        steps={[
+          { id: "intention", label: "Start" },
+          { id: "game", label: "Game" },
+          { id: "review", label: "Confirm" },
+        ]}
+        title="Set up your game"
+      >
+        <Card>
+          <CardContent className="p-6">Step content</CardContent>
+        </Card>
+      </OnboardingShell>
+    </I18nProvider>
+  ),
 };
 
 export const LongContent: Story = {

@@ -16,6 +16,8 @@ import type {
 import { EA_SEARCH_PLATFORM } from "@futrob/api-contracts";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import type { OnboardingGateway } from "./onboarding-flow.tsx";
 import { OnboardingFlowProvider } from "./onboarding-flow.tsx";
 import { CompetitionStep } from "./steps/competition-step.tsx";
@@ -194,18 +196,21 @@ function createOnboardingStoryRouter(
   initialPath: OnboardingStoryPath,
   gateway: StoryOnboardingGateway,
   bootstrap: "cold" | "persisted" = "persisted",
+  locale: Locale = "es",
 ) {
   const rootRoute = createRootRoute({
     component: () => (
-      <QueryTestProvider>
-        <OnboardingFlowProvider
-          bootstrap={bootstrap}
-          gateway={gateway}
-          initialStatus={gateway.initialStatus}
-        >
-          <Outlet />
-        </OnboardingFlowProvider>
-      </QueryTestProvider>
+      <I18nProvider initialLocale={locale} persistLocale={persistStoryLocale}>
+        <QueryTestProvider>
+          <OnboardingFlowProvider
+            bootstrap={bootstrap}
+            gateway={gateway}
+            initialStatus={gateway.initialStatus}
+          >
+            <Outlet />
+          </OnboardingFlowProvider>
+        </QueryTestProvider>
+      </I18nProvider>
     ),
   });
 
@@ -330,14 +335,18 @@ export function OnboardingStoryRouter({
   gateway,
   initialPath,
   bootstrap = "persisted",
+  locale = "es",
 }: {
   gateway: StoryOnboardingGateway;
   initialPath: OnboardingStoryPath;
   bootstrap?: "cold" | "persisted";
+  locale?: Locale;
 }) {
   const router = useMemo(
-    () => createOnboardingStoryRouter(initialPath, gateway, bootstrap),
-    [bootstrap, gateway, initialPath],
+    () => createOnboardingStoryRouter(initialPath, gateway, bootstrap, locale),
+    [bootstrap, gateway, initialPath, locale],
   );
   return <RouterProvider router={router} />;
 }
+
+async function persistStoryLocale(): Promise<void> {}

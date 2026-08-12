@@ -1,60 +1,63 @@
 import type { OnboardingPathDto } from "@futrob/api-contracts";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
-import type { SupportError } from "@/shared/presentation/support-error-alert.tsx";
+import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 
-export function finalizationError(path: OnboardingPathDto, caught: unknown): SupportError {
+export interface OnboardingSupportError {
+  readonly messageKey: ParameterlessMessageKey;
+  readonly requestId?: string;
+  readonly retryAfterSeconds?: number;
+}
+
+export function finalizationError(
+  path: OnboardingPathDto,
+  caught: unknown,
+): OnboardingSupportError {
   const requestId = caught instanceof IdentityOnboardingClientError ? caught.requestId : undefined;
   const retryAfterSeconds =
     caught instanceof IdentityOnboardingClientError ? caught.retryAfterSeconds : undefined;
-  const present = (message: string): SupportError => ({
-    message,
+  const present = (messageKey: ParameterlessMessageKey): OnboardingSupportError => ({
+    messageKey,
     ...(requestId ? { requestId } : {}),
     ...(retryAfterSeconds ? { retryAfterSeconds } : {}),
   });
 
   if (caught instanceof IdentityOnboardingClientError && caught.code === "api.rate_limited") {
-    return present("Alcanzaste el límite temporal. Espera antes de intentarlo nuevamente.");
+    return present("errors.api.rate_limited");
   }
 
   if (caught instanceof IdentityOnboardingClientError && path === "invitation") {
     switch (caught.code) {
       case "organizations.invitation_not_found":
-        return present("No encontramos esa invitación. Revisa el código e inténtalo nuevamente.");
+        return present("errors.organizations.invitation_not_found");
       case "organizations.invitation_expired":
-        return present("La invitación ha caducado. Solicita una nueva al organizador.");
+        return present("errors.organizations.invitation_expired");
       case "organizations.invitation_revoked":
-        return present("La invitación fue revocada. Solicita una nueva al organizador.");
+        return present("errors.organizations.invitation_revoked");
       case "organizations.invitation_invalid":
-        return present("La invitación ya no está disponible.");
+        return present("errors.organizations.invitation_invalid");
     }
   }
   if (caught instanceof IdentityOnboardingClientError && path === "organization") {
     if (caught.code === "organizations.name_conflict") {
-      return present("Ese nombre de organización ya está en uso. Vuelve y elige otro.");
+      return present("errors.organizations.name_conflict");
     }
     if (caught.code.startsWith("competitions.invalid_")) {
-      return present(
-        "Los datos de la competición no son válidos. Revísalos e inténtalo nuevamente.",
-      );
+      return present("errors.onboarding.invalidCompetition");
     }
     if (caught.code.startsWith("teams.invalid_")) {
-      return present(
-        "Los datos de la cuenta de juego no son válidos. Revísalos e inténtalo nuevamente.",
-      );
+      return present("errors.onboarding.invalidGameAccount");
     }
     return present(
       caught.code === "organizations.invalid_name"
-        ? "El nombre de la organización no es válido."
-        : "No pudimos crear la organización. Inténtalo nuevamente.",
+        ? "errors.organizations.invalid_name"
+        : "errors.onboarding.createOrganization",
     );
   }
   if (caught instanceof IdentityOnboardingClientError && caught.code.startsWith("teams.invalid_")) {
-    return present(
-      "Los datos de la cuenta de juego no son válidos. Revísalos e inténtalo nuevamente.",
-    );
+    return present("errors.onboarding.invalidGameAccount");
   }
   if (caught instanceof IdentityOnboardingClientError && path === "player") {
-    return present("No pudimos guardar tu perfil de jugador. Inténtalo nuevamente.");
+    return present("errors.onboarding.completePlayer");
   }
-  return present("No pudimos finalizar tu configuración. Inténtalo nuevamente.");
+  return present("errors.onboarding.finish");
 }
