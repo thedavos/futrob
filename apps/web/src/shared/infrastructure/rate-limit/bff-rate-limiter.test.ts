@@ -53,6 +53,11 @@ describe("BffRateLimiter contract", () => {
         actorMaxAttempts: 5,
         ipMaxAttempts: 5,
       },
+      [BFF_RATE_LIMIT_POLICY.invitationPreview]: {
+        windowSeconds: 900,
+        actorMaxAttempts: 5,
+        ipMaxAttempts: 5,
+      },
     });
   });
 
@@ -64,6 +69,9 @@ describe("BffRateLimiter contract", () => {
       RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS: "600",
       RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX: "4",
       RATE_LIMIT_INVITATION_ACCEPT_IP_MAX: "6",
+      RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS: "300",
+      RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX: "3",
+      RATE_LIMIT_INVITATION_PREVIEW_IP_MAX: "9",
     });
 
     expect(policies[BFF_RATE_LIMIT_POLICY.eaClubSearch]).toEqual({
@@ -75,6 +83,11 @@ describe("BffRateLimiter contract", () => {
       windowSeconds: 600,
       actorMaxAttempts: 4,
       ipMaxAttempts: 6,
+    });
+    expect(policies[BFF_RATE_LIMIT_POLICY.invitationPreview]).toEqual({
+      windowSeconds: 300,
+      actorMaxAttempts: 3,
+      ipMaxAttempts: 9,
     });
   });
 

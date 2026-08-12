@@ -19,6 +19,7 @@ export interface MultiRedemptionClaim {
 export interface InvitationRepository {
   create(invitation: OrganizationInvitation): Promise<void>;
   findByTokenHash(tokenHash: string): Promise<OrganizationInvitation | null>;
+  hasRedemption(invitationId: string, actorId: ActorId): Promise<boolean>;
   update(invitation: OrganizationInvitation): Promise<void>;
   /**
    * Atomically consume a pending, unexpired `single`-policy invitation for `actorId`.

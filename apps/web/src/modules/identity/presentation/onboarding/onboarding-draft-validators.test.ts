@@ -19,6 +19,7 @@ function draft(patch: Partial<OnboardingDraft> = {}): OnboardingDraft {
     competitionGameEdition: "",
     customCompetitionGameEdition: false,
     invitationToken: "",
+    invitationPreview: null,
     gameAccountIdentifier: "",
     platform: null,
     gameEdition: "",

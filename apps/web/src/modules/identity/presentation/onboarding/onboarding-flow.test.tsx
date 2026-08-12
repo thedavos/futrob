@@ -341,6 +341,8 @@ describe("OnboardingFlowProvider initialization", () => {
       "organizations.invitation_revoked",
       "La invitación fue revocada. Solicita una nueva al organizador.",
     ],
+    ["organizations.invitation_invalid", "La invitación ya no está disponible."],
+    ["organizations.invitation_exhausted", "La invitación alcanzó el número máximo de usos."],
   ] as const)("shows typed invitation finish error for %s", async (code, message) => {
     const user = userEvent.setup();
     const requestId = "2170e2f6-a47e-4338-83c3-27c054630800";

@@ -26,6 +26,11 @@ const TEST_POLICIES: BffRateLimitPolicies = {
     actorMaxAttempts: 1,
     ipMaxAttempts: 1,
   },
+  [BFF_RATE_LIMIT_POLICY.invitationPreview]: {
+    windowSeconds: 900,
+    actorMaxAttempts: 1,
+    ipMaxAttempts: 1,
+  },
 };
 
 class SqliteD1Statement {
@@ -164,6 +169,9 @@ describe("D1BffRateLimiter", () => {
     await expect(limiter.check(attempt())).resolves.toEqual({ outcome: "allowed" });
     await expect(
       limiter.check(attempt({ policy: BFF_RATE_LIMIT_POLICY.invitationAccept })),
+    ).resolves.toEqual({ outcome: "allowed" });
+    await expect(
+      limiter.check(attempt({ policy: BFF_RATE_LIMIT_POLICY.invitationPreview })),
     ).resolves.toEqual({ outcome: "allowed" });
   });
 

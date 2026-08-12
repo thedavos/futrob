@@ -1,6 +1,8 @@
 import {
   completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
+  inspectCompetitionInvitationRequestSchema,
+  inspectCompetitionInvitationResponseSchema,
   completeOrganizationOnboardingRequestSchema,
   completeOrganizationOnboardingResponseSchema,
   completePlayerOnboardingRequestSchema,
@@ -10,6 +12,8 @@ import {
   saveOnboardingProgressResponseSchema,
   type CompleteInvitationOnboardingRequest,
   type CompleteInvitationOnboardingResponse,
+  type InspectCompetitionInvitationRequest,
+  type InspectCompetitionInvitationResponse,
   type CompleteOrganizationOnboardingRequest,
   type CompleteOrganizationOnboardingResponse,
   type CompletePlayerOnboardingRequest,
@@ -63,6 +67,18 @@ export function createIdentityResource(http: HttpClient) {
         method: "POST",
         body,
         parse: (data) => completeInvitationOnboardingResponseSchema.parse(data),
+      });
+    },
+
+    async inspectCompetitionInvitation(
+      input: InspectCompetitionInvitationRequest,
+    ): Promise<InspectCompetitionInvitationResponse> {
+      const body = inspectCompetitionInvitationRequestSchema.parse(input);
+      return http.request({
+        path: "/identity/onboarding/invitation/preview",
+        method: "POST",
+        body,
+        parse: (data) => inspectCompetitionInvitationResponseSchema.parse(data),
       });
     },
 

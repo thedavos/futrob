@@ -124,9 +124,10 @@ const es = {
   "onboarding.invitation.token.label": "Código de invitación",
   "onboarding.invitation.token.placeholder": "Pega el código que recibiste",
   "onboarding.invitation.token.description":
-    "Comprobaremos el código al confirmar. No se guardará con tu progreso.",
+    "Comprobaremos el código antes de avanzar. No se guardará con tu progreso.",
   "onboarding.invitation.token.required": "Pega el código de invitación para continuar.",
   "onboarding.invitation.review": "Revisar invitación",
+  "onboarding.invitation.retry": ({ seconds }) => `Reintentar en ${seconds} s`,
   "onboarding.invitation.continuePlayer": "Continuar como jugador",
   "onboarding.club.title": "Asocia tu club EA",
   "onboarding.club.description":
@@ -155,7 +156,11 @@ const es = {
   "onboarding.review.competition": "Competición",
   "onboarding.review.gameAccount": "Cuenta de juego",
   "onboarding.review.club": "Club EA",
-  "onboarding.review.invitationReady": "Invitación lista para validar",
+  "onboarding.review.invitationRole": "Rol en la competición",
+  "onboarding.review.invitationRole.staff": "Staff",
+  "onboarding.review.invitationRole.captain": "Capitán",
+  "onboarding.review.invitationRole.player": "Jugador",
+  "onboarding.review.invitationExpires": "Válida hasta",
   "onboarding.review.playerReady": "Perfil de jugador listo · Datos EA para después",
   "onboarding.review.noClub": "Sin club asociado por ahora",
   "onboarding.review.edit": ({ label }) => `Editar ${String(label).toLowerCase()}`,
@@ -176,6 +181,7 @@ const es = {
   "errors.organizations.invitation_revoked":
     "La invitación fue revocada. Solicita una nueva al organizador.",
   "errors.organizations.invitation_invalid": "La invitación ya no está disponible.",
+  "errors.organizations.invitation_exhausted": "La invitación alcanzó el número máximo de usos.",
   "errors.organizations.name_conflict":
     "Ese nombre de organización ya está en uso. Vuelve y elige otro.",
   "errors.organizations.invalid_name": "El nombre de la organización no es válido.",
@@ -204,6 +210,7 @@ export interface MessageParamsByKey {
   readonly "onboarding.club.search.loadingStatus": { readonly query: string };
   readonly "onboarding.club.search.empty": { readonly query: string };
   readonly "onboarding.club.search.results": { readonly count: number };
+  readonly "onboarding.invitation.retry": { readonly seconds: number };
   readonly "onboarding.review.edit": { readonly label: string };
   readonly "onboarding.review.retry": { readonly seconds: number };
 }
@@ -327,9 +334,10 @@ const en: Catalog = {
   "onboarding.invitation.token.label": "Invitation code",
   "onboarding.invitation.token.placeholder": "Paste the code you received",
   "onboarding.invitation.token.description":
-    "We'll check the code when you confirm. It won't be saved with your progress.",
+    "We'll check the code before you continue. It won't be saved with your progress.",
   "onboarding.invitation.token.required": "Paste the invitation code to continue.",
   "onboarding.invitation.review": "Review invitation",
+  "onboarding.invitation.retry": ({ seconds }) => `Try again in ${seconds}s`,
   "onboarding.invitation.continuePlayer": "Continue as a player",
   "onboarding.club.title": "Link your EA club",
   "onboarding.club.description":
@@ -358,7 +366,11 @@ const en: Catalog = {
   "onboarding.review.competition": "Competition",
   "onboarding.review.gameAccount": "Game account",
   "onboarding.review.club": "EA club",
-  "onboarding.review.invitationReady": "Invitation ready to validate",
+  "onboarding.review.invitationRole": "Competition role",
+  "onboarding.review.invitationRole.staff": "Staff",
+  "onboarding.review.invitationRole.captain": "Captain",
+  "onboarding.review.invitationRole.player": "Player",
+  "onboarding.review.invitationExpires": "Valid until",
   "onboarding.review.playerReady": "Player profile ready · Add EA details later",
   "onboarding.review.noClub": "No club linked yet",
   "onboarding.review.edit": ({ label }) => `Edit ${String(label).toLowerCase()}`,
@@ -378,6 +390,8 @@ const en: Catalog = {
   "errors.organizations.invitation_revoked":
     "The invitation was revoked. Ask the organizer for a new one.",
   "errors.organizations.invitation_invalid": "The invitation is no longer available.",
+  "errors.organizations.invitation_exhausted":
+    "The invitation has reached its maximum number of uses.",
   "errors.organizations.name_conflict":
     "That organization name is already in use. Go back and choose another one.",
   "errors.organizations.invalid_name": "The organization name isn't valid.",

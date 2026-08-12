@@ -228,6 +228,17 @@ export class PostgresInvitationRepository implements InvitationRepository {
     return row ? rehydrateInvitation(row) : null;
   }
 
+  async hasRedemption(invitationId: string, actorId: ActorId): Promise<boolean> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT 1
+       FROM organization_invitation_redemptions
+       WHERE invitation_id = $1 AND actor_id = $2
+       LIMIT 1`,
+      [invitationId, actorId],
+    );
+    return result.rowCount === 1;
+  }
+
   async update(invitation: OrganizationInvitation): Promise<void> {
     await getPgExecutor(this.pool).query(
       `UPDATE organization_invitations
@@ -269,20 +280,6 @@ export class PostgresInvitationRepository implements InvitationRepository {
     return row ? rehydrateInvitation(row) : null;
   }
 
-  /**
-   * Single statement, atomic under Postgres MVCC: `FOR UPDATE` locks and
-   * serializes concurrent claims on the same invitation row (a second
-   * concurrent caller blocks until the first commits, then re-evaluates
-   * against the committed `redeemed_count`). The guarded `INSERT ... WHERE
-   * redeemed_count < max_redemptions` — with `ON CONFLICT DO NOTHING` on the
-   * `(invitation_id, actor_id)` unique ledger — never lets more than
-   * `max_redemptions` distinct actors through. `already_redeemed` reads the
-   * ledger for a redemption committed by an *earlier* call (same-statement
-   * writes are not visible to each other under Postgres CTE snapshot rules,
-   * which is fine: a same-statement insert is already reported via
-   * `newly_claimed`), making a repeat call by the same actor idempotent
-   * without double-counting the cupo.
-   */
   async claimRedemption(
     tokenHash: string,
     actorId: ActorId,
@@ -320,23 +317,24 @@ export class PostgresInvitationRepository implements InvitationRepository {
          invite.redeem_policy, invite.max_redemptions,
          invite.redeemed_count + (CASE WHEN bumped.id IS NOT NULL THEN 1 ELSE 0 END)
            AS redeemed_count,
-         (bumped.id IS NOT NULL) AS newly_claimed,
-         EXISTS (
-           SELECT 1 FROM organization_invitation_redemptions r
-           WHERE r.invitation_id = invite.id AND r.actor_id = $2
-         ) AS already_redeemed
+         (bumped.id IS NOT NULL) AS newly_claimed
        FROM invite
        LEFT JOIN bumped ON bumped.id = invite.id`,
       [tokenHash, actorId, now.toISOString(), REDEEM_POLICY.multi, INVITATION_STATUS.pending],
     );
-    const row = result.rows[0] as
-      | (InvitationRow & { newly_claimed: boolean; already_redeemed: boolean })
-      | undefined;
+    const row = result.rows[0] as (InvitationRow & { newly_claimed: boolean }) | undefined;
     if (!row) return null;
-    if (!row.newly_claimed && !row.already_redeemed) return null;
+    if (!row.newly_claimed) {
+      const alreadyRedeemed = await this.hasRedemption(row.id, actorId);
+      if (!alreadyRedeemed) return null;
+      return {
+        invitation: rehydrateInvitation(row),
+        outcome: "already-redeemed",
+      };
+    }
     return {
       invitation: rehydrateInvitation(row),
-      outcome: row.newly_claimed ? "claimed" : "already-redeemed",
+      outcome: "claimed",
     };
   }
 }

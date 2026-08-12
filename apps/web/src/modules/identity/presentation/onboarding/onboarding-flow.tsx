@@ -25,6 +25,8 @@ import type {
   OnboardingPathDto,
   OnboardingStatusDto,
   OnboardingStepDto,
+  InspectCompetitionInvitationRequest,
+  InspectCompetitionInvitationResponse,
   PlayerExternalClubSelectionInputDto,
   PlayerGameAccountInputDto,
   SearchClubsQueryInput,
@@ -64,6 +66,7 @@ export interface OnboardingDraft {
   readonly competitionGameEdition: string;
   readonly customCompetitionGameEdition: boolean;
   readonly invitationToken: string;
+  readonly invitationPreview: InspectCompetitionInvitationResponse | null;
   readonly gameAccountIdentifier: string;
   readonly platform: GamePlatformDto | null;
   readonly gameEdition: string;
@@ -82,6 +85,7 @@ function createEmptyDraft(): OnboardingDraft {
     competitionGameEdition: "",
     customCompetitionGameEdition: false,
     invitationToken: "",
+    invitationPreview: null,
     gameAccountIdentifier: "",
     platform: null,
     gameEdition: "",
@@ -99,6 +103,9 @@ export interface OnboardingGateway {
   acceptInvitation(
     input: CompleteInvitationOnboardingRequest,
   ): Promise<CompleteInvitationOnboardingResponse>;
+  inspectCompetitionInvitation(
+    input: InspectCompetitionInvitationRequest,
+  ): Promise<InspectCompetitionInvitationResponse>;
   completePlayer(input: CompletePlayerOnboardingRequest): Promise<void>;
   searchExternalClubs(input: SearchClubsQueryInput): Promise<readonly ExternalClubDto[]>;
 }
@@ -108,6 +115,8 @@ export const browserOnboardingGateway: OnboardingGateway = {
   saveProgress: (input) => identityBrowserClient.saveOnboardingProgress(input),
   createOrganization: (input) => identityBrowserClient.completeOrganizationOnboarding(input),
   acceptInvitation: (input) => identityBrowserClient.completeInvitationOnboarding(input),
+  inspectCompetitionInvitation: (input) =>
+    identityBrowserClient.inspectCompetitionInvitation(input),
   async completePlayer(input) {
     await identityBrowserClient.completePlayerOnboarding(input);
   },
@@ -130,6 +139,7 @@ interface OnboardingFlowValue {
   readonly draft: OnboardingDraft;
   setPath(path: OnboardingPathDto): void;
   updateDraft(patch: Partial<OnboardingDraft>): void;
+  inspectCompetitionInvitation(token: string): Promise<boolean>;
   clearGameAccount(): void;
   clearExternalClub(): void;
   checkOrganizationName(name: string): Promise<boolean | null>;
@@ -162,6 +172,8 @@ export function OnboardingFlowProvider({
   const [saving, setSaving] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const finishingRef = useRef(false);
+  const invitationInspectionSequenceRef = useRef(0);
+  const invitationInspectingRef = useRef(false);
   const [error, setError] = useState<
     (Omit<SupportError, "message"> & { readonly messageKey: ParameterlessMessageKey }) | null
   >(null);
@@ -173,6 +185,8 @@ export function OnboardingFlowProvider({
       : resolveOnboardingStep(initialStatus.path, initialStatus.currentStep),
   );
   const [draft, setDraft] = useState<OnboardingDraft>(createEmptyDraft);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
 
   useEffect(() => {
     queryClient.setQueryData(queryKeys.identity.onboardingStatus(), initialStatus);
@@ -201,8 +215,43 @@ export function OnboardingFlowProvider({
         setError(null);
       },
       updateDraft(patch) {
-        setDraft((current) => ({ ...current, ...patch }));
+        if (Object.hasOwn(patch, "invitationToken")) {
+          invitationInspectionSequenceRef.current += 1;
+          setDraft((current) => ({ ...current, ...patch, invitationPreview: null }));
+        } else {
+          setDraft((current) => ({ ...current, ...patch }));
+        }
         setError(null);
+      },
+      async inspectCompetitionInvitation(token) {
+        if (invitationInspectingRef.current || saving) return false;
+        const normalizedToken = token.trim();
+        const sequence = invitationInspectionSequenceRef.current + 1;
+        invitationInspectionSequenceRef.current = sequence;
+        invitationInspectingRef.current = true;
+        setSaving(true);
+        try {
+          const preview = await gateway.inspectCompetitionInvitation({ token: normalizedToken });
+          if (
+            sequence !== invitationInspectionSequenceRef.current ||
+            draftRef.current.invitationToken.trim() !== normalizedToken
+          ) {
+            return false;
+          }
+          setDraft((current) => ({ ...current, invitationPreview: preview }));
+          return true;
+        } catch (error) {
+          if (
+            sequence !== invitationInspectionSequenceRef.current ||
+            draftRef.current.invitationToken.trim() !== normalizedToken
+          ) {
+            return false;
+          }
+          throw error;
+        } finally {
+          invitationInspectingRef.current = false;
+          setSaving(false);
+        }
       },
       clearGameAccount() {
         setDraft((current) => ({

@@ -626,6 +626,45 @@ paths:
           $ref: "#/components/responses/RateLimited"
       parameters:
         - *a2
+  /identity/onboarding/invitation/preview:
+    post:
+      operationId: inspectCompetitionInvitation
+      tags:
+        - onboarding
+      summary: Inspect a competition invitation without consuming it
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  minLength: 1
+      responses:
+        "200":
+          description: Sanitized competition invitation preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InspectCompetitionInvitationResponse"
+          headers:
+            X-Request-ID: *a1
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "401":
+          $ref: "#/components/responses/ApiError"
+        "404":
+          $ref: "#/components/responses/ApiError"
+        "409":
+          $ref: "#/components/responses/ApiError"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+      parameters:
+        - *a2
   /organizations/invitations/accept:
     post:
       operationId: acceptOrganizationInvitation
@@ -3882,6 +3921,33 @@ components:
               type: string
             competitionId:
               type: string
+    InspectCompetitionInvitationResponse:
+      type: object
+      required:
+        - organizationId
+        - organizationName
+        - competitionId
+        - competitionName
+        - competitionRole
+        - expiresAt
+      properties:
+        organizationId:
+          type: string
+        organizationName:
+          type: string
+        competitionId:
+          type: string
+        competitionName:
+          type: string
+        competitionRole:
+          type: string
+          enum:
+            - staff
+            - captain
+            - player
+        expiresAt:
+          type: string
+          format: date-time
     AcceptCompetitionInvitationResponse:
       type: object
       required:

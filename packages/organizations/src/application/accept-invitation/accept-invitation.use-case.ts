@@ -1,10 +1,14 @@
 import { err, ok, type Result } from "@futrob/shared-kernel";
-import type { ActorId, ClockPort } from "@futrob/shared-kernel";
+import type { ActorId, ClockPort, CompetitionId } from "@futrob/shared-kernel";
 import type { InvitationRepository } from "../../domain/ports/invitation.repository.ts";
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
 import type { MembershipSummary } from "../../domain/value-objects/post-auth-destination.ts";
+import type {
+  CompetitionInviteRole,
+  OrgMembershipRole,
+} from "../../domain/value-objects/organization-membership-role.ts";
 import type { Organization } from "../../domain/entities/organization.ts";
 import {
   INVITATION_STATUS,
@@ -20,12 +24,11 @@ import {
   OrganizationNotFound,
   type AcceptInvitationError,
 } from "../../domain/errors/invitation.errors.ts";
+import { assessInvitationEligibility } from "../../domain/policies/invitation-eligibility.ts";
 
 export interface AcceptedInvitation extends MembershipSummary {
-  readonly competitionId: import("@futrob/shared-kernel").CompetitionId | null;
-  readonly competitionRole:
-    | import("../../domain/value-objects/organization-membership-role.ts").CompetitionInviteRole
-    | null;
+  readonly competitionId: CompetitionId | null;
+  readonly competitionRole: CompetitionInviteRole | null;
 }
 
 export interface AcceptInvitationInput {
@@ -48,7 +51,7 @@ export class AcceptInvitationUseCase {
   async execute(
     input: AcceptInvitationInput,
   ): Promise<Result<AcceptedInvitation, AcceptInvitationError>> {
-    const tokenHash = this.deps.tokens.hashToken(input.token);
+    const tokenHash = this.deps.tokens.hashToken(input.token.trim());
     const invitation = await this.deps.invitations.findByTokenHash(tokenHash);
 
     if (!invitation) {
@@ -59,13 +62,28 @@ export class AcceptInvitationUseCase {
         }),
       );
     }
-    if (input.requireCompetition && !invitation.competitionId) {
-      return err(
-        new InvitationInvalid({
-          code: "organizations.invitation_invalid",
-          message: "Invitation does not target a competition",
-        }),
-      );
+    const now = this.deps.clock.now();
+    const actorAlreadyRedeemed =
+      invitation.redeemPolicy === REDEEM_POLICY.multi
+        ? await this.deps.invitations.hasRedemption(invitation.id, input.actorId)
+        : false;
+    const eligible = assessInvitationEligibility({
+      invitation,
+      actorId: input.actorId,
+      actorAlreadyRedeemed,
+      now,
+      requireCompetition: input.requireCompetition ?? false,
+    });
+    if (!eligible.isOk()) {
+      if (invitation.status === INVITATION_STATUS.pending) {
+        if (InvitationExpired.is(eligible.error)) {
+          await this.deps.invitations.update({
+            ...invitation,
+            status: INVITATION_STATUS.expired,
+          });
+        }
+      }
+      return err(eligible.error);
     }
 
     const organization = await this.deps.organizations.getById(invitation.organizationId);
@@ -79,45 +97,8 @@ export class AcceptInvitationUseCase {
       );
     }
 
-    if (invitation.status === INVITATION_STATUS.revoked) {
-      return err(
-        new InvitationRevoked({
-          code: "organizations.invitation_revoked",
-          message: "Invitation has been revoked",
-        }),
-      );
-    }
-
-    const now = this.deps.clock.now();
-    if (
-      invitation.status === INVITATION_STATUS.expired ||
-      invitation.expiresAt.getTime() <= now.getTime()
-    ) {
-      if (invitation.status === INVITATION_STATUS.pending) {
-        await this.deps.invitations.update({
-          ...invitation,
-          status: INVITATION_STATUS.expired,
-        });
-      }
-      return err(
-        new InvitationExpired({
-          code: "organizations.invitation_expired",
-          message: "Invitation has expired",
-        }),
-      );
-    }
-
     if (invitation.status === INVITATION_STATUS.accepted) {
       return this.acceptedResult(organization, invitation, input.actorId);
-    }
-
-    if (invitation.status !== INVITATION_STATUS.pending) {
-      return err(
-        new InvitationInvalid({
-          code: "organizations.invitation_invalid",
-          message: "Invitation is no longer valid",
-        }),
-      );
     }
 
     const claimed =
@@ -234,7 +215,7 @@ export class AcceptInvitationUseCase {
       await this.deps.memberships.add({
         organizationId: claimed.organizationId,
         actorId,
-        role: membershipRole as import("../../domain/value-objects/organization-membership-role.ts").OrgMembershipRole,
+        role: membershipRole as OrgMembershipRole,
         createdAt: now,
       });
     }
@@ -242,13 +223,9 @@ export class AcceptInvitationUseCase {
     return ok({
       organizationId: organization.id,
       organizationName: organization.name,
-      role:
-        existing?.role ??
-        (membershipRole as import("../../domain/value-objects/organization-membership-role.ts").OrgMembershipRole),
+      role: existing?.role ?? (membershipRole as OrgMembershipRole),
       competitionId: claimed.competitionId ?? null,
-      competitionRole: claimed.competitionId
-        ? (claimed.role as import("../../domain/value-objects/organization-membership-role.ts").CompetitionInviteRole)
-        : null,
+      competitionRole: claimed.competitionId ? (claimed.role as CompetitionInviteRole) : null,
     });
   }
 
@@ -261,12 +238,10 @@ export class AcceptInvitationUseCase {
       return ok({
         organizationId: organization.id,
         organizationName: organization.name,
-        role: invitation.competitionId
-          ? "member"
-          : (invitation.role as import("../../domain/value-objects/organization-membership-role.ts").OrgMembershipRole),
+        role: invitation.competitionId ? "member" : (invitation.role as OrgMembershipRole),
         competitionId: invitation.competitionId ?? null,
         competitionRole: invitation.competitionId
-          ? (invitation.role as import("../../domain/value-objects/organization-membership-role.ts").CompetitionInviteRole)
+          ? (invitation.role as CompetitionInviteRole)
           : null,
       });
     }
