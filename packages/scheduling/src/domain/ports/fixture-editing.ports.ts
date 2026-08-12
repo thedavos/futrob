@@ -32,5 +32,10 @@ export interface FixtureAuditEntry {
 }
 
 export interface FixtureAuditPort {
+  findByRequestId(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+    requestId: string,
+  ): Promise<FixtureAuditEntry | null>;
   append(entry: FixtureAuditEntry): Promise<void>;
 }

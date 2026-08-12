@@ -100,6 +100,31 @@ describe("GenerateCompetitionFixtureUseCase", () => {
     expect(events.map((event) => event.eventName)).toEqual(["scheduling.encounter-created"]);
   });
 
+  it("treats corrected schedule inputs as a distinct generation key", async () => {
+    const fixtures = new FixturePlans();
+    const useCase = new GenerateCompetitionFixtureUseCase({
+      authorization: authorization(true),
+      clock: { now: () => new Date("2026-08-11T22:00:00.000Z") },
+      eventPublisher: { publish: async () => {}, publishMany: async () => {} },
+      fixtures,
+      source: source(),
+      transaction: { runInTransaction: async (operation) => operation() },
+    });
+
+    const first = await useCase.execute(input());
+    const shifted = await useCase.execute({
+      ...input(),
+      startsAt: new Date("2026-09-08T01:00:00.000Z"),
+      requestId: "request-2",
+    });
+
+    expect(first.isOk()).toBe(true);
+    expect(shifted.isOk()).toBe(true);
+    if (first.isErr() || shifted.isErr()) return;
+    expect(shifted.value.generationKey).not.toBe(first.value.generationKey);
+    expect(fixtures.saves).toBe(2);
+  });
+
   it("rejects a draft before persistence", async () => {
     const fixtures = new FixturePlans();
     const result = await new GenerateCompetitionFixtureUseCase({

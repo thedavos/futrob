@@ -10,6 +10,10 @@ import {
   type FixtureStage,
   type FixtureStageId,
 } from "../entities/fixture-plan.ts";
+import { arrangeOpeningKnockoutSlots } from "./arrange-opening-knockout-slots.ts";
+import { fixtureGenerationKey } from "./fixture-generation-key.ts";
+
+export { fixtureGenerationKey, fixtureSpecFingerprint } from "./fixture-generation-key.ts";
 
 interface GeneratedStage {
   readonly stage: FixtureStage;
@@ -18,14 +22,6 @@ interface GeneratedStage {
 
 type Pairing = readonly [FixtureParticipantSlot, FixtureParticipantSlot];
 type RoundPairings = readonly Pairing[];
-
-export function fixtureGenerationKey(input: {
-  readonly competitionId: string;
-  readonly rulesVersion: number;
-  readonly generationVersion: number;
-}): string {
-  return `${input.competitionId}:rules:${input.rulesVersion}:generation:${input.generationVersion}`;
-}
 
 export function generateFixturePlan(spec: FixtureGenerationSpec): FixturePlan {
   const generationKey = fixtureGenerationKey(spec);
@@ -184,11 +180,7 @@ function generateKnockoutStage(input: {
   readonly roundOffset: number;
 }): GeneratedStage {
   const stageId = asFixtureStageId(`${input.planId}:stage:${input.stageOrder}`);
-  const bracketSize = nextPowerOfTwo(input.slots.length);
-  let slots = [
-    ...input.slots,
-    ...Array.from({ length: bracketSize - input.slots.length }, byeSlot),
-  ];
+  let slots = arrangeOpeningKnockoutSlots(input.slots);
   const rounds: FixtureRound[] = [];
 
   for (let roundIndex = 0; slots.length > 1; roundIndex += 1) {
@@ -303,12 +295,6 @@ function byeSlot(): FixtureParticipantSlot {
 
 function groupName(index: number): string {
   return `group-${index + 1}`;
-}
-
-function nextPowerOfTwo(value: number): number {
-  let result = 1;
-  while (result < value) result *= 2;
-  return result;
 }
 
 function roundStart(spec: FixtureGenerationSpec, roundOffset: number): Date {

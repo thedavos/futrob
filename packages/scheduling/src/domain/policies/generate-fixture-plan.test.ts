@@ -139,6 +139,49 @@ describe("generateFixturePlan", () => {
       "group-rank",
       "group-rank",
     ]);
+    for (const encounter of qualifierRound?.encounters ?? []) {
+      if (encounter.home.kind === "group-rank" && encounter.away.kind === "group-rank") {
+        expect(encounter.home.groupId).not.toBe(encounter.away.groupId);
+      }
+    }
+  });
+
+  it("avoids same-group opening knockout rematches when qualifiers are not a power of two", () => {
+    const sixTeams = [...teams, asTeamId("echo"), asTeamId("foxtrot")];
+    const plan = generateFixturePlan({
+      ...baseInput(),
+      format: "groups-knockout",
+      seed: sixTeams,
+      groups: { count: 3, qualifiersPerGroup: 2 },
+    });
+    const qualifierRound = plan.stages[1]?.rounds[0];
+    expect(qualifierRound?.encounters).toHaveLength(4);
+    expect(
+      qualifierRound?.encounters.filter(
+        (encounter) => encounter.home.kind === "bye" || encounter.away.kind === "bye",
+      ),
+    ).toHaveLength(2);
+    for (const encounter of qualifierRound?.encounters ?? []) {
+      expect(encounter.home.kind === "bye" && encounter.away.kind === "bye").toBe(false);
+      if (encounter.home.kind === "group-rank" && encounter.away.kind === "group-rank") {
+        expect(encounter.home.groupId).not.toBe(encounter.away.groupId);
+      }
+    }
+  });
+
+  it("changes the generation key when schedule inputs change", () => {
+    const base = {
+      ...baseInput(),
+      format: "league" as const,
+    };
+    const first = generateFixturePlan(base);
+    const shifted = generateFixturePlan({
+      ...base,
+      startsAt: new Date("2026-09-08T01:00:00.000Z"),
+    });
+
+    expect(first.generationKey).not.toBe(shifted.generationKey);
+    expect(first.id).not.toBe(shifted.id);
   });
 
   it("links league standings to a playoff stage", () => {

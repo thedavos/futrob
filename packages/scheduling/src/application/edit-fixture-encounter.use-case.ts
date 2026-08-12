@@ -12,7 +12,11 @@ import {
   type TeamId,
   type TransactionPort,
 } from "@futrob/shared-kernel";
-import type { FixtureEncounter, FixturePlan } from "../domain/entities/fixture-plan.ts";
+import type {
+  FixtureEncounter,
+  FixtureParticipantSlot,
+  FixturePlan,
+} from "../domain/entities/fixture-plan.ts";
 import {
   FixtureAuthorizationForbidden,
   FixtureEncounterNotEditable,
@@ -92,6 +96,21 @@ export class EditFixtureEncounterUseCase {
     }
 
     return this.deps.transaction.runInTransaction(async () => {
+      const prior = await this.deps.audit.findByRequestId(
+        input.organizationId,
+        input.competitionId,
+        input.requestId,
+      );
+      if (prior) {
+        if (
+          prior.fixturePlanId !== input.fixturePlanId ||
+          prior.encounterId !== input.encounterId
+        ) {
+          return err(invalid("requestId was already used for a different fixture edit"));
+        }
+        return ok(prior.after);
+      }
+
       const plan = await this.deps.fixtures.findById(
         input.organizationId,
         input.competitionId,
@@ -127,16 +146,15 @@ export class EditFixtureEncounterUseCase {
       }
 
       if (input.homeTeamId && input.awayTeamId) {
-        const source = await this.deps.source.load(input);
-        const approved = new Set(source?.approvedParticipants ?? []);
-        if (
-          source?.organizationId !== input.organizationId ||
-          source.competitionId !== input.competitionId ||
-          !approved.has(input.homeTeamId) ||
-          !approved.has(input.awayTeamId)
-        ) {
-          return err(invalid("Both Teams must be approved participants in this competition"));
-        }
+        const pairingError = await validatePairingChange(
+          this.deps.source,
+          plan,
+          before,
+          input,
+          input.homeTeamId,
+          input.awayTeamId,
+        );
+        if (pairingError) return err(pairingError);
       }
 
       const after: FixtureEncounter = {
@@ -196,12 +214,40 @@ export class EditFixtureEncounterUseCase {
   }
 }
 
-function findEncounter(plan: FixturePlan, encounterId: EncounterId): FixtureEncounter | null {
-  for (const stage of plan.stages) {
-    for (const round of stage.rounds) {
-      const encounter = round.encounters.find((item) => item.id === encounterId);
-      if (encounter) return encounter;
+async function validatePairingChange(
+  sourcePort: CompetitionFixtureSourcePort,
+  plan: FixturePlan,
+  before: FixtureEncounter,
+  input: EditFixtureEncounterInput,
+  homeTeamId: TeamId,
+  awayTeamId: TeamId,
+): Promise<InvalidFixtureConfiguration | null> {
+  if (before.home.kind !== "team" || before.away.kind !== "team") {
+    return invalid("Only team-vs-team encounters can change pairing");
+  }
+
+  const source = await sourcePort.load(input);
+  const approved = new Set(source?.approvedParticipants ?? []);
+  if (
+    source?.organizationId !== input.organizationId ||
+    source?.competitionId !== input.competitionId ||
+    !approved.has(homeTeamId) ||
+    !approved.has(awayTeamId)
+  ) {
+    return invalid("Both Teams must be approved participants in this competition");
+  }
+  if (before.groupId) {
+    const groupTeams = teamsInGroup(plan, before.groupId);
+    if (!groupTeams.has(homeTeamId) || !groupTeams.has(awayTeamId)) {
+      return invalid("Both Teams must belong to this group");
     }
+  }
+  return null;
+}
+
+function findEncounter(plan: FixturePlan, encounterId: EncounterId): FixtureEncounter | null {
+  for (const encounter of planEncounters(plan)) {
+    if (encounter.id === encounterId) return encounter;
   }
   return null;
 }
@@ -209,6 +255,7 @@ function findEncounter(plan: FixturePlan, encounterId: EncounterId): FixtureEnco
 function replaceEncounter(plan: FixturePlan, replacement: FixtureEncounter): FixturePlan {
   return {
     ...plan,
+    revision: plan.revision + 1,
     stages: plan.stages.map((stage) => ({
       ...stage,
       rounds: stage.rounds.map((round) => ({
@@ -222,19 +269,44 @@ function replaceEncounter(plan: FixturePlan, replacement: FixtureEncounter): Fix
 }
 
 function hasTeamCollision(plan: FixturePlan, candidate: FixtureEncounter): boolean {
-  if (candidate.home.kind !== "team" || candidate.away.kind !== "team") return false;
-  const teams = new Set([candidate.home.teamId, candidate.away.teamId]);
-  return plan.stages.some((stage) =>
-    stage.rounds.some((round) =>
-      round.encounters.some(
-        (encounter) =>
-          encounter.id !== candidate.id &&
-          encounter.scheduledStartAt.getTime() === candidate.scheduledStartAt.getTime() &&
-          ((encounter.home.kind === "team" && teams.has(encounter.home.teamId)) ||
-            (encounter.away.kind === "team" && teams.has(encounter.away.teamId))),
-      ),
-    ),
-  );
+  const teams = teamIdsFromSlots(candidate.home, candidate.away);
+  if (teams.size === 0) return false;
+  const at = candidate.scheduledStartAt.getTime();
+  for (const encounter of planEncounters(plan)) {
+    if (encounter.id === candidate.id) continue;
+    if (encounter.scheduledStartAt.getTime() !== at) continue;
+    for (const teamId of teamIdsFromSlots(encounter.home, encounter.away)) {
+      if (teams.has(teamId)) return true;
+    }
+  }
+  return false;
+}
+
+function teamsInGroup(plan: FixturePlan, groupId: string): Set<TeamId> {
+  const teams = new Set<TeamId>();
+  for (const encounter of planEncounters(plan)) {
+    if (encounter.groupId !== groupId) continue;
+    for (const teamId of teamIdsFromSlots(encounter.home, encounter.away)) {
+      teams.add(teamId);
+    }
+  }
+  return teams;
+}
+
+function* planEncounters(plan: FixturePlan): Generator<FixtureEncounter> {
+  for (const stage of plan.stages) {
+    for (const round of stage.rounds) {
+      yield* round.encounters;
+    }
+  }
+}
+
+function teamIdsFromSlots(...slots: FixtureParticipantSlot[]): Set<TeamId> {
+  const teams = new Set<TeamId>();
+  for (const slot of slots) {
+    if (slot.kind === "team") teams.add(slot.teamId);
+  }
+  return teams;
 }
 
 function encountersEqual(left: FixtureEncounter, right: FixtureEncounter): boolean {
