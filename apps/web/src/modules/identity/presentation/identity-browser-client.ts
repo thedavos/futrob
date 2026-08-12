@@ -1,6 +1,8 @@
 import {
   completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
+  inspectCompetitionInvitationRequestSchema,
+  inspectCompetitionInvitationResponseSchema,
   completeOrganizationOnboardingRequestSchema,
   completeOrganizationOnboardingResponseSchema,
   completePlayerOnboardingRequestSchema,
@@ -12,6 +14,8 @@ import {
   saveOnboardingProgressResponseSchema,
   type CompleteInvitationOnboardingRequest,
   type CompleteInvitationOnboardingResponse,
+  type InspectCompetitionInvitationRequest,
+  type InspectCompetitionInvitationResponse,
   type CompleteOrganizationOnboardingRequest,
   type CompleteOrganizationOnboardingResponse,
   type CompletePlayerOnboardingRequest,
@@ -117,6 +121,18 @@ export const identityBrowserClient = {
       method: "POST",
       body,
       parse: (data) => completeInvitationOnboardingResponseSchema.parse(data),
+    });
+  },
+
+  inspectCompetitionInvitation(
+    input: InspectCompetitionInvitationRequest,
+  ): Promise<InspectCompetitionInvitationResponse> {
+    const body = inspectCompetitionInvitationRequestSchema.parse(input);
+    return requestJson({
+      path: "/api/v1/identity/onboarding/invitation/preview",
+      method: "POST",
+      body,
+      parse: (data) => inspectCompetitionInvitationResponseSchema.parse(data),
     });
   },
 

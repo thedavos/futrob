@@ -6,6 +6,33 @@ afterEach(() => {
 });
 
 describe("identityBrowserClient", () => {
+  it("requests a sanitized invitation preview", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json({
+        organizationId: "org-1",
+        organizationName: "Liga",
+        competitionId: "competition-1",
+        competitionName: "Copa",
+        competitionRole: "player",
+        expiresAt: "2026-09-01T12:00:00.000Z",
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await identityBrowserClient.inspectCompetitionInvitation({
+      token: " private-token ",
+    });
+
+    expect(result.competitionName).toBe("Copa");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/identity/onboarding/invitation/preview",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ token: "private-token" }),
+      }),
+    );
+  });
+
   it("preserves the request ID from an onboarding error", async () => {
     const requestId = "4d381f84-cd53-403c-b062-83b36fb4c422";
     vi.stubGlobal(
