@@ -40,6 +40,7 @@ import {
   MagnifyingGlassIcon,
   PlusIcon,
 } from "@phosphor-icons/react";
+import { runAction } from "@/shared/presentation/run-action.ts";
 
 export const roleLabel: Record<RosterMembershipRoleDto, string> = {
   player: "Jugador",
@@ -328,8 +329,4 @@ export function ConfirmAction({
       </AlertDialogContent>
     </AlertDialog>
   );
-}
-
-export function runAction(action: () => Promise<void>): void {
-  void action().catch(() => undefined);
 }

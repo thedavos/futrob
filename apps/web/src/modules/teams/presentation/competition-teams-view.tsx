@@ -42,6 +42,7 @@ import {
   XCircleIcon,
 } from "@phosphor-icons/react";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
+import { runAction } from "@/shared/presentation/run-action.ts";
 import {
   SupportErrorAlert,
   type SupportError,
@@ -52,7 +53,6 @@ import {
   InvitationDialog,
   roleLabel,
   RosterRoleEditor,
-  runAction,
 } from "./competition-team-actions.tsx";
 
 export type TeamConsoleCapabilities = {
