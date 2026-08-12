@@ -507,6 +507,30 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByRole("heading", { name: "Únete a una competición" })).toBeTruthy();
   });
 
+  it("coalesces double clicks while an invitation preview is pending", async () => {
+    const inspect = vi.fn<() => Promise<never>>(() => new Promise(() => undefined));
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({
+          path: "invitation",
+          currentStep: "invitation",
+          inspectInvitation: inspect,
+        })}
+        initialPath="/onboarding/invitation"
+      />,
+    );
+
+    fireEvent.change(await screen.findByLabelText("Código de invitación"), {
+      target: { value: "invite-token" },
+    });
+    const review = screen.getByRole("button", { name: "Revisar invitación" });
+    fireEvent.click(review);
+    fireEvent.click(review);
+
+    await waitFor(() => expect(inspect).toHaveBeenCalledTimes(1));
+    expect((review as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("preserves the invitation code and unlocks preview after a rate-limit wait", async () => {
     render(
       <OnboardingStoryRouter

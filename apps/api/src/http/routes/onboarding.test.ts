@@ -406,6 +406,17 @@ describe("apps/api http onboarding", () => {
     );
     const { token } = (await invitation.json()) as { token: string };
 
+    const unauthorizedPreview = await app.request(
+      "/api/v1/identity/onboarding/invitation/preview",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      },
+    );
+    expect(unauthorizedPreview.status).toBe(401);
+    expect(await unauthorizedPreview.json()).toMatchObject({ code: "api.unauthorized" });
+
     const preview = await app.request("/api/v1/identity/onboarding/invitation/preview", {
       method: "POST",
       headers: serviceHeaders(player),
@@ -426,6 +437,11 @@ describe("apps/api http onboarding", () => {
         await app.request("/api/v1/identity/onboarding", { headers: serviceHeaders(player) })
       ).json(),
     ).toMatchObject({ completed: false });
+    expect(
+      await (
+        await app.request("/api/v1/competitions/mine", { headers: serviceHeaders(player) })
+      ).json(),
+    ).toMatchObject({ competitions: [] });
 
     const completed = await app.request("/api/v1/identity/onboarding/invitation", {
       method: "POST",
