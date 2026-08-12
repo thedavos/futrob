@@ -244,14 +244,6 @@ export class ContextualAuthorizationAdapter implements AuthorizationPort {
       if (!membership) {
         contextualRoster = await this.findRoster(actorId, scope, null);
         if (contextualRoster) {
-          const entry = await this.deps.entries.findByCompetitionAndTeam(
-            scope.organizationId,
-            scope.competitionId,
-            contextualRoster.teamId,
-          );
-          if (!entry || entry.status !== "approved") contextualRoster = null;
-        }
-        if (contextualRoster) {
           const contextualRole =
             contextualRoster.role === "vice_captain" ? "captain" : contextualRoster.role;
           for (const permission of COMPETITION_ROLE_PERMISSIONS[contextualRole]) {
@@ -320,7 +312,7 @@ export class ContextualAuthorizationAdapter implements AuthorizationPort {
           scope.competitionId,
           scope.teamId,
         );
-        if (!entry || entry.status !== "approved") {
+        if (!entry) {
           return { ok: false, reason: "scope-mismatch" };
         }
       }
@@ -334,12 +326,21 @@ export class ContextualAuthorizationAdapter implements AuthorizationPort {
 
     if (scope.encounterId) {
       const baseline = new Set<Permission>();
-      if (roster?.role === "captain" || roster?.role === "vice_captain") {
+      const approvedEntry =
+        roster && scope.organizationId && scope.competitionId
+          ? await this.deps.entries.findByCompetitionAndTeam(
+              scope.organizationId,
+              scope.competitionId,
+              roster.teamId,
+            )
+          : null;
+      const eligibleRoster = approvedEntry?.status === "approved" ? roster : null;
+      if (eligibleRoster?.role === "captain" || eligibleRoster?.role === "vice_captain") {
         baseline.add(ENCOUNTER_PERMISSION.read);
         baseline.add(ENCOUNTER_PERMISSION.rescheduleRequest);
         baseline.add("encounters.official-selection.propose");
         baseline.add("encounters.official-selection.resolve");
-      } else if (roster?.role === "player") {
+      } else if (eligibleRoster?.role === "player") {
         baseline.add(ENCOUNTER_PERMISSION.read);
       }
       layers.push({

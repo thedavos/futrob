@@ -13,14 +13,18 @@ import {
   createRosterInvitationResponseSchema,
   createTeamRequestSchema,
   createTeamResponseSchema,
+  competitionTeamManagementDetailResponseSchema,
+  competitionTeamManagementListQuerySchema,
+  competitionTeamManagementListResponseSchema,
   getTeamExternalClubResponseSchema,
   listRosterResponseSchema,
   openRosterResponseSchema,
 } from "@futrob/api-contracts";
 import { TEAM_PERMISSION } from "@futrob/teams";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
-import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import {
   rosterInvitationMetaDto,
   rosterMembershipDto,
@@ -34,6 +38,10 @@ import {
 } from "@/http/middleware/service-auth.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 import { requireApiPermission } from "@/http/require-api-permission.ts";
+import {
+  teamRosterManagementDetailDto,
+  teamRosterManagementSummaryDto,
+} from "@/http/mappers/team-management.ts";
 
 export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
@@ -53,6 +61,63 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(createTeamResponseSchema.parse(teamDto(result.value)), 201);
   });
+
+  secured.get(
+    "/organizations/:organizationId/competitions/:competitionId/team-management",
+    async (c) => {
+      const parsed = competitionTeamManagementListQuerySchema.safeParse(c.req.query());
+      if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+      const organizationId = asOrganizationId(c.req.param("organizationId"));
+      const competitionId = asCompetitionId(c.req.param("competitionId"));
+      const forbidden = await requireApiPermission(deps, {
+        actorId: asActorId(c.get("actorId")),
+        permission: COMPETITION_PERMISSION.participantsRead,
+        scope: { organizationId, competitionId },
+      });
+      if (forbidden) return forbidden;
+      const result = await deps.modules.teamManagement.list.execute({
+        actorId: asActorId(c.get("actorId")),
+        organizationId,
+        competitionId,
+        ...parsed.data,
+      });
+      return jsonResponse(
+        competitionTeamManagementListResponseSchema.parse({
+          items: result.items.map(teamRosterManagementSummaryDto),
+          nextCursor: result.nextCursor,
+        }),
+      );
+    },
+  );
+
+  secured.get(
+    "/organizations/:organizationId/competitions/:competitionId/team-management/:teamId",
+    async (c) => {
+      const result = await deps.modules.teamManagement.get.execute({
+        actorId: asActorId(c.get("actorId")),
+        organizationId: asOrganizationId(c.req.param("organizationId")),
+        competitionId: asCompetitionId(c.req.param("competitionId")),
+        teamId: asTeamId(c.req.param("teamId")),
+      });
+      if (result.status === "forbidden") {
+        return apiErrorResponse(403, {
+          code: "authorization.forbidden",
+          messageKey: "errors.authorization.forbidden",
+        });
+      }
+      if (result.status === "not-found") {
+        return apiErrorResponse(404, {
+          code: "teams.not_found",
+          messageKey: "errors.teams.not_found",
+        });
+      }
+      return jsonResponse(
+        competitionTeamManagementDetailResponseSchema.parse(
+          teamRosterManagementDetailDto(result.value),
+        ),
+      );
+    },
+  );
 
   secured.get(
     "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/roster",

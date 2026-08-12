@@ -23,12 +23,14 @@ import {
   listCompetitionParticipantsResponseSchema,
   addCompetitionParticipantResponseSchema,
   publishCompetitionResponseSchema,
+  decideTeamEntryResponseSchema,
   type UpdateCompetitionDraftRequest,
   type UpdateCompetitionDraftResponse,
   type CompetitionParticipantInput,
   type ListCompetitionParticipantsResponse,
   type AddCompetitionParticipantResponse,
   type PublishCompetitionResponse,
+  type DecideTeamEntryResponse,
 } from "@futrob/api-contracts";
 import type { HttpClient } from "../http.ts";
 
@@ -159,6 +161,30 @@ export function createCompetitionsResource(http: HttpClient) {
         method: "POST",
         body,
         parse: (data) => registerTeamEntryResponseSchema.parse(data),
+      });
+    },
+
+    async approveTeamEntry(
+      organizationId: string,
+      competitionId: string,
+      entryId: string,
+    ): Promise<DecideTeamEntryResponse> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/entries/${encodeURIComponent(entryId)}/approve`,
+        method: "POST",
+        parse: (data) => decideTeamEntryResponseSchema.parse(data),
+      });
+    },
+
+    async rejectTeamEntry(
+      organizationId: string,
+      competitionId: string,
+      entryId: string,
+    ): Promise<DecideTeamEntryResponse> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/entries/${encodeURIComponent(entryId)}/reject`,
+        method: "POST",
+        parse: (data) => decideTeamEntryResponseSchema.parse(data),
       });
     },
   };

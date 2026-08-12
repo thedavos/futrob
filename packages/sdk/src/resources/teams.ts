@@ -30,6 +30,12 @@ import {
   type AddToRosterResponse,
   type ChangeRosterRoleRequest,
   type ChangeRosterRoleResponse,
+  competitionTeamManagementDetailResponseSchema,
+  competitionTeamManagementListQuerySchema,
+  competitionTeamManagementListResponseSchema,
+  type CompetitionTeamManagementDetailResponse,
+  type CompetitionTeamManagementListQuery,
+  type CompetitionTeamManagementListResponse,
   type CloseRosterResponse,
   type ConnectTeamExternalClubRequest,
   type ConnectTeamExternalClubResponse,
@@ -50,6 +56,33 @@ import type { HttpClient } from "../http.ts";
 
 export function createTeamsResource(http: HttpClient) {
   return {
+    async listCompetitionManagement(
+      organizationId: string,
+      competitionId: string,
+      query: CompetitionTeamManagementListQuery = { limit: 25 },
+    ): Promise<CompetitionTeamManagementListResponse> {
+      const parsed = competitionTeamManagementListQuerySchema.parse(query);
+      const search = new URLSearchParams({ limit: String(parsed.limit) });
+      if (parsed.cursor) search.set("cursor", parsed.cursor);
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management?${search.toString()}`,
+        method: "GET",
+        parse: (data) => competitionTeamManagementListResponseSchema.parse(data),
+      });
+    },
+
+    async getCompetitionTeamManagement(
+      organizationId: string,
+      competitionId: string,
+      teamId: string,
+    ): Promise<CompetitionTeamManagementDetailResponse> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management/${encodeURIComponent(teamId)}`,
+        method: "GET",
+        parse: (data) => competitionTeamManagementDetailResponseSchema.parse(data),
+      });
+    },
+
     async getMyProfile(): Promise<GetMyPlayerProfileResponse> {
       return http.request({
         path: "/players/me",

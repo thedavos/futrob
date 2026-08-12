@@ -187,9 +187,8 @@ export function createTeamsModule(input: {
       ids: shared.ids,
       clock: shared.clock,
     }),
-    /** Exposed for competitions approve-entry verification bridge. */
     externalClubConnections: connections,
-    repositories: { profiles, teams, rosters, accounts },
+    repositories: { profiles, teams, rosters, rosterStates, connections, accounts, capacity },
   };
 }
 

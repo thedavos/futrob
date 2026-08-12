@@ -163,6 +163,37 @@ describe("ContextualAuthorizationAdapter", () => {
     expect(rival.allowed).toBe(false);
   });
 
+  it("allows Team operations before entry approval without granting encounter authority", async () => {
+    const fixture = await createRbacMatrixFixture();
+    const entry = await fixture.entries.findByCompetitionAndTeam(
+      fixture.ids.orgA,
+      fixture.ids.compA,
+      fixture.ids.teamA,
+    );
+    expect(entry).not.toBeNull();
+    await fixture.entries.save({ ...entry!, status: "pending" });
+
+    const competitionRead = await fixture.authorization.decide({
+      actorId: fixture.actors.rosterCaptain,
+      permission: COMPETITION_PERMISSION.participantsRead,
+      scope: fixture.scope("orgA.compA"),
+    });
+    const rosterRead = await fixture.authorization.decide({
+      actorId: fixture.actors.rosterCaptain,
+      permission: TEAM_PERMISSION.rosterRead,
+      scope: fixture.scope("orgA.compA.teamA"),
+    });
+    const officialSelection = await fixture.authorization.decide({
+      actorId: fixture.actors.rosterCaptain,
+      permission: "encounters.official-selection.propose",
+      scope: fixture.scope("orgA.compA.teamA.encounter"),
+    });
+
+    expect(competitionRead.allowed).toBe(true);
+    expect(rosterRead.allowed).toBe(true);
+    expect(officialSelection.allowed).toBe(false);
+  });
+
   it("applies deny in the same scope and lets a more-specific allow override it", async () => {
     const fixture = await createRbacMatrixFixture();
     await fixture.grants.upsert({
