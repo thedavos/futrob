@@ -173,6 +173,10 @@ export class FakeInvitationRepository implements InvitationRepository {
     return this.byHash.get(tokenHash) ?? null;
   }
 
+  async hasRedemption(invitationId: string, actorId: ActorId): Promise<boolean> {
+    return this.redemptionsByInvitationId.get(invitationId)?.has(actorId) ?? false;
+  }
+
   async update(invitation: OrganizationInvitation): Promise<void> {
     this.byHash.set(invitation.tokenHash, invitation);
   }

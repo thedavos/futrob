@@ -228,6 +228,17 @@ export class PostgresInvitationRepository implements InvitationRepository {
     return row ? rehydrateInvitation(row) : null;
   }
 
+  async hasRedemption(invitationId: string, actorId: ActorId): Promise<boolean> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT 1
+       FROM organization_invitation_redemptions
+       WHERE invitation_id = $1 AND actor_id = $2
+       LIMIT 1`,
+      [invitationId, actorId],
+    );
+    return result.rowCount === 1;
+  }
+
   async update(invitation: OrganizationInvitation): Promise<void> {
     await getPgExecutor(this.pool).query(
       `UPDATE organization_invitations

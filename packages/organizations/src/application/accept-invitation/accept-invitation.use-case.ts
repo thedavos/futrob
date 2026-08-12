@@ -20,6 +20,7 @@ import {
   OrganizationNotFound,
   type AcceptInvitationError,
 } from "../../domain/errors/invitation.errors.ts";
+import { assessInvitationEligibility } from "../../domain/policies/invitation-eligibility.ts";
 
 export interface AcceptedInvitation extends MembershipSummary {
   readonly competitionId: import("@futrob/shared-kernel").CompetitionId | null;
@@ -48,7 +49,7 @@ export class AcceptInvitationUseCase {
   async execute(
     input: AcceptInvitationInput,
   ): Promise<Result<AcceptedInvitation, AcceptInvitationError>> {
-    const tokenHash = this.deps.tokens.hashToken(input.token);
+    const tokenHash = this.deps.tokens.hashToken(input.token.trim());
     const invitation = await this.deps.invitations.findByTokenHash(tokenHash);
 
     if (!invitation) {
@@ -59,13 +60,28 @@ export class AcceptInvitationUseCase {
         }),
       );
     }
-    if (input.requireCompetition && !invitation.competitionId) {
-      return err(
-        new InvitationInvalid({
-          code: "organizations.invitation_invalid",
-          message: "Invitation does not target a competition",
-        }),
-      );
+    const now = this.deps.clock.now();
+    const actorAlreadyRedeemed =
+      invitation.redeemPolicy === REDEEM_POLICY.multi
+        ? await this.deps.invitations.hasRedemption(invitation.id, input.actorId)
+        : false;
+    const eligible = assessInvitationEligibility({
+      invitation,
+      actorId: input.actorId,
+      actorAlreadyRedeemed,
+      now,
+      requireCompetition: input.requireCompetition ?? false,
+    });
+    if (!eligible.isOk()) {
+      if (invitation.status === INVITATION_STATUS.pending) {
+        if (InvitationExpired.is(eligible.error)) {
+          await this.deps.invitations.update({
+            ...invitation,
+            status: INVITATION_STATUS.expired,
+          });
+        }
+      }
+      return err(eligible.error);
     }
 
     const organization = await this.deps.organizations.getById(invitation.organizationId);
@@ -79,45 +95,8 @@ export class AcceptInvitationUseCase {
       );
     }
 
-    if (invitation.status === INVITATION_STATUS.revoked) {
-      return err(
-        new InvitationRevoked({
-          code: "organizations.invitation_revoked",
-          message: "Invitation has been revoked",
-        }),
-      );
-    }
-
-    const now = this.deps.clock.now();
-    if (
-      invitation.status === INVITATION_STATUS.expired ||
-      invitation.expiresAt.getTime() <= now.getTime()
-    ) {
-      if (invitation.status === INVITATION_STATUS.pending) {
-        await this.deps.invitations.update({
-          ...invitation,
-          status: INVITATION_STATUS.expired,
-        });
-      }
-      return err(
-        new InvitationExpired({
-          code: "organizations.invitation_expired",
-          message: "Invitation has expired",
-        }),
-      );
-    }
-
     if (invitation.status === INVITATION_STATUS.accepted) {
       return this.acceptedResult(organization, invitation, input.actorId);
-    }
-
-    if (invitation.status !== INVITATION_STATUS.pending) {
-      return err(
-        new InvitationInvalid({
-          code: "organizations.invitation_invalid",
-          message: "Invitation is no longer valid",
-        }),
-      );
     }
 
     const claimed =

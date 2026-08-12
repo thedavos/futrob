@@ -104,6 +104,11 @@ export {
   type AcceptInvitationInput,
   type AcceptedInvitation,
 } from "./application/accept-invitation/accept-invitation.use-case.ts";
+export {
+  InspectCompetitionInvitationUseCase,
+  type InspectCompetitionInvitationInput,
+  type InspectedCompetitionInvitation,
+} from "./application/inspect-competition-invitation/inspect-competition-invitation.use-case.ts";
 export { resolvePostAuthDestination } from "./application/resolve-post-auth-destination/resolve-post-auth-destination.ts";
 export {
   GetEffectiveAccessUseCase,
