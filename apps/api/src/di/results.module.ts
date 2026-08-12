@@ -28,17 +28,23 @@ export function createResultsModule(input: {
   readonly eventPublisher: EventPublisherPort;
   readonly encounterReader: EncounterReaderPort;
   readonly providerMatches: ProviderMatchReaderPort;
+  readonly results?: OfficialResultRepository;
+  readonly selections?: OfficialMatchSelectionRepository;
   readonly clock?: ClockPort;
   readonly ids?: IdGeneratorPort;
 }) {
   const clock = input.clock ?? new SystemClock();
   const ids = input.ids ?? new CryptoIdGenerator();
-  const selections: OfficialMatchSelectionRepository = input.pool
-    ? new PostgresOfficialMatchSelectionRepository(input.pool)
-    : new InMemoryOfficialMatchSelectionRepository();
-  const results: OfficialResultRepository = input.pool
-    ? new PostgresOfficialResultRepository(input.pool)
-    : new InMemoryOfficialResultRepository();
+  const selections: OfficialMatchSelectionRepository =
+    input.selections ??
+    (input.pool
+      ? new PostgresOfficialMatchSelectionRepository(input.pool)
+      : new InMemoryOfficialMatchSelectionRepository());
+  const results: OfficialResultRepository =
+    input.results ??
+    (input.pool
+      ? new PostgresOfficialResultRepository(input.pool)
+      : new InMemoryOfficialResultRepository());
 
   const officialResultReader: OfficialResultReaderPort = {
     getApprovedByEncounter: (encounterId) => results.findApprovedByEncounter(encounterId),

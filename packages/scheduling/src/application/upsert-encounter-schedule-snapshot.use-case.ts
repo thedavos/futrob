@@ -2,6 +2,7 @@ import { err, ok, type ActorId, type AuthorizationPort, type Result } from "@fut
 import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-schedule-snapshot.ts";
 import {
   EncounterScheduleAuthorizationForbidden,
+  FixtureManagedEncounterConflict,
   InvalidEncounterSchedule,
   type UpsertEncounterScheduleError,
 } from "../domain/errors/encounter-schedule.errors.ts";
@@ -9,6 +10,7 @@ import type {
   EncounterParticipantValidationPort,
   EncounterScheduleRepository,
 } from "../domain/ports/encounter-schedule.repository.ts";
+import type { FixturePlanRepository } from "../domain/ports/fixture-plan.repository.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
 
 /** Producer for the scheduling projection consumed by authorization and results. */
@@ -17,6 +19,7 @@ export class UpsertEncounterScheduleSnapshotUseCase {
     private readonly deps: {
       readonly authorization: AuthorizationPort;
       readonly encounters: EncounterScheduleRepository;
+      readonly fixtureOwnership: Pick<FixturePlanRepository, "containsEncounter">;
       readonly participants: EncounterParticipantValidationPort;
     },
   ) {}
@@ -52,6 +55,21 @@ export class UpsertEncounterScheduleSnapshotUseCase {
         new InvalidEncounterSchedule({
           code: "scheduling.invalid_encounter_schedule",
           message: "Encounter schedule must contain two distinct teams and a valid start time",
+        }),
+      );
+    }
+    if (
+      await this.deps.fixtureOwnership.containsEncounter({
+        organizationId: snapshot.organizationId,
+        competitionId: snapshot.competitionId,
+        encounterId: snapshot.encounterId,
+      })
+    ) {
+      return err(
+        new FixtureManagedEncounterConflict({
+          code: "scheduling.fixture_managed_conflict",
+          message: "Fixture-managed encounters must be changed through the audited fixture edit",
+          encounterId: snapshot.encounterId,
         }),
       );
     }

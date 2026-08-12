@@ -1,6 +1,12 @@
 import {
+  editFixtureEncounterRequestSchema,
+  type EditFixtureEncounterRequest,
   encounterScheduleSnapshotSchema,
   type EncounterScheduleSnapshotDto,
+  fixturePlanSchema,
+  type FixturePlanDto,
+  generateCompetitionFixtureRequestSchema,
+  type GenerateCompetitionFixtureRequest,
   upsertEncounterScheduleSnapshotRequestSchema,
   type UpsertEncounterScheduleSnapshotRequest,
 } from "@futrob/api-contracts";
@@ -24,6 +30,45 @@ export function createEncountersResource(http: HttpClient) {
         method: "PUT",
         body: upsertEncounterScheduleSnapshotRequestSchema.parse(input),
         parse: (data) => encounterScheduleSnapshotSchema.parse(data),
+      });
+    },
+    async generateFixture(
+      organizationId: string,
+      competitionId: string,
+      input: GenerateCompetitionFixtureRequest,
+    ): Promise<FixturePlanDto> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/fixture`,
+        method: "POST",
+        body: generateCompetitionFixtureRequestSchema.parse(input),
+        parse: (data) => fixturePlanSchema.parse(data),
+      });
+    },
+    async getFixture(
+      organizationId: string,
+      competitionId: string,
+      fixturePlanId: string,
+    ): Promise<FixturePlanDto> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/fixtures/${encodeURIComponent(fixturePlanId)}`,
+        method: "GET",
+        parse: (data) => fixturePlanSchema.parse(data),
+      });
+    },
+    async editFixtureEncounter(
+      organizationId: string,
+      competitionId: string,
+      fixturePlanId: string,
+      encounterId: string,
+      input: EditFixtureEncounterRequest,
+    ): Promise<FixturePlanDto> {
+      const requestId = input.requestId ?? crypto.randomUUID();
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/fixtures/${encodeURIComponent(fixturePlanId)}/encounters/${encodeURIComponent(encounterId)}`,
+        method: "PATCH",
+        requestId,
+        body: editFixtureEncounterRequestSchema.parse({ ...input, requestId }),
+        parse: (data) => fixturePlanSchema.parse(data),
       });
     },
   };

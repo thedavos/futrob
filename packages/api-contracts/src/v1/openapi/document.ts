@@ -28,6 +28,7 @@ import {
   listAccessibleCompetitionsResponseSchema,
 } from "../competitions/schemas.ts";
 import { encounterScheduleSnapshotSchema } from "../encounters/schemas.ts";
+import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
   competitionTeamManagementDetailResponseSchema,
   competitionTeamManagementListResponseSchema,
@@ -64,6 +65,7 @@ export const futrobOpenApiV1 = {
     { name: "competitions", description: "Organization-scoped competition drafts" },
     { name: "authorization", description: "Contextual roles, grants and effective access" },
     { name: "encounters", description: "Persisted encounter schedule read models" },
+    { name: "fixtures", description: "Deterministic competition fixture graphs" },
   ],
   paths: {
     "/meta/ping": {
@@ -915,6 +917,7 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    ...fixtureOpenApiPaths,
     "/encounters/{encounterId}/schedule-snapshot": {
       get: {
         operationId: "getEncounterScheduleSnapshot",
@@ -2066,6 +2069,7 @@ export const futrobOpenApiV1 = {
           providerKey: { type: ["string", "null"] },
         },
       },
+      ...fixtureOpenApiSchemas,
       CompetitionRules: {
         type: "object",
         required: [

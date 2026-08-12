@@ -103,7 +103,117 @@ describe("context discovery SDK resources", () => {
     expect(method).toBe("PUT");
     expect(body).toMatchObject({ competitionId: "competition-1", homeTeamId: "team-a" });
   });
+
+  it("generates a competition fixture through the typed resource", async () => {
+    let requestedUrl = "";
+    let method: string | undefined;
+    let body: unknown;
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: (async (input, init) => {
+        requestedUrl = requestUrl(input);
+        method = init?.method;
+        if (typeof init?.body === "string") body = JSON.parse(init.body);
+        return Response.json(fixturePlan());
+      }) as typeof fetch,
+    });
+
+    const result = await client.encounters.generateFixture("org-1", "competition-1", {
+      generationVersion: 1,
+      startsAt: "2026-09-01T01:00:00.000Z",
+      roundIntervalDays: 7,
+      homeAndAway: false,
+    });
+
+    expect(result.id).toBe("fixture-1");
+    expect(method).toBe("POST");
+    expect(body).toMatchObject({ generationVersion: 1, roundIntervalDays: 7 });
+    expect(requestedUrl).toBe(
+      "https://app.example.com/api/v1/organizations/org-1/competitions/competition-1/fixture",
+    );
+  });
+
+  it("sends a stable request ID when editing a fixture encounter", async () => {
+    let method: string | undefined;
+    let body: unknown;
+    let requestId: string | null = null;
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: (async (_input, init) => {
+        method = init?.method;
+        requestId = new Headers(init?.headers).get("X-Request-ID");
+        if (typeof init?.body === "string") body = JSON.parse(init.body);
+        return Response.json(fixturePlan());
+      }) as typeof fetch,
+    });
+
+    const stableId = "1f8c914e-a307-42aa-b2ea-ec6cfefaba83";
+    await client.encounters.editFixtureEncounter(
+      "org-1",
+      "competition-1",
+      "fixture-1",
+      "encounter-1",
+      {
+        scheduledStartAt: "2026-09-02T01:00:00.000Z",
+        reason: "Broadcast window",
+        requestId: stableId,
+      },
+    );
+
+    expect(method).toBe("PATCH");
+    expect(requestId).toBe(stableId);
+    expect(body).toMatchObject({ requestId: stableId, reason: "Broadcast window" });
+  });
 });
+
+function fixturePlan() {
+  return {
+    id: "fixture-1",
+    revision: 1,
+    status: "active",
+    generationKey: "competition-1:rules:1:generation:1",
+    organizationId: "org-1",
+    competitionId: "competition-1",
+    rulesVersion: 1,
+    generationVersion: 1,
+    format: "league",
+    timeZone: "America/Lima",
+    homeAndAway: false,
+    seed: ["team-a", "team-b"],
+    stages: [
+      {
+        id: "stage-1",
+        kind: "league",
+        order: 1,
+        rounds: [
+          {
+            id: "round-1",
+            stageId: "stage-1",
+            number: 1,
+            scheduledStartAt: "2026-09-01T01:00:00.000Z",
+            encounters: [
+              {
+                id: "encounter-1",
+                stageId: "stage-1",
+                roundId: "round-1",
+                order: 1,
+                home: { kind: "team", teamId: "team-a" },
+                away: { kind: "team", teamId: "team-b" },
+                scheduledStartAt: "2026-09-01T01:00:00.000Z",
+                officialMatchCount: 1,
+                series: {
+                  id: "series-1",
+                  resolutionMode: "independent_matches",
+                  officialMatches: [{ id: "official-match-1", slot: 1 }],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
 
 function requestUrl(input: string | URL | Request): string {
   return typeof input === "string" ? input : input instanceof URL ? input.href : input.url;

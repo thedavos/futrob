@@ -6,7 +6,7 @@ import { ENCOUNTER_PERMISSION } from "@futrob/scheduling";
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
-import { apiErrorResponse } from "@/http/errors.ts";
+import { apiErrorResponse, failureToHttp } from "@/http/errors.ts";
 import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
@@ -73,12 +73,7 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
         officialMatchCount: parsed.data.officialMatchCount,
       },
     });
-    if (result.isErr()) {
-      return apiErrorResponse(result.error.code === "authorization.forbidden" ? 403 : 400, {
-        code: result.error.code,
-        messageKey: `errors.${result.error.code}`,
-      });
-    }
+    if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(
       encounterScheduleSnapshotSchema.parse({
         ...result.value,

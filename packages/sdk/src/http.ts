@@ -32,6 +32,7 @@ export class HttpClient {
     readonly path: string;
     readonly method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
     readonly body?: unknown;
+    readonly requestId?: string;
     readonly parse: (data: unknown) => T;
   }): Promise<T> {
     const headers: Record<string, string> = {
@@ -46,6 +47,12 @@ export class HttpClient {
     const token = this.getAccessToken ? await this.getAccessToken() : undefined;
     if (token) {
       headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (input.requestId) {
+      headers[REQUEST_ID_HEADER] = input.requestId;
+    } else if (!hasRequestIdHeader(headers)) {
+      headers[REQUEST_ID_HEADER] = crypto.randomUUID();
     }
 
     let body: string | undefined;
@@ -91,4 +98,8 @@ export class HttpClient {
 
     return input.parse(raw);
   }
+}
+
+function hasRequestIdHeader(headers: Record<string, string>): boolean {
+  return Object.keys(headers).some((key) => key.toLowerCase() === REQUEST_ID_HEADER.toLowerCase());
 }

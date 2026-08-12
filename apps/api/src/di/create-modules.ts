@@ -35,6 +35,12 @@ import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 import type { CompetitionId, OrganizationId, TransactionPort } from "@futrob/shared-kernel";
 import type { ConfirmOfficialSelectionInput } from "@futrob/results";
+import {
+  InMemoryOfficialMatchSelectionRepository,
+  InMemoryOfficialResultRepository,
+  PostgresOfficialMatchSelectionRepository,
+  PostgresOfficialResultRepository,
+} from "@/adapters/results/official-result.repository.ts";
 import type { Pool } from "pg";
 import { createGameDataModule, type GameDataModule } from "./game-data.module.ts";
 import { createIdentityModule, type IdentityModule } from "./identity.module.ts";
@@ -43,6 +49,11 @@ import { createCompetitionsModule, type CompetitionsModule } from "./competition
 import { createTeamsModule, type TeamsModule } from "./teams.module.ts";
 import { createAuthorizationModule, type AuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
+import { CompetitionFixtureSourceAdapter } from "@/adapters/scheduling/competition-fixture-source.ts";
+import {
+  InMemoryEncounterMutationLock,
+  PostgresEncounterMutationLock,
+} from "@/adapters/scheduling/encounter-mutation-lock.ts";
 import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
 import { createResultsModule, type ResultsModule } from "./results.module.ts";
 import { createStatisticsModule, type StatisticsModule } from "./statistics.module.ts";
@@ -116,6 +127,10 @@ export function createModules(input: CreateModulesInput): AppModules {
 
   const deferredAuthorization = new DeferredAuthorizationPort();
   const entryGate = new DeferredRosterEntryGate();
+  const eventPublisher = new NoopEventPublisher();
+  const encounterMutationLock = input.pool
+    ? new PostgresEncounterMutationLock(input.pool)
+    : new InMemoryEncounterMutationLock();
   const organizations = createOrganizationsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
@@ -127,6 +142,12 @@ export function createModules(input: CreateModulesInput): AppModules {
   const competitionRepository = input.pool
     ? new PostgresCompetitionRepository(input.pool)
     : new InMemoryCompetitionRepository();
+  const officialResults = input.pool
+    ? new PostgresOfficialResultRepository(input.pool)
+    : new InMemoryOfficialResultRepository();
+  const officialSelections = input.pool
+    ? new PostgresOfficialMatchSelectionRepository(input.pool)
+    : new InMemoryOfficialMatchSelectionRepository();
 
   const teams = createTeamsModule({
     pool: input.pool,
@@ -147,6 +168,15 @@ export function createModules(input: CreateModulesInput): AppModules {
   const scheduling = createSchedulingModule({
     pool: input.pool,
     authorization: deferredAuthorization,
+    eventPublisher,
+    transaction,
+    officialResults,
+    officialSelections,
+    encounterMutationLock,
+    fixtureSource: new CompetitionFixtureSourceAdapter({
+      competitions: competitionRepository,
+      entries: competitions.entryRepository,
+    }),
     participants: {
       async isApprovedParticipant({ organizationId, competitionId, teamId }) {
         const [team, entry] = await Promise.all([
@@ -197,7 +227,6 @@ export function createModules(input: CreateModulesInput): AppModules {
     get: new GetTeamRosterManagementUseCase(teamManagementDeps),
   };
 
-  const eventPublisher = new NoopEventPublisher();
   const results = createResultsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
@@ -211,6 +240,8 @@ export function createModules(input: CreateModulesInput): AppModules {
       scheduling.encounters,
       teams.externalClubConnections,
     ),
+    results: officialResults,
+    selections: officialSelections,
     ids,
   });
   const statistics = createStatisticsModule({
@@ -223,13 +254,15 @@ export function createModules(input: CreateModulesInput): AppModules {
   const confirmOfficialSelectionAndProject = {
     async execute(input: ConfirmOfficialSelectionInput) {
       return transaction.runInTransaction(async () => {
-        const confirmed = await results.confirmOfficialSelection.execute(input);
-        if (!confirmed.isOk()) return confirmed;
-        const projected = await statistics.useCases.projectApprovedOfficialResult.execute({
-          officialResultId: confirmed.value.id,
+        return encounterMutationLock.runExclusive(input.encounterId, async () => {
+          const confirmed = await results.confirmOfficialSelection.execute(input);
+          if (!confirmed.isOk()) return confirmed;
+          const projected = await statistics.useCases.projectApprovedOfficialResult.execute({
+            officialResultId: confirmed.value.id,
+          });
+          if (!projected.isOk()) throw projected.error;
+          return confirmed;
         });
-        if (!projected.isOk()) throw projected.error;
-        return confirmed;
       });
     },
   };

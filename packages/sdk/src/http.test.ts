@@ -64,4 +64,21 @@ describe("HttpClient request correlation", () => {
 
     expect(caught).toMatchObject({ retryAfterSeconds: 41, status: 429 });
   });
+
+  it("sends X-Request-ID on every request", async () => {
+    let sent: string | null = null;
+    const client = new HttpClient({
+      baseUrl: "https://api.futrob.test",
+      fetchImpl: async (_input, init) => {
+        sent = new Headers(init?.headers).get("X-Request-ID");
+        return Response.json({ ok: true });
+      },
+    });
+
+    await client.request({ path: "/meta/ping", method: "GET", parse: (data) => data });
+
+    expect(sent).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+  });
 });
