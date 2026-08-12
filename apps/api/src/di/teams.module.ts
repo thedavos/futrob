@@ -28,6 +28,7 @@ import {
   type PlayerGameAccountRepository,
   type PlayerProfileRepository,
   type RosterCapacityPort,
+  type RosterEntryGatePort,
   type RosterInvitationRepository,
   type RosterInvitationTokenPort,
   type RosterMutationPort,
@@ -78,6 +79,7 @@ export function createTeamsModule(input: {
   readonly competitions: CompetitionRepository;
   readonly authorization: AuthorizationPort;
   readonly transaction: TransactionPort;
+  readonly entryGate: RosterEntryGatePort;
 }) {
   let profiles: PlayerProfileRepository;
   let accounts: PlayerGameAccountRepository;
@@ -126,6 +128,7 @@ export function createTeamsModule(input: {
     rosters,
     rosterStates,
     capacity,
+    entryGate: input.entryGate,
     accounts,
     authorization: input.authorization,
     mutations: rosterMutations,
@@ -185,6 +188,7 @@ export function createTeamsModule(input: {
       invitations: rosterInvitations,
       tokens: rosterInvitationTokens,
       authorization: input.authorization,
+      entryGate: input.entryGate,
       ...shared,
     }),
     acceptRosterInvitation: new AcceptRosterInvitationUseCase({
@@ -192,6 +196,7 @@ export function createTeamsModule(input: {
       rosters,
       rosterStates,
       capacity,
+      entryGate: input.entryGate,
       profiles,
       invitations: rosterInvitations,
       tokens: rosterInvitationTokens,

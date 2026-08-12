@@ -306,6 +306,7 @@ export class ContextualAuthorizationAdapter implements AuthorizationPort {
     if (scope.teamId && scope.organizationId) {
       const team = await this.deps.teams.findById(scope.organizationId, scope.teamId);
       if (!team) return { ok: false, reason: "scope-not-found" };
+      let rosterPermissions = roster ? ROSTER_ROLE_PERMISSIONS[roster.role] : [];
       if (scope.competitionId) {
         const entry = await this.deps.entries.findByCompetitionAndTeam(
           scope.organizationId,
@@ -315,12 +316,15 @@ export class ContextualAuthorizationAdapter implements AuthorizationPort {
         if (!entry) {
           return { ok: false, reason: "scope-mismatch" };
         }
+        if (entry.status === "rejected" && roster) {
+          rosterPermissions = ROSTER_ROLE_PERMISSIONS.player;
+        }
       }
       layers.push({
         scopeType: "team",
         scopeId: scope.teamId,
         roles: roster ? [{ scopeType: "team", scopeId: scope.teamId, role: roster.role }] : [],
-        baseline: new Set(roster ? ROSTER_ROLE_PERMISSIONS[roster.role] : []),
+        baseline: new Set(rosterPermissions),
       });
     }
 

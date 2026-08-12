@@ -24,7 +24,7 @@ import { TEAM_PERMISSION } from "@futrob/teams";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
-import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import {
   rosterInvitationMetaDto,
   rosterMembershipDto,
@@ -84,7 +84,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
       return jsonResponse(
         competitionTeamManagementListResponseSchema.parse({
           items: result.items.map(teamRosterManagementSummaryDto),
-          nextCursor: result.nextCursor,
+          nextCursor: result.nextCursor ?? null,
         }),
       );
     },
@@ -99,18 +99,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
         competitionId: asCompetitionId(c.req.param("competitionId")),
         teamId: asTeamId(c.req.param("teamId")),
       });
-      if (result.status === "forbidden") {
-        return apiErrorResponse(403, {
-          code: "authorization.forbidden",
-          messageKey: "errors.authorization.forbidden",
-        });
-      }
-      if (result.status === "not-found") {
-        return apiErrorResponse(404, {
-          code: "teams.not_found",
-          messageKey: "errors.teams.not_found",
-        });
-      }
+      if (!result.isOk()) return failureToHttp(result.error);
       return jsonResponse(
         competitionTeamManagementDetailResponseSchema.parse(
           teamRosterManagementDetailDto(result.value),

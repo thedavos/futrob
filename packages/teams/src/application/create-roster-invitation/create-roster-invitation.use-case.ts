@@ -21,7 +21,8 @@ import {
   InvalidRosterInvitationRole,
   type CreateRosterInvitationError,
 } from "../../domain/errors/roster-invitation.errors.ts";
-import { TeamNotFound } from "../../domain/errors/team.errors.ts";
+import { TeamNotFound, RosterEntryInactive } from "../../domain/errors/team.errors.ts";
+import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.port.ts";
 import type { RosterInvitationRepository } from "../../domain/ports/roster-invitation.repository.ts";
 import type { RosterInvitationTokenPort } from "../../domain/ports/roster-invitation-token.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
@@ -61,6 +62,7 @@ export class CreateRosterInvitationUseCase {
       readonly ids: IdGeneratorPort;
       readonly tokens: RosterInvitationTokenPort;
       readonly authorization: AuthorizationPort;
+      readonly entryGate: RosterEntryGatePort;
     },
   ) {}
 
@@ -95,6 +97,19 @@ export class CreateRosterInvitationUseCase {
         new TeamNotFound({
           code: "teams.not_found",
           message: "Team not found",
+        }),
+      );
+    }
+    const canMutate = await this.deps.entryGate.canMutateRoster(
+      input.organizationId,
+      input.competitionId,
+      input.teamId,
+    );
+    if (!canMutate) {
+      return err(
+        new RosterEntryInactive({
+          code: "teams.roster_entry_inactive",
+          message: "Roster writes are closed for this competition entry",
         }),
       );
     }

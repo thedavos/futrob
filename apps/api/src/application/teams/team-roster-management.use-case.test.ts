@@ -7,12 +7,13 @@ import {
   type AuthorizationPort,
 } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "@futrob/competitions";
-import type {
-  CompetitionRosterMembership,
-  CompetitionRosterState,
-  ExternalClubConnection,
-  PlayerGameAccount,
-  Team,
+import {
+  TeamAuthorizationForbidden,
+  type CompetitionRosterMembership,
+  type CompetitionRosterState,
+  type ExternalClubConnection,
+  type PlayerGameAccount,
+  type Team,
 } from "@futrob/teams";
 import {
   GetTeamRosterManagementUseCase,
@@ -74,7 +75,16 @@ function dependencies(input?: {
   };
   return {
     authorization,
-    entries: { list: async () => entries },
+    entries: {
+      list: async () => entries,
+      find: async (organization, competition, teamId) =>
+        entries.find(
+          (candidate) =>
+            candidate.organizationId === organization &&
+            candidate.competitionId === competition &&
+            candidate.teamId === teamId,
+        ) ?? null,
+    },
     teams: {
       find: async (organization, id) =>
         teams.find(
@@ -114,10 +124,10 @@ describe("ListTeamRosterManagementUseCase", () => {
       organizationId,
       competitionId,
       limit: 2,
-      cursor: first.nextCursor ?? undefined,
+      cursor: first.nextCursor,
     });
     expect(second.items.map((item) => item.team.id)).toEqual(["team-z"]);
-    expect(second.nextCursor).toBeNull();
+    expect(second.nextCursor).toBeUndefined();
   });
 
   it("omits teams outside the tenant and teams the actor cannot read", async () => {
@@ -193,13 +203,42 @@ describe("GetTeamRosterManagementUseCase", () => {
       teamId: asTeamId("team-1"),
     });
 
-    expect(result.status).toBe("ok");
-    if (result.status !== "ok") return;
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk()) return;
     expect(result.value.roster).toMatchObject({ state: "closed", memberCount: 1, maxSize: 11 });
     expect(result.value.members[0]?.presentation).toEqual({
       displayName: "Capitana10",
       avatarUrl: null,
     });
+  });
+
+  it("looks up the Team entry directly and leaves unnamed members without copy", async () => {
+    const membership: CompetitionRosterMembership = {
+      id: "membership-1",
+      organizationId,
+      competitionId,
+      teamId: asTeamId("team-1"),
+      playerProfileId: "profile-1",
+      gameAccountId: null,
+      role: "player",
+      createdAt: new Date("2026-08-11T12:00:00.000Z"),
+    };
+    const deps = dependencies({ memberships: [membership] });
+    deps.entries.list = async () => {
+      throw new Error("Get must not list every competition entry");
+    };
+    const useCase = new GetTeamRosterManagementUseCase(deps);
+
+    const result = await useCase.execute({
+      actorId,
+      organizationId,
+      competitionId,
+      teamId: asTeamId("team-1"),
+    });
+
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk()) return;
+    expect(result.value.members[0]?.presentation.displayName).toBeNull();
   });
 
   it("fails closed without revealing whether a denied team exists", async () => {
@@ -210,6 +249,8 @@ describe("GetTeamRosterManagementUseCase", () => {
       competitionId,
       teamId: asTeamId("team-1"),
     });
-    expect(result).toEqual({ status: "forbidden" });
+    expect(result.isOk()).toBe(false);
+    if (result.isOk()) return;
+    expect(TeamAuthorizationForbidden.is(result.error)).toBe(true);
   });
 });

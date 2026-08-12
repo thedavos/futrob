@@ -5,10 +5,10 @@ import { TeamsClientError } from "./teams-browser-client.ts";
 describe("teamConsoleError", () => {
   it.each([
     ["teams.roster_full", "cupo máximo"],
-    ["teams.roster_locked", "está cerrada"],
+    ["teams.roster_entry_inactive", "ya no está activo"],
     ["teams.roster_competition_conflict", "otro Team"],
     ["authorization.forbidden", "No tienes permiso"],
-    ["teams.invitation_expired", "ya expiró"],
+    ["teams.roster_invitation_expired", "ya expiró"],
     ["teams.client_network_error", "Conservamos tu contexto"],
   ])("maps %s to actionable copy", (code, expected) => {
     const error = teamConsoleError(new TeamsClientError(400, code));

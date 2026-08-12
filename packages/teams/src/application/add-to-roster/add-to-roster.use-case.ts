@@ -19,13 +19,16 @@ import {
   RosterCompetitionConflict,
   RosterFull,
   RosterLocked,
+  RosterEntryInactive,
   TeamNotFound,
   type AddToRosterError,
+  type AddToRosterUncheckedError,
 } from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterMembershipRepository } from "../../domain/ports/competition-roster-membership.repository.ts";
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
+import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.port.ts";
 import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
@@ -47,6 +50,7 @@ type AddToRosterCoreDependencies = {
   readonly rosters: CompetitionRosterMembershipRepository;
   readonly rosterStates: CompetitionRosterStateRepository;
   readonly capacity: RosterCapacityPort;
+  readonly entryGate: RosterEntryGatePort;
   readonly accounts: PlayerGameAccountRepository;
   readonly clock: ClockPort;
   readonly ids: IdGeneratorPort;
@@ -56,7 +60,7 @@ type AddToRosterCoreDependencies = {
 export async function addToRosterUnchecked(
   deps: AddToRosterCoreDependencies,
   input: AddToRosterCoreInput,
-): Promise<Result<CompetitionRosterMembership, AddToRosterError>> {
+): Promise<Result<CompetitionRosterMembership, AddToRosterUncheckedError>> {
   const team = await deps.teams.findById(input.organizationId, input.teamId);
   if (!team) {
     return err(new TeamNotFound({ code: "teams.not_found", message: "Team not found" }));
@@ -79,6 +83,20 @@ export async function addToRosterUnchecked(
       new RosterLocked({
         code: "teams.roster_locked",
         message: "Roster is locked for this competition",
+      }),
+    );
+  }
+
+  const canMutate = await deps.entryGate.canMutateRoster(
+    input.organizationId,
+    input.competitionId,
+    input.teamId,
+  );
+  if (!canMutate) {
+    return err(
+      new RosterEntryInactive({
+        code: "teams.roster_entry_inactive",
+        message: "Roster writes are closed for this competition entry",
       }),
     );
   }
@@ -121,13 +139,6 @@ export async function addToRosterUnchecked(
     }
   }
 
-  if (input.role === "captain") {
-    const previousCaptain = currentMembers.find((member) => member.role === "captain");
-    if (previousCaptain) {
-      await deps.rosters.update({ ...previousCaptain, role: "player" });
-    }
-  }
-
   const added = await deps.rosters.add({
     id: deps.ids.generate(),
     organizationId: input.organizationId,
@@ -135,17 +146,24 @@ export async function addToRosterUnchecked(
     teamId: input.teamId,
     playerProfileId: input.playerProfileId,
     gameAccountId,
-    role: input.role,
+    role: input.role === "captain" ? "player" : input.role,
     createdAt: deps.clock.now(),
   });
-  return added
-    ? ok(added)
-    : err(
-        new RosterCompetitionConflict({
-          code: "teams.roster_competition_conflict",
-          message: "Player already belongs to a team in this competition",
-        }),
-      );
+  if (!added) {
+    return err(
+      new RosterCompetitionConflict({
+        code: "teams.roster_competition_conflict",
+        message: "Player already belongs to a team in this competition",
+      }),
+    );
+  }
+  if (input.role !== "captain") return ok(added);
+
+  const previousCaptain = currentMembers.find((member) => member.role === "captain");
+  if (previousCaptain) {
+    await deps.rosters.update({ ...previousCaptain, role: "player" });
+  }
+  return ok(await deps.rosters.update({ ...added, role: "captain" }));
 }
 
 export class AddToRosterUseCase {
@@ -155,6 +173,7 @@ export class AddToRosterUseCase {
       readonly rosters: CompetitionRosterMembershipRepository;
       readonly rosterStates: CompetitionRosterStateRepository;
       readonly capacity: RosterCapacityPort;
+      readonly entryGate: RosterEntryGatePort;
       readonly accounts: PlayerGameAccountRepository;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;

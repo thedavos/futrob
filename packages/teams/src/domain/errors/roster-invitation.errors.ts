@@ -1,6 +1,8 @@
 import { TaggedError } from "@futrob/shared-kernel";
 import type {
+  AddToRosterUncheckedError,
   RosterCompetitionConflict,
+  RosterEntryInactive,
   RosterFull,
   RosterLocked,
   TeamNotFound,
@@ -38,14 +40,12 @@ export class InvalidRosterInvitationRole extends TaggedError("InvalidRosterInvit
 export type CreateRosterInvitationError =
   | InvalidRosterInvitationRole
   | TeamNotFound
-  | TeamAuthorizationForbidden;
+  | TeamAuthorizationForbidden
+  | RosterEntryInactive;
 
 export type AcceptRosterInvitationError =
   | RosterInvitationNotFound
   | RosterInvitationInvalid
   | RosterInvitationExpired
   | RosterInvitationRevoked
-  | TeamNotFound
-  | RosterFull
-  | RosterLocked
-  | RosterCompetitionConflict;
+  | AddToRosterUncheckedError;

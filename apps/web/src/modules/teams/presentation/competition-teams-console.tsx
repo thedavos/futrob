@@ -127,8 +127,6 @@ export function CompetitionTeamsConsole({
         const result = await searchClubs.mutateAsync({
           query,
           providerKey: "ea-clubs",
-          platform: "common-gen5",
-          gameEdition: "fc26",
         });
         return result.clubs;
       }}
@@ -143,6 +141,17 @@ export function CompetitionTeamsConsole({
     />
   );
 }
+
+const ERROR_COPY: Record<string, string> = {
+  "teams.roster_full": "La plantilla ya alcanzó su cupo máximo.",
+  "teams.roster_entry_inactive":
+    "Este Team ya no está activo en la competición. No se pueden cambiar plantillas.",
+  "teams.roster_competition_conflict": "Ese jugador ya pertenece a otro Team en esta competición.",
+  "authorization.forbidden": "No tienes permiso para operar este Team o esta competición.",
+  "teams.roster_invitation_expired": "La invitación ya expiró. Crea un enlace nuevo.",
+  "teams.client_network_error":
+    "No pudimos conectar con Futrob. Conservamos tu contexto para que puedas reintentar.",
+};
 
 export function teamConsoleError(error: unknown): SupportError {
   if (error instanceof TeamsClientError) {
@@ -163,15 +172,5 @@ export function teamConsoleError(error: unknown): SupportError {
 }
 
 function errorCopy(code: string): string {
-  if (code === "teams.roster_full") return "La plantilla ya alcanzó su cupo máximo.";
-  if (code === "teams.roster_locked")
-    return "La plantilla está cerrada. Ábrela antes de invitar jugadores.";
-  if (code === "teams.roster_competition_conflict")
-    return "Ese jugador ya pertenece a otro Team en esta competición.";
-  if (code === "authorization.forbidden")
-    return "No tienes permiso para operar este Team o esta competición.";
-  if (code.includes("expired")) return "La invitación ya expiró. Crea un enlace nuevo.";
-  if (code.includes("network"))
-    return "No pudimos conectar con Futrob. Conservamos tu contexto para que puedas reintentar.";
-  return "No pudimos completar la operación. Inténtalo nuevamente.";
+  return ERROR_COPY[code] ?? "No pudimos completar la operación. Inténtalo nuevamente.";
 }

@@ -76,6 +76,7 @@ function statusForFailureCode(code: string): number {
     code.includes("exhausted") ||
     code.includes("roster_full") ||
     code.includes("roster_locked") ||
+    code.includes("roster_entry_inactive") ||
     code.includes("already_decided") ||
     code.includes("captain_already_assigned") ||
     code.includes("not_editable") ||

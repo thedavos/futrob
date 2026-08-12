@@ -12,6 +12,10 @@ import {
   SchedulingEncounterReader,
 } from "@/adapters/results/bridges.ts";
 import { createTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
+import {
+  CompetitionRosterEntryGate,
+  DeferredRosterEntryGate,
+} from "@/adapters/teams/roster-entry-gate.port.ts";
 import { NoopEventPublisher } from "@/adapters/events/noop-event-publisher.ts";
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
@@ -67,6 +71,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
 
   const deferredAuthorization = new DeferredAuthorizationPort();
+  const entryGate = new DeferredRosterEntryGate();
   const transaction = createTransactionPort(input.pool);
   const organizations = createOrganizationsModule({
     pool: input.pool,
@@ -85,6 +90,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     competitions: competitionRepository,
     authorization: deferredAuthorization,
     transaction,
+    entryGate,
   });
   const competitions = createCompetitionsModule({
     pool: input.pool,
@@ -120,6 +126,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     scheduling,
   });
   deferredAuthorization.bind(authorization.port);
+  entryGate.bind(new CompetitionRosterEntryGate(competitions.entryRepository));
 
   const teamManagementDeps = {
     authorization: deferredAuthorization,
@@ -127,6 +134,9 @@ export function createModules(input: CreateModulesInput): AppModules {
       list: (organizationId: OrganizationId, competitionId: CompetitionId) =>
         competitions.entryRepository.listByCompetition?.(organizationId, competitionId) ??
         Promise.resolve([]),
+      find: competitions.entryRepository.findByCompetitionAndTeam.bind(
+        competitions.entryRepository,
+      ),
     },
     teams: { find: teams.repositories.teams.findById.bind(teams.repositories.teams) },
     rosters: { list: teams.repositories.rosters.listByTeam.bind(teams.repositories.rosters) },

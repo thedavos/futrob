@@ -52,6 +52,7 @@ import {
   InvitationDialog,
   roleLabel,
   RosterRoleEditor,
+  runAction,
 } from "./competition-team-actions.tsx";
 
 export type TeamConsoleCapabilities = {
@@ -396,8 +397,4 @@ function entryStatusLabel(status: "pending" | "approved" | "rejected"): string {
 
 function rosterState(item: CompetitionTeamManagementSummaryDto): string {
   return item.roster.state === "open" ? "abierta" : "cerrada";
-}
-
-function runAction(action: () => Promise<void>): void {
-  void action().catch(() => undefined);
 }

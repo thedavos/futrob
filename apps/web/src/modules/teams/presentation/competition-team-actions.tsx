@@ -330,6 +330,6 @@ export function ConfirmAction({
   );
 }
 
-function runAction(action: () => Promise<void>): void {
+export function runAction(action: () => Promise<void>): void {
   void action().catch(() => undefined);
 }

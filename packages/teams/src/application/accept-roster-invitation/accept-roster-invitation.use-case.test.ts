@@ -211,6 +211,7 @@ function buildHarness(options?: { maxSize?: number }) {
     invitations: harness.invitations,
     tokens: harness.tokens,
     authorization,
+    entryGate: { canMutateRoster: async () => true },
     ...shared,
   });
   const acceptInvitation = new AcceptRosterInvitationUseCase({
@@ -218,6 +219,7 @@ function buildHarness(options?: { maxSize?: number }) {
     rosters,
     rosterStates,
     capacity,
+    entryGate: { canMutateRoster: async () => true },
     profiles,
     invitations: harness.invitations,
     tokens: harness.tokens,

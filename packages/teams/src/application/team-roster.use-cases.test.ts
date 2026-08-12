@@ -6,6 +6,7 @@ import {
   RosterCompetitionConflict,
   RosterFull,
   RosterLocked,
+  RosterEntryInactive,
 } from "../domain/errors/team.errors.ts";
 import type { ActiveTeamPreference } from "../domain/entities/active-team-preference.ts";
 import type { CompetitionRosterMembership } from "../domain/entities/competition-roster-membership.ts";
@@ -277,7 +278,17 @@ function rosterDeps(options?: { maxSize?: number }) {
   const capacity = new Capacity(options?.maxSize ?? 11);
   const accounts = new Accounts();
   const mutations = new SerialRosterMutations();
-  const deps = { teams, rosters, rosterStates, capacity, accounts, mutations, ...shared() };
+  const entryGate = { canMutateRoster: async () => true };
+  const deps = {
+    teams,
+    rosters,
+    rosterStates,
+    capacity,
+    entryGate,
+    accounts,
+    mutations,
+    ...shared(),
+  };
   const addToRoster = new AddToRosterUseCase(deps);
   const closeRoster = new CloseRosterUseCase({
     teams,
@@ -625,6 +636,30 @@ describe("team and roster use cases", () => {
     expect(finalRoster.find((member) => member.playerProfileId === "profile-1")?.role).toBe(
       "player",
     );
+  });
+
+  it("rejects roster writes when the competition entry is no longer live", async () => {
+    const { teams, addToRoster, entryGate } = rosterDeps();
+    entryGate.canMutateRoster = async () => false;
+    const orgId = asOrganizationId("org-1");
+    const team = await new CreateTeamUseCase({ teams, ...shared() }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Rejected FC",
+    });
+    if (!team.isOk()) throw team.error;
+
+    const added = await addToRoster.execute({
+      organizationId: orgId,
+      competitionId: asCompetitionId("comp-1"),
+      teamId: team.value.id,
+      playerProfileId: "profile-1",
+      role: "player",
+    });
+
+    expect(added.isOk()).toBe(false);
+    if (added.isOk()) return;
+    expect(RosterEntryInactive.is(added.error)).toBe(true);
   });
 
   it("keeps exactly one captain when two promotions run concurrently", async () => {

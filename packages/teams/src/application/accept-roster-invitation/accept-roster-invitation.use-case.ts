@@ -19,6 +19,7 @@ import type { CompetitionRosterStateRepository } from "../../domain/ports/compet
 import type { PlayerProfileRepository } from "../../domain/ports/player-profile.repository.ts";
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
+import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.port.ts";
 import type { RosterInvitationRepository } from "../../domain/ports/roster-invitation.repository.ts";
 import type { RosterInvitationTokenPort } from "../../domain/ports/roster-invitation-token.port.ts";
 import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
@@ -47,6 +48,7 @@ export class AcceptRosterInvitationUseCase {
       readonly rosters: CompetitionRosterMembershipRepository;
       readonly rosterStates: CompetitionRosterStateRepository;
       readonly capacity: RosterCapacityPort;
+      readonly entryGate: RosterEntryGatePort;
       readonly profiles: PlayerProfileRepository;
       readonly invitations: RosterInvitationRepository;
       readonly clock: ClockPort;
@@ -73,26 +75,14 @@ export class AcceptRosterInvitationUseCase {
       );
     }
 
-    try {
-      return await this.deps.mutations.runExclusive(
-        {
-          organizationId: invitation.organizationId,
-          competitionId: invitation.competitionId,
-          teamId: invitation.teamId,
-        },
-        () => this.acceptLocked(input, tokenHash),
-      );
-    } catch (error) {
-      if (
-        TeamNotFound.is(error) ||
-        RosterFull.is(error) ||
-        RosterLocked.is(error) ||
-        RosterCompetitionConflict.is(error)
-      ) {
-        return err(error);
-      }
-      throw error;
-    }
+    return this.deps.mutations.runExclusive(
+      {
+        organizationId: invitation.organizationId,
+        competitionId: invitation.competitionId,
+        teamId: invitation.teamId,
+      },
+      () => this.acceptLocked(input, tokenHash),
+    );
   }
 
   private async acceptLocked(
@@ -156,28 +146,23 @@ export class AcceptRosterInvitationUseCase {
       return ok(precheck.membership);
     }
 
+    const profile = await this.deps.ensurePlayerProfile.execute({ actorId: input.actorId });
+    const added = await addToRosterUnchecked(this.deps, {
+      organizationId: invitation.organizationId,
+      competitionId: invitation.competitionId,
+      teamId: invitation.teamId,
+      playerProfileId: profile.id,
+      role: invitation.role,
+    });
+    if (!added.isOk()) {
+      return err(added.error);
+    }
+
     const claimed = await this.deps.invitations.claimPending(tokenHash, input.actorId, now, {
       hasFreeSlot: precheck.hasFreeSlot,
       maxRosterSize: precheck.maxRosterSize,
     });
-    if (!claimed) {
-      return this.claimFailureResult(tokenHash, input.actorId, now, invitation.redeemPolicy);
-    }
-
-    const profile = await this.deps.ensurePlayerProfile.execute({ actorId: input.actorId });
-    const added = await addToRosterUnchecked(this.deps, {
-      organizationId: claimed.organizationId,
-      competitionId: claimed.competitionId,
-      teamId: claimed.teamId,
-      playerProfileId: profile.id,
-      role: claimed.role,
-    });
-
-    if (!added.isOk()) {
-      throw added.error;
-    }
-
-    if (claimed.redeemPolicy === "multi") {
+    if (claimed?.redeemPolicy === "multi") {
       await this.deps.invitations.deleteRedemption(claimed.id, input.actorId);
     }
 
@@ -285,73 +270,6 @@ export class AcceptRosterInvitationUseCase {
     return { kind: "continue", hasFreeSlot, maxRosterSize };
   }
 
-  private async claimFailureResult(
-    tokenHash: string,
-    actorId: ActorId,
-    now: Date,
-    redeemPolicy: NonNullable<
-      Awaited<ReturnType<RosterInvitationRepository["findByTokenHash"]>>
-    >["redeemPolicy"],
-  ): Promise<Result<CompetitionRosterMembership, AcceptRosterInvitationError>> {
-    const current = await this.deps.invitations.findByTokenHash(tokenHash);
-    if (!current) {
-      return err(
-        new RosterInvitationNotFound({
-          code: "teams.roster_invitation_not_found",
-          message: "Roster invitation not found",
-        }),
-      );
-    }
-    if (current.status === ROSTER_INVITATION_STATUS.revoked) {
-      return err(
-        new RosterInvitationRevoked({
-          code: "teams.roster_invitation_revoked",
-          message: "Roster invitation has been revoked",
-        }),
-      );
-    }
-    if (
-      current.status === ROSTER_INVITATION_STATUS.expired ||
-      current.expiresAt.getTime() <= now.getTime()
-    ) {
-      return err(
-        new RosterInvitationExpired({
-          code: "teams.roster_invitation_expired",
-          message: "Roster invitation has expired",
-        }),
-      );
-    }
-    if (redeemPolicy === "single" && current.status === ROSTER_INVITATION_STATUS.accepted) {
-      return this.acceptedResult(current, actorId);
-    }
-    if (redeemPolicy === "multi" && current.status === ROSTER_INVITATION_STATUS.pending) {
-      const priorRedemption = await this.deps.invitations.findRedemption(current.id, actorId);
-      if (priorRedemption) {
-        const profile = await this.deps.ensurePlayerProfile.execute({ actorId });
-        const existing = await this.deps.rosters.findByTeamPlayerCompetition(
-          current.teamId,
-          profile.id,
-          current.competitionId,
-        );
-        if (existing) {
-          return ok(existing);
-        }
-      }
-      return err(
-        new RosterFull({
-          code: "teams.roster_full",
-          message: "Roster has reached maximum capacity",
-        }),
-      );
-    }
-    return err(
-      new RosterInvitationInvalid({
-        code: "teams.roster_invitation_invalid",
-        message: "Roster invitation is no longer valid",
-      }),
-    );
-  }
-
   private async acceptedResult(
     invitation: NonNullable<Awaited<ReturnType<RosterInvitationRepository["findByTokenHash"]>>>,
     actorId: ActorId,
@@ -374,7 +292,7 @@ export class AcceptRosterInvitationUseCase {
         role: invitation.role,
       });
       if (!added.isOk()) {
-        throw added.error;
+        return err(added.error);
       }
       return ok(added.value);
     }
