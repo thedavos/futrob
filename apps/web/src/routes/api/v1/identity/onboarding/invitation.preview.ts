@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/v1/identity/onboarding/invitation/pre
         try {
           return runRateLimitedBffRequest({
             request,
-            policy: BFF_RATE_LIMIT_POLICY.invitationAccept,
+            policy: BFF_RATE_LIMIT_POLICY.invitationPreview,
             authenticate: () => createAuthenticatedProductApiClient(request),
             enforce: enforceBffRateLimit,
             next: async ({ client }) => {

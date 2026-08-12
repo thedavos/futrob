@@ -3,6 +3,7 @@ import type { ActorId } from "@futrob/shared-kernel";
 export const BFF_RATE_LIMIT_POLICY = {
   eaClubSearch: "ea-club-search",
   invitationAccept: "invitation-accept",
+  invitationPreview: "invitation-preview",
 } as const;
 
 export type BffRateLimitPolicy = (typeof BFF_RATE_LIMIT_POLICY)[keyof typeof BFF_RATE_LIMIT_POLICY];
@@ -22,6 +23,11 @@ export const DEFAULT_BFF_RATE_LIMIT_POLICIES: BffRateLimitPolicies = {
     ipMaxAttempts: 30,
   },
   [BFF_RATE_LIMIT_POLICY.invitationAccept]: {
+    windowSeconds: 900,
+    actorMaxAttempts: 5,
+    ipMaxAttempts: 5,
+  },
+  [BFF_RATE_LIMIT_POLICY.invitationPreview]: {
     windowSeconds: 900,
     actorMaxAttempts: 5,
     ipMaxAttempts: 5,
@@ -83,6 +89,23 @@ export function parseBffRateLimitPolicies(
         source.RATE_LIMIT_INVITATION_ACCEPT_IP_MAX,
         DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationAccept].ipMaxAttempts,
         "RATE_LIMIT_INVITATION_ACCEPT_IP_MAX",
+      ),
+    },
+    [BFF_RATE_LIMIT_POLICY.invitationPreview]: {
+      windowSeconds: positiveInteger(
+        source.RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS,
+        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationPreview].windowSeconds,
+        "RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS",
+      ),
+      actorMaxAttempts: positiveInteger(
+        source.RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX,
+        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationPreview].actorMaxAttempts,
+        "RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX",
+      ),
+      ipMaxAttempts: positiveInteger(
+        source.RATE_LIMIT_INVITATION_PREVIEW_IP_MAX,
+        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationPreview].ipMaxAttempts,
+        "RATE_LIMIT_INVITATION_PREVIEW_IP_MAX",
       ),
     },
   };
