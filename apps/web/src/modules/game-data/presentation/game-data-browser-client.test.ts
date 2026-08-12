@@ -32,4 +32,29 @@ describe("gameDataBrowserClient", () => {
       status: 502,
     });
   });
+
+  it("propagates the retry delay from a rate-limited search", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          {
+            code: "api.rate_limited",
+            messageKey: "errors.api.rate_limited",
+            retryAfterSeconds: 37,
+          },
+          { status: 429, headers: { "Retry-After": "37" } },
+        ),
+      ),
+    );
+
+    const result = await gameDataBrowserClient.searchClubs({ query: "Fera" });
+    const error = result.isErr() ? result.error : null;
+
+    expect(error).toMatchObject({
+      code: "api.rate_limited",
+      retryAfterSeconds: 37,
+      status: 429,
+    });
+  });
 });

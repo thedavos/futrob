@@ -4,6 +4,7 @@ export class FutrobApiError extends Error {
   readonly code: string;
   readonly messageKey: string;
   readonly requestId?: string;
+  readonly retryAfterSeconds?: number;
   readonly details?: ApiErrorBody["details"];
   readonly status: number;
 
@@ -14,6 +15,7 @@ export class FutrobApiError extends Error {
     this.code = input.body.code;
     this.messageKey = input.body.messageKey;
     this.requestId = input.body.requestId;
+    this.retryAfterSeconds = input.body.retryAfterSeconds;
     this.details = input.body.details;
   }
 }
@@ -21,4 +23,10 @@ export class FutrobApiError extends Error {
 export function parseApiErrorBody(data: unknown): ApiErrorBody | null {
   const parsed = apiErrorSchema.safeParse(data);
   return parsed.success ? parsed.data : null;
+}
+
+export function parseRetryAfterSeconds(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  const seconds = Number(raw);
+  return Number.isSafeInteger(seconds) && seconds > 0 ? seconds : undefined;
 }

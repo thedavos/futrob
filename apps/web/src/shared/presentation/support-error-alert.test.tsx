@@ -40,4 +40,14 @@ describe("SupportErrorAlert", () => {
     expect(screen.queryByText(/Código de soporte/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Copiar código de soporte" })).toBeNull();
   });
+
+  it("announces when a rate-limited action can be retried", () => {
+    render(
+      <SupportErrorAlert
+        error={{ message: "Alcanzaste el límite temporal.", retryAfterSeconds: 37 }}
+      />,
+    );
+
+    expect(screen.getByText("Podrás reintentar en 37 s.")).toBeTruthy();
+  });
 });

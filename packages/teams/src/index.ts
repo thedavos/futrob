@@ -32,6 +32,11 @@ export type { CompetitionRosterMembershipRepository } from "./domain/ports/compe
 export type { CompetitionRosterStateRepository } from "./domain/ports/competition-roster-state.repository.ts";
 export type { ExternalClubConnectionRepository } from "./domain/ports/external-club-connection.repository.ts";
 export type { RosterCapacityPort } from "./domain/ports/roster-capacity.port.ts";
+export type { RosterEntryGatePort } from "./domain/ports/roster-entry-gate.port.ts";
+export type {
+  RosterMutationPort,
+  RosterMutationScope,
+} from "./domain/ports/roster-mutation.port.ts";
 export type {
   RosterInvitationRepository,
   ClaimPendingOptions,
@@ -51,6 +56,7 @@ export {
   CreationKeyConflict,
   RosterCompetitionConflict,
   RosterLocked,
+  RosterEntryInactive,
   RosterFull,
   RosterMembershipNotFound,
   TeamAuthorizationForbidden,

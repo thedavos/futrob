@@ -8,6 +8,7 @@ import { CheckIcon, CopyIcon, WarningCircleIcon } from "@phosphor-icons/react";
 export interface SupportError {
   readonly message: string;
   readonly requestId?: RequestId;
+  readonly retryAfterSeconds?: number;
 }
 
 export function SupportErrorAlert({
@@ -27,6 +28,9 @@ export function SupportErrorAlert({
       <WarningCircleIcon aria-hidden="true" />
       <AlertDescription className="grid gap-3">
         <span>{error.message}</span>
+        {error.retryAfterSeconds ? (
+          <span aria-live="polite">Podrás reintentar en {error.retryAfterSeconds} s.</span>
+        ) : null}
         {error.requestId ? (
           <span className="flex flex-wrap items-center gap-3">
             <span className="typo-caption">

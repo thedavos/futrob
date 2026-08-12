@@ -6,6 +6,7 @@ import {
   RosterCompetitionConflict,
   RosterFull,
   RosterLocked,
+  RosterEntryInactive,
 } from "../domain/errors/team.errors.ts";
 import type { ActiveTeamPreference } from "../domain/entities/active-team-preference.ts";
 import type { CompetitionRosterMembership } from "../domain/entities/competition-roster-membership.ts";
@@ -21,6 +22,10 @@ import type { ExternalClubConnectionRepository } from "../domain/ports/external-
 import type { PlayerGameAccountRepository } from "../domain/ports/player-game-account.repository.ts";
 import type { PlayerProfileRepository } from "../domain/ports/player-profile.repository.ts";
 import type { RosterCapacityPort } from "../domain/ports/roster-capacity.port.ts";
+import type {
+  RosterMutationPort,
+  RosterMutationScope,
+} from "../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../domain/ports/team.repository.ts";
 import {
   AddToRosterUseCase,
@@ -33,6 +38,7 @@ import { CreateTeamUseCase } from "./create-team/create-team.use-case.ts";
 import { GetActiveTeamUseCase } from "./get-active-team/get-active-team.use-case.ts";
 import { GetTeamExternalClubUseCase } from "./get-team-external-club/get-team-external-club.use-case.ts";
 import { ListRostersForPlayerUseCase } from "./list-rosters-for-player/list-rosters-for-player.use-case.ts";
+import { OpenRosterUseCase } from "./open-roster/open-roster.use-case.ts";
 import { SetActiveTeamUseCase } from "./set-active-team/set-active-team.use-case.ts";
 
 class Teams implements TeamRepository {
@@ -112,6 +118,12 @@ class Rosters implements CompetitionRosterMembershipRepository {
     );
   }
   async add(membership: CompetitionRosterMembership) {
+    const existing = await this.findByPlayerAndCompetition(
+      membership.playerProfileId,
+      membership.competitionId,
+    );
+    if (existing && existing.teamId !== membership.teamId) return null;
+    if (existing) return existing;
     this.rows.push(membership);
     return membership;
   }
@@ -191,7 +203,10 @@ class Accounts implements PlayerGameAccountRepository {
   }) {
     const index = this.rows.findIndex((row) => row.id === input.accountId);
     if (index < 0) return null;
-    const updated = { ...this.rows[index], providerExternalPlayerId: input.providerExternalPlayerId };
+    const updated = {
+      ...this.rows[index],
+      providerExternalPlayerId: input.providerExternalPlayerId,
+    };
     this.rows[index] = updated;
     return updated;
   }
@@ -229,6 +244,24 @@ const allowAllAuthorization: import("@futrob/shared-kernel").AuthorizationPort =
   getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
 };
 
+class SerialRosterMutations implements RosterMutationPort {
+  private tail = Promise.resolve();
+
+  async runExclusive<T>(_scope: RosterMutationScope, operation: () => Promise<T>): Promise<T> {
+    const previous = this.tail;
+    let release: () => void = () => undefined;
+    this.tail = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
+  }
+}
+
 function shared() {
   let sequence = 0;
   return {
@@ -244,13 +277,31 @@ function rosterDeps(options?: { maxSize?: number }) {
   const rosterStates = new RosterStates();
   const capacity = new Capacity(options?.maxSize ?? 11);
   const accounts = new Accounts();
-  const deps = { teams, rosters, rosterStates, capacity, accounts, ...shared() };
+  const mutations = new SerialRosterMutations();
+  const entryGate = { canMutateRoster: async () => true };
+  const deps = {
+    teams,
+    rosters,
+    rosterStates,
+    capacity,
+    entryGate,
+    accounts,
+    mutations,
+    ...shared(),
+  };
   const addToRoster = new AddToRosterUseCase(deps);
   const closeRoster = new CloseRosterUseCase({
     teams,
     rosterStates,
     clock: deps.clock,
     authorization: allowAllAuthorization,
+    mutations,
+  });
+  const openRoster = new OpenRosterUseCase({
+    teams,
+    rosterStates,
+    authorization: allowAllAuthorization,
+    mutations,
   });
   return {
     ...deps,
@@ -258,10 +309,18 @@ function rosterDeps(options?: { maxSize?: number }) {
       execute: (input: Omit<AddToRosterInput, "actorId">) =>
         addToRoster.execute({ actorId: asActorId("manager"), ...input }),
     },
-    changeRole: new ChangeRosterRoleUseCase({ authorization: allowAllAuthorization, rosters }),
+    changeRole: new ChangeRosterRoleUseCase({
+      authorization: allowAllAuthorization,
+      rosters,
+      mutations,
+    }),
     closeRoster: {
       execute: (input: Omit<CloseRosterInput, "actorId">) =>
         closeRoster.execute({ actorId: asActorId("manager"), ...input }),
+    },
+    openRoster: {
+      execute: (input: Omit<CloseRosterInput, "actorId">) =>
+        openRoster.execute({ actorId: asActorId("manager"), ...input }),
     },
   };
 }
@@ -285,7 +344,7 @@ describe("team and roster use cases", () => {
   });
 
   it("allows the same player on teams in different competitions and rejects a second team in one competition", async () => {
-    const { teams, rosters, accounts, addToRoster } = rosterDeps();
+    const { teams, rosters, addToRoster } = rosterDeps();
     const createTeam = new CreateTeamUseCase({ teams, ...shared() });
     const orgId = asOrganizationId("org-1");
     const teamA = await createTeam.execute({
@@ -345,7 +404,7 @@ describe("team and roster use cases", () => {
   });
 
   it("sets active team only for a membership owned by the actor", async () => {
-    const { teams, rosters, accounts, addToRoster } = rosterDeps();
+    const { teams, rosters, addToRoster } = rosterDeps();
     const profiles = new Profiles();
     const preferences = new Preferences();
     const deps = shared();
@@ -394,7 +453,7 @@ describe("team and roster use cases", () => {
   });
 
   it("rejects a game account that does not belong to the player profile", async () => {
-    const { teams, rosters, accounts, addToRoster } = rosterDeps();
+    const { teams, addToRoster } = rosterDeps();
     const deps = shared();
     const team = await new CreateTeamUseCase({ teams, ...deps }).execute({
       organizationId: asOrganizationId("org-1"),
@@ -483,6 +542,28 @@ describe("team and roster use cases", () => {
     expect(!blocked.isOk() && RosterLocked.is(blocked.error)).toBe(true);
   });
 
+  it("orders concurrent close and open mutations for the same roster", async () => {
+    const { teams, closeRoster, openRoster, rosterStates } = rosterDeps();
+    const orgId = asOrganizationId("org-1");
+    const compId = asCompetitionId("comp-1");
+    const team = await new CreateTeamUseCase({ teams, ...shared() }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Ordered FC",
+    });
+    if (!team.isOk()) throw team.error;
+    const input = { organizationId: orgId, competitionId: compId, teamId: team.value.id };
+
+    const [closed, opened] = await Promise.all([
+      closeRoster.execute(input),
+      openRoster.execute(input),
+    ]);
+
+    expect(closed.isOk()).toBe(true);
+    expect(opened.isOk()).toBe(true);
+    expect((await rosterStates.get(orgId, compId, team.value.id))?.lockedAt).toBeNull();
+  });
+
   it("demotes the previous captain when promoting a new one", async () => {
     const { teams, rosters, addToRoster, changeRole } = rosterDeps();
     const orgId = asOrganizationId("org-1");
@@ -523,6 +604,110 @@ describe("team and roster use cases", () => {
     const members = await rosters.listByTeam(orgId, compId, team.value.id);
     expect(members.find((m) => m.id === captain.value.id)?.role).toBe("player");
     expect(members.find((m) => m.id === player.value.id)?.role).toBe("captain");
+  });
+
+  it("demotes the previous captain when a captain joins the roster", async () => {
+    const { teams, rosters, addToRoster } = rosterDeps();
+    const orgId = asOrganizationId("org-1");
+    const compId = asCompetitionId("comp-1");
+    const team = await new CreateTeamUseCase({ teams, ...shared() }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "New Captain FC",
+    });
+    if (!team.isOk()) throw team.error;
+
+    const results = [];
+    for (const playerProfileId of ["profile-1", "profile-2"]) {
+      results.push(
+        await addToRoster.execute({
+          organizationId: orgId,
+          competitionId: compId,
+          teamId: team.value.id,
+          playerProfileId,
+          role: "captain",
+        }),
+      );
+    }
+
+    expect(results.every((result) => result.isOk())).toBe(true);
+    const finalRoster = await rosters.listByTeam(orgId, compId, team.value.id);
+    expect(finalRoster.filter((member) => member.role === "captain")).toHaveLength(1);
+    expect(finalRoster.find((member) => member.playerProfileId === "profile-1")?.role).toBe(
+      "player",
+    );
+  });
+
+  it("rejects roster writes when the competition entry is no longer live", async () => {
+    const { teams, addToRoster, entryGate } = rosterDeps();
+    entryGate.canMutateRoster = async () => false;
+    const orgId = asOrganizationId("org-1");
+    const team = await new CreateTeamUseCase({ teams, ...shared() }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Rejected FC",
+    });
+    if (!team.isOk()) throw team.error;
+
+    const added = await addToRoster.execute({
+      organizationId: orgId,
+      competitionId: asCompetitionId("comp-1"),
+      teamId: team.value.id,
+      playerProfileId: "profile-1",
+      role: "player",
+    });
+
+    expect(added.isOk()).toBe(false);
+    if (added.isOk()) return;
+    expect(RosterEntryInactive.is(added.error)).toBe(true);
+  });
+
+  it("keeps exactly one captain when two promotions run concurrently", async () => {
+    const { teams, rosters, addToRoster, changeRole } = rosterDeps();
+    const orgId = asOrganizationId("org-1");
+    const compId = asCompetitionId("comp-1");
+    const team = await new CreateTeamUseCase({ teams, ...shared() }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Concurrent FC",
+    });
+    if (!team.isOk()) throw team.error;
+
+    const memberships = await Promise.all(
+      ["profile-1", "profile-2", "profile-3"].map((playerProfileId, index) =>
+        addToRoster.execute({
+          organizationId: orgId,
+          competitionId: compId,
+          teamId: team.value.id,
+          playerProfileId,
+          role: index === 0 ? "captain" : "player",
+        }),
+      ),
+    );
+    if (memberships.some((membership) => !membership.isOk())) {
+      throw new Error("roster setup failed");
+    }
+    const players = memberships.slice(1).map((membership) => {
+      if (!membership.isOk()) throw membership.error;
+      return membership.value;
+    });
+
+    const results = await Promise.all(
+      players.map((player) =>
+        changeRole.execute({
+          actorId: asActorId("actor-1"),
+          organizationId: orgId,
+          competitionId: compId,
+          teamId: team.value.id,
+          rosterMembershipId: player.id,
+          role: "captain",
+        }),
+      ),
+    );
+
+    expect(results.every((result) => result.isOk())).toBe(true);
+    const finalRoster = await rosters.listByTeam(orgId, compId, team.value.id);
+    expect(finalRoster.filter((member) => member.role === "captain")).toHaveLength(1);
   });
 
   it("cannot mutate a roster membership through another Team scope", async () => {

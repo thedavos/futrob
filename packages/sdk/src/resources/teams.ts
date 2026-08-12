@@ -30,6 +30,12 @@ import {
   type AddToRosterResponse,
   type ChangeRosterRoleRequest,
   type ChangeRosterRoleResponse,
+  competitionTeamManagementDetailResponseSchema,
+  competitionTeamManagementListQuerySchema,
+  competitionTeamManagementListResponseSchema,
+  type CompetitionTeamManagementDetailResponse,
+  type CompetitionTeamManagementListQuery,
+  type CompetitionTeamManagementListResponse,
   type CloseRosterResponse,
   type ConnectTeamExternalClubRequest,
   type ConnectTeamExternalClubResponse,
@@ -50,6 +56,33 @@ import type { HttpClient } from "../http.ts";
 
 export function createTeamsResource(http: HttpClient) {
   return {
+    async listCompetitionManagement(
+      organizationId: string,
+      competitionId: string,
+      query: CompetitionTeamManagementListQuery = { limit: 25 },
+    ): Promise<CompetitionTeamManagementListResponse> {
+      const parsed = competitionTeamManagementListQuerySchema.parse(query);
+      const search = new URLSearchParams({ limit: String(parsed.limit) });
+      if (parsed.cursor) search.set("cursor", parsed.cursor);
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management?${search.toString()}`,
+        method: "GET",
+        parse: (data) => competitionTeamManagementListResponseSchema.parse(data),
+      });
+    },
+
+    async getCompetitionTeamManagement(
+      organizationId: string,
+      competitionId: string,
+      teamId: string,
+    ): Promise<CompetitionTeamManagementDetailResponse> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management/${encodeURIComponent(teamId)}`,
+        method: "GET",
+        parse: (data) => competitionTeamManagementDetailResponseSchema.parse(data),
+      });
+    },
+
     async getMyProfile(): Promise<GetMyPlayerProfileResponse> {
       return http.request({
         path: "/players/me",
@@ -178,12 +211,13 @@ export function createTeamsResource(http: HttpClient) {
 
     async connectExternalClub(
       organizationId: string,
+      competitionId: string,
       teamId: string,
       input: ConnectTeamExternalClubRequest,
     ): Promise<ConnectTeamExternalClubResponse> {
       const body = connectTeamExternalClubRequestSchema.parse(input);
       return http.request({
-        path: `/organizations/${organizationId}/teams/${teamId}/external-club`,
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/teams/${encodeURIComponent(teamId)}/external-club`,
         method: "PUT",
         body,
         parse: (data) => connectTeamExternalClubResponseSchema.parse(data),
@@ -192,10 +226,11 @@ export function createTeamsResource(http: HttpClient) {
 
     async getExternalClub(
       organizationId: string,
+      competitionId: string,
       teamId: string,
     ): Promise<GetTeamExternalClubResponse> {
       return http.request({
-        path: `/organizations/${organizationId}/teams/${teamId}/external-club`,
+        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/teams/${encodeURIComponent(teamId)}/external-club`,
         method: "GET",
         parse: (data) => getTeamExternalClubResponseSchema.parse(data),
       });

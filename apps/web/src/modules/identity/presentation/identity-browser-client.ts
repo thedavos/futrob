@@ -43,7 +43,12 @@ async function requestJson<T>(input: {
   const raw: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const error = readBrowserApiError(response, raw, "identity.onboarding_request_failed");
-    throw new IdentityOnboardingClientError(response.status, error.code, error.requestId);
+    throw new IdentityOnboardingClientError(
+      response.status,
+      error.code,
+      error.requestId,
+      error.retryAfterSeconds,
+    );
   }
   return input.parse(raw);
 }
@@ -53,6 +58,7 @@ export class IdentityOnboardingClientError extends Error {
     readonly status: number,
     readonly code: string,
     readonly requestId?: RequestId,
+    readonly retryAfterSeconds?: number,
   ) {
     super(code);
     this.name = "IdentityOnboardingClientError";

@@ -16,7 +16,9 @@ import {
   type ResolvePostAuthDestinationResponse,
   type ListMyMembershipsResponse,
   type PostAuthDestinationDto,
+  type RequestId,
 } from "@futrob/api-contracts";
+import { readBrowserApiError } from "@/shared/infrastructure/http/browser-api-error.ts";
 
 async function parseJson(response: Response): Promise<unknown> {
   return response.json().catch(() => null);
@@ -25,12 +27,22 @@ async function parseJson(response: Response): Promise<unknown> {
 export class OrganizationsClientError extends Error {
   readonly status: number;
   readonly code: string;
+  readonly requestId?: RequestId;
+  readonly retryAfterSeconds?: number;
 
-  constructor(input: { status: number; code: string; message: string }) {
+  constructor(input: {
+    status: number;
+    code: string;
+    message: string;
+    requestId?: RequestId;
+    retryAfterSeconds?: number;
+  }) {
     super(input.message);
     this.name = "OrganizationsClientError";
     this.status = input.status;
     this.code = input.code;
+    this.requestId = input.requestId;
+    this.retryAfterSeconds = input.retryAfterSeconds;
   }
 }
 
@@ -52,14 +64,13 @@ async function requestJson<T>(input: {
 
   const raw = await parseJson(response);
   if (!response.ok) {
-    const code =
-      raw && typeof raw === "object" && "code" in raw && typeof raw.code === "string"
-        ? raw.code
-        : "organizations.client_error";
+    const error = readBrowserApiError(response, raw, "organizations.client_error");
     throw new OrganizationsClientError({
       status: response.status,
-      code,
-      message: code,
+      code: error.code,
+      message: error.code,
+      requestId: error.requestId,
+      retryAfterSeconds: error.retryAfterSeconds,
     });
   }
 

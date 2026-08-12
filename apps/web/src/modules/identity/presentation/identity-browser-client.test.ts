@@ -44,4 +44,31 @@ describe("identityBrowserClient", () => {
       status: 409,
     });
   });
+
+  it("propagates the retry delay from invitation onboarding", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          {
+            code: "api.rate_limited",
+            messageKey: "errors.api.rate_limited",
+            retryAfterSeconds: 120,
+          },
+          { status: 429, headers: { "Retry-After": "120" } },
+        ),
+      ),
+    );
+
+    const caught = await identityBrowserClient
+      .completeInvitationOnboarding({ token: "private-token", gameAccount: null })
+      .catch((error: unknown) => error);
+
+    expect(caught).toBeInstanceOf(IdentityOnboardingClientError);
+    expect(caught).toMatchObject({
+      code: "api.rate_limited",
+      retryAfterSeconds: 120,
+      status: 429,
+    });
+  });
 });

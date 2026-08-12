@@ -21,4 +21,47 @@ describe("HttpClient request correlation", () => {
     expect(caught).toBeInstanceOf(FutrobApiError);
     expect(caught).toMatchObject({ requestId, status: 401 });
   });
+
+  it("propagates retryAfterSeconds from a typed rate-limit response", async () => {
+    const client = new HttpClient({
+      baseUrl: "https://api.futrob.test",
+      fetchImpl: async () =>
+        Response.json(
+          {
+            code: "api.rate_limited",
+            messageKey: "errors.api.rate_limited",
+            retryAfterSeconds: 37,
+          },
+          { status: 429, headers: { "Retry-After": "37" } },
+        ),
+    });
+
+    const caught = await client
+      .request({ path: "/game-data/clubs/search", method: "GET", parse: (data) => data })
+      .catch((error: unknown) => error);
+
+    expect(caught).toBeInstanceOf(FutrobApiError);
+    expect(caught).toMatchObject({
+      code: "api.rate_limited",
+      retryAfterSeconds: 37,
+      status: 429,
+    });
+  });
+
+  it("falls back to Retry-After when a legacy rate-limit body omits retry metadata", async () => {
+    const client = new HttpClient({
+      baseUrl: "https://api.futrob.test",
+      fetchImpl: async () =>
+        Response.json(
+          { code: "api.rate_limited", messageKey: "errors.api.rate_limited" },
+          { status: 429, headers: { "Retry-After": "41" } },
+        ),
+    });
+
+    const caught = await client
+      .request({ path: "/game-data/clubs/search", method: "GET", parse: (data) => data })
+      .catch((error: unknown) => error);
+
+    expect(caught).toMatchObject({ retryAfterSeconds: 41, status: 429 });
+  });
 });

@@ -1,5 +1,5 @@
 import { REQUEST_ID_HEADER, requestIdSchema } from "@futrob/api-contracts";
-import { parseApiErrorBody, FutrobApiError } from "./errors.ts";
+import { parseApiErrorBody, parseRetryAfterSeconds, FutrobApiError } from "./errors.ts";
 
 export interface HttpClientOptions {
   readonly baseUrl: string;
@@ -73,6 +73,9 @@ export class HttpClient {
             requestId:
               apiError.requestId ??
               (responseRequestId.success ? responseRequestId.data : undefined),
+            retryAfterSeconds:
+              apiError.retryAfterSeconds ??
+              parseRetryAfterSeconds(response.headers.get("Retry-After")),
           },
         });
       }

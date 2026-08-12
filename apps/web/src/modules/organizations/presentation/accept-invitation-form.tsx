@@ -1,22 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Alert,
-  AlertDescription,
-  Button,
-  Field,
-  FieldError,
-  FieldLabel,
-  Form,
-  Input,
-  readFormString,
-} from "@futrob/ui";
+import { Button, Field, FieldError, FieldLabel, Form, Input, readFormString } from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
-import { WarningCircleIcon } from "@phosphor-icons/react";
 import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
+import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
 import { useAcceptInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import {
+  SupportErrorAlert,
+  type SupportError,
+} from "@/shared/presentation/support-error-alert.tsx";
+import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 
 type AcceptInvitationValues = {
   token: string;
@@ -26,13 +21,15 @@ type AcceptInvitationField = keyof AcceptInvitationValues;
 
 export function AcceptInvitationForm({ initialToken = "" }: Readonly<{ initialToken?: string }>) {
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SupportError | null>(null);
   const validation = useFormValidation<AcceptInvitationField>();
   const acceptInvitation = useAcceptInvitationMutation();
   const submitting = acceptInvitation.isPending;
+  const retry = useRetryAfterCountdown();
 
   async function handleSubmit(formValues: AcceptInvitationValues) {
     const trimmed = formValues.token.trim();
+    if (retry.blocked) return;
 
     setError(null);
     validation.clearServerErrors();
@@ -54,7 +51,15 @@ export function AcceptInvitationForm({ initialToken = "" }: Readonly<{ initialTo
         params: { orgId: accepted.organizationId },
       });
     } catch (caught) {
-      setError(invitationAcceptErrorMessage(caught));
+      const clientError = caught instanceof OrganizationsClientError ? caught : undefined;
+      retry.start(clientError?.retryAfterSeconds);
+      setError({
+        message: clientError?.retryAfterSeconds
+          ? "Alcanzaste el límite temporal de invitaciones."
+          : invitationAcceptErrorMessage(caught),
+        requestId: clientError?.requestId,
+        retryAfterSeconds: clientError?.retryAfterSeconds,
+      });
     }
   }
 
@@ -66,10 +71,9 @@ export function AcceptInvitationForm({ initialToken = "" }: Readonly<{ initialTo
       onFormSubmit={handleSubmit}
     >
       {error ? (
-        <Alert variant="destructive">
-          <WarningCircleIcon aria-hidden="true" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <SupportErrorAlert
+          error={{ ...error, retryAfterSeconds: retry.remainingSeconds || undefined }}
+        />
       ) : null}
 
       <Field
@@ -91,8 +95,12 @@ export function AcceptInvitationForm({ initialToken = "" }: Readonly<{ initialTo
         <FieldError />
       </Field>
 
-      <Button disabled={submitting} type="submit">
-        Unirme a la competición
+      <Button disabled={submitting || retry.blocked} type="submit">
+        {submitting
+          ? "Procesando…"
+          : retry.blocked
+            ? `Reintentar en ${retry.remainingSeconds} s`
+            : "Unirme a la competición"}
       </Button>
     </Form>
   );

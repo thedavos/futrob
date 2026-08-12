@@ -29,3 +29,13 @@ export const LegacyWithoutSupportCode: Story = {
     error: { message: "No pudimos finalizar tu configuración. Inténtalo nuevamente." },
   },
 };
+
+export const RateLimited: Story = {
+  args: {
+    error: {
+      message: "Alcanzaste el límite temporal. Espera antes de intentarlo nuevamente.",
+      requestId: "2170e2f6-a47e-4338-83c3-27c054630800",
+      retryAfterSeconds: 37,
+    },
+  },
+};

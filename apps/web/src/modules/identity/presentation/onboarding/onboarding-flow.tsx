@@ -38,6 +38,7 @@ import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-dat
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
 import type { SupportError } from "@/shared/presentation/support-error-alert.tsx";
+import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 import { finalizationError } from "./onboarding-finalization-errors.ts";
 import {
   isOnboardingPathname,
@@ -120,6 +121,8 @@ export const browserOnboardingGateway: OnboardingGateway = {
 interface OnboardingFlowValue {
   readonly saving: boolean;
   readonly error: SupportError | null;
+  readonly retryBlocked: boolean;
+  readonly retryAfterSeconds: number;
   readonly path: OnboardingPathDto | null;
   readonly currentStep: OnboardingStepDto;
   readonly draft: OnboardingDraft;
@@ -157,6 +160,7 @@ export function OnboardingFlowProvider({
   const [leaving, setLeaving] = useState(false);
   const finishingRef = useRef(false);
   const [error, setError] = useState<SupportError | null>(null);
+  const retry = useRetryAfterCountdown();
   const [path, setPathState] = useState<OnboardingPathDto | null>(() => initialStatus.path);
   const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(() =>
     bootstrap === "persisted"
@@ -172,7 +176,12 @@ export function OnboardingFlowProvider({
   const value = useMemo<OnboardingFlowValue>(
     () => ({
       saving,
-      error,
+      error:
+        error && error.retryAfterSeconds
+          ? { ...error, retryAfterSeconds: retry.remainingSeconds || undefined }
+          : error,
+      retryBlocked: retry.blocked,
+      retryAfterSeconds: retry.remainingSeconds,
       path,
       currentStep,
       draft,
@@ -236,7 +245,7 @@ export function OnboardingFlowProvider({
         }
       },
       async finish() {
-        if (!path || saving || finishingRef.current) return;
+        if (!path || saving || finishingRef.current || retry.blocked) return;
         finishingRef.current = true;
         setSaving(true);
         setLeaving(true);
@@ -283,7 +292,9 @@ export function OnboardingFlowProvider({
           }
         } catch (caught) {
           finishingRef.current = false;
-          setError(finalizationError(path, caught));
+          const nextError = finalizationError(path, caught);
+          retry.start(nextError.retryAfterSeconds);
+          setError(nextError);
           setLeaving(false);
           setSaving(false);
         }
@@ -298,6 +309,9 @@ export function OnboardingFlowProvider({
       navigate,
       path,
       queryClient,
+      retry.blocked,
+      retry.remainingSeconds,
+      retry.start,
       saveProgressMutation,
       saving,
     ],
@@ -324,7 +338,13 @@ export function OnboardingFlowProvider({
 
 function supportErrorFromCaught(caught: unknown, message: string): SupportError {
   const requestId = caught instanceof IdentityOnboardingClientError ? caught.requestId : undefined;
-  return requestId ? { message, requestId } : { message };
+  const retryAfterSeconds =
+    caught instanceof IdentityOnboardingClientError ? caught.retryAfterSeconds : undefined;
+  return {
+    message,
+    ...(requestId ? { requestId } : {}),
+    ...(retryAfterSeconds ? { retryAfterSeconds } : {}),
+  };
 }
 
 function markOnboardingCompletedInCache(queryClient: QueryClient, path: OnboardingPathDto): void {

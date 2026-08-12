@@ -2,12 +2,24 @@ import type { RequestId } from "@futrob/api-contracts";
 import { FutrobApiError } from "@futrob/sdk";
 import { AuthUnauthenticatedError } from "@/context/auth.ts";
 import { apiErrorResponse } from "@/shared/infrastructure/http/api-response.ts";
+import { BffRateLimitUnavailableError } from "@/shared/infrastructure/rate-limit/enforce-bff-rate-limit.ts";
 
 export interface ProductApiBffMisconfiguredFailure extends Error {
   readonly code: "product_api.bff_misconfigured";
 }
 
 export function productApiBffErrorResponse(error: unknown, requestId?: RequestId): Response {
+  if (error instanceof BffRateLimitUnavailableError) {
+    return apiErrorResponse(
+      503,
+      {
+        code: error.code,
+        messageKey: "errors.api.rate_limit_unavailable",
+      },
+      requestId,
+    );
+  }
+
   if (isProductApiBffMisconfiguredFailure(error)) {
     return apiErrorResponse(
       503,
@@ -38,6 +50,7 @@ export function productApiBffErrorResponse(error: unknown, requestId?: RequestId
         messageKey: error.messageKey,
         details: error.details,
         requestId: error.requestId,
+        retryAfterSeconds: error.retryAfterSeconds,
       },
       requestId,
     );

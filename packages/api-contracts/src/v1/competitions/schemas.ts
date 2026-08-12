@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { gamePlatformSchema } from "../teams/schemas.ts";
+import { gamePlatformSchema } from "../game-platform.ts";
 import { acceptInvitationResponseSchema } from "../organizations/schemas.ts";
 
 export const competitionStatusSchema = z.enum([

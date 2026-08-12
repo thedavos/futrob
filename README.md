@@ -90,7 +90,9 @@ Package guide: [`/packages/README.md`](/packages/README.md). API details: [`/app
 vp install                 # or npm ci
 
 # Web secrets (Wrangler / Vite Cloudflare plugin)
-# apps/web/.dev.vars — BETTER_AUTH_*, INTERNAL_JOB_SECRET, …
+cp apps/web/.dev.vars.example apps/web/.dev.vars
+# set independent random values for BETTER_AUTH_SECRET,
+# INTERNAL_JOB_SECRET and RATE_LIMIT_FINGERPRINT_SECRET
 
 # API env
 cp apps/api/.env.example apps/api/.env
@@ -105,6 +107,16 @@ npm run dev                # web (:3000) + api (:8787) in parallel
 ```
 
 Align `INTERNAL_JOB_SECRET` between `apps/web/.dev.vars` and `apps/api/.env` or org BFF calls fail with 401.
+Keep `RATE_LIMIT_FINGERPRINT_SECRET` independent from every other secret. Before deploying the
+Worker, provision it explicitly:
+
+```bash
+npx wrangler secret put RATE_LIMIT_FINGERPRINT_SECRET --config apps/web/wrangler.jsonc
+```
+
+The five protected BFF routes fail closed with 503 when the binding is missing. Rate-limit window
+and attempt overrides are optional Wrangler vars; the defaults are listed in
+`apps/web/.dev.vars.example`.
 
 ## Docs
 

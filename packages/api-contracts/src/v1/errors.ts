@@ -23,6 +23,7 @@ export const apiErrorSchema = z.object({
   code: z.string(),
   messageKey: z.string(),
   requestId: requestIdSchema.optional(),
+  retryAfterSeconds: z.number().int().positive().optional(),
   details: apiErrorDetailsSchema.optional(),
 });
 

@@ -45,6 +45,7 @@ import {
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import { SupportErrorAlert } from "@/shared/presentation/support-error-alert.tsx";
 import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
+import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 
 const clubResultItemClassName =
   "min-h-0 flex-row items-center justify-start gap-4 rounded-xl py-3 pr-14 pl-3 text-left sm:min-h-0 sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:p-3 sm:pr-14 sm:text-left";
@@ -63,6 +64,7 @@ type ClubSearchState =
       readonly query: string;
       readonly message: string;
       readonly requestId?: RequestId;
+      readonly retryAfterSeconds?: number;
     };
 
 export function TeamStep() {
@@ -75,11 +77,12 @@ export function TeamStep() {
     eaSearchPlatformFromGamePlatform(flow.draft.platform),
   );
   const [search, setSearch] = useState<ClubSearchState>({ status: "idle" });
+  const retry = useRetryAfterCountdown();
   const selected = flow.draft.selectedExternalClub;
 
   async function searchClubs() {
     const trimmed = query.trim();
-    if (!trimmed || search.status === "loading" || flow.saving) return;
+    if (!trimmed || search.status === "loading" || flow.saving || retry.blocked) return;
     setSearch({ status: "loading", query: trimmed });
     try {
       const clubs = (
@@ -95,11 +98,16 @@ export function TeamStep() {
           : { status: "empty", query: trimmed },
       );
     } catch (cause) {
+      const retryAfterSeconds = GameDataClientError.is(cause) ? cause.retryAfterSeconds : undefined;
+      retry.start(retryAfterSeconds);
       setSearch({
         status: "error",
         query: trimmed,
-        message: "No pudimos buscar clubs. Inténtalo nuevamente.",
+        message: retryAfterSeconds
+          ? "Alcanzaste el límite temporal de búsquedas."
+          : "No pudimos buscar clubs. Inténtalo nuevamente.",
         requestId: GameDataClientError.is(cause) ? cause.requestId : undefined,
+        retryAfterSeconds,
       });
     }
   }
@@ -221,11 +229,17 @@ export function TeamStep() {
             </Select>
             <Button
               className="min-w-0 flex-1 sm:flex-none"
-              disabled={!query.trim() || search.status === "loading" || flow.saving}
+              disabled={
+                !query.trim() || search.status === "loading" || flow.saving || retry.blocked
+              }
               onClick={() => void searchClubs()}
               variant="outline"
             >
-              {search.status === "loading" ? "Buscando…" : "Buscar club"}
+              {search.status === "loading"
+                ? "Buscando…"
+                : retry.blocked
+                  ? `Reintentar en ${retry.remainingSeconds} s`
+                  : "Buscar club"}
             </Button>
           </div>
         </div>
@@ -238,7 +252,14 @@ export function TeamStep() {
           {liveStatus}
         </div>
 
-        {search.status === "error" ? <SupportErrorAlert error={search} /> : null}
+        {search.status === "error" ? (
+          <SupportErrorAlert
+            error={{
+              ...search,
+              retryAfterSeconds: retry.remainingSeconds || undefined,
+            }}
+          />
+        ) : null}
 
         {search.status === "success" ? (
           <ChoiceGroup

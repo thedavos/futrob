@@ -74,4 +74,19 @@ describe("finalizationError", () => {
       requestId,
     });
   });
+
+  it("preserves retry metadata with safe copy for rate limiting", () => {
+    const requestId = "2170e2f6-a47e-4338-83c3-27c054630800";
+
+    expect(
+      finalizationError(
+        "invitation",
+        new IdentityOnboardingClientError(429, "api.rate_limited", requestId, 45),
+      ),
+    ).toEqual({
+      message: "Alcanzaste el límite temporal. Espera antes de intentarlo nuevamente.",
+      requestId,
+      retryAfterSeconds: 45,
+    });
+  });
 });

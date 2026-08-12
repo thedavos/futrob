@@ -38,8 +38,9 @@ export function OnboardingReview() {
         ? Boolean(flow.draft.invitationToken.trim()) && validOptionalAccount(flow.draft)
         : validOptionalAccount(flow.draft);
   const previous: OnboardingStepDto = path === "player" ? "team" : "game-account";
-  const primaryLabel =
-    path === "organization"
+  const primaryLabel = flow.retryBlocked
+    ? `Reintentar en ${flow.retryAfterSeconds} s`
+    : path === "organization"
       ? "Crear organización y competición"
       : path === "invitation"
         ? "Aceptar invitación"
@@ -92,7 +93,7 @@ export function OnboardingReview() {
         </p>
       ) : null}
       <OnboardingActions
-        disabled={!canFinish}
+        disabled={!canFinish || flow.retryBlocked}
         loading={flow.saving}
         onBack={() => void flow.goTo(previous, path)}
         onPrimary={() => void flow.finish()}

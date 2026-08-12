@@ -1,9 +1,10 @@
 import { REQUEST_ID_HEADER, requestIdSchema, type RequestId } from "@futrob/api-contracts";
-import { parseApiErrorBody } from "@futrob/sdk";
+import { parseApiErrorBody, parseRetryAfterSeconds } from "@futrob/sdk";
 
 export type BrowserApiError = Readonly<{
   code: string;
   requestId?: RequestId;
+  retryAfterSeconds?: number;
 }>;
 
 export function readBrowserApiError(
@@ -16,5 +17,7 @@ export function readBrowserApiError(
   return {
     code: body?.code ?? fallbackCode,
     requestId: body?.requestId ?? (header.success ? header.data : undefined),
+    retryAfterSeconds:
+      body?.retryAfterSeconds ?? parseRetryAfterSeconds(response.headers.get("Retry-After")),
   };
 }
