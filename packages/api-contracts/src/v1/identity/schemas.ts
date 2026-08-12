@@ -109,6 +109,25 @@ export type CompleteInvitationOnboardingRequest = z.infer<
   typeof completeInvitationOnboardingRequestSchema
 >;
 
+export const inspectCompetitionInvitationRequestSchema = z.object({
+  token: z.string().trim().min(1),
+});
+export type InspectCompetitionInvitationRequest = z.infer<
+  typeof inspectCompetitionInvitationRequestSchema
+>;
+
+export const inspectCompetitionInvitationResponseSchema = z.object({
+  organizationId: z.string().min(1),
+  organizationName: z.string().min(1),
+  competitionId: z.string().min(1),
+  competitionName: z.string().min(1),
+  competitionRole: z.enum(["staff", "captain", "player"]),
+  expiresAt: z.string().datetime(),
+});
+export type InspectCompetitionInvitationResponse = z.infer<
+  typeof inspectCompetitionInvitationResponseSchema
+>;
+
 export const completeInvitationOnboardingResponseSchema = acceptInvitationResponseSchema.extend({
   competitionId: z.string().min(1),
   competitionName: z.string().min(1),

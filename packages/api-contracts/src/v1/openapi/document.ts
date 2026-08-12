@@ -13,6 +13,8 @@ import { EA_SEARCH_PLATFORM } from "../game-data/ea-search-platform.ts";
 import {
   completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
+  inspectCompetitionInvitationRequestSchema,
+  inspectCompetitionInvitationResponseSchema,
   completeOrganizationOnboardingRequestSchema,
   completeOrganizationOnboardingResponseSchema,
   completePlayerOnboardingRequestSchema,
@@ -613,6 +615,40 @@ export const futrobOpenApiV1 = {
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/CompleteInvitationOnboardingResponse" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+          "429": { $ref: "#/components/responses/RateLimited" },
+        },
+      },
+    },
+    "/identity/onboarding/invitation/preview": {
+      post: {
+        operationId: "inspectCompetitionInvitation",
+        tags: ["onboarding"],
+        summary: "Inspect a competition invitation without consuming it",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["token"],
+                properties: { token: { type: "string", minLength: 1 } },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Sanitized competition invitation preview",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/InspectCompetitionInvitationResponse" },
               },
             },
           },
@@ -2647,6 +2683,25 @@ export const futrobOpenApiV1 = {
           },
         },
       },
+      InspectCompetitionInvitationResponse: {
+        type: "object",
+        required: [
+          "organizationId",
+          "organizationName",
+          "competitionId",
+          "competitionName",
+          "competitionRole",
+          "expiresAt",
+        ],
+        properties: {
+          organizationId: { type: "string" },
+          organizationName: { type: "string" },
+          competitionId: { type: "string" },
+          competitionName: { type: "string" },
+          competitionRole: { type: "string", enum: ["staff", "captain", "player"] },
+          expiresAt: { type: "string", format: "date-time" },
+        },
+      },
       AcceptCompetitionInvitationResponse: {
         type: "object",
         required: [
@@ -2765,6 +2820,8 @@ void completeOrganizationOnboardingRequestSchema;
 void completeOrganizationOnboardingResponseSchema;
 void completeInvitationOnboardingRequestSchema;
 void completeInvitationOnboardingResponseSchema;
+void inspectCompetitionInvitationRequestSchema;
+void inspectCompetitionInvitationResponseSchema;
 void completePlayerOnboardingRequestSchema;
 void completePlayerOnboardingResponseSchema;
 void competitionDraftInputSchema;

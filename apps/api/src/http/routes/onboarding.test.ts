@@ -378,6 +378,63 @@ describe("apps/api http onboarding", () => {
     });
   });
 
+  it("onboarding: previews a competition invitation without consuming it", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-preview-organizer";
+    const player = "actor-preview-player";
+    const created = await app.request("/api/v1/identity/onboarding/organization", {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Liga Preview",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const { organizationId, competition } = (await created.json()) as {
+      organizationId: string;
+      competition: { competition: { id: string } };
+    };
+    const competitionId = competition.competition.id;
+    const invitation = await app.request(
+      `/api/v1/organizations/${organizationId}/competitions/${competitionId}/invitations`,
+      {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ role: "player" }),
+      },
+    );
+    const { token } = (await invitation.json()) as { token: string };
+
+    const preview = await app.request("/api/v1/identity/onboarding/invitation/preview", {
+      method: "POST",
+      headers: serviceHeaders(player),
+      body: JSON.stringify({ token: ` ${token} ` }),
+    });
+
+    expect(preview.status).toBe(200);
+    expect(await preview.json()).toMatchObject({
+      organizationId,
+      organizationName: "Liga Preview",
+      competitionId,
+      competitionName: "Copa Inicial",
+      competitionRole: "player",
+      expiresAt: expect.any(String),
+    });
+    expect(
+      await (
+        await app.request("/api/v1/identity/onboarding", { headers: serviceHeaders(player) })
+      ).json(),
+    ).toMatchObject({ completed: false });
+
+    const completed = await app.request("/api/v1/identity/onboarding/invitation", {
+      method: "POST",
+      headers: serviceHeaders(player),
+      body: JSON.stringify({ token }),
+    });
+    expect(completed.status).toBe(200);
+  });
+
   it("onboarding: rejects a lost invitation claim without completing the path", async () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-claim-organizer";

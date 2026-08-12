@@ -137,4 +137,35 @@ describe("createFutrobClient identity", () => {
       },
     ]);
   });
+
+  it("inspects a competition invitation through the preview endpoint", async () => {
+    let request: { url: string; body: unknown } | undefined;
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: (async (input, init) => {
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        request = {
+          url,
+          body: typeof init?.body === "string" ? JSON.parse(init.body) : null,
+        };
+        return Response.json({
+          organizationId: "org-1",
+          organizationName: "Liga",
+          competitionId: "competition-1",
+          competitionName: "Copa",
+          competitionRole: "player",
+          expiresAt: "2026-09-01T12:00:00.000Z",
+        });
+      }) as typeof fetch,
+    });
+
+    const result = await client.identity.inspectCompetitionInvitation({ token: " private " });
+
+    expect(request).toEqual({
+      url: "https://app.example.com/api/v1/identity/onboarding/invitation/preview",
+      body: { token: "private" },
+    });
+    expect(result.competitionName).toBe("Copa");
+  });
 });

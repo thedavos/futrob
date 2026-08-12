@@ -9,6 +9,8 @@ export {
   completeOrganizationOnboardingResponseSchema,
   completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
+  inspectCompetitionInvitationRequestSchema,
+  inspectCompetitionInvitationResponseSchema,
   completePlayerOnboardingRequestSchema,
   completePlayerOnboardingResponseSchema,
   type OnboardingPathDto,
@@ -21,6 +23,8 @@ export {
   type CompleteOrganizationOnboardingResponse,
   type CompleteInvitationOnboardingRequest,
   type CompleteInvitationOnboardingResponse,
+  type InspectCompetitionInvitationRequest,
+  type InspectCompetitionInvitationResponse,
   type CompletePlayerOnboardingRequest,
   type CompletePlayerOnboardingResponse,
 } from "./schemas.ts";

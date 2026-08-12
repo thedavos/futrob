@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import {
   completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
+  inspectCompetitionInvitationRequestSchema,
+  inspectCompetitionInvitationResponseSchema,
   completeOrganizationOnboardingRequestSchema,
   completeOrganizationOnboardingResponseSchema,
   completePlayerOnboardingRequestSchema,
@@ -13,6 +15,7 @@ import {
   type PlayerGameAccountInputDto,
 } from "@futrob/api-contracts";
 import { CompetitionNotFound } from "@futrob/competitions";
+import { InvitationInvalid } from "@futrob/organizations";
 import type { ExternalClub } from "@futrob/game-data";
 import type {
   AddPlayerGameAccountError,
@@ -185,6 +188,37 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
       if (isHttpMappableFailure(error)) return failureToHttp(error);
       throw error;
     }
+  });
+
+  secured.post("/identity/onboarding/invitation/preview", async (c) => {
+    const json: unknown = await c.req.json().catch(() => null);
+    const parsed = inspectCompetitionInvitationRequestSchema.safeParse(json);
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+
+    const inspected = await organizations.inspectCompetitionInvitation.execute({
+      token: parsed.data.token,
+      actorId: c.get("actorId"),
+    });
+    if (!inspected.isOk()) return failureToHttp(inspected.error);
+    const competition = await competitions.getDraft.execute({
+      organizationId: inspected.value.organizationId,
+      competitionId: inspected.value.competitionId,
+    });
+    if (!competition) {
+      return failureToHttp(
+        new InvitationInvalid({
+          code: "organizations.invitation_invalid",
+          message: "Invitation competition is unavailable",
+        }),
+      );
+    }
+    return jsonResponse(
+      inspectCompetitionInvitationResponseSchema.parse({
+        ...inspected.value,
+        competitionName: competition.competition.name,
+        expiresAt: inspected.value.expiresAt.toISOString(),
+      }),
+    );
   });
 
   secured.post("/identity/onboarding/player", async (c) => {

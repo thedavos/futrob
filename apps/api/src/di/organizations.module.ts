@@ -4,6 +4,7 @@ import {
   CreateInvitationUseCase,
   CreateOrganizationUseCase,
   ListMembershipsForActorUseCase,
+  InspectCompetitionInvitationUseCase,
   type InvitationRepository,
   type MembershipRepository,
   type OrganizationRepository,
@@ -78,6 +79,7 @@ export function createOrganizationsModule(deps: OrganizationsModuleDependencies)
     listMembershipsForActor: new ListMembershipsForActorUseCase(memberships),
     createInvitation: new CreateInvitationUseCase(ports),
     acceptInvitation: new AcceptInvitationUseCase(ports),
+    inspectCompetitionInvitation: new InspectCompetitionInvitationUseCase(ports),
     repositories: {
       organizations,
       memberships,
