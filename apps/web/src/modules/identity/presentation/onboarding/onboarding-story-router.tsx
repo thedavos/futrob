@@ -90,6 +90,10 @@ export function createFakeOnboardingGateway(input?: {
   failComplete?: boolean;
   /** Typed finish failure for invitation/org/player complete calls. */
   completeError?: IdentityOnboardingClientError;
+  /** Typed name-availability failure with optional support code. */
+  checkNameError?: IdentityOnboardingClientError;
+  /** Typed save-progress failure with optional support code. */
+  saveError?: IdentityOnboardingClientError;
   organizationNameAvailable?: boolean;
   clubs?: readonly StoryExternalClub[];
   searchError?: boolean;
@@ -114,9 +118,11 @@ export function createFakeOnboardingGateway(input?: {
       };
     },
     async checkOrganizationName() {
+      if (input?.checkNameError) throw input.checkNameError;
       return { available: input?.organizationNameAvailable ?? true };
     },
     async saveProgress(next) {
+      if (input?.saveError) throw input.saveError;
       if (input?.failSave) throw new Error("story.save_failed");
       if (input?.pendingSave) return await new Promise<OnboardingStatusDto>(() => undefined);
       path = next.path;
