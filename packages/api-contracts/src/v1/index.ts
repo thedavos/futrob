@@ -4,6 +4,13 @@ export {
   type ApiErrorBody,
   type ApiErrorDetails,
 } from "./errors.ts";
+export {
+  REQUEST_ID_HEADER,
+  requestCorrelationSchema,
+  requestIdSchema,
+  type RequestCorrelation,
+  type RequestId,
+} from "./request-correlation.ts";
 export { pingResponseSchema, type PingResponse } from "./meta/ping.response.ts";
 export * from "./game-data/index.ts";
 export * from "./competitions/index.ts";

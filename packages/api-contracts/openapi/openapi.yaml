@@ -41,6 +41,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PingResponse"
+          headers:
+            X-Request-ID: &a1
+              $ref: "#/components/headers/RequestId"
+      parameters:
+        - &a2
+          $ref: "#/components/parameters/RequestId"
   /openapi.json:
     get:
       operationId: getOpenApiJson
@@ -55,6 +61,10 @@ paths:
             application/json:
               schema:
                 type: object
+          headers:
+            X-Request-ID: *a1
+      parameters:
+        - *a2
   /openapi.yaml:
     get:
       operationId: getOpenApiYaml
@@ -69,6 +79,10 @@ paths:
             application/yaml:
               schema:
                 type: string
+          headers:
+            X-Request-ID: *a1
+      parameters:
+        - *a2
   /game-data/clubs/search:
     get:
       operationId: searchExternalClubs
@@ -76,6 +90,7 @@ paths:
         - game-data
       summary: Search external clubs via a game-data provider
       parameters:
+        - *a2
         - name: query
           in: query
           required: true
@@ -111,6 +126,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SearchClubsResponse"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "502":
@@ -122,6 +139,7 @@ paths:
         - game-data
       summary: Get external club info
       parameters:
+        - *a2
         - name: externalClubId
           in: path
           required: true
@@ -156,6 +174,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExternalClub"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "404":
@@ -169,6 +189,7 @@ paths:
         - game-data
       summary: List recent provider matches for a club
       parameters:
+        - *a2
         - name: externalClubId
           in: path
           required: true
@@ -217,6 +238,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetClubMatchesResponse"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "502":
@@ -234,8 +257,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetMyPlayerProfileResponse"
+          headers:
+            X-Request-ID: *a1
         "401":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /players/me/game-accounts:
     post:
       operationId: addMyPlayerGameAccount
@@ -255,10 +282,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AddMyPlayerGameAccountResponse"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /players/me/statistics:
     get:
       operationId: getMyStatistics
@@ -272,8 +303,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetMyStatisticsResponse"
+          headers:
+            X-Request-ID: *a1
         "401":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /players/me/matches:
     get:
       operationId: getMyMatches
@@ -282,6 +317,7 @@ paths:
       summary: List personal match contributions projected from approved official
         results
       parameters:
+        - *a2
         - name: competitionId
           in: query
           required: false
@@ -309,6 +345,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetMyMatchesResponse"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
@@ -326,8 +364,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OnboardingStatus"
+          headers:
+            X-Request-ID: *a1
         "401":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
     patch:
       operationId: saveOnboardingProgress
       tags:
@@ -369,10 +411,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OnboardingStatus"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /identity/onboarding/organization:
     post:
       operationId: completeOrganizationOnboarding
@@ -406,12 +452,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompleteOrganizationOnboardingResponse"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
           $ref: "#/components/responses/ApiError"
         "409":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /identity/onboarding/invitation:
     post:
       operationId: completeInvitationOnboarding
@@ -441,6 +491,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompleteInvitationOnboardingResponse"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
@@ -449,6 +501,8 @@ paths:
           $ref: "#/components/responses/ApiError"
         "409":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /identity/onboarding/player:
     post:
       operationId: completePlayerOnboarding
@@ -477,12 +531,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompletePlayerOnboardingResponse"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
           $ref: "#/components/responses/ApiError"
         "409":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /organizations/name-availability:
     post:
       operationId: checkOrganizationNameAvailability
@@ -514,10 +572,14 @@ paths:
                 properties:
                   available:
                     type: boolean
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /competitions/invitations/accept:
     post:
       operationId: acceptCompetitionInvitation
@@ -543,12 +605,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AcceptCompetitionInvitationResponse"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
           $ref: "#/components/responses/ApiError"
         "404":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /organizations/{organizationId}/competitions:
     get:
       operationId: listOrganizationCompetitions
@@ -556,6 +622,7 @@ paths:
         - competitions
       summary: List competitions in an organization
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -575,6 +642,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Competition"
+          headers:
+            X-Request-ID: *a1
         "401":
           $ref: "#/components/responses/ApiError"
         "403":
@@ -585,6 +654,7 @@ paths:
         - competitions
       summary: Create a competition draft in an organization
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -603,6 +673,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompetitionDraft"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
@@ -622,8 +694,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListAccessibleCompetitionsResponse"
+          headers:
+            X-Request-ID: *a1
         "401":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /encounters/{encounterId}/schedule-snapshot:
     get:
       operationId: getEncounterScheduleSnapshot
@@ -631,6 +707,7 @@ paths:
         - encounters
       summary: Get the authorized persisted scheduling snapshot for an encounter
       parameters:
+        - *a2
         - name: encounterId
           in: path
           required: true
@@ -643,6 +720,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EncounterScheduleSnapshot"
+          headers:
+            X-Request-ID: *a1
         "401":
           $ref: "#/components/responses/ApiError"
         "404":
@@ -653,6 +732,7 @@ paths:
         - encounters
       summary: Create or update the persisted scheduling projection
       parameters:
+        - *a2
         - name: encounterId
           in: path
           required: true
@@ -695,6 +775,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EncounterScheduleSnapshot"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
@@ -708,6 +790,7 @@ paths:
         - competitions
       summary: Get an organization-scoped competition draft
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -725,6 +808,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompetitionDraft"
+          headers:
+            X-Request-ID: *a1
         "401":
           $ref: "#/components/responses/ApiError"
         "403":
@@ -737,6 +822,7 @@ paths:
         - competitions
       summary: Update the editable structure and rules of a competition draft
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -760,6 +846,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompetitionDraft"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "403":
@@ -775,6 +863,7 @@ paths:
         - teams
       summary: List teams available to the organization operator
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -794,6 +883,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Team"
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
   /organizations/{organizationId}/competitions/{competitionId}/participants:
@@ -803,6 +894,7 @@ paths:
         - competitions
       summary: List draft participants
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -827,6 +919,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/CompetitionEntry"
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
     post:
@@ -835,6 +929,7 @@ paths:
         - competitions
       summary: Add an approved existing or inline-created Team
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -858,6 +953,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompetitionEntry"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "403":
@@ -871,6 +968,7 @@ paths:
         - competitions
       summary: Remove a participant while the competition is a draft
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -889,6 +987,8 @@ paths:
       responses:
         "204":
           description: Participant removed
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
         "404":
@@ -903,6 +1003,7 @@ paths:
       summary: Publish and structurally lock a valid draft with at least two approved
         participants
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -920,6 +1021,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompetitionDraft"
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
         "404":
@@ -933,6 +1036,7 @@ paths:
         - competitions
       summary: Create an invitation scoped to a competition
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -1006,6 +1110,8 @@ paths:
                     type: integer
                     minimum: 1
                     nullable: true
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
@@ -1021,6 +1127,7 @@ paths:
         - authorization
       summary: Resolve the authenticated actor's effective permissions
       parameters:
+        - *a2
         - name: organizationId
           in: query
           schema:
@@ -1048,6 +1155,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EffectiveAccess"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
@@ -1059,6 +1168,7 @@ paths:
         - authorization
       summary: List contextual grants in an authorized scope
       parameters:
+        - *a2
         - name: organizationId
           in: query
           schema:
@@ -1109,6 +1219,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccessGrant"
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
         "404":
@@ -1131,12 +1243,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccessGrant"
+          headers:
+            X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
         "403":
           $ref: "#/components/responses/ApiError"
         "404":
           $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /authorization/grants/{grantId}:
     delete:
       operationId: deleteAccessGrant
@@ -1144,6 +1260,7 @@ paths:
         - authorization
       summary: Delete a contextual override
       parameters:
+        - *a2
         - name: grantId
           in: path
           required: true
@@ -1173,6 +1290,8 @@ paths:
       responses:
         "204":
           description: Grant deleted
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
         "404":
@@ -1184,6 +1303,7 @@ paths:
         - authorization
       summary: Change an organization membership role
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -1203,6 +1323,8 @@ paths:
       responses:
         "200":
           description: Updated role
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
         "404":
@@ -1216,6 +1338,7 @@ paths:
         - authorization
       summary: Change a competition membership role
       parameters:
+        - *a2
         - name: organizationId
           in: path
           required: true
@@ -1244,6 +1367,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompetitionRoleAssignment"
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
         "404":
@@ -1255,6 +1380,7 @@ paths:
         - authorization
       summary: Assign an audited platform superuser
       parameters:
+        - *a2
         - name: actorId
           in: path
           required: true
@@ -1263,6 +1389,8 @@ paths:
       responses:
         "200":
           description: Assigned superuser
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
     delete:
@@ -1271,6 +1399,7 @@ paths:
         - authorization
       summary: Revoke an audited platform superuser
       parameters:
+        - *a2
         - name: actorId
           in: path
           required: true
@@ -1279,6 +1408,8 @@ paths:
       responses:
         "204":
           description: Revoked superuser
+          headers:
+            X-Request-ID: *a1
         "403":
           $ref: "#/components/responses/ApiError"
         "409":
@@ -1290,6 +1421,22 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Optional in MVP scaffold; required when identity is wired.
+  parameters:
+    RequestId:
+      name: X-Request-ID
+      in: header
+      required: false
+      description: Optional caller-supplied UUID. Invalid values are replaced; the
+        effective value is returned in the response.
+      schema:
+        type: string
+        format: uuid
+  headers:
+    RequestId:
+      description: Correlation UUID for support and operational diagnostics.
+      schema:
+        type: string
+        format: uuid
   schemas:
     EffectiveAccess:
       type: object
@@ -1531,6 +1678,7 @@ components:
           type: string
         requestId:
           type: string
+          format: uuid
         details:
           type: object
           additionalProperties: false
@@ -2712,6 +2860,9 @@ components:
   responses:
     ApiError:
       description: API error
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
       content:
         application/json:
           schema:

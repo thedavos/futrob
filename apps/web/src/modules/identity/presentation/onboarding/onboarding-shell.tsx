@@ -1,13 +1,16 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { Alert, AlertDescription, Logo, Stepper, type StepperStep } from "@futrob/ui";
-import { WarningCircleIcon } from "@phosphor-icons/react";
+import { Logo, Stepper, type StepperStep } from "@futrob/ui";
+import {
+  SupportErrorAlert,
+  type SupportError,
+} from "@/shared/presentation/support-error-alert.tsx";
 
 interface OnboardingShellProps {
   readonly steps: readonly StepperStep[];
   readonly currentStepId: string;
   readonly title: string;
   readonly description: string;
-  readonly error?: string | null;
+  readonly error?: SupportError | null;
   readonly children: ReactNode;
 }
 
@@ -53,10 +56,9 @@ export function OnboardingShell({
             <p className="typo-subtitle text-muted-foreground">{description}</p>
           </header>
           {error ? (
-            <Alert className="mb-6 outline-none" ref={errorRef} tabIndex={-1} variant="destructive">
-              <WarningCircleIcon />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            <div className="mb-6 outline-none" ref={errorRef} tabIndex={-1}>
+              <SupportErrorAlert error={error} />
+            </div>
           ) : null}
           {children}
         </section>

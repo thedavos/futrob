@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { requestIdSchema } from "./request-correlation.ts";
 
 /** Typed wire props for expected failures (ADR-0011). Keep keys stable for i18n/clients. */
 export const apiErrorDetailsSchema = z
@@ -21,7 +22,7 @@ export type ApiErrorDetails = z.infer<typeof apiErrorDetailsSchema>;
 export const apiErrorSchema = z.object({
   code: z.string(),
   messageKey: z.string(),
-  requestId: z.string().optional(),
+  requestId: requestIdSchema.optional(),
   details: apiErrorDetailsSchema.optional(),
 });
 

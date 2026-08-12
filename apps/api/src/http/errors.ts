@@ -1,5 +1,6 @@
 import type { ApiErrorBody, ApiErrorDetails } from "@futrob/api-contracts";
 import { TaggedError } from "@futrob/shared-kernel";
+import { currentRequestCorrelation } from "@/context/request-correlation.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 /** Wire-facing expected failure: TaggedError (or structural `{ code }`) with stable wire `code`. */
@@ -22,7 +23,8 @@ const DETAIL_KEYS = [
 ] as const satisfies readonly (keyof ApiErrorDetails)[];
 
 export function apiErrorResponse(status: number, body: ApiErrorBody): Response {
-  return jsonResponse(body, status);
+  const correlation = currentRequestCorrelation();
+  return jsonResponse(correlation ? { ...body, requestId: correlation.requestId } : body, status);
 }
 
 export function validationErrorResponse(issues: unknown): Response {

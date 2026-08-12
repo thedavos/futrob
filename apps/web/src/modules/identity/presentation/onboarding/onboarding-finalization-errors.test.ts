@@ -18,9 +18,9 @@ describe("finalizationError", () => {
     ],
     ["organizations.invitation_invalid", "La invitación ya no está disponible."],
   ] as const)("maps invitation finish code %s", (code, message) => {
-    expect(finalizationError("invitation", new IdentityOnboardingClientError(400, code))).toBe(
+    expect(finalizationError("invitation", new IdentityOnboardingClientError(400, code))).toEqual({
       message,
-    );
+    });
   });
 
   it("maps organization name conflict and falls back for other org codes", () => {
@@ -29,33 +29,49 @@ describe("finalizationError", () => {
         "organization",
         new IdentityOnboardingClientError(409, "organizations.name_conflict"),
       ),
-    ).toBe("Ese nombre de organización ya está en uso. Vuelve y elige otro.");
+    ).toEqual({ message: "Ese nombre de organización ya está en uso. Vuelve y elige otro." });
     expect(
       finalizationError(
         "organization",
         new IdentityOnboardingClientError(400, "organizations.invalid_name"),
       ),
-    ).toBe("El nombre de la organización no es válido.");
+    ).toEqual({ message: "El nombre de la organización no es válido." });
     expect(
       finalizationError(
         "organization",
         new IdentityOnboardingClientError(500, "organizations.boom"),
       ),
-    ).toBe("No pudimos crear la organización. Inténtalo nuevamente.");
+    ).toEqual({ message: "No pudimos crear la organización. Inténtalo nuevamente." });
   });
 
   it("maps player finish failures and unknown errors", () => {
     expect(
       finalizationError("player", new IdentityOnboardingClientError(502, "teams.invalid_platform")),
-    ).toBe("Los datos de la cuenta de juego no son válidos. Revísalos e inténtalo nuevamente.");
+    ).toEqual({
+      message: "Los datos de la cuenta de juego no son válidos. Revísalos e inténtalo nuevamente.",
+    });
     expect(
       finalizationError(
         "player",
         new IdentityOnboardingClientError(500, "identity.onboarding_failed"),
       ),
-    ).toBe("No pudimos guardar tu perfil de jugador. Inténtalo nuevamente.");
-    expect(finalizationError("player", new Error("network"))).toBe(
-      "No pudimos finalizar tu configuración. Inténtalo nuevamente.",
-    );
+    ).toEqual({ message: "No pudimos guardar tu perfil de jugador. Inténtalo nuevamente." });
+    expect(finalizationError("player", new Error("network"))).toEqual({
+      message: "No pudimos finalizar tu configuración. Inténtalo nuevamente.",
+    });
+  });
+
+  it("retains the request ID without exposing transport details", () => {
+    const requestId = "2170e2f6-a47e-4338-83c3-27c054630800";
+
+    expect(
+      finalizationError(
+        "player",
+        new IdentityOnboardingClientError(502, "identity.onboarding_failed", requestId),
+      ),
+    ).toEqual({
+      message: "No pudimos guardar tu perfil de jugador. Inténtalo nuevamente.",
+      requestId,
+    });
   });
 });

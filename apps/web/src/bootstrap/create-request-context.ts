@@ -42,6 +42,7 @@ export function createRequestContext(input: {
   const productApi = createProductApiClient({
     actorId: input.identity.actorId,
     internalJobSecret: input.app.config.env.INTERNAL_JOB_SECRET,
+    requestId: crypto.randomUUID(),
     fetchImpl: input.fetcher,
   });
   const modules = createModules({

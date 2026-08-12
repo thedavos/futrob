@@ -29,11 +29,15 @@ import type {
   PlayerGameAccountInputDto,
   SearchClubsQueryInput,
 } from "@futrob/api-contracts";
-import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
+import {
+  IdentityOnboardingClientError,
+  identityBrowserClient,
+} from "@/modules/identity/presentation/identity-browser-client.ts";
 import { useSaveOnboardingProgressMutation } from "@/modules/identity/presentation/identity-queries.ts";
 import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
+import type { SupportError } from "@/shared/presentation/support-error-alert.tsx";
 import { finalizationError } from "./onboarding-finalization-errors.ts";
 import {
   isOnboardingPathname,
@@ -115,7 +119,7 @@ export const browserOnboardingGateway: OnboardingGateway = {
 
 interface OnboardingFlowValue {
   readonly saving: boolean;
-  readonly error: string | null;
+  readonly error: SupportError | null;
   readonly path: OnboardingPathDto | null;
   readonly currentStep: OnboardingStepDto;
   readonly draft: OnboardingDraft;
@@ -152,7 +156,7 @@ export function OnboardingFlowProvider({
   const [saving, setSaving] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const finishingRef = useRef(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SupportError | null>(null);
   const [path, setPathState] = useState<OnboardingPathDto | null>(() => initialStatus.path);
   const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(() =>
     bootstrap === "persisted"
@@ -200,8 +204,10 @@ export function OnboardingFlowProvider({
         try {
           const result = await gateway.checkOrganizationName({ name });
           return result.available;
-        } catch {
-          setError("No pudimos verificar el nombre. Inténtalo nuevamente.");
+        } catch (caught) {
+          setError(
+            supportErrorFromCaught(caught, "No pudimos verificar el nombre. Inténtalo nuevamente."),
+          );
           return null;
         } finally {
           setSaving(false);
@@ -220,8 +226,10 @@ export function OnboardingFlowProvider({
         await navigate({ to: routeForOnboardingStep(step) });
         try {
           await saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step });
-        } catch {
-          setError("No pudimos guardar tu progreso. Inténtalo nuevamente.");
+        } catch (caught) {
+          setError(
+            supportErrorFromCaught(caught, "No pudimos guardar tu progreso. Inténtalo nuevamente."),
+          );
           setPathState(previousPath);
           setCurrentStep(previousStep);
           await navigate({ to: routeForOnboardingStep(previousStep) });
@@ -312,6 +320,11 @@ export function OnboardingFlowProvider({
       )}
     </OnboardingFlowContext>
   );
+}
+
+function supportErrorFromCaught(caught: unknown, message: string): SupportError {
+  const requestId = caught instanceof IdentityOnboardingClientError ? caught.requestId : undefined;
+  return requestId ? { message, requestId } : { message };
 }
 
 function markOnboardingCompletedInCache(queryClient: QueryClient, path: OnboardingPathDto): void {

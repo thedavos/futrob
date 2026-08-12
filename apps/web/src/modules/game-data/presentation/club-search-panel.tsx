@@ -4,8 +4,6 @@ import { useState } from "react";
 import type { ExternalClubDto } from "@futrob/api-contracts";
 import { EA_SEARCH_PLATFORM, EA_SEARCH_PLATFORM_OPTIONS } from "@futrob/api-contracts";
 import {
-  Alert,
-  AlertDescription,
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -24,6 +22,10 @@ import {
 } from "@futrob/ui";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
+import {
+  SupportErrorAlert,
+  type SupportError,
+} from "@/shared/presentation/support-error-alert.tsx";
 import { GameDataClientError } from "./game-data-browser-client.ts";
 import { useSearchClubsMutation } from "./game-data-queries.ts";
 
@@ -46,7 +48,7 @@ type ClubSearchField = keyof ClubSearchValues;
 
 export function ClubSearchPanel() {
   const [clubs, setClubs] = useState<ExternalClubDto[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SupportError | null>(null);
   const [searched, setSearched] = useState(false);
   const validation = useFormValidation<ClubSearchField>();
   const searchClubs = useSearchClubsMutation();
@@ -74,9 +76,12 @@ export function ClubSearchPanel() {
       setClubs([]);
       setSearched(true);
       if (GameDataClientError.is(cause)) {
-        setError(`${cause.code} (HTTP ${cause.status})`);
+        setError({
+          message: "No pudimos buscar clubs. Inténtalo nuevamente.",
+          requestId: cause.requestId,
+        });
       } else {
-        setError("No se pudo buscar clubs.");
+        setError({ message: "No pudimos buscar clubs. Inténtalo nuevamente." });
       }
     }
   }
@@ -138,11 +143,7 @@ export function ClubSearchPanel() {
       </Form>
 
       <div className="border-t border-border bg-muted px-5 py-4 sm:px-6">
-        {error ? (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : null}
+        {error ? <SupportErrorAlert error={error} /> : null}
 
         {!error && searched && clubs.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sin resultados para esa búsqueda.</p>

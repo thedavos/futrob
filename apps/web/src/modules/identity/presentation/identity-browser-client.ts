@@ -22,6 +22,8 @@ import {
   type SaveOnboardingProgressRequest,
   type SaveOnboardingProgressResponse,
 } from "@futrob/api-contracts";
+import type { RequestId } from "@futrob/api-contracts";
+import { readBrowserApiError } from "@/shared/infrastructure/http/browser-api-error.ts";
 
 async function requestJson<T>(input: {
   readonly path?: string;
@@ -40,11 +42,8 @@ async function requestJson<T>(input: {
   });
   const raw: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const code =
-      raw && typeof raw === "object" && "code" in raw && typeof raw.code === "string"
-        ? raw.code
-        : "identity.onboarding_request_failed";
-    throw new IdentityOnboardingClientError(response.status, code);
+    const error = readBrowserApiError(response, raw, "identity.onboarding_request_failed");
+    throw new IdentityOnboardingClientError(response.status, error.code, error.requestId);
   }
   return input.parse(raw);
 }
@@ -53,6 +52,7 @@ export class IdentityOnboardingClientError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
+    readonly requestId?: RequestId,
   ) {
     super(code);
     this.name = "IdentityOnboardingClientError";

@@ -1216,6 +1216,22 @@ export const futrobOpenApiV1 = {
         description: "Optional in MVP scaffold; required when identity is wired.",
       },
     },
+    parameters: {
+      RequestId: {
+        name: "X-Request-ID",
+        in: "header",
+        required: false,
+        description:
+          "Optional caller-supplied UUID. Invalid values are replaced; the effective value is returned in the response.",
+        schema: { type: "string", format: "uuid" },
+      },
+    },
+    headers: {
+      RequestId: {
+        description: "Correlation UUID for support and operational diagnostics.",
+        schema: { type: "string", format: "uuid" },
+      },
+    },
     schemas: {
       EffectiveAccess: {
         type: "object",
@@ -1364,7 +1380,7 @@ export const futrobOpenApiV1 = {
         properties: {
           code: { type: "string" },
           messageKey: { type: "string" },
-          requestId: { type: "string" },
+          requestId: { type: "string", format: "uuid" },
           details: {
             type: "object",
             additionalProperties: false,
@@ -2194,6 +2210,9 @@ export const futrobOpenApiV1 = {
     responses: {
       ApiError: {
         description: "API error",
+        headers: {
+          "X-Request-ID": { $ref: "#/components/headers/RequestId" },
+        },
         content: {
           "application/json": {
             schema: { $ref: "#/components/schemas/ApiError" },
@@ -2203,6 +2222,34 @@ export const futrobOpenApiV1 = {
     },
   },
 } as const;
+
+const OPENAPI_HTTP_METHODS = ["get", "post", "put", "patch", "delete"] as const;
+const requestIdParameterReference = { $ref: "#/components/parameters/RequestId" } as const;
+const requestIdHeaderReference = { $ref: "#/components/headers/RequestId" } as const;
+
+for (const pathItem of Object.values(futrobOpenApiV1.paths)) {
+  for (const method of OPENAPI_HTTP_METHODS) {
+    const operation = Reflect.get(pathItem, method) as object | undefined;
+    if (!operation) continue;
+
+    const parameters = Reflect.get(operation, "parameters");
+    Reflect.set(operation, "parameters", [
+      requestIdParameterReference,
+      ...(Array.isArray(parameters) ? parameters : []),
+    ]);
+
+    const responses = Reflect.get(operation, "responses");
+    if (!responses || typeof responses !== "object") continue;
+    for (const response of Object.values(responses)) {
+      if (!response || typeof response !== "object" || "$ref" in response) continue;
+      const existingHeaders = Reflect.get(response, "headers");
+      Reflect.set(response, "headers", {
+        ...(existingHeaders && typeof existingHeaders === "object" ? existingHeaders : {}),
+        "X-Request-ID": requestIdHeaderReference,
+      });
+    }
+  }
+}
 
 /** Keep Zod schemas referenced so drift is harder during refactors. */
 void apiErrorSchema;

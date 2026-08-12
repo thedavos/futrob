@@ -88,6 +88,7 @@ export default defineConfig({
     projects: [
       "apps/web",
       "apps/api",
+      "packages/api-contracts",
       "packages/sdk",
       "packages/shared-kernel",
       "packages/game-data",

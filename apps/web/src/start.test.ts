@@ -1,0 +1,60 @@
+import { describe, expect, it } from "vite-plus/test";
+import { correlateBffApiRequest, csrfMiddleware, shouldValidateCsrfRequest } from "./start.ts";
+
+describe("global BFF request correlation", () => {
+  it("correlates a players route that previously omitted request IDs", async () => {
+    const requestId = "715f6cc1-ce62-4adf-a3f1-e8bc12fa0e68";
+    const request = new Request("https://futrob.test/api/v1/players/me", {
+      headers: { "X-Request-ID": requestId },
+    });
+
+    const response = await correlateBffApiRequest(request, "/api/v1/players/me", async () =>
+      Response.json(
+        { code: "auth.unauthenticated", messageKey: "errors.auth.unauthenticated" },
+        { status: 401 },
+      ),
+    );
+
+    expect(response.headers.get("x-request-id")).toBe(requestId);
+    expect(await response.json()).toEqual({
+      code: "auth.unauthenticated",
+      messageKey: "errors.auth.unauthenticated",
+      requestId,
+    });
+  });
+
+  it("does not add API correlation to a page response", async () => {
+    const request = new Request("https://futrob.test/player");
+    const response = await correlateBffApiRequest(request, "/player", async () =>
+      Response.json({ ok: true }),
+    );
+
+    expect(response.headers.get("x-request-id")).toBeNull();
+  });
+
+  it("lets an API router request without browser origin headers pass CSRF", async () => {
+    const request = new Request("https://futrob.test/api/v1/meta/ping");
+    const pathname = "/api/v1/meta/ping";
+    const runCsrf = csrfMiddleware.options.server;
+    if (!runCsrf) throw new Error("CSRF middleware is not configured");
+
+    const result = await runCsrf({
+      request,
+      pathname,
+      handlerType: "router",
+      context: undefined,
+      next: async () => ({
+        request,
+        pathname,
+        context: undefined,
+        response: Response.json({ ok: true }),
+      }),
+    } as never);
+    const response = result instanceof Response ? result : result.response;
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+    expect(shouldValidateCsrfRequest("router")).toBe(false);
+    expect(shouldValidateCsrfRequest("serverFn")).toBe(true);
+  });
+});
