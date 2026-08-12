@@ -14,11 +14,20 @@ fi
 
 # Prefer nvm Node 24 over a base-image Node 22 that may sit earlier on PATH.
 export NVM_DIR="${NVM_DIR:-${HOME}/.nvm}"
-if [[ -s "${NVM_DIR}/nvm.sh" ]]; then
-  # shellcheck disable=SC1091
-  . "${NVM_DIR}/nvm.sh"
-  nvm install 24
-  nvm use 24
+if [[ ! -s "${NVM_DIR}/nvm.sh" ]]; then
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+fi
+if [[ ! -s "${NVM_DIR}/nvm.sh" ]]; then
+  printf 'Unable to bootstrap nvm at %s\n' "${NVM_DIR}" >&2
+  exit 1
+fi
+# shellcheck disable=SC1091
+. "${NVM_DIR}/nvm.sh"
+nvm install 24
+nvm use 24
+if ! node -e 'process.exit(Number(process.versions.major) < 24 ? 1 : 0)'; then
+  printf 'Node 24 or newer is required; found %s\n' "$(node --version)" >&2
+  exit 1
 fi
 
 BASHRC="${HOME}/.bashrc"
