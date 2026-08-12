@@ -27,6 +27,33 @@ Game data (service auth from `apps/web` BFF — not browser cookies):
 - `GET /game-data/clubs/:externalClubId` — external club info.
 - `GET /game-data/clubs/:externalClubId/matches` — recent provider matches.
 
+Provider operations (service-authenticated):
+
+- `POST /internal/game-data/sync-jobs` — enqueue tenant-scoped work with active-job deduplication.
+- `POST /internal/game-data/sync-jobs/:jobId/run` — lease and execute one recoverable attempt.
+- `GET /internal/game-data/providers/:providerKey/health` — sanitized snapshot for platform
+  administrators. Raw payloads, upstream bodies, queries and external club IDs are never returned.
+
+The web BFF exposes `POST /api/v1/game-data/sync-jobs` on the `apps/web` host; it is intentionally not
+part of this Railway API's OpenAPI document. It uses the Better Auth session and requires effective
+`organizations.read` access for the submitted tenant before it persists through the internal API and
+publishes only `jobId` and `requestId` to `JOB_QUEUE`. Queue deliveries use the
+durable `availableAt` value for delayed retries, stop after the configured attempts, and fall through
+to `futrob-job-dlq`. A one-minute Cron calls the service-only `run-next` recovery endpoint so a job
+survives an interrupted publication or Queue delivery. Replaying a message is safe because claim and
+completion are lease-token guarded.
+
+The API caches successful club searches for 30 seconds and club details for five minutes. A
+five-minute stale window is used only after transient provider failures. Recent matches are not
+served stale; immutable observations and normalized matches remain the durable source. Retries are
+limited to timeout, network, 408, 429 and 5xx responses. The shared circuit opens after three final
+transient failures, waits 60 seconds, then grants one ten-second half-open probe.
+
+Provider health is a rolling 24-hour window capped at 1,000 upstream samples. Cache hits and
+half-open probes are not mixed into that cap. The response includes `windowStartedAt` and
+`sampleSize`. Circuit state comes from the live breaker. Telemetry writes are best-effort and never
+delay a provider response.
+
 Organizations (same service auth):
 
 - `GET /organizations/mine`
@@ -69,6 +96,10 @@ Without `DATABASE_URL`, organizations, competitions, player profiles and actor o
 | `competition_entries`            | `competitions`  | Team inscription in a competition (`UNIQUE(competition_id, team_id)`).                                                  |
 | `competition_roster_memberships` | `teams`         | PlayerProfile on a team in a competition (`UNIQUE(player_profile_id, competition_id)`). Optional `game_account_id`.     |
 | `active_team_preferences`        | `teams`         | One active roster membership per actor for personal UI context.                                                         |
+| `provider_sync_jobs`             | `game-data`     | Tenant-scoped job ledger, dedupe key, attempts and recoverable leases.                                                  |
+| `provider_response_cache`        | `game-data`     | Shared successful response cache and cross-replica refresh lease.                                                       |
+| `provider_circuit_state`         | `game-data`     | Shared closed/open/half-open state.                                                                                     |
+| `provider_health_events`         | `game-data`     | Sanitized append-only outcomes, latency and correlation identifiers.                                                    |
 
 The onboarding invitation endpoint accepts only invitations with `competition_id`. A successful
 acceptance ensures both the organization membership required for tenant isolation and the
@@ -115,7 +146,7 @@ npm run api
 
 ## Railway notes
 
-- Apply migrations `0001` through `0017` in filename order.
+- Apply all migrations in filename order through `0028_provider_health.sql`.
 - Set `TEST_DATABASE_URL` to run the clean/legacy migration integration suite; it creates and
   removes a uniquely named schema without touching existing schemas.
   to Postgres before relying on organization, onboarding, or player-profile persistence.
@@ -124,6 +155,8 @@ npm run api
 - Health check path: `/api/v1/meta/health`.
 - EA egress relies on browser-like headers (`EA_CLUBS_REQUEST_HEADERS`) so Node
   requests are not blocked by EA's edge.
+- A growing `retry_scheduled` queue indicates transient degradation. `dead` jobs require operator
+  review after the upstream or schema issue is understood; replaying the same successful job is safe.
 
 ## Layout
 

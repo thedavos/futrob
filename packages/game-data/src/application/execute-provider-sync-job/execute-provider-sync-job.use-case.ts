@@ -1,13 +1,11 @@
 import type { ClockPort, IdGeneratorPort, Result } from "@futrob/shared-kernel";
 import type { ProviderMatch } from "../../domain/entities/provider-match.ts";
-import type { ProviderSyncJob } from "../../domain/entities/provider-sync-job.ts";
-import {
-  ProviderHttpFailed,
-  ProviderNetworkError,
-  ProviderTimeout,
-  ProviderUnavailable,
-  type ProviderError,
-} from "../../domain/errors/provider.errors.ts";
+import type {
+  ProviderSyncJob,
+  RunningProviderSyncJob,
+} from "../../domain/entities/provider-sync-job.ts";
+import type { ProviderError } from "../../domain/errors/provider.errors.ts";
+import { isRetryableProviderError } from "../../domain/policies/classify-provider-failure.ts";
 import type { GetRecentMatchesInput } from "../../domain/ports/game-data-provider.port.ts";
 import type { ProviderSyncJobRepository } from "../../domain/ports/provider-sync-job.repository.ts";
 import type { GameDataProviderKey } from "../../domain/value-objects/provider-key.ts";
@@ -26,6 +24,10 @@ export class ExecuteProviderSyncJobUseCase {
       readonly clock: ClockPort;
       readonly leaseMs: number;
       readonly retryDelayMs: (error: ProviderError, attempt: number) => number;
+      readonly runClaimed?: <T>(
+        job: RunningProviderSyncJob,
+        operation: () => Promise<T>,
+      ) => Promise<T>;
     },
   ) {}
 
@@ -44,6 +46,11 @@ export class ExecuteProviderSyncJobUseCase {
     });
     if (!claimed) return jobId ? this.deps.jobs.findById(jobId) : null;
 
+    const run = async () => this.executeClaimed(claimed);
+    return this.deps.runClaimed ? this.deps.runClaimed(claimed, run) : run();
+  }
+
+  private async executeClaimed(claimed: RunningProviderSyncJob): Promise<ProviderSyncJob | null> {
     const result = await this.deps.sync.execute(claimed.providerKey, claimed.sync);
     const completedAt = this.deps.clock.now();
     if (result.isOk()) {
@@ -75,13 +82,4 @@ export class ExecuteProviderSyncJobUseCase {
     }
     return this.deps.jobs.findById(claimed.id);
   }
-}
-
-export function isRetryableProviderError(error: ProviderError): boolean {
-  if (ProviderTimeout.is(error) || ProviderNetworkError.is(error) || ProviderUnavailable.is(error))
-    return true;
-  return (
-    ProviderHttpFailed.is(error) &&
-    (error.status === 408 || error.status === 429 || error.status >= 500)
-  );
 }

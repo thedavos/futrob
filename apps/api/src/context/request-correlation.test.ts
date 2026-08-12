@@ -2,8 +2,11 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   createRequestCorrelation,
   currentRequestCorrelation,
+  currentJobCorrelation,
   logCorrelatedInfo,
   runWithRequestCorrelation,
+  runWithJobCorrelation,
+  runWithPersistedJobCorrelation,
   type CorrelationLogEntry,
 } from "./request-correlation.ts";
 
@@ -37,6 +40,21 @@ describe("request correlation context", () => {
     expect(entries).toEqual([{ event: "job.attempt.completed", requestId: correlation.requestId }]);
   });
 
+  it("nests a job ID without changing the request correlation", async () => {
+    const correlation = createRequestCorrelation("722e421d-56d9-4335-94d2-07f5057d7cc0");
+
+    await runWithRequestCorrelation(
+      correlation,
+      { info: () => undefined, error: () => undefined },
+      () =>
+        runWithJobCorrelation("job-1", async () => {
+          await Promise.resolve();
+          expect(currentJobCorrelation()).toBe("job-1");
+          expect(currentRequestCorrelation()).toEqual(correlation);
+        }),
+    );
+  });
+
   it("does not let log fields replace the active request ID", () => {
     const correlation = createRequestCorrelation("68f0cadb-269b-48e9-8f23-52b50bff2595");
     const entries: CorrelationLogEntry[] = [];
@@ -48,5 +66,21 @@ describe("request correlation context", () => {
     );
 
     expect(entries[0]?.requestId).toBe(correlation.requestId);
+  });
+
+  it("replaces scheduler correlation with the persisted request and job IDs", async () => {
+    const scheduler = createRequestCorrelation("68f0cadb-269b-48e9-8f23-52b50bff2595");
+    const persisted = createRequestCorrelation("032141c9-0574-4129-86d4-7192bdbbcadd");
+
+    await runWithRequestCorrelation(
+      scheduler,
+      { info: () => undefined, error: () => undefined },
+      () =>
+        runWithPersistedJobCorrelation(persisted, "job-recovered", async () => {
+          await Promise.resolve();
+          expect(currentRequestCorrelation()).toEqual(persisted);
+          expect(currentJobCorrelation()).toBe("job-recovered");
+        }),
+    );
   });
 });

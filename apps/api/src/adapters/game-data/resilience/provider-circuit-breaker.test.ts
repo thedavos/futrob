@@ -39,7 +39,15 @@ describe("InMemoryProviderCircuitBreaker", () => {
     ]);
     expect([probe, concurrent].filter((permission) => permission.allowed)).toHaveLength(1);
 
-    await circuit.recordSuccess({ key: "ea-clubs:/clubs/info", now: probeAt });
+    const allowedProbe = [probe, concurrent].find((permission) => permission.allowed);
+    if (!allowedProbe?.allowed || allowedProbe.state !== "half_open") {
+      throw new TypeError("expected half-open probe");
+    }
+    await circuit.recordSuccess({
+      key: "ea-clubs:/clubs/info",
+      now: probeAt,
+      probeLeaseToken: allowedProbe.probeLeaseToken,
+    });
     await expect(
       circuit.beforeRequest({
         key: "ea-clubs:/clubs/info",
@@ -48,5 +56,54 @@ describe("InMemoryProviderCircuitBreaker", () => {
         probeLeaseExpiresAt: new Date("2026-08-11T20:01:10.000Z"),
       }),
     ).resolves.toEqual({ allowed: true, state: "closed" });
+  });
+
+  it("ignores a success from an expired half-open probe", async () => {
+    const circuit = new InMemoryProviderCircuitBreaker();
+    const key = "ea-clubs:/clubs/info";
+    const failedAt = new Date("2026-08-11T20:00:00.000Z");
+    await circuit.recordTransientFailure({
+      key,
+      now: failedAt,
+      failureThreshold: 1,
+      cooldownMs: 1_000,
+    });
+    const first = await circuit.beforeRequest({
+      key,
+      now: new Date("2026-08-11T20:00:01.000Z"),
+      probeLeaseToken: "probe-a",
+      probeLeaseExpiresAt: new Date("2026-08-11T20:00:02.000Z"),
+    });
+    const second = await circuit.beforeRequest({
+      key,
+      now: new Date("2026-08-11T20:00:02.000Z"),
+      probeLeaseToken: "probe-b",
+      probeLeaseExpiresAt: new Date("2026-08-11T20:00:03.000Z"),
+    });
+    if (!first.allowed || first.state !== "half_open") throw new TypeError("missing first probe");
+    if (!second.allowed || second.state !== "half_open")
+      throw new TypeError("missing second probe");
+
+    await circuit.recordTransientFailure({
+      key,
+      now: new Date("2026-08-11T20:00:02.100Z"),
+      failureThreshold: 1,
+      cooldownMs: 60_000,
+      probeLeaseToken: second.probeLeaseToken,
+    });
+    await circuit.recordSuccess({
+      key,
+      now: new Date("2026-08-11T20:00:02.200Z"),
+      probeLeaseToken: first.probeLeaseToken,
+    });
+
+    await expect(
+      circuit.beforeRequest({
+        key,
+        now: new Date("2026-08-11T20:00:03.000Z"),
+        probeLeaseToken: "probe-c",
+        probeLeaseExpiresAt: new Date("2026-08-11T20:00:04.000Z"),
+      }),
+    ).resolves.toMatchObject({ allowed: false, state: "open" });
   });
 });

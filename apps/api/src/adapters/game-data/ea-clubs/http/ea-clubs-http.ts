@@ -5,6 +5,7 @@ import {
   ProviderNetworkError,
   ProviderTimeout,
   ProviderUnavailable,
+  isRetryableProviderError,
   type ProviderTransportError,
 } from "@futrob/game-data";
 import { logCorrelatedError, logCorrelatedInfo } from "@/context/request-correlation.ts";
@@ -101,11 +102,17 @@ export class EaClubsHttpClient {
     for (let attempt = 1; attempt <= this.retry.maxAttempts; attempt += 1) {
       const result = await this.requestOnce(url, path, attempt);
       if (result.isOk()) {
-        await this.circuit.recordSuccess({ key: circuitKey, now: this.clock.now() });
+        await this.circuit.recordSuccess({
+          key: circuitKey,
+          now: this.clock.now(),
+          ...(permission.state === "half_open"
+            ? { probeLeaseToken: permission.probeLeaseToken }
+            : {}),
+        });
         return result;
       }
       lastError = result.error;
-      if (!isTransient(result.error) || attempt === this.retry.maxAttempts) break;
+      if (!isRetryableProviderError(result.error) || attempt === this.retry.maxAttempts) break;
       const retryAfterMs = ProviderHttpFailed.is(result.error)
         ? result.error.retryAfterMs
         : undefined;
@@ -113,15 +120,19 @@ export class EaClubsHttpClient {
         this.retry.maxDelayMs,
         this.retry.baseDelayMs * 2 ** (attempt - 1),
       );
+      if (retryAfterMs !== undefined && retryAfterMs > this.retry.maxDelayMs) break;
       await this.retry.sleep(retryAfterMs ?? Math.floor(exponential * this.retry.random()));
     }
     if (!lastError) throw new TypeError("Provider request completed without a result");
-    if (isTransient(lastError)) {
+    if (isRetryableProviderError(lastError)) {
       await this.circuit.recordTransientFailure({
         key: circuitKey,
         now: this.clock.now(),
         failureThreshold: 3,
         cooldownMs: 60_000,
+        ...(permission.state === "half_open"
+          ? { probeLeaseToken: permission.probeLeaseToken }
+          : {}),
       });
     }
     return err(lastError);
@@ -194,15 +205,6 @@ export class EaClubsHttpClient {
       clearTimeout(timer);
     }
   }
-}
-
-function isTransient(error: ProviderTransportError): boolean {
-  return (
-    ProviderTimeout.is(error) ||
-    ProviderNetworkError.is(error) ||
-    (ProviderHttpFailed.is(error) &&
-      (error.status === 408 || error.status === 429 || error.status >= 500))
-  );
 }
 
 function parseRetryAfter(value: string | null, now: Date): number | undefined {

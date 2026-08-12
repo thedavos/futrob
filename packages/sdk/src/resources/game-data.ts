@@ -1,12 +1,16 @@
 import {
   getClubMatchesQuerySchema,
   getClubMatchesResponseSchema,
+  enqueueProviderSyncJobRequestSchema,
+  providerSyncJobResponseSchema,
   getClubQuerySchema,
   getClubResponseSchema,
   searchClubsQuerySchema,
   searchClubsResponseSchema,
   type GetClubMatchesQueryInput,
   type GetClubMatchesResponse,
+  type EnqueueProviderSyncJobRequest,
+  type ProviderSyncJobResponse,
   type GetClubQueryInput,
   type GetClubResponse,
   type SearchClubsQueryInput,
@@ -58,6 +62,16 @@ export function createGameDataResource(http: HttpClient) {
           path: `/game-data/clubs/${encodeURIComponent(externalClubId)}/matches${toQuery(query)}`,
           method: "GET",
           parse: (data) => getClubMatchesResponseSchema.parse(data),
+        });
+      },
+    },
+    syncJobs: {
+      async enqueue(input: EnqueueProviderSyncJobRequest): Promise<ProviderSyncJobResponse> {
+        return http.request({
+          path: "/internal/game-data/sync-jobs",
+          method: "POST",
+          body: enqueueProviderSyncJobRequestSchema.parse(input),
+          parse: (data) => providerSyncJobResponseSchema.parse(data),
         });
       },
     },

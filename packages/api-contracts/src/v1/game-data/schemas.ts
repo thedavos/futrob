@@ -113,3 +113,52 @@ export const getClubMatchesResponseSchema = z.object({
 });
 
 export type GetClubMatchesResponse = z.infer<typeof getClubMatchesResponseSchema>;
+
+export const enqueueProviderSyncJobRequestSchema = z.object({
+  organizationId: z.string().trim().min(1),
+  providerKey: z.literal("ea-clubs"),
+  externalClubId: z.string().trim().min(1),
+  platform: z.string().trim().min(1),
+  gameEdition: z.string().trim().min(1),
+  matchType: z.string().trim().min(1),
+  maxResultCount: z.number().int().min(1).max(100),
+});
+
+export type EnqueueProviderSyncJobRequest = z.infer<typeof enqueueProviderSyncJobRequestSchema>;
+
+export const providerSyncJobResponseSchema = z.object({
+  id: z.string().min(1),
+  organizationId: z.string().min(1),
+  providerKey: z.literal("ea-clubs"),
+  status: z.enum(["queued", "running", "succeeded", "retry_scheduled", "dead"]),
+  attempt: z.number().int().nonnegative(),
+  maxAttempts: z.number().int().positive(),
+  requestId: z.string().min(1),
+  availableAt: z.string().datetime().nullable(),
+  leaseExpiresAt: z.string().datetime().nullable(),
+  updatedAt: z.string().datetime(),
+  lastErrorCode: z.string().min(1).optional(),
+});
+
+export type ProviderSyncJobResponse = z.infer<typeof providerSyncJobResponseSchema>;
+
+export const providerHealthResponseSchema = z.object({
+  providerKey: gameDataProviderKeyQuerySchema,
+  status: z.enum(["healthy", "degraded", "unavailable", "unknown"]),
+  circuitState: z.enum(["closed", "open", "half_open"]),
+  observedAt: z.string().datetime(),
+  windowStartedAt: z.string().datetime(),
+  sampleSize: z.number().int().nonnegative(),
+  lastSuccessfulAt: z.string().datetime().nullable(),
+  lastFailureAt: z.string().datetime().nullable(),
+  averageLatencyMs: z.number().int().nonnegative().nullable(),
+  successCount: z.number().int().nonnegative(),
+  failureCount: z.number().int().nonnegative(),
+  cache: z.object({
+    hits: z.number().int().nonnegative(),
+    misses: z.number().int().nonnegative(),
+    stale: z.number().int().nonnegative(),
+  }),
+});
+
+export type ProviderHealthResponse = z.infer<typeof providerHealthResponseSchema>;

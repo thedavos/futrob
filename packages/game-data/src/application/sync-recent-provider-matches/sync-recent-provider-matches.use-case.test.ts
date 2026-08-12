@@ -99,11 +99,22 @@ describe("SyncRecentProviderMatchesUseCase", () => {
     const raw = new MemoryRaw();
     const matches = new MemoryMatches();
     let ids = 0;
+    let inTransaction = false;
     const useCase = new SyncRecentProviderMatchesUseCase({
       ingestions: { get: () => ingestion },
       rawObservations: raw,
       matches,
       ids: { generate: () => `obs-${++ids}` },
+      transaction: {
+        async runInTransaction<T>(operation: () => Promise<T>): Promise<T> {
+          inTransaction = true;
+          try {
+            return await operation();
+          } finally {
+            inTransaction = false;
+          }
+        },
+      },
     });
 
     const first = await useCase.execute("ea-clubs", {
@@ -124,6 +135,7 @@ describe("SyncRecentProviderMatchesUseCase", () => {
     expect(first.isOk()).toBe(true);
     expect(second.isOk()).toBe(true);
     expect(ingestion.calls).toBe(2);
+    expect(inTransaction).toBe(false);
     expect(ids).toBe(2);
     expect(raw.rows).toHaveLength(1);
     await expect(

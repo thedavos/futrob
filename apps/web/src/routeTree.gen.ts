@@ -44,6 +44,7 @@ import { Route as ApiV1OrganizationsNameAvailabilityRouteImport } from './routes
 import { Route as ApiV1OrganizationsMineRouteImport } from './routes/api/v1/organizations/mine'
 import { Route as ApiV1MetaPingRouteImport } from './routes/api/v1/meta/ping'
 import { Route as ApiV1IdentityOnboardingRouteImport } from './routes/api/v1/identity/onboarding'
+import { Route as ApiV1GameDataSyncJobsRouteImport } from './routes/api/v1/game-data/sync-jobs'
 import { Route as ApiV1CompetitionsMineRouteImport } from './routes/api/v1/competitions/mine'
 import { Route as ApiV1AuthorizationEffectiveAccessRouteImport } from './routes/api/v1/authorization/effective-access'
 import { Route as AppRosterInvitationsAcceptTokenRouteImport } from './routes/_app/roster-invitations/accept.$token'
@@ -260,6 +261,11 @@ const ApiV1MetaPingRoute = ApiV1MetaPingRouteImport.update({
 const ApiV1IdentityOnboardingRoute = ApiV1IdentityOnboardingRouteImport.update({
   id: '/api/v1/identity/onboarding',
   path: '/api/v1/identity/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1GameDataSyncJobsRoute = ApiV1GameDataSyncJobsRouteImport.update({
+  id: '/api/v1/game-data/sync-jobs',
+  path: '/api/v1/game-data/sync-jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1CompetitionsMineRoute = ApiV1CompetitionsMineRouteImport.update({
@@ -541,6 +547,7 @@ export interface FileRoutesByFullPath {
   '/roster-invitations/accept/$token': typeof AppRosterInvitationsAcceptTokenRoute
   '/api/v1/authorization/effective-access': typeof ApiV1AuthorizationEffectiveAccessRoute
   '/api/v1/competitions/mine': typeof ApiV1CompetitionsMineRoute
+  '/api/v1/game-data/sync-jobs': typeof ApiV1GameDataSyncJobsRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRouteWithChildren
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
@@ -611,6 +618,7 @@ export interface FileRoutesByTo {
   '/roster-invitations/accept/$token': typeof AppRosterInvitationsAcceptTokenRoute
   '/api/v1/authorization/effective-access': typeof ApiV1AuthorizationEffectiveAccessRoute
   '/api/v1/competitions/mine': typeof ApiV1CompetitionsMineRoute
+  '/api/v1/game-data/sync-jobs': typeof ApiV1GameDataSyncJobsRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRouteWithChildren
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
@@ -685,6 +693,7 @@ export interface FileRoutesById {
   '/_app/roster-invitations/accept/$token': typeof AppRosterInvitationsAcceptTokenRoute
   '/api/v1/authorization/effective-access': typeof ApiV1AuthorizationEffectiveAccessRoute
   '/api/v1/competitions/mine': typeof ApiV1CompetitionsMineRoute
+  '/api/v1/game-data/sync-jobs': typeof ApiV1GameDataSyncJobsRoute
   '/api/v1/identity/onboarding': typeof ApiV1IdentityOnboardingRouteWithChildren
   '/api/v1/meta/ping': typeof ApiV1MetaPingRoute
   '/api/v1/organizations/mine': typeof ApiV1OrganizationsMineRoute
@@ -758,6 +767,7 @@ export interface FileRouteTypes {
     | '/roster-invitations/accept/$token'
     | '/api/v1/authorization/effective-access'
     | '/api/v1/competitions/mine'
+    | '/api/v1/game-data/sync-jobs'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
@@ -828,6 +838,7 @@ export interface FileRouteTypes {
     | '/roster-invitations/accept/$token'
     | '/api/v1/authorization/effective-access'
     | '/api/v1/competitions/mine'
+    | '/api/v1/game-data/sync-jobs'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
@@ -901,6 +912,7 @@ export interface FileRouteTypes {
     | '/_app/roster-invitations/accept/$token'
     | '/api/v1/authorization/effective-access'
     | '/api/v1/competitions/mine'
+    | '/api/v1/game-data/sync-jobs'
     | '/api/v1/identity/onboarding'
     | '/api/v1/meta/ping'
     | '/api/v1/organizations/mine'
@@ -954,6 +966,7 @@ export interface RootRouteChildren {
   ApiV1OpenapiDotyamlRoute: typeof ApiV1OpenapiDotyamlRoute
   ApiV1AuthorizationEffectiveAccessRoute: typeof ApiV1AuthorizationEffectiveAccessRoute
   ApiV1CompetitionsMineRoute: typeof ApiV1CompetitionsMineRoute
+  ApiV1GameDataSyncJobsRoute: typeof ApiV1GameDataSyncJobsRoute
   ApiV1IdentityOnboardingRoute: typeof ApiV1IdentityOnboardingRouteWithChildren
   ApiV1MetaPingRoute: typeof ApiV1MetaPingRoute
   ApiV1OrganizationsMineRoute: typeof ApiV1OrganizationsMineRoute
@@ -1216,6 +1229,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/identity/onboarding'
       fullPath: '/api/v1/identity/onboarding'
       preLoaderRoute: typeof ApiV1IdentityOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/game-data/sync-jobs': {
+      id: '/api/v1/game-data/sync-jobs'
+      path: '/api/v1/game-data/sync-jobs'
+      fullPath: '/api/v1/game-data/sync-jobs'
+      preLoaderRoute: typeof ApiV1GameDataSyncJobsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/competitions/mine': {
@@ -1718,6 +1738,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthorizationEffectiveAccessRoute:
     ApiV1AuthorizationEffectiveAccessRoute,
   ApiV1CompetitionsMineRoute: ApiV1CompetitionsMineRoute,
+  ApiV1GameDataSyncJobsRoute: ApiV1GameDataSyncJobsRoute,
   ApiV1IdentityOnboardingRoute: ApiV1IdentityOnboardingRouteWithChildren,
   ApiV1MetaPingRoute: ApiV1MetaPingRoute,
   ApiV1OrganizationsMineRoute: ApiV1OrganizationsMineRoute,

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { err, ok, type ClockPort, type IdGeneratorPort, type Result } from "@futrob/shared-kernel";
 import {
-  ProviderUnavailable,
+  ProviderRefreshInProgress,
   isRetryableProviderError,
   type GameDataProviderPort,
   type GetExternalClubInput,
@@ -13,6 +13,10 @@ import {
   type SearchExternalClubsInput,
 } from "@futrob/game-data";
 import type { ProviderCacheEntry, ProviderResponseCache } from "./provider-response-cache.ts";
+import { logCorrelatedInfo } from "@/context/request-correlation.ts";
+
+const REFRESH_LEASE_MS = 45_000;
+const FOLLOWER_POLL_MS = 50;
 
 export class CachedGameDataProviderAdapter
   implements GameDataProviderPort, ProviderMatchIngestionPort
@@ -67,7 +71,11 @@ export class CachedGameDataProviderAdapter
     const key = cacheKey(this.key, operation, normalizedInput);
     const now = this.deps.clock.now();
     let cached = await this.deps.cache.read<T>(key);
-    if (cached && cached.freshUntil > now) return cachedResult(cached);
+    if (cached && cached.freshUntil > now) {
+      this.logCache(operation, "cache_hit");
+      return cachedResult(cached);
+    }
+    this.logCache(operation, "cache_miss");
 
     const token = this.deps.ids.generate();
     const acquired = await this.deps.cache.tryAcquireRefresh({
@@ -76,18 +84,26 @@ export class CachedGameDataProviderAdapter
       operation,
       token,
       now,
-      leaseExpiresAt: new Date(now.getTime() + 10_000),
+      leaseExpiresAt: new Date(now.getTime() + REFRESH_LEASE_MS),
     });
     if (!acquired) {
-      for (let attempt = 0; attempt < 20; attempt += 1) {
-        await this.deps.sleep(10);
-        cached = await this.deps.cache.read<T>(key);
-        if (cached && cached.freshUntil > this.deps.clock.now()) return cachedResult(cached);
+      if (cached && cached.staleUntil > this.deps.clock.now()) {
+        this.logCache(operation, "cache_stale");
+        return cachedResult(cached);
       }
-      if (cached && cached.staleUntil > this.deps.clock.now()) return cachedResult(cached);
+      await this.deps.sleep(FOLLOWER_POLL_MS);
+      cached = await this.deps.cache.read<T>(key);
+      if (cached && cached.freshUntil > this.deps.clock.now()) {
+        this.logCache(operation, "cache_hit");
+        return cachedResult(cached);
+      }
+      if (cached && cached.staleUntil > this.deps.clock.now()) {
+        this.logCache(operation, "cache_stale");
+        return cachedResult(cached);
+      }
       return err(
-        new ProviderUnavailable({
-          code: "game_data.provider_unavailable",
+        new ProviderRefreshInProgress({
+          code: "game_data.provider_refresh_in_progress",
           message: "Provider response refresh is already in progress",
           retryAfterSeconds: 1,
         }),
@@ -97,9 +113,11 @@ export class CachedGameDataProviderAdapter
     try {
       const result = await load();
       if (!result.isOk()) {
-        return cached && cached.staleUntil > now && isRetryableProviderError(result.error)
-          ? cachedResult(cached)
-          : result;
+        if (cached && cached.staleUntil > now && isRetryableProviderError(result.error)) {
+          this.logCache(operation, "cache_stale");
+          return cachedResult(cached);
+        }
+        return result;
       }
       const refreshedAt = this.deps.clock.now();
       await this.deps.cache.write({
@@ -116,6 +134,10 @@ export class CachedGameDataProviderAdapter
     } finally {
       await this.deps.cache.release(key, token);
     }
+  }
+
+  private logCache(operation: string, outcome: "cache_hit" | "cache_miss" | "cache_stale"): void {
+    logCorrelatedInfo("provider.cache", { provider: this.key, operation, outcome });
   }
 }
 

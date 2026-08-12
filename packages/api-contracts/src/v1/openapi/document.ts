@@ -2,8 +2,11 @@ import { apiErrorSchema } from "../errors.ts";
 import { pingResponseSchema } from "../meta/ping.response.ts";
 import {
   externalClubSchema,
+  enqueueProviderSyncJobRequestSchema,
   getClubMatchesResponseSchema,
   providerMatchSchema,
+  providerSyncJobResponseSchema,
+  providerHealthResponseSchema,
   searchClubsResponseSchema,
 } from "../game-data/schemas.ts";
 import { EA_SEARCH_PLATFORM } from "../game-data/ea-search-platform.ts";
@@ -270,6 +273,103 @@ export const futrobOpenApiV1 = {
           "400": { $ref: "#/components/responses/ApiError" },
           "401": { $ref: "#/components/responses/ApiError" },
           "502": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/internal/game-data/providers/{providerKey}/health": {
+      get: {
+        operationId: "getProviderHealth",
+        tags: ["game-data"],
+        summary: "Get a sanitized provider health snapshot",
+        parameters: [
+          {
+            name: "providerKey",
+            in: "path",
+            required: true,
+            schema: { type: "string", enum: ["ea-clubs", "manual", "screenshot-ocr"] },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Sanitized provider health",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ProviderHealthResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/internal/game-data/sync-jobs": {
+      post: {
+        operationId: "persistProviderSyncJob",
+        tags: ["game-data"],
+        summary: "Persist a tenant-scoped provider synchronization job",
+        description: "Service-only endpoint authenticated with the internal bearer secret.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/EnqueueProviderSyncJobRequest" },
+            },
+          },
+        },
+        responses: {
+          "202": {
+            description: "Job persisted or active duplicate returned",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ProviderSyncJobResponse" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/internal/game-data/sync-jobs/{jobId}/run": {
+      post: {
+        operationId: "runProviderSyncJob",
+        tags: ["game-data"],
+        summary: "Claim and run one provider synchronization job attempt",
+        description: "Service-only Queue target authenticated with the internal bearer secret.",
+        parameters: [{ name: "jobId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": {
+            description: "Current durable job state",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ProviderSyncJobResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/internal/game-data/sync-jobs/run-next": {
+      post: {
+        operationId: "recoverNextProviderSyncJob",
+        tags: ["game-data"],
+        summary: "Run the next ready provider synchronization job",
+        description:
+          "Service-only Cron recovery path for durable jobs left ready after an interrupted Queue publication or delivery.",
+        responses: {
+          "200": {
+            description: "Current durable job state",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ProviderSyncJobResponse" },
+              },
+            },
+          },
+          "204": { description: "No job is ready" },
+          "401": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -1710,6 +1810,103 @@ export const futrobOpenApiV1 = {
           },
         },
       },
+      EnqueueProviderSyncJobRequest: {
+        type: "object",
+        required: [
+          "organizationId",
+          "providerKey",
+          "externalClubId",
+          "platform",
+          "gameEdition",
+          "matchType",
+          "maxResultCount",
+        ],
+        properties: {
+          organizationId: { type: "string", minLength: 1 },
+          providerKey: { type: "string", enum: ["ea-clubs"] },
+          externalClubId: { type: "string", minLength: 1 },
+          platform: { type: "string", minLength: 1 },
+          gameEdition: { type: "string", minLength: 1 },
+          matchType: { type: "string", minLength: 1 },
+          maxResultCount: { type: "integer", minimum: 1, maximum: 100 },
+        },
+      },
+      ProviderSyncJobResponse: {
+        type: "object",
+        required: [
+          "id",
+          "organizationId",
+          "providerKey",
+          "status",
+          "attempt",
+          "maxAttempts",
+          "requestId",
+          "availableAt",
+          "leaseExpiresAt",
+          "updatedAt",
+        ],
+        properties: {
+          id: { type: "string", minLength: 1 },
+          organizationId: { type: "string", minLength: 1 },
+          providerKey: { type: "string", enum: ["ea-clubs"] },
+          status: {
+            type: "string",
+            enum: ["queued", "running", "succeeded", "retry_scheduled", "dead"],
+          },
+          attempt: { type: "integer", minimum: 0 },
+          maxAttempts: { type: "integer", minimum: 1 },
+          requestId: { type: "string", minLength: 1 },
+          availableAt: { type: ["string", "null"], format: "date-time" },
+          leaseExpiresAt: { type: ["string", "null"], format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+          lastErrorCode: { type: "string", minLength: 1 },
+        },
+      },
+      ProviderHealthResponse: {
+        type: "object",
+        required: [
+          "providerKey",
+          "status",
+          "circuitState",
+          "observedAt",
+          "windowStartedAt",
+          "sampleSize",
+          "lastSuccessfulAt",
+          "lastFailureAt",
+          "averageLatencyMs",
+          "successCount",
+          "failureCount",
+          "cache",
+        ],
+        properties: {
+          providerKey: {
+            type: "string",
+            enum: ["ea-clubs", "manual", "screenshot-ocr"],
+          },
+          status: {
+            type: "string",
+            enum: ["healthy", "degraded", "unavailable", "unknown"],
+          },
+          circuitState: { type: "string", enum: ["closed", "open", "half_open"] },
+          observedAt: { type: "string", format: "date-time" },
+          windowStartedAt: { type: "string", format: "date-time" },
+          sampleSize: { type: "integer", minimum: 0 },
+          lastSuccessfulAt: { type: ["string", "null"], format: "date-time" },
+          lastFailureAt: { type: ["string", "null"], format: "date-time" },
+          averageLatencyMs: { type: ["integer", "null"], minimum: 0 },
+          successCount: { type: "integer", minimum: 0 },
+          failureCount: { type: "integer", minimum: 0 },
+          cache: {
+            type: "object",
+            required: ["hits", "misses", "stale"],
+            properties: {
+              hits: { type: "integer", minimum: 0 },
+              misses: { type: "integer", minimum: 0 },
+              stale: { type: "integer", minimum: 0 },
+            },
+          },
+        },
+      },
       CompetitionDraftInput: {
         type: "object",
         required: ["name", "gameEdition", "platform", "region", "timeZone", "format"],
@@ -2554,6 +2751,9 @@ void externalClubSchema;
 void providerMatchSchema;
 void searchClubsResponseSchema;
 void getClubMatchesResponseSchema;
+void enqueueProviderSyncJobRequestSchema;
+void providerSyncJobResponseSchema;
+void providerHealthResponseSchema;
 void onboardingStatusSchema;
 void saveOnboardingProgressRequestSchema;
 void completeOrganizationOnboardingRequestSchema;

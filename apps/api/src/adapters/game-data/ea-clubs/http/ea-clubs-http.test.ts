@@ -19,13 +19,14 @@ describe("EaClubsHttpClient resilience", () => {
       retry: {
         maxAttempts: 3,
         baseDelayMs: 100,
-        maxDelayMs: 1_000,
+        maxDelayMs: 2_000,
         sleep: async (delayMs) => {
           sleeps.push(delayMs);
         },
         random: () => 0.5,
       },
       circuit: {
+        getProviderState: async () => "closed" as const,
         beforeRequest: async () => ({ allowed: true as const, state: "closed" as const }),
         recordSuccess: async () => {
           circuitEvents.push("success");
@@ -85,7 +86,7 @@ describe("EaClubsHttpClient resilience", () => {
       retry: {
         maxAttempts: 2,
         baseDelayMs: 100,
-        maxDelayMs: 1_000,
+        maxDelayMs: 2_000,
         sleep: async (delayMs) => {
           sleeps.push(delayMs);
         },
@@ -95,6 +96,32 @@ describe("EaClubsHttpClient resilience", () => {
 
     expect((await client.getJson("/clubs/info", {})).isOk()).toBe(true);
     expect(sleeps).toEqual([2_000]);
+  });
+
+  it("returns a long Retry-After to the job scheduler without sleeping in-request", async () => {
+    const sleeps: number[] = [];
+    const client = new EaClubsHttpClient({
+      fetcher: (async () =>
+        Response.json({}, { status: 429, headers: { "Retry-After": "120" } })) as typeof fetch,
+      baseUrl: "https://example.test",
+      timeoutMs: 1_000,
+      retry: {
+        maxAttempts: 3,
+        baseDelayMs: 100,
+        maxDelayMs: 1_000,
+        sleep: async (delayMs) => {
+          sleeps.push(delayMs);
+        },
+        random: () => 0,
+      },
+    });
+
+    const result = await client.getJson("/clubs/info", {});
+
+    expect(result.isOk()).toBe(false);
+    if (result.isOk()) return;
+    expect(result.error).toMatchObject({ status: 429, retryAfterMs: 120_000 });
+    expect(sleeps).toEqual([]);
   });
 
   it("opens the shared circuit after final transient failures", async () => {

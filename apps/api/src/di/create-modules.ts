@@ -15,6 +15,10 @@ import {
   InMemoryProviderResponseCache,
   PostgresProviderResponseCache,
 } from "@/adapters/game-data/resilience/provider-response-cache.ts";
+import {
+  InMemoryProviderHealthRepository,
+  PostgresProviderHealthRepository,
+} from "@/adapters/game-data/health/provider-health.repository.ts";
 import { EaClubsGameDataAdapter, ManualGameDataAdapter } from "@/adapters/game-data/internal.ts";
 import {
   RepositoryProviderMatchReader,
@@ -76,12 +80,16 @@ export function createModules(input: CreateModulesInput): AppModules {
   const providerCache = input.pool
     ? new PostgresProviderResponseCache(input.pool)
     : new InMemoryProviderResponseCache();
+  const providerHealth = input.pool
+    ? new PostgresProviderHealthRepository(input.pool, providerCircuit, clock)
+    : new InMemoryProviderHealthRepository(providerCircuit, clock);
   const eaAdapter = new EaClubsGameDataAdapter({
     fetcher: input.fetcher,
     baseUrl: input.eaClubsBaseUrl,
     timeoutMs: 10_000,
     circuit: providerCircuit,
     clock,
+    health: providerHealth,
   });
   const eaProvider = new CachedGameDataProviderAdapter(eaAdapter, {
     cache: providerCache,
@@ -103,6 +111,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     clock,
     maxJobAttempts: 4,
     transaction,
+    health: providerHealth,
   });
 
   const deferredAuthorization = new DeferredAuthorizationPort();
