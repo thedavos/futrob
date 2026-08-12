@@ -100,6 +100,64 @@ describe("apps/api", () => {
     expect(doc.openapi).toBe("3.1.0");
   });
 
+  it("rejects game-data requests without valid service auth before provider egress", async () => {
+    const cases: ReadonlyArray<{
+      path: string;
+      requestId: string;
+      code: string;
+      headers?: Record<string, string>;
+    }> = [
+      {
+        path: "/api/v1/game-data/clubs/search?query=Fera",
+        requestId: "2c574fb9-091d-433f-b9f4-cc6e1b86f860",
+        code: "api.unauthorized",
+      },
+      {
+        path: "/api/v1/game-data/clubs/10754",
+        requestId: "2c574fb9-091d-433f-b9f4-cc6e1b86f860",
+        code: "api.unauthorized",
+      },
+      {
+        path: "/api/v1/game-data/clubs/10754/matches",
+        requestId: "2c574fb9-091d-433f-b9f4-cc6e1b86f860",
+        code: "api.unauthorized",
+      },
+      {
+        path: "/api/v1/game-data/clubs/search?query=Fera",
+        requestId: "47565055-641b-4e30-b5cf-0978fc9b3647",
+        headers: { ...serviceHeaders(), Authorization: "Bearer incorrect-secret" },
+        code: "api.unauthorized",
+      },
+      {
+        path: "/api/v1/game-data/clubs/search?query=Fera",
+        requestId: "4e22bf7a-59bd-4732-9b09-4c634cfab65a",
+        headers: { Authorization: `Bearer ${INTERNAL_JOB_SECRET}` },
+        code: "api.missing_actor",
+      },
+    ];
+
+    let providerCalls = 0;
+    const app = buildApp(
+      createFetch(() => {
+        providerCalls += 1;
+        return Response.json(searchClubsFixture);
+      }),
+    );
+
+    for (const testCase of cases) {
+      const res = await app.request(testCase.path, {
+        headers: { ...testCase.headers, "X-Request-ID": testCase.requestId },
+      });
+      expect(res.status).toBe(401);
+      expect(res.headers.get("x-request-id")).toBe(testCase.requestId);
+      expect(await res.json()).toMatchObject({
+        code: testCase.code,
+        requestId: testCase.requestId,
+      });
+    }
+    expect(providerCalls).toBe(0);
+  });
+
   it("GET /api/v1/game-data/clubs/search maps EA results to DTOs", async () => {
     const requestId = "2d81f9de-55a8-4f4b-9962-86f63145def0";
     const app = buildApp(
@@ -111,7 +169,7 @@ describe("apps/api", () => {
     );
 
     const res = await app.request("/api/v1/game-data/clubs/search?query=Fera", {
-      headers: { "X-Request-ID": requestId },
+      headers: { ...serviceHeaders(), "X-Request-ID": requestId },
     });
 
     expect(res.status).toBe(200);
@@ -133,7 +191,7 @@ describe("apps/api", () => {
     const app = buildApp(stubFetch);
 
     const res = await app.request("/api/v1/game-data/clubs/search", {
-      headers: { "X-Request-ID": "not-a-safe-request-id" },
+      headers: { ...serviceHeaders(), "X-Request-ID": "not-a-safe-request-id" },
     });
 
     expect(res.status).toBe(400);
@@ -151,7 +209,7 @@ describe("apps/api", () => {
     const app = buildApp(createFetch(() => new Response("nope", { status: 503 })));
 
     const res = await app.request("/api/v1/game-data/clubs/search?query=Fera", {
-      headers: { "X-Request-ID": requestId },
+      headers: { ...serviceHeaders(), "X-Request-ID": requestId },
     });
 
     expect(res.status).toBe(502);
