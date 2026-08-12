@@ -467,6 +467,13 @@ describe("apps/api http onboarding", () => {
     expect(invitation.status).toBe(201);
     const { token } = (await invitation.json()) as { token: string };
 
+    const loserPreview = await app.request("/api/v1/identity/onboarding/invitation/preview", {
+      method: "POST",
+      headers: serviceHeaders(loser),
+      body: JSON.stringify({ token }),
+    });
+    expect(loserPreview.status).toBe(200);
+
     const won = await app.request("/api/v1/identity/onboarding/invitation", {
       method: "POST",
       headers: serviceHeaders(winner),

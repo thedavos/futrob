@@ -38,7 +38,7 @@ export function OnboardingReview() {
         Boolean(competitionFromDraft(flow.draft)) &&
         validOptionalAccount(flow.draft)
       : path === "invitation"
-        ? Boolean(flow.draft.invitationToken.trim()) && validOptionalAccount(flow.draft)
+        ? Boolean(flow.draft.invitationPreview) && validOptionalAccount(flow.draft)
         : validOptionalAccount(flow.draft);
   const previous: OnboardingStepDto = path === "player" ? "club" : "game-account";
   const primaryLabel = flow.retryBlocked
@@ -150,18 +150,50 @@ function reviewRows(
     ];
   }
   if (flow.path === "invitation") {
+    const preview = flow.draft.invitationPreview;
     return [
       base,
       {
+        label: t("onboarding.review.organization"),
+        value: preview?.organizationName ?? null,
+        icon: UsersThreeIcon,
+        editStep: "invitation",
+      },
+      {
         label: t("onboarding.review.competition"),
-        value: flow.draft.invitationToken.trim() ? t("onboarding.review.invitationReady") : null,
+        value: preview?.competitionName ?? null,
         icon: TicketIcon,
         editStep: "invitation",
+      },
+      {
+        label: t("onboarding.review.invitationRole"),
+        value: preview ? invitationRoleLabel(preview.competitionRole, t) : null,
+        icon: ShieldIcon,
+      },
+      {
+        label: t("onboarding.review.invitationExpires"),
+        value: preview ? formatInvitationExpiry(preview.expiresAt, t.locale) : null,
+        icon: TicketIcon,
       },
       accountReviewRow(flow, t),
     ];
   }
   return [base, accountReviewRow(flow, t), clubReviewRow(flow, t)];
+}
+
+function invitationRoleLabel(role: "staff" | "captain" | "player", t: Translator): string {
+  return {
+    staff: t("onboarding.review.invitationRole.staff"),
+    captain: t("onboarding.review.invitationRole.captain"),
+    player: t("onboarding.review.invitationRole.player"),
+  }[role];
+}
+
+function formatInvitationExpiry(value: string, locale: "es" | "en"): string {
+  return new Intl.DateTimeFormat(locale === "es" ? "es-PE" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 function accountReviewRow(

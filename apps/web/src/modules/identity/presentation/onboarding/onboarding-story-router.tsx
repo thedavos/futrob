@@ -98,6 +98,8 @@ export function createFakeOnboardingGateway(input?: {
   checkNameError?: IdentityOnboardingClientError;
   /** Typed save-progress failure with optional support code. */
   saveError?: IdentityOnboardingClientError;
+  inspectError?: IdentityOnboardingClientError;
+  inspectInvitation?: OnboardingGateway["inspectCompetitionInvitation"];
   organizationNameAvailable?: boolean;
   clubs?: readonly StoryExternalClub[];
   searchError?: boolean;
@@ -171,6 +173,18 @@ export function createFakeOnboardingGateway(input?: {
           organizationId: "org-invited",
           competitionId: "competition-invited",
         },
+      };
+    },
+    async inspectCompetitionInvitation(request) {
+      if (input?.inspectInvitation) return input.inspectInvitation(request);
+      if (input?.inspectError) throw input.inspectError;
+      return {
+        organizationId: "org-invited",
+        organizationName: "Liga invitante",
+        competitionId: "competition-invited",
+        competitionName: "Copa Invitación",
+        competitionRole: "player",
+        expiresAt: "2026-09-01T12:00:00.000Z",
       };
     },
     async completePlayer() {

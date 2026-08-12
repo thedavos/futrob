@@ -101,6 +101,38 @@ describe("InspectCompetitionInvitationUseCase", () => {
     },
   );
 
+  it("rejects a pending invitation past its expiry without persisting a status change", async () => {
+    const harness = createOrgTestHarness();
+    const organizer = harness.actor("organizer");
+    const organization = await new CreateOrganizationUseCase(harness).execute({
+      name: "Liga",
+      actorId: organizer,
+    });
+    expect(organization.isOk()).toBe(true);
+    if (!organization.isOk()) return;
+    const invitation = await new CreateInvitationUseCase(harness).execute({
+      organizationId: organization.value.organization.id,
+      competitionId: asCompetitionId("competition-1"),
+      role: "player",
+      invitedByActorId: organizer,
+    });
+    expect(invitation.isOk()).toBe(true);
+    if (!invitation.isOk()) return;
+    harness.clock.advanceMs(8 * 24 * 60 * 60 * 1_000);
+
+    const result = await new InspectCompetitionInvitationUseCase(harness).execute({
+      token: invitation.value.token,
+      actorId: harness.actor("player"),
+    });
+
+    expect(result.isOk()).toBe(false);
+    if (!result.isOk()) expect(InvitationExpired.is(result.error)).toBe(true);
+    const stored = await harness.invitations.findByTokenHash(
+      harness.tokens.hashToken(invitation.value.token),
+    );
+    expect(stored?.status).toBe(INVITATION_STATUS.pending);
+  });
+
   it("rejects missing and organization-only invitations without revealing private details", async () => {
     const harness = createOrgTestHarness();
     const inspect = new InspectCompetitionInvitationUseCase(harness);

@@ -35,6 +35,8 @@ export function finalizationError(
         return present("errors.organizations.invitation_revoked");
       case "organizations.invitation_invalid":
         return present("errors.organizations.invitation_invalid");
+      case "organizations.invitation_exhausted":
+        return present("errors.organizations.invitation_exhausted");
     }
   }
   if (caught instanceof IdentityOnboardingClientError && path === "organization") {
