@@ -67,7 +67,7 @@ type ClubSearchState =
       readonly retryAfterSeconds?: number;
     };
 
-export function TeamStep() {
+export function ClubStep() {
   const flow = useOnboardingFlow();
   const clubNameId = useId();
   const statusId = useId();
@@ -147,8 +147,8 @@ export function TeamStep() {
 
   return (
     <OnboardingShell
-      currentStepId="team"
-      description="Busca tu club de EA Clubs para asociarlo a tu perfil. No crea un equipo de organización."
+      currentStepId="club"
+      description="La asociación es opcional y declarativa. No verifica propiedad, crea un Team de competición ni te incorpora a una plantilla."
       error={flow.error}
       steps={stepsByPath.player}
       title="Asocia tu club EA"

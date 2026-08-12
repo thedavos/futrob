@@ -106,6 +106,17 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBeTruthy();
   });
 
+  it("redirects the legacy team route to the club step without a loop", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ path: "player", currentStep: "club" })}
+        initialPath="/onboarding/team"
+      />,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
+  });
+
   it("navigates optimistically before saveProgress resolves", async () => {
     let resolveSave: ((value: unknown) => void) | undefined;
     const gateway = createFakeOnboardingGateway({
@@ -330,16 +341,16 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBe(false);
   });
 
-  it("searches and selects an EA club on the player team step", async () => {
+  it("searches and selects an EA club on the player club step", async () => {
     const searches: Array<{ gameEdition?: string }> = [];
     render(
       <OnboardingStoryRouter
         gateway={createFakeOnboardingGateway({
           path: "player",
-          currentStep: "team",
+          currentStep: "club",
           onSearchExternalClubs: (request) => searches.push(request),
         })}
-        initialPath="/onboarding/team"
+        initialPath="/onboarding/club"
       />,
     );
 
@@ -360,7 +371,7 @@ describe("OnboardingFlowProvider initialization", () => {
   });
 
   it("preserves the club query and enables retry after a rate-limit wait", async () => {
-    const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "team" });
+    const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "club" });
     gateway.searchExternalClubs = async () => {
       throw new GameDataClientError({
         code: "api.rate_limited",
@@ -370,7 +381,7 @@ describe("OnboardingFlowProvider initialization", () => {
         status: 429,
       });
     };
-    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/team" />);
+    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/club" />);
 
     const query = await screen.findByRole("textbox", { name: "Nombre del club" });
     fireEvent.change(query, { target: { value: "Fera" } });
@@ -441,10 +452,10 @@ describe("OnboardingFlowProvider initialization", () => {
       <OnboardingStoryRouter
         gateway={createFakeOnboardingGateway({
           path: "player",
-          currentStep: "team",
+          currentStep: "club",
           searchError: true,
         })}
-        initialPath="/onboarding/team"
+        initialPath="/onboarding/club"
       />,
     );
 

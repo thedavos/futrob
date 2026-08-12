@@ -67,7 +67,7 @@ export function GameAccountStep() {
       gameAccountIdentifier: draft.gameAccountIdentifier.trim(),
       gameEdition: draft.gameEdition.trim(),
     });
-    void flow.goTo(path === "player" ? "team" : "review", path);
+    void flow.goTo(path === "player" ? "club" : "review", path);
   }
 
   return (
@@ -191,7 +191,7 @@ export function GameAccountStep() {
         onSkip={() => {
           flow.clearGameAccount();
           setValidationError(null);
-          void flow.goTo(path === "player" ? "team" : "review", path);
+          void flow.goTo(path === "player" ? "club" : "review", path);
         }}
         primaryLabel={
           path === "player"

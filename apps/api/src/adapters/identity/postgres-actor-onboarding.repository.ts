@@ -28,7 +28,7 @@ export class PostgresActorOnboardingRepository implements ActorOnboardingPort {
           onboarding_completed_at: Date | string | null;
           onboarding_version: number | null;
           onboarding_path: OnboardingPath | null;
-          onboarding_current_step: OnboardingStep | null;
+          onboarding_current_step: OnboardingStep | "team" | null;
         }
       | undefined;
 
@@ -40,7 +40,8 @@ export class PostgresActorOnboardingRepository implements ActorOnboardingPort {
             row.onboarding_completed_at === null ? null : new Date(row.onboarding_completed_at),
           version: row.onboarding_version,
           path: row.onboarding_path,
-          currentStep: row.onboarding_current_step,
+          currentStep:
+            row.onboarding_current_step === "team" ? "club" : row.onboarding_current_step,
         }
       : null;
   }

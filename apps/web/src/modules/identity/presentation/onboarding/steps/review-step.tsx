@@ -37,7 +37,7 @@ export function OnboardingReview() {
       : path === "invitation"
         ? Boolean(flow.draft.invitationToken.trim()) && validOptionalAccount(flow.draft)
         : validOptionalAccount(flow.draft);
-  const previous: OnboardingStepDto = path === "player" ? "team" : "game-account";
+  const previous: OnboardingStepDto = path === "player" ? "club" : "game-account";
   const primaryLabel = flow.retryBlocked
     ? `Reintentar en ${flow.retryAfterSeconds} s`
     : path === "organization"
@@ -178,6 +178,6 @@ function clubReviewRow(flow: ReturnType<typeof useOnboardingFlow>): OnboardingRe
       ? `${club.name} · ${eaPlatformLabel(club.platform)} · ID ${club.externalClubId}`
       : "Sin club asociado por ahora",
     icon: ShieldIcon,
-    editStep: "team",
+    editStep: "club",
   };
 }

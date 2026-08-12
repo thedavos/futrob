@@ -34,6 +34,7 @@ import { Route as AppOnboardingIntentionRouteImport } from './routes/_app/onboar
 import { Route as AppOnboardingGameAccountRouteImport } from './routes/_app/onboarding/game-account'
 import { Route as AppOnboardingGameRouteImport } from './routes/_app/onboarding/game'
 import { Route as AppOnboardingCompetitionRouteImport } from './routes/_app/onboarding/competition'
+import { Route as AppOnboardingClubRouteImport } from './routes/_app/onboarding/club'
 import { Route as ApiV1OrganizationsIndexRouteImport } from './routes/api/v1/organizations/index'
 import { Route as AppOrgsOrgIdIndexRouteImport } from './routes/_app/orgs/$orgId/index'
 import { Route as AppInvitationsAcceptIndexRouteImport } from './routes/_app/invitations/accept/index'
@@ -209,6 +210,11 @@ const AppOnboardingCompetitionRoute =
     path: '/competition',
     getParentRoute: () => AppOnboardingRoute,
   } as any)
+const AppOnboardingClubRoute = AppOnboardingClubRouteImport.update({
+  id: '/club',
+  path: '/club',
+  getParentRoute: () => AppOnboardingRoute,
+} as any)
 const ApiV1OrganizationsIndexRoute = ApiV1OrganizationsIndexRouteImport.update({
   id: '/api/v1/organizations/',
   path: '/api/v1/organizations/',
@@ -525,6 +531,7 @@ export interface FileRoutesByFullPath {
   '/player': typeof AppPlayerRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/onboarding/club': typeof AppOnboardingClubRoute
   '/onboarding/competition': typeof AppOnboardingCompetitionRoute
   '/onboarding/game': typeof AppOnboardingGameRoute
   '/onboarding/game-account': typeof AppOnboardingGameAccountRoute
@@ -596,6 +603,7 @@ export interface FileRoutesByTo {
   '/player': typeof AppPlayerRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/onboarding/club': typeof AppOnboardingClubRoute
   '/onboarding/competition': typeof AppOnboardingCompetitionRoute
   '/onboarding/game': typeof AppOnboardingGameRoute
   '/onboarding/game-account': typeof AppOnboardingGameAccountRoute
@@ -671,6 +679,7 @@ export interface FileRoutesById {
   '/_app/player': typeof AppPlayerRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
+  '/_app/onboarding/club': typeof AppOnboardingClubRoute
   '/_app/onboarding/competition': typeof AppOnboardingCompetitionRoute
   '/_app/onboarding/game': typeof AppOnboardingGameRoute
   '/_app/onboarding/game-account': typeof AppOnboardingGameAccountRoute
@@ -745,6 +754,7 @@ export interface FileRouteTypes {
     | '/player'
     | '/login'
     | '/signup'
+    | '/onboarding/club'
     | '/onboarding/competition'
     | '/onboarding/game'
     | '/onboarding/game-account'
@@ -816,6 +826,7 @@ export interface FileRouteTypes {
     | '/player'
     | '/login'
     | '/signup'
+    | '/onboarding/club'
     | '/onboarding/competition'
     | '/onboarding/game'
     | '/onboarding/game-account'
@@ -890,6 +901,7 @@ export interface FileRouteTypes {
     | '/_app/player'
     | '/_auth/login'
     | '/_auth/signup'
+    | '/_app/onboarding/club'
     | '/_app/onboarding/competition'
     | '/_app/onboarding/game'
     | '/_app/onboarding/game-account'
@@ -1159,6 +1171,13 @@ declare module '@tanstack/react-router' {
       path: '/competition'
       fullPath: '/onboarding/competition'
       preLoaderRoute: typeof AppOnboardingCompetitionRouteImport
+      parentRoute: typeof AppOnboardingRoute
+    }
+    '/_app/onboarding/club': {
+      id: '/_app/onboarding/club'
+      path: '/club'
+      fullPath: '/onboarding/club'
+      preLoaderRoute: typeof AppOnboardingClubRouteImport
       parentRoute: typeof AppOnboardingRoute
     }
     '/api/v1/organizations/': {
@@ -1494,6 +1513,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppOnboardingRouteChildren {
+  AppOnboardingClubRoute: typeof AppOnboardingClubRoute
   AppOnboardingCompetitionRoute: typeof AppOnboardingCompetitionRoute
   AppOnboardingGameRoute: typeof AppOnboardingGameRoute
   AppOnboardingGameAccountRoute: typeof AppOnboardingGameAccountRoute
@@ -1506,6 +1526,7 @@ interface AppOnboardingRouteChildren {
 }
 
 const AppOnboardingRouteChildren: AppOnboardingRouteChildren = {
+  AppOnboardingClubRoute: AppOnboardingClubRoute,
   AppOnboardingCompetitionRoute: AppOnboardingCompetitionRoute,
   AppOnboardingGameRoute: AppOnboardingGameRoute,
   AppOnboardingGameAccountRoute: AppOnboardingGameAccountRoute,

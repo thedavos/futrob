@@ -19,12 +19,18 @@ interface StoredRow {
     | "game"
     | "invitation"
     | "game-account"
+    | "club"
+    | "team"
     | "review"
     | null;
 }
 
 class FakeActorOnboardingPool {
   private readonly rows = new Map<string, StoredRow>();
+
+  seed(row: StoredRow) {
+    this.rows.set(row.actor_id, row);
+  }
 
   async query(text: string, values: readonly unknown[]) {
     const actorId = String(values[0]);
@@ -110,5 +116,23 @@ describe.each(repositoryCases())("actor onboarding %s repository", (_name, creat
       path: "player",
       currentStep: null,
     });
+  });
+});
+
+it("normalizes a legacy Postgres team step at the persistence boundary", async () => {
+  const pool = new FakeActorOnboardingPool();
+  pool.seed({
+    actor_id: "actor-legacy-team",
+    onboarding_completed: false,
+    onboarding_completed_at: null,
+    onboarding_version: null,
+    onboarding_path: "player",
+    onboarding_current_step: "team",
+  });
+  const repository = new PostgresActorOnboardingRepository(pool as unknown as Pool);
+
+  await expect(repository.findByActor(asActorId("actor-legacy-team"))).resolves.toMatchObject({
+    path: "player",
+    currentStep: "club",
   });
 });

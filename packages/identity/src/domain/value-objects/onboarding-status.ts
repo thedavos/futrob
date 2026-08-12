@@ -17,7 +17,7 @@ export type OnboardingStep =
   | "game"
   | "invitation"
   | "game-account"
-  | "team"
+  | "club"
   | "review";
 
 const stepsByPath: Record<OnboardingPath, readonly OnboardingStep[]> = {
@@ -30,7 +30,7 @@ const stepsByPath: Record<OnboardingPath, readonly OnboardingStep[]> = {
     "review",
   ],
   [ONBOARDING_PATH.invitation]: ["intention", "invitation", "game-account", "review"],
-  [ONBOARDING_PATH.player]: ["intention", "game", "game-account", "team", "review"],
+  [ONBOARDING_PATH.player]: ["intention", "game", "game-account", "club", "review"],
 };
 
 export function isOnboardingStepAllowed(

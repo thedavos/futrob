@@ -8,7 +8,7 @@ import {
 } from "../../onboarding-story-router.tsx";
 
 const meta = {
-  title: "Product/Onboarding/Team",
+  title: "Product/Onboarding/Club",
   parameters: { layout: "fullscreen" },
 } satisfies Meta;
 
@@ -23,8 +23,8 @@ async function searchClubs(canvas: ReturnType<typeof within>, query = "Fera") {
 export const Default: Story = {
   render: () => (
     <OnboardingStoryRouter
-      gateway={createFakeOnboardingGateway({ path: "player", currentStep: "team" })}
-      initialPath="/onboarding/team"
+      gateway={createFakeOnboardingGateway({ path: "player", currentStep: "club" })}
+      initialPath="/onboarding/club"
     />
   ),
 };
@@ -34,10 +34,10 @@ export const OneClubFound: Story = {
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({
         path: "player",
-        currentStep: "team",
+        currentStep: "club",
         clubs: storyExternalClubs(1),
       })}
-      initialPath="/onboarding/team"
+      initialPath="/onboarding/club"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -54,10 +54,10 @@ export const TwoClubsFound: Story = {
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({
         path: "player",
-        currentStep: "team",
+        currentStep: "club",
         clubs: storyExternalClubs(2),
       })}
-      initialPath="/onboarding/team"
+      initialPath="/onboarding/club"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -74,10 +74,10 @@ export const ThreeClubsFound: Story = {
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({
         path: "player",
-        currentStep: "team",
+        currentStep: "club",
         clubs: storyExternalClubs(3),
       })}
-      initialPath="/onboarding/team"
+      initialPath="/onboarding/club"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -94,10 +94,10 @@ export const SelectClub: Story = {
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({
         path: "player",
-        currentStep: "team",
+        currentStep: "club",
         clubs: storyExternalClubs(3),
       })}
-      initialPath="/onboarding/team"
+      initialPath="/onboarding/club"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -114,10 +114,10 @@ export const Empty: Story = {
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({
         path: "player",
-        currentStep: "team",
+        currentStep: "club",
         clubs: [],
       })}
-      initialPath="/onboarding/team"
+      initialPath="/onboarding/club"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -132,10 +132,10 @@ export const SearchError: Story = {
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({
         path: "player",
-        currentStep: "team",
+        currentStep: "club",
         searchError: true,
       })}
-      initialPath="/onboarding/team"
+      initialPath="/onboarding/club"
     />
   ),
   play: async ({ canvasElement }) => {
