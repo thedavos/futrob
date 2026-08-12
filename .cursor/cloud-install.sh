@@ -5,34 +5,34 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-# npm 12+ blocks lifecycle scripts unless allowed. Native binaries for
-# workerd / esbuild / sharp must run their install scripts; keep this on
-# the VM only so package.json does not pin an allowScripts allowlist.
-if ! grep -qxF 'dangerously-allow-all-scripts=true' "${HOME}/.npmrc" 2>/dev/null; then
-  printf '\ndangerously-allow-all-scripts=true\n' >> "${HOME}/.npmrc"
-fi
-
-# Prefer nvm Node 24 over a base-image Node 22 that may sit earlier on PATH.
+NVM_VERSION="v0.40.6"
 export NVM_DIR="${NVM_DIR:-${HOME}/.nvm}"
+
 if [[ ! -s "${NVM_DIR}/nvm.sh" ]]; then
-  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+  curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | PROFILE=/dev/null bash
 fi
 if [[ ! -s "${NVM_DIR}/nvm.sh" ]]; then
-  printf 'Unable to bootstrap nvm at %s\n' "${NVM_DIR}" >&2
+  echo "error: nvm did not install ${NVM_DIR}/nvm.sh" >&2
   exit 1
 fi
 # shellcheck disable=SC1091
 . "${NVM_DIR}/nvm.sh"
 nvm install 24
 nvm use 24
-if ! node -e 'process.exit(Number(process.versions.major) < 24 ? 1 : 0)'; then
-  printf 'Node 24 or newer is required; found %s\n' "$(node --version)" >&2
+hash -r
+
+node_major="$(node -p 'process.versions.node.split(".")[0]')"
+if [[ "${node_major}" -lt 24 ]]; then
+  echo "error: Node >= 24 required (engines.node); got $(node --version) from $(command -v node)" >&2
   exit 1
 fi
 
 BASHRC="${HOME}/.bashrc"
 MARKER="# futrob-cloud-node24"
-if [[ -f "$BASHRC" ]] && ! grep -qF "$MARKER" "$BASHRC"; then
+if [[ ! -f "$BASHRC" ]]; then
+  touch "$BASHRC"
+fi
+if ! grep -qF "$MARKER" "$BASHRC"; then
   cat >> "$BASHRC" <<'EOF'
 
 # futrob-cloud-node24
@@ -44,7 +44,9 @@ fi
 EOF
 fi
 
-npm ci
+# Only esbuild / sharp / workerd may run install scripts (package.json allowScripts).
+# Fail closed on npm 12+ rather than skipping native postinstalls silently.
+npm ci --strict-allow-scripts
 
 if [[ ! -f apps/web/.dev.vars ]]; then
   cp apps/web/.dev.vars.example apps/web/.dev.vars
