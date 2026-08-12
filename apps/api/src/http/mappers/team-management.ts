@@ -32,7 +32,10 @@ export function teamRosterManagementDetailDto(
     ...teamRosterManagementSummaryDto(value),
     members: value.members.map((member) => ({
       membership: rosterMembershipDto(member.membership),
-      presentation: member.presentation,
+      presentation: {
+        displayName: member.presentation.displayName ?? "Jugador sin nombre público",
+        avatarUrl: member.presentation.avatarUrl,
+      },
     })),
   };
 }

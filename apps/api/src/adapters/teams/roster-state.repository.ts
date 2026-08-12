@@ -14,6 +14,7 @@ import {
 } from "@futrob/teams";
 import type { CompetitionRepository } from "@futrob/competitions";
 import type { Pool } from "pg";
+import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class InMemoryCompetitionRosterStateRepository implements CompetitionRosterStateRepository {
   readonly rows = new Map<string, CompetitionRosterState>();
@@ -40,7 +41,7 @@ export class PostgresCompetitionRosterStateRepository implements CompetitionRost
     competitionId: CompetitionId,
     teamId: TeamId,
   ): Promise<CompetitionRosterState | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT organization_id, competition_id, team_id, locked_at
        FROM competition_roster_states
        WHERE organization_id = $1 AND competition_id = $2 AND team_id = $3`,
@@ -50,7 +51,7 @@ export class PostgresCompetitionRosterStateRepository implements CompetitionRost
   }
 
   async save(state: CompetitionRosterState): Promise<CompetitionRosterState> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO competition_roster_states (
          organization_id, competition_id, team_id, locked_at
        ) VALUES ($1, $2, $3, $4)

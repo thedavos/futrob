@@ -194,6 +194,37 @@ describe("ContextualAuthorizationAdapter", () => {
     expect(officialSelection.allowed).toBe(false);
   });
 
+  it("keeps rejected-entry roster reads without write or encounter authority", async () => {
+    const fixture = await createRbacMatrixFixture();
+    const entry = await fixture.entries.findByCompetitionAndTeam(
+      fixture.ids.orgA,
+      fixture.ids.compA,
+      fixture.ids.teamA,
+    );
+    expect(entry).not.toBeNull();
+    await fixture.entries.save({ ...entry!, status: "rejected" });
+
+    const rosterRead = await fixture.authorization.decide({
+      actorId: fixture.actors.rosterCaptain,
+      permission: TEAM_PERMISSION.rosterRead,
+      scope: fixture.scope("orgA.compA.teamA"),
+    });
+    const rosterManage = await fixture.authorization.decide({
+      actorId: fixture.actors.rosterCaptain,
+      permission: TEAM_PERMISSION.rosterManage,
+      scope: fixture.scope("orgA.compA.teamA"),
+    });
+    const officialSelection = await fixture.authorization.decide({
+      actorId: fixture.actors.rosterCaptain,
+      permission: "encounters.official-selection.propose",
+      scope: fixture.scope("orgA.compA.teamA.encounter"),
+    });
+
+    expect(rosterRead.allowed).toBe(true);
+    expect(rosterManage.allowed).toBe(false);
+    expect(officialSelection.allowed).toBe(false);
+  });
+
   it("applies deny in the same scope and lets a more-specific allow override it", async () => {
     const fixture = await createRbacMatrixFixture();
     await fixture.grants.upsert({

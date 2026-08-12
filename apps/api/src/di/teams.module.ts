@@ -28,13 +28,15 @@ import {
   type PlayerGameAccountRepository,
   type PlayerProfileRepository,
   type RosterCapacityPort,
+  type RosterEntryGatePort,
   type RosterInvitationRepository,
   type RosterInvitationTokenPort,
+  type RosterMutationPort,
   type TeamRepository,
 } from "@futrob/teams";
 import type { CompetitionRepository } from "@futrob/competitions";
 import type { Pool } from "pg";
-import type { AuthorizationPort } from "@futrob/shared-kernel";
+import type { AuthorizationPort, TransactionPort } from "@futrob/shared-kernel";
 import {
   InMemoryExternalClubConnectionRepository,
   PostgresExternalClubConnectionRepository,
@@ -60,6 +62,10 @@ import {
 } from "@/adapters/teams/roster-invitation.repository.ts";
 import { Sha256RosterInvitationTokenPort } from "@/adapters/teams/roster-invitation-token.port.ts";
 import {
+  InMemoryRosterMutationPort,
+  PostgresRosterMutationPort,
+} from "@/adapters/teams/roster-mutation.port.ts";
+import {
   InMemoryActiveTeamPreferenceRepository,
   InMemoryCompetitionRosterMembershipRepository,
   InMemoryTeamRepository,
@@ -72,6 +78,8 @@ export function createTeamsModule(input: {
   readonly pool: Pool | undefined;
   readonly competitions: CompetitionRepository;
   readonly authorization: AuthorizationPort;
+  readonly transaction: TransactionPort;
+  readonly entryGate: RosterEntryGatePort;
 }) {
   let profiles: PlayerProfileRepository;
   let accounts: PlayerGameAccountRepository;
@@ -83,6 +91,7 @@ export function createTeamsModule(input: {
   let connections: ExternalClubConnectionRepository;
   let rosterInvitations: RosterInvitationRepository;
   let rosterInvitationTokens: RosterInvitationTokenPort;
+  let rosterMutations: RosterMutationPort;
   if (input.pool) {
     profiles = new PostgresPlayerProfileRepository(input.pool);
     accounts = new PostgresPlayerGameAccountRepository(input.pool);
@@ -93,6 +102,7 @@ export function createTeamsModule(input: {
     rosterStates = new PostgresCompetitionRosterStateRepository(input.pool);
     connections = new PostgresExternalClubConnectionRepository(input.pool);
     rosterInvitations = new PostgresRosterInvitationRepository(input.pool);
+    rosterMutations = new PostgresRosterMutationPort(input.pool, input.transaction);
   } else {
     profiles = new InMemoryPlayerProfileRepository();
     accounts = new InMemoryPlayerGameAccountRepository();
@@ -103,6 +113,7 @@ export function createTeamsModule(input: {
     rosterStates = new InMemoryCompetitionRosterStateRepository();
     connections = new InMemoryExternalClubConnectionRepository();
     rosterInvitations = new InMemoryRosterInvitationRepository();
+    rosterMutations = new InMemoryRosterMutationPort();
   }
   rosterInvitationTokens = new Sha256RosterInvitationTokenPort();
   const shared = { clock: { now: () => new Date() }, ids: { generate: () => randomUUID() } };
@@ -117,8 +128,10 @@ export function createTeamsModule(input: {
     rosters,
     rosterStates,
     capacity,
+    entryGate: input.entryGate,
     accounts,
     authorization: input.authorization,
+    mutations: rosterMutations,
     ...shared,
   });
   return {
@@ -139,6 +152,7 @@ export function createTeamsModule(input: {
     changeRosterRole: new ChangeRosterRoleUseCase({
       authorization: input.authorization,
       rosters,
+      mutations: rosterMutations,
     }),
     closeRoster: new CloseRosterUseCase({
       teams,
@@ -146,11 +160,13 @@ export function createTeamsModule(input: {
       clock: shared.clock,
       eventPublisher,
       authorization: input.authorization,
+      mutations: rosterMutations,
     }),
     openRoster: new OpenRosterUseCase({
       teams,
       rosterStates,
       authorization: input.authorization,
+      mutations: rosterMutations,
     }),
     connectTeamExternalClub: new ConnectTeamExternalClubUseCase({
       teams,
@@ -172,6 +188,7 @@ export function createTeamsModule(input: {
       invitations: rosterInvitations,
       tokens: rosterInvitationTokens,
       authorization: input.authorization,
+      entryGate: input.entryGate,
       ...shared,
     }),
     acceptRosterInvitation: new AcceptRosterInvitationUseCase({
@@ -179,6 +196,7 @@ export function createTeamsModule(input: {
       rosters,
       rosterStates,
       capacity,
+      entryGate: input.entryGate,
       profiles,
       invitations: rosterInvitations,
       tokens: rosterInvitationTokens,
@@ -186,6 +204,7 @@ export function createTeamsModule(input: {
       accounts,
       ids: shared.ids,
       clock: shared.clock,
+      mutations: rosterMutations,
     }),
     externalClubConnections: connections,
     repositories: { profiles, teams, rosters, rosterStates, connections, accounts, capacity },
