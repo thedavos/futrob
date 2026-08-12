@@ -4,8 +4,13 @@ import { StrictMode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type { ExternalClubDto } from "@futrob/api-contracts";
 
-import { OnboardingStoryRouter, createFakeOnboardingGateway } from "./onboarding-story-router.tsx";
+import {
+  OnboardingStoryRouter,
+  STORY_EXTERNAL_CLUBS,
+  createFakeOnboardingGateway,
+} from "./onboarding-story-router.tsx";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 
@@ -115,6 +120,11 @@ describe("OnboardingFlowProvider initialization", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
+    expect(
+      screen.getByText(
+        "La asociación es opcional y declarativa. No verifica propiedad, ni crea un Team de competición ni te incorpora a una plantilla.",
+      ),
+    ).toBeTruthy();
   });
 
   it("navigates optimistically before saveProgress resolves", async () => {
@@ -442,6 +452,32 @@ describe("OnboardingFlowProvider initialization", () => {
     await waitFor(() => {
       expect(screen.queryByRole("radio", { name: /Fera Enjaulada/ })).toBeNull();
     });
+    expect(
+      (screen.getByRole("button", { name: "Revisar club" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it("discards a pending club search when the platform changes", async () => {
+    const user = userEvent.setup();
+    const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "club" });
+    let resolveSearch: ((clubs: readonly ExternalClubDto[]) => void) | undefined;
+    gateway.searchExternalClubs = async () =>
+      await new Promise<readonly ExternalClubDto[]>((resolve) => {
+        resolveSearch = resolve;
+      });
+    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/club" />);
+
+    await user.type(await screen.findByRole("textbox", { name: "Nombre del club" }), "Fera");
+    await user.click(screen.getByRole("button", { name: "Buscar club" }));
+    await screen.findByText("Buscando clubs para «Fera»…");
+    await user.click(screen.getByRole("combobox", { name: "Plataforma EA para la búsqueda" }));
+    await user.click(await screen.findByRole("option", { name: "Xbox" }));
+
+    await act(async () => {
+      resolveSearch?.([...STORY_EXTERNAL_CLUBS]);
+    });
+
+    expect(screen.queryByRole("radio", { name: /Fera Enjaulada/ })).toBeNull();
     expect(
       (screen.getByRole("button", { name: "Revisar club" }) as HTMLButtonElement).disabled,
     ).toBe(true);

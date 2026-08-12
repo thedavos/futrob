@@ -72,6 +72,7 @@ export function ClubStep() {
   const clubNameId = useId();
   const statusId = useId();
   const queryRef = useRef<HTMLInputElement>(null);
+  const searchRevision = useRef(0);
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState<EaSearchPlatform>(() =>
     eaSearchPlatformFromGamePlatform(flow.draft.platform),
@@ -83,6 +84,7 @@ export function ClubStep() {
   async function searchClubs() {
     const trimmed = query.trim();
     if (!trimmed || search.status === "loading" || flow.saving || retry.blocked) return;
+    const revision = ++searchRevision.current;
     setSearch({ status: "loading", query: trimmed });
     try {
       const clubs = (
@@ -92,12 +94,14 @@ export function ClubStep() {
           gameEdition: providerGameEditionFromDraft(flow.draft.gameEdition),
         })
       ).slice(0, MAX_EXTERNAL_CLUB_SEARCH_RESULTS);
+      if (revision !== searchRevision.current) return;
       setSearch(
         clubs.length > 0
           ? { status: "success", query: trimmed, clubs }
           : { status: "empty", query: trimmed },
       );
     } catch (cause) {
+      if (revision !== searchRevision.current) return;
       const retryAfterSeconds = GameDataClientError.is(cause) ? cause.retryAfterSeconds : undefined;
       retry.start(retryAfterSeconds);
       setSearch({
@@ -110,6 +114,11 @@ export function ClubStep() {
         retryAfterSeconds,
       });
     }
+  }
+
+  function invalidateClubSearch() {
+    searchRevision.current += 1;
+    setSearch({ status: "idle" });
   }
 
   function selectClub(club: ExternalClubDto) {
@@ -127,7 +136,7 @@ export function ClubStep() {
 
   function resetClubSearch() {
     flow.clearExternalClub();
-    setSearch({ status: "idle" });
+    invalidateClubSearch();
     setQuery("");
     queryRef.current?.focus();
   }
@@ -148,7 +157,7 @@ export function ClubStep() {
   return (
     <OnboardingShell
       currentStepId="club"
-      description="La asociación es opcional y declarativa. No verifica propiedad, crea un Team de competición ni te incorpora a una plantilla."
+      description="La asociación es opcional y declarativa. No verifica propiedad, ni crea un Team de competición ni te incorpora a una plantilla."
       error={flow.error}
       steps={stepsByPath.player}
       title="Asocia tu club EA"
@@ -163,9 +172,7 @@ export function ClubStep() {
               maxLength={80}
               onChange={(event) => {
                 setQuery(event.target.value);
-                if (search.status !== "idle" && search.status !== "loading") {
-                  setSearch({ status: "idle" });
-                }
+                if (search.status !== "idle") invalidateClubSearch();
               }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
@@ -202,7 +209,7 @@ export function ClubStep() {
               onValueChange={(value) => {
                 if (!value) return;
                 setPlatform(value as EaSearchPlatform);
-                setSearch({ status: "idle" });
+                invalidateClubSearch();
                 flow.clearExternalClub();
               }}
               value={platform}
