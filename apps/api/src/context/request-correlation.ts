@@ -48,6 +48,17 @@ export function runWithJobCorrelation<T>(jobId: string, operation: () => T): T {
   return context ? requestCorrelationStorage.run({ ...context, jobId }, operation) : operation();
 }
 
+export function runWithPersistedJobCorrelation<T>(
+  correlation: RequestCorrelation,
+  jobId: string,
+  operation: () => T,
+): T {
+  const context = requestCorrelationStorage.getStore();
+  return context
+    ? requestCorrelationStorage.run({ correlation, logger: context.logger, jobId }, operation)
+    : operation();
+}
+
 export function logCorrelatedInfo(event: string, fields: Readonly<Record<string, unknown>> = {}) {
   const context = requestCorrelationStorage.getStore();
   if (!context) return;

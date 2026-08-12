@@ -19,6 +19,10 @@ import {
 } from "@futrob/game-data";
 import type { ClockPort, IdGeneratorPort, TransactionPort } from "@futrob/shared-kernel";
 import { InMemoryGameDataProviderRegistry } from "@/adapters/game-data/internal.ts";
+import {
+  createRequestCorrelation,
+  runWithPersistedJobCorrelation,
+} from "@/context/request-correlation.ts";
 
 export interface GameDataModuleDependencies {
   readonly providers: readonly GameDataProviderPort[];
@@ -68,6 +72,8 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
       clock: deps.clock,
       leaseMs: 90_000,
       retryDelayMs: providerJobRetryDelayMs,
+      runClaimed: (job, operation) =>
+        runWithPersistedJobCorrelation(createRequestCorrelation(job.requestId), job.id, operation),
     }),
     jobs: deps.jobs,
     registry,

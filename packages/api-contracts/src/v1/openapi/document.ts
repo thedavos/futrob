@@ -303,36 +303,6 @@ export const futrobOpenApiV1 = {
         },
       },
     },
-    "/game-data/sync-jobs": {
-      post: {
-        operationId: "enqueueProviderSyncJob",
-        tags: ["game-data"],
-        summary: "Persist and publish a provider synchronization job",
-        description:
-          "Authenticated BFF endpoint. It persists through the service-authenticated API and then publishes only jobId/requestId to Cloudflare Queue.",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/EnqueueProviderSyncJobRequest" },
-            },
-          },
-        },
-        responses: {
-          "202": {
-            description: "Job persisted and published",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ProviderSyncJobResponse" },
-              },
-            },
-          },
-          "400": { $ref: "#/components/responses/ApiError" },
-          "401": { $ref: "#/components/responses/ApiError" },
-          "503": { $ref: "#/components/responses/ApiError" },
-        },
-      },
-    },
     "/internal/game-data/sync-jobs": {
       post: {
         operationId: "persistProviderSyncJob",

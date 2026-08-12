@@ -34,8 +34,10 @@ Provider operations (service-authenticated):
 - `GET /internal/game-data/providers/:providerKey/health` — sanitized snapshot for platform
   administrators. Raw payloads, upstream bodies, queries and external club IDs are never returned.
 
-The web BFF exposes `POST /api/v1/game-data/sync-jobs`. It authenticates the actor, persists through
-the internal API, and publishes only `jobId` and `requestId` to `JOB_QUEUE`. Queue deliveries use the
+The web BFF exposes `POST /api/v1/game-data/sync-jobs` on the `apps/web` host; it is intentionally not
+part of this Railway API's OpenAPI document. It uses the Better Auth session and requires effective
+`organizations.read` access for the submitted tenant before it persists through the internal API and
+publishes only `jobId` and `requestId` to `JOB_QUEUE`. Queue deliveries use the
 durable `availableAt` value for delayed retries, stop after the configured attempts, and fall through
 to `futrob-job-dlq`. A one-minute Cron calls the service-only `run-next` recovery endpoint so a job
 survives an interrupted publication or Queue delivery. Replaying a message is safe because claim and

@@ -1,6 +1,9 @@
 import type { ClockPort, IdGeneratorPort, Result } from "@futrob/shared-kernel";
 import type { ProviderMatch } from "../../domain/entities/provider-match.ts";
-import type { ProviderSyncJob } from "../../domain/entities/provider-sync-job.ts";
+import type {
+  ProviderSyncJob,
+  RunningProviderSyncJob,
+} from "../../domain/entities/provider-sync-job.ts";
 import {
   ProviderHttpFailed,
   ProviderNetworkError,
@@ -26,6 +29,10 @@ export class ExecuteProviderSyncJobUseCase {
       readonly clock: ClockPort;
       readonly leaseMs: number;
       readonly retryDelayMs: (error: ProviderError, attempt: number) => number;
+      readonly runClaimed?: <T>(
+        job: RunningProviderSyncJob,
+        operation: () => Promise<T>,
+      ) => Promise<T>;
     },
   ) {}
 
@@ -44,6 +51,11 @@ export class ExecuteProviderSyncJobUseCase {
     });
     if (!claimed) return jobId ? this.deps.jobs.findById(jobId) : null;
 
+    const run = async () => this.executeClaimed(claimed);
+    return this.deps.runClaimed ? this.deps.runClaimed(claimed, run) : run();
+  }
+
+  private async executeClaimed(claimed: RunningProviderSyncJob): Promise<ProviderSyncJob | null> {
     const result = await this.deps.sync.execute(claimed.providerKey, claimed.sync);
     const completedAt = this.deps.clock.now();
     if (result.isOk()) {
