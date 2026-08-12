@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Field, FieldError, FieldLabel, Input } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
@@ -12,16 +13,19 @@ export function OrganizationStep() {
   const flow = useOnboardingFlow();
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationErrorKey, setValidationErrorKey] = useState<ParameterlessMessageKey | null>(
+    null,
+  );
+  const validationError = validationErrorKey ? t(validationErrorKey) : null;
   const name = flow.draft.organizationName;
 
   async function continueToReview() {
     const trimmed = name.trim();
     if (trimmed.length === 0 || trimmed.length > 120) {
-      setValidationError(
+      setValidationErrorKey(
         trimmed.length === 0
-          ? t("onboarding.organization.name.required")
-          : t("onboarding.organization.name.max"),
+          ? "onboarding.organization.name.required"
+          : "onboarding.organization.name.max",
       );
       inputRef.current?.focus();
       return;
@@ -29,7 +33,7 @@ export function OrganizationStep() {
     const available = await flow.checkOrganizationName(trimmed);
     if (available === null) return;
     if (!available) {
-      setValidationError(t("onboarding.organization.name.conflict"));
+      setValidationErrorKey("onboarding.organization.name.conflict");
       inputRef.current?.focus();
       return;
     }
@@ -58,7 +62,7 @@ export function OrganizationStep() {
             maxLength={120}
             onChange={(event) => {
               flow.updateDraft({ organizationName: event.target.value });
-              setValidationError(null);
+              setValidationErrorKey(null);
             }}
             placeholder={t("onboarding.organization.name.placeholder")}
             ref={inputRef}

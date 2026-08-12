@@ -63,7 +63,7 @@ type ClubSearchState =
   | {
       readonly status: "error";
       readonly query: string;
-      readonly message: string;
+      readonly messageKey: "onboarding.club.search.rateLimited" | "onboarding.club.search.failed";
       readonly requestId?: RequestId;
       readonly retryAfterSeconds?: number;
     };
@@ -109,9 +109,9 @@ export function ClubStep() {
       setSearch({
         status: "error",
         query: trimmed,
-        message: retryAfterSeconds
-          ? t("onboarding.club.search.rateLimited")
-          : t("onboarding.club.search.failed"),
+        messageKey: retryAfterSeconds
+          ? "onboarding.club.search.rateLimited"
+          : "onboarding.club.search.failed",
         requestId: GameDataClientError.is(cause) ? cause.requestId : undefined,
         retryAfterSeconds,
       });
@@ -273,7 +273,8 @@ export function ClubStep() {
               copyFailure: t("support.copy.failure"),
             }}
             error={{
-              ...search,
+              message: t(search.messageKey),
+              ...(search.requestId ? { requestId: search.requestId } : {}),
               retryAfterSeconds: retry.remainingSeconds || undefined,
             }}
           />

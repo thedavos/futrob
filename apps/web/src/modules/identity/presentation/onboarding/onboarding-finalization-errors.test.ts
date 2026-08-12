@@ -1,44 +1,31 @@
 import { describe, expect, it } from "vite-plus/test";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { finalizationError } from "./onboarding-finalization-errors.ts";
-import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
 
 describe("finalizationError", () => {
-  it("maps typed and unknown errors in English without exposing transport messages", () => {
-    const t = createTranslator("en");
+  it("maps typed and unknown errors without exposing transport messages", () => {
     expect(
       finalizationError(
         "invitation",
         new IdentityOnboardingClientError(404, "organizations.invitation_not_found"),
-        t,
       ),
-    ).toEqual({ message: "We couldn't find that invitation. Check the code and try again." });
+    ).toEqual({ messageKey: "errors.organizations.invitation_not_found" });
     expect(
       finalizationError(
         "player",
         new IdentityOnboardingClientError(502, "provider.secret_message"),
-        t,
       ),
-    ).toEqual({ message: "We couldn't save your player profile. Try again." });
+    ).toEqual({ messageKey: "errors.onboarding.completePlayer" });
   });
 
   it.each([
-    [
-      "organizations.invitation_not_found",
-      "No encontramos esa invitación. Revisa el código e inténtalo nuevamente.",
-    ],
-    [
-      "organizations.invitation_expired",
-      "La invitación ha caducado. Solicita una nueva al organizador.",
-    ],
-    [
-      "organizations.invitation_revoked",
-      "La invitación fue revocada. Solicita una nueva al organizador.",
-    ],
-    ["organizations.invitation_invalid", "La invitación ya no está disponible."],
-  ] as const)("maps invitation finish code %s", (code, message) => {
+    "organizations.invitation_not_found",
+    "organizations.invitation_expired",
+    "organizations.invitation_revoked",
+    "organizations.invitation_invalid",
+  ] as const)("maps invitation finish code %s", (code) => {
     expect(finalizationError("invitation", new IdentityOnboardingClientError(400, code))).toEqual({
-      message,
+      messageKey: `errors.${code}`,
     });
   });
 
@@ -48,35 +35,35 @@ describe("finalizationError", () => {
         "organization",
         new IdentityOnboardingClientError(409, "organizations.name_conflict"),
       ),
-    ).toEqual({ message: "Ese nombre de organización ya está en uso. Vuelve y elige otro." });
+    ).toEqual({ messageKey: "errors.organizations.name_conflict" });
     expect(
       finalizationError(
         "organization",
         new IdentityOnboardingClientError(400, "organizations.invalid_name"),
       ),
-    ).toEqual({ message: "El nombre de la organización no es válido." });
+    ).toEqual({ messageKey: "errors.organizations.invalid_name" });
     expect(
       finalizationError(
         "organization",
         new IdentityOnboardingClientError(500, "organizations.boom"),
       ),
-    ).toEqual({ message: "No pudimos crear la organización. Inténtalo nuevamente." });
+    ).toEqual({ messageKey: "errors.onboarding.createOrganization" });
   });
 
   it("maps player finish failures and unknown errors", () => {
     expect(
       finalizationError("player", new IdentityOnboardingClientError(502, "teams.invalid_platform")),
     ).toEqual({
-      message: "Los datos de la cuenta de juego no son válidos. Revísalos e inténtalo nuevamente.",
+      messageKey: "errors.onboarding.invalidGameAccount",
     });
     expect(
       finalizationError(
         "player",
         new IdentityOnboardingClientError(500, "identity.onboarding_failed"),
       ),
-    ).toEqual({ message: "No pudimos guardar tu perfil de jugador. Inténtalo nuevamente." });
+    ).toEqual({ messageKey: "errors.onboarding.completePlayer" });
     expect(finalizationError("player", new Error("network"))).toEqual({
-      message: "No pudimos finalizar tu configuración. Inténtalo nuevamente.",
+      messageKey: "errors.onboarding.finish",
     });
   });
 
@@ -89,7 +76,7 @@ describe("finalizationError", () => {
         new IdentityOnboardingClientError(502, "identity.onboarding_failed", requestId),
       ),
     ).toEqual({
-      message: "No pudimos guardar tu perfil de jugador. Inténtalo nuevamente.",
+      messageKey: "errors.onboarding.completePlayer",
       requestId,
     });
   });
@@ -103,7 +90,7 @@ describe("finalizationError", () => {
         new IdentityOnboardingClientError(429, "api.rate_limited", requestId, 45),
       ),
     ).toEqual({
-      message: "Alcanzaste el límite temporal. Espera antes de intentarlo nuevamente.",
+      messageKey: "errors.api.rate_limited",
       requestId,
       retryAfterSeconds: 45,
     });

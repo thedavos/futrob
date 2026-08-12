@@ -18,6 +18,7 @@ import { FieldsetError } from "@/shared/presentation/forms/fieldset-error.tsx";
 import { GameEditionField } from "@/shared/presentation/forms/game-edition-field.tsx";
 import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { PlatformChoice } from "@/shared/presentation/forms/platform-choice.tsx";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
@@ -33,7 +34,10 @@ export function GameAccountStep() {
   const validationErrorId = useId();
   const identifierRef = useRef<HTMLInputElement>(null);
   const customEditionRef = useRef<HTMLInputElement>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationErrorKey, setValidationErrorKey] = useState<ParameterlessMessageKey | null>(
+    null,
+  );
+  const validationError = validationErrorKey ? t(validationErrorKey) : null;
   const draft = flow.draft;
   const hasAny = Boolean(
     draft.gameAccountIdentifier.trim() || draft.platform || draft.gameEdition.trim(),
@@ -50,17 +54,17 @@ export function GameAccountStep() {
 
   function continueAfterAccount() {
     if (!draft.gameAccountIdentifier.trim()) {
-      setValidationError(t("onboarding.account.identifier.required"));
+      setValidationErrorKey("onboarding.account.identifier.required");
       identifierRef.current?.focus();
       return;
     }
     if (!draft.platform) {
-      setValidationError(t("onboarding.account.platform.required"));
+      setValidationErrorKey("onboarding.account.platform.required");
       document.querySelector<HTMLElement>("[data-platform-group] [role=radio]")?.focus();
       return;
     }
     if (!draft.gameEdition.trim()) {
-      setValidationError(t("onboarding.account.edition.required"));
+      setValidationErrorKey("onboarding.account.edition.required");
       if (draft.customGameEdition) customEditionRef.current?.focus();
       else document.querySelector<HTMLElement>("[data-edition-group] [role=radio]")?.focus();
       return;
@@ -122,7 +126,7 @@ export function GameAccountStep() {
             maxLength={80}
             onChange={(event) => {
               flow.updateDraft({ gameAccountIdentifier: event.target.value });
-              setValidationError(null);
+              setValidationErrorKey(null);
             }}
             placeholder={t("onboarding.account.identifier.placeholder")}
             ref={identifierRef}
@@ -146,7 +150,7 @@ export function GameAccountStep() {
             className="grid-cols-1 sm:grid-cols-3 lg:grid-cols-5"
             onValueChange={(value) => {
               if (value) flow.updateDraft({ platform: value });
-              setValidationError(null);
+              setValidationErrorKey(null);
             }}
             value={draft.platform ?? ""}
           >
@@ -177,7 +181,7 @@ export function GameAccountStep() {
           legendId={editionLabelId}
           onValueChange={({ value, custom }) => {
             flow.updateDraft({ customGameEdition: custom, gameEdition: value });
-            setValidationError(null);
+            setValidationErrorKey(null);
           }}
           value={draft.gameEdition}
         />
@@ -197,7 +201,7 @@ export function GameAccountStep() {
         onPrimary={continueAfterAccount}
         onSkip={() => {
           flow.clearGameAccount();
-          setValidationError(null);
+          setValidationErrorKey(null);
           void flow.goTo(path === "player" ? "club" : "review", path);
         }}
         primaryLabel={

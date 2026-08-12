@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { catalogs, type Locale } from "./catalogs.ts";
+import { catalogs, type Locale, type MessageParamsByKey } from "./catalogs.ts";
 import { resolveLocale } from "./locale.ts";
 import { createTranslator } from "./translate.ts";
+import { onboardingHead } from "./onboarding-head.ts";
 
 describe("onboarding i18n", () => {
   it("keeps the English catalog in exact key parity with Spanish", () => {
@@ -36,4 +37,26 @@ describe("onboarding i18n", () => {
       "We couldn't complete the operation. Try again.",
     );
   });
+
+  it("requires parameters for dynamic messages at compile time", () => {
+    const t = createTranslator("en");
+    const retryParamsContract: Equal<
+      MessageParamsByKey["onboarding.review.retry"],
+      { readonly seconds: number }
+    > = true;
+    expect(t("onboarding.review.retry", { seconds: 3 })).toBe("Try again in 3s");
+    expect(retryParamsContract).toBe(true);
+  });
+
+  it("builds localized route titles for server rendering", () => {
+    expect(onboardingHead("es", "onboarding.account.title")).toEqual({
+      meta: [{ title: "Configura tus datos de juego | Futrob" }],
+    });
+    expect(onboardingHead("en", "onboarding.account.title")).toEqual({
+      meta: [{ title: "Set up your game details | Futrob" }],
+    });
+  });
 });
+
+type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;

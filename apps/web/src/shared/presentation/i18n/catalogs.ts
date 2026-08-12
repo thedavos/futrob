@@ -192,6 +192,25 @@ const es = {
 export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
+export interface MessageParamsByKey {
+  readonly "common.seconds": { readonly seconds: number };
+  readonly "support.retryAfter": { readonly seconds: number };
+  readonly "onboarding.shell.stepSummary": {
+    readonly current: number;
+    readonly label: string;
+    readonly total: number;
+  };
+  readonly "onboarding.club.search.retry": { readonly seconds: number };
+  readonly "onboarding.club.search.loadingStatus": { readonly query: string };
+  readonly "onboarding.club.search.empty": { readonly query: string };
+  readonly "onboarding.club.search.results": { readonly count: number };
+  readonly "onboarding.review.edit": { readonly label: string };
+  readonly "onboarding.review.retry": { readonly seconds: number };
+}
+
+export type ParameterizedMessageKey = keyof MessageParamsByKey;
+export type ParameterlessMessageKey = Exclude<MessageKey, ParameterizedMessageKey>;
+
 const en: Catalog = {
   "app.description":
     "Run EA SPORTS FC Clubs leagues and cups with match data, official results, tables, and brackets in one place.",

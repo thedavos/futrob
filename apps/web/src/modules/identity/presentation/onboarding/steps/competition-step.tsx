@@ -25,6 +25,16 @@ export function CompetitionStep() {
   const timeZoneRef = useRef<HTMLButtonElement>(null);
   const [fieldError, setFieldError] = useState<CompetitionDraftFieldError | null>(null);
   const draft = flow.draft;
+  const fields: CompetitionDraftFieldsValue = {
+    name: draft.competitionName,
+    gameEdition: draft.competitionGameEdition,
+    customEdition: draft.customCompetitionGameEdition,
+    platform: draft.competitionPlatform,
+    region: draft.competitionRegion,
+    timeZone: draft.competitionTimeZone,
+    format: draft.competitionFormat,
+  };
+  const localizedFieldError = localizeValidation(fieldError, fields, t);
 
   function invalidate(error: CompetitionDraftFieldError) {
     setFieldError(error);
@@ -44,16 +54,7 @@ export function CompetitionStep() {
   }
 
   function continueToAccount() {
-    const fields = {
-      name: draft.competitionName,
-      gameEdition: draft.competitionGameEdition,
-      customEdition: draft.customCompetitionGameEdition,
-      platform: draft.competitionPlatform,
-      region: draft.competitionRegion,
-      timeZone: draft.competitionTimeZone,
-      format: draft.competitionFormat,
-    };
-    const validation = localizeValidation(validateCompetitionDraftFields(fields), fields, t);
+    const validation = validateCompetitionDraftFields(fields);
     if (validation) {
       invalidate(validation);
       return;
@@ -98,7 +99,7 @@ export function CompetitionStep() {
             formatDescription: t("onboarding.competition.format.description"),
             formats: localizedCompetitionFormats(t),
           }}
-          fieldError={fieldError}
+          fieldError={localizedFieldError}
           nameInputRef={nameRef}
           onChange={(patch) => {
             flow.updateDraft({

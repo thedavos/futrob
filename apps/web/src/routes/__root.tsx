@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRoute, useRouter } from "@tanstack/react-router";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider, useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { getUiLocale, setUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
@@ -62,8 +62,15 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const initialLocale = Route.useLoaderData();
+  const router = useRouter();
   return (
-    <I18nProvider initialLocale={initialLocale} persistLocale={persistUiLocale}>
+    <I18nProvider
+      initialLocale={initialLocale}
+      persistLocale={async (locale) => {
+        await persistUiLocale(locale);
+        await router.invalidate();
+      }}
+    >
       <RootDocument>
         <AppProviders>
           <Outlet />

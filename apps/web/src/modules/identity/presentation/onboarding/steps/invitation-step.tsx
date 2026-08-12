@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Field, FieldDescription, FieldError, FieldLabel, Input } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
@@ -12,11 +13,14 @@ export function InvitationStep() {
   const flow = useOnboardingFlow();
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationErrorKey, setValidationErrorKey] = useState<ParameterlessMessageKey | null>(
+    null,
+  );
+  const validationError = validationErrorKey ? t(validationErrorKey) : null;
 
   function continueToReview() {
     if (!flow.draft.invitationToken.trim()) {
-      setValidationError(t("onboarding.invitation.token.required"));
+      setValidationErrorKey("onboarding.invitation.token.required");
       inputRef.current?.focus();
       return;
     }
@@ -45,7 +49,7 @@ export function InvitationStep() {
             id="invitation-token"
             onChange={(event) => {
               flow.updateDraft({ invitationToken: event.target.value });
-              setValidationError(null);
+              setValidationErrorKey(null);
             }}
             placeholder={t("onboarding.invitation.token.placeholder")}
             ref={inputRef}

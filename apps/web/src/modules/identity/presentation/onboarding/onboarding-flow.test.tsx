@@ -279,6 +279,27 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
   });
 
+  it("retranslates a visible save error when the locale changes", async () => {
+    const user = userEvent.setup();
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ failSave: true })}
+        initialPath="/onboarding/intention"
+      />,
+    );
+
+    await user.click(await screen.findByRole("radio", { name: /Empezar como jugador/ }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    expect(
+      await screen.findByText("No pudimos guardar tu progreso. Inténtalo nuevamente."),
+    ).toBeTruthy();
+
+    await user.click(screen.getByRole("combobox", { name: "Idioma" }));
+    await user.click(await screen.findByRole("option", { name: "Inglés" }));
+
+    expect(await screen.findByText("We couldn't save your progress. Try again.")).toBeTruthy();
+  });
+
   it("does not bounce a finished player back to intention when the provider stays mounted", async () => {
     const completePlayer = vi.fn<() => Promise<void>>(async () => undefined);
     const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "review" });
