@@ -132,9 +132,16 @@ describe("OnboardingFlowProvider initialization", () => {
   });
 
   it("rolls back navigation when saveProgress fails", async () => {
+    const requestId = "715f6cc1-ce62-4adf-a3f1-e8bc12fa0e68";
     render(
       <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({ failSave: true })}
+        gateway={createFakeOnboardingGateway({
+          saveError: new IdentityOnboardingClientError(
+            502,
+            "identity.onboarding_request_failed",
+            requestId,
+          ),
+        })}
         initialPath="/onboarding/intention"
       />,
     );
@@ -145,9 +152,40 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(
       await screen.findByText("No pudimos guardar tu progreso. Inténtalo nuevamente."),
     ).toBeTruthy();
+    expect(screen.getByText(requestId)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Copiar código de soporte" })).toBeTruthy();
     expect(
       await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
     ).toBeTruthy();
+  });
+
+  it("shows a support code when organization name verification fails", async () => {
+    const requestId = "2d81f9de-55a8-4f4b-9962-86f63145def0";
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({
+          path: "organization",
+          currentStep: "organization",
+          checkNameError: new IdentityOnboardingClientError(
+            502,
+            "identity.onboarding_request_failed",
+            requestId,
+          ),
+        })}
+        initialPath="/onboarding/organization"
+      />,
+    );
+
+    const input = await screen.findByRole("textbox", { name: "Nombre de la organización" });
+    fireEvent.change(input, { target: { value: "Liga Norte" } });
+    fireEvent.click(screen.getByRole("button", { name: "Revisar organización" }));
+
+    expect(
+      await screen.findByText("No pudimos verificar el nombre. Inténtalo nuevamente."),
+    ).toBeTruthy();
+    expect(screen.getByText(requestId)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Copiar código de soporte" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
   });
 
   it("does not bounce a finished player back to intention when the provider stays mounted", async () => {

@@ -207,6 +207,9 @@
           "400": {
             "$ref": "#/components/responses/ApiError"
           },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
           "429": {
             "$ref": "#/components/responses/RateLimited"
           },
@@ -279,6 +282,9 @@
             }
           },
           "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
             "$ref": "#/components/responses/ApiError"
           },
           "404": {
@@ -373,6 +379,9 @@
             }
           },
           "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
             "$ref": "#/components/responses/ApiError"
           },
           "502": {

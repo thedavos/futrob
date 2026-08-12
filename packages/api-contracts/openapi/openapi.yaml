@@ -130,6 +130,8 @@ paths:
             X-Request-ID: *a1
         "400":
           $ref: "#/components/responses/ApiError"
+        "401":
+          $ref: "#/components/responses/ApiError"
         "429":
           $ref: "#/components/responses/RateLimited"
         "502":
@@ -179,6 +181,8 @@ paths:
           headers:
             X-Request-ID: *a1
         "400":
+          $ref: "#/components/responses/ApiError"
+        "401":
           $ref: "#/components/responses/ApiError"
         "404":
           $ref: "#/components/responses/ApiError"
@@ -243,6 +247,8 @@ paths:
           headers:
             X-Request-ID: *a1
         "400":
+          $ref: "#/components/responses/ApiError"
+        "401":
           $ref: "#/components/responses/ApiError"
         "502":
           $ref: "#/components/responses/ApiError"
