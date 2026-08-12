@@ -5,8 +5,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-# npm 11 blocks lifecycle scripts unless allowed. Native binaries for
-# workerd / esbuild / sharp must run their install scripts.
+# npm 12+ blocks lifecycle scripts unless allowed. Native binaries for
+# workerd / esbuild / sharp must run their install scripts; keep this on
+# the VM only so package.json does not pin an allowScripts allowlist.
 if ! grep -qxF 'dangerously-allow-all-scripts=true' "${HOME}/.npmrc" 2>/dev/null; then
   printf '\ndangerously-allow-all-scripts=true\n' >> "${HOME}/.npmrc"
 fi
