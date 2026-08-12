@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider, useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { getUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
+import { getUiLocale, setUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
 import { DEFAULT_LOCALE, localeOpenGraphCode } from "@/shared/presentation/i18n/locale.ts";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
 import { AppProviders } from "@/shared/presentation/query/app-providers.tsx";
@@ -62,7 +63,7 @@ export const Route = createRootRoute({
 function RootComponent() {
   const initialLocale = Route.useLoaderData();
   return (
-    <I18nProvider initialLocale={initialLocale}>
+    <I18nProvider initialLocale={initialLocale} persistLocale={persistUiLocale}>
       <RootDocument>
         <AppProviders>
           <Outlet />
@@ -70,6 +71,10 @@ function RootComponent() {
       </RootDocument>
     </I18nProvider>
   );
+}
+
+async function persistUiLocale(locale: Locale): Promise<void> {
+  await setUiLocale({ data: { locale } });
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {

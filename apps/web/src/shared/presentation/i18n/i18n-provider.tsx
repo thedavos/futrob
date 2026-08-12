@@ -10,7 +10,6 @@ import {
   type ReactNode,
 } from "react";
 import type { Locale } from "./catalogs.ts";
-import { setUiLocale } from "./locale.functions.ts";
 import { localeOpenGraphCode } from "./locale.ts";
 import { createTranslator, type Translator } from "./translate.ts";
 
@@ -25,7 +24,7 @@ const I18nContext = createContext<I18nValue | null>(null);
 export function I18nProvider({
   children,
   initialLocale,
-  persistLocale = persistLocaleOnServer,
+  persistLocale = keepLocaleInMemory,
 }: Readonly<{
   children: ReactNode;
   initialLocale: Locale;
@@ -59,6 +58,6 @@ export function useI18n(): I18nValue {
   return value;
 }
 
-async function persistLocaleOnServer(locale: Locale): Promise<void> {
-  await setUiLocale({ data: { locale } });
+function keepLocaleInMemory(): Promise<void> {
+  return Promise.resolve();
 }
