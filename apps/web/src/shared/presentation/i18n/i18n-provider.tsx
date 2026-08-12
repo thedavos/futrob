@@ -16,7 +16,7 @@ import { createTranslator, type Translator } from "./translate.ts";
 interface I18nValue {
   readonly locale: Locale;
   readonly t: Translator;
-  setLocale(locale: Locale): Promise<void>;
+  readonly setLocale: (locale: Locale) => Promise<void>;
 }
 
 const I18nContext = createContext<I18nValue | null>(null);
