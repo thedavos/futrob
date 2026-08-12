@@ -5,6 +5,7 @@ export function fixturePlanDto(plan: FixturePlan): FixturePlanDto {
   return {
     id: plan.id,
     revision: plan.revision,
+    status: plan.status,
     generationKey: plan.generationKey,
     organizationId: plan.organizationId,
     competitionId: plan.competitionId,
@@ -12,6 +13,7 @@ export function fixturePlanDto(plan: FixturePlan): FixturePlanDto {
     generationVersion: plan.generationVersion,
     format: plan.format,
     timeZone: plan.timeZone,
+    homeAndAway: plan.homeAndAway,
     seed: [...plan.seed],
     stages: plan.stages.map((stage) => ({
       id: stage.id,

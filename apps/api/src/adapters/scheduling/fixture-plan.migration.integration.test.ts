@@ -100,9 +100,9 @@ async function insertPlan(
 ): Promise<void> {
   await client.query(
     `INSERT INTO fixture_plans (
-       id, revision, generation_key, generation_fingerprint, organization_id, competition_id,
-       rules_version, generation_version, format, time_zone, seed
-     ) VALUES ($1, 1, $2, $2, $3, $4, 1, 1, 'league', 'America/Lima', '["team-a","team-b"]')`,
+       id, revision, status, generation_key, generation_fingerprint, organization_id, competition_id,
+       rules_version, generation_version, format, time_zone, home_and_away, seed
+     ) VALUES ($1, 1, 'active', $2, $2, $3, $4, 1, 1, 'league', 'America/Lima', false, '["team-a","team-b"]')`,
     [id, generationKey, organizationId, competitionId],
   );
 }

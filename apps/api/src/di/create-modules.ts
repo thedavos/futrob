@@ -36,7 +36,9 @@ import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-
 import type { CompetitionId, OrganizationId, TransactionPort } from "@futrob/shared-kernel";
 import type { ConfirmOfficialSelectionInput } from "@futrob/results";
 import {
+  InMemoryOfficialMatchSelectionRepository,
   InMemoryOfficialResultRepository,
+  PostgresOfficialMatchSelectionRepository,
   PostgresOfficialResultRepository,
 } from "@/adapters/results/official-result.repository.ts";
 import type { Pool } from "pg";
@@ -143,6 +145,9 @@ export function createModules(input: CreateModulesInput): AppModules {
   const officialResults = input.pool
     ? new PostgresOfficialResultRepository(input.pool)
     : new InMemoryOfficialResultRepository();
+  const officialSelections = input.pool
+    ? new PostgresOfficialMatchSelectionRepository(input.pool)
+    : new InMemoryOfficialMatchSelectionRepository();
 
   const teams = createTeamsModule({
     pool: input.pool,
@@ -166,6 +171,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     eventPublisher,
     transaction,
     officialResults,
+    officialSelections,
     encounterMutationLock,
     fixtureSource: new CompetitionFixtureSourceAdapter({
       competitions: competitionRepository,
@@ -235,6 +241,7 @@ export function createModules(input: CreateModulesInput): AppModules {
       teams.externalClubConnections,
     ),
     results: officialResults,
+    selections: officialSelections,
     ids,
   });
   const statistics = createStatisticsModule({

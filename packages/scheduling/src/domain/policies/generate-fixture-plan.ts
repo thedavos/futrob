@@ -113,6 +113,7 @@ export function generateFixturePlan(spec: FixtureGenerationSpec): FixturePlan {
   return {
     id: planId,
     revision: 1,
+    status: "active",
     generationKey,
     generationFingerprint: fixtureSpecFingerprint(spec),
     organizationId: spec.organizationId,
@@ -121,6 +122,7 @@ export function generateFixturePlan(spec: FixtureGenerationSpec): FixturePlan {
     generationVersion: spec.generationVersion,
     format: spec.format,
     timeZone: spec.timeZone,
+    homeAndAway: spec.homeAndAway,
     seed: [...spec.seed],
     stages,
   };

@@ -8,6 +8,7 @@ import type {
 } from "@futrob/shared-kernel";
 
 export type FixtureFormat = "league" | "knockout" | "groups-knockout" | "league-playoffs";
+export type FixturePlanStatus = "active" | "superseded";
 export type FixtureStageId = Brand<string, "FixtureStageId">;
 export type FixtureRoundId = Brand<string, "FixtureRoundId">;
 export type SeriesResolutionMode = "independent_matches" | "aggregate_score";
@@ -68,6 +69,7 @@ export interface FixtureStage {
 export interface FixturePlan {
   readonly id: string;
   readonly revision: number;
+  readonly status: FixturePlanStatus;
   readonly generationKey: string;
   readonly generationFingerprint: string;
   readonly organizationId: OrganizationId;
@@ -76,6 +78,7 @@ export interface FixturePlan {
   readonly generationVersion: number;
   readonly format: FixtureFormat;
   readonly timeZone: string;
+  readonly homeAndAway: boolean;
   readonly seed: readonly TeamId[];
   readonly stages: readonly FixtureStage[];
 }

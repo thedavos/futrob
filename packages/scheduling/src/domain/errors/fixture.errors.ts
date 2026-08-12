@@ -56,12 +56,18 @@ export class FixtureGenerationConflict extends TaggedError("FixtureGenerationCon
   message: string;
 }> {}
 
+export class FixtureSupersedeConflict extends TaggedError("FixtureSupersedeConflict")<{
+  code: "scheduling.fixture_supersede_conflict";
+  message: string;
+}> {}
+
 export type GenerateCompetitionFixtureError =
   | FixtureAuthorizationForbidden
   | FixtureSourceNotFound
   | FixtureSourceNotPublished
   | InvalidFixtureConfiguration
-  | FixtureGenerationConflict;
+  | FixtureGenerationConflict
+  | FixtureSupersedeConflict;
 
 export type EditFixtureEncounterError =
   | FixtureAuthorizationForbidden

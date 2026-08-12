@@ -9,14 +9,14 @@ import {
 } from "@futrob/shared-kernel";
 import type { FixturePlan } from "../domain/entities/fixture-plan.ts";
 import { FixturePlanNotFound } from "../domain/errors/fixture.errors.ts";
-import type { EditableFixturePlanRepository } from "../domain/ports/fixture-editing.ports.ts";
+import type { FixturePlanRepository } from "../domain/ports/fixture-plan.repository.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
 
 export class GetCompetitionFixtureUseCase {
   constructor(
     private readonly deps: {
       readonly authorization: AuthorizationPort;
-      readonly fixtures: Pick<EditableFixturePlanRepository, "findById">;
+      readonly fixtures: Pick<FixturePlanRepository, "findById">;
     },
   ) {}
 

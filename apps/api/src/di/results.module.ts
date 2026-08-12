@@ -29,14 +29,17 @@ export function createResultsModule(input: {
   readonly encounterReader: EncounterReaderPort;
   readonly providerMatches: ProviderMatchReaderPort;
   readonly results?: OfficialResultRepository;
+  readonly selections?: OfficialMatchSelectionRepository;
   readonly clock?: ClockPort;
   readonly ids?: IdGeneratorPort;
 }) {
   const clock = input.clock ?? new SystemClock();
   const ids = input.ids ?? new CryptoIdGenerator();
-  const selections: OfficialMatchSelectionRepository = input.pool
-    ? new PostgresOfficialMatchSelectionRepository(input.pool)
-    : new InMemoryOfficialMatchSelectionRepository();
+  const selections: OfficialMatchSelectionRepository =
+    input.selections ??
+    (input.pool
+      ? new PostgresOfficialMatchSelectionRepository(input.pool)
+      : new InMemoryOfficialMatchSelectionRepository());
   const results: OfficialResultRepository =
     input.results ??
     (input.pool

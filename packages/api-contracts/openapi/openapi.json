@@ -48,6 +48,10 @@
     {
       "name": "encounters",
       "description": "Persisted encounter schedule read models"
+    },
+    {
+      "name": "fixtures",
+      "description": "Deterministic competition fixture graphs"
     }
   ],
   "paths": {
@@ -1488,7 +1492,7 @@
     "/organizations/{organizationId}/competitions/{competitionId}/fixture": {
       "post": {
         "operationId": "generateCompetitionFixture",
-        "tags": ["encounters"],
+        "tags": ["fixtures"],
         "summary": "Generate or replay a deterministic competition fixture",
         "parameters": [
           {
@@ -1523,7 +1527,7 @@
         },
         "responses": {
           "200": {
-            "description": "Generated fixture or existing fixture for the same generation key",
+            "description": "Generated fixture or existing fixture for the same generation version",
             "content": {
               "application/json": {
                 "schema": {
@@ -1555,7 +1559,7 @@
     "/organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}": {
       "get": {
         "operationId": "getCompetitionFixture",
-        "tags": ["encounters"],
+        "tags": ["fixtures"],
         "summary": "Get an organization-scoped competition fixture",
         "parameters": [
           {
@@ -1614,7 +1618,7 @@
     "/organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}/encounters/{encounterId}": {
       "patch": {
         "operationId": "editFixtureEncounter",
-        "tags": ["encounters"],
+        "tags": ["fixtures"],
         "summary": "Edit an unresolved fixture encounter with audit history",
         "parameters": [
           {
@@ -4140,6 +4144,7 @@
         "required": [
           "id",
           "revision",
+          "status",
           "generationKey",
           "organizationId",
           "competitionId",
@@ -4147,6 +4152,7 @@
           "generationVersion",
           "format",
           "timeZone",
+          "homeAndAway",
           "seed",
           "stages"
         ],
@@ -4157,6 +4163,10 @@
           "revision": {
             "type": "integer",
             "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "superseded"]
           },
           "generationKey": {
             "type": "string"
@@ -4181,6 +4191,9 @@
           },
           "timeZone": {
             "type": "string"
+          },
+          "homeAndAway": {
+            "type": "boolean"
           },
           "seed": {
             "type": "array",
@@ -4269,6 +4282,10 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 500
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },

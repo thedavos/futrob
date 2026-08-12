@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS fixture_plans (
   id TEXT PRIMARY KEY,
   revision INTEGER NOT NULL CHECK (revision >= 1),
+  status TEXT NOT NULL CHECK (status IN ('active', 'superseded')),
   generation_key TEXT NOT NULL,
   generation_fingerprint TEXT NOT NULL,
   organization_id TEXT NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
@@ -11,10 +12,11 @@ CREATE TABLE IF NOT EXISTS fixture_plans (
     format IN ('league', 'knockout', 'groups-knockout', 'league-playoffs')
   ),
   time_zone TEXT NOT NULL,
+  home_and_away BOOLEAN NOT NULL,
   seed JSONB NOT NULL CHECK (jsonb_typeof(seed) = 'array'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (organization_id, competition_id, generation_key),
+  UNIQUE (organization_id, competition_id, generation_version),
   UNIQUE (id, organization_id, competition_id)
 );
 
@@ -109,8 +111,9 @@ CREATE TABLE IF NOT EXISTS fixture_encounter_audit (
     REFERENCES fixture_encounters (id, fixture_plan_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS fixture_plans_tenant_index
-  ON fixture_plans (organization_id, competition_id, generation_version);
+CREATE INDEX IF NOT EXISTS fixture_plans_active_index
+  ON fixture_plans (organization_id, competition_id)
+  WHERE status = 'active';
 CREATE INDEX IF NOT EXISTS fixture_encounters_schedule_index
   ON fixture_encounters (organization_id, competition_id, scheduled_start_at);
 CREATE INDEX IF NOT EXISTS fixture_audit_tenant_index

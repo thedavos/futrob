@@ -75,7 +75,10 @@ describe("apps/api http fixtures", () => {
     const generate = () =>
       app.request(`/api/v1/organizations/${organizationId}/competitions/${competitionId}/fixture`, {
         method: "POST",
-        headers: { ...serviceHeaders(organizer), "X-Request-ID": "fixture-generation-1" },
+        headers: {
+          ...serviceHeaders(organizer),
+          "X-Request-ID": "2c574fb9-091d-433f-b9f4-cc6e1b86f860",
+        },
         body: JSON.stringify(generationBody),
       });
     const first = await generate();
@@ -148,7 +151,10 @@ describe("apps/api http fixtures", () => {
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/fixtures/${encodeURIComponent(fixture.id)}/encounters/${encodeURIComponent(readableEncounter.id)}`,
       {
         method: "PATCH",
-        headers: { ...serviceHeaders(organizer), "X-Request-ID": "fixture-edit-1" },
+        headers: {
+          ...serviceHeaders(organizer),
+          "X-Request-ID": "1f8c914e-a307-42aa-b2ea-ec6cfefaba83",
+        },
         body: JSON.stringify({
           scheduledStartAt: "2026-09-02T01:00:00.000Z",
           reason: "Broadcast window",
@@ -163,7 +169,10 @@ describe("apps/api http fixtures", () => {
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/fixtures/${encodeURIComponent(fixture.id)}/encounters/${encodeURIComponent(readableEncounter.id)}`,
       {
         method: "PATCH",
-        headers: { ...serviceHeaders(organizer), "X-Request-ID": "fixture-edit-1" },
+        headers: {
+          ...serviceHeaders(organizer),
+          "X-Request-ID": "1f8c914e-a307-42aa-b2ea-ec6cfefaba83",
+        },
         body: JSON.stringify({
           scheduledStartAt: "2026-09-03T01:00:00.000Z",
           reason: "Conflicting retry",

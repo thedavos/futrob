@@ -24,6 +24,8 @@ class EncounterSchedules implements EncounterScheduleRepository {
   async upsert(snapshot: EncounterScheduleSnapshot) {
     return snapshot;
   }
+
+  async deleteByEncounterIds() {}
 }
 
 class OfficialMatches implements OfficialMatchRepository {
@@ -39,6 +41,8 @@ class OfficialMatches implements OfficialMatchRepository {
       if (!this.rows.has(key)) this.rows.set(key, match);
     }
   }
+
+  async voidByEncounterIds() {}
 }
 
 const snapshot: EncounterScheduleSnapshot = {

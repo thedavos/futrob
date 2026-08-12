@@ -20,6 +20,8 @@ class Encounters implements EncounterScheduleRepository {
     this.rows.set(snapshot.encounterId, snapshot);
     return snapshot;
   }
+
+  async deleteByEncounterIds() {}
 }
 
 const snapshot: EncounterScheduleSnapshot = {

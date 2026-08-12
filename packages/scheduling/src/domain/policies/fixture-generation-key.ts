@@ -4,7 +4,7 @@ export function fixtureGenerationKey(spec: FixtureGenerationSpec): string {
   return `${spec.competitionId}:rules:${spec.rulesVersion}:generation:${spec.generationVersion}:fp:${fixtureSpecFingerprint(spec)}`;
 }
 
-/** Hash of schedule inputs so a corrected startsAt/seed cannot reuse a stale plan key. */
+/** Hash of schedule inputs. Plan identity can change while generation_version occupies the competition. */
 export function fixtureSpecFingerprint(spec: FixtureGenerationSpec): string {
   const groups = spec.groups ? `g${spec.groups.count}q${spec.groups.qualifiersPerGroup}` : "";
   const playoffs = spec.playoffs ? `p${spec.playoffs.teamCount}` : "";

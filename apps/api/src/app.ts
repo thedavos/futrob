@@ -16,6 +16,7 @@ import { registerPlayerRoutes } from "@/http/routes/players.ts";
 import { registerTeamRoutes } from "@/http/routes/teams.ts";
 import { registerAuthorizationRoutes } from "@/http/routes/authorization.ts";
 import { registerEncounterRoutes } from "@/http/routes/encounters.ts";
+import { registerFixtureRoutes } from "@/http/routes/fixtures.ts";
 import { registerProviderSyncJobRoutes } from "@/http/routes/provider-sync-jobs.ts";
 import { registerProviderHealthRoutes } from "@/http/routes/provider-health.ts";
 
@@ -79,6 +80,7 @@ export function createApp(deps: AppDeps): Hono {
   registerTeamRoutes(v1, deps);
   registerAuthorizationRoutes(v1, deps);
   registerEncounterRoutes(v1, deps);
+  registerFixtureRoutes(v1, deps);
 
   app.route("/api/v1", v1);
 

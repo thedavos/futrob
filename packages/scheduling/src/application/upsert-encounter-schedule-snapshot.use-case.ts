@@ -10,7 +10,7 @@ import type {
   EncounterParticipantValidationPort,
   EncounterScheduleRepository,
 } from "../domain/ports/encounter-schedule.repository.ts";
-import type { FixtureEncounterOwnershipPort } from "../domain/ports/fixture-editing.ports.ts";
+import type { FixturePlanRepository } from "../domain/ports/fixture-plan.repository.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
 
 /** Producer for the scheduling projection consumed by authorization and results. */
@@ -19,7 +19,7 @@ export class UpsertEncounterScheduleSnapshotUseCase {
     private readonly deps: {
       readonly authorization: AuthorizationPort;
       readonly encounters: EncounterScheduleRepository;
-      readonly fixtureOwnership: FixtureEncounterOwnershipPort;
+      readonly fixtureOwnership: Pick<FixturePlanRepository, "containsEncounter">;
       readonly participants: EncounterParticipantValidationPort;
     },
   ) {}

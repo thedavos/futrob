@@ -132,12 +132,45 @@ describe("context discovery SDK resources", () => {
       "https://app.example.com/api/v1/organizations/org-1/competitions/competition-1/fixture",
     );
   });
+
+  it("sends a stable request ID when editing a fixture encounter", async () => {
+    let method: string | undefined;
+    let body: unknown;
+    let requestId: string | null = null;
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: (async (_input, init) => {
+        method = init?.method;
+        requestId = new Headers(init?.headers).get("X-Request-ID");
+        if (typeof init?.body === "string") body = JSON.parse(init.body);
+        return Response.json(fixturePlan());
+      }) as typeof fetch,
+    });
+
+    const stableId = "1f8c914e-a307-42aa-b2ea-ec6cfefaba83";
+    await client.encounters.editFixtureEncounter(
+      "org-1",
+      "competition-1",
+      "fixture-1",
+      "encounter-1",
+      {
+        scheduledStartAt: "2026-09-02T01:00:00.000Z",
+        reason: "Broadcast window",
+        requestId: stableId,
+      },
+    );
+
+    expect(method).toBe("PATCH");
+    expect(requestId).toBe(stableId);
+    expect(body).toMatchObject({ requestId: stableId, reason: "Broadcast window" });
+  });
 });
 
 function fixturePlan() {
   return {
     id: "fixture-1",
     revision: 1,
+    status: "active",
     generationKey: "competition-1:rules:1:generation:1",
     organizationId: "org-1",
     competitionId: "competition-1",
@@ -145,6 +178,7 @@ function fixturePlan() {
     generationVersion: 1,
     format: "league",
     timeZone: "America/Lima",
+    homeAndAway: false,
     seed: ["team-a", "team-b"],
     stages: [
       {

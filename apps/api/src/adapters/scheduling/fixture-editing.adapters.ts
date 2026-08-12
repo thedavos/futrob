@@ -2,9 +2,10 @@ import type {
   FixtureAuditEntry,
   FixtureAuditPort,
   FixtureEncounterEditGuardPort,
+  FixtureOccupancyGuardPort,
   OfficialMatchRepository,
 } from "@futrob/scheduling";
-import type { OfficialResultRepository } from "@futrob/results";
+import type { OfficialMatchSelectionRepository, OfficialResultRepository } from "@futrob/results";
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
@@ -120,16 +121,38 @@ export class OfficialResultFixtureEditGuard implements FixtureEncounterEditGuard
   constructor(
     private readonly matches: OfficialMatchRepository,
     private readonly results: Pick<OfficialResultRepository, "findApprovedByEncounter">,
+    private readonly selections: Pick<OfficialMatchSelectionRepository, "findLatestByEncounter">,
   ) {}
 
   async canEdit(input: Parameters<FixtureEncounterEditGuardPort["canEdit"]>[0]): Promise<boolean> {
-    const [matches, approvedResult] = await Promise.all([
+    const [matches, approvedResult, selection] = await Promise.all([
       this.matches.listByEncounter(input.encounterId),
       this.results.findApprovedByEncounter(input.encounterId),
+      this.selections.findLatestByEncounter(input.encounterId),
     ]);
-    return (
-      !approvedResult &&
-      matches.every((match) => match.status !== "completed" && match.status !== "voided")
+    if (approvedResult) return false;
+    if (selection && selection.status !== "voided") return false;
+    return matches.every(
+      (match) =>
+        match.status !== "completed" &&
+        match.status !== "voided" &&
+        match.status !== "selected" &&
+        match.status !== "awaiting_selection",
     );
+  }
+}
+
+export class OfficialResultOccupancyGuard implements FixtureOccupancyGuardPort {
+  constructor(
+    private readonly results: Pick<OfficialResultRepository, "findApprovedByEncounter">,
+  ) {}
+
+  async hasApprovedOfficialResult(
+    encounterIds: Parameters<FixtureOccupancyGuardPort["hasApprovedOfficialResult"]>[0],
+  ): Promise<boolean> {
+    const approved = await Promise.all(
+      encounterIds.map((encounterId) => this.results.findApprovedByEncounter(encounterId)),
+    );
+    return approved.some((result) => result !== null);
   }
 }

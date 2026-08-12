@@ -1,6 +1,10 @@
-import type { CompetitionId, OrganizationId, TeamId } from "@futrob/shared-kernel";
-import type { FixtureFormat, FixturePlan } from "../entities/fixture-plan.ts";
-import type { SeriesResolutionMode } from "../entities/fixture-plan.ts";
+import type { CompetitionId, EncounterId, OrganizationId, TeamId } from "@futrob/shared-kernel";
+import type {
+  FixtureEncounter,
+  FixtureFormat,
+  FixturePlan,
+  SeriesResolutionMode,
+} from "../entities/fixture-plan.ts";
 
 export interface CompetitionFixtureSourceSnapshot {
   readonly organizationId: OrganizationId;
@@ -28,13 +32,36 @@ export interface CompetitionFixtureSourcePort {
 }
 
 export interface FixturePlanRepository {
-  findByGenerationKey(
+  findById(
     organizationId: OrganizationId,
     competitionId: CompetitionId,
-    generationKey: string,
+    fixturePlanId: string,
   ): Promise<FixturePlan | null>;
+  findByGenerationVersion(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+    generationVersion: number,
+  ): Promise<FixturePlan | null>;
+  listActive(organizationId: OrganizationId, competitionId: CompetitionId): Promise<FixturePlan[]>;
   save(plan: FixturePlan): Promise<{
     readonly plan: FixturePlan;
     readonly created: boolean;
   }>;
+  updateEncounter(input: {
+    readonly organizationId: OrganizationId;
+    readonly competitionId: CompetitionId;
+    readonly fixturePlanId: string;
+    readonly revision: number;
+    readonly encounter: FixtureEncounter;
+  }): Promise<FixturePlan | null>;
+  markSuperseded(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+    exceptPlanId: string,
+  ): Promise<void>;
+  containsEncounter(input: {
+    readonly organizationId: OrganizationId;
+    readonly competitionId: CompetitionId;
+    readonly encounterId: EncounterId;
+  }): Promise<boolean>;
 }

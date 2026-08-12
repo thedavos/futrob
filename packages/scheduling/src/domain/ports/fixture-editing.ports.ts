@@ -1,14 +1,5 @@
 import type { ActorId, CompetitionId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
-import type { FixtureEncounter, FixturePlan } from "../entities/fixture-plan.ts";
-
-export interface EditableFixturePlanRepository {
-  findById(
-    organizationId: OrganizationId,
-    competitionId: CompetitionId,
-    fixturePlanId: string,
-  ): Promise<FixturePlan | null>;
-  update(plan: FixturePlan): Promise<FixturePlan | null>;
-}
+import type { FixtureEncounter } from "../entities/fixture-plan.ts";
 
 export interface FixtureEncounterEditGuardPort {
   canEdit(input: {
@@ -18,12 +9,8 @@ export interface FixtureEncounterEditGuardPort {
   }): Promise<boolean>;
 }
 
-export interface FixtureEncounterOwnershipPort {
-  containsEncounter(input: {
-    readonly organizationId: OrganizationId;
-    readonly competitionId: CompetitionId;
-    readonly encounterId: EncounterId;
-  }): Promise<boolean>;
+export interface FixtureOccupancyGuardPort {
+  hasApprovedOfficialResult(encounterIds: readonly EncounterId[]): Promise<boolean>;
 }
 
 export interface FixtureAuditEntry {

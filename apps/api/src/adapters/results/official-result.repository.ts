@@ -24,11 +24,7 @@ export class InMemoryOfficialMatchSelectionRepository implements OfficialMatchSe
   }
 
   async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialMatchSelection | null> {
-    return (
-      [...this.rows]
-        .reverse()
-        .find((row) => row.encounterId === encounterId) ?? null
-    );
+    return [...this.rows].reverse().find((row) => row.encounterId === encounterId) ?? null;
   }
 }
 

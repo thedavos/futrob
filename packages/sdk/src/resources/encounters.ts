@@ -62,10 +62,12 @@ export function createEncountersResource(http: HttpClient) {
       encounterId: string,
       input: EditFixtureEncounterRequest,
     ): Promise<FixturePlanDto> {
+      const requestId = input.requestId ?? crypto.randomUUID();
       return http.request({
         path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/fixtures/${encodeURIComponent(fixturePlanId)}/encounters/${encodeURIComponent(encounterId)}`,
         method: "PATCH",
-        body: editFixtureEncounterRequestSchema.parse(input),
+        requestId,
+        body: editFixtureEncounterRequestSchema.parse({ ...input, requestId }),
         parse: (data) => fixturePlanSchema.parse(data),
       });
     },

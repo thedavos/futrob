@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { requestIdSchema } from "../request-correlation.ts";
 
 export const encounterScheduleSnapshotSchema = z.object({
   encounterId: z.string().min(1),
@@ -90,6 +91,7 @@ export const fixtureStageSchema = z.object({
 export const fixturePlanSchema = z.object({
   id: z.string().min(1),
   revision: z.number().int().positive(),
+  status: z.enum(["active", "superseded"]),
   generationKey: z.string().min(1),
   organizationId: z.string().min(1),
   competitionId: z.string().min(1),
@@ -97,6 +99,7 @@ export const fixturePlanSchema = z.object({
   generationVersion: z.number().int().positive(),
   format: z.enum(["league", "knockout", "groups-knockout", "league-playoffs"]),
   timeZone: z.string().min(1),
+  homeAndAway: z.boolean(),
   seed: z.array(z.string().min(1)).min(2),
   stages: z.array(fixtureStageSchema).min(1),
 });
@@ -129,6 +132,7 @@ export const editFixtureEncounterRequestSchema = z
     homeTeamId: z.string().min(1).optional(),
     awayTeamId: z.string().min(1).optional(),
     reason: z.string().trim().min(1).max(500),
+    requestId: requestIdSchema.optional(),
   })
   .superRefine((value, context) => {
     const changesSchedule = value.scheduledStartAt !== undefined;

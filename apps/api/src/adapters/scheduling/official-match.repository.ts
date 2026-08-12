@@ -28,6 +28,14 @@ export class InMemoryOfficialMatchRepository implements OfficialMatchRepository 
       if (!this.rows.has(key)) this.rows.set(key, match);
     }
   }
+
+  async voidByEncounterIds(encounterIds: readonly EncounterId[]): Promise<void> {
+    const ids = new Set(encounterIds);
+    for (const [key, match] of this.rows) {
+      if (!ids.has(match.encounterId) || match.status === "voided") continue;
+      this.rows.set(key, { ...match, status: "voided" });
+    }
+  }
 }
 
 export class PostgresOfficialMatchRepository implements OfficialMatchRepository {
@@ -69,6 +77,14 @@ export class PostgresOfficialMatchRepository implements OfficialMatchRepository 
        ) VALUES ${placeholders}
        ON CONFLICT (encounter_id, slot) DO NOTHING`,
       values,
+    );
+  }
+
+  async voidByEncounterIds(encounterIds: readonly EncounterId[]): Promise<void> {
+    if (encounterIds.length === 0) return;
+    await getPgExecutor(this.pool).query(
+      `UPDATE official_matches SET status = 'voided' WHERE encounter_id = ANY($1::text[])`,
+      [encounterIds],
     );
   }
 }

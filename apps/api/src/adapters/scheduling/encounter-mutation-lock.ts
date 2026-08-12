@@ -1,4 +1,5 @@
-import type { EncounterId, EncounterMutationLockPort } from "@futrob/shared-kernel";
+import type { EncounterId } from "@futrob/shared-kernel";
+import type { EncounterMutationLockPort } from "@futrob/scheduling";
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 

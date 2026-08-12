@@ -6,18 +6,13 @@ import {
   type ClockPort,
   type CompetitionId,
   type EncounterId,
-  type EncounterMutationLockPort,
   type EventPublisherPort,
   type OrganizationId,
   type Result,
   type TeamId,
   type TransactionPort,
 } from "@futrob/shared-kernel";
-import type {
-  FixtureEncounter,
-  FixtureParticipantSlot,
-  FixturePlan,
-} from "../domain/entities/fixture-plan.ts";
+import type { FixtureEncounter, FixturePlan } from "../domain/entities/fixture-plan.ts";
 import {
   FixtureAuthorizationForbidden,
   FixtureEncounterNotEditable,
@@ -28,13 +23,26 @@ import {
   type EditFixtureEncounterError,
 } from "../domain/errors/fixture.errors.ts";
 import type { EncounterRescheduledEvent } from "../domain/events/encounter-rescheduled.event.ts";
+import type { EncounterMutationLockPort } from "../domain/ports/encounter-mutation-lock.port.ts";
+import type { EncounterScheduleRepository } from "../domain/ports/encounter-schedule.repository.ts";
 import type {
-  EditableFixturePlanRepository,
   FixtureAuditPort,
   FixtureEncounterEditGuardPort,
 } from "../domain/ports/fixture-editing.ports.ts";
-import type { CompetitionFixtureSourcePort } from "../domain/ports/fixture-plan.repository.ts";
+import type {
+  CompetitionFixtureSourcePort,
+  FixturePlanRepository,
+} from "../domain/ports/fixture-plan.repository.ts";
+import type { OfficialMatchRepository } from "../domain/ports/official-match.repository.ts";
+import {
+  encountersEqual,
+  findEncounter,
+  hasDuplicateMatchup,
+  hasTeamCollision,
+  teamsInGroup,
+} from "../domain/policies/edit-fixture-encounter.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
+import { projectFixtureEncounter } from "./project-fixture-encounters.ts";
 
 export interface EditFixtureEncounterInput {
   readonly actorId: ActorId;
@@ -56,8 +64,10 @@ export class EditFixtureEncounterUseCase {
       readonly audit: FixtureAuditPort;
       readonly clock: ClockPort;
       readonly editGuard: FixtureEncounterEditGuardPort;
+      readonly encounters: EncounterScheduleRepository;
       readonly eventPublisher: EventPublisherPort;
-      readonly fixtures: EditableFixturePlanRepository;
+      readonly fixtures: FixturePlanRepository;
+      readonly matches: OfficialMatchRepository;
       readonly mutationLock: EncounterMutationLockPort;
       readonly source: CompetitionFixtureSourcePort;
       readonly transaction: TransactionPort;
@@ -113,6 +123,15 @@ export class EditFixtureEncounterUseCase {
             }),
           );
         }
+        if (plan.status === "superseded") {
+          return err(
+            new FixtureEncounterNotEditable({
+              code: "scheduling.fixture_encounter_not_editable",
+              message: "A superseded fixture cannot be edited",
+              encounterId: input.encounterId,
+            }),
+          );
+        }
         const before = findEncounter(plan, input.encounterId);
         if (!before) {
           return err(
@@ -141,7 +160,7 @@ export class EditFixtureEncounterUseCase {
           return err(
             new FixtureEncounterNotEditable({
               code: "scheduling.fixture_encounter_not_editable",
-              message: "An encounter with an approved or final result cannot be edited",
+              message: "An encounter with a pending selection or official result cannot be edited",
               encounterId: input.encounterId,
             }),
           );
@@ -173,8 +192,17 @@ export class EditFixtureEncounterUseCase {
         if (hasTeamCollision(plan, after)) {
           return err(invalid("A Team cannot have two encounters at the same scheduled time"));
         }
+        if (hasDuplicateMatchup(plan, after)) {
+          return err(invalid("This pairing already exists in the fixture"));
+        }
 
-        const updated = await this.deps.fixtures.update(replaceEncounter(plan, after));
+        const updated = await this.deps.fixtures.updateEncounter({
+          organizationId: input.organizationId,
+          competitionId: input.competitionId,
+          fixturePlanId: input.fixturePlanId,
+          revision: plan.revision,
+          encounter: after,
+        });
         if (!updated) {
           return err(
             new FixtureUpdateConflict({
@@ -183,6 +211,7 @@ export class EditFixtureEncounterUseCase {
             }),
           );
         }
+        await projectFixtureEncounter(this.deps, updated, after);
         const occurredAt = this.deps.clock.now();
         await this.deps.audit.append({
           organizationId: input.organizationId,
@@ -246,77 +275,6 @@ async function validatePairingChange(
     }
   }
   return null;
-}
-
-function findEncounter(plan: FixturePlan, encounterId: EncounterId): FixtureEncounter | null {
-  for (const encounter of planEncounters(plan)) {
-    if (encounter.id === encounterId) return encounter;
-  }
-  return null;
-}
-
-function replaceEncounter(plan: FixturePlan, replacement: FixtureEncounter): FixturePlan {
-  return {
-    ...plan,
-    stages: plan.stages.map((stage) => ({
-      ...stage,
-      rounds: stage.rounds.map((round) => ({
-        ...round,
-        encounters: round.encounters.map((encounter) =>
-          encounter.id === replacement.id ? replacement : encounter,
-        ),
-      })),
-    })),
-  };
-}
-
-function hasTeamCollision(plan: FixturePlan, candidate: FixtureEncounter): boolean {
-  const teams = teamIdsFromSlots(candidate.home, candidate.away);
-  if (teams.size === 0) return false;
-  const at = candidate.scheduledStartAt.getTime();
-  for (const encounter of planEncounters(plan)) {
-    if (encounter.id === candidate.id) continue;
-    if (encounter.scheduledStartAt.getTime() !== at) continue;
-    for (const teamId of teamIdsFromSlots(encounter.home, encounter.away)) {
-      if (teams.has(teamId)) return true;
-    }
-  }
-  return false;
-}
-
-function teamsInGroup(plan: FixturePlan, groupId: string): Set<TeamId> {
-  const teams = new Set<TeamId>();
-  for (const encounter of planEncounters(plan)) {
-    if (encounter.groupId !== groupId) continue;
-    for (const teamId of teamIdsFromSlots(encounter.home, encounter.away)) {
-      teams.add(teamId);
-    }
-  }
-  return teams;
-}
-
-function* planEncounters(plan: FixturePlan): Generator<FixtureEncounter> {
-  for (const stage of plan.stages) {
-    for (const round of stage.rounds) {
-      yield* round.encounters;
-    }
-  }
-}
-
-function teamIdsFromSlots(...slots: FixtureParticipantSlot[]): Set<TeamId> {
-  const teams = new Set<TeamId>();
-  for (const slot of slots) {
-    if (slot.kind === "team") teams.add(slot.teamId);
-  }
-  return teams;
-}
-
-function encountersEqual(left: FixtureEncounter, right: FixtureEncounter): boolean {
-  return (
-    left.scheduledStartAt.getTime() === right.scheduledStartAt.getTime() &&
-    JSON.stringify(left.home) === JSON.stringify(right.home) &&
-    JSON.stringify(left.away) === JSON.stringify(right.away)
-  );
 }
 
 function invalid(message: string): InvalidFixtureConfiguration {

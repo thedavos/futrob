@@ -31,8 +31,13 @@ describe("OfficialResultFixtureEditGuard", () => {
       approvedBy: asActorId("organizer-1"),
     };
     const guard = new OfficialResultFixtureEditGuard(
-      { listByEncounter: async () => [], upsertMany: async () => {} },
+      {
+        listByEncounter: async () => [],
+        upsertMany: async () => {},
+        voidByEncounterIds: async () => {},
+      },
       { findApprovedByEncounter: async () => approved },
+      { findLatestByEncounter: async () => null },
     );
 
     await expect(
@@ -47,8 +52,13 @@ describe("OfficialResultFixtureEditGuard", () => {
   it("allows pending matches when no result is approved", async () => {
     const matches: OfficialMatch[] = [];
     const guard = new OfficialResultFixtureEditGuard(
-      { listByEncounter: async () => matches, upsertMany: async () => {} },
+      {
+        listByEncounter: async () => matches,
+        upsertMany: async () => {},
+        voidByEncounterIds: async () => {},
+      },
       { findApprovedByEncounter: async () => null },
+      { findLatestByEncounter: async () => null },
     );
 
     await expect(
@@ -112,7 +122,25 @@ describe("OfficialResultFixtureEditGuard", () => {
         },
       },
       eventPublisher: { publish: async () => {}, publishMany: async () => {} },
-      fixtures: { findById: async () => plan, update: async () => plan },
+      encounters: {
+        findById: async () => null,
+        upsert: async (snapshot) => snapshot,
+        deleteByEncounterIds: async () => {},
+      },
+      fixtures: {
+        findById: async () => plan,
+        findByGenerationVersion: async () => plan,
+        listActive: async () => [plan],
+        save: async () => ({ plan, created: false }),
+        updateEncounter: async () => plan,
+        markSuperseded: async () => {},
+        containsEncounter: async () => true,
+      },
+      matches: {
+        listByEncounter: async () => [],
+        upsertMany: async () => {},
+        voidByEncounterIds: async () => {},
+      },
       mutationLock: lock,
       source: { load: async () => null },
       transaction: { runInTransaction: async (operation) => operation() },
@@ -138,5 +166,34 @@ describe("OfficialResultFixtureEditGuard", () => {
     if (result.isOk()) return;
     expect(result.error.code).toBe("scheduling.fixture_encounter_not_editable");
     expect(guardChecks).toBe(1);
+  });
+
+  it("blocks fixture edits after an official selection is pending", async () => {
+    const guard = new OfficialResultFixtureEditGuard(
+      {
+        listByEncounter: async () => [],
+        upsertMany: async () => {},
+        voidByEncounterIds: async () => {},
+      },
+      { findApprovedByEncounter: async () => null },
+      {
+        findLatestByEncounter: async () => ({
+          id: "selection-1",
+          encounterId,
+          status: "awaiting_opponent_confirmation",
+          slots: [],
+          proposedByActorId: "captain-1",
+          proposedAt: new Date("2026-09-01T01:30:00.000Z"),
+        }),
+      },
+    );
+
+    await expect(
+      guard.canEdit({
+        encounterId,
+        organizationId: asOrganizationId("org-1"),
+        competitionId: asCompetitionId("competition-1"),
+      }),
+    ).resolves.toBe(false);
   });
 });

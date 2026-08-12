@@ -7,6 +7,7 @@ export {
   type FixtureGenerationSpec,
   type FixtureParticipantSlot,
   type FixturePlan,
+  type FixturePlanStatus,
   type FixtureRound,
   type FixtureRoundId,
   type FixtureSeries,
@@ -21,17 +22,17 @@ export type {
   EncounterScheduleRepository,
 } from "./domain/ports/encounter-schedule.repository.ts";
 export type { OfficialMatchRepository } from "./domain/ports/official-match.repository.ts";
+export type { EncounterMutationLockPort } from "./domain/ports/encounter-mutation-lock.port.ts";
 export type {
   CompetitionFixtureSourcePort,
   CompetitionFixtureSourceSnapshot,
   FixturePlanRepository,
 } from "./domain/ports/fixture-plan.repository.ts";
 export type {
-  EditableFixturePlanRepository,
   FixtureAuditEntry,
   FixtureAuditPort,
   FixtureEncounterEditGuardPort,
-  FixtureEncounterOwnershipPort,
+  FixtureOccupancyGuardPort,
 } from "./domain/ports/fixture-editing.ports.ts";
 export { UpsertEncounterScheduleSnapshotUseCase } from "./application/upsert-encounter-schedule-snapshot.use-case.ts";
 export {
@@ -64,6 +65,7 @@ export {
   FixtureEncounterNotEditable,
   FixtureUpdateConflict,
   FixtureGenerationConflict,
+  FixtureSupersedeConflict,
   InvalidFixtureConfiguration,
   type EditFixtureEncounterError,
   type GenerateCompetitionFixtureError,
@@ -74,6 +76,7 @@ export {
   fixtureGenerationKey,
   generateFixturePlan,
 } from "./domain/policies/generate-fixture-plan.ts";
+export { replaceEncounter } from "./domain/policies/edit-fixture-encounter.ts";
 export type { RescheduleScope } from "./domain/value-objects/reschedule-scope.ts";
 export type { EncounterRescheduledEvent } from "./domain/events/encounter-rescheduled.event.ts";
 export {

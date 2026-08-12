@@ -28,6 +28,10 @@ export class InMemoryEncounterScheduleRepository implements EncounterScheduleRep
     this.rows.set(snapshot.encounterId, snapshot);
     return snapshot;
   }
+
+  async deleteByEncounterIds(encounterIds: readonly EncounterId[]): Promise<void> {
+    for (const encounterId of encounterIds) this.rows.delete(encounterId);
+  }
 }
 
 export class PostgresEncounterScheduleRepository implements EncounterScheduleRepository {
@@ -71,6 +75,14 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
       ],
     );
     return result.rows[0] ? snapshot : null;
+  }
+
+  async deleteByEncounterIds(encounterIds: readonly EncounterId[]): Promise<void> {
+    if (encounterIds.length === 0) return;
+    await getPgExecutor(this.pool).query(
+      `DELETE FROM encounter_schedule_snapshots WHERE encounter_id = ANY($1::text[])`,
+      [encounterIds],
+    );
   }
 }
 

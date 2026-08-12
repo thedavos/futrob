@@ -26,6 +26,8 @@ tags:
     description: Contextual roles, grants and effective access
   - name: encounters
     description: Persisted encounter schedule read models
+  - name: fixtures
+    description: Deterministic competition fixture graphs
 paths:
   /meta/ping:
     get:
@@ -965,7 +967,7 @@ paths:
     post:
       operationId: generateCompetitionFixture
       tags:
-        - encounters
+        - fixtures
       summary: Generate or replay a deterministic competition fixture
       parameters:
         - *a2
@@ -987,7 +989,7 @@ paths:
               $ref: "#/components/schemas/GenerateCompetitionFixtureRequest"
       responses:
         "200":
-          description: Generated fixture or existing fixture for the same generation key
+          description: Generated fixture or existing fixture for the same generation version
           content:
             application/json:
               schema:
@@ -1006,7 +1008,7 @@ paths:
     get:
       operationId: getCompetitionFixture
       tags:
-        - encounters
+        - fixtures
       summary: Get an organization-scoped competition fixture
       parameters:
         - *a2
@@ -1042,7 +1044,7 @@ paths:
     patch:
       operationId: editFixtureEncounter
       tags:
-        - encounters
+        - fixtures
       summary: Edit an unresolved fixture encounter with audit history
       parameters:
         - *a2
@@ -2985,6 +2987,7 @@ components:
       required:
         - id
         - revision
+        - status
         - generationKey
         - organizationId
         - competitionId
@@ -2992,6 +2995,7 @@ components:
         - generationVersion
         - format
         - timeZone
+        - homeAndAway
         - seed
         - stages
       properties:
@@ -3000,6 +3004,11 @@ components:
         revision:
           type: integer
           minimum: 1
+        status:
+          type: string
+          enum:
+            - active
+            - superseded
         generationKey:
           type: string
         organizationId:
@@ -3021,6 +3030,8 @@ components:
             - league-playoffs
         timeZone:
           type: string
+        homeAndAway:
+          type: boolean
         seed:
           type: array
           minItems: 2
@@ -3092,6 +3103,9 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+        requestId:
+          type: string
+          format: uuid
     CompetitionRules:
       type: object
       required:

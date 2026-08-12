@@ -1,14 +1,11 @@
-import { asFixtureStageId } from "@futrob/scheduling";
-import type {
-  EditableFixturePlanRepository,
-  FixtureEncounter,
-  FixtureParticipantSlot,
-  FixturePlan,
-  FixturePlanRepository,
-  FixtureStage,
-  EncounterScheduleRepository,
-  FixtureEncounterOwnershipPort,
-  OfficialMatchRepository,
+import {
+  asFixtureStageId,
+  replaceEncounter,
+  type FixtureEncounter,
+  type FixtureParticipantSlot,
+  type FixturePlan,
+  type FixturePlanRepository,
+  type FixtureStage,
 } from "@futrob/scheduling";
 import {
   asCompetitionId,
@@ -22,23 +19,18 @@ import {
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
-export class InMemoryFixturePlanRepository
-  implements FixturePlanRepository, EditableFixturePlanRepository, FixtureEncounterOwnershipPort
-{
+export class InMemoryFixturePlanRepository implements FixturePlanRepository {
   readonly rows = new Map<string, FixturePlan>();
-  private readonly generationKeys = new Map<string, string>();
+  private readonly generationVersions = new Map<string, string>();
 
-  constructor(
-    private readonly encounters?: EncounterScheduleRepository,
-    private readonly matches?: OfficialMatchRepository,
-  ) {}
-
-  async findByGenerationKey(
+  async findByGenerationVersion(
     organizationId: OrganizationId,
     competitionId: CompetitionId,
-    generationKey: string,
+    generationVersion: number,
   ): Promise<FixturePlan | null> {
-    const id = this.generationKeys.get(key(organizationId, competitionId, generationKey));
+    const id = this.generationVersions.get(
+      versionKey(organizationId, competitionId, generationVersion),
+    );
     return id ? (this.rows.get(id) ?? null) : null;
   }
 
@@ -53,8 +45,20 @@ export class InMemoryFixturePlanRepository
       : null;
   }
 
+  async listActive(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+  ): Promise<FixturePlan[]> {
+    return [...this.rows.values()].filter(
+      (plan) =>
+        plan.organizationId === organizationId &&
+        plan.competitionId === competitionId &&
+        plan.status === "active",
+    );
+  }
+
   async containsEncounter(
-    input: Parameters<FixtureEncounterOwnershipPort["containsEncounter"]>[0],
+    input: Parameters<FixturePlanRepository["containsEncounter"]>[0],
   ): Promise<boolean> {
     for (const plan of this.rows.values()) {
       if (
@@ -79,79 +83,62 @@ export class InMemoryFixturePlanRepository
   async save(
     plan: FixturePlan,
   ): Promise<{ readonly plan: FixturePlan; readonly created: boolean }> {
-    const generationKey = key(plan.organizationId, plan.competitionId, plan.generationKey);
-    const existingId = this.generationKeys.get(generationKey);
+    const key = versionKey(plan.organizationId, plan.competitionId, plan.generationVersion);
+    const existingId = this.generationVersions.get(key);
     if (existingId) return { plan: this.rows.get(existingId) as FixturePlan, created: false };
     this.rows.set(plan.id, plan);
-    this.generationKeys.set(generationKey, plan.id);
-    await this.syncEncounterSnapshots(plan);
+    this.generationVersions.set(key, plan.id);
     return { plan, created: true };
   }
 
-  async update(plan: FixturePlan): Promise<FixturePlan | null> {
-    const existing = this.rows.get(plan.id);
-    if (
-      !existing ||
-      existing.organizationId !== plan.organizationId ||
-      existing.competitionId !== plan.competitionId ||
-      existing.revision !== plan.revision
-    ) {
-      return null;
-    }
-    const updated = { ...plan, revision: plan.revision + 1 };
-    this.rows.set(plan.id, updated);
-    await this.syncEncounterSnapshots(updated);
+  async updateEncounter(
+    input: Parameters<FixturePlanRepository["updateEncounter"]>[0],
+  ): Promise<FixturePlan | null> {
+    const existing = await this.findById(
+      input.organizationId,
+      input.competitionId,
+      input.fixturePlanId,
+    );
+    if (!existing || existing.revision !== input.revision) return null;
+    const updated = {
+      ...replaceEncounter(existing, input.encounter),
+      revision: existing.revision + 1,
+    };
+    this.rows.set(updated.id, updated);
     return updated;
   }
 
-  private async syncEncounterSnapshots(plan: FixturePlan): Promise<void> {
-    if (!this.encounters && !this.matches) return;
-    const createdAt = new Date();
-    for (const stage of plan.stages) {
-      for (const round of stage.rounds) {
-        for (const encounter of round.encounters) {
-          if (encounter.home.kind !== "team" || encounter.away.kind !== "team") continue;
-          await this.encounters?.upsert({
-            encounterId: encounter.id,
-            organizationId: plan.organizationId,
-            competitionId: plan.competitionId,
-            homeTeamId: encounter.home.teamId,
-            awayTeamId: encounter.away.teamId,
-            scheduledStartAt: encounter.scheduledStartAt,
-            officialMatchCount: encounter.officialMatchCount,
-          });
-          if (encounter.series) {
-            await this.matches?.upsertMany(
-              encounter.series.officialMatches.map((match) => ({
-                ...match,
-                encounterId: encounter.id,
-                organizationId: plan.organizationId,
-                competitionId: plan.competitionId,
-                status: "scheduled",
-                createdAt,
-              })),
-            );
-          }
-        }
+  async markSuperseded(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+    exceptPlanId: string,
+  ): Promise<void> {
+    for (const [id, plan] of this.rows) {
+      if (
+        plan.organizationId !== organizationId ||
+        plan.competitionId !== competitionId ||
+        plan.id === exceptPlanId ||
+        plan.status !== "active"
+      ) {
+        continue;
       }
+      this.rows.set(id, { ...plan, status: "superseded" });
     }
   }
 }
 
-export class PostgresFixturePlanRepository
-  implements FixturePlanRepository, EditableFixturePlanRepository, FixtureEncounterOwnershipPort
-{
+export class PostgresFixturePlanRepository implements FixturePlanRepository {
   constructor(private readonly pool: Pool) {}
 
-  async findByGenerationKey(
+  async findByGenerationVersion(
     organizationId: OrganizationId,
     competitionId: CompetitionId,
-    generationKey: string,
+    generationVersion: number,
   ): Promise<FixturePlan | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT id FROM fixture_plans
-       WHERE organization_id = $1 AND competition_id = $2 AND generation_key = $3`,
-      [organizationId, competitionId, generationKey],
+       WHERE organization_id = $1 AND competition_id = $2 AND generation_version = $3`,
+      [organizationId, competitionId, generationVersion],
     );
     const id = result.rows[0]?.id as string | undefined;
     return id ? this.findById(organizationId, competitionId, id) : null;
@@ -164,9 +151,9 @@ export class PostgresFixturePlanRepository
   ): Promise<FixturePlan | null> {
     const executor = getPgExecutor(this.pool);
     const planResult = await executor.query(
-      `SELECT id, revision, generation_key, generation_fingerprint, organization_id,
-              competition_id, rules_version,
-              generation_version, format, time_zone, seed
+      `SELECT id, revision, status, generation_key, generation_fingerprint, organization_id,
+              competition_id, rules_version, generation_version, format, time_zone,
+              home_and_away, seed
        FROM fixture_plans
        WHERE id = $1 AND organization_id = $2 AND competition_id = $3`,
       [fixturePlanId, organizationId, competitionId],
@@ -200,8 +187,24 @@ export class PostgresFixturePlanRepository
     return rehydratePlan(planRow, stageResult.rows, roundResult.rows, encounterResult.rows);
   }
 
+  async listActive(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+  ): Promise<FixturePlan[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id FROM fixture_plans
+       WHERE organization_id = $1 AND competition_id = $2 AND status = 'active'
+       ORDER BY generation_version`,
+      [organizationId, competitionId],
+    );
+    const plans = await Promise.all(
+      result.rows.map((row) => this.findById(organizationId, competitionId, row.id as string)),
+    );
+    return plans.filter((plan): plan is FixturePlan => plan !== null);
+  }
+
   async containsEncounter(
-    input: Parameters<FixtureEncounterOwnershipPort["containsEncounter"]>[0],
+    input: Parameters<FixturePlanRepository["containsEncounter"]>[0],
   ): Promise<boolean> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT 1 FROM fixture_encounters
@@ -217,14 +220,15 @@ export class PostgresFixturePlanRepository
     const executor = getPgExecutor(this.pool);
     const inserted = await executor.query(
       `INSERT INTO fixture_plans (
-         id, revision, generation_key, generation_fingerprint, organization_id, competition_id,
-         rules_version, generation_version, format, time_zone, seed
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
-       ON CONFLICT (organization_id, competition_id, generation_key) DO NOTHING
+         id, revision, status, generation_key, generation_fingerprint, organization_id,
+         competition_id, rules_version, generation_version, format, time_zone, home_and_away, seed
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb)
+       ON CONFLICT (organization_id, competition_id, generation_version) DO NOTHING
        RETURNING id`,
       [
         plan.id,
         plan.revision,
+        plan.status,
         plan.generationKey,
         plan.generationFingerprint,
         plan.organizationId,
@@ -233,16 +237,18 @@ export class PostgresFixturePlanRepository
         plan.generationVersion,
         plan.format,
         plan.timeZone,
+        plan.homeAndAway,
         JSON.stringify(plan.seed),
       ],
     );
     if (!inserted.rows[0]) {
-      const existing = await this.findByGenerationKey(
+      const existing = await this.findByGenerationVersion(
         plan.organizationId,
         plan.competitionId,
-        plan.generationKey,
+        plan.generationVersion,
       );
-      if (!existing) throw new Error("Fixture generation key conflict without a persisted plan");
+      if (!existing)
+        throw new Error("Fixture generation version conflict without a persisted plan");
       return { plan: existing, created: false };
     }
     for (const stage of plan.stages) {
@@ -275,39 +281,44 @@ export class PostgresFixturePlanRepository
     return { plan, created: true };
   }
 
-  async update(plan: FixturePlan): Promise<FixturePlan | null> {
+  async updateEncounter(
+    input: Parameters<FixturePlanRepository["updateEncounter"]>[0],
+  ): Promise<FixturePlan | null> {
     const executor = getPgExecutor(this.pool);
     const bumped = await executor.query(
       `UPDATE fixture_plans SET revision = revision + 1, updated_at = now()
        WHERE id = $1 AND organization_id = $2 AND competition_id = $3 AND revision = $4
        RETURNING revision`,
-      [plan.id, plan.organizationId, plan.competitionId, plan.revision],
+      [input.fixturePlanId, input.organizationId, input.competitionId, input.revision],
     );
-    const revision = bumped.rows[0]?.revision as number | undefined;
-    if (!revision) return null;
-    for (const stage of plan.stages) {
-      for (const round of stage.rounds) {
-        for (const encounter of round.encounters) {
-          await executor.query(
-            `UPDATE fixture_encounters SET home_slot = $1::jsonb, away_slot = $2::jsonb,
-                    scheduled_start_at = $3
-             WHERE id = $4 AND fixture_plan_id = $5 AND organization_id = $6 AND competition_id = $7`,
-            [
-              JSON.stringify(encounter.home),
-              JSON.stringify(encounter.away),
-              encounter.scheduledStartAt.toISOString(),
-              encounter.id,
-              plan.id,
-              plan.organizationId,
-              plan.competitionId,
-            ],
-          );
-          await upsertEncounterSnapshot(executor, plan, encounter);
-          await upsertFixtureOfficialMatches(executor, plan, encounter);
-        }
-      }
-    }
-    return { ...plan, revision: Number(revision) };
+    if (!bumped.rows[0]) return null;
+    await executor.query(
+      `UPDATE fixture_encounters SET home_slot = $1::jsonb, away_slot = $2::jsonb,
+              scheduled_start_at = $3
+       WHERE id = $4 AND fixture_plan_id = $5 AND organization_id = $6 AND competition_id = $7`,
+      [
+        JSON.stringify(input.encounter.home),
+        JSON.stringify(input.encounter.away),
+        input.encounter.scheduledStartAt.toISOString(),
+        input.encounter.id,
+        input.fixturePlanId,
+        input.organizationId,
+        input.competitionId,
+      ],
+    );
+    return this.findById(input.organizationId, input.competitionId, input.fixturePlanId);
+  }
+
+  async markSuperseded(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+    exceptPlanId: string,
+  ): Promise<void> {
+    await getPgExecutor(this.pool).query(
+      `UPDATE fixture_plans SET status = 'superseded', updated_at = now()
+       WHERE organization_id = $1 AND competition_id = $2 AND id <> $3 AND status = 'active'`,
+      [organizationId, competitionId, exceptPlanId],
+    );
   }
 }
 
@@ -338,7 +349,6 @@ async function insertEncounter(
       encounter.officialMatchCount,
     ],
   );
-  await upsertEncounterSnapshot(executor, plan, encounter);
   if (!encounter.series) return;
   await executor.query(
     `INSERT INTO encounter_series (
@@ -353,56 +363,6 @@ async function insertEncounter(
       plan.competitionId,
       encounter.series.resolutionMode,
       encounter.series.officialMatches.length,
-    ],
-  );
-  await upsertFixtureOfficialMatches(executor, plan, encounter);
-}
-
-async function upsertFixtureOfficialMatches(
-  executor: Executor,
-  plan: FixturePlan,
-  encounter: FixtureEncounter,
-): Promise<void> {
-  if (!encounter.series || encounter.home.kind !== "team" || encounter.away.kind !== "team") {
-    return;
-  }
-  for (const match of encounter.series.officialMatches) {
-    await executor.query(
-      `INSERT INTO official_matches (
-         id, encounter_id, organization_id, competition_id, slot, status, created_at
-       ) VALUES ($1, $2, $3, $4, $5, 'scheduled', now())
-       ON CONFLICT (encounter_id, slot) DO NOTHING`,
-      [match.id, encounter.id, plan.organizationId, plan.competitionId, match.slot],
-    );
-  }
-}
-
-async function upsertEncounterSnapshot(
-  executor: Executor,
-  plan: FixturePlan,
-  encounter: FixtureEncounter,
-): Promise<void> {
-  if (encounter.home.kind !== "team" || encounter.away.kind !== "team") return;
-  await executor.query(
-    `INSERT INTO encounter_schedule_snapshots (
-       encounter_id, organization_id, competition_id, home_team_id, away_team_id,
-       scheduled_start_at, official_match_count
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-     ON CONFLICT (encounter_id) DO UPDATE SET
-       home_team_id = EXCLUDED.home_team_id,
-       away_team_id = EXCLUDED.away_team_id,
-       scheduled_start_at = EXCLUDED.scheduled_start_at,
-       official_match_count = EXCLUDED.official_match_count
-     WHERE encounter_schedule_snapshots.organization_id = EXCLUDED.organization_id
-       AND encounter_schedule_snapshots.competition_id = EXCLUDED.competition_id`,
-    [
-      encounter.id,
-      plan.organizationId,
-      plan.competitionId,
-      encounter.home.teamId,
-      encounter.away.teamId,
-      encounter.scheduledStartAt.toISOString(),
-      encounter.officialMatchCount,
     ],
   );
 }
@@ -436,6 +396,7 @@ function rehydratePlan(
   return {
     id: row.id,
     revision: Number(row.revision),
+    status: row.status,
     generationKey: row.generation_key,
     generationFingerprint: row.generation_fingerprint,
     organizationId: asOrganizationId(row.organization_id),
@@ -444,6 +405,7 @@ function rehydratePlan(
     generationVersion: Number(row.generation_version),
     format: row.format,
     timeZone: row.time_zone,
+    homeAndAway: Boolean(row.home_and_away),
     seed: jsonArray(row.seed).map(asTeamId),
     stages,
   };
@@ -468,9 +430,9 @@ function rehydrateEncounter(row: EncounterRow): FixtureEncounter {
         ? {
             id: row.series_id,
             resolutionMode: row.resolution_mode,
-            officialMatches: slots.map((slot) => ({
-              id: asOfficialMatchSlotId(`${id}:official-match:${slot}`),
-              slot,
+            officialMatches: slots.map((matchSlot) => ({
+              id: asOfficialMatchSlotId(`${id}:official-match:${matchSlot}`),
+              slot: matchSlot,
             })),
           }
         : null,
@@ -532,13 +494,18 @@ function requiredNumber(value: unknown): number {
   return value;
 }
 
-function key(organizationId: string, competitionId: string, generationKey: string): string {
-  return `${organizationId}\u0000${competitionId}\u0000${generationKey}`;
+function versionKey(
+  organizationId: string,
+  competitionId: string,
+  generationVersion: number,
+): string {
+  return `${organizationId}\u0000${competitionId}\u0000${generationVersion}`;
 }
 
 interface PlanRow {
   id: string;
   revision: number;
+  status: FixturePlan["status"];
   generation_key: string;
   generation_fingerprint: string;
   organization_id: string;
@@ -547,6 +514,7 @@ interface PlanRow {
   generation_version: number;
   format: FixturePlan["format"];
   time_zone: string;
+  home_and_away: boolean;
   seed: unknown;
 }
 

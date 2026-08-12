@@ -4,22 +4,16 @@ import {
   GetCompetitionFixtureUseCase,
   MaterializeOfficialMatchesForEncounterUseCase,
   UpsertEncounterScheduleSnapshotUseCase,
+  type EncounterMutationLockPort,
   type EncounterParticipantValidationPort,
   type EncounterScheduleRepository,
   type CompetitionFixtureSourcePort,
-  type EditableFixturePlanRepository,
   type FixtureAuditPort,
-  type FixtureEncounterOwnershipPort,
   type FixturePlanRepository,
   type OfficialMatchRepository,
 } from "@futrob/scheduling";
-import type {
-  AuthorizationPort,
-  EncounterMutationLockPort,
-  EventPublisherPort,
-  TransactionPort,
-} from "@futrob/shared-kernel";
-import type { OfficialResultRepository } from "@futrob/results";
+import type { AuthorizationPort, EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
+import type { OfficialMatchSelectionRepository, OfficialResultRepository } from "@futrob/results";
 import type { Pool } from "pg";
 import {
   InMemoryEncounterScheduleRepository,
@@ -37,6 +31,7 @@ import {
 import {
   InMemoryFixtureAuditPort,
   OfficialResultFixtureEditGuard,
+  OfficialResultOccupancyGuard,
   PostgresFixtureAuditPort,
 } from "@/adapters/scheduling/fixture-editing.adapters.ts";
 
@@ -48,6 +43,7 @@ export function createSchedulingModule(input: {
   readonly eventPublisher: EventPublisherPort;
   readonly transaction: TransactionPort;
   readonly officialResults: Pick<OfficialResultRepository, "findApprovedByEncounter">;
+  readonly officialSelections: Pick<OfficialMatchSelectionRepository, "findLatestByEncounter">;
   readonly encounterMutationLock: EncounterMutationLockPort;
 }) {
   const encounters: EncounterScheduleRepository = input.pool
@@ -56,11 +52,9 @@ export function createSchedulingModule(input: {
   const officialMatches: OfficialMatchRepository = input.pool
     ? new PostgresOfficialMatchRepository(input.pool)
     : new InMemoryOfficialMatchRepository();
-  const fixturePlans: FixturePlanRepository &
-    EditableFixturePlanRepository &
-    FixtureEncounterOwnershipPort = input.pool
+  const fixturePlans: FixturePlanRepository = input.pool
     ? new PostgresFixturePlanRepository(input.pool)
-    : new InMemoryFixturePlanRepository(encounters, officialMatches);
+    : new InMemoryFixturePlanRepository();
   const fixtureAudit: FixtureAuditPort = input.pool
     ? new PostgresFixtureAuditPort(input.pool)
     : new InMemoryFixtureAuditPort();
@@ -73,8 +67,11 @@ export function createSchedulingModule(input: {
     generateFixture: new GenerateCompetitionFixtureUseCase({
       authorization: input.authorization,
       clock,
+      encounters,
       eventPublisher: input.eventPublisher,
       fixtures: fixturePlans,
+      matches: officialMatches,
+      occupancy: new OfficialResultOccupancyGuard(input.officialResults),
       source: input.fixtureSource,
       transaction: input.transaction,
     }),
@@ -82,9 +79,15 @@ export function createSchedulingModule(input: {
       authorization: input.authorization,
       audit: fixtureAudit,
       clock,
-      editGuard: new OfficialResultFixtureEditGuard(officialMatches, input.officialResults),
+      editGuard: new OfficialResultFixtureEditGuard(
+        officialMatches,
+        input.officialResults,
+        input.officialSelections,
+      ),
+      encounters,
       eventPublisher: input.eventPublisher,
       fixtures: fixturePlans,
+      matches: officialMatches,
       mutationLock: input.encounterMutationLock,
       source: input.fixtureSource,
       transaction: input.transaction,

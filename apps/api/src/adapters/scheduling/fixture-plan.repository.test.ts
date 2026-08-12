@@ -1,12 +1,9 @@
 import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { generateFixturePlan } from "@futrob/scheduling";
 import { describe, expect, it } from "vite-plus/test";
-import { InMemoryEncounterScheduleRepository } from "./encounter-schedule.repository.ts";
 import { InMemoryFixturePlanRepository } from "./fixture-plan.repository.ts";
-import { InMemoryOfficialMatchRepository } from "./official-match.repository.ts";
 
 function plan(organization = "org-1") {
-  const seed = [asTeamId("team-a"), asTeamId("team-b")];
   return generateFixturePlan({
     organizationId: asOrganizationId(organization),
     competitionId: asCompetitionId("competition-1"),
@@ -18,7 +15,7 @@ function plan(organization = "org-1") {
     roundIntervalDays: 7,
     officialMatchCounts: { regular: 1, knockout: 2 },
     resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
-    seed,
+    seed: [asTeamId("team-a"), asTeamId("team-b")],
     homeAndAway: false,
   });
 }
@@ -36,63 +33,55 @@ describe("InMemoryFixturePlanRepository", () => {
     expect(left.plan).toEqual(right.plan);
   });
 
-  it("scopes reads and optimistic edits by organization", async () => {
+  it("scopes reads and optimistic encounter edits by organization", async () => {
     const repository = new InMemoryFixturePlanRepository();
     const fixture = plan();
     await repository.save(fixture);
+    const encounter = fixture.stages[0]!.rounds[0]!.encounters[0]!;
 
     expect(
       await repository.findById(asOrganizationId("org-2"), fixture.competitionId, fixture.id),
     ).toBeNull();
-    const updated = await repository.update({ ...fixture, timeZone: "UTC" });
-    const stale = await repository.update({ ...fixture, timeZone: "America/Bogota" });
+    const updated = await repository.updateEncounter({
+      organizationId: fixture.organizationId,
+      competitionId: fixture.competitionId,
+      fixturePlanId: fixture.id,
+      revision: fixture.revision,
+      encounter: { ...encounter, scheduledStartAt: new Date("2026-09-02T01:00:00.000Z") },
+    });
+    const stale = await repository.updateEncounter({
+      organizationId: fixture.organizationId,
+      competitionId: fixture.competitionId,
+      fixturePlanId: fixture.id,
+      revision: fixture.revision,
+      encounter: { ...encounter, scheduledStartAt: new Date("2026-09-03T01:00:00.000Z") },
+    });
 
     expect(updated?.revision).toBe(2);
     expect(stale).toBeNull();
   });
 
-  it("materializes concrete pairings for the official-match workflow and skips byes", async () => {
-    const encounters = new InMemoryEncounterScheduleRepository();
-    const matches = new InMemoryOfficialMatchRepository();
-    const repository = new InMemoryFixturePlanRepository(encounters, matches);
-    const fixture = generateFixturePlan({
-      organizationId: asOrganizationId("org-1"),
-      competitionId: asCompetitionId("competition-1"),
+  it("occupies one generation version per competition", async () => {
+    const repository = new InMemoryFixturePlanRepository();
+    const first = plan();
+    const shifted = generateFixturePlan({
+      organizationId: first.organizationId,
+      competitionId: first.competitionId,
       generationVersion: 1,
       rulesVersion: 1,
       format: "league",
       timeZone: "America/Lima",
-      startsAt: new Date("2026-09-01T01:00:00.000Z"),
+      startsAt: new Date("2026-09-08T01:00:00.000Z"),
       roundIntervalDays: 7,
       officialMatchCounts: { regular: 1, knockout: 2 },
       resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
-      seed: [asTeamId("team-a"), asTeamId("team-b"), asTeamId("team-c")],
+      seed: [asTeamId("team-a"), asTeamId("team-b")],
       homeAndAway: false,
     });
+    await repository.save(first);
+    const replay = await repository.save(shifted);
 
-    await repository.save(fixture);
-
-    const generatedEncounters = fixture.stages.flatMap((stage) =>
-      stage.rounds.flatMap((round) => round.encounters),
-    );
-    const concrete = generatedEncounters.find(
-      (encounter) => encounter.home.kind === "team" && encounter.away.kind === "team",
-    );
-    const bye = generatedEncounters.find(
-      (encounter) => encounter.home.kind === "bye" || encounter.away.kind === "bye",
-    );
-    expect(concrete).toBeDefined();
-    expect(bye).toBeDefined();
-    expect(await encounters.findById(concrete!.id)).toMatchObject({
-      organizationId: fixture.organizationId,
-      competitionId: fixture.competitionId,
-    });
-    expect(await encounters.findById(bye!.id)).toBeNull();
-    expect(await matches.listByEncounter(concrete!.id)).toEqual(
-      concrete!.series!.officialMatches.map((match) =>
-        expect.objectContaining({ id: match.id, slot: match.slot, status: "scheduled" }),
-      ),
-    );
-    expect(await matches.listByEncounter(bye!.id)).toEqual([]);
+    expect(replay.created).toBe(false);
+    expect(replay.plan.id).toBe(first.id);
   });
 });
