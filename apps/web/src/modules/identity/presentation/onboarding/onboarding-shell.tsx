@@ -3,7 +3,10 @@ import { Logo, Stepper, type StepperStep } from "@futrob/ui";
 import {
   SupportErrorAlert,
   type SupportError,
+  type SupportErrorAlertCopy,
 } from "@/shared/presentation/support-error-alert.tsx";
+import { LocaleSelect } from "@/shared/presentation/i18n/locale-select.tsx";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 interface OnboardingShellProps {
   readonly steps: readonly StepperStep[];
@@ -22,6 +25,7 @@ export function OnboardingShell({
   error,
   children,
 }: OnboardingShellProps) {
+  const { t } = useI18n();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
@@ -33,12 +37,31 @@ export function OnboardingShell({
     if (error) errorRef.current?.focus();
   }, [error]);
 
+  useEffect(() => {
+    document.title = `${title} | Futrob`;
+  }, [title]);
+
+  const supportCopy: SupportErrorAlertCopy = {
+    retryAfter: (seconds) => t("support.retryAfter", { seconds }),
+    codeLabel: t("support.codeLabel"),
+    copyAria: t("support.copy.aria"),
+    copyAction: t("support.copy.action"),
+    copyDone: t("support.copy.done"),
+    copySuccess: t("support.copy.success"),
+    copyFailure: t("support.copy.failure"),
+  };
+
   return (
     <main className="min-h-svh bg-background text-foreground">
       <div className="mx-auto flex min-h-svh w-full max-w-5xl flex-col px-5 py-6 sm:px-8 sm:py-10">
-        <Logo className="mx-auto h-10 w-auto" title="Futrob" />
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <Logo className="col-start-2 h-10 w-auto" title="Futrob" />
+          <div className="col-start-3 justify-self-end">
+            <LocaleSelect />
+          </div>
+        </div>
         <Stepper
-          aria-label="Progreso del onboarding"
+          aria-label={t("onboarding.shell.progress")}
           className="mx-auto mt-6 max-w-xl sm:mt-8"
           currentStepId={currentStepId}
           steps={steps}
@@ -57,7 +80,7 @@ export function OnboardingShell({
           </header>
           {error ? (
             <div className="mb-6 outline-none" ref={errorRef} tabIndex={-1}>
-              <SupportErrorAlert error={error} />
+              <SupportErrorAlert copy={supportCopy} error={error} />
             </div>
           ) : null}
           {children}

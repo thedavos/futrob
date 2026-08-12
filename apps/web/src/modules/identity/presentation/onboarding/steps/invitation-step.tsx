@@ -2,19 +2,21 @@
 
 import { useRef, useState } from "react";
 import { Field, FieldDescription, FieldError, FieldLabel, Input } from "@futrob/ui";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
-import { stepsByPath } from "../onboarding-step-meta.ts";
+import { stepsForPath } from "../onboarding-step-meta.ts";
 
 export function InvitationStep() {
   const flow = useOnboardingFlow();
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   function continueToReview() {
     if (!flow.draft.invitationToken.trim()) {
-      setValidationError("Pega el código de invitación para continuar.");
+      setValidationError(t("onboarding.invitation.token.required"));
       inputRef.current?.focus();
       return;
     }
@@ -24,14 +26,16 @@ export function InvitationStep() {
   return (
     <OnboardingShell
       currentStepId="invitation"
-      description="Escribe el código que recibiste para unirte a la competición al confirmar."
+      description={t("onboarding.invitation.description")}
       error={flow.error}
-      steps={stepsByPath.invitation}
-      title="Únete a una competición"
+      steps={stepsForPath(t, "invitation")}
+      title={t("onboarding.invitation.title")}
     >
       <div className="mx-auto w-full max-w-xl">
         <Field invalid={Boolean(validationError)}>
-          <FieldLabel htmlFor="invitation-token">Código de invitación</FieldLabel>
+          <FieldLabel htmlFor="invitation-token">
+            {t("onboarding.invitation.token.label")}
+          </FieldLabel>
           <Input
             aria-describedby={
               validationError ? "invitation-token-error" : "invitation-token-description"
@@ -43,7 +47,7 @@ export function InvitationStep() {
               flow.updateDraft({ invitationToken: event.target.value });
               setValidationError(null);
             }}
-            placeholder="Pega el código que recibiste"
+            placeholder={t("onboarding.invitation.token.placeholder")}
             ref={inputRef}
             value={flow.draft.invitationToken}
           />
@@ -53,7 +57,7 @@ export function InvitationStep() {
             </FieldError>
           ) : (
             <FieldDescription id="invitation-token-description">
-              Comprobaremos el código al confirmar. No se guardará con tu progreso.
+              {t("onboarding.invitation.token.description")}
             </FieldDescription>
           )}
         </Field>
@@ -66,8 +70,8 @@ export function InvitationStep() {
           flow.updateDraft({ invitationToken: "" });
           void flow.goTo("game-account", "player");
         }}
-        primaryLabel="Revisar invitación"
-        skipLabel="Continuar como jugador"
+        primaryLabel={t("onboarding.invitation.review")}
+        skipLabel={t("onboarding.invitation.continuePlayer")}
       />
     </OnboardingShell>
   );

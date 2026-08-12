@@ -17,14 +17,16 @@ import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import { FieldsetError } from "@/shared/presentation/forms/fieldset-error.tsx";
 import { GameEditionField } from "@/shared/presentation/forms/game-edition-field.tsx";
 import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PlatformChoice } from "@/shared/presentation/forms/platform-choice.tsx";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
-import { stepsByPath } from "../onboarding-step-meta.ts";
+import { stepsForPath } from "../onboarding-step-meta.ts";
 
 export function GameAccountStep() {
   const flow = useOnboardingFlow();
+  const { t } = useI18n();
   const path = flow.path ?? "player";
   const platformLabelId = useId();
   const editionLabelId = useId();
@@ -48,17 +50,17 @@ export function GameAccountStep() {
 
   function continueAfterAccount() {
     if (!draft.gameAccountIdentifier.trim()) {
-      setValidationError("Escribe tu identificador de EA.");
+      setValidationError(t("onboarding.account.identifier.required"));
       identifierRef.current?.focus();
       return;
     }
     if (!draft.platform) {
-      setValidationError("Selecciona la plataforma de esta cuenta.");
+      setValidationError(t("onboarding.account.platform.required"));
       document.querySelector<HTMLElement>("[data-platform-group] [role=radio]")?.focus();
       return;
     }
     if (!draft.gameEdition.trim()) {
-      setValidationError("Selecciona o escribe la edición del juego.");
+      setValidationError(t("onboarding.account.edition.required"));
       if (draft.customGameEdition) customEditionRef.current?.focus();
       else document.querySelector<HTMLElement>("[data-edition-group] [role=radio]")?.focus();
       return;
@@ -73,10 +75,10 @@ export function GameAccountStep() {
   return (
     <OnboardingShell
       currentStepId="game-account"
-      description="Registra tu identificador de EA sin compartir credenciales. Futrob lo usará para localizar tus partidos y estadísticas."
+      description={t("onboarding.account.description")}
       error={flow.error}
-      steps={stepsByPath[path]}
-      title="Configura tus datos de juego"
+      steps={stepsForPath(t, path)}
+      title={t("onboarding.account.title")}
     >
       <div className="mx-auto grid w-full max-w-2xl gap-8">
         {path === "organization" &&
@@ -87,10 +89,7 @@ export function GameAccountStep() {
             variant="info"
           >
             <InfoIcon aria-hidden="true" />
-            <AlertDescription>
-              La cuenta es personal, pero puedes usar la misma edición y plataforma de la
-              competición.
-            </AlertDescription>
+            <AlertDescription>{t("onboarding.account.reuse.description")}</AlertDescription>
             <Button
               className="col-start-2 mt-2 w-full sm:col-start-3 sm:row-start-1 sm:mt-0 sm:w-auto"
               onClick={() =>
@@ -104,7 +103,7 @@ export function GameAccountStep() {
               }
               variant="outline"
             >
-              Usar datos de la competición
+              {t("onboarding.account.reuse.action")}
             </Button>
           </Alert>
         ) : null}
@@ -112,7 +111,9 @@ export function GameAccountStep() {
           className="gap-3"
           invalid={Boolean(validationError && !draft.gameAccountIdentifier.trim())}
         >
-          <FieldLabel htmlFor="game-account-identifier">Identificador de EA</FieldLabel>
+          <FieldLabel htmlFor="game-account-identifier">
+            {t("onboarding.account.identifier.label")}
+          </FieldLabel>
           <Input
             aria-describedby={invalidField === "identifier" ? validationErrorId : undefined}
             aria-invalid={Boolean(validationError && !draft.gameAccountIdentifier.trim())}
@@ -123,7 +124,7 @@ export function GameAccountStep() {
               flow.updateDraft({ gameAccountIdentifier: event.target.value });
               setValidationError(null);
             }}
-            placeholder="ej. gamer23"
+            placeholder={t("onboarding.account.identifier.placeholder")}
             ref={identifierRef}
             value={draft.gameAccountIdentifier}
           />
@@ -136,7 +137,7 @@ export function GameAccountStep() {
 
         <fieldset className="m-0 border-0 p-0" data-platform-group>
           <legend className="mb-3 typo-label" id={platformLabelId}>
-            Plataforma
+            {t("onboarding.account.platform.label")}
           </legend>
           <ChoiceGroup<GamePlatformDto | "">
             aria-describedby={invalidField === "platform" ? validationErrorId : undefined}
@@ -161,6 +162,12 @@ export function GameAccountStep() {
         </fieldset>
 
         <GameEditionField
+          copy={{
+            legend: t("onboarding.competition.edition.legend"),
+            other: t("onboarding.competition.edition.other"),
+            customName: t("onboarding.competition.edition.name"),
+            customPlaceholder: t("onboarding.competition.edition.placeholder"),
+          }}
           custom={draft.customGameEdition}
           customInputId="custom-game-edition"
           customInputRef={customEditionRef}
@@ -196,11 +203,11 @@ export function GameAccountStep() {
         primaryLabel={
           path === "player"
             ? hasAny
-              ? "Continuar"
-              : "Vincular y continuar"
+              ? t("onboarding.account.continue")
+              : t("onboarding.account.linkContinue")
             : hasAny
-              ? "Revisar cuenta"
-              : "Vincular y revisar"
+              ? t("onboarding.account.review")
+              : t("onboarding.account.linkReview")
         }
       />
     </OnboardingShell>

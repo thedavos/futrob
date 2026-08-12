@@ -1,8 +1,27 @@
 import { describe, expect, it } from "vite-plus/test";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { finalizationError } from "./onboarding-finalization-errors.ts";
+import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
 
 describe("finalizationError", () => {
+  it("maps typed and unknown errors in English without exposing transport messages", () => {
+    const t = createTranslator("en");
+    expect(
+      finalizationError(
+        "invitation",
+        new IdentityOnboardingClientError(404, "organizations.invitation_not_found"),
+        t,
+      ),
+    ).toEqual({ message: "We couldn't find that invitation. Check the code and try again." });
+    expect(
+      finalizationError(
+        "player",
+        new IdentityOnboardingClientError(502, "provider.secret_message"),
+        t,
+      ),
+    ).toEqual({ message: "We couldn't save your player profile. Try again." });
+  });
+
   it.each([
     [
       "organizations.invitation_not_found",

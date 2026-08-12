@@ -4,15 +4,23 @@ import { useRef, useState } from "react";
 import { CompetitionDraftFields } from "@/modules/competitions/presentation/competition-draft-fields.tsx";
 import {
   type CompetitionDraftFieldError,
+  type CompetitionDraftFieldsValue,
   validateCompetitionDraftFields,
 } from "@/modules/competitions/presentation/validate-competition-draft-input.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
-import { stepsByPath } from "../onboarding-step-meta.ts";
+import {
+  localizedCompetitionFormats,
+  localizedCompetitionRegions,
+  stepsForPath,
+} from "../onboarding-step-meta.ts";
 
 export function CompetitionStep() {
   const flow = useOnboardingFlow();
+  const { t } = useI18n();
   const nameRef = useRef<HTMLInputElement>(null);
   const timeZoneRef = useRef<HTMLButtonElement>(null);
   const [fieldError, setFieldError] = useState<CompetitionDraftFieldError | null>(null);
@@ -45,7 +53,7 @@ export function CompetitionStep() {
       timeZone: draft.competitionTimeZone,
       format: draft.competitionFormat,
     };
-    const validation = validateCompetitionDraftFields(fields);
+    const validation = localizeValidation(validateCompetitionDraftFields(fields), fields, t);
     if (validation) {
       invalidate(validation);
       return;
@@ -62,13 +70,34 @@ export function CompetitionStep() {
   return (
     <OnboardingShell
       currentStepId="competition"
-      description="Crea un borrador de FC Clubs. Configurarás los equipos, el calendario y la publicación después."
+      description={t("onboarding.competition.description")}
       error={flow.error}
-      steps={stepsByPath.organization}
-      title="Configura tu primera competición"
+      steps={stepsForPath(t, "organization")}
+      title={t("onboarding.competition.title")}
     >
       <div className="mx-auto w-full max-w-2xl">
         <CompetitionDraftFields
+          copy={{
+            nameLabel: t("onboarding.competition.name.label"),
+            namePlaceholder: t("onboarding.competition.name.placeholder"),
+            gameEdition: {
+              legend: t("onboarding.competition.edition.legend"),
+              other: t("onboarding.competition.edition.other"),
+              customName: t("onboarding.competition.edition.name"),
+              customPlaceholder: t("onboarding.competition.edition.placeholder"),
+            },
+            platformLabel: t("onboarding.competition.platform.label"),
+            regionLabel: t("onboarding.competition.region.label"),
+            regionPlaceholder: t("onboarding.competition.region.placeholder"),
+            regions: localizedCompetitionRegions(t),
+            timeZoneLabel: t("onboarding.competition.timeZone.label"),
+            timeZonePlaceholder: t("onboarding.competition.timeZone.placeholder"),
+            formatLabel: t("onboarding.competition.format.label"),
+            initialFormatLabel: t("onboarding.competition.format.initial"),
+            formatPlaceholder: t("onboarding.competition.format.placeholder"),
+            formatDescription: t("onboarding.competition.format.description"),
+            formats: localizedCompetitionFormats(t),
+          }}
           fieldError={fieldError}
           nameInputRef={nameRef}
           onChange={(patch) => {
@@ -104,8 +133,29 @@ export function CompetitionStep() {
         loading={flow.saving}
         onBack={() => void flow.goTo("organization", "organization")}
         onPrimary={continueToAccount}
-        primaryLabel="Configurar cuenta"
+        primaryLabel={t("onboarding.competition.account")}
       />
     </OnboardingShell>
   );
+}
+
+function localizeValidation(
+  error: CompetitionDraftFieldError | null,
+  value: CompetitionDraftFieldsValue,
+  t: Translator,
+): CompetitionDraftFieldError | null {
+  if (!error) return null;
+  const message = {
+    name: value.name.trim()
+      ? t("onboarding.competition.validation.name.max")
+      : t("onboarding.competition.validation.name.required"),
+    edition: value.gameEdition.trim()
+      ? t("onboarding.competition.validation.edition.max")
+      : t("onboarding.competition.validation.edition.required"),
+    platform: t("onboarding.competition.validation.platform"),
+    region: t("onboarding.competition.validation.region"),
+    "time-zone": t("onboarding.competition.validation.timeZone"),
+    format: t("onboarding.competition.validation.format"),
+  }[error.field];
+  return { ...error, message };
 }

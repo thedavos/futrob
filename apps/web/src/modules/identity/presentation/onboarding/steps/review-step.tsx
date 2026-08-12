@@ -10,6 +10,8 @@ import {
   UsersThreeIcon,
 } from "@phosphor-icons/react";
 import type { OnboardingStepDto } from "@futrob/api-contracts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import {
   validCompleteAccount,
@@ -22,13 +24,14 @@ import {
   eaPlatformLabel,
   formatLabel,
   platformLabel,
-  stepsByPath,
+  stepsForPath,
 } from "../onboarding-step-meta.ts";
 
 export function OnboardingReview() {
   const flow = useOnboardingFlow();
+  const { t } = useI18n();
   const path = flow.path ?? "player";
-  const rows = reviewRows(flow);
+  const rows = reviewRows(flow, t);
   const canFinish =
     path === "organization"
       ? validOrganizationName(flow.draft.organizationName) &&
@@ -39,20 +42,20 @@ export function OnboardingReview() {
         : validOptionalAccount(flow.draft);
   const previous: OnboardingStepDto = path === "player" ? "club" : "game-account";
   const primaryLabel = flow.retryBlocked
-    ? `Reintentar en ${flow.retryAfterSeconds} s`
+    ? t("onboarding.review.retry", { seconds: flow.retryAfterSeconds })
     : path === "organization"
-      ? "Crear organización y competición"
+      ? t("onboarding.review.finish.organization")
       : path === "invitation"
-        ? "Aceptar invitación"
-        : "Entrar a mi espacio";
+        ? t("onboarding.review.finish.invitation")
+        : t("onboarding.review.finish.player");
 
   return (
     <OnboardingShell
       currentStepId="review"
-      description="Revisa qué se guardará al confirmar. Si recargas o cierras esta página antes de confirmar, tendrás que completar los datos otra vez."
+      description={t("onboarding.review.description")}
       error={flow.error}
-      steps={stepsByPath[path]}
-      title="Confirma tu configuración"
+      steps={stepsForPath(t, path)}
+      title={t("onboarding.review.title")}
     >
       <Card className="mx-auto w-full max-w-2xl" variant="elevated">
         <CardContent className="p-0">
@@ -70,15 +73,15 @@ export function OnboardingReview() {
                   {row.value ? (
                     <span>{row.value}</span>
                   ) : (
-                    <Badge variant="neutral">Pendiente</Badge>
+                    <Badge variant="neutral">{t("common.pending")}</Badge>
                   )}
                   {row.editStep ? (
                     <Button
-                      aria-label={`Editar ${row.label.toLowerCase()}`}
+                      aria-label={t("onboarding.review.edit", { label: row.label })}
                       onClick={() => void flow.goTo(row.editStep!, path)}
                       variant="link"
                     >
-                      Editar
+                      {t("common.edit")}
                     </Button>
                   ) : null}
                 </dd>
@@ -89,7 +92,7 @@ export function OnboardingReview() {
       </Card>
       {!canFinish ? (
         <p className="mt-4 text-center typo-caption text-muted-foreground">
-          Completa los datos pendientes antes de confirmar.
+          {t("onboarding.review.incomplete")}
         </p>
       ) : null}
       <OnboardingActions
@@ -110,15 +113,18 @@ interface OnboardingReviewRow {
   readonly editStep?: OnboardingStepDto;
 }
 
-function reviewRows(flow: ReturnType<typeof useOnboardingFlow>): readonly OnboardingReviewRow[] {
+function reviewRows(
+  flow: ReturnType<typeof useOnboardingFlow>,
+  t: Translator,
+): readonly OnboardingReviewRow[] {
   const selectedPath = flow.path ?? "player";
   const intention = {
-    organization: "Organizar",
-    invitation: "Unirme",
-    player: "Empezar como jugador",
+    organization: t("onboarding.intention.organization.label"),
+    invitation: t("onboarding.intention.invitation.label"),
+    player: t("onboarding.intention.player.label"),
   }[selectedPath];
   const base: OnboardingReviewRow = {
-    label: "Cómo empezarás",
+    label: t("onboarding.review.startingAs"),
     value: intention,
     icon: SignpostIcon,
     editStep: "intention",
@@ -127,56 +133,62 @@ function reviewRows(flow: ReturnType<typeof useOnboardingFlow>): readonly Onboar
     return [
       base,
       {
-        label: "Organización",
+        label: t("onboarding.review.organization"),
         value: flow.draft.organizationName.trim() || null,
         icon: UsersThreeIcon,
         editStep: "organization",
       },
       {
-        label: "Competición",
+        label: t("onboarding.review.competition"),
         value: competitionFromDraft(flow.draft)
-          ? `${flow.draft.competitionName.trim()} · ${formatLabel(flow.draft.competitionFormat!)} · ${platformLabel(flow.draft.competitionPlatform!)}`
+          ? `${flow.draft.competitionName.trim()} · ${formatLabel(flow.draft.competitionFormat!, t)} · ${platformLabel(flow.draft.competitionPlatform!)}`
           : null,
         icon: TrophyIcon,
         editStep: "competition",
       },
-      accountReviewRow(flow),
+      accountReviewRow(flow, t),
     ];
   }
   if (flow.path === "invitation") {
     return [
       base,
       {
-        label: "Competición",
-        value: flow.draft.invitationToken.trim() ? "Invitación lista para validar" : null,
+        label: t("onboarding.review.competition"),
+        value: flow.draft.invitationToken.trim() ? t("onboarding.review.invitationReady") : null,
         icon: TicketIcon,
         editStep: "invitation",
       },
-      accountReviewRow(flow),
+      accountReviewRow(flow, t),
     ];
   }
-  return [base, accountReviewRow(flow), clubReviewRow(flow)];
+  return [base, accountReviewRow(flow, t), clubReviewRow(flow, t)];
 }
 
-function accountReviewRow(flow: ReturnType<typeof useOnboardingFlow>): OnboardingReviewRow {
+function accountReviewRow(
+  flow: ReturnType<typeof useOnboardingFlow>,
+  t: Translator,
+): OnboardingReviewRow {
   const accountComplete = validCompleteAccount(flow.draft);
   return {
-    label: "Cuenta de juego",
+    label: t("onboarding.review.gameAccount"),
     value: accountComplete
       ? `${flow.draft.gameAccountIdentifier.trim()} · ${platformLabel(flow.draft.platform!)} · ${flow.draft.gameEdition.trim()}`
-      : "Perfil de jugador listo · Datos EA para después",
+      : t("onboarding.review.playerReady"),
     icon: UserIcon,
     editStep: "game-account",
   };
 }
 
-function clubReviewRow(flow: ReturnType<typeof useOnboardingFlow>): OnboardingReviewRow {
+function clubReviewRow(
+  flow: ReturnType<typeof useOnboardingFlow>,
+  t: Translator,
+): OnboardingReviewRow {
   const club = flow.draft.selectedExternalClub;
   return {
-    label: "Club EA",
+    label: t("onboarding.review.club"),
     value: club
       ? `${club.name} · ${eaPlatformLabel(club.platform)} · ID ${club.externalClubId}`
-      : "Sin club asociado por ahora",
+      : t("onboarding.review.noClub"),
     icon: ShieldIcon,
     editStep: "club",
   };

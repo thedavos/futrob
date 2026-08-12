@@ -29,16 +29,14 @@ import type {
   PlayerGameAccountInputDto,
   SearchClubsQueryInput,
 } from "@futrob/api-contracts";
-import {
-  IdentityOnboardingClientError,
-  identityBrowserClient,
-} from "@/modules/identity/presentation/identity-browser-client.ts";
+import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { useSaveOnboardingProgressMutation } from "@/modules/identity/presentation/identity-queries.ts";
 import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
 import type { SupportError } from "@/shared/presentation/support-error-alert.tsx";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { finalizationError } from "./onboarding-finalization-errors.ts";
 import {
   isOnboardingPathname,
@@ -150,6 +148,7 @@ export function OnboardingFlowProvider({
   /** Production cold-loads at intention; Storybook/harness may honor persisted step. */
   bootstrap?: "cold" | "persisted";
 }>) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const queryClient = useQueryClient();
@@ -213,10 +212,8 @@ export function OnboardingFlowProvider({
         try {
           const result = await gateway.checkOrganizationName({ name });
           return result.available;
-        } catch (caught) {
-          setError(
-            supportErrorFromCaught(caught, "No pudimos verificar el nombre. Inténtalo nuevamente."),
-          );
+        } catch {
+          setError({ message: t("errors.onboarding.organizationCheck") });
           return null;
         } finally {
           setSaving(false);
@@ -235,10 +232,8 @@ export function OnboardingFlowProvider({
         await navigate({ to: routeForOnboardingStep(step) });
         try {
           await saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step });
-        } catch (caught) {
-          setError(
-            supportErrorFromCaught(caught, "No pudimos guardar tu progreso. Inténtalo nuevamente."),
-          );
+        } catch {
+          setError({ message: t("errors.onboarding.saveProgress") });
           setPathState(previousPath);
           setCurrentStep(previousStep);
           await navigate({ to: routeForOnboardingStep(previousStep) });
@@ -292,7 +287,7 @@ export function OnboardingFlowProvider({
           }
         } catch (caught) {
           finishingRef.current = false;
-          const nextError = finalizationError(path, caught);
+          const nextError = finalizationError(path, caught, t);
           retry.start(nextError.retryAfterSeconds);
           setError(nextError);
           setLeaving(false);
@@ -314,6 +309,7 @@ export function OnboardingFlowProvider({
       retry.start,
       saveProgressMutation,
       saving,
+      t,
     ],
   );
 
@@ -327,24 +323,13 @@ export function OnboardingFlowProvider({
       {shouldSyncRoute ? (
         <>
           <Navigate to={expectedRoute} replace />
-          <RoutePendingState message="Recuperando tu progreso…" />
+          <RoutePendingState message={t("onboarding.loading.progress")} />
         </>
       ) : (
         children
       )}
     </OnboardingFlowContext>
   );
-}
-
-function supportErrorFromCaught(caught: unknown, message: string): SupportError {
-  const requestId = caught instanceof IdentityOnboardingClientError ? caught.requestId : undefined;
-  const retryAfterSeconds =
-    caught instanceof IdentityOnboardingClientError ? caught.retryAfterSeconds : undefined;
-  return {
-    message,
-    ...(requestId ? { requestId } : {}),
-    ...(retryAfterSeconds ? { retryAfterSeconds } : {}),
-  };
 }
 
 function markOnboardingCompletedInCache(queryClient: QueryClient, path: OnboardingPathDto): void {

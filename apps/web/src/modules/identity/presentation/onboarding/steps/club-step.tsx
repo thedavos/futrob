@@ -40,12 +40,13 @@ import {
   eaSearchPlatforms,
   formatProviderGameEdition,
   MAX_EXTERNAL_CLUB_SEARCH_RESULTS,
-  stepsByPath,
+  stepsForPath,
 } from "../onboarding-step-meta.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import { SupportErrorAlert } from "@/shared/presentation/support-error-alert.tsx";
 import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 const clubResultItemClassName =
   "min-h-0 flex-row items-center justify-start gap-4 rounded-xl py-3 pr-14 pl-3 text-left sm:min-h-0 sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:p-3 sm:pr-14 sm:text-left";
@@ -69,6 +70,7 @@ type ClubSearchState =
 
 export function ClubStep() {
   const flow = useOnboardingFlow();
+  const { t } = useI18n();
   const clubNameId = useId();
   const statusId = useId();
   const queryRef = useRef<HTMLInputElement>(null);
@@ -108,8 +110,8 @@ export function ClubStep() {
         status: "error",
         query: trimmed,
         message: retryAfterSeconds
-          ? "Alcanzaste el límite temporal de búsquedas."
-          : "No pudimos buscar clubs. Inténtalo nuevamente.",
+          ? t("onboarding.club.search.rateLimited")
+          : t("onboarding.club.search.failed"),
         requestId: GameDataClientError.is(cause) ? cause.requestId : undefined,
         retryAfterSeconds,
       });
@@ -145,27 +147,27 @@ export function ClubStep() {
 
   const liveStatus =
     search.status === "loading"
-      ? `Buscando clubs para «${search.query}»…`
+      ? t("onboarding.club.search.loadingStatus", { query: search.query })
       : search.status === "empty"
-        ? `No encontramos clubs para «${search.query}».`
+        ? t("onboarding.club.search.empty", { query: search.query })
         : search.status === "success"
-          ? `${search.clubs.length} club${search.clubs.length === 1 ? "" : "s"} encontrado${search.clubs.length === 1 ? "" : "s"}.`
+          ? t("onboarding.club.search.results", { count: search.clubs.length })
           : search.status === "error"
-            ? "La búsqueda falló. Puedes intentarlo de nuevo."
+            ? t("onboarding.club.search.failedStatus")
             : null;
 
   return (
     <OnboardingShell
       currentStepId="club"
-      description="La asociación es opcional y declarativa. No verifica propiedad, ni crea un Team de competición ni te incorpora a una plantilla."
+      description={t("onboarding.club.description")}
       error={flow.error}
-      steps={stepsByPath.player}
-      title="Asocia tu club EA"
+      steps={stepsForPath(t, "player")}
+      title={t("onboarding.club.title")}
     >
       <div className="mx-auto grid w-full max-w-2xl gap-6">
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <Field className="gap-3">
-            <FieldLabel htmlFor={clubNameId}>Nombre del club</FieldLabel>
+            <FieldLabel htmlFor={clubNameId}>{t("onboarding.club.name.label")}</FieldLabel>
             <Input
               autoComplete="off"
               id={clubNameId}
@@ -180,7 +182,7 @@ export function ClubStep() {
                   void searchClubs();
                 }
               }}
-              placeholder="ej. Night Owls"
+              placeholder={t("onboarding.club.name.placeholder")}
               ref={queryRef}
               value={query}
             />
@@ -191,7 +193,7 @@ export function ClubStep() {
                 <TooltipTrigger
                   render={
                     <Button
-                      aria-label="Restablecer búsqueda"
+                      aria-label={t("onboarding.club.reset")}
                       disabled={!canResetSearch || search.status === "loading" || flow.saving}
                       onClick={resetClubSearch}
                       size="icon"
@@ -201,7 +203,7 @@ export function ClubStep() {
                 >
                   <ArrowCounterClockwiseIcon aria-hidden="true" strokeWidth={2} />
                 </TooltipTrigger>
-                <TooltipContent>Restablecer búsqueda</TooltipContent>
+                <TooltipContent>{t("onboarding.club.reset")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <Select
@@ -215,7 +217,7 @@ export function ClubStep() {
               value={platform}
             >
               <SelectTrigger
-                aria-label="Plataforma EA para la búsqueda"
+                aria-label={t("onboarding.club.platform.aria")}
                 className="size-(--control-height) max-sm:size-(--control-height-touch) shrink-0 cursor-pointer justify-center gap-0 border-border-strong p-0 [&_[data-slot=select-trigger-icon]]:hidden"
               >
                 <PlatformLogo className="size-4" platform={gamePlatformForEaSearchLogo(platform)} />
@@ -243,10 +245,10 @@ export function ClubStep() {
               variant="outline"
             >
               {search.status === "loading"
-                ? "Buscando…"
+                ? t("onboarding.club.search.loading")
                 : retry.blocked
-                  ? `Reintentar en ${retry.remainingSeconds} s`
-                  : "Buscar club"}
+                  ? t("onboarding.club.search.retry", { seconds: retry.remainingSeconds })
+                  : t("onboarding.club.search.action")}
             </Button>
           </div>
         </div>
@@ -261,6 +263,15 @@ export function ClubStep() {
 
         {search.status === "error" ? (
           <SupportErrorAlert
+            copy={{
+              retryAfter: (seconds) => t("support.retryAfter", { seconds }),
+              codeLabel: t("support.codeLabel"),
+              copyAria: t("support.copy.aria"),
+              copyAction: t("support.copy.action"),
+              copyDone: t("support.copy.done"),
+              copySuccess: t("support.copy.success"),
+              copyFailure: t("support.copy.failure"),
+            }}
             error={{
               ...search,
               retryAfterSeconds: retry.remainingSeconds || undefined,
@@ -271,7 +282,7 @@ export function ClubStep() {
         {search.status === "success" ? (
           <ChoiceGroup
             aria-describedby={statusId}
-            aria-label="Resultados de clubs EA"
+            aria-label={t("onboarding.club.results.aria")}
             className="grid-cols-1"
             onValueChange={(value: string) => {
               const club = search.clubs.find((item) => item.externalClubId === value);
@@ -317,7 +328,7 @@ export function ClubStep() {
           setQuery("");
           void flow.goTo("review", "player");
         }}
-        primaryLabel="Revisar club"
+        primaryLabel={t("onboarding.club.review")}
       />
     </OnboardingShell>
   );

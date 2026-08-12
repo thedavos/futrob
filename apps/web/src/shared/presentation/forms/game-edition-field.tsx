@@ -11,6 +11,20 @@ import {
 import { FieldsetError } from "@/shared/presentation/forms/fieldset-error.tsx";
 import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
 
+export interface GameEditionFieldCopy {
+  readonly legend: string;
+  readonly other: string;
+  readonly customName: string;
+  readonly customPlaceholder: string;
+}
+
+const defaultCopy: GameEditionFieldCopy = {
+  legend: "Edición del juego",
+  other: "Otra edición",
+  customName: "Nombre de la edición",
+  customPlaceholder: "ej. FC 24",
+};
+
 export function GameEditionField({
   legendId,
   customInputId,
@@ -22,6 +36,7 @@ export function GameEditionField({
   errorMessage,
   customInputRef,
   disabled = false,
+  copy = defaultCopy,
 }: {
   readonly legendId: string;
   readonly customInputId: string;
@@ -33,11 +48,12 @@ export function GameEditionField({
   readonly errorMessage: string | null;
   readonly customInputRef?: Ref<HTMLInputElement>;
   readonly disabled?: boolean;
+  readonly copy?: GameEditionFieldCopy;
 }) {
   return (
     <fieldset className="m-0 border-0 p-0" data-edition-group data-competition-edition>
       <legend className="mb-3 typo-label" id={legendId}>
-        Edición del juego
+        {copy.legend}
       </legend>
       <ChoiceGroup
         aria-describedby={invalid ? errorId : undefined}
@@ -58,12 +74,12 @@ export function GameEditionField({
         ))}
         <ChoiceGroupItem appearance="pill" disabled={disabled} value="__other__">
           <ChoiceGroupIndicator className="static size-5" />
-          Otra edición
+          {copy.other}
         </ChoiceGroupItem>
       </ChoiceGroup>
       {custom ? (
         <Field className="mt-4 gap-3" invalid={invalid}>
-          <FieldLabel htmlFor={customInputId}>Nombre de la edición</FieldLabel>
+          <FieldLabel htmlFor={customInputId}>{copy.customName}</FieldLabel>
           <Input
             aria-describedby={invalid ? errorId : undefined}
             aria-invalid={invalid}
@@ -71,7 +87,7 @@ export function GameEditionField({
             id={customInputId}
             maxLength={40}
             onChange={(event) => onValueChange({ value: event.target.value, custom: true })}
-            placeholder="ej. FC 24"
+            placeholder={copy.customPlaceholder}
             ref={customInputRef}
             value={value}
           />

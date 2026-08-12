@@ -4,35 +4,49 @@ import { ChoiceGroup, ChoiceGroupIndicator, ChoiceGroupItem, type Icon } from "@
 import { TicketIcon, TrophyIcon, UserIcon } from "@phosphor-icons/react";
 import type { OnboardingPathDto } from "@futrob/api-contracts";
 import { ONBOARDING_PATH } from "@futrob/identity";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
-import { intentionSteps, stepsByPath } from "../onboarding-step-meta.ts";
+import { intentionSteps, stepsForPath } from "../onboarding-step-meta.ts";
 
 export function IntentChoiceStep() {
   const flow = useOnboardingFlow();
+  const { t } = useI18n();
   return (
     <OnboardingShell
       currentStepId="intention"
-      description="Esto nos ayuda a preparar Futrob para lo que quieres hacer primero."
+      description={t("onboarding.intention.description")}
       error={flow.error}
-      steps={flow.path ? stepsByPath[flow.path] : intentionSteps}
-      title="¿Qué quieres hacer primero?"
+      steps={flow.path ? stepsForPath(t, flow.path) : intentionSteps(t)}
+      title={t("onboarding.intention.title")}
     >
       <ChoiceGroup<OnboardingPathDto | "">
-        aria-label="Intención del onboarding"
+        aria-label={t("onboarding.intention.aria")}
         className="grid-cols-1 sm:grid-cols-3"
         onValueChange={(value) => value && flow.setPath(value)}
         value={flow.path ?? ""}
       >
-        <IntentChoice icon={TrophyIcon} label="Organizar" value={ONBOARDING_PATH.organization}>
-          Crea una organización y una competición.
+        <IntentChoice
+          icon={TrophyIcon}
+          label={t("onboarding.intention.organization.label")}
+          value={ONBOARDING_PATH.organization}
+        >
+          {t("onboarding.intention.organization.description")}
         </IntentChoice>
-        <IntentChoice icon={TicketIcon} label="Unirme" value={ONBOARDING_PATH.invitation}>
-          Accede a una competición con tu código.
+        <IntentChoice
+          icon={TicketIcon}
+          label={t("onboarding.intention.invitation.label")}
+          value={ONBOARDING_PATH.invitation}
+        >
+          {t("onboarding.intention.invitation.description")}
         </IntentChoice>
-        <IntentChoice icon={UserIcon} label="Empezar como jugador" value={ONBOARDING_PATH.player}>
-          Crea tu espacio personal.
+        <IntentChoice
+          icon={UserIcon}
+          label={t("onboarding.intention.player.label")}
+          value={ONBOARDING_PATH.player}
+        >
+          {t("onboarding.intention.player.description")}
         </IntentChoice>
       </ChoiceGroup>
       <OnboardingActions
@@ -48,7 +62,7 @@ export function IntentChoiceStep() {
                 : "game-account";
           void flow.goTo(next, flow.path);
         }}
-        primaryLabel="Continuar"
+        primaryLabel={t("onboarding.intention.continue")}
       />
     </OnboardingShell>
   );

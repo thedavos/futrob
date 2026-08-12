@@ -30,7 +30,10 @@ import type {
   CompetitionDraftFieldsValue,
 } from "@/modules/competitions/presentation/validate-competition-draft-input.ts";
 import { FieldsetError } from "@/shared/presentation/forms/fieldset-error.tsx";
-import { GameEditionField } from "@/shared/presentation/forms/game-edition-field.tsx";
+import {
+  GameEditionField,
+  type GameEditionFieldCopy,
+} from "@/shared/presentation/forms/game-edition-field.tsx";
 import { PlatformChoice } from "@/shared/presentation/forms/platform-choice.tsx";
 
 export type CompetitionDraftFieldsProps = {
@@ -43,6 +46,47 @@ export type CompetitionDraftFieldsProps = {
   readonly showFormatDescription?: boolean;
   readonly nameInputRef?: Ref<HTMLInputElement>;
   readonly timeZoneTriggerRef?: Ref<HTMLButtonElement>;
+  readonly copy?: CompetitionDraftFieldsCopy;
+};
+
+export interface CompetitionDraftFieldsCopy {
+  readonly nameLabel: string;
+  readonly namePlaceholder: string;
+  readonly gameEdition: GameEditionFieldCopy;
+  readonly platformLabel: string;
+  readonly regionLabel: string;
+  readonly regionPlaceholder: string;
+  readonly regions: typeof competitionRegions;
+  readonly timeZoneLabel: string;
+  readonly timeZonePlaceholder: string;
+  readonly formatLabel: string;
+  readonly initialFormatLabel: string;
+  readonly formatPlaceholder: string;
+  readonly formatDescription: string;
+  readonly formats: typeof competitionFormats;
+}
+
+const defaultCopy: CompetitionDraftFieldsCopy = {
+  nameLabel: "Nombre de la competición",
+  namePlaceholder: "ej. Liga Futrob Apertura",
+  gameEdition: {
+    legend: "Edición del juego",
+    other: "Otra edición",
+    customName: "Nombre de la edición",
+    customPlaceholder: "ej. FC 24",
+  },
+  platformLabel: "Plataforma de la competición",
+  regionLabel: "Región deportiva",
+  regionPlaceholder: "Selecciona una región",
+  regions: competitionRegions,
+  timeZoneLabel: "Zona horaria",
+  timeZonePlaceholder: "Selecciona una zona horaria",
+  formatLabel: "Formato",
+  initialFormatLabel: "Formato inicial",
+  formatPlaceholder: "Selecciona un formato",
+  formatDescription:
+    "Las reglas iniciales se asignarán según el formato y podrás ajustarlas antes de publicar.",
+  formats: competitionFormats,
 };
 
 export function CompetitionDraftFields({
@@ -55,6 +99,7 @@ export function CompetitionDraftFields({
   showFormatDescription = false,
   nameInputRef,
   timeZoneTriggerRef,
+  copy = defaultCopy,
 }: CompetitionDraftFieldsProps) {
   const editionLabelId = useId();
   const platformLabelId = useId();
@@ -68,7 +113,7 @@ export function CompetitionDraftFields({
   return (
     <div className="grid gap-8">
       <Field className="gap-3" invalid={fieldError?.field === "name"} name="name">
-        <FieldLabel htmlFor={`${idPrefix}-name`}>Nombre de la competición</FieldLabel>
+        <FieldLabel htmlFor={`${idPrefix}-name`}>{copy.nameLabel}</FieldLabel>
         <Input
           aria-describedby={fieldError?.field === "name" ? errorId : undefined}
           aria-invalid={fieldError?.field === "name"}
@@ -80,7 +125,7 @@ export function CompetitionDraftFields({
             onChange({ name: event.target.value });
             clearError();
           }}
-          placeholder="ej. Liga Futrob Apertura"
+          placeholder={copy.namePlaceholder}
           ref={nameInputRef}
           value={value.name}
         />
@@ -92,6 +137,7 @@ export function CompetitionDraftFields({
       </Field>
 
       <GameEditionField
+        copy={copy.gameEdition}
         custom={value.customEdition}
         customInputId={`${idPrefix}-custom-edition`}
         customInputRef={customEditionRef}
@@ -109,7 +155,7 @@ export function CompetitionDraftFields({
 
       <fieldset className="m-0 border-0 p-0" data-competition-platform>
         <legend className="mb-3 typo-label" id={platformLabelId}>
-          Plataforma de la competición
+          {copy.platformLabel}
         </legend>
         <ChoiceGroup<GamePlatformDto | "">
           aria-describedby={fieldError?.field === "platform" ? errorId : undefined}
@@ -135,9 +181,9 @@ export function CompetitionDraftFields({
 
       <div className="grid gap-8 sm:grid-cols-2 sm:gap-4">
         <Field className="gap-3" data-competition-region invalid={fieldError?.field === "region"}>
-          <FieldLabel htmlFor={`${idPrefix}-region`}>Región deportiva</FieldLabel>
+          <FieldLabel htmlFor={`${idPrefix}-region`}>{copy.regionLabel}</FieldLabel>
           <Select
-            items={competitionRegions}
+            items={copy.regions}
             onValueChange={(next) => {
               if (next) onChange({ region: next as CompetitionRegionDto });
               clearError();
@@ -150,10 +196,10 @@ export function CompetitionDraftFields({
               disabled={disabled}
               id={`${idPrefix}-region`}
             >
-              <SelectValue placeholder="Selecciona una región" />
+              <SelectValue placeholder={copy.regionPlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              {competitionRegions.map((item) => (
+              {copy.regions.map((item) => (
                 <SelectItem key={item.value} value={item.value}>
                   {item.label}
                 </SelectItem>
@@ -168,7 +214,7 @@ export function CompetitionDraftFields({
         </Field>
 
         <Field className="gap-3" invalid={fieldError?.field === "time-zone"}>
-          <FieldLabel htmlFor={`${idPrefix}-time-zone`}>Zona horaria</FieldLabel>
+          <FieldLabel htmlFor={`${idPrefix}-time-zone`}>{copy.timeZoneLabel}</FieldLabel>
           <Select
             items={competitionTimeZones}
             onValueChange={(next) => {
@@ -184,7 +230,7 @@ export function CompetitionDraftFields({
               id={`${idPrefix}-time-zone`}
               ref={timeZoneTriggerRef}
             >
-              <SelectValue placeholder="Selecciona una zona horaria" />
+              <SelectValue placeholder={copy.timeZonePlaceholder} />
             </SelectTrigger>
             <SelectContent className="max-h-(--available-height) overflow-y-auto overscroll-contain">
               {competitionTimeZones.map((tz) => (
@@ -204,10 +250,10 @@ export function CompetitionDraftFields({
 
       <Field className="gap-3" data-competition-format invalid={fieldError?.field === "format"}>
         <FieldLabel htmlFor={`${idPrefix}-format`}>
-          {showFormatDescription ? "Formato inicial" : "Formato"}
+          {showFormatDescription ? copy.initialFormatLabel : copy.formatLabel}
         </FieldLabel>
         <Select
-          items={competitionFormats}
+          items={copy.formats}
           onValueChange={(next) => {
             if (next) onChange({ format: next as CompetitionFormatDto });
             clearError();
@@ -220,10 +266,10 @@ export function CompetitionDraftFields({
             disabled={disabled}
             id={`${idPrefix}-format`}
           >
-            <SelectValue placeholder="Selecciona un formato" />
+            <SelectValue placeholder={copy.formatPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            {competitionFormats.map((item) => (
+            {copy.formats.map((item) => (
               <SelectItem key={item.value} value={item.value}>
                 {item.label}
               </SelectItem>
@@ -231,10 +277,7 @@ export function CompetitionDraftFields({
           </SelectContent>
         </Select>
         {showFormatDescription ? (
-          <FieldDescription>
-            Las reglas iniciales se asignarán según el formato y podrás ajustarlas antes de
-            publicar.
-          </FieldDescription>
+          <FieldDescription>{copy.formatDescription}</FieldDescription>
         ) : null}
         {fieldError?.field === "format" ? (
           <FieldError id={errorId} match>
