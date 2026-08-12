@@ -100,74 +100,61 @@ describe("apps/api", () => {
     expect(doc.openapi).toBe("3.1.0");
   });
 
-  it("rejects direct game-data requests without service authentication before provider egress", async () => {
-    const requestId = "2c574fb9-091d-433f-b9f4-cc6e1b86f860";
-    let providerCalls = 0;
-    const app = buildApp(
-      createFetch(() => {
-        providerCalls += 1;
-        return Response.json(searchClubsFixture);
-      }),
-    );
-
-    const paths = [
-      "/api/v1/game-data/clubs/search?query=Fera",
-      "/api/v1/game-data/clubs/10754",
-      "/api/v1/game-data/clubs/10754/matches",
+  it("rejects game-data requests without valid service auth before provider egress", async () => {
+    const cases: ReadonlyArray<{
+      path: string;
+      requestId: string;
+      code: string;
+      headers?: Record<string, string>;
+    }> = [
+      {
+        path: "/api/v1/game-data/clubs/search?query=Fera",
+        requestId: "2c574fb9-091d-433f-b9f4-cc6e1b86f860",
+        code: "api.unauthorized",
+      },
+      {
+        path: "/api/v1/game-data/clubs/10754",
+        requestId: "2c574fb9-091d-433f-b9f4-cc6e1b86f860",
+        code: "api.unauthorized",
+      },
+      {
+        path: "/api/v1/game-data/clubs/10754/matches",
+        requestId: "2c574fb9-091d-433f-b9f4-cc6e1b86f860",
+        code: "api.unauthorized",
+      },
+      {
+        path: "/api/v1/game-data/clubs/search?query=Fera",
+        requestId: "47565055-641b-4e30-b5cf-0978fc9b3647",
+        headers: { ...serviceHeaders(), Authorization: "Bearer incorrect-secret" },
+        code: "api.unauthorized",
+      },
+      {
+        path: "/api/v1/game-data/clubs/search?query=Fera",
+        requestId: "4e22bf7a-59bd-4732-9b09-4c634cfab65a",
+        headers: { Authorization: `Bearer ${INTERNAL_JOB_SECRET}` },
+        code: "api.missing_actor",
+      },
     ];
-    for (const path of paths) {
-      const res = await app.request(path, { headers: { "X-Request-ID": requestId } });
+
+    let providerCalls = 0;
+    const app = buildApp(
+      createFetch(() => {
+        providerCalls += 1;
+        return Response.json(searchClubsFixture);
+      }),
+    );
+
+    for (const testCase of cases) {
+      const res = await app.request(testCase.path, {
+        headers: { ...testCase.headers, "X-Request-ID": testCase.requestId },
+      });
       expect(res.status).toBe(401);
-      expect(res.headers.get("x-request-id")).toBe(requestId);
-      expect(await res.json()).toMatchObject({ code: "api.unauthorized", requestId });
+      expect(res.headers.get("x-request-id")).toBe(testCase.requestId);
+      expect(await res.json()).toMatchObject({
+        code: testCase.code,
+        requestId: testCase.requestId,
+      });
     }
-    expect(providerCalls).toBe(0);
-  });
-
-  it("rejects an incorrect game-data service secret before provider egress", async () => {
-    const requestId = "47565055-641b-4e30-b5cf-0978fc9b3647";
-    let providerCalls = 0;
-    const app = buildApp(
-      createFetch(() => {
-        providerCalls += 1;
-        return Response.json(searchClubsFixture);
-      }),
-    );
-
-    const res = await app.request("/api/v1/game-data/clubs/search?query=Fera", {
-      headers: {
-        ...serviceHeaders(),
-        Authorization: "Bearer incorrect-secret",
-        "X-Request-ID": requestId,
-      },
-    });
-
-    expect(res.status).toBe(401);
-    expect(res.headers.get("x-request-id")).toBe(requestId);
-    expect(await res.json()).toMatchObject({ code: "api.unauthorized", requestId });
-    expect(providerCalls).toBe(0);
-  });
-
-  it("rejects a game-data request without an actor before provider egress", async () => {
-    const requestId = "4e22bf7a-59bd-4732-9b09-4c634cfab65a";
-    let providerCalls = 0;
-    const app = buildApp(
-      createFetch(() => {
-        providerCalls += 1;
-        return Response.json(searchClubsFixture);
-      }),
-    );
-
-    const res = await app.request("/api/v1/game-data/clubs/search?query=Fera", {
-      headers: {
-        Authorization: `Bearer ${INTERNAL_JOB_SECRET}`,
-        "X-Request-ID": requestId,
-      },
-    });
-
-    expect(res.status).toBe(401);
-    expect(res.headers.get("x-request-id")).toBe(requestId);
-    expect(await res.json()).toMatchObject({ code: "api.missing_actor", requestId });
     expect(providerCalls).toBe(0);
   });
 
