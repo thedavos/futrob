@@ -29,7 +29,10 @@ import type {
   PlayerGameAccountInputDto,
   SearchClubsQueryInput,
 } from "@futrob/api-contracts";
-import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
+import {
+  IdentityOnboardingClientError,
+  identityBrowserClient,
+} from "@/modules/identity/presentation/identity-browser-client.ts";
 import { useSaveOnboardingProgressMutation } from "@/modules/identity/presentation/identity-queries.ts";
 import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
@@ -220,8 +223,11 @@ export function OnboardingFlowProvider({
         try {
           const result = await gateway.checkOrganizationName({ name });
           return result.available;
-        } catch {
-          setError({ messageKey: "errors.onboarding.organizationCheck" });
+        } catch (caught) {
+          setError({
+            messageKey: "errors.onboarding.organizationCheck",
+            ...supportFieldsFromCaught(caught),
+          });
           return null;
         } finally {
           setSaving(false);
@@ -240,8 +246,11 @@ export function OnboardingFlowProvider({
         await navigate({ to: routeForOnboardingStep(step) });
         try {
           await saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step });
-        } catch {
-          setError({ messageKey: "errors.onboarding.saveProgress" });
+        } catch (caught) {
+          setError({
+            messageKey: "errors.onboarding.saveProgress",
+            ...supportFieldsFromCaught(caught),
+          });
           setPathState(previousPath);
           setCurrentStep(previousStep);
           await navigate({ to: routeForOnboardingStep(previousStep) });
@@ -338,6 +347,16 @@ export function OnboardingFlowProvider({
       )}
     </OnboardingFlowContext>
   );
+}
+
+function supportFieldsFromCaught(
+  caught: unknown,
+): Pick<SupportError, "requestId" | "retryAfterSeconds"> {
+  if (!(caught instanceof IdentityOnboardingClientError)) return {};
+  return {
+    ...(caught.requestId ? { requestId: caught.requestId } : {}),
+    ...(caught.retryAfterSeconds ? { retryAfterSeconds: caught.retryAfterSeconds } : {}),
+  };
 }
 
 function markOnboardingCompletedInCache(queryClient: QueryClient, path: OnboardingPathDto): void {
