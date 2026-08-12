@@ -49,10 +49,10 @@ served stale; immutable observations and normalized matches remain the durable s
 limited to timeout, network, 408, 429 and 5xx responses. The shared circuit opens after three final
 transient failures, waits 60 seconds, then grants one ten-second half-open probe.
 
-Provider health is a rolling 24-hour window capped at 1,000 samples. The response includes
-`windowStartedAt` and `sampleSize`. Events older than 30 days are pruned when an administrator reads
-health; the `occurred_at` retention index keeps that operation bounded. Telemetry writes are
-best-effort and never delay a provider response.
+Provider health is a rolling 24-hour window capped at 1,000 upstream samples. Cache hits and
+half-open probes are not mixed into that cap. The response includes `windowStartedAt` and
+`sampleSize`. Circuit state comes from the live breaker. Telemetry writes are best-effort and never
+delay a provider response.
 
 Organizations (same service auth):
 

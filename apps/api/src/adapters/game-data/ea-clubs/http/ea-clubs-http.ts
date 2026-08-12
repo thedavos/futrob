@@ -5,16 +5,10 @@ import {
   ProviderNetworkError,
   ProviderTimeout,
   ProviderUnavailable,
-  type ProviderHealthOutcome,
-  type ProviderHealthPort,
+  isRetryableProviderError,
   type ProviderTransportError,
 } from "@futrob/game-data";
-import {
-  currentRequestCorrelation,
-  currentJobCorrelation,
-  logCorrelatedError,
-  logCorrelatedInfo,
-} from "@/context/request-correlation.ts";
+import { logCorrelatedError, logCorrelatedInfo } from "@/context/request-correlation.ts";
 import {
   InMemoryProviderCircuitBreaker,
   type ProviderCircuitBreaker,
@@ -47,7 +41,6 @@ export interface EaClubsHttpClientOptions {
   };
   readonly circuit?: ProviderCircuitBreaker;
   readonly clock?: { now(): Date };
-  readonly health?: ProviderHealthPort;
 }
 
 export class EaClubsHttpClient {
@@ -57,7 +50,6 @@ export class EaClubsHttpClient {
   private readonly retry: NonNullable<EaClubsHttpClientOptions["retry"]>;
   private readonly circuit: ProviderCircuitBreaker;
   private readonly clock: { now(): Date };
-  private readonly health: ProviderHealthPort | undefined;
 
   constructor(options: EaClubsHttpClientOptions) {
     const unbound = options.fetcher;
@@ -75,7 +67,6 @@ export class EaClubsHttpClient {
       } satisfies NonNullable<EaClubsHttpClientOptions["retry"]>);
     this.circuit = options.circuit ?? new InMemoryProviderCircuitBreaker();
     this.clock = options.clock ?? { now: () => new Date() };
-    this.health = options.health;
   }
 
   async getJson(
@@ -89,7 +80,6 @@ export class EaClubsHttpClient {
       }
     }
 
-    const operationStartedAt = performance.now();
     const circuitKey = `ea-clubs:${path}`;
     const now = this.clock.now();
     const permission = await this.circuit.beforeRequest({
@@ -99,7 +89,6 @@ export class EaClubsHttpClient {
       probeLeaseExpiresAt: new Date(now.getTime() + 10_000),
     });
     if (!permission.allowed) {
-      this.recordHealth(path, "circuit_open", operationStartedAt);
       return err(
         new ProviderUnavailable({
           code: "game_data.provider_unavailable",
@@ -107,9 +96,6 @@ export class EaClubsHttpClient {
           retryAfterSeconds: Math.max(1, Math.ceil(permission.retryAfterMs / 1_000)),
         }),
       );
-    }
-    if (permission.state === "half_open") {
-      this.recordHealth(path, "circuit_half_open", operationStartedAt);
     }
 
     let lastError: ProviderTransportError | undefined;
@@ -123,11 +109,10 @@ export class EaClubsHttpClient {
             ? { probeLeaseToken: permission.probeLeaseToken }
             : {}),
         });
-        this.recordHealth(path, "success", operationStartedAt);
         return result;
       }
       lastError = result.error;
-      if (!isTransient(result.error) || attempt === this.retry.maxAttempts) break;
+      if (!isRetryableProviderError(result.error) || attempt === this.retry.maxAttempts) break;
       const retryAfterMs = ProviderHttpFailed.is(result.error)
         ? result.error.retryAfterMs
         : undefined;
@@ -139,7 +124,7 @@ export class EaClubsHttpClient {
       await this.retry.sleep(retryAfterMs ?? Math.floor(exponential * this.retry.random()));
     }
     if (!lastError) throw new TypeError("Provider request completed without a result");
-    if (isTransient(lastError)) {
+    if (isRetryableProviderError(lastError)) {
       await this.circuit.recordTransientFailure({
         key: circuitKey,
         now: this.clock.now(),
@@ -150,25 +135,7 @@ export class EaClubsHttpClient {
           : {}),
       });
     }
-    this.recordHealth(path, healthOutcome(lastError), operationStartedAt);
     return err(lastError);
-  }
-
-  private recordHealth(operation: string, outcome: ProviderHealthOutcome, startedAt: number): void {
-    if (!this.health) return;
-    const write = this.health.record({
-      id: randomUUID(),
-      providerKey: "ea-clubs",
-      operation,
-      outcome,
-      latencyMs: Math.max(0, Math.round(performance.now() - startedAt)),
-      occurredAt: this.clock.now(),
-      requestId: currentRequestCorrelation()?.requestId ?? null,
-      jobId: currentJobCorrelation() ?? null,
-    });
-    void write.catch(() => {
-      logCorrelatedError("provider.health.record_failed", { provider: "ea-clubs", operation });
-    });
   }
 
   private async requestOnce(
@@ -240,27 +207,10 @@ export class EaClubsHttpClient {
   }
 }
 
-function isTransient(error: ProviderTransportError): boolean {
-  return (
-    ProviderTimeout.is(error) ||
-    ProviderNetworkError.is(error) ||
-    (ProviderHttpFailed.is(error) &&
-      (error.status === 408 || error.status === 429 || error.status >= 500))
-  );
-}
-
 function parseRetryAfter(value: string | null, now: Date): number | undefined {
   if (!value) return undefined;
   const seconds = Number(value);
   if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1_000;
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? Math.max(0, timestamp - now.getTime()) : undefined;
-}
-
-function healthOutcome(error: ProviderTransportError): ProviderHealthOutcome {
-  if (ProviderTimeout.is(error)) return "timeout";
-  if (ProviderNetworkError.is(error)) return "network";
-  if (ProviderUnavailable.is(error)) return "circuit_open";
-  if (error.status === 429) return "rate_limited";
-  return error.status >= 500 ? "upstream_5xx" : "upstream_4xx";
 }

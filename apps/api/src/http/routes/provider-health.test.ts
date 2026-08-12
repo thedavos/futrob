@@ -38,9 +38,9 @@ describe("provider health route", () => {
     expect(JSON.parse(body)).toMatchObject({
       providerKey: "ea-clubs",
       status: "healthy",
-      sampleSize: 2,
+      sampleSize: 1,
       successCount: 1,
-      cache: { misses: 1 },
+      cache: { misses: 0 },
     });
     expect(body).not.toContain("payload");
     expect(body).not.toContain("externalClubId");

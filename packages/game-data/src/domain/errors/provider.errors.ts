@@ -52,6 +52,12 @@ export class ProviderUnavailable extends TaggedError("ProviderUnavailable")<{
   retryAfterSeconds: number;
 }> {}
 
+export class ProviderRefreshInProgress extends TaggedError("ProviderRefreshInProgress")<{
+  code: "game_data.provider_refresh_in_progress";
+  message: string;
+  retryAfterSeconds: number;
+}> {}
+
 export type ProviderTransportError =
   | ProviderHttpFailed
   | ProviderTimeout
@@ -60,6 +66,7 @@ export type ProviderTransportError =
 
 export type ProviderError =
   | ProviderTransportError
+  | ProviderRefreshInProgress
   | ProviderSchemaError
   | ExternalClubNotFound
   | UnsupportedGameDataOperation

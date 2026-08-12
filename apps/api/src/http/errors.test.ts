@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   ProviderHttpFailed,
   ProviderNetworkError,
+  ProviderRefreshInProgress,
   ProviderSchemaError,
   ProviderUnavailable,
 } from "@futrob/game-data";
@@ -71,5 +72,21 @@ describe("game-data HTTP failures", () => {
     expect(await rateLimited.json()).toMatchObject({ retryAfterSeconds: 120 });
     expect(await network.text()).not.toContain("secret.example");
     expect(await schema.text()).not.toContain("secret-provider-value");
+  });
+
+  it("maps cache refresh contention without calling it an open circuit", async () => {
+    const response = failureToHttp(
+      new ProviderRefreshInProgress({
+        code: "game_data.provider_refresh_in_progress",
+        message: "refresh",
+        retryAfterSeconds: 1,
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Retry-After")).toBe("1");
+    expect(await response.json()).toMatchObject({
+      code: "game_data.provider_refresh_in_progress",
+    });
   });
 });

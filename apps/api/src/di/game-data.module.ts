@@ -7,15 +7,13 @@ import {
   ListMatchesBetweenClubsUseCase,
   SearchExternalClubsUseCase,
   SyncRecentProviderMatchesUseCase,
-  ProviderHttpFailed,
-  ProviderUnavailable,
+  providerRetryDelayMs,
   type GameDataProviderPort,
   type ProviderMatchIngestionPort,
   type ProviderMatchRepository,
   type RawObservationRepository,
   type ProviderSyncJobRepository,
   type ProviderHealthPort,
-  type ProviderError,
 } from "@futrob/game-data";
 import type { ClockPort, IdGeneratorPort, TransactionPort } from "@futrob/shared-kernel";
 import { InMemoryGameDataProviderRegistry } from "@/adapters/game-data/internal.ts";
@@ -71,7 +69,7 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
       ids: deps.ids,
       clock: deps.clock,
       leaseMs: 90_000,
-      retryDelayMs: providerJobRetryDelayMs,
+      retryDelayMs: providerRetryDelayMs,
       runClaimed: (job, operation) =>
         runWithPersistedJobCorrelation(createRequestCorrelation(job.requestId), job.id, operation),
     }),
@@ -81,11 +79,3 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
 }
 
 export type GameDataModule = ReturnType<typeof createGameDataModule>;
-
-export function providerJobRetryDelayMs(error: ProviderError, attempt: number): number {
-  if (ProviderUnavailable.is(error)) return error.retryAfterSeconds * 1_000;
-  if (ProviderHttpFailed.is(error) && error.retryAfterMs !== undefined) {
-    return error.retryAfterMs;
-  }
-  return Math.min(30_000, 1_000 * 2 ** (attempt - 1));
-}

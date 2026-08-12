@@ -25,25 +25,35 @@ describe("snapshotFromEvents", () => {
       event("success", "2026-08-11T20:00:00.000Z"),
       event("upstream_5xx", "2026-08-11T20:01:00.000Z"),
     ]);
-    const unavailable = snapshotFromEvents("ea-clubs", [
-      event("success", "2026-08-11T20:00:00.000Z"),
-      event("circuit_open", "2026-08-11T20:01:00.000Z"),
-    ]);
-    const recovered = snapshotFromEvents("ea-clubs", [
-      event("circuit_open", "2026-08-11T20:01:00.000Z"),
-      event("success", "2026-08-11T20:02:00.000Z"),
-      event("cache_hit", "2026-08-11T20:02:01.000Z"),
-    ]);
+    const unavailable = snapshotFromEvents(
+      "ea-clubs",
+      [
+        event("success", "2026-08-11T20:00:00.000Z"),
+        event("circuit_open", "2026-08-11T20:01:00.000Z"),
+      ],
+      { circuitState: "open" },
+    );
+    const recovered = snapshotFromEvents(
+      "ea-clubs",
+      [
+        event("circuit_open", "2026-08-11T20:01:00.000Z"),
+        event("success", "2026-08-11T20:02:00.000Z"),
+        event("cache_hit", "2026-08-11T20:02:01.000Z"),
+      ],
+      { circuitState: "closed" },
+    );
 
     expect(degraded.status).toBe("degraded");
     expect(unavailable).toMatchObject({ status: "unavailable", circuitState: "open" });
     expect(
-      snapshotFromEvents("ea-clubs", [event("circuit_half_open", "2026-08-11T20:01:00.000Z")]),
-    ).toMatchObject({ status: "degraded", circuitState: "half_open" });
+      snapshotFromEvents("ea-clubs", [event("circuit_half_open", "2026-08-11T20:01:00.000Z")], {
+        circuitState: "half_open",
+      }),
+    ).toMatchObject({ status: "degraded", circuitState: "half_open", sampleSize: 0 });
     expect(recovered).toMatchObject({
       status: "healthy",
       circuitState: "closed",
-      sampleSize: 3,
+      sampleSize: 2,
       cache: { hits: 1 },
     });
     expect(JSON.stringify(recovered)).not.toContain("requestId");

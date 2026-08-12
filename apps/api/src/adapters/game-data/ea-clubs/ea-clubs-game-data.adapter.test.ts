@@ -61,4 +61,29 @@ describe("EaClubsGameDataAdapter", () => {
       away: { goals: 1 },
     });
   });
+
+  it("records schema instead of success when HTTP 200 fails validation", async () => {
+    const outcomes: string[] = [];
+    const adapter = new EaClubsGameDataAdapter({
+      fetcher: (async () =>
+        new Response("{}", {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })) as typeof fetch,
+      baseUrl: "https://example.test",
+      timeoutMs: 1_000,
+      health: {
+        record: (event) => {
+          outcomes.push(event.outcome);
+          return Promise.resolve();
+        },
+        getSnapshot: () => Promise.reject(new Error("unused")),
+      },
+    });
+
+    const result = await adapter.ingestRecentMatches(input);
+
+    expect(result.isOk()).toBe(false);
+    expect(outcomes).toEqual(["schema"]);
+  });
 });

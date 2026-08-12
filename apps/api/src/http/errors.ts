@@ -78,7 +78,10 @@ function detailsFromTaggedProps(error: HttpMappableFailure): ApiErrorDetails | u
 }
 
 function statusForFailureCode(code: string): number {
-  if (code === "game_data.provider_unavailable") {
+  if (
+    code === "game_data.provider_unavailable" ||
+    code === "game_data.provider_refresh_in_progress"
+  ) {
     return 503;
   }
   if (code.includes("not_found")) {

@@ -38,9 +38,15 @@ export {
   UnsupportedGameDataOperation,
   ProviderNotImplemented,
   ProviderUnavailable,
+  ProviderRefreshInProgress,
   type ProviderTransportError,
   type ProviderError,
 } from "./domain/errors/provider.errors.ts";
+export {
+  isRetryableProviderError,
+  providerHealthOutcome,
+  providerRetryDelayMs,
+} from "./domain/policies/classify-provider-failure.ts";
 
 export type {
   GameDataProviderPort,
@@ -73,8 +79,5 @@ export {
   EnqueueProviderSyncJobUseCase,
   type EnqueueProviderSyncJobInput,
 } from "./application/enqueue-provider-sync-job/enqueue-provider-sync-job.use-case.ts";
-export {
-  ExecuteProviderSyncJobUseCase,
-  isRetryableProviderError,
-} from "./application/execute-provider-sync-job/execute-provider-sync-job.use-case.ts";
+export { ExecuteProviderSyncJobUseCase } from "./application/execute-provider-sync-job/execute-provider-sync-job.use-case.ts";
 export { GetProviderHealthUseCase } from "./application/get-provider-health/get-provider-health.use-case.ts";

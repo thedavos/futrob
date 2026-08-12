@@ -1,29 +1,22 @@
 import { createHash } from "node:crypto";
 import { err, ok, type ClockPort, type IdGeneratorPort, type Result } from "@futrob/shared-kernel";
 import {
-  ProviderUnavailable,
+  ProviderRefreshInProgress,
   isRetryableProviderError,
   type GameDataProviderPort,
   type GetExternalClubInput,
   type GetRecentMatchesInput,
   type IngestedProviderMatches,
   type ProviderError,
-  type ProviderHealthOutcome,
-  type ProviderHealthPort,
   type ProviderMatch,
   type ProviderMatchIngestionPort,
   type SearchExternalClubsInput,
 } from "@futrob/game-data";
 import type { ProviderCacheEntry, ProviderResponseCache } from "./provider-response-cache.ts";
-import {
-  currentRequestCorrelation,
-  currentJobCorrelation,
-  logCorrelatedError,
-  logCorrelatedInfo,
-} from "@/context/request-correlation.ts";
+import { logCorrelatedInfo } from "@/context/request-correlation.ts";
 
 const REFRESH_LEASE_MS = 45_000;
-const FOLLOWER_WAIT_MS = 35_000;
+const FOLLOWER_POLL_MS = 50;
 
 export class CachedGameDataProviderAdapter
   implements GameDataProviderPort, ProviderMatchIngestionPort
@@ -41,7 +34,6 @@ export class CachedGameDataProviderAdapter
       readonly searchTtlMs: number;
       readonly clubTtlMs: number;
       readonly staleMs: number;
-      readonly health?: ProviderHealthPort;
     },
   ) {
     this.key = provider.key;
@@ -80,10 +72,10 @@ export class CachedGameDataProviderAdapter
     const now = this.deps.clock.now();
     let cached = await this.deps.cache.read<T>(key);
     if (cached && cached.freshUntil > now) {
-      this.recordCache(operation, "cache_hit");
+      this.logCache(operation, "cache_hit");
       return cachedResult(cached);
     }
-    this.recordCache(operation, "cache_miss");
+    this.logCache(operation, "cache_miss");
 
     const token = this.deps.ids.generate();
     const acquired = await this.deps.cache.tryAcquireRefresh({
@@ -96,28 +88,22 @@ export class CachedGameDataProviderAdapter
     });
     if (!acquired) {
       if (cached && cached.staleUntil > this.deps.clock.now()) {
-        this.recordCache(operation, "cache_stale");
+        this.logCache(operation, "cache_stale");
         return cachedResult(cached);
       }
-      let waitedMs = 0;
-      let pollMs = 25;
-      while (waitedMs < FOLLOWER_WAIT_MS) {
-        await this.deps.sleep(pollMs);
-        waitedMs += pollMs;
-        cached = await this.deps.cache.read<T>(key);
-        if (cached && cached.freshUntil > this.deps.clock.now()) {
-          this.recordCache(operation, "cache_hit");
-          return cachedResult(cached);
-        }
-        pollMs = Math.min(1_000, pollMs * 2);
+      await this.deps.sleep(FOLLOWER_POLL_MS);
+      cached = await this.deps.cache.read<T>(key);
+      if (cached && cached.freshUntil > this.deps.clock.now()) {
+        this.logCache(operation, "cache_hit");
+        return cachedResult(cached);
       }
       if (cached && cached.staleUntil > this.deps.clock.now()) {
-        this.recordCache(operation, "cache_stale");
+        this.logCache(operation, "cache_stale");
         return cachedResult(cached);
       }
       return err(
-        new ProviderUnavailable({
-          code: "game_data.provider_unavailable",
+        new ProviderRefreshInProgress({
+          code: "game_data.provider_refresh_in_progress",
           message: "Provider response refresh is already in progress",
           retryAfterSeconds: 1,
         }),
@@ -128,7 +114,7 @@ export class CachedGameDataProviderAdapter
       const result = await load();
       if (!result.isOk()) {
         if (cached && cached.staleUntil > now && isRetryableProviderError(result.error)) {
-          this.recordCache(operation, "cache_stale");
+          this.logCache(operation, "cache_stale");
           return cachedResult(cached);
         }
         return result;
@@ -150,25 +136,8 @@ export class CachedGameDataProviderAdapter
     }
   }
 
-  private recordCache(
-    operation: string,
-    outcome: Extract<ProviderHealthOutcome, "cache_hit" | "cache_miss" | "cache_stale">,
-  ): void {
+  private logCache(operation: string, outcome: "cache_hit" | "cache_miss" | "cache_stale"): void {
     logCorrelatedInfo("provider.cache", { provider: this.key, operation, outcome });
-    if (!this.deps.health) return;
-    const write = this.deps.health.record({
-      id: this.deps.ids.generate(),
-      providerKey: this.key,
-      operation,
-      outcome,
-      latencyMs: 0,
-      occurredAt: this.deps.clock.now(),
-      requestId: currentRequestCorrelation()?.requestId ?? null,
-      jobId: currentJobCorrelation() ?? null,
-    });
-    void write.catch(() => {
-      logCorrelatedError("provider.health.record_failed", { provider: this.key, operation });
-    });
   }
 }
 

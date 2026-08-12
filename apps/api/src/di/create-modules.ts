@@ -99,7 +99,6 @@ export function createModules(input: CreateModulesInput): AppModules {
     searchTtlMs: 30_000,
     clubTtlMs: 300_000,
     staleMs: 300_000,
-    health: providerHealth,
   });
 
   const gameData = createGameDataModule({

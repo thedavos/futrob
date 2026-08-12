@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { err, ok, type Result } from "@futrob/shared-kernel";
-import { ProviderTimeout } from "@futrob/game-data";
+import { ProviderRefreshInProgress, ProviderTimeout } from "@futrob/game-data";
 import type {
   ExternalClub,
   GameDataProviderPort,
@@ -20,7 +20,7 @@ const club: ExternalClub = {
 };
 
 describe("CachedGameDataProviderAdapter", () => {
-  it("single-flights concurrent misses and isolates normalized queries", async () => {
+  it("single-flights concurrent misses and fails fast when the follower has no stale value", async () => {
     let calls = 0;
     let release: (() => void) | undefined;
     const gate = new Promise<void>((resolve) => {
@@ -44,41 +44,33 @@ describe("CachedGameDataProviderAdapter", () => {
       getRecentMatches: async () => ok([]),
       ingestRecentMatches: async () => ok({ observations: [], matches: [] }),
     } satisfies GameDataProviderPort & ProviderMatchIngestionPort;
-    const cache = new InMemoryProviderResponseCache();
-    let followerWaitedMs = 0;
     const adapter = new CachedGameDataProviderAdapter(provider, {
-      cache,
+      cache: new InMemoryProviderResponseCache(),
       clock: { now: () => new Date("2026-08-11T20:00:00.000Z") },
       ids: { generate: () => "refresh-lease" },
-      sleep: async (delayMs) => {
-        followerWaitedMs += delayMs;
-        if (followerWaitedMs >= 300) release?.();
-      },
+      sleep: async () => Promise.resolve(),
       searchTtlMs: 30_000,
       clubTtlMs: 300_000,
       staleMs: 300_000,
     });
+    const query = { query: "fera", platform: "common-gen5", gameEdition: "fc26" };
 
     const first = adapter.searchClubs({
       query: " FERA ",
       platform: "COMMON-GEN5",
       gameEdition: "FC26",
     });
-    const concurrent = adapter.searchClubs({
-      query: "fera",
-      platform: "common-gen5",
-      gameEdition: "fc26",
-    });
+    const concurrent = await adapter.searchClubs(query);
+    expect(concurrent.isOk()).toBe(false);
+    if (!concurrent.isOk()) {
+      expect(ProviderRefreshInProgress.is(concurrent.error)).toBe(true);
+    }
+
+    release?.();
     expect((await first).isOk()).toBe(true);
-    expect((await concurrent).isOk()).toBe(true);
-    expect(followerWaitedMs).toBeGreaterThanOrEqual(300);
     expect(calls).toBe(1);
-    await adapter.searchClubs({
-      query: "otro",
-      platform: "common-gen5",
-      gameEdition: "fc26",
-    });
-    expect(calls).toBe(2);
+    expect((await adapter.searchClubs(query)).isOk()).toBe(true);
+    expect(calls).toBe(1);
   });
 
   it("serves fresh hits and bounded stale data only for transient failures", async () => {

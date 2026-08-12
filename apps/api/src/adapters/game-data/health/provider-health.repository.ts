@@ -13,7 +13,6 @@ import type {
 } from "@/adapters/game-data/resilience/provider-circuit-breaker.ts";
 
 const HEALTH_WINDOW_MS = 24 * 60 * 60 * 1_000;
-const HEALTH_RETENTION_DAYS = 30;
 const HEALTH_SAMPLE_LIMIT = 1_000;
 
 const failureOutcomes = new Set<ProviderHealthOutcome>([
@@ -24,6 +23,13 @@ const failureOutcomes = new Set<ProviderHealthOutcome>([
   "upstream_5xx",
   "schema",
   "circuit_open",
+]);
+
+const nonSampleOutcomes = new Set<ProviderHealthOutcome>([
+  "cache_hit",
+  "cache_miss",
+  "cache_stale",
+  "circuit_half_open",
 ]);
 
 export class InMemoryProviderHealthRepository implements ProviderHealthPort {
@@ -75,17 +81,12 @@ export class PostgresProviderHealthRepository implements ProviderHealthPort {
   }
 
   async getSnapshot(providerKey: GameDataProviderKey): Promise<ProviderHealthSnapshot> {
-    const executor = getPgExecutor(this.pool);
     const now = this.clock.now();
-    await executor.query(
-      `DELETE FROM provider_health_events
-       WHERE occurred_at < $1::timestamptz - make_interval(days => $2)`,
-      [now.toISOString(), HEALTH_RETENTION_DAYS],
-    );
-    const result = await executor.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, provider_key, operation, outcome, latency_ms, occurred_at, request_id, job_id
        FROM provider_health_events
        WHERE provider_key = $1 AND occurred_at >= $2
+         AND outcome NOT IN ('cache_hit', 'cache_miss', 'cache_stale', 'circuit_half_open')
        ORDER BY occurred_at DESC
        LIMIT $3`,
       [providerKey, new Date(now.getTime() - HEALTH_WINDOW_MS).toISOString(), HEALTH_SAMPLE_LIMIT],
@@ -123,8 +124,9 @@ export function snapshotFromEvents(
       new Date(0),
     );
   const windowStartedAt = new Date(now.getTime() - HEALTH_WINDOW_MS);
-  const events = providerEvents
-    .filter((event) => event.occurredAt >= windowStartedAt)
+  const windowEvents = providerEvents.filter((event) => event.occurredAt >= windowStartedAt);
+  const events = windowEvents
+    .filter((event) => !nonSampleOutcomes.has(event.outcome))
     .slice()
     .sort((left, right) => left.occurredAt.getTime() - right.occurredAt.getTime());
   const observedAt = now;
@@ -132,22 +134,7 @@ export function snapshotFromEvents(
   const failures = events.filter((event) => failureOutcomes.has(event.outcome));
   const latestSuccess = successes.at(-1)?.occurredAt ?? null;
   const latestFailure = failures.at(-1)?.occurredAt ?? null;
-  const circuitByOperation = new Map<string, ProviderHealthSnapshot["circuitState"]>();
-  for (const event of events) {
-    if (event.outcome === "circuit_open") circuitByOperation.set(event.operation, "open");
-    if (event.outcome === "circuit_half_open") {
-      circuitByOperation.set(event.operation, "half_open");
-    }
-    if (event.outcome === "success") circuitByOperation.set(event.operation, "closed");
-  }
-  const circuitStates = [...circuitByOperation.values()];
-  const circuitState =
-    options.circuitState ??
-    (circuitStates.includes("open")
-      ? "open"
-      : circuitStates.includes("half_open")
-        ? "half_open"
-        : "closed");
+  const circuitState = options.circuitState ?? "closed";
   const unavailable = circuitState === "open";
   const degraded = Boolean(
     latestFailure && (!latestSuccess || latestFailure.getTime() > latestSuccess.getTime()),
@@ -180,9 +167,9 @@ export function snapshotFromEvents(
     successCount: successes.length,
     failureCount: failures.length,
     cache: {
-      hits: events.filter((event) => event.outcome === "cache_hit").length,
-      misses: events.filter((event) => event.outcome === "cache_miss").length,
-      stale: events.filter((event) => event.outcome === "cache_stale").length,
+      hits: windowEvents.filter((event) => event.outcome === "cache_hit").length,
+      misses: windowEvents.filter((event) => event.outcome === "cache_miss").length,
+      stale: windowEvents.filter((event) => event.outcome === "cache_stale").length,
     },
   };
 }
