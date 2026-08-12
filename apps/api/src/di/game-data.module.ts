@@ -1,4 +1,6 @@
 import {
+  EnqueueProviderSyncJobUseCase,
+  ExecuteProviderSyncJobUseCase,
   GetExternalClubUseCase,
   GetRecentProviderMatchesUseCase,
   ListMatchesBetweenClubsUseCase,
@@ -8,8 +10,9 @@ import {
   type ProviderMatchIngestionPort,
   type ProviderMatchRepository,
   type RawObservationRepository,
+  type ProviderSyncJobRepository,
 } from "@futrob/game-data";
-import type { IdGeneratorPort } from "@futrob/shared-kernel";
+import type { ClockPort, IdGeneratorPort, TransactionPort } from "@futrob/shared-kernel";
 import { InMemoryGameDataProviderRegistry } from "@/adapters/game-data/internal.ts";
 
 export interface GameDataModuleDependencies {
@@ -17,25 +20,51 @@ export interface GameDataModuleDependencies {
   readonly ingestion: ProviderMatchIngestionPort;
   readonly providerMatches: ProviderMatchRepository;
   readonly rawObservations: RawObservationRepository;
+  readonly jobs: ProviderSyncJobRepository;
   readonly ids: IdGeneratorPort;
+  readonly clock: ClockPort;
+  readonly maxJobAttempts: number;
+  readonly transaction: TransactionPort;
 }
 
 export function createGameDataModule(deps: GameDataModuleDependencies) {
   const registry = new InMemoryGameDataProviderRegistry(deps.providers);
+
+  const syncRecentProviderMatches = new SyncRecentProviderMatchesUseCase({
+    ingestions: {
+      get: (key) => (deps.ingestion.key === key ? deps.ingestion : null),
+    },
+    rawObservations: deps.rawObservations,
+    matches: deps.providerMatches,
+    ids: deps.ids,
+  });
 
   return {
     searchExternalClubs: new SearchExternalClubsUseCase(registry),
     getExternalClub: new GetExternalClubUseCase(registry),
     getRecentProviderMatches: new GetRecentProviderMatchesUseCase(registry),
     listMatchesBetweenClubs: new ListMatchesBetweenClubsUseCase(deps.providerMatches),
-    syncRecentProviderMatches: new SyncRecentProviderMatchesUseCase({
-      ingestions: {
-        get: (key) => (deps.ingestion.key === key ? deps.ingestion : null),
-      },
-      rawObservations: deps.rawObservations,
-      matches: deps.providerMatches,
+    syncRecentProviderMatches,
+    enqueueProviderSyncJob: new EnqueueProviderSyncJobUseCase({
+      jobs: deps.jobs,
       ids: deps.ids,
+      clock: deps.clock,
+      maxAttempts: deps.maxJobAttempts,
     }),
+    executeProviderSyncJob: new ExecuteProviderSyncJobUseCase({
+      jobs: deps.jobs,
+      sync: {
+        execute: (providerKey, input) =>
+          deps.transaction.runInTransaction(() =>
+            syncRecentProviderMatches.execute(providerKey, input),
+          ),
+      },
+      ids: deps.ids,
+      clock: deps.clock,
+      leaseMs: 30_000,
+      retryDelayMs: (_error, attempt) => Math.min(30_000, 1_000 * 2 ** (attempt - 1)),
+    }),
+    jobs: deps.jobs,
     registry,
   };
 }

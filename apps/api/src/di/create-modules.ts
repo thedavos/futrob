@@ -6,6 +6,8 @@ import {
   PostgresProviderMatchRepository,
   PostgresRawObservationRepository,
 } from "@/adapters/game-data/persistence/postgres.repository.ts";
+import { InMemoryProviderSyncJobRepository } from "@/adapters/game-data/jobs/in-memory-provider-sync-job.repository.ts";
+import { PostgresProviderSyncJobRepository } from "@/adapters/game-data/jobs/postgres-provider-sync-job.repository.ts";
 import { EaClubsGameDataAdapter, ManualGameDataAdapter } from "@/adapters/game-data/internal.ts";
 import {
   RepositoryProviderMatchReader,
@@ -19,7 +21,7 @@ import {
 import { NoopEventPublisher } from "@/adapters/events/noop-event-publisher.ts";
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
-import { CryptoIdGenerator } from "@/adapters/organizations/crypto-ports.ts";
+import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 import type { CompetitionId, OrganizationId, TransactionPort } from "@futrob/shared-kernel";
 import type { ConfirmOfficialSelectionInput } from "@futrob/results";
 import type { Pool } from "pg";
@@ -50,12 +52,17 @@ export interface CreateModulesInput {
 
 export function createModules(input: CreateModulesInput): AppModules {
   const ids = new CryptoIdGenerator();
+  const clock = new SystemClock();
+  const transaction = createTransactionPort(input.pool);
   const providerMatches = input.pool
     ? new PostgresProviderMatchRepository(input.pool)
     : new InMemoryProviderMatchRepository();
   const rawObservations = input.pool
     ? new PostgresRawObservationRepository(input.pool)
     : new InMemoryRawObservationRepository();
+  const providerSyncJobs = input.pool
+    ? new PostgresProviderSyncJobRepository(input.pool)
+    : new InMemoryProviderSyncJobRepository();
   const eaProvider = new EaClubsGameDataAdapter({
     fetcher: input.fetcher,
     baseUrl: input.eaClubsBaseUrl,
@@ -67,12 +74,15 @@ export function createModules(input: CreateModulesInput): AppModules {
     ingestion: eaProvider,
     providerMatches,
     rawObservations,
+    jobs: providerSyncJobs,
     ids,
+    clock,
+    maxJobAttempts: 4,
+    transaction,
   });
 
   const deferredAuthorization = new DeferredAuthorizationPort();
   const entryGate = new DeferredRosterEntryGate();
-  const transaction = createTransactionPort(input.pool);
   const organizations = createOrganizationsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
