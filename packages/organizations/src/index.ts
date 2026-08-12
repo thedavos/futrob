@@ -106,6 +106,7 @@ export {
 } from "./application/accept-invitation/accept-invitation.use-case.ts";
 export {
   InspectCompetitionInvitationUseCase,
+  type InspectCompetitionInvitationError,
   type InspectCompetitionInvitationInput,
   type InspectedCompetitionInvitation,
 } from "./application/inspect-competition-invitation/inspect-competition-invitation.use-case.ts";

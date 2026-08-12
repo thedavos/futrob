@@ -1,10 +1,14 @@
 import { err, ok, type Result } from "@futrob/shared-kernel";
-import type { ActorId, ClockPort } from "@futrob/shared-kernel";
+import type { ActorId, ClockPort, CompetitionId } from "@futrob/shared-kernel";
 import type { InvitationRepository } from "../../domain/ports/invitation.repository.ts";
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
 import type { MembershipSummary } from "../../domain/value-objects/post-auth-destination.ts";
+import type {
+  CompetitionInviteRole,
+  OrgMembershipRole,
+} from "../../domain/value-objects/organization-membership-role.ts";
 import type { Organization } from "../../domain/entities/organization.ts";
 import {
   INVITATION_STATUS,
@@ -23,10 +27,8 @@ import {
 import { assessInvitationEligibility } from "../../domain/policies/invitation-eligibility.ts";
 
 export interface AcceptedInvitation extends MembershipSummary {
-  readonly competitionId: import("@futrob/shared-kernel").CompetitionId | null;
-  readonly competitionRole:
-    | import("../../domain/value-objects/organization-membership-role.ts").CompetitionInviteRole
-    | null;
+  readonly competitionId: CompetitionId | null;
+  readonly competitionRole: CompetitionInviteRole | null;
 }
 
 export interface AcceptInvitationInput {
@@ -213,7 +215,7 @@ export class AcceptInvitationUseCase {
       await this.deps.memberships.add({
         organizationId: claimed.organizationId,
         actorId,
-        role: membershipRole as import("../../domain/value-objects/organization-membership-role.ts").OrgMembershipRole,
+        role: membershipRole as OrgMembershipRole,
         createdAt: now,
       });
     }
@@ -221,13 +223,9 @@ export class AcceptInvitationUseCase {
     return ok({
       organizationId: organization.id,
       organizationName: organization.name,
-      role:
-        existing?.role ??
-        (membershipRole as import("../../domain/value-objects/organization-membership-role.ts").OrgMembershipRole),
+      role: existing?.role ?? (membershipRole as OrgMembershipRole),
       competitionId: claimed.competitionId ?? null,
-      competitionRole: claimed.competitionId
-        ? (claimed.role as import("../../domain/value-objects/organization-membership-role.ts").CompetitionInviteRole)
-        : null,
+      competitionRole: claimed.competitionId ? (claimed.role as CompetitionInviteRole) : null,
     });
   }
 
@@ -240,12 +238,10 @@ export class AcceptInvitationUseCase {
       return ok({
         organizationId: organization.id,
         organizationName: organization.name,
-        role: invitation.competitionId
-          ? "member"
-          : (invitation.role as import("../../domain/value-objects/organization-membership-role.ts").OrgMembershipRole),
+        role: invitation.competitionId ? "member" : (invitation.role as OrgMembershipRole),
         competitionId: invitation.competitionId ?? null,
         competitionRole: invitation.competitionId
-          ? (invitation.role as import("../../domain/value-objects/organization-membership-role.ts").CompetitionInviteRole)
+          ? (invitation.role as CompetitionInviteRole)
           : null,
       });
     }

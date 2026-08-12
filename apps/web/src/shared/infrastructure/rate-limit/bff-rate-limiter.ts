@@ -53,61 +53,65 @@ export interface BffRateLimiter {
   check(attempt: RateLimitAttempt): Promise<RateLimitDecision>;
 }
 
+const POLICY_ENV_KEYS = {
+  [BFF_RATE_LIMIT_POLICY.eaClubSearch]: {
+    windowSeconds: "RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS",
+    actorMaxAttempts: "RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX",
+    ipMaxAttempts: "RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX",
+  },
+  [BFF_RATE_LIMIT_POLICY.invitationAccept]: {
+    windowSeconds: "RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS",
+    actorMaxAttempts: "RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX",
+    ipMaxAttempts: "RATE_LIMIT_INVITATION_ACCEPT_IP_MAX",
+  },
+  [BFF_RATE_LIMIT_POLICY.invitationPreview]: {
+    windowSeconds: "RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS",
+    actorMaxAttempts: "RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX",
+    ipMaxAttempts: "RATE_LIMIT_INVITATION_PREVIEW_IP_MAX",
+  },
+} as const satisfies Record<
+  BffRateLimitPolicy,
+  Readonly<{ windowSeconds: string; actorMaxAttempts: string; ipMaxAttempts: string }>
+>;
+
 export function parseBffRateLimitPolicies(
   source: Readonly<Record<string, string | undefined>>,
 ): BffRateLimitPolicies {
   return {
-    [BFF_RATE_LIMIT_POLICY.eaClubSearch]: {
-      windowSeconds: positiveInteger(
-        source.RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS,
-        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.eaClubSearch].windowSeconds,
-        "RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS",
-      ),
-      actorMaxAttempts: positiveInteger(
-        source.RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX,
-        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.eaClubSearch].actorMaxAttempts,
-        "RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX",
-      ),
-      ipMaxAttempts: positiveInteger(
-        source.RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX,
-        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.eaClubSearch].ipMaxAttempts,
-        "RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX",
-      ),
-    },
-    [BFF_RATE_LIMIT_POLICY.invitationAccept]: {
-      windowSeconds: positiveInteger(
-        source.RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS,
-        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationAccept].windowSeconds,
-        "RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS",
-      ),
-      actorMaxAttempts: positiveInteger(
-        source.RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX,
-        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationAccept].actorMaxAttempts,
-        "RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX",
-      ),
-      ipMaxAttempts: positiveInteger(
-        source.RATE_LIMIT_INVITATION_ACCEPT_IP_MAX,
-        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationAccept].ipMaxAttempts,
-        "RATE_LIMIT_INVITATION_ACCEPT_IP_MAX",
-      ),
-    },
-    [BFF_RATE_LIMIT_POLICY.invitationPreview]: {
-      windowSeconds: positiveInteger(
-        source.RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS,
-        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationPreview].windowSeconds,
-        "RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS",
-      ),
-      actorMaxAttempts: positiveInteger(
-        source.RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX,
-        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationPreview].actorMaxAttempts,
-        "RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX",
-      ),
-      ipMaxAttempts: positiveInteger(
-        source.RATE_LIMIT_INVITATION_PREVIEW_IP_MAX,
-        DEFAULT_BFF_RATE_LIMIT_POLICIES[BFF_RATE_LIMIT_POLICY.invitationPreview].ipMaxAttempts,
-        "RATE_LIMIT_INVITATION_PREVIEW_IP_MAX",
-      ),
-    },
+    [BFF_RATE_LIMIT_POLICY.eaClubSearch]: policyFromEnv(source, BFF_RATE_LIMIT_POLICY.eaClubSearch),
+    [BFF_RATE_LIMIT_POLICY.invitationAccept]: policyFromEnv(
+      source,
+      BFF_RATE_LIMIT_POLICY.invitationAccept,
+    ),
+    [BFF_RATE_LIMIT_POLICY.invitationPreview]: policyFromEnv(
+      source,
+      BFF_RATE_LIMIT_POLICY.invitationPreview,
+    ),
+  };
+}
+
+function policyFromEnv(
+  source: Readonly<Record<string, string | undefined>>,
+  policy: BffRateLimitPolicy,
+): BffRateLimitPolicyConfig {
+  const keys = POLICY_ENV_KEYS[policy];
+  const defaults = DEFAULT_BFF_RATE_LIMIT_POLICIES[policy];
+  return {
+    windowSeconds: positiveInteger(
+      source[keys.windowSeconds],
+      defaults.windowSeconds,
+      keys.windowSeconds,
+    ),
+    actorMaxAttempts: positiveInteger(
+      source[keys.actorMaxAttempts],
+      defaults.actorMaxAttempts,
+      keys.actorMaxAttempts,
+    ),
+    ipMaxAttempts: positiveInteger(
+      source[keys.ipMaxAttempts],
+      defaults.ipMaxAttempts,
+      keys.ipMaxAttempts,
+    ),
   };
 }
 

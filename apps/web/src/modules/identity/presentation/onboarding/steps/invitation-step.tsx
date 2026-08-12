@@ -1,9 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { RequestId } from "@futrob/api-contracts";
 import { Field, FieldDescription, FieldError, FieldLabel, Input } from "@futrob/ui";
-import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import {
   SupportErrorAlert,
   type SupportErrorAlertCopy,
@@ -15,6 +13,10 @@ import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
 import { stepsForPath } from "../onboarding-step-meta.ts";
+import {
+  finalizationError,
+  type OnboardingSupportError,
+} from "../onboarding-finalization-errors.ts";
 
 export function InvitationStep() {
   const flow = useOnboardingFlow();
@@ -25,11 +27,7 @@ export function InvitationStep() {
     null,
   );
   const validationError = validationErrorKey ? t(validationErrorKey) : null;
-  const [previewError, setPreviewError] = useState<{
-    readonly code: string;
-    readonly requestId?: RequestId;
-    readonly retryAfterSeconds?: number;
-  } | null>(null);
+  const [previewError, setPreviewError] = useState<OnboardingSupportError | null>(null);
 
   async function continueToReview() {
     const token = flow.draft.invitationToken.trim();
@@ -45,14 +43,7 @@ export function InvitationStep() {
         await flow.goTo("game-account", "invitation");
       }
     } catch (caught) {
-      const error =
-        caught instanceof IdentityOnboardingClientError
-          ? {
-              code: caught.code,
-              ...(caught.requestId ? { requestId: caught.requestId } : {}),
-              ...(caught.retryAfterSeconds ? { retryAfterSeconds: caught.retryAfterSeconds } : {}),
-            }
-          : { code: "fallback" };
+      const error = finalizationError("invitation", caught);
       retry.start(error.retryAfterSeconds);
       setPreviewError(error);
       window.requestAnimationFrame(() => inputRef.current?.focus());
@@ -116,7 +107,7 @@ export function InvitationStep() {
               <SupportErrorAlert
                 copy={supportCopy}
                 error={{
-                  message: t.error(previewError.code),
+                  message: t(previewError.messageKey),
                   ...(previewError.requestId ? { requestId: previewError.requestId } : {}),
                   ...(previewError.retryAfterSeconds
                     ? { retryAfterSeconds: retry.remainingSeconds || undefined }
