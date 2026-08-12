@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import {
+  Navigate,
   Outlet,
   RouterProvider,
   createMemoryHistory,
@@ -23,7 +24,7 @@ import { IntentChoiceStep } from "./steps/intention-step.tsx";
 import { InvitationStep } from "./steps/invitation-step.tsx";
 import { OrganizationStep } from "./steps/organization-step.tsx";
 import { OnboardingReview } from "./steps/review-step.tsx";
-import { TeamStep } from "./steps/team-step.tsx";
+import { ClubStep } from "./steps/club-step.tsx";
 
 type OnboardingStoryPath =
   | "/onboarding/intention"
@@ -31,6 +32,7 @@ type OnboardingStoryPath =
   | "/onboarding/competition"
   | "/onboarding/invitation"
   | "/onboarding/game-account"
+  | "/onboarding/club"
   | "/onboarding/team"
   | "/onboarding/review";
 
@@ -235,8 +237,13 @@ function createOnboardingStoryRouter(
     }),
     createRoute({
       getParentRoute: () => rootRoute,
+      path: "/onboarding/club",
+      component: ClubStep,
+    }),
+    createRoute({
+      getParentRoute: () => rootRoute,
       path: "/onboarding/team",
-      component: TeamStep,
+      component: () => <Navigate replace to="/onboarding/club" />,
     }),
     createRoute({
       getParentRoute: () => rootRoute,

@@ -20,7 +20,7 @@ export const onboardingStepSchema = z.enum([
   "game",
   "invitation",
   "game-account",
-  "team",
+  "club",
   "review",
 ]);
 
@@ -44,13 +44,18 @@ export type GetOnboardingStatusResponse = z.infer<typeof getOnboardingStatusResp
 const allowedStepsByPath: Record<OnboardingPathDto, readonly OnboardingStepDto[]> = {
   organization: ["intention", "organization", "competition", "game-account", "game", "review"],
   invitation: ["intention", "invitation", "game-account", "review"],
-  player: ["intention", "game", "game-account", "team", "review"],
+  player: ["intention", "game", "game-account", "club", "review"],
 };
+
+const onboardingProgressInputStepSchema = z.union([
+  onboardingStepSchema,
+  z.literal("team").transform(() => "club" as const),
+]);
 
 export const saveOnboardingProgressRequestSchema = z
   .object({
     path: onboardingPathSchema.nullable(),
-    currentStep: onboardingStepSchema,
+    currentStep: onboardingProgressInputStepSchema,
   })
   .superRefine((input, context) => {
     const allowed =

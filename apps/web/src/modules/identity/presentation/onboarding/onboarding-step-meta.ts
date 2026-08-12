@@ -34,7 +34,7 @@ export const stepsByPath: Record<OnboardingPathDto, readonly StepperStep[]> = {
   [ONBOARDING_PATH.player]: [
     { id: "intention", label: "Inicio" },
     { id: "game-account", label: "Cuenta" },
-    { id: "team", label: "Club" },
+    { id: "club", label: "Club" },
     { id: "review", label: "Confirmar" },
   ],
 };

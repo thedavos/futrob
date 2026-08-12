@@ -805,6 +805,7 @@
                       "game",
                       "invitation",
                       "game-account",
+                      "club",
                       "team",
                       "review"
                     ]
@@ -5095,7 +5096,7 @@
                   "game",
                   "invitation",
                   "game-account",
-                  "team",
+                  "club",
                   "review"
                 ]
               },

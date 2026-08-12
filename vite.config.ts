@@ -91,6 +91,7 @@ export default defineConfig({
       "packages/api-contracts",
       "packages/sdk",
       "packages/shared-kernel",
+      "packages/identity",
       "packages/game-data",
       "packages/organizations",
       "packages/competitions",

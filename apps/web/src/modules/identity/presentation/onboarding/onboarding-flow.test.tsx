@@ -4,8 +4,13 @@ import { StrictMode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type { ExternalClubDto } from "@futrob/api-contracts";
 
-import { OnboardingStoryRouter, createFakeOnboardingGateway } from "./onboarding-story-router.tsx";
+import {
+  OnboardingStoryRouter,
+  STORY_EXTERNAL_CLUBS,
+  createFakeOnboardingGateway,
+} from "./onboarding-story-router.tsx";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 
@@ -103,6 +108,22 @@ describe("OnboardingFlowProvider initialization", () => {
 
     expect(
       await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
+    ).toBeTruthy();
+  });
+
+  it("redirects the legacy team route to the club step without a loop", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ path: "player", currentStep: "club" })}
+        initialPath="/onboarding/team"
+      />,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
+    expect(
+      screen.getByText(
+        "La asociación es opcional y declarativa. No verifica propiedad, ni crea un Team de competición ni te incorpora a una plantilla.",
+      ),
     ).toBeTruthy();
   });
 
@@ -330,16 +351,16 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBe(false);
   });
 
-  it("searches and selects an EA club on the player team step", async () => {
+  it("searches and selects an EA club on the player club step", async () => {
     const searches: Array<{ gameEdition?: string }> = [];
     render(
       <OnboardingStoryRouter
         gateway={createFakeOnboardingGateway({
           path: "player",
-          currentStep: "team",
+          currentStep: "club",
           onSearchExternalClubs: (request) => searches.push(request),
         })}
-        initialPath="/onboarding/team"
+        initialPath="/onboarding/club"
       />,
     );
 
@@ -360,7 +381,7 @@ describe("OnboardingFlowProvider initialization", () => {
   });
 
   it("preserves the club query and enables retry after a rate-limit wait", async () => {
-    const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "team" });
+    const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "club" });
     gateway.searchExternalClubs = async () => {
       throw new GameDataClientError({
         code: "api.rate_limited",
@@ -370,7 +391,7 @@ describe("OnboardingFlowProvider initialization", () => {
         status: 429,
       });
     };
-    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/team" />);
+    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/club" />);
 
     const query = await screen.findByRole("textbox", { name: "Nombre del club" });
     fireEvent.change(query, { target: { value: "Fera" } });
@@ -436,15 +457,41 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBe(true);
   });
 
+  it("discards a pending club search when the platform changes", async () => {
+    const user = userEvent.setup();
+    const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "club" });
+    let resolveSearch: ((clubs: readonly ExternalClubDto[]) => void) | undefined;
+    gateway.searchExternalClubs = async () =>
+      await new Promise<readonly ExternalClubDto[]>((resolve) => {
+        resolveSearch = resolve;
+      });
+    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/club" />);
+
+    await user.type(await screen.findByRole("textbox", { name: "Nombre del club" }), "Fera");
+    await user.click(screen.getByRole("button", { name: "Buscar club" }));
+    await screen.findByText("Buscando clubs para «Fera»…");
+    await user.click(screen.getByRole("combobox", { name: "Plataforma EA para la búsqueda" }));
+    await user.click(await screen.findByRole("option", { name: "Xbox" }));
+
+    await act(async () => {
+      resolveSearch?.([...STORY_EXTERNAL_CLUBS]);
+    });
+
+    expect(screen.queryByRole("radio", { name: /Fera Enjaulada/ })).toBeNull();
+    expect(
+      (screen.getByRole("button", { name: "Revisar club" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
   it("shows a recoverable error when club search fails", async () => {
     render(
       <OnboardingStoryRouter
         gateway={createFakeOnboardingGateway({
           path: "player",
-          currentStep: "team",
+          currentStep: "club",
           searchError: true,
         })}
-        initialPath="/onboarding/team"
+        initialPath="/onboarding/club"
       />,
     );
 

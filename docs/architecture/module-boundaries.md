@@ -5,19 +5,19 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 ## Bounded contexts (MVP)
 
-| Módulo          | Responsabilidad                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------- |
-| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                          |
-| `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación               |
-| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC y membresías contextuales de competición  |
-| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes, vínculo club externo |
-| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                        |
-| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                     |
-| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales               |
-| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                         |
-| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                           |
-| `notifications` | Web, email (WhatsApp/push como ampliación)                                                  |
-| `public-portal` | Lecturas públicas sanitizadas                                                               |
+| Módulo          | Responsabilidad                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                                     |
+| `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación                          |
+| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC y membresías contextuales de competición             |
+| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes y asociaciones a clubes externos |
+| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                                   |
+| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                                |
+| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales                          |
+| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                                    |
+| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                      |
+| `notifications` | Web, email (WhatsApp/push como ampliación)                                                             |
+| `public-portal` | Lecturas públicas sanitizadas                                                                          |
 
 `billing` está fuera del MVP.
 
@@ -68,6 +68,11 @@ private use case
   → contextual resolver (apps/api composition)
   → role membership + owning BC permission catalog + scoped grant ledger
 ```
+
+El path personal usa el paso `club` para crear una `PlayerExternalClubAssociation` en `teams`.
+Esta operación no crea un `Team` ni un `Roster`. `ExternalClubConnection` conserva la asociación
+operativa de un Team. El adapter de persistencia de `identity` normaliza el valor legacy `team` al
+leer progreso de onboarding; el dominio y las respuestas nuevas solo usan `club`.
 
 Una invitación usada por onboarding siempre referencia una competición. `organizations` valida y
 consume el token y asegura una membresía `member` mínima del tenant; `competitions` persiste después

@@ -522,6 +522,7 @@ paths:
                     - game
                     - invitation
                     - game-account
+                    - club
                     - team
                     - review
       responses:
@@ -3792,7 +3793,7 @@ components:
                 - game
                 - invitation
                 - game-account
-                - team
+                - club
                 - review
             - type: "null"
     CompleteOrganizationOnboardingResponse:
