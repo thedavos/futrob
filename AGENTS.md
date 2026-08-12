@@ -12,18 +12,26 @@ Build Futrob MVP (FC Clubs) per `product/`. Architecture: hexagonal feature modu
 
 ## Preferred skills (by phase)
 
-| Skill                     | Use for                                      |
-| ------------------------- | -------------------------------------------- |
-| `futrob-hexagonal-module` | Any module / use case                        |
-| shadcn (+ Base UI)        | `packages/ui` primitives                     |
-| better-ui                 | Screen visual quality                        |
-| gsap                      | Landing / bracket motion (presentation only) |
-| layers-domain             | Domain vocabulary before code                |
-| layers-interaction-flow   | Captain / sync / officialize flows           |
-| web-perf                  | Portal, lists, Workers budgets               |
-| seo                       | Public landing + competition portal          |
+See `.cursor/rules/agent-skills.mdc` for the full table and Cloud Agent availability.
 
-Also: Cloudflare/wrangler, Sentry, TypeScript best practices. See `.cursor/rules/agent-skills.mdc`.
+| Skill                             | Use for                                          |
+| --------------------------------- | ------------------------------------------------ |
+| `futrob-hexagonal-module`         | Any module / use case                            |
+| layers-domain / user-needs        | Vocabulary and operator vs spectator jobs        |
+| layers-interaction-flow           | Captain / sync / officialize flows               |
+| layers-surface                    | Screen audit against the model                   |
+| shadcn (+ Base UI)                | `packages/ui` primitives                         |
+| better-ui / layout / a11y         | Visual pass, structure, 44 px targets            |
+| better-typography / writing       | `typo-*` roles, ES/EN copy                       |
+| better-colors                     | Contrast on existing semantic tokens             |
+| design-empty-states               | Empty, filtered-empty, permission, error         |
+| smooth-shadow-ring                | Elevated surfaces (never `border` + `shadow`)    |
+| gsap                              | Landing / bracket motion (presentation only)     |
+| tanstack-start / query            | Routes, SSR, client `/api/v1` state (ADR-0012)   |
+| web-perf / seo                    | Portal budgets; crawlable published content only |
+| wrangler / workers-best-practices | D1, R2, Queues, Cron, Workers runtime            |
+| sentry-instrument                 | Execution boundaries                             |
+| typescript-best-practices         | Contracts and typed boundaries                   |
 
 ## UI system contract
 
@@ -97,6 +105,19 @@ npm run cli -- help
 ```
 
 `apps/cli` has no local Vite+ app config — only root fmt/lint. Do not claim Workers/EA integrations work without direct evidence.
+
+## Cursor Cloud specific instructions
+
+Standard commands live in the `## Commands` section above and in `README.md` / `apps/api/README.md`; only the non-obvious startup caveats are captured here.
+
+- **Node 24 is required** (`engines.node >=24`). `.cursor/cloud-install.sh` bootstraps nvm if it is missing, installs/selects Node 24, and **exits** if `node --version` is still below 24 (the Cloud image may also expose Node 22 at `/exec-daemon/node`). New shells source `~/.bashrc` for nvm's Node 24; if `node --version` ever shows 22, run `source ~/.bashrc`.
+- **`vp` is not installed globally.** Run tooling through the root `npm run` scripts (`dev`, `check`, `test`, `build`, `web`, `api`); npm puts `node_modules/.bin/vp` on `PATH` for them. For a direct call use `./node_modules/.bin/vp`, never `npx vp`.
+- **Local env files are gitignored and must exist to run the app**: `apps/web/.dev.vars` and `apps/api/.env`. Their `INTERNAL_JOB_SECRET` values **must match**, or the web BFF → API org/onboarding calls fail with 401. The Cloud install script copies the examples and aligns that secret. Create them the same way locally from `apps/web/.dev.vars.example` and `apps/api/.env.example`.
+- **D1 (auth) local state** lives at `apps/web/.wrangler/state` and is shared by the `vp dev` Cloudflare plugin. If it's reset, re-run `cd apps/web && npx wrangler d1 migrations apply futrob-app --local` (non-interactive when stdin is not a TTY). Sign-up/login need this migration applied.
+- **Postgres is optional locally.** Without `DATABASE_URL`, `apps/api` uses process-local in-memory stores (`/api/v1/meta/health` reports `db: "skipped"`). Consequence: organizations/onboarding data is lost whenever the API restarts — and `apps/api` runs under `tsx watch`, so editing API files hot-restarts it and wipes those in-memory orgs. Set `DATABASE_URL` + apply `apps/api/migrations/*.sql` for durable data.
+- **Native install scripts**: only `esbuild`, `sharp`, and `workerd` are allowlisted (by name) in `package.json` `allowScripts` so they can fetch platform binaries. Cloud `npm ci` uses `--strict-allow-scripts` so any other lifecycle script fails the install instead of being skipped. Do not use `dangerously-allow-all-scripts`.
+- **Ports**: web `http://localhost:3000`, api `http://localhost:8787` (`/api/v1`). `npm run dev` runs both in parallel.
+- **Skills**: only `.cursor/skills/` in this repo is guaranteed on Cloud Agents. Preferred user/plugin skills are listed in `.cursor/rules/agent-skills.mdc`; follow the matching rules when those skill files are not in the checkout.
 
 <!--VITE PLUS START-->
 

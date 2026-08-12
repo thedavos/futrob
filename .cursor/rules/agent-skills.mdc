@@ -9,25 +9,52 @@ Always start domain/module work with the repo skill:
 
 - `.cursor/skills/futrob-hexagonal-module/SKILL.md`
 
-## Approved phase skills
+Cloud Agents only auto-load skills committed under `.cursor/skills/` (and `.agents/skills/`).
+User-level `~/.cursor/skills` / `~/.agents/skills` and personal plugins do not sync to the VM.
+When a listed skill file is missing, follow the matching `.cursor/rules` and `AGENTS.md` instead
+of inventing a parallel stack.
 
-Read and follow these when the task matches. Do not invent a parallel stack.
+## Domain and product thinking
+
+Read and follow these when the task matches.
 
 | Skill | When |
 |---|---|
-| **shadcn** (Vercel plugin / CLI) | Add or change primitives in `packages/ui`; compose in web presentation. Base UI only — see `ui-shadcn.mdc`. |
-| **better-ui** | Visual pass on screens: hierarchy, density, empty/error states, operator vs spectator UI. |
-| **gsap** (gsap-skills plugin) | Motion for landing, bracket zoom/pan presence, intentional transitions. Never in domain/application. Respect `prefers-reduced-motion`. |
-| **layers-domain** | Clarify or rename domain concepts before coding (Encounter, OfficialMatch, Team, selection). |
-| **layers-interaction-flow** | Captain selection, reschedule, sync → review → officialize flows before UI/API shape. |
-| **web-perf** | SSR/Workers budgets, dense lists, bracket, public portal load. |
-| **seo** | Public landing and competition portal metadata, crawlable published content only. |
+| **futrob-hexagonal-module** | Any BC, use case, port, adapter, or server function |
+| **layers-domain** | Clarify or rename domain concepts before coding (Encounter, OfficialMatch, Team, selection) |
+| **layers-interaction-flow** | Captain selection, reschedule, sync → review → officialize flows before UI/API shape |
+| **layers-user-needs** | Operator vs spectator jobs, pains, and opportunities before solution shape |
+| **layers-surface** | Audit screens against vocabulary, completeness, feedback, and hierarchy |
 
-## Platform skills (also expected)
+## UI system
 
-- Cloudflare / wrangler / workers-best-practices for Workers, D1, R2, Queues, Cron
-- Sentry at execution boundaries
-- pstack typescript-best-practices for contracts and typed boundaries
+Compose from `@futrob/ui`. Do not invent a second visual language.
+
+| Skill | When |
+|---|---|
+| **shadcn** (Vercel plugin / CLI) | Add or change primitives in `packages/ui`; compose in web presentation. Base UI only — see `ui-shadcn.mdc` |
+| **better-ui** | Visual pass: density, polish, empty/error states, operator vs spectator UI |
+| **better-layout** | Grouping, spacing, reading order, breakpoints, progressive disclosure |
+| **better-typography** | Type roles, wrapping, tabular numbers, measure — keep Manrope + `typo-*` |
+| **better-accessibility** | Focus, keyboard, names, 44 px targets, reduced motion |
+| **better-colors** | Contrast and semantic tokens only; do not invent new primitive colors |
+| **better-writing** | Labels, errors, empty copy; Spanish/English; `typo-caption` is sentence case |
+| **design-empty-states** | First-use, filtered-empty, permission, and recoverable-error panels |
+| **smooth-shadow-ring** | Elevated surfaces. Never pair `border`/`ring` with `shadow` |
+| **gsap** (gsap-skills plugin) | Landing / bracket zoom/pan presence, intentional transitions. Never in domain/application. Respect `prefers-reduced-motion` |
+
+## App and platform
+
+| Skill | When |
+|---|---|
+| **tanstack-start** | Routes, SSR loaders, server functions, Workers entry — see `tanstack-start.mdc` |
+| **tanstack-query** | Client `/api/v1` server-state (`useQuery` / `useMutation`). See ADR-0012 |
+| **web-perf** | SSR/Workers budgets, dense lists, bracket, public portal load |
+| **seo** | Public landing and competition portal metadata; crawlable published content only |
+| **wrangler** | D1, R2, Queues, Cron, secrets, `wrangler.jsonc` |
+| **workers-best-practices** | Workers runtime, bindings, streaming, no Node assumptions at module scope |
+| **sentry-instrument** | Sentry at execution boundaries (server functions, queue/cron, API) |
+| **typescript-best-practices** (pstack) | Contracts, discriminated unions, branded IDs, exhaustive switches |
 
 ## Local tooling
 
@@ -36,4 +63,6 @@ Read and follow these when the task matches. Do not invent a parallel stack.
 
 ## Do not use for implementation here
 
-Supabase, Railway deploy, Clerk, Convex, Nuxt, Astro, UnoCSS, Kapso/Chat SDK unless product direction explicitly reopens them.
+Supabase, Railway deploy of `apps/web`, Clerk, Convex, Nuxt, Astro, UnoCSS, Kapso/Chat SDK,
+industrial-brutalist-ui, stitch-design-taste, or Next.js — unless product direction explicitly
+reopens them. `apps/api` already runs on Railway; do not move the Must web deployable there.
