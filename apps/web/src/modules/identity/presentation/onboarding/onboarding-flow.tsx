@@ -29,7 +29,10 @@ import type {
   PlayerGameAccountInputDto,
   SearchClubsQueryInput,
 } from "@futrob/api-contracts";
-import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
+import {
+  IdentityOnboardingClientError,
+  identityBrowserClient,
+} from "@/modules/identity/presentation/identity-browser-client.ts";
 import { useSaveOnboardingProgressMutation } from "@/modules/identity/presentation/identity-queries.ts";
 import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
@@ -210,8 +213,10 @@ export function OnboardingFlowProvider({
         try {
           const result = await gateway.checkOrganizationName({ name });
           return result.available;
-        } catch {
-          setError({ message: "No pudimos verificar el nombre. Inténtalo nuevamente." });
+        } catch (caught) {
+          setError(
+            supportErrorFromCaught(caught, "No pudimos verificar el nombre. Inténtalo nuevamente."),
+          );
           return null;
         } finally {
           setSaving(false);
@@ -230,8 +235,10 @@ export function OnboardingFlowProvider({
         await navigate({ to: routeForOnboardingStep(step) });
         try {
           await saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step });
-        } catch {
-          setError({ message: "No pudimos guardar tu progreso. Inténtalo nuevamente." });
+        } catch (caught) {
+          setError(
+            supportErrorFromCaught(caught, "No pudimos guardar tu progreso. Inténtalo nuevamente."),
+          );
           setPathState(previousPath);
           setCurrentStep(previousStep);
           await navigate({ to: routeForOnboardingStep(previousStep) });
@@ -327,6 +334,17 @@ export function OnboardingFlowProvider({
       )}
     </OnboardingFlowContext>
   );
+}
+
+function supportErrorFromCaught(caught: unknown, message: string): SupportError {
+  const requestId = caught instanceof IdentityOnboardingClientError ? caught.requestId : undefined;
+  const retryAfterSeconds =
+    caught instanceof IdentityOnboardingClientError ? caught.retryAfterSeconds : undefined;
+  return {
+    message,
+    ...(requestId ? { requestId } : {}),
+    ...(retryAfterSeconds ? { retryAfterSeconds } : {}),
+  };
 }
 
 function markOnboardingCompletedInCache(queryClient: QueryClient, path: OnboardingPathDto): void {

@@ -244,14 +244,6 @@ export class ContextualAuthorizationAdapter implements AuthorizationPort {
       if (!membership) {
         contextualRoster = await this.findRoster(actorId, scope, null);
         if (contextualRoster) {
-          const entry = await this.deps.entries.findByCompetitionAndTeam(
-            scope.organizationId,
-            scope.competitionId,
-            contextualRoster.teamId,
-          );
-          if (!entry || entry.status !== "approved") contextualRoster = null;
-        }
-        if (contextualRoster) {
           const contextualRole =
             contextualRoster.role === "vice_captain" ? "captain" : contextualRoster.role;
           for (const permission of COMPETITION_ROLE_PERMISSIONS[contextualRole]) {
@@ -314,32 +306,45 @@ export class ContextualAuthorizationAdapter implements AuthorizationPort {
     if (scope.teamId && scope.organizationId) {
       const team = await this.deps.teams.findById(scope.organizationId, scope.teamId);
       if (!team) return { ok: false, reason: "scope-not-found" };
+      let rosterPermissions = roster ? ROSTER_ROLE_PERMISSIONS[roster.role] : [];
       if (scope.competitionId) {
         const entry = await this.deps.entries.findByCompetitionAndTeam(
           scope.organizationId,
           scope.competitionId,
           scope.teamId,
         );
-        if (!entry || entry.status !== "approved") {
+        if (!entry) {
           return { ok: false, reason: "scope-mismatch" };
+        }
+        if (entry.status === "rejected" && roster) {
+          rosterPermissions = ROSTER_ROLE_PERMISSIONS.player;
         }
       }
       layers.push({
         scopeType: "team",
         scopeId: scope.teamId,
         roles: roster ? [{ scopeType: "team", scopeId: scope.teamId, role: roster.role }] : [],
-        baseline: new Set(roster ? ROSTER_ROLE_PERMISSIONS[roster.role] : []),
+        baseline: new Set(rosterPermissions),
       });
     }
 
     if (scope.encounterId) {
       const baseline = new Set<Permission>();
-      if (roster?.role === "captain" || roster?.role === "vice_captain") {
+      const approvedEntry =
+        roster && scope.organizationId && scope.competitionId
+          ? await this.deps.entries.findByCompetitionAndTeam(
+              scope.organizationId,
+              scope.competitionId,
+              roster.teamId,
+            )
+          : null;
+      const eligibleRoster = approvedEntry?.status === "approved" ? roster : null;
+      if (eligibleRoster?.role === "captain" || eligibleRoster?.role === "vice_captain") {
         baseline.add(ENCOUNTER_PERMISSION.read);
         baseline.add(ENCOUNTER_PERMISSION.rescheduleRequest);
         baseline.add("encounters.official-selection.propose");
         baseline.add("encounters.official-selection.resolve");
-      } else if (roster?.role === "player") {
+      } else if (eligibleRoster?.role === "player") {
         baseline.add(ENCOUNTER_PERMISSION.read);
       }
       layers.push({

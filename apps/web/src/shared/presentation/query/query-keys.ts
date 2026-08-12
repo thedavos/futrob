@@ -36,6 +36,17 @@ export const queryKeys = {
     teams: (organizationId: string) =>
       [...queryKeys.competitions.all, "teams", organizationId] as const,
   },
+  teams: {
+    all: ["teams"] as const,
+    competitionManagement: (organizationId: string, competitionId: string) =>
+      [...queryKeys.teams.all, "competition-management", organizationId, competitionId] as const,
+    competitionManagementDetail: (organizationId: string, competitionId: string, teamId: string) =>
+      [
+        ...queryKeys.teams.competitionManagement(organizationId, competitionId),
+        "detail",
+        teamId,
+      ] as const,
+  },
   gameData: {
     all: ["game-data"] as const,
     clubSearch: (input: {

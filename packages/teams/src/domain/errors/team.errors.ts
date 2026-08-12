@@ -20,6 +20,11 @@ export class RosterCompetitionConflict extends TaggedError("RosterCompetitionCon
   message: string;
 }> {}
 
+export class RosterEntryInactive extends TaggedError("RosterEntryInactive")<{
+  code: "teams.roster_entry_inactive";
+  message: string;
+}> {}
+
 export class RosterLocked extends TaggedError("RosterLocked")<{
   code: "teams.roster_locked";
   message: string;
@@ -73,13 +78,15 @@ export class InvalidGameEdition extends TaggedError("InvalidGameEdition")<{
 
 export type CreateTeamError = InvalidTeamName | CreationKeyConflict | TeamAuthorizationForbidden;
 
-export type AddToRosterError =
+export type AddToRosterUncheckedError =
   | TeamNotFound
   | RosterCompetitionConflict
   | GameAccountNotFound
   | RosterLocked
   | RosterFull
-  | TeamAuthorizationForbidden;
+  | RosterEntryInactive;
+
+export type AddToRosterError = AddToRosterUncheckedError | TeamAuthorizationForbidden;
 
 export type ChangeRosterRoleError = RosterMembershipNotFound | TeamAuthorizationForbidden;
 

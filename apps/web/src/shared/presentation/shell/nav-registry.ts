@@ -191,7 +191,6 @@ function organizationCompetitionContext(
       id: "teams",
       label: "Equipos",
       href: `${base}/teams`,
-      stub: true,
       requiredPermission: TEAM_PERMISSION.read,
     },
     {

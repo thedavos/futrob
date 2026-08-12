@@ -110,7 +110,13 @@ export class InMemoryCompetitionRosterMembershipRepository implements Competitio
     );
   }
 
-  async add(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership> {
+  async add(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership | null> {
+    const existing = await this.findByPlayerAndCompetition(
+      membership.playerProfileId,
+      membership.competitionId,
+    );
+    if (existing && existing.teamId !== membership.teamId) return null;
+    if (existing) return existing;
     this.rows.set(membership.id, membership);
     return membership;
   }
@@ -188,7 +194,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
   constructor(private readonly pool: Pool) {}
 
   async findById(id: string): Promise<CompetitionRosterMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships WHERE id = $1`,
@@ -203,7 +209,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     teamId: TeamId,
     id: string,
   ): Promise<CompetitionRosterMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -217,7 +223,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     playerProfileId: string,
     competitionId: CompetitionId,
   ): Promise<CompetitionRosterMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -232,7 +238,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     playerProfileId: string,
     competitionId: CompetitionId,
   ): Promise<CompetitionRosterMembership | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -245,7 +251,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
   async listByPlayerProfile(
     playerProfileId: string,
   ): Promise<readonly CompetitionRosterMembership[]> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -261,7 +267,7 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     competitionId: CompetitionId,
     teamId: TeamId,
   ): Promise<readonly CompetitionRosterMembership[]> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, competition_id, team_id, player_profile_id,
               game_account_id, role, created_at
        FROM competition_roster_memberships
@@ -272,14 +278,14 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
     return result.rows.map(rehydrateRoster);
   }
 
-  async add(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership> {
-    const result = await this.pool.query(
+  async add(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership | null> {
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO competition_roster_memberships (
          id, organization_id, competition_id, team_id, player_profile_id,
          game_account_id, role, created_at
        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (player_profile_id, competition_id)
-       DO UPDATE SET player_profile_id = EXCLUDED.player_profile_id
+       DO NOTHING
        RETURNING id, organization_id, competition_id, team_id, player_profile_id,
                  game_account_id, role, created_at`,
       [
@@ -293,11 +299,11 @@ export class PostgresCompetitionRosterMembershipRepository implements Competitio
         membership.createdAt.toISOString(),
       ],
     );
-    return rehydrateRoster(result.rows[0]);
+    return result.rows[0] ? rehydrateRoster(result.rows[0]) : null;
   }
 
   async update(membership: CompetitionRosterMembership): Promise<CompetitionRosterMembership> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `UPDATE competition_roster_memberships
        SET role = $2, game_account_id = $3
        WHERE id = $1 AND organization_id = $4 AND competition_id = $5 AND team_id = $6

@@ -21,13 +21,13 @@ Meta / contract:
   otherwise `db: "skipped"`.
 - `GET /openapi.json` and `GET /openapi.yaml` — the `@futrob/api-contracts` document.
 
-Game data (public CORS for the browser SDK today):
+Game data (service auth from `apps/web` BFF — not browser cookies):
 
 - `GET /game-data/clubs/search?query=…` — search external clubs.
 - `GET /game-data/clubs/:externalClubId` — external club info.
 - `GET /game-data/clubs/:externalClubId/matches` — recent provider matches.
 
-Organizations (service auth from `apps/web` BFF — not browser cookies):
+Organizations (same service auth):
 
 - `GET /organizations/mine`
 - `GET /organizations/post-auth-destination`
@@ -98,7 +98,7 @@ Default port is `8787`. The app boots without a database. Without
 | `PORT`                       | no             | `8787`                                        | HTTP listen port                                                   |
 | `NODE_ENV`                   | no             | `development`                                 | Runtime mode                                                       |
 | `DATABASE_URL`               | no (prod: yes) | unset                                         | Postgres connection string (Railway / Neon)                        |
-| `INTERNAL_JOB_SECRET`        | yes (orgs)     | unset                                         | Shared with `apps/web` for trusted ActorId org calls               |
+| `INTERNAL_JOB_SECRET`        | yes            | unset                                         | Shared with `apps/web` for trusted BFF calls (game-data, orgs, …)  |
 | `INITIAL_SUPERUSER_ACTOR_ID` | no             | unset                                         | Seeds and audits the first persisted superuser; ignored afterwards |
 | `EA_CLUBS_BASE_URL`          | no             | `https://proclubs.ea.com/api/fc`              | EA Clubs egress base                                               |
 | `CORS_ORIGINS`               | no             | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call the API            |

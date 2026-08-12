@@ -26,6 +26,10 @@ import {
 } from "../competitions/schemas.ts";
 import { encounterScheduleSnapshotSchema } from "../encounters/schemas.ts";
 import {
+  competitionTeamManagementDetailResponseSchema,
+  competitionTeamManagementListResponseSchema,
+} from "../teams/schemas.ts";
+import {
   accessGrantSchema,
   changeCompetitionRoleRequestSchema,
   competitionRoleAssignmentSchema,
@@ -150,6 +154,7 @@ export const futrobOpenApiV1 = {
             },
           },
           "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
           "429": { $ref: "#/components/responses/RateLimited" },
           "502": { $ref: "#/components/responses/ApiError" },
         },
@@ -200,6 +205,7 @@ export const futrobOpenApiV1 = {
             },
           },
           "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
           "404": { $ref: "#/components/responses/ApiError" },
           "502": { $ref: "#/components/responses/ApiError" },
         },
@@ -262,6 +268,7 @@ export const futrobOpenApiV1 = {
             },
           },
           "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
           "502": { $ref: "#/components/responses/ApiError" },
         },
       },
@@ -952,6 +959,70 @@ export const futrobOpenApiV1 = {
             },
           },
           "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/team-management": {
+      get: {
+        operationId: "listCompetitionTeamManagement",
+        tags: ["teams"],
+        summary: "List competition Teams with roster management state",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+          { name: "cursor", in: "query", required: false, schema: { type: "string" } },
+          {
+            name: "limit",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, maximum: 50, default: 25 },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Visible Team management summaries",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["items", "nextCursor"],
+                  properties: {
+                    items: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/CompetitionTeamManagementSummary" },
+                    },
+                    nextCursor: { type: ["string", "null"] },
+                  },
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/team-management/{teamId}": {
+      get: {
+        operationId: "getCompetitionTeamManagement",
+        tags: ["teams"],
+        summary: "Get a competition Team roster management detail",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+          { name: "teamId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Team roster management detail",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/CompetitionTeamManagementDetail" },
+              },
+            },
+          },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -1881,6 +1952,105 @@ export const futrobOpenApiV1 = {
           createdAt: { type: "string", format: "date-time" },
         },
       },
+      CompetitionTeamManagementSummary: {
+        type: "object",
+        required: ["team", "entry", "roster", "externalClub"],
+        properties: {
+          team: { $ref: "#/components/schemas/Team" },
+          entry: { $ref: "#/components/schemas/CompetitionEntry" },
+          roster: {
+            type: "object",
+            required: ["state", "memberCount", "maxSize", "lockedAt"],
+            properties: {
+              state: { type: "string", enum: ["open", "closed"] },
+              memberCount: { type: "integer", minimum: 0 },
+              maxSize: { type: "integer", minimum: 1 },
+              lockedAt: { type: ["string", "null"], format: "date-time" },
+            },
+          },
+          externalClub: {
+            anyOf: [
+              {
+                type: "object",
+                required: [
+                  "teamId",
+                  "providerKey",
+                  "externalClubId",
+                  "externalClubName",
+                  "platform",
+                  "gameEdition",
+                ],
+                properties: {
+                  teamId: { type: "string" },
+                  providerKey: {
+                    type: "string",
+                    enum: ["ea-clubs", "manual", "screenshot-ocr"],
+                  },
+                  externalClubId: { type: "string" },
+                  externalClubName: { type: "string" },
+                  platform: { type: "string" },
+                  gameEdition: { type: "string" },
+                },
+              },
+              { type: "null" },
+            ],
+          },
+        },
+      },
+      CompetitionTeamManagementDetail: {
+        allOf: [
+          { $ref: "#/components/schemas/CompetitionTeamManagementSummary" },
+          {
+            type: "object",
+            required: ["members"],
+            properties: {
+              members: {
+                type: "array",
+                items: {
+                  type: "object",
+                  required: ["membership", "presentation"],
+                  properties: {
+                    membership: {
+                      type: "object",
+                      required: [
+                        "id",
+                        "organizationId",
+                        "competitionId",
+                        "teamId",
+                        "playerProfileId",
+                        "gameAccountId",
+                        "role",
+                        "createdAt",
+                      ],
+                      properties: {
+                        id: { type: "string" },
+                        organizationId: { type: "string" },
+                        competitionId: { type: "string" },
+                        teamId: { type: "string" },
+                        playerProfileId: { type: "string" },
+                        gameAccountId: { type: ["string", "null"] },
+                        role: {
+                          type: "string",
+                          enum: ["player", "captain", "vice_captain"],
+                        },
+                        createdAt: { type: "string", format: "date-time" },
+                      },
+                    },
+                    presentation: {
+                      type: "object",
+                      required: ["displayName", "avatarUrl"],
+                      properties: {
+                        displayName: { type: "string" },
+                        avatarUrl: { type: ["string", "null"], format: "uri" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
       CompetitionParticipantInput: {
         oneOf: [
           {
@@ -2404,3 +2574,5 @@ void changeCompetitionRoleRequestSchema;
 void competitionRoleAssignmentSchema;
 void listAccessibleCompetitionsResponseSchema;
 void encounterScheduleSnapshotSchema;
+void competitionTeamManagementListResponseSchema;
+void competitionTeamManagementDetailResponseSchema;

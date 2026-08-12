@@ -11,17 +11,26 @@ import {
   RosterInvitationInvalid,
   RosterInvitationRevoked,
 } from "../../domain/errors/roster-invitation.errors.ts";
-import { RosterFull, RosterLocked } from "../../domain/errors/team.errors.ts";
+import {
+  RosterCompetitionConflict,
+  RosterFull,
+  RosterLocked,
+} from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterMembershipRepository } from "../../domain/ports/competition-roster-membership.repository.ts";
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 import type { PlayerProfileRepository } from "../../domain/ports/player-profile.repository.ts";
 import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port.ts";
+import type {
+  RosterMutationPort,
+  RosterMutationScope,
+} from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { EnsurePlayerProfileUseCase } from "../ensure-player-profile/ensure-player-profile.use-case.ts";
 import { createRosterInvitationTestHarness } from "../roster-invitation-test-harness.ts";
 import { AcceptRosterInvitationUseCase } from "./accept-roster-invitation.use-case.ts";
 import { CreateRosterInvitationUseCase } from "../create-roster-invitation/create-roster-invitation.use-case.ts";
+import { CloseRosterUseCase } from "../close-roster/close-roster.use-case.ts";
 
 class Teams implements TeamRepository {
   rows: Team[] = [];
@@ -100,6 +109,12 @@ class Rosters implements CompetitionRosterMembershipRepository {
     );
   }
   async add(membership: CompetitionRosterMembership) {
+    const existing = await this.findByPlayerAndCompetition(
+      membership.playerProfileId,
+      membership.competitionId,
+    );
+    if (existing && existing.teamId !== membership.teamId) return null;
+    if (existing) return existing;
     this.rows.push(membership);
     return membership;
   }
@@ -153,6 +168,24 @@ class Profiles implements PlayerProfileRepository {
   }
 }
 
+class SerialRosterMutations implements RosterMutationPort {
+  private tail = Promise.resolve();
+
+  async runExclusive<T>(_scope: RosterMutationScope, operation: () => Promise<T>): Promise<T> {
+    const previous = this.tail;
+    let release: () => void = () => undefined;
+    this.tail = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
+  }
+}
+
 function buildHarness(options?: { maxSize?: number }) {
   const harness = createRosterInvitationTestHarness();
   const teams = new Teams();
@@ -160,6 +193,7 @@ function buildHarness(options?: { maxSize?: number }) {
   const rosterStates = new RosterStates();
   const capacity = new Capacity(options?.maxSize ?? 11);
   const profiles = new Profiles();
+  const mutations = new SerialRosterMutations();
   const shared = { clock: harness.clock, ids: harness.ids };
   const authorization: import("@futrob/shared-kernel").AuthorizationPort = {
     decide: async (request) => ({ ...request, allowed: true, reason: "allowed" }),
@@ -177,6 +211,7 @@ function buildHarness(options?: { maxSize?: number }) {
     invitations: harness.invitations,
     tokens: harness.tokens,
     authorization,
+    entryGate: { canMutateRoster: async () => true },
     ...shared,
   });
   const acceptInvitation = new AcceptRosterInvitationUseCase({
@@ -184,6 +219,7 @@ function buildHarness(options?: { maxSize?: number }) {
     rosters,
     rosterStates,
     capacity,
+    entryGate: { canMutateRoster: async () => true },
     profiles,
     invitations: harness.invitations,
     tokens: harness.tokens,
@@ -191,6 +227,7 @@ function buildHarness(options?: { maxSize?: number }) {
     accounts,
     ids: harness.ids,
     clock: harness.clock,
+    mutations,
   });
 
   return {
@@ -199,6 +236,8 @@ function buildHarness(options?: { maxSize?: number }) {
     rosters,
     rosterStates,
     profiles,
+    authorization,
+    mutations,
     createInvitation,
     acceptInvitation,
   };
@@ -360,20 +399,6 @@ describe("AcceptRosterInvitationUseCase", () => {
     });
     expect(invite.isOk()).toBe(true);
     if (!invite.isOk()) return;
-
-    let entered = 0;
-    let releaseFirst: (() => void) | undefined;
-    const firstAtClaim = new Promise<void>((resolve) => {
-      releaseFirst = resolve;
-    });
-    ctx.invitations.beforeClaim = async () => {
-      entered += 1;
-      if (entered === 1) {
-        await firstAtClaim;
-      } else {
-        releaseFirst?.();
-      }
-    };
 
     const [resultA, resultB] = await Promise.all([
       ctx.acceptInvitation.execute({ token: invite.value.token, actorId: actorA }),
@@ -539,39 +564,32 @@ describe("AcceptRosterInvitationUseCase multi policy", () => {
     expect(ctx.rosters.rows).toHaveLength(1);
   });
 
-  it("only one actor wins the last roster slot under concurrency", async () => {
+  it("only one of two invitation tokens wins the last roster slot under concurrency", async () => {
     const ctx = buildHarness({ maxSize: 1 });
     const { orgId, teamId, competitionId } = await seedTeam(ctx);
     const actorA = ctx.actor("actor-a");
     const actorB = ctx.actor("actor-b");
 
-    const invite = await ctx.createInvitation.execute({
-      organizationId: orgId,
-      competitionId,
-      teamId,
-      invitedByActorId: ctx.actor("staff-1"),
-      redeemPolicy: "multi",
-    });
-    expect(invite.isOk()).toBe(true);
-    if (!invite.isOk()) return;
-
-    let entered = 0;
-    let releaseFirst: (() => void) | undefined;
-    const firstAtClaim = new Promise<void>((resolve) => {
-      releaseFirst = resolve;
-    });
-    ctx.invitations.beforeClaim = async () => {
-      entered += 1;
-      if (entered === 1) {
-        await firstAtClaim;
-      } else {
-        releaseFirst?.();
-      }
-    };
+    const invitations = await Promise.all(
+      [actorA, actorB].map((actor) =>
+        ctx.createInvitation.execute({
+          organizationId: orgId,
+          competitionId,
+          teamId,
+          invitedByActorId: ctx.actor("staff-1"),
+          redeemPolicy: "multi",
+          role: actor === actorA ? "captain" : "player",
+        }),
+      ),
+    );
+    expect(invitations.every((invitation) => invitation.isOk())).toBe(true);
+    if (invitations.some((invitation) => !invitation.isOk())) return;
+    const [inviteA, inviteB] = invitations;
+    if (!inviteA?.isOk() || !inviteB?.isOk()) return;
 
     const [resultA, resultB] = await Promise.all([
-      ctx.acceptInvitation.execute({ token: invite.value.token, actorId: actorA }),
-      ctx.acceptInvitation.execute({ token: invite.value.token, actorId: actorB }),
+      ctx.acceptInvitation.execute({ token: inviteA.value.token, actorId: actorA }),
+      ctx.acceptInvitation.execute({ token: inviteB.value.token, actorId: actorB }),
     ]);
 
     const winners = [resultA, resultB].filter((r) => r.isOk());
@@ -582,6 +600,104 @@ describe("AcceptRosterInvitationUseCase multi policy", () => {
       expect(RosterFull.is(losers[0]!.error)).toBe(true);
     }
     expect(ctx.rosters.rows).toHaveLength(1);
+  });
+
+  it("keeps the losing token pending when one actor accepts invitations to two Teams", async () => {
+    const ctx = buildHarness();
+    const first = await seedTeam(ctx);
+    const secondTeamId = asTeamId("team-2");
+    ctx.teams.rows.push({
+      id: secondTeamId,
+      organizationId: first.orgId,
+      name: "FC Beta",
+      createdAt: ctx.clock.now(),
+      createdByActorId: ctx.actor("staff-1"),
+      creationKey: null,
+    });
+    const invitations = await Promise.all(
+      [first.teamId, secondTeamId].map((teamId) =>
+        ctx.createInvitation.execute({
+          organizationId: first.orgId,
+          competitionId: first.competitionId,
+          teamId,
+          invitedByActorId: ctx.actor("staff-1"),
+        }),
+      ),
+    );
+    const [inviteA, inviteB] = invitations;
+    if (!inviteA?.isOk() || !inviteB?.isOk()) {
+      throw new Error("invitation setup failed");
+    }
+    const acceptedInvitations = [inviteA.value, inviteB.value];
+    const actorId = ctx.actor("player-1");
+
+    const results = await Promise.all(
+      acceptedInvitations.map((invitation) =>
+        ctx.acceptInvitation.execute({ token: invitation.token, actorId }),
+      ),
+    );
+
+    expect(results.filter((result) => result.isOk())).toHaveLength(1);
+    const rejected = results.find((result) => result.isErr());
+    expect(rejected?.isErr() && RosterCompetitionConflict.is(rejected.error)).toBe(true);
+    expect(ctx.rosters.rows).toHaveLength(1);
+    const stored = await Promise.all(
+      acceptedInvitations.map((invitation) =>
+        ctx.invitations.findByTokenHash(ctx.tokens.hashToken(invitation.token)),
+      ),
+    );
+    expect(stored.filter((invitation) => invitation?.status === "accepted")).toHaveLength(1);
+    expect(stored.filter((invitation) => invitation?.status === "pending")).toHaveLength(1);
+  });
+
+  it("finishes an acceptance before a concurrent close of the same roster", async () => {
+    const ctx = buildHarness();
+    const { orgId, teamId, competitionId } = await seedTeam(ctx);
+    const invitation = await ctx.createInvitation.execute({
+      organizationId: orgId,
+      competitionId,
+      teamId,
+      invitedByActorId: ctx.actor("staff-1"),
+    });
+    if (!invitation.isOk()) throw invitation.error;
+    let releaseClaim: () => void = () => undefined;
+    let reachedClaim: () => void = () => undefined;
+    const claimReached = new Promise<void>((resolve) => {
+      reachedClaim = resolve;
+    });
+    const continueClaim = new Promise<void>((resolve) => {
+      releaseClaim = resolve;
+    });
+    ctx.invitations.beforeClaim = async () => {
+      reachedClaim();
+      await continueClaim;
+    };
+    const closeRoster = new CloseRosterUseCase({
+      teams: ctx.teams,
+      rosterStates: ctx.rosterStates,
+      clock: ctx.clock,
+      authorization: ctx.authorization,
+      mutations: ctx.mutations,
+    });
+
+    const accepting = ctx.acceptInvitation.execute({
+      token: invitation.value.token,
+      actorId: ctx.actor("player-1"),
+    });
+    await claimReached;
+    const closing = closeRoster.execute({
+      actorId: ctx.actor("staff-1"),
+      organizationId: orgId,
+      competitionId,
+      teamId,
+    });
+    releaseClaim();
+    const [accepted, closed] = await Promise.all([accepting, closing]);
+
+    expect(accepted.isOk()).toBe(true);
+    expect(closed.isOk()).toBe(true);
+    expect(ctx.rosters.rows).toHaveLength(1);
+    expect((await ctx.rosterStates.get(orgId, competitionId, teamId))?.lockedAt).not.toBeNull();
   });
 });
 
