@@ -1,10 +1,14 @@
 import {
+  getCompetitionRankingsQuerySchema,
+  getCompetitionRankingsResponseSchema,
   getCompetitionStandingsResponseSchema,
   getCompetitionTeamStatisticsResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
+  type GetCompetitionRankingsQuery,
+  type GetCompetitionRankingsResponse,
   type GetCompetitionStandingsResponse,
   type GetCompetitionTeamStatisticsResponse,
   type GetMyMatchesQuery,
@@ -57,6 +61,23 @@ export function createStatisticsResource(http: HttpClient) {
         path: `/organizations/${encodeURIComponent(input.organizationId)}/competitions/${encodeURIComponent(input.competitionId)}/team-statistics`,
         method: "GET",
         parse: (data) => getCompetitionTeamStatisticsResponseSchema.parse(data),
+      });
+    },
+    async getCompetitionRankings(input: {
+      readonly organizationId: string;
+      readonly competitionId: string;
+      readonly kind?: GetCompetitionRankingsQuery["kind"];
+    }): Promise<GetCompetitionRankingsResponse> {
+      const parsed = getCompetitionRankingsQuerySchema.parse({
+        kind: input.kind,
+      });
+      const search = new URLSearchParams();
+      if (parsed.kind) search.set("kind", parsed.kind);
+      const queryString = search.toString();
+      return http.request({
+        path: `/organizations/${encodeURIComponent(input.organizationId)}/competitions/${encodeURIComponent(input.competitionId)}/rankings${queryString ? `?${queryString}` : ""}`,
+        method: "GET",
+        parse: (data) => getCompetitionRankingsResponseSchema.parse(data),
       });
     },
   };

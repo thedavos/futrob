@@ -1,10 +1,12 @@
 import type { Pool } from "pg";
 import {
+  GetCompetitionRankingsUseCase,
   GetCompetitionStandingsUseCase,
   GetCompetitionTeamStatisticsUseCase,
   GetMyPersonalStatisticsUseCase,
   ListMyMatchContributionsUseCase,
   ProjectOfficialResultUseCase,
+  RebuildCompetitionRankingsUseCase,
   RebuildCompetitionStatisticsUseCase,
   type PlayerIdentityResolverPort,
   type PlayerProfileLookupPort,
@@ -26,6 +28,7 @@ import {
   InMemoryPlayerCompetitionStatsRepository,
   InMemoryPlayerMatchContributionRepository,
   InMemoryPlayerPersonalStatsRepository,
+  InMemoryRankingSnapshotRepository,
   InMemoryTeamCompetitionStatsRepository,
   InMemoryTeamMatchContributionRepository,
 } from "@/adapters/statistics/in-memory.repositories";
@@ -34,6 +37,7 @@ import {
   PostgresPlayerCompetitionStatsRepository,
   PostgresPlayerMatchContributionRepository,
   PostgresPlayerPersonalStatsRepository,
+  PostgresRankingSnapshotRepository,
   PostgresTeamCompetitionStatsRepository,
   PostgresTeamMatchContributionRepository,
 } from "@/adapters/statistics/postgres.repositories";
@@ -42,10 +46,12 @@ export type StatisticsModule = {
   useCases: {
     projectOfficialResult: ProjectOfficialResultUseCase;
     rebuildCompetitionStatistics: RebuildCompetitionStatisticsUseCase;
+    rebuildCompetitionRankings: RebuildCompetitionRankingsUseCase;
     getMyPersonalStatistics: GetMyPersonalStatisticsUseCase;
     listMyMatchContributions: ListMyMatchContributionsUseCase;
     getCompetitionStandings: GetCompetitionStandingsUseCase;
     getCompetitionTeamStatistics: GetCompetitionTeamStatisticsUseCase;
+    getCompetitionRankings: GetCompetitionRankingsUseCase;
   };
   ports: {
     identities: PlayerIdentityResolverPort;
@@ -89,9 +95,22 @@ export function createStatisticsModule(deps: {
     deps.pool === null
       ? new InMemoryCompetitionStandingSnapshotRepository()
       : new PostgresCompetitionStandingSnapshotRepository(deps.pool);
+  const rankings =
+    deps.pool === null
+      ? new InMemoryRankingSnapshotRepository()
+      : new PostgresRankingSnapshotRepository(deps.pool);
   const matchRules = new CompetitionsMatchRulesReader(deps.competitions);
   const identities = new TeamsPlayerIdentityResolver(deps.rosters, deps.accounts);
   const profiles = new TeamsPlayerProfileLookup(deps.profiles);
+  const clock = new SystemClock();
+  const rebuildRankings = new RebuildCompetitionRankingsUseCase({
+    contributions,
+    teamContributions,
+    rankings,
+    eventPublisher: deps.eventPublisher,
+    transaction: deps.transaction,
+    clock,
+  });
   const projectOfficialResult = new ProjectOfficialResultUseCase({
     officialResults: deps.resultReader,
     encounterReader: deps.encounterReader,
@@ -103,8 +122,9 @@ export function createStatisticsModule(deps: {
     teamCompetitionStats,
     standings,
     matchRules,
+    rebuildRankings,
     transaction: deps.transaction,
-    clock: new SystemClock(),
+    clock,
   });
 
   return {
@@ -120,17 +140,19 @@ export function createStatisticsModule(deps: {
         teamCompetitionStats,
         standings,
         matchRules,
+        rebuildRankings,
         eventPublisher: deps.eventPublisher,
         transaction: deps.transaction,
-        clock: new SystemClock(),
+        clock,
       }),
+      rebuildCompetitionRankings: rebuildRankings,
       getMyPersonalStatistics: new GetMyPersonalStatisticsUseCase({
         personalStats,
         competitionStats,
         contributions,
         profiles,
         authorization: deps.authorization,
-        clock: new SystemClock(),
+        clock,
       }),
       listMyMatchContributions: new ListMyMatchContributionsUseCase({
         contributions,
@@ -143,6 +165,10 @@ export function createStatisticsModule(deps: {
       }),
       getCompetitionTeamStatistics: new GetCompetitionTeamStatisticsUseCase({
         teamCompetitionStats,
+        authorization: deps.authorization,
+      }),
+      getCompetitionRankings: new GetCompetitionRankingsUseCase({
+        rankings,
         authorization: deps.authorization,
       }),
     },

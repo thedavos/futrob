@@ -26,6 +26,7 @@ import {
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
 import type { ProjectOfficialResultUseCase } from "../project-official-result/project-official-result.use-case.ts";
+import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 
 export interface RebuildCompetitionStatisticsInput {
   readonly competitionId: CompetitionId;
@@ -47,6 +48,7 @@ export interface RebuildCompetitionStatisticsDependencies {
   readonly teamCompetitionStats: TeamCompetitionStatsRepository;
   readonly standings: CompetitionStandingSnapshotRepository;
   readonly matchRules: CompetitionMatchRulesReaderPort;
+  readonly rebuildRankings: Pick<RebuildCompetitionRankingsUseCase, "execute">;
   readonly eventPublisher: EventPublisherPort;
   readonly transaction: TransactionPort;
   readonly clock: ClockPort;
@@ -78,6 +80,7 @@ export class RebuildCompetitionStatisticsUseCase {
           case "approved": {
             const projected = await this.deps.projectOfficialResult.execute({
               officialResultId: officialResult.id,
+              rebuildRankings: false,
             });
             if (!projected.isOk()) return err(projected.error);
             officialResultsProjected += 1;
@@ -122,6 +125,7 @@ export class RebuildCompetitionStatisticsUseCase {
       occurredAt: this.deps.clock.now().toISOString(),
       payload: rebuilt.value,
     });
+    await this.deps.rebuildRankings.execute({ competitionId: input.competitionId });
     return rebuilt;
   }
 

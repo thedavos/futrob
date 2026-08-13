@@ -59,6 +59,9 @@ describe("statistics SDK resource", () => {
         if (url.includes("/standings")) {
           return Response.json({ standings: null });
         }
+        if (url.includes("/rankings")) {
+          return Response.json({ rankings: [] });
+        }
         return Response.json({ teams: [] });
       }) as typeof fetch,
     });
@@ -71,10 +74,16 @@ describe("statistics SDK resource", () => {
       organizationId: "organization-1",
       competitionId: "competition-1",
     });
+    await client.statistics.getCompetitionRankings({
+      organizationId: "organization-1",
+      competitionId: "competition-1",
+      kind: "scorer",
+    });
 
     expect(requested).toEqual([
       "https://app.example.com/api/v1/organizations/organization-1/competitions/competition-1/standings",
       "https://app.example.com/api/v1/organizations/organization-1/competitions/competition-1/team-statistics",
+      "https://app.example.com/api/v1/organizations/organization-1/competitions/competition-1/rankings?kind=scorer",
     ]);
   });
 });

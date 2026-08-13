@@ -31,7 +31,13 @@ import type {
   TeamMatchContribution,
   TeamMatchContributionRepository,
 } from "../../index.ts";
+import type {
+  RankingKind,
+  RankingSnapshot,
+  RankingSnapshotRepository as RankingSnapshotRepositoryPort,
+} from "../../index.ts";
 import { ProjectOfficialResultUseCase } from "./project-official-result.use-case.ts";
+import { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 import { RebuildCompetitionStatisticsUseCase } from "../rebuild-competition-statistics/rebuild-competition-statistics.use-case.ts";
 
 class ContributionRepository implements PlayerMatchContributionRepository {
@@ -256,6 +262,39 @@ class StandingSnapshotRepository implements CompetitionStandingSnapshotRepositor
     competitionId: CompetitionStandingSnapshot["competitionId"],
   ): Promise<void> {
     this.rows.delete(competitionId);
+  }
+}
+
+class RankingSnapshotRepository implements RankingSnapshotRepositoryPort {
+  readonly rows = new Map<string, RankingSnapshot>();
+
+  async replaceForCompetition(
+    competitionId: RankingSnapshot["competitionId"],
+    snapshots: readonly RankingSnapshot[],
+  ): Promise<void> {
+    await this.deleteByCompetition(competitionId);
+    for (const snapshot of snapshots) {
+      this.rows.set(`${snapshot.competitionId}:${snapshot.kind}`, snapshot);
+    }
+  }
+
+  async listByCompetition(
+    competitionId: RankingSnapshot["competitionId"],
+  ): Promise<RankingSnapshot[]> {
+    return [...this.rows.values()].filter((row) => row.competitionId === competitionId);
+  }
+
+  async findByCompetitionAndKind(
+    competitionId: RankingSnapshot["competitionId"],
+    kind: RankingKind,
+  ): Promise<RankingSnapshot | null> {
+    return this.rows.get(`${competitionId}:${kind}`) ?? null;
+  }
+
+  async deleteByCompetition(competitionId: RankingSnapshot["competitionId"]): Promise<void> {
+    for (const [key, row] of this.rows) {
+      if (row.competitionId === competitionId) this.rows.delete(key);
+    }
   }
 }
 
@@ -674,6 +713,23 @@ describe("ProjectOfficialResultUseCase", () => {
     await harness.project.execute({ officialResultId: removed.id });
     harness.byId.set(removed.id, { ...removed, status: "voided" });
     const events: string[] = [];
+    const eventPublisher = {
+      async publish(event: { readonly eventName: string }) {
+        events.push(event.eventName);
+      },
+      async publishMany(batch: readonly { readonly eventName: string }[]) {
+        events.push(...batch.map((event) => event.eventName));
+      },
+    };
+    const rankings = new RankingSnapshotRepository();
+    const rebuildRankings = new RebuildCompetitionRankingsUseCase({
+      contributions: harness.contributions,
+      teamContributions: harness.teamContributions,
+      rankings,
+      eventPublisher,
+      transaction: { runInTransaction: async (operation) => operation() },
+      clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+    });
     const rebuild = new RebuildCompetitionStatisticsUseCase({
       officialResults: harness.officialResults,
       projectOfficialResult: harness.project,
@@ -693,16 +749,10 @@ describe("ProjectOfficialResultUseCase", () => {
           };
         },
       },
+      rebuildRankings,
       transaction: { runInTransaction: async (operation) => operation() },
       clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
-      eventPublisher: {
-        async publish(event) {
-          events.push(event.eventName);
-        },
-        async publishMany(batch) {
-          events.push(...batch.map((event) => event.eventName));
-        },
-      },
+      eventPublisher,
     });
 
     const rebuilt = await rebuild.execute({ competitionId: retained.competitionId });
@@ -717,7 +767,8 @@ describe("ProjectOfficialResultUseCase", () => {
         retained.competitionId,
       ),
     ).toMatchObject({ matchesPlayed: 1, totals: { goals: 3 } });
-    expect(events).toEqual(["statistics.competition-stats-rebuilt"]);
+    expect(events).toEqual(["statistics.competition-stats-rebuilt", "statistics.rankings-updated"]);
+    expect(await rankings.listByCompetition(retained.competitionId)).toHaveLength(5);
   });
 
   it("projects matched team contributions and competition aggregates for both sides", async () => {

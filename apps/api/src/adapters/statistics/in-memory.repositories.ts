@@ -9,6 +9,9 @@ import type {
   PlayerPersonalStatsRepository,
   CompetitionStandingSnapshot,
   CompetitionStandingSnapshotRepository,
+  RankingKind,
+  RankingSnapshot,
+  RankingSnapshotRepository,
   TeamCompetitionStats,
   TeamCompetitionStatsRepository,
   TeamMatchContribution,
@@ -225,6 +228,39 @@ export class InMemoryCompetitionStandingSnapshotRepository implements Competitio
   }
 }
 
+export class InMemoryRankingSnapshotRepository implements RankingSnapshotRepository {
+  private readonly rows = new Map<string, RankingSnapshot>();
+
+  async replaceForCompetition(
+    competitionId: CompetitionId,
+    snapshots: readonly RankingSnapshot[],
+  ): Promise<void> {
+    await this.deleteByCompetition(competitionId);
+    for (const snapshot of snapshots) {
+      this.rows.set(rankingKey(snapshot.competitionId, snapshot.kind), snapshot);
+    }
+  }
+
+  async listByCompetition(competitionId: CompetitionId): Promise<RankingSnapshot[]> {
+    return [...this.rows.values()]
+      .filter((snapshot) => snapshot.competitionId === competitionId)
+      .sort((left, right) => rankingKindOrder(left.kind) - rankingKindOrder(right.kind));
+  }
+
+  async findByCompetitionAndKind(
+    competitionId: CompetitionId,
+    kind: RankingKind,
+  ): Promise<RankingSnapshot | null> {
+    return this.rows.get(rankingKey(competitionId, kind)) ?? null;
+  }
+
+  async deleteByCompetition(competitionId: CompetitionId): Promise<void> {
+    for (const [key, snapshot] of this.rows) {
+      if (snapshot.competitionId === competitionId) this.rows.delete(key);
+    }
+  }
+}
+
 function contributionKey(contribution: PlayerMatchContribution): string {
   return [
     contribution.officialResultId,
@@ -236,6 +272,31 @@ function contributionKey(contribution: PlayerMatchContribution): string {
 
 function competitionStatsKey(playerProfileId: string, competitionId: CompetitionId): string {
   return `${playerProfileId}:${competitionId}`;
+}
+
+function rankingKey(competitionId: CompetitionId, kind: RankingKind): string {
+  return `${competitionId}:${kind}`;
+}
+
+function rankingKindOrder(kind: RankingKind): number {
+  switch (kind) {
+    case "scorer":
+      return 0;
+    case "assister":
+      return 1;
+    case "rating":
+      return 2;
+    case "mvp":
+      return 3;
+    case "goalkeeper":
+      return 4;
+    default:
+      return assertNeverRankingKind(kind);
+  }
+}
+
+function assertNeverRankingKind(kind: never): never {
+  throw new RangeError(`Unsupported ranking kind: ${String(kind)}`);
 }
 
 function matchesContribution(

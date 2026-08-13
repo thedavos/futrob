@@ -160,3 +160,50 @@ export const getCompetitionTeamStatisticsResponseSchema = z.object({
 export type GetCompetitionTeamStatisticsResponse = z.infer<
   typeof getCompetitionTeamStatisticsResponseSchema
 >;
+
+export const rankingKindSchema = z.enum(["scorer", "assister", "rating", "mvp", "goalkeeper"]);
+
+export type RankingKindDto = z.infer<typeof rankingKindSchema>;
+
+export const rankingEligibilitySchema = z.object({
+  minimumMatches: z.number().int().nonnegative(),
+  minimumTeamMinutesRatio: z.number().min(0).max(1),
+});
+
+export type RankingEligibilityDto = z.infer<typeof rankingEligibilitySchema>;
+
+export const rankingRowSchema = z.object({
+  position: z.number().int().positive(),
+  playerProfileId: z.string().min(1),
+  teamId: z.string().min(1).nullable(),
+  value: z.number(),
+  matchesPlayed: z.number().int().nonnegative(),
+  minutes: z.number().nonnegative(),
+});
+
+export type RankingRowDto = z.infer<typeof rankingRowSchema>;
+
+export const rankingSnapshotSchema = z.object({
+  competitionId: z.string().min(1),
+  organizationId: z.string().min(1),
+  kind: rankingKindSchema,
+  formulaVersion: z.literal("player-ranking-v1"),
+  eligibility: rankingEligibilitySchema,
+  rows: z.array(rankingRowSchema),
+  sourceRevisionMax: z.number().int().nonnegative(),
+  updatedAt: z.string().datetime(),
+});
+
+export type RankingSnapshotDto = z.infer<typeof rankingSnapshotSchema>;
+
+export const getCompetitionRankingsQuerySchema = z.object({
+  kind: rankingKindSchema.optional(),
+});
+
+export type GetCompetitionRankingsQuery = z.infer<typeof getCompetitionRankingsQuerySchema>;
+
+export const getCompetitionRankingsResponseSchema = z.object({
+  rankings: z.array(rankingSnapshotSchema),
+});
+
+export type GetCompetitionRankingsResponse = z.infer<typeof getCompetitionRankingsResponseSchema>;

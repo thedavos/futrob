@@ -14,6 +14,11 @@ import type {
   PlayerStatisticPartialFlags,
   PlayerStatisticRates,
   PlayerStatisticTotals,
+  RankingEligibilityConfig,
+  RankingKind,
+  RankingRow,
+  RankingSnapshot,
+  RankingSnapshotRepository,
   TeamCompetitionStats,
   TeamCompetitionStatsRepository,
   TeamCorrelationStatus,
@@ -21,7 +26,11 @@ import type {
   TeamMatchContributionRepository,
   TeamMatchSide,
 } from "@futrob/statistics";
-import { COMPETITION_STANDING_FORMULA_VERSION } from "@futrob/statistics";
+import {
+  COMPETITION_STANDING_FORMULA_VERSION,
+  RANKING_FORMULA_VERSION,
+  RANKING_KINDS,
+} from "@futrob/statistics";
 import {
   asCompetitionId,
   asEncounterId,
@@ -757,6 +766,64 @@ export class PostgresCompetitionStandingSnapshotRepository implements Competitio
   }
 }
 
+export class PostgresRankingSnapshotRepository implements RankingSnapshotRepository {
+  constructor(private readonly pool: Pool) {}
+
+  async replaceForCompetition(
+    competitionId: CompetitionId,
+    snapshots: readonly RankingSnapshot[],
+  ): Promise<void> {
+    await this.deleteByCompetition(competitionId);
+    for (const snapshot of snapshots) {
+      await getPgExecutor(this.pool).query(
+        `INSERT INTO ranking_snapshots (
+           competition_id, organization_id, kind, formula_version, eligibility, rows,
+           source_revision_max, updated_at
+         ) VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8)`,
+        [
+          snapshot.competitionId,
+          snapshot.organizationId,
+          snapshot.kind,
+          snapshot.formulaVersion,
+          JSON.stringify(snapshot.eligibility),
+          JSON.stringify(snapshot.rows),
+          snapshot.sourceRevisionMax,
+          snapshot.updatedAt.toISOString(),
+        ],
+      );
+    }
+  }
+
+  async listByCompetition(competitionId: CompetitionId): Promise<RankingSnapshot[]> {
+    const result = await getPgExecutor(this.pool).query<RankingSnapshotRow>(
+      `SELECT * FROM ranking_snapshots WHERE competition_id = $1`,
+      [competitionId],
+    );
+    return result.rows
+      .map(rehydrateRankingSnapshot)
+      .sort((left, right) => rankingKindOrder(left.kind) - rankingKindOrder(right.kind));
+  }
+
+  async findByCompetitionAndKind(
+    competitionId: CompetitionId,
+    kind: RankingKind,
+  ): Promise<RankingSnapshot | null> {
+    const result = await getPgExecutor(this.pool).query<RankingSnapshotRow>(
+      `SELECT * FROM ranking_snapshots WHERE competition_id = $1 AND kind = $2`,
+      [competitionId, kind],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateRankingSnapshot(row) : null;
+  }
+
+  async deleteByCompetition(competitionId: CompetitionId): Promise<void> {
+    await getPgExecutor(this.pool).query(
+      `DELETE FROM ranking_snapshots WHERE competition_id = $1`,
+      [competitionId],
+    );
+  }
+}
+
 interface TeamContributionRow {
   readonly id: string;
   readonly official_result_id: string;
@@ -807,6 +874,17 @@ interface StandingSnapshotRow {
   readonly organization_id: string;
   readonly formula_version: string;
   readonly rows: CompetitionStandingRow[] | string;
+  readonly source_revision_max: number | string;
+  readonly updated_at: string | Date;
+}
+
+interface RankingSnapshotRow {
+  readonly competition_id: string;
+  readonly organization_id: string;
+  readonly kind: string;
+  readonly formula_version: string;
+  readonly eligibility: RankingEligibilityConfig | string;
+  readonly rows: RankingRow[] | string;
   readonly source_revision_max: number | string;
   readonly updated_at: string | Date;
 }
@@ -876,6 +954,56 @@ function rehydrateStandingSnapshot(row: StandingSnapshotRow): CompetitionStandin
     sourceRevisionMax: Number(row.source_revision_max),
     updatedAt: parseDate(row.updated_at),
   };
+}
+
+function rehydrateRankingSnapshot(row: RankingSnapshotRow): RankingSnapshot {
+  if (row.formula_version !== RANKING_FORMULA_VERSION) {
+    throw new RangeError(`Unsupported rankings formula version: ${row.formula_version}`);
+  }
+  const kind = parseRankingKind(row.kind);
+  const eligibility = parseJsonRecord(row.eligibility);
+  const rows = parseJsonRecord(row.rows).map((rankingRow) => ({
+    ...rankingRow,
+    teamId: rankingRow.teamId === null ? null : asTeamId(rankingRow.teamId),
+  }));
+  return {
+    competitionId: asCompetitionId(row.competition_id),
+    organizationId: asOrganizationId(row.organization_id),
+    kind,
+    formulaVersion: RANKING_FORMULA_VERSION,
+    eligibility,
+    rows,
+    sourceRevisionMax: Number(row.source_revision_max),
+    updatedAt: parseDate(row.updated_at),
+  };
+}
+
+function parseRankingKind(value: string): RankingKind {
+  if ((RANKING_KINDS as readonly string[]).includes(value)) {
+    return value as RankingKind;
+  }
+  throw new RangeError(`Invalid ranking kind: ${value}`);
+}
+
+function rankingKindOrder(kind: RankingKind): number {
+  switch (kind) {
+    case "scorer":
+      return 0;
+    case "assister":
+      return 1;
+    case "rating":
+      return 2;
+    case "mvp":
+      return 3;
+    case "goalkeeper":
+      return 4;
+    default:
+      return assertNever(kind);
+  }
+}
+
+function assertNever(value: never): never {
+  throw new RangeError(`Unexpected value: ${String(value)}`);
 }
 
 function parseTeamCorrelationStatus(value: string): TeamCorrelationStatus {
