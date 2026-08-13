@@ -6,6 +6,7 @@
   "main": "src/server.ts",
   "vars": {
     "APP_BASE_URL": "https://futrob.app",
+    // Local override: FUTROB_API_BASE_URL in apps/web/.dev.vars
     "FUTROB_API_BASE_URL": "https://api.futrob.app/api/v1",
   },
   "d1_databases": [
@@ -22,9 +23,16 @@
       "bucket_name": "futrob-media",
     },
   ],
-  "triggers": { "crons": ["* * * * *"] },
+  "triggers": {
+    "crons": ["* * * * *"],
+  },
   "queues": {
-    "producers": [{ "binding": "JOB_QUEUE", "queue": "futrob-job-queue" }],
+    "producers": [
+      {
+        "binding": "JOB_QUEUE",
+        "queue": "futrob-job-queue",
+      },
+    ],
     "consumers": [
       {
         "queue": "futrob-job-queue",

@@ -1,6 +1,9 @@
 BETTER_AUTH_SECRET=replace-with-a-local-secret
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000
+APP_BASE_URL=http://localhost:3000
+# Overrides wrangler.jsonc so the BFF talks to local apps/api, not production.
+FUTROB_API_BASE_URL=http://localhost:8787/api/v1
 INTERNAL_JOB_SECRET=replace-with-the-same-value-as-apps-api
 RATE_LIMIT_FINGERPRINT_SECRET=replace-with-an-independent-random-secret
 

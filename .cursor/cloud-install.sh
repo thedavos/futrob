@@ -84,5 +84,9 @@ if grep -q '^RATE_LIMIT_FINGERPRINT_SECRET=replace-with-an-independent-random-se
   rm -f apps/web/.dev.vars.bak
 fi
 
+if ! grep -q '^FUTROB_API_BASE_URL=' apps/web/.dev.vars; then
+  printf '\nFUTROB_API_BASE_URL=http://localhost:8787/api/v1\n' >> apps/web/.dev.vars
+fi
+
 # Non-interactive when stdin is not a TTY (Cloud / CI).
 CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/web

@@ -35,7 +35,7 @@ export async function createAuthenticatedProductApiClient(request: Request, requ
     BETTER_AUTH_TRUSTED_ORIGINS:
       bindings.BETTER_AUTH_TRUSTED_ORIGINS ?? process.env.BETTER_AUTH_TRUSTED_ORIGINS,
     EA_CLUBS_BASE_URL: process.env.EA_CLUBS_BASE_URL,
-    INTERNAL_JOB_SECRET: process.env.INTERNAL_JOB_SECRET,
+    INTERNAL_JOB_SECRET: bindings.INTERNAL_JOB_SECRET ?? process.env.INTERNAL_JOB_SECRET,
   });
 
   if (!appEnv.INTERNAL_JOB_SECRET) {
@@ -61,6 +61,7 @@ export async function createAuthenticatedProductApiClient(request: Request, requ
     actorId,
     internalJobSecret: appEnv.INTERNAL_JOB_SECRET,
     requestId: resolvedRequestId,
+    baseUrl: bindings.FUTROB_API_BASE_URL,
   });
 
   return { client, actorId, requestId: resolvedRequestId };

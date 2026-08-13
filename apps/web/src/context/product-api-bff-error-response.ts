@@ -1,6 +1,7 @@
 import type { RequestId } from "@futrob/api-contracts";
 import { FutrobApiError } from "@futrob/sdk";
 import { AuthUnauthenticatedError } from "@/context/auth.ts";
+import { ProductApiUnreachableError } from "@/context/product-api-client.ts";
 import { apiErrorResponse } from "@/shared/infrastructure/http/api-response.ts";
 import { BffRateLimitUnavailableError } from "@/shared/infrastructure/rate-limit/enforce-bff-rate-limit.ts";
 
@@ -42,6 +43,17 @@ export function productApiBffErrorResponse(error: unknown, requestId?: RequestId
     );
   }
 
+  if (error instanceof ProductApiUnreachableError) {
+    return apiErrorResponse(
+      503,
+      {
+        code: error.code,
+        messageKey: "errors.product_api.unreachable",
+      },
+      requestId,
+    );
+  }
+
   if (error instanceof FutrobApiError) {
     return apiErrorResponse(
       error.status,
@@ -56,17 +68,14 @@ export function productApiBffErrorResponse(error: unknown, requestId?: RequestId
     );
   }
 
-  if (requestId) {
-    return apiErrorResponse(
-      500,
-      {
-        code: "api.unexpected_error",
-        messageKey: "errors.api.unexpected_error",
-      },
-      requestId,
-    );
-  }
-  throw error;
+  return apiErrorResponse(
+    500,
+    {
+      code: "api.unexpected_error",
+      messageKey: "errors.api.unexpected_error",
+    },
+    requestId,
+  );
 }
 
 function isProductApiBffMisconfiguredFailure(

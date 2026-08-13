@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { FutrobApiError } from "@futrob/sdk";
 import { productApiBffErrorResponse } from "./product-api-bff-error-response.ts";
+import { ProductApiUnreachableError } from "./product-api-client.ts";
 import { BffRateLimitUnavailableError } from "@/shared/infrastructure/rate-limit/enforce-bff-rate-limit.ts";
 
 describe("productApiBffErrorResponse", () => {
@@ -47,6 +48,28 @@ describe("productApiBffErrorResponse", () => {
       code: "api.rate_limit_unavailable",
       messageKey: "errors.api.rate_limit_unavailable",
       requestId,
+    });
+  });
+
+  it("returns a sanitized 503 when the product API is unreachable", async () => {
+    const requestId = "9c1d0a3e-2f7b-4c8a-9d1e-6b5a4c3d2e1f";
+    const response = productApiBffErrorResponse(new ProductApiUnreachableError(), requestId);
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      code: "product_api.unreachable",
+      messageKey: "errors.product_api.unreachable",
+      requestId,
+    });
+  });
+
+  it("sanitizes unexpected BFF failures without a request ID", async () => {
+    const response = productApiBffErrorResponse(new Error("secret database detail"));
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      code: "api.unexpected_error",
+      messageKey: "errors.api.unexpected_error",
     });
   });
 });

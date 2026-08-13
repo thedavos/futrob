@@ -107,6 +107,7 @@ npm run dev                # web (:3000) + api (:8787) in parallel
 ```
 
 Align `INTERNAL_JOB_SECRET` between `apps/web/.dev.vars` and `apps/api/.env` or org BFF calls fail with 401.
+Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` in `apps/web/.dev.vars` (it overrides the production URL in `wrangler.jsonc`) or the BFF calls production and login after-auth requests fail with 500.
 Keep `RATE_LIMIT_FINGERPRINT_SECRET` independent from every other secret. Before deploying the
 Worker, provision it explicitly:
 

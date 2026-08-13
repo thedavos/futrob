@@ -174,6 +174,8 @@ const es = {
   "errors.onboarding.saveProgress": "No pudimos guardar tu progreso. Inténtalo nuevamente.",
   "errors.api.rate_limited":
     "Alcanzaste el límite temporal. Espera antes de intentarlo nuevamente.",
+  "errors.product_api.unreachable": "No pudimos conectar con el servicio. Inténtalo nuevamente.",
+  "errors.product_api.bff_misconfigured": "La conexión con el servicio no está configurada.",
   "errors.organizations.invitation_not_found":
     "No encontramos esa invitación. Revisa el código e inténtalo nuevamente.",
   "errors.organizations.invitation_expired":
@@ -383,6 +385,8 @@ const en: Catalog = {
   "errors.onboarding.organizationCheck": "We couldn't check the name. Try again.",
   "errors.onboarding.saveProgress": "We couldn't save your progress. Try again.",
   "errors.api.rate_limited": "You reached the temporary limit. Wait before trying again.",
+  "errors.product_api.unreachable": "We couldn't reach the service. Try again.",
+  "errors.product_api.bff_misconfigured": "The service connection isn't configured.",
   "errors.organizations.invitation_not_found":
     "We couldn't find that invitation. Check the code and try again.",
   "errors.organizations.invitation_expired":
