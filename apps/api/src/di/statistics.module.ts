@@ -1,5 +1,7 @@
 import type { Pool } from "pg";
 import {
+  GetCompetitionStandingsUseCase,
+  GetCompetitionTeamStatisticsUseCase,
   GetMyPersonalStatisticsUseCase,
   ListMyMatchContributionsUseCase,
   ProjectOfficialResultUseCase,
@@ -7,6 +9,7 @@ import {
   type PlayerIdentityResolverPort,
   type PlayerProfileLookupPort,
 } from "@futrob/statistics";
+import type { CompetitionRepository } from "@futrob/competitions";
 import type { EncounterReaderPort, OfficialResultReaderPort } from "@futrob/results";
 import type {
   CompetitionRosterMembershipRepository,
@@ -15,17 +18,24 @@ import type {
 } from "@futrob/teams";
 import type { AuthorizationPort, EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
 import { SystemClock } from "@/adapters/organizations/crypto-ports";
+import { CompetitionsMatchRulesReader } from "@/adapters/statistics/competition-match-rules-reader";
 import { TeamsPlayerIdentityResolver } from "@/adapters/statistics/player-identity-resolver";
 import { TeamsPlayerProfileLookup } from "@/adapters/statistics/player-profile-lookup";
 import {
+  InMemoryCompetitionStandingSnapshotRepository,
   InMemoryPlayerCompetitionStatsRepository,
   InMemoryPlayerMatchContributionRepository,
   InMemoryPlayerPersonalStatsRepository,
+  InMemoryTeamCompetitionStatsRepository,
+  InMemoryTeamMatchContributionRepository,
 } from "@/adapters/statistics/in-memory.repositories";
 import {
+  PostgresCompetitionStandingSnapshotRepository,
   PostgresPlayerCompetitionStatsRepository,
   PostgresPlayerMatchContributionRepository,
   PostgresPlayerPersonalStatsRepository,
+  PostgresTeamCompetitionStatsRepository,
+  PostgresTeamMatchContributionRepository,
 } from "@/adapters/statistics/postgres.repositories";
 
 export type StatisticsModule = {
@@ -34,6 +44,8 @@ export type StatisticsModule = {
     rebuildCompetitionStatistics: RebuildCompetitionStatisticsUseCase;
     getMyPersonalStatistics: GetMyPersonalStatisticsUseCase;
     listMyMatchContributions: ListMyMatchContributionsUseCase;
+    getCompetitionStandings: GetCompetitionStandingsUseCase;
+    getCompetitionTeamStatistics: GetCompetitionTeamStatisticsUseCase;
   };
   ports: {
     identities: PlayerIdentityResolverPort;
@@ -47,6 +59,7 @@ export function createStatisticsModule(deps: {
   accounts: PlayerGameAccountRepository;
   rosters: CompetitionRosterMembershipRepository;
   profiles: PlayerProfileRepository;
+  competitions: CompetitionRepository;
   authorization: AuthorizationPort;
   encounterReader?: EncounterReaderPort;
   transaction: TransactionPort;
@@ -64,6 +77,19 @@ export function createStatisticsModule(deps: {
     deps.pool === null
       ? new InMemoryPlayerPersonalStatsRepository()
       : new PostgresPlayerPersonalStatsRepository(deps.pool);
+  const teamContributions =
+    deps.pool === null
+      ? new InMemoryTeamMatchContributionRepository()
+      : new PostgresTeamMatchContributionRepository(deps.pool);
+  const teamCompetitionStats =
+    deps.pool === null
+      ? new InMemoryTeamCompetitionStatsRepository()
+      : new PostgresTeamCompetitionStatsRepository(deps.pool);
+  const standings =
+    deps.pool === null
+      ? new InMemoryCompetitionStandingSnapshotRepository()
+      : new PostgresCompetitionStandingSnapshotRepository(deps.pool);
+  const matchRules = new CompetitionsMatchRulesReader(deps.competitions);
   const identities = new TeamsPlayerIdentityResolver(deps.rosters, deps.accounts);
   const profiles = new TeamsPlayerProfileLookup(deps.profiles);
   const projectOfficialResult = new ProjectOfficialResultUseCase({
@@ -73,6 +99,10 @@ export function createStatisticsModule(deps: {
     contributions,
     competitionStats,
     personalStats,
+    teamContributions,
+    teamCompetitionStats,
+    standings,
+    matchRules,
     transaction: deps.transaction,
     clock: new SystemClock(),
   });
@@ -86,6 +116,10 @@ export function createStatisticsModule(deps: {
         contributions,
         competitionStats,
         personalStats,
+        teamContributions,
+        teamCompetitionStats,
+        standings,
+        matchRules,
         eventPublisher: deps.eventPublisher,
         transaction: deps.transaction,
         clock: new SystemClock(),
@@ -101,6 +135,14 @@ export function createStatisticsModule(deps: {
       listMyMatchContributions: new ListMyMatchContributionsUseCase({
         contributions,
         profiles,
+        authorization: deps.authorization,
+      }),
+      getCompetitionStandings: new GetCompetitionStandingsUseCase({
+        standings,
+        authorization: deps.authorization,
+      }),
+      getCompetitionTeamStatistics: new GetCompetitionTeamStatisticsUseCase({
+        teamCompetitionStats,
         authorization: deps.authorization,
       }),
     },

@@ -7,8 +7,14 @@ import type {
   PlayerMatchContributionRepository,
   PlayerPersonalStats,
   PlayerPersonalStatsRepository,
+  CompetitionStandingSnapshot,
+  CompetitionStandingSnapshotRepository,
+  TeamCompetitionStats,
+  TeamCompetitionStatsRepository,
+  TeamMatchContribution,
+  TeamMatchContributionRepository,
 } from "@futrob/statistics";
-import type { CompetitionId, EncounterId } from "@futrob/shared-kernel";
+import type { CompetitionId, EncounterId, TeamId } from "@futrob/shared-kernel";
 
 export class InMemoryPlayerMatchContributionRepository implements PlayerMatchContributionRepository {
   private readonly rows = new Map<string, PlayerMatchContribution>();
@@ -127,6 +133,95 @@ export class InMemoryPlayerPersonalStatsRepository implements PlayerPersonalStat
 
   async findByPlayerProfile(playerProfileId: string): Promise<PlayerPersonalStats | null> {
     return this.rows.get(playerProfileId) ?? null;
+  }
+}
+
+export class InMemoryTeamMatchContributionRepository implements TeamMatchContributionRepository {
+  private readonly rows = new Map<string, TeamMatchContribution>();
+
+  async saveMany(contributions: readonly TeamMatchContribution[]): Promise<void> {
+    for (const contribution of contributions) {
+      this.rows.set(contribution.id, contribution);
+    }
+  }
+
+  async deleteByEncounterRevision(input: {
+    readonly encounterId: EncounterId;
+    readonly revision: number | "all";
+  }): Promise<void> {
+    for (const [key, contribution] of this.rows) {
+      if (
+        contribution.encounterId === input.encounterId &&
+        (input.revision === "all" || contribution.revision === input.revision)
+      ) {
+        this.rows.delete(key);
+      }
+    }
+  }
+
+  async deleteByCompetition(competitionId: CompetitionId): Promise<void> {
+    for (const [key, contribution] of this.rows) {
+      if (contribution.competitionId === competitionId) this.rows.delete(key);
+    }
+  }
+
+  async listByTeam(teamId: TeamId): Promise<TeamMatchContribution[]> {
+    return [...this.rows.values()].filter((contribution) => contribution.teamId === teamId);
+  }
+
+  async listByEncounter(encounterId: EncounterId): Promise<TeamMatchContribution[]> {
+    return [...this.rows.values()].filter(
+      (contribution) => contribution.encounterId === encounterId,
+    );
+  }
+
+  async listByCompetition(competitionId: CompetitionId): Promise<TeamMatchContribution[]> {
+    return [...this.rows.values()].filter(
+      (contribution) => contribution.competitionId === competitionId,
+    );
+  }
+}
+
+export class InMemoryTeamCompetitionStatsRepository implements TeamCompetitionStatsRepository {
+  private readonly rows = new Map<string, TeamCompetitionStats>();
+
+  async upsert(stats: TeamCompetitionStats): Promise<void> {
+    this.rows.set(`${stats.teamId}:${stats.competitionId}`, stats);
+  }
+
+  async findByTeamAndCompetition(
+    teamId: TeamId,
+    competitionId: CompetitionId,
+  ): Promise<TeamCompetitionStats | null> {
+    return this.rows.get(`${teamId}:${competitionId}`) ?? null;
+  }
+
+  async listByCompetition(competitionId: CompetitionId): Promise<TeamCompetitionStats[]> {
+    return [...this.rows.values()].filter((stats) => stats.competitionId === competitionId);
+  }
+
+  async deleteByCompetition(competitionId: CompetitionId): Promise<void> {
+    for (const [key, stats] of this.rows) {
+      if (stats.competitionId === competitionId) this.rows.delete(key);
+    }
+  }
+}
+
+export class InMemoryCompetitionStandingSnapshotRepository implements CompetitionStandingSnapshotRepository {
+  private readonly rows = new Map<string, CompetitionStandingSnapshot>();
+
+  async upsert(snapshot: CompetitionStandingSnapshot): Promise<void> {
+    this.rows.set(snapshot.competitionId, snapshot);
+  }
+
+  async findByCompetition(
+    competitionId: CompetitionId,
+  ): Promise<CompetitionStandingSnapshot | null> {
+    return this.rows.get(competitionId) ?? null;
+  }
+
+  async deleteByCompetition(competitionId: CompetitionId): Promise<void> {
+    this.rows.delete(competitionId);
   }
 }
 

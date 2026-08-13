@@ -1,8 +1,12 @@
 import {
+  getCompetitionStandingsResponseSchema,
+  getCompetitionTeamStatisticsResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
+  type GetCompetitionStandingsResponse,
+  type GetCompetitionTeamStatisticsResponse,
   type GetMyMatchesQuery,
   type GetMyMatchesResponse,
   type GetMyStatisticsQuery,
@@ -33,6 +37,26 @@ export function createStatisticsResource(http: HttpClient) {
         path: `/players/me/matches?${search.toString()}`,
         method: "GET",
         parse: (data) => getMyMatchesResponseSchema.parse(data),
+      });
+    },
+    async getCompetitionStandings(input: {
+      readonly organizationId: string;
+      readonly competitionId: string;
+    }): Promise<GetCompetitionStandingsResponse> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(input.organizationId)}/competitions/${encodeURIComponent(input.competitionId)}/standings`,
+        method: "GET",
+        parse: (data) => getCompetitionStandingsResponseSchema.parse(data),
+      });
+    },
+    async getCompetitionTeamStatistics(input: {
+      readonly organizationId: string;
+      readonly competitionId: string;
+    }): Promise<GetCompetitionTeamStatisticsResponse> {
+      return http.request({
+        path: `/organizations/${encodeURIComponent(input.organizationId)}/competitions/${encodeURIComponent(input.competitionId)}/team-statistics`,
+        method: "GET",
+        parse: (data) => getCompetitionTeamStatisticsResponseSchema.parse(data),
       });
     },
   };

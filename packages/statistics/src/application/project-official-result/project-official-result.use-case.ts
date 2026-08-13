@@ -12,15 +12,28 @@ import {
   type TransactionPort,
 } from "@futrob/shared-kernel";
 import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
+import type {
+  TeamMatchContribution,
+  TeamMatchSide,
+} from "../../domain/entities/team-match-contribution.ts";
 import {
   OfficialResultNotFound,
   type ProjectOfficialResultError,
 } from "../../domain/errors/project-official-result.errors.ts";
+import type { CompetitionMatchRulesReaderPort } from "../../domain/ports/competition-match-rules-reader.port.ts";
+import type { CompetitionStandingSnapshotRepository } from "../../domain/ports/competition-standing-snapshot.repository.ts";
 import type { PlayerCompetitionStatsRepository } from "../../domain/ports/player-competition-stats.repository.ts";
 import type { PlayerIdentityResolverPort } from "../../domain/ports/player-identity-resolver.port.ts";
 import type { PlayerMatchContributionRepository } from "../../domain/ports/player-match-contribution.repository.ts";
 import type { PlayerPersonalStatsRepository } from "../../domain/ports/player-personal-stats.repository.ts";
+import type { TeamCompetitionStatsRepository } from "../../domain/ports/team-competition-stats.repository.ts";
+import type { TeamMatchContributionRepository } from "../../domain/ports/team-match-contribution.repository.ts";
 import { aggregatePlayerContributions } from "../../domain/policies/aggregate-player-contributions.ts";
+import { aggregateTeamContributions } from "../../domain/policies/aggregate-team-contributions.ts";
+import {
+  buildCompetitionStandings,
+  DEFAULT_COMPETITION_MATCH_POINTS,
+} from "../../domain/policies/build-competition-standings.ts";
 
 export type ProjectOfficialResultInput =
   | { readonly officialResultId: string }
@@ -40,6 +53,10 @@ export interface ProjectOfficialResultDependencies {
   readonly contributions: PlayerMatchContributionRepository;
   readonly competitionStats: PlayerCompetitionStatsRepository;
   readonly personalStats: PlayerPersonalStatsRepository;
+  readonly teamContributions: TeamMatchContributionRepository;
+  readonly teamCompetitionStats: TeamCompetitionStatsRepository;
+  readonly standings: CompetitionStandingSnapshotRepository;
+  readonly matchRules: CompetitionMatchRulesReaderPort;
   readonly transaction: TransactionPort;
   readonly clock: ClockPort;
 }
@@ -64,10 +81,18 @@ export class ProjectOfficialResultUseCase {
       );
     }
 
-    const previous = await this.deps.contributions.listByEncounter(officialResult.encounterId);
-    const projectedRevision = previous.reduce(
-      (maximum, contribution) => Math.max(maximum, contribution.revision),
-      0,
+    const previousPlayers = await this.deps.contributions.listByEncounter(
+      officialResult.encounterId,
+    );
+    const previousTeams = await this.deps.teamContributions.listByEncounter(
+      officialResult.encounterId,
+    );
+    const projectedRevision = Math.max(
+      previousPlayers.reduce(
+        (maximum, contribution) => Math.max(maximum, contribution.revision),
+        0,
+      ),
+      previousTeams.reduce((maximum, contribution) => Math.max(maximum, contribution.revision), 0),
     );
     if (projectedRevision > officialResult.revision) {
       return ok({
@@ -78,34 +103,45 @@ export class ProjectOfficialResultUseCase {
       });
     }
 
-    const next = await this.contributionsForStatus(officialResult);
+    const nextPlayers = await this.playerContributionsForStatus(officialResult);
+    const nextTeams = await this.teamContributionsForStatus(officialResult);
     const affectedPlayerProfiles = new Set<string>();
-    addMatchedProfiles(affectedPlayerProfiles, previous);
-    addMatchedProfiles(affectedPlayerProfiles, next);
+    addMatchedProfiles(affectedPlayerProfiles, previousPlayers);
+    addMatchedProfiles(affectedPlayerProfiles, nextPlayers);
+    const affectedTeams = new Set<TeamId>();
+    addMatchedTeams(affectedTeams, previousTeams);
+    addMatchedTeams(affectedTeams, nextTeams);
 
     await this.deps.transaction.runInTransaction(async () => {
       await this.deps.contributions.deleteByEncounterRevision({
         encounterId: officialResult.encounterId,
         revision: "all",
       });
-      await this.deps.contributions.saveMany(next);
-      await this.rebuildAggregates(officialResult, affectedPlayerProfiles);
+      await this.deps.teamContributions.deleteByEncounterRevision({
+        encounterId: officialResult.encounterId,
+        revision: "all",
+      });
+      await this.deps.contributions.saveMany(nextPlayers);
+      await this.deps.teamContributions.saveMany(nextTeams);
+      await this.rebuildPlayerAggregates(officialResult, affectedPlayerProfiles);
+      await this.rebuildTeamAggregates(officialResult, affectedTeams);
+      await this.rebuildStandings(officialResult);
     });
 
     return ok({
       officialResultId: officialResult.id,
       revision: officialResult.revision,
-      contributionsProjected: next.length,
+      contributionsProjected: nextPlayers.length,
       matchedPlayerProfiles: affectedPlayerProfiles.size,
     });
   }
 
-  private async contributionsForStatus(
+  private async playerContributionsForStatus(
     officialResult: OfficialResult,
   ): Promise<PlayerMatchContribution[]> {
     switch (officialResult.status) {
       case "approved":
-        return this.buildContributions(officialResult);
+        return this.buildPlayerContributions(officialResult);
       case "voided":
         return [];
       default:
@@ -113,7 +149,20 @@ export class ProjectOfficialResultUseCase {
     }
   }
 
-  private async rebuildAggregates(
+  private async teamContributionsForStatus(
+    officialResult: OfficialResult,
+  ): Promise<TeamMatchContribution[]> {
+    switch (officialResult.status) {
+      case "approved":
+        return this.buildTeamContributions(officialResult);
+      case "voided":
+        return [];
+      default:
+        return assertNever(officialResult.status);
+    }
+  }
+
+  private async rebuildPlayerAggregates(
     officialResult: OfficialResult,
     affectedPlayerProfiles: ReadonlySet<string>,
   ): Promise<void> {
@@ -148,7 +197,49 @@ export class ProjectOfficialResultUseCase {
     }
   }
 
-  private async buildContributions(
+  private async rebuildTeamAggregates(
+    officialResult: OfficialResult,
+    affectedTeams: ReadonlySet<TeamId>,
+  ): Promise<void> {
+    const updatedAt = this.deps.clock.now();
+    for (const teamId of affectedTeams) {
+      const competitionContributions = (
+        await this.deps.teamContributions.listByTeam(teamId)
+      ).filter(
+        (contribution) =>
+          contribution.correlationStatus === "matched" &&
+          contribution.teamId === teamId &&
+          contribution.competitionId === officialResult.competitionId,
+      );
+      await this.deps.teamCompetitionStats.upsert({
+        teamId,
+        competitionId: officialResult.competitionId,
+        organizationId: officialResult.organizationId,
+        ...aggregateTeamContributions(competitionContributions),
+        updatedAt,
+      });
+    }
+  }
+
+  private async rebuildStandings(officialResult: OfficialResult): Promise<void> {
+    const contributions = await this.deps.teamContributions.listByCompetition(
+      officialResult.competitionId,
+    );
+    const pointsRules =
+      (await this.deps.matchRules.getPointsRules(officialResult.competitionId)) ??
+      DEFAULT_COMPETITION_MATCH_POINTS;
+    await this.deps.standings.upsert(
+      buildCompetitionStandings({
+        competitionId: officialResult.competitionId,
+        organizationId: officialResult.organizationId,
+        contributions,
+        pointsRules,
+        updatedAt: this.deps.clock.now(),
+      }),
+    );
+  }
+
+  private async buildPlayerContributions(
     officialResult: OfficialResult,
   ): Promise<PlayerMatchContribution[]> {
     const encounter =
@@ -172,7 +263,7 @@ export class ProjectOfficialResultUseCase {
           teamId: teamId ?? undefined,
         });
         contributions.push({
-          id: contributionId({
+          id: playerContributionId({
             officialResultId: officialResult.id,
             revision: officialResult.revision,
             officialSlot: slot.officialSlot,
@@ -212,6 +303,58 @@ export class ProjectOfficialResultUseCase {
     }
     return contributions;
   }
+
+  private async buildTeamContributions(
+    officialResult: OfficialResult,
+  ): Promise<TeamMatchContribution[]> {
+    const encounter =
+      (await this.deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
+    const contributions: TeamMatchContribution[] = [];
+    for (const slot of officialResult.slots) {
+      for (const side of ["home", "away"] as const) {
+        const externalClubId = side === "home" ? slot.homeExternalClubId : slot.awayExternalClubId;
+        const goalsFor = side === "home" ? slot.homeGoals : slot.awayGoals;
+        const goalsAgainst = side === "home" ? slot.awayGoals : slot.homeGoals;
+        // Slot home/away clubs map to encounter team IDs (same as player contributions).
+        // Do not use live ExternalClubConnection IDs — re-links must not blank standings.
+        const teamId = mapExternalClubToTeam({
+          externalClubId,
+          homeExternalClubId: slot.homeExternalClubId,
+          awayExternalClubId: slot.awayExternalClubId,
+          homeTeamId: encounter?.homeTeamId ?? null,
+          awayTeamId: encounter?.awayTeamId ?? null,
+        });
+        const correlationStatus = teamId === null ? "unmatched" : "matched";
+        const rolled = rollUpSlotPlayers(
+          slot.players.filter((player) => player.externalClubId === externalClubId),
+        );
+        contributions.push({
+          id: teamContributionId({
+            officialResultId: officialResult.id,
+            revision: officialResult.revision,
+            officialSlot: slot.officialSlot,
+            side,
+          }),
+          officialResultId: officialResult.id,
+          revision: officialResult.revision,
+          encounterId: officialResult.encounterId,
+          competitionId: officialResult.competitionId,
+          organizationId: officialResult.organizationId,
+          officialSlot: slot.officialSlot,
+          teamId,
+          correlationStatus,
+          side,
+          externalClubId,
+          goalsFor,
+          goalsAgainst,
+          platform: slot.platform,
+          gameEdition: slot.gameEdition,
+          ...rolled,
+        });
+      }
+    }
+    return contributions;
+  }
 }
 
 function assertNever(status: never): never {
@@ -241,7 +384,18 @@ function addMatchedProfiles(
   }
 }
 
-function contributionId(input: {
+function addMatchedTeams(
+  teams: Set<TeamId>,
+  contributions: readonly TeamMatchContribution[],
+): void {
+  for (const contribution of contributions) {
+    if (contribution.correlationStatus === "matched" && contribution.teamId !== null) {
+      teams.add(contribution.teamId);
+    }
+  }
+}
+
+function playerContributionId(input: {
   readonly officialResultId: string;
   readonly revision: number;
   readonly officialSlot: 1 | 2;
@@ -253,4 +407,81 @@ function contributionId(input: {
     input.officialSlot,
     encodeURIComponent(input.externalPlayerId),
   ].join(":");
+}
+
+function teamContributionId(input: {
+  readonly officialResultId: string;
+  readonly revision: number;
+  readonly officialSlot: 1 | 2;
+  readonly side: TeamMatchSide;
+}): string {
+  return [input.officialResultId, input.revision, input.officialSlot, input.side].join(":");
+}
+
+function rollUpSlotPlayers(
+  players: OfficialResult["slots"][number]["players"],
+): Pick<
+  TeamMatchContribution,
+  | "minutesPlayed"
+  | "goals"
+  | "assists"
+  | "shots"
+  | "passAttempts"
+  | "passesMade"
+  | "tackleAttempts"
+  | "tacklesMade"
+  | "saves"
+  | "yellowCards"
+  | "redCards"
+  | "isMvp"
+  | "rating"
+> {
+  if (players.length === 0) {
+    return {
+      minutesPlayed: null,
+      goals: null,
+      assists: null,
+      shots: null,
+      passAttempts: null,
+      passesMade: null,
+      tackleAttempts: null,
+      tacklesMade: null,
+      saves: null,
+      yellowCards: null,
+      redCards: null,
+      isMvp: null,
+      rating: null,
+    };
+  }
+
+  return {
+    minutesPlayed: sumNullable(players.map((player) => player.minutesPlayed)),
+    goals: sumNullable(players.map((player) => player.goals)),
+    assists: sumNullable(players.map((player) => player.assists)),
+    shots: sumNullable(players.map((player) => player.shots)),
+    passAttempts: sumNullable(players.map((player) => player.passAttempts)),
+    passesMade: sumNullable(players.map((player) => player.passesMade)),
+    tackleAttempts: sumNullable(players.map((player) => player.tackleAttempts)),
+    tacklesMade: sumNullable(players.map((player) => player.tacklesMade)),
+    saves: sumNullable(players.map((player) => player.saves)),
+    yellowCards: sumNullable(players.map((player) => player.yellowCards)),
+    redCards: sumNullable(players.map((player) => player.redCards)),
+    isMvp: players.some((player) => player.isMvp === true)
+      ? true
+      : players.every((player) => player.isMvp === false)
+        ? false
+        : null,
+    rating: averageNullable(players.map((player) => player.rating)),
+  };
+}
+
+function sumNullable(values: readonly (number | null)[]): number | null {
+  if (values.every((value) => value === null)) return null;
+  return values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
+}
+
+function averageNullable(values: readonly (number | null)[]): number | null {
+  const present = values.filter((value): value is number => value !== null);
+  if (present.length === 0) return null;
+  return present.reduce((sum, value) => sum + value, 0) / present.length;
 }

@@ -251,6 +251,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     accounts: teams.repositories.accounts,
     rosters: teams.repositories.rosters,
     profiles: teams.repositories.profiles,
+    competitions: competitions.repository,
     authorization: authorization.port,
     encounterReader,
     transaction,
