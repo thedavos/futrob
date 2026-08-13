@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { handleProviderSyncJobRequest } from "./sync-jobs.handler.ts";
+import { handleProviderSyncJobRequest } from "./-sync-jobs.handler.ts";
 
 const requestId = "032141c9-0574-4129-86d4-7192bdbbcadd";
 
