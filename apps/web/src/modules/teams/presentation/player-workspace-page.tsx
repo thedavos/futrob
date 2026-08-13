@@ -49,22 +49,30 @@ export function PlayerWorkspacePage() {
         </p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <EmptyState>
-          <EmptyStateTitle>Mis partidos</EmptyStateTitle>
-          <EmptyStateDescription>
-            Cuando vincules tu identificador de juego y existan resultados oficiales asociados,
-            aparecerán aquí.
-          </EmptyStateDescription>
-        </EmptyState>
-        <EmptyState>
-          <EmptyStateTitle>Mis estadísticas</EmptyStateTitle>
-          <EmptyStateDescription>
-            Tus goles, asistencias, rating y otras métricas se construirán desde partidos oficiales
-            aprobados.
-          </EmptyStateDescription>
-        </EmptyState>
-      </div>
+      <section className="divide-y divide-border-subtle rounded-lg border border-border bg-surface">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+          <div className="max-w-2xl">
+            <h2 className="font-semibold">Mis partidos</h2>
+            <p className="typo-caption mt-1 text-muted-foreground">
+              Revisa tu historial individual desde resultados oficiales aprobados.
+            </p>
+          </div>
+          <Button render={<Link to="/player/matches" />} variant="secondary">
+            Abrir Mis partidos
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+          <div className="max-w-2xl">
+            <h2 className="font-semibold">Mis estadísticas</h2>
+            <p className="typo-caption mt-1 text-muted-foreground">
+              Consulta goles, asistencias, rating y métricas con sus estados de dato incompleto.
+            </p>
+          </div>
+          <Button render={<Link to="/player/statistics" />} variant="secondary">
+            Abrir Mis estadísticas
+          </Button>
+        </div>
+      </section>
 
       <section className="mt-8 rounded-lg border border-border bg-surface p-5 sm:p-6">
         <div className="mb-4">

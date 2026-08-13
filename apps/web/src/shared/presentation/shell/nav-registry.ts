@@ -16,7 +16,8 @@ export type ShellNavIconId =
   | "home"
   | "competitions"
   | "ea-clubs"
-  | "pro-stats"
+  | "matches"
+  | "statistics"
   | "invitations"
   | "teams"
   | "players"
@@ -47,13 +48,18 @@ function personalGeneralNav(): readonly ShellNavItem[] {
       href: "/player/competitions",
       icon: "competitions",
     },
-    { id: "ea-clubs", label: "Clubes EA", href: "/player/ea-clubs", icon: "ea-clubs" },
     {
-      id: "pro-stats",
-      label: "Pro Stats",
-      href: "/player/pro-stats",
-      icon: "pro-stats",
-      stub: true,
+      id: "ea-clubs",
+      label: "Datos de juego",
+      href: "/player/game-accounts",
+      icon: "ea-clubs",
+    },
+    { id: "matches", label: "Mis partidos", href: "/player/matches", icon: "matches" },
+    {
+      id: "statistics",
+      label: "Mis estadísticas",
+      href: "/player/statistics",
+      icon: "statistics",
     },
     { id: "invitations", label: "Invitaciones", href: "/invitations/accept", icon: "invitations" },
   ];

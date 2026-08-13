@@ -98,6 +98,12 @@ describe("PlayerWorkspacePage", () => {
 
     expect(await screen.findByText("Alpha FC")).toBeTruthy();
     expect(screen.getByText("Beta FC")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Abrir Mis partidos" }).getAttribute("href")).toBe(
+      "/player/matches",
+    );
+    expect(
+      screen.getByRole("button", { name: "Abrir Mis estadísticas" }).getAttribute("href"),
+    ).toBe("/player/statistics");
 
     fireEvent.click(screen.getByRole("radio", { name: /Beta FC/ }));
     await waitFor(() => {

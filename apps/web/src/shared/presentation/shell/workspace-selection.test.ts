@@ -124,14 +124,20 @@ describe("nav registries", () => {
     expect(section.items[0]?.href).toBe("/orgs/org-1");
   });
 
-  it("includes Pro Stats in personal general nav", () => {
+  it("keeps personal matches and statistics as distinct real destinations", () => {
     const section = generalNavFor({ kind: WORKSPACE_SELECTION_KIND.personal });
-    const proStats = section.items.find((item) => item.id === "pro-stats");
-    expect(proStats).toMatchObject({
-      label: "Pro Stats",
-      href: "/player/pro-stats",
-      stub: true,
+    const matches = section.items.find((item) => item.id === "matches");
+    const statistics = section.items.find((item) => item.id === "statistics");
+    expect(matches).toMatchObject({
+      label: "Mis partidos",
+      href: "/player/matches",
     });
+    expect(statistics).toMatchObject({
+      label: "Mis estadísticas",
+      href: "/player/statistics",
+    });
+    expect(matches?.stub).toBeUndefined();
+    expect(statistics?.stub).toBeUndefined();
   });
 
   it("returns competition context items", () => {
@@ -187,9 +193,8 @@ describe("nav registries", () => {
 
   it("resolves the most specific matching nav href among siblings", () => {
     const items = generalNavFor({ kind: WORKSPACE_SELECTION_KIND.personal }).items;
-    expect(resolveActiveNavHref("/player/ea-clubs", items)).toBe("/player/ea-clubs");
+    expect(resolveActiveNavHref("/player/game-accounts", items)).toBe("/player/game-accounts");
     expect(resolveActiveNavHref("/player", items)).toBe("/player");
-    expect(resolveActiveNavHref("/player/game-accounts", items)).toBe("/player");
   });
 });
 
