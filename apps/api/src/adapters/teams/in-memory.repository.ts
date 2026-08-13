@@ -47,6 +47,10 @@ export class InMemoryPlayerExternalClubAssociationRepository implements PlayerEx
 export class InMemoryPlayerGameAccountRepository implements PlayerGameAccountRepository {
   readonly rows = new Map<string, PlayerGameAccount>();
 
+  async findById(id: string): Promise<PlayerGameAccount | null> {
+    return this.rows.get(id) ?? null;
+  }
+
   async listByProfile(playerProfileId: string): Promise<PlayerGameAccount[]> {
     return [...this.rows.values()].filter((row) => row.playerProfileId === playerProfileId);
   }

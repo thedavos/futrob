@@ -2,6 +2,7 @@ import { COMPETITION_PERMISSION, COMPETITION_PERMISSIONS } from "@futrob/competi
 import { ORGANIZATION_PERMISSION, ORGANIZATION_PERMISSIONS } from "@futrob/organizations";
 import { RESULT_PERMISSION, RESULT_PERMISSIONS } from "@futrob/results";
 import { ENCOUNTER_PERMISSION, ENCOUNTER_PERMISSIONS } from "@futrob/scheduling";
+import { STATISTICS_PERMISSION, STATISTICS_PERMISSIONS } from "@futrob/statistics";
 import type { AuthorizationScopeType, Permission } from "@futrob/shared-kernel";
 import { ROSTER_ROLE_PERMISSIONS, TEAM_PERMISSION, TEAM_PERMISSIONS } from "@futrob/teams";
 import {
@@ -16,6 +17,7 @@ export const RBAC_ALL_PERMISSIONS = [
   ...TEAM_PERMISSIONS,
   ...ENCOUNTER_PERMISSIONS,
   ...RESULT_PERMISSIONS,
+  ...STATISTICS_PERMISSIONS,
 ] as const satisfies readonly Permission[];
 
 /** Representative probes: every catalog + high-risk mutate/read pairs. */
@@ -38,6 +40,8 @@ export const RBAC_PROBE_PERMISSIONS = [
   RESULT_PERMISSION.officialSelectionPropose,
   RESULT_PERMISSION.officialSelectionResolve,
   RESULT_PERMISSION.resultApprove,
+  STATISTICS_PERMISSION.readOwn,
+  STATISTICS_PERMISSION.read,
 ] as const satisfies readonly Permission[];
 
 const ENCOUNTER_CAPTAIN_BASELINE = new Set<Permission>([
@@ -127,10 +131,15 @@ export function expectedBundleDecision(
   permission: Permission,
   scope: RbacScopeKey,
 ): RbacDecisionExpectation | null {
+  if (scope === "orgA.compA.teamB" || scope === "orgA.compA.teamB.encounter") {
+    return { allowed: false, reason: "scope-mismatch" };
+  }
+
+  if (permission === STATISTICS_PERMISSION.readOwn) {
+    return { allowed: true, reason: "allowed" };
+  }
+
   if (actor === "superuser") {
-    if (scope === "orgA.compA.teamB" || scope === "orgA.compA.teamB.encounter") {
-      return { allowed: false, reason: "scope-mismatch" };
-    }
     return { allowed: true, reason: "allowed" };
   }
 
@@ -148,10 +157,6 @@ export function expectedBundleDecision(
 
   if (scope === "orgB" || scope === "orgB.compB") {
     return { allowed: false, reason: "no-assignment" };
-  }
-
-  if (scope === "orgA.compA.teamB" || scope === "orgA.compA.teamB.encounter") {
-    return { allowed: false, reason: "scope-mismatch" };
   }
 
   if (scope === "platform") {

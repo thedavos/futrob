@@ -45,6 +45,9 @@ class Associations implements PlayerExternalClubAssociationRepository {
 
 class Accounts implements PlayerGameAccountRepository {
   rows: PlayerGameAccount[] = [];
+  async findById(id: string) {
+    return this.rows.find((row) => row.id === id) ?? null;
+  }
   async listByProfile(playerProfileId: string) {
     return this.rows.filter((row) => row.playerProfileId === playerProfileId);
   }
@@ -66,7 +69,10 @@ class Accounts implements PlayerGameAccountRepository {
   }) {
     const index = this.rows.findIndex((row) => row.id === input.accountId);
     if (index < 0) return null;
-    const updated = { ...this.rows[index], providerExternalPlayerId: input.providerExternalPlayerId };
+    const updated = {
+      ...this.rows[index],
+      providerExternalPlayerId: input.providerExternalPlayerId,
+    };
     this.rows[index] = updated;
     return updated;
   }

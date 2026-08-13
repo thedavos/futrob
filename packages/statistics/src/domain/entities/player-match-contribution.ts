@@ -1,4 +1,4 @@
-import type { CompetitionId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
+import type { CompetitionId, EncounterId, OrganizationId, TeamId } from "@futrob/shared-kernel";
 
 export type PlayerCorrelationStatus = "matched" | "unmatched" | "ambiguous";
 
@@ -12,6 +12,7 @@ export interface PlayerMatchContribution {
   readonly officialSlot: 1 | 2;
   readonly playerProfileId: string | null;
   readonly gameAccountId: string | null;
+  readonly teamId: TeamId | null;
   readonly correlationStatus: PlayerCorrelationStatus;
   readonly externalPlayerId: string;
   readonly displayName: string;

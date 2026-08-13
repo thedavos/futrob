@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { PlayerMatchContribution } from "@futrob/statistics";
-import { asCompetitionId } from "@futrob/shared-kernel";
+import { asCompetitionId, asTeamId } from "@futrob/shared-kernel";
 import {
   addMyPlayerGameAccountRequestSchema,
   addMyPlayerGameAccountResponseSchema,
@@ -9,13 +9,15 @@ import {
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
   getMyPlayerProfileResponseSchema,
+  getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
   getMyTeamsResponseSchema,
   setActiveTeamRequestSchema,
   setActiveTeamResponseSchema,
+  type GetMyStatisticsQuery,
 } from "@futrob/api-contracts";
 import type { AppDeps } from "@/app.ts";
-import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp, isHttpMappableFailure, validationErrorResponse } from "@/http/errors.ts";
 import {
   playerExternalClubAssociationDto,
   playerGameAccountDto,
@@ -115,14 +117,25 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
   });
 
   secured.get("/players/me/statistics", async (c) => {
-    const actorId = c.get("actorId");
-    const details = await teams.getPlayerProfile.execute({ actorId });
-    if (!details.profile) {
-      return jsonResponse(getMyStatisticsResponseSchema.parse({ statistics: null }));
-    }
-    const stats = await statistics.useCases.getMyPersonalStatistics.execute({
-      playerProfileId: details.profile.id,
+    const parsed = getMyStatisticsQuerySchema.safeParse({
+      competitionId: c.req.query("competitionId") ?? undefined,
+      teamId: c.req.query("teamId") ?? undefined,
+      gameEdition: c.req.query("gameEdition") ?? undefined,
+      platform: c.req.query("platform") ?? undefined,
+      position: c.req.query("position") ?? undefined,
     });
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+
+    let stats;
+    try {
+      stats = await statistics.useCases.getMyPersonalStatistics.execute({
+        actorId: c.get("actorId"),
+        ...personalStatisticsFilters(parsed.data),
+      });
+    } catch (error) {
+      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      throw error;
+    }
     return jsonResponse(
       getMyStatisticsResponseSchema.parse({
         statistics: stats
@@ -145,25 +158,27 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
   secured.get("/players/me/matches", async (c) => {
     const parsed = getMyMatchesQuerySchema.safeParse({
       competitionId: c.req.query("competitionId") ?? undefined,
+      teamId: c.req.query("teamId") ?? undefined,
+      gameEdition: c.req.query("gameEdition") ?? undefined,
+      platform: c.req.query("platform") ?? undefined,
+      position: c.req.query("position") ?? undefined,
       cursor: c.req.query("cursor") ?? undefined,
       limit: c.req.query("limit") ?? undefined,
     });
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
 
-    const actorId = c.get("actorId");
-    const details = await teams.getPlayerProfile.execute({ actorId });
-    if (!details.profile) {
-      return jsonResponse(getMyMatchesResponseSchema.parse({ matches: [], nextCursor: null }));
+    let page;
+    try {
+      page = await statistics.useCases.listMyMatchContributions.execute({
+        actorId: c.get("actorId"),
+        ...personalStatisticsFilters(parsed.data),
+        ...(parsed.data.cursor === undefined ? {} : { cursor: parsed.data.cursor }),
+        limit: parsed.data.limit,
+      });
+    } catch (error) {
+      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      throw error;
     }
-
-    const page = await statistics.useCases.listMyMatchContributions.execute({
-      playerProfileId: details.profile.id,
-      competitionId: parsed.data.competitionId
-        ? asCompetitionId(parsed.data.competitionId)
-        : undefined,
-      cursor: parsed.data.cursor,
-      limit: parsed.data.limit,
-    });
     return jsonResponse(
       getMyMatchesResponseSchema.parse({
         matches: page.items.map((row: PlayerMatchContribution) => ({
@@ -174,6 +189,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
           competitionId: row.competitionId,
           organizationId: row.organizationId,
           officialSlot: row.officialSlot,
+          teamId: row.teamId,
           correlationStatus: row.correlationStatus,
           externalPlayerId: row.externalPlayerId,
           displayName: row.displayName,
@@ -257,4 +273,16 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
   });
 
   app.route("/", secured);
+}
+
+function personalStatisticsFilters(query: GetMyStatisticsQuery) {
+  return {
+    ...(query.competitionId === undefined
+      ? {}
+      : { competitionId: asCompetitionId(query.competitionId) }),
+    ...(query.teamId === undefined ? {} : { teamId: asTeamId(query.teamId) }),
+    ...(query.gameEdition === undefined ? {} : { gameEdition: query.gameEdition }),
+    ...(query.platform === undefined ? {} : { platform: query.platform }),
+    ...(query.position === undefined ? {} : { position: query.position }),
+  };
 }

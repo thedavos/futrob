@@ -445,6 +445,41 @@ paths:
       tags:
         - players
       summary: Get personal official statistics for the authenticated player
+      parameters:
+        - *a2
+        - name: competitionId
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+        - name: teamId
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+        - name: gameEdition
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+        - name: platform
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+        - name: position
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 80
       responses:
         "200":
           description: Aggregated personal statistics, or null when none exist
@@ -456,8 +491,8 @@ paths:
             X-Request-ID: *a1
         "401":
           $ref: "#/components/responses/ApiError"
-      parameters:
-        - *a2
+        "403":
+          $ref: "#/components/responses/ApiError"
   /players/me/matches:
     get:
       operationId: getMyMatches
@@ -473,6 +508,33 @@ paths:
           schema:
             type: string
             minLength: 1
+        - name: teamId
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+        - name: gameEdition
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+        - name: platform
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+        - name: position
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 80
         - name: cursor
           in: query
           required: false
@@ -499,6 +561,8 @@ paths:
         "400":
           $ref: "#/components/responses/ApiError"
         "401":
+          $ref: "#/components/responses/ApiError"
+        "403":
           $ref: "#/components/responses/ApiError"
   /identity/onboarding:
     get:
@@ -3625,6 +3689,7 @@ components:
         - competitionId
         - organizationId
         - officialSlot
+        - teamId
         - correlationStatus
         - externalPlayerId
         - displayName
@@ -3664,6 +3729,10 @@ components:
           enum:
             - 1
             - 2
+        teamId:
+          type:
+            - string
+            - "null"
         correlationStatus:
           type: string
           enum:

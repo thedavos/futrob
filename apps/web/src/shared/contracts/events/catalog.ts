@@ -18,6 +18,7 @@ export const FutrobEventNames = {
   officialSelectionConfirmed: "results.official-selection-confirmed",
   matchDisputeOpened: "results.match-dispute-opened",
   officialResultApproved: "results.official-result-approved",
+  officialResultVoided: "results.official-result-voided",
   competitionStatsRebuilt: "statistics.competition-stats-rebuilt",
   rankingsUpdated: "statistics.rankings-updated",
   analyticsSnapshotGenerated: "analytics.snapshot-generated",

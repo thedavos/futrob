@@ -1,9 +1,41 @@
 import { describe, expect, it } from "vite-plus/test";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { createRbacMatrixFixture, RBAC_MATRIX_NOW } from "./rbac-matrix.fixture.ts";
 
 describe("ContextualAuthorizationAdapter", () => {
+  it("allows any authenticated actor to read only their own statistics at platform scope", async () => {
+    const fixture = await createRbacMatrixFixture();
+
+    const decision = await fixture.authorization.decide({
+      actorId: fixture.actors.outsider,
+      permission: STATISTICS_PERMISSION.readOwn,
+      scope: fixture.scope("platform"),
+    });
+    await fixture.grants.upsert({
+      id: "deny-own-statistics",
+      organizationId: null,
+      actorId: fixture.actors.outsider,
+      permission: STATISTICS_PERMISSION.readOwn,
+      effect: "deny",
+      scopeType: "platform",
+      scopeId: "platform",
+      grantedByActorId: fixture.actors.superuser,
+      reason: null,
+      createdAt: RBAC_MATRIX_NOW,
+      updatedAt: RBAC_MATRIX_NOW,
+    });
+    const denied = await fixture.authorization.decide({
+      actorId: fixture.actors.outsider,
+      permission: STATISTICS_PERMISSION.readOwn,
+      scope: fixture.scope("platform"),
+    });
+
+    expect(decision.allowed).toBe(true);
+    expect(denied.allowed).toBe(false);
+  });
+
   it("isolates organization authority from another tenant", async () => {
     const fixture = await createRbacMatrixFixture();
     const own = await fixture.authorization.decide({

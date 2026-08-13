@@ -699,6 +699,59 @@
         "operationId": "getMyStatistics",
         "tags": ["players"],
         "summary": "Get personal official statistics for the authenticated player",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "competitionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "gameEdition",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          {
+            "name": "position",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Aggregated personal statistics, or null when none exist",
@@ -717,13 +770,11 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
           }
-        },
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/RequestId"
-          }
-        ]
+        }
       }
     },
     "/players/me/matches": {
@@ -742,6 +793,45 @@
             "schema": {
               "type": "string",
               "minLength": 1
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "gameEdition",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          {
+            "name": "position",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
             }
           },
           {
@@ -785,6 +875,9 @@
             "$ref": "#/components/responses/ApiError"
           },
           "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
             "$ref": "#/components/responses/ApiError"
           }
         }
@@ -4966,6 +5059,7 @@
           "competitionId",
           "organizationId",
           "officialSlot",
+          "teamId",
           "correlationStatus",
           "externalPlayerId",
           "displayName",
@@ -5010,6 +5104,9 @@
           "officialSlot": {
             "type": "integer",
             "enum": [1, 2]
+          },
+          "teamId": {
+            "type": ["string", "null"]
           },
           "correlationStatus": {
             "type": "string",

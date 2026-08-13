@@ -2,14 +2,21 @@ import type { Pool } from "pg";
 import {
   GetMyPersonalStatisticsUseCase,
   ListMyMatchContributionsUseCase,
-  ProjectApprovedOfficialResultUseCase,
+  ProjectOfficialResultUseCase,
+  RebuildCompetitionStatisticsUseCase,
   type PlayerIdentityResolverPort,
+  type PlayerProfileLookupPort,
 } from "@futrob/statistics";
-import type { OfficialResultReaderPort } from "@futrob/results";
-import type { PlayerGameAccountRepository } from "@futrob/teams";
-import type { TransactionPort } from "@futrob/shared-kernel";
+import type { EncounterReaderPort, OfficialResultReaderPort } from "@futrob/results";
+import type {
+  CompetitionRosterMembershipRepository,
+  PlayerGameAccountRepository,
+  PlayerProfileRepository,
+} from "@futrob/teams";
+import type { AuthorizationPort, EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
 import { SystemClock } from "@/adapters/organizations/crypto-ports";
 import { TeamsPlayerIdentityResolver } from "@/adapters/statistics/player-identity-resolver";
+import { TeamsPlayerProfileLookup } from "@/adapters/statistics/player-profile-lookup";
 import {
   InMemoryPlayerCompetitionStatsRepository,
   InMemoryPlayerMatchContributionRepository,
@@ -23,12 +30,14 @@ import {
 
 export type StatisticsModule = {
   useCases: {
-    projectApprovedOfficialResult: ProjectApprovedOfficialResultUseCase;
+    projectOfficialResult: ProjectOfficialResultUseCase;
+    rebuildCompetitionStatistics: RebuildCompetitionStatisticsUseCase;
     getMyPersonalStatistics: GetMyPersonalStatisticsUseCase;
     listMyMatchContributions: ListMyMatchContributionsUseCase;
   };
   ports: {
     identities: PlayerIdentityResolverPort;
+    profiles: PlayerProfileLookupPort;
   };
 };
 
@@ -36,7 +45,12 @@ export function createStatisticsModule(deps: {
   pool: Pool | null;
   resultReader: OfficialResultReaderPort;
   accounts: PlayerGameAccountRepository;
+  rosters: CompetitionRosterMembershipRepository;
+  profiles: PlayerProfileRepository;
+  authorization: AuthorizationPort;
+  encounterReader?: EncounterReaderPort;
   transaction: TransactionPort;
+  eventPublisher: EventPublisherPort;
 }): StatisticsModule {
   const contributions =
     deps.pool === null
@@ -50,24 +64,49 @@ export function createStatisticsModule(deps: {
     deps.pool === null
       ? new InMemoryPlayerPersonalStatsRepository()
       : new PostgresPlayerPersonalStatsRepository(deps.pool);
-  const identities = new TeamsPlayerIdentityResolver(deps.accounts);
+  const identities = new TeamsPlayerIdentityResolver(deps.rosters, deps.accounts);
+  const profiles = new TeamsPlayerProfileLookup(deps.profiles);
+  const projectOfficialResult = new ProjectOfficialResultUseCase({
+    officialResults: deps.resultReader,
+    encounterReader: deps.encounterReader,
+    identities,
+    contributions,
+    competitionStats,
+    personalStats,
+    transaction: deps.transaction,
+    clock: new SystemClock(),
+  });
 
   return {
     useCases: {
-      projectApprovedOfficialResult: new ProjectApprovedOfficialResultUseCase({
+      projectOfficialResult,
+      rebuildCompetitionStatistics: new RebuildCompetitionStatisticsUseCase({
         officialResults: deps.resultReader,
-        identities,
+        projectOfficialResult,
         contributions,
         competitionStats,
         personalStats,
+        eventPublisher: deps.eventPublisher,
         transaction: deps.transaction,
         clock: new SystemClock(),
       }),
-      getMyPersonalStatistics: new GetMyPersonalStatisticsUseCase(personalStats),
-      listMyMatchContributions: new ListMyMatchContributionsUseCase(contributions),
+      getMyPersonalStatistics: new GetMyPersonalStatisticsUseCase({
+        personalStats,
+        competitionStats,
+        contributions,
+        profiles,
+        authorization: deps.authorization,
+        clock: new SystemClock(),
+      }),
+      listMyMatchContributions: new ListMyMatchContributionsUseCase({
+        contributions,
+        profiles,
+        authorization: deps.authorization,
+      }),
     },
     ports: {
       identities,
+      profiles,
     },
   };
 }

@@ -95,6 +95,18 @@ export class PostgresPlayerExternalClubAssociationRepository implements PlayerEx
 export class PostgresPlayerGameAccountRepository implements PlayerGameAccountRepository {
   constructor(private readonly pool: Pool) {}
 
+  async findById(id: string): Promise<PlayerGameAccount | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, player_profile_id, identifier, normalized_identifier,
+              provider_external_player_id, platform, game_edition, created_at
+       FROM player_game_accounts
+       WHERE id = $1`,
+      [id],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateAccount(row) : null;
+  }
+
   async listByProfile(playerProfileId: string): Promise<PlayerGameAccount[]> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT id, player_profile_id, identifier, normalized_identifier,

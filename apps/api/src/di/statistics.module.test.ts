@@ -2,14 +2,26 @@ import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asCompetitionId, asEncounterId, asOrganizationId } from "@futrob/shared-kernel";
 import type { OfficialResult } from "@futrob/results";
 import { InMemoryOfficialResultRepository } from "@/adapters/results/official-result.repository";
-import { InMemoryPlayerGameAccountRepository } from "@/adapters/teams/in-memory.repository";
+import {
+  InMemoryPlayerGameAccountRepository,
+  InMemoryPlayerProfileRepository,
+} from "@/adapters/teams/in-memory.repository";
+import { InMemoryCompetitionRosterMembershipRepository } from "@/adapters/teams/team-roster.repositories";
 import { NoopTransactionPort } from "@/adapters/persistence/pg-transaction";
+import { NoopEventPublisher } from "@/adapters/events/noop-event-publisher";
 import { createStatisticsModule } from "./statistics.module";
 
 describe("statistics module projection", () => {
   it("projects an approved result through the official result reader", async () => {
     const officialResults = new InMemoryOfficialResultRepository();
     const accounts = new InMemoryPlayerGameAccountRepository();
+    const profiles = new InMemoryPlayerProfileRepository();
+    const rosters = new InMemoryCompetitionRosterMembershipRepository();
+    await profiles.saveIfAbsent({
+      id: "profile-1",
+      actorId: asActorId("actor-1"),
+      createdAt: new Date("2026-08-01T00:00:00.000Z"),
+    });
     accounts.rows.set("account-1", {
       id: "account-1",
       playerProfileId: "profile-1",
@@ -28,18 +40,35 @@ describe("statistics module projection", () => {
         getApprovedByEncounter: (encounterId) =>
           officialResults.findApprovedByEncounter(encounterId),
         getById: (officialResultId) => officialResults.findById(officialResultId),
+        listByCompetition: (competitionId) => officialResults.listByCompetition(competitionId),
       },
       accounts,
+      rosters,
+      profiles,
+      authorization: {
+        async decide(request) {
+          return {
+            allowed: true,
+            permission: request.permission,
+            scope: request.scope,
+            reason: "allowed",
+          };
+        },
+        async getEffectiveAccess() {
+          throw new Error("not used");
+        },
+      },
       transaction: new NoopTransactionPort(),
+      eventPublisher: new NoopEventPublisher(),
     });
 
-    const projected = await statistics.useCases.projectApprovedOfficialResult.execute({
+    const projected = await statistics.useCases.projectOfficialResult.execute({
       officialResultId: result.id,
     });
 
     expect(projected.isOk()).toBe(true);
     const contributions = await statistics.useCases.listMyMatchContributions.execute({
-      playerProfileId: "profile-1",
+      actorId: asActorId("actor-1"),
       limit: 20,
     });
     expect(contributions.items).toEqual([

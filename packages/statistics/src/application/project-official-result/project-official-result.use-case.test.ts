@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vite-plus/test";
-import { asActorId, asCompetitionId, asEncounterId, asOrganizationId } from "@futrob/shared-kernel";
-import type { OfficialResult, OfficialResultReaderPort } from "@futrob/results";
+import {
+  asActorId,
+  asCompetitionId,
+  asEncounterId,
+  asOrganizationId,
+  asTeamId,
+} from "@futrob/shared-kernel";
 import type {
+  EncounterScheduleSnapshot,
+  OfficialResult,
+  OfficialResultReaderPort,
+} from "@futrob/results";
+import type {
+  MatchedPlayerContributionPageQuery,
+  MatchedPlayerContributionQuery,
   PlayerCompetitionStats,
   PlayerCompetitionStatsRepository,
   PlayerIdentityResolution,
@@ -11,7 +23,8 @@ import type {
   PlayerPersonalStats,
   PlayerPersonalStatsRepository,
 } from "../../index.ts";
-import { ProjectApprovedOfficialResultUseCase } from "./project-approved-official-result.use-case.ts";
+import { ProjectOfficialResultUseCase } from "./project-official-result.use-case.ts";
+import { RebuildCompetitionStatisticsUseCase } from "../rebuild-competition-statistics/rebuild-competition-statistics.use-case.ts";
 
 class ContributionRepository implements PlayerMatchContributionRepository {
   readonly rows = new Map<string, PlayerMatchContribution>();
@@ -52,6 +65,12 @@ class ContributionRepository implements PlayerMatchContributionRepository {
     );
   }
 
+  async deleteByCompetition(
+    competitionId: PlayerMatchContribution["competitionId"],
+  ): Promise<void> {
+    this.deleteMatching((row) => row.competitionId === competitionId);
+  }
+
   async listByPlayerProfile(playerProfileId: string): Promise<PlayerMatchContribution[]> {
     return [...this.rows.values()].filter((row) => row.playerProfileId === playerProfileId);
   }
@@ -66,23 +85,31 @@ class ContributionRepository implements PlayerMatchContributionRepository {
     return [...this.rows.values()].filter((row) => row.encounterId === encounterId);
   }
 
-  async listMatchedPage(input: {
-    readonly playerProfileId: string;
-    readonly competitionId?: PlayerMatchContribution["competitionId"];
-    readonly cursor?: string;
-    readonly limit: number;
-  }): Promise<{
+  async listByCompetition(
+    competitionId: PlayerMatchContribution["competitionId"],
+  ): Promise<PlayerMatchContribution[]> {
+    return [...this.rows.values()].filter((row) => row.competitionId === competitionId);
+  }
+
+  async listMatched(input: MatchedPlayerContributionQuery): Promise<PlayerMatchContribution[]> {
+    return [...this.rows.values()].filter(
+      (row) =>
+        row.correlationStatus === "matched" &&
+        row.playerProfileId === input.playerProfileId &&
+        (input.competitionId === undefined || row.competitionId === input.competitionId) &&
+        (input.teamId === undefined || row.teamId === input.teamId) &&
+        (input.gameEdition === undefined || row.gameEdition === input.gameEdition) &&
+        (input.platform === undefined || row.platform === input.platform) &&
+        (input.position === undefined || row.position === input.position),
+    );
+  }
+
+  async listMatchedPage(input: MatchedPlayerContributionPageQuery): Promise<{
     readonly items: PlayerMatchContribution[];
     readonly nextCursor: string | null;
   }> {
-    const matched = [...this.rows.values()]
-      .filter(
-        (row) =>
-          row.correlationStatus === "matched" &&
-          row.playerProfileId === input.playerProfileId &&
-          (input.competitionId === undefined || row.competitionId === input.competitionId) &&
-          (input.cursor === undefined || row.id > input.cursor),
-      )
+    const matched = (await this.listMatched(input))
+      .filter((row) => input.cursor === undefined || row.id > input.cursor)
       .sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
     const items = matched.slice(0, input.limit);
     return {
@@ -132,6 +159,7 @@ class PersonalStatsRepository implements PlayerPersonalStatsRepository {
 function makeHarness(input: {
   readonly results: readonly OfficialResult[];
   readonly resolutions: Readonly<Record<string, PlayerIdentityResolution>>;
+  readonly encounter?: EncounterScheduleSnapshot;
 }) {
   const byId = new Map(input.results.map((result) => [result.id, result]));
   const officialResults: OfficialResultReaderPort = {
@@ -145,16 +173,21 @@ function makeHarness(input: {
     async getById(officialResultId) {
       return byId.get(officialResultId) ?? null;
     },
+    async listByCompetition(competitionId) {
+      return [...byId.values()].filter((result) => result.competitionId === competitionId);
+    },
   };
+  const identityInputs: Parameters<PlayerIdentityResolverPort["resolve"]>[0][] = [];
   const identities: PlayerIdentityResolverPort = {
     async resolve(correlation) {
+      identityInputs.push(correlation);
       return input.resolutions[correlation.externalPlayerId] ?? { status: "unmatched" };
     },
   };
   const contributions = new ContributionRepository();
   const competitionStats = new CompetitionStatsRepository();
   const personalStats = new PersonalStatsRepository();
-  const project = new ProjectApprovedOfficialResultUseCase({
+  const project = new ProjectOfficialResultUseCase({
     officialResults,
     identities,
     contributions,
@@ -162,11 +195,65 @@ function makeHarness(input: {
     personalStats,
     transaction: { runInTransaction: async (operation) => operation() },
     clock: { now: () => new Date("2026-08-11T07:00:00.000Z") },
+    encounterReader: input.encounter
+      ? {
+          getById: async () => input.encounter ?? null,
+        }
+      : undefined,
   });
-  return { byId, project, contributions, competitionStats, personalStats };
+  return {
+    byId,
+    officialResults,
+    project,
+    contributions,
+    competitionStats,
+    personalStats,
+    identityInputs,
+  };
 }
 
-describe("ProjectApprovedOfficialResultUseCase", () => {
+describe("ProjectOfficialResultUseCase", () => {
+  it("maps the player's external club to a team for identity resolution and persistence", async () => {
+    const result = officialResult({
+      players: [player({ externalPlayerId: "matched", externalClubId: "club-1" })],
+    });
+    const harness = makeHarness({
+      results: [result],
+      resolutions: {
+        matched: {
+          status: "matched",
+          playerProfileId: "profile-1",
+          gameAccountId: "account-1",
+        },
+      },
+      encounter: {
+        encounterId: result.encounterId,
+        organizationId: result.organizationId,
+        competitionId: result.competitionId,
+        homeTeamId: asTeamId("home-team"),
+        awayTeamId: asTeamId("away-team"),
+        scheduledStartAt: new Date("2026-08-10T19:00:00.000Z"),
+        officialMatchCount: 1,
+        homeExternalClubId: "club-1",
+        awayExternalClubId: "club-2",
+        providerKey: "ea-clubs",
+      },
+    });
+
+    expect((await harness.project.execute({ officialResultId: result.id })).isOk()).toBe(true);
+
+    expect(harness.identityInputs).toEqual([
+      expect.objectContaining({
+        organizationId: result.organizationId,
+        competitionId: result.competitionId,
+        teamId: asTeamId("home-team"),
+      }),
+    ]);
+    expect(await harness.contributions.listByOfficialResult(result.id)).toEqual([
+      expect.objectContaining({ teamId: asTeamId("home-team") }),
+    ]);
+  });
+
   it("keeps matched, unmatched, and ambiguous correlations while preserving zero and null", async () => {
     const result = officialResult({
       players: [
@@ -287,6 +374,72 @@ describe("ProjectApprovedOfficialResultUseCase", () => {
     });
   });
 
+  it("clears a voided encounter and zeros aggregates for previously matched players", async () => {
+    const approved = officialResult({
+      players: [player({ externalPlayerId: "matched", goals: 2 })],
+    });
+    const harness = makeHarness({
+      results: [approved],
+      resolutions: {
+        matched: {
+          status: "matched",
+          playerProfileId: "profile-1",
+          gameAccountId: "account-1",
+        },
+      },
+    });
+    expect((await harness.project.execute({ officialResultId: approved.id })).isOk()).toBe(true);
+
+    harness.byId.set(approved.id, { ...approved, status: "voided" });
+    const voided = await harness.project.execute({ officialResultId: approved.id });
+
+    expect(voided.isOk() && voided.value.contributionsProjected).toBe(0);
+    expect(await harness.contributions.listByEncounter(approved.encounterId)).toEqual([]);
+    expect(
+      await harness.competitionStats.findByPlayerAndCompetition(
+        "profile-1",
+        approved.competitionId,
+      ),
+    ).toMatchObject({ matchesPlayed: 0, minutes: 0, sourceRevisionMax: 0 });
+    expect(await harness.personalStats.findByPlayerProfile("profile-1")).toMatchObject({
+      matchesPlayed: 0,
+      minutes: 0,
+      sourceRevisionMax: 0,
+    });
+  });
+
+  it("leaves newer projected contributions untouched when the result is stale", async () => {
+    const stale = officialResult({
+      id: "result-r1",
+      revision: 1,
+      players: [player({ externalPlayerId: "matched", goals: 1 })],
+    });
+    const newer = officialResult({
+      id: "result-r2",
+      revision: 2,
+      players: [player({ externalPlayerId: "matched", goals: 3 })],
+    });
+    const harness = makeHarness({
+      results: [newer],
+      resolutions: {
+        matched: {
+          status: "matched",
+          playerProfileId: "profile-1",
+          gameAccountId: "account-1",
+        },
+      },
+    });
+    expect((await harness.project.execute({ officialResultId: newer.id })).isOk()).toBe(true);
+    harness.byId.set(stale.id, stale);
+
+    const projected = await harness.project.execute({ officialResultId: stale.id });
+
+    expect(projected.isOk() && projected.value.contributionsProjected).toBe(0);
+    expect(await harness.contributions.listByEncounter(stale.encounterId)).toMatchObject([
+      { officialResultId: newer.id, revision: 2, goals: 3 },
+    ]);
+  });
+
   it("rolls personal stats across competitions without an organization membership", async () => {
     const first = officialResult({
       id: "result-1",
@@ -321,6 +474,64 @@ describe("ProjectApprovedOfficialResultUseCase", () => {
       averages: { goals: 1.5 },
       per90: { goals: 2 },
     });
+  });
+
+  it("rebuilds a competition from the latest approved results and skips voided encounters", async () => {
+    const retained = officialResult({
+      id: "result-retained",
+      encounterId: "encounter-retained",
+      players: [player({ externalPlayerId: "matched", goals: 3 })],
+    });
+    const removed = officialResult({
+      id: "result-removed",
+      encounterId: "encounter-removed",
+      players: [player({ externalPlayerId: "matched", goals: 5 })],
+    });
+    const harness = makeHarness({
+      results: [retained, removed],
+      resolutions: {
+        matched: {
+          status: "matched",
+          playerProfileId: "profile-1",
+          gameAccountId: "account-1",
+        },
+      },
+    });
+    await harness.project.execute({ officialResultId: retained.id });
+    await harness.project.execute({ officialResultId: removed.id });
+    harness.byId.set(removed.id, { ...removed, status: "voided" });
+    const events: string[] = [];
+    const rebuild = new RebuildCompetitionStatisticsUseCase({
+      officialResults: harness.officialResults,
+      projectOfficialResult: harness.project,
+      contributions: harness.contributions,
+      competitionStats: harness.competitionStats,
+      personalStats: harness.personalStats,
+      transaction: { runInTransaction: async (operation) => operation() },
+      clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+      eventPublisher: {
+        async publish(event) {
+          events.push(event.eventName);
+        },
+        async publishMany(batch) {
+          events.push(...batch.map((event) => event.eventName));
+        },
+      },
+    });
+
+    const rebuilt = await rebuild.execute({ competitionId: retained.competitionId });
+
+    expect(rebuilt.isOk()).toBe(true);
+    expect(await harness.contributions.listByCompetition(retained.competitionId)).toMatchObject([
+      { officialResultId: retained.id, goals: 3 },
+    ]);
+    expect(
+      await harness.competitionStats.findByPlayerAndCompetition(
+        "profile-1",
+        retained.competitionId,
+      ),
+    ).toMatchObject({ matchesPlayed: 1, totals: { goals: 3 } });
+    expect(events).toEqual(["statistics.competition-stats-rebuilt"]);
   });
 });
 

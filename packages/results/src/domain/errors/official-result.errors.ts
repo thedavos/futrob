@@ -17,6 +17,11 @@ export class OfficialResultForbidden extends TaggedError("OfficialResultForbidde
   message: string;
 }> {}
 
+export class OfficialResultNotFound extends TaggedError("OfficialResultNotFound")<{
+  code: "results.official_result_not_found";
+  message: string;
+}> {}
+
 export class ProviderMatchSnapshotMissing extends TaggedError("ProviderMatchSnapshotMissing")<{
   code: "results.provider_match_snapshot_missing";
   message: string;
@@ -30,3 +35,5 @@ export type ConfirmOfficialSelectionError =
   | ProviderMatchSnapshotMissing;
 
 export type ApproveOfficialResultError = ConfirmOfficialSelectionError;
+
+export type VoidOfficialResultError = OfficialResultForbidden | OfficialResultNotFound;

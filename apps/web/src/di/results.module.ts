@@ -25,8 +25,14 @@ class MemoryResults implements OfficialResultRepository {
   async findApprovedByEncounter() {
     return null;
   }
+  async findLatestByEncounter() {
+    return null;
+  }
   async findById() {
     return null;
+  }
+  async listByCompetition() {
+    return [];
   }
 }
 

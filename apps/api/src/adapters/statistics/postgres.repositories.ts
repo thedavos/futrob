@@ -1,4 +1,6 @@
 import type {
+  MatchedPlayerContributionPageQuery,
+  MatchedPlayerContributionQuery,
   PlayerCompetitionStats,
   PlayerCompetitionStatsRepository,
   PlayerCorrelationStatus,
@@ -14,12 +16,13 @@ import {
   asCompetitionId,
   asEncounterId,
   asOrganizationId,
+  asTeamId,
   type CompetitionId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
-const CONTRIBUTION_COLUMNS = 29;
+const CONTRIBUTION_COLUMNS = 30;
 
 export class PostgresPlayerMatchContributionRepository implements PlayerMatchContributionRepository {
   constructor(private readonly pool: Pool) {}
@@ -33,7 +36,7 @@ export class PostgresPlayerMatchContributionRepository implements PlayerMatchCon
       const contribution = contributions[index]!;
       const offset = index * CONTRIBUTION_COLUMNS;
       placeholders.push(
-        `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15}, $${offset + 16}, $${offset + 17}, $${offset + 18}, $${offset + 19}, $${offset + 20}, $${offset + 21}, $${offset + 22}, $${offset + 23}, $${offset + 24}, $${offset + 25}, $${offset + 26}, $${offset + 27}, $${offset + 28}, $${offset + 29})`,
+        `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15}, $${offset + 16}, $${offset + 17}, $${offset + 18}, $${offset + 19}, $${offset + 20}, $${offset + 21}, $${offset + 22}, $${offset + 23}, $${offset + 24}, $${offset + 25}, $${offset + 26}, $${offset + 27}, $${offset + 28}, $${offset + 29}, $${offset + 30})`,
       );
       values.push(
         contribution.id,
@@ -45,6 +48,7 @@ export class PostgresPlayerMatchContributionRepository implements PlayerMatchCon
         contribution.officialSlot,
         contribution.playerProfileId,
         contribution.gameAccountId,
+        contribution.teamId,
         contribution.correlationStatus,
         contribution.externalPlayerId,
         contribution.displayName,
@@ -71,7 +75,7 @@ export class PostgresPlayerMatchContributionRepository implements PlayerMatchCon
     await getPgExecutor(this.pool).query(
       `INSERT INTO player_match_contributions (
          id, official_result_id, revision, encounter_id, competition_id, organization_id,
-         official_slot, player_profile_id, game_account_id, correlation_status,
+         official_slot, player_profile_id, game_account_id, team_id, correlation_status,
          external_player_id, display_name, external_club_id, platform, game_edition,
          position, minutes_played, goals, assists, shots, pass_attempts, passes_made,
          tackle_attempts, tackles_made, saves, yellow_cards, red_cards, is_mvp, rating
@@ -84,6 +88,7 @@ export class PostgresPlayerMatchContributionRepository implements PlayerMatchCon
          organization_id = EXCLUDED.organization_id,
          player_profile_id = EXCLUDED.player_profile_id,
          game_account_id = EXCLUDED.game_account_id,
+         team_id = EXCLUDED.team_id,
          correlation_status = EXCLUDED.correlation_status,
          display_name = EXCLUDED.display_name,
          external_club_id = EXCLUDED.external_club_id,
@@ -143,6 +148,13 @@ export class PostgresPlayerMatchContributionRepository implements PlayerMatchCon
     );
   }
 
+  async deleteByCompetition(competitionId: CompetitionId): Promise<void> {
+    await getPgExecutor(this.pool).query(
+      `DELETE FROM player_match_contributions WHERE competition_id = $1`,
+      [competitionId],
+    );
+  }
+
   async listByPlayerProfile(playerProfileId: string): Promise<PlayerMatchContribution[]> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT *
@@ -178,22 +190,34 @@ export class PostgresPlayerMatchContributionRepository implements PlayerMatchCon
     return result.rows.map(rehydrateContribution);
   }
 
-  async listMatchedPage(input: {
-    readonly playerProfileId: string;
-    readonly competitionId?: CompetitionId;
-    readonly cursor?: string;
-    readonly limit: number;
-  }): Promise<{
+  async listByCompetition(competitionId: CompetitionId): Promise<PlayerMatchContribution[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT *
+       FROM player_match_contributions
+       WHERE competition_id = $1
+       ORDER BY encounter_id, revision, official_slot, external_player_id`,
+      [competitionId],
+    );
+    return result.rows.map(rehydrateContribution);
+  }
+
+  async listMatched(input: MatchedPlayerContributionQuery): Promise<PlayerMatchContribution[]> {
+    const { filters, params } = matchedContributionFilters(input);
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT *
+       FROM player_match_contributions
+       WHERE ${filters.join(" AND ")}
+       ORDER BY id ASC`,
+      params,
+    );
+    return result.rows.map(rehydrateContribution);
+  }
+
+  async listMatchedPage(input: MatchedPlayerContributionPageQuery): Promise<{
     readonly items: PlayerMatchContribution[];
     readonly nextCursor: string | null;
   }> {
-    const params: unknown[] = [input.playerProfileId];
-    const filters = [`player_profile_id = $1`, `correlation_status = 'matched'`];
-
-    if (input.competitionId) {
-      params.push(input.competitionId);
-      filters.push(`competition_id = $${params.length}`);
-    }
+    const { filters, params } = matchedContributionFilters(input);
     if (input.cursor) {
       params.push(input.cursor);
       filters.push(`id > $${params.length}`);
@@ -322,6 +346,26 @@ export class PostgresPlayerPersonalStatsRepository implements PlayerPersonalStat
   }
 }
 
+function matchedContributionFilters(input: MatchedPlayerContributionQuery): {
+  readonly filters: string[];
+  readonly params: unknown[];
+} {
+  const params: unknown[] = [input.playerProfileId];
+  const filters = [`player_profile_id = $1`, `correlation_status = 'matched'`];
+  for (const [column, value] of [
+    ["competition_id", input.competitionId],
+    ["team_id", input.teamId],
+    ["game_edition", input.gameEdition],
+    ["platform", input.platform],
+    ["position", input.position],
+  ] as const) {
+    if (value === undefined) continue;
+    params.push(value);
+    filters.push(`${column} = $${params.length}`);
+  }
+  return { filters, params };
+}
+
 interface ContributionRow {
   readonly id: string;
   readonly official_result_id: string;
@@ -332,6 +376,7 @@ interface ContributionRow {
   readonly official_slot: number | string;
   readonly player_profile_id: string | null;
   readonly game_account_id: string | null;
+  readonly team_id: string | null;
   readonly correlation_status: string;
   readonly external_player_id: string;
   readonly display_name: string;
@@ -382,6 +427,7 @@ function rehydrateContribution(row: ContributionRow): PlayerMatchContribution {
     officialSlot: parseOfficialSlot(row.official_slot),
     playerProfileId: row.player_profile_id,
     gameAccountId: row.game_account_id,
+    teamId: row.team_id === null ? null : asTeamId(row.team_id),
     correlationStatus: parseCorrelationStatus(row.correlation_status),
     externalPlayerId: row.external_player_id,
     displayName: row.display_name,

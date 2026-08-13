@@ -9,6 +9,7 @@ import {
   asCompetitionId,
   asEncounterId,
   asOrganizationId,
+  type CompetitionId,
   type EncounterId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
@@ -32,6 +33,11 @@ export class InMemoryOfficialResultRepository implements OfficialResultRepositor
   rows: OfficialResult[] = [];
 
   async save(result: OfficialResult): Promise<OfficialResult> {
+    this.rows = this.rows.filter(
+      (row) =>
+        row.id !== result.id &&
+        !(row.encounterId === result.encounterId && row.revision === result.revision),
+    );
     this.rows.push(result);
     return result;
   }
@@ -46,6 +52,18 @@ export class InMemoryOfficialResultRepository implements OfficialResultRepositor
 
   async findById(officialResultId: string): Promise<OfficialResult | null> {
     return this.rows.find((row) => row.id === officialResultId) ?? null;
+  }
+
+  async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialResult | null> {
+    return (
+      this.rows
+        .filter((row) => row.encounterId === encounterId)
+        .sort((left, right) => right.revision - left.revision)[0] ?? null
+    );
+  }
+
+  async listByCompetition(competitionId: CompetitionId): Promise<OfficialResult[]> {
+    return this.rows.filter((row) => row.competitionId === competitionId);
   }
 }
 
@@ -152,6 +170,32 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
     );
     const row = result.rows[0];
     return row ? rehydrateOfficialResult(row) : null;
+  }
+
+  async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialResult | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, encounter_id, organization_id, competition_id, revision, status,
+              slots, approved_at, approved_by
+       FROM official_results
+       WHERE encounter_id = $1
+       ORDER BY revision DESC
+       LIMIT 1`,
+      [encounterId],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateOfficialResult(row) : null;
+  }
+
+  async listByCompetition(competitionId: CompetitionId): Promise<OfficialResult[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, encounter_id, organization_id, competition_id, revision, status,
+              slots, approved_at, approved_by
+       FROM official_results
+       WHERE competition_id = $1
+       ORDER BY encounter_id, revision`,
+      [competitionId],
+    );
+    return result.rows.map(rehydrateOfficialResult);
   }
 }
 
