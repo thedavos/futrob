@@ -11,6 +11,7 @@ import {
   EmptyStateTitle,
 } from "@futrob/ui";
 import type { PlayerGameAccountDto, PlayerTeamMembershipDto } from "@futrob/api-contracts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   useMyPlayerProfileQuery,
   useMyTeamsQuery,
@@ -18,6 +19,7 @@ import {
 } from "./player-queries.ts";
 
 export function PlayerWorkspacePage() {
+  const { t } = useI18n();
   const [activeError, setActiveError] = useState<string | null>(null);
   const profileQuery = useMyPlayerProfileQuery();
   const teamsQuery = useMyTeamsQuery();
@@ -52,24 +54,24 @@ export function PlayerWorkspacePage() {
       <section className="divide-y divide-border-subtle rounded-lg border border-border bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
           <div className="max-w-2xl">
-            <h2 className="font-semibold">Mis partidos</h2>
+            <h2 className="font-semibold">{t("player.matches.title")}</h2>
             <p className="typo-caption mt-1 text-muted-foreground">
-              Revisa tu historial individual desde resultados oficiales aprobados.
+              {t("player.matches.description")}
             </p>
           </div>
           <Button render={<Link to="/player/matches" />} variant="secondary">
-            Abrir Mis partidos
+            {t("player.matches.open")}
           </Button>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
           <div className="max-w-2xl">
-            <h2 className="font-semibold">Mis estadísticas</h2>
+            <h2 className="font-semibold">{t("player.statistics.title")}</h2>
             <p className="typo-caption mt-1 text-muted-foreground">
-              Consulta goles, asistencias, rating y métricas con sus estados de dato incompleto.
+              {t("player.statistics.description")}
             </p>
           </div>
           <Button render={<Link to="/player/statistics" />} variant="secondary">
-            Abrir Mis estadísticas
+            {t("player.statistics.open")}
           </Button>
         </div>
       </section>
