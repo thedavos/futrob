@@ -233,12 +233,14 @@ const es = {
   "player.matches.emptyTitle": "Aún no hay partidos oficiales",
   "player.matches.historyLabel": "Historial de partidos oficiales",
   "player.matches.loadMore": "Cargar más partidos",
+  "player.matches.open": "Abrir Mis partidos",
   "player.statistics.title": "Mis estadísticas",
   "player.statistics.description":
     "Agregados individuales construidos únicamente desde resultados oficiales aprobados.",
   "player.statistics.loading": "Cargando tus estadísticas…",
   "player.statistics.error": "No pudimos cargar tus estadísticas.",
   "player.statistics.emptyTitle": "Aún no hay estadísticas oficiales",
+  "player.statistics.open": "Abrir Mis estadísticas",
   "player.statistics.matchesCount": ({ count }) => `${count} partidos oficiales`,
   "player.statistics.revision": ({ revision }) =>
     `Actualizado con la revisión oficial ${revision}.`,
@@ -524,12 +526,14 @@ const en: Catalog = {
   "player.matches.emptyTitle": "No official matches yet",
   "player.matches.historyLabel": "Official match history",
   "player.matches.loadMore": "Load more matches",
+  "player.matches.open": "Open My matches",
   "player.statistics.title": "My statistics",
   "player.statistics.description":
     "Individual aggregates built only from approved official results.",
   "player.statistics.loading": "Loading your statistics…",
   "player.statistics.error": "We could not load your statistics.",
   "player.statistics.emptyTitle": "No official statistics yet",
+  "player.statistics.open": "Open My statistics",
   "player.statistics.matchesCount": ({ count }) =>
     count === 1 ? "1 official match" : `${count} official matches`,
   "player.statistics.revision": ({ revision }) => `Updated from official revision ${revision}.`,
