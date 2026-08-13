@@ -55,6 +55,13 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    // The gzip budget is enforced against dist/client by `npm run bundle:budget`.
+    // Keep this raw-size warning above the current framework entry to avoid a second,
+    // incomparable budget based on uncompressed bytes.
+    chunkSizeWarningLimit: 860,
+    manifest: true,
+  },
   plugins: [tailwindcss(), createAppPlugins()],
   test: {
     name: "web",
