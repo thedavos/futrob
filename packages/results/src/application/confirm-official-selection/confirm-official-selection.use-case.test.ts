@@ -123,6 +123,9 @@ describe("ConfirmOfficialSelectionUseCase", () => {
       async listByCompetition(competitionId) {
         return saved.filter((row) => row.competitionId === competitionId);
       },
+      async listByEncounter(encounterId) {
+        return saved.filter((row) => row.encounterId === encounterId);
+      },
     };
     const providerMatches: ProviderMatchReaderPort = {
       async listCandidatesForEncounter() {

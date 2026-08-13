@@ -49,6 +49,7 @@ export function createResultsModule(input: {
 
   const officialResultReader: OfficialResultReaderPort = {
     getApprovedByEncounter: (encounterId) => results.findApprovedByEncounter(encounterId),
+    getLatestByEncounter: (encounterId) => results.findLatestByEncounter(encounterId),
     getById: (officialResultId) => results.findById(officialResultId),
     listByCompetition: (competitionId) => results.listByCompetition(competitionId),
   };

@@ -39,6 +39,7 @@ describe("statistics module projection", () => {
       resultReader: {
         getApprovedByEncounter: (encounterId) =>
           officialResults.findApprovedByEncounter(encounterId),
+        getLatestByEncounter: (encounterId) => officialResults.findLatestByEncounter(encounterId),
         getById: (officialResultId) => officialResults.findById(officialResultId),
         listByCompetition: (competitionId) => officialResults.listByCompetition(competitionId),
       },
