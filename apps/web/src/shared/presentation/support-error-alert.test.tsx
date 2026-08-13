@@ -30,6 +30,8 @@ describe("SupportErrorAlert", () => {
 
     expect(writeText).toHaveBeenCalledWith(requestId);
     expect(writeText).not.toHaveBeenCalledWith(expect.stringContaining("No pudimos"));
+    expect(screen.getByText("Copiar código")).toBeTruthy();
+    expect(screen.getByText("Copiado")).toBeTruthy();
     expect(screen.getByText("Código copiado")).toBeTruthy();
   });
 
