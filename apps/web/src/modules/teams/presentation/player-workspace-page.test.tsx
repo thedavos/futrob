@@ -3,6 +3,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PlayerWorkspacePage } from "./player-workspace-page.tsx";
 
 const getMyProfile = vi.fn<() => Promise<unknown>>();
@@ -90,11 +91,7 @@ describe("PlayerWorkspacePage", () => {
       updatedAt: "2026-08-01T01:00:00.000Z",
     });
 
-    render(
-      <QueryTestProvider>
-        <PlayerWorkspacePage />
-      </QueryTestProvider>,
-    );
+    renderPage();
 
     expect(await screen.findByText("Alpha FC")).toBeTruthy();
     expect(screen.getByText("Beta FC")).toBeTruthy();
@@ -110,4 +107,33 @@ describe("PlayerWorkspacePage", () => {
       expect(setActiveTeam).toHaveBeenCalledWith({ rosterMembershipId: "m2" });
     });
   });
+
+  it("renders English copy for the personal stats entry cards", async () => {
+    getMyProfile.mockResolvedValue({
+      profile: { id: "p1", createdAt: "2026-08-01T00:00:00.000Z" },
+      gameAccounts: [],
+    });
+    getMyTeams.mockResolvedValue({ activeRosterMembershipId: null, teams: [] });
+
+    renderPage("en");
+
+    expect(await screen.findByRole("heading", { name: "My matches" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "My statistics" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Open My matches" }).getAttribute("href")).toBe(
+      "/player/matches",
+    );
+    expect(screen.getByRole("button", { name: "Open My statistics" }).getAttribute("href")).toBe(
+      "/player/statistics",
+    );
+  });
 });
+
+function renderPage(locale: "es" | "en" = "es") {
+  render(
+    <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
+      <QueryTestProvider>
+        <PlayerWorkspacePage />
+      </QueryTestProvider>
+    </I18nProvider>,
+  );
+}
