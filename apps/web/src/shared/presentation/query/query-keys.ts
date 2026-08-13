@@ -1,3 +1,5 @@
+import type { GetMyMatchesQuery, GetMyStatisticsQuery } from "@futrob/api-contracts";
+
 export const queryKeys = {
   identity: {
     all: ["identity"] as const,
@@ -46,6 +48,13 @@ export const queryKeys = {
         "detail",
         teamId,
       ] as const,
+  },
+  statistics: {
+    all: ["statistics"] as const,
+    me: (query: GetMyStatisticsQuery = {}) =>
+      [...queryKeys.statistics.all, "me", "summary", query] as const,
+    meMatches: (query: GetMyMatchesQuery) =>
+      [...queryKeys.statistics.all, "me", "matches", query] as const,
   },
   gameData: {
     all: ["game-data"] as const,

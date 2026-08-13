@@ -11,6 +11,7 @@ import {
   EmptyStateTitle,
 } from "@futrob/ui";
 import type { PlayerGameAccountDto, PlayerTeamMembershipDto } from "@futrob/api-contracts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   useMyPlayerProfileQuery,
   useMyTeamsQuery,
@@ -18,6 +19,7 @@ import {
 } from "./player-queries.ts";
 
 export function PlayerWorkspacePage() {
+  const { t } = useI18n();
   const [activeError, setActiveError] = useState<string | null>(null);
   const profileQuery = useMyPlayerProfileQuery();
   const teamsQuery = useMyTeamsQuery();
@@ -49,22 +51,30 @@ export function PlayerWorkspacePage() {
         </p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <EmptyState>
-          <EmptyStateTitle>Mis partidos</EmptyStateTitle>
-          <EmptyStateDescription>
-            Cuando vincules tu identificador de juego y existan resultados oficiales asociados,
-            aparecerán aquí.
-          </EmptyStateDescription>
-        </EmptyState>
-        <EmptyState>
-          <EmptyStateTitle>Mis estadísticas</EmptyStateTitle>
-          <EmptyStateDescription>
-            Tus goles, asistencias, rating y otras métricas se construirán desde partidos oficiales
-            aprobados.
-          </EmptyStateDescription>
-        </EmptyState>
-      </div>
+      <section className="divide-y divide-border-subtle rounded-lg border border-border bg-surface">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+          <div className="max-w-2xl">
+            <h2 className="font-semibold">{t("player.matches.title")}</h2>
+            <p className="typo-caption mt-1 text-muted-foreground">
+              {t("player.matches.description")}
+            </p>
+          </div>
+          <Button render={<Link to="/player/matches" />} variant="secondary">
+            {t("player.matches.open")}
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+          <div className="max-w-2xl">
+            <h2 className="font-semibold">{t("player.statistics.title")}</h2>
+            <p className="typo-caption mt-1 text-muted-foreground">
+              {t("player.statistics.description")}
+            </p>
+          </div>
+          <Button render={<Link to="/player/statistics" />} variant="secondary">
+            {t("player.statistics.open")}
+          </Button>
+        </div>
+      </section>
 
       <section className="mt-8 rounded-lg border border-border bg-surface p-5 sm:p-6">
         <div className="mb-4">

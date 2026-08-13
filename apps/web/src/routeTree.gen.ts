@@ -22,6 +22,8 @@ import { Route as ApiV1OpenapiDotyamlRouteImport } from './routes/api/v1/openapi
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppRosterInvitationsAcceptRouteImport } from './routes/_app/roster-invitations/accept'
+import { Route as AppPlayerStatisticsRouteImport } from './routes/_app/player_.statistics'
+import { Route as AppPlayerMatchesRouteImport } from './routes/_app/player_.matches'
 import { Route as AppPlayerGameAccountsRouteImport } from './routes/_app/player_.game-accounts'
 import { Route as AppPlayerEaClubsRouteImport } from './routes/_app/player_.ea-clubs'
 import { Route as AppPlayerCompetitionsRouteImport } from './routes/_app/player_.competitions'
@@ -52,6 +54,8 @@ import { Route as AppRosterInvitationsAcceptTokenRouteImport } from './routes/_a
 import { Route as AppInvitationsAcceptPlainTokenRouteImport } from './routes/_app/invitations/accept/$plainToken'
 import { Route as AppOrgsOrgIdCompetitionsIndexRouteImport } from './routes/_app/orgs/$orgId/competitions/index'
 import { Route as ApiV1PlayersMeTeamsRouteImport } from './routes/api/v1/players/me/teams'
+import { Route as ApiV1PlayersMeStatisticsRouteImport } from './routes/api/v1/players/me/statistics'
+import { Route as ApiV1PlayersMeMatchesRouteImport } from './routes/api/v1/players/me/matches'
 import { Route as ApiV1PlayersMeGameAccountsRouteImport } from './routes/api/v1/players/me/game-accounts'
 import { Route as ApiV1PlayersMeExternalClubRouteImport } from './routes/api/v1/players/me/external-club'
 import { Route as ApiV1PlayersMeActiveTeamRouteImport } from './routes/api/v1/players/me/active-team'
@@ -149,6 +153,16 @@ const AppRosterInvitationsAcceptRoute =
     path: '/roster-invitations/accept',
     getParentRoute: () => AppRoute,
   } as any)
+const AppPlayerStatisticsRoute = AppPlayerStatisticsRouteImport.update({
+  id: '/player_/statistics',
+  path: '/player/statistics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPlayerMatchesRoute = AppPlayerMatchesRouteImport.update({
+  id: '/player_/matches',
+  path: '/player/matches',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPlayerGameAccountsRoute = AppPlayerGameAccountsRouteImport.update({
   id: '/player_/game-accounts',
   path: '/player/game-accounts',
@@ -308,6 +322,17 @@ const AppOrgsOrgIdCompetitionsIndexRoute =
 const ApiV1PlayersMeTeamsRoute = ApiV1PlayersMeTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
+  getParentRoute: () => ApiV1PlayersMeRoute,
+} as any)
+const ApiV1PlayersMeStatisticsRoute =
+  ApiV1PlayersMeStatisticsRouteImport.update({
+    id: '/statistics',
+    path: '/statistics',
+    getParentRoute: () => ApiV1PlayersMeRoute,
+  } as any)
+const ApiV1PlayersMeMatchesRoute = ApiV1PlayersMeMatchesRouteImport.update({
+  id: '/matches',
+  path: '/matches',
   getParentRoute: () => ApiV1PlayersMeRoute,
 } as any)
 const ApiV1PlayersMeGameAccountsRoute =
@@ -566,6 +591,8 @@ export interface FileRoutesByFullPath {
   '/player/competitions': typeof AppPlayerCompetitionsRoute
   '/player/ea-clubs': typeof AppPlayerEaClubsRoute
   '/player/game-accounts': typeof AppPlayerGameAccountsRoute
+  '/player/matches': typeof AppPlayerMatchesRoute
+  '/player/statistics': typeof AppPlayerStatisticsRoute
   '/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -601,6 +628,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/players/me/active-team': typeof ApiV1PlayersMeActiveTeamRoute
   '/api/v1/players/me/external-club': typeof ApiV1PlayersMeExternalClubRoute
   '/api/v1/players/me/game-accounts': typeof ApiV1PlayersMeGameAccountsRoute
+  '/api/v1/players/me/matches': typeof ApiV1PlayersMeMatchesRoute
+  '/api/v1/players/me/statistics': typeof ApiV1PlayersMeStatisticsRoute
   '/api/v1/players/me/teams': typeof ApiV1PlayersMeTeamsRoute
   '/orgs/$orgId/competitions/': typeof AppOrgsOrgIdCompetitionsIndexRoute
   '/orgs/$orgId/competitions/$competitionId/setup': typeof AppOrgsOrgIdCompetitionsCompetitionIdSetupRoute
@@ -640,6 +669,8 @@ export interface FileRoutesByTo {
   '/player/competitions': typeof AppPlayerCompetitionsRoute
   '/player/ea-clubs': typeof AppPlayerEaClubsRoute
   '/player/game-accounts': typeof AppPlayerGameAccountsRoute
+  '/player/matches': typeof AppPlayerMatchesRoute
+  '/player/statistics': typeof AppPlayerStatisticsRoute
   '/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -675,6 +706,8 @@ export interface FileRoutesByTo {
   '/api/v1/players/me/active-team': typeof ApiV1PlayersMeActiveTeamRoute
   '/api/v1/players/me/external-club': typeof ApiV1PlayersMeExternalClubRoute
   '/api/v1/players/me/game-accounts': typeof ApiV1PlayersMeGameAccountsRoute
+  '/api/v1/players/me/matches': typeof ApiV1PlayersMeMatchesRoute
+  '/api/v1/players/me/statistics': typeof ApiV1PlayersMeStatisticsRoute
   '/api/v1/players/me/teams': typeof ApiV1PlayersMeTeamsRoute
   '/orgs/$orgId/competitions': typeof AppOrgsOrgIdCompetitionsIndexRoute
   '/orgs/$orgId/competitions/$competitionId/setup': typeof AppOrgsOrgIdCompetitionsCompetitionIdSetupRoute
@@ -718,6 +751,8 @@ export interface FileRoutesById {
   '/_app/player_/competitions': typeof AppPlayerCompetitionsRoute
   '/_app/player_/ea-clubs': typeof AppPlayerEaClubsRoute
   '/_app/player_/game-accounts': typeof AppPlayerGameAccountsRoute
+  '/_app/player_/matches': typeof AppPlayerMatchesRoute
+  '/_app/player_/statistics': typeof AppPlayerStatisticsRoute
   '/_app/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -753,6 +788,8 @@ export interface FileRoutesById {
   '/api/v1/players/me/active-team': typeof ApiV1PlayersMeActiveTeamRoute
   '/api/v1/players/me/external-club': typeof ApiV1PlayersMeExternalClubRoute
   '/api/v1/players/me/game-accounts': typeof ApiV1PlayersMeGameAccountsRoute
+  '/api/v1/players/me/matches': typeof ApiV1PlayersMeMatchesRoute
+  '/api/v1/players/me/statistics': typeof ApiV1PlayersMeStatisticsRoute
   '/api/v1/players/me/teams': typeof ApiV1PlayersMeTeamsRoute
   '/_app/orgs/$orgId/competitions/': typeof AppOrgsOrgIdCompetitionsIndexRoute
   '/_app/orgs/$orgId/competitions/$competitionId/setup': typeof AppOrgsOrgIdCompetitionsCompetitionIdSetupRoute
@@ -795,6 +832,8 @@ export interface FileRouteTypes {
     | '/player/competitions'
     | '/player/ea-clubs'
     | '/player/game-accounts'
+    | '/player/matches'
+    | '/player/statistics'
     | '/roster-invitations/accept'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
@@ -830,6 +869,8 @@ export interface FileRouteTypes {
     | '/api/v1/players/me/active-team'
     | '/api/v1/players/me/external-club'
     | '/api/v1/players/me/game-accounts'
+    | '/api/v1/players/me/matches'
+    | '/api/v1/players/me/statistics'
     | '/api/v1/players/me/teams'
     | '/orgs/$orgId/competitions/'
     | '/orgs/$orgId/competitions/$competitionId/setup'
@@ -869,6 +910,8 @@ export interface FileRouteTypes {
     | '/player/competitions'
     | '/player/ea-clubs'
     | '/player/game-accounts'
+    | '/player/matches'
+    | '/player/statistics'
     | '/roster-invitations/accept'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
@@ -904,6 +947,8 @@ export interface FileRouteTypes {
     | '/api/v1/players/me/active-team'
     | '/api/v1/players/me/external-club'
     | '/api/v1/players/me/game-accounts'
+    | '/api/v1/players/me/matches'
+    | '/api/v1/players/me/statistics'
     | '/api/v1/players/me/teams'
     | '/orgs/$orgId/competitions'
     | '/orgs/$orgId/competitions/$competitionId/setup'
@@ -946,6 +991,8 @@ export interface FileRouteTypes {
     | '/_app/player_/competitions'
     | '/_app/player_/ea-clubs'
     | '/_app/player_/game-accounts'
+    | '/_app/player_/matches'
+    | '/_app/player_/statistics'
     | '/_app/roster-invitations/accept'
     | '/api/auth/$'
     | '/api/v1/openapi.json'
@@ -981,6 +1028,8 @@ export interface FileRouteTypes {
     | '/api/v1/players/me/active-team'
     | '/api/v1/players/me/external-club'
     | '/api/v1/players/me/game-accounts'
+    | '/api/v1/players/me/matches'
+    | '/api/v1/players/me/statistics'
     | '/api/v1/players/me/teams'
     | '/_app/orgs/$orgId/competitions/'
     | '/_app/orgs/$orgId/competitions/$competitionId/setup'
@@ -1121,6 +1170,20 @@ declare module '@tanstack/react-router' {
       path: '/roster-invitations/accept'
       fullPath: '/roster-invitations/accept'
       preLoaderRoute: typeof AppRosterInvitationsAcceptRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/player_/statistics': {
+      id: '/_app/player_/statistics'
+      path: '/player/statistics'
+      fullPath: '/player/statistics'
+      preLoaderRoute: typeof AppPlayerStatisticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/player_/matches': {
+      id: '/_app/player_/matches'
+      path: '/player/matches'
+      fullPath: '/player/matches'
+      preLoaderRoute: typeof AppPlayerMatchesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/player_/game-accounts': {
@@ -1331,6 +1394,20 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/api/v1/players/me/teams'
       preLoaderRoute: typeof ApiV1PlayersMeTeamsRouteImport
+      parentRoute: typeof ApiV1PlayersMeRoute
+    }
+    '/api/v1/players/me/statistics': {
+      id: '/api/v1/players/me/statistics'
+      path: '/statistics'
+      fullPath: '/api/v1/players/me/statistics'
+      preLoaderRoute: typeof ApiV1PlayersMeStatisticsRouteImport
+      parentRoute: typeof ApiV1PlayersMeRoute
+    }
+    '/api/v1/players/me/matches': {
+      id: '/api/v1/players/me/matches'
+      path: '/matches'
+      fullPath: '/api/v1/players/me/matches'
+      preLoaderRoute: typeof ApiV1PlayersMeMatchesRouteImport
       parentRoute: typeof ApiV1PlayersMeRoute
     }
     '/api/v1/players/me/game-accounts': {
@@ -1611,6 +1688,8 @@ interface AppRouteChildren {
   AppPlayerCompetitionsRoute: typeof AppPlayerCompetitionsRoute
   AppPlayerEaClubsRoute: typeof AppPlayerEaClubsRoute
   AppPlayerGameAccountsRoute: typeof AppPlayerGameAccountsRoute
+  AppPlayerMatchesRoute: typeof AppPlayerMatchesRoute
+  AppPlayerStatisticsRoute: typeof AppPlayerStatisticsRoute
   AppRosterInvitationsAcceptRoute: typeof AppRosterInvitationsAcceptRouteWithChildren
   AppOrgsIndexRoute: typeof AppOrgsIndexRoute
   AppInvitationsAcceptPlainTokenRoute: typeof AppInvitationsAcceptPlainTokenRoute
@@ -1630,6 +1709,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppPlayerCompetitionsRoute: AppPlayerCompetitionsRoute,
   AppPlayerEaClubsRoute: AppPlayerEaClubsRoute,
   AppPlayerGameAccountsRoute: AppPlayerGameAccountsRoute,
+  AppPlayerMatchesRoute: AppPlayerMatchesRoute,
+  AppPlayerStatisticsRoute: AppPlayerStatisticsRoute,
   AppRosterInvitationsAcceptRoute: AppRosterInvitationsAcceptRouteWithChildren,
   AppOrgsIndexRoute: AppOrgsIndexRoute,
   AppInvitationsAcceptPlainTokenRoute: AppInvitationsAcceptPlainTokenRoute,
@@ -1698,6 +1779,8 @@ interface ApiV1PlayersMeRouteChildren {
   ApiV1PlayersMeActiveTeamRoute: typeof ApiV1PlayersMeActiveTeamRoute
   ApiV1PlayersMeExternalClubRoute: typeof ApiV1PlayersMeExternalClubRoute
   ApiV1PlayersMeGameAccountsRoute: typeof ApiV1PlayersMeGameAccountsRoute
+  ApiV1PlayersMeMatchesRoute: typeof ApiV1PlayersMeMatchesRoute
+  ApiV1PlayersMeStatisticsRoute: typeof ApiV1PlayersMeStatisticsRoute
   ApiV1PlayersMeTeamsRoute: typeof ApiV1PlayersMeTeamsRoute
 }
 
@@ -1705,6 +1788,8 @@ const ApiV1PlayersMeRouteChildren: ApiV1PlayersMeRouteChildren = {
   ApiV1PlayersMeActiveTeamRoute: ApiV1PlayersMeActiveTeamRoute,
   ApiV1PlayersMeExternalClubRoute: ApiV1PlayersMeExternalClubRoute,
   ApiV1PlayersMeGameAccountsRoute: ApiV1PlayersMeGameAccountsRoute,
+  ApiV1PlayersMeMatchesRoute: ApiV1PlayersMeMatchesRoute,
+  ApiV1PlayersMeStatisticsRoute: ApiV1PlayersMeStatisticsRoute,
   ApiV1PlayersMeTeamsRoute: ApiV1PlayersMeTeamsRoute,
 }
 

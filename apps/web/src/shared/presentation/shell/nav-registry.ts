@@ -2,6 +2,7 @@ import type { Permission } from "@futrob/shared-kernel";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { TEAM_PERMISSION } from "@futrob/teams";
+import { createTranslator, type Translator } from "@/shared/presentation/i18n/translate.ts";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
 
 export const NAV_SECTION = {
@@ -16,7 +17,8 @@ export type ShellNavIconId =
   | "home"
   | "competitions"
   | "ea-clubs"
-  | "pro-stats"
+  | "matches"
+  | "statistics"
   | "invitations"
   | "teams"
   | "players"
@@ -38,7 +40,7 @@ export type ShellNavSection = {
   readonly items: readonly ShellNavItem[];
 };
 
-function personalGeneralNav(): readonly ShellNavItem[] {
+function personalGeneralNav(t: Translator): readonly ShellNavItem[] {
   return [
     { id: "home", label: "Inicio", href: "/player", icon: "home" },
     {
@@ -47,13 +49,18 @@ function personalGeneralNav(): readonly ShellNavItem[] {
       href: "/player/competitions",
       icon: "competitions",
     },
-    { id: "ea-clubs", label: "Clubes EA", href: "/player/ea-clubs", icon: "ea-clubs" },
     {
-      id: "pro-stats",
-      label: "Pro Stats",
-      href: "/player/pro-stats",
-      icon: "pro-stats",
-      stub: true,
+      id: "game-accounts",
+      label: t("player.nav.gameData"),
+      href: "/player/game-accounts",
+      icon: "ea-clubs",
+    },
+    { id: "matches", label: t("player.nav.matches"), href: "/player/matches", icon: "matches" },
+    {
+      id: "statistics",
+      label: t("player.nav.statistics"),
+      href: "/player/statistics",
+      icon: "statistics",
     },
     { id: "invitations", label: "Invitaciones", href: "/invitations/accept", icon: "invitations" },
   ];
@@ -220,6 +227,7 @@ function organizationCompetitionContext(
 export function generalNavFor(
   selection: WorkspaceSelection,
   allowedPermissions?: ReadonlySet<string>,
+  t: Translator = createTranslator("es"),
 ): ShellNavSection {
   if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
     return {
@@ -235,7 +243,7 @@ export function generalNavFor(
   return {
     id: NAV_SECTION.general,
     label: "General",
-    items: personalGeneralNav(),
+    items: personalGeneralNav(t),
   };
 }
 

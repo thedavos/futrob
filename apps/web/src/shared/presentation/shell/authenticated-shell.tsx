@@ -274,8 +274,9 @@ function ShellSidebarBody({
   forceExpanded = false,
 }: ShellSidebarProps & { readonly forceExpanded?: boolean }) {
   const { collapsed, toggleCollapsed } = useSidebar();
+  const { t } = useI18n();
   const compact = collapsed && !forceExpanded;
-  const general = generalNavFor(selection, allowedPermissions);
+  const general = generalNavFor(selection, allowedPermissions, t);
   const context = contextNavFor(selection, allowedPermissions);
   const footerItems = context.items.length > 0 ? context.items : general.items;
   const showCollapseControl = !forceExpanded;
