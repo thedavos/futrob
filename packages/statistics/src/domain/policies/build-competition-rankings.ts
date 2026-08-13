@@ -24,7 +24,10 @@ export function buildCompetitionRankings(input: {
     (contribution) =>
       contribution.correlationStatus === "matched" && contribution.playerProfileId !== null,
   );
-  const teamMinutesByTeam = sumTeamMatchClockMinutes(matchedPlayers);
+  const teamMinutesByTeam = sumTeamMatchClockMinutes(
+    input.playerContributions,
+    input.teamContributions,
+  );
   const teamGoalsAgainstByKey = indexTeamGoalsAgainst(input.teamContributions);
   const players = aggregatePlayers(matchedPlayers, teamGoalsAgainstByKey);
 
@@ -239,7 +242,7 @@ function aggregatePlayers(
       current.goalkeeperMatches += 1;
       if (contribution.saves !== null) current.saves += contribution.saves;
       if (contribution.teamId !== null) {
-        const key = teamGoalsAgainstKey({
+        const key = slotTeamKey({
           encounterId: contribution.encounterId,
           officialSlot: contribution.officialSlot,
           teamId: contribution.teamId,
@@ -294,22 +297,38 @@ function aggregatePlayers(
 }
 
 /**
- * Team clock for DEC-043 is available match time per team (max player minutes
- * on that side per official match), not the roster-sum of player minutes.
- * Missing minutes default to 90 so a full match still has a usable clock.
+ * Team clock for DEC-043 is available match time per team side, independent of
+ * whether player identities correlated. Player minutes (any correlation) set the
+ * clock when present; otherwise each matched team contribution is 90 minutes.
  */
 function sumTeamMatchClockMinutes(
-  contributions: readonly PlayerMatchContribution[],
+  playerContributions: readonly PlayerMatchContribution[],
+  teamContributions: readonly TeamMatchContribution[],
 ): Map<TeamId, number> {
   const perMatch = new Map<string, { readonly teamId: TeamId; readonly minutes: number }>();
-  for (const contribution of contributions) {
+  for (const contribution of playerContributions) {
     if (contribution.teamId === null) continue;
-    const key = `${contribution.encounterId}:${contribution.officialSlot}:${contribution.teamId}`;
+    const key = slotTeamKey({
+      encounterId: contribution.encounterId,
+      officialSlot: contribution.officialSlot,
+      teamId: contribution.teamId,
+    });
     const minutes = contribution.minutesPlayed ?? DEFAULT_MATCH_CLOCK_MINUTES;
     const current = perMatch.get(key);
     if (current === undefined || minutes > current.minutes) {
       perMatch.set(key, { teamId: contribution.teamId, minutes });
     }
+  }
+
+  for (const contribution of teamContributions) {
+    if (contribution.correlationStatus !== "matched" || contribution.teamId === null) continue;
+    const key = slotTeamKey({
+      encounterId: contribution.encounterId,
+      officialSlot: contribution.officialSlot,
+      teamId: contribution.teamId,
+    });
+    if (perMatch.has(key)) continue;
+    perMatch.set(key, { teamId: contribution.teamId, minutes: DEFAULT_MATCH_CLOCK_MINUTES });
   }
 
   const totals = new Map<TeamId, number>();
@@ -328,7 +347,7 @@ function indexTeamGoalsAgainst(
   for (const contribution of contributions) {
     if (contribution.correlationStatus !== "matched" || contribution.teamId === null) continue;
     index.set(
-      teamGoalsAgainstKey({
+      slotTeamKey({
         encounterId: contribution.encounterId,
         officialSlot: contribution.officialSlot,
         teamId: contribution.teamId,
@@ -339,7 +358,7 @@ function indexTeamGoalsAgainst(
   return index;
 }
 
-function teamGoalsAgainstKey(input: {
+function slotTeamKey(input: {
   readonly encounterId: string;
   readonly officialSlot: 1 | 2;
   readonly teamId: TeamId;

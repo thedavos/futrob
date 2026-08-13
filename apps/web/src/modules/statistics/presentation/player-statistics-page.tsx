@@ -23,6 +23,9 @@ import {
   TableHeader,
   TableRow,
 } from "@futrob/ui";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { useMyStatisticsQuery } from "./statistics-queries.ts";
 
 type StatisticMetric = keyof PlayerPersonalStatsDto["totals"];
@@ -42,73 +45,75 @@ const STATISTIC_METRICS = [
   "rating",
 ] as const satisfies readonly StatisticMetric[];
 
-const METRIC_LABELS: Record<StatisticMetric, string> = {
-  goals: "Goles",
-  assists: "Asistencias",
-  shots: "Tiros",
-  passAttempts: "Pases intentados",
-  passesMade: "Pases completados",
-  tackleAttempts: "Entradas intentadas",
-  tacklesMade: "Entradas completadas",
-  saves: "Paradas",
-  yellowCards: "Tarjetas amarillas",
-  redCards: "Tarjetas rojas",
-  mvpAwards: "Premios MVP",
-  rating: "Rating",
-};
-
-const numberFormat = new Intl.NumberFormat("es-ES", {
-  maximumFractionDigits: 2,
-});
+const METRIC_KEYS = {
+  goals: "player.metric.goals",
+  assists: "player.metric.assists",
+  shots: "player.metric.shots",
+  passAttempts: "player.metric.passAttempts",
+  passesMade: "player.metric.passesMade",
+  tackleAttempts: "player.metric.tackleAttempts",
+  tacklesMade: "player.metric.tacklesMade",
+  saves: "player.metric.saves",
+  yellowCards: "player.metric.yellowCards",
+  redCards: "player.metric.redCards",
+  mvpAwards: "player.metric.mvpAwards",
+  rating: "player.metric.rating",
+} as const satisfies Record<StatisticMetric, ParameterlessMessageKey>;
 
 export function PlayerStatisticsPage() {
+  const { t, locale } = useI18n();
   const statisticsQuery = useMyStatisticsQuery();
+  const numberFormat = new Intl.NumberFormat(locale === "en" ? "en-GB" : "es-ES", {
+    maximumFractionDigits: 2,
+  });
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
-      <PageHeader />
+      <PageHeader t={t} />
 
       {statisticsQuery.isPending ? (
-        <StatisticsLoading />
+        <StatisticsLoading t={t} />
       ) : statisticsQuery.isError ? (
         <Alert variant="destructive">
           <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-            <span>No pudimos cargar tus estadísticas.</span>
+            <span>{t("player.statistics.error")}</span>
             <Button onClick={() => void statisticsQuery.refetch()} variant="secondary">
-              Reintentar
+              {t("player.retry")}
             </Button>
           </AlertDescription>
         </Alert>
       ) : statisticsQuery.data.statistics === null ? (
-        <OfficialHistoryEmpty />
+        <OfficialHistoryEmpty t={t} />
       ) : (
-        <StatisticsContent statistics={statisticsQuery.data.statistics} />
+        <StatisticsContent
+          numberFormat={numberFormat}
+          statistics={statisticsQuery.data.statistics}
+          t={t}
+        />
       )}
     </main>
   );
 }
 
-function PageHeader() {
+function PageHeader({ t }: { readonly t: Translator }) {
   return (
     <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
       <div className="max-w-2xl space-y-2">
-        <p className="typo-label text-muted-foreground">Espacio personal</p>
-        <h1 className="typo-heading">Mis estadísticas</h1>
-        <p className="typo-subtitle text-muted-foreground">
-          Agregados individuales construidos únicamente desde resultados oficiales aprobados.
-        </p>
+        <p className="typo-label text-muted-foreground">{t("player.workspace.eyebrow")}</p>
+        <h1 className="typo-heading">{t("player.statistics.title")}</h1>
+        <p className="typo-subtitle text-muted-foreground">{t("player.statistics.description")}</p>
       </div>
       <Button render={<Link to="/player" />} variant="link">
-        Volver al espacio personal
+        {t("player.backToWorkspace")}
       </Button>
     </div>
   );
 }
 
-function StatisticsLoading() {
+function StatisticsLoading({ t }: { readonly t: Translator }) {
   return (
-    <section aria-busy="true" aria-label="Cargando tus estadísticas" className="space-y-4">
-      <p className="typo-caption text-muted-foreground">Cargando tus estadísticas…</p>
+    <section aria-busy="true" aria-label={t("player.statistics.loading")} className="space-y-4">
+      <p className="typo-caption text-muted-foreground">{t("player.statistics.loading")}</p>
       <div className="grid gap-4 sm:grid-cols-3">
         <Skeleton className="h-20" />
         <Skeleton className="h-20" />
@@ -119,22 +124,27 @@ function StatisticsLoading() {
   );
 }
 
-function OfficialHistoryEmpty() {
+function OfficialHistoryEmpty({ t }: { readonly t: Translator }) {
   return (
     <EmptyState>
-      <EmptyStateTitle>Aún no hay estadísticas oficiales</EmptyStateTitle>
-      <EmptyStateDescription>
-        Vincula tus datos de juego y vuelve cuando una organización haya aprobado resultados que
-        coincidan con tu jugador.
-      </EmptyStateDescription>
+      <EmptyStateTitle>{t("player.statistics.emptyTitle")}</EmptyStateTitle>
+      <EmptyStateDescription>{t("player.official.emptyDescription")}</EmptyStateDescription>
       <EmptyStateActions>
-        <Button render={<Link to="/player/game-accounts" />}>Revisar datos de juego</Button>
+        <Button render={<Link to="/player/game-accounts" />}>{t("player.gameData.review")}</Button>
       </EmptyStateActions>
     </EmptyState>
   );
 }
 
-function StatisticsContent({ statistics }: { readonly statistics: PlayerPersonalStatsDto }) {
+function StatisticsContent({
+  statistics,
+  numberFormat,
+  t,
+}: {
+  readonly statistics: PlayerPersonalStatsDto;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly t: Translator;
+}) {
   const hasPartialData = Object.values(statistics.partial).some(Boolean);
 
   return (
@@ -142,70 +152,71 @@ function StatisticsContent({ statistics }: { readonly statistics: PlayerPersonal
       <section className="rounded-lg border border-border bg-surface p-5">
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="typo-label">{statistics.matchesPlayed} partidos oficiales</h2>
+            <h2 className="typo-label">
+              {t("player.statistics.matchesCount", { count: statistics.matchesPlayed })}
+            </h2>
             <p className="typo-caption mt-1 text-muted-foreground">
-              Actualizado con la revisión oficial {statistics.sourceRevisionMax}.
+              {t("player.statistics.revision", { revision: statistics.sourceRevisionMax })}
             </p>
           </div>
-          {hasPartialData ? <Badge variant="warning">Datos parciales</Badge> : null}
+          {hasPartialData ? <Badge variant="warning">{t("player.partialData")}</Badge> : null}
         </div>
         <StatGroup>
           <Stat>
-            <StatLabel>Partidos</StatLabel>
+            <StatLabel>{t("player.metric.matches")}</StatLabel>
             <StatValue>{statistics.matchesPlayed}</StatValue>
           </Stat>
           <Stat>
-            <StatLabel>Minutos</StatLabel>
-            <StatValue>{formatNumber(statistics.minutes)}</StatValue>
+            <StatLabel>{t("player.metric.minutes")}</StatLabel>
+            <StatValue>{numberFormat.format(statistics.minutes)}</StatValue>
           </Stat>
           <Stat>
-            <StatLabel>Goles</StatLabel>
-            <StatValue>{formatNumber(statistics.totals.goals)}</StatValue>
+            <StatLabel>{t("player.metric.goals")}</StatLabel>
+            <StatValue>{numberFormat.format(statistics.totals.goals)}</StatValue>
           </Stat>
           <Stat>
-            <StatLabel>Asistencias</StatLabel>
-            <StatValue>{formatNumber(statistics.totals.assists)}</StatValue>
+            <StatLabel>{t("player.metric.assists")}</StatLabel>
+            <StatValue>{numberFormat.format(statistics.totals.assists)}</StatValue>
           </Stat>
         </StatGroup>
       </section>
 
       {hasPartialData ? (
         <Alert>
-          <AlertDescription>
-            Datos parciales. Algunas métricas no estuvieron disponibles en todos los partidos
-            oficiales y se marcan en la tabla.
-          </AlertDescription>
+          <AlertDescription>{t("player.partialData.description")}</AlertDescription>
         </Alert>
       ) : null}
 
-      <Table aria-label="Estadísticas oficiales del jugador" dense>
+      <Table aria-label={t("player.statistics.tableLabel")} dense>
         <TableHeader>
           <TableRow>
-            <TableHead>Métrica</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead className="text-right">Promedio</TableHead>
-            <TableHead className="text-right">Por 90</TableHead>
-            <TableHead>Estado</TableHead>
+            <TableHead>{t("player.statistics.metric")}</TableHead>
+            <TableHead className="text-right">{t("player.statistics.total")}</TableHead>
+            <TableHead className="text-right">{t("player.statistics.average")}</TableHead>
+            <TableHead className="text-right">{t("player.statistics.per90")}</TableHead>
+            <TableHead>{t("player.statistics.status")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {STATISTIC_METRICS.map((metric) => (
             <TableRow key={metric}>
-              <TableCell className="font-medium">{METRIC_LABELS[metric]}</TableCell>
+              <TableCell className="font-medium">{t(METRIC_KEYS[metric])}</TableCell>
               <TableCell className="typo-score text-right">
-                {formatNumber(statistics.totals[metric])}
+                {numberFormat.format(statistics.totals[metric])}
               </TableCell>
               <TableCell className="typo-score text-right">
-                {formatNullableNumber(statistics.averages[metric])}
+                {formatNullableNumber(statistics.averages[metric], numberFormat, t)}
               </TableCell>
               <TableCell className="typo-score text-right">
-                {formatNullableNumber(statistics.per90[metric])}
+                {formatNullableNumber(statistics.per90[metric], numberFormat, t)}
               </TableCell>
               <TableCell>
                 {statistics.partial[metric] ? (
-                  <Badge variant="warning">Datos parciales</Badge>
+                  <Badge variant="warning">{t("player.partialData")}</Badge>
                 ) : (
-                  <span className="typo-caption text-muted-foreground">Completo</span>
+                  <span className="typo-caption text-muted-foreground">
+                    {t("player.completeData")}
+                  </span>
                 )}
               </TableCell>
             </TableRow>
@@ -216,10 +227,10 @@ function StatisticsContent({ statistics }: { readonly statistics: PlayerPersonal
   );
 }
 
-function formatNullableNumber(value: number | null): string {
-  return value === null ? "Sin datos" : formatNumber(value);
-}
-
-function formatNumber(value: number): string {
-  return numberFormat.format(value);
+function formatNullableNumber(
+  value: number | null,
+  numberFormat: Intl.NumberFormat,
+  t: Translator,
+): string {
+  return value === null ? t("player.noData") : numberFormat.format(value);
 }

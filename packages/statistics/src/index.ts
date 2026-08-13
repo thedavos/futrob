@@ -46,6 +46,7 @@ export type { RankingSnapshotRepository } from "./domain/ports/ranking-snapshot.
 export type {
   CompetitionMatchPointsRules,
   CompetitionMatchRulesReaderPort,
+  StandingResolutionMode,
 } from "./domain/ports/competition-match-rules-reader.port.ts";
 export type { PlayerProfileLookupPort } from "./domain/ports/player-profile-lookup.port.ts";
 export type {

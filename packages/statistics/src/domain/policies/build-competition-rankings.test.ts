@@ -282,6 +282,33 @@ describe("buildCompetitionRankings", () => {
     expect(snapshots.find((snapshot) => snapshot.kind === "scorer")?.rows).toEqual([]);
   });
 
+  it("does not shrink the team clock when most player identities are unmatched", () => {
+    const snapshots = buildCompetitionRankings({
+      competitionId: asCompetitionId("competition-1"),
+      organizationId: asOrganizationId("organization-1"),
+      playerContributions: [
+        player({
+          id: "matched-40",
+          playerProfileId: "short-minutes",
+          goals: 2,
+          minutesPlayed: 40,
+        }),
+        player({
+          id: "unmatched-clock",
+          playerProfileId: null,
+          correlationStatus: "unmatched",
+          gameAccountId: null,
+          goals: 0,
+          minutesPlayed: 90,
+        }),
+      ],
+      teamContributions: [team({ encounterId: "encounter-1", minutesPlayed: 990 })],
+      updatedAt: new Date("2026-08-13T12:00:00.000Z"),
+    });
+
+    expect(snapshots.find((snapshot) => snapshot.kind === "scorer")?.rows).toEqual([]);
+  });
+
   it("ranks goalkeepers by saves then lower goals against", () => {
     const snapshots = buildCompetitionRankings({
       competitionId: asCompetitionId("competition-1"),
@@ -381,12 +408,12 @@ function threeMatches(input: {
 
 function player(input: {
   readonly id: string;
-  readonly playerProfileId: string;
+  readonly playerProfileId: string | null;
   readonly officialResultId?: string;
   readonly revision?: number;
   readonly encounterId?: string;
   readonly officialSlot?: 1 | 2;
-  readonly gameAccountId?: string;
+  readonly gameAccountId?: string | null;
   readonly teamId?: ReturnType<typeof asTeamId>;
   readonly correlationStatus?: PlayerMatchContribution["correlationStatus"];
   readonly externalPlayerId?: string;
@@ -418,11 +445,11 @@ function player(input: {
     organizationId: asOrganizationId("organization-1"),
     officialSlot: input.officialSlot ?? 1,
     playerProfileId: input.playerProfileId,
-    gameAccountId: input.gameAccountId ?? "account-1",
+    gameAccountId: input.gameAccountId === undefined ? "account-1" : input.gameAccountId,
     teamId: input.teamId ?? asTeamId("home-team"),
     correlationStatus: input.correlationStatus ?? "matched",
-    externalPlayerId: input.externalPlayerId ?? input.playerProfileId,
-    displayName: input.displayName ?? input.playerProfileId,
+    externalPlayerId: input.externalPlayerId ?? input.playerProfileId ?? input.id,
+    displayName: input.displayName ?? input.playerProfileId ?? input.id,
     externalClubId: input.externalClubId ?? "club-1",
     platform: input.platform ?? "common-gen5",
     gameEdition: input.gameEdition ?? "fc-26",

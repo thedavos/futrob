@@ -65,6 +65,10 @@ export class InMemoryOfficialResultRepository implements OfficialResultRepositor
   async listByCompetition(competitionId: CompetitionId): Promise<OfficialResult[]> {
     return this.rows.filter((row) => row.competitionId === competitionId);
   }
+
+  async listByEncounter(encounterId: EncounterId): Promise<OfficialResult[]> {
+    return this.rows.filter((row) => row.encounterId === encounterId);
+  }
 }
 
 export class PostgresOfficialMatchSelectionRepository implements OfficialMatchSelectionRepository {
@@ -194,6 +198,18 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
        WHERE competition_id = $1
        ORDER BY encounter_id, revision`,
       [competitionId],
+    );
+    return result.rows.map(rehydrateOfficialResult);
+  }
+
+  async listByEncounter(encounterId: EncounterId): Promise<OfficialResult[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, encounter_id, organization_id, competition_id, revision, status,
+              slots, approved_at, approved_by
+       FROM official_results
+       WHERE encounter_id = $1
+       ORDER BY revision`,
+      [encounterId],
     );
     return result.rows.map(rehydrateOfficialResult);
   }

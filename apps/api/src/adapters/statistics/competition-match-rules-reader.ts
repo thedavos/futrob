@@ -16,6 +16,7 @@ export class CompetitionsMatchRulesReader implements CompetitionMatchRulesReader
       winPoints: stage.winPoints,
       drawPoints: stage.drawPoints,
       lossPoints: stage.lossPoints,
+      resolutionMode: stage.resolutionMode,
     };
   }
 }

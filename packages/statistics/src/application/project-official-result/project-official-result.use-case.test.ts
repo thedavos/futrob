@@ -313,6 +313,13 @@ function makeHarness(input: {
           .sort((left, right) => right.revision - left.revision)[0] ?? null
       );
     },
+    async getLatestByEncounter(encounterId) {
+      return (
+        [...byId.values()]
+          .filter((result) => result.encounterId === encounterId)
+          .sort((left, right) => right.revision - left.revision)[0] ?? null
+      );
+    },
     async getById(officialResultId) {
       return byId.get(officialResultId) ?? null;
     },
@@ -336,7 +343,12 @@ function makeHarness(input: {
   const matchRules: CompetitionMatchRulesReaderPort = {
     async getPointsRules() {
       return input.pointsRules === undefined
-        ? { winPoints: 3, drawPoints: 1, lossPoints: 0 }
+        ? {
+            winPoints: 3,
+            drawPoints: 1,
+            lossPoints: 0,
+            resolutionMode: "independent_matches",
+          }
         : input.pointsRules;
     },
   };
@@ -568,6 +580,46 @@ describe("ProjectOfficialResultUseCase", () => {
     });
   });
 
+  it("clears the encounter from the latest voided revision instead of restoring an older approval", async () => {
+    const revisionOne = officialResult({
+      id: "result-r1",
+      revision: 1,
+      players: [player({ externalPlayerId: "matched", goals: 1 })],
+    });
+    const revisionTwo = officialResult({
+      id: "result-r2",
+      revision: 2,
+      players: [player({ externalPlayerId: "matched", goals: 3 })],
+    });
+    const harness = makeHarness({
+      results: [revisionOne, revisionTwo],
+      resolutions: {
+        matched: {
+          status: "matched",
+          playerProfileId: "profile-1",
+          gameAccountId: "account-1",
+        },
+      },
+    });
+    expect((await harness.project.execute({ officialResultId: revisionTwo.id })).isOk()).toBe(true);
+
+    harness.byId.set(revisionTwo.id, { ...revisionTwo, status: "voided" });
+    const voided = await harness.project.execute({ encounterId: revisionTwo.encounterId });
+
+    expect(voided.isOk() && voided.value).toMatchObject({
+      officialResultId: revisionTwo.id,
+      revision: 2,
+      contributionsProjected: 0,
+    });
+    expect(await harness.contributions.listByEncounter(revisionTwo.encounterId)).toEqual([]);
+    expect(
+      await harness.competitionStats.findByPlayerAndCompetition(
+        "profile-1",
+        revisionTwo.competitionId,
+      ),
+    ).toMatchObject({ matchesPlayed: 0, minutes: 0, sourceRevisionMax: 0 });
+  });
+
   it("leaves newer projected contributions untouched when the result is stale", async () => {
     const stale = officialResult({
       id: "result-r1",
@@ -689,7 +741,12 @@ describe("ProjectOfficialResultUseCase", () => {
       standings: harness.standings,
       matchRules: {
         async getPointsRules() {
-          return { winPoints: 3, drawPoints: 1, lossPoints: 0 };
+          return {
+            winPoints: 3,
+            drawPoints: 1,
+            lossPoints: 0,
+            resolutionMode: "independent_matches",
+          };
         },
       },
       rebuildRankings,
@@ -972,7 +1029,12 @@ describe("ProjectOfficialResultUseCase", () => {
       standings: harness.standings,
       matchRules: {
         async getPointsRules() {
-          return { winPoints: 3, drawPoints: 1, lossPoints: 0 };
+          return {
+            winPoints: 3,
+            drawPoints: 1,
+            lossPoints: 0,
+            resolutionMode: "independent_matches",
+          };
         },
       },
       transaction: { runInTransaction: async (operation) => operation() },
