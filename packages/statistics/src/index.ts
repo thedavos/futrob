@@ -2,6 +2,11 @@ export type {
   PlayerCorrelationStatus,
   PlayerMatchContribution,
 } from "./domain/entities/player-match-contribution.ts";
+export type {
+  TeamCorrelationStatus,
+  TeamMatchContribution,
+  TeamMatchSide,
+} from "./domain/entities/team-match-contribution.ts";
 export {
   PLAYER_STATISTIC_METRICS,
   type PlayerAggregateStats,
@@ -12,6 +17,12 @@ export {
 } from "./domain/entities/player-aggregate-stats.ts";
 export type { PlayerCompetitionStats } from "./domain/entities/player-competition-stats.ts";
 export type { PlayerPersonalStats } from "./domain/entities/player-personal-stats.ts";
+export type { TeamCompetitionStats } from "./domain/entities/team-competition-stats.ts";
+export {
+  COMPETITION_STANDING_FORMULA_VERSION,
+  type CompetitionStandingRow,
+  type CompetitionStandingSnapshot,
+} from "./domain/entities/competition-standing-snapshot.ts";
 export type {
   MatchedPlayerContributionPageQuery,
   MatchedPlayerContributionQuery,
@@ -19,6 +30,14 @@ export type {
 } from "./domain/ports/player-match-contribution.repository.ts";
 export type { PlayerCompetitionStatsRepository } from "./domain/ports/player-competition-stats.repository.ts";
 export type { PlayerPersonalStatsRepository } from "./domain/ports/player-personal-stats.repository.ts";
+export type { TeamMatchContributionRepository } from "./domain/ports/team-match-contribution.repository.ts";
+export type { TeamCompetitionStatsRepository } from "./domain/ports/team-competition-stats.repository.ts";
+export type { CompetitionStandingSnapshotRepository } from "./domain/ports/competition-standing-snapshot.repository.ts";
+export type {
+  CompetitionMatchPointsRules,
+  CompetitionMatchRulesReaderPort,
+  StandingResolutionMode,
+} from "./domain/ports/competition-match-rules-reader.port.ts";
 export type { PlayerProfileLookupPort } from "./domain/ports/player-profile-lookup.port.ts";
 export type {
   PlayerIdentityResolution,
@@ -57,4 +76,14 @@ export {
   type ListMyMatchContributionsInput,
   type ListMyMatchContributionsOutput,
 } from "./application/list-my-match-contributions/list-my-match-contributions.use-case.ts";
+export {
+  GetCompetitionStandingsUseCase,
+  type GetCompetitionStandingsDependencies,
+  type GetCompetitionStandingsInput,
+} from "./application/get-competition-standings/get-competition-standings.use-case.ts";
+export {
+  GetCompetitionTeamStatisticsUseCase,
+  type GetCompetitionTeamStatisticsDependencies,
+  type GetCompetitionTeamStatisticsInput,
+} from "./application/get-competition-team-statistics/get-competition-team-statistics.use-case.ts";
 export type { OfficialResultReaderPort } from "@futrob/results";

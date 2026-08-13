@@ -1164,6 +1164,52 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/organizations/{organizationId}/competitions/{competitionId}/standings": {
+      get: {
+        operationId: "getCompetitionStandings",
+        tags: ["statistics"],
+        summary: "Read the official competition standings snapshot",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Standing snapshot or null when nothing has been projected",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GetCompetitionStandingsResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/team-statistics": {
+      get: {
+        operationId: "getCompetitionTeamStatistics",
+        tags: ["statistics"],
+        summary: "Read official team competition statistics",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Team competition aggregates",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GetCompetitionTeamStatisticsResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     "/organizations/{organizationId}/competitions/{competitionId}/team-management": {
       get: {
         operationId: "listCompetitionTeamManagement",
@@ -2601,6 +2647,115 @@ export const futrobOpenApiV1 = {
             items: { $ref: "#/components/schemas/PlayerMatchContribution" },
           },
           nextCursor: { type: ["string", "null"] },
+        },
+      },
+      CompetitionStandingRow: {
+        type: "object",
+        required: [
+          "position",
+          "teamId",
+          "played",
+          "wins",
+          "draws",
+          "losses",
+          "goalsFor",
+          "goalsAgainst",
+          "goalDifference",
+          "points",
+        ],
+        properties: {
+          position: { type: "integer", minimum: 1 },
+          teamId: { type: "string" },
+          played: { type: "integer", minimum: 0 },
+          wins: { type: "integer", minimum: 0 },
+          draws: { type: "integer", minimum: 0 },
+          losses: { type: "integer", minimum: 0 },
+          goalsFor: { type: "integer", minimum: 0 },
+          goalsAgainst: { type: "integer", minimum: 0 },
+          goalDifference: { type: "integer" },
+          points: { type: "integer" },
+        },
+      },
+      CompetitionStandingSnapshot: {
+        type: "object",
+        required: [
+          "competitionId",
+          "organizationId",
+          "formulaVersion",
+          "rows",
+          "sourceRevisionMax",
+          "updatedAt",
+        ],
+        properties: {
+          competitionId: { type: "string" },
+          organizationId: { type: "string" },
+          formulaVersion: { type: "string", enum: ["points-gd-gf-v1"] },
+          rows: {
+            type: "array",
+            items: { $ref: "#/components/schemas/CompetitionStandingRow" },
+          },
+          sourceRevisionMax: { type: "integer", minimum: 0 },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      GetCompetitionStandingsResponse: {
+        type: "object",
+        required: ["standings"],
+        properties: {
+          standings: {
+            anyOf: [{ $ref: "#/components/schemas/CompetitionStandingSnapshot" }, { type: "null" }],
+          },
+        },
+      },
+      TeamCompetitionStats: {
+        type: "object",
+        required: [
+          "teamId",
+          "competitionId",
+          "organizationId",
+          "matchesPlayed",
+          "minutes",
+          "totals",
+          "averages",
+          "per90",
+          "partial",
+          "sourceRevisionMax",
+          "updatedAt",
+        ],
+        properties: {
+          teamId: { type: "string" },
+          competitionId: { type: "string" },
+          organizationId: { type: "string" },
+          matchesPlayed: { type: "integer", minimum: 0 },
+          minutes: { type: "number", minimum: 0 },
+          totals: {
+            type: "object",
+            additionalProperties: { type: "number" },
+          },
+          averages: {
+            type: "object",
+            additionalProperties: { type: ["number", "null"] },
+          },
+          per90: {
+            type: "object",
+            additionalProperties: { type: ["number", "null"] },
+          },
+          partial: {
+            type: "object",
+            additionalProperties: { type: "boolean" },
+          },
+          sourceRevisionMax: { type: "integer", minimum: 0 },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      GetCompetitionTeamStatisticsResponse: {
+        type: "object",
+        required: ["teams"],
+        properties: {
+          teams: {
+            type: "array",
+            items: { $ref: "#/components/schemas/TeamCompetitionStats" },
+          },
         },
       },
       PlayerExternalClubSelectionInput: {

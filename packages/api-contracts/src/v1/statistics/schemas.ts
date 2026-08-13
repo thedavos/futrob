@@ -104,3 +104,59 @@ export const getMyMatchesResponseSchema = z.object({
 });
 
 export type GetMyMatchesResponse = z.infer<typeof getMyMatchesResponseSchema>;
+
+export const competitionStandingRowSchema = z.object({
+  position: z.number().int().positive(),
+  teamId: z.string().min(1),
+  played: z.number().int().nonnegative(),
+  wins: z.number().int().nonnegative(),
+  draws: z.number().int().nonnegative(),
+  losses: z.number().int().nonnegative(),
+  goalsFor: z.number().int().nonnegative(),
+  goalsAgainst: z.number().int().nonnegative(),
+  goalDifference: z.number().int(),
+  points: z.number().int(),
+});
+
+export type CompetitionStandingRowDto = z.infer<typeof competitionStandingRowSchema>;
+
+export const competitionStandingSnapshotSchema = z.object({
+  competitionId: z.string().min(1),
+  organizationId: z.string().min(1),
+  formulaVersion: z.literal("points-gd-gf-v1"),
+  rows: z.array(competitionStandingRowSchema),
+  sourceRevisionMax: z.number().int().nonnegative(),
+  updatedAt: z.string().datetime(),
+});
+
+export type CompetitionStandingSnapshotDto = z.infer<typeof competitionStandingSnapshotSchema>;
+
+export const getCompetitionStandingsResponseSchema = z.object({
+  standings: competitionStandingSnapshotSchema.nullable(),
+});
+
+export type GetCompetitionStandingsResponse = z.infer<typeof getCompetitionStandingsResponseSchema>;
+
+export const teamCompetitionStatsSchema = z.object({
+  teamId: z.string().min(1),
+  competitionId: z.string().min(1),
+  organizationId: z.string().min(1),
+  matchesPlayed: z.number().int().nonnegative(),
+  minutes: z.number().nonnegative(),
+  totals: playerStatisticTotalsSchema,
+  averages: playerStatisticRatesSchema,
+  per90: playerStatisticRatesSchema,
+  partial: playerStatisticPartialFlagsSchema,
+  sourceRevisionMax: z.number().int().nonnegative(),
+  updatedAt: z.string().datetime(),
+});
+
+export type TeamCompetitionStatsDto = z.infer<typeof teamCompetitionStatsSchema>;
+
+export const getCompetitionTeamStatisticsResponseSchema = z.object({
+  teams: z.array(teamCompetitionStatsSchema),
+});
+
+export type GetCompetitionTeamStatisticsResponse = z.infer<
+  typeof getCompetitionTeamStatisticsResponseSchema
+>;

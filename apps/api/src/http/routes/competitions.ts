@@ -7,6 +7,8 @@ import {
   createCompetitionInvitationRequestSchema,
   createInvitationResponseSchema,
   getCompetitionDraftResponseSchema,
+  getCompetitionStandingsResponseSchema,
+  getCompetitionTeamStatisticsResponseSchema,
   listOrganizationCompetitionsResponseSchema,
   listAccessibleCompetitionsResponseSchema,
   registerTeamEntryRequestSchema,
@@ -23,7 +25,12 @@ import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
-import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import {
+  apiErrorResponse,
+  failureToHttp,
+  isHttpMappableFailure,
+  validationErrorResponse,
+} from "@/http/errors.ts";
 import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
@@ -124,6 +131,72 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     }
     return jsonResponse(getCompetitionDraftResponseSchema.parse(competitionDraftDto(draft)));
   });
+
+  secured.get("/organizations/:organizationId/competitions/:competitionId/standings", async (c) => {
+    const organizationId = asOrganizationId(c.req.param("organizationId"));
+    const competitionId = asCompetitionId(c.req.param("competitionId"));
+    let standings;
+    try {
+      standings = await deps.modules.statistics.useCases.getCompetitionStandings.execute({
+        actorId: c.get("actorId"),
+        organizationId,
+        competitionId,
+      });
+    } catch (error) {
+      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      throw error;
+    }
+    return jsonResponse(
+      getCompetitionStandingsResponseSchema.parse({
+        standings: standings
+          ? {
+              competitionId: standings.competitionId,
+              organizationId: standings.organizationId,
+              formulaVersion: standings.formulaVersion,
+              rows: standings.rows,
+              sourceRevisionMax: standings.sourceRevisionMax,
+              updatedAt: standings.updatedAt.toISOString(),
+            }
+          : null,
+      }),
+    );
+  });
+
+  secured.get(
+    "/organizations/:organizationId/competitions/:competitionId/team-statistics",
+    async (c) => {
+      const organizationId = asOrganizationId(c.req.param("organizationId"));
+      const competitionId = asCompetitionId(c.req.param("competitionId"));
+      let teams;
+      try {
+        teams = await deps.modules.statistics.useCases.getCompetitionTeamStatistics.execute({
+          actorId: c.get("actorId"),
+          organizationId,
+          competitionId,
+        });
+      } catch (error) {
+        if (isHttpMappableFailure(error)) return failureToHttp(error);
+        throw error;
+      }
+      return jsonResponse(
+        getCompetitionTeamStatisticsResponseSchema.parse({
+          teams: teams.map((stats) => ({
+            teamId: stats.teamId,
+            competitionId: stats.competitionId,
+            organizationId: stats.organizationId,
+            matchesPlayed: stats.matchesPlayed,
+            minutes: stats.minutes,
+            totals: stats.totals,
+            averages: stats.averages,
+            per90: stats.per90,
+            partial: stats.partial,
+            sourceRevisionMax: stats.sourceRevisionMax,
+            updatedAt: stats.updatedAt.toISOString(),
+          })),
+        }),
+      );
+    },
+  );
 
   secured.patch("/organizations/:organizationId/competitions/:competitionId", async (c) => {
     const parsed = updateCompetitionDraftRequestSchema.safeParse(

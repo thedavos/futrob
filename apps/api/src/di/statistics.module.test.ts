@@ -46,6 +46,23 @@ describe("statistics module projection", () => {
       accounts,
       rosters,
       profiles,
+      competitions: {
+        async saveDraft(draft) {
+          return draft;
+        },
+        async findById() {
+          return null;
+        },
+        async findByCreationKey() {
+          return null;
+        },
+        async findRulesByCompetitionId() {
+          return null;
+        },
+        async listByOrganization() {
+          return [];
+        },
+      },
       authorization: {
         async decide(request) {
           return {
