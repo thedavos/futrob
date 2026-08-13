@@ -13,4 +13,5 @@ export interface OfficialResultRepository {
   findLatestByEncounter(encounterId: EncounterId): Promise<OfficialResult | null>;
   findById(officialResultId: string): Promise<OfficialResult | null>;
   listByCompetition(competitionId: CompetitionId): Promise<OfficialResult[]>;
+  listByEncounter(encounterId: EncounterId): Promise<OfficialResult[]>;
 }

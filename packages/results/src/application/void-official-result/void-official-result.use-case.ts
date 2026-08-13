@@ -67,33 +67,34 @@ export class VoidOfficialResultUseCase {
       );
     }
 
-    switch (existing.status) {
-      case "voided":
-        return ok(existing);
-      case "approved":
-        break;
-      default:
-        assertNever(existing.status);
+    // Void every approved revision for the encounter so an older approval cannot
+    // remain live after the latest revision is voided and stats are cleared.
+    const approved = (await this.deps.results.listByEncounter(existing.encounterId)).filter(
+      (result) => result.status === "approved",
+    );
+    if (approved.length === 0) {
+      return ok(existing);
     }
 
-    const voided: OfficialResult = { ...existing, status: "voided" };
-    const saved = await this.deps.results.save(voided);
+    const voided = await Promise.all(
+      approved.map((result) => this.deps.results.save({ ...result, status: "voided" })),
+    );
+    const latestVoided = voided.reduce((latest, result) =>
+      result.revision >= latest.revision ? result : latest,
+    );
+
     await this.deps.eventPublisher.publish({
       eventName: "results.official-result-voided",
       occurredAt: this.deps.clock.now().toISOString(),
       payload: {
-        encounterId: saved.encounterId,
-        organizationId: saved.organizationId,
-        competitionId: saved.competitionId,
+        encounterId: latestVoided.encounterId,
+        organizationId: latestVoided.organizationId,
+        competitionId: latestVoided.competitionId,
         voidedBy: input.actorId,
-        officialResultId: saved.id,
-        revision: saved.revision,
+        officialResultId: latestVoided.id,
+        revision: latestVoided.revision,
       },
     });
-    return ok(saved);
+    return ok(latestVoided);
   }
-}
-
-function assertNever(status: never): never {
-  throw new RangeError(`Unsupported official result status: ${String(status)}`);
 }

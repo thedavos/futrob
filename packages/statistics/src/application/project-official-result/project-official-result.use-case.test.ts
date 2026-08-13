@@ -170,6 +170,13 @@ function makeHarness(input: {
           .sort((left, right) => right.revision - left.revision)[0] ?? null
       );
     },
+    async getLatestByEncounter(encounterId) {
+      return (
+        [...byId.values()]
+          .filter((result) => result.encounterId === encounterId)
+          .sort((left, right) => right.revision - left.revision)[0] ?? null
+      );
+    },
     async getById(officialResultId) {
       return byId.get(officialResultId) ?? null;
     },
