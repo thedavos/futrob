@@ -136,7 +136,7 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
             />
           </SidebarRail>
           <CommandBar commands={commands} selection={selectionState.selection} title={title} />
-          <div className="min-h-0 flex-1 overflow-y-auto" id="app-main">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" id="app-main">
             {children}
           </div>
           <ShellActionBarSlot />

@@ -51,7 +51,7 @@ describe("CompetitionTeamsView", () => {
   it("keeps the list context in an actionable empty state", () => {
     renderView({ items: [], detail: null, selectedTeamId: null });
 
-    expect(screen.getByText("Aún no hay equipos")).toBeTruthy();
+    expect(screen.getByText("Sin equipos todavía")).toBeTruthy();
     expect(screen.getByText("Selecciona un equipo")).toBeTruthy();
   });
 

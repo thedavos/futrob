@@ -31,6 +31,13 @@ const meta = {
   component: CompetitionTeamsView,
   parameters: { layout: "fullscreen" },
   args: defaultArgs,
+  decorators: [
+    (Story) => (
+      <div className="flex h-svh flex-col">
+        <Story />
+      </div>
+    ),
+  ],
 } satisfies Meta<typeof CompetitionTeamsView>;
 
 export default meta;
@@ -43,7 +50,7 @@ export const EmptyRoster: Story = {
     detail: { ...detail, roster: { ...detail.roster, memberCount: 0 }, members: [] },
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText("La plantilla está vacía.")).toBeVisible();
+    await expect(within(canvasElement).getByText("Sin jugadores.")).toBeVisible();
   },
 };
 
@@ -105,4 +112,49 @@ export const ReadOnly: Story = {
 
 export const Mobile: Story = {
   parameters: { viewport: { defaultViewport: "mobile1" } },
+};
+
+export const EmptyTeams: Story = {
+  name: "Empty teams",
+  args: {
+    items: [],
+    detail: null,
+    selectedTeamId: null,
+  },
+};
+
+export const LoadingList: Story = {
+  name: "Loading",
+  args: {
+    items: [],
+    detail: null,
+    selectedTeamId: null,
+    loadingList: true,
+    loadingDetail: true,
+  },
+};
+
+export const PermissionUnavailable: Story = {
+  name: "Permissions unavailable",
+  args: {
+    capabilities: {
+      ...defaultArgs.capabilities,
+      unavailable: true,
+      manageRoster: false,
+      manageRoles: false,
+      manageInvitations: false,
+      manageExternalClub: false,
+      manageEntries: false,
+    },
+  },
+};
+
+export const RecoverableError: Story = {
+  name: "Recoverable error",
+  args: {
+    error: {
+      message: "No pudimos completar la operación. Inténtalo nuevamente.",
+      requestId: "2170e2f6-a47e-4338-83c3-27c054630800",
+    },
+  },
 };
