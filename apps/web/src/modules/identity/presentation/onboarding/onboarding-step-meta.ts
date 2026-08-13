@@ -1,6 +1,5 @@
 import type { StepperStep } from "@futrob/ui";
 import type { GamePlatformDto, OnboardingPathDto } from "@futrob/api-contracts";
-import { EA_SEARCH_PLATFORM_OPTIONS } from "@futrob/api-contracts";
 import { ONBOARDING_PATH } from "@futrob/identity";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import {
@@ -8,8 +7,21 @@ import {
   competitionRegions,
   competitionTimeZones,
 } from "@/modules/competitions/presentation/competition-draft-meta.ts";
+import {
+  eaPlatformLabel,
+  eaSearchPlatforms,
+  formatProviderGameEdition,
+  MAX_EXTERNAL_CLUB_SEARCH_RESULTS,
+} from "@/modules/game-data/presentation/ea-club-search-meta.ts";
 import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+
+export {
+  eaPlatformLabel,
+  eaSearchPlatforms,
+  formatProviderGameEdition,
+  MAX_EXTERNAL_CLUB_SEARCH_RESULTS,
+};
 
 export function intentionSteps(t: Translator): readonly StepperStep[] {
   return [
@@ -48,11 +60,6 @@ export function stepsForPath(t: Translator, path: OnboardingPathDto): readonly S
   }[path];
 }
 
-export const eaSearchPlatforms = EA_SEARCH_PLATFORM_OPTIONS;
-
-/** Hard cap on clubs shown after an EA Clubs search in onboarding. */
-export const MAX_EXTERNAL_CLUB_SEARCH_RESULTS = 3;
-
 export { knownGameEditions, competitionFormats, competitionRegions, competitionTimeZones };
 
 export function localizedCompetitionRegions(t: Translator): typeof competitionRegions {
@@ -84,18 +91,6 @@ export function platformLabel(platform: GamePlatformDto): string {
     [GAME_PLATFORM.NINTENDO_SWITCH_1]: "Nintendo Switch 1",
     [GAME_PLATFORM.NINTENDO_SWITCH_2]: "Nintendo Switch 2",
   }[platform];
-}
-
-export function eaPlatformLabel(platform: string): string {
-  return eaSearchPlatforms.find((option) => option.value === platform)?.label ?? platform;
-}
-
-/** Formats provider keys like `fc26` for display as `FC 26`. */
-export function formatProviderGameEdition(edition: string): string {
-  const trimmed = edition.trim();
-  const match = trimmed.toLowerCase().match(/^fc[_\s-]?(\d{2})$/);
-  if (match) return `FC ${match[1]}`;
-  return trimmed;
 }
 
 export function formatLabel(
