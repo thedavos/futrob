@@ -51,7 +51,8 @@ export const queryKeys = {
   },
   statistics: {
     all: ["statistics"] as const,
-    me: (query: GetMyStatisticsQuery = {}) => [...queryKeys.statistics.all, "me", query] as const,
+    me: (query: GetMyStatisticsQuery = {}) =>
+      [...queryKeys.statistics.all, "me", "summary", query] as const,
     meMatches: (query: GetMyMatchesQuery) =>
       [...queryKeys.statistics.all, "me", "matches", query] as const,
   },

@@ -2,6 +2,7 @@
 
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerStatisticsPage } from "./player-statistics-page.tsx";
 
@@ -90,9 +91,11 @@ describe("PlayerStatisticsPage", () => {
 
 function renderPage() {
   render(
-    <QueryTestProvider>
-      <PlayerStatisticsPage />
-    </QueryTestProvider>,
+    <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+      <QueryTestProvider>
+        <PlayerStatisticsPage />
+      </QueryTestProvider>
+    </I18nProvider>,
   );
 }
 

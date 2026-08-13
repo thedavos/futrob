@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
   getMyMatchesQuerySchema,
   getMyStatisticsQuerySchema,
@@ -18,8 +18,14 @@ export function useMyStatisticsQuery(filters: GetMyStatisticsQuery = {}) {
 
 export function useMyMatchesQuery(filters: Partial<GetMyMatchesQuery> = {}) {
   const query = getMyMatchesQuerySchema.parse(filters);
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: queryKeys.statistics.meMatches(query),
-    queryFn: () => statisticsBrowserClient.getMyMatches(query),
+    queryFn: ({ pageParam }) =>
+      statisticsBrowserClient.getMyMatches({
+        ...query,
+        cursor: pageParam,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
 }

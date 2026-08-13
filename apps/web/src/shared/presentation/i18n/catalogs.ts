@@ -221,6 +221,59 @@ const es = {
   "errors.onboarding.completePlayer":
     "No pudimos guardar tu perfil de jugador. Inténtalo nuevamente.",
   "errors.onboarding.finish": "No pudimos finalizar tu configuración. Inténtalo nuevamente.",
+  "player.nav.matches": "Mis partidos",
+  "player.nav.statistics": "Mis estadísticas",
+  "player.nav.gameData": "Datos de juego",
+  "player.workspace.eyebrow": "Espacio personal",
+  "player.matches.title": "Mis partidos",
+  "player.matches.description":
+    "Tu historial individual ordenado desde resultados oficiales aprobados.",
+  "player.matches.loading": "Cargando tus partidos…",
+  "player.matches.error": "No pudimos cargar tus partidos.",
+  "player.matches.emptyTitle": "Aún no hay partidos oficiales",
+  "player.matches.historyLabel": "Historial de partidos oficiales",
+  "player.matches.loadMore": "Cargar más partidos",
+  "player.statistics.title": "Mis estadísticas",
+  "player.statistics.description":
+    "Agregados individuales construidos únicamente desde resultados oficiales aprobados.",
+  "player.statistics.loading": "Cargando tus estadísticas…",
+  "player.statistics.error": "No pudimos cargar tus estadísticas.",
+  "player.statistics.emptyTitle": "Aún no hay estadísticas oficiales",
+  "player.statistics.matchesCount": ({ count }) => `${count} partidos oficiales`,
+  "player.statistics.revision": ({ revision }) =>
+    `Actualizado con la revisión oficial ${revision}.`,
+  "player.statistics.tableLabel": "Estadísticas oficiales del jugador",
+  "player.statistics.metric": "Métrica",
+  "player.statistics.total": "Total",
+  "player.statistics.average": "Promedio",
+  "player.statistics.per90": "Por 90",
+  "player.statistics.status": "Estado",
+  "player.official.emptyDescription":
+    "Vincula tus datos de juego y vuelve cuando una organización haya aprobado resultados que coincidan con tu jugador.",
+  "player.gameData.review": "Revisar datos de juego",
+  "player.backToWorkspace": "Volver al espacio personal",
+  "player.retry": "Reintentar",
+  "player.partialData": "Datos parciales",
+  "player.partialData.description":
+    "Algunas métricas no estuvieron disponibles en todos los partidos oficiales y se marcan en la tabla.",
+  "player.completeData": "Completo",
+  "player.noData": "Sin datos",
+  "player.onboarding.checking": "Comprobando tu onboarding…",
+  "player.metric.goals": "Goles",
+  "player.metric.assists": "Asistencias",
+  "player.metric.shots": "Tiros",
+  "player.metric.passAttempts": "Pases intentados",
+  "player.metric.passesMade": "Pases completados",
+  "player.metric.tackleAttempts": "Entradas intentadas",
+  "player.metric.tacklesMade": "Entradas completadas",
+  "player.metric.saves": "Paradas",
+  "player.metric.yellowCards": "Tarjetas amarillas",
+  "player.metric.redCards": "Tarjetas rojas",
+  "player.metric.mvpAwards": "Premios MVP",
+  "player.metric.rating": "Rating",
+  "player.metric.matches": "Partidos",
+  "player.metric.minutes": "Minutos",
+  "player.position.unknown": "Posición sin datos",
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
@@ -241,6 +294,8 @@ export interface MessageParamsByKey {
   readonly "onboarding.invitation.retry": { readonly seconds: number };
   readonly "onboarding.review.edit": { readonly label: string };
   readonly "onboarding.review.retry": { readonly seconds: number };
+  readonly "player.statistics.matchesCount": { readonly count: number };
+  readonly "player.statistics.revision": { readonly revision: number };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -458,6 +513,58 @@ const en: Catalog = {
   "errors.onboarding.createOrganization": "We couldn't create the organization. Try again.",
   "errors.onboarding.completePlayer": "We couldn't save your player profile. Try again.",
   "errors.onboarding.finish": "We couldn't finish your setup. Try again.",
+  "player.nav.matches": "My matches",
+  "player.nav.statistics": "My statistics",
+  "player.nav.gameData": "Game data",
+  "player.workspace.eyebrow": "Personal workspace",
+  "player.matches.title": "My matches",
+  "player.matches.description": "Your ordered individual history from approved official results.",
+  "player.matches.loading": "Loading your matches…",
+  "player.matches.error": "We could not load your matches.",
+  "player.matches.emptyTitle": "No official matches yet",
+  "player.matches.historyLabel": "Official match history",
+  "player.matches.loadMore": "Load more matches",
+  "player.statistics.title": "My statistics",
+  "player.statistics.description":
+    "Individual aggregates built only from approved official results.",
+  "player.statistics.loading": "Loading your statistics…",
+  "player.statistics.error": "We could not load your statistics.",
+  "player.statistics.emptyTitle": "No official statistics yet",
+  "player.statistics.matchesCount": ({ count }) =>
+    count === 1 ? "1 official match" : `${count} official matches`,
+  "player.statistics.revision": ({ revision }) => `Updated from official revision ${revision}.`,
+  "player.statistics.tableLabel": "Official player statistics",
+  "player.statistics.metric": "Metric",
+  "player.statistics.total": "Total",
+  "player.statistics.average": "Average",
+  "player.statistics.per90": "Per 90",
+  "player.statistics.status": "Status",
+  "player.official.emptyDescription":
+    "Link your game data and return after an organization approves results that match your player.",
+  "player.gameData.review": "Review game data",
+  "player.backToWorkspace": "Back to personal workspace",
+  "player.retry": "Try again",
+  "player.partialData": "Partial data",
+  "player.partialData.description":
+    "Some metrics were unavailable in one or more official matches and are flagged in the table.",
+  "player.completeData": "Complete",
+  "player.noData": "No data",
+  "player.onboarding.checking": "Checking your onboarding…",
+  "player.metric.goals": "Goals",
+  "player.metric.assists": "Assists",
+  "player.metric.shots": "Shots",
+  "player.metric.passAttempts": "Pass attempts",
+  "player.metric.passesMade": "Passes completed",
+  "player.metric.tackleAttempts": "Tackle attempts",
+  "player.metric.tacklesMade": "Tackles completed",
+  "player.metric.saves": "Saves",
+  "player.metric.yellowCards": "Yellow cards",
+  "player.metric.redCards": "Red cards",
+  "player.metric.mvpAwards": "MVP awards",
+  "player.metric.rating": "Rating",
+  "player.metric.matches": "Matches",
+  "player.metric.minutes": "Minutes",
+  "player.position.unknown": "Position unavailable",
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;
