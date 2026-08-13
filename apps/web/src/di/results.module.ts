@@ -34,6 +34,9 @@ class MemoryResults implements OfficialResultRepository {
   async listByCompetition() {
     return [];
   }
+  async listByEncounter() {
+    return [];
+  }
 }
 
 class EmptyProviderMatches implements ProviderMatchReaderPort {

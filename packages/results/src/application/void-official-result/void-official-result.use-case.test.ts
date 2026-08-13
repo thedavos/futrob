@@ -48,9 +48,66 @@ class ResultRepository implements OfficialResultRepository {
   ): Promise<OfficialResult[]> {
     return [...this.rows.values()].filter((result) => result.competitionId === competitionId);
   }
+
+  async listByEncounter(encounterId: OfficialResult["encounterId"]): Promise<OfficialResult[]> {
+    return [...this.rows.values()].filter((result) => result.encounterId === encounterId);
+  }
 }
 
 describe("VoidOfficialResultUseCase", () => {
+  function allowAll(): AuthorizationPort {
+    return {
+      async decide(request) {
+        return {
+          allowed: true,
+          permission: request.permission,
+          scope: request.scope,
+          reason: "allowed",
+        };
+      },
+      async getEffectiveAccess(input) {
+        return { actorId: input.actorId, scope: input.scope, roles: [], permissions: [] };
+      },
+    };
+  }
+
+  it("voids every approved revision for the encounter so older approvals cannot stay live", async () => {
+    const results = new ResultRepository();
+    const revisionOne = officialResult({ id: "result-1", revision: 1 });
+    const revisionTwo = officialResult({ id: "result-2", revision: 2 });
+    await results.save(revisionOne);
+    await results.save(revisionTwo);
+    const events: DomainEvent[] = [];
+    const useCase = new VoidOfficialResultUseCase({
+      results,
+      authorization: allowAll(),
+      eventPublisher: {
+        async publish(event) {
+          events.push(event);
+        },
+        async publishMany(batch) {
+          events.push(...batch);
+        },
+      },
+      clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+    });
+
+    const voided = await useCase.execute({
+      actorId: asActorId("actor-2"),
+      officialResultId: revisionTwo.id,
+    });
+
+    expect(voided.isOk() && voided.value).toMatchObject({
+      id: "result-2",
+      status: "voided",
+      revision: 2,
+    });
+    expect(await results.findById(revisionOne.id)).toMatchObject({ status: "voided" });
+    expect(await results.findById(revisionTwo.id)).toMatchObject({ status: "voided" });
+    expect(await results.findApprovedByEncounter(revisionTwo.encounterId)).toBeNull();
+    expect(events.map((event) => event.eventName)).toEqual(["results.official-result-voided"]);
+  });
+
   it("voids once and converges when repeated", async () => {
     const results = new ResultRepository();
     const approved = officialResult();
@@ -101,13 +158,18 @@ describe("VoidOfficialResultUseCase", () => {
   });
 });
 
-function officialResult(): OfficialResult {
+function officialResult(
+  input: {
+    readonly id?: string;
+    readonly revision?: number;
+  } = {},
+): OfficialResult {
   return {
-    id: "result-1",
+    id: input.id ?? "result-1",
     encounterId: asEncounterId("encounter-1"),
     organizationId: asOrganizationId("organization-1"),
     competitionId: asCompetitionId("competition-1"),
-    revision: 1,
+    revision: input.revision ?? 1,
     status: "approved",
     slots: [],
     approvedAt: new Date("2026-08-10T20:00:00.000Z"),
