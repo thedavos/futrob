@@ -26,6 +26,7 @@
     "cli": "npm run cli -w @futrob/cli --",
     "cli:typecheck": "npm run typecheck -w @futrob/cli",
     "build": "npm run web:build",
+    "bundle:budget": "node apps/web/scripts/check-client-bundle-budget.mjs",
     "preview": "npm run web:preview",
     "format": "vp fmt",
     "lint": "vp lint",
