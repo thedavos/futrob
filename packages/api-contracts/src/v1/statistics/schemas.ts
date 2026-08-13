@@ -45,6 +45,18 @@ export const getMyStatisticsResponseSchema = z.object({
 
 export type GetMyStatisticsResponse = z.infer<typeof getMyStatisticsResponseSchema>;
 
+const personalStatisticsFilters = {
+  competitionId: z.string().trim().min(1).optional(),
+  teamId: z.string().trim().min(1).optional(),
+  gameEdition: z.string().trim().min(1).max(40).optional(),
+  platform: z.string().trim().min(1).max(40).optional(),
+  position: z.string().trim().min(1).max(80).optional(),
+} as const;
+
+export const getMyStatisticsQuerySchema = z.object(personalStatisticsFilters);
+
+export type GetMyStatisticsQuery = z.infer<typeof getMyStatisticsQuerySchema>;
+
 export const playerMatchContributionSchema = z.object({
   id: z.string().min(1),
   officialResultId: z.string().min(1),
@@ -53,6 +65,7 @@ export const playerMatchContributionSchema = z.object({
   competitionId: z.string().min(1),
   organizationId: z.string().min(1),
   officialSlot: z.union([z.literal(1), z.literal(2)]),
+  teamId: z.string().min(1).nullable(),
   correlationStatus: z.enum(["matched", "unmatched", "ambiguous"]),
   externalPlayerId: z.string().min(1),
   displayName: z.string().min(1),
@@ -78,7 +91,7 @@ export const playerMatchContributionSchema = z.object({
 export type PlayerMatchContributionDto = z.infer<typeof playerMatchContributionSchema>;
 
 export const getMyMatchesQuerySchema = z.object({
-  competitionId: z.string().min(1).optional(),
+  ...personalStatisticsFilters,
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().positive().max(100).default(20),
 });

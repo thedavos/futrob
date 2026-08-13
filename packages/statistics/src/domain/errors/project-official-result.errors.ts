@@ -5,10 +5,4 @@ export class OfficialResultNotFound extends TaggedError("OfficialResultNotFound"
   message: string;
 }> {}
 
-export class OfficialResultNotApproved extends TaggedError("OfficialResultNotApproved")<{
-  code: "statistics.official_result_not_approved";
-  message: string;
-  officialResultId: string;
-}> {}
-
-export type ProjectApprovedOfficialResultError = OfficialResultNotFound | OfficialResultNotApproved;
+export type ProjectOfficialResultError = OfficialResultNotFound;

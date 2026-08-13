@@ -41,6 +41,7 @@ describe("teams persistence adapters", () => {
       providerExternalPlayerId: "provider-player-23",
     });
     expect(linked?.providerExternalPlayerId).toBe("provider-player-23");
+    expect(await accounts.findById(account.id)).toEqual(linked);
     expect(
       await accounts.findByCorrelation({
         platform: account.platform,
@@ -149,7 +150,7 @@ describe("teams persistence adapters", () => {
     expect(query).toHaveBeenCalledTimes(3);
   });
 
-  it("updates and finds a Postgres account by provider correlation", async () => {
+  it("updates and finds a Postgres account by id and provider correlation", async () => {
     const row = {
       id: "account-1",
       player_profile_id: "profile-1",
@@ -163,6 +164,7 @@ describe("teams persistence adapters", () => {
     const query = vi
       .fn()
       .mockResolvedValueOnce({ rows: [row] })
+      .mockResolvedValueOnce({ rows: [row] })
       .mockResolvedValueOnce({ rows: [row] });
     const repository = new PostgresPlayerGameAccountRepository({
       query,
@@ -172,6 +174,7 @@ describe("teams persistence adapters", () => {
       accountId: row.id,
       providerExternalPlayerId: row.provider_external_player_id,
     });
+    const found = await repository.findById(row.id);
     const matches = await repository.findByCorrelation({
       platform: "playstation",
       gameEdition: "FC 26",
@@ -179,8 +182,10 @@ describe("teams persistence adapters", () => {
     });
 
     expect(linked?.providerExternalPlayerId).toBe(row.provider_external_player_id);
+    expect(found).toEqual(linked);
     expect(matches).toEqual([linked]);
-    expect(query.mock.calls[1]?.[1]).toEqual([
+    expect(query.mock.calls[1]?.[1]).toEqual([row.id]);
+    expect(query.mock.calls[2]?.[1]).toEqual([
       "playstation",
       "FC 26",
       row.provider_external_player_id,

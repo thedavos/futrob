@@ -45,6 +45,41 @@ import {
   upsertAccessGrantRequestSchema,
 } from "../authorization/schemas.ts";
 
+function personalStatisticsOpenApiParameters() {
+  return [
+    {
+      name: "competitionId",
+      in: "query",
+      required: false,
+      schema: { type: "string", minLength: 1 },
+    },
+    {
+      name: "teamId",
+      in: "query",
+      required: false,
+      schema: { type: "string", minLength: 1 },
+    },
+    {
+      name: "gameEdition",
+      in: "query",
+      required: false,
+      schema: { type: "string", minLength: 1, maxLength: 40 },
+    },
+    {
+      name: "platform",
+      in: "query",
+      required: false,
+      schema: { type: "string", minLength: 1, maxLength: 40 },
+    },
+    {
+      name: "position",
+      in: "query",
+      required: false,
+      schema: { type: "string", minLength: 1, maxLength: 80 },
+    },
+  ] as const;
+}
+
 /** OpenAPI 3.1 document for Futrob private `/api/v1`. Regenerated via `npm run generate:openapi -w @futrob/api-contracts`. */
 export const futrobOpenApiV1 = {
   openapi: "3.1.0",
@@ -456,6 +491,7 @@ export const futrobOpenApiV1 = {
         operationId: "getMyStatistics",
         tags: ["players"],
         summary: "Get personal official statistics for the authenticated player",
+        parameters: personalStatisticsOpenApiParameters(),
         responses: {
           "200": {
             description: "Aggregated personal statistics, or null when none exist",
@@ -466,6 +502,7 @@ export const futrobOpenApiV1 = {
             },
           },
           "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -475,12 +512,7 @@ export const futrobOpenApiV1 = {
         tags: ["players"],
         summary: "List personal match contributions projected from approved official results",
         parameters: [
-          {
-            name: "competitionId",
-            in: "query",
-            required: false,
-            schema: { type: "string", minLength: 1 },
-          },
+          ...personalStatisticsOpenApiParameters(),
           {
             name: "cursor",
             in: "query",
@@ -505,6 +537,7 @@ export const futrobOpenApiV1 = {
           },
           "400": { $ref: "#/components/responses/ApiError" },
           "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -2503,6 +2536,7 @@ export const futrobOpenApiV1 = {
           "competitionId",
           "organizationId",
           "officialSlot",
+          "teamId",
           "correlationStatus",
           "externalPlayerId",
           "displayName",
@@ -2532,6 +2566,7 @@ export const futrobOpenApiV1 = {
           competitionId: { type: "string" },
           organizationId: { type: "string" },
           officialSlot: { type: "integer", enum: [1, 2] },
+          teamId: { type: ["string", "null"] },
           correlationStatus: {
             type: "string",
             enum: ["matched", "unmatched", "ambiguous"],

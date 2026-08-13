@@ -201,6 +201,7 @@ function buildHarness(options?: { maxSize?: number }) {
   };
   const ensurePlayerProfile = new EnsurePlayerProfileUseCase({ profiles, ...shared });
   const accounts: PlayerGameAccountRepository = {
+    findById: async () => null,
     listByProfile: async () => [],
     saveIfAbsent: async (account: PlayerGameAccount) => account,
     setProviderExternalPlayerId: async () => null,

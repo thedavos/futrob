@@ -114,8 +114,17 @@ describe("ConfirmOfficialSelectionUseCase", () => {
       async findApprovedByEncounter() {
         return saved.filter((row) => row.status === "approved").at(-1) ?? null;
       },
+      async findLatestByEncounter() {
+        return saved.at(-1) ?? null;
+      },
       async findById(id) {
         return saved.find((row) => row.id === id) ?? null;
+      },
+      async listByCompetition(competitionId) {
+        return saved.filter((row) => row.competitionId === competitionId);
+      },
+      async listByEncounter(encounterId) {
+        return saved.filter((row) => row.encounterId === encounterId);
       },
     };
     const providerMatches: ProviderMatchReaderPort = {

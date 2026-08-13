@@ -190,6 +190,9 @@ class Profiles implements PlayerProfileRepository {
 
 class Accounts implements PlayerGameAccountRepository {
   rows: PlayerGameAccount[] = [];
+  async findById(id: string) {
+    return this.rows.find((row) => row.id === id) ?? null;
+  }
   async listByProfile(playerProfileId: string) {
     return this.rows.filter((row) => row.playerProfileId === playerProfileId);
   }

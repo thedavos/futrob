@@ -106,7 +106,7 @@ export class ConfirmOfficialSelectionUseCase {
       );
     }
 
-    const existing = await this.deps.results.findApprovedByEncounter(input.encounterId);
+    const existing = await this.deps.results.findLatestByEncounter(input.encounterId);
     const revision = (existing?.revision ?? 0) + 1;
     const slots: OfficialResultSlotSnapshot[] = [];
 

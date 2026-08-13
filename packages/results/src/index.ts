@@ -19,6 +19,7 @@ export type {
 } from "./domain/ports/official-result.repository.ts";
 export type { OfficialResultReaderPort } from "./domain/ports/official-result-reader.port.ts";
 export type { OfficialResultApprovedEvent } from "./domain/events/official-result-approved.event.ts";
+export type { OfficialResultVoidedEvent } from "./domain/events/official-result-voided.event.ts";
 export { RESULT_PERMISSION, RESULT_PERMISSIONS } from "./domain/policies/result-permissions.ts";
 export {
   EncounterNotFound,
@@ -31,9 +32,11 @@ export {
   SelectionNotFound,
   SelectionNotConfirmable,
   OfficialResultForbidden,
+  OfficialResultNotFound,
   ProviderMatchSnapshotMissing,
   type ConfirmOfficialSelectionError,
   type ApproveOfficialResultError,
+  type VoidOfficialResultError,
 } from "./domain/errors/official-result.errors.ts";
 export {
   SelectOfficialMatchesUseCase,
@@ -43,3 +46,8 @@ export {
   ConfirmOfficialSelectionUseCase,
   type ConfirmOfficialSelectionInput,
 } from "./application/confirm-official-selection/confirm-official-selection.use-case.ts";
+export {
+  VoidOfficialResultUseCase,
+  type VoidOfficialResultDependencies,
+  type VoidOfficialResultInput,
+} from "./application/void-official-result/void-official-result.use-case.ts";

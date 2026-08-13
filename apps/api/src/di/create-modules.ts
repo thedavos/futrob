@@ -34,7 +34,7 @@ import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 import type { CompetitionId, OrganizationId, TransactionPort } from "@futrob/shared-kernel";
-import type { ConfirmOfficialSelectionInput } from "@futrob/results";
+import type { ConfirmOfficialSelectionInput, VoidOfficialResultInput } from "@futrob/results";
 import {
   InMemoryOfficialMatchSelectionRepository,
   InMemoryOfficialResultRepository,
@@ -227,14 +227,15 @@ export function createModules(input: CreateModulesInput): AppModules {
     get: new GetTeamRosterManagementUseCase(teamManagementDeps),
   };
 
+  const encounterReader = new SchedulingEncounterReader(
+    scheduling.encounters,
+    teams.externalClubConnections,
+  );
   const results = createResultsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
     eventPublisher,
-    encounterReader: new SchedulingEncounterReader(
-      scheduling.encounters,
-      teams.externalClubConnections,
-    ),
+    encounterReader,
     providerMatches: new RepositoryProviderMatchReader(
       providerMatches,
       scheduling.encounters,
@@ -248,7 +249,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     pool: input.pool ?? null,
     resultReader: results.officialResultReader,
     accounts: teams.repositories.accounts,
+    rosters: teams.repositories.rosters,
+    profiles: teams.repositories.profiles,
+    authorization: authorization.port,
+    encounterReader,
     transaction,
+    eventPublisher,
   });
 
   const confirmOfficialSelectionAndProject = {
@@ -257,11 +263,33 @@ export function createModules(input: CreateModulesInput): AppModules {
         return encounterMutationLock.runExclusive(input.encounterId, async () => {
           const confirmed = await results.confirmOfficialSelection.execute(input);
           if (!confirmed.isOk()) return confirmed;
-          const projected = await statistics.useCases.projectApprovedOfficialResult.execute({
+          const projected = await statistics.useCases.projectOfficialResult.execute({
             officialResultId: confirmed.value.id,
           });
           if (!projected.isOk()) throw projected.error;
           return confirmed;
+        });
+      });
+    },
+  };
+
+  const voidOfficialResultAndUnproject = {
+    async execute(input: VoidOfficialResultInput) {
+      const existing =
+        "encounterId" in input
+          ? await results.results.findLatestByEncounter(input.encounterId)
+          : await results.results.findById(input.officialResultId);
+      if (!existing) return results.voidOfficialResult.execute(input);
+
+      return transaction.runInTransaction(async () => {
+        return encounterMutationLock.runExclusive(existing.encounterId, async () => {
+          const voided = await results.voidOfficialResult.execute(input);
+          if (!voided.isOk()) return voided;
+          const projected = await statistics.useCases.projectOfficialResult.execute({
+            officialResultId: voided.value.id,
+          });
+          if (!projected.isOk()) throw projected.error;
+          return voided;
         });
       });
     },
@@ -280,6 +308,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     teams,
     teamManagement,
     transaction,
+    voidOfficialResultAndUnproject,
   };
 }
 
@@ -290,6 +319,11 @@ export interface AppModules {
     execute(
       input: ConfirmOfficialSelectionInput,
     ): ReturnType<ResultsModule["confirmOfficialSelection"]["execute"]>;
+  };
+  readonly voidOfficialResultAndUnproject: {
+    execute(
+      input: VoidOfficialResultInput,
+    ): ReturnType<ResultsModule["voidOfficialResult"]["execute"]>;
   };
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;

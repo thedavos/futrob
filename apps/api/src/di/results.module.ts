@@ -1,6 +1,7 @@
 import {
   ConfirmOfficialSelectionUseCase,
   SelectOfficialMatchesUseCase,
+  VoidOfficialResultUseCase,
   type EncounterReaderPort,
   type OfficialMatchSelectionRepository,
   type OfficialResultReaderPort,
@@ -48,7 +49,9 @@ export function createResultsModule(input: {
 
   const officialResultReader: OfficialResultReaderPort = {
     getApprovedByEncounter: (encounterId) => results.findApprovedByEncounter(encounterId),
+    getLatestByEncounter: (encounterId) => results.findLatestByEncounter(encounterId),
     getById: (officialResultId) => results.findById(officialResultId),
+    listByCompetition: (competitionId) => results.listByCompetition(competitionId),
   };
 
   return {
@@ -71,6 +74,12 @@ export function createResultsModule(input: {
       eventPublisher: input.eventPublisher,
       authorization: input.authorization,
       ids,
+      clock,
+    }),
+    voidOfficialResult: new VoidOfficialResultUseCase({
+      results,
+      eventPublisher: input.eventPublisher,
+      authorization: input.authorization,
       clock,
     }),
   };

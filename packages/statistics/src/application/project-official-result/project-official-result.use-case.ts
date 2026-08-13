@@ -1,30 +1,41 @@
-import type { OfficialResult, OfficialResultReaderPort } from "@futrob/results";
-import { err, ok, type ClockPort, type Result, type TransactionPort } from "@futrob/shared-kernel";
+import type {
+  EncounterReaderPort,
+  OfficialResult,
+  OfficialResultReaderPort,
+} from "@futrob/results";
+import {
+  err,
+  ok,
+  type ClockPort,
+  type Result,
+  type TeamId,
+  type TransactionPort,
+} from "@futrob/shared-kernel";
+import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
+import {
+  OfficialResultNotFound,
+  type ProjectOfficialResultError,
+} from "../../domain/errors/project-official-result.errors.ts";
 import type { PlayerCompetitionStatsRepository } from "../../domain/ports/player-competition-stats.repository.ts";
 import type { PlayerIdentityResolverPort } from "../../domain/ports/player-identity-resolver.port.ts";
 import type { PlayerMatchContributionRepository } from "../../domain/ports/player-match-contribution.repository.ts";
 import type { PlayerPersonalStatsRepository } from "../../domain/ports/player-personal-stats.repository.ts";
-import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
 import { aggregatePlayerContributions } from "../../domain/policies/aggregate-player-contributions.ts";
-import {
-  OfficialResultNotApproved,
-  OfficialResultNotFound,
-  type ProjectApprovedOfficialResultError,
-} from "../../domain/errors/project-official-result.errors.ts";
 
-export type ProjectApprovedOfficialResultInput =
+export type ProjectOfficialResultInput =
   | { readonly officialResultId: string }
   | { readonly encounterId: OfficialResult["encounterId"] };
 
-export interface ProjectApprovedOfficialResultOutput {
+export interface ProjectOfficialResultOutput {
   readonly officialResultId: string;
   readonly revision: number;
   readonly contributionsProjected: number;
   readonly matchedPlayerProfiles: number;
 }
 
-export interface ProjectApprovedOfficialResultDependencies {
+export interface ProjectOfficialResultDependencies {
   readonly officialResults: OfficialResultReaderPort;
+  readonly encounterReader?: EncounterReaderPort;
   readonly identities: PlayerIdentityResolverPort;
   readonly contributions: PlayerMatchContributionRepository;
   readonly competitionStats: PlayerCompetitionStatsRepository;
@@ -33,12 +44,12 @@ export interface ProjectApprovedOfficialResultDependencies {
   readonly clock: ClockPort;
 }
 
-export class ProjectApprovedOfficialResultUseCase {
-  constructor(private readonly deps: ProjectApprovedOfficialResultDependencies) {}
+export class ProjectOfficialResultUseCase {
+  constructor(private readonly deps: ProjectOfficialResultDependencies) {}
 
   async execute(
-    input: ProjectApprovedOfficialResultInput,
-  ): Promise<Result<ProjectApprovedOfficialResultOutput, ProjectApprovedOfficialResultError>> {
+    input: ProjectOfficialResultInput,
+  ): Promise<Result<ProjectOfficialResultOutput, ProjectOfficialResultError>> {
     const officialResult =
       "officialResultId" in input
         ? await this.deps.officialResults.getById(input.officialResultId)
@@ -49,15 +60,6 @@ export class ProjectApprovedOfficialResultUseCase {
         new OfficialResultNotFound({
           code: "statistics.official_result_not_found",
           message: "Official result was not found.",
-        }),
-      );
-    }
-    if (officialResult.status !== "approved") {
-      return err(
-        new OfficialResultNotApproved({
-          code: "statistics.official_result_not_approved",
-          message: "Only approved official results can update statistics.",
-          officialResultId: officialResult.id,
         }),
       );
     }
@@ -76,7 +78,7 @@ export class ProjectApprovedOfficialResultUseCase {
       });
     }
 
-    const next = await this.buildContributions(officialResult);
+    const next = await this.contributionsForStatus(officialResult);
     const affectedPlayerProfiles = new Set<string>();
     addMatchedProfiles(affectedPlayerProfiles, previous);
     addMatchedProfiles(affectedPlayerProfiles, next);
@@ -87,36 +89,7 @@ export class ProjectApprovedOfficialResultUseCase {
         revision: "all",
       });
       await this.deps.contributions.saveMany(next);
-
-      const updatedAt = this.deps.clock.now();
-      for (const playerProfileId of affectedPlayerProfiles) {
-        const allPlayerContributions =
-          await this.deps.contributions.listByPlayerProfile(playerProfileId);
-        const competitionContributions = allPlayerContributions.filter(
-          (contribution) =>
-            contribution.correlationStatus === "matched" &&
-            contribution.playerProfileId === playerProfileId &&
-            contribution.competitionId === officialResult.competitionId,
-        );
-        await this.deps.competitionStats.upsert({
-          playerProfileId,
-          competitionId: officialResult.competitionId,
-          organizationId: officialResult.organizationId,
-          ...aggregatePlayerContributions(competitionContributions),
-          updatedAt,
-        });
-
-        const personalContributions = allPlayerContributions.filter(
-          (contribution) =>
-            contribution.correlationStatus === "matched" &&
-            contribution.playerProfileId === playerProfileId,
-        );
-        await this.deps.personalStats.upsert({
-          playerProfileId,
-          ...aggregatePlayerContributions(personalContributions),
-          updatedAt,
-        });
-      }
+      await this.rebuildAggregates(officialResult, affectedPlayerProfiles);
     });
 
     return ok({
@@ -127,16 +100,76 @@ export class ProjectApprovedOfficialResultUseCase {
     });
   }
 
+  private async contributionsForStatus(
+    officialResult: OfficialResult,
+  ): Promise<PlayerMatchContribution[]> {
+    switch (officialResult.status) {
+      case "approved":
+        return this.buildContributions(officialResult);
+      case "voided":
+        return [];
+      default:
+        return assertNever(officialResult.status);
+    }
+  }
+
+  private async rebuildAggregates(
+    officialResult: OfficialResult,
+    affectedPlayerProfiles: ReadonlySet<string>,
+  ): Promise<void> {
+    const updatedAt = this.deps.clock.now();
+    for (const playerProfileId of affectedPlayerProfiles) {
+      const allPlayerContributions =
+        await this.deps.contributions.listByPlayerProfile(playerProfileId);
+      const competitionContributions = allPlayerContributions.filter(
+        (contribution) =>
+          contribution.correlationStatus === "matched" &&
+          contribution.playerProfileId === playerProfileId &&
+          contribution.competitionId === officialResult.competitionId,
+      );
+      await this.deps.competitionStats.upsert({
+        playerProfileId,
+        competitionId: officialResult.competitionId,
+        organizationId: officialResult.organizationId,
+        ...aggregatePlayerContributions(competitionContributions),
+        updatedAt,
+      });
+
+      const personalContributions = allPlayerContributions.filter(
+        (contribution) =>
+          contribution.correlationStatus === "matched" &&
+          contribution.playerProfileId === playerProfileId,
+      );
+      await this.deps.personalStats.upsert({
+        playerProfileId,
+        ...aggregatePlayerContributions(personalContributions),
+        updatedAt,
+      });
+    }
+  }
+
   private async buildContributions(
     officialResult: OfficialResult,
   ): Promise<PlayerMatchContribution[]> {
+    const encounter =
+      (await this.deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
     const contributions: PlayerMatchContribution[] = [];
     for (const slot of officialResult.slots) {
       for (const player of slot.players) {
+        const teamId = mapExternalClubToTeam({
+          externalClubId: player.externalClubId,
+          homeExternalClubId: slot.homeExternalClubId,
+          awayExternalClubId: slot.awayExternalClubId,
+          homeTeamId: encounter?.homeTeamId ?? null,
+          awayTeamId: encounter?.awayTeamId ?? null,
+        });
         const resolution = await this.deps.identities.resolve({
           externalPlayerId: player.externalPlayerId,
           platform: slot.platform,
           gameEdition: slot.gameEdition,
+          organizationId: officialResult.organizationId,
+          competitionId: officialResult.competitionId,
+          teamId: teamId ?? undefined,
         });
         contributions.push({
           id: contributionId({
@@ -153,6 +186,7 @@ export class ProjectApprovedOfficialResultUseCase {
           officialSlot: slot.officialSlot,
           playerProfileId: resolution.status === "matched" ? resolution.playerProfileId : null,
           gameAccountId: resolution.status === "matched" ? resolution.gameAccountId : null,
+          teamId,
           correlationStatus: resolution.status,
           externalPlayerId: player.externalPlayerId,
           displayName: player.displayName,
@@ -178,6 +212,22 @@ export class ProjectApprovedOfficialResultUseCase {
     }
     return contributions;
   }
+}
+
+function assertNever(status: never): never {
+  throw new RangeError(`Unsupported official result status: ${String(status)}`);
+}
+
+function mapExternalClubToTeam(input: {
+  readonly externalClubId: string;
+  readonly homeExternalClubId: string;
+  readonly awayExternalClubId: string;
+  readonly homeTeamId: TeamId | null;
+  readonly awayTeamId: TeamId | null;
+}): TeamId | null {
+  if (input.externalClubId === input.homeExternalClubId) return input.homeTeamId;
+  if (input.externalClubId === input.awayExternalClubId) return input.awayTeamId;
+  return null;
 }
 
 function addMatchedProfiles(

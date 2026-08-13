@@ -1,4 +1,6 @@
 import type {
+  MatchedPlayerContributionPageQuery,
+  MatchedPlayerContributionQuery,
   PlayerCompetitionStats,
   PlayerCompetitionStatsRepository,
   PlayerMatchContribution,
@@ -45,6 +47,12 @@ export class InMemoryPlayerMatchContributionRepository implements PlayerMatchCon
     }
   }
 
+  async deleteByCompetition(competitionId: CompetitionId): Promise<void> {
+    for (const [key, contribution] of this.rows) {
+      if (contribution.competitionId === competitionId) this.rows.delete(key);
+    }
+  }
+
   async listByPlayerProfile(playerProfileId: string): Promise<PlayerMatchContribution[]> {
     return [...this.rows.values()].filter(
       (contribution) => contribution.playerProfileId === playerProfileId,
@@ -63,24 +71,24 @@ export class InMemoryPlayerMatchContributionRepository implements PlayerMatchCon
     );
   }
 
-  async listMatchedPage(input: {
-    readonly playerProfileId: string;
-    readonly competitionId?: CompetitionId;
-    readonly cursor?: string;
-    readonly limit: number;
-  }): Promise<{
+  async listByCompetition(competitionId: CompetitionId): Promise<PlayerMatchContribution[]> {
+    return [...this.rows.values()].filter(
+      (contribution) => contribution.competitionId === competitionId,
+    );
+  }
+
+  async listMatched(input: MatchedPlayerContributionQuery): Promise<PlayerMatchContribution[]> {
+    return [...this.rows.values()].filter((contribution) =>
+      matchesContribution(contribution, input),
+    );
+  }
+
+  async listMatchedPage(input: MatchedPlayerContributionPageQuery): Promise<{
     readonly items: PlayerMatchContribution[];
     readonly nextCursor: string | null;
   }> {
-    const items = [...this.rows.values()]
-      .filter(
-        (contribution) =>
-          contribution.playerProfileId === input.playerProfileId &&
-          contribution.correlationStatus === "matched" &&
-          (input.competitionId === undefined ||
-            contribution.competitionId === input.competitionId) &&
-          (input.cursor === undefined || contribution.id > input.cursor),
-      )
+    const items = (await this.listMatched(input))
+      .filter((contribution) => input.cursor === undefined || contribution.id > input.cursor)
       .sort((left, right) => left.id.localeCompare(right.id))
       .slice(0, input.limit);
 
@@ -133,4 +141,19 @@ function contributionKey(contribution: PlayerMatchContribution): string {
 
 function competitionStatsKey(playerProfileId: string, competitionId: CompetitionId): string {
   return `${playerProfileId}:${competitionId}`;
+}
+
+function matchesContribution(
+  contribution: PlayerMatchContribution,
+  input: MatchedPlayerContributionQuery,
+): boolean {
+  return (
+    contribution.playerProfileId === input.playerProfileId &&
+    contribution.correlationStatus === "matched" &&
+    (input.competitionId === undefined || contribution.competitionId === input.competitionId) &&
+    (input.teamId === undefined || contribution.teamId === input.teamId) &&
+    (input.gameEdition === undefined || contribution.gameEdition === input.gameEdition) &&
+    (input.platform === undefined || contribution.platform === input.platform) &&
+    (input.position === undefined || contribution.position === input.position)
+  );
 }

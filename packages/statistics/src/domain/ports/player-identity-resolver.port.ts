@@ -12,5 +12,8 @@ export interface PlayerIdentityResolverPort {
     readonly externalPlayerId: string;
     readonly platform: string;
     readonly gameEdition: string;
+    readonly organizationId?: string;
+    readonly competitionId?: string;
+    readonly teamId?: string;
   }): Promise<PlayerIdentityResolution>;
 }

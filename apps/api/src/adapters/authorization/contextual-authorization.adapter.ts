@@ -18,6 +18,7 @@ import {
 } from "@futrob/organizations";
 import { RESULT_PERMISSIONS } from "@futrob/results";
 import { ENCOUNTER_PERMISSION, ENCOUNTER_PERMISSIONS } from "@futrob/scheduling";
+import { STATISTICS_PERMISSION, STATISTICS_PERMISSIONS } from "@futrob/statistics";
 import type {
   ActorId,
   AuthorizationDecision,
@@ -57,6 +58,7 @@ const ALL_PERMISSIONS = [
   ...TEAM_PERMISSIONS,
   ...ENCOUNTER_PERMISSIONS,
   ...RESULT_PERMISSIONS,
+  ...STATISTICS_PERMISSIONS,
 ] as readonly Permission[];
 
 export function contextualOrganizationRolePermissions(
@@ -74,6 +76,7 @@ export function contextualOrganizationRolePermissions(
       ...TEAM_PERMISSIONS,
       ...ENCOUNTER_PERMISSIONS,
       ...RESULT_PERMISSIONS,
+      ...STATISTICS_PERMISSIONS,
     ];
   }
   return ORGANIZATION_ROLE_PERMISSIONS.member;
@@ -88,6 +91,7 @@ export function contextualCompetitionRolePermissions(
         ...TEAM_PERMISSIONS,
         ...ENCOUNTER_PERMISSIONS,
         ...RESULT_PERMISSIONS,
+        ...STATISTICS_PERMISSIONS,
       ]
     : COMPETITION_ROLE_PERMISSIONS[role];
 }
@@ -196,7 +200,7 @@ export class ContextualAuthorizationAdapter implements AuthorizationPort {
       scopeType: "platform",
       scopeId: "platform",
       roles: superuser ? [{ scopeType: "platform", scopeId: "platform", role: "superuser" }] : [],
-      baseline: new Set(superuser ? ALL_PERMISSIONS : []),
+      baseline: new Set(superuser ? ALL_PERMISSIONS : [STATISTICS_PERMISSION.readOwn]),
     });
 
     let organizationRole: string | null = null;
