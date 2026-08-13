@@ -168,7 +168,7 @@ function DemoWorkspaceSelector({ dense = true }: { readonly dense?: boolean }) {
           <DropdownMenuLabel>Clubes EA</DropdownMenuLabel>
           <DropdownMenuItem>
             <PlusIcon aria-hidden="true" className="size-4" />
-            Asociar club
+            Añadir club
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

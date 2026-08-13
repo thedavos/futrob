@@ -6,9 +6,7 @@ import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Sheet,
@@ -34,19 +32,15 @@ import {
   useSidebar,
 } from "@futrob/ui";
 import {
-  BuildingsIcon,
   CaretDownIcon,
   CheckSquareOffsetIcon,
   ListIcon,
-  PlusIcon,
   SidebarIcon as SidebarExpandIcon,
   SidebarSimpleIcon,
-  TrophyIcon,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
-import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { SHELL_NAV_ICONS } from "@/shared/presentation/shell/nav-icons.ts";
 import {
   accountNavItems,
@@ -66,21 +60,17 @@ import {
 import { commandsFor } from "@/shared/presentation/shell/shell-commands.ts";
 import {
   WORKSPACE_SELECTION_KIND,
-  type CompetitionSelectorOption,
-  type OrganizationSelectorOption,
   type WorkspaceSelection,
-  pathForWorkspaceSelection,
 } from "@/shared/presentation/shell/workspace-selection.ts";
-import { writeStoredWorkspaceSelection } from "@/shared/presentation/shell/workspace-selection-storage.ts";
 import { useWorkspaceSelection } from "@/shared/presentation/shell/use-workspace-selection.ts";
-
-type AssociatedClubSummary = {
-  readonly name: string;
-  readonly imageUrl: string | null;
-};
+import { WorkspaceSelector } from "@/shared/presentation/shell/workspace-selector.tsx";
+import type { WorkspaceSelectorModel } from "@/shared/presentation/shell/workspace-selector-model.ts";
+import { AddClubDialog } from "@/modules/teams/presentation/add-club-dialog.tsx";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 export function AuthenticatedShell({ children }: { readonly children: ReactNode }) {
   const selectionState = useWorkspaceSelection();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const title = pageTitleFor(pathname, selectionState.selection);
   const commands = commandsFor(
@@ -89,6 +79,7 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
     selectionState.allowedPermissions,
   );
   const [collapsed, setCollapsed] = useState(false);
+  const [addClubOpen, setAddClubOpen] = useState(false);
 
   useEffect(() => {
     const stored = readStoredShellChrome();
@@ -114,10 +105,9 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
           Saltar al contenido
         </a>
         <DesktopSidebar
-          associatedClub={selectionState.associatedClub}
           allowedPermissions={selectionState.allowedPermissions}
-          competitions={selectionState.competitions}
-          memberships={selectionState.memberships}
+          model={selectionState.selectorModel}
+          onRequestAddClub={() => setAddClubOpen(true)}
           onSelect={selectionState.select}
           pathname={pathname}
           selection={selectionState.selection}
@@ -125,22 +115,34 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
         <SidebarInset>
           <SidebarRail>
             <MobileNav
-              associatedClub={selectionState.associatedClub}
               allowedPermissions={selectionState.allowedPermissions}
-              competitions={selectionState.competitions}
-              memberships={selectionState.memberships}
+              model={selectionState.selectorModel}
+              onRequestAddClub={() => setAddClubOpen(true)}
               onSelect={selectionState.select}
               pathname={pathname}
               selection={selectionState.selection}
               title={title}
             />
           </SidebarRail>
-          <CommandBar commands={commands} selection={selectionState.selection} title={title} />
+          <CommandBar
+            commands={commands}
+            onAddClub={() => setAddClubOpen(true)}
+            selection={selectionState.selection}
+            title={title}
+          />
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" id="app-main">
             {children}
           </div>
           <ShellActionBarSlot />
         </SidebarInset>
+        <AddClubDialog
+          onAssociated={() => {
+            selectionState.select({ kind: WORKSPACE_SELECTION_KIND.personal });
+            void navigate({ to: "/player/ea-clubs" });
+          }}
+          onOpenChange={setAddClubOpen}
+          open={addClubOpen}
+        />
       </ShellActionBarProvider>
     </SidebarProvider>
   );
@@ -150,12 +152,15 @@ function CommandBar({
   title,
   commands,
   selection,
+  onAddClub,
 }: {
   readonly title: string;
   readonly commands: ReturnType<typeof commandsFor>;
   readonly selection: WorkspaceSelection;
+  readonly onAddClub: () => void;
 }) {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   return (
     <header className="hidden h-14 shrink-0 items-center gap-3 border-b border-border px-4 md:flex">
@@ -182,12 +187,12 @@ function CommandBar({
                   return;
                 }
                 if (command.id === "associate-club") {
-                  void navigate({ to: "/player/ea-clubs" });
+                  onAddClub();
                 }
               }}
               variant={command.id === commands[0]?.id ? "default" : "outline"}
             >
-              {command.label}
+              {command.id === "associate-club" ? t("shell.workspace.addClub") : command.label}
             </Button>
           ))}
         </div>
@@ -208,15 +213,16 @@ function ShellActionBarSlot() {
   );
 }
 
-function DesktopSidebar(props: {
+type ShellSidebarProps = {
   readonly selection: WorkspaceSelection;
   readonly pathname: string;
-  readonly memberships: readonly OrganizationSelectorOption[];
-  readonly competitions: readonly CompetitionSelectorOption[];
-  readonly associatedClub: AssociatedClubSummary | null;
+  readonly model: WorkspaceSelectorModel;
   readonly allowedPermissions: ReadonlySet<string>;
   readonly onSelect: (selection: WorkspaceSelection) => void;
-}) {
+  readonly onRequestAddClub: () => void;
+};
+
+function DesktopSidebar(props: ShellSidebarProps) {
   return (
     <Sidebar aria-label="Navegación principal">
       <ShellSidebarBody {...props} />
@@ -224,16 +230,7 @@ function DesktopSidebar(props: {
   );
 }
 
-function MobileNav(props: {
-  readonly selection: WorkspaceSelection;
-  readonly pathname: string;
-  readonly memberships: readonly OrganizationSelectorOption[];
-  readonly competitions: readonly CompetitionSelectorOption[];
-  readonly associatedClub: AssociatedClubSummary | null;
-  readonly allowedPermissions: ReadonlySet<string>;
-  readonly onSelect: (selection: WorkspaceSelection) => void;
-  readonly title: string;
-}) {
+function MobileNav(props: ShellSidebarProps & { readonly title: string }) {
   const { openMobile, setOpenMobile } = useSidebar();
 
   return (
@@ -270,22 +267,12 @@ function MobileNav(props: {
 function ShellSidebarBody({
   selection,
   pathname,
-  memberships,
-  competitions,
-  associatedClub,
+  model,
   allowedPermissions,
   onSelect,
+  onRequestAddClub,
   forceExpanded = false,
-}: {
-  readonly selection: WorkspaceSelection;
-  readonly pathname: string;
-  readonly memberships: readonly OrganizationSelectorOption[];
-  readonly competitions: readonly CompetitionSelectorOption[];
-  readonly associatedClub: AssociatedClubSummary | null;
-  readonly allowedPermissions: ReadonlySet<string>;
-  readonly onSelect: (selection: WorkspaceSelection) => void;
-  readonly forceExpanded?: boolean;
-}) {
+}: ShellSidebarProps & { readonly forceExpanded?: boolean }) {
   const { collapsed, toggleCollapsed } = useSidebar();
   const compact = collapsed && !forceExpanded;
   const general = generalNavFor(selection, allowedPermissions);
@@ -317,9 +304,8 @@ function ShellSidebarBody({
         </div>
         {compact ? null : (
           <WorkspaceSelector
-            associatedClub={associatedClub}
-            competitions={competitions}
-            memberships={memberships}
+            model={model}
+            onRequestAddClub={onRequestAddClub}
             onSelect={onSelect}
             selection={selection}
           />
@@ -421,119 +407,6 @@ function NavItemList({
   );
 }
 
-function WorkspaceSelector({
-  selection,
-  memberships,
-  competitions,
-  associatedClub,
-  onSelect,
-}: {
-  readonly selection: WorkspaceSelection;
-  readonly memberships: readonly OrganizationSelectorOption[];
-  readonly competitions: readonly CompetitionSelectorOption[];
-  readonly associatedClub: AssociatedClubSummary | null;
-  readonly onSelect: (selection: WorkspaceSelection) => void;
-}) {
-  const navigate = useNavigate();
-  const personalLabel = associatedClub?.name ?? "Asociar club";
-
-  function choose(next: WorkspaceSelection) {
-    writeStoredWorkspaceSelection(next);
-    onSelect(next);
-    if (next.kind === WORKSPACE_SELECTION_KIND.personal) {
-      void navigate({ to: associatedClub ? "/player" : "/player/ea-clubs" });
-      return;
-    }
-    void navigate({ to: pathForWorkspaceSelection(next) });
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button className="group w-full justify-between font-medium" dense variant="outline" />
-        }
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <SelectorTriggerIcon associatedClub={associatedClub} selection={selection} />
-          <span className="truncate">{selectorTriggerLabel(selection, personalLabel)}</span>
-        </span>
-        <CaretDownIcon
-          aria-hidden="true"
-          className="size-4 shrink-0 transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
-        />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-56">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Competiciones</DropdownMenuLabel>
-          {competitions.length === 0 ? (
-            <DropdownMenuItem disabled>Sin competiciones todavía</DropdownMenuItem>
-          ) : (
-            competitions.map((competition) => (
-              <DropdownMenuItem
-                key={competition.competitionId}
-                onClick={() =>
-                  choose({
-                    kind: WORKSPACE_SELECTION_KIND.competition,
-                    competitionId: competition.competitionId,
-                    organizationId: competition.organizationId,
-                    label: competition.name,
-                  })
-                }
-              >
-                <TrophyIcon aria-hidden="true" className="size-4 shrink-0" />
-                <span className="truncate">{competition.name}</span>
-              </DropdownMenuItem>
-            ))
-          )}
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Clubes EA</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => choose({ kind: WORKSPACE_SELECTION_KIND.personal })}>
-            <ClubMenuIcon club={associatedClub} />
-            <span className="truncate">{personalLabel}</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Organizaciones</DropdownMenuLabel>
-          {memberships.map((membership) => (
-            <DropdownMenuItem
-              key={membership.organizationId}
-              onClick={() =>
-                choose({
-                  kind: WORKSPACE_SELECTION_KIND.organization,
-                  organizationId: membership.organizationId,
-                  label: membership.name,
-                })
-              }
-            >
-              <BuildingsIcon aria-hidden="true" className="size-4 shrink-0" />
-              <span className="truncate">{membership.name}</span>
-            </DropdownMenuItem>
-          ))}
-          <DropdownMenuItem
-            onClick={() => {
-              void navigate({ to: "/orgs/new" });
-            }}
-          >
-            <PlusIcon aria-hidden="true" className="size-4 shrink-0" />
-            Crear organización
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function ClubMenuIcon({ club }: { readonly club: AssociatedClubSummary | null }) {
-  if (!club) {
-    return <PlusIcon aria-hidden="true" className="size-4 shrink-0" />;
-  }
-  return <ClubCrestAvatar imageUrl={club.imageUrl} name={club.name} />;
-}
-
 function AccountMenu({ compact = false }: { readonly compact?: boolean }) {
   const session = authClient.useSession();
   const navigate = useNavigate();
@@ -614,35 +487,6 @@ function abbreviatedDisplayName(name: string): string {
   }
   const first = trimmed.split(/\s+/).find(Boolean) ?? trimmed;
   return first.length > 14 ? `${first.slice(0, 12)}…` : first;
-}
-
-function SelectorTriggerIcon({
-  selection,
-  associatedClub,
-}: {
-  readonly selection: WorkspaceSelection;
-  readonly associatedClub: AssociatedClubSummary | null;
-}) {
-  const className = "size-4 shrink-0 text-muted-foreground";
-  switch (selection.kind) {
-    case WORKSPACE_SELECTION_KIND.personal:
-      return <ClubMenuIcon club={associatedClub} />;
-    case WORKSPACE_SELECTION_KIND.organization:
-      return <BuildingsIcon aria-hidden="true" className={className} />;
-    case WORKSPACE_SELECTION_KIND.competition:
-      return <TrophyIcon aria-hidden="true" className={className} />;
-  }
-}
-
-function selectorTriggerLabel(selection: WorkspaceSelection, personalLabel: string): string {
-  switch (selection.kind) {
-    case WORKSPACE_SELECTION_KIND.personal:
-      return personalLabel;
-    case WORKSPACE_SELECTION_KIND.organization:
-      return selection.label ?? "Organización";
-    case WORKSPACE_SELECTION_KIND.competition:
-      return selection.label ?? "Competición";
-  }
 }
 
 function pageTitleFor(pathname: string, selection: WorkspaceSelection): string {

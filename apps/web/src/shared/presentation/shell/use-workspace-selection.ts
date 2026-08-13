@@ -34,6 +34,8 @@ import {
   readStoredWorkspaceSelection,
   writeStoredWorkspaceSelection,
 } from "./workspace-selection-storage.ts";
+import { buildWorkspaceSelectorModel } from "./workspace-selector-model.ts";
+
 export function useWorkspaceSelection() {
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -49,6 +51,7 @@ export function useWorkspaceSelection() {
     return {
       name: club.externalClubName,
       imageUrl: club.imageUrl ?? null,
+      externalClubId: club.externalClubId,
     };
   }, [profileQuery.data?.externalClub]);
 
@@ -80,6 +83,14 @@ export function useWorkspaceSelection() {
     queryKey: queryKeys.competitions.mine(),
     queryFn: listMyAccessibleCompetitions,
   });
+
+  const accessRoleByCompetitionId = useMemo(() => {
+    const roles = new Map<string, "staff" | "captain" | "vice_captain" | "player">();
+    for (const item of accessibleCompetitionsQuery.data?.competitions ?? []) {
+      roles.set(item.competition.id, item.role);
+    }
+    return roles;
+  }, [accessibleCompetitionsQuery.data?.competitions]);
 
   const competitions: readonly CompetitionSelectorOption[] = useMemo(() => {
     const byId = new Map<string, CompetitionSelectorOption>();
@@ -115,6 +126,32 @@ export function useWorkspaceSelection() {
 
     return [...byId.values()];
   }, [accessibleCompetitionsQuery.data?.competitions, competitionQueries, pathname]);
+
+  const selectorModel = useMemo(
+    () =>
+      buildWorkspaceSelectorModel({
+        memberships: (membershipsQuery.data?.memberships ?? []).map((item) => ({
+          organizationId: item.organizationId,
+          name: item.organizationName,
+          role: item.role,
+        })),
+        competitions: competitions.map((competition) => ({
+          competitionId: competition.competitionId,
+          organizationId: competition.organizationId,
+          name: competition.name,
+          accessRole: accessRoleByCompetitionId.get(competition.competitionId) ?? null,
+        })),
+        associatedClub: associatedClub
+          ? {
+              name: associatedClub.name,
+              imageUrl: associatedClub.imageUrl,
+              externalClubId: associatedClub.externalClubId,
+            }
+          : null,
+        clubRosterRoles: [],
+      }),
+    [accessRoleByCompetitionId, associatedClub, competitions, membershipsQuery.data?.memberships],
+  );
 
   const selection = useMemo(() => {
     const fromPath = workspaceSelectionFromPathname(pathname);
@@ -195,6 +232,7 @@ export function useWorkspaceSelection() {
     selection,
     memberships,
     competitions,
+    selectorModel,
     associatedClub,
     associatedClubName,
     allowedPermissions,

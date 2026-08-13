@@ -13,7 +13,14 @@ type CreateOrganizationValues = {
 
 type CreateOrganizationField = keyof CreateOrganizationValues;
 
-export function CreateOrganizationForm() {
+export function CreateOrganizationForm({
+  onCreated,
+}: {
+  readonly onCreated?: (created: {
+    readonly organizationId: string;
+    readonly name: string;
+  }) => void;
+} = {}) {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const validation = useFormValidation<CreateOrganizationField>();
@@ -28,6 +35,10 @@ export function CreateOrganizationForm() {
 
     try {
       const created = await createOrganization.mutateAsync({ name: trimmed });
+      if (onCreated) {
+        onCreated({ organizationId: created.organizationId, name: created.name });
+        return;
+      }
       await navigate({ to: "/orgs/$orgId", params: { orgId: created.organizationId } });
     } catch (caught) {
       if (caught instanceof OrganizationsClientError) {

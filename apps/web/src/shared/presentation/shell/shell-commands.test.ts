@@ -86,7 +86,7 @@ describe("commandsFor", () => {
     const commands = commandsFor("/player/ea-clubs", {
       kind: WORKSPACE_SELECTION_KIND.personal,
     });
-    expect(commands).toEqual([{ id: "associate-club", label: "Asociar club", disabled: false }]);
+    expect(commands).toEqual([{ id: "associate-club", label: "Añadir club", disabled: false }]);
   });
 
   it("returns empty for plain personal home", () => {

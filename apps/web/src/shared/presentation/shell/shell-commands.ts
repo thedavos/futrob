@@ -45,7 +45,7 @@ export function commandsFor(
   } else if (pathname.startsWith("/player/competitions")) {
     commands = [{ id: "accept-invite", label: "Aceptar invitación", disabled: false }];
   } else if (pathname.startsWith("/player/ea-clubs")) {
-    commands = [{ id: "associate-club", label: "Asociar club", disabled: false }];
+    commands = [{ id: "associate-club", label: "Añadir club", disabled: false }];
   } else {
     commands = [];
   }
