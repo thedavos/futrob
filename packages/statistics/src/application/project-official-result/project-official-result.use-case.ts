@@ -70,7 +70,7 @@ export class ProjectOfficialResultUseCase {
     const officialResult =
       "officialResultId" in input
         ? await this.deps.officialResults.getById(input.officialResultId)
-        : await this.deps.officialResults.getApprovedByEncounter(input.encounterId);
+        : await this.deps.officialResults.getLatestByEncounter(input.encounterId);
 
     if (!officialResult) {
       return err(

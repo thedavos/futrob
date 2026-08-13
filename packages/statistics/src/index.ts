@@ -36,6 +36,7 @@ export type { CompetitionStandingSnapshotRepository } from "./domain/ports/compe
 export type {
   CompetitionMatchPointsRules,
   CompetitionMatchRulesReaderPort,
+  StandingResolutionMode,
 } from "./domain/ports/competition-match-rules-reader.port.ts";
 export type { PlayerProfileLookupPort } from "./domain/ports/player-profile-lookup.port.ts";
 export type {
