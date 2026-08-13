@@ -410,6 +410,35 @@ paths:
           $ref: "#/components/responses/ApiError"
       parameters:
         - *a2
+  /players/me/external-club:
+    post:
+      operationId: associateMyPlayerExternalClub
+      tags:
+        - players
+      summary: Associate an EA Clubs club with the personal player profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerExternalClubSelectionInput"
+      responses:
+        "201":
+          description: Idempotently associated external club
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssociateMyPlayerExternalClubResponse"
+          headers:
+            X-Request-ID: *a1
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "401":
+          $ref: "#/components/responses/ApiError"
+        "404":
+          $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /players/me/statistics:
     get:
       operationId: getMyStatistics
@@ -3793,6 +3822,16 @@ components:
           $ref: "#/components/schemas/PlayerProfile"
         gameAccount:
           $ref: "#/components/schemas/PlayerGameAccount"
+    AssociateMyPlayerExternalClubResponse:
+      type: object
+      required:
+        - profile
+        - externalClub
+      properties:
+        profile:
+          $ref: "#/components/schemas/PlayerProfile"
+        externalClub:
+          $ref: "#/components/schemas/PlayerExternalClubAssociation"
     OnboardingStatus:
       type: object
       required:

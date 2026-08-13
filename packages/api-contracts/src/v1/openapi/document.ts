@@ -32,6 +32,7 @@ import {
 import { encounterScheduleSnapshotSchema } from "../encounters/schemas.ts";
 import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
+  associateMyPlayerExternalClubResponseSchema,
   competitionTeamManagementDetailResponseSchema,
   competitionTeamManagementListResponseSchema,
 } from "../teams/schemas.ts";
@@ -419,6 +420,34 @@ export const futrobOpenApiV1 = {
           },
           "400": { $ref: "#/components/responses/ApiError" },
           "401": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/players/me/external-club": {
+      post: {
+        operationId: "associateMyPlayerExternalClub",
+        tags: ["players"],
+        summary: "Associate an EA Clubs club with the personal player profile",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PlayerExternalClubSelectionInput" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Idempotently associated external club",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AssociateMyPlayerExternalClubResponse" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -2586,6 +2615,14 @@ export const futrobOpenApiV1 = {
           gameAccount: { $ref: "#/components/schemas/PlayerGameAccount" },
         },
       },
+      AssociateMyPlayerExternalClubResponse: {
+        type: "object",
+        required: ["profile", "externalClub"],
+        properties: {
+          profile: { $ref: "#/components/schemas/PlayerProfile" },
+          externalClub: { $ref: "#/components/schemas/PlayerExternalClubAssociation" },
+        },
+      },
       OnboardingStatus: {
         type: "object",
         required: ["completed", "completedAt", "version", "path", "currentStep"],
@@ -2838,3 +2875,4 @@ void listAccessibleCompetitionsResponseSchema;
 void encounterScheduleSnapshotSchema;
 void competitionTeamManagementListResponseSchema;
 void competitionTeamManagementDetailResponseSchema;
+void associateMyPlayerExternalClubResponseSchema;

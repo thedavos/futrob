@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
+import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import {
   buildApp,
+  createFetch,
   onboardingCompetition,
   serviceHeaders,
   stubFetch,
@@ -309,6 +311,50 @@ describe("apps/api http teams", () => {
     );
     expect(await roster.json()).toMatchObject({
       memberships: [{ teamId: teamBody.id, role: "player" }],
+    });
+  });
+
+  it("associates a personal EA club through players/me/external-club", async () => {
+    const app = buildApp(
+      createFetch((url) => {
+        expect(url).toContain("/clubs/info");
+        expect(url).toContain("clubIds=10754");
+        return Response.json(clubInfoFixture);
+      }),
+    );
+    const actor = "actor-associate-club";
+
+    await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({ gameAccount: null }),
+    });
+
+    const associated = await app.request("/api/v1/players/me/external-club", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({
+        providerKey: "ea-clubs",
+        externalClubId: "10754",
+        platform: "common-gen5",
+        gameEdition: "fc26",
+      }),
+    });
+    expect(associated.status).toBe(201);
+    expect(await associated.json()).toMatchObject({
+      externalClub: {
+        externalClubId: "10754",
+        externalClubName: "Fera Enjaulada",
+        platform: "common-gen5",
+        gameEdition: "fc26",
+      },
+    });
+
+    const profile = await app.request("/api/v1/players/me", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await profile.json()).toMatchObject({
+      externalClub: { externalClubId: "10754", externalClubName: "Fera Enjaulada" },
     });
   });
 });

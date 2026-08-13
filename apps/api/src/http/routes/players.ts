@@ -4,6 +4,8 @@ import { asCompetitionId } from "@futrob/shared-kernel";
 import {
   addMyPlayerGameAccountRequestSchema,
   addMyPlayerGameAccountResponseSchema,
+  associateMyPlayerExternalClubRequestSchema,
+  associateMyPlayerExternalClubResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
   getMyPlayerProfileResponseSchema,
@@ -79,6 +81,34 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
       addMyPlayerGameAccountResponseSchema.parse({
         profile: playerProfileDto(profile),
         gameAccount: playerGameAccountDto(account.value),
+      }),
+      201,
+    );
+  });
+
+  secured.post("/players/me/external-club", async (c) => {
+    const json: unknown = await c.req.json().catch(() => null);
+    const parsed = associateMyPlayerExternalClubRequestSchema.safeParse(json);
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+
+    const resolved = await gameData.getExternalClub.execute(parsed.data.providerKey, {
+      externalClubId: parsed.data.externalClubId,
+      platform: parsed.data.platform,
+      gameEdition: parsed.data.gameEdition,
+    });
+    if (!resolved.isOk()) return failureToHttp(resolved.error);
+
+    const profile = await teams.ensurePlayerProfile.execute({ actorId: c.get("actorId") });
+    const associated = await teams.associatePlayerExternalClub.execute({
+      playerProfileId: profile.id,
+      club: resolved.value,
+    });
+    if (!associated.isOk()) return failureToHttp(associated.error);
+
+    return jsonResponse(
+      associateMyPlayerExternalClubResponseSchema.parse({
+        profile: playerProfileDto(profile),
+        externalClub: playerExternalClubAssociationDto(associated.value),
       }),
       201,
     );

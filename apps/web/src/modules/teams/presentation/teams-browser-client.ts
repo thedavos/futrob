@@ -3,6 +3,8 @@ import {
   acceptRosterInvitationResponseSchema,
   addMyPlayerGameAccountRequestSchema,
   addMyPlayerGameAccountResponseSchema,
+  associateMyPlayerExternalClubRequestSchema,
+  associateMyPlayerExternalClubResponseSchema,
   getMyPlayerProfileResponseSchema,
   getMyTeamsResponseSchema,
   setActiveTeamRequestSchema,
@@ -11,6 +13,8 @@ import {
   type AcceptRosterInvitationResponse,
   type AddMyPlayerGameAccountRequest,
   type AddMyPlayerGameAccountResponse,
+  type AssociateMyPlayerExternalClubRequest,
+  type AssociateMyPlayerExternalClubResponse,
   type GetMyPlayerProfileResponse,
   type GetMyTeamsResponse,
   type SetActiveTeamRequest,
@@ -200,6 +204,17 @@ export const teamsBrowserClient = {
       method: "POST",
       body,
       parse: (data) => addMyPlayerGameAccountResponseSchema.parse(data),
+    });
+  },
+  associateMyExternalClub(
+    input: AssociateMyPlayerExternalClubRequest,
+  ): Promise<AssociateMyPlayerExternalClubResponse> {
+    const body = associateMyPlayerExternalClubRequestSchema.parse(input);
+    return requestJson({
+      path: "/api/v1/players/me/external-club",
+      method: "POST",
+      body,
+      parse: (data) => associateMyPlayerExternalClubResponseSchema.parse(data),
     });
   },
   getMyTeams(): Promise<GetMyTeamsResponse> {

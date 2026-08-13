@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   AcceptRosterInvitationRequest,
   AddMyPlayerGameAccountRequest,
+  AssociateMyPlayerExternalClubRequest,
   SetActiveTeamRequest,
 } from "@futrob/api-contracts";
 import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
@@ -28,6 +29,18 @@ export function useAddMyGameAccountMutation() {
   return useMutation({
     mutationFn: (input: AddMyPlayerGameAccountRequest) =>
       teamsBrowserClient.addMyGameAccount(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
+    },
+  });
+}
+
+export function useAssociateMyExternalClubMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: AssociateMyPlayerExternalClubRequest) =>
+      teamsBrowserClient.associateMyExternalClub(input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
     },

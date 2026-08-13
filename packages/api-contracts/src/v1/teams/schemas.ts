@@ -68,6 +68,19 @@ export const addMyPlayerGameAccountResponseSchema = z.object({
 });
 export type AddMyPlayerGameAccountResponse = z.infer<typeof addMyPlayerGameAccountResponseSchema>;
 
+export const associateMyPlayerExternalClubRequestSchema = playerExternalClubSelectionInputSchema;
+export type AssociateMyPlayerExternalClubRequest = z.infer<
+  typeof associateMyPlayerExternalClubRequestSchema
+>;
+
+export const associateMyPlayerExternalClubResponseSchema = z.object({
+  profile: playerProfileSchema,
+  externalClub: playerExternalClubAssociationSchema,
+});
+export type AssociateMyPlayerExternalClubResponse = z.infer<
+  typeof associateMyPlayerExternalClubResponseSchema
+>;
+
 export const rosterMembershipRoleSchema = z.enum(["player", "captain", "vice_captain"]);
 export type RosterMembershipRoleDto = z.infer<typeof rosterMembershipRoleSchema>;
 

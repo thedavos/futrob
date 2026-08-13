@@ -646,6 +646,54 @@
         ]
       }
     },
+    "/players/me/external-club": {
+      "post": {
+        "operationId": "associateMyPlayerExternalClub",
+        "tags": ["players"],
+        "summary": "Associate an EA Clubs club with the personal player profile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerExternalClubSelectionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Idempotently associated external club",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssociateMyPlayerExternalClubResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/players/me/statistics": {
       "get": {
         "operationId": "getMyStatistics",
@@ -5117,6 +5165,18 @@
           },
           "gameAccount": {
             "$ref": "#/components/schemas/PlayerGameAccount"
+          }
+        }
+      },
+      "AssociateMyPlayerExternalClubResponse": {
+        "type": "object",
+        "required": ["profile", "externalClub"],
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/PlayerProfile"
+          },
+          "externalClub": {
+            "$ref": "#/components/schemas/PlayerExternalClubAssociation"
           }
         }
       },
