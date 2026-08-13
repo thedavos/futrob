@@ -23,6 +23,15 @@ export {
   type CompetitionStandingRow,
   type CompetitionStandingSnapshot,
 } from "./domain/entities/competition-standing-snapshot.ts";
+export {
+  DEFAULT_RANKING_ELIGIBILITY,
+  RANKING_FORMULA_VERSION,
+  RANKING_KINDS,
+  type RankingEligibilityConfig,
+  type RankingKind,
+  type RankingRow,
+  type RankingSnapshot,
+} from "./domain/entities/ranking-snapshot.ts";
 export type {
   MatchedPlayerContributionPageQuery,
   MatchedPlayerContributionQuery,
@@ -33,6 +42,7 @@ export type { PlayerPersonalStatsRepository } from "./domain/ports/player-person
 export type { TeamMatchContributionRepository } from "./domain/ports/team-match-contribution.repository.ts";
 export type { TeamCompetitionStatsRepository } from "./domain/ports/team-competition-stats.repository.ts";
 export type { CompetitionStandingSnapshotRepository } from "./domain/ports/competition-standing-snapshot.repository.ts";
+export type { RankingSnapshotRepository } from "./domain/ports/ranking-snapshot.repository.ts";
 export type {
   CompetitionMatchPointsRules,
   CompetitionMatchRulesReaderPort,
@@ -63,7 +73,14 @@ export {
   type RebuildCompetitionStatisticsInput,
   type RebuildCompetitionStatisticsOutput,
 } from "./application/rebuild-competition-statistics/rebuild-competition-statistics.use-case.ts";
+export {
+  RebuildCompetitionRankingsUseCase,
+  type RebuildCompetitionRankingsDependencies,
+  type RebuildCompetitionRankingsInput,
+  type RebuildCompetitionRankingsOutput,
+} from "./application/rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 export type { CompetitionStatisticsRebuiltEvent } from "./domain/events/competition-statistics-rebuilt.event.ts";
+export type { RankingsUpdatedEvent } from "./domain/events/rankings-updated.event.ts";
 export {
   GetMyPersonalStatisticsUseCase,
   type GetMyPersonalStatisticsDependencies,
@@ -85,4 +102,9 @@ export {
   type GetCompetitionTeamStatisticsDependencies,
   type GetCompetitionTeamStatisticsInput,
 } from "./application/get-competition-team-statistics/get-competition-team-statistics.use-case.ts";
+export {
+  GetCompetitionRankingsUseCase,
+  type GetCompetitionRankingsDependencies,
+  type GetCompetitionRankingsInput,
+} from "./application/get-competition-rankings/get-competition-rankings.use-case.ts";
 export type { OfficialResultReaderPort } from "@futrob/results";

@@ -34,10 +34,11 @@ import {
   buildCompetitionStandings,
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
+import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 
 export type ProjectOfficialResultInput =
-  | { readonly officialResultId: string }
-  | { readonly encounterId: OfficialResult["encounterId"] };
+  | { readonly officialResultId: string; readonly rebuildRankings?: boolean }
+  | { readonly encounterId: OfficialResult["encounterId"]; readonly rebuildRankings?: boolean };
 
 export interface ProjectOfficialResultOutput {
   readonly officialResultId: string;
@@ -57,6 +58,7 @@ export interface ProjectOfficialResultDependencies {
   readonly teamCompetitionStats: TeamCompetitionStatsRepository;
   readonly standings: CompetitionStandingSnapshotRepository;
   readonly matchRules: CompetitionMatchRulesReaderPort;
+  readonly rebuildRankings?: Pick<RebuildCompetitionRankingsUseCase, "execute">;
   readonly transaction: TransactionPort;
   readonly clock: ClockPort;
 }
@@ -127,6 +129,12 @@ export class ProjectOfficialResultUseCase {
       await this.rebuildTeamAggregates(officialResult, affectedTeams);
       await this.rebuildStandings(officialResult);
     });
+
+    if (input.rebuildRankings !== false && this.deps.rebuildRankings) {
+      await this.deps.rebuildRankings.execute({
+        competitionId: officialResult.competitionId,
+      });
+    }
 
     return ok({
       officialResultId: officialResult.id,

@@ -9,6 +9,8 @@ import {
   getCompetitionDraftResponseSchema,
   getCompetitionStandingsResponseSchema,
   getCompetitionTeamStatisticsResponseSchema,
+  getCompetitionRankingsQuerySchema,
+  getCompetitionRankingsResponseSchema,
   listOrganizationCompetitionsResponseSchema,
   listAccessibleCompetitionsResponseSchema,
   registerTeamEntryRequestSchema,
@@ -197,6 +199,41 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
       );
     },
   );
+
+  secured.get("/organizations/:organizationId/competitions/:competitionId/rankings", async (c) => {
+    const organizationId = asOrganizationId(c.req.param("organizationId"));
+    const competitionId = asCompetitionId(c.req.param("competitionId"));
+    const query = getCompetitionRankingsQuerySchema.safeParse({
+      kind: c.req.query("kind") || undefined,
+    });
+    if (!query.success) return validationErrorResponse(query.error.issues);
+    let rankings;
+    try {
+      rankings = await deps.modules.statistics.useCases.getCompetitionRankings.execute({
+        actorId: c.get("actorId"),
+        organizationId,
+        competitionId,
+        ...(query.data.kind === undefined ? {} : { kind: query.data.kind }),
+      });
+    } catch (error) {
+      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      throw error;
+    }
+    return jsonResponse(
+      getCompetitionRankingsResponseSchema.parse({
+        rankings: rankings.map((snapshot) => ({
+          competitionId: snapshot.competitionId,
+          organizationId: snapshot.organizationId,
+          kind: snapshot.kind,
+          formulaVersion: snapshot.formulaVersion,
+          eligibility: snapshot.eligibility,
+          rows: snapshot.rows,
+          sourceRevisionMax: snapshot.sourceRevisionMax,
+          updatedAt: snapshot.updatedAt.toISOString(),
+        })),
+      }),
+    );
+  });
 
   secured.patch("/organizations/:organizationId/competitions/:competitionId", async (c) => {
     const parsed = updateCompetitionDraftRequestSchema.safeParse(

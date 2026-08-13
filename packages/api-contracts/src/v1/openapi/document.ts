@@ -1210,6 +1210,38 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/organizations/{organizationId}/competitions/{competitionId}/rankings": {
+      get: {
+        operationId: "getCompetitionRankings",
+        tags: ["statistics"],
+        summary: "Read competition player ranking snapshots",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+          {
+            name: "kind",
+            in: "query",
+            required: false,
+            schema: {
+              type: "string",
+              enum: ["scorer", "assister", "rating", "mvp", "goalkeeper"],
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Ranking snapshots for the competition",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GetCompetitionRankingsResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     "/organizations/{organizationId}/competitions/{competitionId}/team-management": {
       get: {
         operationId: "listCompetitionTeamManagement",
@@ -2755,6 +2787,65 @@ export const futrobOpenApiV1 = {
           teams: {
             type: "array",
             items: { $ref: "#/components/schemas/TeamCompetitionStats" },
+          },
+        },
+      },
+      RankingEligibility: {
+        type: "object",
+        required: ["minimumMatches", "minimumTeamMinutesRatio"],
+        properties: {
+          minimumMatches: { type: "integer", minimum: 0 },
+          minimumTeamMinutesRatio: { type: "number", minimum: 0, maximum: 1 },
+        },
+      },
+      RankingRow: {
+        type: "object",
+        required: ["position", "playerProfileId", "teamId", "value", "matchesPlayed", "minutes"],
+        properties: {
+          position: { type: "integer", minimum: 1 },
+          playerProfileId: { type: "string" },
+          teamId: { type: ["string", "null"] },
+          value: { type: "number" },
+          matchesPlayed: { type: "integer", minimum: 0 },
+          minutes: { type: "number", minimum: 0 },
+        },
+      },
+      RankingSnapshot: {
+        type: "object",
+        required: [
+          "competitionId",
+          "organizationId",
+          "kind",
+          "formulaVersion",
+          "eligibility",
+          "rows",
+          "sourceRevisionMax",
+          "updatedAt",
+        ],
+        properties: {
+          competitionId: { type: "string" },
+          organizationId: { type: "string" },
+          kind: {
+            type: "string",
+            enum: ["scorer", "assister", "rating", "mvp", "goalkeeper"],
+          },
+          formulaVersion: { type: "string", enum: ["player-ranking-v1"] },
+          eligibility: { $ref: "#/components/schemas/RankingEligibility" },
+          rows: {
+            type: "array",
+            items: { $ref: "#/components/schemas/RankingRow" },
+          },
+          sourceRevisionMax: { type: "integer", minimum: 0 },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      GetCompetitionRankingsResponse: {
+        type: "object",
+        required: ["rankings"],
+        properties: {
+          rankings: {
+            type: "array",
+            items: { $ref: "#/components/schemas/RankingSnapshot" },
           },
         },
       },
