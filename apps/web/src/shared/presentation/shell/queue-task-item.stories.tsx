@@ -14,7 +14,7 @@ import {
   UserPlusIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { cn } from "@futrob/ui";
+import { Alert, AlertDescription, AlertTitle, Button, cn } from "@futrob/ui";
 import type { ComponentProps, ReactNode } from "react";
 
 import { QueueTaskItem } from "./queue-task-item.tsx";
@@ -151,7 +151,7 @@ export const Density: Story = {
           title="Confirmar selección"
         />
       </QueuePanel>
-      <QueuePanel className="w-14" label="compact / icon rail">
+      <QueuePanel label="compact / icon rail" rail>
         <QueueTaskItem
           compact
           icon={CheckSquareIcon}
@@ -381,13 +381,15 @@ export const OrganizerContext: Story = {
 export const Empty: Story = {
   name: "Empty queue",
   render: () => (
-    <div className="w-72 rounded-xl border border-border bg-surface p-3">
-      <p className="mb-2 px-2.5 typo-label text-muted-foreground">Cola</p>
+    <div className="flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3">
+      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Cola</p>
       <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
-        <p className="text-sm font-medium text-foreground">Sin tareas pendientes</p>
-        <p className="typo-caption text-muted-foreground">
-          Las tareas del espacio activo aparecerán aquí.
-        </p>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-semibold text-pretty text-foreground">Sin tareas pendientes</p>
+          <p className="typo-caption font-medium text-pretty text-muted-foreground">
+            Las tareas del espacio activo aparecerán aquí.
+          </p>
+        </div>
       </div>
     </div>
   ),
@@ -396,9 +398,9 @@ export const Empty: Story = {
 export const Loading: Story = {
   name: "Loading",
   render: () => (
-    <div className="w-72 rounded-xl border border-border bg-surface p-3">
-      <p className="mb-2 px-2.5 typo-label text-muted-foreground">Cola</p>
-      <ul aria-busy="true" aria-label="Cargando cola" className="flex flex-col gap-2">
+    <div className="flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3">
+      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Cola</p>
+      <ul aria-busy="true" aria-label="Cargando cola" className="flex flex-col gap-2" role="status">
         <li className="h-10 animate-pulse rounded-lg bg-muted" />
         <li className="h-10 animate-pulse rounded-lg bg-muted" />
         <li className="h-10 animate-pulse rounded-lg bg-muted" />
@@ -410,12 +412,20 @@ export const Loading: Story = {
 export const ErrorState: Story = {
   name: "Error",
   render: () => (
-    <div className="w-72 rounded-xl border border-border bg-surface p-3">
-      <p className="mb-2 px-2.5 typo-label text-muted-foreground">Cola</p>
-      <div className="rounded-lg border border-border px-3 py-4 text-center" role="alert">
-        <p className="text-sm font-medium text-foreground">No se pudo cargar la cola</p>
-        <p className="typo-caption text-muted-foreground">Reintentar</p>
-      </div>
+    <div className="flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3">
+      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Cola</p>
+      <Alert className="gap-y-3" variant="destructive">
+        <WarningCircleIcon aria-hidden="true" />
+        <AlertTitle className="font-bold">No se pudo cargar la cola</AlertTitle>
+        <AlertDescription className="grid gap-4">
+          <span className="typo-caption font-medium text-pretty">
+            Conservamos el espacio activo para que puedas reintentar.
+          </span>
+          <Button dense type="button" variant="outline">
+            Reintentar
+          </Button>
+        </AlertDescription>
+      </Alert>
     </div>
   ),
 };
@@ -424,15 +434,36 @@ function QueuePanel({
   children,
   className,
   label,
+  rail = false,
 }: {
   readonly children: ReactNode;
   readonly className?: string;
   readonly label: string;
+  readonly rail?: boolean;
 }) {
+  const heading = (
+    <p className="typo-label font-semibold text-pretty text-muted-foreground">{label}</p>
+  );
+  const list = <ul className="flex flex-col gap-2">{children}</ul>;
+
+  if (rail) {
+    return (
+      <div className={cn("flex flex-col gap-4", className)}>
+        {heading}
+        <div className="w-fit rounded-2xl border border-border bg-surface p-2">{list}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("w-72 rounded-xl border border-border bg-surface p-3", className)}>
-      <p className="mb-2 px-2.5 typo-caption text-muted-foreground">{label}</p>
-      <ul className="flex flex-col gap-0.5">{children}</ul>
+    <div
+      className={cn(
+        "flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3",
+        className,
+      )}
+    >
+      <p className="px-2.5 typo-label font-semibold text-pretty text-muted-foreground">{label}</p>
+      {list}
     </div>
   );
 }
