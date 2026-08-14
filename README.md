@@ -115,7 +115,9 @@ Worker, provision it explicitly:
 npx wrangler secret put RATE_LIMIT_FINGERPRINT_SECRET --config apps/web/wrangler.jsonc
 ```
 
-The five protected BFF routes fail closed with 503 when the binding is missing. Rate-limit window
+Local `ENVIRONMENT=development` (see `apps/web/.dev.vars.example`) skips BFF rate limits so
+club search and invitation routes work without `CF-Connecting-IP`. Outside development, the
+five protected BFF routes fail closed with 503 when the binding is missing. Rate-limit window
 and attempt overrides are optional Wrangler vars; the defaults are listed in
 `apps/web/.dev.vars.example`.
 

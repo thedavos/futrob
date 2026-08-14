@@ -64,6 +64,10 @@ export class BffRateLimitUnavailableError extends Error {
   }
 }
 
+export function shouldBypassBffRateLimit(environment: string): boolean {
+  return environment === "development";
+}
+
 export async function enforceBffRateLimit(
   input: Readonly<{
     request: Request;
@@ -73,11 +77,18 @@ export async function enforceBffRateLimit(
   }>,
   dependencies: EnforceDependencies = {},
 ): Promise<Response | undefined> {
-  const connectingIp = input.request.headers.get("CF-Connecting-IP");
+  const earlyEnvironment = dependencies.environment ?? process.env.NODE_ENV;
+  if (earlyEnvironment && shouldBypassBffRateLimit(earlyEnvironment)) return undefined;
+
   let bindings = dependencies.bindings;
   if (!bindings && (!dependencies.limiter || !dependencies.fingerprintSecret)) {
     bindings = await loadWorkerBindings();
   }
+  const environment =
+    dependencies.environment ?? bindings?.ENVIRONMENT ?? process.env.NODE_ENV ?? "unknown";
+  if (shouldBypassBffRateLimit(environment)) return undefined;
+
+  const connectingIp = input.request.headers.get("CF-Connecting-IP");
   const fingerprintSecret =
     dependencies.fingerprintSecret ??
     bindings?.RATE_LIMIT_FINGERPRINT_SECRET ??
@@ -138,8 +149,6 @@ export async function enforceBffRateLimit(
     throw new BffRateLimitUnavailableError();
   }
   const logger = dependencies.logger ?? consoleRateLimitLogger;
-  const environment =
-    dependencies.environment ?? bindings?.ENVIRONMENT ?? process.env.NODE_ENV ?? "unknown";
 
   if (decision.outcome === "allowed") {
     logger.info({

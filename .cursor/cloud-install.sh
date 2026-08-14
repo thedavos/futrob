@@ -83,6 +83,12 @@ if grep -q '^RATE_LIMIT_FINGERPRINT_SECRET=replace-with-an-independent-random-se
   sed -i.bak "s|^RATE_LIMIT_FINGERPRINT_SECRET=.*|RATE_LIMIT_FINGERPRINT_SECRET=$(openssl rand -hex 32)|" apps/web/.dev.vars
   rm -f apps/web/.dev.vars.bak
 fi
+if ! grep -q '^RATE_LIMIT_FINGERPRINT_SECRET=' apps/web/.dev.vars; then
+  printf '\nRATE_LIMIT_FINGERPRINT_SECRET=%s\n' "$(openssl rand -hex 32)" >> apps/web/.dev.vars
+fi
+if ! grep -q '^ENVIRONMENT=' apps/web/.dev.vars; then
+  printf '\nENVIRONMENT=development\n' >> apps/web/.dev.vars
+fi
 
 if ! grep -q '^FUTROB_API_BASE_URL=' apps/web/.dev.vars; then
   printf '\nFUTROB_API_BASE_URL=http://localhost:8787/api/v1\n' >> apps/web/.dev.vars

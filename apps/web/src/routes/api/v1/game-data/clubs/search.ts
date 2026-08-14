@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/v1/game-data/clubs/search")({
     handlers: {
       GET: async ({ request }) => {
         try {
-          return runRateLimitedBffRequest({
+          return await runRateLimitedBffRequest({
             request,
             policy: BFF_RATE_LIMIT_POLICY.eaClubSearch,
             authenticate: () => createAuthenticatedProductApiClient(request),

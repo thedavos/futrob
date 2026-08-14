@@ -17,7 +17,7 @@ export const Route = createFileRoute("/api/v1/competitions/invitations/accept")(
     handlers: {
       POST: async ({ request }) => {
         try {
-          return runRateLimitedBffRequest({
+          return await runRateLimitedBffRequest({
             request,
             policy: BFF_RATE_LIMIT_POLICY.invitationAccept,
             authenticate: () => createAuthenticatedProductApiClient(request),
