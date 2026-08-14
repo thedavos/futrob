@@ -69,12 +69,25 @@ describe("teams persistence adapters", () => {
           externalClubId: "club-10",
           externalClubName: "Day Owls",
           imageUrl: null,
+          associatedAt: new Date("2026-07-31T12:00:01.000Z"),
         })
       ).externalClubId,
     ).toBe("club-10");
-    expect(await associations.findByPlayerProfile(profile.id)).toMatchObject({
-      externalClubId: "club-10",
-      imageUrl: null,
+    expect(await associations.listByPlayerProfile(profile.id)).toEqual([
+      expect.objectContaining({ externalClubId: "club-10", imageUrl: null }),
+      expect.objectContaining({ externalClubId: "club-9", imageUrl: association.imageUrl }),
+    ]);
+    expect(
+      await associations.upsertForPlayerProfile({
+        ...association,
+        externalClubName: "Night Owls Renamed",
+        imageUrl: "https://example.com/crests/l9b.png",
+        associatedAt: new Date("2026-07-31T12:00:05.000Z"),
+      }),
+    ).toMatchObject({
+      externalClubId: "club-9",
+      externalClubName: "Night Owls Renamed",
+      associatedAt: createdAt,
     });
   });
 

@@ -45,17 +45,17 @@ export function useWorkspaceSelection() {
   const teamsQuery = useMyTeamsQuery();
   const [override, setOverride] = useState<WorkspaceSelection | null>(null);
 
-  const associatedClub = useMemo(() => {
-    const club = profileQuery.data?.externalClub;
-    if (!club) return null;
-    return {
-      name: club.externalClubName,
-      imageUrl: club.imageUrl ?? null,
-      externalClubId: club.externalClubId,
-    };
-  }, [profileQuery.data?.externalClub]);
+  const associatedClubs = useMemo(
+    () =>
+      (profileQuery.data?.externalClubs ?? []).map((club) => ({
+        name: club.externalClubName,
+        imageUrl: club.imageUrl ?? null,
+        externalClubId: club.externalClubId,
+      })),
+    [profileQuery.data?.externalClubs],
+  );
 
-  const associatedClubName = associatedClub?.name ?? null;
+  const associatedClubName = associatedClubs[0]?.name ?? null;
 
   const memberships: readonly OrganizationSelectorOption[] = useMemo(
     () =>
@@ -141,16 +141,10 @@ export function useWorkspaceSelection() {
           name: competition.name,
           accessRole: accessRoleByCompetitionId.get(competition.competitionId) ?? null,
         })),
-        associatedClub: associatedClub
-          ? {
-              name: associatedClub.name,
-              imageUrl: associatedClub.imageUrl,
-              externalClubId: associatedClub.externalClubId,
-            }
-          : null,
+        associatedClubs,
         clubRosterRoles: [],
       }),
-    [accessRoleByCompetitionId, associatedClub, competitions, membershipsQuery.data?.memberships],
+    [accessRoleByCompetitionId, associatedClubs, competitions, membershipsQuery.data?.memberships],
   );
 
   const selection = useMemo(() => {
@@ -233,7 +227,7 @@ export function useWorkspaceSelection() {
     memberships,
     competitions,
     selectorModel,
-    associatedClub,
+    associatedClubs,
     associatedClubName,
     allowedPermissions,
     capability,

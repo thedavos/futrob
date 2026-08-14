@@ -26,7 +26,7 @@ export function AddClubDialog({
 }: {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
-  readonly onAssociated: () => void;
+  readonly onAssociated?: () => void;
 }) {
   const { t } = useI18n();
   const associate = useAssociateMyExternalClubMutation();
@@ -45,7 +45,7 @@ export function AddClubDialog({
       });
       onOpenChange(false);
       setSelected(null);
-      onAssociated();
+      onAssociated?.();
     } catch {
       setError(t("shell.workspace.addClub.failed"));
     }

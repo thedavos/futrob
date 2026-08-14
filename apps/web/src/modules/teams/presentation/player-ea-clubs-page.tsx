@@ -27,16 +27,15 @@ import { useMyPlayerProfileQuery } from "./player-queries.ts";
 
 export function PlayerEaClubsPage() {
   const profileQuery = useMyPlayerProfileQuery();
-  const club = profileQuery.data?.externalClub ?? null;
+  const clubs = profileQuery.data?.externalClubs ?? [];
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8 sm:py-14">
       <header className="space-y-3">
-        {club ? <p className="typo-label text-muted-foreground">{club.externalClubName}</p> : null}
         <div className="space-y-3">
           <h1 className="typo-heading">Clubes EA</h1>
           <p className="typo-subtitle max-w-xl text-muted-foreground">
-            Consulta el club de EA Clubs vinculado a tu perfil.
+            Consulta los clubes de EA vinculados a tu perfil.
           </p>
         </div>
       </header>
@@ -45,21 +44,20 @@ export function PlayerEaClubsPage() {
         {profileQuery.isError ? (
           <Alert variant="destructive">
             <AlertDescription>
-              No se pudo cargar el club. Comprueba la conexión e inténtalo de nuevo.
+              No se pudieron cargar los clubes. Comprueba la conexión e inténtalo de nuevo.
             </AlertDescription>
           </Alert>
         ) : null}
 
         {profileQuery.isPending ? (
-          <p className="typo-caption text-muted-foreground">Cargando club…</p>
-        ) : club ? (
-          <AssociatedClub club={club} />
+          <p className="typo-caption text-muted-foreground">Cargando clubes…</p>
+        ) : clubs.length > 0 ? (
+          clubs.map((club) => <AssociatedClub club={club} key={club.externalClubId} />)
         ) : (
           <EmptyState>
-            <EmptyStateTitle>Sin club asociado</EmptyStateTitle>
+            <EmptyStateTitle>Sin clubes asociados</EmptyStateTitle>
             <EmptyStateDescription>
-              Asocia un club de EA Clubs durante el onboarding para localizar partidos y
-              estadísticas.
+              Usa Añadir club en el selector de contexto para vincular un club de EA a tu perfil.
             </EmptyStateDescription>
             <EmptyStateActions>
               <Button render={<Link to="/player" />} variant="secondary">

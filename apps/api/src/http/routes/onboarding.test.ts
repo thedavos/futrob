@@ -151,7 +151,7 @@ describe("apps/api http onboarding", () => {
     expect(await completed.json()).toMatchObject({
       destination: "personal",
       gameAccount: null,
-      externalClub: null,
+      externalClubs: [],
     });
 
     const personalDestination = await app.request("/api/v1/organizations/post-auth-destination", {
@@ -233,26 +233,30 @@ describe("apps/api http onboarding", () => {
     expect(completed.status).toBe(200);
     expect(await completed.json()).toMatchObject({
       destination: "personal",
-      externalClub: {
-        externalClubId: "10754",
-        externalClubName: "Fera Enjaulada",
-        platform: "common-gen5",
-        gameEdition: "fc26",
-        imageUrl:
-          "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/fcweb/crests/256x256/l99160122.png",
-      },
+      externalClubs: [
+        {
+          externalClubId: "10754",
+          externalClubName: "Fera Enjaulada",
+          platform: "common-gen5",
+          gameEdition: "fc26",
+          imageUrl:
+            "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/fcweb/crests/256x256/l99160122.png",
+        },
+      ],
     });
 
     const profile = await app.request("/api/v1/players/me", {
       headers: serviceHeaders(actor),
     });
     expect(await profile.json()).toMatchObject({
-      externalClub: {
-        externalClubId: "10754",
-        externalClubName: "Fera Enjaulada",
-        imageUrl:
-          "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/fcweb/crests/256x256/l99160122.png",
-      },
+      externalClubs: [
+        {
+          externalClubId: "10754",
+          externalClubName: "Fera Enjaulada",
+          imageUrl:
+            "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/fcweb/crests/256x256/l99160122.png",
+        },
+      ],
     });
   });
 

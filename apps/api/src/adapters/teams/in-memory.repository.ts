@@ -30,17 +30,28 @@ export class InMemoryPlayerProfileRepository implements PlayerProfileRepository 
 export class InMemoryPlayerExternalClubAssociationRepository implements PlayerExternalClubAssociationRepository {
   readonly rows = new Map<string, PlayerExternalClubAssociation>();
 
-  async findByPlayerProfile(
+  private key(association: PlayerExternalClubAssociation) {
+    return `${association.playerProfileId}:${association.providerKey}:${association.externalClubId}`;
+  }
+
+  async listByPlayerProfile(
     playerProfileId: string,
-  ): Promise<PlayerExternalClubAssociation | null> {
-    return this.rows.get(playerProfileId) ?? null;
+  ): Promise<readonly PlayerExternalClubAssociation[]> {
+    return [...this.rows.values()]
+      .filter((row) => row.playerProfileId === playerProfileId)
+      .sort((a, b) => b.associatedAt.getTime() - a.associatedAt.getTime());
   }
 
   async upsertForPlayerProfile(
     association: PlayerExternalClubAssociation,
   ): Promise<PlayerExternalClubAssociation> {
-    this.rows.set(association.playerProfileId, association);
-    return association;
+    const key = this.key(association);
+    const existing = this.rows.get(key);
+    const next: PlayerExternalClubAssociation = existing
+      ? { ...association, associatedAt: existing.associatedAt }
+      : association;
+    this.rows.set(key, next);
+    return next;
   }
 }
 

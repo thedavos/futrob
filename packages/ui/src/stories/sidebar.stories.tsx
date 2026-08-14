@@ -134,6 +134,26 @@ function DemoAccountRow({
   );
 }
 
+function WorkspaceSectionHeader({
+  actionLabel,
+  title,
+}: {
+  readonly actionLabel: string;
+  readonly title: string;
+}) {
+  return (
+    <div className="flex items-center">
+      <DropdownMenuLabel className="min-w-0 flex-1 py-1.5 pe-1">{title}</DropdownMenuLabel>
+      <DropdownMenuItem
+        aria-label={actionLabel}
+        className="size-(--control-height-dense) min-h-(--control-height-dense) shrink-0 justify-center p-0 text-muted-foreground max-sm:size-(--control-height-touch) max-sm:min-h-(--control-height-touch)"
+      >
+        <PlusIcon aria-hidden="true" className="size-4" />
+      </DropdownMenuItem>
+    </div>
+  );
+}
+
 function DemoWorkspaceSelector({ dense = true }: { readonly dense?: boolean }) {
   return (
     <DropdownMenu>
@@ -157,7 +177,7 @@ function DemoWorkspaceSelector({ dense = true }: { readonly dense?: boolean }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-56">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Competiciones</DropdownMenuLabel>
+          <WorkspaceSectionHeader actionLabel="Crear competición" title="Competiciones" />
           <DropdownMenuItem>
             <TrophyIcon aria-hidden="true" className="size-4" />
             La Copa del Barrio
@@ -165,19 +185,12 @@ function DemoWorkspaceSelector({ dense = true }: { readonly dense?: boolean }) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Clubes EA</DropdownMenuLabel>
-          <DropdownMenuItem>
-            <PlusIcon aria-hidden="true" className="size-4" />
-            Añadir club
-          </DropdownMenuItem>
+          <WorkspaceSectionHeader actionLabel="Añadir club" title="Clubes EA" />
+          <DropdownMenuItem>Night Owls</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Organizaciones</DropdownMenuLabel>
-          <DropdownMenuItem>
-            <PlusIcon aria-hidden="true" className="size-4" />
-            Crear organización
-          </DropdownMenuItem>
+          <WorkspaceSectionHeader actionLabel="Crear organización" title="Organizaciones" />
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

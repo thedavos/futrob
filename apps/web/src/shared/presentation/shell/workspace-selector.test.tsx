@@ -17,8 +17,8 @@ afterEach(() => {
   cleanup();
 });
 
-function renderSelector() {
-  const model = buildWorkspaceSelectorModel({
+function renderSelector(
+  model = buildWorkspaceSelectorModel({
     memberships: [
       { organizationId: "org-1", name: "Acme", role: "organizer" },
       { organizationId: "org-2", name: "Beta", role: "staff" },
@@ -31,8 +31,9 @@ function renderSelector() {
         accessRole: "player",
       },
     ],
-    associatedClub: null,
-  });
+    associatedClubs: [],
+  }),
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -52,7 +53,7 @@ function renderSelector() {
 }
 
 describe("WorkspaceSelector", () => {
-  it("shows create competition and add club actions with role-aware option names", async () => {
+  it("shows create actions and role-aware option names", async () => {
     renderSelector();
 
     const trigger = screen.getByRole("button");
@@ -60,40 +61,50 @@ describe("WorkspaceSelector", () => {
 
     expect(await screen.findByRole("menuitem", { name: "Crear competición" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Añadir club" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "Crear organización" })).toBeTruthy();
     expect(screen.getByLabelText("Liga Norte, Organizador")).toBeTruthy();
     expect(screen.getByLabelText("Acme, Organizador")).toBeTruthy();
     expect(screen.getByLabelText("Beta, Staff")).toBeTruthy();
   });
 
-  it("keeps add club visible when a club is already associated", async () => {
+  it("lists associated clubs in the EA Clubs section", async () => {
     const model = buildWorkspaceSelectorModel({
       memberships: [],
       competitions: [],
-      associatedClub: {
-        name: "Fera",
-        imageUrl: null,
-        externalClubId: "club-1",
-      },
-    });
-    const client = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      associatedClubs: [
+        {
+          name: "Fera",
+          imageUrl: null,
+          externalClubId: "club-1",
+        },
+        {
+          name: "Night Owls",
+          imageUrl: null,
+          externalClubId: "club-2",
+        },
+      ],
     });
 
-    render(
-      <QueryClientProvider client={client}>
-        <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
-          <WorkspaceSelector
-            model={model}
-            onRequestAddClub={vi.fn<() => void>()}
-            onSelect={vi.fn<() => void>()}
-            selection={{ kind: WORKSPACE_SELECTION_KIND.personal }}
-          />
-        </I18nProvider>
-      </QueryClientProvider>,
-    );
+    renderSelector(model);
 
     screen.getByRole("button").click();
     expect(await screen.findByLabelText("Fera, Jugador")).toBeTruthy();
+    expect(screen.getByLabelText("Night Owls, Jugador")).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Añadir club" })).toBeTruthy();
+  });
+
+  it("shows empty copy in each section when lists are empty", async () => {
+    const model = buildWorkspaceSelectorModel({
+      memberships: [],
+      competitions: [],
+      associatedClubs: [],
+    });
+
+    renderSelector(model);
+
+    screen.getByRole("button").click();
+    expect(await screen.findByText("Sin competiciones todavía")).toBeTruthy();
+    expect(screen.getByText("Sin clubes todavía")).toBeTruthy();
+    expect(screen.getByText("Sin organizaciones todavía")).toBeTruthy();
   });
 });

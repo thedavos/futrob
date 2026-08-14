@@ -63,13 +63,18 @@ export function WorkspaceSelector({
   const { t } = useI18n();
   const [dialog, setDialog] = useState<CompetitionHostDialog>({ kind: "closed" });
 
-  const personalLabel =
-    model.club.kind === "associated" ? model.club.name : t("shell.workspace.addClub");
+  const personalLabel = model.clubs[0]?.name ?? t("shell.workspace.addClub");
 
   function choose(next: WorkspaceSelection) {
     writeStoredWorkspaceSelection(next);
     onSelect(next);
     void navigate({ to: pathForWorkspaceSelection(next) });
+  }
+
+  function chooseClub() {
+    writeStoredWorkspaceSelection({ kind: WORKSPACE_SELECTION_KIND.personal });
+    onSelect({ kind: WORKSPACE_SELECTION_KIND.personal });
+    void navigate({ to: "/player/ea-clubs" });
   }
 
   function handleCreateCompetition() {
@@ -103,7 +108,7 @@ export function WorkspaceSelector({
           }
         >
           <span className="flex min-w-0 items-center gap-2">
-            <SelectorTriggerIcon club={model.club} selection={selection} />
+            <SelectorTriggerIcon clubs={model.clubs} selection={selection} />
             <span className="truncate">
               {selectorTriggerLabel(
                 selection,
@@ -121,7 +126,11 @@ export function WorkspaceSelector({
         <DropdownMenuContent align="start" className="min-w-56">
           <TooltipProvider>
             <DropdownMenuGroup>
-              <DropdownMenuLabel>{t("shell.workspace.competitions")}</DropdownMenuLabel>
+              <SectionHeaderAction
+                actionLabel={t("shell.workspace.createCompetition")}
+                onAction={handleCreateCompetition}
+                title={t("shell.workspace.competitions")}
+              />
               {model.competitions.length === 0 ? (
                 <DropdownMenuItem disabled>{t("shell.workspace.noCompetitions")}</DropdownMenuItem>
               ) : (
@@ -142,51 +151,54 @@ export function WorkspaceSelector({
                   />
                 ))
               )}
-              <DropdownMenuItem onClick={handleCreateCompetition}>
-                <PlusIcon aria-hidden="true" className="size-4 shrink-0" />
-                <span className="truncate">{t("shell.workspace.createCompetition")}</span>
-              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuLabel>{t("shell.workspace.eaClubs")}</DropdownMenuLabel>
-              {model.club.kind === "associated" ? (
-                <AssociatedClubMenuItem
-                  club={model.club}
-                  onSelect={() => choose({ kind: WORKSPACE_SELECTION_KIND.personal })}
-                />
-              ) : null}
-              <DropdownMenuItem onClick={onRequestAddClub}>
-                <PlusIcon aria-hidden="true" className="size-4 shrink-0" />
-                <span className="truncate">{t("shell.workspace.addClub")}</span>
-              </DropdownMenuItem>
+              <SectionHeaderAction
+                actionLabel={t("shell.workspace.addClub")}
+                onAction={onRequestAddClub}
+                title={t("shell.workspace.eaClubs")}
+              />
+              {model.clubs.length === 0 ? (
+                <DropdownMenuItem disabled>{t("shell.workspace.noClubs")}</DropdownMenuItem>
+              ) : (
+                model.clubs.map((club) => (
+                  <AssociatedClubMenuItem
+                    club={club}
+                    key={club.externalClubId}
+                    onSelect={chooseClub}
+                  />
+                ))
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuLabel>{t("shell.workspace.organizations")}</DropdownMenuLabel>
-              {model.organizations.map((membership) => (
-                <RoleAwareMenuItem
-                  EntityIcon={BuildingsIcon}
-                  key={membership.organizationId}
-                  name={membership.name}
-                  onSelect={() =>
-                    choose({
-                      kind: WORKSPACE_SELECTION_KIND.organization,
-                      organizationId: membership.organizationId,
-                      label: membership.name,
-                    })
-                  }
-                  role={membership.role}
-                />
-              ))}
-              <DropdownMenuItem
-                onClick={() => {
+              <SectionHeaderAction
+                actionLabel={t("shell.workspace.createOrganization")}
+                onAction={() => {
                   void navigate({ to: "/orgs/new" });
                 }}
-              >
-                <PlusIcon aria-hidden="true" className="size-4 shrink-0" />
-                <span className="truncate">{t("shell.workspace.createOrganization")}</span>
-              </DropdownMenuItem>
+                title={t("shell.workspace.organizations")}
+              />
+              {model.organizations.length === 0 ? (
+                <DropdownMenuItem disabled>{t("shell.workspace.noOrganizations")}</DropdownMenuItem>
+              ) : (
+                model.organizations.map((membership) => (
+                  <RoleAwareMenuItem
+                    EntityIcon={BuildingsIcon}
+                    key={membership.organizationId}
+                    name={membership.name}
+                    onSelect={() =>
+                      choose({
+                        kind: WORKSPACE_SELECTION_KIND.organization,
+                        organizationId: membership.organizationId,
+                        label: membership.name,
+                      })
+                    }
+                    role={membership.role}
+                  />
+                ))
+              )}
             </DropdownMenuGroup>
           </TooltipProvider>
         </DropdownMenuContent>
@@ -269,6 +281,34 @@ export function WorkspaceSelector({
   );
 }
 
+function SectionHeaderAction({
+  title,
+  actionLabel,
+  onAction,
+}: {
+  readonly title: string;
+  readonly actionLabel: string;
+  readonly onAction: () => void;
+}) {
+  return (
+    <div className="flex items-center">
+      <DropdownMenuLabel className="min-w-0 flex-1 py-1.5 pe-1">{title}</DropdownMenuLabel>
+      <DropdownMenuItem
+        aria-label={actionLabel}
+        className="size-(--control-height-dense) min-h-(--control-height-dense) shrink-0 justify-center p-0 text-muted-foreground max-sm:size-(--control-height-touch) max-sm:min-h-(--control-height-touch)"
+        onClick={onAction}
+      >
+        <Tooltip>
+          <TooltipTrigger render={<span className="inline-flex" tabIndex={-1} />}>
+            <PlusIcon aria-hidden="true" className="size-4" />
+          </TooltipTrigger>
+          <TooltipContent>{actionLabel}</TooltipContent>
+        </Tooltip>
+      </DropdownMenuItem>
+    </div>
+  );
+}
+
 function RoleAwareMenuItem({
   name,
   role,
@@ -301,7 +341,7 @@ function AssociatedClubMenuItem({
   club,
   onSelect,
 }: {
-  readonly club: Extract<WorkspaceSelectorClubOption, { kind: "associated" }>;
+  readonly club: WorkspaceSelectorClubOption;
   readonly onSelect: () => void;
 }) {
   const { t } = useI18n();
@@ -341,19 +381,21 @@ function RoleIcon({ role }: { readonly role: WorkspaceDisplayRole }) {
 
 function SelectorTriggerIcon({
   selection,
-  club,
+  clubs,
 }: {
   readonly selection: WorkspaceSelection;
-  readonly club: WorkspaceSelectorClubOption;
+  readonly clubs: readonly WorkspaceSelectorClubOption[];
 }) {
   const className = "size-4 shrink-0 text-muted-foreground";
   switch (selection.kind) {
-    case WORKSPACE_SELECTION_KIND.personal:
-      return club.kind === "associated" ? (
+    case WORKSPACE_SELECTION_KIND.personal: {
+      const club = clubs[0];
+      return club ? (
         <ClubCrestAvatar imageUrl={club.imageUrl} name={club.name} />
       ) : (
         <PlusIcon aria-hidden="true" className={className} />
       );
+    }
     case WORKSPACE_SELECTION_KIND.organization:
       return <BuildingsIcon aria-hidden="true" className={className} />;
     case WORKSPACE_SELECTION_KIND.competition:

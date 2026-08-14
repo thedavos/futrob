@@ -152,7 +152,7 @@ export type CompletePlayerOnboardingRequest = z.infer<typeof completePlayerOnboa
 export const completePlayerOnboardingResponseSchema = z.object({
   profile: playerProfileSchema,
   gameAccount: playerGameAccountSchema.nullable(),
-  externalClub: playerExternalClubAssociationSchema.nullable(),
+  externalClubs: z.array(playerExternalClubAssociationSchema),
   destination: z.literal("personal"),
 });
 export type CompletePlayerOnboardingResponse = z.infer<

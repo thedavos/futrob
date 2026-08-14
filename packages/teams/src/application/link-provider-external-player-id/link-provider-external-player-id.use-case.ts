@@ -7,9 +7,7 @@ import {
 } from "../../domain/errors/team.errors.ts";
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 
-export type LinkProviderExternalPlayerIdError =
-  | AddPlayerGameAccountError
-  | GameAccountNotFound;
+export type LinkProviderExternalPlayerIdError = AddPlayerGameAccountError | GameAccountNotFound;
 
 export interface LinkProviderExternalPlayerIdInput {
   readonly accountId: string;

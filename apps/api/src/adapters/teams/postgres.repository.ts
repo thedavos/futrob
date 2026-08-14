@@ -46,17 +46,18 @@ export class PostgresPlayerProfileRepository implements PlayerProfileRepository 
 export class PostgresPlayerExternalClubAssociationRepository implements PlayerExternalClubAssociationRepository {
   constructor(private readonly pool: Pool) {}
 
-  async findByPlayerProfile(
+  async listByPlayerProfile(
     playerProfileId: string,
-  ): Promise<PlayerExternalClubAssociation | null> {
+  ): Promise<readonly PlayerExternalClubAssociation[]> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT player_profile_id, provider_key, external_club_id, external_club_name,
               platform, game_edition, image_url, associated_at
        FROM player_external_club_associations
-       WHERE player_profile_id = $1`,
+       WHERE player_profile_id = $1
+       ORDER BY associated_at DESC`,
       [playerProfileId],
     );
-    return result.rows[0] ? rehydrateAssociation(result.rows[0]) : null;
+    return result.rows.map(rehydrateAssociation);
   }
 
   async upsertForPlayerProfile(
@@ -67,14 +68,11 @@ export class PostgresPlayerExternalClubAssociationRepository implements PlayerEx
          player_profile_id, provider_key, external_club_id, external_club_name,
          platform, game_edition, image_url, associated_at
        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT (player_profile_id) DO UPDATE SET
-         provider_key = EXCLUDED.provider_key,
-         external_club_id = EXCLUDED.external_club_id,
+       ON CONFLICT (player_profile_id, provider_key, external_club_id) DO UPDATE SET
          external_club_name = EXCLUDED.external_club_name,
          platform = EXCLUDED.platform,
          game_edition = EXCLUDED.game_edition,
-         image_url = EXCLUDED.image_url,
-         associated_at = EXCLUDED.associated_at
+         image_url = EXCLUDED.image_url
        RETURNING player_profile_id, provider_key, external_club_id, external_club_name,
                  platform, game_edition, image_url, associated_at`,
       [

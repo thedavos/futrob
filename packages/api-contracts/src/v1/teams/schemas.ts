@@ -55,7 +55,7 @@ export type PlayerExternalClubAssociationDto = z.infer<typeof playerExternalClub
 export const getMyPlayerProfileResponseSchema = z.object({
   profile: playerProfileSchema.nullable(),
   gameAccounts: z.array(playerGameAccountSchema),
-  externalClub: playerExternalClubAssociationSchema.nullable(),
+  externalClubs: z.array(playerExternalClubAssociationSchema),
 });
 export type GetMyPlayerProfileResponse = z.infer<typeof getMyPlayerProfileResponseSchema>;
 

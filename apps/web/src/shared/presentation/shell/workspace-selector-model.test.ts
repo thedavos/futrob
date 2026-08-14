@@ -17,7 +17,7 @@ describe("buildWorkspaceSelectorModel", () => {
           accessRole: "player",
         },
       ],
-      associatedClub: null,
+      associatedClubs: [],
     });
 
     expect(model.competitions[0]?.role).toBe(WORKSPACE_DISPLAY_ROLE.organizer);
@@ -34,7 +34,7 @@ describe("buildWorkspaceSelectorModel", () => {
           accessRole: "captain",
         },
       ],
-      associatedClub: null,
+      associatedClubs: [],
     });
 
     expect(model.competitions[0]?.role).toBe(WORKSPACE_DISPLAY_ROLE.staff);
@@ -51,7 +51,7 @@ describe("buildWorkspaceSelectorModel", () => {
           accessRole: "vice_captain",
         },
       ],
-      associatedClub: null,
+      associatedClubs: [],
     });
 
     expect(model.competitions[0]?.role).toBe(WORKSPACE_DISPLAY_ROLE.vice_captain);
@@ -67,7 +67,7 @@ describe("buildWorkspaceSelectorModel", () => {
           name: "Liga Norte",
         },
       ],
-      associatedClub: null,
+      associatedClubs: [],
     });
 
     expect(model.competitions[0]?.role).toBe(WORKSPACE_DISPLAY_ROLE.player);
@@ -80,7 +80,7 @@ describe("buildWorkspaceSelectorModel", () => {
         { organizationId: "org-2", name: "Beta", role: "member" },
       ],
       competitions: [],
-      associatedClub: null,
+      associatedClubs: [],
     });
 
     expect(model.organizations.map((item) => item.role)).toEqual([
@@ -93,61 +93,81 @@ describe("buildWorkspaceSelectorModel", () => {
     const model = buildWorkspaceSelectorModel({
       memberships: [],
       competitions: [],
-      associatedClub: {
-        name: "Fera",
-        imageUrl: null,
-        externalClubId: "club-1",
-      },
+      associatedClubs: [
+        {
+          name: "Fera",
+          imageUrl: null,
+          externalClubId: "club-1",
+        },
+      ],
       clubRosterRoles: [{ externalClubId: "other", role: "captain" }],
     });
 
-    expect(model.club).toEqual({
-      kind: "associated",
-      name: "Fera",
-      imageUrl: null,
-      role: WORKSPACE_DISPLAY_ROLE.player,
-    });
+    expect(model.clubs).toEqual([
+      {
+        externalClubId: "club-1",
+        name: "Fera",
+        imageUrl: null,
+        role: WORKSPACE_DISPLAY_ROLE.player,
+      },
+    ]);
   });
 
-  it("picks the highest roster role for the associated club", () => {
+  it("picks the highest roster role for each associated club", () => {
     const model = buildWorkspaceSelectorModel({
       memberships: [],
       competitions: [],
-      associatedClub: {
-        name: "Fera",
-        imageUrl: "https://example.com/crest.png",
-        externalClubId: "club-1",
-      },
+      associatedClubs: [
+        {
+          name: "Fera",
+          imageUrl: "https://example.com/crest.png",
+          externalClubId: "club-1",
+        },
+        {
+          name: "Night Owls",
+          imageUrl: null,
+          externalClubId: "club-2",
+        },
+      ],
       clubRosterRoles: [
         { externalClubId: "club-1", role: "player" },
         { externalClubId: "club-1", role: "vice_captain" },
         { externalClubId: "club-1", role: "captain" },
+        { externalClubId: "club-2", role: "player" },
       ],
     });
 
-    expect(model.club).toEqual({
-      kind: "associated",
-      name: "Fera",
-      imageUrl: "https://example.com/crest.png",
-      role: WORKSPACE_DISPLAY_ROLE.captain,
-    });
+    expect(model.clubs).toEqual([
+      {
+        externalClubId: "club-1",
+        name: "Fera",
+        imageUrl: "https://example.com/crest.png",
+        role: WORKSPACE_DISPLAY_ROLE.captain,
+      },
+      {
+        externalClubId: "club-2",
+        name: "Night Owls",
+        imageUrl: null,
+        role: WORKSPACE_DISPLAY_ROLE.player,
+      },
+    ]);
   });
 
-  it("exposes add-club when no club is associated", () => {
+  it("returns no clubs when none are associated", () => {
     const model = buildWorkspaceSelectorModel({
       memberships: [],
       competitions: [],
-      associatedClub: null,
+      associatedClubs: [],
     });
 
-    expect(model.club).toEqual({ kind: "add" });
+    expect(model.clubs).toEqual([]);
   });
 
   it("resolves create-competition intent for 0, 1, and 2+ eligible orgs", () => {
     const none = buildWorkspaceSelectorModel({
       memberships: [{ organizationId: "org-1", name: "Acme", role: "member" }],
       competitions: [],
-      associatedClub: null,
+      associatedClubs: [],
     });
     expect(none.createCompetitionIntent).toEqual({ kind: "create-organization" });
     expect(none.eligibleHostOrganizations).toEqual([]);
@@ -155,7 +175,7 @@ describe("buildWorkspaceSelectorModel", () => {
     const one = buildWorkspaceSelectorModel({
       memberships: [{ organizationId: "org-1", name: "Acme", role: "staff" }],
       competitions: [],
-      associatedClub: null,
+      associatedClubs: [],
     });
     expect(one.createCompetitionIntent).toEqual({
       kind: "navigate",
@@ -168,7 +188,7 @@ describe("buildWorkspaceSelectorModel", () => {
         { organizationId: "org-2", name: "Beta", role: "staff" },
       ],
       competitions: [],
-      associatedClub: null,
+      associatedClubs: [],
     });
     expect(many.createCompetitionIntent).toEqual({
       kind: "pick-organization",

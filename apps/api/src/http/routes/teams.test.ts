@@ -354,7 +354,7 @@ describe("apps/api http teams", () => {
       headers: serviceHeaders(actor),
     });
     expect(await profile.json()).toMatchObject({
-      externalClub: { externalClubId: "10754", externalClubName: "Fera Enjaulada" },
+      externalClubs: [{ externalClubId: "10754", externalClubName: "Fera Enjaulada" }],
     });
   });
 });

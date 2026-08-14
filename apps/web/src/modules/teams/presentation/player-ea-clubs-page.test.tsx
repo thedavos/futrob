@@ -46,20 +46,32 @@ describe("PlayerEaClubsPage", () => {
     vi.unstubAllGlobals();
   });
 
-  it("shows the associated club with its crest from the profile", async () => {
+  it("lists associated clubs with crests", async () => {
     getMyProfile.mockResolvedValue({
       profile: { id: "p1", createdAt: "2026-08-01T00:00:00.000Z" },
       gameAccounts: [],
-      externalClub: {
-        playerProfileId: "p1",
-        providerKey: "ea-clubs",
-        externalClubId: "10754",
-        externalClubName: "Night Owls",
-        platform: "common-gen5",
-        gameEdition: "fc26",
-        imageUrl: "https://example.com/crest.png",
-        associatedAt: "2026-08-01T12:00:00.000Z",
-      },
+      externalClubs: [
+        {
+          playerProfileId: "p1",
+          providerKey: "ea-clubs",
+          externalClubId: "10754",
+          externalClubName: "Night Owls",
+          platform: "common-gen5",
+          gameEdition: "fc26",
+          imageUrl: "https://example.com/crest.png",
+          associatedAt: "2026-08-01T12:00:00.000Z",
+        },
+        {
+          playerProfileId: "p1",
+          providerKey: "ea-clubs",
+          externalClubId: "22110",
+          externalClubName: "Fera",
+          platform: "ps5",
+          gameEdition: "fc26",
+          imageUrl: null,
+          associatedAt: "2026-08-01T11:00:00.000Z",
+        },
+      ],
     });
 
     render(
@@ -71,10 +83,10 @@ describe("PlayerEaClubsPage", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Clubes EA" })).toBeTruthy();
       expect(screen.getByRole("heading", { name: "Night Owls" })).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Fera" })).toBeTruthy();
     });
     expect(screen.getByText(/ID 10754/)).toBeTruthy();
-    // Club name also appears as the page label above the heading.
-    expect(screen.getAllByText("Night Owls").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/ID 22110/)).toBeTruthy();
     await waitFor(() => {
       expect(document.querySelector('[data-slot="avatar-image"]')).toBeTruthy();
     });
@@ -84,7 +96,7 @@ describe("PlayerEaClubsPage", () => {
     getMyProfile.mockResolvedValue({
       profile: { id: "p1", createdAt: "2026-08-01T00:00:00.000Z" },
       gameAccounts: [],
-      externalClub: null,
+      externalClubs: [],
     });
 
     render(
@@ -94,7 +106,7 @@ describe("PlayerEaClubsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Sin club asociado")).toBeTruthy();
+      expect(screen.getByText("Sin clubes asociados")).toBeTruthy();
     });
     expect(screen.getByRole("button", { name: "Ir al espacio personal" })).toBeTruthy();
   });

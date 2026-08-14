@@ -9,7 +9,7 @@ import type { PlayerProfileRepository } from "../../domain/ports/player-profile.
 export interface PlayerProfileDetails {
   readonly profile: PlayerProfile | null;
   readonly gameAccounts: readonly PlayerGameAccount[];
-  readonly externalClub: PlayerExternalClubAssociation | null;
+  readonly externalClubs: readonly PlayerExternalClubAssociation[];
 }
 
 export class GetPlayerProfileUseCase {
@@ -22,12 +22,12 @@ export class GetPlayerProfileUseCase {
   async execute(input: { readonly actorId: ActorId }): Promise<PlayerProfileDetails> {
     const profile = await this.profiles.findByActor(input.actorId);
     if (!profile) {
-      return { profile: null, gameAccounts: [], externalClub: null };
+      return { profile: null, gameAccounts: [], externalClubs: [] };
     }
-    const [gameAccounts, externalClub] = await Promise.all([
+    const [gameAccounts, externalClubs] = await Promise.all([
       this.accounts.listByProfile(profile.id),
-      this.associations.findByPlayerProfile(profile.id),
+      this.associations.listByPlayerProfile(profile.id),
     ]);
-    return { profile, gameAccounts, externalClub };
+    return { profile, gameAccounts, externalClubs };
   }
 }

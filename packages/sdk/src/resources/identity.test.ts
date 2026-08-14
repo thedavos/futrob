@@ -105,7 +105,7 @@ describe("createFutrobClient identity", () => {
         return Response.json({
           profile,
           gameAccount: null,
-          externalClub: null,
+          externalClubs: [],
           destination: "personal",
         });
       }) as typeof fetch,

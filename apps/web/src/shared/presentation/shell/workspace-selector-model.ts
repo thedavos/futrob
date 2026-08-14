@@ -59,19 +59,17 @@ export type WorkspaceSelectorOrgOption = {
   readonly role: WorkspaceDisplayRole;
 };
 
-export type WorkspaceSelectorClubOption =
-  | {
-      readonly kind: "associated";
-      readonly name: string;
-      readonly imageUrl: string | null;
-      readonly role: WorkspaceDisplayRole;
-    }
-  | { readonly kind: "add" };
+export type WorkspaceSelectorClubOption = {
+  readonly externalClubId: string;
+  readonly name: string;
+  readonly imageUrl: string | null;
+  readonly role: WorkspaceDisplayRole;
+};
 
 export type WorkspaceSelectorModel = {
   readonly competitions: readonly WorkspaceSelectorCompetitionOption[];
   readonly organizations: readonly WorkspaceSelectorOrgOption[];
-  readonly club: WorkspaceSelectorClubOption;
+  readonly clubs: readonly WorkspaceSelectorClubOption[];
   readonly eligibleHostOrganizations: readonly WorkspaceSelectorOrgOption[];
   readonly createCompetitionIntent: CreateCompetitionOrgIntent;
 };
@@ -94,7 +92,7 @@ const ROSTER_ROLE_RANK: Readonly<Record<RosterRoleInput, number>> = {
 export function buildWorkspaceSelectorModel(input: {
   readonly memberships: readonly WorkspaceSelectorMembershipInput[];
   readonly competitions: readonly WorkspaceSelectorCompetitionInput[];
-  readonly associatedClub: WorkspaceSelectorClubInput | null;
+  readonly associatedClubs: readonly WorkspaceSelectorClubInput[];
   readonly clubRosterRoles?: readonly WorkspaceSelectorClubRosterInput[];
 }): WorkspaceSelectorModel {
   const organizations = input.memberships.map((membership) => ({
@@ -123,10 +121,12 @@ export function buildWorkspaceSelectorModel(input: {
       organization.role === WORKSPACE_DISPLAY_ROLE.staff,
   );
 
+  const clubRosterRoles = input.clubRosterRoles ?? [];
+
   return {
     competitions,
     organizations,
-    club: resolveClubOption(input.associatedClub, input.clubRosterRoles ?? []),
+    clubs: input.associatedClubs.map((club) => resolveClubOption(club, clubRosterRoles)),
     eligibleHostOrganizations,
     createCompetitionIntent: resolveCreateCompetitionIntent(eligibleHostOrganizations),
   };
@@ -165,10 +165,9 @@ function resolveCompetitionDisplayRole(input: {
 }
 
 function resolveClubOption(
-  associatedClub: WorkspaceSelectorClubInput | null,
+  associatedClub: WorkspaceSelectorClubInput,
   clubRosterRoles: readonly WorkspaceSelectorClubRosterInput[],
 ): WorkspaceSelectorClubOption {
-  if (!associatedClub) return { kind: "add" };
   const matching = clubRosterRoles.filter(
     (item) => item.externalClubId === associatedClub.externalClubId,
   );
@@ -179,7 +178,7 @@ function resolveClubOption(
           ROSTER_ROLE_RANK[item.role] > ROSTER_ROLE_RANK[best.role] ? item : best,
         ).role;
   return {
-    kind: "associated",
+    externalClubId: associatedClub.externalClubId,
     name: associatedClub.name,
     imageUrl: associatedClub.imageUrl,
     role,

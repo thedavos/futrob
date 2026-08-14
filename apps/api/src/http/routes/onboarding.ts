@@ -247,21 +247,22 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
         const player = await ensurePlayer(teams, actorId, parsed.data.gameAccount ?? null);
         if (!player.ok) throw player.error;
 
-        let externalClub: PlayerExternalClubAssociation | null = null;
+        let externalClubs: PlayerExternalClubAssociation[] = [];
         if (resolvedClub) {
           const associated = await teams.associatePlayerExternalClub.execute({
             playerProfileId: player.profile.id,
             club: resolvedClub,
           });
           if (!associated.isOk()) throw associated.error;
-          externalClub = associated.value;
         }
+        const details = await teams.getPlayerProfile.execute({ actorId });
+        externalClubs = [...details.externalClubs];
 
         await identity.completeOnboarding.execute({ actorId, path: "player" });
         return completePlayerOnboardingResponseSchema.parse({
           profile: playerProfileDto(player.profile),
           gameAccount: player.gameAccount ? playerGameAccountDto(player.gameAccount) : null,
-          externalClub: externalClub ? playerExternalClubAssociationDto(externalClub) : null,
+          externalClubs: externalClubs.map(playerExternalClubAssociationDto),
           destination: "personal",
         });
       });
