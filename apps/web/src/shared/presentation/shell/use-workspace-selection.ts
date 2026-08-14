@@ -35,6 +35,7 @@ import {
   writeStoredWorkspaceSelection,
 } from "./workspace-selection-storage.ts";
 import { buildWorkspaceSelectorModel } from "./workspace-selector-model.ts";
+import { commandBarIdentity } from "./command-bar-identity.ts";
 
 export function useWorkspaceSelection() {
   const queryClient = useQueryClient();
@@ -56,6 +57,14 @@ export function useWorkspaceSelection() {
   );
 
   const associatedClubName = associatedClubs[0]?.name ?? null;
+  const playerIdentity = useMemo(
+    () =>
+      commandBarIdentity({
+        gameAccounts: profileQuery.data?.gameAccounts ?? [],
+        clubs: associatedClubs,
+      }),
+    [associatedClubs, profileQuery.data?.gameAccounts],
+  );
 
   const memberships: readonly OrganizationSelectorOption[] = useMemo(
     () =>
@@ -229,6 +238,8 @@ export function useWorkspaceSelection() {
     selectorModel,
     associatedClubs,
     associatedClubName,
+    playerIdentity,
+    playerIdentityReady: !profileQuery.isPending,
     allowedPermissions,
     capability,
     effectiveAccessQuery,

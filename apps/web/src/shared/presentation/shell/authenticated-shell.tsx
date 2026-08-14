@@ -67,12 +67,20 @@ import { WorkspaceSelector } from "@/shared/presentation/shell/workspace-selecto
 import type { WorkspaceSelectorModel } from "@/shared/presentation/shell/workspace-selector-model.ts";
 import { AddClubDialog } from "@/modules/teams/presentation/add-club-dialog.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import {
+  commandBarIdentityLabel,
+  type CommandBarIdentity,
+} from "@/shared/presentation/shell/command-bar-identity.ts";
+import { CommandBarIdentityMark } from "@/shared/presentation/shell/command-bar-identity-mark.tsx";
 
 export function AuthenticatedShell({ children }: { readonly children: ReactNode }) {
+  const { t } = useI18n();
   const selectionState = useWorkspaceSelection();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const title = pageTitleFor(pathname, selectionState.selection);
+  const identityLabel = selectionState.playerIdentityReady
+    ? commandBarIdentityLabel(selectionState.playerIdentity, t("player.workspace.eyebrow"))
+    : "";
   const commands = commandsFor(
     pathname,
     selectionState.selection,
@@ -121,14 +129,15 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
               onSelect={selectionState.select}
               pathname={pathname}
               selection={selectionState.selection}
-              title={title}
+              title={identityLabel}
             />
           </SidebarRail>
           <CommandBar
             commands={commands}
+            identity={selectionState.playerIdentity}
+            identityReady={selectionState.playerIdentityReady}
             onAddClub={() => setAddClubOpen(true)}
             selection={selectionState.selection}
-            title={title}
           />
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" id="app-main">
             {children}
@@ -149,22 +158,27 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
 }
 
 function CommandBar({
-  title,
   commands,
+  identity,
+  identityReady,
   selection,
   onAddClub,
 }: {
-  readonly title: string;
   readonly commands: ReturnType<typeof commandsFor>;
+  readonly identity: CommandBarIdentity;
+  readonly identityReady: boolean;
   readonly selection: WorkspaceSelection;
   readonly onAddClub: () => void;
 }) {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const emptyLabel = t("player.workspace.eyebrow");
 
   return (
     <header className="hidden h-14 shrink-0 items-center gap-3 border-b border-border px-4 md:flex">
-      <h1 className="typo-heading min-w-0 flex-1 truncate text-lg">{title}</h1>
+      <div className="flex min-w-0 flex-1 items-center">
+        <CommandBarIdentityMark emptyLabel={emptyLabel} identity={identity} ready={identityReady} />
+      </div>
       {commands.length > 0 ? (
         <div className="flex shrink-0 items-center gap-2">
           {commands.map((command) => (
@@ -488,23 +502,4 @@ function abbreviatedDisplayName(name: string): string {
   }
   const first = trimmed.split(/\s+/).find(Boolean) ?? trimmed;
   return first.length > 14 ? `${first.slice(0, 12)}…` : first;
-}
-
-function pageTitleFor(pathname: string, selection: WorkspaceSelection): string {
-  if (pathname.includes("/ea-clubs")) return "Clubes EA";
-  if (pathname.includes("/game-accounts")) return "Datos de juego";
-  if (pathname.includes("/competitions/") && pathname.includes("/setup")) {
-    return "Configuración de competición";
-  }
-  if (/\/orgs\/[^/]+\/competitions\/new$/.test(pathname)) return "Nueva competición";
-  if (/\/orgs\/[^/]+\/competitions\/?$/.test(pathname)) return "Competiciones";
-  if (pathname.startsWith("/player/competitions")) return "Competiciones";
-  if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
-    return selection.label ?? "Competición";
-  }
-  if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
-    return selection.label ?? "Organización";
-  }
-  if (pathname.startsWith("/player")) return "Espacio personal";
-  return "Futrob";
 }
