@@ -44,13 +44,22 @@ export const eaClubInfoMapSchema = z.record(z.string(), eaClubInfoSchema);
 
 export type EaClubInfoMap = z.infer<typeof eaClubInfoMapSchema>;
 
+export const eaMatchClubDetailsSchema = z
+  .object({
+    name: z.string().optional(),
+    clubId: eaIdAsString.optional(),
+    customKit: eaCustomKitSchema.optional(),
+  })
+  .passthrough();
+
 export const eaMatchClubSchema = z
   .object({
     goals: eaNumeric,
     score: eaNumeric,
     goalsAgainst: eaNumeric,
     winnerByDnf: eaNumeric,
-    details: eaClubInfoSchema.optional(),
+    TEAM: eaIdAsString.optional(),
+    details: eaMatchClubDetailsSchema.optional(),
   })
   .passthrough();
 
@@ -90,4 +99,15 @@ export const eaClubMatchSchema = z
 
 export type EaClubMatch = z.infer<typeof eaClubMatchSchema>;
 
-export const eaClubMatchesResponseSchema = z.array(eaClubMatchSchema);
+/** EA returns `[]` when a match type has games, and `{}` (or null) when it has none. */
+export const eaClubMatchesResponseSchema = z
+  .unknown()
+  .transform((value) => (Array.isArray(value) ? value : []))
+  .pipe(
+    z.array(z.unknown()).transform((items) =>
+      items.flatMap((item) => {
+        const parsed = eaClubMatchSchema.safeParse(item);
+        return parsed.success ? [parsed.data] : [];
+      }),
+    ),
+  );

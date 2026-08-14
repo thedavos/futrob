@@ -53,12 +53,12 @@ Los roles son contextuales. Un usuario puede ser organizador en una organizació
 
 ### Espacio personal del jugador
 
-Un jugador autenticado puede crear o mantener su perfil personal sin crear una organización ni aceptar una invitación. Desde ese espacio puede registrar su identificador de EA, consultar sus partidos y visualizar estadísticas individuales derivadas de resultados oficiales aprobados. Futrob confía en el identificador declarado y no verifica que el actor sea propietario de la cuenta.
+Un jugador autenticado puede crear o mantener su perfil personal sin crear una organización ni aceptar una invitación. Desde ese espacio puede registrar su identificador de EA, consultar Mis partidos y visualizar Mis estadísticas. Futrob confía en el identificador declarado y no verifica que el actor sea propietario de la cuenta.
 
-El jugador también puede asociar un `ExternalClub` a su `PlayerProfile`. Esta
-`PlayerExternalClubAssociation` es opcional y declarativa. Guarda la referencia del proveedor y
-no crea una organización, un `Team`, una entrada de competición ni una membresía de `Roster`.
-Tampoco prueba que el jugador sea propietario del club. La asociación operativa
+Mis partidos tiene dos bloques que no se mezclan: partidos recientes (`ProviderMatch` en los que el jugador aparece) e historial oficial (contribuciones de resultados aprobados). Mis estadísticas sigue siendo solo oficial. Las proyecciones competitivas no nacen de observaciones de proveedor.
+
+El jugador también puede asociar uno o más `ExternalClub` a su `PlayerProfile`. Cada
+`PlayerExternalClubAssociation` es opcional y declarativa para el perfil: no crea una organización, un `Team`, una entrada de competición ni una membresía de `Roster`, ni prueba propiedad del club. Sí es obligatoria para consultar partidos recientes: sin al menos un club asociado no se llama al proveedor. El identificador de juego solo filtra apariciones después de traer los partidos de esos clubes. La asociación operativa
 `ExternalClubConnection` pertenece a un `Team` de competición y es un concepto distinto.
 
 El onboarding asegura este perfil personal en los caminos jugador, invitación y organizador. La

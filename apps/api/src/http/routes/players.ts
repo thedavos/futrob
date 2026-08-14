@@ -8,6 +8,7 @@ import {
   associateMyPlayerExternalClubResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  getMyRecentMatchesResponseSchema,
   getMyPlayerProfileResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
@@ -23,6 +24,7 @@ import {
   playerGameAccountDto,
   playerProfileDto,
 } from "@/http/mappers/player.ts";
+import { toPlayerRecentMatchesDto } from "@/http/mappers/game-data.ts";
 import { playerTeamMembershipDto } from "@/http/mappers/team.ts";
 import {
   createServiceAuthMiddleware,
@@ -37,32 +39,30 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
 
   secured.get("/players/me", async (c) => {
     const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
-    let externalClub = details.externalClub;
-
-    // Associations created before crest persistence (or when EA omitted crestAssetId)
-    // stay imageUrl=null; hydrate once from game-data and persist.
-    if (externalClub && !externalClub.imageUrl) {
-      const resolved = await gameData.getExternalClub.execute(externalClub.providerKey, {
-        externalClubId: externalClub.externalClubId,
-        platform: externalClub.platform,
-        gameEdition: externalClub.gameEdition,
-      });
-      if (resolved.isOk() && resolved.value.imageUrl) {
+    const externalClubs = await Promise.all(
+      details.externalClubs.map(async (club) => {
+        if (club.imageUrl) return club;
+        // Associations created before crest persistence (or when EA omitted crestAssetId)
+        // stay imageUrl=null; hydrate once from game-data and persist without bumping associatedAt.
+        const resolved = await gameData.getExternalClub.execute(club.providerKey, {
+          externalClubId: club.externalClubId,
+          platform: club.platform,
+          gameEdition: club.gameEdition,
+        });
+        if (!resolved.isOk() || !resolved.value.imageUrl) return club;
         const associated = await teams.associatePlayerExternalClub.execute({
-          playerProfileId: externalClub.playerProfileId,
+          playerProfileId: club.playerProfileId,
           club: resolved.value,
         });
-        if (associated.isOk()) {
-          externalClub = associated.value;
-        }
-      }
-    }
+        return associated.isOk() ? associated.value : club;
+      }),
+    );
 
     return jsonResponse(
       getMyPlayerProfileResponseSchema.parse({
         profile: details.profile ? playerProfileDto(details.profile) : null,
         gameAccounts: details.gameAccounts.map(playerGameAccountDto),
-        externalClub: externalClub ? playerExternalClubAssociationDto(externalClub) : null,
+        externalClubs: externalClubs.map(playerExternalClubAssociationDto),
       }),
     );
   });
@@ -213,6 +213,27 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
         })),
         nextCursor: page.nextCursor,
       }),
+    );
+  });
+
+  secured.get("/players/me/recent-matches", async (c) => {
+    const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
+    const listed = await gameData.listPlayerRecentProviderMatches.execute({
+      accounts: details.gameAccounts.map((account) => ({
+        identifier: account.identifier,
+        normalizedIdentifier: account.normalizedIdentifier,
+        providerExternalPlayerId: account.providerExternalPlayerId,
+      })),
+      clubs: details.externalClubs.map((club) => ({
+        providerKey: club.providerKey,
+        externalClubId: club.externalClubId,
+        platform: club.platform,
+        gameEdition: club.gameEdition,
+      })),
+    });
+    if (!listed.isOk()) return failureToHttp(listed.error);
+    return jsonResponse(
+      getMyRecentMatchesResponseSchema.parse(toPlayerRecentMatchesDto(listed.value)),
     );
   });
 

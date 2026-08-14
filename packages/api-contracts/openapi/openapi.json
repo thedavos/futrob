@@ -883,6 +883,44 @@
         }
       }
     },
+    "/players/me/recent-matches": {
+      "get": {
+        "operationId": "getMyRecentMatches",
+        "tags": ["players"],
+        "summary": "List recent provider matches in which the player appears, for associated ExternalClubs",
+        "responses": {
+          "200": {
+            "description": "needs_club when no club is associated, needs_game_account when no identifier is registered, or ready appearances",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMyRecentMatchesResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/identity/onboarding": {
       "get": {
         "operationId": "getOnboardingStatus",
@@ -2192,6 +2230,168 @@
                 "$ref": "#/components/headers/RequestId"
               }
             }
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/standings": {
+      "get": {
+        "operationId": "getCompetitionStandings",
+        "tags": ["statistics"],
+        "summary": "Read the official competition standings snapshot",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standing snapshot or null when nothing has been projected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCompetitionStandingsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/team-statistics": {
+      "get": {
+        "operationId": "getCompetitionTeamStatistics",
+        "tags": ["statistics"],
+        "summary": "Read official team competition statistics",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team competition aggregates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCompetitionTeamStatisticsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/rankings": {
+      "get": {
+        "operationId": "getCompetitionRankings",
+        "tags": ["statistics"],
+        "summary": "Read competition player ranking snapshots",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["scorer", "assister", "rating", "mvp", "goalkeeper"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ranking snapshots for the competition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCompetitionRankingsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -3602,7 +3802,7 @@
       },
       "ProviderMatchTeam": {
         "type": "object",
-        "required": ["externalClubId", "name", "goals"],
+        "required": ["externalClubId", "name", "goals", "imageUrl"],
         "properties": {
           "externalClubId": {
             "type": "string"
@@ -3612,6 +3812,10 @@
           },
           "goals": {
             "type": "number"
+          },
+          "imageUrl": {
+            "type": ["string", "null"],
+            "format": "uri"
           }
         }
       },
@@ -4926,7 +5130,7 @@
       },
       "GetMyPlayerProfileResponse": {
         "type": "object",
-        "required": ["profile", "gameAccounts", "externalClub"],
+        "required": ["profile", "gameAccounts", "externalClubs"],
         "properties": {
           "profile": {
             "anyOf": [
@@ -4944,15 +5148,11 @@
               "$ref": "#/components/schemas/PlayerGameAccount"
             }
           },
-          "externalClub": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PlayerExternalClubAssociation"
-              },
-              {
-                "type": "null"
-              }
-            ]
+          "externalClubs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerExternalClubAssociation"
+            }
           }
         }
       },
@@ -5183,6 +5383,344 @@
           },
           "nextCursor": {
             "type": ["string", "null"]
+          }
+        }
+      },
+      "PlayerRecentProviderMatch": {
+        "type": "object",
+        "required": ["match", "appearance"],
+        "properties": {
+          "match": {
+            "$ref": "#/components/schemas/ProviderMatch"
+          },
+          "appearance": {
+            "$ref": "#/components/schemas/ProviderPlayerMatchStats"
+          }
+        }
+      },
+      "GetMyRecentMatchesResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["status"],
+            "properties": {
+              "status": {
+                "type": "string",
+                "const": "needs_club"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["status"],
+            "properties": {
+              "status": {
+                "type": "string",
+                "const": "needs_game_account"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["status", "matches"],
+            "properties": {
+              "status": {
+                "type": "string",
+                "const": "ready"
+              },
+              "matches": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PlayerRecentProviderMatch"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "CompetitionStandingRow": {
+        "type": "object",
+        "required": [
+          "position",
+          "teamId",
+          "played",
+          "wins",
+          "draws",
+          "losses",
+          "goalsFor",
+          "goalsAgainst",
+          "goalDifference",
+          "points"
+        ],
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "played": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wins": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "draws": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "losses": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goalsFor": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goalsAgainst": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goalDifference": {
+            "type": "integer"
+          },
+          "points": {
+            "type": "integer"
+          }
+        }
+      },
+      "CompetitionStandingSnapshot": {
+        "type": "object",
+        "required": [
+          "competitionId",
+          "organizationId",
+          "formulaVersion",
+          "rows",
+          "sourceRevisionMax",
+          "updatedAt"
+        ],
+        "properties": {
+          "competitionId": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "formulaVersion": {
+            "type": "string",
+            "enum": ["points-gd-gf-v1"]
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompetitionStandingRow"
+            }
+          },
+          "sourceRevisionMax": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GetCompetitionStandingsResponse": {
+        "type": "object",
+        "required": ["standings"],
+        "properties": {
+          "standings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompetitionStandingSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "TeamCompetitionStats": {
+        "type": "object",
+        "required": [
+          "teamId",
+          "competitionId",
+          "organizationId",
+          "matchesPlayed",
+          "minutes",
+          "totals",
+          "averages",
+          "per90",
+          "partial",
+          "sourceRevisionMax",
+          "updatedAt"
+        ],
+        "properties": {
+          "teamId": {
+            "type": "string"
+          },
+          "competitionId": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "matchesPlayed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minutes": {
+            "type": "number",
+            "minimum": 0
+          },
+          "totals": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "averages": {
+            "type": "object",
+            "additionalProperties": {
+              "type": ["number", "null"]
+            }
+          },
+          "per90": {
+            "type": "object",
+            "additionalProperties": {
+              "type": ["number", "null"]
+            }
+          },
+          "partial": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "sourceRevisionMax": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GetCompetitionTeamStatisticsResponse": {
+        "type": "object",
+        "required": ["teams"],
+        "properties": {
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamCompetitionStats"
+            }
+          }
+        }
+      },
+      "RankingEligibility": {
+        "type": "object",
+        "required": ["minimumMatches", "minimumTeamMinutesRatio"],
+        "properties": {
+          "minimumMatches": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minimumTeamMinutesRatio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "RankingRow": {
+        "type": "object",
+        "required": ["position", "playerProfileId", "teamId", "value", "matchesPlayed", "minutes"],
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "playerProfileId": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": ["string", "null"]
+          },
+          "value": {
+            "type": "number"
+          },
+          "matchesPlayed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minutes": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "RankingSnapshot": {
+        "type": "object",
+        "required": [
+          "competitionId",
+          "organizationId",
+          "kind",
+          "formulaVersion",
+          "eligibility",
+          "rows",
+          "sourceRevisionMax",
+          "updatedAt"
+        ],
+        "properties": {
+          "competitionId": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["scorer", "assister", "rating", "mvp", "goalkeeper"]
+          },
+          "formulaVersion": {
+            "type": "string",
+            "enum": ["player-ranking-v1"]
+          },
+          "eligibility": {
+            "$ref": "#/components/schemas/RankingEligibility"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankingRow"
+            }
+          },
+          "sourceRevisionMax": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GetCompetitionRankingsResponse": {
+        "type": "object",
+        "required": ["rankings"],
+        "properties": {
+          "rankings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankingSnapshot"
+            }
           }
         }
       },
@@ -5525,7 +6063,7 @@
       },
       "CompletePlayerOnboardingResponse": {
         "type": "object",
-        "required": ["profile", "gameAccount", "externalClub", "destination"],
+        "required": ["profile", "gameAccount", "externalClubs", "destination"],
         "properties": {
           "profile": {
             "$ref": "#/components/schemas/PlayerProfile"
@@ -5540,15 +6078,11 @@
               }
             ]
           },
-          "externalClub": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PlayerExternalClubAssociation"
-              },
-              {
-                "type": "null"
-              }
-            ]
+          "externalClubs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerExternalClubAssociation"
+            }
           },
           "destination": {
             "type": "string",

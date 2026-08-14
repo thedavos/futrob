@@ -72,14 +72,24 @@ Además, reejecutar el mismo job de sync o la misma confirmación no crea partid
 - **pero** si intenta abrir `/player` antes de completar el onboarding, no ve su contenido y es redirigido al onboarding.
 - **y** puede aceptar una invitación o crear una organización posteriormente sin perder su perfil personal.
 
-### AC-PLAYER-001 — Consulta personal de estadísticas
+### AC-PLAYER-001 — Consulta personal de partidos y estadísticas
 
-**Cubre:** FTR-PLAYER-002, FTR-PLAYER-003, FR-18.
+**Cubre:** FTR-PLAYER-002, FTR-PLAYER-003, FTR-PLAYER-005, FTR-PLAYER-006, FR-18.
 
 - **Dado** un PlayerProfile con un identificador de EA registrado y partidos oficiales aprobados que contienen ese identificador externo,
-- **cuando** abre Mis partidos o Mis estadísticas,
-- **entonces** ve únicamente su historial y agregados individuales ordenados, con estados de dato incompleto cuando corresponda.
+- **cuando** abre Mis estadísticas,
+- **entonces** ve únicamente agregados individuales construidos desde resultados oficiales aprobados, con estados de dato incompleto cuando corresponda.
 - **y** no ve candidatos EA, disputas, payloads raw ni datos administrativos privados de organizaciones donde no sea miembro.
+- **Dado** el mismo perfil,
+- **cuando** abre Mis partidos,
+- **entonces** ve dos bloques separados: Recientes (`ProviderMatch`) y Oficiales (contribuciones de resultados aprobados).
+- **y** Oficiales lista solo contribuciones oficiales, con o sin club asociado.
+- **Dado** un PlayerProfile sin `PlayerExternalClubAssociation`,
+- **cuando** abre Recientes,
+- **entonces** ve un empty state para asociar un club y Futrob no consulta al proveedor. El identificador de juego no alcanza para obtener recientes.
+- **Dado** un PlayerProfile con al menos un club asociado y una cuenta de juego,
+- **cuando** Recientes está listo,
+- **entonces** ve apariciones en partidos de esos clubes filtradas por su identificador, sin mezclarlas con el historial oficial.
 
 ### AC-ONB-001 — Consecuencias multirrol del onboarding
 

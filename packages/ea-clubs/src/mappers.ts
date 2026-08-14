@@ -1,5 +1,10 @@
-import type { ExternalClub, ProviderMatch, ProviderPlayerMatchStats } from "@futrob/game-data";
-import type { EaClubInfo, EaClubMatch, EaLeaderboardEntry } from "./schemas.ts";
+import type {
+  ExternalClub,
+  ProviderMatch,
+  ProviderMatchTeam,
+  ProviderPlayerMatchStats,
+} from "@futrob/game-data";
+import type { EaClubInfo, EaClubMatch, EaLeaderboardEntry, EaMatchClub } from "./schemas.ts";
 import { buildEaClubCrestUrl, crestAssetIdFromCustomKit } from "./crest-url.ts";
 
 export function mapLeaderboardEntryToExternalClub(
@@ -43,10 +48,8 @@ export function mapClubInfoToExternalClub(
 function pickHomeAway(
   clubs: EaClubMatch["clubs"],
   focalClubId: string,
-): {
-  home: { externalClubId: string; name: string; goals: number };
-  away: { externalClubId: string; name: string; goals: number };
-} | null {
+  gameEdition: string,
+): { home: ProviderMatchTeam; away: ProviderMatchTeam } | null {
   const ids = Object.keys(clubs);
   if (ids.length < 2) {
     return null;
@@ -54,20 +57,25 @@ function pickHomeAway(
 
   const focal = clubs[focalClubId] ? focalClubId : ids[0]!;
   const other = ids.find((id) => id !== focal) ?? ids[1]!;
-  const homeClub = clubs[focal]!;
-  const awayClub = clubs[other]!;
-
   return {
-    home: {
-      externalClubId: focal,
-      name: homeClub.details?.name ?? focal,
-      goals: homeClub.goals ?? homeClub.score ?? 0,
-    },
-    away: {
-      externalClubId: other,
-      name: awayClub.details?.name ?? other,
-      goals: awayClub.goals ?? awayClub.score ?? 0,
-    },
+    home: toMatchTeam(focal, clubs[focal]!, gameEdition),
+    away: toMatchTeam(other, clubs[other]!, gameEdition),
+  };
+}
+
+function toMatchTeam(
+  externalClubId: string,
+  club: EaMatchClub,
+  gameEdition: string,
+): ProviderMatchTeam {
+  return {
+    externalClubId,
+    name: club.details?.name ?? externalClubId,
+    goals: club.goals ?? club.score ?? 0,
+    imageUrl: buildEaClubCrestUrl(
+      gameEdition,
+      crestAssetIdFromCustomKit(club.details?.customKit) ?? club.TEAM ?? null,
+    ),
   };
 }
 
@@ -136,7 +144,7 @@ export function mapClubMatchToProviderMatch(
     readonly focalExternalClubId: string;
   },
 ): ProviderMatch | null {
-  const sides = pickHomeAway(match.clubs, input.focalExternalClubId);
+  const sides = pickHomeAway(match.clubs, input.focalExternalClubId, input.gameEdition);
   if (!sides) {
     return null;
   }

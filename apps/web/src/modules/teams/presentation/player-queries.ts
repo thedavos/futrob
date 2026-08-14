@@ -31,6 +31,7 @@ export function useAddMyGameAccountMutation() {
       teamsBrowserClient.addMyGameAccount(input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.gameData.meRecentMatches() });
     },
   });
 }
@@ -43,6 +44,7 @@ export function useAssociateMyExternalClubMutation() {
       teamsBrowserClient.associateMyExternalClub(input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.gameData.meRecentMatches() });
     },
   });
 }

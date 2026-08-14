@@ -61,8 +61,14 @@ describe("ea-clubs schemas and mappers", () => {
     expect(match).toMatchObject({
       id: "ea-clubs:336118610940060",
       provider: { key: "ea-clubs", externalMatchId: "336118610940060" },
-      home: { externalClubId: "10754", name: "Fera Enjaulada", goals: 2 },
-      away: { externalClubId: "2575670", name: "Brothers tm", goals: 3 },
+      home: {
+        externalClubId: "10754",
+        name: "Fera Enjaulada",
+        goals: 2,
+        imageUrl:
+          "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/fcweb/crests/256x256/l99160122.png",
+      },
+      away: { externalClubId: "2575670", name: "Brothers tm", goals: 3, imageUrl: null },
       metadata: { winnerByForfeit: false, completeness: "complete" },
     });
     expect(match?.occurredAt.toISOString()).toBe(new Date(1768624748 * 1000).toISOString());

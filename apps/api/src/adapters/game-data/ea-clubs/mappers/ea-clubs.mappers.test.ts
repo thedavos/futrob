@@ -50,6 +50,21 @@ describe("ea-clubs schemas and mappers (api)", () => {
     });
   });
 
+  it("parses an empty object as no matches", () => {
+    expect(eaClubMatchesResponseSchema.parse({})).toEqual([]);
+    expect(eaClubMatchesResponseSchema.parse(null)).toEqual([]);
+  });
+
+  it("keeps valid matches when a sibling row cannot be parsed", () => {
+    const parsed = eaClubMatchesResponseSchema.parse([
+      clubMatchesFixture[0],
+      { matchId: "broken" },
+    ]);
+
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0]?.matchId).toBe("336118610940060");
+  });
+
   it("maps full player stats and preserves zero versus absent fields", () => {
     const parsed = eaClubMatchesResponseSchema.parse(clubMatchesFixture);
     const match = mapClubMatchToProviderMatch(parsed[0]!, {

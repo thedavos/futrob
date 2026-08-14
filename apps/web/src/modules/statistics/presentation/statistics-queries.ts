@@ -29,3 +29,11 @@ export function useMyMatchesQuery(filters: Partial<GetMyMatchesQuery> = {}) {
     getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
 }
+
+export function useMyRecentMatchesQuery() {
+  return useQuery({
+    queryKey: queryKeys.gameData.meRecentMatches(),
+    queryFn: () => statisticsBrowserClient.getMyRecentMatches(),
+    retry: false,
+  });
+}

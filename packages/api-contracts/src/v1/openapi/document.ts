@@ -4,6 +4,8 @@ import {
   externalClubSchema,
   enqueueProviderSyncJobRequestSchema,
   getClubMatchesResponseSchema,
+  playerRecentProviderMatchSchema,
+  getMyRecentMatchesResponseSchema,
   providerMatchSchema,
   providerSyncJobResponseSchema,
   providerHealthResponseSchema,
@@ -538,6 +540,28 @@ export const futrobOpenApiV1 = {
           "400": { $ref: "#/components/responses/ApiError" },
           "401": { $ref: "#/components/responses/ApiError" },
           "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/players/me/recent-matches": {
+      get: {
+        operationId: "getMyRecentMatches",
+        tags: ["players"],
+        summary:
+          "List recent provider matches in which the player appears, for associated ExternalClubs",
+        responses: {
+          "200": {
+            description:
+              "needs_club when no club is associated, needs_game_account when no identifier is registered, or ready appearances",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GetMyRecentMatchesResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "502": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -1922,11 +1946,12 @@ export const futrobOpenApiV1 = {
       },
       ProviderMatchTeam: {
         type: "object",
-        required: ["externalClubId", "name", "goals"],
+        required: ["externalClubId", "name", "goals", "imageUrl"],
         properties: {
           externalClubId: { type: "string" },
           name: { type: "string" },
           goals: { type: "number" },
+          imageUrl: { type: ["string", "null"], format: "uri" },
         },
       },
       ProviderPlayerMatchStats: {
@@ -2523,7 +2548,7 @@ export const futrobOpenApiV1 = {
       },
       GetMyPlayerProfileResponse: {
         type: "object",
-        required: ["profile", "gameAccounts", "externalClub"],
+        required: ["profile", "gameAccounts", "externalClubs"],
         properties: {
           profile: {
             anyOf: [{ $ref: "#/components/schemas/PlayerProfile" }, { type: "null" }],
@@ -2532,11 +2557,9 @@ export const futrobOpenApiV1 = {
             type: "array",
             items: { $ref: "#/components/schemas/PlayerGameAccount" },
           },
-          externalClub: {
-            anyOf: [
-              { $ref: "#/components/schemas/PlayerExternalClubAssociation" },
-              { type: "null" },
-            ],
+          externalClubs: {
+            type: "array",
+            items: { $ref: "#/components/schemas/PlayerExternalClubAssociation" },
           },
         },
       },
@@ -2680,6 +2703,43 @@ export const futrobOpenApiV1 = {
           },
           nextCursor: { type: ["string", "null"] },
         },
+      },
+      PlayerRecentProviderMatch: {
+        type: "object",
+        required: ["match", "appearance"],
+        properties: {
+          match: { $ref: "#/components/schemas/ProviderMatch" },
+          appearance: { $ref: "#/components/schemas/ProviderPlayerMatchStats" },
+        },
+      },
+      GetMyRecentMatchesResponse: {
+        oneOf: [
+          {
+            type: "object",
+            required: ["status"],
+            properties: {
+              status: { type: "string", const: "needs_club" },
+            },
+          },
+          {
+            type: "object",
+            required: ["status"],
+            properties: {
+              status: { type: "string", const: "needs_game_account" },
+            },
+          },
+          {
+            type: "object",
+            required: ["status", "matches"],
+            properties: {
+              status: { type: "string", const: "ready" },
+              matches: {
+                type: "array",
+                items: { $ref: "#/components/schemas/PlayerRecentProviderMatch" },
+              },
+            },
+          },
+        ],
       },
       CompetitionStandingRow: {
         type: "object",
@@ -3050,17 +3110,15 @@ export const futrobOpenApiV1 = {
       },
       CompletePlayerOnboardingResponse: {
         type: "object",
-        required: ["profile", "gameAccount", "externalClub", "destination"],
+        required: ["profile", "gameAccount", "externalClubs", "destination"],
         properties: {
           profile: { $ref: "#/components/schemas/PlayerProfile" },
           gameAccount: {
             anyOf: [{ $ref: "#/components/schemas/PlayerGameAccount" }, { type: "null" }],
           },
-          externalClub: {
-            anyOf: [
-              { $ref: "#/components/schemas/PlayerExternalClubAssociation" },
-              { type: "null" },
-            ],
+          externalClubs: {
+            type: "array",
+            items: { $ref: "#/components/schemas/PlayerExternalClubAssociation" },
           },
           destination: { type: "string", const: "personal" },
         },
@@ -3129,6 +3187,8 @@ void externalClubSchema;
 void providerMatchSchema;
 void searchClubsResponseSchema;
 void getClubMatchesResponseSchema;
+void playerRecentProviderMatchSchema;
+void getMyRecentMatchesResponseSchema;
 void enqueueProviderSyncJobRequestSchema;
 void providerSyncJobResponseSchema;
 void providerHealthResponseSchema;

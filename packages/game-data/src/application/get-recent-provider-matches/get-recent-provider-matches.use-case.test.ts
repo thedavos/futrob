@@ -12,8 +12,8 @@ describe("GetRecentProviderMatchesUseCase", () => {
       provider: { key: "ea-clubs" as const, externalMatchId: "1" },
       game: { edition: "fc26", platform: "common-gen5", mode: "friendlyMatch" },
       occurredAt: new Date(0),
-      home: { externalClubId: "1", name: "A", goals: 1 },
-      away: { externalClubId: "2", name: "B", goals: 0 },
+      home: { externalClubId: "1", name: "A", goals: 1, imageUrl: null },
+      away: { externalClubId: "2", name: "B", goals: 0, imageUrl: null },
       players: [],
       metadata: {
         durationSeconds: null,

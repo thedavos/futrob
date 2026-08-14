@@ -25,7 +25,7 @@ Futrob
 ├── Autenticación
 ├── Aplicación autenticada
 │   ├── Espacio personal del jugador
-│   │   ├── Mis partidos
+│   │   ├── Mis partidos (Recientes + Oficiales)
 │   │   ├── Mis estadísticas
 │   │   ├── Datos de juego
 │   │   └── Invitaciones y organizaciones
@@ -91,7 +91,7 @@ Regiones de la sidebar (scroll independiente del contenido central):
 
 Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive en el header de la sidebar. Mobile usa Sheet con las mismas regiones.
 
-El command bar muestra el título de página y acciones contextuales (stubs cuando el handler aún no existe). La action bar inferior solo aparece cuando una página registra acciones.
+El command bar muestra la identidad del jugador (identificador de juego y club asociado) y acciones contextuales (stubs cuando el handler aún no existe). La action bar inferior solo aparece cuando una página registra acciones.
 
 ### Selector de contexto (único)
 
@@ -99,6 +99,7 @@ Un control en el header de la sidebar agrupa:
 
 - **Espacio personal**
 - **Competiciones** (accesibles al actor)
+- **Clubes EA** (asociaciones del PlayerProfile + Añadir club)
 - **Organización** (memberships + Crear organización)
 
 Solo un ítem está activo. El valor inicial sigue el `ONBOARDING_PATH` completado:
@@ -127,7 +128,8 @@ configura en el paso **Cuenta** o posteriormente desde Datos de juego. Los recor
 - Invitación: Intención → Invitación → Cuenta → Confirmar.
 - Jugador: Intención → Cuenta → Club → Confirmar.
 
-El paso **Club** permite asociar un `ExternalClub` al `PlayerProfile`. Es opcional y no crea un
+El paso **Club** permite asociar un `ExternalClub` al `PlayerProfile`. Más asociaciones se
+añaden después desde el selector de contexto. Es opcional y no crea un
 Team de competición, una inscripción ni una membresía de plantilla. `/onboarding/club` es la ruta
 canónica. `/onboarding/team` solo redirige para recuperar sesiones o marcadores anteriores.
 
@@ -148,6 +150,8 @@ crear una organización ni aceptar una invitación.
 **General (personal):** Inicio · Competiciones · Clubes EA · Invitaciones.
 
 - **Inicio personal:** resumen de partidos recientes, estadísticas destacadas y estado de vinculación de la cuenta de juego.
+- **Mis partidos:** dos bloques. Recientes = `ProviderMatch` de los clubes asociados (requiere `PlayerExternalClubAssociation`). Oficiales = contribuciones de resultados aprobados. No se mezclan.
+- **Mis estadísticas:** solo agregados oficiales.
 - **Competiciones / Clubes EA:** listados; al abrir una entidad se activa el grupo Contexto.
 - **Datos de juego:** vincular o actualizar identificador de jugador (subdestino desde Clubes EA o perfil).
 - **Invitaciones:** aceptar una invitación o crear una organización como acciones secundarias.
@@ -222,7 +226,7 @@ Sync EA → candidatos → capitán asigna → preview → rival confirma → ap
 
 ### Registro de jugador independiente
 
-Registro → onboarding → continuar como jugador → vincular identificador de juego y club externo (ambos opcionales) → confirmar → crear o asegurar el perfil personal → espacio personal → consultar partidos/estadísticas cuando existan → aceptar invitación o crear organización más adelante.
+Registro → onboarding → continuar como jugador → vincular identificador de juego y club externo (ambos opcionales) → confirmar → crear o asegurar el perfil personal → espacio personal → consultar Recientes (si hay club asociado) y Oficiales/estadísticas cuando existan → aceptar invitación o crear organización más adelante.
 
 ### Acceso de usuario existente
 
@@ -237,5 +241,6 @@ Sin sidebar administrativo. Header de competición + tabs horizontales sticky. S
 
 - Ruta no aplicable al formato: omitir.
 - Ruta aplicable sin datos: empty state con siguiente acción.
-- Jugador sin partidos vinculados: empty state que permite configurar o revisar su identificador de juego; no se exige invitación.
+- Jugador sin club asociado en Mis partidos / Recientes: empty state para asociar un club; el identificador de juego no alcanza.
+- Jugador sin partidos oficiales: empty state que explica que aparecen al aprobar un resultado que coincida; no se exige invitación.
 - Sin permiso: 403 con salida segura; no disfrazar como vacío.

@@ -5,6 +5,7 @@ import {
   getCompetitionTeamStatisticsResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  getMyRecentMatchesResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
   type GetCompetitionRankingsQuery,
@@ -13,6 +14,7 @@ import {
   type GetCompetitionTeamStatisticsResponse,
   type GetMyMatchesQuery,
   type GetMyMatchesResponse,
+  type GetMyRecentMatchesResponse,
   type GetMyStatisticsQuery,
   type GetMyStatisticsResponse,
 } from "@futrob/api-contracts";
@@ -41,6 +43,13 @@ export function createStatisticsResource(http: HttpClient) {
         path: `/players/me/matches?${search.toString()}`,
         method: "GET",
         parse: (data) => getMyMatchesResponseSchema.parse(data),
+      });
+    },
+    async getMyRecentMatches(): Promise<GetMyRecentMatchesResponse> {
+      return http.request({
+        path: "/players/me/recent-matches",
+        method: "GET",
+        parse: (data) => getMyRecentMatchesResponseSchema.parse(data),
       });
     },
     async getCompetitionStandings(input: {

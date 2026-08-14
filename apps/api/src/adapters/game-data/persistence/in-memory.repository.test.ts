@@ -10,8 +10,8 @@ const match: ProviderMatch = {
   provider: { key: "ea-clubs", externalMatchId: "match-1" },
   game: { edition: "fc26", platform: "common-gen5", mode: "friendlyMatch" },
   occurredAt: new Date("2026-08-10T12:00:00.000Z"),
-  home: { externalClubId: "home", name: "Home", goals: 2 },
-  away: { externalClubId: "away", name: "Away", goals: 1 },
+  home: { externalClubId: "home", name: "Home", goals: 2, imageUrl: null },
+  away: { externalClubId: "away", name: "Away", goals: 1, imageUrl: null },
   players: [],
   metadata: {
     durationSeconds: null,

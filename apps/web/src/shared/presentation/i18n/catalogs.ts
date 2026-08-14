@@ -229,13 +229,33 @@ const es = {
   "player.workspace.eyebrow": "Espacio personal",
   "player.matches.title": "Mis partidos",
   "player.matches.description":
-    "Tu historial individual ordenado desde resultados oficiales aprobados.",
+    "Partidos recientes de tus clubes asociados e historial oficial de competición.",
   "player.matches.loading": "Cargando tus partidos…",
   "player.matches.error": "No pudimos cargar tus partidos.",
   "player.matches.emptyTitle": "Aún no hay partidos oficiales",
   "player.matches.historyLabel": "Historial de partidos oficiales",
   "player.matches.loadMore": "Cargar más partidos",
+  "player.matches.loadMore.loading": "Cargando más partidos…",
   "player.matches.open": "Abrir Mis partidos",
+  "player.matches.recent.title": "Recientes",
+  "player.matches.recent.loading": "Cargando partidos recientes…",
+  "player.matches.recent.error": "No pudimos cargar tus partidos recientes.",
+  "player.matches.recent.historyLabel": "Partidos recientes",
+  "player.matches.recent.needsClub.title": "Asocia un club para ver partidos recientes",
+  "player.matches.recent.needsClub.description":
+    "Los partidos recientes salen de los clubes que asocies. Tu identificador de juego solo reconoce tus apariciones.",
+  "player.matches.recent.needsGameAccount.title": "Añade una cuenta de juego",
+  "player.matches.recent.needsGameAccount.description":
+    "Asocia un identificador de juego para reconocer tus apariciones en los partidos de tus clubes.",
+  "player.matches.recent.emptyTitle": "No hay partidos recientes",
+  "player.matches.recent.emptyDescription":
+    "Todavía no hay apariciones recientes en tus clubes asociados.",
+  "player.matches.official.title": "Oficiales",
+  "player.matches.official.loading": "Cargando partidos oficiales…",
+  "player.matches.official.error": "No pudimos cargar tus partidos oficiales.",
+  "player.matches.official.emptyDescription":
+    "Los partidos oficiales aparecen cuando una organización aprueba un resultado que coincida contigo.",
+  "player.matches.official.badge": "Oficial",
   "player.statistics.title": "Mis estadísticas",
   "player.statistics.description":
     "Agregados individuales construidos únicamente desde resultados oficiales aprobados.",
@@ -524,13 +544,34 @@ const en: Catalog = {
   "player.nav.gameData": "Game data",
   "player.workspace.eyebrow": "Personal workspace",
   "player.matches.title": "My matches",
-  "player.matches.description": "Your ordered individual history from approved official results.",
+  "player.matches.description":
+    "Recent matches from your associated clubs and your official competition history.",
   "player.matches.loading": "Loading your matches…",
   "player.matches.error": "We could not load your matches.",
   "player.matches.emptyTitle": "No official matches yet",
   "player.matches.historyLabel": "Official match history",
   "player.matches.loadMore": "Load more matches",
+  "player.matches.loadMore.loading": "Loading more matches…",
   "player.matches.open": "Open My matches",
+  "player.matches.recent.title": "Recent",
+  "player.matches.recent.loading": "Loading recent matches…",
+  "player.matches.recent.error": "We could not load your recent matches.",
+  "player.matches.recent.historyLabel": "Recent matches",
+  "player.matches.recent.needsClub.title": "Associate a club to see recent matches",
+  "player.matches.recent.needsClub.description":
+    "Recent matches come from the clubs you associate. Your game identifier only recognizes your appearances.",
+  "player.matches.recent.needsGameAccount.title": "Add a game account",
+  "player.matches.recent.needsGameAccount.description":
+    "Associate a game identifier so your appearances in your clubs' matches can be recognized.",
+  "player.matches.recent.emptyTitle": "No recent matches",
+  "player.matches.recent.emptyDescription":
+    "There are no recent appearances in your associated clubs yet.",
+  "player.matches.official.title": "Official",
+  "player.matches.official.loading": "Loading official matches…",
+  "player.matches.official.error": "We could not load your official matches.",
+  "player.matches.official.emptyDescription":
+    "Official matches appear when an organization approves a result that matches you.",
+  "player.matches.official.badge": "Official",
   "player.statistics.title": "My statistics",
   "player.statistics.description":
     "Individual aggregates built only from approved official results.",

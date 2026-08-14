@@ -4,6 +4,7 @@ export interface ProviderMatchTeam {
   readonly externalClubId: string;
   readonly name: string;
   readonly goals: number;
+  readonly imageUrl: string | null;
 }
 
 /**

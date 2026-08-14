@@ -17,6 +17,7 @@ export const providerMatchTeamSchema = z.object({
   externalClubId: z.string(),
   name: z.string(),
   goals: z.number(),
+  imageUrl: z.string().url().nullable(),
 });
 
 export const providerPlayerMatchStatsSchema = z.object({
@@ -113,6 +114,24 @@ export const getClubMatchesResponseSchema = z.object({
 });
 
 export type GetClubMatchesResponse = z.infer<typeof getClubMatchesResponseSchema>;
+
+export const playerRecentProviderMatchSchema = z.object({
+  match: providerMatchSchema,
+  appearance: providerPlayerMatchStatsSchema,
+});
+
+export type PlayerRecentProviderMatchDto = z.infer<typeof playerRecentProviderMatchSchema>;
+
+export const getMyRecentMatchesResponseSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("needs_club") }),
+  z.object({ status: z.literal("needs_game_account") }),
+  z.object({
+    status: z.literal("ready"),
+    matches: z.array(playerRecentProviderMatchSchema),
+  }),
+]);
+
+export type GetMyRecentMatchesResponse = z.infer<typeof getMyRecentMatchesResponseSchema>;
 
 export const enqueueProviderSyncJobRequestSchema = z.object({
   organizationId: z.string().trim().min(1),

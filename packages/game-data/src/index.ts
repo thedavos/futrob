@@ -74,6 +74,14 @@ export {
 export { SearchExternalClubsUseCase } from "./application/search-external-clubs/search-external-clubs.use-case.ts";
 export { GetExternalClubUseCase } from "./application/get-external-club/get-external-club.use-case.ts";
 export { GetRecentProviderMatchesUseCase } from "./application/get-recent-provider-matches/get-recent-provider-matches.use-case.ts";
+export {
+  ListPlayerRecentProviderMatchesUseCase,
+  type ListPlayerRecentProviderMatchesInput,
+  type PlayerRecentMatchClub,
+  type PlayerRecentMatchIdentity,
+  type PlayerRecentMatchesResult,
+  type PlayerRecentProviderMatch,
+} from "./application/list-player-recent-provider-matches/list-player-recent-provider-matches.use-case.ts";
 export { SyncRecentProviderMatchesUseCase } from "./application/sync-recent-provider-matches/sync-recent-provider-matches.use-case.ts";
 export {
   EnqueueProviderSyncJobUseCase,

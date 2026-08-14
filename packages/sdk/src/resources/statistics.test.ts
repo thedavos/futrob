@@ -49,6 +49,20 @@ describe("statistics SDK resource", () => {
     );
   });
 
+  it("reads personal recent provider matches", async () => {
+    let requestedUrl = "";
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: (async (input) => {
+        requestedUrl = requestUrl(input);
+        return Response.json({ status: "needs_club" });
+      }) as typeof fetch,
+    });
+
+    await expect(client.statistics.getMyRecentMatches()).resolves.toEqual({ status: "needs_club" });
+    expect(requestedUrl).toBe("https://app.example.com/api/v1/players/me/recent-matches");
+  });
+
   it("reads competition standings and team statistics", async () => {
     const requested: string[] = [];
     const client = createFutrobClient({

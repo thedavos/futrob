@@ -1,10 +1,12 @@
 import {
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  getMyRecentMatchesResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
   type GetMyMatchesQuery,
   type GetMyMatchesResponse,
+  type GetMyRecentMatchesResponse,
   type GetMyStatisticsQuery,
   type GetMyStatisticsResponse,
   type RequestId,
@@ -62,6 +64,12 @@ export const statisticsBrowserClient = {
     search.set("limit", String(query.limit));
     return requestJson(`/api/v1/players/me/matches?${search.toString()}`, (data) =>
       getMyMatchesResponseSchema.parse(data),
+    );
+  },
+
+  getMyRecentMatches(): Promise<GetMyRecentMatchesResponse> {
+    return requestJson(`/api/v1/players/me/recent-matches`, (data) =>
+      getMyRecentMatchesResponseSchema.parse(data),
     );
   },
 };

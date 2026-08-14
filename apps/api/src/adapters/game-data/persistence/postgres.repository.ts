@@ -171,11 +171,13 @@ function rehydrateMatch(row: {
       externalClubId: row.home_external_club_id,
       name: row.home_name,
       goals: Number(row.home_goals),
+      imageUrl: null,
     },
     away: {
       externalClubId: row.away_external_club_id,
       name: row.away_name,
       goals: Number(row.away_goals),
+      imageUrl: null,
     },
     players: row.players as ProviderMatch["players"],
     metadata: row.metadata as ProviderMatch["metadata"],
