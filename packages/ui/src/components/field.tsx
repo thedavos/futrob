@@ -32,7 +32,7 @@ function FieldDescription({ className, ...props }: FieldPrimitive.Description.Pr
   return (
     <FieldPrimitive.Description
       data-slot="field-description"
-      className={cn("typo-caption leading-relaxed text-muted-foreground", className)}
+      className={cn("text-xs leading-normal text-muted-foreground", className)}
       {...props}
     />
   );
@@ -42,12 +42,12 @@ function FieldError({ className, ...props }: Omit<FieldPrimitive.Error.Props, "r
   return (
     <FieldPrimitive.Error
       data-slot="field-error"
-      className={cn("typo-caption flex items-start gap-1.5 text-danger", className)}
+      className={cn("flex items-start gap-1.5 text-xs leading-normal text-danger", className)}
       render={(elementProps) => (
         <div {...elementProps}>
           <WarningCircleIcon
             aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0"
+            className="mt-0.5 size-3 shrink-0"
             strokeWidth={1.5}
           />
           <span>{elementProps.children}</span>

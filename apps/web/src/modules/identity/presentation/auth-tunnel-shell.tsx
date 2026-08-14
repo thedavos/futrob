@@ -3,7 +3,17 @@ import { Logo } from "@futrob/ui";
 
 export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <main className="grid min-h-svh grid-rows-[auto_1fr] bg-background text-foreground lg:grid-cols-[minmax(0,1.2fr)_minmax(25rem,1fr)] lg:grid-rows-1">
+    <main className="grid min-h-svh bg-background text-foreground lg:grid-cols-[minmax(0,700px)_minmax(0,1fr)]">
+      <section className="auth-form-panel relative flex min-h-svh w-full items-center justify-center bg-[var(--neutral-0)] text-[var(--neutral-950)] [--background:var(--neutral-0)] [--border:var(--neutral-300)] [--border-subtle:var(--neutral-200)] [--destructive:var(--red-700)] [--foreground:var(--neutral-950)] [--input:var(--neutral-450)] [--muted-foreground:var(--neutral-600)] [--primary:var(--brand-700)] [--primary-foreground:var(--neutral-0)] [--ring:var(--brand-600)]">
+        <header className="absolute start-5 top-[max(1.5rem,env(safe-area-inset-top))] sm:start-8">
+          <Logo className="h-11 w-auto" title="Futrob" />
+        </header>
+
+        <div className="flex w-full max-w-md flex-col items-stretch gap-8 px-4 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-12">
+          {children}
+        </div>
+      </section>
+
       <section className="relative hidden overflow-hidden lg:flex lg:min-h-svh lg:flex-col lg:justify-end lg:p-14 xl:p-20">
         <img
           alt=""
@@ -25,17 +35,6 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
             pensada para competiciones de fútbol y gaming.
           </p>
         </div>
-      </section>
-
-      <header className="flex items-center justify-between gap-5 border-b border-border-subtle bg-background px-5 py-4 lg:hidden">
-        <Logo className="h-11 w-auto" title="Futrob" />
-        <p className="max-w-48 text-right text-xs leading-5 text-muted-foreground">
-          Tu torneo, en serio.
-        </p>
-      </header>
-
-      <section className="auth-form-panel flex min-h-0 items-center justify-center bg-[var(--neutral-0)] px-5 py-10 text-[var(--neutral-950)] sm:px-10 lg:px-12 lg:py-16 [--background:var(--neutral-0)] [--border:var(--neutral-300)] [--border-subtle:var(--neutral-200)] [--destructive:var(--red-700)] [--foreground:var(--neutral-950)] [--input:var(--neutral-450)] [--muted-foreground:var(--neutral-600)] [--primary:var(--brand-700)] [--primary-foreground:var(--neutral-0)] [--ring:var(--brand-600)]">
-        <div className="w-full max-w-md">{children}</div>
       </section>
     </main>
   );

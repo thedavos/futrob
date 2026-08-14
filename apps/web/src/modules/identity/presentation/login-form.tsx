@@ -82,71 +82,75 @@ export function LoginForm() {
   return (
     <Form<LoginValues>
       aria-busy={isSubmitting}
-      className="space-y-6"
+      className="flex flex-col gap-8"
       errors={validation.formErrors}
       onFormSubmit={handleSubmit}
     >
-      {state.status === "error" && state.message !== undefined ? (
-        <div
-          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-          role="alert"
-        >
-          {state.message}
-        </div>
-      ) : null}
+      <div className="flex flex-col gap-4">
+        {state.status === "error" && state.message !== undefined ? (
+          <div
+            className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+            role="alert"
+          >
+            {state.message}
+          </div>
+        ) : null}
 
-      <Field
-        {...validation.getFieldValidationProps("email")}
-        disabled={isSubmitting}
-        name="email"
-        validate={(value) => validateLoginField("email", readFormString(value))}
-      >
-        <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
-        <InputWithIcon
-          autoComplete="email"
+        <Field
+          {...validation.getFieldValidationProps("email")}
           disabled={isSubmitting}
-          id="email"
           name="email"
-          placeholder="ejemplo@correo.com"
-          startIcon={EnvelopeSimpleIcon}
-          type="email"
-        />
-        <FieldError />
-      </Field>
-
-      <Field
-        {...validation.getFieldValidationProps("password")}
-        disabled={isSubmitting}
-        name="password"
-        validate={(value) => validateLoginField("password", readFormString(value))}
-      >
-        <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-        <InputWithIcon
-          autoComplete="current-password"
-          disabled={isSubmitting}
-          id="password"
-          name="password"
-          placeholder="Ingresa tu contraseña"
-          startIcon={LockIcon}
-          type="password"
-        />
-        <FieldError />
-      </Field>
-
-      <Button className="w-full" disabled={isSubmitting} type="submit">
-        Iniciar sesión
-      </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        ¿Aún no tienes cuenta?{" "}
-        <Link
-          className="font-medium text-foreground underline-offset-4 hover:underline"
-          search={{ redirectTo }}
-          to="/signup"
+          validate={(value) => validateLoginField("email", readFormString(value))}
         >
-          Crear una cuenta
-        </Link>
-      </p>
+          <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
+          <InputWithIcon
+            autoComplete="email"
+            disabled={isSubmitting}
+            id="email"
+            name="email"
+            placeholder="ejemplo@correo.com"
+            startIcon={EnvelopeSimpleIcon}
+            type="email"
+          />
+          <FieldError />
+        </Field>
+
+        <Field
+          {...validation.getFieldValidationProps("password")}
+          disabled={isSubmitting}
+          name="password"
+          validate={(value) => validateLoginField("password", readFormString(value))}
+        >
+          <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+          <InputWithIcon
+            autoComplete="current-password"
+            disabled={isSubmitting}
+            id="password"
+            name="password"
+            placeholder="Ingresa tu contraseña"
+            startIcon={LockIcon}
+            type="password"
+          />
+          <FieldError />
+        </Field>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        <Button className="w-full" disabled={isSubmitting} type="submit">
+          Iniciar sesión
+        </Button>
+
+        <p className="text-center text-sm text-muted-foreground">
+          ¿Aún no tienes cuenta?{" "}
+          <Link
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+            search={{ redirectTo }}
+            to="/signup"
+          >
+            Crear una cuenta
+          </Link>
+        </p>
+      </div>
     </Form>
   );
 }

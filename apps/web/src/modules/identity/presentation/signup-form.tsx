@@ -118,126 +118,130 @@ export function SignupForm() {
   return (
     <Form<SignupValues>
       aria-busy={isSubmitting}
-      className="space-y-6"
+      className="flex flex-col gap-8"
       errors={validation.formErrors}
       onFormSubmit={handleSubmit}
     >
-      {state.status === "error" && state.message !== undefined ? (
-        <div
-          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-          role="alert"
-        >
-          {state.message}
-        </div>
-      ) : null}
+      <div className="flex flex-col gap-4">
+        {state.status === "error" && state.message !== undefined ? (
+          <div
+            className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+            role="alert"
+          >
+            {state.message}
+          </div>
+        ) : null}
 
-      <Field
-        {...validation.getFieldValidationProps("name")}
-        disabled={isSubmitting}
-        name="name"
-        validate={(value) => validateSignupField("name", readFormString(value))}
-      >
-        <FieldLabel htmlFor="name">Nombre completo</FieldLabel>
-        <InputWithIcon
-          autoComplete="name"
+        <Field
+          {...validation.getFieldValidationProps("name")}
           disabled={isSubmitting}
-          id="name"
           name="name"
-          placeholder="Ingresa tu nombre completo"
-          startIcon={UserIcon}
-        />
-        <FieldError />
-      </Field>
-
-      <Field
-        {...validation.getFieldValidationProps("email")}
-        disabled={isSubmitting}
-        name="email"
-        validate={(value) => validateSignupField("email", readFormString(value))}
-      >
-        <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
-        <InputWithIcon
-          autoComplete="email"
-          disabled={isSubmitting}
-          id="email"
-          name="email"
-          placeholder="ejemplo@correo.com"
-          startIcon={EnvelopeSimpleIcon}
-          type="email"
-        />
-        <FieldError />
-      </Field>
-
-      <Field
-        {...validation.getFieldValidationProps("password")}
-        disabled={isSubmitting}
-        name="password"
-        validate={(value) => validateSignupField("password", readFormString(value))}
-      >
-        <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-        <InputWithIcon
-          autoComplete="new-password"
-          disabled={isSubmitting}
-          endAction={
-            <Button
-              aria-label={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
-              aria-pressed={isPasswordVisible}
-              className="rounded-l-none text-muted-foreground hover:text-foreground"
-              disabled={isSubmitting}
-              onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
-              size="icon"
-              static
-              type="button"
-              variant="ghost"
-            >
-              <span className="relative size-4" aria-hidden="true">
-                <EyeIcon
-                  className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
-                    isPasswordVisible
-                      ? "scale-[0.25] opacity-0 blur-[4px]"
-                      : "scale-100 opacity-100 blur-0"
-                  }`}
-                />
-                <EyeSlashIcon
-                  className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
-                    isPasswordVisible
-                      ? "scale-100 opacity-100 blur-0"
-                      : "scale-[0.25] opacity-0 blur-[4px]"
-                  }`}
-                />
-              </span>
-            </Button>
-          }
-          id="password"
-          name="password"
-          placeholder="Crea una contraseña"
-          startIcon={LockIcon}
-          type={isPasswordVisible ? "text" : "password"}
-        />
-        <FieldValidity>
-          {({ validity }) =>
-            validity.valid === false ? null : (
-              <FieldDescription>{AUTH_PASSWORD_HINT}</FieldDescription>
-            )
-          }
-        </FieldValidity>
-        <FieldError />
-      </Field>
-
-      <Button className="w-full" disabled={isSubmitting} type="submit" variant="default">
-        Crear cuenta
-      </Button>
-
-      <p className="text-center text-xs text-muted-foreground">
-        ¿Ya tienes una cuenta?{" "}
-        <Link
-          className="font-medium text-foreground underline-offset-4 hover:underline"
-          search={{ redirectTo }}
-          to="/login"
+          validate={(value) => validateSignupField("name", readFormString(value))}
         >
-          Iniciar sesión
-        </Link>
-      </p>
+          <FieldLabel htmlFor="name">Nombre completo</FieldLabel>
+          <InputWithIcon
+            autoComplete="name"
+            disabled={isSubmitting}
+            id="name"
+            name="name"
+            placeholder="Ingresa tu nombre completo"
+            startIcon={UserIcon}
+          />
+          <FieldError />
+        </Field>
+
+        <Field
+          {...validation.getFieldValidationProps("email")}
+          disabled={isSubmitting}
+          name="email"
+          validate={(value) => validateSignupField("email", readFormString(value))}
+        >
+          <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
+          <InputWithIcon
+            autoComplete="email"
+            disabled={isSubmitting}
+            id="email"
+            name="email"
+            placeholder="ejemplo@correo.com"
+            startIcon={EnvelopeSimpleIcon}
+            type="email"
+          />
+          <FieldError />
+        </Field>
+
+        <Field
+          {...validation.getFieldValidationProps("password")}
+          disabled={isSubmitting}
+          name="password"
+          validate={(value) => validateSignupField("password", readFormString(value))}
+        >
+          <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+          <InputWithIcon
+            autoComplete="new-password"
+            disabled={isSubmitting}
+            endAction={
+              <Button
+                aria-label={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-pressed={isPasswordVisible}
+                className="rounded-l-none text-muted-foreground hover:text-foreground"
+                disabled={isSubmitting}
+                onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
+                size="icon"
+                static
+                type="button"
+                variant="ghost"
+              >
+                <span className="relative size-4" aria-hidden="true">
+                  <EyeIcon
+                    className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
+                      isPasswordVisible
+                        ? "scale-[0.25] opacity-0 blur-[4px]"
+                        : "scale-100 opacity-100 blur-0"
+                    }`}
+                  />
+                  <EyeSlashIcon
+                    className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
+                      isPasswordVisible
+                        ? "scale-100 opacity-100 blur-0"
+                        : "scale-[0.25] opacity-0 blur-[4px]"
+                    }`}
+                  />
+                </span>
+              </Button>
+            }
+            id="password"
+            name="password"
+            placeholder="Crea una contraseña"
+            startIcon={LockIcon}
+            type={isPasswordVisible ? "text" : "password"}
+          />
+          <FieldValidity>
+            {({ validity }) =>
+              validity.valid === false ? null : (
+                <FieldDescription>{AUTH_PASSWORD_HINT}</FieldDescription>
+              )
+            }
+          </FieldValidity>
+          <FieldError />
+        </Field>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        <Button className="w-full" disabled={isSubmitting} type="submit" variant="default">
+          Crear cuenta
+        </Button>
+
+        <p className="text-center text-xs text-muted-foreground">
+          ¿Ya tienes una cuenta?{" "}
+          <Link
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+            search={{ redirectTo }}
+            to="/login"
+          >
+            Iniciar sesión
+          </Link>
+        </p>
+      </div>
     </Form>
   );
 }

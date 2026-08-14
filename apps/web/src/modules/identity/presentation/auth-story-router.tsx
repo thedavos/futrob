@@ -38,13 +38,13 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     path: "/login",
     component: () => (
       <AuthStoryShell>
-        <div className="mb-8">
+        <div className="flex flex-col gap-8">
           <AuthFormHeader
             description="Continúa gestionando tu competición."
             title="Inicia sesión"
           />
+          <LoginForm />
         </div>
-        <LoginForm />
       </AuthStoryShell>
     ),
   });
@@ -54,13 +54,13 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     path: "/signup",
     component: () => (
       <AuthStoryShell>
-        <div className="mb-8">
+        <div className="flex flex-col gap-8">
           <AuthFormHeader
             description="Empieza gratis y organiza tu competición con más control, orden y transparencia."
             title="Crea tu cuenta"
           />
+          <SignupForm />
         </div>
-        <SignupForm />
       </AuthStoryShell>
     ),
   });

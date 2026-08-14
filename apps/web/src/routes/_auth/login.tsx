@@ -18,9 +18,7 @@ export const Route = createFileRoute("/_auth/login")({
 function LoginPage() {
   return (
     <>
-      <div className="mb-8">
-        <AuthFormHeader description="Continúa gestionando tu competición." title="Inicia sesión" />
-      </div>
+      <AuthFormHeader description="Continúa gestionando tu competición." title="Inicia sesión" />
       <LoginForm />
     </>
   );
