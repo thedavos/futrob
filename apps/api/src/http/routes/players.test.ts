@@ -81,6 +81,8 @@ describe("apps/api personal statistics routes", () => {
         externalClubId: "10754",
         platform: "common-gen5",
         gameEdition: "fc26",
+        name: "Fera Enjaulada",
+        imageUrl: null,
       }),
     });
 
@@ -122,6 +124,8 @@ describe("apps/api personal statistics routes", () => {
         externalClubId: "10754",
         platform: "common-gen5",
         gameEdition: "fc26",
+        name: "Fera Enjaulada",
+        imageUrl: null,
       }),
     });
 

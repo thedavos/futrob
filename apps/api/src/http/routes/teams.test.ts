@@ -315,10 +315,10 @@ describe("apps/api http teams", () => {
   });
 
   it("associates a personal EA club through players/me/external-club", async () => {
+    let infoCalls = 0;
     const app = buildApp(
       createFetch((url) => {
-        expect(url).toContain("/clubs/info");
-        expect(url).toContain("clubIds=10754");
+        if (url.includes("/clubs/info")) infoCalls += 1;
         return Response.json(clubInfoFixture);
       }),
     );
@@ -338,15 +338,19 @@ describe("apps/api http teams", () => {
         externalClubId: "10754",
         platform: "common-gen5",
         gameEdition: "fc26",
+        name: "Cuervos FC1",
+        imageUrl: "https://example.com/cuervos.png",
       }),
     });
     expect(associated.status).toBe(201);
+    expect(infoCalls).toBe(0);
     expect(await associated.json()).toMatchObject({
       externalClub: {
         externalClubId: "10754",
-        externalClubName: "Fera Enjaulada",
+        externalClubName: "Cuervos FC1",
         platform: "common-gen5",
         gameEdition: "fc26",
+        imageUrl: "https://example.com/cuervos.png",
       },
     });
 
@@ -354,7 +358,8 @@ describe("apps/api http teams", () => {
       headers: serviceHeaders(actor),
     });
     expect(await profile.json()).toMatchObject({
-      externalClubs: [{ externalClubId: "10754", externalClubName: "Fera Enjaulada" }],
+      externalClubs: [{ externalClubId: "10754", externalClubName: "Cuervos FC1" }],
     });
+    expect(infoCalls).toBe(0);
   });
 });

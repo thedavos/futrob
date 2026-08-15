@@ -93,17 +93,17 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     const parsed = associateMyPlayerExternalClubRequestSchema.safeParse(json);
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
 
-    const resolved = await gameData.getExternalClub.execute(parsed.data.providerKey, {
-      externalClubId: parsed.data.externalClubId,
-      platform: parsed.data.platform,
-      gameEdition: parsed.data.gameEdition,
-    });
-    if (!resolved.isOk()) return failureToHttp(resolved.error);
-
     const profile = await teams.ensurePlayerProfile.execute({ actorId: c.get("actorId") });
     const associated = await teams.associatePlayerExternalClub.execute({
       playerProfileId: profile.id,
-      club: resolved.value,
+      club: {
+        providerKey: parsed.data.providerKey,
+        externalClubId: parsed.data.externalClubId,
+        name: parsed.data.name,
+        platform: parsed.data.platform,
+        gameEdition: parsed.data.gameEdition,
+        imageUrl: parsed.data.imageUrl,
+      },
     });
     if (!associated.isOk()) return failureToHttp(associated.error);
 

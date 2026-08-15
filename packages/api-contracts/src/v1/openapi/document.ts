@@ -34,6 +34,7 @@ import {
 import { encounterScheduleSnapshotSchema } from "../encounters/schemas.ts";
 import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
+  associateMyPlayerExternalClubRequestSchema,
   associateMyPlayerExternalClubResponseSchema,
   competitionTeamManagementDetailResponseSchema,
   competitionTeamManagementListResponseSchema,
@@ -469,7 +470,7 @@ export const futrobOpenApiV1 = {
           required: true,
           content: {
             "application/json": {
-              schema: { $ref: "#/components/schemas/PlayerExternalClubSelectionInput" },
+              schema: { $ref: "#/components/schemas/AssociateMyPlayerExternalClubRequest" },
             },
           },
         },
@@ -2922,6 +2923,21 @@ export const futrobOpenApiV1 = {
           gameEdition: { type: "string", minLength: 1, maxLength: 40 },
         },
       },
+      AssociateMyPlayerExternalClubRequest: {
+        type: "object",
+        required: ["providerKey", "externalClubId", "platform", "gameEdition", "name", "imageUrl"],
+        properties: {
+          providerKey: {
+            type: "string",
+            enum: ["ea-clubs", "manual", "screenshot-ocr"],
+          },
+          externalClubId: { type: "string", minLength: 1, maxLength: 80 },
+          platform: { type: "string", minLength: 1, maxLength: 40 },
+          gameEdition: { type: "string", minLength: 1, maxLength: 40 },
+          name: { type: "string", minLength: 1 },
+          imageUrl: { type: ["string", "null"], format: "uri" },
+        },
+      },
       PlayerExternalClubAssociation: {
         type: "object",
         required: [
@@ -3216,4 +3232,5 @@ void listAccessibleCompetitionsResponseSchema;
 void encounterScheduleSnapshotSchema;
 void competitionTeamManagementListResponseSchema;
 void competitionTeamManagementDetailResponseSchema;
+void associateMyPlayerExternalClubRequestSchema;
 void associateMyPlayerExternalClubResponseSchema;

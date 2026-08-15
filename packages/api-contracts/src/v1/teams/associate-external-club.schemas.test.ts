@@ -5,14 +5,20 @@ import {
 } from "./schemas.ts";
 
 describe("associateMyPlayerExternalClub contracts", () => {
-  it("accepts a locator and returns the persisted association", () => {
+  it("accepts the searched club and returns the persisted association", () => {
     const request = associateMyPlayerExternalClubRequestSchema.parse({
       providerKey: "ea-clubs",
       externalClubId: "10754",
       platform: "common-gen5",
       gameEdition: "fc26",
+      name: "Fera Enjaulada",
+      imageUrl: "https://example.com/fera.png",
     });
-    expect(request.externalClubId).toBe("10754");
+    expect(request).toMatchObject({
+      externalClubId: "10754",
+      name: "Fera Enjaulada",
+      imageUrl: "https://example.com/fera.png",
+    });
 
     const response = associateMyPlayerExternalClubResponseSchema.parse({
       profile: {

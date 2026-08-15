@@ -3,6 +3,8 @@ import type {
   AcceptRosterInvitationRequest,
   AddMyPlayerGameAccountRequest,
   AssociateMyPlayerExternalClubRequest,
+  AssociateMyPlayerExternalClubResponse,
+  GetMyPlayerProfileResponse,
   SetActiveTeamRequest,
 } from "@futrob/api-contracts";
 import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
@@ -42,9 +44,11 @@ export function useAssociateMyExternalClubMutation() {
   return useMutation({
     mutationFn: (input: AssociateMyPlayerExternalClubRequest) =>
       teamsBrowserClient.associateMyExternalClub(input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.gameData.meRecentMatches() });
+    onSuccess: (data) => {
+      queryClient.setQueryData<GetMyPlayerProfileResponse>(queryKeys.players.me(), (current) =>
+        profileWithAssociatedClub(current, data),
+      );
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gameData.meRecentMatches() });
     },
   });
 }
@@ -73,4 +77,31 @@ export function useAcceptRosterInvitationMutation() {
       await invalidateEffectiveAccessQueries(queryClient);
     },
   });
+}
+
+function profileWithAssociatedClub(
+  current: GetMyPlayerProfileResponse | undefined,
+  data: AssociateMyPlayerExternalClubResponse,
+): GetMyPlayerProfileResponse {
+  if (!current) {
+    return {
+      profile: data.profile,
+      gameAccounts: [],
+      externalClubs: [data.externalClub],
+    };
+  }
+  return {
+    ...current,
+    profile: data.profile,
+    externalClubs: [
+      ...current.externalClubs.filter(
+        (item) =>
+          !(
+            item.providerKey === data.externalClub.providerKey &&
+            item.externalClubId === data.externalClub.externalClubId
+          ),
+      ),
+      data.externalClub,
+    ],
+  };
 }

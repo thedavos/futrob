@@ -42,6 +42,8 @@ export function AddClubDialog({
         externalClubId: selected.externalClubId,
         platform: selected.platform,
         gameEdition: selected.gameEdition,
+        name: selected.name,
+        imageUrl: selected.imageUrl,
       });
       onOpenChange(false);
       setSelected(null);

@@ -68,7 +68,11 @@ export const addMyPlayerGameAccountResponseSchema = z.object({
 });
 export type AddMyPlayerGameAccountResponse = z.infer<typeof addMyPlayerGameAccountResponseSchema>;
 
-export const associateMyPlayerExternalClubRequestSchema = playerExternalClubSelectionInputSchema;
+export const associateMyPlayerExternalClubRequestSchema =
+  playerExternalClubSelectionInputSchema.extend({
+    name: z.string().trim().min(1),
+    imageUrl: z.string().url().nullable(),
+  });
 export type AssociateMyPlayerExternalClubRequest = z.infer<
   typeof associateMyPlayerExternalClubRequestSchema
 >;

@@ -421,7 +421,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PlayerExternalClubSelectionInput"
+              $ref: "#/components/schemas/AssociateMyPlayerExternalClubRequest"
       responses:
         "201":
           description: Idempotently associated external club
@@ -4247,6 +4247,42 @@ components:
           type: string
           minLength: 1
           maxLength: 40
+    AssociateMyPlayerExternalClubRequest:
+      type: object
+      required:
+        - providerKey
+        - externalClubId
+        - platform
+        - gameEdition
+        - name
+        - imageUrl
+      properties:
+        providerKey:
+          type: string
+          enum:
+            - ea-clubs
+            - manual
+            - screenshot-ocr
+        externalClubId:
+          type: string
+          minLength: 1
+          maxLength: 80
+        platform:
+          type: string
+          minLength: 1
+          maxLength: 40
+        gameEdition:
+          type: string
+          minLength: 1
+          maxLength: 40
+        name:
+          type: string
+          minLength: 1
+        imageUrl:
+          type:
+            - string
+            - "null"
+          format: uri
     PlayerExternalClubAssociation:
       type: object
       required:
