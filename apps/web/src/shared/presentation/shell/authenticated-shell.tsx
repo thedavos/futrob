@@ -332,7 +332,7 @@ function ShellSidebarBody({
       {compact ? (
         <SidebarContent className="items-center p-2">
           <Button
-            aria-label="Expandir para ver cola"
+            aria-label={t("shell.queue.expand")}
             dense
             onClick={toggleCollapsed}
             size="icon"
@@ -345,7 +345,7 @@ function ShellSidebarBody({
       ) : (
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Cola</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("shell.queue.label")}</SidebarGroupLabel>
             <QueuePlaceholder />
           </SidebarGroup>
         </SidebarContent>
@@ -358,12 +358,12 @@ function ShellSidebarBody({
 }
 
 function QueuePlaceholder() {
+  const { t } = useI18n();
+
   return (
     <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
-      <p className="text-sm font-medium text-foreground">Sin tareas pendientes</p>
-      <p className="typo-caption text-muted-foreground">
-        Las tareas del espacio activo aparecerán aquí.
-      </p>
+      <p className="text-sm font-medium text-foreground">{t("shell.queue.empty.title")}</p>
+      <p className="typo-caption text-muted-foreground">{t("shell.queue.empty.description")}</p>
     </div>
   );
 }

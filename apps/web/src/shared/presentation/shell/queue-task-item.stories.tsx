@@ -53,7 +53,7 @@ type Story = StoryObj<typeof meta>;
 export const Playground: Story = {
   decorators: [
     (Story) => (
-      <QueuePanel label="Cola">
+      <QueuePanel label="Tareas">
         <Story />
       </QueuePanel>
     ),
@@ -187,7 +187,7 @@ export const AsLink: Story = {
   },
   decorators: [
     (Story) => (
-      <QueuePanel label="Cola">
+      <QueuePanel label="Tareas">
         <Story />
       </QueuePanel>
     ),
@@ -382,7 +382,7 @@ export const Empty: Story = {
   name: "Empty queue",
   render: () => (
     <div className="flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3">
-      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Cola</p>
+      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Tareas</p>
       <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold text-pretty text-foreground">Sin tareas pendientes</p>
@@ -399,8 +399,13 @@ export const Loading: Story = {
   name: "Loading",
   render: () => (
     <div className="flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3">
-      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Cola</p>
-      <ul aria-busy="true" aria-label="Cargando cola" className="flex flex-col gap-2" role="status">
+      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Tareas</p>
+      <ul
+        aria-busy="true"
+        aria-label="Cargando tareas"
+        className="flex flex-col gap-2"
+        role="status"
+      >
         <li className="h-10 animate-pulse rounded-lg bg-muted" />
         <li className="h-10 animate-pulse rounded-lg bg-muted" />
         <li className="h-10 animate-pulse rounded-lg bg-muted" />
@@ -413,10 +418,10 @@ export const ErrorState: Story = {
   name: "Error",
   render: () => (
     <div className="flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3">
-      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Cola</p>
+      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Tareas</p>
       <Alert className="gap-y-3" variant="destructive">
         <WarningCircleIcon aria-hidden="true" />
-        <AlertTitle className="font-bold">No se pudo cargar la cola</AlertTitle>
+        <AlertTitle className="font-bold">No se pudieron cargar las tareas</AlertTitle>
         <AlertDescription className="grid gap-4">
           <span className="typo-caption font-medium text-pretty">
             Conservamos el espacio activo para que puedas reintentar.

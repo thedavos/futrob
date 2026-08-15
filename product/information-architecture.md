@@ -86,7 +86,7 @@ sidebar izquierda | command bar + contenido con scroll + action bar opcional
 Regiones de la sidebar (scroll independiente del contenido central):
 
 1. **Header sticky:** fila de cuenta (avatar + nombre abreviado + colapsar) y selector de contexto.
-2. **Content (scroll):** cola de tareas (placeholder hasta que existan colas de dominio).
+2. **Content (scroll):** tareas del espacio activo (placeholder hasta que existan colas de dominio).
 3. **Footer sticky:** navegación General (Inicio, Competiciones, …).
 
 Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive en el header de la sidebar. Mobile usa Sheet con las mismas regiones.

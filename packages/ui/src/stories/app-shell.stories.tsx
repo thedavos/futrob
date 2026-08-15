@@ -185,7 +185,7 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Cola</SidebarGroupLabel>
+            <SidebarGroupLabel>Tareas</SidebarGroupLabel>
             <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
               <p className="text-sm font-medium">Sin tareas pendientes</p>
               <p className="typo-caption text-muted-foreground">
@@ -279,7 +279,7 @@ export const CollapsedRail: Story = {
             <AccountAndCollapseRow compact />
           </SidebarHeader>
           <SidebarContent className="items-center p-2">
-            <SidebarMenuButton aria-label="Cola" className="justify-center px-0" dense>
+            <SidebarMenuButton aria-label="Tareas" className="justify-center px-0" dense>
               <CheckSquareOffsetIcon aria-hidden="true" />
             </SidebarMenuButton>
           </SidebarContent>
@@ -303,7 +303,7 @@ export const CollapsedRail: Story = {
             <h1 className="typo-heading text-lg">Focus mode</h1>
           </header>
           <div className="flex-1 p-5 text-sm text-muted-foreground">
-            Icon rail colapsado. Expandir restaura selector y cola.
+            Icon rail colapsado. Expandir restaura el selector y las tareas.
           </div>
         </SidebarInset>
       </SidebarProvider>

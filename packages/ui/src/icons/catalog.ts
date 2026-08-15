@@ -128,8 +128,8 @@ export const FUTROB_ICON_CATALOG = [
   },
   {
     name: "CheckSquareOffsetIcon",
-    label: "Cola",
-    usage: "Placeholder de cola en sidebar colapsada",
+    label: "Tareas",
+    usage: "Placeholder de tareas en sidebar colapsada",
     Icon: CheckSquareOffsetIcon,
   },
   {

@@ -275,18 +275,14 @@ function DemoSidebar({
       </SidebarHeader>
       {compact ? (
         <SidebarContent className="items-center p-2">
-          <SidebarMenuButton
-            aria-label="Cola de tareas"
-            className="justify-center px-0"
-            dense={dense}
-          >
+          <SidebarMenuButton aria-label="Tareas" className="justify-center px-0" dense={dense}>
             <CheckSquareOffsetIcon aria-hidden="true" />
           </SidebarMenuButton>
         </SidebarContent>
       ) : (
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Cola</SidebarGroupLabel>
+            <SidebarGroupLabel>Tareas</SidebarGroupLabel>
             <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
               <p className="text-sm font-medium text-foreground">Sin tareas pendientes</p>
               <p className="typo-caption text-muted-foreground">
@@ -370,7 +366,7 @@ export const Regions: Story = {
         <SidebarContent>
           <p className="typo-caption text-muted-foreground">Content con scroll</p>
           <SidebarGroup>
-            <SidebarGroupLabel>Cola</SidebarGroupLabel>
+            <SidebarGroupLabel>Tareas</SidebarGroupLabel>
             <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
               <p className="text-sm font-medium">Sin tareas pendientes</p>
             </div>
@@ -559,14 +555,14 @@ export const EmptyQueue: Story = {
   name: "Empty queue content",
   render: () => (
     <SidebarProvider className="h-svh" data-density="dense">
-      <Sidebar aria-label="Cola vacía" className="flex">
+      <Sidebar aria-label="Tareas" className="flex">
         <SidebarHeader className="gap-3">
           <DemoAccountRow dense shortName="David" />
           <DemoWorkspaceSelector dense />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Cola</SidebarGroupLabel>
+            <SidebarGroupLabel>Tareas</SidebarGroupLabel>
             <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
               <p className="text-sm font-medium text-foreground">Sin tareas pendientes</p>
               <p className="typo-caption text-muted-foreground">
