@@ -41,7 +41,7 @@ export function PlayerWorkspacePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
+    <main className="w-full">
       <div className="mb-8 max-w-2xl space-y-2">
         <p className="typo-label text-muted-foreground">Espacio personal</p>
         <h1 className="typo-heading text-3xl sm:text-4xl">Tu espacio de jugador</h1>

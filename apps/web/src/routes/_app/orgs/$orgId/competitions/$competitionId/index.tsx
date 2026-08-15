@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_app/orgs/$orgId/competitions/$competitio
 function CompetitionHomePage() {
   const { orgId } = Route.useParams();
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="w-full">
       <div className="space-y-4">
         <h1 className="typo-heading">Ya formas parte de la competición</h1>
         <p className="text-sm text-muted-foreground">

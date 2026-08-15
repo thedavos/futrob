@@ -29,7 +29,7 @@ export function OrganizationCompetitionsPage({
   const canCreate = create.allowed;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8 sm:py-14">
+    <main className="w-full">
       <header className="space-y-3">
         <h1 className="typo-heading">Competiciones</h1>
         <p className="typo-subtitle max-w-xl text-muted-foreground">

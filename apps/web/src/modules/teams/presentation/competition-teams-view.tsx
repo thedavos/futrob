@@ -93,7 +93,10 @@ export type CompetitionTeamsViewProps = {
 
 export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
   return (
-    <main className="flex h-full min-h-0 flex-1 flex-col bg-background text-foreground">
+    <main
+      className="flex h-full min-h-0 flex-1 flex-col bg-background text-foreground"
+      data-shell-bleed=""
+    >
       <header className="flex shrink-0 flex-col gap-2 border-b border-border px-5 py-5 sm:px-8">
         <h1 className="typo-heading">Equipos y plantillas</h1>
         <p className="typo-subtitle max-w-[65ch] text-pretty text-muted-foreground">

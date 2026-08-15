@@ -129,113 +129,111 @@ export function CompetitionSetupPage({
     return <PageAlert> No se pudo cargar el borrador de la competición. </PageAlert>;
   if (!draft || !form)
     return (
-      <main className="px-5 py-10">
+      <main>
         <p className="typo-subtitle text-muted-foreground">Cargando competición…</p>
       </main>
     );
 
   return (
-    <main className="px-5 py-8 text-foreground sm:px-8 sm:py-10">
-      <div className="mx-auto w-full max-w-3xl">
-        <header className="mb-8 grid gap-3 text-center">
-          <div>
-            <Badge variant="neutral">{readOnly ? "Publicada" : "Borrador"}</Badge>
-          </div>
-          <h1 className="typo-heading">Configurar {draft.competition.name}</h1>
-          <p className="typo-subtitle text-muted-foreground">
-            Guarda el avance y vuelve cuando quieras. La asociación EA es declarativa y no verifica
-            propiedad.
-          </p>
-        </header>
-        <Stepper
-          aria-label="Configuración de competición"
-          className="mb-10"
-          currentStepId={currentStep}
-          steps={steps}
-        />
-        {error ? (
-          <PageAlert>
-            No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
-          </PageAlert>
-        ) : null}
-        <Card>
-          <CardContent className="grid gap-6 p-5 sm:p-8">
-            {currentStep === "information" ? (
-              <InformationStep
-                disabled={readOnly}
-                form={form}
-                onChange={(patch) => setForm({ ...form, ...patch })}
-              />
-            ) : null}
-            {currentStep === "format" ? (
-              <FormatStep
-                disabled={readOnly}
-                form={form}
-                onChange={(next) => {
-                  if (next === form.format) return;
-                  if (
-                    !globalThis.confirm(
-                      "Cambiar el formato reemplazará las reglas incompatibles. ¿Continuar?",
-                    )
+    <main className="w-full">
+      <header className="mb-8 grid gap-3 text-center">
+        <div>
+          <Badge variant="neutral">{readOnly ? "Publicada" : "Borrador"}</Badge>
+        </div>
+        <h1 className="typo-heading">Configurar {draft.competition.name}</h1>
+        <p className="typo-subtitle text-muted-foreground">
+          Guarda el avance y vuelve cuando quieras. La asociación EA es declarativa y no verifica
+          propiedad.
+        </p>
+      </header>
+      <Stepper
+        aria-label="Configuración de competición"
+        className="mb-10"
+        currentStepId={currentStep}
+        steps={steps}
+      />
+      {error ? (
+        <PageAlert>
+          No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
+        </PageAlert>
+      ) : null}
+      <Card>
+        <CardContent className="grid gap-6 p-5 sm:p-8">
+          {currentStep === "information" ? (
+            <InformationStep
+              disabled={readOnly}
+              form={form}
+              onChange={(patch) => setForm({ ...form, ...patch })}
+            />
+          ) : null}
+          {currentStep === "format" ? (
+            <FormatStep
+              disabled={readOnly}
+              form={form}
+              onChange={(next) => {
+                if (next === form.format) return;
+                if (
+                  !globalThis.confirm(
+                    "Cambiar el formato reemplazará las reglas incompatibles. ¿Continuar?",
                   )
-                    return;
-                  setForm({ ...form, format: next, rules: rulesForFormat(next) });
-                }}
-              />
-            ) : null}
-            {currentStep === "rules" ? (
-              <RulesStep
-                disabled={readOnly}
-                form={form}
-                onChange={(rules) => setForm({ ...form, rules })}
-              />
-            ) : null}
-            {currentStep === "participants" ? (
-              <ParticipantsStep
-                availableTeams={availableTeams}
-                disabled={readOnly || busy || !canManageParticipants}
-                newTeamName={newTeamName}
-                onAdd={addParticipant}
-                onNameChange={setNewTeamName}
-                onRemove={(id: string) => remove.mutateAsync(id)}
-                onTeamChange={setSelectedTeamId}
-                participants={participantsQuery.data?.participants ?? []}
-                selectedTeamId={selectedTeamId}
-                teams={teamsQuery.data?.teams ?? []}
-              />
-            ) : null}
-            {currentStep === "review" ? (
-              <ReviewStep draft={draft} participantCount={approvedParticipantCount} />
-            ) : null}
-          </CardContent>
-        </Card>
-        <div className="mt-6 flex flex-wrap justify-between gap-3">
-          <Button
-            disabled={currentStep === "information" || busy}
-            onClick={() => move(-1)}
-            variant="outline"
-          >
-            Anterior
-          </Button>
-          <div className="flex flex-wrap gap-3">
-            {!readOnly && currentStep !== "participants" && currentStep !== "review" ? (
-              <Button disabled={busy} onClick={() => void save()} variant="outline">
-                {update.isPending ? "Guardando…" : "Guardar"}
-              </Button>
-            ) : null}
-            {currentStep !== "review" ? (
-              <Button disabled={busy} onClick={() => void continueNext()}>
-                Continuar
-              </Button>
-            ) : !readOnly && canPublish ? (
-              <Button
-                disabled={busy || approvedParticipantCount < 2}
-                onClick={() => void publish.mutateAsync()}
-              >
-                {publish.isPending ? "Publicando…" : "Publicar competición"}
-              </Button>
-            ) : null}
-          </div>
+                )
+                  return;
+                setForm({ ...form, format: next, rules: rulesForFormat(next) });
+              }}
+            />
+          ) : null}
+          {currentStep === "rules" ? (
+            <RulesStep
+              disabled={readOnly}
+              form={form}
+              onChange={(rules) => setForm({ ...form, rules })}
+            />
+          ) : null}
+          {currentStep === "participants" ? (
+            <ParticipantsStep
+              availableTeams={availableTeams}
+              disabled={readOnly || busy || !canManageParticipants}
+              newTeamName={newTeamName}
+              onAdd={addParticipant}
+              onNameChange={setNewTeamName}
+              onRemove={(id: string) => remove.mutateAsync(id)}
+              onTeamChange={setSelectedTeamId}
+              participants={participantsQuery.data?.participants ?? []}
+              selectedTeamId={selectedTeamId}
+              teams={teamsQuery.data?.teams ?? []}
+            />
+          ) : null}
+          {currentStep === "review" ? (
+            <ReviewStep draft={draft} participantCount={approvedParticipantCount} />
+          ) : null}
+        </CardContent>
+      </Card>
+      <div className="mt-6 flex flex-wrap justify-between gap-3">
+        <Button
+          disabled={currentStep === "information" || busy}
+          onClick={() => move(-1)}
+          variant="outline"
+        >
+          Anterior
+        </Button>
+        <div className="flex flex-wrap gap-3">
+          {!readOnly && currentStep !== "participants" && currentStep !== "review" ? (
+            <Button disabled={busy} onClick={() => void save()} variant="outline">
+              {update.isPending ? "Guardando…" : "Guardar"}
+            </Button>
+          ) : null}
+          {currentStep !== "review" ? (
+            <Button disabled={busy} onClick={() => void continueNext()}>
+              Continuar
+            </Button>
+          ) : !readOnly && canPublish ? (
+            <Button
+              disabled={busy || approvedParticipantCount < 2}
+              onClick={() => void publish.mutateAsync()}
+            >
+              {publish.isPending ? "Publicando…" : "Publicar competición"}
+            </Button>
+          ) : null}
         </div>
       </div>
     </main>

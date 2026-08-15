@@ -25,7 +25,7 @@ export function PlayerCompetitionsPage() {
   const competitions = competitionsFromTeams(teamsQuery.data?.teams ?? []);
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8 sm:py-14">
+    <main className="w-full">
       <header className="space-y-3">
         <div className="space-y-3">
           <h1 className="typo-heading">Competiciones</h1>

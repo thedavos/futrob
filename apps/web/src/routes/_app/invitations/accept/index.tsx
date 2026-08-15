@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_app/invitations/accept/")({
 
 function AcceptInvitationPage() {
   return (
-    <main className="mx-auto w-full max-w-xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="w-full max-w-xl">
       <div className="mb-8 space-y-2">
         <h1 className="typo-heading">Únete a una competición</h1>
         <p className="typo-subtitle text-muted-foreground">

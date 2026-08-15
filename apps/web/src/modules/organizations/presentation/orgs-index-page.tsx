@@ -37,7 +37,7 @@ export function OrgsIndexPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="w-full">
       <div className="mb-6 space-y-2">
         <h1 className="typo-heading">Tus organizaciones</h1>
         <p className="text-sm text-muted-foreground">

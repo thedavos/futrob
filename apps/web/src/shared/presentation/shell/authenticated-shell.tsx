@@ -139,7 +139,10 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
             onAddClub={() => setAddClubOpen(true)}
             selection={selectionState.selection}
           />
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" id="app-main">
+          <div
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 has-[[data-shell-bleed]]:p-0"
+            id="app-main"
+          >
             {children}
           </div>
           <ShellActionBarSlot />

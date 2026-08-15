@@ -8,7 +8,7 @@ function OrgHomePage() {
   const { orgId } = Route.useParams();
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
+    <main className="w-full">
       <div className="space-y-4">
         <h1 className="typo-heading">Organización</h1>
         <p className="text-sm text-muted-foreground">

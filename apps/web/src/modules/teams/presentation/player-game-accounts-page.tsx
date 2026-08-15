@@ -79,7 +79,7 @@ export function PlayerGameAccountsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-12">
+    <main className="w-full">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div className="space-y-2">
           <p className="typo-label text-muted-foreground">Espacio personal</p>
