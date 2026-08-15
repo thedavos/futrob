@@ -94,6 +94,13 @@ export { Label } from "./components/label";
 export { MasterDetail } from "./components/master-detail";
 export type { MasterDetailProps } from "./components/master-detail";
 export {
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderDescription,
+  PageHeaderEyebrow,
+  PageHeaderTitle,
+} from "./components/page-header";
+export {
   Popover,
   PopoverClose,
   PopoverContent,
@@ -177,6 +184,7 @@ export {
 } from "./components/table";
 export type { TableProps } from "./components/table";
 export { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "./components/tabs";
+export type { TabsProps, TabsVariant } from "./components/tabs";
 export { Textarea } from "./components/textarea";
 export type { TextareaProps } from "./components/textarea";
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/tooltip";

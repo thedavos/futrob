@@ -51,6 +51,14 @@
   --blue-700: oklch(0.488 0.243 264.376);
   --blue-900: oklch(0.379 0.146 265.522);
 
+  /* Categorical highlight scale. Not mapped to Tailwind — consume via --emphasis. */
+  --violet-50: oklch(0.97 0.014 300);
+  --violet-100: oklch(0.932 0.032 300);
+  --violet-300: oklch(0.809 0.105 300);
+  --violet-500: oklch(0.623 0.18 300);
+  --violet-700: oklch(0.488 0.2 300);
+  --violet-900: oklch(0.379 0.146 300);
+
   /* Typography — Manrope; canonical weights 400 / 500 / 600 / 700 */
   --font-ui: "Manrope Variable", "Manrope", system-ui, sans-serif;
   --font-weight-regular: 400;
@@ -193,6 +201,9 @@
   --destructive-foreground: var(--danger-foreground);
   --info: var(--blue-700);
   --info-foreground: var(--neutral-0);
+  /* Categorical highlight — not a status. Distinct from brand, info, warning, danger. */
+  --emphasis: var(--violet-700);
+  --emphasis-foreground: var(--neutral-0);
   --sidebar: var(--surface);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -253,6 +264,8 @@
   --destructive-foreground: var(--danger-foreground);
   --info: var(--blue-300);
   --info-foreground: var(--neutral-950);
+  --emphasis: var(--violet-300);
+  --emphasis-foreground: var(--neutral-950);
   --sidebar: var(--surface);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);

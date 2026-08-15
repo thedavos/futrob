@@ -38,6 +38,8 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+  --color-emphasis: var(--emphasis);
+  --color-emphasis-foreground: var(--emphasis-foreground);
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
   --color-brand-200: var(--brand-200);

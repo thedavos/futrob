@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 
 import {
   Breadcrumb,
@@ -58,4 +59,44 @@ export const CompetitionNavigation: Story = {
       </Tabs>
     </div>
   ),
+};
+
+export const PillsTabs: Story = {
+  name: "Tabs pills",
+  render: () => (
+    <div className="w-[min(46rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-6">
+      <Tabs defaultValue="recent" variant="pills">
+        <TabsList>
+          <TabsTrigger value="recent">Recientes</TabsTrigger>
+          <TabsTrigger value="league">Liga</TabsTrigger>
+          <TabsTrigger value="playoff">Playoff</TabsTrigger>
+          <TabsTrigger value="friendly">Amistosos</TabsTrigger>
+          <TabsTrigger value="all">Todos los partidos</TabsTrigger>
+          <TabsIndicator />
+        </TabsList>
+        <TabsContent value="recent">
+          <p className="text-sm text-muted-foreground">Apariciones de los últimos 7 días.</p>
+        </TabsContent>
+        <TabsContent value="league">
+          <p className="text-sm text-muted-foreground">Partidos de liga.</p>
+        </TabsContent>
+        <TabsContent value="playoff">
+          <p className="text-sm text-muted-foreground">Partidos de playoff.</p>
+        </TabsContent>
+        <TabsContent value="friendly">
+          <p className="text-sm text-muted-foreground">Partidos amistosos.</p>
+        </TabsContent>
+        <TabsContent value="all">
+          <p className="text-sm text-muted-foreground">Todas las apariciones.</p>
+        </TabsContent>
+      </Tabs>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector("[data-slot='tabs']")).toHaveAttribute(
+      "data-variant",
+      "pills",
+    );
+    await expect(canvasElement.querySelector("[data-slot='tabs-indicator']")).toBeNull();
+  },
 };

@@ -40,13 +40,14 @@ Formularios:
 
 Navegación:
 
-- `Tabs`, `Breadcrumb`, `Sheet`, `Stepper`
+- `Tabs` (`line` | `pills`), `Breadcrumb`, `Sheet`, `Stepper`
 - `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`
 - `Sidebar` (+ header/content/footer/group/menu, collapse via `SidebarProvider`) y `DropdownMenu`
 - `MasterDetail` (lista + detalle con scroll independiente; mobile muestra detalle a pantalla completa cuando hay `selectedId`)
 
 Composición de shell:
 
+- `PageHeader`, `PageHeaderEyebrow`, `PageHeaderTitle`, `PageHeaderDescription`, `PageHeaderActions`
 - `ActionBar`, `ActionBarStart`, `ActionBarEnd` (barra sticky inferior de acciones de página)
 
 Datos:

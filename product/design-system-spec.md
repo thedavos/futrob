@@ -56,6 +56,8 @@ capacidad opt-in, pero ninguna UI debe activarlo mediante `prefers-color-scheme`
 - `--approved` es una variante verde más profunda y separada de `--primary`; se usa únicamente
   cuando un resultado ya fue auditado/aprobado.
 - Sync usa azul, selección/revisión usa ámbar, disputa/error usa rojo y cancelación usa neutral.
+- `--emphasis` es violeta: acento categórico cuando marca, info, warning y danger ya están ocupados.
+  No sustituye a `--approved` ni al verde de victoria.
 - Los componentes consumen tokens semánticos (`--primary`, `--approved`, `--danger`,
   `--border`, etc.), nunca tonos crudos.
 - Objetivo: WCAG 2.2 AA. El borde de un control debe mantener contraste no textual suficiente
@@ -111,7 +113,7 @@ Los formularios muestran validación junto al campo y un resumen solo cuando apo
 
 ### Navegación
 
-- `Tabs` con indicador lineal
+- `Tabs` con variantes cerradas `line` (indicador lineal, default) y `pills` (segmento relleno)
 - `Breadcrumb`
 - `Sheet` para navegación móvil
 - `Stepper` para progreso secuencial no interactivo
@@ -122,7 +124,7 @@ La navegación de producto usa `typo-label`. El estado activo no depende únicam
 ### Datos
 
 - `Table` y primitivas de fila/celda
-- `Badge` con variante `approved`
+- `Badge` con variantes `approved` (solo resultados oficiales) y `emphasis` (acento categórico; no es un estado)
 - `Card` para entidades o resúmenes autónomos
   - `variant="flat"` (default): borde estructural, sin elevación.
   - `variant="elevated"`: `smooth-shadow-ring-md`. Sin `border`/`ring` en el mismo elemento.
