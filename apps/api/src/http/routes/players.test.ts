@@ -138,12 +138,14 @@ describe("apps/api personal statistics routes", () => {
       status: string;
       matches?: Array<{
         appearance: { displayName: string };
-        match: { players: unknown[] };
+        match: { players: Array<{ isMvp: boolean | null }> };
       }>;
     };
     expect(body.status).toBe("ready");
     expect(body.matches?.length).toBeGreaterThan(0);
     expect(body.matches?.every((row) => row.appearance.displayName === "Vcaliari")).toBe(true);
-    expect(body.matches?.every((row) => row.match.players.length === 0)).toBe(true);
+    expect(
+      body.matches?.every((row) => row.match.players.every((player) => player.isMvp === true)),
+    ).toBe(true);
   });
 });

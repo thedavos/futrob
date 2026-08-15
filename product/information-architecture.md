@@ -25,7 +25,7 @@ Futrob
 ├── Autenticación
 ├── Aplicación autenticada
 │   ├── Espacio personal del jugador
-│   │   ├── Mis partidos (Recientes + Oficiales)
+│   │   ├── Mis partidos (Recientes + Todos)
 │   │   ├── Mis estadísticas
 │   │   ├── Datos de juego
 │   │   └── Invitaciones y organizaciones
@@ -150,7 +150,7 @@ crear una organización ni aceptar una invitación.
 **General (personal):** Inicio · Competiciones · Clubes EA · Invitaciones.
 
 - **Inicio personal:** resumen de partidos recientes, estadísticas destacadas y estado de vinculación de la cuenta de juego.
-- **Mis partidos:** dos bloques. Recientes = `ProviderMatch` de los clubes asociados (requiere `PlayerExternalClubAssociation`). Oficiales = contribuciones de resultados aprobados. No se mezclan.
+- **Mis partidos:** una lista de `ProviderMatch` de los clubes asociados (requiere `PlayerExternalClubAssociation`). Recientes = últimos 7 días de calendario; Todos = el conjunto que trae el proveedor. Recientes y Todos marcan el tipo de partido (liga, playoff, amistoso) y las tarjetas de la aparición. Un badge de hat-trick, póker o repóker aparece cuando la aparición tiene 3, 4 o 5+ goles. El historial oficial no vive aquí: está en Mis estadísticas y en `GET /players/me/matches`.
 - **Mis estadísticas:** solo agregados oficiales.
 - **Competiciones / Clubes EA:** listados; al abrir una entidad se activa el grupo Contexto.
 - **Datos de juego:** vincular o actualizar identificador de jugador (subdestino desde Clubes EA o perfil).
@@ -241,6 +241,7 @@ Sin sidebar administrativo. Header de competición + tabs horizontales sticky. S
 
 - Ruta no aplicable al formato: omitir.
 - Ruta aplicable sin datos: empty state con siguiente acción.
-- Jugador sin club asociado en Mis partidos / Recientes: empty state para asociar un club; el identificador de juego no alcanza.
-- Jugador sin partidos oficiales: empty state que explica que aparecen al aprobar un resultado que coincida; no se exige invitación.
+- Jugador sin club asociado en Mis partidos: empty state para asociar un club; el identificador de juego no alcanza.
+- Jugador sin partidos recientes y con partidos más antiguos: empty de Recientes con acción hacia Todos.
+- Jugador sin partidos oficiales: empty state en Mis estadísticas que explica que aparecen al aprobar un resultado que coincida; no se exige invitación.
 - Sin permiso: 403 con salida segura; no disfrazar como vacío.

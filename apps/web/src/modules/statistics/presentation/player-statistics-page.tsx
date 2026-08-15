@@ -11,6 +11,11 @@ import {
   EmptyStateActions,
   EmptyStateDescription,
   EmptyStateTitle,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderDescription,
+  PageHeaderEyebrow,
+  PageHeaderTitle,
   Skeleton,
   Stat,
   StatGroup,
@@ -68,8 +73,8 @@ export function PlayerStatisticsPage() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
-      <PageHeader t={t} />
+    <main className="w-full">
+      <StatisticsPageHeader t={t} />
 
       {statisticsQuery.isPending ? (
         <StatisticsLoading t={t} />
@@ -95,18 +100,18 @@ export function PlayerStatisticsPage() {
   );
 }
 
-function PageHeader({ t }: { readonly t: Translator }) {
+function StatisticsPageHeader({ t }: { readonly t: Translator }) {
   return (
-    <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-      <div className="max-w-2xl space-y-2">
-        <p className="typo-label text-muted-foreground">{t("player.workspace.eyebrow")}</p>
-        <h1 className="typo-heading">{t("player.statistics.title")}</h1>
-        <p className="typo-subtitle text-muted-foreground">{t("player.statistics.description")}</p>
-      </div>
-      <Button render={<Link to="/player" />} variant="link">
-        {t("player.backToWorkspace")}
-      </Button>
-    </div>
+    <PageHeader>
+      <PageHeaderEyebrow>{t("player.workspace.eyebrow")}</PageHeaderEyebrow>
+      <PageHeaderTitle>{t("player.statistics.title")}</PageHeaderTitle>
+      <PageHeaderDescription>{t("player.statistics.description")}</PageHeaderDescription>
+      <PageHeaderActions>
+        <Button render={<Link to="/player" />} variant="link">
+          {t("player.backToWorkspace")}
+        </Button>
+      </PageHeaderActions>
+    </PageHeader>
   );
 }
 

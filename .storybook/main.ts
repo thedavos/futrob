@@ -19,7 +19,31 @@ const config: StorybookConfig = {
     options: {},
   },
   async viteFinal(viteConfig) {
-    viteConfig.plugins = [...(viteConfig.plugins ?? []), tailwindcss()];
+    const statisticsStoryClient = resolve(
+      webSrc,
+      "modules/statistics/presentation/player-matches-story-client.ts",
+    );
+    viteConfig.plugins = [
+      {
+        name: "storybook-mock-statistics-browser-client",
+        enforce: "pre",
+        resolveId(source: string) {
+          const id = source.replaceAll("\\", "/").split("?")[0] ?? source;
+          if (id.includes("player-matches-story-client")) return null;
+          if (
+            id === "./statistics-browser-client.ts" ||
+            id === "./statistics-browser-client" ||
+            id.endsWith("/statistics-browser-client.ts") ||
+            id.endsWith("/statistics-browser-client")
+          ) {
+            return statisticsStoryClient;
+          }
+          return null;
+        },
+      },
+      ...(viteConfig.plugins ?? []),
+      tailwindcss(),
+    ];
     viteConfig.resolve = {
       ...viteConfig.resolve,
       alias: [
@@ -31,6 +55,10 @@ const config: StorybookConfig = {
         {
           find: /^@\/modules\/organizations\/presentation\/organizations-browser-client(?:\.ts)?$/,
           replacement: resolve(configDir, "mocks/organizations-browser-client.ts"),
+        },
+        {
+          find: /^@\/modules\/statistics\/presentation\/statistics-browser-client(?:\.ts)?$/,
+          replacement: statisticsStoryClient,
         },
         {
           find: "@",

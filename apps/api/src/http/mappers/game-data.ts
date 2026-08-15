@@ -43,7 +43,8 @@ export function toPlayerRecentMatchesDto(
         matches: result.matches.map((row) => ({
           match: {
             ...toProviderMatchDto(row.match),
-            players: [],
+            // Keep only the match MVP so Mis partidos can name them without the full roster.
+            players: row.match.players.filter((player) => player.isMvp === true),
           },
           appearance: { ...row.appearance },
         })),

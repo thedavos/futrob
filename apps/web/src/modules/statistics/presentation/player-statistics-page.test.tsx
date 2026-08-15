@@ -8,7 +8,7 @@ import { PlayerStatisticsPage } from "./player-statistics-page.tsx";
 
 const getMyStatistics = vi.fn<() => Promise<unknown>>();
 
-vi.mock("./statistics-browser-client.ts", () => ({
+vi.mock("@/modules/statistics/presentation/statistics-browser-client.ts", () => ({
   statisticsBrowserClient: {
     getMyStatistics: () => getMyStatistics(),
   },

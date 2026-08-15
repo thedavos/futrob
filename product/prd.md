@@ -55,7 +55,7 @@ Los roles son contextuales. Un usuario puede ser organizador en una organizació
 
 Un jugador autenticado puede crear o mantener su perfil personal sin crear una organización ni aceptar una invitación. Desde ese espacio puede registrar su identificador de EA, consultar Mis partidos y visualizar Mis estadísticas. Futrob confía en el identificador declarado y no verifica que el actor sea propietario de la cuenta.
 
-Mis partidos tiene dos bloques que no se mezclan: partidos recientes (`ProviderMatch` en los que el jugador aparece) e historial oficial (contribuciones de resultados aprobados). Mis estadísticas sigue siendo solo oficial. Las proyecciones competitivas no nacen de observaciones de proveedor.
+Mis partidos es una sola fuente de `ProviderMatch` de los clubes asociados, con pestañas Recientes (últimos 7 días de calendario) y Todos (cupo del proveedor). Recientes y Todos marcan si cada partido es de liga, playoff o amistoso, y las tarjetas de la aparición. Un hat-trick, póker o repóker se marca cuando la aparición tiene 3, 4 o 5+ goles. El historial oficial de contribuciones vive en Mis estadísticas. Las proyecciones competitivas no nacen de observaciones de proveedor.
 
 El jugador también puede asociar uno o más `ExternalClub` a su `PlayerProfile`. Cada
 `PlayerExternalClubAssociation` es opcional y declarativa para el perfil: no crea una organización, un `Team`, una entrada de competición ni una membresía de `Roster`, ni prueba propiedad del club. Sí es obligatoria para consultar partidos recientes: sin al menos un club asociado no se llama al proveedor. El identificador de juego solo filtra apariciones después de traer los partidos de esos clubes. La asociación operativa

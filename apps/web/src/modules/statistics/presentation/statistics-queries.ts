@@ -6,7 +6,7 @@ import {
   type GetMyStatisticsQuery,
 } from "@futrob/api-contracts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
-import { statisticsBrowserClient } from "./statistics-browser-client.ts";
+import { statisticsBrowserClient } from "@/modules/statistics/presentation/statistics-browser-client.ts";
 
 export function useMyStatisticsQuery(filters: GetMyStatisticsQuery = {}) {
   const query = getMyStatisticsQuerySchema.parse(filters);
