@@ -1,9 +1,4 @@
-import type {
-  ActorId,
-  CompetitionId,
-  EncounterId,
-  OrganizationId,
-} from "@futrob/shared-kernel";
+import type { ActorId, CompetitionId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
 import type { ExternalReference, ProviderPlayerMatchStats } from "@futrob/game-data";
 
 export type OfficialResultStatus = "approved" | "voided";

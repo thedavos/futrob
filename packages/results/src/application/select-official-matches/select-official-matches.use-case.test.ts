@@ -59,9 +59,7 @@ class MemorySelections implements OfficialMatchSelectionRepository {
     return selection;
   }
   async findLatestByEncounter(encounterId: OfficialMatchSelection["encounterId"]) {
-    return (
-      [...this.rows].reverse().find((row) => row.encounterId === encounterId) ?? null
-    );
+    return [...this.rows].reverse().find((row) => row.encounterId === encounterId) ?? null;
   }
 }
 
