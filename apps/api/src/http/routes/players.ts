@@ -8,6 +8,7 @@ import {
   associateMyPlayerExternalClubResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
   getMyPlayerProfileResponseSchema,
   getMyStatisticsQuerySchema,
@@ -217,14 +218,28 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
   });
 
   secured.get("/players/me/recent-matches", async (c) => {
+    const parsed = getMyRecentMatchesQuerySchema.safeParse({
+      externalClubId: c.req.query("externalClubId") ?? undefined,
+    });
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+
     const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
+    const clubs = clubsForRecentMatches(details.externalClubs, parsed.data.externalClubId);
+    if (parsed.data.externalClubId && details.externalClubs.length > 0 && clubs.length === 0) {
+      return validationErrorResponse([
+        {
+          path: ["externalClubId"],
+          message: "externalClubId must match an associated club",
+        },
+      ]);
+    }
     const listed = await gameData.listPlayerRecentProviderMatches.execute({
       accounts: details.gameAccounts.map((account) => ({
         identifier: account.identifier,
         normalizedIdentifier: account.normalizedIdentifier,
         providerExternalPlayerId: account.providerExternalPlayerId,
       })),
-      clubs: details.externalClubs.map((club) => ({
+      clubs: clubs.map((club) => ({
         providerKey: club.providerKey,
         externalClubId: club.externalClubId,
         platform: club.platform,
@@ -306,4 +321,12 @@ function personalStatisticsFilters(query: GetMyStatisticsQuery) {
     ...(query.platform === undefined ? {} : { platform: query.platform }),
     ...(query.position === undefined ? {} : { position: query.position }),
   };
+}
+
+function clubsForRecentMatches<T extends { readonly externalClubId: string }>(
+  clubs: readonly T[],
+  externalClubId: string | undefined,
+): readonly T[] {
+  if (externalClubId === undefined) return clubs;
+  return clubs.filter((club) => club.externalClubId === externalClubId);
 }

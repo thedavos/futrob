@@ -5,6 +5,7 @@ import {
   getCompetitionTeamStatisticsResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
@@ -14,6 +15,7 @@ import {
   type GetCompetitionTeamStatisticsResponse,
   type GetMyMatchesQuery,
   type GetMyMatchesResponse,
+  type GetMyRecentMatchesQueryInput,
   type GetMyRecentMatchesResponse,
   type GetMyStatisticsQuery,
   type GetMyStatisticsResponse,
@@ -45,9 +47,15 @@ export function createStatisticsResource(http: HttpClient) {
         parse: (data) => getMyMatchesResponseSchema.parse(data),
       });
     },
-    async getMyRecentMatches(): Promise<GetMyRecentMatchesResponse> {
+    async getMyRecentMatches(
+      query: GetMyRecentMatchesQueryInput = {},
+    ): Promise<GetMyRecentMatchesResponse> {
+      const parsed = getMyRecentMatchesQuerySchema.parse(query);
+      const search = new URLSearchParams();
+      if (parsed.externalClubId) search.set("externalClubId", parsed.externalClubId);
+      const queryString = search.toString();
       return http.request({
-        path: "/players/me/recent-matches",
+        path: `/players/me/recent-matches${queryString ? `?${queryString}` : ""}`,
         method: "GET",
         parse: (data) => getMyRecentMatchesResponseSchema.parse(data),
       });

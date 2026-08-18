@@ -1,7 +1,13 @@
-import type { ExternalClub, PlayerRecentMatchesResult, ProviderMatch } from "@futrob/game-data";
+import type {
+  ExternalClub,
+  PlayerRecentMatchesResult,
+  PlayerRecentProviderMatch,
+  ProviderMatch,
+} from "@futrob/game-data";
 import type {
   ExternalClubDto,
   GetMyRecentMatchesResponse,
+  PlayerRecentProviderMatchDto,
   ProviderMatchDto,
 } from "@futrob/api-contracts";
 
@@ -40,18 +46,46 @@ export function toPlayerRecentMatchesDto(
     case "ready":
       return {
         status: "ready",
-        matches: result.matches.map((row) => ({
-          match: {
-            ...toProviderMatchDto(row.match),
-            // Keep only the match MVP so Mis partidos can name them without the full roster.
-            players: row.match.players.filter((player) => player.isMvp === true),
-          },
-          appearance: { ...row.appearance },
-        })),
+        matches: result.matches.map(toPlayerRecentMatchDto),
       };
     default: {
       const _exhaustive: never = result;
       return _exhaustive;
     }
   }
+}
+
+function toPlayerRecentMatchDto(row: PlayerRecentProviderMatch): PlayerRecentProviderMatchDto {
+  const match = toRecentListedMatchDto(row);
+  switch (row.kind) {
+    case "played":
+      return {
+        kind: "played",
+        match,
+        appearance: { ...row.appearance },
+        listedExternalClubId: row.listedExternalClubId,
+      };
+    case "not_played":
+      return {
+        kind: "not_played",
+        match,
+        listedExternalClubId: row.listedExternalClubId,
+      };
+    default: {
+      const _exhaustive: never = row;
+      return _exhaustive;
+    }
+  }
+}
+
+function toRecentListedMatchDto(row: PlayerRecentProviderMatch): ProviderMatchDto {
+  const mvpPlayers = row.match.players.filter((player) => player.isMvp === true);
+  return {
+    ...toProviderMatchDto(row.match),
+    // Only the match MVP is needed to name them without shipping the full roster.
+    players:
+      row.kind === "not_played"
+        ? mvpPlayers.filter((player) => player.externalClubId === row.listedExternalClubId)
+        : mvpPlayers,
+  };
 }

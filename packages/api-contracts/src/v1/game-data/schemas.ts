@@ -115,12 +115,28 @@ export const getClubMatchesResponseSchema = z.object({
 
 export type GetClubMatchesResponse = z.infer<typeof getClubMatchesResponseSchema>;
 
-export const playerRecentProviderMatchSchema = z.object({
-  match: providerMatchSchema,
-  appearance: providerPlayerMatchStatsSchema,
-});
+export const playerRecentProviderMatchSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("played"),
+    match: providerMatchSchema,
+    appearance: providerPlayerMatchStatsSchema,
+    listedExternalClubId: z.string(),
+  }),
+  z.object({
+    kind: z.literal("not_played"),
+    match: providerMatchSchema,
+    listedExternalClubId: z.string(),
+  }),
+]);
 
 export type PlayerRecentProviderMatchDto = z.infer<typeof playerRecentProviderMatchSchema>;
+
+export const getMyRecentMatchesQuerySchema = z.object({
+  externalClubId: z.string().trim().min(1).optional(),
+});
+
+export type GetMyRecentMatchesQuery = z.infer<typeof getMyRecentMatchesQuerySchema>;
+export type GetMyRecentMatchesQueryInput = z.input<typeof getMyRecentMatchesQuerySchema>;
 
 export const getMyRecentMatchesResponseSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("needs_club") }),

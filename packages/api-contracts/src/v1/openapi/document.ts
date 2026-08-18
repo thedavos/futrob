@@ -5,6 +5,7 @@ import {
   enqueueProviderSyncJobRequestSchema,
   getClubMatchesResponseSchema,
   playerRecentProviderMatchSchema,
+  getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
   providerMatchSchema,
   providerSyncJobResponseSchema,
@@ -549,17 +550,28 @@ export const futrobOpenApiV1 = {
         operationId: "getMyRecentMatches",
         tags: ["players"],
         summary:
-          "List recent provider matches in which the player appears, for associated ExternalClubs",
+          "List recent provider matches for the selected ExternalClub, including matches the player did not play",
+        parameters: [
+          {
+            name: "externalClubId",
+            in: "query",
+            required: false,
+            description:
+              "Associated ExternalClub to fetch. When omitted, appearances from every associated club are returned.",
+            schema: { type: "string", minLength: 1 },
+          },
+        ],
         responses: {
           "200": {
             description:
-              "needs_club when no club is associated, needs_game_account when no identifier is registered, or ready appearances",
+              "needs_club when no club is associated, needs_game_account when no identifier is registered, or ready club matches classified as played or not_played",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/GetMyRecentMatchesResponse" },
               },
             },
           },
+          "400": { $ref: "#/components/responses/ApiError" },
           "401": { $ref: "#/components/responses/ApiError" },
           "403": { $ref: "#/components/responses/ApiError" },
           "502": { $ref: "#/components/responses/ApiError" },
@@ -2706,12 +2718,28 @@ export const futrobOpenApiV1 = {
         },
       },
       PlayerRecentProviderMatch: {
-        type: "object",
-        required: ["match", "appearance"],
-        properties: {
-          match: { $ref: "#/components/schemas/ProviderMatch" },
-          appearance: { $ref: "#/components/schemas/ProviderPlayerMatchStats" },
-        },
+        oneOf: [
+          {
+            type: "object",
+            required: ["kind", "match", "appearance", "listedExternalClubId"],
+            properties: {
+              kind: { type: "string", const: "played" },
+              match: { $ref: "#/components/schemas/ProviderMatch" },
+              appearance: { $ref: "#/components/schemas/ProviderPlayerMatchStats" },
+              listedExternalClubId: { type: "string" },
+            },
+          },
+          {
+            type: "object",
+            required: ["kind", "match", "listedExternalClubId"],
+            properties: {
+              kind: { type: "string", const: "not_played" },
+              match: { $ref: "#/components/schemas/ProviderMatch" },
+              listedExternalClubId: { type: "string" },
+            },
+          },
+        ],
+        discriminator: { propertyName: "kind" },
       },
       GetMyRecentMatchesResponse: {
         oneOf: [
@@ -3204,6 +3232,7 @@ void providerMatchSchema;
 void searchClubsResponseSchema;
 void getClubMatchesResponseSchema;
 void playerRecentProviderMatchSchema;
+void getMyRecentMatchesQuerySchema;
 void getMyRecentMatchesResponseSchema;
 void enqueueProviderSyncJobRequestSchema;
 void providerSyncJobResponseSchema;

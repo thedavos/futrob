@@ -137,15 +137,151 @@ describe("apps/api personal statistics routes", () => {
     const body = (await response.json()) as {
       status: string;
       matches?: Array<{
-        appearance: { displayName: string };
+        kind: string;
+        appearance?: { displayName: string };
         match: { players: Array<{ isMvp: boolean | null }> };
       }>;
     };
     expect(body.status).toBe("ready");
     expect(body.matches?.length).toBeGreaterThan(0);
-    expect(body.matches?.every((row) => row.appearance.displayName === "Vcaliari")).toBe(true);
+    expect(
+      body.matches?.every(
+        (row) => row.kind === "played" && row.appearance?.displayName === "Vcaliari",
+      ),
+    ).toBe(true);
     expect(
       body.matches?.every((row) => row.match.players.every((player) => player.isMvp === true)),
     ).toBe(true);
   });
+
+  it("queries only the selected associated club for recent matches", async () => {
+    const matchUrls: string[] = [];
+    const app = buildApp(
+      createFetch((url) => {
+        if (url.includes("/clubs/info")) return Response.json(twoClubInfo());
+        if (url.includes("/clubs/matches")) {
+          matchUrls.push(url);
+          return Response.json(clubMatchesFixture);
+        }
+        return Response.json([]);
+      }),
+    );
+    const actor = "actor-recent-selected-club";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, { externalClubId: "10754", name: "Fera Enjaulada" });
+    await associateClub(app, actor, { externalClubId: "44001", name: "Night Owls" });
+
+    const response = await app.request("/api/v1/players/me/recent-matches?externalClubId=10754", {
+      headers: serviceHeaders(actor),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ status: "ready" });
+    expect(matchUrls).toHaveLength(3);
+    expect(matchUrls.every((url) => new URL(url).searchParams.get("clubIds") === "10754")).toBe(
+      true,
+    );
+  });
+
+  it("queries every associated club when recent-matches omits externalClubId", async () => {
+    const matchUrls: string[] = [];
+    const app = buildApp(
+      createFetch((url) => {
+        if (url.includes("/clubs/info")) return Response.json(twoClubInfo());
+        if (url.includes("/clubs/matches")) {
+          matchUrls.push(url);
+          return Response.json(clubMatchesFixture);
+        }
+        return Response.json([]);
+      }),
+    );
+    const actor = "actor-recent-all-clubs";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, { externalClubId: "10754", name: "Fera Enjaulada" });
+    await associateClub(app, actor, { externalClubId: "44001", name: "Night Owls" });
+
+    const response = await app.request("/api/v1/players/me/recent-matches", {
+      headers: serviceHeaders(actor),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ status: "ready" });
+    const clubIds = new Set(matchUrls.map((url) => new URL(url).searchParams.get("clubIds")));
+    expect(clubIds).toEqual(new Set(["10754", "44001"]));
+    expect(matchUrls).toHaveLength(6);
+  });
+
+  it("rejects a recent-matches club that is not associated", async () => {
+    let matchCalls = 0;
+    const app = buildApp(
+      createFetch((url) => {
+        if (url.includes("/clubs/info")) return Response.json(clubInfoFixture);
+        if (url.includes("/clubs/matches")) {
+          matchCalls += 1;
+          return Response.json(clubMatchesFixture);
+        }
+        return Response.json([]);
+      }),
+    );
+    const actor = "actor-recent-unknown-club";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, { externalClubId: "10754", name: "Fera Enjaulada" });
+
+    const response = await app.request("/api/v1/players/me/recent-matches?externalClubId=44001", {
+      headers: serviceHeaders(actor),
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: "api.validation_error" });
+    expect(matchCalls).toBe(0);
+  });
 });
+
+async function onboardPlayerWithAccount(
+  app: ReturnType<typeof buildApp>,
+  actor: string,
+): Promise<void> {
+  await app.request("/api/v1/identity/onboarding/player", {
+    method: "POST",
+    headers: serviceHeaders(actor),
+    body: JSON.stringify({
+      gameAccount: {
+        identifier: "Vcaliari",
+        platform: "playstation",
+        gameEdition: "FC 26",
+      },
+    }),
+  });
+}
+
+async function associateClub(
+  app: ReturnType<typeof buildApp>,
+  actor: string,
+  club: { readonly externalClubId: string; readonly name: string },
+): Promise<void> {
+  const response = await app.request("/api/v1/players/me/external-club", {
+    method: "POST",
+    headers: serviceHeaders(actor),
+    body: JSON.stringify({
+      providerKey: "ea-clubs",
+      externalClubId: club.externalClubId,
+      platform: "common-gen5",
+      gameEdition: "fc26",
+      name: club.name,
+      imageUrl: null,
+    }),
+  });
+  expect(response.status).toBe(201);
+}
+
+function twoClubInfo() {
+  const fera = clubInfoFixture["10754"];
+  return {
+    ...clubInfoFixture,
+    "44001": {
+      ...fera,
+      name: "Night Owls",
+      clubId: 44001,
+    },
+  };
+}
