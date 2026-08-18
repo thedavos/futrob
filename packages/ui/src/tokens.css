@@ -85,15 +85,15 @@
   --tracking-label: 0.14em;
 
   /* Typography roles (consumed by Tailwind @utility in apps/web) */
-  --typo-display-size: var(--text-5xl);
+  --typo-display-size: var(--text-4xl);
   --typo-display-weight: var(--font-weight-bold);
   --typo-display-leading: 0.96;
   --typo-display-tracking: var(--tracking-tight);
-  --typo-heading-size: var(--text-2xl);
+  --typo-heading-size: var(--text-xl);
   --typo-heading-weight: var(--font-weight-bold);
   --typo-heading-leading: var(--leading-tight);
   --typo-heading-tracking: var(--tracking-tight);
-  --typo-subtitle-size: var(--text-base);
+  --typo-subtitle-size: var(--text-sm);
   --typo-subtitle-weight: var(--font-weight-regular);
   --typo-subtitle-leading: var(--leading-normal);
   --typo-subtitle-tracking: var(--tracking-normal);
@@ -101,15 +101,15 @@
   --typo-label-weight: var(--font-weight-medium);
   --typo-label-leading: var(--leading-snug);
   --typo-label-tracking: var(--tracking-label);
-  --typo-body-size: var(--text-base);
+  --typo-body-size: var(--text-sm);
   --typo-body-weight: var(--font-weight-regular);
   --typo-body-leading: var(--leading-normal);
   --typo-body-tracking: var(--tracking-normal);
-  --typo-caption-size: var(--text-sm);
+  --typo-caption-size: var(--text-xs);
   --typo-caption-weight: var(--font-weight-regular);
   --typo-caption-leading: var(--leading-normal);
   --typo-caption-tracking: var(--tracking-normal);
-  --typo-score-size: var(--text-4xl);
+  --typo-score-size: var(--text-3xl);
   --typo-score-weight: var(--font-weight-semibold);
   --typo-score-leading: var(--leading-none);
   --typo-score-tracking: var(--tracking-tight);
