@@ -6,7 +6,7 @@ import type {
 import type { ProviderError } from "../../domain/errors/provider.errors.ts";
 import type { GameDataProviderRegistryPort } from "../../domain/ports/game-data-provider-registry.port.ts";
 import {
-  findPlayerAppearance,
+  findPlayerAppearances,
   type PlayerRecentMatchIdentity,
 } from "../../domain/policies/player-appears-in-provider-match.ts";
 import { externalReferenceKey } from "../../domain/value-objects/external-reference.ts";
@@ -30,10 +30,18 @@ export interface ListPlayerRecentProviderMatchesInput {
   readonly clubs: readonly PlayerRecentMatchClub[];
 }
 
-export interface PlayerRecentProviderMatch {
-  readonly match: ProviderMatch;
-  readonly appearance: ProviderPlayerMatchStats;
-}
+export type PlayerRecentProviderMatch =
+  | {
+      readonly kind: "played";
+      readonly match: ProviderMatch;
+      readonly appearance: ProviderPlayerMatchStats;
+      readonly listedExternalClubId: string;
+    }
+  | {
+      readonly kind: "not_played";
+      readonly match: ProviderMatch;
+      readonly listedExternalClubId: string;
+    };
 
 export type PlayerRecentMatchesResult =
   | { readonly status: "needs_club" }
@@ -53,7 +61,8 @@ export class ListPlayerRecentProviderMatchesUseCase {
       return ok({ status: "needs_game_account" });
     }
 
-    const fetched: ProviderMatch[] = [];
+    const listed = new Map<string, PlayerRecentProviderMatch>();
+    let fetchedCount = 0;
     let lastError: ProviderError | undefined;
     for (const club of input.clubs) {
       const provider = this.registry.get(club.providerKey);
@@ -69,28 +78,58 @@ export class ListPlayerRecentProviderMatchesUseCase {
           lastError = result.error;
           continue;
         }
-        fetched.push(...result.value);
+        fetchedCount += result.value.length;
+        for (const match of result.value) {
+          const row = classifyPlayerRecentMatch(
+            match,
+            findPlayerAppearances(match, input.accounts),
+            club.externalClubId,
+          );
+          const key = externalReferenceKey({
+            providerKey: match.provider.key,
+            externalId: match.provider.externalMatchId,
+          });
+          const existing = listed.get(key);
+          if (!existing || shouldReplaceListedMatch(existing, row)) {
+            listed.set(key, row);
+          }
+        }
       }
     }
-    if (fetched.length === 0 && lastError) return err(lastError);
+    if (fetchedCount === 0 && lastError) return err(lastError);
 
-    const appearances = new Map<string, PlayerRecentProviderMatch>();
-    for (const match of fetched) {
-      const appearance = findPlayerAppearance(match, input.accounts);
-      if (!appearance) continue;
-      const key = externalReferenceKey({
-        providerKey: match.provider.key,
-        externalId: match.provider.externalMatchId,
-      });
-      const existing = appearances.get(key);
-      if (!existing || match.occurredAt.getTime() > existing.match.occurredAt.getTime()) {
-        appearances.set(key, { match, appearance });
-      }
-    }
-
-    const matches = [...appearances.values()]
+    const matches = [...listed.values()]
       .sort((left, right) => right.match.occurredAt.getTime() - left.match.occurredAt.getTime())
       .slice(0, MAX_RECENT_MATCHES);
     return ok({ status: "ready", matches });
   }
+}
+
+function classifyPlayerRecentMatch(
+  match: ProviderMatch,
+  appearances: readonly ProviderPlayerMatchStats[],
+  listedExternalClubId: string,
+): PlayerRecentProviderMatch {
+  const listedAppearance = appearances.find(
+    (appearance) => appearance.externalClubId === listedExternalClubId,
+  );
+  if (listedAppearance) {
+    return {
+      kind: "played",
+      match,
+      appearance: listedAppearance,
+      listedExternalClubId,
+    };
+  }
+  return { kind: "not_played", match, listedExternalClubId };
+}
+
+function shouldReplaceListedMatch(
+  existing: PlayerRecentProviderMatch,
+  incoming: PlayerRecentProviderMatch,
+): boolean {
+  if (existing.kind !== incoming.kind) {
+    return incoming.kind === "played";
+  }
+  return incoming.match.occurredAt.getTime() > existing.match.occurredAt.getTime();
 }

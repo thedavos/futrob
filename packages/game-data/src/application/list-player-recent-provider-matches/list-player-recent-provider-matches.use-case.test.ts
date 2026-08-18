@@ -72,14 +72,9 @@ describe("ListPlayerRecentProviderMatchesUseCase", () => {
       occurredAt: "2026-08-09T12:00:00.000Z",
       players: [playerStats({ displayName: "Other", externalPlayerId: "davos282" })],
     });
-    const stranger = match({
-      externalMatchId: "other-match",
-      occurredAt: "2026-08-12T12:00:00.000Z",
-      players: [playerStats({ displayName: "Rival", externalPlayerId: "111" })],
-    });
 
     const provider = recordingProvider({
-      friendlyMatch: [byName, stranger],
+      friendlyMatch: [byName],
       leagueMatch: [byProviderId],
       playoffMatch: [byIdentifier],
     });
@@ -103,7 +98,9 @@ describe("ListPlayerRecentProviderMatchesUseCase", () => {
       "name-match",
       "identifier-match",
     ]);
-    expect(result.value.matches[0]?.appearance.externalPlayerId).toBe("922546779");
+    expect(result.value.matches[0]?.kind).toBe("played");
+    if (result.value.matches[0]?.kind !== "played") return;
+    expect(result.value.matches[0].appearance.externalPlayerId).toBe("922546779");
   });
 
   it("dedupes by external match id and keeps the latest occurrence", async () => {
@@ -135,25 +132,9 @@ describe("ListPlayerRecentProviderMatchesUseCase", () => {
     expect(result.value.matches[0]?.match.occurredAt.toISOString()).toBe(
       "2026-08-08T00:00:00.000Z",
     );
-    expect(result.value.matches[0]?.appearance.goals).toBe(2);
-  });
-
-  it("returns a ready empty list when the club has matches but none feature the player", async () => {
-    const provider = recordingProvider({
-      friendlyMatch: [
-        match({
-          players: [playerStats({ displayName: "Rival", externalPlayerId: "111" })],
-        }),
-      ],
-    });
-    const useCase = new ListPlayerRecentProviderMatchesUseCase(registryOf(provider));
-
-    const result = await useCase.execute({
-      accounts: [account({ identifier: "davos282", normalizedIdentifier: "davos282" })],
-      clubs: [club()],
-    });
-
-    expect(result).toEqual(ok({ status: "ready", matches: [] }));
+    expect(result.value.matches[0]?.kind).toBe("played");
+    if (result.value.matches[0]?.kind !== "played") return;
+    expect(result.value.matches[0].appearance.goals).toBe(2);
   });
 
   it("keeps appearances from match types that succeed when another type fails", async () => {
@@ -226,6 +207,145 @@ describe("ListPlayerRecentProviderMatchesUseCase", () => {
     expect(result.value.matches).toHaveLength(50);
     expect(result.value.matches[0]?.match.provider.externalMatchId).toBe("match-50");
     expect(result.value.matches.at(-1)?.match.provider.externalMatchId).toBe("match-1");
+  });
+
+  it("classifies an appearance for the fetched club as played", async () => {
+    const provider = recordingProvider({
+      friendlyMatch: [
+        match({
+          players: [playerStats({ displayName: "davos282", externalClubId: "10754", goals: 1 })],
+        }),
+      ],
+    });
+    const useCase = new ListPlayerRecentProviderMatchesUseCase(registryOf(provider));
+
+    const result = await useCase.execute({
+      accounts: [account({ identifier: "davos282", normalizedIdentifier: "davos282" })],
+      clubs: [club()],
+    });
+
+    expect(result.isOk() && result.value.status).toBe("ready");
+    if (!result.isOk() || result.value.status !== "ready") return;
+    expect(result.value.matches).toEqual([
+      expect.objectContaining({
+        kind: "played",
+        listedExternalClubId: "10754",
+        appearance: expect.objectContaining({ externalClubId: "10754", goals: 1 }),
+      }),
+    ]);
+  });
+
+  it("classifies club matches without a player roster row as not_played", async () => {
+    const provider = recordingProvider({
+      friendlyMatch: [
+        match({
+          externalMatchId: "sat-out",
+          players: [playerStats({ displayName: "Rival", externalPlayerId: "111" })],
+        }),
+      ],
+    });
+    const useCase = new ListPlayerRecentProviderMatchesUseCase(registryOf(provider));
+
+    const result = await useCase.execute({
+      accounts: [account({ identifier: "davos282", normalizedIdentifier: "davos282" })],
+      clubs: [club()],
+    });
+
+    expect(result.isOk() && result.value.status).toBe("ready");
+    if (!result.isOk() || result.value.status !== "ready") return;
+    expect(result.value.matches).toEqual([
+      expect.objectContaining({
+        kind: "not_played",
+        listedExternalClubId: "10754",
+        match: expect.objectContaining({
+          provider: expect.objectContaining({ externalMatchId: "sat-out" }),
+        }),
+      }),
+    ]);
+    expect(result.value.matches[0]).not.toHaveProperty("appearance");
+  });
+
+  it("classifies an appearance for the opponent of the fetched club as not_played", async () => {
+    const provider = recordingProvider({
+      friendlyMatch: [
+        match({
+          players: [playerStats({ displayName: "davos282", externalClubId: "2", goals: 3 })],
+        }),
+      ],
+    });
+    const useCase = new ListPlayerRecentProviderMatchesUseCase(registryOf(provider));
+
+    const result = await useCase.execute({
+      accounts: [account({ identifier: "davos282", normalizedIdentifier: "davos282" })],
+      clubs: [club()],
+    });
+
+    expect(result.isOk() && result.value.status).toBe("ready");
+    if (!result.isOk() || result.value.status !== "ready") return;
+    expect(result.value.matches).toHaveLength(1);
+    expect(result.value.matches[0]).toEqual(
+      expect.objectContaining({
+        kind: "not_played",
+        listedExternalClubId: "10754",
+      }),
+    );
+    expect(result.value.matches[0]).not.toHaveProperty("appearance");
+  });
+
+  it("prefers played over not_played when the same match is fetched from both clubs", async () => {
+    const shared = match({
+      externalMatchId: "shared",
+      players: [playerStats({ displayName: "davos282", externalClubId: "2" })],
+    });
+    const accounts = [account({ identifier: "davos282", normalizedIdentifier: "davos282" })];
+    const listed = club({ externalClubId: "10754" });
+    const linedUp = club({ externalClubId: "2" });
+
+    for (const clubs of [
+      [listed, linedUp],
+      [linedUp, listed],
+    ]) {
+      const useCase = new ListPlayerRecentProviderMatchesUseCase(
+        registryOf(recordingProvider({ friendlyMatch: [shared] })),
+      );
+      const result = await useCase.execute({ accounts, clubs });
+      expect(result.isOk() && result.value.status).toBe("ready");
+      if (!result.isOk() || result.value.status !== "ready") return;
+      expect(result.value.matches).toHaveLength(1);
+      expect(result.value.matches[0]?.kind).toBe("played");
+      if (result.value.matches[0]?.kind !== "played") return;
+      expect(result.value.matches[0].appearance.externalClubId).toBe("2");
+      expect(result.value.matches[0].listedExternalClubId).toBe("2");
+    }
+  });
+
+  it("prefers the listed-club appearance when the opponent roster is scanned first", async () => {
+    const provider = recordingProvider({
+      friendlyMatch: [
+        match({
+          players: [
+            playerStats({ displayName: "davos282", externalClubId: "2", goals: 3 }),
+            playerStats({ displayName: "davos282", externalClubId: "10754", goals: 1 }),
+          ],
+        }),
+      ],
+    });
+    const useCase = new ListPlayerRecentProviderMatchesUseCase(registryOf(provider));
+
+    const result = await useCase.execute({
+      accounts: [account({ identifier: "davos282", normalizedIdentifier: "davos282" })],
+      clubs: [club()],
+    });
+
+    expect(result.isOk() && result.value.status).toBe("ready");
+    if (!result.isOk() || result.value.status !== "ready") return;
+    expect(result.value.matches).toHaveLength(1);
+    expect(result.value.matches[0]?.kind).toBe("played");
+    if (result.value.matches[0]?.kind !== "played") return;
+    expect(result.value.matches[0].listedExternalClubId).toBe("10754");
+    expect(result.value.matches[0].appearance).toEqual(
+      expect.objectContaining({ externalClubId: "10754", goals: 1 }),
+    );
   });
 });
 

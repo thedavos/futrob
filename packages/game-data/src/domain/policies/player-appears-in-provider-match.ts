@@ -6,16 +6,20 @@ export interface PlayerRecentMatchIdentity {
   readonly providerExternalPlayerId: string | null;
 }
 
+export function findPlayerAppearances(
+  match: ProviderMatch,
+  accounts: readonly PlayerRecentMatchIdentity[],
+): readonly ProviderPlayerMatchStats[] {
+  return match.players.filter((player) =>
+    accounts.some((account) => playerMatchesAccount(player, account)),
+  );
+}
+
 export function findPlayerAppearance(
   match: ProviderMatch,
   accounts: readonly PlayerRecentMatchIdentity[],
 ): ProviderPlayerMatchStats | null {
-  for (const player of match.players) {
-    if (accounts.some((account) => playerMatchesAccount(player, account))) {
-      return player;
-    }
-  }
-  return null;
+  return findPlayerAppearances(match, accounts)[0] ?? null;
 }
 
 function playerMatchesAccount(
