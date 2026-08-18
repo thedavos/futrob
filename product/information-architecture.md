@@ -91,7 +91,7 @@ Regiones de la sidebar (scroll independiente del contenido central):
 
 Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive en el header de la sidebar. Mobile usa Sheet con las mismas regiones.
 
-El command bar muestra la identidad del jugador (identificador de juego y club asociado) y acciones contextuales (stubs cuando el handler aún no existe). La action bar inferior solo aparece cuando una página registra acciones.
+El command bar muestra la identidad del jugador (identificador de juego y club seleccionado) y acciones contextuales (stubs cuando el handler aún no existe). La action bar inferior solo aparece cuando una página registra acciones.
 
 ### Selector de contexto (único)
 
@@ -99,10 +99,10 @@ Un control en el header de la sidebar agrupa:
 
 - **Espacio personal**
 - **Competiciones** (accesibles al actor)
-- **Clubes EA** (asociaciones del PlayerProfile + Añadir club)
+- **Clubes EA** (asociaciones del PlayerProfile + Añadir club). Elegir un club deja el espacio personal activo y fija el `ExternalClub` de contexto: Mis partidos consulta solo ese club.
 - **Organización** (memberships + Crear organización)
 
-Solo un ítem está activo. El valor inicial sigue el `ONBOARDING_PATH` completado:
+Solo un ítem está activo. El club elegido es el ítem activo del espacio personal. El valor inicial sigue el `ONBOARDING_PATH` completado:
 
 - `player` → Espacio personal
 - `organization` → organización creada
@@ -150,7 +150,7 @@ crear una organización ni aceptar una invitación.
 **General (personal):** Inicio · Competiciones · Clubes EA · Invitaciones.
 
 - **Inicio personal:** resumen de partidos recientes, estadísticas destacadas y estado de vinculación de la cuenta de juego.
-- **Mis partidos:** una lista de `ProviderMatch` de los clubes asociados (requiere `PlayerExternalClubAssociation`). Recientes = últimos 7 días de calendario; Todos = el conjunto que trae el proveedor. Recientes y Todos marcan el tipo de partido (liga, playoff, amistoso) y las tarjetas de la aparición. Un badge de hat-trick, póker o repóker aparece cuando la aparición tiene 3, 4 o 5+ goles. El historial oficial no vive aquí: está en Mis estadísticas y en `GET /players/me/matches`.
+- **Mis partidos:** una lista de `ProviderMatch` del `ExternalClub` seleccionado en el selector de contexto (requiere `PlayerExternalClubAssociation`; si hay varios, el primero hasta que el jugador elija otro). Recientes = últimos 7 días de calendario; Todos = el conjunto que trae el proveedor. Recientes y Todos marcan el tipo de partido (liga, playoff, amistoso) y las tarjetas de la aparición cuando el jugador alineó con ese club. Si no alineó con ese club (identificador en el rival o ausente del partido), la fila permanece con el badge «No jugaste» y sin estadísticas personales; el marcador y el W/D/L siguen el club seleccionado. Un badge de hat-trick, póker o repóker aparece cuando la aparición del club seleccionado tiene 3, 4 o 5+ goles. El historial oficial no vive aquí: está en Mis estadísticas y en `GET /players/me/matches`.
 - **Mis estadísticas:** solo agregados oficiales.
 - **Competiciones / Clubes EA:** listados; al abrir una entidad se activa el grupo Contexto.
 - **Datos de juego:** vincular o actualizar identificador de jugador (subdestino desde Clubes EA o perfil).

@@ -82,10 +82,11 @@ Además, reejecutar el mismo job de sync o la misma confirmación no crea partid
 - **y** no ve candidatos EA, disputas, payloads raw ni datos administrativos privados de organizaciones donde no sea miembro.
 - **Dado** el mismo perfil,
 - **cuando** abre Mis partidos,
-- **entonces** ve `ProviderMatch` de sus clubes asociados, con pestañas Recientes (últimos 7 días de calendario) y Todos (cupo del proveedor), agrupados por día.
+- **entonces** ve `ProviderMatch` del ExternalClub seleccionado en el selector de contexto, con pestañas Recientes (últimos 7 días de calendario) y Todos (cupo del proveedor), agrupados por día.
 - **y** Recientes y Todos muestran un badge de tipo (liga, playoff o amistoso); las pestañas filtradas no lo duplican.
-- **y** cada fila muestra tarjetas amarillas y rojas de la aparición cuando el proveedor las envía.
-- **y** un badge de hat-trick, póker o repóker cuando la aparición tiene 3, 4 o 5+ goles.
+- **y** cada fila muestra tarjetas amarillas y rojas de la aparición cuando el jugador alineó con el club seleccionado y el proveedor las envía.
+- **y** un badge de hat-trick, póker o repóker cuando esa aparición tiene 3, 4 o 5+ goles.
+- **y** si el identificador no alineó con el club seleccionado (aparece en el rival o no aparece en el partido), la fila se mantiene con el badge «No jugaste», sin estadísticas personales, y con el W/D/L del club listado.
 - **y** no ve contribuciones oficiales en esta página; el historial oficial permanece en Mis estadísticas y en `GET /players/me/matches`.
 - **y** los KPI (ganados, empates, derrotas, rating) corresponden al tab activo, no a resultados oficiales.
 - **Dado** un PlayerProfile sin `PlayerExternalClubAssociation`,
@@ -93,7 +94,7 @@ Además, reejecutar el mismo job de sync o la misma confirmación no crea partid
 - **entonces** ve un empty state para asociar un club y Futrob no consulta al proveedor. El identificador de juego no alcanza para obtener recientes.
 - **Dado** un PlayerProfile con al menos un club asociado y una cuenta de juego,
 - **cuando** Mis partidos está listo,
-- **entonces** ve apariciones en partidos de esos clubes filtradas por su identificador, sin mezclarlas con el historial oficial.
+- **entonces** ve los partidos de ese club, clasificados como jugados o «No jugaste», sin mezclarlos con el historial oficial.
 
 ### AC-ONB-001 — Consecuencias multirrol del onboarding
 
