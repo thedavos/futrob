@@ -63,6 +63,12 @@ export const ClosedVariants: Story = {
             <StatLabel>compact</StatLabel>
             <StatValue size="compact">9.2</StatValue>
           </Stat>
+          <Stat>
+            <StatLabel>empty</StatLabel>
+            <StatValue size="empty" tone="muted">
+              Sin datos
+            </StatValue>
+          </Stat>
         </StatGroup>
       </div>
     </div>
@@ -195,8 +201,8 @@ export const EmptyAndUnavailable: Story = {
         </Stat>
         <Stat>
           <StatLabel>Asistencias</StatLabel>
-          <StatValue size="compact" tone="muted">
-            —
+          <StatValue size="empty" tone="muted">
+            Sin datos
           </StatValue>
         </Stat>
         <Stat>

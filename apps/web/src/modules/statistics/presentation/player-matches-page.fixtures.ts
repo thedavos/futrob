@@ -9,18 +9,37 @@ const FC26_CREST =
 /** Frozen "now" for Mis partidos stories and page tests (14 Aug 2026, local). */
 export const PLAYER_MATCHES_PAGE_NOW = new Date(2026, 7, 14, 15, 0, 0);
 
+type PlayedMatch = Extract<PlayerRecentProviderMatchDto, { kind: "played" }>;
+type NotPlayedMatch = Extract<PlayerRecentProviderMatchDto, { kind: "not_played" }>;
+
+type FixtureMatchFields = {
+  readonly id: string;
+  readonly externalMatchId: string;
+  readonly occurredAt: string;
+  readonly home: PlayedMatch["match"]["home"];
+  readonly away: PlayedMatch["match"]["away"];
+  readonly mode: PlayedMatch["match"]["game"]["mode"];
+  readonly players: PlayedMatch["match"]["players"];
+  readonly metadata: Partial<PlayedMatch["match"]["metadata"]>;
+};
+
+type PlayedFixtureOverrides = Partial<
+  FixtureMatchFields & {
+    readonly kind: "played";
+    readonly appearance: Partial<PlayedMatch["appearance"]>;
+    readonly listedExternalClubId: string;
+  }
+>;
+
+type NotPlayedFixtureOverrides = Partial<FixtureMatchFields> & {
+  readonly kind: "not_played";
+  readonly listedExternalClubId?: string;
+};
+
+export function recentProviderMatchFixture(overrides?: PlayedFixtureOverrides): PlayedMatch;
+export function recentProviderMatchFixture(overrides: NotPlayedFixtureOverrides): NotPlayedMatch;
 export function recentProviderMatchFixture(
-  overrides: Partial<{
-    readonly id: string;
-    readonly externalMatchId: string;
-    readonly occurredAt: string;
-    readonly home: PlayerRecentProviderMatchDto["match"]["home"];
-    readonly away: PlayerRecentProviderMatchDto["match"]["away"];
-    readonly appearance: Partial<PlayerRecentProviderMatchDto["appearance"]>;
-    readonly mode: PlayerRecentProviderMatchDto["match"]["game"]["mode"];
-    readonly players: PlayerRecentProviderMatchDto["match"]["players"];
-    readonly metadata: Partial<PlayerRecentProviderMatchDto["match"]["metadata"]>;
-  }> = {},
+  overrides: PlayedFixtureOverrides | NotPlayedFixtureOverrides = {},
 ): PlayerRecentProviderMatchDto {
   const home = overrides.home ?? {
     externalClubId: "10754",
@@ -29,49 +48,76 @@ export function recentProviderMatchFixture(
     imageUrl: FC26_CREST,
   };
 
-  return {
-    match: {
-      id: overrides.id ?? "provider-match-1",
-      provider: { key: "ea-clubs", externalMatchId: overrides.externalMatchId ?? "ea-1" },
-      game: { edition: "fc26", platform: "common-gen5", mode: overrides.mode ?? "leagueMatch" },
-      occurredAt: overrides.occurredAt ?? new Date(2026, 7, 14, 18, 0).toISOString(),
-      home,
-      away: overrides.away ?? {
-        externalClubId: "99",
-        name: "Night Owls",
-        goals: 1,
-        imageUrl: null,
-      },
-      players: overrides.players ?? [],
-      metadata: {
-        durationSeconds: 540,
-        wasDisconnected: false,
-        winnerByForfeit: false,
-        completeness: "complete",
-        ...overrides.metadata,
-      },
-    },
-    appearance: {
-      externalPlayerId: "davos282",
-      displayName: "davos282",
-      externalClubId: home.externalClubId,
-      position: "ST",
-      minutesPlayed: 12,
+  const match = {
+    id: overrides.id ?? "provider-match-1",
+    provider: { key: "ea-clubs" as const, externalMatchId: overrides.externalMatchId ?? "ea-1" },
+    game: { edition: "fc26", platform: "common-gen5", mode: overrides.mode ?? "leagueMatch" },
+    occurredAt: overrides.occurredAt ?? new Date(2026, 7, 14, 18, 0).toISOString(),
+    home,
+    away: overrides.away ?? {
+      externalClubId: "99",
+      name: "Night Owls",
       goals: 1,
-      assists: 0,
-      shots: 3,
-      passAttempts: 8,
-      passesMade: 6,
-      tackleAttempts: 1,
-      tacklesMade: 1,
-      saves: null,
-      yellowCards: 0,
-      redCards: 0,
-      isMvp: false,
-      rating: 8.4,
-      ...overrides.appearance,
+      imageUrl: null,
+    },
+    players: overrides.players ?? [],
+    metadata: {
+      durationSeconds: 540,
+      wasDisconnected: false,
+      winnerByForfeit: false,
+      completeness: "complete" as const,
+      ...overrides.metadata,
     },
   };
+
+  const kind = overrides.kind ?? "played";
+  switch (kind) {
+    case "played": {
+      const appearanceOverrides = "appearance" in overrides ? overrides.appearance : undefined;
+      const appearance = {
+        externalPlayerId: "davos282",
+        displayName: "davos282",
+        externalClubId: home.externalClubId,
+        position: "ST",
+        minutesPlayed: 12,
+        goals: 1,
+        assists: 0,
+        shots: 3,
+        passAttempts: 8,
+        passesMade: 6,
+        tackleAttempts: 1,
+        tacklesMade: 1,
+        saves: null,
+        yellowCards: 0,
+        redCards: 0,
+        isMvp: false,
+        rating: 8.4,
+        ...appearanceOverrides,
+      };
+      return {
+        kind: "played",
+        match,
+        appearance,
+        listedExternalClubId:
+          "listedExternalClubId" in overrides && overrides.listedExternalClubId !== undefined
+            ? overrides.listedExternalClubId
+            : appearance.externalClubId,
+      };
+    }
+    case "not_played":
+      return {
+        kind: "not_played",
+        match,
+        listedExternalClubId:
+          "listedExternalClubId" in overrides && overrides.listedExternalClubId !== undefined
+            ? overrides.listedExternalClubId
+            : home.externalClubId,
+      };
+    default: {
+      const _exhaustive: never = kind;
+      return _exhaustive;
+    }
+  }
 }
 
 export function recentMatchesReadyFixture(

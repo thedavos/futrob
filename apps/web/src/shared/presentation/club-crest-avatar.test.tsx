@@ -34,4 +34,14 @@ describe("ClubCrestAvatar", () => {
     fireEvent.error(image!);
     expect(container.textContent).toContain("NO");
   });
+
+  it("omits the circular frame when framed is false", () => {
+    const { container } = render(
+      <ClubCrestAvatar framed={false} imageUrl="https://example.com/crest.png" name="Night Owls" />,
+    );
+    const avatar = container.querySelector('[data-slot="club-crest-avatar"]');
+    const image = container.querySelector('[data-slot="club-crest-image"]');
+    expect(avatar?.className).not.toContain("rounded-full");
+    expect(image?.className).toContain("outline-none");
+  });
 });

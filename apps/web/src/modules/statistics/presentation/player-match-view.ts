@@ -24,9 +24,20 @@ export function scoringFeat(goals: number | null): ScoringFeat | null {
   return "hatTrick";
 }
 
+export function playedAppearance(
+  item: PlayerRecentProviderMatchDto,
+): Extract<PlayerRecentProviderMatchDto, { kind: "played" }>["appearance"] | null {
+  return item.kind === "played" ? item.appearance : null;
+}
+
+export function appearanceScoringFeat(item: PlayerRecentProviderMatchDto): ScoringFeat | null {
+  return scoringFeat(playedAppearance(item)?.goals ?? null);
+}
+
 export function scoringFeatPlayerName(item: PlayerRecentProviderMatchDto): string | null {
-  if (scoringFeat(item.appearance.goals) === null) return null;
-  const name = item.appearance.displayName.trim();
+  const appearance = playedAppearance(item);
+  if (!appearance || scoringFeat(appearance.goals) === null) return null;
+  const name = appearance.displayName.trim();
   return name.length > 0 ? name : null;
 }
 
@@ -43,18 +54,26 @@ export function showsRedCards(redCards: number | null): boolean {
 }
 
 export function matchMvpDisplayName(item: PlayerRecentProviderMatchDto): string | null {
+  const listedMvp = item.match.players.find(
+    (player) => player.isMvp === true && player.externalClubId === item.listedExternalClubId,
+  );
+  if (listedMvp) return listedMvp.displayName;
+  const appearance = playedAppearance(item);
+  if (appearance?.isMvp === true) return appearance.displayName;
   const named = item.match.players.find((player) => player.isMvp === true);
-  if (named) return named.displayName;
-  if (item.appearance.isMvp === true) return item.appearance.displayName;
-  return null;
+  return named && item.kind === "played" ? named.displayName : null;
 }
 
 export type MatchOutcome = "win" | "draw" | "loss" | "unknown";
 
 export type MatchSide = "home" | "away";
 
+export function listedClubId(item: PlayerRecentProviderMatchDto): string {
+  return item.listedExternalClubId;
+}
+
 export function playerMatchSide(item: PlayerRecentProviderMatchDto): MatchSide | null {
-  const clubId = item.appearance.externalClubId;
+  const clubId = listedClubId(item);
   if (item.match.home.externalClubId === clubId) return "home";
   if (item.match.away.externalClubId === clubId) return "away";
   return null;
@@ -150,17 +169,20 @@ export function summarizeMatchRecord(
         return _exhaustive;
       }
     }
-    if (item.appearance.goals !== null) {
-      goalsSum += item.appearance.goals;
-      goalsCount += 1;
-    }
-    if (item.appearance.assists !== null) {
-      assistsSum += item.appearance.assists;
-      assistsCount += 1;
-    }
-    if (item.appearance.rating !== null) {
-      ratingSum += item.appearance.rating;
-      ratingCount += 1;
+    const appearance = playedAppearance(item);
+    if (appearance) {
+      if (appearance.goals !== null) {
+        goalsSum += appearance.goals;
+        goalsCount += 1;
+      }
+      if (appearance.assists !== null) {
+        assistsSum += appearance.assists;
+        assistsCount += 1;
+      }
+      if (appearance.rating !== null) {
+        ratingSum += appearance.rating;
+        ratingCount += 1;
+      }
     }
   }
 

@@ -7,6 +7,7 @@ import {
   groupMatchesByDay,
   isDnfMatch,
   isWithinRecentCalendarDays,
+  listedClubId,
   matchesForView,
   matchMvpDisplayName,
   matchOutcome,
@@ -75,6 +76,18 @@ describe("matchOutcome", () => {
     });
     expect(matchOutcome(item)).toBe("unknown");
   });
+
+  it("uses the listed club for a not_played row, not an opponent appearance", () => {
+    const item = recentProviderMatchFixture({
+      kind: "not_played",
+      listedExternalClubId: "10754",
+      home: { externalClubId: "10754", name: "Sirius", goals: 2, imageUrl: null },
+      away: { externalClubId: "99", name: "Cuervos", goals: 1, imageUrl: null },
+    });
+    expect(listedClubId(item)).toBe("10754");
+    expect(playerMatchSide(item)).toBe("home");
+    expect(matchOutcome(item)).toBe("win");
+  });
 });
 
 describe("summarizeMatchRecord", () => {
@@ -119,6 +132,27 @@ describe("summarizeMatchRecord", () => {
       recentProviderMatchFixture({ appearance: { rating: null } }),
     ]);
     expect(summary.averageRating).toBeNull();
+  });
+
+  it("counts W/D/L for not_played rows and ignores opponent personal stats", () => {
+    const summary = summarizeMatchRecord([
+      recentProviderMatchFixture({ appearance: { goals: 1, assists: 1, rating: 8 } }),
+      recentProviderMatchFixture({
+        kind: "not_played",
+        id: "not-played-win",
+        listedExternalClubId: "10754",
+        home: { externalClubId: "10754", name: "Sirius", goals: 4, imageUrl: null },
+        away: { externalClubId: "99", name: "Cuervos", goals: 0, imageUrl: null },
+      }),
+    ]);
+    expect(summary).toEqual({
+      wins: 2,
+      draws: 0,
+      losses: 0,
+      goals: 1,
+      assists: 1,
+      averageRating: 8,
+    });
   });
 });
 
@@ -240,6 +274,17 @@ describe("scoringFeatPlayerName", () => {
       ),
     ).toBeNull();
   });
+
+  it("returns null for a not_played row", () => {
+    expect(
+      scoringFeatPlayerName(
+        recentProviderMatchFixture({
+          kind: "not_played",
+          listedExternalClubId: "10754",
+        }),
+      ),
+    ).toBeNull();
+  });
 });
 
 describe("showsYellowCards", () => {
@@ -275,6 +320,19 @@ describe("matchMvpDisplayName", () => {
     expect(matchMvpDisplayName(recentProviderMatchFixture({ appearance: { isMvp: true } }))).toBe(
       "davos282",
     );
+  });
+
+  it("does not name the player as MVP on a not_played row", () => {
+    const appearance = recentProviderMatchFixture().appearance;
+    expect(
+      matchMvpDisplayName(
+        recentProviderMatchFixture({
+          kind: "not_played",
+          listedExternalClubId: "10754",
+          players: [{ ...appearance, externalClubId: "99", displayName: "davos282", isMvp: true }],
+        }),
+      ),
+    ).toBeNull();
   });
 
   it("prefers the named MVP in the match roster", () => {

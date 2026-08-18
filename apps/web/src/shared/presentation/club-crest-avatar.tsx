@@ -9,11 +9,13 @@ export function ClubCrestAvatar({
   imageUrl,
   className,
   fallbackClassName,
+  framed = true,
 }: {
   readonly name: string;
   readonly imageUrl: string | null;
   readonly className?: string;
   readonly fallbackClassName?: string;
+  readonly framed?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(imageUrl) && !failed;
@@ -22,7 +24,8 @@ export function ClubCrestAvatar({
     <span
       aria-hidden="true"
       className={cn(
-        "relative flex size-4 shrink-0 overflow-hidden rounded-full bg-muted text-muted-foreground",
+        "relative flex size-4 shrink-0 text-muted-foreground",
+        framed ? "overflow-hidden rounded-full bg-muted" : "bg-transparent",
         className,
       )}
       data-slot="club-crest-avatar"
@@ -30,7 +33,7 @@ export function ClubCrestAvatar({
       {showImage ? (
         <img
           alt=""
-          className="size-full object-contain"
+          className={cn("size-full object-contain", framed ? undefined : "outline-none")}
           data-slot="club-crest-image"
           onError={() => setFailed(true)}
           referrerPolicy="no-referrer"

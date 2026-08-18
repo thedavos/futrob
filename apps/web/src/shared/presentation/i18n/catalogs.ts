@@ -232,7 +232,7 @@ const es = {
   "player.nav.gameData": "Datos de juego",
   "player.workspace.eyebrow": "Espacio personal",
   "player.matches.title": "Mis partidos",
-  "player.matches.description": "Apariciones en tus clubes asociados.",
+  "player.matches.description": "Apariciones en el club seleccionado.",
   "player.matches.loading": "Cargando tus partidos…",
   "player.matches.error": "No pudimos cargar tus partidos.",
   "player.matches.emptyTitle": "Aún no hay partidos oficiales",
@@ -256,10 +256,15 @@ const es = {
   "player.matches.mvp": "MVP",
   "player.matches.mvp.named": ({ name }) => `${name} MVP`,
   "player.matches.dnf": "Ganado por desconexión",
+  "player.matches.notPlayed": "No jugaste",
+  "player.matches.openMatch": "Ver partido",
   "player.matches.outcome.win": "Victoria",
   "player.matches.outcome.draw": "Empate",
   "player.matches.outcome.loss": "Derrota",
   "player.matches.vs": "–",
+  "player.matches.appearance.goalsUnit": ({ count }) => (count === 1 ? "gol" : "goles"),
+  "player.matches.appearance.assistsUnit": ({ count }) =>
+    count === 1 ? "asistencia" : "asistencias",
   "player.matches.recent.title": "Recientes",
   "player.matches.recent.loading": "Cargando partidos recientes…",
   "player.matches.recent.error": "No pudimos cargar tus partidos recientes.",
@@ -272,26 +277,26 @@ const es = {
     "Asocia un identificador de juego para reconocer tus apariciones en los partidos de tus clubes.",
   "player.matches.recent.emptyTitle": "No hay partidos recientes",
   "player.matches.recent.emptyDescription":
-    "Todavía no hay apariciones recientes en tus clubes asociados.",
+    "Todavía no hay apariciones recientes en el club seleccionado.",
   "player.matches.recent.emptyOlder.title": "No hay partidos en los últimos 7 días",
   "player.matches.recent.emptyOlder.description":
     "Tienes partidos más antiguos. Ábrelos en Todos los partidos.",
   "player.matches.recent.emptyOlder.action": "Ver todos los partidos",
   "player.matches.all.historyLabel": "Todos los partidos",
   "player.matches.all.emptyTitle": "No hay partidos",
-  "player.matches.all.emptyDescription": "Todavía no hay apariciones en tus clubes asociados.",
+  "player.matches.all.emptyDescription": "Todavía no hay apariciones en el club seleccionado.",
   "player.matches.league.historyLabel": "Partidos de liga",
   "player.matches.league.emptyTitle": "No hay partidos de liga",
   "player.matches.league.emptyDescription":
-    "Todavía no hay apariciones de liga en tus clubes asociados.",
+    "Todavía no hay apariciones de liga en el club seleccionado.",
   "player.matches.playoff.historyLabel": "Partidos de playoff",
   "player.matches.playoff.emptyTitle": "No hay playoffs",
   "player.matches.playoff.emptyDescription":
-    "Todavía no hay apariciones de playoff en tus clubes asociados.",
+    "Todavía no hay apariciones de playoff en el club seleccionado.",
   "player.matches.friendly.historyLabel": "Partidos amistosos",
   "player.matches.friendly.emptyTitle": "No hay amistosos",
   "player.matches.friendly.emptyDescription":
-    "Todavía no hay apariciones amistosas en tus clubes asociados.",
+    "Todavía no hay apariciones amistosas en el club seleccionado.",
   "player.matches.type.league": "Liga",
   "player.matches.type.playoff": "Playoff",
   "player.matches.type.friendly": "Amistoso",
@@ -373,6 +378,8 @@ export interface MessageParamsByKey {
   readonly "player.statistics.revision": { readonly revision: number };
   readonly "player.matches.mvp.named": { readonly name: string };
   readonly "player.matches.feat.scorer": { readonly name: string };
+  readonly "player.matches.appearance.goalsUnit": { readonly count: number };
+  readonly "player.matches.appearance.assistsUnit": { readonly count: number };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -601,7 +608,7 @@ const en: Catalog = {
   "player.nav.gameData": "Game data",
   "player.workspace.eyebrow": "Personal workspace",
   "player.matches.title": "My matches",
-  "player.matches.description": "Appearances in your associated clubs.",
+  "player.matches.description": "Appearances in the selected club.",
   "player.matches.loading": "Loading your matches…",
   "player.matches.error": "We could not load your matches.",
   "player.matches.emptyTitle": "No official matches yet",
@@ -625,10 +632,14 @@ const en: Catalog = {
   "player.matches.mvp": "MVP",
   "player.matches.mvp.named": ({ name }) => `${name} MVP`,
   "player.matches.dnf": "Won by DNF",
+  "player.matches.notPlayed": "You didn't play",
+  "player.matches.openMatch": "View match",
   "player.matches.outcome.win": "Win",
   "player.matches.outcome.draw": "Draw",
   "player.matches.outcome.loss": "Lose",
   "player.matches.vs": "–",
+  "player.matches.appearance.goalsUnit": ({ count }) => (count === 1 ? "goal" : "goals"),
+  "player.matches.appearance.assistsUnit": ({ count }) => (count === 1 ? "assist" : "assists"),
   "player.matches.recent.title": "Recent",
   "player.matches.recent.loading": "Loading recent matches…",
   "player.matches.recent.error": "We could not load your recent matches.",
@@ -641,26 +652,26 @@ const en: Catalog = {
     "Associate a game identifier so your appearances in your clubs' matches can be recognized.",
   "player.matches.recent.emptyTitle": "No recent matches",
   "player.matches.recent.emptyDescription":
-    "There are no recent appearances in your associated clubs yet.",
+    "There are no recent appearances in the selected club yet.",
   "player.matches.recent.emptyOlder.title": "No matches in the last 7 days",
   "player.matches.recent.emptyOlder.description":
     "You have older matches. Open them in All matches.",
   "player.matches.recent.emptyOlder.action": "View all matches",
   "player.matches.all.historyLabel": "All matches",
   "player.matches.all.emptyTitle": "No matches",
-  "player.matches.all.emptyDescription": "There are no appearances in your associated clubs yet.",
+  "player.matches.all.emptyDescription": "There are no appearances in the selected club yet.",
   "player.matches.league.historyLabel": "League matches",
   "player.matches.league.emptyTitle": "No league matches",
   "player.matches.league.emptyDescription":
-    "There are no league appearances in your associated clubs yet.",
+    "There are no league appearances in the selected club yet.",
   "player.matches.playoff.historyLabel": "Playoff matches",
   "player.matches.playoff.emptyTitle": "No playoff matches",
   "player.matches.playoff.emptyDescription":
-    "There are no playoff appearances in your associated clubs yet.",
+    "There are no playoff appearances in the selected club yet.",
   "player.matches.friendly.historyLabel": "Friendly matches",
   "player.matches.friendly.emptyTitle": "No friendlies",
   "player.matches.friendly.emptyDescription":
-    "There are no friendly appearances in your associated clubs yet.",
+    "There are no friendly appearances in the selected club yet.",
   "player.matches.type.league": "League",
   "player.matches.type.playoff": "Playoff",
   "player.matches.type.friendly": "Friendly",

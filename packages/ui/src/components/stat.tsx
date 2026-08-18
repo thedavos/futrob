@@ -23,6 +23,8 @@ const statValueVariants = cva("min-w-0 max-w-full truncate text-foreground", {
       default: "typo-score",
       /** Strip denso de KPIs en dashboards y resúmenes. */
       compact: "text-2xl font-semibold leading-none tracking-tight tabular-nums",
+      /** Copy sentence-case when there is no numeric value (`typo-caption`). */
+      empty: "typo-caption",
     },
     tone: {
       default: "text-foreground",

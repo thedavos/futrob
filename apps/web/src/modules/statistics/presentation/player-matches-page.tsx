@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import type {
   GetMyRecentMatchesResponse,
@@ -39,6 +39,7 @@ import {
   type IconWeight,
 } from "@futrob/ui";
 import {
+  CaretRightIcon,
   EqualsIcon,
   GameControllerIcon,
   HandshakeIcon,
@@ -53,7 +54,9 @@ import { AddClubDialog } from "@/modules/teams/presentation/add-club-dialog.tsx"
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { useWorkspaceSelectedClubId } from "@/shared/presentation/shell/use-workspace-selection.tsx";
 import {
+  appearanceScoringFeat,
   calendarDayKind,
   filterRecentMatches,
   groupMatchesByDay,
@@ -63,9 +66,9 @@ import {
   matchMvpDisplayName,
   matchOutcome,
   PLAYER_MATCHES_VIEWS,
+  playedAppearance,
   playerMatchSide,
   providerMatchMode,
-  scoringFeat,
   scoringFeatPlayerName,
   showsMatchTypeBadge,
   showsRedCards,
@@ -85,19 +88,70 @@ import { useMyRecentMatchesQuery } from "./statistics-queries.ts";
 export type { PlayerMatchesView };
 
 /** 2 on mobile, 3 on tablet, 6 in a row when the shell content is wide. */
-const RECORD_STAT_GRID_CLASS_NAME = "grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6";
+const RECORD_STAT_GRID_CLASS_NAME =
+  "grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 xl:grid-cols-6";
 
 export function PlayerMatchesPage({
-  now = new Date(),
+  externalClubId: clubIdProp,
+  now,
   onViewChange,
-  view = "recent",
+  view,
+}: {
+  readonly externalClubId?: string;
+  readonly now?: Date;
+  readonly onViewChange?: (view: PlayerMatchesView) => void;
+  readonly view?: PlayerMatchesView;
+}) {
+  if (clubIdProp !== undefined) {
+    return (
+      <PlayerMatchesPageLoaded
+        externalClubId={clubIdProp}
+        now={now}
+        onViewChange={onViewChange}
+        profileReady
+        view={view}
+      />
+    );
+  }
+  return <PlayerMatchesFromWorkspace now={now} onViewChange={onViewChange} view={view} />;
+}
+
+function PlayerMatchesFromWorkspace({
+  now,
+  onViewChange,
+  view,
 }: {
   readonly now?: Date;
   readonly onViewChange?: (view: PlayerMatchesView) => void;
   readonly view?: PlayerMatchesView;
 }) {
+  const selectedClub = useWorkspaceSelectedClubId();
+  return (
+    <PlayerMatchesPageLoaded
+      externalClubId={selectedClub.externalClubId}
+      now={now}
+      onViewChange={onViewChange}
+      profileReady={selectedClub.profileReady}
+      view={view}
+    />
+  );
+}
+
+function PlayerMatchesPageLoaded({
+  externalClubId,
+  now = new Date(),
+  onViewChange,
+  profileReady,
+  view = "recent",
+}: {
+  readonly externalClubId: string | undefined;
+  readonly now?: Date;
+  readonly onViewChange?: (view: PlayerMatchesView) => void;
+  readonly profileReady: boolean;
+  readonly view?: PlayerMatchesView;
+}) {
   const { t, locale } = useI18n();
-  const recentQuery = useMyRecentMatchesQuery();
+  const recentQuery = useMyRecentMatchesQuery(externalClubId, profileReady);
   const [addClubOpen, setAddClubOpen] = useState(false);
   const [uncontrolledView, setUncontrolledView] = useState<PlayerMatchesView>(view);
   const activeView = onViewChange === undefined ? uncontrolledView : view;
@@ -107,6 +161,8 @@ export function PlayerMatchesPage({
   const dateTimeFormat = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "es-ES", {
     dateStyle: "medium",
     timeStyle: "short",
+    hour12: false,
+    hourCycle: "h23",
   });
   const dayDateFormat = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "es-ES", {
     day: "numeric",
@@ -182,7 +238,9 @@ function MatchesBody({
       <div className="space-y-8">
         <RecordLoading t={t} />
         <MatchesTabs activeView={activeView} onViewChange={onViewChange} t={t}>
-          <MatchesLoading label={t("player.matches.loading")} />
+          <TabsContent value={activeView}>
+            <MatchesLoading label={t("player.matches.loading")} />
+          </TabsContent>
         </MatchesTabs>
       </div>
     );
@@ -415,12 +473,14 @@ function MatchDayLists({
             <h2 className="typo-label text-muted-foreground">
               <time dateTime={group.dayKey}>{heading}</time>
             </h2>
-            <ol className="divide-y divide-border-subtle rounded-lg border border-border bg-surface">
+            <ol className="flex flex-col gap-3">
               {group.matches.map((item) => (
                 <ProviderMatchRow
                   dateTimeFormat={dateTimeFormat}
+                  dayDateFormat={dayDateFormat}
                   item={item}
                   key={`${item.match.provider.key}:${item.match.provider.externalMatchId}`}
+                  now={now}
                   numberFormat={numberFormat}
                   showMatchType={showMatchType}
                   t={t}
@@ -436,31 +496,34 @@ function MatchDayLists({
 
 function ProviderMatchRow({
   dateTimeFormat,
+  dayDateFormat,
   item,
+  now,
   numberFormat,
   showMatchType,
   t,
 }: {
   readonly dateTimeFormat: Intl.DateTimeFormat;
+  readonly dayDateFormat: Intl.DateTimeFormat;
   readonly item: PlayerRecentProviderMatchDto;
+  readonly now: Date;
   readonly numberFormat: Intl.NumberFormat;
   readonly showMatchType: boolean;
   readonly t: Translator;
 }) {
-  const { match, appearance } = item;
+  const { match } = item;
   const occurredAt = new Date(match.occurredAt);
   const mode = providerMatchMode(item);
   const typeLabel = showMatchType && mode ? t(matchTypeMessageKey(mode)) : null;
   const outcome = matchOutcome(item);
   const outcomeLabel = outcome === "unknown" ? null : t(matchOutcomeMessageKey(outcome));
-  const feat = scoringFeat(appearance.goals);
+  const feat = appearanceScoringFeat(item);
   const featLabel = feat ? t(scoringFeatMessageKey(feat)) : null;
   const featScorerName = scoringFeatPlayerName(item);
   const mvpName = matchMvpDisplayName(item);
   const mvpLabel = mvpName ? t("player.matches.mvp.named", { name: mvpName }) : null;
   const dnf = isDnfMatch(item);
-  const showYellow = showsYellowCards(appearance.yellowCards);
-  const showRed = showsRedCards(appearance.redCards);
+  const notPlayedLabel = notPlayedMessage(item, t);
   const side = playerMatchSide(item);
   const accessibleName = [
     match.home.name,
@@ -469,153 +532,455 @@ function ProviderMatchRow({
     String(match.away.goals),
     match.away.name,
     typeLabel,
+    notPlayedLabel,
     outcomeLabel,
     dnf ? t("player.matches.dnf") : null,
     featLabel,
     mvpLabel,
-    showRed && appearance.redCards !== null
-      ? `${t("player.matches.metric.redCards")} ${appearance.redCards}`
-      : null,
+    appearanceRedCardsAria(item, t),
     dateTimeFormat.format(occurredAt),
   ]
     .filter((part): part is string => part !== null)
     .join(" ");
 
-  const typeBadge =
-    typeLabel && mode ? (
-      <Badge data-match-type={mode} variant={matchTypeBadgeVariant(mode)}>
-        {typeLabel}
-      </Badge>
-    ) : null;
-  const dnfBadge = dnf ? (
-    <Badge
-      aria-label={t("player.matches.dnf")}
-      data-match-dnf=""
-      title={t("player.matches.dnf")}
-      variant="outline"
-    >
-      <PlugsIcon aria-hidden="true" />
-    </Badge>
-  ) : null;
-  const accoladeBadges = (
-    <>
-      {featLabel && feat ? (
-        <ScoringFeatBadge feat={feat} featLabel={featLabel} scorerName={featScorerName} t={t} />
-      ) : null}
-      {mvpLabel ? (
-        <Badge>
-          <StarIcon aria-hidden="true" weight="fill" />
-          {mvpLabel}
-        </Badge>
-      ) : null}
-    </>
-  );
-  const hasAccolades = Boolean(featLabel || mvpLabel);
-  const hasMatchHeader = Boolean(typeBadge || dnfBadge);
+  const { locale } = useI18n();
+  const timeLabel = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    hourCycle: "h23",
+  }).format(occurredAt);
+  const dayKind = calendarDayKind(occurredAt, now);
+  const whenLabel = `${dayHeading(dayKind, occurredAt, dayDateFormat, t)}, ${timeLabel}`;
 
   return (
-    <li aria-label={accessibleName} className="px-4 py-5 sm:px-5">
-      {hasMatchHeader ? (
-        <div className="mb-4 flex items-center gap-2">
-          {typeBadge}
-          {dnfBadge}
-        </div>
-      ) : null}
-
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 gap-y-1">
-        <div className="flex justify-center">
-          <ClubCrestAvatar
-            className="size-12"
-            fallbackClassName="text-xs"
-            imageUrl={match.home.imageUrl}
-            name={match.home.name}
-          />
-        </div>
-        <div
-          className={`col-start-2 row-span-2 flex items-center justify-center gap-2 ${matchOutcomeScoreClass(outcome)}`}
-          data-match-outcome={outcome === "unknown" ? undefined : outcome}
-        >
-          <span className="typo-score tabular-nums">{match.home.goals}</span>
-          <span className="typo-caption px-0.5 font-semibold leading-none">
-            {t("player.matches.vs")}
-          </span>
-          <span className="typo-score tabular-nums">{match.away.goals}</span>
-        </div>
-        <div className="flex justify-center">
-          <ClubCrestAvatar
-            className="size-12"
-            fallbackClassName="text-xs"
-            imageUrl={match.away.imageUrl}
-            name={match.away.name}
-          />
-        </div>
-        <MatchClubMeta
-          column="home"
-          name={match.home.name}
-          redCards={side === "home" ? appearance.redCards : null}
-          redCardsLabel={t("player.matches.metric.redCards")}
-        />
-        <MatchClubMeta
-          column="away"
-          name={match.away.name}
-          redCards={side === "away" ? appearance.redCards : null}
-          redCardsLabel={t("player.matches.metric.redCards")}
-        />
-      </div>
-
-      {hasAccolades ? (
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-          {accoladeBadges}
-        </div>
-      ) : null}
-
-      <StatGroup
-        className={
-          showYellow
-            ? "mt-5 grid w-full grid-cols-4 items-end gap-x-3 [&>[data-slot=stat]]:min-w-0"
-            : "mt-5 grid w-full grid-cols-3 items-end gap-x-3 [&>[data-slot=stat]]:min-w-0"
-        }
+    <li aria-label={accessibleName} className="relative">
+      <div
+        className={`relative flex min-h-52 flex-col overflow-hidden rounded-xl border border-border bg-surface ${
+          playedAppearance(item) ? "pb-16" : ""
+        }`}
       >
-        <MatchStat
+        <MatchPitchWash
+          awayGoals={match.away.goals}
+          awayImageUrl={match.away.imageUrl}
+          homeGoals={match.home.goals}
+          homeImageUrl={match.home.imageUrl}
+        />
+        <div className="relative flex min-h-0 flex-1 flex-col px-4 py-5 sm:px-6 sm:py-6">
+          <div className="flex items-start justify-between gap-2">
+            <MatchHeaderMeta
+              items={[
+                typeLabel && mode ? (
+                  <Badge data-match-type={mode} key="type" variant={matchTypeBadgeVariant(mode)}>
+                    {typeLabel}
+                  </Badge>
+                ) : null,
+                outcomeLabel ? (
+                  <span
+                    className={`typo-caption font-semibold ${matchOutcomeToneClass(outcome)}`}
+                    data-match-outcome={outcome === "unknown" ? undefined : outcome}
+                    key="outcome"
+                  >
+                    {outcomeLabel}
+                  </span>
+                ) : null,
+                notPlayedLabel ? (
+                  <span
+                    className="typo-caption text-muted-foreground"
+                    data-played="false"
+                    key="played"
+                  >
+                    <span className="font-medium">{notPlayedLabel}</span>
+                  </span>
+                ) : null,
+                dnf ? (
+                  <span
+                    aria-label={t("player.matches.dnf")}
+                    className="inline-flex text-muted-foreground"
+                    data-match-dnf=""
+                    key="dnf"
+                    title={t("player.matches.dnf")}
+                  >
+                    <PlugsIcon aria-hidden="true" className="size-3.5" />
+                  </span>
+                ) : null,
+                <time
+                  className="typo-caption tabular-nums text-muted-foreground"
+                  dateTime={occurredAt.toISOString()}
+                  key="when"
+                >
+                  <span className="font-medium">{whenLabel}</span>
+                </time>,
+              ]}
+            />
+            <Button
+              aria-label={t("player.matches.openMatch")}
+              className="shrink-0"
+              data-match-chevron=""
+              dense
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <CaretRightIcon />
+            </Button>
+          </div>
+
+          <div className="flex flex-1 flex-col items-center justify-center gap-2">
+            <div className="mx-auto flex w-fit max-w-full items-center justify-center gap-10 sm:gap-16">
+              <MatchClubSide
+                imageUrl={match.home.imageUrl}
+                name={match.home.name}
+                redCards={listedClubRedCards(item, side, "home")}
+                redCardsLabel={t("player.matches.metric.redCards")}
+              />
+              <div
+                className="flex items-center justify-center gap-2.5 rounded-lg bg-foreground px-3.5 py-2.5 text-background smooth-shadow-ring-md"
+                data-match-score=""
+                data-match-outcome={outcome === "unknown" ? undefined : outcome}
+              >
+                <span
+                  className={`typo-score tabular-nums ${scoreDigitClass(match.home.goals, match.away.goals, "home")}`}
+                >
+                  {match.home.goals}
+                </span>
+                <span className="typo-score px-0.5 leading-none">{t("player.matches.vs")}</span>
+                <span
+                  className={`typo-score tabular-nums ${scoreDigitClass(match.home.goals, match.away.goals, "away")}`}
+                >
+                  {match.away.goals}
+                </span>
+              </div>
+              <MatchClubSide
+                imageUrl={match.away.imageUrl}
+                name={match.away.name}
+                redCards={listedClubRedCards(item, side, "away")}
+                redCardsLabel={t("player.matches.metric.redCards")}
+              />
+            </div>
+
+            {featLabel && feat ? (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <ScoringFeatBadge
+                  feat={feat}
+                  featLabel={featLabel}
+                  scorerName={featScorerName}
+                  t={t}
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+      <MatchAppearanceStrip item={item} mvpLabel={mvpLabel} numberFormat={numberFormat} t={t} />
+    </li>
+  );
+}
+
+function MatchHeaderMeta({ items }: { readonly items: readonly ReactNode[] }) {
+  const parts = items.filter((item) => item !== null && item !== false && item !== undefined);
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      {parts.map((part, index) => (
+        <Fragment key={index}>
+          {index > 0 ? (
+            <span aria-hidden="true" className="typo-caption text-muted-foreground">
+              ·
+            </span>
+          ) : null}
+          {part}
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
+function matchScoreWinnerSide(homeGoals: number, awayGoals: number): "home" | "away" | "draw" {
+  if (homeGoals > awayGoals) return "home";
+  if (awayGoals > homeGoals) return "away";
+  return "draw";
+}
+
+type PitchHalfFill = "win" | "loss" | "drawHome" | "drawAway";
+
+function MatchPitchWash({
+  awayGoals,
+  awayImageUrl,
+  homeGoals,
+  homeImageUrl,
+}: {
+  readonly awayGoals: number;
+  readonly awayImageUrl: string | null;
+  readonly homeGoals: number;
+  readonly homeImageUrl: string | null;
+}) {
+  const fills = pitchFillsForResult(matchScoreWinnerSide(homeGoals, awayGoals));
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+      <MatchPitchHalf
+        className="[clip-path:polygon(0_0,58%_0,42%_100%,0_100%)]"
+        fill={fills.home}
+        imageUrl={homeImageUrl}
+        side="home"
+      />
+      <MatchPitchHalf
+        className="[clip-path:polygon(58%_0,100%_0,100%_100%,42%_100%)]"
+        fill={fills.away}
+        imageUrl={awayImageUrl}
+        side="away"
+      />
+    </div>
+  );
+}
+
+function pitchFillsForResult(result: "home" | "away" | "draw"): {
+  readonly home: PitchHalfFill;
+  readonly away: PitchHalfFill;
+} {
+  switch (result) {
+    case "home":
+      return { home: "win", away: "loss" };
+    case "away":
+      return { home: "loss", away: "win" };
+    case "draw":
+      return { home: "drawHome", away: "drawAway" };
+    default: {
+      const _exhaustive: never = result;
+      return _exhaustive;
+    }
+  }
+}
+
+function MatchPitchHalf({
+  className,
+  fill,
+  imageUrl,
+  side,
+}: {
+  readonly className: string;
+  readonly fill: PitchHalfFill;
+  readonly imageUrl: string | null;
+  readonly side: "home" | "away";
+}) {
+  return (
+    <div
+      className={`absolute inset-0 ${pitchHalfWashClass(fill)} ${className}`}
+      data-pitch-fill={fill}
+      data-pitch-half={side}
+    >
+      {imageUrl === null ? null : (
+        <img
+          alt=""
+          className={`absolute top-1/2 hidden size-[16.1rem] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain opacity-10 outline-none grayscale mix-blend-multiply lg:block dark:mix-blend-soft-light ${pitchWatermarkSideClass(side)}`}
+          data-pitch-watermark={side}
+          referrerPolicy="no-referrer"
+          src={imageUrl}
+        />
+      )}
+    </div>
+  );
+}
+
+function pitchWatermarkSideClass(side: "home" | "away"): string {
+  switch (side) {
+    case "home":
+      return "left-[20%]";
+    case "away":
+      return "left-[80%]";
+    default: {
+      const _exhaustive: never = side;
+      return _exhaustive;
+    }
+  }
+}
+
+function pitchHalfWashClass(fill: PitchHalfFill): string {
+  switch (fill) {
+    case "win":
+      return "bg-primary/10";
+    case "loss":
+      return "bg-danger/10";
+    case "drawHome":
+      return "bg-muted";
+    case "drawAway":
+      return "bg-muted/50";
+    default: {
+      const _exhaustive: never = fill;
+      return _exhaustive;
+    }
+  }
+}
+
+function MatchAppearanceStrip({
+  item,
+  mvpLabel,
+  numberFormat,
+  t,
+}: {
+  readonly item: PlayerRecentProviderMatchDto;
+  readonly mvpLabel: string | null;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly t: Translator;
+}) {
+  const appearance = playedAppearance(item);
+  if (!appearance) return null;
+  const showYellow = showsYellowCards(appearance.yellowCards);
+  const name = appearance.displayName.trim();
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex justify-center px-4 sm:bottom-4">
+      <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-full bg-surface px-4 py-2.5 smooth-shadow-ring-sm">
+        {mvpLabel ? <MatchMvpBadge label={mvpLabel} /> : null}
+        {mvpLabel === null && name !== "" ? (
+          <span className="inline-flex min-w-0 max-w-[9rem] items-center gap-1">
+            <StarIcon
+              aria-hidden="true"
+              className="size-3.5 shrink-0 text-muted-foreground"
+              weight="fill"
+            />
+            <span className="typo-caption min-w-0 truncate">
+              <span className="font-semibold">{name}</span>
+            </span>
+          </span>
+        ) : null}
+        <AppearanceStripStat
           icon={SoccerBallIcon}
-          label={t("player.metric.goals")}
           metric="recent-goals"
           numberFormat={numberFormat}
           t={t}
+          unitKey="player.matches.appearance.goalsUnit"
           value={appearance.goals}
         />
-        <MatchStat
+        <AppearanceStripStat
           icon={HandshakeIcon}
-          label={t("player.metric.assists")}
           metric="recent-assists"
           numberFormat={numberFormat}
           t={t}
+          unitKey="player.matches.appearance.assistsUnit"
           value={appearance.assists}
         />
-        <MatchStat
-          icon={StarIcon}
-          iconWeight="fill"
-          label={t("player.metric.rating")}
-          metric="recent-rating"
-          numberFormat={numberFormat}
-          t={t}
-          value={appearance.rating}
-        />
         {showYellow ? (
-          <MatchStat
+          <AppearanceStripStat
             icon={RectangleIcon}
             iconClassName="size-3.5 rotate-90 text-warning"
             iconWeight="fill"
-            label={t("player.matches.metric.yellowCards")}
             metric="recent-yellow"
             numberFormat={numberFormat}
             t={t}
+            unitKey={null}
             value={appearance.yellowCards}
           />
         ) : null}
-      </StatGroup>
-    </li>
+        <Badge className="font-semibold" variant={ratingBadgeVariant(appearance.rating)}>
+          <StarIcon
+            aria-hidden="true"
+            className="size-3.5"
+            data-metric-icon="recent-rating"
+            weight="fill"
+          />
+          <span className="typo-caption">
+            <span className="font-medium">{t("player.metric.rating")}</span>
+          </span>
+          {appearance.rating === null ? (
+            <span className="typo-caption" data-size="empty">
+              <span className="font-medium" data-metric="recent-rating">
+                {t("player.noData")}
+              </span>
+            </span>
+          ) : (
+            <span className="typo-caption tabular-nums">
+              <span className="font-medium" data-metric="recent-rating">
+                {numberFormat.format(appearance.rating)}
+              </span>
+            </span>
+          )}
+        </Badge>
+      </div>
+    </div>
   );
+}
+
+function MatchMvpBadge({ label }: { readonly label: string }) {
+  return (
+    <Badge data-mvp="" variant="warning">
+      <StarIcon aria-hidden="true" className="text-warning" weight="fill" />
+      <span className="font-medium">{label}</span>
+    </Badge>
+  );
+}
+
+function AppearanceStripStat({
+  icon: MetricIcon,
+  iconClassName = "size-3.5",
+  iconWeight = "regular",
+  metric,
+  numberFormat,
+  t,
+  unitKey,
+  value,
+}: {
+  readonly icon: Icon;
+  readonly iconClassName?: string;
+  readonly iconWeight?: IconWeight;
+  readonly metric: string;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly t: Translator;
+  readonly unitKey:
+    | "player.matches.appearance.goalsUnit"
+    | "player.matches.appearance.assistsUnit"
+    | null;
+  readonly value: number | null;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 text-muted-foreground">
+      <MetricIcon
+        aria-hidden="true"
+        className={iconClassName}
+        data-metric-icon={metric}
+        weight={iconWeight}
+      />
+      {value === null ? (
+        <span className="typo-caption" data-size="empty">
+          <span className="font-medium" data-metric={metric}>
+            {t("player.noData")}
+          </span>
+        </span>
+      ) : (
+        <>
+          <span className="typo-caption tabular-nums text-foreground">
+            <span className="font-semibold" data-metric={metric}>
+              {numberFormat.format(value)}
+            </span>
+          </span>
+          {unitKey === null ? null : (
+            <span className="typo-caption">
+              <span className="font-medium">{t(unitKey, { count: value })}</span>
+            </span>
+          )}
+        </>
+      )}
+    </span>
+  );
+}
+
+function notPlayedMessage(item: PlayerRecentProviderMatchDto, t: Translator): string | null {
+  return item.kind === "not_played" ? t("player.matches.notPlayed") : null;
+}
+
+function listedClubRedCards(
+  item: PlayerRecentProviderMatchDto,
+  side: "home" | "away" | null,
+  column: "home" | "away",
+): number | null {
+  const appearance = playedAppearance(item);
+  return appearance && side === column ? appearance.redCards : null;
+}
+
+function appearanceRedCardsAria(item: PlayerRecentProviderMatchDto, t: Translator): string | null {
+  const appearance = playedAppearance(item);
+  if (!appearance || !showsRedCards(appearance.redCards) || appearance.redCards === null) {
+    return null;
+  }
+  return `${t("player.matches.metric.redCards")} ${appearance.redCards}`;
 }
 
 function ViewRecord({
@@ -707,7 +1072,7 @@ function RecordStatCard({
   readonly metric: string;
 }) {
   return (
-    <Card className="min-w-0">
+    <Card className="h-full min-w-0">
       <CardContent className="p-4">
         <Stat>
           <StatLabel className="flex items-center gap-1">
@@ -746,7 +1111,7 @@ function RecordLoading({ t }: { readonly t: Translator }) {
 
 function RecordLoadingCard() {
   return (
-    <Card className="min-w-0">
+    <Card className="h-full min-w-0">
       <CardContent className="p-4">
         <Skeleton className="h-14 w-16" />
       </CardContent>
@@ -789,10 +1154,18 @@ function MatchesTabs({
 
 function MatchesLoading({ label }: { readonly label: string }) {
   return (
-    <div aria-busy="true" aria-live="polite" aria-label={label} className="space-y-3" role="status">
+    <div
+      aria-busy="true"
+      aria-live="polite"
+      aria-label={label}
+      className="flex flex-col gap-6"
+      role="status"
+    >
       <p className="typo-caption text-muted-foreground">{label}</p>
-      <Skeleton className="h-36" />
-      <Skeleton className="h-36" />
+      <div className="space-y-3">
+        <Skeleton className="h-36" />
+        <Skeleton className="h-36" />
+      </div>
     </div>
   );
 }
@@ -829,13 +1202,36 @@ function sectionStatus(query: {
 
 type SectionStatus = "pending" | "error" | "ready";
 
-function MatchClubMeta({
-  column,
+function MatchClubSide({
+  imageUrl,
   name,
   redCards,
   redCardsLabel,
 }: {
-  readonly column: "home" | "away";
+  readonly imageUrl: string | null;
+  readonly name: string;
+  readonly redCards: number | null;
+  readonly redCardsLabel: string;
+}) {
+  return (
+    <div className="flex w-28 min-w-0 flex-col items-center gap-1 sm:w-36">
+      <ClubCrestAvatar
+        className="size-20 shrink-0 sm:size-24"
+        fallbackClassName="text-base"
+        framed={false}
+        imageUrl={imageUrl}
+        name={name}
+      />
+      <MatchClubMeta name={name} redCards={redCards} redCardsLabel={redCardsLabel} />
+    </div>
+  );
+}
+
+function MatchClubMeta({
+  name,
+  redCards,
+  redCardsLabel,
+}: {
   readonly name: string;
   readonly redCards: number | null;
   readonly redCardsLabel: string;
@@ -843,11 +1239,9 @@ function MatchClubMeta({
   const showRed = showsRedCards(redCards);
 
   return (
-    <div
-      className={`${matchClubColumnClass(column)} flex min-w-0 w-full flex-col items-center gap-0.5`}
-    >
-      <p className="typo-caption min-w-0 w-full truncate text-center font-semibold text-muted-foreground">
-        {name}
+    <div className="flex min-w-0 flex-col items-center gap-0.5 text-center">
+      <p className="typo-subtitle min-w-0 w-full max-w-full truncate text-nowrap text-center text-muted-foreground whitespace-nowrap">
+        <span className="font-semibold">{name}</span>
       </p>
       {showRed && redCards !== null ? (
         <span
@@ -866,19 +1260,6 @@ function MatchClubMeta({
       ) : null}
     </div>
   );
-}
-
-function matchClubColumnClass(column: "home" | "away"): "col-start-1" | "col-start-3" {
-  switch (column) {
-    case "home":
-      return "col-start-1";
-    case "away":
-      return "col-start-3";
-    default: {
-      const _exhaustive: never = column;
-      return _exhaustive;
-    }
-  }
 }
 
 function ScoringFeatBadge({
@@ -909,53 +1290,42 @@ function ScoringFeatBadge({
   );
 }
 
-function MatchStat({
-  icon: MetricIcon,
-  iconClassName = "size-3.5",
-  iconWeight = "regular",
-  label,
-  metric,
-  numberFormat,
-  t,
-  value,
-}: {
-  readonly icon: Icon;
-  readonly iconClassName?: string;
-  readonly iconWeight?: IconWeight;
-  readonly label: string;
-  readonly metric: string;
-  readonly numberFormat: Intl.NumberFormat;
-  readonly t: Translator;
-  readonly value: number | null;
-}) {
-  return (
-    <Stat align="center">
-      <StatLabel className="flex items-center justify-center gap-1">
-        <MetricIcon
-          aria-hidden="true"
-          className={iconClassName}
-          data-metric-icon={metric}
-          weight={iconWeight}
-        />
-        {label}
-      </StatLabel>
-      <CompactMetricValue metric={metric} numberFormat={numberFormat} t={t} value={value} />
-    </Stat>
-  );
+function ratingBadgeVariant(rating: number | null): "primary" | "outline" {
+  return rating !== null && rating >= 7 ? "primary" : "outline";
 }
 
-function matchOutcomeScoreClass(outcome: MatchOutcome): string {
+function matchOutcomeToneClass(outcome: MatchOutcome): string {
   switch (outcome) {
     case "win":
       return "text-primary";
     case "draw":
-      return "text-muted-foreground";
+      return "text-[var(--amber-500)] dark:text-[var(--amber-300)]";
     case "loss":
       return "text-danger";
     case "unknown":
-      return "text-foreground";
+      return "text-muted-foreground";
     default: {
       const _exhaustive: never = outcome;
+      return _exhaustive;
+    }
+  }
+}
+
+function scoreDigitClass(homeGoals: number, awayGoals: number, side: "home" | "away"): string {
+  const leads = side === "home" ? homeGoals > awayGoals : awayGoals > homeGoals;
+  return leads ? "text-brand-300 dark:text-primary" : "text-background";
+}
+
+function matchTypeBadgeVariant(mode: ProviderMatchMode): "emphasis" | "info" | "neutral" {
+  switch (mode) {
+    case "leagueMatch":
+      return "emphasis";
+    case "playoffMatch":
+      return "info";
+    case "friendlyMatch":
+      return "neutral";
+    default: {
+      const _exhaustive: never = mode;
       return _exhaustive;
     }
   }
@@ -975,7 +1345,11 @@ function CompactMetricValue({
   readonly value: number | null;
 }) {
   return (
-    <StatValue data-metric={metric} size={size} tone={value === null ? "muted" : "default"}>
+    <StatValue
+      data-metric={metric}
+      size={value === null ? "empty" : size}
+      tone={value === null ? "muted" : "default"}
+    >
       {value === null ? t("player.noData") : numberFormat.format(value)}
     </StatValue>
   );
@@ -1017,21 +1391,6 @@ function matchTypeMessageKey(
       return "player.matches.type.playoff";
     case "friendlyMatch":
       return "player.matches.type.friendly";
-    default: {
-      const _exhaustive: never = mode;
-      return _exhaustive;
-    }
-  }
-}
-
-function matchTypeBadgeVariant(mode: ProviderMatchMode): "emphasis" | "info" | "neutral" {
-  switch (mode) {
-    case "leagueMatch":
-      return "emphasis";
-    case "playoffMatch":
-      return "info";
-    case "friendlyMatch":
-      return "neutral";
     default: {
       const _exhaustive: never = mode;
       return _exhaustive;

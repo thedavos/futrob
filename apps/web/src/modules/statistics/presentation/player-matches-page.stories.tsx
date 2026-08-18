@@ -24,6 +24,8 @@ import {
   type PlayerMatchesStoryState,
 } from "./player-matches-story-client.ts";
 
+const STORY_CLUB_ID = "10754";
+
 const SCENARIO_IDS = [
   "ready",
   "loading",
@@ -78,7 +80,7 @@ function scenarioState(id: ScenarioId): PlayerMatchesStoryState {
 
 function hydratePlayerMatchesQueries(client: QueryClient, state: PlayerMatchesStoryState): void {
   if (state.recent !== "pending" && state.recent !== "error") {
-    client.setQueryData(queryKeys.gameData.meRecentMatches(), state.recent);
+    client.setQueryData(queryKeys.gameData.meRecentMatches(STORY_CLUB_ID), state.recent);
   }
 }
 
@@ -109,7 +111,13 @@ function PlayerMatchesStoryShell({
     const matchesRoute = createRoute({
       getParentRoute: () => rootRoute,
       path: "/player/matches",
-      component: () => <PlayerMatchesPage now={PLAYER_MATCHES_PAGE_NOW} view={view} />,
+      component: () => (
+        <PlayerMatchesPage
+          externalClubId={STORY_CLUB_ID}
+          now={PLAYER_MATCHES_PAGE_NOW}
+          view={view}
+        />
+      ),
     });
     const gameAccountsRoute = createRoute({
       getParentRoute: () => rootRoute,
@@ -127,7 +135,7 @@ function PlayerMatchesStoryShell({
   return (
     <QueryClientProvider client={client}>
       <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
-        <div className="min-h-svh bg-background px-4 py-6">
+        <div className="min-h-svh bg-background px-6 py-6">
           <RouterProvider router={router} />
         </div>
       </I18nProvider>

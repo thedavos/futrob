@@ -64,7 +64,10 @@ export const queryKeys = {
       readonly providerKey?: string;
       readonly gameEdition?: string;
     }) => [...queryKeys.gameData.all, "clubs", "search", input] as const,
-    meRecentMatches: () => [...queryKeys.gameData.all, "me", "recent-matches"] as const,
+    meRecentMatches: (externalClubId?: string) =>
+      externalClubId
+        ? ([...queryKeys.gameData.all, "me", "recent-matches", externalClubId] as const)
+        : ([...queryKeys.gameData.all, "me", "recent-matches"] as const),
     club: (input: {
       readonly externalClubId: string;
       readonly platform: string;

@@ -30,10 +30,12 @@ export function useMyMatchesQuery(filters: Partial<GetMyMatchesQuery> = {}) {
   });
 }
 
-export function useMyRecentMatchesQuery() {
+export function useMyRecentMatchesQuery(externalClubId?: string, enabled = true) {
   return useQuery({
-    queryKey: queryKeys.gameData.meRecentMatches(),
-    queryFn: () => statisticsBrowserClient.getMyRecentMatches(),
+    queryKey: queryKeys.gameData.meRecentMatches(externalClubId),
+    queryFn: () =>
+      statisticsBrowserClient.getMyRecentMatches(externalClubId ? { externalClubId } : {}),
+    enabled,
     retry: false,
   });
 }

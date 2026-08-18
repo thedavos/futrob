@@ -13,11 +13,12 @@ import {
 } from "./player-matches-page.fixtures.ts";
 import { PlayerMatchesPage, type PlayerMatchesView } from "./player-matches-page.tsx";
 
-const getMyRecentMatches = vi.fn<() => Promise<GetMyRecentMatchesResponse>>();
+const getMyRecentMatches =
+  vi.fn<(query?: { readonly externalClubId?: string }) => Promise<GetMyRecentMatchesResponse>>();
 
 vi.mock("@/modules/statistics/presentation/statistics-browser-client.ts", () => ({
   statisticsBrowserClient: {
-    getMyRecentMatches: () => getMyRecentMatches(),
+    getMyRecentMatches: (query?: { readonly externalClubId?: string }) => getMyRecentMatches(query),
   },
 }));
 
@@ -51,7 +52,7 @@ describe("PlayerMatchesPage", () => {
     renderPage("en");
 
     expect(screen.getByRole("heading", { name: "My matches" })).toBeTruthy();
-    expect(screen.getByText("Appearances in your associated clubs.")).toBeTruthy();
+    expect(screen.getByText("Appearances in the selected club.")).toBeTruthy();
     expect(screen.getByText("Loading your matches…")).toBeTruthy();
   });
 
@@ -107,11 +108,20 @@ describe("PlayerMatchesPage", () => {
 
     expect(await screen.findByText("No hay partidos recientes")).toBeTruthy();
     expect(
-      screen.getByText("Todavía no hay apariciones recientes en tus clubes asociados."),
+      screen.getByText("Todavía no hay apariciones recientes en el club seleccionado."),
     ).toBeTruthy();
     expect(screen.queryByText("Vincula tus datos de juego")).toBeNull();
     expect(screen.queryByRole("button", { name: "Revisar datos de juego" })).toBeNull();
     expect(screen.queryByText("Ganados")).toBeNull();
+  });
+
+  it("requests appearances for the selected club", async () => {
+    getMyRecentMatches.mockResolvedValue({ status: "ready", matches: [] });
+
+    renderPage("es", { externalClubId: "10754" });
+
+    expect(await screen.findByText("No hay partidos recientes")).toBeTruthy();
+    expect(getMyRecentMatches).toHaveBeenCalledWith({ externalClubId: "10754" });
   });
 
   it("renders a recent appearance with a centered score, stats and MVP", async () => {
@@ -139,8 +149,43 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
       "text-emphasis",
     );
+    expect(document.querySelector("[data-match-chevron]")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Ver partido" })).toBeTruthy();
+    expect(document.querySelectorAll("[data-mvp]")).toHaveLength(1);
+    expect(document.querySelector("[data-slot='club-crest-avatar']")?.className).not.toContain(
+      "rounded-full",
+    );
+    expect(
+      screen
+        .getByText("8,4", { selector: "[data-metric='recent-rating']" })
+        .closest("[data-slot='badge']")?.className,
+    ).toContain("bg-primary");
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
+    expect(document.querySelector("[data-match-score] .typo-score")?.className).toContain(
+      "text-brand-300",
+    );
+    const homeWinItem = screen.getByRole("listitem", { name: /Inter 2 – 1 Milan/ });
+    expect(homeWinItem.querySelector("[data-pitch-half='home']")?.className).toContain(
+      "bg-primary/10",
+    );
+    expect(homeWinItem.querySelector("[data-pitch-half='away']")?.className).toContain(
+      "bg-danger/10",
+    );
+    expect(homeWinItem.querySelector("[data-pitch-half='home']")?.className).not.toContain(
+      "bg-muted",
+    );
+    const homeWatermark = homeWinItem.querySelector("[data-pitch-watermark='home']");
+    expect(homeWatermark?.getAttribute("src")).toBe("https://example.com/inter.png");
+    expect(homeWatermark?.className).toContain("opacity-10");
+    expect(homeWatermark?.className).toContain("grayscale");
+    expect(homeWatermark?.className).toContain("hidden");
+    expect(homeWatermark?.className).toContain("size-[16.1rem]");
+    expect(homeWatermark?.className).toContain("left-[20%]");
+    expect(homeWinItem.querySelector("[data-pitch-watermark='away']")).toBeNull();
     expect(screen.queryByText("Hat-trick")).toBeNull();
+    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).toContain(
+      "items-stretch",
+    );
     expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).toContain(
       "xl:grid-cols-6",
     );
@@ -181,6 +226,14 @@ describe("PlayerMatchesPage", () => {
     );
     expect(document.querySelector("[data-match-outcome='draw']")).toBeTruthy();
     expect(screen.getByText("1", { selector: "[data-metric='record-draws']" })).toBeTruthy();
+    const drawItem = screen.getByRole("listitem", { name: /Atlético Norte 1 – 1 Fera Enjaulada/ });
+    expect(drawItem.querySelector("[data-pitch-half='home']")?.className).toContain("bg-muted");
+    expect(drawItem.querySelector("[data-pitch-half='home']")?.className).not.toContain(
+      "bg-muted/50",
+    );
+    expect(drawItem.querySelector("[data-pitch-half='away']")?.className).toContain("bg-muted/50");
+    expect(drawItem.querySelector("[data-pitch-fill='win']")).toBeNull();
+    expect(drawItem.querySelector("[data-pitch-fill='loss']")).toBeNull();
   });
 
   it("offers Todos when Recientes is empty and older matches exist", async () => {
@@ -248,6 +301,15 @@ describe("PlayerMatchesPage", () => {
     renderPage();
 
     expect(await screen.findByText("Hoy")).toBeTruthy();
+    expect(
+      [...document.querySelectorAll("time")].some((node) =>
+        /^Hoy, \d{2}:\d{2}$/.test(node.textContent ?? ""),
+      ),
+    ).toBe(true);
+    expect(document.querySelector("[data-match-score]")?.className).toContain("bg-foreground");
+    expect(document.querySelector("[data-match-score]")?.className).toContain(
+      "smooth-shadow-ring-md",
+    );
     expect(document.querySelector("[data-match-type='leagueMatch']")?.textContent).toBe("Liga");
     expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
       "text-emphasis",
@@ -258,6 +320,19 @@ describe("PlayerMatchesPage", () => {
     );
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
     expect(document.querySelector("[data-match-outcome='loss']")).toBeTruthy();
+    const awayWinItem = screen.getByRole("listitem", { name: /Cuervos FC 0 – 3 Fera Barranco/ });
+    expect(awayWinItem.querySelector("[data-pitch-half='away']")?.className).toContain(
+      "bg-primary/10",
+    );
+    expect(awayWinItem.querySelector("[data-pitch-half='home']")?.className).toContain(
+      "bg-danger/10",
+    );
+    expect(awayWinItem.querySelector("[data-pitch-half='away']")?.className).not.toContain(
+      "bg-muted",
+    );
+    expect(document.querySelector("[data-match-outcome='loss']")?.className).toContain(
+      "text-danger",
+    );
     expect(document.querySelector("[data-scoring-feat='hatTrick']")?.textContent).toContain(
       "Hat-trick",
     );
@@ -276,11 +351,20 @@ describe("PlayerMatchesPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Playoff" }));
     expect(await screen.findByText("Cuervos FC")).toBeTruthy();
+    expect(
+      screen
+        .getByText("6,8", { selector: "[data-metric='recent-rating']" })
+        .closest("[data-slot='badge']")?.className,
+    ).toContain("bg-transparent");
     expect(screen.queryByText("Atlético Norte")).toBeNull();
 
     await user.click(screen.getByRole("tab", { name: "Amistosos" }));
     expect(await screen.findByText("Atlético Norte")).toBeTruthy();
     expect(document.querySelector("[data-match-outcome='draw']")).toBeTruthy();
+    expect(document.querySelector("[data-match-outcome='draw']")?.className).toContain("amber-500");
+    expect(document.querySelector("[data-match-outcome='draw']")?.className).not.toContain(
+      "text-danger",
+    );
     expect(screen.queryByText("Cuervos FC")).toBeNull();
   });
 
@@ -384,12 +468,46 @@ describe("PlayerMatchesPage", () => {
     renderPage();
 
     expect(await screen.findByText("Rival Cap MVP")).toBeTruthy();
+    expect(screen.queryByText("davos282")).toBeNull();
+    expect(document.querySelector("[data-mvp]")?.className).toContain("text-warning");
+  });
+
+  it("shows No jugaste and hides personal stats when the player lined up for the other club", async () => {
+    getMyRecentMatches.mockResolvedValue(
+      recentMatchesReadyFixture([
+        recentProviderMatchFixture({
+          kind: "not_played",
+          listedExternalClubId: "10754",
+          home: { externalClubId: "10754", name: "Sirius", goals: 2, imageUrl: null },
+          away: { externalClubId: "99", name: "Cuervos", goals: 1, imageUrl: null },
+        }),
+      ]),
+    );
+
+    renderPage("es", { externalClubId: "10754" });
+
+    expect(await screen.findByText("No jugaste")).toBeTruthy();
+    expect(screen.getByRole("listitem", { name: /No jugaste/ })).toBeTruthy();
+    expect(document.querySelector("[data-played='false']")?.textContent).toBe("No jugaste");
+    expect(
+      document.querySelector("[data-played='false']")?.closest("[data-slot='badge']"),
+    ).toBeNull();
+    expect(document.querySelector("[data-metric='recent-goals']")).toBeNull();
+    expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
+    expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
+    expect(
+      screen.getByText("Sin datos", { selector: "[data-metric='record-assists']" }),
+    ).toBeTruthy();
+    expect(
+      document.querySelector("[data-metric='record-assists']")?.getAttribute("data-size"),
+    ).toBe("empty");
   });
 });
 
 function renderPage(
   locale: "es" | "en" = "es",
   options: {
+    readonly externalClubId?: string;
     readonly view?: PlayerMatchesView;
     readonly onViewChange?: (view: PlayerMatchesView) => void;
   } = {},
@@ -398,6 +516,7 @@ function renderPage(
     <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
       <QueryTestProvider>
         <PlayerMatchesPage
+          externalClubId={options.externalClubId ?? "10754"}
           now={PLAYER_MATCHES_PAGE_NOW}
           onViewChange={options.onViewChange}
           view={options.view}

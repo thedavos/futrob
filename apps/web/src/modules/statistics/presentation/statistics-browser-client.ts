@@ -1,11 +1,13 @@
 import {
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
   type GetMyMatchesQuery,
   type GetMyMatchesResponse,
+  type GetMyRecentMatchesQueryInput,
   type GetMyRecentMatchesResponse,
   type GetMyStatisticsQuery,
   type GetMyStatisticsResponse,
@@ -67,9 +69,16 @@ export const statisticsBrowserClient = {
     );
   },
 
-  getMyRecentMatches(): Promise<GetMyRecentMatchesResponse> {
-    return requestJson(`/api/v1/players/me/recent-matches`, (data) =>
-      getMyRecentMatchesResponseSchema.parse(data),
+  getMyRecentMatches(
+    filters: GetMyRecentMatchesQueryInput = {},
+  ): Promise<GetMyRecentMatchesResponse> {
+    const query = getMyRecentMatchesQuerySchema.parse(filters);
+    const search = new URLSearchParams();
+    if (query.externalClubId) search.set("externalClubId", query.externalClubId);
+    const queryString = search.toString();
+    return requestJson(
+      `/api/v1/players/me/recent-matches${queryString ? `?${queryString}` : ""}`,
+      (data) => getMyRecentMatchesResponseSchema.parse(data),
     );
   },
 };

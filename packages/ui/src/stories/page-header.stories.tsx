@@ -23,7 +23,7 @@ export const Playground: Story = {
     <PageHeader className="w-full max-w-5xl">
       <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
       <PageHeaderTitle>Mis partidos</PageHeaderTitle>
-      <PageHeaderDescription>Apariciones en tus clubes asociados.</PageHeaderDescription>
+      <PageHeaderDescription>Apariciones en el club seleccionado.</PageHeaderDescription>
     </PageHeader>
   ),
 };
@@ -42,7 +42,7 @@ export const WithDescription: Story = {
   render: () => (
     <PageHeader className="w-full max-w-5xl">
       <PageHeaderTitle>Mis partidos</PageHeaderTitle>
-      <PageHeaderDescription>Apariciones en tus clubes asociados.</PageHeaderDescription>
+      <PageHeaderDescription>Apariciones en el club seleccionado.</PageHeaderDescription>
     </PageHeader>
   ),
 };

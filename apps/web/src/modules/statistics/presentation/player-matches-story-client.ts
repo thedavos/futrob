@@ -41,7 +41,9 @@ export const statisticsBrowserClient = {
     return Promise.resolve({ matches: [], nextCursor: null });
   },
 
-  getMyRecentMatches(): Promise<GetMyRecentMatchesResponse> {
+  getMyRecentMatches(_query?: {
+    readonly externalClubId?: string;
+  }): Promise<GetMyRecentMatchesResponse> {
     const recent = state.recent;
     if (recent === "pending") return hang();
     if (recent === "error") {
