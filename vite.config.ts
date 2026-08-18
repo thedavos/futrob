@@ -12,7 +12,7 @@ export default defineConfig({
   fmt: {
     singleQuote: false,
     semi: true,
-    ignorePatterns: ["**/routeTree.gen.ts", "packages/sdk_dart/**", "**/openapi/*.yaml"],
+    ignorePatterns: ["**/routeTree.gen.ts", "**/openapi/*.yaml"],
   },
   lint: {
     jsPlugins: [
@@ -26,11 +26,7 @@ export default defineConfig({
       typeAware: true,
       typeCheck: true,
     },
-    ignorePatterns: [
-      "**/routeTree.gen.ts",
-      "packages/sdk_dart/**",
-      "packages/api-contracts/scripts/**",
-    ],
+    ignorePatterns: ["**/routeTree.gen.ts", "packages/api-contracts/scripts/**"],
     rules: {
       "vite-plus/prefer-vite-plus-imports": "error",
       "no-console": ["error", { allow: ["warn", "error"] }],

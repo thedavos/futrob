@@ -18,6 +18,6 @@ await futrob.gameData.clubs.matches("10754", { matchType: "friendlyMatch" });
 
 Depende solo de `@futrob/api-contracts`. No importa módulos de `apps/web`. No llama a EA.
 
-Dart mirror: [`/packages/sdk_dart`](/packages/sdk_dart).
+El mismo cliente TypeScript cubre `apps/web` y la app móvil post-MVP (React Native + Expo). No hay SDK Dart/Flutter.
 
 Guía general: [`/packages/README.md`](/packages/README.md).

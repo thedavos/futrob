@@ -6,7 +6,7 @@
 ## 1. Alcance y coherencia
 
 - **UX-SCP-001** Landing, app y portal se identifican como Futrob y comparten tipografía, tokens y componentes.
-- **UX-SCP-002** La UI presenta ligas/copas EA SPORTS FC Clubs. No ofrece app nativa, fantasy, streaming propio, fútbol real ni OCR como camino feliz.
+- **UX-SCP-002** La UI presenta ligas/copas EA SPORTS FC Clubs. No ofrece app nativa (React Native + Expo es post-MVP), fantasy, streaming propio, fútbol real ni OCR como camino feliz.
 - **UX-SCP-003** La navegación base no cambia por formato; se ocultan destinos no aplicables (p. ej. bracket en liga pura).
 - **UX-SCP-004** Toda UI de resultado distingue Enfrentamiento, Partido oficial, Partido EA y Serie (resolución).
 - **UX-SCP-005** Candidatos EA y resultados oficiales tienen presentación visual distinta.

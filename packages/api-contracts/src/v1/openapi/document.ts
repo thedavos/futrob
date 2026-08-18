@@ -91,7 +91,7 @@ export const futrobOpenApiV1 = {
     title: "Futrob Private API",
     version: "0.1.0",
     description:
-      "Private HTTP API for Futrob clients (web, Flutter, scripts). Not a public third-party API.",
+      "Private HTTP API for Futrob clients (web, React Native / Expo, scripts). Not a public third-party API.",
   },
   servers: [{ url: "/api/v1", description: "Same Worker as apps/web" }],
   security: [{ bearerAuth: [] }],

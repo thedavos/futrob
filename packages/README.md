@@ -6,12 +6,11 @@ Documento canónico: [`/docs/architecture/packages-and-sdk.md`](/docs/architectu
 
 ## Inventario
 
-| Package                                                         | npm / pub               | Rol                                                |
+| Package                                                         | npm                     | Rol                                                |
 | --------------------------------------------------------------- | ----------------------- | -------------------------------------------------- |
 | [`identity`](./identity/) … [`public-portal`](./public-portal/) | `@futrob/<bc>`          | Domain + application + ports por BC                |
 | [`api-contracts`](./api-contracts/)                             | `@futrob/api-contracts` | Zod / OpenAPI de `/api/v1`                         |
-| [`sdk`](./sdk/)                                                 | `@futrob/sdk`           | Cliente HTTP TypeScript                            |
-| [`sdk_dart`](./sdk_dart/)                                       | `futrob_sdk`            | Cliente HTTP Dart                                  |
+| [`sdk`](./sdk/)                                                 | `@futrob/sdk`           | Cliente HTTP TypeScript (web y React Native/Expo)  |
 | [`ui`](./ui/)                                                   | `@futrob/ui`            | Tokens y primitivas shadcn/Base UI                 |
 | [`shared-kernel`](./shared-kernel/)                             | `@futrob/shared-kernel` | Result, IDs, errores/eventos y ports transversales |
 | [`test-support`](./test-support/)                               | `@futrob/test-support`  | Fakes/builders de test                             |
@@ -22,7 +21,7 @@ BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`,
 
 1. **Domain/application/ports** de cada BC viven en `@futrob/<bc>`, no solo en `apps/web`.
 2. El **dominio no importa Zod**. Zod vive en `api-contracts` y en adapters/server de las apps.
-3. Los **SDKs no importan** `@futrob/<bc>` ni adapters. Solo contratos + HTTP a `/api/v1`.
+3. El **SDK no importa** `@futrob/<bc>` ni adapters. Solo contratos + HTTP a `/api/v1`. Cubre web y el cliente React Native / Expo.
 4. **EA Clubs** vive en adapters de app (hoy `apps/web/.../game-data/adapters/providers/ea-clubs/`).
 5. **`ui` no conoce** competiciones, EA ni permisos.
 6. Preferir imports `@futrob/<bc>`, no deep-imports a `src/` internos salvo `exports` públicos.
@@ -60,6 +59,7 @@ apps/cli ──► @futrob/<bc> + shared-kernel + sdk (integración)
 @futrob/<bc>    ──► @futrob/shared-kernel
 
 @futrob/sdk     ──► @futrob/api-contracts ──► HTTP /api/v1
+apps/web, Expo  ──► @futrob/sdk
 ```
 
 ## Cómo añadir un use case
@@ -73,12 +73,13 @@ apps/cli ──► @futrob/<bc> + shared-kernel + sdk (integración)
 
 1. Schemas en `@futrob/api-contracts`.
 2. Regenerar OpenAPI.
-3. Método en SDK (+ Dart mirror).
+3. Método en `@futrob/sdk` (web y cliente React Native / Expo).
 4. Handler en `apps/web` (hoy) / `apps/api` (futuro) → use case del package.
 
 ## Anti-patrones
 
 - Meter adapters D1/EA/Wrangler dentro de `@futrob/<bc>`.
 - Hacer que el SDK importe dominio de packages.
+- Reintroducir un SDK Dart/Flutter; el cliente móvil es React Native + Expo.
 - Duplicar use cases en `apps/web` y `apps/api`.
 - Path-alias de `apps/api` hacia `apps/web/src/modules` para dominio.

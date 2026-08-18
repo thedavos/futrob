@@ -35,11 +35,6 @@ worker-configuration.d.ts
 *.swp
 *.swo
 
-# Dart / Flutter (packages/sdk_dart)
-.dart_tool/
-.packages
-**/doc/api/
-
 # Logs
 *.log
 npm-debug.log*

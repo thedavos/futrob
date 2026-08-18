@@ -132,7 +132,7 @@ Aplicación web responsive; auth, perfiles personales de jugador y organizacione
 
 ### Fuera del MVP
 
-App nativa; FC Temporadas/Amistosos; marketplace; fantasy; streaming; white-label completo; doble eliminación y suizo; automatización de pagos/premios; predicciones con IA; OCR de capturas como fuente primaria de resultados; WhatsApp/Telegram como canal operativo del MVP.
+App nativa (React Native + Expo, vía `@futrob/sdk`); FC Temporadas/Amistosos; marketplace; fantasy; streaming; white-label completo; doble eliminación y suizo; automatización de pagos/premios; predicciones con IA; OCR de capturas como fuente primaria de resultados; WhatsApp/Telegram como canal operativo del MVP.
 
 ## 21–23. Métricas, riesgos y roadmap
 

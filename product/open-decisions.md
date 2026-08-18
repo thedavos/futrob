@@ -14,6 +14,7 @@
 | DEC-004 | Unidad competitiva            | Team (club/equipo) en fixtures, tabla y bracket.                                                                                                                                                                                                                                                                 |
 | DEC-005 | Jerarquía                     | `Encounter → OfficialMatch` con `Series` como regla de resolución; `EaMatch` es dato externo.                                                                                                                                                                                                                    |
 | DEC-006 | Stack de plataforma           | TanStack Start, Better Auth, Vite+, Sentry, shadcn/Base UI sobre **Cloudflare Workers**, con **D1**, **R2**, **Queues** y **Cron Triggers**. Hexagonal por feature module en `apps/web/src/modules` con DI en `src/di`. Bounded context de proveedores: **game-data** (EA como adapter). Sin Supabase ni Vercel. |
+| DEC-007 | Cliente móvil post-MVP        | React Native + Expo. Consume `/api/v1` con `@futrob/sdk` (TypeScript). No Flutter ni SDK Dart. Fuera del MVP.                                                                                                                                                                                                    |
 
 ## 2. Decisiones de dominio con default
 

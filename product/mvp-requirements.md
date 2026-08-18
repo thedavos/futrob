@@ -125,17 +125,17 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 ## 5. Requisitos Won't (MVP)
 
-| ID      | Exclusión                                                          |
-| ------- | ------------------------------------------------------------------ |
-| WONT-01 | Aplicación móvil nativa.                                           |
-| WONT-02 | FC Temporadas y FC Amistosos como modalidades operativas.          |
-| WONT-03 | Marketplace, fantasy, streaming propio, white-label completo.      |
-| WONT-04 | Doble eliminación, sistema suizo, divisiones con ascenso/descenso. |
-| WONT-05 | Automatización de pagos y premios.                                 |
-| WONT-06 | Predicciones con IA.                                               |
-| WONT-07 | OCR de capturas como fuente primaria de resultados.                |
-| WONT-08 | WhatsApp/Telegram/push como canales operativos del MVP.            |
-| WONT-09 | API pública de terceros.                                           |
+| ID      | Exclusión                                                             |
+| ------- | --------------------------------------------------------------------- |
+| WONT-01 | Aplicación móvil nativa (React Native + Expo; consume `@futrob/sdk`). |
+| WONT-02 | FC Temporadas y FC Amistosos como modalidades operativas.             |
+| WONT-03 | Marketplace, fantasy, streaming propio, white-label completo.         |
+| WONT-04 | Doble eliminación, sistema suizo, divisiones con ascenso/descenso.    |
+| WONT-05 | Automatización de pagos y premios.                                    |
+| WONT-06 | Predicciones con IA.                                                  |
+| WONT-07 | OCR de capturas como fuente primaria de resultados.                   |
+| WONT-08 | WhatsApp/Telegram/push como canales operativos del MVP.               |
+| WONT-09 | API pública de terceros.                                              |
 
 ## 6. Requisitos no funcionales
 
@@ -164,7 +164,7 @@ Entidades conceptuales mínimas (nombres de persistencia orientativos):
 3. **EA Data Layer** — vinculación, sync, almacenamiento, normalización, observabilidad.
 4. **Resultados oficiales** — candidatos, selección, confirmación, disputas, agregado, proyecciones.
 5. **Estadísticas y premium** — rankings, premios, analíticas.
-6. **Expansión** — otras modalidades, móvil, white-label, más integraciones.
+6. **Expansión** — otras modalidades, móvil (React Native + Expo), white-label, más integraciones.
 
 ## 9. Trazabilidad
 

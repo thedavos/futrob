@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-10
-- Actualizada: 2026-07-23
+- Actualizada: 2026-08-18
 - Relacionado: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [ADR-0010](/docs/adr/0010-bounded-context-packages.md)
 
 ## Contexto
@@ -13,15 +13,16 @@ El producto necesita UI, BFF, API privada tipada, auth y jobs de sincronización
 
 Usar workspaces npm con:
 
-| App        | Rol                                                                                                                                                |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web` | Deployable Must del MVP: TanStack Start + Workers (UI, BFF, `/api/v1` hoy, Queues, Cron)                                                           |
-| `apps/api` | Deployable de API de producto (Hono/Node en Railway); dueño de Postgres (`DATABASE_URL`) y del egress Node a EA; consume los mismos packages de BC |
-| `apps/cli` | Tooling local; no se despliega                                                                                                                     |
+| App           | Rol                                                                                                                                                |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web`    | Deployable Must del MVP: TanStack Start + Workers (UI, BFF, `/api/v1` hoy, Queues, Cron)                                                           |
+| `apps/api`    | Deployable de API de producto (Hono/Node en Railway); dueño de Postgres (`DATABASE_URL`) y del egress Node a EA; consume los mismos packages de BC |
+| `apps/cli`    | Tooling local; no se despliega                                                                                                                     |
+| `apps/mobile` | Post-MVP: React Native + Expo. Consume `/api/v1` con `@futrob/sdk`. Fuera del MVP; no hay SDK Dart/Flutter.                                        |
 
 La lógica de negocio (**domain + application + ports**) vive en `packages/<bounded-context>/` como `@futrob/<bc>`. Cada app cablea adapters y composition en su propio `di/`.
 
-`/api/v1` se sirve desde `apps/web` (Workers) y desde `apps/api` (Hono/Node en Railway), siempre sobre los mismos use cases de packages. `apps/api` es dueño de Postgres y del egress Node a EA; `apps/web` puede consumir ese contrato. El SDK (`@futrob/sdk`) habla HTTP al contrato; no importa dominio.
+`/api/v1` se sirve desde `apps/web` (Workers) y desde `apps/api` (Hono/Node en Railway), siempre sobre los mismos use cases de packages. `apps/api` es dueño de Postgres y del egress Node a EA; `apps/web` puede consumir ese contrato. El SDK (`@futrob/sdk`) habla HTTP al contrato; no importa dominio. El mismo cliente TypeScript sirve a `apps/web` y al cliente móvil post-MVP (React Native + Expo).
 
 No crear `apps/worker` mientras los stages de sync EA quepan en los límites medidos del Worker/Queue de `apps/web`. La cola permanece durable (Cloudflare Queues) en el lado web.
 

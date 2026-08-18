@@ -2,8 +2,8 @@ openapi: 3.1.0
 info:
   title: Futrob Private API
   version: 0.1.0
-  description: Private HTTP API for Futrob clients (web, Flutter, scripts). Not a
-    public third-party API.
+  description: Private HTTP API for Futrob clients (web, React Native / Expo,
+    scripts). Not a public third-party API.
 servers:
   - url: /api/v1
     description: Same Worker as apps/web

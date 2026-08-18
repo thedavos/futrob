@@ -53,6 +53,7 @@ analytics    → premium interpretation
 | ------------- | -------------------------------------------------------- |
 | Web           | TanStack Start + React (`apps/web`) → Cloudflare Workers |
 | API           | Hono + Node (`apps/api`) → Railway                       |
+| Mobile        | React Native + Expo post-MVP, vía `@futrob/sdk`          |
 | Architecture  | Hexagonal BCs in `packages/<bc>`; DI in each app         |
 | Auth          | Better Auth (D1) + Futrob organizations (Postgres)       |
 | Data (web)    | D1 (auth/actors), R2, Queues, Cron                       |
@@ -76,7 +77,7 @@ apps/
 packages/
 ├── <bc>/                # @futrob/<bc> — domain + application (no adapters)
 ├── api-contracts/       # Zod / OpenAPI for /api/v1
-├── sdk/                 # Typed HTTP client
+├── sdk/                 # Typed HTTP client (web + React Native / Expo)
 ├── ui/                  # Tokens + shadcn primitives
 ├── shared-kernel/       # Result, IDs, domain errors
 └── test-support/

@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-10
-- Actualizada: 2026-08-03
+- Actualizada: 2026-08-18
 - Relacionado: [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md)
 
 ## Contexto
@@ -18,7 +18,7 @@ No hay API pública de terceros en el MVP.
 ## Consecuencias
 
 - Contratos versionados y testeables.
-- Flutter u otros clientes pueden aparecer sin reescribir dominio.
+- Un cliente React Native + Expo (u otros) puede aparecer sin reescribir dominio; consume `@futrob/sdk`.
 
 ## Alternativas rechazadas
 
