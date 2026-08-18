@@ -235,7 +235,7 @@ function DemoShell({
                 <span className="truncate text-sm font-medium">Inicio</span>
               </SidebarRail>
             ) : null}
-            <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
+            <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-6">
               <h1 className="typo-heading text-lg">Espacio personal</h1>
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto p-5 text-sm text-muted-foreground">

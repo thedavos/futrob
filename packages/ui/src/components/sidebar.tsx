@@ -219,7 +219,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-rail"
       className={cn(
-        "flex h-14 shrink-0 items-center gap-2 border-b border-border px-4 md:hidden",
+        "flex h-14 shrink-0 items-center gap-2 border-b border-border px-6 md:hidden",
         className,
       )}
       {...props}

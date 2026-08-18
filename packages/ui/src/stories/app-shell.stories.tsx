@@ -224,7 +224,7 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-6">
           <h1 className="typo-heading flex-1 text-lg">Inicio</h1>
           <Button dense disabled variant="outline">
             Sync EA
@@ -299,7 +299,7 @@ export const CollapsedRail: Story = {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
+          <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-5">
             <h1 className="typo-heading text-lg">Focus mode</h1>
           </header>
           <div className="flex-1 p-5 text-sm text-muted-foreground">

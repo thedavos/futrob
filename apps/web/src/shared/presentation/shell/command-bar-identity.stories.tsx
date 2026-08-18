@@ -32,7 +32,7 @@ type Story = StoryObj<StoryArgs>;
 
 function Chrome({ children }: { readonly children: ReactNode }) {
   return (
-    <header className="flex h-14 items-center gap-3 rounded-lg border border-border bg-surface px-4">
+    <header className="flex h-14 items-center gap-3 rounded-lg border border-border bg-surface px-5">
       <div className="flex min-w-0 flex-1 items-center">{children}</div>
     </header>
   );
