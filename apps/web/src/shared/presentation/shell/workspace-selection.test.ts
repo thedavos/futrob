@@ -6,7 +6,10 @@ import {
   WORKSPACE_SELECTION_KIND,
   isSameWorkspaceSelection,
   pathForWorkspaceSelection,
+  personalWorkspaceSelection,
   resolveDefaultWorkspaceSelection,
+  resolvePersonalExternalClubId,
+  selectionAfterAssociatingClub,
   workspaceSelectionFromPathname,
   workspaceSelectionKey,
 } from "./workspace-selection.ts";
@@ -211,5 +214,31 @@ describe("selection identity", () => {
     } as const;
     expect(workspaceSelectionKey(left)).toBe("organization:org-1");
     expect(isSameWorkspaceSelection(left, right)).toBe(true);
+  });
+
+  it("includes the selected club in the personal key", () => {
+    expect(workspaceSelectionKey(personalWorkspaceSelection("club-1"))).toBe("personal:club-1");
+    expect(workspaceSelectionKey(personalWorkspaceSelection())).toBe("personal");
+  });
+});
+
+describe("personal club selection", () => {
+  it("keeps a preferred associated club and falls back to the first", () => {
+    expect(resolvePersonalExternalClubId("club-2", ["club-1", "club-2"])).toBe("club-2");
+    expect(resolvePersonalExternalClubId("gone", ["club-1", "club-2"])).toBe("club-1");
+    expect(resolvePersonalExternalClubId(undefined, [])).toBeUndefined();
+  });
+
+  it("keeps the selected club after associating another from the shell", () => {
+    expect(selectionAfterAssociatingClub(personalWorkspaceSelection("club-2"))).toEqual({
+      kind: WORKSPACE_SELECTION_KIND.personal,
+      externalClubId: "club-2",
+    });
+    expect(
+      selectionAfterAssociatingClub({
+        kind: WORKSPACE_SELECTION_KIND.organization,
+        organizationId: "org-1",
+      }),
+    ).toEqual({ kind: WORKSPACE_SELECTION_KIND.personal });
   });
 });

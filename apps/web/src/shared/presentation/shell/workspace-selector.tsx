@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Button,
   Dialog,
@@ -30,6 +30,7 @@ import {
   WORKSPACE_SELECTION_KIND,
   type WorkspaceSelection,
   pathForWorkspaceSelection,
+  personalWorkspaceSelection,
 } from "./workspace-selection.ts";
 import { writeStoredWorkspaceSelection } from "./workspace-selection-storage.ts";
 import {
@@ -60,10 +61,16 @@ export function WorkspaceSelector({
   readonly onRequestAddClub: () => void;
 }) {
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { t } = useI18n();
   const [dialog, setDialog] = useState<CompetitionHostDialog>({ kind: "closed" });
 
-  const personalLabel = model.clubs[0]?.name ?? t("shell.workspace.addClub");
+  const selectedClub =
+    selection.kind === WORKSPACE_SELECTION_KIND.personal
+      ? (model.clubs.find((club) => club.externalClubId === selection.externalClubId) ??
+        model.clubs[0])
+      : model.clubs[0];
+  const personalLabel = selectedClub?.name ?? t("shell.workspace.addClub");
 
   function choose(next: WorkspaceSelection) {
     writeStoredWorkspaceSelection(next);
@@ -71,10 +78,13 @@ export function WorkspaceSelector({
     void navigate({ to: pathForWorkspaceSelection(next) });
   }
 
-  function chooseClub() {
-    writeStoredWorkspaceSelection({ kind: WORKSPACE_SELECTION_KIND.personal });
-    onSelect({ kind: WORKSPACE_SELECTION_KIND.personal });
-    void navigate({ to: "/player/ea-clubs" });
+  function chooseClub(externalClubId: string) {
+    const next = personalWorkspaceSelection(externalClubId);
+    writeStoredWorkspaceSelection(next);
+    onSelect(next);
+    if (!pathname.startsWith("/player")) {
+      void navigate({ to: pathForWorkspaceSelection(next) });
+    }
   }
 
   function handleCreateCompetition() {
@@ -166,7 +176,11 @@ export function WorkspaceSelector({
                   <AssociatedClubMenuItem
                     club={club}
                     key={club.externalClubId}
-                    onSelect={chooseClub}
+                    onSelect={() => chooseClub(club.externalClubId)}
+                    selected={
+                      selection.kind === WORKSPACE_SELECTION_KIND.personal &&
+                      selection.externalClubId === club.externalClubId
+                    }
                   />
                 ))
               )}
@@ -340,16 +354,20 @@ function RoleAwareMenuItem({
 function AssociatedClubMenuItem({
   club,
   onSelect,
+  selected,
 }: {
   readonly club: WorkspaceSelectorClubOption;
   readonly onSelect: () => void;
+  readonly selected: boolean;
 }) {
   const { t } = useI18n();
   const roleLabel = t(workspaceRoleMessageKey(club.role));
   return (
     <DropdownMenuItem
+      aria-current={selected ? "true" : undefined}
       aria-label={`${club.name}, ${roleLabel}`}
       className="justify-between"
+      data-active={selected ? "" : undefined}
       onClick={onSelect}
     >
       <span className="flex min-w-0 items-center gap-2">
@@ -389,7 +407,8 @@ function SelectorTriggerIcon({
   const className = "size-4 shrink-0 text-muted-foreground";
   switch (selection.kind) {
     case WORKSPACE_SELECTION_KIND.personal: {
-      const club = clubs[0];
+      const club =
+        clubs.find((item) => item.externalClubId === selection.externalClubId) ?? clubs[0];
       return club ? (
         <ClubCrestAvatar imageUrl={club.imageUrl} name={club.name} />
       ) : (

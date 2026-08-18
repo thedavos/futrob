@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { ONBOARDING_PATH } from "@futrob/identity";
@@ -27,7 +27,9 @@ import {
   type OrganizationSelectorOption,
   type WorkspaceSelection,
   isSameWorkspaceSelection,
+  personalWorkspaceSelection,
   resolveDefaultWorkspaceSelection,
+  resolvePersonalExternalClubId,
   workspaceSelectionFromPathname,
 } from "./workspace-selection.ts";
 import {
@@ -37,7 +39,45 @@ import {
 import { buildWorkspaceSelectorModel } from "./workspace-selector-model.ts";
 import { commandBarIdentity } from "./command-bar-identity.ts";
 
-export function useWorkspaceSelection() {
+type WorkspaceSelectionState = ReturnType<typeof useWorkspaceSelectionState>;
+
+const WorkspaceSelectionContext = createContext<WorkspaceSelectionState | null>(null);
+
+export function WorkspaceSelectionProvider({ children }: { readonly children: ReactNode }) {
+  const value = useWorkspaceSelectionState();
+  return (
+    <WorkspaceSelectionContext.Provider value={value}>
+      {children}
+    </WorkspaceSelectionContext.Provider>
+  );
+}
+
+export function useWorkspaceSelection(): WorkspaceSelectionState {
+  const value = useContext(WorkspaceSelectionContext);
+  if (!value) {
+    throw new Error("useWorkspaceSelection requires WorkspaceSelectionProvider");
+  }
+  return value;
+}
+
+export function useWorkspaceSelectedClubId(): {
+  readonly externalClubId: string | undefined;
+  readonly profileReady: boolean;
+} {
+  const value = useContext(WorkspaceSelectionContext);
+  if (!value) {
+    throw new Error("useWorkspaceSelectedClubId requires WorkspaceSelectionProvider");
+  }
+  return {
+    externalClubId:
+      value.selection.kind === WORKSPACE_SELECTION_KIND.personal
+        ? value.selection.externalClubId
+        : undefined,
+    profileReady: value.playerIdentityReady,
+  };
+}
+
+function useWorkspaceSelectionState() {
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const onboardingQuery = useOnboardingStatusQuery();
@@ -55,15 +95,9 @@ export function useWorkspaceSelection() {
       })),
     [profileQuery.data?.externalClubs],
   );
-
-  const associatedClubName = associatedClubs[0]?.name ?? null;
-  const playerIdentity = useMemo(
-    () =>
-      commandBarIdentity({
-        gameAccounts: profileQuery.data?.gameAccounts ?? [],
-        clubs: associatedClubs,
-      }),
-    [associatedClubs, profileQuery.data?.gameAccounts],
+  const associatedClubIds = useMemo(
+    () => associatedClubs.map((club) => club.externalClubId),
+    [associatedClubs],
   );
 
   const memberships: readonly OrganizationSelectorOption[] = useMemo(
@@ -157,18 +191,22 @@ export function useWorkspaceSelection() {
   );
 
   const selection = useMemo(() => {
-    const fromPath = workspaceSelectionFromPathname(pathname);
-    if (fromPath) {
-      return withLabels(fromPath, memberships, competitions);
-    }
-
-    if (override) {
-      return withLabels(override, memberships, competitions);
-    }
-
     const stored = readStoredWorkspaceSelection();
-    if (stored && isStoredSelectionValid(stored, memberships, competitions)) {
-      return withLabels(stored, memberships, competitions);
+    const preferredClubId = preferredPersonalExternalClubId(override, stored);
+    const withPersonalClub = (base: WorkspaceSelection): WorkspaceSelection => {
+      if (base.kind !== WORKSPACE_SELECTION_KIND.personal) {
+        return withLabels(base, memberships, competitions);
+      }
+      return personalWorkspaceSelection(
+        resolvePersonalExternalClubId(preferredClubId ?? base.externalClubId, associatedClubIds),
+      );
+    };
+
+    const fromPath = workspaceSelectionFromPathname(pathname);
+    if (fromPath) return withPersonalClub(fromPath);
+    if (override) return withPersonalClub(override);
+    if (stored && isStoredSelectionValid(stored, memberships, competitions, associatedClubIds)) {
+      return withPersonalClub(stored);
     }
 
     const path = onboardingQuery.data?.path ?? null;
@@ -188,8 +226,36 @@ export function useWorkspaceSelection() {
       competitionLabel: firstCompetition?.name ?? null,
     });
 
-    return withLabels(defaults, memberships, competitions);
-  }, [competitions, memberships, onboardingQuery.data?.path, override, pathname]);
+    return withPersonalClub(defaults);
+  }, [
+    associatedClubIds,
+    competitions,
+    memberships,
+    onboardingQuery.data?.path,
+    override,
+    pathname,
+  ]);
+
+  const selectedPersonalClub =
+    selection.kind === WORKSPACE_SELECTION_KIND.personal
+      ? associatedClubs.find((club) => club.externalClubId === selection.externalClubId)
+      : undefined;
+  const associatedClubName = selectedPersonalClub?.name ?? associatedClubs[0]?.name ?? null;
+  const playerIdentity = useMemo(
+    () =>
+      commandBarIdentity({
+        gameAccounts: profileQuery.data?.gameAccounts ?? [],
+        clubs: selectedPersonalClub
+          ? [
+              selectedPersonalClub,
+              ...associatedClubs.filter(
+                (club) => club.externalClubId !== selectedPersonalClub.externalClubId,
+              ),
+            ]
+          : associatedClubs,
+      }),
+    [associatedClubs, profileQuery.data?.gameAccounts, selectedPersonalClub],
+  );
 
   const authorizationScope = useMemo(() => {
     if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
@@ -264,12 +330,26 @@ function withLabels(
   return selection;
 }
 
+function preferredPersonalExternalClubId(
+  override: WorkspaceSelection | null,
+  stored: WorkspaceSelection | null,
+): string | undefined {
+  if (override?.kind === WORKSPACE_SELECTION_KIND.personal) return override.externalClubId;
+  if (stored?.kind === WORKSPACE_SELECTION_KIND.personal) return stored.externalClubId;
+  return undefined;
+}
+
 function isStoredSelectionValid(
   selection: WorkspaceSelection,
   memberships: readonly OrganizationSelectorOption[],
   competitions: readonly CompetitionSelectorOption[],
+  associatedClubIds: readonly string[],
 ): boolean {
-  if (selection.kind === WORKSPACE_SELECTION_KIND.personal) return true;
+  if (selection.kind === WORKSPACE_SELECTION_KIND.personal) {
+    return (
+      selection.externalClubId === undefined || associatedClubIds.includes(selection.externalClubId)
+    );
+  }
   if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
     return memberships.some((item) => item.organizationId === selection.organizationId);
   }

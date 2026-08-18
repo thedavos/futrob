@@ -61,8 +61,12 @@ import { commandsFor } from "@/shared/presentation/shell/shell-commands.ts";
 import {
   WORKSPACE_SELECTION_KIND,
   type WorkspaceSelection,
+  selectionAfterAssociatingClub,
 } from "@/shared/presentation/shell/workspace-selection.ts";
-import { useWorkspaceSelection } from "@/shared/presentation/shell/use-workspace-selection.ts";
+import {
+  WorkspaceSelectionProvider,
+  useWorkspaceSelection,
+} from "@/shared/presentation/shell/use-workspace-selection.tsx";
 import { WorkspaceSelector } from "@/shared/presentation/shell/workspace-selector.tsx";
 import type { WorkspaceSelectorModel } from "@/shared/presentation/shell/workspace-selector-model.ts";
 import { AddClubDialog } from "@/modules/teams/presentation/add-club-dialog.tsx";
@@ -74,6 +78,14 @@ import {
 import { CommandBarIdentityMark } from "@/shared/presentation/shell/command-bar-identity-mark.tsx";
 
 export function AuthenticatedShell({ children }: { readonly children: ReactNode }) {
+  return (
+    <WorkspaceSelectionProvider>
+      <AuthenticatedShellFrame>{children}</AuthenticatedShellFrame>
+    </WorkspaceSelectionProvider>
+  );
+}
+
+function AuthenticatedShellFrame({ children }: { readonly children: ReactNode }) {
   const { t } = useI18n();
   const selectionState = useWorkspaceSelection();
   const navigate = useNavigate();
@@ -140,7 +152,7 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
             selection={selectionState.selection}
           />
           <div
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 has-[[data-shell-bleed]]:p-0"
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6 has-[[data-shell-bleed]]:p-0"
             id="app-main"
           >
             {children}
@@ -149,7 +161,7 @@ export function AuthenticatedShell({ children }: { readonly children: ReactNode 
         </SidebarInset>
         <AddClubDialog
           onAssociated={() => {
-            selectionState.select({ kind: WORKSPACE_SELECTION_KIND.personal });
+            selectionState.select(selectionAfterAssociatingClub(selectionState.selection));
             void navigate({ to: "/player/ea-clubs" });
           }}
           onOpenChange={setAddClubOpen}
@@ -178,7 +190,7 @@ function CommandBar({
   const emptyLabel = t("player.workspace.eyebrow");
 
   return (
-    <header className="hidden h-14 shrink-0 items-center gap-3 border-b border-border px-4 md:flex">
+    <header className="hidden h-14 shrink-0 items-center gap-3 border-b border-border px-5 md:flex">
       <div className="flex min-w-0 flex-1 items-center">
         <CommandBarIdentityMark emptyLabel={emptyLabel} identity={identity} ready={identityReady} />
       </div>

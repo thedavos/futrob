@@ -39,8 +39,12 @@ function selectionFor(
         organizationId: model.competitions[0]?.organizationId ?? "org-1",
         label: model.competitions[0]?.name,
       };
-    case "personal":
-      return { kind: WORKSPACE_SELECTION_KIND.personal };
+    case "personal": {
+      const clubId = model.clubs[0]?.externalClubId;
+      return clubId
+        ? { kind: WORKSPACE_SELECTION_KIND.personal, externalClubId: clubId }
+        : { kind: WORKSPACE_SELECTION_KIND.personal };
+    }
     default: {
       const _exhaustive: never = kind;
       return _exhaustive;

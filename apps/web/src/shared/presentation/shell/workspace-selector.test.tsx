@@ -1,20 +1,31 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach } from "vite-plus/test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { WorkspaceSelector } from "./workspace-selector.tsx";
-import { WORKSPACE_SELECTION_KIND } from "./workspace-selection.ts";
+import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
 import { buildWorkspaceSelectorModel } from "./workspace-selector-model.ts";
 
+const routerMocks = vi.hoisted(() => ({
+  navigate: vi.fn<() => void>(),
+  pathname: "/player/matches",
+}));
+
 vi.mock("@tanstack/react-router", () => ({
-  useNavigate: () => vi.fn<() => void>(),
+  useNavigate: () => routerMocks.navigate,
+  useRouterState: ({
+    select,
+  }: {
+    select: (state: { location: { pathname: string } }) => unknown;
+  }) => select({ location: { pathname: routerMocks.pathname } }),
 }));
 
 afterEach(() => {
   cleanup();
+  routerMocks.navigate.mockClear();
+  routerMocks.pathname = "/player/matches";
 });
 
 function renderSelector(
@@ -33,6 +44,10 @@ function renderSelector(
     ],
     associatedClubs: [],
   }),
+  options: {
+    readonly onSelect?: (selection: WorkspaceSelection) => void;
+    readonly selection?: WorkspaceSelection;
+  } = {},
 ) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -44,8 +59,8 @@ function renderSelector(
         <WorkspaceSelector
           model={model}
           onRequestAddClub={vi.fn<() => void>()}
-          onSelect={vi.fn<() => void>()}
-          selection={{ kind: WORKSPACE_SELECTION_KIND.personal }}
+          onSelect={options.onSelect ?? vi.fn<() => void>()}
+          selection={options.selection ?? { kind: WORKSPACE_SELECTION_KIND.personal }}
         />
       </I18nProvider>
     </QueryClientProvider>,
@@ -91,6 +106,42 @@ describe("WorkspaceSelector", () => {
     expect(await screen.findByLabelText("Fera, Jugador")).toBeTruthy();
     expect(screen.getByLabelText("Night Owls, Jugador")).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Añadir club" })).toBeTruthy();
+  });
+
+  it("keeps the player on the current route when selecting a club", async () => {
+    const onSelect = vi.fn<(selection: WorkspaceSelection) => void>();
+    const model = buildWorkspaceSelectorModel({
+      memberships: [],
+      competitions: [],
+      associatedClubs: [
+        {
+          name: "Fera",
+          imageUrl: null,
+          externalClubId: "club-1",
+        },
+        {
+          name: "Night Owls",
+          imageUrl: null,
+          externalClubId: "club-2",
+        },
+      ],
+    });
+
+    renderSelector(model, {
+      onSelect,
+      selection: { kind: WORKSPACE_SELECTION_KIND.personal, externalClubId: "club-1" },
+    });
+
+    screen.getByRole("button").click();
+    const selected = await screen.findByLabelText("Fera, Jugador");
+    expect(selected.getAttribute("aria-current")).toBe("true");
+
+    screen.getByLabelText("Night Owls, Jugador").click();
+    expect(onSelect).toHaveBeenCalledWith({
+      kind: WORKSPACE_SELECTION_KIND.personal,
+      externalClubId: "club-2",
+    });
+    expect(routerMocks.navigate).not.toHaveBeenCalled();
   });
 
   it("shows empty copy in each section when lists are empty", async () => {

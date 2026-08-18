@@ -10,7 +10,10 @@ export type WorkspaceSelectionKind =
   (typeof WORKSPACE_SELECTION_KIND)[keyof typeof WORKSPACE_SELECTION_KIND];
 
 export type WorkspaceSelection =
-  | { readonly kind: typeof WORKSPACE_SELECTION_KIND.personal }
+  | {
+      readonly kind: typeof WORKSPACE_SELECTION_KIND.personal;
+      readonly externalClubId?: string;
+    }
   | {
       readonly kind: typeof WORKSPACE_SELECTION_KIND.competition;
       readonly competitionId: string;
@@ -111,10 +114,35 @@ export function pathForWorkspaceSelection(selection: WorkspaceSelection): string
   }
 }
 
+export function personalWorkspaceSelection(externalClubId?: string): WorkspaceSelection {
+  if (externalClubId) {
+    return { kind: WORKSPACE_SELECTION_KIND.personal, externalClubId };
+  }
+  return { kind: WORKSPACE_SELECTION_KIND.personal };
+}
+
+export function selectionAfterAssociatingClub(current: WorkspaceSelection): WorkspaceSelection {
+  if (current.kind === WORKSPACE_SELECTION_KIND.personal) {
+    return personalWorkspaceSelection(current.externalClubId);
+  }
+  return personalWorkspaceSelection();
+}
+
+export function resolvePersonalExternalClubId(
+  preferredId: string | undefined,
+  associatedClubIds: readonly string[],
+): string | undefined {
+  if (associatedClubIds.length === 0) return undefined;
+  if (preferredId !== undefined && associatedClubIds.includes(preferredId)) return preferredId;
+  return associatedClubIds[0];
+}
+
 export function workspaceSelectionKey(selection: WorkspaceSelection): string {
   switch (selection.kind) {
     case WORKSPACE_SELECTION_KIND.personal:
-      return WORKSPACE_SELECTION_KIND.personal;
+      return selection.externalClubId
+        ? `${WORKSPACE_SELECTION_KIND.personal}:${selection.externalClubId}`
+        : WORKSPACE_SELECTION_KIND.personal;
     case WORKSPACE_SELECTION_KIND.organization:
       return `${WORKSPACE_SELECTION_KIND.organization}:${selection.organizationId}`;
     case WORKSPACE_SELECTION_KIND.competition:

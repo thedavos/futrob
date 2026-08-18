@@ -25,7 +25,13 @@ export function writeStoredWorkspaceSelection(selection: WorkspaceSelection): vo
 function parseStoredWorkspaceSelection(value: unknown): WorkspaceSelection | null {
   if (!value || typeof value !== "object" || !("kind" in value)) return null;
   if (value.kind === WORKSPACE_SELECTION_KIND.personal) {
-    return { kind: WORKSPACE_SELECTION_KIND.personal };
+    const externalClubId =
+      "externalClubId" in value && typeof value.externalClubId === "string"
+        ? value.externalClubId
+        : undefined;
+    return externalClubId
+      ? { kind: WORKSPACE_SELECTION_KIND.personal, externalClubId }
+      : { kind: WORKSPACE_SELECTION_KIND.personal };
   }
   if (
     value.kind === WORKSPACE_SELECTION_KIND.organization &&
