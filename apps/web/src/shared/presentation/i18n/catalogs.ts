@@ -251,6 +251,57 @@ const es = {
   "player.matches.record.losses": "Derrotas",
   "player.matches.record.label": "Resumen de esta vista",
   "player.matches.record.loading": "Cargando el resumen de partidos…",
+  "player.matches.stats.performance": "Rendimiento",
+  "player.matches.stats.record": "Record",
+  "player.matches.stats.contributions": "Contribuciones",
+  "player.matches.contributions.composition": ({ goals, assists }) => {
+    const goalsCount = Number(goals);
+    const assistsCount = Number(assists);
+    const goalsLabel = goalsCount === 1 ? "1 gol" : `${goalsCount} goles`;
+    const assistsLabel = assistsCount === 1 ? "1 asistencia" : `${assistsCount} asistencias`;
+    return `${goalsLabel} · ${assistsLabel}`;
+  },
+  "player.matches.contributions.goalsOnly": ({ count }) =>
+    Number(count) === 1 ? "1 gol" : `${Number(count)} goles`,
+  "player.matches.contributions.assistsOnly": ({ count }) =>
+    Number(count) === 1 ? "1 asistencia" : `${Number(count)} asistencias`,
+  "player.matches.contributions.contributed": "Con G+A",
+  "player.matches.contributions.pace": "Por partido",
+  "player.matches.contributions.share": "De los goles",
+  "player.matches.contributions.contributedValue": ({ contributed, played }) =>
+    `${contributed}/${played}`,
+  "player.matches.contributions.shareValue": ({ percent }) => `${percent}%`,
+  "player.matches.contributions.contributedTooltip": ({ contributed, played, playedCount }) => {
+    const matchWord = Number(playedCount) === 1 ? "partido" : "partidos";
+    return `Marcaste o asististe en ${contributed} de ${played} ${matchWord}. No cuenta partidos sin datos de goles o asistencias.`;
+  },
+  "player.matches.contributions.contributedTooltip.empty":
+    "Partidos en los que marcaste o asististe. No hay partidos con datos de goles o asistencias.",
+  "player.matches.contributions.paceTooltip": ({ rate }) => `Media de ${rate} G+A por partido.`,
+  "player.matches.contributions.paceTooltip.empty":
+    "Media de G+A por partido. No hay datos de goles o asistencias para calcularla.",
+  "player.matches.contributions.shareTooltip": ({ percent }) =>
+    `Marcaste el ${percent}% de los goles del club. No incluye asistencias.`,
+  "player.matches.contributions.shareTooltip.noClubGoals":
+    "Porcentaje de los goles del club que marcaste. En esta vista el club no tiene goles.",
+  "player.matches.contributions.shareTooltip.unknown":
+    "Porcentaje de los goles del club que marcaste. No hay datos de goles para calcularlo.",
+  "player.matches.performance.averageRating": "Rating promedio",
+  "player.matches.performance.vsLast": ({ count }) => `vs últimos ${count}`,
+  "player.matches.performance.improved": "Ha mejorado",
+  "player.matches.performance.declined": "Ha empeorado",
+  "player.matches.performance.unchanged": "Sin cambios",
+  "player.matches.performance.trendAria": ({ status, delta, count }) =>
+    `${status}. ${delta} vs últimos ${count}`,
+  "player.matches.form.label": "Forma reciente",
+  "player.matches.form.win": ({ score, opponent }) => `Victoria ${score} contra ${opponent}`,
+  "player.matches.form.draw": ({ score, opponent }) => `Empate ${score} contra ${opponent}`,
+  "player.matches.form.loss": ({ score, opponent }) => `Derrota ${score} contra ${opponent}`,
+  "player.matches.form.unknownMatch": ({ home, score, away }) => `${home} ${score} ${away}`,
+  "player.matches.form.winShort": "V",
+  "player.matches.form.drawShort": "E",
+  "player.matches.form.lossShort": "D",
+  "player.matches.form.unknownShort": "—",
   "player.matches.day.today": "Hoy",
   "player.matches.day.yesterday": "Ayer",
   "player.matches.mvp": "MVP",
@@ -341,6 +392,7 @@ const es = {
   "player.onboarding.checking": "Comprobando tu onboarding…",
   "player.metric.goals": "Goles",
   "player.metric.assists": "Asistencias",
+  "player.metric.goalsPlusAssists": "G+A",
   "player.metric.shots": "Tiros",
   "player.metric.passAttempts": "Pases intentados",
   "player.metric.passesMade": "Pases completados",
@@ -380,6 +432,38 @@ export interface MessageParamsByKey {
   readonly "player.matches.feat.scorer": { readonly name: string };
   readonly "player.matches.appearance.goalsUnit": { readonly count: number };
   readonly "player.matches.appearance.assistsUnit": { readonly count: number };
+  readonly "player.matches.performance.vsLast": { readonly count: number };
+  readonly "player.matches.performance.trendAria": {
+    readonly status: string;
+    readonly delta: string;
+    readonly count: number;
+  };
+  readonly "player.matches.form.win": { readonly score: string; readonly opponent: string };
+  readonly "player.matches.form.draw": { readonly score: string; readonly opponent: string };
+  readonly "player.matches.form.loss": { readonly score: string; readonly opponent: string };
+  readonly "player.matches.form.unknownMatch": {
+    readonly home: string;
+    readonly score: string;
+    readonly away: string;
+  };
+  readonly "player.matches.contributions.composition": {
+    readonly goals: number;
+    readonly assists: number;
+  };
+  readonly "player.matches.contributions.goalsOnly": { readonly count: number };
+  readonly "player.matches.contributions.assistsOnly": { readonly count: number };
+  readonly "player.matches.contributions.contributedValue": {
+    readonly contributed: string;
+    readonly played: string;
+  };
+  readonly "player.matches.contributions.shareValue": { readonly percent: string };
+  readonly "player.matches.contributions.contributedTooltip": {
+    readonly contributed: string;
+    readonly played: string;
+    readonly playedCount: number;
+  };
+  readonly "player.matches.contributions.paceTooltip": { readonly rate: string };
+  readonly "player.matches.contributions.shareTooltip": { readonly percent: string };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -627,6 +711,57 @@ const en: Catalog = {
   "player.matches.record.losses": "Losses",
   "player.matches.record.label": "Summary of this view",
   "player.matches.record.loading": "Loading the match summary…",
+  "player.matches.stats.performance": "Performance",
+  "player.matches.stats.record": "Record",
+  "player.matches.stats.contributions": "Contributions",
+  "player.matches.contributions.composition": ({ goals, assists }) => {
+    const goalsCount = Number(goals);
+    const assistsCount = Number(assists);
+    const goalsLabel = goalsCount === 1 ? "1 goal" : `${goalsCount} goals`;
+    const assistsLabel = assistsCount === 1 ? "1 assist" : `${assistsCount} assists`;
+    return `${goalsLabel} · ${assistsLabel}`;
+  },
+  "player.matches.contributions.goalsOnly": ({ count }) =>
+    Number(count) === 1 ? "1 goal" : `${Number(count)} goals`,
+  "player.matches.contributions.assistsOnly": ({ count }) =>
+    Number(count) === 1 ? "1 assist" : `${Number(count)} assists`,
+  "player.matches.contributions.contributed": "With G+A",
+  "player.matches.contributions.pace": "Per match",
+  "player.matches.contributions.share": "Of club goals",
+  "player.matches.contributions.contributedValue": ({ contributed, played }) =>
+    `${contributed}/${played}`,
+  "player.matches.contributions.shareValue": ({ percent }) => `${percent}%`,
+  "player.matches.contributions.contributedTooltip": ({ contributed, played, playedCount }) => {
+    const matchWord = Number(playedCount) === 1 ? "match" : "matches";
+    return `You scored or assisted in ${contributed} of ${played} ${matchWord}. Matches without goal or assist data are not counted.`;
+  },
+  "player.matches.contributions.contributedTooltip.empty":
+    "Matches in which you scored or assisted. There are no matches with goal or assist data.",
+  "player.matches.contributions.paceTooltip": ({ rate }) => `Average of ${rate} G+A per match.`,
+  "player.matches.contributions.paceTooltip.empty":
+    "Average G+A per match. There is no goal or assist data to calculate it.",
+  "player.matches.contributions.shareTooltip": ({ percent }) =>
+    `You scored ${percent}% of the club's goals. Assists are not included.`,
+  "player.matches.contributions.shareTooltip.noClubGoals":
+    "Share of the club's goals you scored. The club has no goals in this view.",
+  "player.matches.contributions.shareTooltip.unknown":
+    "Share of the club's goals you scored. There is no goal data to calculate it.",
+  "player.matches.performance.averageRating": "Average rating",
+  "player.matches.performance.vsLast": ({ count }) => `vs last ${count}`,
+  "player.matches.performance.improved": "Improved",
+  "player.matches.performance.declined": "Declined",
+  "player.matches.performance.unchanged": "Unchanged",
+  "player.matches.performance.trendAria": ({ status, delta, count }) =>
+    `${status}. ${delta} vs last ${count}`,
+  "player.matches.form.label": "Recent form",
+  "player.matches.form.win": ({ score, opponent }) => `Win ${score} against ${opponent}`,
+  "player.matches.form.draw": ({ score, opponent }) => `Draw ${score} against ${opponent}`,
+  "player.matches.form.loss": ({ score, opponent }) => `Loss ${score} against ${opponent}`,
+  "player.matches.form.unknownMatch": ({ home, score, away }) => `${home} ${score} ${away}`,
+  "player.matches.form.winShort": "W",
+  "player.matches.form.drawShort": "D",
+  "player.matches.form.lossShort": "L",
+  "player.matches.form.unknownShort": "—",
   "player.matches.day.today": "Today",
   "player.matches.day.yesterday": "Yesterday",
   "player.matches.mvp": "MVP",
@@ -716,6 +851,7 @@ const en: Catalog = {
   "player.onboarding.checking": "Checking your onboarding…",
   "player.metric.goals": "Goals",
   "player.metric.assists": "Assists",
+  "player.metric.goalsPlusAssists": "G+A",
   "player.metric.shots": "Shots",
   "player.metric.passAttempts": "Pass attempts",
   "player.metric.passesMade": "Passes completed",

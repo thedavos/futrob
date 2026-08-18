@@ -8,6 +8,7 @@ import {
   CalendarDotsIcon,
   CaretDownIcon,
   CaretRightIcon,
+  ChartLineUpIcon,
   CheckIcon,
   CheckCircleIcon,
   CheckSquareOffsetIcon,
@@ -44,6 +45,7 @@ import {
   TicketIcon,
   TrayIcon,
   TrendDownIcon,
+  TrendUpIcon,
   TrophyIcon,
   UserIcon,
   UsersIcon,
@@ -113,6 +115,12 @@ export const FUTROB_ICON_CATALOG = [
     label: "Caret derecha",
     usage: "Breadcrumb y collapsibles",
     Icon: CaretRightIcon,
+  },
+  {
+    name: "ChartLineUpIcon",
+    label: "G+A",
+    usage: "Goles más asistencias en Mis partidos",
+    Icon: ChartLineUpIcon,
   },
   {
     name: "CheckIcon",
@@ -327,8 +335,14 @@ export const FUTROB_ICON_CATALOG = [
   {
     name: "TrendDownIcon",
     label: "Tendencia a la baja",
-    usage: "Derrotas en Mis partidos",
+    usage: "Derrotas y rating a la baja en Mis partidos",
     Icon: TrendDownIcon,
+  },
+  {
+    name: "TrendUpIcon",
+    label: "Tendencia al alza",
+    usage: "Rating al alza en Mis partidos",
+    Icon: TrendUpIcon,
   },
   {
     name: "TrophyIcon",

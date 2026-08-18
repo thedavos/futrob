@@ -1,20 +1,26 @@
 import { describe, expect, it } from "vite-plus/test";
 import { recentProviderMatchFixture } from "./player-matches-page.fixtures.ts";
 import {
+  appearanceContribution,
   calendarDayKind,
   filterMatchesByMode,
   filterRecentMatches,
+  formTimeline,
   groupMatchesByDay,
   isDnfMatch,
   isWithinRecentCalendarDays,
+  lastFormGames,
   listedClubId,
   matchesForView,
   matchMvpDisplayName,
   matchOutcome,
+  opponentClubName,
   playerMatchSide,
+  ratingTrendVsLast,
   scoringFeat,
   scoringFeatPlayerName,
   showsMatchTypeBadge,
+  showsRecentForm,
   showsRedCards,
   showsYellowCards,
   summarizeMatchRecord,
@@ -90,6 +96,17 @@ describe("matchOutcome", () => {
   });
 });
 
+describe("appearanceContribution", () => {
+  it("classifies contributed, blank and unknown appearances", () => {
+    expect(appearanceContribution({ goals: 1, assists: 0 })).toBe("contributed");
+    expect(appearanceContribution({ goals: null, assists: 2 })).toBe("contributed");
+    expect(appearanceContribution({ goals: 0, assists: 0 })).toBe("blank");
+    expect(appearanceContribution({ goals: null, assists: null })).toBe("unknown");
+    expect(appearanceContribution({ goals: 0, assists: null })).toBe("unknown");
+    expect(appearanceContribution({ goals: null, assists: 0 })).toBe("unknown");
+  });
+});
+
 describe("summarizeMatchRecord", () => {
   it("aggregates wins, draws, losses, goals, assists and average rating", () => {
     const summary = summarizeMatchRecord([
@@ -114,17 +131,47 @@ describe("summarizeMatchRecord", () => {
       losses: 1,
       goals: 3,
       assists: 0,
+      goalsPlusAssists: 3,
       averageRating: 7,
+      contributions: {
+        playedAppearances: 3,
+        contributed: { kind: "ready", contributed: 3, known: 3 },
+        pace: { kind: "ready", rate: 1 },
+        teamGoalShare: { kind: "ready", ratio: 1 },
+      },
     });
   });
 
-  it("returns null goals and assists when every appearance omits them", () => {
+  it("returns null goals, assists and G+A when every appearance omits them", () => {
     const summary = summarizeMatchRecord([
       recentProviderMatchFixture({ appearance: { goals: null, assists: null, rating: null } }),
     ]);
     expect(summary.goals).toBeNull();
     expect(summary.assists).toBeNull();
+    expect(summary.goalsPlusAssists).toBeNull();
     expect(summary.averageRating).toBeNull();
+    expect(summary.contributions).toEqual({
+      playedAppearances: 1,
+      contributed: { kind: "unknown" },
+      pace: { kind: "unknown" },
+      teamGoalShare: { kind: "unknown" },
+    });
+  });
+
+  it("counts G+A from whichever of goals or assists is present", () => {
+    const summary = summarizeMatchRecord([
+      recentProviderMatchFixture({ appearance: { goals: 2, assists: null } }),
+    ]);
+    expect(summary.goals).toBe(2);
+    expect(summary.assists).toBeNull();
+    expect(summary.goalsPlusAssists).toBe(2);
+    expect(summary.contributions.contributed).toEqual({
+      kind: "ready",
+      contributed: 1,
+      known: 1,
+    });
+    expect(summary.contributions.pace).toEqual({ kind: "ready", rate: 2 });
+    expect(summary.contributions.teamGoalShare).toEqual({ kind: "ready", ratio: 1 });
   });
 
   it("returns a null average when no ratings exist", () => {
@@ -151,8 +198,174 @@ describe("summarizeMatchRecord", () => {
       losses: 0,
       goals: 1,
       assists: 1,
+      goalsPlusAssists: 2,
       averageRating: 8,
+      contributions: {
+        playedAppearances: 1,
+        contributed: { kind: "ready", contributed: 1, known: 1 },
+        pace: { kind: "ready", rate: 2 },
+        teamGoalShare: { kind: "ready", ratio: 0.5 },
+      },
     });
+  });
+
+  it("treats 0 G+A as a blank appearance and ignores unknown G+A in the ratio", () => {
+    const summary = summarizeMatchRecord([
+      recentProviderMatchFixture({ appearance: { goals: 1, assists: 0 } }),
+      recentProviderMatchFixture({
+        id: "blank",
+        appearance: { goals: 0, assists: 0 },
+      }),
+      recentProviderMatchFixture({
+        id: "unknown",
+        appearance: { goals: null, assists: null },
+      }),
+    ]);
+    expect(summary.contributions.playedAppearances).toBe(3);
+    expect(summary.contributions.contributed).toEqual({
+      kind: "ready",
+      contributed: 1,
+      known: 2,
+    });
+    expect(summary.goalsPlusAssists).toBe(1);
+    expect(summary.contributions.pace).toEqual({ kind: "ready", rate: 1 / 3 });
+  });
+
+  it("does not treat a one-sided null as a blank appearance", () => {
+    const summary = summarizeMatchRecord([
+      recentProviderMatchFixture({ appearance: { goals: null, assists: 0 } }),
+    ]);
+    expect(summary.contributions.playedAppearances).toBe(1);
+    expect(summary.contributions.contributed).toEqual({ kind: "unknown" });
+    expect(summary.contributions.pace).toEqual({ kind: "unknown" });
+  });
+
+  it("shares player goals against listed club goals from played matches", () => {
+    const summary = summarizeMatchRecord([
+      recentProviderMatchFixture({
+        home: { externalClubId: "10754", name: "Fera", goals: 4, imageUrl: null },
+        appearance: { goals: 3, assists: 1 },
+      }),
+      recentProviderMatchFixture({
+        kind: "not_played",
+        id: "not-played-goals",
+        listedExternalClubId: "10754",
+        home: { externalClubId: "10754", name: "Sirius", goals: 5, imageUrl: null },
+        away: { externalClubId: "99", name: "Cuervos", goals: 0, imageUrl: null },
+      }),
+    ]);
+    expect(summary.contributions.teamGoalShare).toEqual({ kind: "ready", ratio: 0.75 });
+    expect(summary.contributions.pace).toEqual({ kind: "ready", rate: 4 });
+  });
+
+  it("marks goal share as noClubGoals when the club scored none", () => {
+    const summary = summarizeMatchRecord([
+      recentProviderMatchFixture({
+        home: { externalClubId: "10754", name: "Fera", goals: 0, imageUrl: null },
+        appearance: { goals: 0, assists: 0 },
+      }),
+    ]);
+    expect(summary.contributions.teamGoalShare).toEqual({ kind: "noClubGoals" });
+  });
+});
+
+describe("recent form", () => {
+  it("needs at least two listed matches", () => {
+    expect(showsRecentForm([recentProviderMatchFixture()])).toBe(false);
+    expect(
+      showsRecentForm([recentProviderMatchFixture(), recentProviderMatchFixture({ id: "second" })]),
+    ).toBe(true);
+  });
+
+  it("orders the timeline oldest first and takes the last two", () => {
+    const newest = recentProviderMatchFixture({
+      id: "newest",
+      occurredAt: new Date(2026, 7, 14, 18, 0).toISOString(),
+      away: { externalClubId: "99", name: "Night Owls", goals: 1, imageUrl: null },
+    });
+    const oldest = recentProviderMatchFixture({
+      id: "oldest",
+      occurredAt: new Date(2026, 7, 1, 18, 0).toISOString(),
+      away: { externalClubId: "44001", name: "Atlético Norte", goals: 1, imageUrl: null },
+    });
+    const middle = recentProviderMatchFixture({
+      id: "middle",
+      occurredAt: new Date(2026, 7, 13, 20, 0).toISOString(),
+      away: { externalClubId: "33021", name: "Fera Barranco", goals: 1, imageUrl: null },
+    });
+
+    expect(formTimeline([newest, oldest, middle]).map((item) => item.match.id)).toEqual([
+      "oldest",
+      "middle",
+      "newest",
+    ]);
+    expect(lastFormGames([newest, oldest, middle]).map((item) => item.match.id)).toEqual([
+      "oldest",
+      "middle",
+      "newest",
+    ]);
+    const extra = recentProviderMatchFixture({
+      id: "extra",
+      occurredAt: new Date(2026, 6, 20, 18, 0).toISOString(),
+    });
+    expect(lastFormGames([newest, oldest, middle, extra]).map((item) => item.match.id)).toEqual([
+      "oldest",
+      "middle",
+      "newest",
+    ]);
+    expect(opponentClubName(newest)).toBe("Night Owls");
+  });
+});
+
+describe("ratingTrendVsLast", () => {
+  it("returns null when there are not more matches than the window", () => {
+    expect(
+      ratingTrendVsLast(
+        Array.from({ length: 5 }, (_, index) =>
+          recentProviderMatchFixture({
+            id: `m-${index}`,
+            occurredAt: new Date(2026, 7, index + 1, 18, 0).toISOString(),
+            appearance: { rating: 8 },
+          }),
+        ),
+      ),
+    ).toBeNull();
+  });
+
+  it("compares the last five ratings against the earlier matches", () => {
+    const matches = [
+      recentProviderMatchFixture({
+        id: "old",
+        occurredAt: new Date(2026, 7, 1, 18, 0).toISOString(),
+        appearance: { rating: 7 },
+      }),
+      ...Array.from({ length: 5 }, (_, index) =>
+        recentProviderMatchFixture({
+          id: `recent-${index}`,
+          occurredAt: new Date(2026, 7, index + 8, 18, 0).toISOString(),
+          appearance: { rating: 8 },
+        }),
+      ),
+    ];
+    expect(ratingTrendVsLast(matches)).toEqual({ delta: 1, window: 5 });
+  });
+
+  it("returns a negative delta when the last five are worse", () => {
+    const matches = [
+      recentProviderMatchFixture({
+        id: "old",
+        occurredAt: new Date(2026, 7, 1, 18, 0).toISOString(),
+        appearance: { rating: 9 },
+      }),
+      ...Array.from({ length: 5 }, (_, index) =>
+        recentProviderMatchFixture({
+          id: `recent-${index}`,
+          occurredAt: new Date(2026, 7, index + 8, 18, 0).toISOString(),
+          appearance: { rating: 7 },
+        }),
+      ),
+    ];
+    expect(ratingTrendVsLast(matches)?.delta).toBe(-2);
   });
 });
 

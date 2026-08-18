@@ -183,21 +183,51 @@ describe("PlayerMatchesPage", () => {
     expect(homeWatermark?.className).toContain("left-[20%]");
     expect(homeWinItem.querySelector("[data-pitch-watermark='away']")).toBeNull();
     expect(screen.queryByText("Hat-trick")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Rendimiento" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Record" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Contribuciones" })).toBeTruthy();
     expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).toContain(
       "items-stretch",
     );
     expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).toContain(
-      "xl:grid-cols-6",
+      "md:grid-cols-3",
     );
     expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
-    expect(screen.getByText("1", { selector: "[data-metric='record-goals']" })).toBeTruthy();
-    expect(screen.getByText("0", { selector: "[data-metric='record-assists']" })).toBeTruthy();
+    expect(
+      screen.getByText("1", { selector: "[data-metric='record-goals-plus-assists']" }),
+    ).toBeTruthy();
+    expect(screen.getByText("1 gol · 0 asistencias")).toBeTruthy();
+    expect(
+      screen.getByText("1/1", { selector: "[data-metric='record-contributed']" }),
+    ).toBeTruthy();
+    expect(screen.getByText("1", { selector: "[data-metric='record-pace']" })).toBeTruthy();
+    expect(screen.getByText("50%", { selector: "[data-metric='record-share']" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "Marcaste o asististe en 1 de 1 partido. No cuenta partidos sin datos de goles o asistencias.",
+      }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Media de 1 G+A por partido." })).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "Marcaste el 50% de los goles del club. No incluye asistencias.",
+      }),
+    ).toBeTruthy();
     expect(document.querySelector("[data-metric-icon='record-wins']")).toBeTruthy();
     expect(document.querySelector("[data-metric-icon='record-draws']")).toBeTruthy();
     expect(document.querySelector("[data-metric-icon='record-losses']")).toBeTruthy();
-    expect(document.querySelector("[data-metric-icon='record-goals']")).toBeTruthy();
-    expect(document.querySelector("[data-metric-icon='record-assists']")).toBeTruthy();
-    expect(document.querySelector("[data-metric-icon='record-rating']")).toBeTruthy();
+    expect(document.querySelector("[data-metric-icon='record-goals-plus-assists']")).toBeTruthy();
+    expect(
+      document
+        .querySelector("[data-metric='record-goals-plus-assists']")
+        ?.getAttribute("data-size"),
+    ).toBe("compact");
+    expect(screen.getByText("8,4", { selector: "[data-metric='record-rating']" })).toBeTruthy();
+    expect(screen.getByText("Rating promedio")).toBeTruthy();
+    expect(screen.getByText("1", { selector: "[data-metric='record-matches']" })).toBeTruthy();
+    expect(document.querySelector("[data-rating-ring]")).toBeTruthy();
+    expect(document.querySelector("[data-rating-trend]")).toBeNull();
+    expect(screen.queryByLabelText("Forma reciente")).toBeNull();
     expect(screen.queryByText("Oficial")).toBeNull();
   });
 
@@ -213,8 +243,39 @@ describe("PlayerMatchesPage", () => {
     expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
     expect(screen.getByText("1", { selector: "[data-metric='record-losses']" })).toBeTruthy();
     expect(screen.getByText("0", { selector: "[data-metric='record-draws']" })).toBeTruthy();
-    expect(screen.getByText("3", { selector: "[data-metric='record-goals']" })).toBeTruthy();
-    expect(screen.getByText("1", { selector: "[data-metric='record-assists']" })).toBeTruthy();
+    expect(
+      screen.getByText("4", { selector: "[data-metric='record-goals-plus-assists']" }),
+    ).toBeTruthy();
+    expect(screen.getByText("3 goles · 1 asistencia")).toBeTruthy();
+    expect(
+      screen.getByText("2/2", { selector: "[data-metric='record-contributed']" }),
+    ).toBeTruthy();
+    expect(screen.getByText("2", { selector: "[data-metric='record-pace']" })).toBeTruthy();
+    expect(screen.getByText("100%", { selector: "[data-metric='record-share']" })).toBeTruthy();
+    expect(screen.getByText("2", { selector: "[data-metric='record-matches']" })).toBeTruthy();
+    expect(document.querySelector("[data-rating-ring]")).toBeTruthy();
+    expect(document.querySelector("[data-rating-trend]")).toBeNull();
+    expect(screen.getByLabelText("Forma reciente")).toBeTruthy();
+    expect(screen.getByText("Forma reciente")).toBeTruthy();
+    expect(document.querySelector("[data-recent-form-bar]")).toBeTruthy();
+    expect(
+      [...document.querySelectorAll("[data-form-segment]")].map((segment) =>
+        segment.getAttribute("data-form-segment"),
+      ),
+    ).toEqual(["loss", "win"]);
+    expect(
+      screen.getAllByRole("button", { name: "Derrota 0 – 3 contra Fera Barranco" }),
+    ).toHaveLength(2);
+    expect(
+      screen.getAllByRole("button", { name: "Victoria 3 – 1 contra Night Owls" }),
+    ).toHaveLength(2);
+    expect(
+      [...document.querySelectorAll("[data-last-game-outcome]")].map((mark) =>
+        mark.getAttribute("data-last-game-outcome"),
+      ),
+    ).toEqual(["loss", "win"]);
+    expect(document.querySelector("[data-last-game-outcome='loss']")?.textContent).toBe("D");
+    expect(document.querySelector("[data-last-game-outcome='win']")?.textContent).toBe("V");
 
     await user.click(screen.getByRole("tab", { name: "Todos los partidos" }));
 
@@ -234,6 +295,17 @@ describe("PlayerMatchesPage", () => {
     expect(drawItem.querySelector("[data-pitch-half='away']")?.className).toContain("bg-muted/50");
     expect(drawItem.querySelector("[data-pitch-fill='win']")).toBeNull();
     expect(drawItem.querySelector("[data-pitch-fill='loss']")).toBeNull();
+    expect(
+      [...document.querySelectorAll("[data-form-segment]")].map((segment) =>
+        segment.getAttribute("data-form-segment"),
+      ),
+    ).toEqual(["draw", "loss", "win"]);
+    expect(
+      [...document.querySelectorAll("[data-last-game-outcome]")].map((mark) =>
+        mark.getAttribute("data-last-game-outcome"),
+      ),
+    ).toEqual(["draw", "loss", "win"]);
+    expect(document.querySelector("[data-last-game-outcome='draw']")?.textContent).toBe("E");
   });
 
   it("offers Todos when Recientes is empty and older matches exist", async () => {
@@ -303,7 +375,7 @@ describe("PlayerMatchesPage", () => {
     expect(await screen.findByText("Hoy")).toBeTruthy();
     expect(
       [...document.querySelectorAll("time")].some((node) =>
-        /^Hoy, \d{2}:\d{2}$/.test(node.textContent ?? ""),
+        /^\d{2}:\d{2}$/.test(node.textContent ?? ""),
       ),
     ).toBe(true);
     expect(document.querySelector("[data-match-score]")?.className).toContain("bg-foreground");
@@ -348,6 +420,7 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-match-type]")).toBeNull();
     expect(screen.queryByText("Cuervos FC")).toBeNull();
     expect(screen.queryByText("Atlético Norte")).toBeNull();
+    expect(screen.queryByLabelText("Forma reciente")).toBeNull();
 
     await user.click(screen.getByRole("tab", { name: "Playoff" }));
     expect(await screen.findByText("Cuervos FC")).toBeTruthy();
@@ -472,6 +545,33 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-mvp]")?.className).toContain("text-warning");
   });
 
+  it("shows rating trend against the last five when enough matches exist", async () => {
+    getMyRecentMatches.mockResolvedValue(
+      recentMatchesReadyFixture([
+        recentProviderMatchFixture({
+          id: "baseline",
+          externalMatchId: "ea-baseline",
+          occurredAt: new Date(2026, 7, 1, 12, 0).toISOString(),
+          appearance: { rating: 7 },
+        }),
+        ...Array.from({ length: 5 }, (_, index) =>
+          recentProviderMatchFixture({
+            id: `recent-${index}`,
+            externalMatchId: `ea-recent-${index}`,
+            occurredAt: new Date(2026, 7, 8 + index, 12, 0).toISOString(),
+            appearance: { rating: 8 },
+          }),
+        ),
+      ]),
+    );
+
+    renderPage("es", { view: "all" });
+
+    expect(await screen.findByLabelText("Ha mejorado. +1 vs últimos 5")).toBeTruthy();
+    expect(document.querySelector("[data-rating-trend='up']")).toBeTruthy();
+    expect(screen.getByText("6", { selector: "[data-metric='record-matches']" })).toBeTruthy();
+  });
+
   it("shows No jugaste and hides personal stats when the player lined up for the other club", async () => {
     getMyRecentMatches.mockResolvedValue(
       recentMatchesReadyFixture([
@@ -496,11 +596,51 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
     expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
     expect(
-      screen.getByText("Sin datos", { selector: "[data-metric='record-assists']" }),
+      screen.getByText("Sin datos", { selector: "[data-metric='record-goals-plus-assists']" }),
+    ).toBeTruthy();
+    expect(document.querySelector("[data-contribution-composition]")).toBeNull();
+    expect(document.querySelector("[data-metric='record-contributed']")).toBeNull();
+    expect(document.querySelector("[data-metric='record-pace']")).toBeNull();
+    expect(document.querySelector("[data-metric='record-share']")).toBeNull();
+    expect(
+      document
+        .querySelector("[data-metric='record-goals-plus-assists']")
+        ?.getAttribute("data-size"),
+    ).toBe("empty");
+  });
+
+  it("keeps contribution stats when a played appearance has unknown G+A", async () => {
+    getMyRecentMatches.mockResolvedValue(
+      recentMatchesReadyFixture([
+        recentProviderMatchFixture({ appearance: { goals: null, assists: null, rating: null } }),
+      ]),
+    );
+
+    renderPage();
+
+    expect(await screen.findByRole("heading", { name: "Contribuciones" })).toBeTruthy();
+    expect(
+      screen.getByText("Sin datos", { selector: "[data-metric='record-contributed']" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Sin datos", { selector: "[data-metric='record-pace']" })).toBeTruthy();
+    expect(
+      screen.getByText("Sin datos", { selector: "[data-metric='record-share']" }),
     ).toBeTruthy();
     expect(
-      document.querySelector("[data-metric='record-assists']")?.getAttribute("data-size"),
-    ).toBe("empty");
+      screen.getByRole("button", {
+        name: "Partidos en los que marcaste o asististe. No hay partidos con datos de goles o asistencias.",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "Media de G+A por partido. No hay datos de goles o asistencias para calcularla.",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "Porcentaje de los goles del club que marcaste. No hay datos de goles para calcularlo.",
+      }),
+    ).toBeTruthy();
   });
 });
 

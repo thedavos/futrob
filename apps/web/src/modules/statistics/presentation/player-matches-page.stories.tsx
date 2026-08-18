@@ -176,6 +176,11 @@ export const Ready: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("heading", { name: "Mis partidos" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Rendimiento" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Record" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Contribuciones" })).toBeVisible();
+    await expect(canvas.getByLabelText("Forma reciente")).toBeVisible();
+    await expect(canvas.getByText("Forma reciente")).toBeVisible();
     await expect(canvas.getByText("Hoy")).toBeVisible();
     await expect(canvas.getByText("Ayer")).toBeVisible();
     await expect(canvas.getByText("Fera Enjaulada")).toBeVisible();
@@ -229,6 +234,7 @@ export const League: Story = {
     );
     await expect(canvas.queryByText("Cuervos FC")).toBeNull();
     await expect(canvas.queryByText("Atlético Norte")).toBeNull();
+    await expect(canvas.queryByLabelText("Forma reciente")).toBeNull();
     await expect(canvasElement.querySelector("[data-match-type]")).toBeNull();
   },
 };
