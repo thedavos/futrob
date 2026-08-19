@@ -4,11 +4,9 @@ import {
   appearanceContribution,
   calendarDayKind,
   filterMatchesByMode,
-  filterRecentMatches,
   formTimeline,
   groupMatchesByDay,
   isDnfMatch,
-  isWithinRecentCalendarDays,
   lastFormGames,
   listedClubId,
   matchesForView,
@@ -19,10 +17,13 @@ import {
   ratingTrendVsLast,
   scoringFeat,
   scoringFeatPlayerName,
+  showsContributionStats,
   showsMatchTypeBadge,
+  showsPerformanceStats,
   showsRecentForm,
   showsRedCards,
   showsYellowCards,
+  sortMatchesByOccurredAt,
   summarizeMatchRecord,
 } from "./player-match-view.ts";
 
@@ -179,6 +180,33 @@ describe("summarizeMatchRecord", () => {
       recentProviderMatchFixture({ appearance: { rating: null } }),
     ]);
     expect(summary.averageRating).toBeNull();
+    expect(showsPerformanceStats(summary)).toBe(false);
+  });
+
+  it("shows contribution stats when G+A is known, including zero", () => {
+    expect(showsContributionStats(summarizeMatchRecord([recentProviderMatchFixture()]))).toBe(true);
+    expect(
+      showsContributionStats(
+        summarizeMatchRecord([
+          recentProviderMatchFixture({ appearance: { goals: 0, assists: 0 } }),
+        ]),
+      ),
+    ).toBe(true);
+  });
+
+  it("hides contribution stats when G+A is missing", () => {
+    expect(
+      showsContributionStats(
+        summarizeMatchRecord([
+          recentProviderMatchFixture({ appearance: { goals: null, assists: null } }),
+        ]),
+      ),
+    ).toBe(false);
+    expect(
+      showsContributionStats(
+        summarizeMatchRecord([recentProviderMatchFixture({ kind: "not_played" })]),
+      ),
+    ).toBe(false);
   });
 
   it("counts W/D/L for not_played rows and ignores opponent personal stats", () => {
@@ -369,25 +397,6 @@ describe("ratingTrendVsLast", () => {
   });
 });
 
-describe("recent calendar window", () => {
-  it("includes today and the sixth previous calendar day", () => {
-    expect(isWithinRecentCalendarDays(new Date(2026, 7, 14, 23, 59), now)).toBe(true);
-    expect(isWithinRecentCalendarDays(new Date(2026, 7, 8, 0, 0), now)).toBe(true);
-    expect(isWithinRecentCalendarDays(new Date(2026, 7, 7, 23, 59), now)).toBe(false);
-  });
-
-  it("filters the 7-day subset", () => {
-    const recent = recentProviderMatchFixture({
-      occurredAt: new Date(2026, 7, 13, 18, 0).toISOString(),
-    });
-    const older = recentProviderMatchFixture({
-      id: "old",
-      occurredAt: new Date(2026, 7, 1, 18, 0).toISOString(),
-    });
-    expect(filterRecentMatches([recent, older], now)).toEqual([recent]);
-  });
-});
-
 describe("groupMatchesByDay", () => {
   it("groups newest-first days and keeps input order inside a day", () => {
     const morning = recentProviderMatchFixture({
@@ -440,17 +449,36 @@ describe("provider match types", () => {
     });
     const matches = [league, olderFriendly];
 
-    expect(matchesForView(matches, "recent", now)).toEqual([league]);
-    expect(matchesForView(matches, "all", now)).toEqual(matches);
-    expect(matchesForView(matches, "league", now)).toEqual([league]);
-    expect(matchesForView(matches, "friendly", now)).toEqual([olderFriendly]);
-    expect(matchesForView(matches, "playoff", now)).toEqual([]);
+    expect(matchesForView(matches, "all")).toEqual(matches);
+    expect(matchesForView(matches, "league")).toEqual([league]);
+    expect(matchesForView(matches, "friendly")).toEqual([olderFriendly]);
+    expect(matchesForView(matches, "playoff")).toEqual([]);
+  });
+
+  it("orders matches by occurredAt", () => {
+    const league = recentProviderMatchFixture({
+      id: "league",
+      occurredAt: new Date(2026, 7, 14, 18, 0).toISOString(),
+    });
+    const olderFriendly = recentProviderMatchFixture({
+      id: "friendly",
+      occurredAt: new Date(2026, 7, 1, 18, 0).toISOString(),
+    });
+    const matches = [league, olderFriendly];
+
+    expect(sortMatchesByOccurredAt(matches, "newest").map((item) => item.match.id)).toEqual([
+      "league",
+      "friendly",
+    ]);
+    expect(sortMatchesByOccurredAt(matches, "oldest").map((item) => item.match.id)).toEqual([
+      "friendly",
+      "league",
+    ]);
   });
 });
 
 describe("showsMatchTypeBadge", () => {
-  it("is only for Recientes and Todos", () => {
-    expect(showsMatchTypeBadge("recent")).toBe(true);
+  it("is only for Todos", () => {
     expect(showsMatchTypeBadge("all")).toBe(true);
     expect(showsMatchTypeBadge("league")).toBe(false);
     expect(showsMatchTypeBadge("playoff")).toBe(false);

@@ -4,41 +4,44 @@ import {
   startOfLocalDay,
   type CalendarDayKind,
   type MatchOutcome,
+  type MatchSortOrder,
   type PlayerMatchesView,
   type ProviderMatchMode,
   type ScoringFeat,
 } from "./player-match-view.ts";
 
-export type ListedMatchesView = Exclude<PlayerMatchesView, "recent">;
-
-export const VIEW_TAB_KEYS = {
-  recent: "player.matches.view.recent",
+export const VIEW_FILTER_KEYS = {
+  all: "player.matches.view.all",
   league: "player.matches.view.league",
   playoff: "player.matches.view.playoff",
   friendly: "player.matches.view.friendly",
-  all: "player.matches.view.all",
 } as const satisfies Record<PlayerMatchesView, ParameterlessMessageKey>;
+
+export const MATCH_SORT_KEYS = {
+  newest: "player.matches.sort.newest",
+  oldest: "player.matches.sort.oldest",
+} as const satisfies Record<MatchSortOrder, ParameterlessMessageKey>;
 
 export const HISTORY_LABEL_KEYS = {
   all: "player.matches.all.historyLabel",
   league: "player.matches.league.historyLabel",
   playoff: "player.matches.playoff.historyLabel",
   friendly: "player.matches.friendly.historyLabel",
-} as const satisfies Record<ListedMatchesView, ParameterlessMessageKey>;
+} as const satisfies Record<PlayerMatchesView, ParameterlessMessageKey>;
 
 export const EMPTY_TITLE_KEYS = {
   all: "player.matches.all.emptyTitle",
   league: "player.matches.league.emptyTitle",
   playoff: "player.matches.playoff.emptyTitle",
   friendly: "player.matches.friendly.emptyTitle",
-} as const satisfies Record<ListedMatchesView, ParameterlessMessageKey>;
+} as const satisfies Record<PlayerMatchesView, ParameterlessMessageKey>;
 
 export const EMPTY_DESCRIPTION_KEYS = {
   all: "player.matches.all.emptyDescription",
   league: "player.matches.league.emptyDescription",
   playoff: "player.matches.playoff.emptyDescription",
   friendly: "player.matches.friendly.emptyDescription",
-} as const satisfies Record<ListedMatchesView, ParameterlessMessageKey>;
+} as const satisfies Record<PlayerMatchesView, ParameterlessMessageKey>;
 
 export const MATCH_TYPE_KEYS = {
   leagueMatch: "player.matches.type.league",

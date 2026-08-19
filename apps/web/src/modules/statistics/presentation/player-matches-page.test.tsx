@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
+import type { ReactNode } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { GetMyRecentMatchesResponse } from "@futrob/api-contracts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
@@ -12,6 +13,7 @@ import {
   recentProviderMatchFixture,
 } from "./player-matches-page.fixtures.ts";
 import { PlayerMatchesPage, type PlayerMatchesView } from "./player-matches-page.tsx";
+import type { MatchSortOrder } from "./player-match-view.ts";
 
 const getMyRecentMatches =
   vi.fn<(query?: { readonly externalClubId?: string }) => Promise<GetMyRecentMatchesResponse>>();
@@ -23,17 +25,22 @@ vi.mock("@/modules/statistics/presentation/statistics-browser-client.ts", () => 
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children, ...props }: { to: string; children?: unknown }) => (
+  Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
     <a href={to} {...props}>
-      {children as never}
+      {children}
     </a>
   ),
 }));
 
 describe("PlayerMatchesPage", () => {
+  beforeEach(() => {
+    vi.stubGlobal("PointerEvent", MouseEvent);
+  });
+
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("shows a loading state for the summary and the list", () => {
@@ -106,10 +113,8 @@ describe("PlayerMatchesPage", () => {
 
     renderPage();
 
-    expect(await screen.findByText("No hay partidos recientes")).toBeTruthy();
-    expect(
-      screen.getByText("Todavía no hay apariciones recientes en el club seleccionado."),
-    ).toBeTruthy();
+    expect(await screen.findByText("No hay partidos")).toBeTruthy();
+    expect(screen.getByText("Todavía no hay apariciones en el club seleccionado.")).toBeTruthy();
     expect(screen.queryByText("Vincula tus datos de juego")).toBeNull();
     expect(screen.queryByRole("button", { name: "Revisar datos de juego" })).toBeNull();
     expect(screen.queryByText("Ganados")).toBeNull();
@@ -120,7 +125,7 @@ describe("PlayerMatchesPage", () => {
 
     renderPage("es", { externalClubId: "10754" });
 
-    expect(await screen.findByText("No hay partidos recientes")).toBeTruthy();
+    expect(await screen.findByText("No hay partidos")).toBeTruthy();
     expect(getMyRecentMatches).toHaveBeenCalledWith({ externalClubId: "10754" });
   });
 
@@ -190,7 +195,7 @@ describe("PlayerMatchesPage", () => {
       "items-stretch",
     );
     expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).toContain(
-      "md:grid-cols-3",
+      "@5xl:grid-cols-3",
     );
     expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
     expect(
@@ -231,28 +236,30 @@ describe("PlayerMatchesPage", () => {
     expect(screen.queryByText("Oficial")).toBeNull();
   });
 
-  it("groups matches by day and keeps KPIs on the active tab", async () => {
+  it("groups matches by day and keeps KPIs on the active filter", async () => {
     getMyRecentMatches.mockResolvedValue(recentMatchesReadyFixture());
 
-    const user = userEvent.setup();
     renderPage();
 
     expect(await screen.findByText("Hoy")).toBeTruthy();
     expect(screen.getByText("Ayer")).toBeTruthy();
-    expect(screen.queryByText("Atlético Norte")).toBeNull();
+    expect(screen.getByText("Atlético Norte")).toBeTruthy();
+    expect(screen.getByText("1 de agosto del 2026")).toBeTruthy();
+    expect(screen.getByText("1 de agosto del 2026").closest("time")?.dateTime).toBe("2026-08-01");
     expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
     expect(screen.getByText("1", { selector: "[data-metric='record-losses']" })).toBeTruthy();
-    expect(screen.getByText("0", { selector: "[data-metric='record-draws']" })).toBeTruthy();
+    expect(screen.getByText("1", { selector: "[data-metric='record-draws']" })).toBeTruthy();
     expect(
       screen.getByText("4", { selector: "[data-metric='record-goals-plus-assists']" }),
     ).toBeTruthy();
     expect(screen.getByText("3 goles · 1 asistencia")).toBeTruthy();
     expect(
-      screen.getByText("2/2", { selector: "[data-metric='record-contributed']" }),
+      screen.getByText("2/3", { selector: "[data-metric='record-contributed']" }),
     ).toBeTruthy();
-    expect(screen.getByText("2", { selector: "[data-metric='record-pace']" })).toBeTruthy();
-    expect(screen.getByText("100%", { selector: "[data-metric='record-share']" })).toBeTruthy();
-    expect(screen.getByText("2", { selector: "[data-metric='record-matches']" })).toBeTruthy();
+    expect(screen.getByText("1,33", { selector: "[data-metric='record-pace']" })).toBeTruthy();
+    expect(screen.getByText("75%", { selector: "[data-metric='record-share']" })).toBeTruthy();
+    expect(screen.getByText("3", { selector: "[data-metric='record-matches']" })).toBeTruthy();
+    expect(screen.getByText("3 partidos")).toBeTruthy();
     expect(document.querySelector("[data-rating-ring]")).toBeTruthy();
     expect(document.querySelector("[data-rating-trend]")).toBeNull();
     expect(screen.getByLabelText("Forma reciente")).toBeTruthy();
@@ -262,31 +269,16 @@ describe("PlayerMatchesPage", () => {
       [...document.querySelectorAll("[data-form-segment]")].map((segment) =>
         segment.getAttribute("data-form-segment"),
       ),
-    ).toEqual(["loss", "win"]);
-    expect(
-      screen.getAllByRole("button", { name: "Derrota 0 – 3 contra Fera Barranco" }),
-    ).toHaveLength(2);
-    expect(
-      screen.getAllByRole("button", { name: "Victoria 3 – 1 contra Night Owls" }),
-    ).toHaveLength(2);
+    ).toEqual(["draw", "loss", "win"]);
     expect(
       [...document.querySelectorAll("[data-last-game-outcome]")].map((mark) =>
         mark.getAttribute("data-last-game-outcome"),
       ),
-    ).toEqual(["loss", "win"]);
-    expect(document.querySelector("[data-last-game-outcome='loss']")?.textContent).toBe("D");
-    expect(document.querySelector("[data-last-game-outcome='win']")?.textContent).toBe("V");
-
-    await user.click(screen.getByRole("tab", { name: "Todos los partidos" }));
-
-    expect(await screen.findByText("Atlético Norte")).toBeTruthy();
-    expect(screen.getByText("1 de agosto del 2026")).toBeTruthy();
-    expect(screen.getByText("1 de agosto del 2026").closest("time")?.dateTime).toBe("2026-08-01");
+    ).toEqual(["draw", "loss", "win"]);
     expect(document.querySelector("[data-match-type='friendlyMatch']")?.textContent).toBe(
       "Amistoso",
     );
     expect(document.querySelector("[data-match-outcome='draw']")).toBeTruthy();
-    expect(screen.getByText("1", { selector: "[data-metric='record-draws']" })).toBeTruthy();
     const drawItem = screen.getByRole("listitem", { name: /Atlético Norte 1 – 1 Fera Enjaulada/ });
     expect(drawItem.querySelector("[data-pitch-half='home']")?.className).toContain("bg-muted");
     expect(drawItem.querySelector("[data-pitch-half='home']")?.className).not.toContain(
@@ -295,20 +287,16 @@ describe("PlayerMatchesPage", () => {
     expect(drawItem.querySelector("[data-pitch-half='away']")?.className).toContain("bg-muted/50");
     expect(drawItem.querySelector("[data-pitch-fill='win']")).toBeNull();
     expect(drawItem.querySelector("[data-pitch-fill='loss']")).toBeNull();
-    expect(
-      [...document.querySelectorAll("[data-form-segment]")].map((segment) =>
-        segment.getAttribute("data-form-segment"),
-      ),
-    ).toEqual(["draw", "loss", "win"]);
-    expect(
-      [...document.querySelectorAll("[data-last-game-outcome]")].map((mark) =>
-        mark.getAttribute("data-last-game-outcome"),
-      ),
-    ).toEqual(["draw", "loss", "win"]);
+    expect(document.querySelector("[data-form-segment='draw']")?.className).toContain(
+      "bg-muted-foreground",
+    );
+    expect(document.querySelector("[data-last-game-outcome='draw']")?.className).toContain(
+      "bg-muted-foreground",
+    );
     expect(document.querySelector("[data-last-game-outcome='draw']")?.textContent).toBe("E");
   });
 
-  it("offers Todos when Recientes is empty and older matches exist", async () => {
+  it("shows older matches in Todos without a 7-day empty wall", async () => {
     getMyRecentMatches.mockResolvedValue(
       recentMatchesReadyFixture([
         recentProviderMatchFixture({
@@ -319,20 +307,12 @@ describe("PlayerMatchesPage", () => {
       ]),
     );
 
-    const user = userEvent.setup();
     renderPage();
-
-    expect(await screen.findByText("No hay partidos en los últimos 7 días")).toBeTruthy();
-    expect(screen.queryByText("Atlético Norte")).toBeNull();
-    expect(screen.queryByText("Ganados")).toBeNull();
-
-    await user.click(screen.getByRole("button", { name: "Ver todos los partidos" }));
 
     expect(await screen.findByText("Atlético Norte")).toBeTruthy();
     expect(screen.getByText("1 de agosto del 2026")).toBeTruthy();
-    expect(
-      screen.getByRole("tab", { name: "Todos los partidos" }).getAttribute("aria-selected"),
-    ).toBe("true");
+    expect(screen.getByRole("radio", { name: "Todos" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByText("1 partido")).toBeTruthy();
   });
 
   it("formats older day headings in English", async () => {
@@ -357,13 +337,66 @@ describe("PlayerMatchesPage", () => {
     const onViewChange = vi.fn<(view: PlayerMatchesView) => void>();
 
     const user = userEvent.setup();
-    renderPage("es", { view: "recent", onViewChange });
+    renderPage("es", { view: "all", onViewChange });
 
     await screen.findByText("Hoy");
-    const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
-    expect(tabs).toEqual(["Recientes", "Liga", "Playoff", "Amistosos", "Todos los partidos"]);
-    await user.click(screen.getByRole("tab", { name: "Todos los partidos" }));
-    expect(onViewChange).toHaveBeenCalledWith("all");
+    const filters = screen.getAllByRole("radio").map((filter) => filter.textContent);
+    expect(filters).toEqual(["Todos", "Liga", "Playoff", "Amistosos"]);
+    await user.click(screen.getByRole("radio", { name: "Liga" }));
+    expect(onViewChange).toHaveBeenCalledWith("league");
+  });
+
+  it("notifies the route when the sort order changes", async () => {
+    getMyRecentMatches.mockResolvedValue(recentMatchesReadyFixture());
+    const onSortChange = vi.fn<(order: MatchSortOrder) => void>();
+
+    const user = userEvent.setup();
+    renderPage("es", { view: "all", onSortChange });
+
+    await screen.findByText("Hoy");
+    await user.click(screen.getByLabelText("Orden de partidos"));
+    await user.click(await screen.findByRole("option", { name: "Más antiguos" }));
+    expect(onSortChange).toHaveBeenCalledWith("oldest");
+  });
+
+  it("moves the match type filter with arrow keys", async () => {
+    getMyRecentMatches.mockResolvedValue(recentMatchesReadyFixture());
+    const onViewChange = vi.fn<(view: PlayerMatchesView) => void>();
+
+    const user = userEvent.setup();
+    renderPage("es", { view: "all", onViewChange });
+
+    await screen.findByText("Hoy");
+    screen.getByRole("radio", { name: "Todos" }).focus();
+    await user.keyboard("{ArrowRight}");
+    expect(onViewChange).toHaveBeenCalledWith("league");
+    expect(document.activeElement).toBe(screen.getByRole("radio", { name: "Liga" }));
+  });
+
+  it("sorts the day list from oldest to newest", async () => {
+    getMyRecentMatches.mockResolvedValue(recentMatchesReadyFixture());
+
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(await screen.findByText("Hoy")).toBeTruthy();
+    const region = screen.getByRole("region", { name: "Todos los partidos" });
+    expect([...region.querySelectorAll("h2")].map((heading) => heading.textContent)).toEqual([
+      "Hoy",
+      "Ayer",
+      "1 de agosto del 2026",
+    ]);
+
+    expect(screen.getByLabelText("Orden de partidos").textContent).toContain("Más recientes");
+    expect(screen.queryByText("newest")).toBeNull();
+    await user.click(screen.getByLabelText("Orden de partidos"));
+    await user.click(await screen.findByRole("option", { name: "Más antiguos" }));
+
+    expect([...region.querySelectorAll("h2")].map((heading) => heading.textContent)).toEqual([
+      "1 de agosto del 2026",
+      "Ayer",
+      "Hoy",
+    ]);
   });
 
   it("filters Liga, Playoff and Amistosos from the provider match type", async () => {
@@ -411,18 +444,18 @@ describe("PlayerMatchesPage", () => {
     expect(screen.getByText("1", { selector: "[data-metric='recent-yellow']" })).toBeTruthy();
     expect(screen.getByText("2", { selector: "[data-metric='recent-yellow']" })).toBeTruthy();
     expect(screen.getByText("1", { selector: "[data-metric='recent-red']" })).toBeTruthy();
-    expect(screen.getByRole("tab", { name: "Liga" })).toBeTruthy();
-    expect(screen.getByRole("tab", { name: "Playoff" })).toBeTruthy();
-    expect(screen.getByRole("tab", { name: "Amistosos" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Liga" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Playoff" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Amistosos" })).toBeTruthy();
 
-    await user.click(screen.getByRole("tab", { name: "Liga" }));
+    await user.click(screen.getByRole("radio", { name: "Liga" }));
     expect(await screen.findByText("Fera Enjaulada")).toBeTruthy();
     expect(document.querySelector("[data-match-type]")).toBeNull();
     expect(screen.queryByText("Cuervos FC")).toBeNull();
     expect(screen.queryByText("Atlético Norte")).toBeNull();
     expect(screen.queryByLabelText("Forma reciente")).toBeNull();
 
-    await user.click(screen.getByRole("tab", { name: "Playoff" }));
+    await user.click(screen.getByRole("radio", { name: "Playoff" }));
     expect(await screen.findByText("Cuervos FC")).toBeTruthy();
     expect(
       screen
@@ -431,10 +464,12 @@ describe("PlayerMatchesPage", () => {
     ).toContain("bg-transparent");
     expect(screen.queryByText("Atlético Norte")).toBeNull();
 
-    await user.click(screen.getByRole("tab", { name: "Amistosos" }));
+    await user.click(screen.getByRole("radio", { name: "Amistosos" }));
     expect(await screen.findByText("Atlético Norte")).toBeTruthy();
     expect(document.querySelector("[data-match-outcome='draw']")).toBeTruthy();
-    expect(document.querySelector("[data-match-outcome='draw']")?.className).toContain("amber-500");
+    expect(document.querySelector("[data-match-outcome='draw']")?.className).toContain(
+      "text-muted-foreground",
+    );
     expect(document.querySelector("[data-match-outcome='draw']")?.className).not.toContain(
       "text-danger",
     );
@@ -595,21 +630,17 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-metric='recent-goals']")).toBeNull();
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
     expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
-    expect(
-      screen.getByText("Sin datos", { selector: "[data-metric='record-goals-plus-assists']" }),
-    ).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Rendimiento" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Contribuciones" })).toBeNull();
+    expect(document.querySelector("[data-metric='record-goals-plus-assists']")).toBeNull();
     expect(document.querySelector("[data-contribution-composition]")).toBeNull();
     expect(document.querySelector("[data-metric='record-contributed']")).toBeNull();
     expect(document.querySelector("[data-metric='record-pace']")).toBeNull();
     expect(document.querySelector("[data-metric='record-share']")).toBeNull();
-    expect(
-      document
-        .querySelector("[data-metric='record-goals-plus-assists']")
-        ?.getAttribute("data-size"),
-    ).toBe("empty");
+    expect(document.querySelector("[data-rating-ring]")).toBeNull();
   });
 
-  it("keeps contribution stats when a played appearance has unknown G+A", async () => {
+  it("hides contribution and performance cards when G+A and rating are missing", async () => {
     getMyRecentMatches.mockResolvedValue(
       recentMatchesReadyFixture([
         recentProviderMatchFixture({ appearance: { goals: null, assists: null, rating: null } }),
@@ -618,29 +649,23 @@ describe("PlayerMatchesPage", () => {
 
     renderPage();
 
-    expect(await screen.findByRole("heading", { name: "Contribuciones" })).toBeTruthy();
-    expect(
-      screen.getByText("Sin datos", { selector: "[data-metric='record-contributed']" }),
-    ).toBeTruthy();
-    expect(screen.getByText("Sin datos", { selector: "[data-metric='record-pace']" })).toBeTruthy();
-    expect(
-      screen.getByText("Sin datos", { selector: "[data-metric='record-share']" }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("button", {
-        name: "Partidos en los que marcaste o asististe. No hay partidos con datos de goles o asistencias.",
-      }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("button", {
-        name: "Media de G+A por partido. No hay datos de goles o asistencias para calcularla.",
-      }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("button", {
-        name: "Porcentaje de los goles del club que marcaste. No hay datos de goles para calcularlo.",
-      }),
-    ).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Record" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Contribuciones" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Rendimiento" })).toBeNull();
+    expect(document.querySelector("[data-metric='record-goals-plus-assists']")).toBeNull();
+    expect(document.querySelector("[data-metric='record-contributed']")).toBeNull();
+    expect(document.querySelector("[data-metric='record-pace']")).toBeNull();
+    expect(document.querySelector("[data-metric='record-share']")).toBeNull();
+    expect(document.querySelector("[data-rating-ring]")).toBeNull();
+    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).toContain(
+      "@5xl:grid-cols-[minmax(0,28rem)]",
+    );
+    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).not.toContain(
+      "repeat(3",
+    );
+    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).not.toContain(
+      "repeat(2",
+    );
   });
 });
 
@@ -650,6 +675,7 @@ function renderPage(
     readonly externalClubId?: string;
     readonly view?: PlayerMatchesView;
     readonly onViewChange?: (view: PlayerMatchesView) => void;
+    readonly onSortChange?: (order: MatchSortOrder) => void;
   } = {},
 ) {
   render(
@@ -658,6 +684,7 @@ function renderPage(
         <PlayerMatchesPage
           externalClubId={options.externalClubId ?? "10754"}
           now={PLAYER_MATCHES_PAGE_NOW}
+          onSortChange={options.onSortChange}
           onViewChange={options.onViewChange}
           view={options.view}
         />

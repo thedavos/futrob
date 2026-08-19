@@ -1,18 +1,23 @@
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 
-export const RECENT_CALENDAR_DAYS = 7;
-
-export const PLAYER_MATCHES_VIEWS = ["recent", "league", "playoff", "friendly", "all"] as const;
+export const PLAYER_MATCHES_VIEWS = ["all", "league", "playoff", "friendly"] as const;
 export type PlayerMatchesView = (typeof PLAYER_MATCHES_VIEWS)[number];
+
+export const MATCH_SORT_ORDERS = ["newest", "oldest"] as const;
+export type MatchSortOrder = (typeof MATCH_SORT_ORDERS)[number];
 
 export type ProviderMatchMode = "leagueMatch" | "playoffMatch" | "friendlyMatch";
 
-export function isPlayerMatchesView(value: unknown): value is PlayerMatchesView {
-  return PLAYER_MATCHES_VIEWS.some((view) => view === value);
+export function isPlayerMatchesView(value: string | null): value is PlayerMatchesView {
+  return value !== null && PLAYER_MATCHES_VIEWS.some((view) => view === value);
+}
+
+export function isMatchSortOrder(value: string | null): value is MatchSortOrder {
+  return value !== null && MATCH_SORT_ORDERS.some((order) => order === value);
 }
 
 export function showsMatchTypeBadge(view: PlayerMatchesView): boolean {
-  return view === "recent" || view === "all";
+  return view === "all";
 }
 
 export type ScoringFeat = "hatTrick" | "poker" | "repoker";
@@ -160,16 +165,6 @@ export function calendarDayKind(occurredAt: Date, now: Date): CalendarDayKind {
   return "other";
 }
 
-export function isWithinRecentCalendarDays(
-  occurredAt: Date,
-  now: Date,
-  days = RECENT_CALENDAR_DAYS,
-): boolean {
-  const start = startOfLocalDay(now);
-  start.setDate(start.getDate() - (days - 1));
-  return occurredAt.getTime() >= start.getTime();
-}
-
 export function matchOutcome(item: PlayerRecentProviderMatchDto): MatchOutcome {
   const side = playerMatchSide(item);
   if (side === null) return "unknown";
@@ -221,15 +216,18 @@ export function showsRecentForm(matches: readonly PlayerRecentProviderMatchDto[]
   return matches.length >= RECENT_FORM_MIN_MATCHES;
 }
 
+export function showsPerformanceStats(record: MatchRecordSummary): boolean {
+  return record.averageRating !== null;
+}
+
+export function showsContributionStats(record: MatchRecordSummary): boolean {
+  return record.goalsPlusAssists !== null;
+}
+
 export function formTimeline(
   matches: readonly PlayerRecentProviderMatchDto[],
 ): readonly PlayerRecentProviderMatchDto[] {
-  return [...matches].sort((left, right) => {
-    const delta =
-      new Date(left.match.occurredAt).getTime() - new Date(right.match.occurredAt).getTime();
-    if (delta !== 0) return delta;
-    return left.match.id.localeCompare(right.match.id);
-  });
+  return sortMatchesByOccurredAt(matches, "oldest");
 }
 
 export function lastFormGames(
@@ -398,13 +396,6 @@ function teamGoalShareFromSample({
   return { kind: "ready", ratio: playerGoals / clubGoals };
 }
 
-export function filterRecentMatches(
-  matches: readonly PlayerRecentProviderMatchDto[],
-  now: Date,
-): readonly PlayerRecentProviderMatchDto[] {
-  return matches.filter((item) => isWithinRecentCalendarDays(new Date(item.match.occurredAt), now));
-}
-
 export function providerMatchMode(item: PlayerRecentProviderMatchDto): ProviderMatchMode | null {
   switch (item.match.game.mode) {
     case "leagueMatch":
@@ -426,11 +417,8 @@ export function filterMatchesByMode(
 export function matchesForView(
   matches: readonly PlayerRecentProviderMatchDto[],
   view: PlayerMatchesView,
-  now: Date,
 ): readonly PlayerRecentProviderMatchDto[] {
   switch (view) {
-    case "recent":
-      return filterRecentMatches(matches, now);
     case "all":
       return matches;
     case "league":
@@ -444,6 +432,18 @@ export function matchesForView(
       return _exhaustive;
     }
   }
+}
+
+export function sortMatchesByOccurredAt(
+  matches: readonly PlayerRecentProviderMatchDto[],
+  order: MatchSortOrder,
+): readonly PlayerRecentProviderMatchDto[] {
+  return [...matches].sort((left, right) => {
+    const delta =
+      new Date(left.match.occurredAt).getTime() - new Date(right.match.occurredAt).getTime();
+    if (delta !== 0) return order === "oldest" ? delta : -delta;
+    return left.match.id.localeCompare(right.match.id);
+  });
 }
 
 export function groupMatchesByDay(

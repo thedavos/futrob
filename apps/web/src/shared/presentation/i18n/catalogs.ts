@@ -240,12 +240,15 @@ const es = {
   "player.matches.loadMore": "Cargar más partidos",
   "player.matches.loadMore.loading": "Cargando más partidos…",
   "player.matches.open": "Abrir Mis partidos",
-  "player.matches.view.label": "Vista de partidos",
-  "player.matches.view.recent": "Recientes",
-  "player.matches.view.all": "Todos los partidos",
+  "player.matches.view.label": "Tipo de partido",
+  "player.matches.view.all": "Todos",
   "player.matches.view.league": "Liga",
   "player.matches.view.playoff": "Playoff",
   "player.matches.view.friendly": "Amistosos",
+  "player.matches.sort.label": "Orden de partidos",
+  "player.matches.sort.newest": "Más recientes",
+  "player.matches.sort.oldest": "Más antiguos",
+  "player.matches.results.count": ({ count }) => (count === 1 ? "1 partido" : `${count} partidos`),
   "player.matches.record.wins": "Ganados",
   "player.matches.record.draws": "Empates",
   "player.matches.record.losses": "Derrotas",
@@ -329,10 +332,6 @@ const es = {
   "player.matches.recent.emptyTitle": "No hay partidos recientes",
   "player.matches.recent.emptyDescription":
     "Todavía no hay apariciones recientes en el club seleccionado.",
-  "player.matches.recent.emptyOlder.title": "No hay partidos en los últimos 7 días",
-  "player.matches.recent.emptyOlder.description":
-    "Tienes partidos más antiguos. Ábrelos en Todos los partidos.",
-  "player.matches.recent.emptyOlder.action": "Ver todos los partidos",
   "player.matches.all.historyLabel": "Todos los partidos",
   "player.matches.all.emptyTitle": "No hay partidos",
   "player.matches.all.emptyDescription": "Todavía no hay apariciones en el club seleccionado.",
@@ -427,6 +426,7 @@ export interface MessageParamsByKey {
   readonly "onboarding.review.edit": { readonly label: string };
   readonly "onboarding.review.retry": { readonly seconds: number };
   readonly "player.statistics.matchesCount": { readonly count: number };
+  readonly "player.matches.results.count": { readonly count: number };
   readonly "player.statistics.revision": { readonly revision: number };
   readonly "player.matches.mvp.named": { readonly name: string };
   readonly "player.matches.feat.scorer": { readonly name: string };
@@ -700,12 +700,15 @@ const en: Catalog = {
   "player.matches.loadMore": "Load more matches",
   "player.matches.loadMore.loading": "Loading more matches…",
   "player.matches.open": "Open My matches",
-  "player.matches.view.label": "Match view",
-  "player.matches.view.recent": "Recent",
-  "player.matches.view.all": "All matches",
+  "player.matches.view.label": "Match type",
+  "player.matches.view.all": "All",
   "player.matches.view.league": "League",
   "player.matches.view.playoff": "Playoff",
   "player.matches.view.friendly": "Friendlies",
+  "player.matches.sort.label": "Match order",
+  "player.matches.sort.newest": "Newest",
+  "player.matches.sort.oldest": "Oldest",
+  "player.matches.results.count": ({ count }) => (count === 1 ? "1 match" : `${count} matches`),
   "player.matches.record.wins": "Wins",
   "player.matches.record.draws": "Draws",
   "player.matches.record.losses": "Losses",
@@ -788,10 +791,6 @@ const en: Catalog = {
   "player.matches.recent.emptyTitle": "No recent matches",
   "player.matches.recent.emptyDescription":
     "There are no recent appearances in the selected club yet.",
-  "player.matches.recent.emptyOlder.title": "No matches in the last 7 days",
-  "player.matches.recent.emptyOlder.description":
-    "You have older matches. Open them in All matches.",
-  "player.matches.recent.emptyOlder.action": "View all matches",
   "player.matches.all.historyLabel": "All matches",
   "player.matches.all.emptyTitle": "No matches",
   "player.matches.all.emptyDescription": "There are no appearances in the selected club yet.",

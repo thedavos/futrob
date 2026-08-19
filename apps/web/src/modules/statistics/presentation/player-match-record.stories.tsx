@@ -4,13 +4,9 @@ import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import { TooltipProvider } from "@futrob/ui";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { recentProviderMatchFixture } from "./player-matches-page.fixtures.ts";
-import {
-  AverageRatingRing,
-  PerformancePanel,
-  RecentForm,
-  RecordLoading,
-  ViewRecord,
-} from "./player-match-record.tsx";
+import { RecentForm } from "./player-match-form.tsx";
+import { AverageRatingRing, PerformancePanel } from "./player-match-performance.tsx";
+import { RecordLoading, ViewRecord } from "./player-match-record.tsx";
 import { summarizeMatchRecord } from "./player-match-view.ts";
 
 const numberFormat = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 });

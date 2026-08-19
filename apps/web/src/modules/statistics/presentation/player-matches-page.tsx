@@ -10,6 +10,10 @@ import {
   Alert,
   AlertDescription,
   Button,
+  Card,
+  CardContent,
+  ChoiceGroup,
+  ChoiceGroupItem,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
@@ -18,12 +22,13 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Separator,
   Skeleton,
-  Tabs,
-  TabsContent,
-  TabsIndicator,
-  TabsList,
-  TabsTrigger,
   TooltipProvider,
 } from "@futrob/ui";
 import { GameControllerIcon, SoccerBallIcon } from "@phosphor-icons/react";
@@ -36,20 +41,24 @@ import {
   EMPTY_DESCRIPTION_KEYS,
   EMPTY_TITLE_KEYS,
   HISTORY_LABEL_KEYS,
-  VIEW_TAB_KEYS,
+  MATCH_SORT_KEYS,
+  VIEW_FILTER_KEYS,
 } from "./player-match-copy.ts";
 import { RecordLoading, ViewRecord } from "./player-match-record.tsx";
 import { ProviderMatchRow } from "./player-match-row.tsx";
 import {
   calendarDayKind,
-  filterRecentMatches,
   groupMatchesByDay,
+  isMatchSortOrder,
   isPlayerMatchesView,
+  MATCH_SORT_ORDERS,
   matchesForView,
   PLAYER_MATCHES_VIEWS,
   showsMatchTypeBadge,
+  sortMatchesByOccurredAt,
   summarizeMatchRecord,
   type MatchDayGroup,
+  type MatchSortOrder,
   type PlayerMatchesView,
 } from "./player-match-view.ts";
 import { useMyRecentMatchesQuery } from "./statistics-queries.ts";
@@ -61,12 +70,16 @@ type SectionStatus = "pending" | "error" | "ready";
 export function PlayerMatchesPage({
   externalClubId: clubIdProp,
   now,
+  onSortChange,
   onViewChange,
+  sortOrder,
   view,
 }: {
   readonly externalClubId?: string;
   readonly now?: Date;
+  readonly onSortChange?: (order: MatchSortOrder) => void;
   readonly onViewChange?: (view: PlayerMatchesView) => void;
+  readonly sortOrder?: MatchSortOrder;
   readonly view?: PlayerMatchesView;
 }) {
   if (clubIdProp !== undefined) {
@@ -74,22 +87,36 @@ export function PlayerMatchesPage({
       <PlayerMatchesPageLoaded
         externalClubId={clubIdProp}
         now={now}
+        onSortChange={onSortChange}
         onViewChange={onViewChange}
         profileReady
+        sortOrder={sortOrder}
         view={view}
       />
     );
   }
-  return <PlayerMatchesFromWorkspace now={now} onViewChange={onViewChange} view={view} />;
+  return (
+    <PlayerMatchesFromWorkspace
+      now={now}
+      onSortChange={onSortChange}
+      onViewChange={onViewChange}
+      sortOrder={sortOrder}
+      view={view}
+    />
+  );
 }
 
 function PlayerMatchesFromWorkspace({
   now,
+  onSortChange,
   onViewChange,
+  sortOrder,
   view,
 }: {
   readonly now?: Date;
+  readonly onSortChange?: (order: MatchSortOrder) => void;
   readonly onViewChange?: (view: PlayerMatchesView) => void;
+  readonly sortOrder?: MatchSortOrder;
   readonly view?: PlayerMatchesView;
 }) {
   const selectedClub = useWorkspaceSelectedClubId();
@@ -97,8 +124,10 @@ function PlayerMatchesFromWorkspace({
     <PlayerMatchesPageLoaded
       externalClubId={selectedClub.externalClubId}
       now={now}
+      onSortChange={onSortChange}
       onViewChange={onViewChange}
       profileReady={selectedClub.profileReady}
+      sortOrder={sortOrder}
       view={view}
     />
   );
@@ -107,21 +136,27 @@ function PlayerMatchesFromWorkspace({
 function PlayerMatchesPageLoaded({
   externalClubId,
   now = new Date(),
+  onSortChange,
   onViewChange,
   profileReady,
-  view = "recent",
+  sortOrder: sortOrderProp = "newest",
+  view = "all",
 }: {
   readonly externalClubId: string | undefined;
   readonly now?: Date;
+  readonly onSortChange?: (order: MatchSortOrder) => void;
   readonly onViewChange?: (view: PlayerMatchesView) => void;
   readonly profileReady: boolean;
+  readonly sortOrder?: MatchSortOrder;
   readonly view?: PlayerMatchesView;
 }) {
   const { t, locale } = useI18n();
   const recentQuery = useMyRecentMatchesQuery(externalClubId, profileReady);
   const [addClubOpen, setAddClubOpen] = useState(false);
   const [uncontrolledView, setUncontrolledView] = useState<PlayerMatchesView>(view);
+  const [uncontrolledSort, setUncontrolledSort] = useState<MatchSortOrder>(sortOrderProp);
   const activeView = onViewChange === undefined ? uncontrolledView : view;
+  const sortOrder = onSortChange === undefined ? uncontrolledSort : sortOrderProp;
   const numberFormat = new Intl.NumberFormat(locale === "en" ? "en-GB" : "es-ES", {
     maximumFractionDigits: 2,
   });
@@ -147,6 +182,14 @@ function PlayerMatchesPageLoaded({
     onViewChange(next);
   }
 
+  function setSortOrder(next: MatchSortOrder) {
+    if (onSortChange === undefined) {
+      setUncontrolledSort(next);
+      return;
+    }
+    onSortChange(next);
+  }
+
   return (
     <main className="w-full">
       <TooltipProvider>
@@ -163,8 +206,10 @@ function PlayerMatchesPageLoaded({
           numberFormat={numberFormat}
           onAddClub={() => setAddClubOpen(true)}
           onRetry={() => void recentQuery.refetch()}
+          onSortChange={setSortOrder}
           onViewChange={setActiveView}
           result={result}
+          sortOrder={sortOrder}
           status={status}
           t={t}
         />
@@ -183,8 +228,10 @@ function MatchesBody({
   numberFormat,
   onAddClub,
   onRetry,
+  onSortChange,
   onViewChange,
   result,
+  sortOrder,
   status,
   t,
 }: {
@@ -195,8 +242,10 @@ function MatchesBody({
   readonly numberFormat: Intl.NumberFormat;
   readonly onAddClub: () => void;
   readonly onRetry: () => void;
+  readonly onSortChange: (order: MatchSortOrder) => void;
   readonly onViewChange: (view: PlayerMatchesView) => void;
   readonly result: GetMyRecentMatchesResponse | undefined;
+  readonly sortOrder: MatchSortOrder;
   readonly status: SectionStatus;
   readonly t: Translator;
 }) {
@@ -204,11 +253,16 @@ function MatchesBody({
     return (
       <div className="space-y-8">
         <RecordLoading />
-        <MatchesTabs activeView={activeView} onViewChange={onViewChange} t={t}>
-          <TabsContent value={activeView}>
-            <MatchesLoading label={t("player.matches.loading")} />
-          </TabsContent>
-        </MatchesTabs>
+        <div className="flex flex-col gap-6">
+          <MatchesToolbar
+            activeView={activeView}
+            onSortChange={onSortChange}
+            onViewChange={onViewChange}
+            sortOrder={sortOrder}
+            t={t}
+          />
+          <MatchesLoading label={t("player.matches.loading")} />
+        </div>
       </div>
     );
   }
@@ -254,7 +308,9 @@ function MatchesBody({
           matches={result.matches}
           now={now}
           numberFormat={numberFormat}
+          onSortChange={onSortChange}
           onViewChange={onViewChange}
+          sortOrder={sortOrder}
           t={t}
         />
       );
@@ -272,7 +328,9 @@ function ReadyMatches({
   matches,
   now,
   numberFormat,
+  onSortChange,
   onViewChange,
+  sortOrder,
   t,
 }: {
   readonly activeView: PlayerMatchesView;
@@ -281,11 +339,12 @@ function ReadyMatches({
   readonly matches: readonly PlayerRecentProviderMatchDto[];
   readonly now: Date;
   readonly numberFormat: Intl.NumberFormat;
+  readonly onSortChange: (order: MatchSortOrder) => void;
   readonly onViewChange: (view: PlayerMatchesView) => void;
+  readonly sortOrder: MatchSortOrder;
   readonly t: Translator;
 }) {
-  const recentMatches = filterRecentMatches(matches, now);
-  const visibleMatches = matchesForView(matches, activeView, now);
+  const visibleMatches = sortMatchesByOccurredAt(matchesForView(matches, activeView), sortOrder);
   const record = summarizeMatchRecord(visibleMatches);
   const groups = groupMatchesByDay(visibleMatches);
 
@@ -294,92 +353,29 @@ function ReadyMatches({
       {visibleMatches.length > 0 ? (
         <ViewRecord matches={visibleMatches} numberFormat={numberFormat} record={record} />
       ) : null}
-      <MatchesTabs activeView={activeView} onViewChange={onViewChange} t={t}>
-        {PLAYER_MATCHES_VIEWS.map((view) => (
-          <TabsContent key={view} value={view}>
-            {activeView === view ? (
-              view === "recent" ? (
-                <RecentTabBody
-                  dateTimeFormat={dateTimeFormat}
-                  dayDateFormat={dayDateFormat}
-                  groups={groups}
-                  hasOlderMatches={matches.length > recentMatches.length}
-                  now={now}
-                  numberFormat={numberFormat}
-                  onShowAll={() => onViewChange("all")}
-                  showMatchType
-                  t={t}
-                />
-              ) : (
-                <MatchDayLists
-                  dateTimeFormat={dateTimeFormat}
-                  dayDateFormat={dayDateFormat}
-                  emptyDescription={t(EMPTY_DESCRIPTION_KEYS[view])}
-                  emptyTitle={t(EMPTY_TITLE_KEYS[view])}
-                  groups={groups}
-                  historyLabel={t(HISTORY_LABEL_KEYS[view])}
-                  now={now}
-                  numberFormat={numberFormat}
-                  showMatchType={showsMatchTypeBadge(view)}
-                  t={t}
-                />
-              )
-            ) : null}
-          </TabsContent>
-        ))}
-      </MatchesTabs>
+      <div className="flex flex-col gap-6">
+        <MatchesToolbar
+          activeView={activeView}
+          onSortChange={onSortChange}
+          onViewChange={onViewChange}
+          resultCount={visibleMatches.length}
+          sortOrder={sortOrder}
+          t={t}
+        />
+        <MatchDayLists
+          dateTimeFormat={dateTimeFormat}
+          dayDateFormat={dayDateFormat}
+          emptyDescription={t(EMPTY_DESCRIPTION_KEYS[activeView])}
+          emptyTitle={t(EMPTY_TITLE_KEYS[activeView])}
+          groups={groups}
+          historyLabel={t(HISTORY_LABEL_KEYS[activeView])}
+          now={now}
+          numberFormat={numberFormat}
+          showMatchType={showsMatchTypeBadge(activeView)}
+          t={t}
+        />
+      </div>
     </div>
-  );
-}
-
-function RecentTabBody({
-  dateTimeFormat,
-  dayDateFormat,
-  groups,
-  hasOlderMatches,
-  now,
-  numberFormat,
-  onShowAll,
-  showMatchType,
-  t,
-}: {
-  readonly dateTimeFormat: Intl.DateTimeFormat;
-  readonly dayDateFormat: Intl.DateTimeFormat;
-  readonly groups: readonly MatchDayGroup[];
-  readonly hasOlderMatches: boolean;
-  readonly now: Date;
-  readonly numberFormat: Intl.NumberFormat;
-  readonly onShowAll: () => void;
-  readonly showMatchType: boolean;
-  readonly t: Translator;
-}) {
-  if (groups.length === 0 && hasOlderMatches) {
-    return (
-      <MatchesEmpty
-        actions={
-          <Button onClick={onShowAll} variant="secondary">
-            {t("player.matches.recent.emptyOlder.action")}
-          </Button>
-        }
-        description={t("player.matches.recent.emptyOlder.description")}
-        title={t("player.matches.recent.emptyOlder.title")}
-      />
-    );
-  }
-
-  return (
-    <MatchDayLists
-      dateTimeFormat={dateTimeFormat}
-      dayDateFormat={dayDateFormat}
-      emptyDescription={t("player.matches.recent.emptyDescription")}
-      emptyTitle={t("player.matches.recent.emptyTitle")}
-      groups={groups}
-      historyLabel={t("player.matches.recent.historyLabel")}
-      now={now}
-      numberFormat={numberFormat}
-      showMatchType={showMatchType}
-      t={t}
-    />
   );
 }
 
@@ -439,36 +435,84 @@ function MatchDayLists({
   );
 }
 
-function MatchesTabs({
+function MatchesToolbar({
   activeView,
-  children,
+  onSortChange,
   onViewChange,
+  resultCount,
+  sortOrder,
   t,
 }: {
   readonly activeView: PlayerMatchesView;
-  readonly children: ReactNode;
+  readonly onSortChange: (order: MatchSortOrder) => void;
   readonly onViewChange: (view: PlayerMatchesView) => void;
+  readonly resultCount?: number;
+  readonly sortOrder: MatchSortOrder;
   readonly t: Translator;
 }) {
   return (
-    <Tabs
-      aria-label={t("player.matches.view.label")}
-      onValueChange={(value) => {
-        if (isPlayerMatchesView(value)) onViewChange(value);
-      }}
-      value={activeView}
-      variant="pills"
-    >
-      <TabsList>
-        {PLAYER_MATCHES_VIEWS.map((view) => (
-          <TabsTrigger key={view} value={view}>
-            {t(VIEW_TAB_KEYS[view])}
-          </TabsTrigger>
-        ))}
-        <TabsIndicator />
-      </TabsList>
-      {children}
-    </Tabs>
+    <Card className="@container">
+      <CardContent className="flex flex-col gap-4 px-4 py-3 @3xl:flex-row @3xl:items-center @3xl:gap-x-4 @3xl:gap-y-2">
+        <ChoiceGroup<PlayerMatchesView>
+          aria-label={t("player.matches.view.label")}
+          className="grid min-w-0 grid-cols-2 gap-2 @xl:flex @xl:flex-wrap"
+          onValueChange={(value) => {
+            if (isPlayerMatchesView(value)) onViewChange(value);
+          }}
+          value={activeView}
+        >
+          {PLAYER_MATCHES_VIEWS.map((view) => (
+            <ChoiceGroupItem
+              appearance="pill"
+              className="w-full rounded-lg border-border-strong px-4 font-semibold data-[checked]:border-transparent data-[checked]:bg-primary data-[checked]:text-primary-foreground data-[checked]:hover:bg-primary-hover @xl:w-auto min-h-(--control-height-dense) max-sm:min-h-(--control-height-touch)"
+              key={view}
+              value={view}
+            >
+              {t(VIEW_FILTER_KEYS[view])}
+            </ChoiceGroupItem>
+          ))}
+        </ChoiceGroup>
+        <Separator className="hidden h-8 @3xl:block" orientation="vertical" />
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+          <Select
+            itemToStringLabel={(value) =>
+              isMatchSortOrder(value) ? t(MATCH_SORT_KEYS[value]) : ""
+            }
+            items={MATCH_SORT_ORDERS.map((order) => ({
+              label: t(MATCH_SORT_KEYS[order]),
+              value: order,
+            }))}
+            onValueChange={(value) => {
+              if (isMatchSortOrder(value)) onSortChange(value);
+            }}
+            value={sortOrder}
+          >
+            <SelectTrigger
+              aria-label={t("player.matches.sort.label")}
+              className="w-max min-w-40 max-w-full"
+              dense
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {MATCH_SORT_ORDERS.map((order) => (
+                <SelectItem key={order} value={order}>
+                  {t(MATCH_SORT_KEYS[order])}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {resultCount === undefined ? null : (
+            <p
+              className="typo-caption shrink-0 font-medium whitespace-nowrap tabular-nums text-muted-foreground"
+              role="status"
+            >
+              {t("player.matches.results.count", { count: resultCount })}
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

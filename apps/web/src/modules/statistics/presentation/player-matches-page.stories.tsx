@@ -32,7 +32,7 @@ const SCENARIO_IDS = [
   "needsClub",
   "needsGameAccount",
   "recentEmpty",
-  "recentEmptyOlder",
+  "olderMatch",
   "allMatches",
   "error",
 ] as const;
@@ -57,7 +57,7 @@ function scenarioState(id: ScenarioId): PlayerMatchesStoryState {
       return { recent: { status: "needs_game_account" } };
     case "recentEmpty":
       return { recent: recentMatchesReadyFixture([]) };
-    case "recentEmptyOlder":
+    case "olderMatch":
       return {
         recent: recentMatchesReadyFixture([
           recentProviderMatchFixture({
@@ -148,7 +148,7 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     scenario: "ready",
-    view: "recent",
+    view: "all",
   },
   argTypes: {
     scenario: {
@@ -171,7 +171,7 @@ export const Playground: Story = {
 
 export const Ready: Story = {
   name: "Ready",
-  args: { scenario: "ready", view: "recent" },
+  args: { scenario: "ready", view: "all" },
   render: (args) => <PlayerMatchesStoryShell key={`${args.scenario}-${args.view}`} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -194,11 +194,13 @@ export const Ready: Story = {
     );
     await expect(canvasElement.querySelector("[data-match-outcome='win']")).toBeTruthy();
     await expect(canvasElement.querySelector("[data-match-outcome='loss']")).toBeTruthy();
-    await expect(canvas.getByRole("tab", { name: "Liga" })).toBeVisible();
-    await expect(canvas.getByRole("tab", { name: "Playoff" })).toBeVisible();
-    await expect(canvas.getByRole("tab", { name: "Amistosos" })).toBeVisible();
+    await expect(canvas.getByRole("radio", { name: "Todos" })).toBeVisible();
+    await expect(canvas.getByRole("radio", { name: "Liga" })).toBeVisible();
+    await expect(canvas.getByRole("radio", { name: "Playoff" })).toBeVisible();
+    await expect(canvas.getByRole("radio", { name: "Amistosos" })).toBeVisible();
+    await expect(canvas.getByLabelText("Orden de partidos")).toBeVisible();
+    await expect(canvas.getByText("3 partidos")).toBeVisible();
     await expect(canvas.queryByText("Oficial")).toBeNull();
-    await expect(canvas.queryByText("Atlético Norte")).toBeNull();
   },
 };
 
@@ -214,8 +216,8 @@ export const AllMatches: Story = {
     ).toHaveTextContent("Amistoso");
     await expect(canvas.getByText("Hoy")).toBeVisible();
     await expect(canvas.getByText("1 de agosto del 2026")).toBeVisible();
-    await expect(canvas.getByRole("tab", { name: "Todos los partidos" })).toHaveAttribute(
-      "aria-selected",
+    await expect(canvas.getByRole("radio", { name: "Todos" })).toHaveAttribute(
+      "aria-checked",
       "true",
     );
   },
@@ -228,8 +230,8 @@ export const League: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Fera Enjaulada")).toBeVisible();
-    await expect(canvas.getByRole("tab", { name: "Liga" })).toHaveAttribute(
-      "aria-selected",
+    await expect(canvas.getByRole("radio", { name: "Liga" })).toHaveAttribute(
+      "aria-checked",
       "true",
     );
     await expect(canvas.queryByText("Cuervos FC")).toBeNull();
@@ -246,8 +248,8 @@ export const Playoff: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Cuervos FC")).toBeVisible();
-    await expect(canvas.getByRole("tab", { name: "Playoff" })).toHaveAttribute(
-      "aria-selected",
+    await expect(canvas.getByRole("radio", { name: "Playoff" })).toHaveAttribute(
+      "aria-checked",
       "true",
     );
     await expect(canvas.queryByText("Atlético Norte")).toBeNull();
@@ -261,8 +263,8 @@ export const Friendlies: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Atlético Norte")).toBeVisible();
-    await expect(canvas.getByRole("tab", { name: "Amistosos" })).toHaveAttribute(
-      "aria-selected",
+    await expect(canvas.getByRole("radio", { name: "Amistosos" })).toHaveAttribute(
+      "aria-checked",
       "true",
     );
     await expect(canvas.queryByText("Cuervos FC")).toBeNull();
@@ -329,20 +331,19 @@ export const RecentEmpty: Story = {
   render: (args) => <PlayerMatchesStoryShell key={`${args.scenario}-${args.view}`} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText("No hay partidos recientes")).toBeVisible();
+    await expect(await canvas.findByText("No hay partidos")).toBeVisible();
     await expect(canvas.queryByRole("button", { name: "Revisar datos de juego" })).toBeNull();
   },
 };
 
-export const RecentEmptyOlder: Story = {
-  name: "Recent empty with older matches",
-  args: { scenario: "recentEmptyOlder", view: "recent" },
+export const OlderMatch: Story = {
+  name: "Older match",
+  args: { scenario: "olderMatch", view: "all" },
   render: (args) => <PlayerMatchesStoryShell key={`${args.scenario}-${args.view}`} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText("No hay partidos en los últimos 7 días")).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Ver todos los partidos" }));
     await expect(await canvas.findByText("Atlético Norte")).toBeVisible();
+    await expect(canvas.getByText("1 partido")).toBeVisible();
   },
 };
 

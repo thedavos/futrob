@@ -94,18 +94,14 @@ export function ProviderMatchRow({
 
   return (
     <li aria-label={accessibleName} className="relative">
-      <div
-        className={`relative flex min-h-52 flex-col overflow-hidden rounded-xl border border-border bg-surface ${
-          playedAppearance(item) ? "pb-16" : ""
-        }`}
-      >
+      <div className="@container relative flex flex-col overflow-hidden rounded-xl border border-border bg-surface">
         <MatchPitchWash
           awayGoals={match.away.goals}
           awayImageUrl={match.away.imageUrl}
           homeGoals={match.home.goals}
           homeImageUrl={match.home.imageUrl}
         />
-        <div className="relative flex min-h-0 flex-1 flex-col px-4 py-5 sm:px-6 sm:py-6">
+        <div className="relative flex min-h-52 flex-1 flex-col px-4 py-4 @lg:px-6 @lg:py-6">
           <div className="flex items-start justify-between gap-2">
             <MatchHeaderMeta
               items={[
@@ -166,7 +162,7 @@ export function ProviderMatchRow({
           </div>
 
           <div className="flex flex-1 flex-col items-center justify-center gap-2">
-            <div className="mx-auto flex w-fit max-w-full items-center justify-center gap-10 sm:gap-16">
+            <div className="mx-auto flex w-fit max-w-full items-center justify-center gap-4 @lg:gap-16">
               <MatchClubSide
                 imageUrl={match.home.imageUrl}
                 name={match.home.name}
@@ -210,8 +206,8 @@ export function ProviderMatchRow({
             ) : null}
           </div>
         </div>
+        <MatchAppearanceStrip item={item} mvpLabel={mvpLabel} numberFormat={numberFormat} t={t} />
       </div>
-      <MatchAppearanceStrip item={item} mvpLabel={mvpLabel} numberFormat={numberFormat} t={t} />
     </li>
   );
 }
@@ -272,10 +268,12 @@ function MatchPitchWash({
   );
 }
 
-function pitchFillsForResult(result: "home" | "away" | "draw"): {
+type PitchFills = {
   readonly home: PitchHalfFill;
   readonly away: PitchHalfFill;
-} {
+};
+
+function pitchFillsForResult(result: "home" | "away" | "draw"): PitchFills {
   switch (result) {
     case "home":
       return { home: "win", away: "loss" };
@@ -366,8 +364,8 @@ function MatchAppearanceStrip({
   const showYellow = showsYellowCards(appearance.yellowCards);
   const name = appearance.displayName.trim();
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex justify-center px-4 sm:bottom-4">
-      <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-full bg-surface px-4 py-2.5 smooth-shadow-ring-sm">
+    <div className="relative z-10 flex justify-center px-4 pb-3 @lg:pb-4">
+      <div className="flex max-w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 @lg:gap-x-3 @lg:gap-y-2 @lg:rounded-full @lg:bg-surface @lg:px-4 @lg:py-2.5 @lg:smooth-shadow-ring-sm">
         {mvpLabel ? <MatchMvpBadge label={mvpLabel} /> : null}
         {mvpLabel === null && name !== "" ? (
           <span className="inline-flex min-w-0 max-w-[9rem] items-center gap-1">
@@ -416,7 +414,7 @@ function MatchAppearanceStrip({
             data-metric-icon="recent-rating"
             weight="fill"
           />
-          <span className="typo-caption">
+          <span className="typo-caption @max-lg:sr-only">
             <span className="font-medium">{t("player.metric.rating")}</span>
           </span>
           {appearance.rating === null ? (
@@ -491,7 +489,7 @@ function AppearanceStripStat({
             </span>
           </span>
           {unitKey === null ? null : (
-            <span className="typo-caption">
+            <span className="typo-caption @max-lg:sr-only">
               <span className="font-medium">{t(unitKey, { count: value })}</span>
             </span>
           )}
@@ -534,9 +532,9 @@ function MatchClubSide({
   readonly redCardsLabel: string;
 }) {
   return (
-    <div className="flex w-28 min-w-0 flex-col items-center gap-1 sm:w-36">
+    <div className="flex w-24 min-w-0 flex-col items-center gap-1 @lg:w-36">
       <ClubCrestAvatar
-        className="size-20 shrink-0 sm:size-24"
+        className="size-16 shrink-0 @lg:size-24"
         fallbackClassName="text-base"
         framed={false}
         imageUrl={imageUrl}
