@@ -42,6 +42,7 @@
   },
   "devDependencies": {
     "@futrob/api-contracts": "^0.1.0",
+    "@oxlint/plugins": "^1.79.0",
     "@storybook/addon-a11y": "10.5.7",
     "@storybook/addon-docs": "10.5.7",
     "@storybook/react-vite": "10.5.7",
@@ -51,6 +52,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.1.10",
+    "oxlint": "^1.79.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "shadow-plugin": "^1.2.6",
