@@ -82,6 +82,11 @@ export {
   type PlayerRecentMatchesResult,
   type PlayerRecentProviderMatch,
 } from "./application/list-player-recent-provider-matches/list-player-recent-provider-matches.use-case.ts";
+export {
+  GetPlayerRecentProviderMatchUseCase,
+  type GetPlayerRecentProviderMatchInput,
+  type PlayerRecentProviderMatchResult,
+} from "./application/get-player-recent-provider-match/get-player-recent-provider-match.use-case.ts";
 export { SyncRecentProviderMatchesUseCase } from "./application/sync-recent-provider-matches/sync-recent-provider-matches.use-case.ts";
 export {
   EnqueueProviderSyncJobUseCase,
