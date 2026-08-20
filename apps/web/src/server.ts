@@ -11,6 +11,11 @@ interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
 }
 
+interface ScheduledController {
+  readonly scheduledTime: number;
+  readonly cron: string;
+}
+
 export default {
   fetch: startServer.fetch,
   async queue(batch: QueueBatch, env: WorkerEnv): Promise<void> {
@@ -20,7 +25,7 @@ export default {
       internalJobSecret: env.INTERNAL_JOB_SECRET,
     }).queue(batch);
   },
-  scheduled(_controller: unknown, env: WorkerEnv, context: ExecutionContext): void {
+  scheduled(_controller: ScheduledController, env: WorkerEnv, context: ExecutionContext): void {
     context.waitUntil(
       recoverNextProviderSyncJob({
         fetcher: fetch,

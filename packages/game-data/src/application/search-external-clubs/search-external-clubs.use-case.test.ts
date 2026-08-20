@@ -7,7 +7,16 @@ import type { ExternalClub } from "../../domain/entities/external-club.ts";
 
 describe("SearchExternalClubsUseCase", () => {
   it("searches through the selected provider", async () => {
-    const clubs = [{ id: "c-1" }] as unknown as ExternalClub[];
+    const clubs = [
+      {
+        providerKey: "ea-clubs",
+        externalClubId: "c-1",
+        name: "Club",
+        platform: "common-gen5",
+        gameEdition: "fc26",
+        imageUrl: null,
+      },
+    ] satisfies ExternalClub[];
     const provider = {
       key: "ea-clubs",
       capabilities: {

@@ -4,7 +4,10 @@ import {
   type RequestId,
 } from "@futrob/api-contracts";
 import type { FutrobClient } from "@futrob/sdk";
-import { productApiBffErrorResponse } from "@/context/product-api-bff-error-response.ts";
+import {
+  productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
+} from "@/context/product-api-bff-error-response.ts";
 import { apiErrorResponse, jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
 import {
   enqueueProviderSyncJob,
@@ -25,7 +28,7 @@ export async function handleProviderSyncJobRequest(
       readonly client: ProviderSyncJobClient;
       readonly requestId: RequestId;
     }>;
-    readonly getQueue: () => ProviderSyncJobQueue | undefined;
+    readonly getQueue: () => Promise<ProviderSyncJobQueue | undefined>;
   },
 ): Promise<Response> {
   try {
@@ -63,7 +66,7 @@ export async function handleProviderSyncJobRequest(
       );
     }
 
-    const queue = deps.getQueue();
+    const queue = await deps.getQueue();
     if (!queue) {
       return apiErrorResponse(
         503,
@@ -80,6 +83,9 @@ export async function handleProviderSyncJobRequest(
     });
     return jsonResponse(providerSyncJobResponseSchema.parse(job), 202);
   } catch (error) {
-    return productApiBffErrorResponse(error);
+    if (!(error instanceof Error)) {
+      return productApiBffErrorResponse({ kind: "unexpected" });
+    }
+    return productApiBffErrorResponseForError(error);
   }
 }

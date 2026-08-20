@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import searchClubsFixture from "@/adapters/game-data/ea-clubs/fixtures/search-clubs.json";
 import { createApp } from "@/app.ts";
 import { createModules } from "@/di/create-modules.ts";
+import { createFetch } from "@/http/http-app.harness.ts";
 import { asActorId } from "@futrob/shared-kernel";
 
 const secret = "provider-health-secret";
@@ -10,7 +11,7 @@ const actorId = "provider-health-admin";
 describe("provider health route", () => {
   it("requires platform administration and returns a sanitized real snapshot", async () => {
     const modules = createModules({
-      fetcher: (async () => Response.json(searchClubsFixture)) as typeof fetch,
+      fetcher: createFetch(async () => Response.json(searchClubsFixture)),
       eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
       pool: undefined,
     });
@@ -50,7 +51,7 @@ describe("provider health route", () => {
 
   it("rejects callers without service authentication", async () => {
     const modules = createModules({
-      fetcher: (async () => Response.json([])) as typeof fetch,
+      fetcher: createFetch(async () => Response.json([])),
       eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
       pool: undefined,
     });

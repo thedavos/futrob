@@ -10,6 +10,7 @@ import {
   listAccessGrantsResponseSchema,
   manageSuperuserRequestSchema,
   organizationRoleAssignmentSchema,
+  permissionSchema,
   platformRoleAssignmentSchema,
   upsertAccessGrantRequestSchema,
 } from "@futrob/api-contracts";
@@ -42,7 +43,9 @@ export function registerAuthorizationRoutes(app: Hono, deps: AppDeps): void {
     const access = await deps.modules.authorization.getEffectiveAccess.execute({
       actorId: c.get("actorId"),
       scope: toScope(parsed.data),
-      permissions: parsed.data.permissions as readonly Permission[] | undefined,
+      permissions: parsed.data.permissions?.map((value) =>
+        toPermission(permissionSchema.parse(value)),
+      ),
     });
     return jsonResponse(effectiveAccessSchema.parse(access));
   });
@@ -57,7 +60,7 @@ export function registerAuthorizationRoutes(app: Hono, deps: AppDeps): void {
       organizationId: parsed.data.organizationId
         ? asOrganizationId(parsed.data.organizationId)
         : null,
-      permission: parsed.data.permission as Permission,
+      permission: toPermission(permissionSchema.parse(parsed.data.permission)),
       effect: parsed.data.effect,
       scopeType: parsed.data.scopeType,
       scopeId: parsed.data.scopeId,
@@ -198,4 +201,10 @@ function grantDto(grant: AccessGrant) {
     createdAt: grant.createdAt.toISOString(),
     updatedAt: grant.updatedAt.toISOString(),
   };
+}
+
+function toPermission(value: string): Permission {
+  const parsed = permissionSchema.parse(value);
+  // SAFETY: Permission wire values are validated by permissionSchema before branding.
+  return parsed as Permission;
 }

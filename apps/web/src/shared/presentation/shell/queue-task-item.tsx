@@ -208,7 +208,7 @@ function QueueTaskItemLink({
 }
 
 export function QueueTaskItem(props: QueueTaskItemProps) {
-  if (typeof props.href === "string") {
+  if (props.href !== undefined) {
     return <QueueTaskItemLink {...props} />;
   }
   return <QueueTaskItemButton {...props} />;

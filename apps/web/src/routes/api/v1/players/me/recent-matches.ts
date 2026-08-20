@@ -6,6 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   createAuthenticatedProductApiClient,
   productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
 } from "@/context/create-authenticated-product-api-client.ts";
 import {
   apiErrorResponse,
@@ -43,7 +44,10 @@ export const Route = createFileRoute("/api/v1/players/me/recent-matches")({
               ),
           });
         } catch (error) {
-          return productApiBffErrorResponse(error);
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
+          return productApiBffErrorResponseForError(error);
         }
       },
     },

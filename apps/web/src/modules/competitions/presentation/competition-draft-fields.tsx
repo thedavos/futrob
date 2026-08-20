@@ -14,11 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@futrob/ui";
-import type {
-  CompetitionFormatDto,
-  CompetitionRegionDto,
-  GamePlatformDto,
-} from "@futrob/api-contracts";
+import type { GamePlatformDto } from "@futrob/api-contracts";
+import { competitionFormatSchema, competitionRegionSchema } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import {
   competitionFormats,
@@ -185,7 +182,9 @@ export function CompetitionDraftFields({
           <Select
             items={copy.regions}
             onValueChange={(next) => {
-              if (next) onChange({ region: next as CompetitionRegionDto });
+              if (!next) return;
+              const region = competitionRegionSchema.parse(next);
+              onChange({ region });
               clearError();
             }}
             value={value.region}
@@ -255,7 +254,9 @@ export function CompetitionDraftFields({
         <Select
           items={copy.formats}
           onValueChange={(next) => {
-            if (next) onChange({ format: next as CompetitionFormatDto });
+            if (!next) return;
+            const format = competitionFormatSchema.parse(next);
+            onChange({ format });
             clearError();
           }}
           value={value.format}

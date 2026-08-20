@@ -16,7 +16,12 @@ export function buildEaClubCrestUrl(
   const id = crestAssetId?.trim();
   if (!id) return null;
   const edition = gameEdition.trim().toLowerCase();
-  const cdn = EA_CLUB_CREST_CDN_BY_EDITION[edition as keyof typeof EA_CLUB_CREST_CDN_BY_EDITION];
+  const cdn =
+    edition === "fc26"
+      ? EA_CLUB_CREST_CDN_BY_EDITION.fc26
+      : edition === "fc25"
+        ? EA_CLUB_CREST_CDN_BY_EDITION.fc25
+        : null;
   if (!cdn) return null;
   return `${cdn.baseUrl}/fcweb/crests/256x256/l${id}.png`;
 }

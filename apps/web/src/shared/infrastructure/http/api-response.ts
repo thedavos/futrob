@@ -1,5 +1,6 @@
 import {
   REQUEST_ID_HEADER,
+  apiErrorDetailsSchema,
   type ApiErrorBody,
   type ApiErrorDetails,
   type RequestId,
@@ -10,20 +11,16 @@ export type HttpMappableFailure = {
   readonly details?: ApiErrorDetails;
 };
 
-const DETAIL_KEYS = [
-  "organizationId",
-  "role",
-  "status",
-  "path",
-  "body",
-  "issues",
-  "externalClubId",
-  "cause",
-  "completedPath",
-  "requestedPath",
-] as const satisfies readonly (keyof ApiErrorDetails)[];
+export type JsonSerializable =
+  | string
+  | number
+  | boolean
+  | null
+  | ApiErrorBody
+  | readonly JsonSerializable[]
+  | { readonly [key: string]: JsonSerializable };
 
-export function jsonResponse(data: unknown, status = 200): Response {
+export function jsonResponse(data: JsonSerializable, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -66,16 +63,14 @@ export function failureToHttp(error: HttpMappableFailure): Response {
   });
 }
 
+const taggedErrorDetailsSchema = apiErrorDetailsSchema.partial();
+
 function detailsFromTaggedProps(error: HttpMappableFailure): ApiErrorDetails | undefined {
-  const details: Partial<ApiErrorDetails> = {};
-  for (const key of DETAIL_KEYS) {
-    if (!Object.hasOwn(error, key)) continue;
-    const value = Reflect.get(error, key);
-    if (value !== undefined) {
-      Object.assign(details, { [key]: value });
-    }
+  const taggedDetails = taggedErrorDetailsSchema.safeParse(error);
+  if (!taggedDetails.success) {
+    return undefined;
   }
-  return Object.keys(details).length > 0 ? details : undefined;
+  return Object.keys(taggedDetails.data).length > 0 ? taggedDetails.data : undefined;
 }
 
 function statusForFailureCode(code: string): number {
@@ -104,10 +99,10 @@ function statusForFailureCode(code: string): number {
   return 500;
 }
 
-export function queryRecord(url: URL): Readonly<Record<string, string>> {
+export function queryRecord(url: URL) {
   const out: Record<string, string> = {};
   for (const [key, value] of url.searchParams.entries()) {
     out[key] = value;
   }
-  return out;
+  return out satisfies Readonly<Record<string, string>>;
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
+import type { asCompetitionId } from "@futrob/shared-kernel";
+import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
 import { InvalidCompetitionTimeZone } from "../../domain/errors/competition.errors.ts";
 import type {
   CompetitionDraft,

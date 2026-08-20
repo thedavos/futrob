@@ -1,3 +1,4 @@
+import type { SearchClubsQueryInput } from "@futrob/api-contracts";
 import { FutrobApiError } from "@futrob/sdk";
 import { createCliFutrobClient, resolveApiBaseUrl } from "../lib/futrob-client.ts";
 import { flagBoolean, flagString, parseFlags } from "../lib/parse-flags.ts";
@@ -19,18 +20,20 @@ type SearchClubsCliArgs = {
   readonly gameEdition?: string;
 };
 
-const PROVIDER_KEYS = new Set(["ea-clubs", "manual", "screenshot-ocr"]);
+type ProviderKey = NonNullable<SearchClubsCliArgs["providerKey"]>;
 
-function parseProviderKey(
-  value: string | undefined,
-): SearchClubsCliArgs["providerKey"] | "invalid" | undefined {
+function parseProviderKey(value: string | undefined): ProviderKey | "invalid" | undefined {
   if (value === undefined) {
     return undefined;
   }
-  if (PROVIDER_KEYS.has(value)) {
-    return value as SearchClubsCliArgs["providerKey"];
+  switch (value) {
+    case "ea-clubs":
+    case "manual":
+    case "screenshot-ocr":
+      return value;
+    default:
+      return "invalid";
   }
-  return "invalid";
 }
 
 function parseArgs(args: string[]): SearchClubsCliArgs | { error: string } {
@@ -66,12 +69,18 @@ export async function run(args: string[]): Promise<number> {
   const client = createCliFutrobClient({ baseUrl: parsed.baseUrl });
 
   try {
-    const response = await client.gameData.clubs.search({
-      query: parsed.query,
-      ...(parsed.providerKey !== undefined ? { providerKey: parsed.providerKey } : {}),
-      ...(parsed.platform !== undefined ? { platform: parsed.platform } : {}),
-      ...(parsed.gameEdition !== undefined ? { gameEdition: parsed.gameEdition } : {}),
-    });
+    const searchInput: SearchClubsQueryInput = { query: parsed.query };
+    if (parsed.providerKey !== undefined) {
+      searchInput.providerKey = parsed.providerKey;
+    }
+    if (parsed.platform !== undefined) {
+      searchInput.platform = parsed.platform;
+    }
+    if (parsed.gameEdition !== undefined) {
+      searchInput.gameEdition = parsed.gameEdition;
+    }
+
+    const response = await client.gameData.clubs.search(searchInput);
 
     if (parsed.json) {
       printJson(response);

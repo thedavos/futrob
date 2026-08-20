@@ -30,6 +30,7 @@ import {
   isHttpMappableFailure,
   validationErrorResponse,
 } from "@/http/errors.ts";
+import { TaggedError } from "@futrob/shared-kernel";
 import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
@@ -121,7 +122,9 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
       });
       return jsonResponse(body);
     } catch (error) {
-      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
+        return failureToHttp(error);
+      }
       throw error;
     }
   });
@@ -185,7 +188,9 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
       });
       return jsonResponse(body);
     } catch (error) {
-      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
+        return failureToHttp(error);
+      }
       throw error;
     }
   });
@@ -268,7 +273,9 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
       });
       return jsonResponse(body);
     } catch (error) {
-      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
+        return failureToHttp(error);
+      }
       throw error;
     }
   });

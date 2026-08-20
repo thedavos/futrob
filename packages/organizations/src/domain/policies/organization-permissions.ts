@@ -15,9 +15,7 @@ export const ORGANIZATION_PERMISSION = {
 
 export const ORGANIZATION_PERMISSIONS = Object.values(ORGANIZATION_PERMISSION);
 
-export const ORGANIZATION_ROLE_PERMISSIONS: Readonly<
-  Record<OrgMembershipRole, readonly Permission[]>
-> = {
+export const ORGANIZATION_ROLE_PERMISSIONS = {
   organizer: ORGANIZATION_PERMISSIONS.filter(
     (permission) => permission !== ORGANIZATION_PERMISSION.superusersManage,
   ),
@@ -27,4 +25,4 @@ export const ORGANIZATION_ROLE_PERMISSIONS: Readonly<
     ORGANIZATION_PERMISSION.invitationsManage,
   ],
   member: [ORGANIZATION_PERMISSION.read],
-};
+} as const satisfies Record<OrgMembershipRole, readonly Permission[]>;

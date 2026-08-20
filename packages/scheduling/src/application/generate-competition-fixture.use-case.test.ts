@@ -12,9 +12,11 @@ import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-sch
 import type { FixturePlan } from "../domain/entities/fixture-plan.ts";
 import type { OfficialMatch } from "../domain/entities/official-match.ts";
 import type { EncounterScheduleRepository } from "../domain/ports/encounter-schedule.repository.ts";
-import type { FixturePlanRepository } from "../domain/ports/fixture-plan.repository.ts";
+import type {
+  FixturePlanRepository,
+  CompetitionFixtureSourcePort,
+} from "../domain/ports/fixture-plan.repository.ts";
 import type { OfficialMatchRepository } from "../domain/ports/official-match.repository.ts";
-import type { CompetitionFixtureSourcePort } from "../domain/ports/fixture-plan.repository.ts";
 import { GenerateCompetitionFixtureUseCase } from "./generate-competition-fixture.use-case.ts";
 
 const sourceSnapshot = {

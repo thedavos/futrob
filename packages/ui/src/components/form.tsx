@@ -1,13 +1,15 @@
 import { Form as FormPrimitive } from "@base-ui/react/form";
 
 import { cn } from "#lib/utils";
+import type { FormFieldValue } from "#lib/read-form-string";
 
-type FormProps<FormValues extends Record<string, any> = Record<string, any>> =
-  FormPrimitive.Props<FormValues>;
+type FormValuesRecord = { readonly [key: string]: FormFieldValue };
+
+type FormProps<FormValues extends object = FormValuesRecord> = FormPrimitive.Props<FormValues>;
 
 type FormErrors<Field extends string = string> = Partial<Record<Field, string | string[]>>;
 
-function Form<FormValues extends Record<string, any> = Record<string, any>>({
+function Form<FormValues extends object = FormValuesRecord>({
   className,
   validationMode = "onSubmit",
   ...props

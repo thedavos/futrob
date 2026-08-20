@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
+import { z } from "zod";
 import { buildApp, stubFetch } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
+
+const openApiDocumentSchema = z.object({ openapi: z.string() });
 
 describe("apps/api http meta", () => {
   it("GET /api/v1/meta/ping returns the ping contract", async () => {
@@ -44,7 +48,7 @@ describe("apps/api http meta", () => {
     const res = await app.request("/api/v1/openapi.json");
 
     expect(res.status).toBe(200);
-    const doc = (await res.json()) as { openapi: string };
+    const doc = await parseResponse(openApiDocumentSchema, res);
     expect(doc.openapi).toBe("3.1.0");
   });
 });

@@ -18,11 +18,8 @@ import {
   type PostAuthDestinationDto,
   type RequestId,
 } from "@futrob/api-contracts";
-import { readBrowserApiError } from "@/shared/infrastructure/http/browser-api-error.ts";
-
-async function parseJson(response: Response): Promise<unknown> {
-  return response.json().catch(() => null);
-}
+import type { z } from "zod";
+import { requestBrowserJson } from "@/shared/infrastructure/http/browser-json-request.ts";
 
 export class OrganizationsClientError extends Error {
   readonly status: number;
@@ -46,72 +43,64 @@ export class OrganizationsClientError extends Error {
   }
 }
 
-async function requestJson<T>(input: {
+async function requestOrganizationsJson<T>(input: {
   readonly path: string;
   readonly method: "GET" | "POST";
   readonly body?: unknown;
-  readonly parse: (data: unknown) => T;
+  readonly schema: z.ZodType<T>;
 }): Promise<T> {
-  const response = await fetch(input.path, {
+  return requestBrowserJson({
+    path: input.path,
     method: input.method,
-    credentials: "include",
-    headers:
-      input.body === undefined
-        ? { Accept: "application/json" }
-        : { Accept: "application/json", "Content-Type": "application/json" },
-    body: input.body === undefined ? undefined : JSON.stringify(input.body),
+    body: input.body,
+    schema: input.schema,
+    fallbackCode: "organizations.client_error",
+    createError: (status, error) =>
+      new OrganizationsClientError({
+        status,
+        code: error.code,
+        message: error.code,
+        requestId: error.requestId,
+        retryAfterSeconds: error.retryAfterSeconds,
+      }),
   });
-
-  const raw = await parseJson(response);
-  if (!response.ok) {
-    const error = readBrowserApiError(response, raw, "organizations.client_error");
-    throw new OrganizationsClientError({
-      status: response.status,
-      code: error.code,
-      message: error.code,
-      requestId: error.requestId,
-      retryAfterSeconds: error.retryAfterSeconds,
-    });
-  }
-
-  return input.parse(raw);
 }
 
 /** Browser client for same-origin organizations BFF (session cookies). */
 export const organizationsBrowserClient = {
   listMine(): Promise<ListMyMembershipsResponse> {
-    return requestJson({
+    return requestOrganizationsJson({
       path: "/api/v1/organizations/mine",
       method: "GET",
-      parse: (data) => listMyMembershipsResponseSchema.parse(data),
+      schema: listMyMembershipsResponseSchema,
     });
   },
 
   resolvePostAuthDestination(): Promise<ResolvePostAuthDestinationResponse> {
-    return requestJson({
+    return requestOrganizationsJson({
       path: "/api/v1/organizations/post-auth-destination",
       method: "GET",
-      parse: (data) => resolvePostAuthDestinationResponseSchema.parse(data),
+      schema: resolvePostAuthDestinationResponseSchema,
     });
   },
 
   create(input: CreateOrganizationRequest): Promise<CreateOrganizationResponse> {
     const body = createOrganizationRequestSchema.parse(input);
-    return requestJson({
+    return requestOrganizationsJson({
       path: "/api/v1/organizations/",
       method: "POST",
       body,
-      parse: (data) => createOrganizationResponseSchema.parse(data),
+      schema: createOrganizationResponseSchema,
     });
   },
 
   acceptInvitation(input: AcceptInvitationRequest): Promise<AcceptCompetitionInvitationResponse> {
     const body = acceptInvitationRequestSchema.parse(input);
-    return requestJson({
+    return requestOrganizationsJson({
       path: "/api/v1/competitions/invitations/accept",
       method: "POST",
       body,
-      parse: (data) => acceptCompetitionInvitationResponseSchema.parse(data),
+      schema: acceptCompetitionInvitationResponseSchema,
     });
   },
 
@@ -121,11 +110,11 @@ export const organizationsBrowserClient = {
     input: CreateInvitationRequest,
   ): Promise<CreateInvitationResponse> {
     const body = createInvitationRequestSchema.parse(input);
-    return requestJson({
+    return requestOrganizationsJson({
       path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/invitations`,
       method: "POST",
       body,
-      parse: (data) => createInvitationResponseSchema.parse(data),
+      schema: createInvitationResponseSchema,
     });
   },
 };

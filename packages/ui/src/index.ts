@@ -85,7 +85,8 @@ export { Field, FieldDescription, FieldError, FieldLabel, FieldValidity } from "
 export type { FieldActions } from "./components/field";
 export { Form } from "./components/form";
 export type { FormErrors, FormProps } from "./components/form";
-export { readFormString } from "./lib/read-form-string";
+export { readFormString, type FormFieldValue } from "./lib/read-form-string";
+export { hasBrowserWindow } from "./lib/browser-runtime";
 export { Input } from "./components/input";
 export type { InputProps } from "./components/input";
 export { InputWithIcon } from "./components/input-with-icon";

@@ -63,7 +63,7 @@ function getCompetitionTimeZones(): readonly { value: string; label: string }[] 
   let localTimeZone = "UTC";
   try {
     localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    if (typeof Intl.supportedValuesOf === "function") {
+    if ("supportedValuesOf" in Intl) {
       values = Intl.supportedValuesOf("timeZone");
     }
   } catch {

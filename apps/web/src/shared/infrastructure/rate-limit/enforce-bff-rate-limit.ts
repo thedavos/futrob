@@ -1,5 +1,6 @@
 import type { RequestId } from "@futrob/api-contracts";
 import type { ActorId } from "@futrob/shared-kernel";
+import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
 import type { AppD1Database } from "../d1.ts";
 import { apiErrorResponse } from "../http/api-response.ts";
 import {
@@ -11,7 +12,7 @@ import {
 import { D1BffRateLimiter } from "./d1-bff-rate-limiter.ts";
 import { fingerprintRateLimitSubject } from "./rate-limit-fingerprint.ts";
 
-type RateLimitLogEntry = Readonly<{
+export type RateLimitLogEntry = Readonly<{
   event: "bff.rate_limit.checked";
   environment: string;
   outcome: RateLimitDecision["outcome"];
@@ -184,6 +185,5 @@ export async function enforceBffRateLimit(
 }
 
 async function loadWorkerBindings(): Promise<RateLimitBindings> {
-  const { getWorkerEnv } = await import("@/modules/identity/adapters/auth/worker-env.ts");
-  return getWorkerEnv();
+  return getWorkerBindings();
 }

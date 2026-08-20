@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
 
+import type { ReactNode } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import type { GetMyStatisticsResponse } from "@futrob/api-contracts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerStatisticsPage } from "./player-statistics-page.tsx";
 
-const getMyStatistics = vi.fn<() => Promise<unknown>>();
+const getMyStatistics = vi.fn<() => Promise<GetMyStatisticsResponse>>();
 
 vi.mock("@/modules/statistics/presentation/statistics-browser-client.ts", () => ({
   statisticsBrowserClient: {
@@ -15,9 +17,9 @@ vi.mock("@/modules/statistics/presentation/statistics-browser-client.ts", () => 
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children, ...props }: { to: string; children?: unknown }) => (
+  Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
     <a href={to} {...props}>
-      {children as never}
+      {children}
     </a>
   ),
 }));
@@ -74,7 +76,6 @@ describe("PlayerStatisticsPage", () => {
         },
         sourceRevisionMax: 2,
         updatedAt: "2026-08-12T12:00:00.000Z",
-        rawPayload: "raw-provider-payload",
       },
     });
 
@@ -99,15 +100,6 @@ function renderPage() {
   );
 }
 
-function metricRecord<T>(
-  fallback: T,
-  overrides: Partial<Record<Metric, T>> = {},
-): Record<Metric, T> {
-  return Object.fromEntries(
-    METRICS.map((metric) => [metric, overrides[metric] ?? fallback]),
-  ) as Record<Metric, T>;
-}
-
 const METRICS = [
   "goals",
   "assists",
@@ -124,3 +116,20 @@ const METRICS = [
 ] as const;
 
 type Metric = (typeof METRICS)[number];
+
+function metricRecord<T>(fallback: T, overrides: Partial<Record<Metric, T>> = {}) {
+  return {
+    goals: overrides.goals ?? fallback,
+    assists: overrides.assists ?? fallback,
+    shots: overrides.shots ?? fallback,
+    passAttempts: overrides.passAttempts ?? fallback,
+    passesMade: overrides.passesMade ?? fallback,
+    tackleAttempts: overrides.tackleAttempts ?? fallback,
+    tacklesMade: overrides.tacklesMade ?? fallback,
+    saves: overrides.saves ?? fallback,
+    yellowCards: overrides.yellowCards ?? fallback,
+    redCards: overrides.redCards ?? fallback,
+    mvpAwards: overrides.mvpAwards ?? fallback,
+    rating: overrides.rating ?? fallback,
+  } satisfies Record<Metric, T>;
+}

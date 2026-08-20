@@ -27,6 +27,15 @@ import type {
   TeamMatchSide,
 } from "@futrob/statistics";
 import {
+  competitionStandingRowSchema,
+  playerStatisticPartialFlagsSchema,
+  playerStatisticRatesSchema,
+  playerStatisticTotalsSchema,
+  rankingEligibilitySchema,
+  rankingKindSchema,
+  rankingRowSchema,
+} from "@futrob/api-contracts";
+import {
   COMPETITION_STANDING_FORMULA_VERSION,
   RANKING_FORMULA_VERSION,
   RANKING_KINDS,
@@ -41,6 +50,8 @@ import {
   type TeamId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { parseJsonColumn, type PgJsonInput } from "@/adapters/persistence/parse-json-column.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 const CONTRIBUTION_COLUMNS = 30;
@@ -368,10 +379,7 @@ export class PostgresPlayerPersonalStatsRepository implements PlayerPersonalStat
   }
 }
 
-function matchedContributionFilters(input: MatchedPlayerContributionQuery): {
-  readonly filters: string[];
-  readonly params: unknown[];
-} {
+function matchedContributionFilters(input: MatchedPlayerContributionQuery) {
   const params: unknown[] = [input.playerProfileId];
   const filters = [`player_profile_id = $1`, `correlation_status = 'matched'`];
   for (const [column, value] of [
@@ -480,10 +488,10 @@ function rehydrateCompetitionStats(row: CompetitionStatsRow): PlayerCompetitionS
     organizationId: asOrganizationId(row.organization_id),
     matchesPlayed: Number(row.matches_played),
     minutes: Number(row.minutes),
-    totals: parseJsonRecord(row.totals),
-    averages: parseJsonRecord(row.averages),
-    per90: parseJsonRecord(row.per90),
-    partial: parseJsonRecord(row.partial),
+    totals: parseJsonRecord(playerStatisticTotalsSchema, row.totals),
+    averages: parseJsonRecord(playerStatisticRatesSchema, row.averages),
+    per90: parseJsonRecord(playerStatisticRatesSchema, row.per90),
+    partial: parseJsonRecord(playerStatisticPartialFlagsSchema, row.partial),
     sourceRevisionMax: Number(row.source_revision_max),
     updatedAt: parseDate(row.updated_at),
   };
@@ -494,17 +502,20 @@ function rehydratePersonalStats(row: AggregateStatsRow): PlayerPersonalStats {
     playerProfileId: row.player_profile_id,
     matchesPlayed: Number(row.matches_played),
     minutes: Number(row.minutes),
-    totals: parseJsonRecord(row.totals),
-    averages: parseJsonRecord(row.averages),
-    per90: parseJsonRecord(row.per90),
-    partial: parseJsonRecord(row.partial),
+    totals: parseJsonRecord(playerStatisticTotalsSchema, row.totals),
+    averages: parseJsonRecord(playerStatisticRatesSchema, row.averages),
+    per90: parseJsonRecord(playerStatisticRatesSchema, row.per90),
+    partial: parseJsonRecord(playerStatisticPartialFlagsSchema, row.partial),
     sourceRevisionMax: Number(row.source_revision_max),
     updatedAt: parseDate(row.updated_at),
   };
 }
 
-function parseJsonRecord<T>(value: T | string): T {
-  return typeof value === "string" ? (JSON.parse(value) as T) : value;
+function parseJsonRecord<TSchema extends z.ZodType>(
+  schema: TSchema,
+  value: PgJsonInput,
+): z.infer<TSchema> {
+  return parseJsonColumn(schema, value);
 }
 
 function nullableNumber(value: number | string | null): number | null {
@@ -801,7 +812,7 @@ export class PostgresRankingSnapshotRepository implements RankingSnapshotReposit
     );
     return result.rows
       .map(rehydrateRankingSnapshot)
-      .sort((left, right) => rankingKindOrder(left.kind) - rankingKindOrder(right.kind));
+      .sort((left, right) => RANKING_KINDS.indexOf(left.kind) - RANKING_KINDS.indexOf(right.kind));
   }
 
   async findByCompetitionAndKind(
@@ -929,17 +940,17 @@ function rehydrateTeamCompetitionStats(row: TeamCompetitionStatsRow): TeamCompet
     organizationId: asOrganizationId(row.organization_id),
     matchesPlayed: Number(row.matches_played),
     minutes: Number(row.minutes),
-    totals: parseJsonRecord(row.totals),
-    averages: parseJsonRecord(row.averages),
-    per90: parseJsonRecord(row.per90),
-    partial: parseJsonRecord(row.partial),
+    totals: parseJsonRecord(playerStatisticTotalsSchema, row.totals),
+    averages: parseJsonRecord(playerStatisticRatesSchema, row.averages),
+    per90: parseJsonRecord(playerStatisticRatesSchema, row.per90),
+    partial: parseJsonRecord(playerStatisticPartialFlagsSchema, row.partial),
     sourceRevisionMax: Number(row.source_revision_max),
     updatedAt: parseDate(row.updated_at),
   };
 }
 
 function rehydrateStandingSnapshot(row: StandingSnapshotRow): CompetitionStandingSnapshot {
-  const rows = parseJsonRecord(row.rows).map((standing) => ({
+  const rows = parseJsonColumn(z.array(competitionStandingRowSchema), row.rows).map((standing) => ({
     ...standing,
     teamId: asTeamId(standing.teamId),
   }));
@@ -961,8 +972,8 @@ function rehydrateRankingSnapshot(row: RankingSnapshotRow): RankingSnapshot {
     throw new RangeError(`Unsupported rankings formula version: ${row.formula_version}`);
   }
   const kind = parseRankingKind(row.kind);
-  const eligibility = parseJsonRecord(row.eligibility);
-  const rows = parseJsonRecord(row.rows).map((rankingRow) => ({
+  const eligibility = parseJsonColumn(rankingEligibilitySchema, row.eligibility);
+  const rows = parseJsonColumn(z.array(rankingRowSchema), row.rows).map((rankingRow) => ({
     ...rankingRow,
     teamId: rankingRow.teamId === null ? null : asTeamId(rankingRow.teamId),
   }));
@@ -979,31 +990,7 @@ function rehydrateRankingSnapshot(row: RankingSnapshotRow): RankingSnapshot {
 }
 
 function parseRankingKind(value: string): RankingKind {
-  if ((RANKING_KINDS as readonly string[]).includes(value)) {
-    return value as RankingKind;
-  }
-  throw new RangeError(`Invalid ranking kind: ${value}`);
-}
-
-function rankingKindOrder(kind: RankingKind): number {
-  switch (kind) {
-    case "scorer":
-      return 0;
-    case "assister":
-      return 1;
-    case "rating":
-      return 2;
-    case "mvp":
-      return 3;
-    case "goalkeeper":
-      return 4;
-    default:
-      return assertNever(kind);
-  }
-}
-
-function assertNever(value: never): never {
-  throw new RangeError(`Unexpected value: ${String(value)}`);
+  return rankingKindSchema.parse(value);
 }
 
 function parseTeamCorrelationStatus(value: string): TeamCorrelationStatus {

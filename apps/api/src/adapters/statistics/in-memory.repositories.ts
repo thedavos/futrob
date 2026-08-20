@@ -1,21 +1,22 @@
-import type {
-  MatchedPlayerContributionPageQuery,
-  MatchedPlayerContributionQuery,
-  PlayerCompetitionStats,
-  PlayerCompetitionStatsRepository,
-  PlayerMatchContribution,
-  PlayerMatchContributionRepository,
-  PlayerPersonalStats,
-  PlayerPersonalStatsRepository,
-  CompetitionStandingSnapshot,
-  CompetitionStandingSnapshotRepository,
-  RankingKind,
-  RankingSnapshot,
-  RankingSnapshotRepository,
-  TeamCompetitionStats,
-  TeamCompetitionStatsRepository,
-  TeamMatchContribution,
-  TeamMatchContributionRepository,
+import {
+  RANKING_KINDS,
+  type MatchedPlayerContributionPageQuery,
+  type MatchedPlayerContributionQuery,
+  type PlayerCompetitionStats,
+  type PlayerCompetitionStatsRepository,
+  type PlayerMatchContribution,
+  type PlayerMatchContributionRepository,
+  type PlayerPersonalStats,
+  type PlayerPersonalStatsRepository,
+  type CompetitionStandingSnapshot,
+  type CompetitionStandingSnapshotRepository,
+  type RankingKind,
+  type RankingSnapshot,
+  type RankingSnapshotRepository,
+  type TeamCompetitionStats,
+  type TeamCompetitionStatsRepository,
+  type TeamMatchContribution,
+  type TeamMatchContributionRepository,
 } from "@futrob/statistics";
 import type { CompetitionId, EncounterId, TeamId } from "@futrob/shared-kernel";
 
@@ -244,7 +245,7 @@ export class InMemoryRankingSnapshotRepository implements RankingSnapshotReposit
   async listByCompetition(competitionId: CompetitionId): Promise<RankingSnapshot[]> {
     return [...this.rows.values()]
       .filter((snapshot) => snapshot.competitionId === competitionId)
-      .sort((left, right) => rankingKindOrder(left.kind) - rankingKindOrder(right.kind));
+      .sort((left, right) => RANKING_KINDS.indexOf(left.kind) - RANKING_KINDS.indexOf(right.kind));
   }
 
   async findByCompetitionAndKind(
@@ -276,27 +277,6 @@ function competitionStatsKey(playerProfileId: string, competitionId: Competition
 
 function rankingKey(competitionId: CompetitionId, kind: RankingKind): string {
   return `${competitionId}:${kind}`;
-}
-
-function rankingKindOrder(kind: RankingKind): number {
-  switch (kind) {
-    case "scorer":
-      return 0;
-    case "assister":
-      return 1;
-    case "rating":
-      return 2;
-    case "mvp":
-      return 3;
-    case "goalkeeper":
-      return 4;
-    default:
-      return assertNeverRankingKind(kind);
-  }
-}
-
-function assertNeverRankingKind(kind: never): never {
-  throw new RangeError(`Unsupported ranking kind: ${String(kind)}`);
 }
 
 function matchesContribution(

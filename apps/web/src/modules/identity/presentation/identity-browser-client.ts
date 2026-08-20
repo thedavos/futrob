@@ -25,37 +25,10 @@ import {
   type OrganizationNameAvailabilityResponse,
   type SaveOnboardingProgressRequest,
   type SaveOnboardingProgressResponse,
+  type RequestId,
 } from "@futrob/api-contracts";
-import type { RequestId } from "@futrob/api-contracts";
-import { readBrowserApiError } from "@/shared/infrastructure/http/browser-api-error.ts";
-
-async function requestJson<T>(input: {
-  readonly path?: string;
-  readonly method: "GET" | "POST" | "PATCH";
-  readonly body?: unknown;
-  readonly parse: (data: unknown) => T;
-}): Promise<T> {
-  const response = await fetch(input.path ?? "/api/v1/identity/onboarding", {
-    method: input.method,
-    credentials: "include",
-    headers:
-      input.body === undefined
-        ? { Accept: "application/json" }
-        : { Accept: "application/json", "Content-Type": "application/json" },
-    body: input.body === undefined ? undefined : JSON.stringify(input.body),
-  });
-  const raw: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error = readBrowserApiError(response, raw, "identity.onboarding_request_failed");
-    throw new IdentityOnboardingClientError(
-      response.status,
-      error.code,
-      error.requestId,
-      error.retryAfterSeconds,
-    );
-  }
-  return input.parse(raw);
-}
+import type { z } from "zod";
+import { requestBrowserJson } from "@/shared/infrastructure/http/browser-json-request.ts";
 
 export class IdentityOnboardingClientError extends Error {
   constructor(
@@ -69,23 +42,45 @@ export class IdentityOnboardingClientError extends Error {
   }
 }
 
+async function requestIdentityJson<T>(input: {
+  readonly path?: string;
+  readonly method: "GET" | "POST" | "PATCH";
+  readonly body?: unknown;
+  readonly schema: z.ZodType<T>;
+}): Promise<T> {
+  return requestBrowserJson({
+    path: input.path ?? "/api/v1/identity/onboarding",
+    method: input.method,
+    body: input.body,
+    schema: input.schema,
+    fallbackCode: "identity.onboarding_request_failed",
+    createError: (status, error) =>
+      new IdentityOnboardingClientError(
+        status,
+        error.code,
+        error.requestId,
+        error.retryAfterSeconds,
+      ),
+  });
+}
+
 export const identityBrowserClient = {
   checkOrganizationName(
     input: OrganizationNameAvailabilityRequest,
   ): Promise<OrganizationNameAvailabilityResponse> {
     const body = organizationNameAvailabilityRequestSchema.parse(input);
-    return requestJson({
+    return requestIdentityJson({
       path: "/api/v1/organizations/name-availability",
       method: "POST",
       body,
-      parse: (data) => organizationNameAvailabilityResponseSchema.parse(data),
+      schema: organizationNameAvailabilityResponseSchema,
     });
   },
 
   getOnboardingStatus(): Promise<GetOnboardingStatusResponse> {
-    return requestJson({
+    return requestIdentityJson({
       method: "GET",
-      parse: (data) => getOnboardingStatusResponseSchema.parse(data),
+      schema: getOnboardingStatusResponseSchema,
     });
   },
 
@@ -93,10 +88,10 @@ export const identityBrowserClient = {
     input: SaveOnboardingProgressRequest,
   ): Promise<SaveOnboardingProgressResponse> {
     const body = saveOnboardingProgressRequestSchema.parse(input);
-    return requestJson({
+    return requestIdentityJson({
       method: "PATCH",
       body,
-      parse: (data) => saveOnboardingProgressResponseSchema.parse(data),
+      schema: saveOnboardingProgressResponseSchema,
     });
   },
 
@@ -104,11 +99,11 @@ export const identityBrowserClient = {
     input: CompleteOrganizationOnboardingRequest,
   ): Promise<CompleteOrganizationOnboardingResponse> {
     const body = completeOrganizationOnboardingRequestSchema.parse(input);
-    return requestJson({
+    return requestIdentityJson({
       path: "/api/v1/identity/onboarding/organization",
       method: "POST",
       body,
-      parse: (data) => completeOrganizationOnboardingResponseSchema.parse(data),
+      schema: completeOrganizationOnboardingResponseSchema,
     });
   },
 
@@ -116,11 +111,11 @@ export const identityBrowserClient = {
     input: CompleteInvitationOnboardingRequest,
   ): Promise<CompleteInvitationOnboardingResponse> {
     const body = completeInvitationOnboardingRequestSchema.parse(input);
-    return requestJson({
+    return requestIdentityJson({
       path: "/api/v1/identity/onboarding/invitation",
       method: "POST",
       body,
-      parse: (data) => completeInvitationOnboardingResponseSchema.parse(data),
+      schema: completeInvitationOnboardingResponseSchema,
     });
   },
 
@@ -128,11 +123,11 @@ export const identityBrowserClient = {
     input: InspectCompetitionInvitationRequest,
   ): Promise<InspectCompetitionInvitationResponse> {
     const body = inspectCompetitionInvitationRequestSchema.parse(input);
-    return requestJson({
+    return requestIdentityJson({
       path: "/api/v1/identity/onboarding/invitation/preview",
       method: "POST",
       body,
-      parse: (data) => inspectCompetitionInvitationResponseSchema.parse(data),
+      schema: inspectCompetitionInvitationResponseSchema,
     });
   },
 
@@ -140,11 +135,11 @@ export const identityBrowserClient = {
     input: CompletePlayerOnboardingRequest,
   ): Promise<CompletePlayerOnboardingResponse> {
     const body = completePlayerOnboardingRequestSchema.parse(input);
-    return requestJson({
+    return requestIdentityJson({
       path: "/api/v1/identity/onboarding/player",
       method: "POST",
       body,
-      parse: (data) => completePlayerOnboardingResponseSchema.parse(data),
+      schema: completePlayerOnboardingResponseSchema,
     });
   },
 };

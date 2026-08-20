@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
 import { apiErrorSchema } from "../errors.ts";
 import { futrobOpenApiV1 } from "./document.ts";
+import {
+  getOpenApiOperation,
+  getOpenApiResponse,
+  type OpenApiHttpMethod,
+} from "./openapi-access.ts";
 
 describe("rate-limit contract", () => {
   it("keeps retryAfterSeconds at the top level of an API error", () => {
@@ -20,11 +25,12 @@ describe("rate-limit contract", () => {
     ["/organizations/invitations/accept", "post"],
     ["/competitions/invitations/accept", "post"],
     ["/roster-invitations/accept", "post"],
-  ] as const)("documents 429 for %s", (path, method) => {
-    const operation = Reflect.get(Reflect.get(futrobOpenApiV1.paths, path), method) as {
-      responses: Record<string, unknown>;
-    };
-    expect(operation.responses["429"]).toEqual({
+  ] as const satisfies ReadonlyArray<
+    readonly [keyof typeof futrobOpenApiV1.paths, OpenApiHttpMethod]
+  >)("documents 429 for %s", (path, method) => {
+    const pathItem = futrobOpenApiV1.paths[path];
+    const operation = getOpenApiOperation(pathItem, method);
+    expect(getOpenApiResponse(operation, "429")).toEqual({
       $ref: "#/components/responses/RateLimited",
     });
   });

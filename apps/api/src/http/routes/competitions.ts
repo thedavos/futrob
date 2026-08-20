@@ -25,7 +25,7 @@ import {
 } from "@futrob/api-contracts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { TEAM_PERMISSION } from "@futrob/teams";
-import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
+import { asCompetitionId, asOrganizationId, asTeamId, TaggedError } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
 import {
   apiErrorResponse,
@@ -145,7 +145,9 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
         competitionId,
       });
     } catch (error) {
-      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
+        return failureToHttp(error);
+      }
       throw error;
     }
     return jsonResponse(
@@ -177,7 +179,9 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
           competitionId,
         });
       } catch (error) {
-        if (isHttpMappableFailure(error)) return failureToHttp(error);
+        if (TaggedError.is(error) && isHttpMappableFailure(error)) {
+          return failureToHttp(error);
+        }
         throw error;
       }
       return jsonResponse(
@@ -209,14 +213,20 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     if (!query.success) return validationErrorResponse(query.error.issues);
     let rankings;
     try {
-      rankings = await deps.modules.statistics.useCases.getCompetitionRankings.execute({
-        actorId: c.get("actorId"),
-        organizationId,
-        competitionId,
-        ...(query.data.kind === undefined ? {} : { kind: query.data.kind }),
-      });
+      rankings = await deps.modules.statistics.useCases.getCompetitionRankings.execute(
+        query.data.kind === undefined
+          ? { actorId: c.get("actorId"), organizationId, competitionId }
+          : {
+              actorId: c.get("actorId"),
+              organizationId,
+              competitionId,
+              kind: query.data.kind,
+            },
+      );
     } catch (error) {
-      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
+        return failureToHttp(error);
+      }
       throw error;
     }
     return jsonResponse(

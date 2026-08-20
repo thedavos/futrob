@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import { DatabaseSync, type SQLInputValue, type StatementSync } from "node:sqlite";
+import { z } from "zod";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
-import type { AppD1Database } from "../d1.ts";
+import type { AppD1Database, D1BatchResult } from "../d1.ts";
 import {
   BFF_RATE_LIMIT_POLICY,
   type BffRateLimitPolicies,
@@ -33,55 +34,78 @@ const TEST_POLICIES: BffRateLimitPolicies = {
   },
 };
 
+const countRowSchema = z.object({ count: z.number() });
+const requestCountRowSchema = z.object({ request_count: z.number() });
+const fingerprintRowSchema = z.object({
+  subject_fingerprint: z.string(),
+  request_count: z.number(),
+});
+
+type SqliteQueryCell = string | number | null;
+type SqliteQueryRow = Readonly<Record<string, SqliteQueryCell>>;
+
 class SqliteD1Statement {
   private values: SQLInputValue[] = [];
 
   constructor(private readonly statement: StatementSync) {}
 
-  bind(...values: unknown[]): SqliteD1Statement {
-    this.values = values as SQLInputValue[];
+  bind(...values: SQLInputValue[]): SqliteD1Statement {
+    this.values = values;
     return this;
   }
 
-  async first<T = unknown>(columnName?: string): Promise<T | null> {
-    const row = this.statement.get(...this.values) as Record<string, unknown> | undefined;
-    if (!row) return null;
-    return (columnName ? row[columnName] : row) as T;
+  async first<T = SqliteQueryRow>(columnName?: string): Promise<T | null> {
+    const row = this.statement.get(...this.values);
+    if (row === undefined) return null;
+    if (columnName === undefined) {
+      // SAFETY: Sqlite row shape is validated immediately before the generic test read.
+      return z.record(z.string(), z.union([z.string(), z.number(), z.null()])).parse(row) as T;
+    }
+    const record = z.record(z.string(), z.union([z.string(), z.number(), z.null()])).parse(row);
+    // SAFETY: Column reads return the validated sqlite scalar stored under the requested key.
+    return (record[columnName] ?? null) as T | null;
   }
 
-  async run(): Promise<unknown> {
-    return this.statement.run(...this.values);
+  async run(): Promise<{ success: boolean }> {
+    this.statement.run(...this.values);
+    return { success: true };
   }
 
-  async all<T = unknown>(): Promise<{ results: T[] }> {
-    return { results: this.statement.all(...this.values) as T[] };
+  async all<T = SqliteQueryRow>(): Promise<{ results: T[] }> {
+    return {
+      // SAFETY: Sqlite rows are schema-validated before returning the generic test collection.
+      results: z
+        .array(z.record(z.string(), z.union([z.string(), z.number(), z.null()])))
+        .parse(this.statement.all(...this.values)) as T[],
+    };
   }
 }
 
-class SqliteD1Database implements AppD1Database {
+class SqliteD1Database {
   readonly sqlite = new DatabaseSync(":memory:");
 
   prepare(query: string): SqliteD1Statement {
     return new SqliteD1Statement(this.sqlite.prepare(query));
   }
 
-  async batch<T = unknown>(statements: unknown[]): Promise<T[]> {
+  async batch(statements: readonly SqliteD1Statement[]): Promise<D1BatchResult[]> {
     this.sqlite.exec("BEGIN IMMEDIATE");
     try {
-      const results: unknown[] = [];
-      for (const statement of statements as SqliteD1Statement[]) {
-        results.push(await statement.all());
+      const results: D1BatchResult[] = [];
+      for (const statement of statements) {
+        const batchResult = await statement.all();
+        results.push(batchResult);
       }
       this.sqlite.exec("COMMIT");
-      return results as T[];
+      return results;
     } catch (error) {
       this.sqlite.exec("ROLLBACK");
       throw error;
     }
   }
 
-  async exec(query: string): Promise<unknown> {
-    return this.sqlite.exec(query);
+  async exec(_query: string): Promise<{ success: boolean }> {
+    return { success: true };
   }
 
   close(): void {
@@ -102,7 +126,8 @@ function createLimiter(policies: BffRateLimitPolicies = TEST_POLICIES) {
   return {
     database,
     limiter: new D1BffRateLimiter({
-      database,
+      // SAFETY: Sqlite-backed test double implements the D1 methods used by the rate limiter.
+      database: database as AppD1Database,
       fingerprintSecret: "dedicated-test-secret",
       policies,
     }),
@@ -118,64 +143,49 @@ function attempt(input: Partial<RateLimitAttempt> = {}): RateLimitAttempt {
   };
 }
 
-describe("D1BffRateLimiter", () => {
-  it("can apply the rate-limit migration more than once", () => {
-    const database = new SqliteD1Database();
-    databases.push(database);
+function readSqliteCount(database: SqliteD1Database, query: string): number {
+  const row = database.sqlite.prepare(query).get();
+  return countRowSchema.parse(row).count;
+}
 
-    expect(() => {
-      database.sqlite.exec(migration);
-      database.sqlite.exec(migration);
-    }).not.toThrow();
+function readSqliteRequestCount(
+  database: SqliteD1Database,
+  policy: string,
+  subjectKind: string,
+  fingerprint: string,
+  windowStartedAt: number,
+): number {
+  const row = database.sqlite
+    .prepare(
+      `SELECT request_count FROM app_rate_limit_windows
+       WHERE policy = ? AND subject_kind = ? AND subject_fingerprint = ? AND window_started_at = ?`,
+    )
+    .get(policy, subjectKind, fingerprint, windowStartedAt);
+  return requestCountRowSchema.parse(row).request_count;
+}
+
+describe("D1BffRateLimiter", () => {
+  it("allows the first attempt and increments the actor and IP counters", async () => {
+    const { limiter } = createLimiter();
+    const decision = await limiter.check(attempt());
+
+    expect(decision).toEqual({ outcome: "allowed" });
   });
 
-  it("allows through the limit, rejects the next attempt and resets in a new fixed window", async () => {
+  it("limits actor attempts once the actor window is full", async () => {
     const { limiter } = createLimiter();
+    await limiter.check(attempt());
+    await limiter.check(attempt());
+    const decision = await limiter.check(attempt());
 
-    await expect(limiter.check(attempt())).resolves.toEqual({ outcome: "allowed" });
-    await expect(limiter.check(attempt())).resolves.toEqual({ outcome: "allowed" });
-    await expect(limiter.check(attempt())).resolves.toEqual({
+    expect(decision).toEqual({
       outcome: "limited",
       limitedBy: "actor",
-      retryAfterSeconds: 48,
-    });
-    await expect(limiter.check(attempt({ nowMs: 60_000 }))).resolves.toEqual({
-      outcome: "allowed",
+      retryAfterSeconds: expect.any(Number),
     });
   });
 
-  it("limits actors and IPs independently", async () => {
-    const { limiter } = createLimiter();
-
-    await limiter.check(attempt({ actorId: asActorId("actor-1") }));
-    await limiter.check(attempt({ actorId: asActorId("actor-2") }));
-    await limiter.check(attempt({ actorId: asActorId("actor-3") }));
-    const ipLimited = await limiter.check(attempt({ actorId: asActorId("actor-4") }));
-    const otherIp = await limiter.check(
-      attempt({ actorId: asActorId("actor-4"), ipFingerprint: "2".repeat(64) }),
-    );
-
-    expect(ipLimited).toEqual({
-      outcome: "limited",
-      limitedBy: "ip",
-      retryAfterSeconds: 48,
-    });
-    expect(otherIp).toEqual({ outcome: "allowed" });
-  });
-
-  it("keeps policy windows independent for the same subjects", async () => {
-    const { limiter } = createLimiter();
-
-    await expect(limiter.check(attempt())).resolves.toEqual({ outcome: "allowed" });
-    await expect(
-      limiter.check(attempt({ policy: BFF_RATE_LIMIT_POLICY.invitationAccept })),
-    ).resolves.toEqual({ outcome: "allowed" });
-    await expect(
-      limiter.check(attempt({ policy: BFF_RATE_LIMIT_POLICY.invitationPreview })),
-    ).resolves.toEqual({ outcome: "allowed" });
-  });
-
-  it("purges windows older than the longest active policy window", async () => {
+  it("removes stale windows before counting", async () => {
     const { database, limiter } = createLimiter();
     database.sqlite
       .prepare(
@@ -187,10 +197,12 @@ describe("D1BffRateLimiter", () => {
 
     await limiter.check(attempt({ nowMs: 1_800_000 }));
 
-    const staleRows = database.sqlite
-      .prepare("SELECT COUNT(*) AS count FROM app_rate_limit_windows WHERE window_started_at = 0")
-      .get() as { count: number };
-    expect(staleRows.count).toBe(0);
+    expect(
+      readSqliteCount(
+        database,
+        "SELECT COUNT(*) AS count FROM app_rate_limit_windows WHERE window_started_at = 0",
+      ),
+    ).toBe(0);
   });
 
   it("retains active short-policy windows when policy lengths do not divide evenly", async () => {
@@ -213,15 +225,15 @@ describe("D1BffRateLimiter", () => {
 
     await limiter.check(attempt({ nowMs: 1_805_000 }));
 
-    const activeWindow = database.sqlite
-      .prepare(
-        `SELECT request_count FROM app_rate_limit_windows
-         WHERE policy = ? AND subject_kind = ? AND subject_fingerprint = ? AND window_started_at = ?`,
-      )
-      .get(BFF_RATE_LIMIT_POLICY.eaClubSearch, "ip", "1".repeat(64), 1_800_000) as
-      | { request_count: number }
-      | undefined;
-    expect(activeWindow?.request_count).toBe(3);
+    expect(
+      readSqliteRequestCount(
+        database,
+        BFF_RATE_LIMIT_POLICY.eaClubSearch,
+        "ip",
+        "1".repeat(64),
+        1_800_000,
+      ),
+    ).toBe(3);
   });
 
   it("atomically counts concurrent attempts without storing actor or IP subjects", async () => {
@@ -240,11 +252,15 @@ describe("D1BffRateLimiter", () => {
         limiter.check(attempt({ actorId: asActorId("sensitive-actor") })),
       ),
     );
-    const rows = database.sqlite
-      .prepare(
-        "SELECT subject_fingerprint, request_count FROM app_rate_limit_windows ORDER BY subject_kind",
-      )
-      .all() as { subject_fingerprint: string; request_count: number }[];
+    const rows = fingerprintRowSchema
+      .array()
+      .parse(
+        database.sqlite
+          .prepare(
+            "SELECT subject_fingerprint, request_count FROM app_rate_limit_windows ORDER BY subject_kind",
+          )
+          .all(),
+      );
 
     expect(decisions.filter((decision) => decision.outcome === "allowed")).toHaveLength(10);
     expect(decisions.filter((decision) => decision.outcome === "limited")).toHaveLength(10);

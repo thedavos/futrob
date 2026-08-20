@@ -62,7 +62,7 @@ describe("identityBrowserClient", () => {
         },
         gameAccount: null,
       })
-      .catch((error: unknown) => error);
+      .catch((error: Error) => error);
 
     expect(caught).toBeInstanceOf(IdentityOnboardingClientError);
     expect(caught).toMatchObject({
@@ -89,7 +89,7 @@ describe("identityBrowserClient", () => {
 
     const caught = await identityBrowserClient
       .completeInvitationOnboarding({ token: "private-token", gameAccount: null })
-      .catch((error: unknown) => error);
+      .catch((error: Error) => error);
 
     expect(caught).toBeInstanceOf(IdentityOnboardingClientError);
     expect(caught).toMatchObject({

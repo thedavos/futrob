@@ -178,16 +178,17 @@ export class EditFixtureEncounterUseCase {
           if (pairingError) return err(pairingError);
         }
 
-        const after: FixtureEncounter = {
-          ...before,
-          ...(input.scheduledStartAt ? { scheduledStartAt: input.scheduledStartAt } : {}),
-          ...(input.homeTeamId && input.awayTeamId
-            ? {
-                home: { kind: "team" as const, teamId: input.homeTeamId },
-                away: { kind: "team" as const, teamId: input.awayTeamId },
-              }
-            : {}),
-        };
+        let after: FixtureEncounter = { ...before };
+        if (input.scheduledStartAt) {
+          after = { ...after, scheduledStartAt: input.scheduledStartAt };
+        }
+        if (input.homeTeamId && input.awayTeamId) {
+          after = {
+            ...after,
+            home: { kind: "team", teamId: input.homeTeamId },
+            away: { kind: "team", teamId: input.awayTeamId },
+          };
+        }
         if (encountersEqual(before, after)) return ok(plan);
         if (hasTeamCollision(plan, after)) {
           return err(invalid("A Team cannot have two encounters at the same scheduled time"));

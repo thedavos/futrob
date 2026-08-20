@@ -4,6 +4,8 @@ import { cn } from "#lib/utils";
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
+    // Consumers must pass `htmlFor` or wrap an associated control.
+    // eslint-disable-next-line jsx-a11y/label-has-associated-control -- primitive forwards label semantics via props
     <label
       data-slot="label"
       className={cn(

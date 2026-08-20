@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { PlayerMatchContribution } from "@futrob/statistics";
-import { asCompetitionId, asTeamId } from "@futrob/shared-kernel";
+import { asCompetitionId, asTeamId, TaggedError } from "@futrob/shared-kernel";
 import {
   addMyPlayerGameAccountRequestSchema,
   addMyPlayerGameAccountResponseSchema,
@@ -134,7 +134,9 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
         ...personalStatisticsFilters(parsed.data),
       });
     } catch (error) {
-      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
+        return failureToHttp(error);
+      }
       throw error;
     }
     return jsonResponse(
@@ -170,14 +172,19 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
 
     let page;
     try {
-      page = await statistics.useCases.listMyMatchContributions.execute({
+      const filters = personalStatisticsFilters(parsed.data);
+      const base = {
         actorId: c.get("actorId"),
-        ...personalStatisticsFilters(parsed.data),
-        ...(parsed.data.cursor === undefined ? {} : { cursor: parsed.data.cursor }),
         limit: parsed.data.limit,
-      });
+        ...filters,
+      };
+      page = await statistics.useCases.listMyMatchContributions.execute(
+        parsed.data.cursor === undefined ? base : { ...base, cursor: parsed.data.cursor },
+      );
     } catch (error) {
-      if (isHttpMappableFailure(error)) return failureToHttp(error);
+      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
+        return failureToHttp(error);
+      }
       throw error;
     }
     return jsonResponse(
@@ -228,6 +235,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     if (parsed.data.externalClubId && details.externalClubs.length > 0 && clubs.length === 0) {
       return validationErrorResponse([
         {
+          code: "custom",
           path: ["externalClubId"],
           message: "externalClubId must match an associated club",
         },
@@ -313,13 +321,12 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
 
 function personalStatisticsFilters(query: GetMyStatisticsQuery) {
   return {
-    ...(query.competitionId === undefined
-      ? {}
-      : { competitionId: asCompetitionId(query.competitionId) }),
-    ...(query.teamId === undefined ? {} : { teamId: asTeamId(query.teamId) }),
-    ...(query.gameEdition === undefined ? {} : { gameEdition: query.gameEdition }),
-    ...(query.platform === undefined ? {} : { platform: query.platform }),
-    ...(query.position === undefined ? {} : { position: query.position }),
+    competitionId:
+      query.competitionId === undefined ? undefined : asCompetitionId(query.competitionId),
+    teamId: query.teamId === undefined ? undefined : asTeamId(query.teamId),
+    gameEdition: query.gameEdition,
+    platform: query.platform,
+    position: query.position,
   };
 }
 

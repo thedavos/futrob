@@ -7,7 +7,19 @@ import {
   type EncounterId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
+
+const encounterScheduleRowSchema = z.object({
+  encounter_id: pgTextSchema,
+  organization_id: pgTextSchema,
+  competition_id: pgTextSchema,
+  home_team_id: pgTextSchema,
+  away_team_id: pgTextSchema,
+  scheduled_start_at: pgTimestampSchema,
+  official_match_count: z.coerce.number().pipe(z.union([z.literal(1), z.literal(2)])),
+});
 
 export class InMemoryEncounterScheduleRepository implements EncounterScheduleRepository {
   readonly rows = new Map<EncounterId, EncounterScheduleSnapshot>();
@@ -45,9 +57,8 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
        WHERE encounter_id = $1`,
       [encounterId],
     );
-    const row = result.rows[0] as EncounterScheduleSnapshotRow | undefined;
-    if (!row) return null;
-    return rehydrateEncounterScheduleSnapshot(row);
+    const row = result.rows[0];
+    return row ? rehydrateEncounterScheduleSnapshot(encounterScheduleRowSchema.parse(row)) : null;
   }
 
   async upsert(snapshot: EncounterScheduleSnapshot): Promise<EncounterScheduleSnapshot | null> {
@@ -86,18 +97,8 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
   }
 }
 
-interface EncounterScheduleSnapshotRow {
-  encounter_id: string;
-  organization_id: string;
-  competition_id: string;
-  home_team_id: string;
-  away_team_id: string;
-  scheduled_start_at: Date | string;
-  official_match_count: number;
-}
-
 function rehydrateEncounterScheduleSnapshot(
-  row: EncounterScheduleSnapshotRow,
+  row: z.infer<typeof encounterScheduleRowSchema>,
 ): EncounterScheduleSnapshot {
   return {
     encounterId: asEncounterId(row.encounter_id),
@@ -105,7 +106,7 @@ function rehydrateEncounterScheduleSnapshot(
     competitionId: asCompetitionId(row.competition_id),
     homeTeamId: asTeamId(row.home_team_id),
     awayTeamId: asTeamId(row.away_team_id),
-    scheduledStartAt: new Date(row.scheduled_start_at),
-    officialMatchCount: Number(row.official_match_count) as 1 | 2,
+    scheduledStartAt: row.scheduled_start_at,
+    officialMatchCount: row.official_match_count,
   };
 }

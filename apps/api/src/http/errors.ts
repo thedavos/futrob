@@ -1,5 +1,7 @@
 import type { ApiErrorBody, ApiErrorDetails } from "@futrob/api-contracts";
-import { TaggedError } from "@futrob/shared-kernel";
+import { apiErrorDetailsSchema } from "@futrob/api-contracts";
+import type { AnyTaggedError } from "@futrob/shared-kernel";
+import { z, type ZodIssue } from "zod";
 import { currentRequestCorrelation } from "@/context/request-correlation.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
@@ -11,25 +13,12 @@ export type HttpMappableFailure = {
   readonly retryAfterMs?: number;
 };
 
-const DETAIL_KEYS = [
-  "organizationId",
-  "role",
-  "status",
-  "path",
-  "body",
-  "issues",
-  "externalClubId",
-  "cause",
-  "completedPath",
-  "requestedPath",
-] as const satisfies readonly (keyof ApiErrorDetails)[];
-
 export function apiErrorResponse(status: number, body: ApiErrorBody): Response {
   const correlation = currentRequestCorrelation();
   return jsonResponse(correlation ? { ...body, requestId: correlation.requestId } : body, status);
 }
 
-export function validationErrorResponse(issues: unknown): Response {
+export function validationErrorResponse(issues: ZodIssue[]): Response {
   return apiErrorResponse(400, {
     code: "api.validation_error",
     messageKey: "errors.api.validation_error",
@@ -55,26 +44,27 @@ export function failureToHttp(error: HttpMappableFailure): Response {
   return response;
 }
 
-/** TaggedError expected failures that carry a stable wire `code`. */
-export function isHttpMappableFailure(error: unknown): error is HttpMappableFailure {
-  return (
-    TaggedError.is(error) &&
-    "code" in error &&
-    typeof (error as { code: unknown }).code === "string"
-  );
-}
+const httpMappableFailureSchema = z.object({
+  code: z.string(),
+  details: z.custom<ApiErrorDetails>().optional(),
+  retryAfterSeconds: z.number().optional(),
+  retryAfterMs: z.number().optional(),
+});
+
+const taggedErrorDetailsSchema = apiErrorDetailsSchema.partial();
 
 function detailsFromTaggedProps(error: HttpMappableFailure): ApiErrorDetails | undefined {
   if (error.code.startsWith("game_data.ea_clubs_")) return undefined;
-  const details: Partial<ApiErrorDetails> = {};
-  for (const key of DETAIL_KEYS) {
-    if (!Object.hasOwn(error, key)) continue;
-    const value = Reflect.get(error, key);
-    if (value !== undefined) {
-      Object.assign(details, { [key]: value });
-    }
-  }
-  return Object.keys(details).length > 0 ? details : undefined;
+  const parsed = taggedErrorDetailsSchema.safeParse(error);
+  if (!parsed.success) return undefined;
+  return Object.keys(parsed.data).length > 0 ? parsed.data : undefined;
+}
+
+/** TaggedError expected failures that carry a stable wire `code`. */
+export function isHttpMappableFailure(
+  error: AnyTaggedError,
+): error is AnyTaggedError & HttpMappableFailure {
+  return httpMappableFailureSchema.safeParse(error).success;
 }
 
 function statusForFailureCode(code: string): number {

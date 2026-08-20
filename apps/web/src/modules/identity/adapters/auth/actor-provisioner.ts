@@ -76,9 +76,9 @@ export async function ensureActorForSubject(
   return asActorId(actorId);
 }
 
-export function credentialSubject(userId: string): {
-  provider: typeof CREDENTIAL_IDENTITY_PROVIDER;
-  subject: string;
-} {
-  return { provider: CREDENTIAL_IDENTITY_PROVIDER, subject: userId };
+export function credentialSubject(userId: string) {
+  return { provider: CREDENTIAL_IDENTITY_PROVIDER, subject: userId } satisfies {
+    provider: typeof CREDENTIAL_IDENTITY_PROVIDER;
+    subject: string;
+  };
 }

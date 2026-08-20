@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
+import type { asCompetitionId } from "@futrob/shared-kernel";
+import { asActorId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "../domain/entities/competition-entry.ts";
 import type { CompetitionEntryRepository } from "../domain/ports/competition-entry.repository.ts";
 import type {

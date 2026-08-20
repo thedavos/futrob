@@ -2,6 +2,8 @@ import { createFutrobClient, type FutrobClient } from "@futrob/sdk";
 import { REQUEST_ID_HEADER, type RequestId } from "@futrob/api-contracts";
 import type { ActorId } from "@futrob/shared-kernel";
 
+import { readNodeEnv } from "@/shared/infrastructure/node-env.ts";
+
 const DEFAULT_API_BASE_URL = "http://localhost:8787/api/v1";
 
 export class ProductApiUnreachableError extends Error {
@@ -16,8 +18,8 @@ export class ProductApiUnreachableError extends Error {
 export function resolveProductApiBaseUrl(explicit?: string): string {
   return (
     explicit ??
-    (typeof process !== "undefined" ? process.env.FUTROB_API_BASE_URL : undefined) ??
-    (typeof process !== "undefined" ? process.env.VITE_FUTROB_API_BASE_URL : undefined) ??
+    readNodeEnv("FUTROB_API_BASE_URL") ??
+    readNodeEnv("VITE_FUTROB_API_BASE_URL") ??
     DEFAULT_API_BASE_URL
   ).replace(/\/$/, "");
 }
@@ -44,12 +46,13 @@ export function createProductApiClient(input: {
 
 function withUnreachableMapping(fetchImpl: typeof fetch | undefined): typeof fetch {
   const unbound = fetchImpl ?? globalThis.fetch.bind(globalThis);
-  return (async (input, init) => {
+  const mappedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     try {
       return await unbound(input, init);
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") throw error;
       throw new ProductApiUnreachableError();
     }
-  }) as typeof fetch;
+  };
+  return mappedFetch satisfies typeof fetch;
 }

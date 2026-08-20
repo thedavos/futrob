@@ -81,7 +81,7 @@ describe("useEffectivePermissions", () => {
 
   it("uses distinct query keys per authorization scope", async () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
-      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const url = input instanceof Request ? input.url : input instanceof URL ? input.href : input;
       const allowed = url.includes("competitionId=c2");
       return new Response(
         JSON.stringify(

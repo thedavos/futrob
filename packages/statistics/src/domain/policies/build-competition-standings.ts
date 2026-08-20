@@ -1,4 +1,4 @@
-import type { TeamId } from "@futrob/shared-kernel";
+import { assertNever, type TeamId } from "@futrob/shared-kernel";
 import {
   COMPETITION_STANDING_FORMULA_VERSION,
   type CompetitionStandingRow,
@@ -113,7 +113,7 @@ function matchesForStandings(
     case "aggregate_score":
       return aggregateEncounterMatches(matched);
     default:
-      return assertNever(resolutionMode);
+      return assertNever(resolutionMode, "Unsupported standing resolution mode");
   }
 }
 
@@ -164,8 +164,4 @@ function compareStandings(left: MutableStanding, right: MutableStanding): number
     right.goalsFor - left.goalsFor ||
     left.teamId.localeCompare(right.teamId)
   );
-}
-
-function assertNever(value: never): never {
-  throw new RangeError(`Unsupported standing resolution mode: ${String(value)}`);
 }

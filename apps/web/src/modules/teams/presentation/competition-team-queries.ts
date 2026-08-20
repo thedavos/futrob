@@ -3,6 +3,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type InfiniteData,
   type QueryClient,
 } from "@tanstack/react-query";
 import type {
@@ -14,14 +15,21 @@ import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { teamsBrowserClient } from "./teams-browser-client.ts";
 
 export function useCompetitionTeamManagementQuery(organizationId: string, competitionId: string) {
-  return useInfiniteQuery({
+  type Page = Awaited<ReturnType<typeof teamsBrowserClient.listCompetitionManagement>>;
+  return useInfiniteQuery<
+    Page,
+    Error,
+    InfiniteData<Page>,
+    ReturnType<typeof queryKeys.teams.competitionManagement>,
+    string | undefined
+  >({
     queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
     queryFn: ({ pageParam }) =>
       teamsBrowserClient.listCompetitionManagement(organizationId, competitionId, {
         cursor: pageParam,
         limit: 25,
       }),
-    initialPageParam: undefined as string | undefined,
+    initialPageParam: undefined,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: organizationId.length > 0 && competitionId.length > 0,
   });

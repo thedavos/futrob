@@ -1,5 +1,4 @@
-import type { GamePlatform } from "../entities/player-game-account.ts";
-import type { PlayerGameAccount } from "../entities/player-game-account.ts";
+import type { GamePlatform, PlayerGameAccount } from "../entities/player-game-account.ts";
 
 export interface PlayerGameAccountRepository {
   findById(id: string): Promise<PlayerGameAccount | null>;

@@ -19,7 +19,7 @@ describe("invitationAcceptErrorMessage", () => {
   });
 
   it("falls back for unknown errors", () => {
-    expect(invitationAcceptErrorMessage(new Error("boom"))).toBe(
+    expect(invitationAcceptErrorMessage(null)).toBe(
       "No se pudo aceptar la invitación. Inténtalo de nuevo.",
     );
   });

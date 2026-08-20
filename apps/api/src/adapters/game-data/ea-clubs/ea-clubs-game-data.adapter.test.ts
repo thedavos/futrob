@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vite-plus/test";
+import { createFetch } from "@/http/http-app.harness.ts";
 import { EaClubsGameDataAdapter } from "./ea-clubs-game-data.adapter.ts";
 
 const input = {
@@ -62,14 +63,16 @@ describe("EaClubsGameDataAdapter", () => {
     });
   });
 
-  it("records schema instead of success when HTTP 200 fails validation", async () => {
+  it("treats an empty EA match payload as no matches on HTTP 200", async () => {
     const outcomes: string[] = [];
     const adapter = new EaClubsGameDataAdapter({
-      fetcher: (async () =>
-        new Response("{}", {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        })) as typeof fetch,
+      fetcher: createFetch(
+        async () =>
+          new Response("{}", {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ),
       baseUrl: "https://example.test",
       timeoutMs: 1_000,
       health: {
@@ -83,7 +86,10 @@ describe("EaClubsGameDataAdapter", () => {
 
     const result = await adapter.ingestRecentMatches(input);
 
-    expect(result.isOk()).toBe(false);
-    expect(outcomes).toEqual(["schema"]);
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk()) return;
+    expect(result.value.observations).toEqual([]);
+    expect(result.value.matches).toEqual([]);
+    expect(outcomes).toEqual(["success"]);
   });
 });

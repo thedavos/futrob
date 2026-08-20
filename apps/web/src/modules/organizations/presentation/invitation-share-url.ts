@@ -1,3 +1,5 @@
+import { hasBrowserWindow } from "@futrob/ui";
+
 /** Canonical access-invitation deep link path (plain token is base64url). */
 export function invitationAcceptPath(plainToken: string): string {
   return `/invitations/accept/${plainToken}`;
@@ -6,7 +8,7 @@ export function invitationAcceptPath(plainToken: string): string {
 /** Client-built share URL. Create API still returns only `token`. */
 export function buildInvitationShareUrl(
   plainToken: string,
-  origin: string = typeof window !== "undefined" ? window.location.origin : "",
+  origin: string = hasBrowserWindow() ? window.location.origin : "",
 ): string {
   return `${origin}${invitationAcceptPath(plainToken)}`;
 }

@@ -1,7 +1,6 @@
-import { asActorId } from "@futrob/shared-kernel";
-import type { GameDataProviderKey } from "@futrob/game-data";
+import { gameDataProviderKeyQuerySchema, gamePlatformSchema } from "@futrob/api-contracts";
+import { asActorId, type GamePlatform } from "@futrob/shared-kernel";
 import type {
-  GamePlatform,
   PlayerExternalClubAssociation,
   PlayerExternalClubAssociationRepository,
   PlayerGameAccount,
@@ -213,7 +212,7 @@ function rehydrateAccount(row: {
     identifier: row.identifier,
     normalizedIdentifier: row.normalized_identifier,
     providerExternalPlayerId: row.provider_external_player_id,
-    platform: row.platform as GamePlatform,
+    platform: gamePlatformSchema.parse(row.platform),
     gameEdition: row.game_edition,
     createdAt: new Date(row.created_at),
   };
@@ -231,7 +230,7 @@ function rehydrateAssociation(row: {
 }): PlayerExternalClubAssociation {
   return {
     playerProfileId: row.player_profile_id,
-    providerKey: row.provider_key as GameDataProviderKey,
+    providerKey: gameDataProviderKeyQuerySchema.parse(row.provider_key),
     externalClubId: row.external_club_id,
     externalClubName: row.external_club_name,
     platform: row.platform,

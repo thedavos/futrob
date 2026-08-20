@@ -1,4 +1,5 @@
-import type { AppD1Database } from "../d1.ts";
+import type { D1BatchResult, AppD1Database } from "../d1.ts";
+import { z } from "zod";
 import type {
   BffRateLimiter,
   BffRateLimitPolicies,
@@ -25,10 +26,6 @@ const PURGE_EXPIRED_WINDOWS_SQL = `
 DELETE FROM app_rate_limit_windows
 WHERE window_started_at < ?
 `;
-
-type CounterResult = Readonly<{
-  results: readonly Readonly<{ request_count: number }>[];
-}>;
 
 export class D1BffRateLimiter implements BffRateLimiter {
   private readonly database: AppD1Database;
@@ -63,7 +60,7 @@ export class D1BffRateLimiter implements BffRateLimiter {
       attempt.actorId,
     );
     const retentionCutoff = attempt.nowMs - this.maxPolicyWindowMs;
-    const [, actor, ip] = await this.database.batch<CounterResult>([
+    const [, actor, ip] = await this.database.batch([
       this.database.prepare(PURGE_EXPIRED_WINDOWS_SQL).bind(retentionCutoff),
       this.database
         .prepare(INCREMENT_WINDOW_SQL)
@@ -90,10 +87,11 @@ export class D1BffRateLimiter implements BffRateLimiter {
   }
 }
 
-function readCount(result: CounterResult | undefined): number {
-  const count = result?.results[0]?.request_count;
-  if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 1) {
+function readCount(result: D1BatchResult | undefined): number {
+  const count = result?.results[0];
+  const parsed = z.object({ request_count: z.number().int().min(1) }).safeParse(count);
+  if (!parsed.success) {
     throw new Error("Rate-limit counter did not return a valid count");
   }
-  return count;
+  return parsed.data.request_count;
 }

@@ -1,3 +1,8 @@
+import {
+  competitionInviteRoleSchema,
+  orgMembershipRoleSchema,
+  redeemPolicySchema,
+} from "@futrob/api-contracts";
 import type {
   InvitationRepository,
   MembershipRepository,
@@ -7,11 +12,14 @@ import type {
   OrganizationInvitation,
   OrganizationMembership,
   OrganizationRepository,
-  OrgMembershipRole,
 } from "@futrob/organizations";
 import { INVITATION_STATUS, REDEEM_POLICY } from "@futrob/organizations";
 import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
+import { z } from "zod";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
+
+const invitationStatusSchema = z.enum(["pending", "accepted", "revoked", "expired"]);
 
 export class InMemoryOrganizationRepository implements OrganizationRepository {
   readonly byId = new Map<string, Organization>();
@@ -227,7 +235,7 @@ export function rehydrateMembership(row: {
   return {
     organizationId: asOrganizationId(row.organization_id),
     actorId: asActorId(row.actor_id),
-    role: row.role as OrgMembershipRole,
+    role: orgMembershipRoleSchema.parse(row.role),
     createdAt: new Date(row.created_at),
   };
 }
@@ -254,21 +262,39 @@ export interface InvitationRow {
   redeemed_count: number;
 }
 
+export const invitationRowSchema = z.object({
+  id: pgTextSchema,
+  organization_id: pgTextSchema,
+  competition_id: pgTextSchema.nullable().optional(),
+  role: competitionInviteRoleSchema,
+  token_hash: pgTextSchema,
+  email: pgTextSchema.nullable(),
+  status: invitationStatusSchema,
+  invited_by_actor_id: pgTextSchema,
+  expires_at: pgTimestampSchema,
+  accepted_by_actor_id: pgTextSchema.nullable(),
+  created_at: pgTimestampSchema,
+  redeem_policy: redeemPolicySchema,
+  max_redemptions: z.coerce.number().nullable(),
+  redeemed_count: z.coerce.number(),
+});
+
 export function rehydrateInvitation(row: InvitationRow): OrganizationInvitation {
+  const parsed = invitationRowSchema.parse(row);
   return {
-    id: row.id,
-    organizationId: asOrganizationId(row.organization_id),
-    competitionId: row.competition_id ? asCompetitionId(row.competition_id) : null,
-    role: row.role as OrganizationInvitation["role"],
-    tokenHash: row.token_hash,
-    email: row.email,
-    status: row.status as OrganizationInvitation["status"],
-    invitedByActorId: asActorId(row.invited_by_actor_id),
-    expiresAt: new Date(row.expires_at),
-    acceptedByActorId: row.accepted_by_actor_id ? asActorId(row.accepted_by_actor_id) : null,
-    createdAt: new Date(row.created_at),
-    redeemPolicy: row.redeem_policy as OrganizationInvitation["redeemPolicy"],
-    maxRedemptions: row.max_redemptions,
-    redeemedCount: row.redeemed_count,
+    id: parsed.id,
+    organizationId: asOrganizationId(parsed.organization_id),
+    competitionId: parsed.competition_id ? asCompetitionId(parsed.competition_id) : null,
+    role: parsed.role,
+    tokenHash: parsed.token_hash,
+    email: parsed.email,
+    status: parsed.status,
+    invitedByActorId: asActorId(parsed.invited_by_actor_id),
+    expiresAt: parsed.expires_at,
+    acceptedByActorId: parsed.accepted_by_actor_id ? asActorId(parsed.accepted_by_actor_id) : null,
+    createdAt: parsed.created_at,
+    redeemPolicy: parsed.redeem_policy,
+    maxRedemptions: parsed.max_redemptions,
+    redeemedCount: parsed.redeemed_count,
   };
 }

@@ -3,6 +3,7 @@ import { setActiveTeamRequestSchema, setActiveTeamResponseSchema } from "@futrob
 import {
   createAuthenticatedProductApiClient,
   productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
 } from "@/context/create-authenticated-product-api-client.ts";
 import { apiErrorResponse, jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
 
@@ -26,7 +27,10 @@ export const Route = createFileRoute("/api/v1/players/me/active-team")({
             setActiveTeamResponseSchema.parse(await client.teams.setActiveTeam(parsed.data)),
           );
         } catch (error) {
-          return productApiBffErrorResponse(error);
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
+          return productApiBffErrorResponseForError(error);
         }
       },
     },

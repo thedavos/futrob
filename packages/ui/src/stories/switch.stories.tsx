@@ -24,8 +24,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <label className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3">
-      <Switch {...args} />
+    <label
+      htmlFor="switch-playground"
+      className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3"
+    >
+      <Switch id="switch-playground" {...args} />
       <span className="typo-label text-foreground">Publicar portal</span>
     </label>
   ),
@@ -34,25 +37,25 @@ export const Playground: Story = {
 export const States: Story = {
   render: () => (
     <div className="grid w-[min(22rem,calc(100vw-2rem))] gap-4 rounded-xl border border-border bg-surface p-6">
-      <label className="flex items-center justify-between gap-3">
+      <label className="flex items-center justify-between gap-3" htmlFor="switch-off">
         <span className="typo-label text-foreground">Desactivado</span>
-        <Switch />
+        <Switch id="switch-off" />
       </label>
-      <label className="flex items-center justify-between gap-3">
+      <label className="flex items-center justify-between gap-3" htmlFor="switch-on">
         <span className="typo-label text-foreground">Activado</span>
-        <Switch defaultChecked />
+        <Switch defaultChecked id="switch-on" />
       </label>
-      <label className="flex items-center justify-between gap-3">
+      <label className="flex items-center justify-between gap-3" htmlFor="switch-disabled">
         <span className="typo-label text-muted-foreground">Deshabilitado</span>
-        <Switch disabled />
+        <Switch disabled id="switch-disabled" />
       </label>
-      <label className="flex items-center justify-between gap-3">
+      <label className="flex items-center justify-between gap-3" htmlFor="switch-on-disabled">
         <span className="typo-label text-muted-foreground">Activado · deshabilitado</span>
-        <Switch defaultChecked disabled />
+        <Switch defaultChecked disabled id="switch-on-disabled" />
       </label>
-      <label className="flex items-center justify-between gap-3">
+      <label className="flex items-center justify-between gap-3" htmlFor="switch-invalid">
         <span className="typo-label text-foreground">Inválido</span>
-        <Switch aria-invalid />
+        <Switch aria-invalid id="switch-invalid" />
       </label>
     </div>
   ),

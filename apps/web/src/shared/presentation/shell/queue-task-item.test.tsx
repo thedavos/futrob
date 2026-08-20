@@ -73,7 +73,7 @@ describe("QueueTaskItem", () => {
   });
 
   it("invokes onClick when used as a button", () => {
-    const onClick = vi.fn();
+    const onClick = vi.fn<() => void>();
     render(<QueueTaskItem icon={CheckSquareIcon} onClick={onClick} title="Confirmar selección" />);
 
     fireEvent.click(screen.getByRole("button", { name: /Confirmar selección/ }));
@@ -94,7 +94,7 @@ describe("QueueTaskItem", () => {
   });
 
   it("does not fire onClick when disabled", () => {
-    const onClick = vi.fn();
+    const onClick = vi.fn<() => void>();
     render(
       <QueueTaskItem
         disabled

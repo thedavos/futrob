@@ -39,7 +39,7 @@ import {
   SidebarSimpleIcon,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
+import { authClient } from "@/modules/identity/auth-client.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import { SHELL_NAV_ICONS } from "@/shared/presentation/shell/nav-icons.ts";
 import {

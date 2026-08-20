@@ -59,7 +59,7 @@ const ALL_PERMISSIONS = [
   ...ENCOUNTER_PERMISSIONS,
   ...RESULT_PERMISSIONS,
   ...STATISTICS_PERMISSIONS,
-] as readonly Permission[];
+] satisfies readonly Permission[];
 
 export function contextualOrganizationRolePermissions(
   role: keyof typeof ORGANIZATION_ROLE_PERMISSIONS,
@@ -406,11 +406,7 @@ function resolvePermission(
     readonly scopeType: AuthorizationScopeType;
     readonly scopeId: string;
   }[],
-): {
-  readonly allowed: boolean;
-  readonly assigned: boolean;
-  readonly decidedAt: AuthorizationScopeType;
-} {
+) {
   let allowed = false;
   let assigned = false;
   let decidedAt: AuthorizationScopeType = "platform";
@@ -439,7 +435,11 @@ function resolvePermission(
       decidedAt = layer.scopeType;
     }
   }
-  return { allowed, assigned, decidedAt };
+  return { allowed, assigned, decidedAt } satisfies {
+    readonly allowed: boolean;
+    readonly assigned: boolean;
+    readonly decidedAt: AuthorizationScopeType;
+  };
 }
 
 function uniquePermissions(permissions: readonly Permission[]): readonly Permission[] {

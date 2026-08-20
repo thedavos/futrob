@@ -1,4 +1,5 @@
 import {
+  createEmptyPartialFlags,
   PLAYER_STATISTIC_METRICS,
   type PlayerAggregateStats,
   type PlayerStatisticMetric,
@@ -11,7 +12,7 @@ export function aggregateTeamContributions(
 ): PlayerAggregateStats {
   const totals = emptyMetricNumbers();
   const observed = emptyMetricNumbers();
-  const partial = emptyPartialFlags();
+  const partial = createEmptyPartialFlags();
   let minutes = 0;
 
   for (const contribution of contributions) {
@@ -72,7 +73,7 @@ function contributionMetricValue(
   }
 }
 
-function emptyMetricNumbers(): Record<PlayerStatisticMetric, number> {
+function emptyMetricNumbers() {
   return {
     goals: 0,
     assists: 0,
@@ -86,25 +87,7 @@ function emptyMetricNumbers(): Record<PlayerStatisticMetric, number> {
     redCards: 0,
     mvpAwards: 0,
     rating: 0,
-  };
-}
-
-function emptyPartialFlags(): Record<PlayerStatisticMetric | "minutes", boolean> {
-  return {
-    minutes: false,
-    goals: false,
-    assists: false,
-    shots: false,
-    passAttempts: false,
-    passesMade: false,
-    tackleAttempts: false,
-    tacklesMade: false,
-    saves: false,
-    yellowCards: false,
-    redCards: false,
-    mvpAwards: false,
-    rating: false,
-  };
+  } satisfies Record<PlayerStatisticMetric, number>;
 }
 
 function metricRates(

@@ -8,8 +8,8 @@ import {
   type OrganizationId,
   type Result,
   type TeamId,
+  type ActorId,
 } from "@futrob/shared-kernel";
-import type { ActorId } from "@futrob/shared-kernel";
 import type { RosterMembershipRole } from "../../domain/entities/competition-roster-membership.ts";
 import {
   isRosterMembershipRole,

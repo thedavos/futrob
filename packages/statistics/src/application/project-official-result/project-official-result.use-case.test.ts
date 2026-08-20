@@ -30,8 +30,6 @@ import type {
   TeamCompetitionStatsRepository,
   TeamMatchContribution,
   TeamMatchContributionRepository,
-} from "../../index.ts";
-import type {
   RankingKind,
   RankingSnapshot,
   RankingSnapshotRepository as RankingSnapshotRepositoryPort,

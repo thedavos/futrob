@@ -1,4 +1,5 @@
 import type { ActorId, ClockPort } from "@futrob/shared-kernel";
+import { InvalidOnboardingProgress } from "../../domain/errors/onboarding.errors.ts";
 import type { ActorOnboardingPort } from "../../domain/ports/actor-onboarding.port.ts";
 import {
   isOnboardingStepAllowed,
@@ -21,7 +22,10 @@ export class SaveOnboardingProgressUseCase {
 
   async execute(input: SaveOnboardingProgressInput): Promise<OnboardingStatus> {
     if (!isOnboardingStepAllowed(input.path, input.currentStep)) {
-      throw new RangeError("identity.invalid_onboarding_progress");
+      throw new InvalidOnboardingProgress({
+        code: "identity.invalid_onboarding_progress",
+        message: "identity.invalid_onboarding_progress",
+      });
     }
 
     const existing = await this.actorOnboarding.findByActor(input.actorId);

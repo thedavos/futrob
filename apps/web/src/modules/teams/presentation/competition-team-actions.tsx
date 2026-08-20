@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ExternalClubDto, RosterMembershipRoleDto } from "@futrob/api-contracts";
+import { rosterMembershipRoleSchema } from "@futrob/api-contracts";
 import {
   Alert,
   AlertDescription,
@@ -42,11 +43,11 @@ import {
 } from "@phosphor-icons/react";
 import { runAction } from "@/shared/presentation/run-action.ts";
 
-export const roleLabel: Record<RosterMembershipRoleDto, string> = {
+export const roleLabel = {
   player: "Jugador",
   captain: "Capitán",
   vice_captain: "Subcapitán",
-};
+} satisfies Record<RosterMembershipRoleDto, string>;
 
 export function InvitationDialog({
   busy,
@@ -79,7 +80,10 @@ export function InvitationDialog({
           <Field name="invitation-role">
             <FieldLabel>Rol inicial</FieldLabel>
             <Select
-              onValueChange={(value) => setRole(value as RosterMembershipRoleDto)}
+              onValueChange={(value) => {
+                if (!value) return;
+                setRole(rosterMembershipRoleSchema.parse(value));
+              }}
               value={role}
             >
               <SelectTrigger>
@@ -97,7 +101,9 @@ export function InvitationDialog({
           <Field name="invitation-policy">
             <FieldLabel>Usos</FieldLabel>
             <Select
-              onValueChange={(value) => setPolicy(value as "single" | "multi")}
+              onValueChange={(value) => {
+                if (value === "single" || value === "multi") setPolicy(value);
+              }}
               value={policy}
             >
               <SelectTrigger>
@@ -243,7 +249,10 @@ export function RosterRoleEditor({
     <>
       <Select
         disabled={busy}
-        onValueChange={(value) => setPendingRole(value as RosterMembershipRoleDto)}
+        onValueChange={(value) => {
+          if (!value) return;
+          setPendingRole(rosterMembershipRoleSchema.parse(value));
+        }}
         value={role}
       >
         <SelectTrigger aria-label={`Rol de ${displayName}`} className="w-40">

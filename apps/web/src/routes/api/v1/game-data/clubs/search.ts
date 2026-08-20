@@ -3,6 +3,7 @@ import { searchClubsQuerySchema, searchClubsResponseSchema } from "@futrob/api-c
 import {
   createAuthenticatedProductApiClient,
   productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
 } from "@/context/create-authenticated-product-api-client.ts";
 import {
   apiErrorResponse,
@@ -38,7 +39,10 @@ export const Route = createFileRoute("/api/v1/game-data/clubs/search")({
             },
           });
         } catch (error) {
-          return productApiBffErrorResponse(error);
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
+          return productApiBffErrorResponseForError(error);
         }
       },
     },

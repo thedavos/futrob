@@ -1,5 +1,12 @@
-import { err, ok, type ActorId, type ClockPort, type Result } from "@futrob/shared-kernel";
-import type { CompetitionId, OrganizationId } from "@futrob/shared-kernel";
+import {
+  err,
+  ok,
+  type ActorId,
+  type ClockPort,
+  type Result,
+  type CompetitionId,
+  type OrganizationId,
+} from "@futrob/shared-kernel";
 import {
   isCompetitionInviteRole,
   type CompetitionInviteRole,

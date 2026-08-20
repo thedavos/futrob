@@ -1,6 +1,6 @@
-import { Result as ResultNs, Ok, Err, TaggedError } from "better-result";
+import { Result as ResultNs, Ok, Err, TaggedError, type AnyTaggedError } from "better-result";
 
-export { Ok, Err, TaggedError };
+export { Ok, Err, TaggedError, type AnyTaggedError };
 
 export const Result = ResultNs;
 export type Result<T, E> = Ok<T, E> | Err<T, E>;

@@ -2,11 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   effectiveAccessSchema,
   getEffectiveAccessQuerySchema,
-  type PermissionDto,
+  permissionSchema,
 } from "@futrob/api-contracts";
 import {
   createAuthenticatedProductApiClient,
   productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
 } from "@/context/create-authenticated-product-api-client.ts";
 import { jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
 
@@ -37,11 +38,14 @@ export const Route = createFileRoute("/api/v1/authorization/effective-access")({
               teamId: parsed.data.teamId,
               encounterId: parsed.data.encounterId,
             },
-            parsed.data.permissions as readonly PermissionDto[] | undefined,
+            parsed.data.permissions?.map((permission) => permissionSchema.parse(permission)),
           );
           return jsonResponse(effectiveAccessSchema.parse(body));
         } catch (error) {
-          return productApiBffErrorResponse(error);
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
+          return productApiBffErrorResponseForError(error);
         }
       },
     },

@@ -4,11 +4,11 @@ import { Link } from "@tanstack/react-router";
 import type { MembershipSummaryDto } from "@futrob/api-contracts";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 
-const ROLE_LABEL: Record<MembershipSummaryDto["role"], string> = {
+const ROLE_LABEL = {
   organizer: "Organizador",
   staff: "Staff",
   member: "Miembro",
-};
+} satisfies Record<MembershipSummaryDto["role"], string>;
 
 export function OrganizationPicker() {
   const membershipsQuery = useMyMembershipsQuery();

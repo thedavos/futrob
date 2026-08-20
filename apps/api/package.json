@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "start": "tsx src/main.ts",
+    "format": "vp fmt",
+    "lint": "vp lint",
+    "check": "vp check",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vp test"
   },

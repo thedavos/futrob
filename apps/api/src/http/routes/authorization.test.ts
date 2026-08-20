@@ -1,5 +1,11 @@
+import {
+  accessGrantSchema,
+  createInvitationResponseSchema,
+  createOrganizationResponseSchema,
+} from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import { buildApp, serviceHeaders, stubFetch } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http authorization", () => {
   it("authorization: resolves grants without crossing tenant scopes", async () => {
@@ -13,13 +19,13 @@ describe("apps/api http authorization", () => {
       headers: serviceHeaders(organizer),
       body: JSON.stringify({ name: "Authorization Org" }),
     });
-    const { organizationId } = (await created.json()) as { organizationId: string };
+    const { organizationId } = await parseResponse(createOrganizationResponseSchema, created);
     const invitation = await app.request(`/api/v1/organizations/${organizationId}/invitations`, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({ role: "member" }),
     });
-    const { token } = (await invitation.json()) as { token: string };
+    const { token } = await parseResponse(createInvitationResponseSchema, invitation);
     await app.request("/api/v1/organizations/invitations/accept", {
       method: "POST",
       headers: serviceHeaders(member),
@@ -47,7 +53,7 @@ describe("apps/api http authorization", () => {
       }),
     });
     expect(granted.status).toBe(200);
-    const grant = (await granted.json()) as { id: string };
+    const grant = await parseResponse(accessGrantSchema, granted);
     const listed = await app.request(
       `/api/v1/authorization/grants?organizationId=${organizationId}&scopeType=organization&scopeId=${organizationId}&targetActorId=${member}`,
       { headers: serviceHeaders(organizer) },
@@ -69,7 +75,10 @@ describe("apps/api http authorization", () => {
       headers: serviceHeaders(otherOrganizer),
       body: JSON.stringify({ name: "Other Authorization Org" }),
     });
-    const otherOrganizationId = ((await other.json()) as { organizationId: string }).organizationId;
+    const { organizationId: otherOrganizationId } = await parseResponse(
+      createOrganizationResponseSchema,
+      other,
+    );
     const crossTenantDelete = await app.request(
       `/api/v1/authorization/grants/${grant.id}?organizationId=${otherOrganizationId}`,
       { method: "DELETE", headers: serviceHeaders(otherOrganizer) },

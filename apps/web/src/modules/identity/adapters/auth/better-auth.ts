@@ -10,8 +10,7 @@ import { authSchema } from "./drizzle-schema.ts";
 import { createD1ActorProvisioner, credentialSubject, type AuthDb } from "./actor-provisioner.ts";
 
 export function createAuthDb(d1: AppD1Database): AuthDb {
-  // drizzle-orm/d1 expects the Workers D1Database binding; AppD1Database is our local mirror.
-  return drizzle(d1 as never, { schema: authSchema });
+  return drizzle(d1, { schema: authSchema });
 }
 
 /**

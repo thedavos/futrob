@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createFutrobClient } from "../client.ts";
+import { mockFetch, parseMockJsonBody, requestUrl } from "../testing/mock-fetch.ts";
 
 describe("authorization SDK resource", () => {
   it("queries effective access with the full contextual scope", async () => {
     let requestedUrl = "";
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         requestedUrl = requestUrl(input);
         return Response.json({
           actorId: "actor-1",
@@ -18,7 +19,7 @@ describe("authorization SDK resource", () => {
           roles: [{ scopeType: "team", scopeId: "team-1", role: "captain" }],
           permissions: [{ permission: "teams.roster.manage", allowed: true, decidedAt: "team" }],
         });
-      }) as typeof fetch,
+      }),
     });
 
     const access = await client.authorization.getEffectiveAccess(
@@ -37,12 +38,12 @@ describe("authorization SDK resource", () => {
     const requests: Array<{ url: string; method: string | undefined; body: unknown }> = [];
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input, init) => {
+      fetchImpl: mockFetch(async (input, init) => {
         const url = requestUrl(input);
         requests.push({
           url,
           method: init?.method,
-          body: typeof init?.body === "string" ? JSON.parse(init.body) : null,
+          body: parseMockJsonBody(init),
         });
         return Response.json({
           organizationId: "org-1",
@@ -51,7 +52,7 @@ describe("authorization SDK resource", () => {
           role: "captain",
           createdAt: "2026-08-07T12:00:00.000Z",
         });
-      }) as typeof fetch,
+      }),
     });
 
     const result = await client.authorization.changeCompetitionRole(
@@ -75,7 +76,7 @@ describe("authorization SDK resource", () => {
     const paths: string[] = [];
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         const path = new URL(requestUrl(input)).pathname;
         paths.push(path);
         if (path.includes("roster-invitations")) {
@@ -99,7 +100,7 @@ describe("authorization SDK resource", () => {
           redeemPolicy: "single",
           maxRedemptions: 1,
         });
-      }) as typeof fetch,
+      }),
     });
 
     await client.organizations.createInvitation("org-1", { role: "member" });
@@ -117,7 +118,7 @@ describe("authorization SDK resource", () => {
   it("parses EffectiveAccess permissions for allow and deny rows", async () => {
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async () =>
+      fetchImpl: mockFetch(async () =>
         Response.json({
           actorId: "actor-1",
           scope: { organizationId: "org-1", competitionId: "competition-1" },
@@ -137,7 +138,8 @@ describe("authorization SDK resource", () => {
               decidedAt: "competition",
             },
           ],
-        })) as typeof fetch,
+        }),
+      ),
     });
 
     const access = await client.authorization.getEffectiveAccess(
@@ -152,7 +154,3 @@ describe("authorization SDK resource", () => {
     ]);
   });
 });
-
-function requestUrl(input: string | URL | Request): string {
-  return typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-}

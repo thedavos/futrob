@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vite-plus/test";
+import { z } from "zod";
 import type { CompetitionDraft, CompetitionRepository } from "@futrob/competitions";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
-import type { Pool } from "pg";
+import { asPgPool } from "@/adapters/persistence/pg-test-double.ts";
+import { pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { PostgresTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import { InMemoryCompetitionRepository } from "./in-memory.repository.ts";
 import {
@@ -52,10 +54,7 @@ const draft: CompetitionDraft = {
 function repositoryCases(): Array<[string, () => CompetitionRepository]> {
   return [
     ["in-memory", () => new InMemoryCompetitionRepository()],
-    [
-      "Postgres",
-      () => new PostgresCompetitionRepository(new FakeCompetitionPool() as unknown as Pool),
-    ],
+    ["Postgres", () => new PostgresCompetitionRepository(asPgPool(new FakeCompetitionPool()))],
   ];
 }
 
@@ -89,7 +88,7 @@ describe("PostgresCompetitionRepository nested in TransactionPort", () => {
   it("joins the outer transaction instead of opening a second BEGIN", async () => {
     const fakePool = new FakeCompetitionPool();
     const connectSpy = vi.spyOn(fakePool, "connect");
-    const pool = fakePool as unknown as Pool;
+    const pool = asPgPool(fakePool);
     const repository = new PostgresCompetitionRepository(pool);
     const transaction = new PostgresTransactionPort(pool);
 
@@ -130,9 +129,9 @@ class FakeCompetitionPool {
         time_zone: String(values[8]),
         format: String(values[9]),
         created_by_actor_id: String(values[10]),
-        creation_key: values[11] == null ? null : String(values[11]),
-        created_at: values[12] as Date | string,
-        updated_at: values[13] as Date | string,
+        creation_key: values[11] == null ? null : z.string().parse(values[11]),
+        created_at: pgTimestampSchema.parse(values[12]),
+        updated_at: pgTimestampSchema.parse(values[13]),
       };
       return { rows: [this.competition] };
     }
@@ -140,11 +139,11 @@ class FakeCompetitionPool {
       this.rules = {
         competition_id: String(values[0]),
         version: Number(values[1]),
-        regular_stage: (values[2] as CompetitionRulesRow["regular_stage"]) ?? null,
-        knockout_stage: (values[3] as CompetitionRulesRow["knockout_stage"]) ?? null,
+        regular_stage: null,
+        knockout_stage: null,
         away_goals_enabled: Boolean(values[4]),
         max_roster_size: values[5] == null ? null : Number(values[5]),
-        created_at: values[6] as Date | string,
+        created_at: pgTimestampSchema.parse(values[6]),
       };
       return { rows: [this.rules] };
     }

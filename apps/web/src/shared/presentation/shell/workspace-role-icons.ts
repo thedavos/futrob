@@ -9,14 +9,14 @@ import {
 } from "@phosphor-icons/react";
 import { WORKSPACE_DISPLAY_ROLE, type WorkspaceDisplayRole } from "./workspace-selector-model.ts";
 
-export const WORKSPACE_ROLE_ICONS: Record<WorkspaceDisplayRole, Icon> = {
+export const WORKSPACE_ROLE_ICONS = {
   [WORKSPACE_DISPLAY_ROLE.organizer]: FlagBannerIcon,
   [WORKSPACE_DISPLAY_ROLE.staff]: IdentificationBadgeIcon,
   [WORKSPACE_DISPLAY_ROLE.member]: UserIcon,
   [WORKSPACE_DISPLAY_ROLE.captain]: CrownIcon,
   [WORKSPACE_DISPLAY_ROLE.vice_captain]: CrownSimpleIcon,
   [WORKSPACE_DISPLAY_ROLE.player]: SoccerBallIcon,
-};
+} satisfies Record<WorkspaceDisplayRole, Icon>;
 
 export type WorkspaceRoleMessageKey =
   | "shell.workspace.role.organizer"

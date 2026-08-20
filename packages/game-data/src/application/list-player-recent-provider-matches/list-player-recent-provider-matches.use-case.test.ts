@@ -365,11 +365,11 @@ function recordingProvider(
     readonly matchType: string;
     readonly maxResultCount: number;
   }> = [];
-  const byType: Record<string, readonly ProviderMatch[]> = {
+  const byType = {
     friendlyMatch: options.friendlyMatch ?? [],
     leagueMatch: options.leagueMatch ?? [],
     playoffMatch: options.playoffMatch ?? [],
-  };
+  } satisfies Record<string, readonly ProviderMatch[]>;
 
   const provider: GameDataProviderPort & { readonly calls: typeof calls } = {
     key: "ea-clubs",
@@ -389,7 +389,15 @@ function recordingProvider(
       const typedFailure = options.failTypes?.[input.matchType];
       if (typedFailure) return err(typedFailure);
       if (options.failWith) return err(options.failWith);
-      return ok([...(byType[input.matchType] ?? [])]);
+      const matches =
+        input.matchType === "friendlyMatch"
+          ? byType.friendlyMatch
+          : input.matchType === "leagueMatch"
+            ? byType.leagueMatch
+            : input.matchType === "playoffMatch"
+              ? byType.playoffMatch
+              : [];
+      return ok([...matches]);
     },
     calls,
   };

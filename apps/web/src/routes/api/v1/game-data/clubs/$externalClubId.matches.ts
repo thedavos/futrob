@@ -3,6 +3,7 @@ import { getClubMatchesQuerySchema, getClubMatchesResponseSchema } from "@futrob
 import {
   createAuthenticatedProductApiClient,
   productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
 } from "@/context/create-authenticated-product-api-client.ts";
 import {
   apiErrorResponse,
@@ -32,7 +33,10 @@ export const Route = createFileRoute("/api/v1/game-data/clubs/$externalClubId/ma
             ),
           );
         } catch (error) {
-          return productApiBffErrorResponse(error);
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
+          return productApiBffErrorResponseForError(error);
         }
       },
     },

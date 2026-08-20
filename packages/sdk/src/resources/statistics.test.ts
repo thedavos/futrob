@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createFutrobClient } from "../client.ts";
+import { mockFetch, requestUrl } from "../testing/mock-fetch.ts";
 
 describe("statistics SDK resource", () => {
   it("forwards personal statistics filters", async () => {
     let requestedUrl = "";
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         requestedUrl = requestUrl(input);
         return Response.json({ statistics: null });
-      }) as typeof fetch,
+      }),
     });
 
     await client.statistics.getMyStatistics({
@@ -29,10 +30,10 @@ describe("statistics SDK resource", () => {
     let requestedUrl = "";
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         requestedUrl = requestUrl(input);
         return Response.json({ matches: [], nextCursor: null });
-      }) as typeof fetch,
+      }),
     });
 
     await client.statistics.getMyMatches({
@@ -53,10 +54,10 @@ describe("statistics SDK resource", () => {
     let requestedUrl = "";
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         requestedUrl = requestUrl(input);
         return Response.json({ status: "needs_club" });
-      }) as typeof fetch,
+      }),
     });
 
     await expect(client.statistics.getMyRecentMatches()).resolves.toEqual({ status: "needs_club" });
@@ -67,10 +68,10 @@ describe("statistics SDK resource", () => {
     let requestedUrl = "";
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         requestedUrl = requestUrl(input);
         return Response.json({ status: "needs_club" });
-      }) as typeof fetch,
+      }),
     });
 
     await client.statistics.getMyRecentMatches({ externalClubId: "10754" });
@@ -83,7 +84,7 @@ describe("statistics SDK resource", () => {
     const requested: string[] = [];
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         const url = requestUrl(input);
         requested.push(url);
         if (url.includes("/standings")) {
@@ -93,7 +94,7 @@ describe("statistics SDK resource", () => {
           return Response.json({ rankings: [] });
         }
         return Response.json({ teams: [] });
-      }) as typeof fetch,
+      }),
     });
 
     await client.statistics.getCompetitionStandings({
@@ -117,7 +118,3 @@ describe("statistics SDK resource", () => {
     ]);
   });
 });
-
-function requestUrl(input: RequestInfo | URL): string {
-  return typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-}

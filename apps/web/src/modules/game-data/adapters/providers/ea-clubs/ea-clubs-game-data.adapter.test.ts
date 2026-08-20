@@ -8,10 +8,10 @@ import clubMatchesFixture from "@/modules/game-data/adapters/providers/ea-clubs/
 function createFetch(
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
 ): typeof fetch {
-  return (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  return async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = input instanceof Request ? input.url : input instanceof URL ? input.href : input;
     return handler(url, init);
-  }) as typeof fetch;
+  };
 }
 
 describe("EaClubsGameDataAdapter", () => {

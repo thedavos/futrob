@@ -2,9 +2,11 @@ import type {
   ProviderSyncJob,
   ProviderSyncJobRepository,
   QueuedProviderSyncJob,
-  RunningProviderSyncJob,
 } from "@futrob/game-data";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { parseJsonColumn } from "@/adapters/persistence/parse-json-column.ts";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class PostgresProviderSyncJobRepository implements ProviderSyncJobRepository {
@@ -37,7 +39,7 @@ export class PostgresProviderSyncJobRepository implements ProviderSyncJobReposit
         job.updatedAt.toISOString(),
       ],
     );
-    if (inserted.rows[0]) return rehydrateJob(inserted.rows[0]);
+    if (inserted.rows[0]) return rehydrateJob(providerSyncJobRowSchema.parse(inserted.rows[0]));
     const existing = await executor.query(
       `SELECT * FROM provider_sync_jobs
        WHERE organization_id = $1 AND dedupe_key = $2
@@ -45,7 +47,7 @@ export class PostgresProviderSyncJobRepository implements ProviderSyncJobReposit
       [job.organizationId, job.dedupeKey],
     );
     if (!existing.rows[0]) return this.enqueue(job);
-    return rehydrateJob(existing.rows[0]);
+    return rehydrateJob(providerSyncJobRowSchema.parse(existing.rows[0]));
   }
 
   async claimNext(input: Parameters<ProviderSyncJobRepository["claimNext"]>[0]) {
@@ -70,7 +72,10 @@ export class PostgresProviderSyncJobRepository implements ProviderSyncJobReposit
        RETURNING job.*`,
       [input.now.toISOString(), input.leaseToken, input.leaseExpiresAt.toISOString(), input.jobId],
     );
-    return result.rows[0] ? (rehydrateJob(result.rows[0]) as RunningProviderSyncJob) : null;
+    const job = result.rows[0]
+      ? rehydrateJob(providerSyncJobRowSchema.parse(result.rows[0]))
+      : null;
+    return job?.status === "running" ? job : null;
   }
 
   async findById(id: string): Promise<ProviderSyncJob | null> {
@@ -78,7 +83,7 @@ export class PostgresProviderSyncJobRepository implements ProviderSyncJobReposit
       "SELECT * FROM provider_sync_jobs WHERE id = $1",
       [id],
     );
-    return result.rows[0] ? rehydrateJob(result.rows[0]) : null;
+    return result.rows[0] ? rehydrateJob(providerSyncJobRowSchema.parse(result.rows[0])) : null;
   }
 
   succeed(input: Parameters<ProviderSyncJobRepository["succeed"]>[0]) {
@@ -118,56 +123,89 @@ export class PostgresProviderSyncJobRepository implements ProviderSyncJobReposit
   }
 }
 
-function rehydrateJob(row: Record<string, unknown>): ProviderSyncJob {
+const recentMatchesSyncSchema = z.object({
+  externalClubId: z.string(),
+  platform: z.string(),
+  gameEdition: z.string(),
+  matchType: z.string(),
+  maxResultCount: z.number(),
+});
+
+const providerSyncJobRowSchema = z.object({
+  id: pgTextSchema,
+  organization_id: pgTextSchema,
+  provider_key: z.enum(["ea-clubs", "manual", "screenshot-ocr"]),
+  input_json: z.unknown(),
+  dedupe_key: pgTextSchema,
+  request_id: pgTextSchema,
+  attempt: z.coerce.number(),
+  max_attempts: z.coerce.number(),
+  created_at: pgTimestampSchema,
+  updated_at: pgTimestampSchema,
+  status: z.enum(["queued", "retry_scheduled", "running", "succeeded", "dead"]),
+  available_at: pgTimestampSchema.nullable().optional(),
+  lease_token: pgTextSchema.nullable().optional(),
+  lease_expires_at: pgTimestampSchema.nullable().optional(),
+  started_at: pgTimestampSchema.nullable().optional(),
+  completed_at: pgTimestampSchema.nullable().optional(),
+  last_error_code: pgTextSchema.nullable().optional(),
+});
+
+type ProviderSyncJobRow = z.infer<typeof providerSyncJobRowSchema>;
+
+function rehydrateJob(row: ProviderSyncJobRow): ProviderSyncJob {
+  const parsed = row;
   const base = {
-    id: String(row.id),
-    organizationId: String(row.organization_id),
-    providerKey: String(row.provider_key) as ProviderSyncJob["providerKey"],
+    id: parsed.id,
+    organizationId: parsed.organization_id,
+    providerKey: parsed.provider_key,
     kind: "recent-matches" as const,
-    sync: row.input_json as ProviderSyncJob["sync"],
-    dedupeKey: String(row.dedupe_key),
-    requestId: String(row.request_id),
-    attempt: Number(row.attempt),
-    maxAttempts: Number(row.max_attempts),
-    createdAt: new Date(row.created_at as string | Date),
-    updatedAt: new Date(row.updated_at as string | Date),
+    sync: parseJsonColumn(recentMatchesSyncSchema, parsed.input_json),
+    dedupeKey: parsed.dedupe_key,
+    requestId: parsed.request_id,
+    attempt: parsed.attempt,
+    maxAttempts: parsed.max_attempts,
+    createdAt: parsed.created_at,
+    updatedAt: parsed.updated_at,
   };
-  switch (row.status) {
+  switch (parsed.status) {
     case "queued":
       return {
         ...base,
         status: "queued",
-        availableAt: new Date(row.available_at as string | Date),
+        availableAt: pgTimestampSchema.parse(parsed.available_at),
       };
     case "retry_scheduled":
       return {
         ...base,
         status: "retry_scheduled",
-        availableAt: new Date(row.available_at as string | Date),
-        lastErrorCode: String(row.last_error_code),
+        availableAt: pgTimestampSchema.parse(parsed.available_at),
+        lastErrorCode: pgTextSchema.parse(parsed.last_error_code),
       };
     case "running":
       return {
         ...base,
         status: "running",
-        leaseToken: String(row.lease_token),
-        leaseExpiresAt: new Date(row.lease_expires_at as string | Date),
-        startedAt: new Date(row.started_at as string | Date),
+        leaseToken: pgTextSchema.parse(parsed.lease_token),
+        leaseExpiresAt: pgTimestampSchema.parse(parsed.lease_expires_at),
+        startedAt: pgTimestampSchema.parse(parsed.started_at),
       };
     case "succeeded":
       return {
         ...base,
         status: "succeeded",
-        completedAt: new Date(row.completed_at as string | Date),
+        completedAt: pgTimestampSchema.parse(parsed.completed_at),
       };
     case "dead":
       return {
         ...base,
         status: "dead",
-        completedAt: new Date(row.completed_at as string | Date),
-        lastErrorCode: String(row.last_error_code),
+        completedAt: pgTimestampSchema.parse(parsed.completed_at),
+        lastErrorCode: pgTextSchema.parse(parsed.last_error_code),
       };
-    default:
-      throw new TypeError(`Unknown provider sync job status: ${String(row.status)}`);
+    default: {
+      const _exhaustive: never = parsed.status;
+      throw new TypeError(`Unknown provider sync job status: ${String(_exhaustive)}`);
+    }
   }
 }

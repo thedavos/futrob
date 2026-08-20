@@ -6,6 +6,7 @@ import {
 import {
   createAuthenticatedProductApiClient,
   productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
 } from "@/context/create-authenticated-product-api-client.ts";
 import { apiErrorResponse, jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
 import { runRateLimitedBffRequest } from "@/shared/infrastructure/rate-limit/bff-rate-limit-guard.ts";
@@ -42,7 +43,10 @@ export const Route = createFileRoute("/api/v1/roster-invitations/accept")({
             },
           });
         } catch (error) {
-          return productApiBffErrorResponse(error);
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
+          return productApiBffErrorResponseForError(error);
         }
       },
     },

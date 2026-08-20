@@ -20,7 +20,7 @@ export type OnboardingStep =
   | "club"
   | "review";
 
-const stepsByPath: Record<OnboardingPath, readonly OnboardingStep[]> = {
+const stepsByPath = {
   [ONBOARDING_PATH.organization]: [
     "intention",
     "organization",
@@ -31,13 +31,21 @@ const stepsByPath: Record<OnboardingPath, readonly OnboardingStep[]> = {
   ],
   [ONBOARDING_PATH.invitation]: ["intention", "invitation", "game-account", "review"],
   [ONBOARDING_PATH.player]: ["intention", "game", "game-account", "club", "review"],
-};
+} as const satisfies Record<OnboardingPath, readonly OnboardingStep[]>;
 
 export function isOnboardingStepAllowed(
   path: OnboardingPath | null,
   step: OnboardingStep,
 ): boolean {
-  return path === null ? step === "intention" : stepsByPath[path].includes(step);
+  if (path === null) {
+    return step === "intention";
+  }
+  for (const allowed of stepsByPath[path]) {
+    if (allowed === step) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export interface OnboardingStatus {

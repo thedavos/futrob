@@ -1,13 +1,43 @@
-import type {
-  FixtureAuditEntry,
-  FixtureAuditPort,
-  FixtureEncounterEditGuardPort,
-  FixtureOccupancyGuardPort,
-  OfficialMatchRepository,
+import {
+  asFixtureRoundId,
+  asFixtureStageId,
+  type FixtureAuditEntry,
+  type FixtureAuditPort,
+  type FixtureEncounter,
+  type FixtureEncounterEditGuardPort,
+  type FixtureOccupancyGuardPort,
+  type FixtureParticipantSlot,
+  type FixtureSeries,
+  type OfficialMatchRepository,
 } from "@futrob/scheduling";
 import type { OfficialMatchSelectionRepository, OfficialResultRepository } from "@futrob/results";
+import { fixtureEncounterSchema, type FixtureEncounterDto } from "@futrob/api-contracts";
+import {
+  asActorId,
+  asCompetitionId,
+  asEncounterId,
+  asOfficialMatchSlotId,
+  asOrganizationId,
+  asTeamId,
+} from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { parseJsonColumn, type PgJsonInput } from "@/adapters/persistence/parse-json-column.ts";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
+
+const fixtureAuditRowSchema = z.object({
+  organization_id: pgTextSchema,
+  competition_id: pgTextSchema,
+  fixture_plan_id: pgTextSchema,
+  encounter_id: pgTextSchema,
+  actor_id: pgTextSchema,
+  request_id: pgTextSchema,
+  reason: pgTextSchema,
+  occurred_at: pgTimestampSchema,
+  before_state: z.custom<PgJsonInput>((value) => value !== undefined),
+  after_state: z.custom<PgJsonInput>((value) => value !== undefined),
+});
 
 export class InMemoryFixtureAuditPort implements FixtureAuditPort {
   readonly rows: FixtureAuditEntry[] = [];
@@ -57,21 +87,21 @@ export class PostgresFixtureAuditPort implements FixtureAuditPort {
        WHERE organization_id = $1 AND competition_id = $2 AND request_id = $3`,
       [organizationId, competitionId, requestId],
     );
-    const row = result.rows[0] as AuditRow | undefined;
-    return row
-      ? {
-          organizationId: row.organization_id as FixtureAuditEntry["organizationId"],
-          competitionId: row.competition_id as FixtureAuditEntry["competitionId"],
-          fixturePlanId: row.fixture_plan_id,
-          encounterId: row.encounter_id as FixtureAuditEntry["encounterId"],
-          actorId: row.actor_id as FixtureAuditEntry["actorId"],
-          requestId: row.request_id,
-          reason: row.reason,
-          occurredAt: new Date(row.occurred_at),
-          before: fixtureEncounter(row.before_state),
-          after: fixtureEncounter(row.after_state),
-        }
-      : null;
+    const row = result.rows[0];
+    if (!row) return null;
+    const parsed = fixtureAuditRowSchema.parse(row);
+    return {
+      organizationId: asOrganizationId(parsed.organization_id),
+      competitionId: asCompetitionId(parsed.competition_id),
+      fixturePlanId: parsed.fixture_plan_id,
+      encounterId: asEncounterId(parsed.encounter_id),
+      actorId: asActorId(parsed.actor_id),
+      requestId: parsed.request_id,
+      reason: parsed.reason,
+      occurredAt: parsed.occurred_at,
+      before: fixtureEncounter(parsed.before_state),
+      after: fixtureEncounter(parsed.after_state),
+    };
   }
 
   async append(entry: FixtureAuditEntry): Promise<void> {
@@ -97,24 +127,60 @@ export class PostgresFixtureAuditPort implements FixtureAuditPort {
   }
 }
 
-interface AuditRow {
-  readonly organization_id: string;
-  readonly competition_id: string;
-  readonly fixture_plan_id: string;
-  readonly encounter_id: string;
-  readonly actor_id: string;
-  readonly request_id: string;
-  readonly reason: string;
-  readonly occurred_at: string | Date;
-  readonly before_state: FixtureAuditEntry["before"] | string;
-  readonly after_state: FixtureAuditEntry["after"] | string;
+type ParsedFixtureEncounter = FixtureEncounterDto;
+
+function fixtureParticipantSlot(slot: ParsedFixtureEncounter["home"]): FixtureParticipantSlot {
+  switch (slot.kind) {
+    case "team":
+      return { kind: "team", teamId: asTeamId(slot.teamId) };
+    case "bye":
+      return { kind: "bye" };
+    case "winner":
+      return { kind: "winner", encounterId: asEncounterId(slot.encounterId) };
+    case "group-rank":
+      return {
+        kind: "group-rank",
+        stageId: asFixtureStageId(slot.stageId),
+        groupId: slot.groupId,
+        rank: slot.rank,
+      };
+    case "stage-rank":
+      return {
+        kind: "stage-rank",
+        stageId: asFixtureStageId(slot.stageId),
+        rank: slot.rank,
+      };
+  }
 }
 
-function fixtureEncounter(
-  value: FixtureAuditEntry["before"] | string,
-): FixtureAuditEntry["before"] {
-  const parsed = typeof value === "string" ? JSON.parse(value) : value;
-  return { ...parsed, scheduledStartAt: new Date(parsed.scheduledStartAt) };
+function fixtureSeries(series: NonNullable<ParsedFixtureEncounter["series"]>): FixtureSeries {
+  return {
+    id: series.id,
+    resolutionMode: series.resolutionMode,
+    officialMatches: series.officialMatches.map((match) => ({
+      id: asOfficialMatchSlotId(match.id),
+      slot: match.slot,
+    })),
+  };
+}
+
+function fixtureEncounter(value: PgJsonInput): FixtureEncounter {
+  const parsed = parseJsonColumn(fixtureEncounterSchema, value);
+  const encounter: FixtureEncounter = {
+    id: asEncounterId(parsed.id),
+    stageId: asFixtureStageId(parsed.stageId),
+    roundId: asFixtureRoundId(parsed.roundId),
+    order: parsed.order,
+    home: fixtureParticipantSlot(parsed.home),
+    away: fixtureParticipantSlot(parsed.away),
+    scheduledStartAt: new Date(parsed.scheduledStartAt),
+    officialMatchCount: parsed.officialMatchCount,
+    series: parsed.series ? fixtureSeries(parsed.series) : null,
+  };
+  if (parsed.groupId) {
+    return { ...encounter, groupId: parsed.groupId };
+  }
+  return encounter;
 }
 
 export class OfficialResultFixtureEditGuard implements FixtureEncounterEditGuardPort {

@@ -45,15 +45,29 @@ export class ListMyMatchContributionsUseCase {
     }
     if (!profile) return { items: [], nextCursor: null };
 
-    return this.deps.contributions.listMatchedPage({
+    const pageQuery = {
       playerProfileId: profile.id,
-      ...(input.competitionId === undefined ? {} : { competitionId: input.competitionId }),
-      ...(input.teamId === undefined ? {} : { teamId: input.teamId }),
-      ...(input.gameEdition === undefined ? {} : { gameEdition: input.gameEdition }),
-      ...(input.platform === undefined ? {} : { platform: input.platform }),
-      ...(input.position === undefined ? {} : { position: input.position }),
-      ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
       limit: input.limit,
-    });
+    };
+    if (input.competitionId !== undefined) {
+      Object.assign(pageQuery, { competitionId: input.competitionId });
+    }
+    if (input.teamId !== undefined) {
+      Object.assign(pageQuery, { teamId: input.teamId });
+    }
+    if (input.gameEdition !== undefined) {
+      Object.assign(pageQuery, { gameEdition: input.gameEdition });
+    }
+    if (input.platform !== undefined) {
+      Object.assign(pageQuery, { platform: input.platform });
+    }
+    if (input.position !== undefined) {
+      Object.assign(pageQuery, { position: input.position });
+    }
+    if (input.cursor !== undefined) {
+      Object.assign(pageQuery, { cursor: input.cursor });
+    }
+
+    return this.deps.contributions.listMatchedPage(pageQuery);
   }
 }

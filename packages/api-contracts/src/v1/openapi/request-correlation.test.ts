@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
 import { requestIdSchema } from "../request-correlation.ts";
 import { futrobOpenApiV1 } from "./document.ts";
+import {
+  getOpenApiOperation,
+  isInlineOpenApiResponse,
+  OPENAPI_HTTP_METHODS,
+} from "./openapi-access.ts";
 
 describe("request correlation contract", () => {
   it("accepts only UUID request IDs", () => {
@@ -28,19 +33,21 @@ describe("request correlation contract", () => {
     let operationCount = 0;
 
     for (const pathItem of Object.values(futrobOpenApiV1.paths)) {
-      for (const method of ["get", "post", "put", "patch", "delete"]) {
-        const operation = Reflect.get(pathItem, method) as object | undefined;
+      for (const method of OPENAPI_HTTP_METHODS) {
+        const operation = getOpenApiOperation(pathItem, method);
         if (!operation) continue;
         operationCount += 1;
 
-        expect(Reflect.get(operation, "parameters")).toContainEqual({
+        expect(operation.parameters).toContainEqual({
           $ref: "#/components/parameters/RequestId",
         });
 
-        const responses = Reflect.get(operation, "responses") as Record<string, object>;
+        const responses = operation.responses;
+        if (!responses) continue;
+
         for (const response of Object.values(responses)) {
-          if ("$ref" in response) continue;
-          expect(Reflect.get(response, "headers")).toMatchObject({
+          if (!isInlineOpenApiResponse(response)) continue;
+          expect(response.headers).toMatchObject({
             "X-Request-ID": { $ref: "#/components/headers/RequestId" },
           });
         }

@@ -13,7 +13,8 @@ import {
   type GetMyStatisticsResponse,
   type RequestId,
 } from "@futrob/api-contracts";
-import { readBrowserApiError } from "@/shared/infrastructure/http/browser-api-error.ts";
+import type { z } from "zod";
+import { requestBrowserJson } from "@/shared/infrastructure/http/browser-json-request.ts";
 
 export class StatisticsClientError extends Error {
   constructor(
@@ -27,23 +28,15 @@ export class StatisticsClientError extends Error {
   }
 }
 
-async function requestJson<T>(path: string, parse: (data: unknown) => T): Promise<T> {
-  const response = await fetch(path, {
+async function requestStatisticsJson<T>(path: string, schema: z.ZodType<T>): Promise<T> {
+  return requestBrowserJson({
+    path,
     method: "GET",
-    credentials: "include",
-    headers: { Accept: "application/json" },
+    schema,
+    fallbackCode: "statistics.client_error",
+    createError: (status, error) =>
+      new StatisticsClientError(status, error.code, error.requestId, error.retryAfterSeconds),
   });
-  const raw: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error = readBrowserApiError(response, raw, "statistics.client_error");
-    throw new StatisticsClientError(
-      response.status,
-      error.code,
-      error.requestId,
-      error.retryAfterSeconds,
-    );
-  }
-  return parse(raw);
 }
 
 export const statisticsBrowserClient = {
@@ -52,9 +45,9 @@ export const statisticsBrowserClient = {
     const search = new URLSearchParams();
     appendPersonalStatisticsFilters(search, query);
     const queryString = search.toString();
-    return requestJson(
+    return requestStatisticsJson(
       `/api/v1/players/me/statistics${queryString ? `?${queryString}` : ""}`,
-      (data) => getMyStatisticsResponseSchema.parse(data),
+      getMyStatisticsResponseSchema,
     );
   },
 
@@ -64,8 +57,9 @@ export const statisticsBrowserClient = {
     appendPersonalStatisticsFilters(search, query);
     if (query.cursor !== undefined) search.set("cursor", query.cursor);
     search.set("limit", String(query.limit));
-    return requestJson(`/api/v1/players/me/matches?${search.toString()}`, (data) =>
-      getMyMatchesResponseSchema.parse(data),
+    return requestStatisticsJson(
+      `/api/v1/players/me/matches?${search.toString()}`,
+      getMyMatchesResponseSchema,
     );
   },
 
@@ -76,9 +70,9 @@ export const statisticsBrowserClient = {
     const search = new URLSearchParams();
     if (query.externalClubId) search.set("externalClubId", query.externalClubId);
     const queryString = search.toString();
-    return requestJson(
+    return requestStatisticsJson(
       `/api/v1/players/me/recent-matches${queryString ? `?${queryString}` : ""}`,
-      (data) => getMyRecentMatchesResponseSchema.parse(data),
+      getMyRecentMatchesResponseSchema,
     );
   },
 };

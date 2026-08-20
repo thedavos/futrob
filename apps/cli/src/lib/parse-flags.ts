@@ -51,7 +51,10 @@ export function parseFlags(args: string[]): ParsedFlags {
 
 export function flagString(flags: Record<string, string | true>, key: string): string | undefined {
   const value = flags[key];
-  if (typeof value === "string" && value.length > 0) {
+  if (value === true || value === undefined) {
+    return undefined;
+  }
+  if (value.length > 0) {
     return value;
   }
   return undefined;

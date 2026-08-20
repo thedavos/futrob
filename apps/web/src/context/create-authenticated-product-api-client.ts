@@ -1,16 +1,16 @@
 import type { RequestId } from "@futrob/api-contracts";
-import type { ActorId } from "@futrob/shared-kernel";
 import { parseAppEnv } from "@/config/env.ts";
-import { requireAuthenticatedActor } from "@/context/auth.ts";
 import { createProductApiClient } from "@/context/product-api-client.ts";
-import { createAuth, createAuthDb } from "@/modules/identity/adapters/auth/better-auth.ts";
-import { createD1ActorProvisioner } from "@/modules/identity/adapters/auth/actor-provisioner.ts";
-import { createSessionIdentityAdapter } from "@/modules/identity/adapters/auth/session-identity.adapter.ts";
-import { getWorkerEnv } from "@/modules/identity/adapters/auth/worker-env.ts";
+import { resolveAuthenticatedRequestActor } from "@/modules/identity/server/authenticated-request-actor.ts";
+import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
 import { CryptoIdGenerator } from "@/shared/application/id-generator.ts";
 import { createBffRequestCorrelation } from "@/shared/infrastructure/http/request-correlation.ts";
 
-export { productApiBffErrorResponse } from "@/context/product-api-bff-error-response.ts";
+export {
+  classifyProductApiBffError,
+  productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
+} from "@/context/product-api-bff-error-response.ts";
 
 export class ProductApiBffMisconfiguredError extends Error {
   readonly code = "product_api.bff_misconfigured" as const;
@@ -23,7 +23,7 @@ export class ProductApiBffMisconfiguredError extends Error {
 
 export async function createAuthenticatedProductApiClient(request: Request, requestId?: RequestId) {
   const resolvedRequestId = requestId ?? createBffRequestCorrelation(request).requestId;
-  const bindings = getWorkerEnv();
+  const bindings = await getWorkerBindings();
   if (!bindings.APP_DB) {
     throw new ProductApiBffMisconfiguredError("APP_DB binding is required");
   }
@@ -43,20 +43,12 @@ export async function createAuthenticatedProductApiClient(request: Request, requ
   }
 
   const ids = new CryptoIdGenerator();
-  const db = createAuthDb(bindings.APP_DB);
-  const actorProvisioner = createD1ActorProvisioner({ db, ids });
-  const auth = createAuth({
+  const actorId = await resolveAuthenticatedRequestActor({
     d1: bindings.APP_DB,
     env: appEnv,
     ids,
-    actorProvisioner,
+    headers: request.headers,
   });
-  const sessionIdentity = createSessionIdentityAdapter({
-    auth,
-    actorProvisioner,
-  });
-
-  const actorId: ActorId = await requireAuthenticatedActor(sessionIdentity, request.headers);
   const client = createProductApiClient({
     actorId,
     internalJobSecret: appEnv.INTERNAL_JOB_SECRET,

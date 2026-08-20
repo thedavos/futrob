@@ -205,6 +205,10 @@ export function expectedBundleDecision(
         return rosterResolves(actor, scope)
           ? new Set(COMPETITION_ROLE_CAPTAIN)
           : new Set<Permission>();
+      case "organizationMember":
+      case "organizationStaff":
+      case "organizer":
+        return new Set<Permission>();
       default:
         return new Set<Permission>();
     }
@@ -223,6 +227,13 @@ export function expectedBundleDecision(
         return rosterBaseline("player");
       case "rivalCaptain":
         return rosterBaseline("captain");
+      case "competitionCaptain":
+      case "competitionPlayer":
+      case "competitionStaff":
+      case "organizationMember":
+      case "organizationStaff":
+      case "organizer":
+        return new Set<Permission>();
       default:
         return new Set<Permission>();
     }
@@ -239,6 +250,13 @@ export function expectedBundleDecision(
         return ENCOUNTER_CAPTAIN_BASELINE;
       case "rosterPlayer":
         return ENCOUNTER_PLAYER_BASELINE;
+      case "competitionCaptain":
+      case "competitionPlayer":
+      case "competitionStaff":
+      case "organizationMember":
+      case "organizationStaff":
+      case "organizer":
+        return new Set<Permission>();
       default:
         return new Set<Permission>();
     }
@@ -651,12 +669,7 @@ export const RBAC_MATRIX_CASES: readonly RbacMatrixCase[] = [
   ...buildGrantPrecedenceCases(),
 ];
 
-export function rbacMatrixCoverageSummary(): {
-  readonly total: number;
-  readonly byFamily: Record<string, number>;
-  readonly actors: readonly RbacActorKey[];
-  readonly permissions: readonly Permission[];
-} {
+export function rbacMatrixCoverageSummary() {
   const byFamily: Record<string, number> = {};
   for (const matrixCase of RBAC_MATRIX_CASES) {
     const family = matrixCase.id.split("/")[0] ?? "unknown";
@@ -681,5 +694,10 @@ export function rbacMatrixCoverageSummary(): {
       "organizerB",
     ],
     permissions: [...RBAC_PROBE_PERMISSIONS],
+  } satisfies {
+    readonly total: number;
+    readonly byFamily: Record<string, number>;
+    readonly actors: readonly RbacActorKey[];
+    readonly permissions: readonly Permission[];
   };
 }

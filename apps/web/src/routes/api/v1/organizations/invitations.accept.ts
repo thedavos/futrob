@@ -8,6 +8,7 @@ import {
   createAuthenticatedOrganizationsClient,
   organizationsBffErrorResponse,
 } from "@/modules/organizations/server/create-authenticated-organizations-client.ts";
+import { productApiBffErrorResponse } from "@/context/product-api-bff-error-response.ts";
 import { runRateLimitedBffRequest } from "@/shared/infrastructure/rate-limit/bff-rate-limit-guard.ts";
 import { BFF_RATE_LIMIT_POLICY } from "@/shared/infrastructure/rate-limit/bff-rate-limiter.ts";
 import { enforceBffRateLimit } from "@/shared/infrastructure/rate-limit/enforce-bff-rate-limit.ts";
@@ -40,6 +41,9 @@ export const Route = createFileRoute("/api/v1/organizations/invitations/accept")
             },
           });
         } catch (error) {
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
           return organizationsBffErrorResponse(error);
         }
       },

@@ -15,7 +15,7 @@ import {
 } from "@/modules/competitions/presentation/validate-competition-draft-input.ts";
 
 function browserTimeZone(): string {
-  if (typeof Intl === "undefined") return "America/Lima";
+  if (!("Intl" in globalThis)) return "America/Lima";
   return Intl.DateTimeFormat().resolvedOptions().timeZone ?? "America/Lima";
 }
 

@@ -1,3 +1,4 @@
+import { competitionEntryStatusSchema } from "@futrob/api-contracts";
 import {
   asCompetitionId,
   asOrganizationId,
@@ -6,11 +7,7 @@ import {
   type OrganizationId,
   type TeamId,
 } from "@futrob/shared-kernel";
-import type {
-  CompetitionEntry,
-  CompetitionEntryRepository,
-  CompetitionEntryStatus,
-} from "@futrob/competitions";
+import type { CompetitionEntry, CompetitionEntryRepository } from "@futrob/competitions";
 import type { Pool } from "pg";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
@@ -158,7 +155,7 @@ function rehydrateEntry(row: {
     organizationId: asOrganizationId(row.organization_id),
     competitionId: asCompetitionId(row.competition_id),
     teamId: asTeamId(row.team_id),
-    status: row.status as CompetitionEntryStatus,
+    status: competitionEntryStatusSchema.parse(row.status),
     createdAt: new Date(row.created_at),
     creationKey: row.creation_key,
   };

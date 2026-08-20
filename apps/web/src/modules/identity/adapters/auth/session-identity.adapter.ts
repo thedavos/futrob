@@ -1,11 +1,11 @@
-import type { ActorProvisionerPort, RequestHeaders, SessionIdentityPort } from "@futrob/identity";
+import type { ActorProvisionerPort, SessionIdentityPort, RequestHeaders } from "@futrob/identity";
 import { asActorId, type ActorId } from "@futrob/shared-kernel";
 import { credentialSubject } from "./actor-provisioner.ts";
 
 /** Narrow surface so memory-adapter test auth and D1 auth share the same adapter. */
 export interface AuthSessionApi {
   readonly api: {
-    getSession(input: { headers: Headers }): Promise<{ user: { id: string } } | null>;
+    getSession(input: { headers: RequestHeaders }): Promise<{ user: { id: string } } | null>;
   };
 }
 
@@ -15,9 +15,7 @@ export function createSessionIdentityAdapter(input: {
 }): SessionIdentityPort {
   return {
     async resolveActorId(headers) {
-      const session = await input.auth.api.getSession({
-        headers: headers as Headers,
-      });
+      const session = await input.auth.api.getSession({ headers });
       if (!session?.user?.id) {
         return null;
       }

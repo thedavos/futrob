@@ -112,7 +112,7 @@ describe("onboarding invitation preview", () => {
   });
 
   it("ignores a stale preview failure after the invitation code changes", async () => {
-    let rejectInspection!: (reason: unknown) => void;
+    let rejectInspection!: (reason: Error) => void;
     const inspect = vi.fn<() => Promise<never>>(
       () =>
         new Promise<never>((_resolve, reject) => {
@@ -134,9 +134,7 @@ describe("onboarding invitation preview", () => {
     fireEvent.change(input, { target: { value: "old-token" } });
     fireEvent.click(screen.getByRole("button", { name: "Revisar invitación" }));
     await waitFor(() => expect(inspect).toHaveBeenCalledWith({ token: "old-token" }));
-    expect(
-      (screen.getByRole("button", { name: "Revisar invitación" }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(screen.getByRole("button", { name: "Revisar invitación" })).toBeDisabled();
 
     fireEvent.change(input, { target: { value: "new-token" } });
     await act(async () => {
@@ -149,7 +147,7 @@ describe("onboarding invitation preview", () => {
       );
     });
 
-    expect((input as HTMLInputElement).value).toBe("new-token");
+    expect(input).toHaveValue("new-token");
     expect(screen.queryByText(/invitación ha caducado/i)).toBeNull();
     expect(screen.getByRole("heading", { name: "Únete a una competición" })).toBeTruthy();
   });
@@ -175,7 +173,7 @@ describe("onboarding invitation preview", () => {
     fireEvent.click(review);
 
     await waitFor(() => expect(inspect).toHaveBeenCalledTimes(1));
-    expect((review as HTMLButtonElement).disabled).toBe(true);
+    expect(review).toBeDisabled();
   });
 
   it("preserves the invitation code and unlocks preview after a rate-limit wait", async () => {
@@ -203,15 +201,11 @@ describe("onboarding invitation preview", () => {
       await act(async () => Promise.resolve());
 
       expect(screen.getByText("Podrás reintentar en 2 s.")).toBeTruthy();
-      expect(
-        (screen.getByRole("button", { name: "Reintentar en 2 s" }) as HTMLButtonElement).disabled,
-      ).toBe(true);
-      expect((input as HTMLInputElement).value).toBe("invite-token");
+      expect(screen.getByRole("button", { name: "Reintentar en 2 s" })).toBeDisabled();
+      expect(input).toHaveValue("invite-token");
 
       await act(async () => vi.advanceTimersByTime(2_000));
-      expect(
-        (screen.getByRole("button", { name: "Revisar invitación" }) as HTMLButtonElement).disabled,
-      ).toBe(false);
+      expect(screen.getByRole("button", { name: "Revisar invitación" })).not.toBeDisabled();
     } finally {
       vi.useRealTimers();
     }

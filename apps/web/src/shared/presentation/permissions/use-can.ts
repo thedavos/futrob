@@ -28,23 +28,25 @@ export type CapabilitiesQuery<T extends CapabilityMap> = {
   readonly unavailable: boolean;
 };
 
+function buildCapabilityFlags<T extends CapabilityMap>(
+  allowed: ReadonlySet<string>,
+  map: T,
+): { readonly [K in keyof T]: boolean } {
+  const entries = Object.entries(map).map(([key, permission]) => [key, can(allowed, permission)]);
+  return Object.fromEntries(entries) satisfies { readonly [K in keyof T]: boolean };
+}
+
 export function useCapabilities<T extends CapabilityMap>(
   scope: AuthorizationScopeDto,
   map: T,
 ): CapabilitiesQuery<T> {
-  const permissions = useMemo(() => Object.values(map) as Permission[], [map]);
+  const permissions = useMemo(() => Object.values(map), [map]);
   const { allowed, capability } = useEffectivePermissions(scope, permissions);
-  const flags = useMemo(() => {
-    const next = {} as { [K in keyof T]: boolean };
-    for (const key of Object.keys(map) as Array<keyof T>) {
-      next[key] = can(allowed, map[key]);
-    }
-    return next;
-  }, [allowed, map]);
+  const flags = useMemo(() => buildCapabilityFlags(allowed, map), [allowed, map]);
 
   return {
     ...flags,
     loading: capability.status === "loading",
     unavailable: capability.status === "unavailable",
-  };
+  } satisfies CapabilitiesQuery<T>;
 }

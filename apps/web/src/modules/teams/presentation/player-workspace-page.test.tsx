@@ -1,14 +1,21 @@
 // @vitest-environment jsdom
 
+import type { ReactNode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type {
+  GetMyPlayerProfileResponse,
+  GetMyTeamsResponse,
+  SetActiveTeamResponse,
+} from "@futrob/api-contracts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PlayerWorkspacePage } from "./player-workspace-page.tsx";
 
-const getMyProfile = vi.fn<() => Promise<unknown>>();
-const getMyTeams = vi.fn<() => Promise<unknown>>();
-const setActiveTeam = vi.fn<(input: { rosterMembershipId: string }) => Promise<unknown>>();
+const getMyProfile = vi.fn<() => Promise<GetMyPlayerProfileResponse>>();
+const getMyTeams = vi.fn<() => Promise<GetMyTeamsResponse>>();
+const setActiveTeam =
+  vi.fn<(input: { rosterMembershipId: string }) => Promise<SetActiveTeamResponse>>();
 
 vi.mock("./teams-browser-client.ts", () => ({
   teamsBrowserClient: {
@@ -19,9 +26,9 @@ vi.mock("./teams-browser-client.ts", () => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children, ...props }: { to: string; children?: unknown }) => (
+  Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
     <a href={to} {...props}>
-      {children as never}
+      {children}
     </a>
   ),
 }));
@@ -41,6 +48,7 @@ describe("PlayerWorkspacePage", () => {
     getMyProfile.mockResolvedValue({
       profile: { id: "p1", createdAt: "2026-08-01T00:00:00.000Z" },
       gameAccounts: [],
+      externalClubs: [],
     });
     getMyTeams.mockResolvedValue({
       activeRosterMembershipId: "m1",
@@ -112,6 +120,7 @@ describe("PlayerWorkspacePage", () => {
     getMyProfile.mockResolvedValue({
       profile: { id: "p1", createdAt: "2026-08-01T00:00:00.000Z" },
       gameAccounts: [],
+      externalClubs: [],
     });
     getMyTeams.mockResolvedValue({ activeRosterMembershipId: null, teams: [] });
 

@@ -1,7 +1,7 @@
-import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
+import type { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
 
-export function invitationAcceptErrorMessage(error: unknown): string {
-  if (!(error instanceof OrganizationsClientError)) {
+export function invitationAcceptErrorMessage(error: OrganizationsClientError | null): string {
+  if (!error) {
     return "No se pudo aceptar la invitación. Inténtalo de nuevo.";
   }
 

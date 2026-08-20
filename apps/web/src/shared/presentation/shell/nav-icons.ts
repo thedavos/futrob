@@ -13,7 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import type { ShellNavIconId } from "./nav-registry.ts";
 
-export const SHELL_NAV_ICONS: Record<ShellNavIconId, Icon> = {
+export const SHELL_NAV_ICONS = {
   home: HouseIcon,
   competitions: TrophyIcon,
   "ea-clubs": GameControllerIcon,
@@ -24,4 +24,4 @@ export const SHELL_NAV_ICONS: Record<ShellNavIconId, Icon> = {
   players: UsersThreeIcon,
   organization: BuildingsIcon,
   settings: GearIcon,
-};
+} satisfies Record<ShellNavIconId, Icon>;

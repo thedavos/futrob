@@ -9,7 +9,7 @@ export type OnboardingRoute =
   | "/onboarding/club"
   | "/onboarding/review";
 
-const routeByStep: Record<OnboardingStepDto, OnboardingRoute> = {
+const routeByStep = {
   intention: "/onboarding/intention",
   organization: "/onboarding/organization",
   competition: "/onboarding/competition",
@@ -18,13 +18,25 @@ const routeByStep: Record<OnboardingStepDto, OnboardingRoute> = {
   "game-account": "/onboarding/game-account",
   club: "/onboarding/club",
   review: "/onboarding/review",
-};
+} satisfies Record<OnboardingStepDto, OnboardingRoute>;
 
-const allowedStepsByPath: Record<OnboardingPathDto, readonly OnboardingStepDto[]> = {
+function isOnboardingStepInPath(
+  steps: readonly OnboardingStepDto[],
+  step: OnboardingStepDto,
+): boolean {
+  for (const allowed of steps) {
+    if (allowed === step) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const allowedStepsByPath = {
   organization: ["intention", "organization", "competition", "game-account", "review"],
   invitation: ["intention", "invitation", "game-account", "review"],
   player: ["intention", "game-account", "club", "review"],
-};
+} satisfies Record<OnboardingPathDto, readonly OnboardingStepDto[]>;
 
 /**
  * Cold bootstrap without a rehydratable draft always opens at intention.
@@ -51,7 +63,7 @@ export function resolvePersistedOnboardingStep(
         ? "game-account"
         : "intention";
   }
-  return allowedStepsByPath[path].includes(currentStep) ? currentStep : "intention";
+  return isOnboardingStepInPath(allowedStepsByPath[path], currentStep) ? currentStep : "intention";
 }
 
 export function isOnboardingStepAllowedForPath(
@@ -60,7 +72,7 @@ export function isOnboardingStepAllowedForPath(
 ): boolean {
   if (path === null) return step === "intention";
   if (step === "game") return path === "organization" || path === "player";
-  return allowedStepsByPath[path].includes(step);
+  return isOnboardingStepInPath(allowedStepsByPath[path], step);
 }
 
 export function routeForOnboardingStep(step: OnboardingStepDto): OnboardingRoute {

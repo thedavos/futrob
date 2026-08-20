@@ -1,7 +1,9 @@
+import { getMyRecentMatchesResponseSchema } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import clubMatchesFixture from "@/adapters/game-data/ea-clubs/fixtures/club-matches.json";
 import { buildApp, createFetch, serviceHeaders, stubFetch } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api personal statistics routes", () => {
   it("rejects invalid personal statistics query filters", async () => {
@@ -134,23 +136,19 @@ describe("apps/api personal statistics routes", () => {
     });
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-      status: string;
-      matches?: Array<{
-        kind: string;
-        appearance?: { displayName: string };
-        match: { players: Array<{ isMvp: boolean | null }> };
-      }>;
-    };
+    const body = await parseResponse(getMyRecentMatchesResponseSchema, response);
     expect(body.status).toBe("ready");
-    expect(body.matches?.length).toBeGreaterThan(0);
+    if (body.status !== "ready") {
+      return;
+    }
+    expect(body.matches.length).toBeGreaterThan(0);
     expect(
-      body.matches?.every(
+      body.matches.every(
         (row) => row.kind === "played" && row.appearance?.displayName === "Vcaliari",
       ),
     ).toBe(true);
     expect(
-      body.matches?.every((row) => row.match.players.every((player) => player.isMvp === true)),
+      body.matches.every((row) => row.match.players.every((player) => player.isMvp === true)),
     ).toBe(true);
   });
 

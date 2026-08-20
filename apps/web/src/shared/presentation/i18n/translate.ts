@@ -1,6 +1,7 @@
 import {
   catalogs,
   type Locale,
+  type Message,
   type MessageKey,
   type MessageParamsByKey,
   type ParameterizedMessageKey,
@@ -15,25 +16,30 @@ export interface Translator {
   error(code: string): string;
 }
 
+function renderMessage(message: Message, params: TranslationParams): string {
+  if (message instanceof Function) {
+    return message(params);
+  }
+  return interpolate(message, params);
+}
+
 export function createTranslator(locale: Locale): Translator {
   const catalog = catalogs[locale];
   const translateMessage = (key: MessageKey, params: TranslationParams = {}): string => {
     const message = catalog[key] ?? catalogs.es[key];
-    return typeof message === "function" ? message(params) : interpolate(message, params);
+    return renderMessage(message, params);
   };
-  return Object.assign(translateMessage, {
-    locale,
-    error(code: string): string {
-      const key = `errors.${code}`;
-      return hasMessageKey(catalog, key)
-        ? translateMessage(key)
-        : translateMessage("errors.fallback");
-    },
-  }) as Translator;
+  const error = (code: string): string => {
+    const key = `errors.${code}`;
+    return hasMessageKey(catalog, key)
+      ? translateMessage(key)
+      : translateMessage("errors.fallback");
+  };
+  return Object.assign(translateMessage, { locale, error }) satisfies Translator;
 }
 
 function hasMessageKey(catalog: (typeof catalogs)[Locale], key: string): key is MessageKey {
-  return Object.prototype.hasOwnProperty.call(catalog, key);
+  return Object.hasOwn(catalog, key);
 }
 
 function interpolate(message: string, params: TranslationParams): string {

@@ -6,12 +6,12 @@ export interface AuthClientError {
   status: number;
 }
 
-export function isNetworkError(error: unknown): boolean {
+export function isNetworkError(error: Error): boolean {
   if (error instanceof TypeError) {
     return true;
   }
 
-  return error instanceof Error && /fetch|network|load failed/i.test(error.message);
+  return /fetch|network|load failed/i.test(error.message);
 }
 
 export const AUTH_ERROR_NETWORK =

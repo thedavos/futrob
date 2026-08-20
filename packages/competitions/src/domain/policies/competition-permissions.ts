@@ -13,10 +13,8 @@ export const COMPETITION_PERMISSION = {
 
 export const COMPETITION_PERMISSIONS = Object.values(COMPETITION_PERMISSION);
 
-export const COMPETITION_ROLE_PERMISSIONS: Readonly<
-  Record<CompetitionMembershipRole, readonly Permission[]>
-> = {
+export const COMPETITION_ROLE_PERMISSIONS = {
   staff: COMPETITION_PERMISSIONS,
   captain: [COMPETITION_PERMISSION.read, COMPETITION_PERMISSION.participantsRead],
   player: [COMPETITION_PERMISSION.read, COMPETITION_PERMISSION.participantsRead],
-};
+} as const satisfies Record<CompetitionMembershipRole, readonly Permission[]>;

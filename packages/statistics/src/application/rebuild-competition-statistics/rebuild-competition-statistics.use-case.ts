@@ -1,5 +1,6 @@
 import type { OfficialResult, OfficialResultReaderPort } from "@futrob/results";
 import {
+  assertNever,
   err,
   ok,
   type ClockPort,
@@ -90,7 +91,7 @@ export class RebuildCompetitionStatisticsUseCase {
           case "voided":
             break;
           default:
-            assertNever(officialResult.status);
+            assertNever(officialResult.status, "Unsupported official result status");
         }
       }
 
@@ -261,8 +262,4 @@ function addMatchedTeams(
       teams.add(contribution.teamId);
     }
   }
-}
-
-function assertNever(status: never): never {
-  throw new RangeError(`Unsupported official result status: ${String(status)}`);
 }

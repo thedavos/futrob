@@ -1,5 +1,6 @@
 import { REQUEST_ID_HEADER, requestIdSchema, type RequestId } from "@futrob/api-contracts";
-import { parseApiErrorBody, parseRetryAfterSeconds } from "@futrob/sdk";
+import { parseApiErrorBody, parseRetryAfterSeconds, httpResponseBodySchema } from "@futrob/sdk";
+import { z } from "zod";
 
 export type BrowserApiError = Readonly<{
   code: string;
@@ -7,12 +8,17 @@ export type BrowserApiError = Readonly<{
   retryAfterSeconds?: number;
 }>;
 
+const responseBodySchema = z.unknown();
+
+export type UnparsedResponseBody = z.infer<typeof responseBodySchema>;
+
 export function readBrowserApiError(
   response: Response,
-  raw: unknown,
+  raw: UnparsedResponseBody,
   fallbackCode: string,
 ): BrowserApiError {
-  const body = parseApiErrorBody(raw);
+  const parsedBody = httpResponseBodySchema.safeParse(raw);
+  const body = parseApiErrorBody(parsedBody.success ? parsedBody.data : null);
   const header = requestIdSchema.safeParse(response.headers.get(REQUEST_ID_HEADER));
   return {
     code: body?.code ?? fallbackCode,

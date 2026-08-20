@@ -14,23 +14,23 @@ export interface SignupValues {
 
 type SignupFieldValidator = (value: string) => string | null;
 
-const signupFieldValidators: Record<AuthFormField, SignupFieldValidator> = {
-  name: (value) => (value.length === 0 ? AUTH_VALIDATION_REQUIRED : null),
-  email: (value) => {
+const signupFieldValidators = {
+  name: (value: string) => (value.length === 0 ? AUTH_VALIDATION_REQUIRED : null),
+  email: (value: string) => {
     if (value.length === 0) {
       return AUTH_VALIDATION_REQUIRED;
     }
 
     return EMAIL_PATTERN.test(value) ? null : AUTH_VALIDATION_EMAIL;
   },
-  password: (value) => {
+  password: (value: string) => {
     if (value.length === 0) {
       return AUTH_VALIDATION_REQUIRED;
     }
 
     return getPasswordPolicyError(value) ?? null;
   },
-};
+} satisfies Record<AuthFormField, SignupFieldValidator>;
 
 export function validateSignupField(field: AuthFormField, value: string): string | null {
   const normalizedValue = field === "password" ? value : value.trim();

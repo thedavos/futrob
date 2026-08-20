@@ -7,8 +7,8 @@ import {
   asTeamId,
   type AuthorizationPort,
   type DomainEvent,
+  type EventPublisherPort,
 } from "@futrob/shared-kernel";
-import type { EventPublisherPort } from "@futrob/shared-kernel";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
 import type { OfficialMatchSelectionRepository } from "../../domain/ports/official-result.repository.ts";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";

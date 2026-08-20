@@ -58,7 +58,7 @@ describe("provider sync job BFF", () => {
               gameData: { syncJobs: { enqueue } },
             },
           }),
-          getQueue: () => ({ send }),
+          getQueue: async () => ({ send }),
         },
       );
 

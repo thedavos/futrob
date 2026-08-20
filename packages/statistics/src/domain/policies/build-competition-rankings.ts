@@ -1,4 +1,4 @@
-import type { TeamId } from "@futrob/shared-kernel";
+import { assertNever, type TeamId } from "@futrob/shared-kernel";
 import {
   RANKING_FORMULA_VERSION,
   RANKING_KINDS,
@@ -155,7 +155,7 @@ function qualifiesForKind(player: PlayerRankingAggregate, kind: RankingKind): bo
     case "goalkeeper":
       return player.goalkeeperMatches > 0;
     default:
-      return assertNever(kind);
+      return assertNever(kind, "Unsupported ranking kind");
   }
 }
 
@@ -172,7 +172,7 @@ function valueForKind(player: PlayerRankingAggregate, kind: RankingKind): number
     case "goalkeeper":
       return player.saves;
     default:
-      return assertNever(kind);
+      return assertNever(kind, "Unsupported ranking kind");
   }
 }
 
@@ -186,7 +186,7 @@ function secondaryForKind(player: PlayerRankingAggregate, kind: RankingKind): nu
     case "mvp":
       return 0;
     default:
-      return assertNever(kind);
+      return assertNever(kind, "Unsupported ranking kind");
   }
 }
 
@@ -397,8 +397,4 @@ interface MutablePlayer {
   goalkeeperMatches: number;
   sourceRevisionMax: number;
   teamMinutesAccumulator: Map<TeamId, number>;
-}
-
-function assertNever(value: never): never {
-  throw new RangeError(`Unsupported ranking kind: ${String(value)}`);
 }

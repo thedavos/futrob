@@ -11,6 +11,7 @@ import {
   Form,
   Input,
   readFormString,
+  hasBrowserWindow,
 } from "@futrob/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CheckCircleIcon } from "@phosphor-icons/react";
@@ -185,8 +186,8 @@ export function AcceptRosterInvitationForm(props: {
   );
 }
 
-function signupSearchWithCurrentPath(): { redirectTo?: string } {
-  if (typeof window === "undefined") return {};
+function signupSearchWithCurrentPath() {
+  if (!hasBrowserWindow()) return {};
   const redirectTo = resolveSafeRedirect(window.location.pathname);
   return redirectTo == null ? {} : { redirectTo };
 }

@@ -1,11 +1,13 @@
-import { err, ok, type Result } from "@futrob/shared-kernel";
-import type {
-  ActorId,
-  ClockPort,
-  CompetitionId,
-  IdGeneratorPort,
-  OrganizationId,
-  AuthorizationPort,
+import {
+  err,
+  ok,
+  type Result,
+  type ActorId,
+  type ClockPort,
+  type CompetitionId,
+  type IdGeneratorPort,
+  type OrganizationId,
+  type AuthorizationPort,
 } from "@futrob/shared-kernel";
 import type { InvitationRepository } from "../../domain/ports/invitation.repository.ts";
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
@@ -18,7 +20,9 @@ import {
 } from "../../domain/entities/organization-invitation.ts";
 import {
   isCompetitionInviteRole,
+  isInviteRole,
   isOrganizationInviteRole,
+  type InviteRole,
 } from "../../domain/value-objects/organization-membership-role.ts";
 import {
   InvalidInvitationRedeemPolicy,
@@ -70,7 +74,7 @@ export class CreateInvitationUseCase {
     const validRole = input.competitionId
       ? isCompetitionInviteRole(input.role)
       : isOrganizationInviteRole(input.role);
-    if (!validRole) {
+    if (!validRole || !isInviteRole(input.role)) {
       return err(
         new InvalidInvitationRole({
           code: "organizations.invalid_role",
@@ -82,9 +86,15 @@ export class CreateInvitationUseCase {
       );
     }
 
+    const inviteRole: InviteRole = input.role;
     const redeemPolicy = input.redeemPolicy ?? REDEEM_POLICY.single;
     if (redeemPolicy === REDEEM_POLICY.multi) {
-      if (!Number.isInteger(input.maxRedemptions) || (input.maxRedemptions as number) < 1) {
+      const maxRedemptionsValue = input.maxRedemptions;
+      if (
+        maxRedemptionsValue === undefined ||
+        !Number.isInteger(maxRedemptionsValue) ||
+        maxRedemptionsValue < 1
+      ) {
         return err(
           new InvalidInvitationRedeemPolicy({
             code: "organizations.invalid_redeem_policy",
@@ -138,13 +148,13 @@ export class CreateInvitationUseCase {
     const token = this.deps.tokens.generatePlainToken();
     const tokenHash = this.deps.tokens.hashToken(token);
     const maxRedemptions =
-      redeemPolicy === REDEEM_POLICY.multi ? (input.maxRedemptions as number) : null;
+      redeemPolicy === REDEEM_POLICY.multi ? (input.maxRedemptions ?? null) : null;
 
     await this.deps.invitations.create({
       id: invitationId,
       organizationId: input.organizationId,
       competitionId: input.competitionId ?? null,
-      role: input.role as import("../../domain/value-objects/organization-membership-role.ts").InviteRole,
+      role: inviteRole,
       tokenHash,
       email: input.email ?? null,
       status: INVITATION_STATUS.pending,

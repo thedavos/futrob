@@ -24,9 +24,13 @@ import {
   type PublishCompetitionResponse,
   type ListOrganizationTeamsResponse,
 } from "@futrob/api-contracts";
+import { z } from "zod";
+import { requestBrowserJson } from "@/shared/infrastructure/http/browser-json-request.ts";
+import type { UnparsedResponseBody } from "@/shared/infrastructure/http/browser-api-error.ts";
 
 export class CompetitionsClientError extends Error {
   constructor(
+    readonly status: number,
     readonly code: string,
     message?: string,
   ) {
@@ -35,45 +39,82 @@ export class CompetitionsClientError extends Error {
   }
 }
 
-export async function listMyAccessibleCompetitions(): Promise<ListAccessibleCompetitionsResponse> {
-  const response = await fetch("/api/v1/competitions/mine", {
-    credentials: "include",
-    headers: { Accept: "application/json" },
+function createCompetitionsError(status: number, code: string): CompetitionsClientError {
+  return new CompetitionsClientError(status, code);
+}
+
+async function requestCompetitionsJson<T>(input: {
+  readonly path: string;
+  readonly method: "GET" | "PATCH" | "POST" | "DELETE";
+  readonly body?: unknown;
+  readonly schema: z.ZodType<T>;
+  readonly fallbackCode: string;
+}): Promise<T> {
+  return requestBrowserJson({
+    path: input.path,
+    method: input.method,
+    body: input.body,
+    schema: input.schema,
+    fallbackCode: input.fallbackCode,
+    createError: (status, error) => createCompetitionsError(status, error.code),
   });
-  const json: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new CompetitionsClientError(errorCode(json, "competitions.mine_failed"));
+}
+
+function competitionJsonHeaders(hasBody: boolean): HeadersInit {
+  if (hasBody) {
+    return { Accept: "application/json", "Content-Type": "application/json" };
   }
-  return listAccessibleCompetitionsResponseSchema.parse(json);
+  return { Accept: "application/json" };
+}
+
+async function competitionRequest<T>(
+  path: string,
+  options: { readonly method: "GET" | "PATCH" | "POST" | "DELETE"; readonly body?: unknown },
+  schema: z.ZodType<T>,
+): Promise<T> {
+  const response = await fetch(path, {
+    method: options.method,
+    credentials: "include",
+    headers: competitionJsonHeaders(options.body !== undefined),
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  });
+  const raw: unknown = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) {
+    throw createCompetitionsError(response.status, errorCode(raw, "competitions.request_failed"));
+  }
+  return schema.parse(raw);
+}
+
+export async function listMyAccessibleCompetitions(): Promise<ListAccessibleCompetitionsResponse> {
+  return requestCompetitionsJson({
+    path: "/api/v1/competitions/mine",
+    method: "GET",
+    schema: listAccessibleCompetitionsResponseSchema,
+    fallbackCode: "competitions.mine_failed",
+  });
 }
 
 export async function listOrganizationCompetitions(
   organizationId: string,
 ): Promise<ListOrganizationCompetitionsResponse> {
-  const response = await fetch(
-    `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions`,
-    { credentials: "include", headers: { Accept: "application/json" } },
-  );
-  const json: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new CompetitionsClientError(errorCode(json, "competitions.list_failed"));
-  }
-  return listOrganizationCompetitionsResponseSchema.parse(json);
+  return requestCompetitionsJson({
+    path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions`,
+    method: "GET",
+    schema: listOrganizationCompetitionsResponseSchema,
+    fallbackCode: "competitions.list_failed",
+  });
 }
 
 export async function getCompetitionDraft(
   organizationId: string,
   competitionId: string,
 ): Promise<GetCompetitionDraftResponse> {
-  const response = await fetch(
-    `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}`,
-    { credentials: "include", headers: { Accept: "application/json" } },
-  );
-  const json: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new CompetitionsClientError(errorCode(json, "competitions.load_failed"));
-  }
-  return getCompetitionDraftResponseSchema.parse(json);
+  return requestCompetitionsJson({
+    path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}`,
+    method: "GET",
+    schema: getCompetitionDraftResponseSchema,
+    fallbackCode: "competitions.load_failed",
+  });
 }
 
 export async function createCompetitionDraft(
@@ -81,39 +122,13 @@ export async function createCompetitionDraft(
   input: CreateCompetitionDraftRequest,
 ): Promise<CreateCompetitionDraftResponse> {
   const body = createCompetitionDraftRequestSchema.parse(input);
-  const response = await fetch(
-    `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions`,
-    {
-      method: "POST",
-      credentials: "include",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  );
-  const json: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new CompetitionsClientError(errorCode(json, "competitions.create_failed"));
-  }
-  return createCompetitionDraftResponseSchema.parse(json);
-}
-
-async function competitionRequest<T>(
-  path: string,
-  options: RequestInit,
-  parse: (value: unknown) => T,
-): Promise<T> {
-  const response = await fetch(path, {
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
-    },
-    ...options,
+  return requestCompetitionsJson({
+    path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions`,
+    method: "POST",
+    body,
+    schema: createCompetitionDraftResponseSchema,
+    fallbackCode: "competitions.create_failed",
   });
-  const json: unknown = response.status === 204 ? null : await response.json().catch(() => null);
-  if (!response.ok)
-    throw new CompetitionsClientError(errorCode(json, "competitions.request_failed"));
-  return parse(json);
 }
 
 export function updateCompetitionDraft(
@@ -124,8 +139,8 @@ export function updateCompetitionDraft(
   const body = updateCompetitionDraftRequestSchema.parse(input);
   return competitionRequest(
     `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}`,
-    { method: "PATCH", body: JSON.stringify(body) },
-    (value) => updateCompetitionDraftResponseSchema.parse(value),
+    { method: "PATCH", body },
+    updateCompetitionDraftResponseSchema,
   );
 }
 
@@ -136,7 +151,7 @@ export function listCompetitionParticipants(
   return competitionRequest(
     `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/participants`,
     { method: "GET" },
-    (value) => listCompetitionParticipantsResponseSchema.parse(value),
+    listCompetitionParticipantsResponseSchema,
   );
 }
 
@@ -146,7 +161,7 @@ export function listOrganizationTeams(
   return competitionRequest(
     `/api/v1/organizations/${encodeURIComponent(organizationId)}/teams`,
     { method: "GET" },
-    (value) => listOrganizationTeamsResponseSchema.parse(value),
+    listOrganizationTeamsResponseSchema,
   );
 }
 
@@ -158,8 +173,8 @@ export function addCompetitionParticipant(
   const body = competitionParticipantInputSchema.parse(input);
   return competitionRequest(
     `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/participants`,
-    { method: "POST", body: JSON.stringify(body) },
-    (value) => addCompetitionParticipantResponseSchema.parse(value),
+    { method: "POST", body },
+    addCompetitionParticipantResponseSchema,
   );
 }
 
@@ -171,7 +186,7 @@ export function removeCompetitionParticipant(
   return competitionRequest(
     `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/participants/${encodeURIComponent(entryId)}`,
     { method: "DELETE" },
-    () => undefined,
+    z.null().transform(() => undefined),
   );
 }
 
@@ -182,13 +197,13 @@ export function publishCompetition(
   return competitionRequest(
     `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/publish`,
     { method: "POST" },
-    (value) => publishCompetitionResponseSchema.parse(value),
+    publishCompetitionResponseSchema,
   );
 }
 
-function errorCode(json: unknown, fallback: string): string {
-  if (json && typeof json === "object" && "code" in json && typeof json.code === "string") {
-    return json.code;
-  }
-  return fallback;
+const errorBodySchema = z.object({ code: z.string() });
+
+function errorCode(raw: UnparsedResponseBody, fallback: string): string {
+  const parsed = errorBodySchema.safeParse(raw);
+  return parsed.success ? parsed.data.code : fallback;
 }

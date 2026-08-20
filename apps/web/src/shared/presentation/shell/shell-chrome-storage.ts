@@ -1,31 +1,33 @@
+import { hasBrowserWindow } from "@futrob/ui";
+import { z } from "zod";
+
 export const SHELL_CHROME_STORAGE_KEY = "futrob.shell-chrome";
 
 export type ShellChromeState = {
   readonly collapsed: boolean;
 };
 
+const shellChromeStateSchema = z.object({
+  collapsed: z.boolean(),
+});
+
 export function readStoredShellChrome(): ShellChromeState | null {
-  if (typeof window === "undefined") return null;
+  if (!hasBrowserWindow()) return null;
   try {
     const raw = window.localStorage.getItem(SHELL_CHROME_STORAGE_KEY);
     if (!raw) return null;
-    return parseStoredShellChrome(JSON.parse(raw) as unknown);
+    const parsed = shellChromeStateSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }
 }
 
 export function writeStoredShellChrome(state: ShellChromeState): void {
-  if (typeof window === "undefined") return;
+  if (!hasBrowserWindow()) return;
   try {
     window.localStorage.setItem(SHELL_CHROME_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // ignore quota / private mode
   }
-}
-
-function parseStoredShellChrome(value: unknown): ShellChromeState | null {
-  if (!value || typeof value !== "object") return null;
-  if (!("collapsed" in value) || typeof value.collapsed !== "boolean") return null;
-  return { collapsed: value.collapsed };
 }

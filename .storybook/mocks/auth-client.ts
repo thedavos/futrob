@@ -9,12 +9,18 @@ type EmailPayload = {
   name?: string;
 };
 
+function isEmailString(payload: EmailPayload | string): payload is string {
+  return Object.prototype.toString.call(payload) === "[object String]";
+}
+
 function readEmail(payload: EmailPayload | string | undefined): string {
-  if (typeof payload === "string") {
+  if (payload === undefined) {
+    return "";
+  }
+  if (isEmailString(payload)) {
     return payload;
   }
-
-  return payload?.email?.trim() ?? "";
+  return payload.email?.trim() ?? "";
 }
 
 export const authClient = {

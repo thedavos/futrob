@@ -12,7 +12,12 @@ function createBlurEvent(
   currentTarget: HTMLDivElement,
   relatedTarget: EventTarget | null,
 ): FocusEvent<HTMLDivElement> {
-  return { currentTarget, relatedTarget } as FocusEvent<HTMLDivElement>;
+  // SAFETY: Test double supplies only the FocusEvent fields exercised by useFormValidation.
+  return {
+    type: "blur",
+    currentTarget,
+    relatedTarget,
+  } as FocusEvent<HTMLDivElement>;
 }
 
 describe("useFormValidation", () => {

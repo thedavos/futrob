@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   createAuthenticatedProductApiClient,
   productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
 } from "@/context/create-authenticated-product-api-client.ts";
 
 export const Route = createFileRoute(
@@ -19,7 +20,10 @@ export const Route = createFileRoute(
           );
           return new Response(null, { status: 204 });
         } catch (error) {
-          return productApiBffErrorResponse(error);
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
+          return productApiBffErrorResponseForError(error);
         }
       },
     },

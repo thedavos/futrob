@@ -59,7 +59,10 @@ export function PlayerWorkspacePage() {
               {t("player.matches.description")}
             </p>
           </div>
-          <Button render={<Link to="/player/matches" />} variant="secondary">
+          <Button
+            render={<Link to="/player/matches" search={{ view: "all" }} />}
+            variant="secondary"
+          >
             {t("player.matches.open")}
           </Button>
         </div>

@@ -112,9 +112,11 @@ export interface FixtureGenerationSpec {
 }
 
 export function asFixtureStageId(value: string): FixtureStageId {
+  // SAFETY: Compile-time brand marker; fixture stage ids are domain-owned strings at generation time.
   return value as FixtureStageId;
 }
 
 export function asFixtureRoundId(value: string): FixtureRoundId {
+  // SAFETY: Compile-time brand marker; fixture round ids are domain-owned strings at generation time.
   return value as FixtureRoundId;
 }

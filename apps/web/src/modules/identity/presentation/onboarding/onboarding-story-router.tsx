@@ -14,7 +14,7 @@ import type {
   OnboardingStepDto,
 } from "@futrob/api-contracts";
 import { EA_SEARCH_PLATFORM } from "@futrob/api-contracts";
-import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
+import type { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";

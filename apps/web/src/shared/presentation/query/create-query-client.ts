@@ -1,11 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
-
-function isClientHttpError(error: unknown): boolean {
-  if (error && typeof error === "object" && "status" in error && typeof error.status === "number") {
-    return error.status >= 400 && error.status < 500;
-  }
-  return false;
-}
+import {
+  clientHttpErrorSchema,
+  isClientHttpError,
+} from "@/shared/infrastructure/http/client-http-error.ts";
 
 export function createAppQueryClient(): QueryClient {
   return new QueryClient({
@@ -13,7 +10,8 @@ export function createAppQueryClient(): QueryClient {
       queries: {
         staleTime: 30_000,
         retry: (failureCount, error) => {
-          if (isClientHttpError(error)) {
+          const parsed = clientHttpErrorSchema.safeParse(error);
+          if (parsed.success && isClientHttpError(parsed.data)) {
             return false;
           }
           return failureCount < 2;

@@ -62,7 +62,7 @@ describe("finalizationError", () => {
         new IdentityOnboardingClientError(500, "identity.onboarding_failed"),
       ),
     ).toEqual({ messageKey: "errors.onboarding.completePlayer" });
-    expect(finalizationError("player", new Error("network"))).toEqual({
+    expect(finalizationError("player", null)).toEqual({
       messageKey: "errors.onboarding.finish",
     });
   });

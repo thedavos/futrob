@@ -1,4 +1,5 @@
 import { apiErrorSchema, type ApiErrorBody } from "@futrob/api-contracts";
+import type { HttpResponseBody } from "./wire-body.ts";
 
 export class FutrobApiError extends Error {
   readonly code: string;
@@ -20,7 +21,7 @@ export class FutrobApiError extends Error {
   }
 }
 
-export function parseApiErrorBody(data: unknown): ApiErrorBody | null {
+export function parseApiErrorBody(data: HttpResponseBody): ApiErrorBody | null {
   const parsed = apiErrorSchema.safeParse(data);
   return parsed.success ? parsed.data : null;
 }

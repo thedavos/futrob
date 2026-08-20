@@ -1,7 +1,8 @@
+import { apiErrorSchema } from "../errors.ts";
 import { stringify } from "yaml";
 import { futrobOpenApiV1 } from "./document.ts";
 
-export function getOpenApiJsonDocument(): unknown {
+export function getOpenApiJsonDocument(): typeof futrobOpenApiV1 {
   return futrobOpenApiV1;
 }
 
@@ -12,3 +13,6 @@ export function getOpenApiJsonText(): string {
 export function getOpenApiYamlText(): string {
   return stringify(futrobOpenApiV1);
 }
+
+/** Keep error schema referenced for OpenAPI drift checks. */
+void apiErrorSchema;

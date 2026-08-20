@@ -8,6 +8,7 @@ import {
   createAuthenticatedOrganizationsClient,
   organizationsBffErrorResponse,
 } from "@/modules/organizations/server/create-authenticated-organizations-client.ts";
+import { productApiBffErrorResponse } from "@/context/product-api-bff-error-response.ts";
 
 export const Route = createFileRoute("/api/v1/organizations/")({
   server: {
@@ -30,6 +31,9 @@ export const Route = createFileRoute("/api/v1/organizations/")({
           );
           return jsonResponse(body, 201);
         } catch (error) {
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
           return organizationsBffErrorResponse(error);
         }
       },

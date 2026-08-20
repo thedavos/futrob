@@ -1,5 +1,6 @@
 "use client";
 
+import { z } from "zod";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Alert,
@@ -25,10 +26,13 @@ import type {
   CompetitionFormatDto,
   CompetitionMatchRulesDto,
   CompetitionParticipantInput,
-  CompetitionPlatformDto,
-  CompetitionRegionDto,
   TeamDto,
   UpdateCompetitionDraftRequest,
+} from "@futrob/api-contracts";
+import {
+  competitionFormatSchema,
+  competitionPlatformSchema,
+  competitionRegionSchema,
 } from "@futrob/api-contracts";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
@@ -278,7 +282,7 @@ function InformationStep({
           id="competition-platform"
           items={platforms.map((value) => ({ value, label: value }))}
           label="Plataforma"
-          onChange={(value) => onChange({ platform: value as CompetitionPlatformDto })}
+          onChange={(value) => onChange({ platform: competitionPlatformSchema.parse(value) })}
           value={form.platform}
         />
         <SelectField
@@ -286,7 +290,7 @@ function InformationStep({
           id="competition-region"
           items={competitionRegions}
           label="Región"
-          onChange={(value) => onChange({ region: value as CompetitionRegionDto })}
+          onChange={(value) => onChange({ region: competitionRegionSchema.parse(value) })}
           value={form.region}
         />
       </div>
@@ -326,7 +330,7 @@ function FormatStep({
         id="competition-format"
         items={competitionFormats}
         label="Formato competitivo"
-        onChange={(value) => onChange(value as CompetitionFormatDto)}
+        onChange={(value) => onChange(competitionFormatSchema.parse(value))}
         value={form.format}
       />
     </section>
@@ -399,7 +403,7 @@ function MatchRulesEditor({
           ]}
           label="Partidos por cruce"
           onChange={(value) => {
-            const count = Number(value) as 1 | 2;
+            const count = z.union([z.literal(1), z.literal(2)]).parse(Number(value));
             onChange({
               ...rules,
               officialMatchesPerEncounter: count,
@@ -419,7 +423,7 @@ function MatchRulesEditor({
           onChange={(value) =>
             onChange({
               ...rules,
-              resolutionMode: value as CompetitionMatchRulesDto["resolutionMode"],
+              resolutionMode: z.enum(["independent_matches", "aggregate_score"]).parse(value),
             })
           }
           value={rules.resolutionMode}
@@ -510,7 +514,7 @@ function ParticipantsStep({
   onTeamChange: (id: string) => void;
   onNameChange: (name: string) => void;
   onAdd: (input: CompetitionParticipantInput) => Promise<void>;
-  onRemove: (id: string) => Promise<unknown>;
+  onRemove: (id: string) => Promise<void>;
   disabled: boolean;
 }) {
   return (

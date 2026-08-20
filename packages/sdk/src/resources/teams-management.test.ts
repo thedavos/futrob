@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createFutrobClient } from "../client.ts";
+import { mockFetch, requestUrl } from "../testing/mock-fetch.ts";
 
 const summary = {
   team: {
@@ -25,7 +26,7 @@ describe("team management SDK resources", () => {
     const requests: string[] = [];
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         const url = requestUrl(input);
         requests.push(url);
         return Response.json(
@@ -33,7 +34,7 @@ describe("team management SDK resources", () => {
             ? { ...summary, members: [] }
             : { items: [summary], nextCursor: null },
         );
-      }) as typeof fetch,
+      }),
     });
 
     const list = await client.teams.listCompetitionManagement("org-1", "competition-1", {
@@ -57,14 +58,14 @@ describe("team management SDK resources", () => {
     const requests: Array<{ url: string; method: string | undefined }> = [];
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input, init) => {
+      fetchImpl: mockFetch(async (input, init) => {
         const url = requestUrl(input);
         requests.push({ url, method: init?.method });
         return Response.json({
           ...summary.entry,
           status: url.endsWith("/approve") ? "approved" : "rejected",
         });
-      }) as typeof fetch,
+      }),
     });
 
     await client.competitions.approveTeamEntry("org-1", "competition-1", "entry-1");
@@ -82,7 +83,3 @@ describe("team management SDK resources", () => {
     ]);
   });
 });
-
-function requestUrl(input: string | URL | Request): string {
-  return typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-}

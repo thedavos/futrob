@@ -42,7 +42,7 @@ describe("teamsBrowserClient management reads", () => {
 
     const caught = await teamsBrowserClient
       .getCompetitionTeamManagement("org-1", "competition-1", "team-1")
-      .catch((error: unknown) => error);
+      .catch((error: Error) => error);
 
     expect(caught).toBeInstanceOf(TeamsClientError);
     expect(caught).toMatchObject({
@@ -55,9 +55,8 @@ describe("teamsBrowserClient management reads", () => {
 
 describe("teamsBrowserClient management commands", () => {
   it("uses competition-scoped roster and club endpoints", async () => {
-    const fetchMock = vi.fn<typeof fetch>(async (input) => {
-      const path =
-        typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    const fetchMock = vi.fn<typeof fetch>(async (input: RequestInfo | URL) => {
+      const path = input instanceof Request ? input.url : input instanceof URL ? input.href : input;
       if (path.endsWith("/roster/member-1")) {
         return Response.json({
           id: "member-1",

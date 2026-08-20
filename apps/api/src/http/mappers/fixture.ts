@@ -24,27 +24,32 @@ export function fixturePlanDto(plan: FixturePlan): FixturePlanDto {
         stageId: round.stageId,
         number: round.number,
         scheduledStartAt: round.scheduledStartAt.toISOString(),
-        encounters: round.encounters.map((encounter) => ({
-          id: encounter.id,
-          stageId: encounter.stageId,
-          roundId: encounter.roundId,
-          order: encounter.order,
-          ...(encounter.groupId ? { groupId: encounter.groupId } : {}),
-          home: encounter.home,
-          away: encounter.away,
-          scheduledStartAt: encounter.scheduledStartAt.toISOString(),
-          officialMatchCount: encounter.officialMatchCount,
-          series: encounter.series
-            ? {
-                id: encounter.series.id,
-                resolutionMode: encounter.series.resolutionMode,
-                officialMatches: encounter.series.officialMatches.map((match) => ({
-                  id: match.id,
-                  slot: match.slot,
-                })),
-              }
-            : null,
-        })),
+        encounters: round.encounters.map((encounter) => {
+          const dto = {
+            id: encounter.id,
+            stageId: encounter.stageId,
+            roundId: encounter.roundId,
+            order: encounter.order,
+            home: encounter.home,
+            away: encounter.away,
+            scheduledStartAt: encounter.scheduledStartAt.toISOString(),
+            officialMatchCount: encounter.officialMatchCount,
+            series: encounter.series
+              ? {
+                  id: encounter.series.id,
+                  resolutionMode: encounter.series.resolutionMode,
+                  officialMatches: encounter.series.officialMatches.map((match) => ({
+                    id: match.id,
+                    slot: match.slot,
+                  })),
+                }
+              : null,
+          };
+          if (encounter.groupId) {
+            return { ...dto, groupId: encounter.groupId };
+          }
+          return dto;
+        }),
       })),
     })),
   };

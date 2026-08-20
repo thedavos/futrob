@@ -38,7 +38,7 @@ type AddGameAccountValues = {
 type AddGameAccountField = keyof AddGameAccountValues;
 
 function isGamePlatform(value: string): value is GamePlatformDto {
-  return (GAME_PLATFORMS as readonly string[]).includes(value);
+  return GAME_PLATFORMS.some((platform) => platform === value);
 }
 
 export function PlayerGameAccountsPage() {

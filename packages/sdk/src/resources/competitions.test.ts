@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createFutrobClient } from "../client.ts";
+import { mockFetch, parseMockJsonBody, requestUrl } from "../testing/mock-fetch.ts";
 
 describe("context discovery SDK resources", () => {
   it("lists actor-accessible competitions", async () => {
     let requestedUrl = "";
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         requestedUrl = requestUrl(input);
         return Response.json({
           competitions: [
@@ -29,7 +30,7 @@ describe("context discovery SDK resources", () => {
             },
           ],
         });
-      }) as typeof fetch,
+      }),
     });
 
     const result = await client.competitions.listMine();
@@ -42,7 +43,7 @@ describe("context discovery SDK resources", () => {
     let requestedUrl = "";
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
+      fetchImpl: mockFetch(async (input) => {
         requestedUrl = requestUrl(input);
         return Response.json({
           encounterId: "encounter-1",
@@ -56,7 +57,7 @@ describe("context discovery SDK resources", () => {
           awayExternalClubId: null,
           providerKey: null,
         });
-      }) as typeof fetch,
+      }),
     });
 
     const result = await client.encounters.getScheduleSnapshot("encounter-1");
@@ -72,10 +73,9 @@ describe("context discovery SDK resources", () => {
     let body: unknown;
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (_input, init) => {
+      fetchImpl: mockFetch(async (_input, init) => {
         method = init?.method;
-        if (typeof init?.body !== "string") throw new Error("Expected a JSON request body");
-        body = JSON.parse(init.body);
+        body = parseMockJsonBody(init);
         return Response.json({
           encounterId: "encounter-1",
           organizationId: "org-1",
@@ -88,7 +88,7 @@ describe("context discovery SDK resources", () => {
           awayExternalClubId: null,
           providerKey: null,
         });
-      }) as typeof fetch,
+      }),
     });
 
     await client.encounters.upsertScheduleSnapshot("encounter-1", {
@@ -110,12 +110,12 @@ describe("context discovery SDK resources", () => {
     let body: unknown;
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input, init) => {
+      fetchImpl: mockFetch(async (input, init) => {
         requestedUrl = requestUrl(input);
         method = init?.method;
-        if (typeof init?.body === "string") body = JSON.parse(init.body);
+        body = parseMockJsonBody(init);
         return Response.json(fixturePlan());
-      }) as typeof fetch,
+      }),
     });
 
     const result = await client.encounters.generateFixture("org-1", "competition-1", {
@@ -139,12 +139,12 @@ describe("context discovery SDK resources", () => {
     let requestId: string | null = null;
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (_input, init) => {
+      fetchImpl: mockFetch(async (_input, init) => {
         method = init?.method;
         requestId = new Headers(init?.headers).get("X-Request-ID");
-        if (typeof init?.body === "string") body = JSON.parse(init.body);
+        body = parseMockJsonBody(init);
         return Response.json(fixturePlan());
-      }) as typeof fetch,
+      }),
     });
 
     const stableId = "1f8c914e-a307-42aa-b2ea-ec6cfefaba83";
@@ -213,8 +213,4 @@ function fixturePlan() {
       },
     ],
   };
-}
-
-function requestUrl(input: string | URL | Request): string {
-  return typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 }

@@ -5,6 +5,7 @@ import {
   createAuthenticatedOrganizationsClient,
   organizationsBffErrorResponse,
 } from "@/modules/organizations/server/create-authenticated-organizations-client.ts";
+import { productApiBffErrorResponse } from "@/context/product-api-bff-error-response.ts";
 
 export const Route = createFileRoute("/api/v1/organizations/mine")({
   server: {
@@ -15,6 +16,9 @@ export const Route = createFileRoute("/api/v1/organizations/mine")({
           const body = listMyMembershipsResponseSchema.parse(await client.organizations.listMine());
           return jsonResponse(body);
         } catch (error) {
+          if (!(error instanceof Error)) {
+            return productApiBffErrorResponse({ kind: "unexpected" });
+          }
           return organizationsBffErrorResponse(error);
         }
       },

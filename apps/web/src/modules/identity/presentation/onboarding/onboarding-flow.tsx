@@ -39,6 +39,10 @@ import { useSaveOnboardingProgressMutation } from "@/modules/identity/presentati
 import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
+import {
+  buildOnboardingFlowErrorDisplay,
+  buildSupportFields,
+} from "@/shared/presentation/support-fields.ts";
 import type { SupportError } from "@/shared/presentation/support-error-alert.tsx";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
@@ -196,13 +200,13 @@ export function OnboardingFlowProvider({
     () => ({
       saving,
       error: error
-        ? {
+        ? buildOnboardingFlowErrorDisplay({
             message: t(error.messageKey),
-            ...(error.requestId ? { requestId: error.requestId } : {}),
-            ...(error.retryAfterSeconds
-              ? { retryAfterSeconds: retry.remainingSeconds || undefined }
-              : {}),
-          }
+            requestId: error.requestId,
+            retryAfterSeconds: error.retryAfterSeconds
+              ? retry.remainingSeconds || undefined
+              : undefined,
+          })
         : null,
       retryBlocked: retry.blocked,
       retryAfterSeconds: retry.remainingSeconds,
@@ -273,9 +277,13 @@ export function OnboardingFlowProvider({
           const result = await gateway.checkOrganizationName({ name });
           return result.available;
         } catch (caught) {
+          const clientError = caught instanceof IdentityOnboardingClientError ? caught : null;
           setError({
             messageKey: "errors.onboarding.organizationCheck",
-            ...supportFieldsFromCaught(caught),
+            ...buildSupportFields({
+              requestId: clientError?.requestId,
+              retryAfterSeconds: clientError?.retryAfterSeconds,
+            }),
           });
           return null;
         } finally {
@@ -296,9 +304,13 @@ export function OnboardingFlowProvider({
         try {
           await saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step });
         } catch (caught) {
+          const clientError = caught instanceof IdentityOnboardingClientError ? caught : null;
           setError({
             messageKey: "errors.onboarding.saveProgress",
-            ...supportFieldsFromCaught(caught),
+            ...buildSupportFields({
+              requestId: clientError?.requestId,
+              retryAfterSeconds: clientError?.retryAfterSeconds,
+            }),
           });
           setPathState(previousPath);
           setCurrentStep(previousStep);
@@ -353,7 +365,8 @@ export function OnboardingFlowProvider({
           }
         } catch (caught) {
           finishingRef.current = false;
-          const nextError = finalizationError(path, caught);
+          const clientError = caught instanceof IdentityOnboardingClientError ? caught : null;
+          const nextError = finalizationError(path, clientError);
           retry.start(nextError.retryAfterSeconds);
           setError(nextError);
           setLeaving(false);
@@ -396,16 +409,6 @@ export function OnboardingFlowProvider({
       )}
     </OnboardingFlowContext>
   );
-}
-
-function supportFieldsFromCaught(
-  caught: unknown,
-): Pick<SupportError, "requestId" | "retryAfterSeconds"> {
-  if (!(caught instanceof IdentityOnboardingClientError)) return {};
-  return {
-    ...(caught.requestId ? { requestId: caught.requestId } : {}),
-    ...(caught.retryAfterSeconds ? { retryAfterSeconds: caught.retryAfterSeconds } : {}),
-  };
 }
 
 function markOnboardingCompletedInCache(queryClient: QueryClient, path: OnboardingPathDto): void {

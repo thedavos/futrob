@@ -41,12 +41,12 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
         replace: true,
       });
     } catch (caught) {
-      const clientError = caught instanceof OrganizationsClientError ? caught : undefined;
+      const clientError = caught instanceof OrganizationsClientError ? caught : null;
       retry.start(clientError?.retryAfterSeconds);
       setError({
         message: clientError?.retryAfterSeconds
           ? "Alcanzaste el límite temporal de invitaciones."
-          : invitationAcceptErrorMessage(caught),
+          : invitationAcceptErrorMessage(clientError),
         requestId: clientError?.requestId,
         retryAfterSeconds: clientError?.retryAfterSeconds,
       });

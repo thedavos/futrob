@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { EaClubsHttpClient } from "./ea-clubs-http.ts";
 import { InMemoryProviderCircuitBreaker } from "@/adapters/game-data/resilience/provider-circuit-breaker.ts";
+import { createFetch } from "@/http/http-app.harness.ts";
 
 describe("EaClubsHttpClient resilience", () => {
   it("retries transient responses with backoff and then records recovery", async () => {
@@ -8,12 +9,12 @@ describe("EaClubsHttpClient resilience", () => {
     const sleeps: number[] = [];
     const circuitEvents: string[] = [];
     const client = new EaClubsHttpClient({
-      fetcher: (async () => {
+      fetcher: createFetch(async () => {
         const status = responses.shift() ?? 500;
         return Response.json(status === 200 ? { ok: true } : { secret: "do-not-log" }, {
           status,
         });
-      }) as typeof fetch,
+      }),
       baseUrl: "https://example.test",
       timeoutMs: 1_000,
       retry: {
@@ -49,10 +50,10 @@ describe("EaClubsHttpClient resilience", () => {
     let calls = 0;
     const sleeps: number[] = [];
     const client = new EaClubsHttpClient({
-      fetcher: (async () => {
+      fetcher: createFetch(async () => {
         calls += 1;
         return Response.json({}, { status: 404 });
-      }) as typeof fetch,
+      }),
       baseUrl: "https://example.test",
       timeoutMs: 1_000,
       retry: {
@@ -75,12 +76,12 @@ describe("EaClubsHttpClient resilience", () => {
     let calls = 0;
     const sleeps: number[] = [];
     const client = new EaClubsHttpClient({
-      fetcher: (async () => {
+      fetcher: createFetch(async () => {
         calls += 1;
         return calls === 1
           ? Response.json({}, { status: 429, headers: { "Retry-After": "2" } })
           : Response.json({ ok: true });
-      }) as typeof fetch,
+      }),
       baseUrl: "https://example.test",
       timeoutMs: 1_000,
       retry: {
@@ -101,8 +102,9 @@ describe("EaClubsHttpClient resilience", () => {
   it("returns a long Retry-After to the job scheduler without sleeping in-request", async () => {
     const sleeps: number[] = [];
     const client = new EaClubsHttpClient({
-      fetcher: (async () =>
-        Response.json({}, { status: 429, headers: { "Retry-After": "120" } })) as typeof fetch,
+      fetcher: createFetch(async () =>
+        Response.json({}, { status: 429, headers: { "Retry-After": "120" } }),
+      ),
       baseUrl: "https://example.test",
       timeoutMs: 1_000,
       retry: {
@@ -128,10 +130,10 @@ describe("EaClubsHttpClient resilience", () => {
     let calls = 0;
     const circuit = new InMemoryProviderCircuitBreaker();
     const client = new EaClubsHttpClient({
-      fetcher: (async () => {
+      fetcher: createFetch(async () => {
         calls += 1;
         return Response.json({}, { status: 503 });
-      }) as typeof fetch,
+      }),
       baseUrl: "https://example.test",
       timeoutMs: 1_000,
       retry: {

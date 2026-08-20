@@ -8,6 +8,9 @@
   "type": "module",
   "scripts": {
     "cli": "tsx src/main.ts",
+    "format": "vp fmt",
+    "lint": "vp lint",
+    "check": "vp check",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

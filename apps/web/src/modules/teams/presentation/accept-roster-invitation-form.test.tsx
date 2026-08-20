@@ -1,14 +1,21 @@
 // @vitest-environment jsdom
 
+import type { ReactNode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import type { AcceptRosterInvitationRequest } from "@futrob/api-contracts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { TeamsClientError } from "./teams-browser-client.ts";
 import { AcceptRosterInvitationForm } from "./accept-roster-invitation-form.tsx";
 
+type TestNavigateInput = {
+  readonly to: string;
+  readonly search?: Record<string, string | undefined>;
+};
+
 const mocks = vi.hoisted(() => ({
-  accept: vi.fn<(input: unknown) => Promise<unknown>>(),
-  navigate: vi.fn<(input: unknown) => Promise<void>>(),
+  accept: vi.fn<(input: AcceptRosterInvitationRequest) => Promise<Record<string, never>>>(),
+  navigate: vi.fn<(input: TestNavigateInput) => Promise<void>>(),
 }));
 
 vi.mock("./teams-browser-client.ts", async (importOriginal) => {
@@ -17,13 +24,15 @@ vi.mock("./teams-browser-client.ts", async (importOriginal) => {
     ...actual,
     teamsBrowserClient: {
       ...actual.teamsBrowserClient,
-      acceptRosterInvitation: (input: unknown) => mocks.accept(input),
+      acceptRosterInvitation: (input: AcceptRosterInvitationRequest) => mocks.accept(input),
     },
   };
 });
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, ...props }: { children?: unknown }) => <a {...props}>{children as never}</a>,
+  Link: ({ children, ...props }: { children?: ReactNode; to: string }) => (
+    <a {...props}>{children}</a>
+  ),
   useNavigate: () => mocks.navigate,
 }));
 
@@ -49,8 +58,7 @@ describe("AcceptRosterInvitationForm", () => {
     );
 
     expect(await screen.findByText("Podrás reintentar en 2 s.")).toBeTruthy();
-    const retryButton = screen.getByRole("button", { name: "Reintentar en 2 s" });
-    expect((retryButton as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Reintentar en 2 s" })).toBeDisabled();
 
     void act(() => vi.advanceTimersByTime(2_000));
     fireEvent.click(screen.getByRole("button", { name: "Reintentar invitación" }));

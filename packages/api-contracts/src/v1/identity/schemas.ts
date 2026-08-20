@@ -41,11 +41,23 @@ export const getOnboardingStatusResponseSchema = onboardingStatusSchema;
 
 export type GetOnboardingStatusResponse = z.infer<typeof getOnboardingStatusResponseSchema>;
 
-const allowedStepsByPath: Record<OnboardingPathDto, readonly OnboardingStepDto[]> = {
+function isOnboardingStepInPath(
+  steps: readonly OnboardingStepDto[],
+  step: OnboardingStepDto,
+): boolean {
+  for (const allowed of steps) {
+    if (allowed === step) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const allowedStepsByPath = {
   organization: ["intention", "organization", "competition", "game-account", "game", "review"],
   invitation: ["intention", "invitation", "game-account", "review"],
   player: ["intention", "game", "game-account", "club", "review"],
-};
+} as const satisfies Record<OnboardingPathDto, readonly OnboardingStepDto[]>;
 
 const onboardingProgressInputStepSchema = z.union([
   onboardingStepSchema,
@@ -61,7 +73,7 @@ export const saveOnboardingProgressRequestSchema = z
     const allowed =
       input.path === null
         ? input.currentStep === "intention"
-        : allowedStepsByPath[input.path].includes(input.currentStep);
+        : isOnboardingStepInPath(allowedStepsByPath[input.path], input.currentStep);
     if (!allowed) {
       context.addIssue({
         code: "custom",

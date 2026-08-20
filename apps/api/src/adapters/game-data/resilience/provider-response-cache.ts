@@ -1,4 +1,7 @@
 import type { Pool } from "pg";
+import { z } from "zod";
+import { parseJsonColumn } from "@/adapters/persistence/parse-json-column.ts";
+import { pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export interface ProviderCacheEntry<T> {
@@ -19,7 +22,7 @@ export interface ProviderCacheWriteInput<T> {
 }
 
 export interface ProviderResponseCache {
-  read<T>(key: string): Promise<ProviderCacheEntry<T> | null>;
+  read(key: string): Promise<ProviderCacheEntry<unknown> | null>;
   tryAcquireRefresh(input: {
     readonly key: string;
     readonly providerKey: string;
@@ -36,8 +39,8 @@ export class InMemoryProviderResponseCache implements ProviderResponseCache {
   private readonly entries = new Map<string, ProviderCacheEntry<unknown>>();
   private readonly leases = new Map<string, { token: string; expiresAt: Date }>();
 
-  read<T>(key: string): Promise<ProviderCacheEntry<T> | null> {
-    return Promise.resolve((this.entries.get(key) as ProviderCacheEntry<T> | undefined) ?? null);
+  read(key: string): Promise<ProviderCacheEntry<unknown> | null> {
+    return Promise.resolve(this.entries.get(key) ?? null);
   }
 
   tryAcquireRefresh(
@@ -70,7 +73,7 @@ export class InMemoryProviderResponseCache implements ProviderResponseCache {
 export class PostgresProviderResponseCache implements ProviderResponseCache {
   constructor(private readonly pool: Pool) {}
 
-  async read<T>(key: string): Promise<ProviderCacheEntry<T> | null> {
+  async read(key: string): Promise<ProviderCacheEntry<unknown> | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT value_json, fresh_until, stale_until
        FROM provider_response_cache
@@ -78,13 +81,19 @@ export class PostgresProviderResponseCache implements ProviderResponseCache {
       [key],
     );
     const row = result.rows[0];
-    return row
-      ? {
-          value: row.value_json as T,
-          freshUntil: new Date(row.fresh_until),
-          staleUntil: new Date(row.stale_until),
-        }
-      : null;
+    if (!row) return null;
+    const parsed = z
+      .object({
+        value_json: z.unknown(),
+        fresh_until: pgTimestampSchema,
+        stale_until: pgTimestampSchema,
+      })
+      .parse(row);
+    return {
+      value: parseJsonColumn(z.unknown(), parsed.value_json),
+      freshUntil: parsed.fresh_until,
+      staleUntil: parsed.stale_until,
+    };
   }
 
   async tryAcquireRefresh(

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createFutrobClient } from "../client.ts";
+import { mockFetch, parseMockJsonBody, requestUrl } from "../testing/mock-fetch.ts";
 
 describe("createFutrobClient identity", () => {
   const competition = {
@@ -35,12 +36,9 @@ describe("createFutrobClient identity", () => {
     let body: unknown;
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (_input, init) => {
+      fetchImpl: mockFetch(async (_input, init) => {
         method = init?.method;
-        if (typeof init?.body !== "string") {
-          throw new TypeError("Expected a JSON request body");
-        }
-        body = JSON.parse(init.body);
+        body = parseMockJsonBody(init);
         return Response.json({
           completed: false,
           completedAt: null,
@@ -48,7 +46,7 @@ describe("createFutrobClient identity", () => {
           path: "player",
           currentStep: "game-account",
         });
-      }) as typeof fetch,
+      }),
     });
 
     const result = await client.identity.saveOnboardingProgress({
@@ -65,10 +63,9 @@ describe("createFutrobClient identity", () => {
     const requests: Array<{ url: string; body: unknown }> = [];
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input, init) => {
-        const url =
-          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-        const body = typeof init?.body === "string" ? JSON.parse(init.body) : null;
+      fetchImpl: mockFetch(async (input, init) => {
+        const url = requestUrl(input);
+        const body = parseMockJsonBody(init);
         requests.push({ url, body });
         if (url.endsWith("/organization")) {
           return Response.json({
@@ -108,7 +105,7 @@ describe("createFutrobClient identity", () => {
           externalClubs: [],
           destination: "personal",
         });
-      }) as typeof fetch,
+      }),
     });
 
     await client.identity.completeOrganizationOnboarding({
@@ -142,12 +139,10 @@ describe("createFutrobClient identity", () => {
     let request: { url: string; body: unknown } | undefined;
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input, init) => {
-        const url =
-          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      fetchImpl: mockFetch(async (input, init) => {
         request = {
-          url,
-          body: typeof init?.body === "string" ? JSON.parse(init.body) : null,
+          url: requestUrl(input),
+          body: parseMockJsonBody(init),
         };
         return Response.json({
           organizationId: "org-1",
@@ -157,7 +152,7 @@ describe("createFutrobClient identity", () => {
           competitionRole: "player",
           expiresAt: "2026-09-01T12:00:00.000Z",
         });
-      }) as typeof fetch,
+      }),
     });
 
     const result = await client.identity.inspectCompetitionInvitation({ token: " private " });

@@ -42,8 +42,11 @@ export function useFormValidation<Field extends string>() {
         actionsRef,
         validationMode: touchedFields[field] === true ? "onChange" : "onSubmit",
         onBlur: (event) => {
-          const nextFocusedElement = event.relatedTarget as Node | null;
-          if (nextFocusedElement !== null && event.currentTarget.contains(nextFocusedElement)) {
+          const nextFocusedElement = event.relatedTarget;
+          if (
+            nextFocusedElement instanceof Node &&
+            event.currentTarget.contains(nextFocusedElement)
+          ) {
             return;
           }
 

@@ -1,14 +1,23 @@
 import { describe, expect, it } from "vite-plus/test";
 import { handleGameDataSyncJob, recoverNextProviderSyncJob } from "./game-data-sync.worker.ts";
 
+function readFetchTarget(input: RequestInfo | URL) {
+  if (input instanceof Request) {
+    return { url: input.url, init: input } satisfies { url: string; init?: RequestInit };
+  }
+  if (input instanceof URL) {
+    return { url: input.href } satisfies { url: string };
+  }
+  return { url: input } satisfies { url: string };
+}
+
 describe("handleGameDataSyncJob", () => {
   it("wakes the API runner with the persisted job and request identifiers", async () => {
     let request: { url: string; init?: RequestInit } | undefined;
-    const fetcher = (async (input: string | URL | Request, init?: RequestInit) => {
-      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-      request = { url, init };
+    const fetcher: typeof fetch = async (input, init) => {
+      request = { ...readFetchTarget(input), init };
       return Response.json(jobResponse("succeeded"));
-    }) as typeof fetch;
+    };
 
     const result = await handleGameDataSyncJob(
       {
@@ -35,11 +44,10 @@ describe("handleGameDataSyncJob", () => {
   it("wakes the recovery runner for jobs left queued after a publication failure", async () => {
     let requested = "";
     await recoverNextProviderSyncJob({
-      fetcher: (async (input) => {
-        requested =
-          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      fetcher: async (input) => {
+        requested = readFetchTarget(input).url;
         return new Response(null, { status: 204 });
-      }) as typeof fetch,
+      },
       apiBaseUrl: "https://api.futrob.test/api/v1",
       internalJobSecret: "secret",
     });
@@ -55,13 +63,13 @@ describe("handleGameDataSyncJob", () => {
     await expect(
       handleGameDataSyncJob(
         { jobId: "job-1", requestId: "84a02caf-7051-4677-9a68-b6329f39e063" },
-        { ...deps, fetcher: (async () => new Response(null, { status: 503 })) as typeof fetch },
+        { ...deps, fetcher: async () => new Response(null, { status: 503 }) },
       ),
     ).rejects.toThrow("503");
     await expect(
       handleGameDataSyncJob(
         { jobId: "job-1", requestId: "84a02caf-7051-4677-9a68-b6329f39e063" },
-        { ...deps, fetcher: (async () => new Response(null, { status: 409 })) as typeof fetch },
+        { ...deps, fetcher: async () => new Response(null, { status: 409 }) },
       ),
     ).resolves.toEqual({ action: "ack" });
 
@@ -71,7 +79,7 @@ describe("handleGameDataSyncJob", () => {
         {
           ...deps,
           now: () => new Date("2026-08-11T12:00:00.000Z"),
-          fetcher: (async () =>
+          fetcher: async () =>
             Response.json({
               id: "job-1",
               organizationId: "org-1",
@@ -84,7 +92,7 @@ describe("handleGameDataSyncJob", () => {
               leaseExpiresAt: null,
               updatedAt: "2026-08-11T12:00:00.000Z",
               lastErrorCode: "game_data.ea_clubs_timeout",
-            })) as typeof fetch,
+            }),
         },
       ),
     ).resolves.toEqual({ action: "retry", delaySeconds: 17 });

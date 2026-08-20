@@ -66,8 +66,8 @@ export const CompleteForm: Story = {
         <FieldLabel>Notas operativas</FieldLabel>
         <Textarea placeholder="Criterios, horarios o excepciones…" />
       </Field>
-      <label className="flex items-start gap-3 text-sm leading-relaxed">
-        <Checkbox defaultChecked name="audit" />
+      <label className="flex items-start gap-3 text-sm leading-relaxed" htmlFor="audit-checkbox">
+        <Checkbox defaultChecked id="audit-checkbox" name="audit" />
         <span>
           Exigir auditoría antes de oficializar resultados
           <span className="block text-muted-foreground">

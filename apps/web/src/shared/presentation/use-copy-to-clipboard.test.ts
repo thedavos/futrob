@@ -5,12 +5,13 @@ import { useCopyToClipboard } from "@futrob/ui";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 describe("useCopyToClipboard", () => {
+  let writeText: ReturnType<typeof vi.fn<(text: string) => Promise<void>>>;
+
   beforeEach(() => {
+    writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
-      value: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
+      value: { writeText },
     });
   });
 
@@ -28,7 +29,7 @@ describe("useCopyToClipboard", () => {
     });
 
     expect(copied).toBe(true);
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith("https://example.test/invite");
+    expect(writeText).toHaveBeenCalledWith("https://example.test/invite");
     expect(result.current.isCopied).toBe(true);
 
     act(() => {
@@ -40,10 +41,10 @@ describe("useCopyToClipboard", () => {
   });
 
   it("returns false when clipboard write fails and legacy copy is unavailable", async () => {
-    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("denied"));
+    writeText.mockRejectedValue(new Error("denied"));
     Object.defineProperty(document, "execCommand", {
       configurable: true,
-      value: vi.fn().mockReturnValue(false),
+      value: vi.fn<(command: string) => boolean>().mockReturnValue(false),
     });
 
     const { result } = renderHook(() => useCopyToClipboard());
@@ -76,10 +77,10 @@ describe("useCopyToClipboard", () => {
     });
     expect(result.current.isCopied).toBe(true);
 
-    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("denied"));
+    writeText.mockRejectedValue(new Error("denied"));
     Object.defineProperty(document, "execCommand", {
       configurable: true,
-      value: vi.fn().mockReturnValue(false),
+      value: vi.fn<(command: string) => boolean>().mockReturnValue(false),
     });
 
     let copied = true;

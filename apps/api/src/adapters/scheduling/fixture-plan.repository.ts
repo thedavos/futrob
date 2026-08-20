@@ -1,5 +1,6 @@
 import {
   asFixtureStageId,
+  asFixtureRoundId,
   replaceEncounter,
   type FixtureEncounter,
   type FixtureParticipantSlot,
@@ -7,6 +8,7 @@ import {
   type FixturePlanRepository,
   type FixtureStage,
 } from "@futrob/scheduling";
+import { fixtureParticipantSlotSchema } from "@futrob/api-contracts";
 import {
   asCompetitionId,
   asEncounterId,
@@ -17,6 +19,9 @@ import {
   type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { parseJsonColumn, type PgJsonInput } from "@/adapters/persistence/parse-json-column.ts";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class InMemoryFixturePlanRepository implements FixturePlanRepository {
@@ -85,7 +90,11 @@ export class InMemoryFixturePlanRepository implements FixturePlanRepository {
   ): Promise<{ readonly plan: FixturePlan; readonly created: boolean }> {
     const key = versionKey(plan.organizationId, plan.competitionId, plan.generationVersion);
     const existingId = this.generationVersions.get(key);
-    if (existingId) return { plan: this.rows.get(existingId) as FixturePlan, created: false };
+    if (existingId) {
+      const existing = this.rows.get(existingId);
+      if (!existing) throw new Error("Fixture generation version mapped to missing plan");
+      return { plan: existing, created: false };
+    }
     this.rows.set(plan.id, plan);
     this.generationVersions.set(key, plan.id);
     return { plan, created: true };
@@ -140,7 +149,7 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
        WHERE organization_id = $1 AND competition_id = $2 AND generation_version = $3`,
       [organizationId, competitionId, generationVersion],
     );
-    const id = result.rows[0]?.id as string | undefined;
+    const id = result.rows[0] ? idRowSchema.parse(result.rows[0]).id : undefined;
     return id ? this.findById(organizationId, competitionId, id) : null;
   }
 
@@ -158,7 +167,7 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
        WHERE id = $1 AND organization_id = $2 AND competition_id = $3`,
       [fixturePlanId, organizationId, competitionId],
     );
-    const planRow = planResult.rows[0] as PlanRow | undefined;
+    const planRow = planResult.rows[0] ? planRowSchema.parse(planResult.rows[0]) : undefined;
     if (!planRow) return null;
     const [stageResult, roundResult, encounterResult] = await Promise.all([
       executor.query(
@@ -198,7 +207,9 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
       [organizationId, competitionId],
     );
     const plans = await Promise.all(
-      result.rows.map((row) => this.findById(organizationId, competitionId, row.id as string)),
+      result.rows.map((row) =>
+        this.findById(organizationId, competitionId, idRowSchema.parse(row).id),
+      ),
     );
     return plans.filter((plan): plan is FixturePlan => plan !== null);
   }
@@ -369,61 +380,62 @@ async function insertEncounter(
 
 function rehydratePlan(
   row: PlanRow,
-  stageRows: unknown[],
-  roundRows: unknown[],
-  encounterRows: unknown[],
+  stageRows: readonly unknown[],
+  roundRows: readonly unknown[],
+  encounterRows: readonly unknown[],
 ): FixturePlan {
-  const rounds = roundRows as RoundRow[];
-  const encounters = encounterRows as EncounterRow[];
-  const stages = (stageRows as StageRow[]).map(
-    (stage): FixtureStage => ({
-      id: stage.id as FixtureStage["id"],
+  const rounds = roundRows.map((roundRow) => roundRowSchema.parse(roundRow));
+  const encounters = encounterRows.map((encounterRow) => encounterRowSchema.parse(encounterRow));
+  const stages = stageRows.map((stageRow) => {
+    const stage = stageRowSchema.parse(stageRow);
+    const stageId = asFixtureStageId(stage.id);
+    return {
+      id: stageId,
       kind: stage.kind,
-      order: Number(stage.stage_order),
+      order: stage.stage_order,
       rounds: rounds
         .filter((round) => round.stage_id === stage.id)
         .map((round) => ({
-          id: round.id as FixtureStage["rounds"][number]["id"],
-          stageId: stage.id as FixtureStage["id"],
-          number: Number(round.round_number),
-          scheduledStartAt: new Date(round.scheduled_start_at),
+          id: asFixtureRoundId(round.id),
+          stageId,
+          number: round.round_number,
+          scheduledStartAt: round.scheduled_start_at,
           encounters: encounters
             .filter((encounter) => encounter.round_id === round.id)
             .map(rehydrateEncounter),
         })),
-    }),
-  );
+    } satisfies FixtureStage;
+  });
   return {
     id: row.id,
-    revision: Number(row.revision),
+    revision: row.revision,
     status: row.status,
     generationKey: row.generation_key,
     generationFingerprint: row.generation_fingerprint,
     organizationId: asOrganizationId(row.organization_id),
     competitionId: asCompetitionId(row.competition_id),
-    rulesVersion: Number(row.rules_version),
-    generationVersion: Number(row.generation_version),
+    rulesVersion: row.rules_version,
+    generationVersion: row.generation_version,
     format: row.format,
     timeZone: row.time_zone,
-    homeAndAway: Boolean(row.home_and_away),
-    seed: jsonArray(row.seed).map(asTeamId),
+    homeAndAway: row.home_and_away,
+    seed: seedArraySchema.parse(parseJsonColumn(z.unknown(), row.seed)).map(asTeamId),
     stages,
   };
 }
 
 function rehydrateEncounter(row: EncounterRow): FixtureEncounter {
   const id = asEncounterId(row.id);
-  const officialMatchCount = Number(row.official_match_count) as 1 | 2;
+  const officialMatchCount = officialMatchCountSchema.parse(row.official_match_count);
   const slots: readonly (1 | 2)[] = officialMatchCount === 1 ? [1] : [1, 2];
-  return {
+  const encounter: FixtureEncounter = {
     id,
-    stageId: row.stage_id as FixtureEncounter["stageId"],
-    roundId: row.round_id as FixtureEncounter["roundId"],
-    order: Number(row.encounter_order),
-    ...(row.group_id ? { groupId: row.group_id } : {}),
-    home: slot(row.home_slot),
-    away: slot(row.away_slot),
-    scheduledStartAt: new Date(row.scheduled_start_at),
+    stageId: asFixtureStageId(row.stage_id),
+    roundId: asFixtureRoundId(row.round_id),
+    order: row.encounter_order,
+    home: parseParticipantSlot(row.home_slot),
+    away: parseParticipantSlot(row.away_slot),
+    scheduledStartAt: row.scheduled_start_at,
     officialMatchCount,
     series:
       row.series_id && row.resolution_mode
@@ -437,62 +449,99 @@ function rehydrateEncounter(row: EncounterRow): FixtureEncounter {
           }
         : null,
   };
+  if (row.group_id) {
+    return { ...encounter, groupId: row.group_id };
+  }
+  return encounter;
 }
 
-function slot(value: unknown): FixtureParticipantSlot {
-  const parsed = jsonObject(value);
+function parseParticipantSlot(value: PgJsonInput): FixtureParticipantSlot {
+  const parsed = parseJsonColumn(fixtureParticipantSlotSchema, value);
   switch (parsed.kind) {
     case "team":
-      return { kind: "team", teamId: asTeamId(requiredString(parsed.teamId)) };
+      return { kind: "team", teamId: asTeamId(parsed.teamId) };
     case "bye":
       return { kind: "bye" };
     case "winner":
-      return { kind: "winner", encounterId: asEncounterId(requiredString(parsed.encounterId)) };
+      return { kind: "winner", encounterId: asEncounterId(parsed.encounterId) };
     case "group-rank":
       return {
         kind: "group-rank",
-        stageId: asFixtureStageId(requiredString(parsed.stageId)),
-        groupId: requiredString(parsed.groupId),
-        rank: requiredNumber(parsed.rank),
+        stageId: asFixtureStageId(parsed.stageId),
+        groupId: parsed.groupId,
+        rank: parsed.rank,
       };
     case "stage-rank":
       return {
         kind: "stage-rank",
-        stageId: asFixtureStageId(requiredString(parsed.stageId)),
-        rank: requiredNumber(parsed.rank),
+        stageId: asFixtureStageId(parsed.stageId),
+        rank: parsed.rank,
       };
-    default:
-      throw new Error("Invalid fixture participant slot");
+    default: {
+      const _exhaustive: never = parsed;
+      throw new Error(`Invalid fixture participant slot: ${String(_exhaustive)}`);
+    }
   }
 }
 
-function jsonObject(value: unknown): Record<string, unknown> {
-  const parsed = typeof value === "string" ? (JSON.parse(value) as unknown) : value;
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("Invalid fixture JSON object");
-  }
-  return parsed as Record<string, unknown>;
-}
+const officialMatchCountSchema = z.union([z.literal(1), z.literal(2)]);
+const fixtureStageKindSchema = z.enum(["league", "groups", "knockout", "playoffs"]);
+const resolutionModeSchema = z.enum(["independent_matches", "aggregate_score"]);
+const fixturePlanStatusSchema = z.enum(["active", "superseded"]);
+const fixturePlanFormatSchema = z.enum([
+  "league",
+  "knockout",
+  "groups-knockout",
+  "league-playoffs",
+]);
+const seedArraySchema = z.array(z.string());
+const idRowSchema = z.object({ id: pgTextSchema });
 
-function jsonArray(value: unknown): string[] {
-  const parsed = typeof value === "string" ? (JSON.parse(value) as unknown) : value;
-  if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string")) {
-    throw new Error("Invalid fixture seed");
-  }
-  return parsed as string[];
-}
+const planRowSchema = z.object({
+  id: z.string(),
+  revision: z.coerce.number(),
+  status: fixturePlanStatusSchema,
+  generation_key: z.string(),
+  generation_fingerprint: z.string(),
+  organization_id: z.string(),
+  competition_id: z.string(),
+  rules_version: z.coerce.number(),
+  generation_version: z.coerce.number(),
+  format: fixturePlanFormatSchema,
+  time_zone: z.string(),
+  home_and_away: z.coerce.boolean(),
+  seed: z.unknown(),
+});
 
-function requiredString(value: unknown): string {
-  if (typeof value !== "string" || !value) throw new Error("Invalid fixture string field");
-  return value;
-}
+const stageRowSchema = z.object({
+  id: z.string(),
+  kind: fixtureStageKindSchema,
+  stage_order: z.coerce.number(),
+});
 
-function requiredNumber(value: unknown): number {
-  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) {
-    throw new Error("Invalid fixture number field");
-  }
-  return value;
-}
+const roundRowSchema = z.object({
+  id: z.string(),
+  stage_id: z.string(),
+  round_number: z.coerce.number(),
+  scheduled_start_at: pgTimestampSchema,
+});
+
+const encounterRowSchema = z.object({
+  id: z.string(),
+  stage_id: z.string(),
+  round_id: z.string(),
+  encounter_order: z.coerce.number(),
+  group_id: z.string().nullable(),
+  home_slot: z.unknown(),
+  away_slot: z.unknown(),
+  scheduled_start_at: pgTimestampSchema,
+  official_match_count: z.coerce.number(),
+  series_id: z.string().nullable(),
+  resolution_mode: resolutionModeSchema.nullable(),
+});
+
+type PlanRow = z.infer<typeof planRowSchema>;
+type EncounterRow = z.infer<typeof encounterRowSchema>;
 
 function versionKey(
   organizationId: string,
@@ -500,47 +549,4 @@ function versionKey(
   generationVersion: number,
 ): string {
   return `${organizationId}\u0000${competitionId}\u0000${generationVersion}`;
-}
-
-interface PlanRow {
-  id: string;
-  revision: number;
-  status: FixturePlan["status"];
-  generation_key: string;
-  generation_fingerprint: string;
-  organization_id: string;
-  competition_id: string;
-  rules_version: number;
-  generation_version: number;
-  format: FixturePlan["format"];
-  time_zone: string;
-  home_and_away: boolean;
-  seed: unknown;
-}
-
-interface StageRow {
-  id: string;
-  kind: FixtureStage["kind"];
-  stage_order: number;
-}
-
-interface RoundRow {
-  id: string;
-  stage_id: string;
-  round_number: number;
-  scheduled_start_at: Date | string;
-}
-
-interface EncounterRow {
-  id: string;
-  stage_id: string;
-  round_id: string;
-  encounter_order: number;
-  group_id: string | null;
-  home_slot: unknown;
-  away_slot: unknown;
-  scheduled_start_at: Date | string;
-  official_match_count: number;
-  series_id: string | null;
-  resolution_mode: NonNullable<FixtureEncounter["series"]>["resolutionMode"] | null;
 }

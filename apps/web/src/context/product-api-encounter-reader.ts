@@ -6,7 +6,7 @@ import {
   asTeamId,
   type EncounterId,
 } from "@futrob/shared-kernel";
-import type { FutrobClient } from "@futrob/sdk";
+import { FutrobApiError, type FutrobClient } from "@futrob/sdk";
 
 export class ProductApiEncounterReader implements EncounterReaderPort {
   constructor(private readonly client: FutrobClient) {}
@@ -27,12 +27,7 @@ export class ProductApiEncounterReader implements EncounterReaderPort {
         providerKey: snapshot.providerKey,
       };
     } catch (error) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "status" in error &&
-        (error as { readonly status?: number }).status === 404
-      ) {
+      if (error instanceof FutrobApiError && error.status === 404) {
         return null;
       }
       throw error;

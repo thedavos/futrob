@@ -6,6 +6,7 @@ import {
   BffRateLimitUnavailableError,
   enforceBffRateLimit,
   shouldBypassBffRateLimit,
+  type RateLimitLogEntry,
 } from "./enforce-bff-rate-limit.ts";
 import { FakeBffRateLimiter } from "./fake-bff-rate-limiter.ts";
 
@@ -16,7 +17,7 @@ describe("enforceBffRateLimit", () => {
     const limiter = new FakeBffRateLimiter([
       { outcome: "limited", limitedBy: "ip", retryAfterSeconds: 37 },
     ]);
-    const logger = { info: vi.fn<(entry: unknown) => void>() };
+    const logger = { info: vi.fn<(entry: RateLimitLogEntry) => void>() };
     const response = await enforceBffRateLimit(
       {
         request: new Request("https://futrob.test/api/v1/game-data/clubs/search?query=secret", {
@@ -75,7 +76,7 @@ describe("enforceBffRateLimit", () => {
 
   it("allows without a response and emits a sanitized allowed event", async () => {
     const limiter = new FakeBffRateLimiter();
-    const logger = { info: vi.fn<(entry: unknown) => void>() };
+    const logger = { info: vi.fn<(entry: RateLimitLogEntry) => void>() };
 
     await expect(
       enforceBffRateLimit(
@@ -141,7 +142,15 @@ describe("enforceBffRateLimit", () => {
           limiter,
           fingerprintSecret: "",
           environment: "test",
-          bindings: { APP_DB: {} as AppD1Database },
+          bindings: {
+            APP_DB: {
+              prepare: () => {
+                throw new Error("unavailable");
+              },
+              batch: async () => [],
+              exec: async () => ({ success: false }),
+            } satisfies AppD1Database,
+          },
         },
       ),
     ).rejects.toBeInstanceOf(BffRateLimitUnavailableError);

@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import type { Pool, PoolClient } from "pg";
+import {
+  asPgPool,
+  createFakePgClient,
+  type FakePgPool,
+} from "@/adapters/persistence/pg-test-double.ts";
 import {
   createRequestCorrelation,
   runWithRequestCorrelation,
@@ -16,47 +20,34 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createFakePool(client: ReturnType<typeof createFakeClient>) {
-  return {
-    connect: vi.fn<() => Promise<PoolClient>>(async () => client as unknown as PoolClient),
-    query: vi.fn(),
-  };
-}
-
-function createFakeClient() {
-  const queries: string[] = [];
-  return {
-    queries,
-    query: vi.fn(async (text: string) => {
-      queries.push(text);
-      return { rows: [], rowCount: 0 };
-    }),
-    release: vi.fn<() => void>(),
-  };
+function createTestSetup() {
+  const release = vi.fn<() => void>();
+  const client = createFakePgClient();
+  const connect = vi.fn(async () => ({ ...client, release }));
+  const fakePool: FakePgPool = { connect, query: client.query };
+  return { client, pool: asPgPool(fakePool), connect, release };
 }
 
 describe("PostgresTransactionPort", () => {
   it("commits when the operation succeeds", async () => {
-    const client = createFakeClient();
-    const pool = createFakePool(client);
-    const port = new PostgresTransactionPort(pool as unknown as Pool);
+    const { client, pool, release } = createTestSetup();
+    const port = new PostgresTransactionPort(pool);
 
     const value = await port.runInTransaction(async () => {
       expect(isInPgTransaction()).toBe(true);
-      await getPgExecutor(pool as unknown as Pool).query("SELECT 1");
+      await getPgExecutor(pool).query("SELECT 1");
       return 42;
     });
 
     expect(value).toBe(42);
     expect(client.queries).toEqual(["BEGIN", "SELECT 1", "COMMIT"]);
-    expect(client.release).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledOnce();
     expect(isInPgTransaction()).toBe(false);
   });
 
   it("logs a committed transaction with the active request ID", async () => {
-    const client = createFakeClient();
-    const pool = createFakePool(client);
-    const port = new PostgresTransactionPort(pool as unknown as Pool);
+    const { pool } = createTestSetup();
+    const port = new PostgresTransactionPort(pool);
     const entries: CorrelationLogEntry[] = [];
     const requestId = "c67ed142-17da-4dc1-9239-1671fb10adbb";
 
@@ -70,33 +61,31 @@ describe("PostgresTransactionPort", () => {
   });
 
   it("rolls back when the operation throws", async () => {
-    const client = createFakeClient();
-    const pool = createFakePool(client);
-    const port = new PostgresTransactionPort(pool as unknown as Pool);
+    const { client, pool, release } = createTestSetup();
+    const port = new PostgresTransactionPort(pool);
 
     await expect(
       port.runInTransaction(async () => {
-        await getPgExecutor(pool as unknown as Pool).query("INSERT INTO x DEFAULT VALUES");
+        await getPgExecutor(pool).query("INSERT INTO x DEFAULT VALUES");
         throw new Error("boom");
       }),
     ).rejects.toThrow("boom");
 
     expect(client.queries).toEqual(["BEGIN", "INSERT INTO x DEFAULT VALUES", "ROLLBACK"]);
-    expect(client.release).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledOnce();
   });
 
   it("reuses the outer client for nested runInTransaction calls", async () => {
-    const client = createFakeClient();
-    const pool = createFakePool(client);
-    const port = new PostgresTransactionPort(pool as unknown as Pool);
+    const { client, pool, connect } = createTestSetup();
+    const port = new PostgresTransactionPort(pool);
 
     await port.runInTransaction(async () => {
       await port.runInTransaction(async () => {
-        await getPgExecutor(pool as unknown as Pool).query("SELECT nested");
+        await getPgExecutor(pool).query("SELECT nested");
       });
     });
 
-    expect(pool.connect).toHaveBeenCalledOnce();
+    expect(connect).toHaveBeenCalledOnce();
     expect(client.queries).toEqual(["BEGIN", "SELECT nested", "COMMIT"]);
   });
 });

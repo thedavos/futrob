@@ -6,6 +6,7 @@ import type {
   EffectiveAccess,
   Permission,
 } from "@futrob/shared-kernel";
+import { permissionSchema } from "@futrob/api-contracts";
 import type { FutrobClient } from "@futrob/sdk";
 
 /** Server-side bridge; policy resolution remains owned by apps/api. */
@@ -48,8 +49,14 @@ export class ProductApiAuthorizationPort implements AuthorizationPort {
       roles: access.roles,
       permissions: access.permissions.map((item) => ({
         ...item,
-        permission: item.permission as Permission,
+        permission: toPermission(item.permission),
       })),
     };
   }
+}
+
+function toPermission(value: string): Permission {
+  const parsed = permissionSchema.parse(value);
+  // SAFETY: Permission wire values are validated by permissionSchema before branding.
+  return parsed as Permission;
 }

@@ -1,6 +1,6 @@
+import { gameDataProviderKeyQuerySchema } from "@futrob/api-contracts";
 import { asTeamId, type TeamId } from "@futrob/shared-kernel";
 import type { ExternalClubConnection, ExternalClubConnectionRepository } from "@futrob/teams";
-import type { GameDataProviderKey } from "@futrob/game-data";
 import type { Pool } from "pg";
 
 export class InMemoryExternalClubConnectionRepository implements ExternalClubConnectionRepository {
@@ -66,7 +66,7 @@ function rehydrate(row: {
 }): ExternalClubConnection {
   return {
     teamId: asTeamId(row.team_id),
-    providerKey: row.provider_key as GameDataProviderKey,
+    providerKey: gameDataProviderKeyQuerySchema.parse(row.provider_key),
     externalClubId: row.external_club_id,
     externalClubName: row.external_club_name,
     gameEdition: row.game_edition,

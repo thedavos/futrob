@@ -21,7 +21,7 @@ import {
   EnvelopeSimpleIcon,
   UserIcon,
 } from "@phosphor-icons/react";
-import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
+import { authClient } from "@/modules/identity/auth-client.ts";
 import { useAuthResume } from "@/modules/identity/presentation/auth-resume.tsx";
 import {
   AUTH_ERROR_GENERIC,
@@ -53,6 +53,8 @@ function signupFailure(error: AuthClientError): SignupFailure {
   }
 
   switch (error.code) {
+    case undefined:
+      return { message: AUTH_ERROR_GENERIC };
     case "USER_ALREADY_EXISTS":
     case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
       return {
@@ -110,7 +112,8 @@ export function SignupForm() {
     } catch (error) {
       setState({
         status: "error",
-        message: isNetworkError(error) ? AUTH_ERROR_NETWORK : AUTH_ERROR_GENERIC,
+        message:
+          error instanceof Error && isNetworkError(error) ? AUTH_ERROR_NETWORK : AUTH_ERROR_GENERIC,
       });
     }
   }

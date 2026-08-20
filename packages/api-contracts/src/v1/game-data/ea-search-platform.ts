@@ -17,9 +17,18 @@ export const EA_SEARCH_PLATFORM_VALUES = [
 export type EaSearchPlatform = (typeof EA_SEARCH_PLATFORM_VALUES)[number];
 
 export function asEaSearchPlatform(platform: string): EaSearchPlatform | null {
-  return (EA_SEARCH_PLATFORM_VALUES as readonly string[]).includes(platform)
-    ? (platform as EaSearchPlatform)
-    : null;
+  switch (platform) {
+    case EA_SEARCH_PLATFORM.CROSS_GEN:
+      return EA_SEARCH_PLATFORM.CROSS_GEN;
+    case EA_SEARCH_PLATFORM.PS5:
+      return EA_SEARCH_PLATFORM.PS5;
+    case EA_SEARCH_PLATFORM.XBOX:
+      return EA_SEARCH_PLATFORM.XBOX;
+    case EA_SEARCH_PLATFORM.NINTENDO:
+      return EA_SEARCH_PLATFORM.NINTENDO;
+    default:
+      return null;
+  }
 }
 
 export const EA_SEARCH_PLATFORM_OPTIONS = [

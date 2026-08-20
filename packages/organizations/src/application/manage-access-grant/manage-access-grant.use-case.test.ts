@@ -2,11 +2,13 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   asActorId,
   asOrganizationId,
+  type ActorId,
   type AuthorizationPort,
+  type OrganizationId,
   type TransactionPort,
 } from "@futrob/shared-kernel";
-import type { OrganizationMembership } from "../../domain/entities/organization-membership.ts";
 import type { AccessGrant } from "../../domain/entities/access-grant.ts";
+import type { OrganizationMembership } from "../../domain/entities/organization-membership.ts";
 import type {
   AccessGrantRepository,
   AuthorizationAuditRepository,
@@ -165,8 +167,8 @@ function dependencies(
     } satisfies TransactionPort,
     mutationLock: {
       runWithActors: async <T>(
-        _organizationId: unknown,
-        _actorIds: unknown,
+        _organizationId: OrganizationId,
+        _actorIds: readonly ActorId[],
         operation: () => Promise<T>,
       ) => operation(),
     },

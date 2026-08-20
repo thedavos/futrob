@@ -1,3 +1,4 @@
+import { orgMembershipRoleSchema } from "@futrob/api-contracts";
 import { asOrganizationId, type ActorId, type OrganizationId } from "@futrob/shared-kernel";
 import type {
   InvitationRepository,
@@ -8,18 +9,45 @@ import type {
   OrganizationInvitation,
   OrganizationMembership,
   OrganizationRepository,
-  OrgMembershipRole,
 } from "@futrob/organizations";
 import { INVITATION_STATUS, REDEEM_POLICY } from "@futrob/organizations";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 import {
   INVITATION_COLUMNS,
+  invitationRowSchema,
   rehydrateInvitation,
   rehydrateMembership,
   rehydrateOrganization,
-  type InvitationRow,
 } from "./in-memory.repository.ts";
+
+const organizationRowSchema = z.object({
+  id: pgTextSchema,
+  name: pgTextSchema,
+  normalized_name: pgTextSchema,
+  created_at: pgTimestampSchema,
+  created_by_actor_id: pgTextSchema,
+  creation_key: pgTextSchema.nullable(),
+});
+
+const membershipSummaryRowSchema = z.object({
+  organization_id: pgTextSchema,
+  organization_name: pgTextSchema,
+  role: orgMembershipRoleSchema,
+});
+
+const membershipRowSchema = z.object({
+  organization_id: pgTextSchema,
+  actor_id: pgTextSchema,
+  role: orgMembershipRoleSchema,
+  created_at: pgTimestampSchema,
+});
+
+const invitationClaimRowSchema = invitationRowSchema.extend({
+  newly_claimed: z.boolean(),
+});
 
 export class PostgresOrganizationRepository implements OrganizationRepository {
   constructor(private readonly pool: Pool) {}
@@ -40,7 +68,7 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
         organization.creationKey ?? null,
       ],
     );
-    if (result.rows[0]) return rehydrateOrganization(result.rows[0]);
+    if (result.rows[0]) return rehydrateOrganization(organizationRowSchema.parse(result.rows[0]));
     return organization.creationKey ? await this.getByCreationKey(organization.creationKey) : null;
   }
 
@@ -50,17 +78,8 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
        FROM organizations WHERE id = $1`,
       [id],
     );
-    const row = result.rows[0] as
-      | {
-          id: string;
-          name: string;
-          normalized_name: string;
-          created_at: Date;
-          created_by_actor_id: string;
-          creation_key: string | null;
-        }
-      | undefined;
-    return row ? rehydrateOrganization(row) : null;
+    const row = result.rows[0];
+    return row ? rehydrateOrganization(organizationRowSchema.parse(row)) : null;
   }
 
   async getByCreationKey(creationKey: string): Promise<Organization | null> {
@@ -69,7 +88,8 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
        FROM organizations WHERE creation_key = $1`,
       [creationKey],
     );
-    return result.rows[0] ? rehydrateOrganization(result.rows[0]) : null;
+    const row = result.rows[0];
+    return row ? rehydrateOrganization(organizationRowSchema.parse(row)) : null;
   }
 
   async getByNormalizedName(normalizedName: string): Promise<Organization | null> {
@@ -78,7 +98,8 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
        FROM organizations WHERE normalized_name = $1`,
       [normalizedName],
     );
-    return result.rows[0] ? rehydrateOrganization(result.rows[0]) : null;
+    const row = result.rows[0];
+    return row ? rehydrateOrganization(organizationRowSchema.parse(row)) : null;
   }
 }
 
@@ -109,17 +130,14 @@ export class PostgresMembershipRepository implements MembershipRepository {
       [actorId],
     );
 
-    return (
-      result.rows as Array<{
-        organization_id: string;
-        organization_name: string;
-        role: OrgMembershipRole;
-      }>
-    ).map((row) => ({
-      organizationId: asOrganizationId(row.organization_id),
-      organizationName: row.organization_name,
-      role: row.role,
-    }));
+    return result.rows.map((row) => {
+      const parsed = membershipSummaryRowSchema.parse(row);
+      return {
+        organizationId: asOrganizationId(parsed.organization_id),
+        organizationName: parsed.organization_name,
+        role: parsed.role,
+      } satisfies MembershipSummary;
+    });
   }
 
   async findByOrgAndActor(
@@ -132,15 +150,8 @@ export class PostgresMembershipRepository implements MembershipRepository {
        WHERE organization_id = $1 AND actor_id = $2`,
       [organizationId, actorId],
     );
-    const row = result.rows[0] as
-      | {
-          organization_id: string;
-          actor_id: string;
-          role: string;
-          created_at: Date;
-        }
-      | undefined;
-    return row ? rehydrateMembership(row) : null;
+    const row = result.rows[0];
+    return row ? rehydrateMembership(membershipRowSchema.parse(row)) : null;
   }
 
   async updateRole(membership: OrganizationMembership): Promise<OrganizationMembership> {
@@ -150,7 +161,7 @@ export class PostgresMembershipRepository implements MembershipRepository {
        RETURNING organization_id, actor_id, role, created_at`,
       [membership.organizationId, membership.actorId, membership.role],
     );
-    return rehydrateMembership(result.rows[0]);
+    return rehydrateMembership(membershipRowSchema.parse(result.rows[0]));
   }
 
   async updateRoleProtectingLastOrganizer(
@@ -176,7 +187,7 @@ export class PostgresMembershipRepository implements MembershipRepository {
        RETURNING organization_id, actor_id, role, created_at`,
       [membership.organizationId, membership.actorId, membership.role],
     );
-    return result.rows[0] ? rehydrateMembership(result.rows[0]) : null;
+    return result.rows[0] ? rehydrateMembership(membershipRowSchema.parse(result.rows[0])) : null;
   }
 
   async countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number> {
@@ -224,8 +235,8 @@ export class PostgresInvitationRepository implements InvitationRepository {
        FROM organization_invitations WHERE token_hash = $1`,
       [tokenHash],
     );
-    const row = result.rows[0] as InvitationRow | undefined;
-    return row ? rehydrateInvitation(row) : null;
+    const row = result.rows[0];
+    return row ? rehydrateInvitation(invitationRowSchema.parse(row)) : null;
   }
 
   async hasRedemption(invitationId: string, actorId: ActorId): Promise<boolean> {
@@ -276,8 +287,8 @@ export class PostgresInvitationRepository implements InvitationRepository {
         INVITATION_STATUS.pending,
       ],
     );
-    const row = result.rows[0] as InvitationRow | undefined;
-    return row ? rehydrateInvitation(row) : null;
+    const row = result.rows[0];
+    return row ? rehydrateInvitation(invitationRowSchema.parse(row)) : null;
   }
 
   async claimRedemption(
@@ -322,18 +333,19 @@ export class PostgresInvitationRepository implements InvitationRepository {
        LEFT JOIN bumped ON bumped.id = invite.id`,
       [tokenHash, actorId, now.toISOString(), REDEEM_POLICY.multi, INVITATION_STATUS.pending],
     );
-    const row = result.rows[0] as (InvitationRow & { newly_claimed: boolean }) | undefined;
+    const row = result.rows[0];
     if (!row) return null;
-    if (!row.newly_claimed) {
-      const alreadyRedeemed = await this.hasRedemption(row.id, actorId);
+    const parsed = invitationClaimRowSchema.parse(row);
+    if (!parsed.newly_claimed) {
+      const alreadyRedeemed = await this.hasRedemption(parsed.id, actorId);
       if (!alreadyRedeemed) return null;
       return {
-        invitation: rehydrateInvitation(row),
+        invitation: rehydrateInvitation(parsed),
         outcome: "already-redeemed",
       };
     }
     return {
-      invitation: rehydrateInvitation(row),
+      invitation: rehydrateInvitation(parsed),
       outcome: "claimed",
     };
   }

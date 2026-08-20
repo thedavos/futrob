@@ -1,22 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createFutrobClient } from "../client.ts";
-
-function requestUrl(input: string | URL | Request): string {
-  if (typeof input === "string") {
-    return input;
-  }
-  if (input instanceof URL) {
-    return input.href;
-  }
-  return input.url;
-}
+import { mockFetch, requestUrl } from "../testing/mock-fetch.ts";
 
 describe("createFutrobClient gameData", () => {
   it("search calls /game-data/clubs/search", async () => {
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
-        const url = requestUrl(input as string | URL | Request);
+      fetchImpl: mockFetch(async (input) => {
+        const url = requestUrl(input);
         expect(url).toContain("/game-data/clubs/search?");
         expect(url).toContain("query=Fera");
         return Response.json({
@@ -31,7 +22,7 @@ describe("createFutrobClient gameData", () => {
             },
           ],
         });
-      }) as typeof fetch,
+      }),
     });
 
     const result = await client.gameData.clubs.search({ query: "Fera" });
@@ -42,8 +33,8 @@ describe("createFutrobClient gameData", () => {
     const urls: string[] = [];
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
-      fetchImpl: (async (input) => {
-        const url = requestUrl(input as string | URL | Request);
+      fetchImpl: mockFetch(async (input) => {
+        const url = requestUrl(input);
         urls.push(url);
         if (url.includes("/matches")) {
           return Response.json({ matches: [] });
@@ -56,7 +47,7 @@ describe("createFutrobClient gameData", () => {
           gameEdition: "fc26",
           imageUrl: null,
         });
-      }) as typeof fetch,
+      }),
     });
 
     await client.gameData.clubs.retrieve("10754");
@@ -70,8 +61,8 @@ describe("createFutrobClient gameData", () => {
   it("validates and persists a provider sync job through the internal API", async () => {
     const client = createFutrobClient({
       baseUrl: "https://api.example.com/api/v1",
-      fetchImpl: (async (input, init) => {
-        expect(requestUrl(input as string | URL | Request)).toBe(
+      fetchImpl: mockFetch(async (input, init) => {
+        expect(requestUrl(input)).toBe(
           "https://api.example.com/api/v1/internal/game-data/sync-jobs",
         );
         expect(init?.method).toBe("POST");
@@ -87,7 +78,7 @@ describe("createFutrobClient gameData", () => {
           leaseExpiresAt: null,
           updatedAt: "2026-08-11T20:00:00.000Z",
         });
-      }) as typeof fetch,
+      }),
     });
 
     await expect(

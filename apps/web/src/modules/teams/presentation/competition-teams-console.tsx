@@ -1,5 +1,6 @@
 "use client";
 
+import { hasBrowserWindow } from "@futrob/ui";
 import { useState } from "react";
 import { buildRosterInvitationShareUrl } from "@futrob/sdk";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
@@ -112,8 +113,7 @@ export function CompetitionTeamsConsole({
       }}
       onCreateInvitation={async (input) => {
         const created = await createInvitation.mutateAsync(input);
-        const origin =
-          typeof window === "undefined" ? "https://futrob.app" : window.location.origin;
+        const origin = hasBrowserWindow() ? window.location.origin : "https://futrob.app";
         setInvitation({
           teamId: created.teamId,
           url: buildRosterInvitationShareUrl(origin, created.token),
@@ -142,7 +142,7 @@ export function CompetitionTeamsConsole({
   );
 }
 
-const ERROR_COPY: Record<string, string> = {
+const ERROR_COPY = {
   "teams.roster_full": "La plantilla ya alcanzó su cupo máximo.",
   "teams.roster_entry_inactive":
     "Este Team ya no está activo en la competición. No se pueden cambiar plantillas.",
@@ -151,9 +151,9 @@ const ERROR_COPY: Record<string, string> = {
   "teams.roster_invitation_expired": "La invitación ya expiró. Crea un enlace nuevo.",
   "teams.client_network_error":
     "No pudimos conectar con Futrob. Conservamos tu contexto para que puedas reintentar.",
-};
+} satisfies Record<string, string>;
 
-export function teamConsoleError(error: unknown): SupportError {
+export function teamConsoleError(error: Error): SupportError {
   if (error instanceof TeamsClientError) {
     return {
       message: errorCopy(error.code),
@@ -171,6 +171,13 @@ export function teamConsoleError(error: unknown): SupportError {
   return { message: "No pudimos completar la operación. Revisa tu conexión e inténtalo de nuevo." };
 }
 
+function isTeamConsoleErrorCode(code: string): code is keyof typeof ERROR_COPY {
+  return Object.hasOwn(ERROR_COPY, code);
+}
+
 function errorCopy(code: string): string {
-  return ERROR_COPY[code] ?? "No pudimos completar la operación. Inténtalo nuevamente.";
+  if (isTeamConsoleErrorCode(code)) {
+    return ERROR_COPY[code];
+  }
+  return "No pudimos completar la operación. Inténtalo nuevamente.";
 }

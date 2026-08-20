@@ -32,8 +32,7 @@ export class EaClubsHttpClient {
   private readonly timeoutMs: number;
 
   constructor(options: EaClubsHttpClientOptions) {
-    const unbound = options.fetcher;
-    this.fetcher = ((input, init) => unbound(input, init)) as typeof fetch;
+    this.fetcher = options.fetcher.bind(globalThis);
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.timeoutMs = options.timeoutMs;
   }

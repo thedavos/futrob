@@ -7,7 +7,7 @@ import {
 } from "@futrob/api-contracts";
 import { apiErrorResponse } from "@/shared/infrastructure/http/api-response.ts";
 
-type BffRequestLogEntry = Readonly<{
+export type BffRequestLogEntry = Readonly<{
   event: "bff.request.completed" | "bff.request.failed";
   requestId: RequestId;
   method: string;

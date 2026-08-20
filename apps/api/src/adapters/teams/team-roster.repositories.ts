@@ -1,3 +1,4 @@
+import { rosterMembershipRoleSchema } from "@futrob/api-contracts";
 import {
   asActorId,
   asCompetitionId,
@@ -13,7 +14,6 @@ import type {
   ActiveTeamPreferenceRepository,
   CompetitionRosterMembership,
   CompetitionRosterMembershipRepository,
-  RosterMembershipRole,
   Team,
   TeamRepository,
 } from "@futrob/teams";
@@ -383,7 +383,7 @@ function rehydrateRoster(row: {
     teamId: asTeamId(row.team_id),
     playerProfileId: row.player_profile_id,
     gameAccountId: row.game_account_id,
-    role: row.role as RosterMembershipRole,
+    role: rosterMembershipRoleSchema.parse(row.role),
     createdAt: new Date(row.created_at),
   };
 }

@@ -1,3 +1,11 @@
+import {
+  acceptRosterInvitationResponseSchema,
+  createRosterInvitationResponseSchema,
+  addToRosterResponseSchema,
+  completeOrganizationOnboardingResponseSchema,
+  createTeamResponseSchema,
+  getMyPlayerProfileResponseSchema,
+} from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import {
@@ -7,6 +15,7 @@ import {
   serviceHeaders,
   stubFetch,
 } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http teams", () => {
   it("teams: creates entry, roster across competitions, active preference, and rejects same-competition conflict", async () => {
@@ -24,10 +33,7 @@ describe("apps/api http teams", () => {
       }),
     });
     expect(orgCreated.status).toBe(200);
-    const orgBody = (await orgCreated.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string } };
-    };
+    const orgBody = await parseResponse(completeOrganizationOnboardingResponseSchema, orgCreated);
     const organizationId = orgBody.organizationId;
     const competitionA = orgBody.competition.competition.id;
 
@@ -45,10 +51,7 @@ describe("apps/api http teams", () => {
     const profileRes = await app.request("/api/v1/players/me", {
       headers: serviceHeaders(player),
     });
-    const profileBody = (await profileRes.json()) as {
-      profile: { id: string };
-      gameAccounts: Array<{ id: string }>;
-    };
+    const profileBody = await parseResponse(getMyPlayerProfileResponseSchema, profileRes);
 
     const teamA = await app.request(`/api/v1/organizations/${organizationId}/teams`, {
       method: "POST",
@@ -56,14 +59,14 @@ describe("apps/api http teams", () => {
       body: JSON.stringify({ name: "Alpha", creationKey: "team:alpha" }),
     });
     expect(teamA.status).toBe(201);
-    const teamABody = (await teamA.json()) as { id: string };
+    const teamABody = await parseResponse(createTeamResponseSchema, teamA);
 
     const teamB = await app.request(`/api/v1/organizations/${organizationId}/teams`, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({ name: "Beta", creationKey: "team:beta" }),
     });
-    const teamBBody = (await teamB.json()) as { id: string };
+    const teamBBody = await parseResponse(createTeamResponseSchema, teamB);
 
     const entryA = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionA}/participants`,
@@ -81,14 +84,14 @@ describe("apps/api http teams", () => {
         method: "POST",
         headers: serviceHeaders(organizer),
         body: JSON.stringify({
-          playerProfileId: profileBody.profile.id,
+          playerProfileId: profileBody.profile!.id,
           gameAccountId: profileBody.gameAccounts[0]?.id,
           role: "player",
         }),
       },
     );
     expect(rosterA.status).toBe(201);
-    const rosterABody = (await rosterA.json()) as { id: string };
+    const rosterABody = await parseResponse(addToRosterResponseSchema, rosterA);
 
     const conflict = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionA}/teams/${teamBBody.id}/roster`,
@@ -96,7 +99,7 @@ describe("apps/api http teams", () => {
         method: "POST",
         headers: serviceHeaders(organizer),
         body: JSON.stringify({
-          playerProfileId: profileBody.profile.id,
+          playerProfileId: profileBody.profile!.id,
           role: "player",
         }),
       },
@@ -117,7 +120,7 @@ describe("apps/api http teams", () => {
         method: "POST",
         headers: serviceHeaders(organizer),
         body: JSON.stringify({
-          playerProfileId: profileBody.profile.id,
+          playerProfileId: profileBody.profile!.id,
           role: "player",
         }),
       },
@@ -208,14 +211,14 @@ describe("apps/api http teams", () => {
     const lockedProfile = await app.request("/api/v1/players/me", {
       headers: serviceHeaders("actor-roster-locked"),
     });
-    const lockedProfileBody = (await lockedProfile.json()) as { profile: { id: string } };
+    const lockedProfileBody = await parseResponse(getMyPlayerProfileResponseSchema, lockedProfile);
     const addWhileLocked = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionA}/teams/${teamABody.id}/roster`,
       {
         method: "POST",
         headers: serviceHeaders(organizer),
         body: JSON.stringify({
-          playerProfileId: lockedProfileBody.profile.id,
+          playerProfileId: lockedProfileBody.profile!.id,
           role: "player",
         }),
       },
@@ -239,10 +242,7 @@ describe("apps/api http teams", () => {
       }),
     });
     expect(orgCreated.status).toBe(200);
-    const orgBody = (await orgCreated.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string } };
-    };
+    const orgBody = await parseResponse(completeOrganizationOnboardingResponseSchema, orgCreated);
     const organizationId = orgBody.organizationId;
     const competitionId = orgBody.competition.competition.id;
 
@@ -252,7 +252,7 @@ describe("apps/api http teams", () => {
       body: JSON.stringify({ name: "Invite FC", creationKey: "team:invite" }),
     });
     expect(teamRes.status).toBe(201);
-    const teamBody = (await teamRes.json()) as { id: string };
+    const teamBody = await parseResponse(createTeamResponseSchema, teamRes);
 
     const entry = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/participants`,
@@ -273,7 +273,7 @@ describe("apps/api http teams", () => {
       },
     );
     expect(invitation.status).toBe(201);
-    const { token } = (await invitation.json()) as { token: string };
+    const { token } = await parseResponse(createRosterInvitationResponseSchema, invitation);
 
     const accepted = await app.request("/api/v1/roster-invitations/accept", {
       method: "POST",
@@ -281,7 +281,7 @@ describe("apps/api http teams", () => {
       body: JSON.stringify({ token }),
     });
     expect(accepted.status).toBe(201);
-    const membership = (await accepted.json()) as { teamId: string; role: string };
+    const membership = await parseResponse(acceptRosterInvitationResponseSchema, accepted);
     expect(membership).toMatchObject({ teamId: teamBody.id, role: "player" });
 
     const discoverable = await app.request("/api/v1/competitions/mine", {

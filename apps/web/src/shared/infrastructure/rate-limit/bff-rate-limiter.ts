@@ -16,7 +16,7 @@ export type BffRateLimitPolicyConfig = Readonly<{
 
 export type BffRateLimitPolicies = Readonly<Record<BffRateLimitPolicy, BffRateLimitPolicyConfig>>;
 
-export const DEFAULT_BFF_RATE_LIMIT_POLICIES: BffRateLimitPolicies = {
+export const DEFAULT_BFF_RATE_LIMIT_POLICIES = {
   [BFF_RATE_LIMIT_POLICY.eaClubSearch]: {
     windowSeconds: 60,
     actorMaxAttempts: 10,
@@ -32,7 +32,7 @@ export const DEFAULT_BFF_RATE_LIMIT_POLICIES: BffRateLimitPolicies = {
     actorMaxAttempts: 5,
     ipMaxAttempts: 5,
   },
-};
+} satisfies BffRateLimitPolicies;
 
 export type RateLimitAttempt = Readonly<{
   policy: BffRateLimitPolicy;
@@ -74,9 +74,7 @@ const POLICY_ENV_KEYS = {
   Readonly<{ windowSeconds: string; actorMaxAttempts: string; ipMaxAttempts: string }>
 >;
 
-export function parseBffRateLimitPolicies(
-  source: Readonly<Record<string, string | undefined>>,
-): BffRateLimitPolicies {
+export function parseBffRateLimitPolicies(source: Readonly<Record<string, string | undefined>>) {
   return {
     [BFF_RATE_LIMIT_POLICY.eaClubSearch]: policyFromEnv(source, BFF_RATE_LIMIT_POLICY.eaClubSearch),
     [BFF_RATE_LIMIT_POLICY.invitationAccept]: policyFromEnv(
@@ -87,7 +85,7 @@ export function parseBffRateLimitPolicies(
       source,
       BFF_RATE_LIMIT_POLICY.invitationPreview,
     ),
-  };
+  } satisfies BffRateLimitPolicies;
 }
 
 function policyFromEnv(

@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { CompetitionRulesDto } from "@futrob/api-contracts";
+import {
+  addCompetitionParticipantResponseSchema,
+  completeOrganizationOnboardingResponseSchema,
+} from "@futrob/api-contracts";
 import {
   buildApp,
   onboardingCompetition,
   serviceHeaders,
   stubFetch,
 } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http competitions", () => {
   it("competitions: resumes draft, manages approved participants, publishes and locks structure", async () => {
@@ -21,10 +25,7 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const body = (await created.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string }; rules: CompetitionRulesDto };
-    };
+    const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
     const organizationId = body.organizationId;
     const competitionId = body.competition.competition.id;
 
@@ -75,7 +76,7 @@ describe("apps/api http competitions", () => {
         },
       );
       expect(added.status).toBe(201);
-      const entry = (await added.json()) as { id: string; status: string };
+      const entry = await parseResponse(addCompetitionParticipantResponseSchema, added);
       expect(entry.status).toBe("approved");
       participantIds.push(entry.id);
     }

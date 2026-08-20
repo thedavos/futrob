@@ -2,11 +2,12 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import { requestIdSchema, type RequestCorrelation } from "@futrob/api-contracts";
 
+type CorrelationFieldValue = string | number | boolean | null;
+
 export type CorrelationLogEntry = Readonly<
   RequestCorrelation & {
     event: string;
-    [key: string]: unknown;
-  }
+  } & Record<string, CorrelationFieldValue>
 >;
 
 export interface CorrelationLogger {
@@ -59,13 +60,19 @@ export function runWithPersistedJobCorrelation<T>(
     : operation();
 }
 
-export function logCorrelatedInfo(event: string, fields: Readonly<Record<string, unknown>> = {}) {
+export function logCorrelatedInfo(
+  event: string,
+  fields: Readonly<Record<string, CorrelationFieldValue>> = {},
+) {
   const context = requestCorrelationStorage.getStore();
   if (!context) return;
   context.logger.info({ ...fields, event, requestId: context.correlation.requestId });
 }
 
-export function logCorrelatedError(event: string, fields: Readonly<Record<string, unknown>> = {}) {
+export function logCorrelatedError(
+  event: string,
+  fields: Readonly<Record<string, CorrelationFieldValue>> = {},
+) {
   const context = requestCorrelationStorage.getStore();
   if (!context) return;
   context.logger.error({ ...fields, event, requestId: context.correlation.requestId });

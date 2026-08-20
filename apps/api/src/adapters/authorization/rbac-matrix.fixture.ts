@@ -107,7 +107,7 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
     siblingEncounterId: asEncounterId("encounter-sibling"),
   };
 
-  const actors: Record<RbacActorKey, ActorId> = {
+  const actors = {
     superuser: asActorId("superuser"),
     organizer: asActorId("organizer-a"),
     organizationStaff: asActorId("organization-staff"),
@@ -121,7 +121,7 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
     rivalCaptain: asActorId("rival-captain-a"),
     outsider: asActorId("outsider"),
     organizerB: asActorId("organizer-b"),
-  };
+  } satisfies Record<RbacActorKey, ActorId>;
 
   for (const [id, name, actorId] of [
     [ids.orgA, "Org A", actors.organizer],

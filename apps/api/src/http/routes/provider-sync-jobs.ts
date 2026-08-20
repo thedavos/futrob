@@ -58,7 +58,7 @@ export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
 }
 
 function toSyncJobDto(job: ProviderSyncJob) {
-  return providerSyncJobResponseSchema.parse({
+  const dto = {
     id: job.id,
     organizationId: job.organizationId,
     providerKey: job.providerKey,
@@ -72,8 +72,9 @@ function toSyncJobDto(job: ProviderSyncJob) {
         : null,
     leaseExpiresAt: job.status === "running" ? job.leaseExpiresAt.toISOString() : null,
     updatedAt: job.updatedAt.toISOString(),
-    ...(job.status === "retry_scheduled" || job.status === "dead"
-      ? { lastErrorCode: job.lastErrorCode }
-      : {}),
-  });
+  };
+  if (job.status === "retry_scheduled" || job.status === "dead") {
+    return providerSyncJobResponseSchema.parse({ ...dto, lastErrorCode: job.lastErrorCode });
+  }
+  return providerSyncJobResponseSchema.parse(dto);
 }

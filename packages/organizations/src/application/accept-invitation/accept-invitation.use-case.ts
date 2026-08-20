@@ -1,5 +1,11 @@
-import { err, ok, type Result } from "@futrob/shared-kernel";
-import type { ActorId, ClockPort, CompetitionId } from "@futrob/shared-kernel";
+import {
+  err,
+  ok,
+  type Result,
+  type ActorId,
+  type ClockPort,
+  type CompetitionId,
+} from "@futrob/shared-kernel";
 import type { InvitationRepository } from "../../domain/ports/invitation.repository.ts";
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
@@ -9,6 +15,7 @@ import type {
   CompetitionInviteRole,
   OrgMembershipRole,
 } from "../../domain/value-objects/organization-membership-role.ts";
+import { isCompetitionInviteRole } from "../../domain/value-objects/organization-membership-role.ts";
 import type { Organization } from "../../domain/entities/organization.ts";
 import {
   INVITATION_STATUS,
@@ -210,12 +217,12 @@ export class AcceptInvitationUseCase {
     now: Date,
   ): Promise<Result<AcceptedInvitation, AcceptInvitationError>> {
     const existing = await this.deps.memberships.findByOrgAndActor(claimed.organizationId, actorId);
-    const membershipRole = claimed.competitionId ? "member" : claimed.role;
+    const membershipRole = membershipRoleForInvitation(claimed);
     if (!existing) {
       await this.deps.memberships.add({
         organizationId: claimed.organizationId,
         actorId,
-        role: membershipRole as OrgMembershipRole,
+        role: membershipRole,
         createdAt: now,
       });
     }
@@ -223,9 +230,9 @@ export class AcceptInvitationUseCase {
     return ok({
       organizationId: organization.id,
       organizationName: organization.name,
-      role: existing?.role ?? (membershipRole as OrgMembershipRole),
+      role: existing?.role ?? membershipRole,
       competitionId: claimed.competitionId ?? null,
-      competitionRole: claimed.competitionId ? (claimed.role as CompetitionInviteRole) : null,
+      competitionRole: competitionRoleForInvitation(claimed),
     });
   }
 
@@ -238,11 +245,9 @@ export class AcceptInvitationUseCase {
       return ok({
         organizationId: organization.id,
         organizationName: organization.name,
-        role: invitation.competitionId ? "member" : (invitation.role as OrgMembershipRole),
+        role: membershipRoleForInvitation(invitation),
         competitionId: invitation.competitionId ?? null,
-        competitionRole: invitation.competitionId
-          ? (invitation.role as CompetitionInviteRole)
-          : null,
+        competitionRole: competitionRoleForInvitation(invitation),
       });
     }
     return err(
@@ -252,4 +257,20 @@ export class AcceptInvitationUseCase {
       }),
     );
   }
+}
+
+function membershipRoleForInvitation(invitation: OrganizationInvitation): OrgMembershipRole {
+  if (invitation.competitionId) {
+    return "member";
+  }
+  return invitation.role === "staff" ? "staff" : "member";
+}
+
+function competitionRoleForInvitation(
+  invitation: OrganizationInvitation,
+): CompetitionInviteRole | null {
+  if (!invitation.competitionId || !isCompetitionInviteRole(invitation.role)) {
+    return null;
+  }
+  return invitation.role;
 }

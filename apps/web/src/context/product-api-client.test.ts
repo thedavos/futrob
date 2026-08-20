@@ -32,7 +32,8 @@ describe("createProductApiClient", () => {
   it("uses an explicit product API base URL", async () => {
     let requestedUrl = "";
     const fetchImpl: typeof fetch = async (input) => {
-      requestedUrl = String(input);
+      requestedUrl =
+        input instanceof URL ? input.href : input instanceof Request ? input.url : input;
       return Response.json({
         completed: false,
         completedAt: null,

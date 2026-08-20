@@ -1,6 +1,7 @@
+import type { PoolClient } from "pg";
 import { describe, expect, it } from "vite-plus/test";
-import type { Pool } from "pg";
 import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
+import { asPgPool } from "@/adapters/persistence/pg-test-double.ts";
 import {
   PostgresAccessGrantRepository,
   PostgresAuthorizationAuditRepository,
@@ -17,7 +18,7 @@ describe("Postgres contextual authorization repositories", () => {
       { rows: [row], rowCount: 1 },
       { rows: [row], rowCount: 1 },
     ]);
-    const repository = new PostgresAccessGrantRepository(pool as unknown as Pool);
+    const repository = new PostgresAccessGrantRepository(asPgPool(pool));
 
     const saved = await repository.upsert({
       id: "grant-1",
@@ -55,7 +56,7 @@ describe("Postgres contextual authorization repositories", () => {
       { rows: [row], rowCount: 1 },
       { rows: [{ count: 1 }], rowCount: 1 },
     ]);
-    const repository = new PostgresPlatformRoleRepository(pool as unknown as Pool);
+    const repository = new PostgresPlatformRoleRepository(asPgPool(pool));
 
     const assignment = await repository.assignSuperuser({
       actorId: asActorId("super-1"),
@@ -87,7 +88,7 @@ describe("Postgres contextual authorization repositories", () => {
       { rows: [], rowCount: 1 },
       { rows: [auditRow], rowCount: 1 },
     ]);
-    const repository = new PostgresAuthorizationAuditRepository(pool as unknown as Pool);
+    const repository = new PostgresAuthorizationAuditRepository(asPgPool(pool));
 
     await repository.append({
       id: "audit-1",
@@ -120,6 +121,10 @@ class StubPool {
       readonly rowCount: number;
     }[],
   ) {}
+
+  async connect(): Promise<PoolClient> {
+    throw new Error("StubPool.connect is not used in these tests");
+  }
 
   async query(sql: string, values?: readonly unknown[]) {
     this.calls.push({ sql, values });

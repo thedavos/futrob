@@ -2,13 +2,36 @@ import type {
   ActorOnboardingPort,
   ActorOnboardingState,
   CompletedOnboarding,
-  OnboardingPath,
   OnboardingProgress,
-  OnboardingStep,
 } from "@futrob/identity";
 import { asActorId, type ActorId } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
+
+const onboardingPathSchema = z.enum(["player", "organization", "invitation"]);
+const onboardingStepSchema = z.enum([
+  "intention",
+  "organization",
+  "competition",
+  "game",
+  "invitation",
+  "game-account",
+  "club",
+  "review",
+]);
+const actorOnboardingRowSchema = z.object({
+  actor_id: pgTextSchema,
+  onboarding_completed: z.boolean(),
+  onboarding_completed_at: pgTimestampSchema.nullable(),
+  onboarding_version: z.coerce.number().nullable(),
+  onboarding_path: onboardingPathSchema.nullable(),
+  onboarding_current_step: z
+    .union([onboardingStepSchema, z.literal("team")])
+    .nullable()
+    .transform((step) => (step === "team" ? "club" : step)),
+});
 
 export class PostgresActorOnboardingRepository implements ActorOnboardingPort {
   constructor(private readonly pool: Pool) {}
@@ -21,29 +44,18 @@ export class PostgresActorOnboardingRepository implements ActorOnboardingPort {
        WHERE actor_id = $1`,
       [actorId],
     );
-    const row = result.rows[0] as
-      | {
-          actor_id: string;
-          onboarding_completed: boolean;
-          onboarding_completed_at: Date | string | null;
-          onboarding_version: number | null;
-          onboarding_path: OnboardingPath | null;
-          onboarding_current_step: OnboardingStep | "team" | null;
-        }
-      | undefined;
+    const row = result.rows[0];
+    if (!row) return null;
+    const parsed = actorOnboardingRowSchema.parse(row);
 
-    return row
-      ? {
-          actorId: asActorId(row.actor_id),
-          completed: row.onboarding_completed,
-          completedAt:
-            row.onboarding_completed_at === null ? null : new Date(row.onboarding_completed_at),
-          version: row.onboarding_version,
-          path: row.onboarding_path,
-          currentStep:
-            row.onboarding_current_step === "team" ? "club" : row.onboarding_current_step,
-        }
-      : null;
+    return {
+      actorId: asActorId(parsed.actor_id),
+      completed: parsed.onboarding_completed,
+      completedAt: parsed.onboarding_completed_at,
+      version: parsed.onboarding_version,
+      path: parsed.onboarding_path,
+      currentStep: parsed.onboarding_current_step,
+    };
   }
 
   async saveProgress(progress: OnboardingProgress): Promise<void> {

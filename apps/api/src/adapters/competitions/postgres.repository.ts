@@ -8,6 +8,12 @@ import type {
   CompetitionRules,
 } from "@futrob/competitions";
 import {
+  competitionFormatSchema,
+  competitionPlatformSchema,
+  competitionRegionSchema,
+  competitionStatusSchema,
+} from "@futrob/api-contracts";
+import {
   asActorId,
   asCompetitionId,
   asOrganizationId,
@@ -16,6 +22,8 @@ import {
   type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import {
   getPgExecutor,
   isInPgTransaction,
@@ -284,13 +292,15 @@ export interface CompetitionRulesRow {
   created_at: Date | string;
 }
 
+const competitionMembershipRoleSchema = z.enum(["staff", "captain", "player"]);
+
 function rehydrateCompetitionMembership(row: CompetitionMembershipRow): CompetitionMembership {
   return {
     organizationId: asOrganizationId(row.organization_id),
     competitionId: asCompetitionId(row.competition_id),
     actorId: asActorId(row.actor_id),
-    role: row.role as CompetitionMembership["role"],
-    createdAt: new Date(row.created_at),
+    role: competitionMembershipRoleSchema.parse(row.role),
+    createdAt: pgTimestampSchema.parse(row.created_at),
   };
 }
 
@@ -299,17 +309,17 @@ function rehydrateCompetition(row: CompetitionRow): Competition {
     id: asCompetitionId(row.id),
     organizationId: asOrganizationId(row.organization_id),
     name: row.name,
-    status: row.status as Competition["status"],
+    status: competitionStatusSchema.parse(row.status),
     modality: "fc-clubs",
     gameEdition: row.game_edition,
-    platform: row.platform as Competition["platform"],
-    region: row.region as Competition["region"],
+    platform: competitionPlatformSchema.parse(row.platform),
+    region: competitionRegionSchema.parse(row.region),
     timeZone: row.time_zone,
-    format: row.format as Competition["format"],
+    format: competitionFormatSchema.parse(row.format),
     createdByActorId: asActorId(row.created_by_actor_id),
     creationKey: row.creation_key ?? undefined,
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at),
+    createdAt: pgTimestampSchema.parse(row.created_at),
+    updatedAt: pgTimestampSchema.parse(row.updated_at),
   };
 }
 

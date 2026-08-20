@@ -1,5 +1,10 @@
+import {
+  createInvitationResponseSchema,
+  createOrganizationResponseSchema,
+} from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import { buildApp, serviceHeaders, stubFetch } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http organizations", () => {
   it("organization resources do not complete onboarding implicitly", async () => {
@@ -13,7 +18,7 @@ describe("apps/api http organizations", () => {
       body: JSON.stringify({ name: "Liga Test" }),
     });
     expect(created.status).toBe(201);
-    const createdBody = (await created.json()) as { organizationId: string };
+    const createdBody = await parseResponse(createOrganizationResponseSchema, created);
     expect(createdBody.organizationId).toBeTruthy();
 
     const mine = await app.request("/api/v1/organizations/mine", {
@@ -47,7 +52,7 @@ describe("apps/api http organizations", () => {
       },
     );
     expect(invite.status).toBe(201);
-    const inviteBody = (await invite.json()) as { token: string };
+    const inviteBody = await parseResponse(createInvitationResponseSchema, invite);
 
     const accepted = await app.request("/api/v1/organizations/invitations/accept", {
       method: "POST",
@@ -79,7 +84,7 @@ describe("apps/api http organizations", () => {
       body: JSON.stringify({ name: "Liga Multi" }),
     });
     expect(created.status).toBe(201);
-    const { organizationId } = (await created.json()) as { organizationId: string };
+    const { organizationId } = await parseResponse(createOrganizationResponseSchema, created);
 
     const invite = await app.request(`/api/v1/organizations/${organizationId}/invitations`, {
       method: "POST",
@@ -87,11 +92,7 @@ describe("apps/api http organizations", () => {
       body: JSON.stringify({ role: "staff", redeemPolicy: "multi", maxRedemptions: 2 }),
     });
     expect(invite.status).toBe(201);
-    const inviteBody = (await invite.json()) as {
-      token: string;
-      redeemPolicy: string;
-      maxRedemptions: number | null;
-    };
+    const inviteBody = await parseResponse(createInvitationResponseSchema, invite);
     expect(inviteBody).toMatchObject({ redeemPolicy: "multi", maxRedemptions: 2 });
 
     const acceptAs = (actorId: string) =>

@@ -4,13 +4,18 @@ import { createModules } from "@/di/create-modules.ts";
 
 export const INTERNAL_JOB_SECRET = "test-internal-secret";
 
+function resolveFetchUrl(input: string | URL | Request): string {
+  if (input instanceof URL) return input.href;
+  if (input instanceof Request) return input.url;
+  return input;
+}
+
 export function createFetch(
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
 ): typeof fetch {
-  return (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    return handler(url, init);
-  }) as typeof fetch;
+  const fetchImpl = async (input: string | URL | Request, init?: RequestInit) =>
+    handler(resolveFetchUrl(input), init);
+  return fetchImpl satisfies typeof fetch;
 }
 
 export function buildApp(fetcher: typeof fetch, correlationLogEntries: CorrelationLogEntry[] = []) {
@@ -30,12 +35,12 @@ export function buildApp(fetcher: typeof fetch, correlationLogEntries: Correlati
   });
 }
 
-export function serviceHeaders(actorId = "actor-test-1"): Record<string, string> {
+export function serviceHeaders(actorId = "actor-test-1") {
   return {
     Authorization: `Bearer ${INTERNAL_JOB_SECRET}`,
     "X-Futrob-Actor-Id": actorId,
     "Content-Type": "application/json",
-  };
+  } satisfies Record<string, string>;
 }
 
 export const stubFetch = createFetch(() => Response.json([]));

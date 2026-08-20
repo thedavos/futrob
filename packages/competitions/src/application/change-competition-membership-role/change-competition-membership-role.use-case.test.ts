@@ -3,9 +3,13 @@ import {
   asActorId,
   asCompetitionId,
   asOrganizationId,
+  type ActorId,
   type AuthorizationPort,
+  type OrganizationId,
   type Permission,
 } from "@futrob/shared-kernel";
+import type { Competition } from "../../domain/entities/competition.ts";
+import type { CompetitionRules } from "../../domain/entities/competition-rules.ts";
 import type { CompetitionMembership } from "../../domain/entities/competition-membership.ts";
 import type { CompetitionMembershipRepository } from "../../domain/ports/competition-membership.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
@@ -111,9 +115,38 @@ function authorization(allowed: boolean): AuthorizationPort {
 }
 
 function competitionRepository(found: boolean): CompetitionRepository {
+  const competition = {
+    id: competitionId,
+    organizationId,
+    name: "Test competition",
+    status: "draft",
+    modality: "fc-clubs",
+    gameEdition: "fc26",
+    platform: "playstation",
+    region: "europe",
+    timeZone: "UTC",
+    format: "league",
+    createdByActorId: managerId,
+    createdAt: new Date("2026-08-07T00:00:00.000Z"),
+    updatedAt: new Date("2026-08-07T00:00:00.000Z"),
+  } satisfies Competition;
+  const rules = {
+    competitionId,
+    version: 1,
+    regularStage: null,
+    knockoutStage: null,
+    awayGoalsEnabled: false,
+    maxRosterSize: null,
+    createdAt: new Date("2026-08-07T00:00:00.000Z"),
+  } satisfies CompetitionRules;
+
   return {
-    findById: async () => (found ? ({ id: competitionId } as never) : null),
-  } as unknown as CompetitionRepository;
+    findById: async () => (found ? { competition, rules } : null),
+    saveDraft: async (draft) => draft,
+    findByCreationKey: async () => null,
+    findRulesByCompetitionId: async () => (found ? rules : null),
+    listByOrganization: async () => (found ? [competition] : []),
+  };
 }
 
 function membershipRepository(
@@ -148,8 +181,8 @@ function managementDependencies() {
     },
     mutationLock: {
       runWithActors: async <T>(
-        _organizationId: unknown,
-        _actorIds: unknown,
+        _organizationId: OrganizationId,
+        _actorIds: readonly ActorId[],
         operation: () => Promise<T>,
       ) => operation(),
     },

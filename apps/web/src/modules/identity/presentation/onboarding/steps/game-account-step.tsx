@@ -100,8 +100,8 @@ export function GameAccountStep() {
                 flow.updateDraft({
                   platform: flow.draft.competitionPlatform,
                   gameEdition: flow.draft.competitionGameEdition,
-                  customGameEdition: !(knownGameEditions as readonly string[]).includes(
-                    flow.draft.competitionGameEdition,
+                  customGameEdition: !knownGameEditions.some(
+                    (edition) => edition === flow.draft.competitionGameEdition,
                   ),
                 })
               }

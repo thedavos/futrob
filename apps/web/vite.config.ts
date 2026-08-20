@@ -30,7 +30,8 @@ async function createAppPlugins() {
 /**
  * App Vite config for @futrob/web.
  * Runtime: TanStack Start + Cloudflare Workers.
- * Quality (fmt/lint/check) is owned by the repo-root vite.config.ts (oxfmt/oxlint via Vite+).
+ * Quality (fmt/lint/check, including anti-slop) is owned by the repo-root
+ * vite.config.ts. `vp lint` from this package still uses that root config.
  */
 export default defineConfig({
   root: rootDir,
@@ -39,12 +40,6 @@ export default defineConfig({
   },
   fmt: {
     ignorePatterns: ["src/routeTree.gen.ts", "src/paraglide/**"],
-  },
-  lint: {
-    ignorePatterns: ["src/routeTree.gen.ts", "src/paraglide/**"],
-    jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
-    rules: { "vite-plus/prefer-vite-plus-imports": "error" },
-    options: { typeAware: true, typeCheck: true },
   },
   resolve: {
     alias: {
@@ -66,6 +61,7 @@ export default defineConfig({
   test: {
     name: "web",
     environment: "node",
+    setupFiles: ["src/test-setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     coverage: {
       provider: "v8",

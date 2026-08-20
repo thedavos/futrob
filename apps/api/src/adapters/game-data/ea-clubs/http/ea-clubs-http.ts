@@ -53,7 +53,8 @@ export class EaClubsHttpClient {
 
   constructor(options: EaClubsHttpClientOptions) {
     const unbound = options.fetcher;
-    this.fetcher = ((input, init) => unbound(input, init)) as typeof fetch;
+    const fetchImpl = (input: string | URL | Request, init?: RequestInit) => unbound(input, init);
+    this.fetcher = fetchImpl satisfies typeof fetch;
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.timeoutMs = options.timeoutMs;
     this.retry =
@@ -102,13 +103,15 @@ export class EaClubsHttpClient {
     for (let attempt = 1; attempt <= this.retry.maxAttempts; attempt += 1) {
       const result = await this.requestOnce(url, path, attempt);
       if (result.isOk()) {
-        await this.circuit.recordSuccess({
-          key: circuitKey,
-          now: this.clock.now(),
-          ...(permission.state === "half_open"
-            ? { probeLeaseToken: permission.probeLeaseToken }
-            : {}),
-        });
+        await this.circuit.recordSuccess(
+          permission.state === "half_open"
+            ? {
+                key: circuitKey,
+                now: this.clock.now(),
+                probeLeaseToken: permission.probeLeaseToken,
+              }
+            : { key: circuitKey, now: this.clock.now() },
+        );
         return result;
       }
       lastError = result.error;
@@ -125,15 +128,22 @@ export class EaClubsHttpClient {
     }
     if (!lastError) throw new TypeError("Provider request completed without a result");
     if (isRetryableProviderError(lastError)) {
-      await this.circuit.recordTransientFailure({
-        key: circuitKey,
-        now: this.clock.now(),
-        failureThreshold: 3,
-        cooldownMs: 60_000,
-        ...(permission.state === "half_open"
-          ? { probeLeaseToken: permission.probeLeaseToken }
-          : {}),
-      });
+      await this.circuit.recordTransientFailure(
+        permission.state === "half_open"
+          ? {
+              key: circuitKey,
+              now: this.clock.now(),
+              failureThreshold: 3,
+              cooldownMs: 60_000,
+              probeLeaseToken: permission.probeLeaseToken,
+            }
+          : {
+              key: circuitKey,
+              now: this.clock.now(),
+              failureThreshold: 3,
+              cooldownMs: 60_000,
+            },
+      );
     }
     return err(lastError);
   }

@@ -9,79 +9,104 @@ export interface ProductApiBffMisconfiguredFailure extends Error {
   readonly code: "product_api.bff_misconfigured";
 }
 
-export function productApiBffErrorResponse(error: unknown, requestId?: RequestId): Response {
+export type ClassifiedProductApiBffError =
+  | { readonly kind: "rate_limit_unavailable"; readonly error: BffRateLimitUnavailableError }
+  | { readonly kind: "misconfigured"; readonly error: ProductApiBffMisconfiguredFailure }
+  | { readonly kind: "unauthenticated"; readonly error: AuthUnauthenticatedError }
+  | { readonly kind: "unreachable"; readonly error: ProductApiUnreachableError }
+  | { readonly kind: "futrob_api"; readonly error: FutrobApiError }
+  | { readonly kind: "unexpected" };
+
+export function classifyProductApiBffError(error: Error): ClassifiedProductApiBffError {
   if (error instanceof BffRateLimitUnavailableError) {
-    return apiErrorResponse(
-      503,
-      {
-        code: error.code,
-        messageKey: "errors.api.rate_limit_unavailable",
-      },
-      requestId,
-    );
+    return { kind: "rate_limit_unavailable", error };
   }
-
   if (isProductApiBffMisconfiguredFailure(error)) {
-    return apiErrorResponse(
-      503,
-      {
-        code: error.code,
-        messageKey: "errors.product_api.bff_misconfigured",
-      },
-      requestId,
-    );
+    return { kind: "misconfigured", error };
   }
-
   if (error instanceof AuthUnauthenticatedError) {
-    return apiErrorResponse(
-      401,
-      {
-        code: "auth.unauthenticated",
-        messageKey: "errors.auth.unauthenticated",
-      },
-      requestId,
-    );
+    return { kind: "unauthenticated", error };
   }
-
   if (error instanceof ProductApiUnreachableError) {
-    return apiErrorResponse(
-      503,
-      {
-        code: error.code,
-        messageKey: "errors.product_api.unreachable",
-      },
-      requestId,
-    );
+    return { kind: "unreachable", error };
   }
-
   if (error instanceof FutrobApiError) {
-    return apiErrorResponse(
-      error.status,
-      {
-        code: error.code,
-        messageKey: error.messageKey,
-        details: error.details,
-        requestId: error.requestId,
-        retryAfterSeconds: error.retryAfterSeconds,
-      },
-      requestId,
-    );
+    return { kind: "futrob_api", error };
   }
+  return { kind: "unexpected" };
+}
 
-  return apiErrorResponse(
-    500,
-    {
-      code: "api.unexpected_error",
-      messageKey: "errors.api.unexpected_error",
-    },
-    requestId,
-  );
+export function productApiBffErrorResponse(
+  error: ClassifiedProductApiBffError,
+  requestId?: RequestId,
+): Response {
+  switch (error.kind) {
+    case "rate_limit_unavailable":
+      return apiErrorResponse(
+        503,
+        {
+          code: error.error.code,
+          messageKey: "errors.api.rate_limit_unavailable",
+        },
+        requestId,
+      );
+    case "misconfigured":
+      return apiErrorResponse(
+        503,
+        {
+          code: error.error.code,
+          messageKey: "errors.product_api.bff_misconfigured",
+        },
+        requestId,
+      );
+    case "unauthenticated":
+      return apiErrorResponse(
+        401,
+        {
+          code: "auth.unauthenticated",
+          messageKey: "errors.auth.unauthenticated",
+        },
+        requestId,
+      );
+    case "unreachable":
+      return apiErrorResponse(
+        503,
+        {
+          code: error.error.code,
+          messageKey: "errors.product_api.unreachable",
+        },
+        requestId,
+      );
+    case "futrob_api":
+      return apiErrorResponse(
+        error.error.status,
+        {
+          code: error.error.code,
+          messageKey: error.error.messageKey,
+          details: error.error.details,
+          requestId: error.error.requestId,
+          retryAfterSeconds: error.error.retryAfterSeconds,
+        },
+        requestId,
+      );
+    case "unexpected":
+      return apiErrorResponse(
+        500,
+        {
+          code: "api.unexpected_error",
+          messageKey: "errors.api.unexpected_error",
+        },
+        requestId,
+      );
+  }
+}
+
+export function productApiBffErrorResponseForError(error: Error, requestId?: RequestId): Response {
+  return productApiBffErrorResponse(classifyProductApiBffError(error), requestId);
 }
 
 function isProductApiBffMisconfiguredFailure(
-  error: unknown,
+  error: Error,
 ): error is ProductApiBffMisconfiguredFailure {
-  return (
-    error instanceof Error && "code" in error && error.code === "product_api.bff_misconfigured"
-  );
+  return "code" in error && error.code === "product_api.bff_misconfigured";
 }

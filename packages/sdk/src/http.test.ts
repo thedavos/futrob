@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { FutrobApiError } from "./errors.ts";
 import { HttpClient } from "./http.ts";
+import type { HttpResponseBody } from "./wire-body.ts";
 
 describe("HttpClient request correlation", () => {
   it("uses the response header when a legacy error body has no request ID", async () => {
@@ -14,12 +15,13 @@ describe("HttpClient request correlation", () => {
         ),
     });
 
-    const caught = await client
-      .request({ path: "/identity/onboarding", method: "GET", parse: (data) => data })
-      .catch((error: unknown) => error);
-
-    expect(caught).toBeInstanceOf(FutrobApiError);
-    expect(caught).toMatchObject({ requestId, status: 401 });
+    await expect(
+      client.request({
+        path: "/identity/onboarding",
+        method: "GET",
+        parse: (data: HttpResponseBody) => data,
+      }),
+    ).rejects.toMatchObject({ requestId, status: 401 });
   });
 
   it("propagates retryAfterSeconds from a typed rate-limit response", async () => {
@@ -36,12 +38,13 @@ describe("HttpClient request correlation", () => {
         ),
     });
 
-    const caught = await client
-      .request({ path: "/game-data/clubs/search", method: "GET", parse: (data) => data })
-      .catch((error: unknown) => error);
-
-    expect(caught).toBeInstanceOf(FutrobApiError);
-    expect(caught).toMatchObject({
+    await expect(
+      client.request({
+        path: "/game-data/clubs/search",
+        method: "GET",
+        parse: (data: HttpResponseBody) => data,
+      }),
+    ).rejects.toMatchObject({
       code: "api.rate_limited",
       retryAfterSeconds: 37,
       status: 429,
@@ -58,11 +61,13 @@ describe("HttpClient request correlation", () => {
         ),
     });
 
-    const caught = await client
-      .request({ path: "/game-data/clubs/search", method: "GET", parse: (data) => data })
-      .catch((error: unknown) => error);
-
-    expect(caught).toMatchObject({ retryAfterSeconds: 41, status: 429 });
+    await expect(
+      client.request({
+        path: "/game-data/clubs/search",
+        method: "GET",
+        parse: (data: HttpResponseBody) => data,
+      }),
+    ).rejects.toMatchObject({ retryAfterSeconds: 41, status: 429 });
   });
 
   it("sends X-Request-ID on every request", async () => {
@@ -75,10 +80,33 @@ describe("HttpClient request correlation", () => {
       },
     });
 
-    await client.request({ path: "/meta/ping", method: "GET", parse: (data) => data });
+    await client.request({
+      path: "/meta/ping",
+      method: "GET",
+      parse: (data: HttpResponseBody) => data,
+    });
 
     expect(sent).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
+  });
+
+  it("throws FutrobApiError for API failures", async () => {
+    const client = new HttpClient({
+      baseUrl: "https://api.futrob.test",
+      fetchImpl: async () =>
+        Response.json(
+          { code: "api.unauthorized", messageKey: "errors.api.unauthorized" },
+          { status: 401 },
+        ),
+    });
+
+    await expect(
+      client.request({
+        path: "/identity/onboarding",
+        method: "GET",
+        parse: (data: HttpResponseBody) => data,
+      }),
+    ).rejects.toBeInstanceOf(FutrobApiError);
   });
 });

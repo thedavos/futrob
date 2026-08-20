@@ -1,3 +1,4 @@
+import { apiErrorSchema, searchClubsResponseSchema } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import searchClubsFixture from "@/adapters/game-data/ea-clubs/fixtures/search-clubs.json";
 import type { CorrelationLogEntry } from "@/context/request-correlation.ts";
@@ -8,6 +9,7 @@ import {
   serviceHeaders,
   stubFetch,
 } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http game-data clubs", () => {
   it("rejects game-data requests without valid service auth before provider egress", async () => {
@@ -86,7 +88,7 @@ describe("apps/api http game-data clubs", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get("x-request-id")).toBe(requestId);
-    const body = (await res.json()) as { clubs: Array<{ externalClubId: string; name: string }> };
+    const body = await parseResponse(searchClubsResponseSchema, res);
     expect(body.clubs[0]?.externalClubId).toBe("10754");
     expect(body.clubs[0]?.name).toBe("Fera Enjaulada");
     expect(correlationLogEntries).toContainEqual(
@@ -107,7 +109,7 @@ describe("apps/api http game-data clubs", () => {
     });
 
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { code: string; requestId?: string };
+    const body = await parseResponse(apiErrorSchema, res);
     expect(body).toMatchObject({ code: "api.validation_error" });
     expect(body.requestId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
@@ -126,7 +128,7 @@ describe("apps/api http game-data clubs", () => {
 
     expect(res.status).toBe(502);
     expect(res.headers.get("x-request-id")).toBe(requestId);
-    expect((await res.json()) as { code: string }).toMatchObject({
+    expect(await parseResponse(apiErrorSchema, res)).toMatchObject({
       code: "game_data.ea_clubs_http_error",
       requestId,
     });

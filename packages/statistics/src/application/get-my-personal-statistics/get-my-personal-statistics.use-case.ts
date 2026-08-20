@@ -62,14 +62,26 @@ export class GetMyPersonalStatisticsUseCase {
       return stats ? toPersonalStats(stats) : null;
     }
 
-    const contributions = await this.deps.contributions.listMatched({
+    const contributionQuery = {
       playerProfileId: profile.id,
-      ...(input.competitionId === undefined ? {} : { competitionId: input.competitionId }),
-      ...(input.teamId === undefined ? {} : { teamId: input.teamId }),
-      ...(input.gameEdition === undefined ? {} : { gameEdition: input.gameEdition }),
-      ...(input.platform === undefined ? {} : { platform: input.platform }),
-      ...(input.position === undefined ? {} : { position: input.position }),
-    });
+    };
+    if (input.competitionId !== undefined) {
+      Object.assign(contributionQuery, { competitionId: input.competitionId });
+    }
+    if (input.teamId !== undefined) {
+      Object.assign(contributionQuery, { teamId: input.teamId });
+    }
+    if (input.gameEdition !== undefined) {
+      Object.assign(contributionQuery, { gameEdition: input.gameEdition });
+    }
+    if (input.platform !== undefined) {
+      Object.assign(contributionQuery, { platform: input.platform });
+    }
+    if (input.position !== undefined) {
+      Object.assign(contributionQuery, { position: input.position });
+    }
+
+    const contributions = await this.deps.contributions.listMatched(contributionQuery);
     if (contributions.length === 0) return null;
     return {
       playerProfileId: profile.id,

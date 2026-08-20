@@ -13,6 +13,8 @@ import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
 import { stepsForPath } from "../onboarding-step-meta.ts";
+import { buildOnboardingFlowErrorDisplay } from "@/shared/presentation/support-fields.ts";
+import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import {
   finalizationError,
   type OnboardingSupportError,
@@ -43,7 +45,8 @@ export function InvitationStep() {
         await flow.goTo("game-account", "invitation");
       }
     } catch (caught) {
-      const error = finalizationError("invitation", caught);
+      const clientError = caught instanceof IdentityOnboardingClientError ? caught : null;
+      const error = finalizationError("invitation", clientError);
       retry.start(error.retryAfterSeconds);
       setPreviewError(error);
       window.requestAnimationFrame(() => inputRef.current?.focus());
@@ -106,13 +109,13 @@ export function InvitationStep() {
             <div id="invitation-preview-error">
               <SupportErrorAlert
                 copy={supportCopy}
-                error={{
+                error={buildOnboardingFlowErrorDisplay({
                   message: t(previewError.messageKey),
-                  ...(previewError.requestId ? { requestId: previewError.requestId } : {}),
-                  ...(previewError.retryAfterSeconds
-                    ? { retryAfterSeconds: retry.remainingSeconds || undefined }
-                    : {}),
-                }}
+                  requestId: previewError.requestId,
+                  retryAfterSeconds: previewError.retryAfterSeconds
+                    ? retry.remainingSeconds || undefined
+                    : undefined,
+                })}
               />
             </div>
           ) : null}

@@ -37,7 +37,7 @@ const buttonVariants = cva(
 );
 
 /** Stops browsers from restoring dynamic `disabled` across reloads (SSR hydration mismatch). */
-const disableFormStateRestore = { autoComplete: "off" } as ButtonPrimitive.Props;
+const disableFormStateRestore = { autoComplete: "off" } as const;
 
 type ButtonProps = ButtonPrimitive.Props &
   VariantProps<typeof buttonVariants> & {

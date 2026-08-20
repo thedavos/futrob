@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
 import { FutrobApiError } from "@futrob/sdk";
-import { productApiBffErrorResponse } from "./product-api-bff-error-response.ts";
+import {
+  productApiBffErrorResponse,
+  productApiBffErrorResponseForError,
+} from "./product-api-bff-error-response.ts";
 import { ProductApiUnreachableError } from "./product-api-client.ts";
 import { BffRateLimitUnavailableError } from "@/shared/infrastructure/rate-limit/enforce-bff-rate-limit.ts";
 
@@ -16,7 +19,7 @@ describe("productApiBffErrorResponse", () => {
       },
     });
 
-    const response = productApiBffErrorResponse(error, requestId);
+    const response = productApiBffErrorResponseForError(error, requestId);
 
     expect(response.headers.get("x-request-id")).toBe(requestId);
     expect(await response.json()).toMatchObject({
@@ -28,7 +31,10 @@ describe("productApiBffErrorResponse", () => {
   it("sanitizes unexpected BFF failures when correlation is active", async () => {
     const requestId = "6ac06d3e-105e-44d6-88b5-8955978b636b";
 
-    const response = productApiBffErrorResponse(new Error("secret database detail"), requestId);
+    const response = productApiBffErrorResponseForError(
+      new Error("secret database detail"),
+      requestId,
+    );
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({
@@ -41,7 +47,10 @@ describe("productApiBffErrorResponse", () => {
   it("returns a sanitized 503 when rate-limit infrastructure is unavailable", async () => {
     const requestId = "6128b21e-92a7-4dd7-b4df-5b044325203b";
 
-    const response = productApiBffErrorResponse(new BffRateLimitUnavailableError(), requestId);
+    const response = productApiBffErrorResponseForError(
+      new BffRateLimitUnavailableError(),
+      requestId,
+    );
 
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -53,7 +62,10 @@ describe("productApiBffErrorResponse", () => {
 
   it("returns a sanitized 503 when the product API is unreachable", async () => {
     const requestId = "9c1d0a3e-2f7b-4c8a-9d1e-6b5a4c3d2e1f";
-    const response = productApiBffErrorResponse(new ProductApiUnreachableError(), requestId);
+    const response = productApiBffErrorResponseForError(
+      new ProductApiUnreachableError(),
+      requestId,
+    );
 
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -64,7 +76,17 @@ describe("productApiBffErrorResponse", () => {
   });
 
   it("sanitizes unexpected BFF failures without a request ID", async () => {
-    const response = productApiBffErrorResponse(new Error("secret database detail"));
+    const response = productApiBffErrorResponseForError(new Error("secret database detail"));
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      code: "api.unexpected_error",
+      messageKey: "errors.api.unexpected_error",
+    });
+  });
+
+  it("handles non-error thrown values via the unexpected branch", async () => {
+    const response = productApiBffErrorResponse({ kind: "unexpected" });
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({

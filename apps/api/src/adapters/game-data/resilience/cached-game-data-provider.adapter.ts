@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { err, ok, type ClockPort, type IdGeneratorPort, type Result } from "@futrob/shared-kernel";
+import { externalClubSchema } from "@futrob/api-contracts";
+import { z } from "zod";
 import {
   ProviderRefreshInProgress,
   isRetryableProviderError,
@@ -12,7 +14,7 @@ import {
   type ProviderMatchIngestionPort,
   type SearchExternalClubsInput,
 } from "@futrob/game-data";
-import type { ProviderCacheEntry, ProviderResponseCache } from "./provider-response-cache.ts";
+import type { ProviderResponseCache } from "./provider-response-cache.ts";
 import { logCorrelatedInfo } from "@/context/request-correlation.ts";
 
 const REFRESH_LEASE_MS = 45_000;
@@ -41,14 +43,22 @@ export class CachedGameDataProviderAdapter
   }
 
   searchClubs(input: SearchExternalClubsInput) {
-    return this.loadCached("search-clubs", normalizeSearch(input), this.deps.searchTtlMs, () =>
-      this.provider.searchClubs(input),
+    return this.loadCached(
+      "search-clubs",
+      normalizeSearch(input),
+      this.deps.searchTtlMs,
+      z.array(externalClubSchema),
+      () => this.provider.searchClubs(input),
     );
   }
 
   getClubInfo(input: GetExternalClubInput) {
-    return this.loadCached("club-info", normalizeClub(input), this.deps.clubTtlMs, () =>
-      this.provider.getClubInfo(input),
+    return this.loadCached(
+      "club-info",
+      normalizeClub(input),
+      this.deps.clubTtlMs,
+      externalClubSchema,
+      () => this.provider.getClubInfo(input),
     );
   }
 
@@ -66,14 +76,15 @@ export class CachedGameDataProviderAdapter
     operation: string,
     normalizedInput: Readonly<Record<string, string>>,
     ttlMs: number,
+    schema: z.ZodType<T>,
     load: () => Promise<Result<T, ProviderError>>,
   ): Promise<Result<T, ProviderError>> {
     const key = cacheKey(this.key, operation, normalizedInput);
     const now = this.deps.clock.now();
-    let cached = await this.deps.cache.read<T>(key);
+    let cached = await this.deps.cache.read(key);
     if (cached && cached.freshUntil > now) {
       this.logCache(operation, "cache_hit");
-      return cachedResult(cached);
+      return ok(schema.parse(cached.value));
     }
     this.logCache(operation, "cache_miss");
 
@@ -89,17 +100,17 @@ export class CachedGameDataProviderAdapter
     if (!acquired) {
       if (cached && cached.staleUntil > this.deps.clock.now()) {
         this.logCache(operation, "cache_stale");
-        return cachedResult(cached);
+        return ok(schema.parse(cached.value));
       }
       await this.deps.sleep(FOLLOWER_POLL_MS);
-      cached = await this.deps.cache.read<T>(key);
+      cached = await this.deps.cache.read(key);
       if (cached && cached.freshUntil > this.deps.clock.now()) {
         this.logCache(operation, "cache_hit");
-        return cachedResult(cached);
+        return ok(schema.parse(cached.value));
       }
       if (cached && cached.staleUntil > this.deps.clock.now()) {
         this.logCache(operation, "cache_stale");
-        return cachedResult(cached);
+        return ok(schema.parse(cached.value));
       }
       return err(
         new ProviderRefreshInProgress({
@@ -115,7 +126,7 @@ export class CachedGameDataProviderAdapter
       if (!result.isOk()) {
         if (cached && cached.staleUntil > now && isRetryableProviderError(result.error)) {
           this.logCache(operation, "cache_stale");
-          return cachedResult(cached);
+          return ok(schema.parse(cached.value));
         }
         return result;
       }
@@ -139,10 +150,6 @@ export class CachedGameDataProviderAdapter
   private logCache(operation: string, outcome: "cache_hit" | "cache_miss" | "cache_stale"): void {
     logCorrelatedInfo("provider.cache", { provider: this.key, operation, outcome });
   }
-}
-
-function cachedResult<T>(entry: ProviderCacheEntry<T>): Result<T, never> {
-  return ok(entry.value);
 }
 
 function cacheKey(

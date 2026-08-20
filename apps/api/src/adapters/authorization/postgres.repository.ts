@@ -1,9 +1,9 @@
+import { authorizationScopeTypeSchema, permissionSchema } from "@futrob/api-contracts";
 import type {
   AccessGrant,
   AccessGrantRepository,
   AuthorizationAuditEntry,
   AuthorizationAuditRepository,
-  GrantEffect,
   PlatformRoleAssignment,
   PlatformRoleRepository,
 } from "@futrob/organizations";
@@ -17,7 +17,15 @@ import {
   type AuthorizationMutationLockPort,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { z } from "zod";
+import {
+  pgNullableTextSchema,
+  pgTextSchema,
+  pgTimestampSchema,
+} from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
+
+const grantEffectSchema = z.enum(["allow", "deny"]);
 
 export class PostgresAccessGrantRepository implements AccessGrantRepository {
   constructor(private readonly pool: Pool) {}
@@ -299,56 +307,54 @@ export interface AuthorizationAuditRow {
 
 function rehydrateGrant(row: AccessGrantRow): AccessGrant {
   return {
-    id: requiredText(row.id),
+    id: pgTextSchema.parse(row.id),
     organizationId: row.organization_id
-      ? asOrganizationId(requiredText(row.organization_id))
+      ? asOrganizationId(pgTextSchema.parse(row.organization_id))
       : null,
-    actorId: asActorId(requiredText(row.actor_id)),
-    permission: requiredText(row.permission) as Permission,
-    effect: requiredText(row.effect) as GrantEffect,
-    scopeType: requiredText(row.scope_type) as AuthorizationScopeType,
-    scopeId: requiredText(row.scope_id),
-    grantedByActorId: asActorId(requiredText(row.granted_by_actor_id)),
-    reason: nullableText(row.reason),
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at),
+    actorId: asActorId(pgTextSchema.parse(row.actor_id)),
+    permission: toPermission(permissionSchema.parse(pgTextSchema.parse(row.permission))),
+    effect: grantEffectSchema.parse(pgTextSchema.parse(row.effect)),
+    scopeType: authorizationScopeTypeSchema.parse(pgTextSchema.parse(row.scope_type)),
+    scopeId: pgTextSchema.parse(row.scope_id),
+    grantedByActorId: asActorId(pgTextSchema.parse(row.granted_by_actor_id)),
+    reason: pgNullableTextSchema.parse(row.reason),
+    createdAt: pgTimestampSchema.parse(row.created_at),
+    updatedAt: pgTimestampSchema.parse(row.updated_at),
   };
 }
 
 function rehydratePlatformRole(row: PlatformRoleRow): PlatformRoleAssignment {
   return {
-    actorId: asActorId(requiredText(row.actor_id)),
+    actorId: asActorId(pgTextSchema.parse(row.actor_id)),
     role: "superuser",
-    assignedByActorId: asActorId(requiredText(row.assigned_by_actor_id)),
-    createdAt: new Date(row.created_at),
+    assignedByActorId: asActorId(pgTextSchema.parse(row.assigned_by_actor_id)),
+    createdAt: pgTimestampSchema.parse(row.created_at),
   };
 }
 
 function rehydrateAuditEntry(row: AuthorizationAuditRow): AuthorizationAuditEntry {
   return {
-    id: requiredText(row.id),
-    actorId: asActorId(requiredText(row.actor_id)),
-    action: requiredText(row.action),
-    targetActorId: asActorId(requiredText(row.target_actor_id)),
+    id: pgTextSchema.parse(row.id),
+    actorId: asActorId(pgTextSchema.parse(row.actor_id)),
+    action: pgTextSchema.parse(row.action),
+    targetActorId: asActorId(pgTextSchema.parse(row.target_actor_id)),
     organizationId: row.organization_id
-      ? asOrganizationId(requiredText(row.organization_id))
+      ? asOrganizationId(pgTextSchema.parse(row.organization_id))
       : null,
-    scopeType: requiredText(row.scope_type) as AuthorizationScopeType,
-    scopeId: requiredText(row.scope_id),
-    permission: row.permission ? (requiredText(row.permission) as Permission) : null,
+    scopeType: authorizationScopeTypeSchema.parse(pgTextSchema.parse(row.scope_type)),
+    scopeId: pgTextSchema.parse(row.scope_id),
+    permission: row.permission
+      ? toPermission(permissionSchema.parse(pgTextSchema.parse(row.permission)))
+      : null,
     before: row.before_value ?? null,
     after: row.after_value ?? null,
-    reason: nullableText(row.reason),
-    createdAt: new Date(row.created_at),
+    reason: pgNullableTextSchema.parse(row.reason),
+    createdAt: pgTimestampSchema.parse(row.created_at),
   };
 }
 
-function requiredText(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "bigint") return `${value}`;
-  throw new Error("Expected a scalar text value from Postgres");
-}
-
-function nullableText(value: unknown): string | null {
-  return value === null || value === undefined ? null : requiredText(value);
+function toPermission(value: string): Permission {
+  const parsed = permissionSchema.parse(value);
+  // SAFETY: Permission wire values are validated by permissionSchema before branding.
+  return parsed as Permission;
 }

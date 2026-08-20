@@ -1,45 +1,53 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { ActorOnboardingPort } from "@futrob/identity";
 import { asActorId } from "@futrob/shared-kernel";
-import type { Pool } from "pg";
+import { z } from "zod";
+import { asPgPool, type FakePgQueryable } from "@/adapters/persistence/pg-test-double.ts";
 
 import { InMemoryActorOnboardingRepository } from "./in-memory-actor-onboarding.repository.ts";
 import { PostgresActorOnboardingRepository } from "./postgres-actor-onboarding.repository.ts";
 
+const onboardingPathSchema = z.enum(["player", "organization", "invitation"]);
+const onboardingStepSchema = z.enum([
+  "intention",
+  "organization",
+  "competition",
+  "game",
+  "invitation",
+  "game-account",
+  "club",
+  "team",
+  "review",
+]);
 interface StoredRow {
   actor_id: string;
   onboarding_completed: boolean;
   onboarding_completed_at: string | null;
   onboarding_version: number | null;
-  onboarding_path: "player" | "organization" | "invitation" | null;
-  onboarding_current_step:
-    | "intention"
-    | "organization"
-    | "competition"
-    | "game"
-    | "invitation"
-    | "game-account"
-    | "club"
-    | "team"
-    | "review"
-    | null;
+  onboarding_path: z.infer<typeof onboardingPathSchema> | null;
+  onboarding_current_step: z.infer<typeof onboardingStepSchema> | null;
 }
 
 class FakeActorOnboardingPool {
   private readonly rows = new Map<string, StoredRow>();
 
+  async connect(): Promise<FakePgQueryable> {
+    throw new Error("connect not used");
+  }
+
   seed(row: StoredRow) {
     this.rows.set(row.actor_id, row);
   }
 
-  async query(text: string, values: readonly unknown[]) {
-    const actorId = String(values[0]);
+  async query(text: string, values?: readonly unknown[]) {
+    const actorId = String(values?.[0]);
     if (text.includes("SELECT actor_id")) {
       const row = this.rows.get(actorId);
       return { rows: row ? [row] : [] };
     }
 
     if (text.includes("VALUES ($1, FALSE")) {
+      if (!values) throw new Error("expected onboarding insert values");
       const existing = this.rows.get(actorId);
       if (!existing?.onboarding_completed) {
         this.rows.set(actorId, {
@@ -47,14 +55,15 @@ class FakeActorOnboardingPool {
           onboarding_completed: false,
           onboarding_completed_at: null,
           onboarding_version: null,
-          onboarding_path: values[1] as StoredRow["onboarding_path"],
-          onboarding_current_step: values[2] as StoredRow["onboarding_current_step"],
+          onboarding_path: onboardingPathSchema.parse(values[1]),
+          onboarding_current_step: onboardingStepSchema.parse(values[2]),
         });
       }
       return { rows: [] };
     }
 
     if (text.includes("VALUES ($1, TRUE")) {
+      if (!values) throw new Error("expected onboarding completion values");
       const existing = this.rows.get(actorId);
       if (!existing?.onboarding_completed) {
         this.rows.set(actorId, {
@@ -62,7 +71,7 @@ class FakeActorOnboardingPool {
           onboarding_completed: true,
           onboarding_completed_at: String(values[1]),
           onboarding_version: Number(values[2]),
-          onboarding_path: values[3] as StoredRow["onboarding_path"],
+          onboarding_path: onboardingPathSchema.parse(values[3]),
           onboarding_current_step: null,
         });
       }
@@ -78,7 +87,7 @@ function repositoryCases(): Array<[string, () => ActorOnboardingPort]> {
     ["in-memory", () => new InMemoryActorOnboardingRepository()],
     [
       "Postgres",
-      () => new PostgresActorOnboardingRepository(new FakeActorOnboardingPool() as unknown as Pool),
+      () => new PostgresActorOnboardingRepository(asPgPool(new FakeActorOnboardingPool())),
     ],
   ];
 }
@@ -129,7 +138,7 @@ it("normalizes a legacy Postgres team step at the persistence boundary", async (
     onboarding_path: "player",
     onboarding_current_step: "team",
   });
-  const repository = new PostgresActorOnboardingRepository(pool as unknown as Pool);
+  const repository = new PostgresActorOnboardingRepository(asPgPool(pool));
 
   await expect(repository.findByActor(asActorId("actor-legacy-team"))).resolves.toMatchObject({
     path: "player",

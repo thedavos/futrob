@@ -1,4 +1,11 @@
-import { err, ok, type ActorId, type ClockPort, type Result } from "@futrob/shared-kernel";
+import {
+  err,
+  ok,
+  type ActorId,
+  type ClockPort,
+  type Result,
+  type IdGeneratorPort,
+} from "@futrob/shared-kernel";
 import type { CompetitionRosterMembership } from "../../domain/entities/competition-roster-membership.ts";
 import { ROSTER_INVITATION_STATUS } from "../../domain/entities/roster-invitation.ts";
 import {
@@ -25,8 +32,7 @@ import type { RosterInvitationTokenPort } from "../../domain/ports/roster-invita
 import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { addToRosterUnchecked } from "../add-to-roster/add-to-roster.use-case.ts";
-import type { IdGeneratorPort } from "@futrob/shared-kernel";
-import { EnsurePlayerProfileUseCase } from "../ensure-player-profile/ensure-player-profile.use-case.ts";
+import type { EnsurePlayerProfileUseCase } from "../ensure-player-profile/ensure-player-profile.use-case.ts";
 
 export interface AcceptRosterInvitationInput {
   readonly token: string;

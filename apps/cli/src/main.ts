@@ -7,24 +7,27 @@ import { printError } from "./lib/print.ts";
 
 type Command = (args: string[]) => Promise<number>;
 
-const commands: Record<string, Command> = {
+const commands = {
   help: async () => help(),
   ping: async () => ping(),
   "domain-smoke": async () => domainSmoke(),
   "search-clubs": async (args) => searchClubs(args),
-};
+} satisfies Record<string, Command>;
+
+function isCommandName(name: string): name is keyof typeof commands {
+  return name in commands;
+}
 
 async function main(): Promise<number> {
   const [commandName = "help", ...args] = process.argv.slice(2);
-  const command = commands[commandName];
 
-  if (!command) {
+  if (!isCommandName(commandName)) {
     printError(`Unknown command: ${commandName}`);
     await help();
     return 1;
   }
 
-  return command(args);
+  return commands[commandName](args);
 }
 
 const code = await main();

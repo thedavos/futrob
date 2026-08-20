@@ -45,7 +45,8 @@ import {
   type OpenRosterResponse,
   type RequestId,
 } from "@futrob/api-contracts";
-import { readBrowserApiError } from "@/shared/infrastructure/http/browser-api-error.ts";
+import { requestBrowserJson } from "@/shared/infrastructure/http/browser-json-request.ts";
+import type { z } from "zod";
 
 export class TeamsClientError extends Error {
   constructor(
@@ -59,32 +60,21 @@ export class TeamsClientError extends Error {
   }
 }
 
-async function requestJson<T>(input: {
+async function requestTeamsJson<T>(input: {
   readonly path: string;
   readonly method: "GET" | "PATCH" | "POST" | "PUT";
   readonly body?: unknown;
-  readonly parse: (data: unknown) => T;
+  readonly schema: z.ZodType<T>;
 }): Promise<T> {
-  const response = await fetch(input.path, {
+  return requestBrowserJson({
+    path: input.path,
     method: input.method,
-    credentials: "include",
-    headers:
-      input.body === undefined
-        ? { Accept: "application/json" }
-        : { Accept: "application/json", "Content-Type": "application/json" },
-    body: input.body === undefined ? undefined : JSON.stringify(input.body),
+    body: input.body,
+    schema: input.schema,
+    fallbackCode: "teams.client_error",
+    createError: (status, error) =>
+      new TeamsClientError(status, error.code, error.requestId, error.retryAfterSeconds),
   });
-  const raw: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error = readBrowserApiError(response, raw, "teams.client_error");
-    throw new TeamsClientError(
-      response.status,
-      error.code,
-      error.requestId,
-      error.retryAfterSeconds,
-    );
-  }
-  return input.parse(raw);
 }
 
 export const teamsBrowserClient = {
@@ -96,10 +86,10 @@ export const teamsBrowserClient = {
     const parsed = competitionTeamManagementListQuerySchema.parse(query);
     const search = new URLSearchParams({ limit: String(parsed.limit) });
     if (parsed.cursor) search.set("cursor", parsed.cursor);
-    return requestJson({
+    return requestTeamsJson({
       path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management?${search.toString()}`,
       method: "GET",
-      parse: (data) => competitionTeamManagementListResponseSchema.parse(data),
+      schema: competitionTeamManagementListResponseSchema,
     });
   },
   getCompetitionTeamManagement(
@@ -107,10 +97,10 @@ export const teamsBrowserClient = {
     competitionId: string,
     teamId: string,
   ): Promise<CompetitionTeamManagementDetailResponse> {
-    return requestJson({
+    return requestTeamsJson({
       path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management/${encodeURIComponent(teamId)}`,
       method: "GET",
-      parse: (data) => competitionTeamManagementDetailResponseSchema.parse(data),
+      schema: competitionTeamManagementDetailResponseSchema,
     });
   },
   changeRosterRole(
@@ -121,11 +111,11 @@ export const teamsBrowserClient = {
     input: ChangeRosterRoleRequest,
   ): Promise<ChangeRosterRoleResponse> {
     const body = changeRosterRoleRequestSchema.parse(input);
-    return requestJson({
+    return requestTeamsJson({
       path: competitionTeamPath(organizationId, competitionId, teamId, `roster/${membershipId}`),
       method: "PATCH",
       body,
-      parse: (data) => changeRosterRoleResponseSchema.parse(data),
+      schema: changeRosterRoleResponseSchema,
     });
   },
   closeRoster(
@@ -133,10 +123,10 @@ export const teamsBrowserClient = {
     competitionId: string,
     teamId: string,
   ): Promise<CloseRosterResponse> {
-    return requestJson({
+    return requestTeamsJson({
       path: competitionTeamPath(organizationId, competitionId, teamId, "roster/close"),
       method: "POST",
-      parse: (data) => closeRosterResponseSchema.parse(data),
+      schema: closeRosterResponseSchema,
     });
   },
   openRoster(
@@ -144,10 +134,10 @@ export const teamsBrowserClient = {
     competitionId: string,
     teamId: string,
   ): Promise<OpenRosterResponse> {
-    return requestJson({
+    return requestTeamsJson({
       path: competitionTeamPath(organizationId, competitionId, teamId, "roster/open"),
       method: "POST",
-      parse: (data) => openRosterResponseSchema.parse(data),
+      schema: openRosterResponseSchema,
     });
   },
   connectExternalClub(
@@ -157,11 +147,11 @@ export const teamsBrowserClient = {
     input: ConnectTeamExternalClubRequest,
   ): Promise<ConnectTeamExternalClubResponse> {
     const body = connectTeamExternalClubRequestSchema.parse(input);
-    return requestJson({
+    return requestTeamsJson({
       path: competitionTeamPath(organizationId, competitionId, teamId, "external-club"),
       method: "PUT",
       body,
-      parse: (data) => connectTeamExternalClubResponseSchema.parse(data),
+      schema: connectTeamExternalClubResponseSchema,
     });
   },
   createRosterInvitation(
@@ -171,11 +161,11 @@ export const teamsBrowserClient = {
     input: CreateRosterInvitationRequestInput,
   ): Promise<CreateRosterInvitationResponse> {
     const body = createRosterInvitationRequestSchema.parse(input);
-    return requestJson({
+    return requestTeamsJson({
       path: competitionTeamPath(organizationId, competitionId, teamId, "roster-invitations"),
       method: "POST",
       body,
-      parse: (data) => createRosterInvitationResponseSchema.parse(data),
+      schema: createRosterInvitationResponseSchema,
     });
   },
   decideEntry(
@@ -184,64 +174,64 @@ export const teamsBrowserClient = {
     entryId: string,
     decision: "approve" | "reject",
   ): Promise<DecideTeamEntryResponse> {
-    return requestJson({
+    return requestTeamsJson({
       path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/entries/${encodeURIComponent(entryId)}/${decision}`,
       method: "POST",
-      parse: (data) => decideTeamEntryResponseSchema.parse(data),
+      schema: decideTeamEntryResponseSchema,
     });
   },
   getMyProfile(): Promise<GetMyPlayerProfileResponse> {
-    return requestJson({
+    return requestTeamsJson({
       path: "/api/v1/players/me",
       method: "GET",
-      parse: (data) => getMyPlayerProfileResponseSchema.parse(data),
+      schema: getMyPlayerProfileResponseSchema,
     });
   },
   addMyGameAccount(input: AddMyPlayerGameAccountRequest): Promise<AddMyPlayerGameAccountResponse> {
     const body = addMyPlayerGameAccountRequestSchema.parse(input);
-    return requestJson({
+    return requestTeamsJson({
       path: "/api/v1/players/me/game-accounts",
       method: "POST",
       body,
-      parse: (data) => addMyPlayerGameAccountResponseSchema.parse(data),
+      schema: addMyPlayerGameAccountResponseSchema,
     });
   },
   associateMyExternalClub(
     input: AssociateMyPlayerExternalClubRequest,
   ): Promise<AssociateMyPlayerExternalClubResponse> {
     const body = associateMyPlayerExternalClubRequestSchema.parse(input);
-    return requestJson({
+    return requestTeamsJson({
       path: "/api/v1/players/me/external-club",
       method: "POST",
       body,
-      parse: (data) => associateMyPlayerExternalClubResponseSchema.parse(data),
+      schema: associateMyPlayerExternalClubResponseSchema,
     });
   },
   getMyTeams(): Promise<GetMyTeamsResponse> {
-    return requestJson({
+    return requestTeamsJson({
       path: "/api/v1/players/me/teams",
       method: "GET",
-      parse: (data) => getMyTeamsResponseSchema.parse(data),
+      schema: getMyTeamsResponseSchema,
     });
   },
   setActiveTeam(input: SetActiveTeamRequest): Promise<SetActiveTeamResponse> {
     const body = setActiveTeamRequestSchema.parse(input);
-    return requestJson({
+    return requestTeamsJson({
       path: "/api/v1/players/me/active-team",
       method: "PUT",
       body,
-      parse: (data) => setActiveTeamResponseSchema.parse(data),
+      schema: setActiveTeamResponseSchema,
     });
   },
   acceptRosterInvitation(
     input: AcceptRosterInvitationRequest,
   ): Promise<AcceptRosterInvitationResponse> {
     const body = acceptRosterInvitationRequestSchema.parse(input);
-    return requestJson({
+    return requestTeamsJson({
       path: "/api/v1/roster-invitations/accept",
       method: "POST",
       body,
-      parse: (data) => acceptRosterInvitationResponseSchema.parse(data),
+      schema: acceptRosterInvitationResponseSchema,
     });
   },
 };

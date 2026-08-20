@@ -1,45 +1,78 @@
-import type { ClaimPendingOptions, RosterInvitationRepository } from "@futrob/teams";
-import { ROSTER_INVITATION_STATUS, type RosterInvitation } from "@futrob/teams";
+import {
+  type ClaimPendingOptions,
+  type RosterInvitationRepository,
+  ROSTER_INVITATION_STATUS,
+  type RosterInvitation,
+} from "@futrob/teams";
+import { redeemPolicySchema, rosterMembershipRoleSchema } from "@futrob/api-contracts";
 import type { ActorId } from "@futrob/shared-kernel";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { z } from "zod";
+import {
+  pgNullableTextSchema,
+  pgTextSchema,
+  pgTimestampSchema,
+} from "@/adapters/persistence/pg-scalar.ts";
 import {
   getPgExecutor,
   isInPgTransaction,
   type PgExecutor,
 } from "@/adapters/persistence/pg-transaction.ts";
 
-export function rehydrateRosterInvitation(row: {
-  id: string;
-  organization_id: string;
-  competition_id: string;
-  team_id: string;
-  role: string;
-  token_hash: string;
-  status: string;
-  invited_by_actor_id: string;
-  expires_at: Date | string;
-  accepted_by_actor_id: string | null;
-  created_at: Date | string;
-  redeem_policy: string;
-}): RosterInvitation {
+const rosterInvitationStatusSchema = z.enum(["pending", "accepted", "revoked", "expired"]);
+
+export const rosterInvitationRowSchema = z.object({
+  id: pgTextSchema,
+  organization_id: pgTextSchema,
+  competition_id: pgTextSchema,
+  team_id: pgTextSchema,
+  role: rosterMembershipRoleSchema,
+  token_hash: pgTextSchema,
+  status: rosterInvitationStatusSchema,
+  invited_by_actor_id: pgTextSchema,
+  expires_at: pgTimestampSchema,
+  accepted_by_actor_id: pgNullableTextSchema,
+  created_at: pgTimestampSchema,
+  redeem_policy: redeemPolicySchema,
+});
+
+export type RosterInvitationRow = z.infer<typeof rosterInvitationRowSchema>;
+
+const redemptionAtRowSchema = z.object({
+  redeemed_at: pgTimestampSchema,
+});
+
+const memberCountRowSchema = z.object({
+  member_count: z.coerce.number(),
+});
+
+const redemptionCountRowSchema = z.object({
+  redemption_count: z.coerce.number(),
+});
+
+export function rehydrateRosterInvitation(row: RosterInvitationRow): RosterInvitation {
   return {
     id: row.id,
     organizationId: asOrganizationId(row.organization_id),
     competitionId: asCompetitionId(row.competition_id),
     teamId: asTeamId(row.team_id),
-    role: row.role as RosterInvitation["role"],
+    role: row.role,
     tokenHash: row.token_hash,
-    status: row.status as RosterInvitation["status"],
+    status: row.status,
     invitedByActorId: asActorId(row.invited_by_actor_id),
-    expiresAt: new Date(row.expires_at),
+    expiresAt: row.expires_at,
     acceptedByActorId: row.accepted_by_actor_id ? asActorId(row.accepted_by_actor_id) : null,
-    createdAt: new Date(row.created_at),
-    redeemPolicy: row.redeem_policy as RosterInvitation["redeemPolicy"],
+    createdAt: row.created_at,
+    redeemPolicy: row.redeem_policy,
   };
 }
 
 type RedemptionKey = `${string}:${string}`;
+
+function redemptionKey(invitationId: string, actorId: ActorId): RedemptionKey {
+  return `${invitationId}:${actorId}`;
+}
 
 export class InMemoryRosterInvitationRepository implements RosterInvitationRepository {
   readonly byHash = new Map<string, RosterInvitation>();
@@ -55,11 +88,11 @@ export class InMemoryRosterInvitationRepository implements RosterInvitationRepos
   }
 
   async findRedemption(invitationId: string, actorId: ActorId): Promise<Date | null> {
-    return this.redemptions.get(`${invitationId}:${actorId}`) ?? null;
+    return this.redemptions.get(redemptionKey(invitationId, actorId)) ?? null;
   }
 
   async deleteRedemption(invitationId: string, actorId: ActorId): Promise<void> {
-    this.redemptions.delete(`${invitationId}:${actorId}`);
+    this.redemptions.delete(redemptionKey(invitationId, actorId));
   }
 
   async claimPending(
@@ -74,21 +107,21 @@ export class InMemoryRosterInvitationRepository implements RosterInvitationRepos
     if (current.expiresAt.getTime() <= now.getTime()) return null;
 
     if (current.redeemPolicy === "multi") {
-      const redemptionKey = `${current.id}:${actorId}` as RedemptionKey;
-      if (this.redemptions.has(redemptionKey)) {
+      const key = redemptionKey(current.id, actorId);
+      if (this.redemptions.has(key)) {
         return current;
       }
 
       const memberCount = this.rosterMemberCount?.(current) ?? 0;
-      const redemptionCount = [...this.redemptions.keys()].filter((key) =>
-        key.startsWith(`${current.id}:`),
+      const redemptionCount = [...this.redemptions.keys()].filter((entry) =>
+        entry.startsWith(`${current.id}:`),
       ).length;
       const freeSlots = options.maxRosterSize - memberCount;
       if (freeSlots <= 0 || redemptionCount >= freeSlots || !options.hasFreeSlot) {
         return null;
       }
 
-      this.redemptions.set(redemptionKey, now);
+      this.redemptions.set(key, now);
       return current;
     }
 
@@ -135,23 +168,8 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
        FROM roster_invitations WHERE token_hash = $1`,
       [tokenHash],
     );
-    const row = result.rows[0] as
-      | {
-          id: string;
-          organization_id: string;
-          competition_id: string;
-          team_id: string;
-          role: string;
-          token_hash: string;
-          status: string;
-          invited_by_actor_id: string;
-          expires_at: Date;
-          accepted_by_actor_id: string | null;
-          created_at: Date;
-          redeem_policy: string;
-        }
-      | undefined;
-    return row ? rehydrateRosterInvitation(row) : null;
+    const row = result.rows[0];
+    return row ? rehydrateRosterInvitation(rosterInvitationRowSchema.parse(row)) : null;
   }
 
   async findRedemption(invitationId: string, actorId: ActorId): Promise<Date | null> {
@@ -161,8 +179,8 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
        WHERE invitation_id = $1 AND actor_id = $2`,
       [invitationId, actorId],
     );
-    const row = result.rows[0] as { redeemed_at: Date } | undefined;
-    return row ? new Date(row.redeemed_at) : null;
+    const row = result.rows[0];
+    return row ? redemptionAtRowSchema.parse(row).redeemed_at : null;
   }
 
   async deleteRedemption(invitationId: string, actorId: ActorId): Promise<void> {
@@ -222,10 +240,10 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
        FOR UPDATE`,
       [tokenHash],
     );
-    const row = locked.rows[0] as Parameters<typeof rehydrateRosterInvitation>[0] | undefined;
+    const row = locked.rows[0];
     if (!row) return null;
 
-    const invitation = rehydrateRosterInvitation(row);
+    const invitation = rehydrateRosterInvitation(rosterInvitationRowSchema.parse(row));
     if (invitation.status !== ROSTER_INVITATION_STATUS.pending) return null;
     if (invitation.expiresAt.getTime() <= now.getTime()) return null;
 
@@ -244,15 +262,16 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
          WHERE organization_id = $1 AND competition_id = $2 AND team_id = $3`,
         [invitation.organizationId, invitation.competitionId, invitation.teamId],
       );
-      const memberCount = (countResult.rows[0] as { member_count: number }).member_count;
+      const memberCount = memberCountRowSchema.parse(countResult.rows[0]).member_count;
       const redemptionCountResult = await executor.query(
         `SELECT COUNT(*)::int AS redemption_count
          FROM roster_invitation_redemptions
          WHERE invitation_id = $1`,
         [invitation.id],
       );
-      const redemptionCount = (redemptionCountResult.rows[0] as { redemption_count: number })
-        .redemption_count;
+      const redemptionCount = redemptionCountRowSchema.parse(
+        redemptionCountResult.rows[0],
+      ).redemption_count;
       const freeSlots = options.maxRosterSize - memberCount;
       if (freeSlots <= 0 || redemptionCount >= freeSlots || !options.hasFreeSlot) return null;
 
@@ -282,9 +301,7 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
       ],
     );
     return accepted.rows[0]
-      ? rehydrateRosterInvitation(
-          accepted.rows[0] as Parameters<typeof rehydrateRosterInvitation>[0],
-        )
+      ? rehydrateRosterInvitation(rosterInvitationRowSchema.parse(accepted.rows[0]))
       : null;
   }
 }

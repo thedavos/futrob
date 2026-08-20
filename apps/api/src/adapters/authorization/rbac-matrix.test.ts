@@ -1,11 +1,8 @@
+import { authorizationScopeTypeSchema } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
-import {
-  asActorId,
-  asOrganizationId,
-  type AuthorizationScopeType,
-  type Permission,
-} from "@futrob/shared-kernel";
-import type { Pool } from "pg";
+import { asActorId, asOrganizationId, type Permission } from "@futrob/shared-kernel";
+import type { PoolClient } from "pg";
+import { asPgPool } from "@/adapters/persistence/pg-test-double.ts";
 import {
   createRbacMatrixFixture,
   RBAC_MATRIX_NOW,
@@ -187,11 +184,11 @@ describe("RBAC grant store parity", () => {
       updated_at: RBAC_MATRIX_NOW,
     };
     const pool = new StubPool([{ rows: [own], rowCount: 1 }]);
-    const repository = new PostgresAccessGrantRepository(pool as unknown as Pool);
+    const repository = new PostgresAccessGrantRepository(asPgPool(pool));
     const listed = await repository.listForActorAndScopes(
       asActorId("organization-member"),
       asOrganizationId("org-a"),
-      [{ scopeType: "organization" as AuthorizationScopeType, scopeId: "org-a" }],
+      [{ scopeType: authorizationScopeTypeSchema.parse("organization"), scopeId: "org-a" }],
     );
     expect(listed.map((row) => row.id)).toEqual(["g-own"]);
     expect(pool.calls[0]?.values).toEqual([
@@ -212,6 +209,10 @@ class StubPool {
       readonly rowCount: number;
     }[],
   ) {}
+
+  async connect(): Promise<PoolClient> {
+    throw new Error("StubPool.connect is not used in these tests");
+  }
 
   async query(sql: string, values?: readonly unknown[]) {
     this.calls.push({ sql, values });

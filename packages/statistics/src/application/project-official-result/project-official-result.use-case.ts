@@ -4,6 +4,7 @@ import type {
   OfficialResultReaderPort,
 } from "@futrob/results";
 import {
+  assertNever,
   err,
   ok,
   type ClockPort,
@@ -153,7 +154,7 @@ export class ProjectOfficialResultUseCase {
       case "voided":
         return [];
       default:
-        return assertNever(officialResult.status);
+        return assertNever(officialResult.status, "Unsupported official result status");
     }
   }
 
@@ -166,7 +167,7 @@ export class ProjectOfficialResultUseCase {
       case "voided":
         return [];
       default:
-        return assertNever(officialResult.status);
+        return assertNever(officialResult.status, "Unsupported official result status");
     }
   }
 
@@ -363,10 +364,6 @@ export class ProjectOfficialResultUseCase {
     }
     return contributions;
   }
-}
-
-function assertNever(status: never): never {
-  throw new RangeError(`Unsupported official result status: ${String(status)}`);
 }
 
 function mapExternalClubToTeam(input: {

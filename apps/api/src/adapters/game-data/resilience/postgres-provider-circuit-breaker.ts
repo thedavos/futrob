@@ -1,10 +1,20 @@
 import type { Pool } from "pg";
+import { z } from "zod";
+import { pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 import type {
   ProviderCircuitBreaker,
   ProviderCircuitPermission,
   ProviderCircuitState,
 } from "./provider-circuit-breaker.ts";
+
+const providerCircuitStateSchema = z.enum(["closed", "open", "half_open"]);
+
+const circuitStateRowSchema = z.object({
+  state: providerCircuitStateSchema,
+  opened_until: pgTimestampSchema.nullable(),
+  probe_lease_expires_at: pgTimestampSchema.nullable(),
+});
 
 export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
   constructor(private readonly pool: Pool) {}
@@ -24,7 +34,7 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
       ) {
         return "half_open";
       }
-      return row.state as ProviderCircuitState;
+      return providerCircuitStateSchema.parse(row.state);
     });
     if (states.includes("open")) return "open";
     if (states.includes("half_open")) return "half_open";
@@ -71,11 +81,7 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
        FROM provider_circuit_state WHERE circuit_key = $1`,
       [input.key],
     );
-    const row = result.rows[0] as {
-      state: ProviderCircuitState;
-      opened_until: Date | string | null;
-      probe_lease_expires_at: Date | string | null;
-    };
+    const row = circuitStateRowSchema.parse(result.rows[0]);
     if (row.state === "closed") return { allowed: true, state: "closed" };
     const retryAt = row.state === "open" ? row.opened_until : row.probe_lease_expires_at;
     return {

@@ -49,14 +49,15 @@ describe("enqueueProviderSyncJob", () => {
       queue: { send: async (message) => void queued.push(message) },
     });
     const actions: string[] = [];
+    const fetcher: typeof fetch = async () =>
+      Response.json({
+        ...job,
+        status: "succeeded",
+        attempt: 1,
+        availableAt: null,
+      });
     const workers = registerWorkers({
-      fetcher: (async () =>
-        Response.json({
-          ...job,
-          status: "succeeded",
-          attempt: 1,
-          availableAt: null,
-        })) as typeof fetch,
+      fetcher,
       apiBaseUrl: "https://api.futrob.test/api/v1",
       internalJobSecret: "secret",
     });

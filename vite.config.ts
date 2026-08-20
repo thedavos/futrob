@@ -14,6 +14,7 @@ export default defineConfig({
     semi: true,
     ignorePatterns: [
       "**/routeTree.gen.ts",
+      "**/paraglide/**",
       "**/openapi/*.yaml",
       ".agent/**",
       ".agents/**",
@@ -39,14 +40,19 @@ export default defineConfig({
         name: "anti-slop",
         specifier: "./tools/oxlint/anti-slop/index.ts",
       },
+      {
+        name: "futrob",
+        specifier: "./tools/oxlint/futrob/index.ts",
+      },
     ],
-    plugins: ["typescript"],
+    plugins: ["typescript", "import"],
     options: {
       typeAware: true,
       typeCheck: true,
     },
     ignorePatterns: [
       "**/routeTree.gen.ts",
+      "**/paraglide/**",
       "packages/api-contracts/scripts/**",
       ".agent/**",
       ".agents/**",
@@ -79,13 +85,86 @@ export default defineConfig({
       "anti-slop/no-unsafe-dictionary-type": "error",
       "anti-slop/no-widen-then-assert": "error",
       "anti-slop/require-safety-comment-for-type-assertion": "error",
+      "typescript/switch-exhaustiveness-check": "error",
+      "typescript/no-floating-promises": "error",
+      "typescript/await-thenable": "error",
+      "typescript/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports", fixStyle: "separate-type-imports" },
+      ],
+      "import/no-duplicates": "error",
+      "typescript/no-restricted-types": [
+        "error",
+        {
+          types: {
+            any: "Use unknown and parse or match at boundaries instead of any.",
+          },
+        },
+      ],
+      "futrob/no-unparsed-json-boundary": "error",
+      "futrob/no-cross-module-adapter-import": "error",
     },
     overrides: [
       {
         files: ["apps/web/**", "packages/ui/**"],
-        plugins: ["typescript", "react"],
+        plugins: ["typescript", "react", "jsx-a11y", "import"],
         rules: {
           "react/self-closing-comp": "error",
+          "jsx-a11y/label-has-associated-control": [
+            "error",
+            { controlComponents: ["Switch", "Checkbox"] },
+          ],
+          "jsx-a11y/alt-text": "error",
+          "react/button-has-type": "error",
+          "jsx-a11y/no-autofocus": "error",
+        },
+      },
+      {
+        files: ["packages/*/src/domain/**", "packages/*/src/application/**"],
+        plugins: ["typescript", "import"],
+        rules: {
+          "no-restricted-imports": [
+            "error",
+            {
+              paths: [
+                {
+                  name: "react",
+                  message: "Domain/application must not import React.",
+                },
+                {
+                  name: "react-dom",
+                  message: "Domain/application must not import React DOM.",
+                },
+                {
+                  name: "zod",
+                  message: "Domain/application must not import Zod — parse in adapters or server.",
+                },
+                {
+                  name: "@tanstack/react-router",
+                  message: "Domain/application must not import TanStack Router.",
+                },
+                {
+                  name: "@tanstack/react-query",
+                  message: "Domain/application must not import TanStack Query.",
+                },
+                {
+                  name: "@sentry/react",
+                  message: "Domain/application must not import Sentry React bindings.",
+                },
+                {
+                  name: "@sentry/node",
+                  message: "Domain/application must not import Sentry Node bindings.",
+                },
+              ],
+              patterns: [
+                {
+                  group: ["**/apps/web/**", "**/apps/api/**"],
+                  message: "BC packages must not import app-layer modules.",
+                },
+              ],
+            },
+          ],
+          "futrob/prefer-tagged-error": "error",
         },
       },
       {
@@ -119,11 +198,30 @@ export default defineConfig({
         },
       },
       {
+        files: ["**/*.d.ts"],
+        rules: {
+          "typescript/consistent-type-imports": "off",
+        },
+      },
+      {
         files: ["**/*.{test,spec}.{ts,tsx}"],
-        plugins: ["typescript", "vitest"],
+        plugins: ["typescript", "vitest", "import"],
         rules: {
           "@typescript-eslint/no-explicit-any": "off",
+          "typescript/no-restricted-types": "off",
+          "typescript/consistent-type-imports": [
+            "error",
+            {
+              prefer: "type-imports",
+              fixStyle: "separate-type-imports",
+              disallowTypeAnnotations: false,
+            },
+          ],
           "vitest/no-disabled-tests": "error",
+          "vitest/no-focused-tests": "error",
+          "vitest/expect-expect": ["error", { assertFunctionNames: ["expect", "runCase"] }],
+          "futrob/prefer-tagged-error": "off",
+          "futrob/no-cross-module-adapter-import": "off",
         },
       },
     ],
@@ -144,6 +242,7 @@ export default defineConfig({
       "packages/scheduling",
       "packages/statistics",
       "packages/teams",
+      "tools/oxlint/futrob",
     ],
   },
 });

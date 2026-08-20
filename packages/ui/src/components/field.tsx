@@ -2,14 +2,31 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
+import { formFieldValueSchema, type FormFieldValue } from "#lib/read-form-string";
 
 type FieldActions = FieldPrimitive.Root.Actions;
 
-function Field({ className, ...props }: FieldPrimitive.Root.Props) {
+type FieldFormValues = Parameters<NonNullable<FieldPrimitive.Root.Props["validate"]>>[1];
+
+type FieldValidate = (
+  value: FormFieldValue,
+  formValues: FieldFormValues,
+) => ReturnType<NonNullable<FieldPrimitive.Root.Props["validate"]>>;
+
+type FieldProps = Omit<FieldPrimitive.Root.Props, "validate"> & {
+  validate?: FieldValidate;
+};
+
+function Field({ className, validate, ...props }: FieldProps) {
+  const wrappedValidate: FieldPrimitive.Root.Props["validate"] = validate
+    ? (value, formValues) => validate(formFieldValueSchema.parse(value), formValues)
+    : undefined;
+
   return (
     <FieldPrimitive.Root
       data-slot="field"
       className={cn("group/field flex w-full flex-col gap-2", className)}
+      validate={wrappedValidate}
       {...props}
     />
   );

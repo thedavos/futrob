@@ -1,5 +1,9 @@
 import { REQUEST_ID_HEADER, requestIdSchema } from "@futrob/api-contracts";
 import { parseApiErrorBody, parseRetryAfterSeconds, FutrobApiError } from "./errors.ts";
+import type { HttpResponseBody } from "./wire-body.ts";
+import { httpResponseBodySchema } from "./wire-body.ts";
+
+export type { HttpResponseBody } from "./wire-body.ts";
 
 export interface HttpClientOptions {
   readonly baseUrl: string;
@@ -25,7 +29,7 @@ export class HttpClient {
     // Keep a bound/wrapper fetch — bare `fetch` as a method reference throws
     // "Illegal invocation" in browsers when called as `this.fetchImpl(...)`.
     const unbound = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
-    this.fetchImpl = ((input, init) => unbound(input, init)) as typeof fetch;
+    this.fetchImpl = (input, init) => unbound(input, init);
   }
 
   async request<T>(input: {
@@ -33,41 +37,45 @@ export class HttpClient {
     readonly method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
     readonly body?: unknown;
     readonly requestId?: string;
-    readonly parse: (data: unknown) => T;
+    readonly parse: (data: HttpResponseBody) => T;
   }): Promise<T> {
-    const headers: Record<string, string> = {
-      Accept: "application/json",
-    };
+    const headerMap = new Map<string, string>([["Accept", "application/json"]]);
 
     const extra = this.getExtraHeaders ? await this.getExtraHeaders() : undefined;
     if (extra) {
-      Object.assign(headers, extra);
+      for (const [key, value] of Object.entries(extra)) {
+        headerMap.set(key, value);
+      }
     }
 
     const token = this.getAccessToken ? await this.getAccessToken() : undefined;
     if (token) {
-      headers.Authorization = `Bearer ${token}`;
+      headerMap.set("Authorization", `Bearer ${token}`);
     }
 
     if (input.requestId) {
-      headers[REQUEST_ID_HEADER] = input.requestId;
-    } else if (!hasRequestIdHeader(headers)) {
-      headers[REQUEST_ID_HEADER] = crypto.randomUUID();
+      headerMap.set(REQUEST_ID_HEADER, input.requestId);
+    } else if (!hasRequestIdHeader(headerMap)) {
+      headerMap.set(REQUEST_ID_HEADER, crypto.randomUUID());
     }
 
     let body: string | undefined;
     if (input.body !== undefined) {
-      headers["Content-Type"] = "application/json";
+      headerMap.set("Content-Type", "application/json");
       body = JSON.stringify(input.body);
     }
 
     const response = await this.fetchImpl(`${this.baseUrl}${input.path}`, {
       method: input.method,
-      headers,
+      headers: Object.fromEntries(headerMap),
       body,
     });
 
-    const raw: unknown = response.status === 204 ? null : await response.json().catch(() => null);
+    let raw: HttpResponseBody = null;
+    if (response.status !== 204) {
+      const parsedBody = httpResponseBodySchema.safeParse(await response.json().catch(() => null));
+      raw = parsedBody.success ? parsedBody.data : null;
+    }
 
     if (!response.ok) {
       const responseRequestId = requestIdSchema.safeParse(response.headers.get(REQUEST_ID_HEADER));
@@ -100,6 +108,6 @@ export class HttpClient {
   }
 }
 
-function hasRequestIdHeader(headers: Record<string, string>): boolean {
-  return Object.keys(headers).some((key) => key.toLowerCase() === REQUEST_ID_HEADER.toLowerCase());
+function hasRequestIdHeader(headers: Map<string, string>): boolean {
+  return [...headers.keys()].some((key) => key.toLowerCase() === REQUEST_ID_HEADER.toLowerCase());
 }

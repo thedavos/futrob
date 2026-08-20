@@ -15,9 +15,7 @@ export const TEAM_PERMISSION = {
 
 export const TEAM_PERMISSIONS = Object.values(TEAM_PERMISSION);
 
-export const ROSTER_ROLE_PERMISSIONS: Readonly<
-  Record<RosterMembershipRole, readonly Permission[]>
-> = {
+export const ROSTER_ROLE_PERMISSIONS = {
   captain: TEAM_PERMISSIONS.filter((permission) => permission !== TEAM_PERMISSION.create),
   vice_captain: [
     TEAM_PERMISSION.read,
@@ -29,4 +27,4 @@ export const ROSTER_ROLE_PERMISSIONS: Readonly<
     TEAM_PERMISSION.externalClubManage,
   ],
   player: [TEAM_PERMISSION.read, TEAM_PERMISSION.rosterRead, TEAM_PERMISSION.externalClubRead],
-};
+} as const satisfies Record<RosterMembershipRole, readonly Permission[]>;

@@ -17,6 +17,7 @@ import {
   localizedCompetitionRegions,
   stepsForPath,
 } from "../onboarding-step-meta.ts";
+import type { OnboardingDraft } from "../onboarding-flow.tsx";
 
 export function CompetitionStep() {
   const flow = useOnboardingFlow();
@@ -102,19 +103,7 @@ export function CompetitionStep() {
           fieldError={localizedFieldError}
           nameInputRef={nameRef}
           onChange={(patch) => {
-            flow.updateDraft({
-              ...(patch.name !== undefined ? { competitionName: patch.name } : {}),
-              ...(patch.gameEdition !== undefined
-                ? { competitionGameEdition: patch.gameEdition }
-                : {}),
-              ...(patch.customEdition !== undefined
-                ? { customCompetitionGameEdition: patch.customEdition }
-                : {}),
-              ...(patch.platform !== undefined ? { competitionPlatform: patch.platform } : {}),
-              ...(patch.region !== undefined ? { competitionRegion: patch.region } : {}),
-              ...(patch.timeZone !== undefined ? { competitionTimeZone: patch.timeZone } : {}),
-              ...(patch.format !== undefined ? { competitionFormat: patch.format } : {}),
-            });
+            flow.updateDraft(competitionDraftUpdate(patch));
           }}
           onClearFieldError={() => setFieldError(null)}
           showFormatDescription
@@ -159,4 +148,28 @@ function localizeValidation(
     format: t("onboarding.competition.validation.format"),
   }[error.field];
   return { ...error, message };
+}
+
+type CompetitionDraftUpdate = Partial<{
+  competitionName: OnboardingDraft["competitionName"];
+  competitionGameEdition: OnboardingDraft["competitionGameEdition"];
+  customCompetitionGameEdition: OnboardingDraft["customCompetitionGameEdition"];
+  competitionPlatform: OnboardingDraft["competitionPlatform"];
+  competitionRegion: OnboardingDraft["competitionRegion"];
+  competitionTimeZone: OnboardingDraft["competitionTimeZone"];
+  competitionFormat: OnboardingDraft["competitionFormat"];
+}>;
+
+function competitionDraftUpdate(
+  patch: Partial<CompetitionDraftFieldsValue>,
+): CompetitionDraftUpdate {
+  const update: CompetitionDraftUpdate = {};
+  if (patch.name !== undefined) update.competitionName = patch.name;
+  if (patch.gameEdition !== undefined) update.competitionGameEdition = patch.gameEdition;
+  if (patch.customEdition !== undefined) update.customCompetitionGameEdition = patch.customEdition;
+  if (patch.platform !== undefined) update.competitionPlatform = patch.platform;
+  if (patch.region !== undefined) update.competitionRegion = patch.region;
+  if (patch.timeZone !== undefined) update.competitionTimeZone = patch.timeZone;
+  if (patch.format !== undefined) update.competitionFormat = patch.format;
+  return update;
 }

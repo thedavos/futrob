@@ -5,8 +5,57 @@ import type {
   RawObservationRepository,
   RawProviderObservation,
 } from "@futrob/game-data";
+import { gameDataProviderKeyQuerySchema } from "@futrob/api-contracts";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { parseJsonColumn, type PgJsonInput } from "@/adapters/persistence/parse-json-column.ts";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
+
+const providerPlayerSchema = z.object({
+  externalPlayerId: z.string(),
+  displayName: z.string(),
+  externalClubId: z.string(),
+  position: z.string().nullable(),
+  minutesPlayed: z.number().nullable(),
+  goals: z.number().nullable(),
+  assists: z.number().nullable(),
+  shots: z.number().nullable(),
+  passAttempts: z.number().nullable(),
+  passesMade: z.number().nullable(),
+  tackleAttempts: z.number().nullable(),
+  tacklesMade: z.number().nullable(),
+  saves: z.number().nullable(),
+  yellowCards: z.number().nullable(),
+  redCards: z.number().nullable(),
+  isMvp: z.boolean().nullable(),
+  rating: z.number().nullable(),
+});
+
+const providerMatchRowSchema = z.object({
+  id: pgTextSchema,
+  provider_key: gameDataProviderKeyQuerySchema,
+  external_match_id: pgTextSchema,
+  game_edition: pgTextSchema,
+  platform: pgTextSchema,
+  mode: pgTextSchema,
+  occurred_at: pgTimestampSchema,
+  home_external_club_id: pgTextSchema,
+  home_name: pgTextSchema,
+  home_goals: z.coerce.number(),
+  away_external_club_id: pgTextSchema,
+  away_name: pgTextSchema,
+  away_goals: z.coerce.number(),
+  players: z.custom<PgJsonInput>((value) => value !== undefined),
+  metadata: z.custom<PgJsonInput>((value) => value !== undefined),
+});
+
+const providerMatchMetadataSchema = z.object({
+  durationSeconds: z.number().nullable(),
+  wasDisconnected: z.boolean(),
+  winnerByForfeit: z.boolean(),
+  completeness: z.enum(["complete", "partial", "unknown"]),
+});
 
 export class PostgresRawObservationRepository implements RawObservationRepository {
   constructor(private readonly pool: Pool) {}
@@ -102,7 +151,7 @@ export class PostgresProviderMatchRepository implements ProviderMatchRepository 
       [input.providerKey, input.externalMatchId],
     );
     const row = result.rows[0];
-    return row ? rehydrateMatch(row) : null;
+    return row ? rehydrateMatch(providerMatchRowSchema.parse(row)) : null;
   }
 
   async listBetweenClubs(input: {
@@ -134,31 +183,15 @@ export class PostgresProviderMatchRepository implements ProviderMatchRepository 
         input.awayExternalClubId,
       ],
     );
-    return result.rows.map(rehydrateMatch);
+    return result.rows.map((row) => rehydrateMatch(providerMatchRowSchema.parse(row)));
   }
 }
 
-function rehydrateMatch(row: {
-  id: string;
-  provider_key: string;
-  external_match_id: string;
-  game_edition: string;
-  platform: string;
-  mode: string;
-  occurred_at: Date | string;
-  home_external_club_id: string;
-  home_name: string;
-  home_goals: number;
-  away_external_club_id: string;
-  away_name: string;
-  away_goals: number;
-  players: unknown;
-  metadata: unknown;
-}): ProviderMatch {
+function rehydrateMatch(row: z.infer<typeof providerMatchRowSchema>): ProviderMatch {
   return {
     id: row.id,
     provider: {
-      key: row.provider_key as GameDataProviderKey,
+      key: row.provider_key,
       externalMatchId: row.external_match_id,
     },
     game: {
@@ -166,20 +199,20 @@ function rehydrateMatch(row: {
       platform: row.platform,
       mode: row.mode,
     },
-    occurredAt: new Date(row.occurred_at),
+    occurredAt: row.occurred_at,
     home: {
       externalClubId: row.home_external_club_id,
       name: row.home_name,
-      goals: Number(row.home_goals),
+      goals: row.home_goals,
       imageUrl: null,
     },
     away: {
       externalClubId: row.away_external_club_id,
       name: row.away_name,
-      goals: Number(row.away_goals),
+      goals: row.away_goals,
       imageUrl: null,
     },
-    players: row.players as ProviderMatch["players"],
-    metadata: row.metadata as ProviderMatch["metadata"],
+    players: parseJsonColumn(z.array(providerPlayerSchema), row.players),
+    metadata: parseJsonColumn(providerMatchMetadataSchema, row.metadata),
   };
 }

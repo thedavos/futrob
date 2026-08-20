@@ -8,9 +8,10 @@ describe("registerWorkers", () => {
       Response.json(jobResponse("retry_scheduled", "2026-08-11T12:00:07.000Z")),
       new Response(null, { status: 503 }),
     ];
+    const fetcher: typeof fetch = async () =>
+      responses.shift() ?? new Response(null, { status: 500 });
     const workers = registerWorkers({
-      fetcher: (async () =>
-        responses.shift() ?? new Response(null, { status: 500 })) as typeof fetch,
+      fetcher,
       apiBaseUrl: "https://api.futrob.test/api/v1",
       internalJobSecret: "secret",
       now: () => new Date("2026-08-11T12:00:00.000Z"),
@@ -32,6 +33,21 @@ describe("registerWorkers", () => {
 });
 
 function jobResponse(status: "succeeded" | "retry_scheduled", availableAt: string | null) {
+  if (status === "retry_scheduled") {
+    return {
+      id: "job-1",
+      organizationId: "org-1",
+      providerKey: "ea-clubs",
+      status,
+      attempt: 1,
+      maxAttempts: 4,
+      requestId: "b0e3c6fa-fe1e-4866-8573-84ba9e52e437",
+      availableAt,
+      leaseExpiresAt: null,
+      updatedAt: "2026-08-11T12:00:00.000Z",
+      lastErrorCode: "game_data.ea_clubs_timeout",
+    };
+  }
   return {
     id: "job-1",
     organizationId: "org-1",
@@ -43,6 +59,5 @@ function jobResponse(status: "succeeded" | "retry_scheduled", availableAt: strin
     availableAt,
     leaseExpiresAt: null,
     updatedAt: "2026-08-11T12:00:00.000Z",
-    ...(status === "retry_scheduled" ? { lastErrorCode: "game_data.ea_clubs_timeout" } : {}),
   };
 }

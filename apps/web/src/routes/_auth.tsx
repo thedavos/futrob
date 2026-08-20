@@ -14,7 +14,7 @@ const authSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_auth")({
-  validateSearch: (search: unknown): AuthSearch => {
+  validateSearch: (search): AuthSearch => {
     const parsed = authSearchSchema.safeParse(search);
     const redirectTo = resolveSafeRedirect(
       parsed.success ? (parsed.data.redirectTo ?? null) : null,

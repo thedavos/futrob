@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
-import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
+import {
+  asActorId,
+  asCompetitionId,
+  asOrganizationId,
+  asTeamId,
+  type AuthorizationPort,
+} from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "../../domain/entities/competition-entry.ts";
 import { EntryAlreadyDecided } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
@@ -31,16 +37,16 @@ class FakeEntryRepository implements CompetitionEntryRepository {
 
 describe("RejectCompetitionEntryUseCase", () => {
   const authorization = {
-    decide: async (
-      request: Parameters<import("@futrob/shared-kernel").AuthorizationPort["decide"]>[0],
-    ) => ({
+    decide: async (request: Parameters<AuthorizationPort["decide"]>[0]) => ({
       ...request,
       allowed: true,
       reason: "allowed" as const,
     }),
-    getEffectiveAccess: async (
-      input: Parameters<import("@futrob/shared-kernel").AuthorizationPort["getEffectiveAccess"]>[0],
-    ) => ({ ...input, roles: [], permissions: [] }),
+    getEffectiveAccess: async (input: Parameters<AuthorizationPort["getEffectiveAccess"]>[0]) => ({
+      ...input,
+      roles: [],
+      permissions: [],
+    }),
   };
   it("rejects a pending entry", async () => {
     const entries = new FakeEntryRepository();

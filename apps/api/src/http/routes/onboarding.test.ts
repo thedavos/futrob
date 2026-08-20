@@ -1,3 +1,9 @@
+import {
+  completeOrganizationOnboardingResponseSchema,
+  createInvitationResponseSchema,
+  getMyPlayerProfileResponseSchema,
+  listMyMembershipsResponseSchema,
+} from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import {
@@ -7,6 +13,7 @@ import {
   serviceHeaders,
   stubFetch,
 } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http onboarding", () => {
   it("includes request correlation on onboarding authentication errors", async () => {
@@ -42,11 +49,8 @@ describe("apps/api http onboarding", () => {
 
     const first = await request();
     const retried = await request();
-    const firstBody = (await first.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string } };
-    };
-    const retriedBody = (await retried.json()) as { organizationId: string };
+    const firstBody = await parseResponse(completeOrganizationOnboardingResponseSchema, first);
+    const retriedBody = await parseResponse(completeOrganizationOnboardingResponseSchema, retried);
     expect(retriedBody.organizationId).toBe(firstBody.organizationId);
     expect(retriedBody).toMatchObject({
       competition: { competition: { name: "Copa Inicial", status: "draft" } },
@@ -77,13 +81,13 @@ describe("apps/api http onboarding", () => {
     const mine = await app.request("/api/v1/organizations/mine", {
       headers: serviceHeaders(actor),
     });
-    const mineBody = (await mine.json()) as { memberships: unknown[] };
+    const mineBody = await parseResponse(listMyMembershipsResponseSchema, mine);
     expect(mineBody.memberships).toHaveLength(1);
 
     const profile = await app.request("/api/v1/players/me", {
       headers: serviceHeaders(actor),
     });
-    const profileBody = (await profile.json()) as { gameAccounts: unknown[] };
+    const profileBody = await parseResponse(getMyPlayerProfileResponseSchema, profile);
     expect(profileBody.gameAccounts).toHaveLength(1);
 
     const status = await app.request("/api/v1/identity/onboarding", {
@@ -198,7 +202,7 @@ describe("apps/api http onboarding", () => {
     const profile = await app.request("/api/v1/players/me", {
       headers: serviceHeaders(actor),
     });
-    const profileBody = (await profile.json()) as { gameAccounts: unknown[] };
+    const profileBody = await parseResponse(getMyPlayerProfileResponseSchema, profile);
     expect(profileBody.gameAccounts).toHaveLength(1);
 
     const status = await app.request("/api/v1/identity/onboarding", {
@@ -301,10 +305,10 @@ describe("apps/api http onboarding", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId, competition } = (await created.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string } };
-    };
+    const { organizationId, competition } = await parseResponse(
+      completeOrganizationOnboardingResponseSchema,
+      created,
+    );
     const competitionId = competition.competition.id;
     const organizationInvitation = await app.request(
       `/api/v1/organizations/${organizationId}/invitations`,
@@ -314,7 +318,10 @@ describe("apps/api http onboarding", () => {
         body: JSON.stringify({ role: "staff" }),
       },
     );
-    const organizationToken = (await organizationInvitation.json()) as { token: string };
+    const organizationToken = await parseResponse(
+      createInvitationResponseSchema,
+      organizationInvitation,
+    );
     const rejectedOrganizationInvitation = await app.request(
       "/api/v1/identity/onboarding/invitation",
       {
@@ -337,7 +344,7 @@ describe("apps/api http onboarding", () => {
       },
     );
     expect(invitation.status).toBe(201);
-    const { token } = (await invitation.json()) as { token: string };
+    const { token } = await parseResponse(createInvitationResponseSchema, invitation);
 
     const completed = await app.request("/api/v1/identity/onboarding/invitation", {
       method: "POST",
@@ -395,10 +402,10 @@ describe("apps/api http onboarding", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId, competition } = (await created.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string } };
-    };
+    const { organizationId, competition } = await parseResponse(
+      completeOrganizationOnboardingResponseSchema,
+      created,
+    );
     const competitionId = competition.competition.id;
     const invitation = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/invitations`,
@@ -408,7 +415,7 @@ describe("apps/api http onboarding", () => {
         body: JSON.stringify({ role: "player" }),
       },
     );
-    const { token } = (await invitation.json()) as { token: string };
+    const { token } = await parseResponse(createInvitationResponseSchema, invitation);
 
     const unauthorizedPreview = await app.request(
       "/api/v1/identity/onboarding/invitation/preview",
@@ -470,10 +477,10 @@ describe("apps/api http onboarding", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId, competition } = (await created.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string } };
-    };
+    const { organizationId, competition } = await parseResponse(
+      completeOrganizationOnboardingResponseSchema,
+      created,
+    );
     const competitionId = competition.competition.id;
 
     const invitation = await app.request(
@@ -485,7 +492,7 @@ describe("apps/api http onboarding", () => {
       },
     );
     expect(invitation.status).toBe(201);
-    const { token } = (await invitation.json()) as { token: string };
+    const { token } = await parseResponse(createInvitationResponseSchema, invitation);
 
     const loserPreview = await app.request("/api/v1/identity/onboarding/invitation/preview", {
       method: "POST",
@@ -558,10 +565,10 @@ describe("apps/api http onboarding", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId, competition } = (await created.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string } };
-    };
+    const { organizationId, competition } = await parseResponse(
+      completeOrganizationOnboardingResponseSchema,
+      created,
+    );
     const invitation = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competition.competition.id}/invitations`,
       {
@@ -571,7 +578,7 @@ describe("apps/api http onboarding", () => {
       },
     );
     expect(invitation.status).toBe(201);
-    const { token } = (await invitation.json()) as { token: string };
+    const { token } = await parseResponse(createInvitationResponseSchema, invitation);
     await new Promise((resolve) => setTimeout(resolve, 5));
 
     const expired = await app.request("/api/v1/identity/onboarding/invitation", {

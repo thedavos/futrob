@@ -12,7 +12,7 @@ import {
 } from "@futrob/ui";
 import { Link } from "@tanstack/react-router";
 import { LockIcon, EnvelopeSimpleIcon } from "@phosphor-icons/react";
-import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
+import { authClient } from "@/modules/identity/auth-client.ts";
 import { useAuthResume } from "@/modules/identity/presentation/auth-resume.tsx";
 import {
   AUTH_ERROR_GENERIC,
@@ -34,6 +34,8 @@ function loginErrorMessage(error: AuthClientError): string {
   }
 
   switch (error.code) {
+    case undefined:
+      return AUTH_ERROR_GENERIC;
     case "CREDENTIAL_ACCOUNT_NOT_FOUND":
     case "INVALID_EMAIL":
     case "INVALID_EMAIL_OR_PASSWORD":
@@ -74,7 +76,8 @@ export function LoginForm() {
     } catch (error) {
       setState({
         status: "error",
-        message: isNetworkError(error) ? AUTH_ERROR_NETWORK : AUTH_ERROR_GENERIC,
+        message:
+          error instanceof Error && isNetworkError(error) ? AUTH_ERROR_NETWORK : AUTH_ERROR_GENERIC,
       });
     }
   }

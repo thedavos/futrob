@@ -1,7 +1,5 @@
-import {
-  handleGameDataSyncJob,
-  type GameDataSyncQueueMessage,
-} from "@/workers/game-data-sync.worker.ts";
+import { z } from "zod";
+import { handleGameDataSyncJob } from "@/workers/game-data-sync.worker.ts";
 
 export interface QueueMessage<T> {
   readonly body: T;
@@ -13,6 +11,11 @@ export interface QueueBatch {
   readonly messages: readonly QueueMessage<unknown>[];
 }
 
+const gameDataSyncQueueMessageSchema = z.object({
+  jobId: z.string().min(1),
+  requestId: z.string().min(1),
+});
+
 export function registerWorkers(deps: {
   readonly fetcher: typeof fetch;
   readonly apiBaseUrl: string;
@@ -23,12 +26,13 @@ export function registerWorkers(deps: {
     async queue(batch: QueueBatch): Promise<void> {
       await Promise.all(
         batch.messages.map(async (message) => {
-          if (!isGameDataSyncQueueMessage(message.body)) {
+          const parsed = gameDataSyncQueueMessageSchema.safeParse(message.body);
+          if (!parsed.success) {
             message.ack();
             return;
           }
           try {
-            const result = await handleGameDataSyncJob(message.body, deps);
+            const result = await handleGameDataSyncJob(parsed.data, deps);
             if (result.action === "ack") {
               message.ack();
             } else {
@@ -41,17 +45,4 @@ export function registerWorkers(deps: {
       );
     },
   };
-}
-
-function isGameDataSyncQueueMessage(value: unknown): value is GameDataSyncQueueMessage {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "jobId" in value &&
-    typeof value.jobId === "string" &&
-    value.jobId.length > 0 &&
-    "requestId" in value &&
-    typeof value.requestId === "string" &&
-    value.requestId.length > 0
-  );
 }

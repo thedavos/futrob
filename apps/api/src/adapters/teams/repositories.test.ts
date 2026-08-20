@@ -1,6 +1,6 @@
 import { asActorId } from "@futrob/shared-kernel";
 import { describe, expect, it, vi } from "vite-plus/test";
-import type { Pool } from "pg";
+import { asPgPool } from "@/adapters/persistence/pg-test-double.ts";
 import {
   InMemoryPlayerExternalClubAssociationRepository,
   InMemoryPlayerGameAccountRepository,
@@ -125,7 +125,12 @@ describe("teams persistence adapters", () => {
           },
         ],
       });
-    const pool = { query } as unknown as Pool;
+    const pool = asPgPool({
+      connect: async () => {
+        throw new Error("connect not used");
+      },
+      query,
+    });
     const profile = await new PostgresPlayerProfileRepository(pool).saveIfAbsent({
       id: "profile-new",
       actorId: asActorId("actor-1"),
@@ -179,9 +184,14 @@ describe("teams persistence adapters", () => {
       .mockResolvedValueOnce({ rows: [row] })
       .mockResolvedValueOnce({ rows: [row] })
       .mockResolvedValueOnce({ rows: [row] });
-    const repository = new PostgresPlayerGameAccountRepository({
-      query,
-    } as unknown as Pool);
+    const repository = new PostgresPlayerGameAccountRepository(
+      asPgPool({
+        connect: async () => {
+          throw new Error("connect not used");
+        },
+        query,
+      }),
+    );
 
     const linked = await repository.setProviderExternalPlayerId({
       accountId: row.id,

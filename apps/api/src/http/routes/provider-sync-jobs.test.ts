@@ -1,19 +1,21 @@
+import { providerSyncJobResponseSchema } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import clubMatchesFixture from "@/adapters/game-data/ea-clubs/fixtures/club-matches.json";
 import { createApp } from "@/app.ts";
+import { createFetch } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 import { createModules } from "@/di/create-modules.ts";
 
 const secret = "provider-job-secret";
 const requestId = "032141c9-0574-4129-86d4-7192bdbbcadd";
 
 function buildApp(onProviderCall: () => void) {
-  const fetcher = (async () => {
-    onProviderCall();
-    return Response.json(clubMatchesFixture);
-  }) as typeof fetch;
   return createApp({
     modules: createModules({
-      fetcher,
+      fetcher: createFetch(() => {
+        onProviderCall();
+        return Response.json(clubMatchesFixture);
+      }),
       eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
       pool: undefined,
     }),
@@ -57,8 +59,8 @@ describe("provider sync job routes", () => {
       headers: headers(),
       body,
     });
-    const firstJob = (await first.json()) as { id: string };
-    const duplicateJob = (await duplicate.json()) as { id: string };
+    const firstJob = await parseResponse(providerSyncJobResponseSchema, first);
+    const duplicateJob = await parseResponse(providerSyncJobResponseSchema, duplicate);
     expect(first.status).toBe(202);
     expect(duplicateJob.id).toBe(firstJob.id);
 

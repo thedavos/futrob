@@ -1,3 +1,4 @@
+import { gameDataProviderKeyQuerySchema } from "@futrob/api-contracts";
 import type {
   ProviderHealthEvent,
   ProviderHealthOutcome,
@@ -6,6 +7,8 @@ import type {
   GameDataProviderKey,
 } from "@futrob/game-data";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 import type {
   ProviderCircuitBreaker,
@@ -14,6 +17,32 @@ import type {
 
 const HEALTH_WINDOW_MS = 24 * 60 * 60 * 1_000;
 const HEALTH_SAMPLE_LIMIT = 1_000;
+
+const providerHealthOutcomeSchema = z.enum([
+  "success",
+  "timeout",
+  "network",
+  "rate_limited",
+  "upstream_4xx",
+  "upstream_5xx",
+  "schema",
+  "circuit_open",
+  "circuit_half_open",
+  "cache_hit",
+  "cache_miss",
+  "cache_stale",
+]);
+
+const providerHealthEventRowSchema = z.object({
+  id: pgTextSchema,
+  provider_key: gameDataProviderKeyQuerySchema,
+  operation: pgTextSchema,
+  outcome: providerHealthOutcomeSchema,
+  latency_ms: z.coerce.number(),
+  occurred_at: pgTimestampSchema,
+  request_id: pgTextSchema.nullable(),
+  job_id: pgTextSchema.nullable(),
+});
 
 const failureOutcomes = new Set<ProviderHealthOutcome>([
   "timeout",
@@ -93,16 +122,19 @@ export class PostgresProviderHealthRepository implements ProviderHealthPort {
     );
     return snapshotFromEvents(
       providerKey,
-      result.rows.map((row) => ({
-        id: String(row.id),
-        providerKey: String(row.provider_key) as GameDataProviderKey,
-        operation: String(row.operation),
-        outcome: String(row.outcome) as ProviderHealthOutcome,
-        latencyMs: Number(row.latency_ms),
-        occurredAt: new Date(row.occurred_at),
-        requestId: row.request_id ? String(row.request_id) : null,
-        jobId: row.job_id ? String(row.job_id) : null,
-      })),
+      result.rows.map((row) => {
+        const parsed = providerHealthEventRowSchema.parse(row);
+        return {
+          id: parsed.id,
+          providerKey: parsed.provider_key,
+          operation: parsed.operation,
+          outcome: parsed.outcome,
+          latencyMs: parsed.latency_ms,
+          occurredAt: parsed.occurred_at,
+          requestId: parsed.request_id,
+          jobId: parsed.job_id,
+        } satisfies ProviderHealthEvent;
+      }),
       {
         now,
         circuitState: await this.circuit.getProviderState(providerKey, now),

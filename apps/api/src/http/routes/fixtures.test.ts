@@ -1,3 +1,7 @@
+import {
+  completeOrganizationOnboardingResponseSchema,
+  fixturePlanSchema,
+} from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import {
   buildApp,
@@ -5,6 +9,7 @@ import {
   serviceHeaders,
   stubFetch,
 } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http fixtures", () => {
   it("generates, replays, reads, and audits a schedule edit", async () => {
@@ -19,10 +24,7 @@ describe("apps/api http fixtures", () => {
         gameAccount: null,
       }),
     });
-    const createdBody = (await created.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string } };
-    };
+    const createdBody = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
     const { organizationId } = createdBody;
     const competitionId = createdBody.competition.competition.id;
     await app.request(`/api/v1/organizations/${organizationId}/competitions/${competitionId}`, {
@@ -85,23 +87,7 @@ describe("apps/api http fixtures", () => {
     const replay = await generate();
     expect(first.status).toBe(200);
     expect(replay.status).toBe(200);
-    const fixture = (await first.json()) as {
-      id: string;
-      revision: number;
-      stages: Array<{
-        rounds: Array<{
-          encounters: Array<{
-            id: string;
-            home: { kind: string; teamId?: string };
-            away: { kind: string; teamId?: string };
-            series: null | {
-              resolutionMode: string;
-              officialMatches: Array<{ id: string; slot: number }>;
-            };
-          }>;
-        }>;
-      }>;
-    };
+    const fixture = await parseResponse(fixturePlanSchema, first);
     expect(await replay.json()).toEqual(fixture);
     expect(
       fixture.stages[0]?.rounds.every((round) =>
@@ -135,8 +121,8 @@ describe("apps/api http fixtures", () => {
         body: JSON.stringify({
           organizationId,
           competitionId,
-          homeTeamId: readableEncounter.home.teamId,
-          awayTeamId: readableEncounter.away.teamId,
+          homeTeamId: readableEncounter.home.kind === "team" ? readableEncounter.home.teamId : "",
+          awayTeamId: readableEncounter.away.kind === "team" ? readableEncounter.away.teamId : "",
           scheduledStartAt: "2026-09-04T01:00:00.000Z",
           officialMatchCount: 1,
         }),
@@ -162,7 +148,7 @@ describe("apps/api http fixtures", () => {
       },
     );
     expect(edited.status).toBe(200);
-    const editedFixture = (await edited.json()) as typeof fixture;
+    const editedFixture = await parseResponse(fixturePlanSchema, edited);
     expect(editedFixture).toMatchObject({ id: fixture.id, revision: 2 });
 
     const conflictingReplay = await app.request(

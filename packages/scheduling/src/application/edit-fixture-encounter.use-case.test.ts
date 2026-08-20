@@ -58,7 +58,7 @@ class Snapshots implements EncounterScheduleRepository {
 
 class Matches implements OfficialMatchRepository {
   async listByEncounter() {
-    return [] as OfficialMatch[];
+    return [] satisfies OfficialMatch[];
   }
   async upsertMany() {}
   async voidByEncounterIds() {}

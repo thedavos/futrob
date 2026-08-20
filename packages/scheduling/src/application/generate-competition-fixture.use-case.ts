@@ -225,7 +225,7 @@ function buildSpec(
     }
   }
 
-  return {
+  const spec = {
     organizationId: source.organizationId,
     competitionId: source.competitionId,
     generationVersion: input.generationVersion,
@@ -238,9 +238,14 @@ function buildSpec(
     resolutionModes: source.resolutionModes,
     seed,
     homeAndAway: input.homeAndAway,
-    ...(input.groups ? { groups: input.groups } : {}),
-    ...(input.playoffs ? { playoffs: input.playoffs } : {}),
   };
+  if (input.groups) {
+    Object.assign(spec, { groups: input.groups });
+  }
+  if (input.playoffs) {
+    Object.assign(spec, { playoffs: input.playoffs });
+  }
+  return spec;
 }
 
 function invalid(message: string): InvalidFixtureConfiguration {
@@ -268,23 +273,24 @@ function encounterCreatedEvents(
     stage.rounds.flatMap((round) =>
       round.encounters.flatMap((encounter) => {
         if (encounter.home.kind !== "team" || encounter.away.kind !== "team") return [];
-        return [
-          {
-            eventName: "scheduling.encounter-created",
-            occurredAt: occurredAt.toISOString(),
-            ...(correlationId ? { correlationId } : {}),
-            payload: {
-              encounterId: encounter.id,
-              organizationId: plan.organizationId,
-              competitionId: plan.competitionId,
-              stageId: stage.id,
-              roundId: round.id,
-              homeTeamId: encounter.home.teamId,
-              awayTeamId: encounter.away.teamId,
-              scheduledStartAt: encounter.scheduledStartAt.toISOString(),
-            },
+        const event = {
+          eventName: "scheduling.encounter-created" as const,
+          occurredAt: occurredAt.toISOString(),
+          payload: {
+            encounterId: encounter.id,
+            organizationId: plan.organizationId,
+            competitionId: plan.competitionId,
+            stageId: stage.id,
+            roundId: round.id,
+            homeTeamId: encounter.home.teamId,
+            awayTeamId: encounter.away.teamId,
+            scheduledStartAt: encounter.scheduledStartAt.toISOString(),
           },
-        ];
+        };
+        if (correlationId === undefined) {
+          return [event];
+        }
+        return [{ ...event, correlationId }];
       }),
     ),
   );

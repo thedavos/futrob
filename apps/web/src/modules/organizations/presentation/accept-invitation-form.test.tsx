@@ -2,13 +2,22 @@
 
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import type {
+  AcceptCompetitionInvitationResponse,
+  AcceptInvitationRequest,
+} from "@futrob/api-contracts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { OrganizationsClientError } from "./organizations-browser-client.ts";
 import { AcceptInvitationForm } from "./accept-invitation-form.tsx";
 
+type TestNavigateInput = {
+  readonly to: string;
+  readonly params?: Record<string, string>;
+};
+
 const mocks = vi.hoisted(() => ({
-  accept: vi.fn<(input: unknown) => Promise<unknown>>(),
-  navigate: vi.fn<(input: unknown) => Promise<void>>(),
+  accept: vi.fn<(input: AcceptInvitationRequest) => Promise<AcceptCompetitionInvitationResponse>>(),
+  navigate: vi.fn<(input: TestNavigateInput) => Promise<void>>(),
 }));
 
 vi.mock("./organizations-browser-client.ts", async (importOriginal) => {
@@ -17,7 +26,7 @@ vi.mock("./organizations-browser-client.ts", async (importOriginal) => {
     ...actual,
     organizationsBrowserClient: {
       ...actual.organizationsBrowserClient,
-      acceptInvitation: (input: unknown) => mocks.accept(input),
+      acceptInvitation: (input: AcceptInvitationRequest) => mocks.accept(input),
     },
   };
 });
@@ -53,15 +62,10 @@ describe("AcceptInvitationForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Unirme a la competición" }));
 
     expect(await screen.findByText("Podrás reintentar en 2 s.")).toBeTruthy();
-    expect((input as HTMLInputElement).value).toBe("competition-token");
-    expect(
-      (screen.getByRole("button", { name: "Reintentar en 2 s" }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(input).toHaveValue("competition-token");
+    expect(screen.getByRole("button", { name: "Reintentar en 2 s" })).toBeDisabled();
 
     void act(() => vi.advanceTimersByTime(2_000));
-    expect(
-      (screen.getByRole("button", { name: "Unirme a la competición" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(false);
+    expect(screen.getByRole("button", { name: "Unirme a la competición" })).not.toBeDisabled();
   });
 });

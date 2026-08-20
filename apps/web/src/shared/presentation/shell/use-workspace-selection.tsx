@@ -60,10 +60,7 @@ export function useWorkspaceSelection(): WorkspaceSelectionState {
   return value;
 }
 
-export function useWorkspaceSelectedClubId(): {
-  readonly externalClubId: string | undefined;
-  readonly profileReady: boolean;
-} {
+export function useWorkspaceSelectedClubId() {
   const value = useContext(WorkspaceSelectionContext);
   if (!value) {
     throw new Error("useWorkspaceSelectedClubId requires WorkspaceSelectionProvider");
@@ -74,6 +71,9 @@ export function useWorkspaceSelectedClubId(): {
         ? value.selection.externalClubId
         : undefined,
     profileReady: value.playerIdentityReady,
+  } satisfies {
+    readonly externalClubId: string | undefined;
+    readonly profileReady: boolean;
   };
 }
 
@@ -263,10 +263,16 @@ function useWorkspaceSelectionState() {
     }
     if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
       const teamId = teamIdForCompetition(selection.competitionId, teamsQuery.data);
+      if (teamId) {
+        return {
+          organizationId: selection.organizationId ?? undefined,
+          competitionId: selection.competitionId,
+          teamId,
+        };
+      }
       return {
         organizationId: selection.organizationId ?? undefined,
         competitionId: selection.competitionId,
-        ...(teamId ? { teamId } : {}),
       };
     }
     return {};

@@ -30,10 +30,10 @@ export function registerFixtureRoutes(app: Hono, deps: AppDeps): void {
       startsAt: new Date(parsed.data.startsAt),
       roundIntervalDays: parsed.data.roundIntervalDays,
       homeAndAway: parsed.data.homeAndAway,
-      ...(parsed.data.seed ? { seed: parsed.data.seed.map(asTeamId) } : {}),
-      ...(parsed.data.groups ? { groups: parsed.data.groups } : {}),
-      ...(parsed.data.playoffs ? { playoffs: parsed.data.playoffs } : {}),
       requestId: currentRequestCorrelation()?.requestId,
+      seed: parsed.data.seed?.map(asTeamId),
+      groups: parsed.data.groups,
+      playoffs: parsed.data.playoffs,
     });
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));
@@ -64,18 +64,20 @@ export function registerFixtureRoutes(app: Hono, deps: AppDeps): void {
         competitionId: asCompetitionId(c.req.param("competitionId")),
         fixturePlanId: c.req.param("fixturePlanId"),
         encounterId: asEncounterId(c.req.param("encounterId")),
-        ...(parsed.data.scheduledStartAt
-          ? { scheduledStartAt: new Date(parsed.data.scheduledStartAt) }
-          : {}),
-        ...(parsed.data.homeTeamId && parsed.data.awayTeamId
-          ? {
-              homeTeamId: asTeamId(parsed.data.homeTeamId),
-              awayTeamId: asTeamId(parsed.data.awayTeamId),
-            }
-          : {}),
         reason: parsed.data.reason,
         requestId:
           parsed.data.requestId ?? currentRequestCorrelation()?.requestId ?? crypto.randomUUID(),
+        scheduledStartAt: parsed.data.scheduledStartAt
+          ? new Date(parsed.data.scheduledStartAt)
+          : undefined,
+        homeTeamId:
+          parsed.data.homeTeamId && parsed.data.awayTeamId
+            ? asTeamId(parsed.data.homeTeamId)
+            : undefined,
+        awayTeamId:
+          parsed.data.homeTeamId && parsed.data.awayTeamId
+            ? asTeamId(parsed.data.awayTeamId)
+            : undefined,
       });
       if (result.isErr()) return failureToHttp(result.error);
       return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));

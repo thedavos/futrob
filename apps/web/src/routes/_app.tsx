@@ -1,6 +1,6 @@
 import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { authClient } from "@/modules/identity/adapters/auth/auth-client.ts";
+import { authClient } from "@/modules/identity/auth-client.ts";
 import { AuthenticatedShell } from "@/shared/presentation/shell/authenticated-shell.tsx";
 
 export const Route = createFileRoute("/_app")({

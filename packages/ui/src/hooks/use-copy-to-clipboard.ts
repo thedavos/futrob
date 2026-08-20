@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { hasBrowserWindow } from "#lib/browser-runtime";
 
 function legacyCopyToClipboard(value: string): boolean {
   const textArea = document.createElement("textarea");
@@ -57,7 +58,7 @@ export function useCopyToClipboard({ timeout = 2000, onCopy }: UseCopyToClipboar
   }
 
   async function copyToClipboard(value: string): Promise<boolean> {
-    if (typeof window === "undefined" || value.length === 0) {
+    if (!hasBrowserWindow() || value.length === 0) {
       reset();
       return false;
     }

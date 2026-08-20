@@ -90,6 +90,7 @@ export class FakeRosterInvitationRepository implements RosterInvitationRepositor
     if (current.expiresAt.getTime() <= now.getTime()) return null;
 
     if (current.redeemPolicy === "multi") {
+      // SAFETY: Compile-time brand marker; redemption keys pair invitation id with actor id.
       const redemptionKey = `${current.id}:${actorId}` as RedemptionKey;
       const existingRedemption = this.redemptions.get(redemptionKey);
       if (existingRedemption) {

@@ -63,9 +63,7 @@ describe("OnboardingFlowProvider initialization", () => {
     await user.click(await screen.findByRole("option", { name: "Inglés" }));
 
     expect(await screen.findByRole("heading", { name: "Set up your game details" })).toBeTruthy();
-    expect((screen.getByRole("textbox", { name: "EA identifier" }) as HTMLInputElement).value).toBe(
-      "gamer23",
-    );
+    expect(screen.getByRole("textbox", { name: "EA identifier" })).toHaveValue("gamer23");
     expect(screen.getByRole("radio", { name: "PlayStation" }).getAttribute("aria-checked")).toBe(
       "true",
     );
@@ -198,14 +196,14 @@ describe("OnboardingFlowProvider initialization", () => {
   });
 
   it("navigates optimistically before saveProgress resolves", async () => {
-    let resolveSave: ((value: unknown) => void) | undefined;
+    let resolveSave: (() => void) | undefined;
     const gateway = createFakeOnboardingGateway({
       path: null,
       currentStep: "intention",
     });
     const originalSave = gateway.saveProgress.bind(gateway);
     gateway.saveProgress = async (input) => {
-      await new Promise((resolve) => {
+      await new Promise<void>((resolve) => {
         resolveSave = resolve;
       });
       return originalSave(input);
@@ -219,7 +217,7 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(
       await screen.findByRole("heading", { name: "Configura tus datos de juego" }),
     ).toBeTruthy();
-    resolveSave?.(undefined);
+    resolveSave?.();
   });
 
   it("rolls back navigation when saveProgress fails", async () => {
@@ -400,22 +398,16 @@ describe("OnboardingFlowProvider initialization", () => {
       await act(async () => Promise.resolve());
 
       expect(screen.getByText("Podrás reintentar en 2 s.")).toBeTruthy();
-      expect(
-        (screen.getByRole("button", { name: "Reintentar en 2 s" }) as HTMLButtonElement).disabled,
-      ).toBe(true);
+      expect(screen.getByRole("button", { name: "Reintentar en 2 s" })).toBeDisabled();
 
       void act(() => vi.advanceTimersByTime(2_000));
-      expect(
-        (screen.getByRole("button", { name: "Aceptar invitación" }) as HTMLButtonElement).disabled,
-      ).toBe(false);
+      expect(screen.getByRole("button", { name: "Aceptar invitación" })).not.toBeDisabled();
     } finally {
       vi.useRealTimers();
     }
 
     fireEvent.click(screen.getByRole("button", { name: "Editar competición" }));
-    expect(((await screen.findByLabelText("Código de invitación")) as HTMLInputElement).value).toBe(
-      "invite-token",
-    );
+    expect(await screen.findByLabelText("Código de invitación")).toHaveValue("invite-token");
   });
 
   it("turns an omitted invitation into the player path", async () => {
@@ -439,9 +431,7 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(startingPath.parentElement?.querySelector("svg")).not.toBeNull();
     expect(screen.getByText("Empezar como jugador")).toBeTruthy();
     expect(screen.getByText("Sin club asociado por ahora")).toBeTruthy();
-    expect(
-      (screen.getByRole("button", { name: "Entrar a mi espacio" }) as HTMLButtonElement).disabled,
-    ).toBe(false);
+    expect(screen.getByRole("button", { name: "Entrar a mi espacio" })).not.toBeDisabled();
   });
 
   it("searches and selects an EA club on the player club step", async () => {
@@ -493,16 +483,12 @@ describe("OnboardingFlowProvider initialization", () => {
       fireEvent.click(screen.getByRole("button", { name: "Buscar club" }));
       await act(async () => Promise.resolve());
 
-      expect((query as HTMLInputElement).value).toBe("Fera");
+      expect(query).toHaveValue("Fera");
       expect(screen.getByText("Podrás reintentar en 2 s.")).toBeTruthy();
-      expect(
-        (screen.getByRole("button", { name: "Reintentar en 2 s" }) as HTMLButtonElement).disabled,
-      ).toBe(true);
+      expect(screen.getByRole("button", { name: "Reintentar en 2 s" })).toBeDisabled();
 
       void act(() => vi.advanceTimersByTime(2_000));
-      expect(
-        (screen.getByRole("button", { name: "Buscar club" }) as HTMLButtonElement).disabled,
-      ).toBe(false);
+      expect(screen.getByRole("button", { name: "Buscar club" })).not.toBeDisabled();
     } finally {
       vi.useRealTimers();
     }
@@ -535,9 +521,7 @@ describe("OnboardingFlowProvider initialization", () => {
     const club = await screen.findByRole("radio", { name: /Fera Enjaulada/ });
     await user.click(club);
     expect(searches.at(-1)?.gameEdition).toBe("fc25");
-    expect(
-      (screen.getByRole("button", { name: "Revisar club" }) as HTMLButtonElement).disabled,
-    ).toBe(false);
+    expect(screen.getByRole("button", { name: "Revisar club" })).not.toBeDisabled();
 
     await user.click(screen.getByRole("combobox", { name: "Plataforma EA para la búsqueda" }));
     await user.click(await screen.findByRole("option", { name: /Xbox/ }));
@@ -545,9 +529,7 @@ describe("OnboardingFlowProvider initialization", () => {
     await waitFor(() => {
       expect(screen.queryByRole("radio", { name: /Fera Enjaulada/ })).toBeNull();
     });
-    expect(
-      (screen.getByRole("button", { name: "Revisar club" }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(screen.getByRole("button", { name: "Revisar club" })).toBeDisabled();
   });
 
   it("discards a pending club search when the platform changes", async () => {
@@ -571,9 +553,7 @@ describe("OnboardingFlowProvider initialization", () => {
     });
 
     expect(screen.queryByRole("radio", { name: /Fera Enjaulada/ })).toBeNull();
-    expect(
-      (screen.getByRole("button", { name: "Revisar club" }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(screen.getByRole("button", { name: "Revisar club" })).toBeDisabled();
   });
 
   it("shows a recoverable error when club search fails", async () => {

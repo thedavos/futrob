@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { err, ok, type Result } from "@futrob/shared-kernel";
+import { z } from "zod";
 import {
   ExternalClubNotFound,
   ProviderSchemaError,
@@ -174,7 +175,7 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
       const rawPayloads = Array.isArray(response.value) ? response.value : [];
       const observedAt = new Date();
       const observations = parsed.data.map((match, index) => {
-        const payload = rawPayloads[index];
+        const payload = serializableProviderPayloadSchema.parse(rawPayloads[index] ?? null);
         return {
           providerKey: this.key,
           resourceType: "match" as const,
@@ -237,7 +238,26 @@ export class EaClubsGameDataAdapter implements GameDataProviderPort, ProviderMat
   }
 }
 
-function hashPayload(payload: unknown): string {
+type SerializableProviderPayload =
+  | null
+  | boolean
+  | number
+  | string
+  | SerializableProviderPayload[]
+  | { readonly [key: string]: SerializableProviderPayload };
+
+const serializableProviderPayloadSchema: z.ZodType<SerializableProviderPayload> = z.lazy(() =>
+  z.union([
+    z.null(),
+    z.boolean(),
+    z.number(),
+    z.string(),
+    z.array(serializableProviderPayloadSchema),
+    z.record(z.string(), serializableProviderPayloadSchema),
+  ]),
+);
+
+function hashPayload(payload: SerializableProviderPayload): string {
   const json = JSON.stringify(payload);
   if (json === undefined) {
     throw new TypeError("EA match payload is not JSON serializable");

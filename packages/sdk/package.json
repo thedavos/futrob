@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@futrob/api-contracts": "0.1.0"
+    "@futrob/api-contracts": "0.1.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "typescript": "6.0.2"

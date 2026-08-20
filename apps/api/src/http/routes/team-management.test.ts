@@ -1,3 +1,8 @@
+import {
+  addCompetitionParticipantResponseSchema,
+  completeOrganizationOnboardingResponseSchema,
+  getMyPlayerProfileResponseSchema,
+} from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import {
   buildApp,
@@ -5,6 +10,7 @@ import {
   serviceHeaders,
   stubFetch,
 } from "@/http/http-app.harness.ts";
+import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http team-management", () => {
   it("returns a tenant-scoped management list and detail", async () => {
@@ -21,10 +27,7 @@ describe("apps/api http team-management", () => {
         gameAccount: null,
       }),
     });
-    const orgBody = (await orgCreated.json()) as {
-      organizationId: string;
-      competition: { competition: { id: string } };
-    };
+    const orgBody = await parseResponse(completeOrganizationOnboardingResponseSchema, orgCreated);
     const organizationId = orgBody.organizationId;
     const competitionId = orgBody.competition.competition.id;
 
@@ -40,9 +43,10 @@ describe("apps/api http team-management", () => {
       }),
     });
     expect(playerOnboarding.status).toBe(200);
-    const profile = (await (
-      await app.request("/api/v1/players/me", { headers: serviceHeaders(player) })
-    ).json()) as { profile: { id: string }; gameAccounts: Array<{ id: string }> };
+    const profile = await parseResponse(
+      getMyPlayerProfileResponseSchema,
+      await app.request("/api/v1/players/me", { headers: serviceHeaders(player) }),
+    );
 
     const participant = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/participants`,
@@ -57,7 +61,7 @@ describe("apps/api http team-management", () => {
       },
     );
     expect(participant.status).toBe(201);
-    const entry = (await participant.json()) as { id: string; teamId: string };
+    const entry = await parseResponse(addCompetitionParticipantResponseSchema, participant);
 
     const added = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/teams/${entry.teamId}/roster`,
@@ -65,7 +69,7 @@ describe("apps/api http team-management", () => {
         method: "POST",
         headers: serviceHeaders(organizer),
         body: JSON.stringify({
-          playerProfileId: profile.profile.id,
+          playerProfileId: profile.profile!.id,
           gameAccountId: profile.gameAccounts[0]?.id,
           role: "captain",
         }),

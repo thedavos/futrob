@@ -2,13 +2,22 @@
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import type {
+  AcceptCompetitionInvitationResponse,
+  AcceptInvitationRequest,
+} from "@futrob/api-contracts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { OrganizationsClientError } from "./organizations-browser-client.ts";
 import { AcceptInvitationDeepLink } from "./accept-invitation-deep-link.tsx";
 
+type TestNavigateInput = {
+  readonly to: string;
+  readonly params?: Record<string, string>;
+};
+
 const mocks = vi.hoisted(() => ({
-  accept: vi.fn<(input: unknown) => Promise<unknown>>(),
-  navigate: vi.fn<(input: unknown) => Promise<void>>(),
+  accept: vi.fn<(input: AcceptInvitationRequest) => Promise<AcceptCompetitionInvitationResponse>>(),
+  navigate: vi.fn<(input: TestNavigateInput) => Promise<void>>(),
 }));
 
 vi.mock("./organizations-browser-client.ts", async (importOriginal) => {
@@ -17,7 +26,7 @@ vi.mock("./organizations-browser-client.ts", async (importOriginal) => {
     ...actual,
     organizationsBrowserClient: {
       ...actual.organizationsBrowserClient,
-      acceptInvitation: (input: unknown) => mocks.accept(input),
+      acceptInvitation: (input: AcceptInvitationRequest) => mocks.accept(input),
     },
   };
 });
@@ -45,7 +54,11 @@ describe("AcceptInvitationDeepLink", () => {
       )
       .mockResolvedValueOnce({
         organizationId: "org-1",
-        destination: { kind: "organization", organizationId: "org-1" },
+        organizationName: "Org Test",
+        role: "member",
+        competitionId: "comp-1",
+        competitionName: "Liga Test",
+        destination: { kind: "competition", organizationId: "org-1", competitionId: "comp-1" },
       });
     vi.useFakeTimers({ shouldAdvanceTime: true });
     render(
@@ -55,9 +68,7 @@ describe("AcceptInvitationDeepLink", () => {
     );
 
     expect(await screen.findByText("Podrás reintentar en 2 s.")).toBeTruthy();
-    expect(
-      (screen.getByRole("button", { name: "Reintentar en 2 s" }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(screen.getByRole("button", { name: "Reintentar en 2 s" })).toBeDisabled();
 
     void act(() => vi.advanceTimersByTime(2_000));
     fireEvent.click(screen.getByRole("button", { name: "Reintentar invitación" }));

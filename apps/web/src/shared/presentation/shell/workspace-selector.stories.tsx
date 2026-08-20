@@ -240,7 +240,7 @@ const meta = {
   title: "Product/Shell/WorkspaceSelector",
   parameters: { layout: "centered" },
   args: {
-    selectionKind: "competition" as StoryArgs["selectionKind"],
+    selectionKind: "competition" satisfies StoryArgs["selectionKind"],
   },
   argTypes: {
     selectionKind: {

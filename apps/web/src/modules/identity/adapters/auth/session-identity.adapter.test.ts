@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { describe, expect, it } from "vite-plus/test";
 import { requireAuthenticatedActor, AuthUnauthenticatedError } from "@/context/auth.ts";
 import { createMemoryActorProvisioner, createMemorySessionIdentity } from "./test-auth.ts";
@@ -77,7 +78,10 @@ describe("Better Auth email/password session → ActorId", () => {
       }),
     );
     expect(sessionRes.ok).toBe(true);
-    const body = (await sessionRes.json()) as { user?: { email?: string } } | null;
+    const sessionBodySchema = z
+      .object({ user: z.object({ email: z.string() }).optional() })
+      .nullable();
+    const body = sessionBodySchema.parse(await sessionRes.json());
     expect(body?.user?.email).toBe(email);
   });
 });

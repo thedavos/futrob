@@ -3,7 +3,9 @@ import type {
   OfficialMatchSelectionRepository,
   OfficialResult,
   OfficialResultRepository,
+  OfficialResultSlotSnapshot,
 } from "@futrob/results";
+import { gameDataProviderKeyQuerySchema } from "@futrob/api-contracts";
 import {
   asActorId,
   asCompetitionId,
@@ -13,7 +15,60 @@ import {
   type EncounterId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { z } from "zod";
+import { parseJsonColumn, type PgJsonInput } from "@/adapters/persistence/parse-json-column.ts";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
+
+const officialResultStatusSchema = z.enum(["approved", "voided"]);
+
+const providerPlayerMatchStatsSchema = z.object({
+  externalPlayerId: z.string(),
+  displayName: z.string(),
+  externalClubId: z.string(),
+  position: z.string().nullable(),
+  minutesPlayed: z.number().nullable(),
+  goals: z.number().nullable(),
+  assists: z.number().nullable(),
+  shots: z.number().nullable(),
+  passAttempts: z.number().nullable(),
+  passesMade: z.number().nullable(),
+  tackleAttempts: z.number().nullable(),
+  tacklesMade: z.number().nullable(),
+  saves: z.number().nullable(),
+  yellowCards: z.number().nullable(),
+  redCards: z.number().nullable(),
+  isMvp: z.boolean().nullable(),
+  rating: z.number().nullable(),
+});
+
+const officialResultSlotSnapshotSchema = z.object({
+  officialSlot: z.union([z.literal(1), z.literal(2)]),
+  providerMatchRef: z.object({
+    providerKey: gameDataProviderKeyQuerySchema,
+    externalId: z.string(),
+  }),
+  homeExternalClubId: z.string(),
+  awayExternalClubId: z.string(),
+  homeGoals: z.number(),
+  awayGoals: z.number(),
+  occurredAt: z.union([pgTimestampSchema, z.string()]),
+  gameEdition: z.string(),
+  platform: z.string(),
+  players: z.array(providerPlayerMatchStatsSchema),
+});
+
+const officialResultRowSchema = z.object({
+  id: pgTextSchema,
+  encounter_id: pgTextSchema,
+  organization_id: pgTextSchema,
+  competition_id: pgTextSchema,
+  revision: z.coerce.number(),
+  status: officialResultStatusSchema,
+  slots: z.custom<PgJsonInput>((value) => value !== undefined),
+  approved_at: pgTimestampSchema,
+  approved_by: pgTextSchema,
+});
 
 export class InMemoryOfficialMatchSelectionRepository implements OfficialMatchSelectionRepository {
   rows: OfficialMatchSelection[] = [];
@@ -161,7 +216,7 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
       [encounterId],
     );
     const row = result.rows[0];
-    return row ? rehydrateOfficialResult(row) : null;
+    return row ? rehydrateOfficialResult(officialResultRowSchema.parse(row)) : null;
   }
 
   async findById(officialResultId: string): Promise<OfficialResult | null> {
@@ -173,7 +228,7 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
       [officialResultId],
     );
     const row = result.rows[0];
-    return row ? rehydrateOfficialResult(row) : null;
+    return row ? rehydrateOfficialResult(officialResultRowSchema.parse(row)) : null;
   }
 
   async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialResult | null> {
@@ -187,7 +242,7 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
       [encounterId],
     );
     const row = result.rows[0];
-    return row ? rehydrateOfficialResult(row) : null;
+    return row ? rehydrateOfficialResult(officialResultRowSchema.parse(row)) : null;
   }
 
   async listByCompetition(competitionId: CompetitionId): Promise<OfficialResult[]> {
@@ -199,7 +254,7 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
        ORDER BY encounter_id, revision`,
       [competitionId],
     );
-    return result.rows.map(rehydrateOfficialResult);
+    return result.rows.map((row) => rehydrateOfficialResult(officialResultRowSchema.parse(row)));
   }
 
   async listByEncounter(encounterId: EncounterId): Promise<OfficialResult[]> {
@@ -211,38 +266,32 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
        ORDER BY revision`,
       [encounterId],
     );
-    return result.rows.map(rehydrateOfficialResult);
+    return result.rows.map((row) => rehydrateOfficialResult(officialResultRowSchema.parse(row)));
   }
 }
 
-function rehydrateOfficialResult(row: {
-  id: string;
-  encounter_id: string;
-  organization_id: string;
-  competition_id: string;
-  revision: number;
-  status: OfficialResult["status"];
-  slots: Array<Record<string, unknown>>;
-  approved_at: Date | string;
-  approved_by: string;
-}): OfficialResult {
+function rehydrateOfficialResult(row: z.infer<typeof officialResultRowSchema>): OfficialResult {
+  const slots = parseJsonColumn(z.array(officialResultSlotSnapshotSchema), row.slots).map(
+    rehydrateOfficialResultSlot,
+  );
   return {
     id: row.id,
     encounterId: asEncounterId(row.encounter_id),
     organizationId: asOrganizationId(row.organization_id),
     competitionId: asCompetitionId(row.competition_id),
-    revision: Number(row.revision),
+    revision: row.revision,
     status: row.status,
-    slots: row.slots.map((slot) => {
-      const snapshot = slot as unknown as OfficialResult["slots"][number] & {
-        occurredAt: string | Date;
-      };
-      return {
-        ...snapshot,
-        occurredAt: new Date(snapshot.occurredAt),
-      };
-    }),
-    approvedAt: new Date(row.approved_at),
+    slots,
+    approvedAt: row.approved_at,
     approvedBy: asActorId(row.approved_by),
+  };
+}
+
+function rehydrateOfficialResultSlot(
+  slot: z.infer<typeof officialResultSlotSnapshotSchema>,
+): OfficialResultSlotSnapshot {
+  return {
+    ...slot,
+    occurredAt: slot.occurredAt instanceof Date ? slot.occurredAt : new Date(slot.occurredAt),
   };
 }

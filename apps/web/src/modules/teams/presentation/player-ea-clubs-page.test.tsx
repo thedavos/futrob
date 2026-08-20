@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
+import type { ReactNode } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type { GetMyPlayerProfileResponse } from "@futrob/api-contracts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerEaClubsPage } from "./player-ea-clubs-page.tsx";
 
-const getMyProfile = vi.fn<() => Promise<unknown>>();
+const getMyProfile = vi.fn<() => Promise<GetMyPlayerProfileResponse>>();
 
 vi.mock("./teams-browser-client.ts", () => ({
   teamsBrowserClient: {
@@ -14,9 +16,9 @@ vi.mock("./teams-browser-client.ts", () => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children, ...props }: { to: string; children?: unknown }) => (
+  Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
     <a href={to} {...props}>
-      {children as never}
+      {children}
     </a>
   ),
 }));

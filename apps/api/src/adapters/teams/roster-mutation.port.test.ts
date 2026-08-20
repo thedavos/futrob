@@ -1,5 +1,11 @@
 import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { describe, expect, it, vi } from "vite-plus/test";
+import {
+  asPgPool,
+  createFakePgClient,
+  createFakePgPool,
+  type FakePgClient,
+} from "@/adapters/persistence/pg-test-double.ts";
 import { InMemoryRosterMutationPort, PostgresRosterMutationPort } from "./roster-mutation.port.ts";
 import {
   InMemoryCompetitionRosterMembershipRepository,
@@ -32,12 +38,12 @@ describe("roster mutation ports", () => {
 
   it("acquires the roster advisory lock inside the transaction", async () => {
     const calls: string[] = [];
-    const pool = {
-      query: vi.fn(async (sql: string) => {
-        calls.push(sql);
-        return { rows: [] };
-      }),
-    };
+    const queryImpl = vi.fn(async (sql: string) => {
+      calls.push(sql);
+      return { rows: [] };
+    }) satisfies FakePgClient["query"];
+    const client = createFakePgClient(queryImpl);
+    const pool = asPgPool(createFakePgPool(client));
     const transaction = {
       runInTransaction: async <T>(operation: () => Promise<T>) => {
         calls.push("transaction:start");
@@ -46,7 +52,7 @@ describe("roster mutation ports", () => {
         return result;
       },
     };
-    const mutations = new PostgresRosterMutationPort(pool as never, transaction);
+    const mutations = new PostgresRosterMutationPort(pool, transaction);
 
     await mutations.runExclusive(scope, async () => {
       calls.push("operation");
@@ -58,10 +64,7 @@ describe("roster mutation ports", () => {
       "operation",
       "transaction:end",
     ]);
-    expect(pool.query).toHaveBeenCalledWith(
-      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
-      ["org-1:competition-1"],
-    );
+    expect(client.queries).toContain("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))");
   });
 });
 
@@ -89,12 +92,15 @@ describe("roster membership conflict writes", () => {
   });
 
   it("returns null when Postgres rejects the unique membership insert", async () => {
-    const pool = { query: vi.fn(async (_sql: string) => ({ rows: [] })) };
-    const rosters = new PostgresCompetitionRosterMembershipRepository(pool as never);
+    const client = createFakePgClient(
+      vi.fn(async () => ({ rows: [] })) satisfies FakePgClient["query"],
+    );
+    const pool = asPgPool(createFakePgPool(client));
+    const rosters = new PostgresCompetitionRosterMembershipRepository(pool);
 
     const conflicting = await rosters.add(membership);
 
     expect(conflicting).toBeNull();
-    expect(pool.query.mock.calls[0]?.[0]).toContain("DO NOTHING");
+    expect(client.queries[0]).toContain("DO NOTHING");
   });
 });

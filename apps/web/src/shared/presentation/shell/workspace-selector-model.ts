@@ -74,20 +74,31 @@ export type WorkspaceSelectorModel = {
   readonly createCompetitionIntent: CreateCompetitionOrgIntent;
 };
 
-const COMPETITION_ROLE_RANK: Readonly<Record<WorkspaceDisplayRole, number>> = {
+const COMPETITION_ROLE_RANK = {
   organizer: 5,
   staff: 4,
   captain: 3,
   vice_captain: 2,
   player: 1,
   member: 0,
-};
+} satisfies Record<WorkspaceDisplayRole, number>;
 
-const ROSTER_ROLE_RANK: Readonly<Record<RosterRoleInput, number>> = {
+const ROSTER_ROLE_RANK = {
   captain: 3,
   vice_captain: 2,
   player: 1,
-};
+} satisfies Record<RosterRoleInput, number>;
+
+function orgMembershipToDisplayRole(role: OrgMembershipRoleInput): WorkspaceDisplayRole {
+  switch (role) {
+    case "organizer":
+      return WORKSPACE_DISPLAY_ROLE.organizer;
+    case "staff":
+      return WORKSPACE_DISPLAY_ROLE.staff;
+    case "member":
+      return WORKSPACE_DISPLAY_ROLE.member;
+  }
+}
 
 export function buildWorkspaceSelectorModel(input: {
   readonly memberships: readonly WorkspaceSelectorMembershipInput[];
@@ -98,7 +109,7 @@ export function buildWorkspaceSelectorModel(input: {
   const organizations = input.memberships.map((membership) => ({
     organizationId: membership.organizationId,
     name: membership.name,
-    role: membership.role as WorkspaceDisplayRole,
+    role: orgMembershipToDisplayRole(membership.role),
   }));
 
   const orgRoleById = new Map(

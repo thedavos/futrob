@@ -330,7 +330,7 @@ describe("player profile use cases", () => {
       name: "Shared FC",
       platform: "common-gen5",
       gameEdition: "fc26",
-      imageUrl: null as string | null,
+      imageUrl: null,
     };
 
     const firstResult = await associate.execute({ playerProfileId: first.id, club });

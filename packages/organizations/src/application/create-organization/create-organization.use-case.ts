@@ -1,5 +1,12 @@
-import { asOrganizationId, err, ok, type Result } from "@futrob/shared-kernel";
-import type { ActorId, ClockPort, IdGeneratorPort } from "@futrob/shared-kernel";
+import {
+  asOrganizationId,
+  err,
+  ok,
+  type Result,
+  type ActorId,
+  type ClockPort,
+  type IdGeneratorPort,
+} from "@futrob/shared-kernel";
 import {
   normalizeOrganizationName,
   type Organization,

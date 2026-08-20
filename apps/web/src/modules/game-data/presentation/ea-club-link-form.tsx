@@ -20,13 +20,16 @@ import {
   TooltipTrigger,
 } from "@futrob/ui";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
-import type { EaSearchPlatform, ExternalClubDto, RequestId } from "@futrob/api-contracts";
 import {
+  type EaSearchPlatform,
+  type ExternalClubDto,
+  type RequestId,
   asEaSearchPlatform,
   eaSearchPlatformFromGamePlatform,
   gamePlatformForEaSearchLogo,
   type GamePlatformDto,
 } from "@futrob/api-contracts";
+import { buildSupportFields } from "@/shared/presentation/support-fields.ts";
 import { PlatformLogo } from "@/shared/presentation/platform-logo.tsx";
 import { EaLogo } from "@/shared/presentation/ea-logo.tsx";
 import {
@@ -223,7 +226,9 @@ export function EaClubLinkForm({
             items={[...eaSearchPlatforms]}
             onValueChange={(value) => {
               if (!value) return;
-              setPlatform(value as EaSearchPlatform);
+              const nextPlatform = asEaSearchPlatform(value);
+              if (!nextPlatform) return;
+              setPlatform(nextPlatform);
               invalidateClubSearch();
               onClear();
             }}
@@ -281,8 +286,10 @@ export function EaClubLinkForm({
           }}
           error={{
             message: t(search.messageKey),
-            ...(search.requestId ? { requestId: search.requestId } : {}),
-            retryAfterSeconds: retry.remainingSeconds || undefined,
+            ...buildSupportFields({
+              requestId: search.requestId,
+              retryAfterSeconds: retry.remainingSeconds || undefined,
+            }),
           }}
         />
       ) : null}

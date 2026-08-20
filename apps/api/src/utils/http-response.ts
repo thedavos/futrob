@@ -1,4 +1,6 @@
-export function jsonResponse(data: unknown, status = 200): Response {
+type JsonSerializable = Parameters<typeof JSON.stringify>[0];
+
+export function jsonResponse(data: JsonSerializable, status = 200): Response {
   const body = JSON.stringify(data);
   return new Response(body, {
     status,

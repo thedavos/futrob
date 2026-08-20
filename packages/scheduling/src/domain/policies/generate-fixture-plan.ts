@@ -246,12 +246,11 @@ function fixtureEncounter(input: {
 }): FixtureEncounter {
   const encounterId = asEncounterId(`${input.roundId}:encounter:${input.order}`);
   const slots: readonly (1 | 2)[] = input.officialMatchCount === 1 ? [1] : [1, 2];
-  return {
+  const encounter: FixtureEncounter = {
     id: encounterId,
     stageId: input.stageId,
     roundId: input.roundId,
     order: input.order,
-    ...(input.groupId ? { groupId: input.groupId } : {}),
     home: input.home,
     away: input.away,
     scheduledStartAt: input.scheduledStartAt,
@@ -268,6 +267,10 @@ function fixtureEncounter(input: {
           }
         : null,
   };
+  if (input.groupId === undefined) {
+    return encounter;
+  }
+  return { ...encounter, groupId: input.groupId };
 }
 
 function roundRobin(participants: readonly TeamId[]): readonly RoundPairings[] {
@@ -290,7 +293,7 @@ function roundRobin(participants: readonly TeamId[]): readonly RoundPairings[] {
 }
 
 function distributeGroups(seed: readonly TeamId[], count: number): readonly (readonly TeamId[])[] {
-  const groups = Array.from({ length: count }, () => [] as TeamId[]);
+  const groups = Array.from({ length: count }, (): TeamId[] => []);
   seed.forEach((teamId, index) => groups[index % count]?.push(teamId));
   return groups;
 }
