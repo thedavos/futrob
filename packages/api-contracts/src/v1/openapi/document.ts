@@ -4,10 +4,15 @@ import {
   externalClubSchema,
   enqueueProviderSyncJobRequestSchema,
   getClubMatchesResponseSchema,
+  getMyRecentMatchPathSchema,
+  getMyRecentMatchQuerySchema,
+  getMyRecentMatchResponseSchema,
   playerRecentProviderMatchSchema,
+  playerRecentProviderMatchDetailSchema,
   getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
   providerMatchSchema,
+  providerMatchListSchema,
   providerSyncJobResponseSchema,
   providerHealthResponseSchema,
   searchClubsResponseSchema,
@@ -576,6 +581,53 @@ export const futrobOpenApiV1 = {
           "401": { $ref: "#/components/responses/ApiError" },
           "403": { $ref: "#/components/responses/ApiError" },
           "502": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/players/me/recent-matches/{providerKey}/{externalMatchId}": {
+      get: {
+        operationId: "getMyRecentMatch",
+        tags: ["players"],
+        summary: "Get one personal provider match from the final 50-result recent window",
+        parameters: [
+          {
+            name: "providerKey",
+            in: "path",
+            required: true,
+            schema: {
+              type: "string",
+              enum: ["ea-clubs", "manual", "screenshot-ocr"],
+            },
+          },
+          {
+            name: "externalMatchId",
+            in: "path",
+            required: true,
+            schema: { type: "string", minLength: 1 },
+          },
+          {
+            name: "externalClubId",
+            in: "query",
+            required: false,
+            description: "Associated ExternalClub whose recent window is searched.",
+            schema: { type: "string", minLength: 1 },
+          },
+        ],
+        responses: {
+          "200": {
+            description:
+              "Prerequisite, not-found, or ready detail state with the complete provider roster",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GetMyRecentMatchResponse" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "502": { $ref: "#/components/responses/ApiError" },
+          "503": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -1958,6 +2010,43 @@ export const futrobOpenApiV1 = {
           },
         },
       },
+      ProviderMatchList: {
+        type: "object",
+        required: ["id", "provider", "game", "occurredAt", "home", "away", "metadata"],
+        properties: {
+          id: { type: "string" },
+          provider: {
+            type: "object",
+            required: ["key", "externalMatchId"],
+            properties: {
+              key: { type: "string", enum: ["ea-clubs", "manual", "screenshot-ocr"] },
+              externalMatchId: { type: "string" },
+            },
+          },
+          game: {
+            type: "object",
+            required: ["edition", "platform", "mode"],
+            properties: {
+              edition: { type: "string" },
+              platform: { type: "string" },
+              mode: { type: "string" },
+            },
+          },
+          occurredAt: { type: "string", format: "date-time" },
+          home: { $ref: "#/components/schemas/ProviderMatchTeam" },
+          away: { $ref: "#/components/schemas/ProviderMatchTeam" },
+          metadata: {
+            type: "object",
+            required: ["durationSeconds", "wasDisconnected", "winnerByForfeit", "completeness"],
+            properties: {
+              durationSeconds: { type: ["number", "null"] },
+              wasDisconnected: { type: "boolean" },
+              winnerByForfeit: { type: "boolean" },
+              completeness: { type: "string", enum: ["complete", "partial", "unknown"] },
+            },
+          },
+        },
+      },
       ProviderMatchTeam: {
         type: "object",
         required: ["externalClubId", "name", "goals", "imageUrl"],
@@ -2722,21 +2811,29 @@ export const futrobOpenApiV1 = {
         oneOf: [
           {
             type: "object",
-            required: ["kind", "match", "appearance", "listedExternalClubId"],
+            required: [
+              "kind",
+              "match",
+              "appearance",
+              "listedExternalClubId",
+              "listedMvpDisplayName",
+            ],
             properties: {
               kind: { type: "string", const: "played" },
-              match: { $ref: "#/components/schemas/ProviderMatch" },
+              match: { $ref: "#/components/schemas/ProviderMatchList" },
               appearance: { $ref: "#/components/schemas/ProviderPlayerMatchStats" },
               listedExternalClubId: { type: "string" },
+              listedMvpDisplayName: { type: ["string", "null"] },
             },
           },
           {
             type: "object",
-            required: ["kind", "match", "listedExternalClubId"],
+            required: ["kind", "match", "listedExternalClubId", "listedMvpDisplayName"],
             properties: {
               kind: { type: "string", const: "not_played" },
-              match: { $ref: "#/components/schemas/ProviderMatch" },
+              match: { $ref: "#/components/schemas/ProviderMatchList" },
               listedExternalClubId: { type: "string" },
+              listedMvpDisplayName: { type: ["string", "null"] },
             },
           },
         ],
@@ -2767,6 +2864,63 @@ export const futrobOpenApiV1 = {
                 type: "array",
                 items: { $ref: "#/components/schemas/PlayerRecentProviderMatch" },
               },
+            },
+          },
+        ],
+      },
+      PlayerRecentProviderMatchDetail: {
+        oneOf: [
+          {
+            type: "object",
+            required: ["kind", "match", "appearance", "listedExternalClubId"],
+            properties: {
+              kind: { type: "string", const: "played" },
+              match: { $ref: "#/components/schemas/ProviderMatch" },
+              appearance: { $ref: "#/components/schemas/ProviderPlayerMatchStats" },
+              listedExternalClubId: { type: "string" },
+            },
+          },
+          {
+            type: "object",
+            required: ["kind", "match", "listedExternalClubId"],
+            properties: {
+              kind: { type: "string", const: "not_played" },
+              match: { $ref: "#/components/schemas/ProviderMatch" },
+              listedExternalClubId: { type: "string" },
+            },
+          },
+        ],
+        discriminator: { propertyName: "kind" },
+      },
+      GetMyRecentMatchResponse: {
+        oneOf: [
+          {
+            type: "object",
+            required: ["status"],
+            properties: {
+              status: { type: "string", const: "needs_club" },
+            },
+          },
+          {
+            type: "object",
+            required: ["status"],
+            properties: {
+              status: { type: "string", const: "needs_game_account" },
+            },
+          },
+          {
+            type: "object",
+            required: ["status"],
+            properties: {
+              status: { type: "string", const: "not_found" },
+            },
+          },
+          {
+            type: "object",
+            required: ["status", "match"],
+            properties: {
+              status: { type: "string", const: "ready" },
+              match: { $ref: "#/components/schemas/PlayerRecentProviderMatchDetail" },
             },
           },
         ],
@@ -3205,11 +3359,16 @@ void apiErrorSchema;
 void pingResponseSchema;
 void externalClubSchema;
 void providerMatchSchema;
+void providerMatchListSchema;
 void searchClubsResponseSchema;
 void getClubMatchesResponseSchema;
 void playerRecentProviderMatchSchema;
 void getMyRecentMatchesQuerySchema;
 void getMyRecentMatchesResponseSchema;
+void getMyRecentMatchPathSchema;
+void getMyRecentMatchQuerySchema;
+void playerRecentProviderMatchDetailSchema;
+void getMyRecentMatchResponseSchema;
 void enqueueProviderSyncJobRequestSchema;
 void providerSyncJobResponseSchema;
 void providerHealthResponseSchema;

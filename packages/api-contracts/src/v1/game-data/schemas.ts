@@ -65,6 +65,10 @@ export const providerMatchSchema = z.object({
 
 export type ProviderMatchDto = z.infer<typeof providerMatchSchema>;
 
+export const providerMatchListSchema = providerMatchSchema.omit({ players: true });
+
+export type ProviderMatchListDto = z.infer<typeof providerMatchListSchema>;
+
 export const gameDataProviderKeyQuerySchema = z.enum(["ea-clubs", "manual", "screenshot-ocr"]);
 
 export type GameDataProviderKeyQuery = z.infer<typeof gameDataProviderKeyQuerySchema>;
@@ -118,14 +122,16 @@ export type GetClubMatchesResponse = z.infer<typeof getClubMatchesResponseSchema
 export const playerRecentProviderMatchSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("played"),
-    match: providerMatchSchema,
+    match: providerMatchListSchema,
     appearance: providerPlayerMatchStatsSchema,
     listedExternalClubId: z.string(),
+    listedMvpDisplayName: z.string().nullable(),
   }),
   z.object({
     kind: z.literal("not_played"),
-    match: providerMatchSchema,
+    match: providerMatchListSchema,
     listedExternalClubId: z.string(),
+    listedMvpDisplayName: z.string().nullable(),
   }),
 ]);
 
@@ -148,6 +154,50 @@ export const getMyRecentMatchesResponseSchema = z.discriminatedUnion("status", [
 ]);
 
 export type GetMyRecentMatchesResponse = z.infer<typeof getMyRecentMatchesResponseSchema>;
+
+export const getMyRecentMatchPathSchema = z.object({
+  providerKey: gameDataProviderKeyQuerySchema,
+  externalMatchId: z.string().trim().min(1),
+});
+
+export type GetMyRecentMatchPath = z.infer<typeof getMyRecentMatchPathSchema>;
+
+export const getMyRecentMatchQuerySchema = z.object({
+  externalClubId: z.string().trim().min(1).optional(),
+});
+
+export type GetMyRecentMatchQuery = z.infer<typeof getMyRecentMatchQuerySchema>;
+export type GetMyRecentMatchQueryInput = z.input<typeof getMyRecentMatchQuerySchema>;
+
+export const playerRecentProviderMatchDetailSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("played"),
+    match: providerMatchSchema,
+    appearance: providerPlayerMatchStatsSchema,
+    listedExternalClubId: z.string(),
+  }),
+  z.object({
+    kind: z.literal("not_played"),
+    match: providerMatchSchema,
+    listedExternalClubId: z.string(),
+  }),
+]);
+
+export type PlayerRecentProviderMatchDetailDto = z.infer<
+  typeof playerRecentProviderMatchDetailSchema
+>;
+
+export const getMyRecentMatchResponseSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("needs_club") }),
+  z.object({ status: z.literal("needs_game_account") }),
+  z.object({ status: z.literal("not_found") }),
+  z.object({
+    status: z.literal("ready"),
+    match: playerRecentProviderMatchDetailSchema,
+  }),
+]);
+
+export type GetMyRecentMatchResponse = z.infer<typeof getMyRecentMatchResponseSchema>;
 
 export const enqueueProviderSyncJobRequestSchema = z.object({
   organizationId: z.string().trim().min(1),

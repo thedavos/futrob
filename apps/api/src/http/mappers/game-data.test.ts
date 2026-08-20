@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vite-plus/test";
 import type {
   PlayerRecentMatchesResult,
+  PlayerRecentProviderMatchResult,
   ProviderMatch,
   ProviderPlayerMatchStats,
 } from "@futrob/game-data";
-import { toPlayerRecentMatchesDto } from "./game-data.ts";
+import { toPlayerRecentMatchDetailDto, toPlayerRecentMatchesDto } from "./game-data.ts";
 
 describe("toPlayerRecentMatchesDto", () => {
-  it("maps a played row with appearance and only the match MVP roster", () => {
+  it("maps a played row with appearance, no roster, and listed-club MVP only", () => {
     const appearance = playerStats({
       displayName: "davos282",
       externalClubId: "10754",
@@ -30,18 +31,19 @@ describe("toPlayerRecentMatchesDto", () => {
       matches: [
         {
           kind: "played",
-          match: expect.objectContaining({
-            id: "ea-clubs:1",
-            players: [expect.objectContaining({ displayName: "Rival Cap", isMvp: true })],
-          }),
+          match: expect.objectContaining({ id: "ea-clubs:1" }),
           appearance: expect.objectContaining({ displayName: "davos282", externalClubId: "10754" }),
           listedExternalClubId: "10754",
+          listedMvpDisplayName: null,
         },
       ],
     });
+    expect(dto.status === "ready" ? dto.matches[0]?.match : undefined).not.toHaveProperty(
+      "players",
+    );
   });
 
-  it("maps a not_played row without copying the opponent appearance", () => {
+  it("maps a not_played row without copying the opponent appearance or MVP", () => {
     const opponentAppearance = playerStats({
       displayName: "davos282",
       externalClubId: "2",
@@ -64,11 +66,86 @@ describe("toPlayerRecentMatchesDto", () => {
         {
           kind: "not_played",
           listedExternalClubId: "10754",
-          match: expect.objectContaining({ id: "ea-clubs:1", players: [] }),
+          listedMvpDisplayName: null,
+          match: expect.objectContaining({ id: "ea-clubs:1" }),
         },
       ],
     });
     expect(dto.status === "ready" ? dto.matches[0] : undefined).not.toHaveProperty("appearance");
+    expect(dto.status === "ready" ? dto.matches[0]?.match : undefined).not.toHaveProperty(
+      "players",
+    );
+  });
+
+  it("names the listed-club MVP from the appearance when that player is MVP", () => {
+    const appearance = playerStats({
+      displayName: "davos282",
+      externalClubId: "10754",
+      isMvp: true,
+    });
+    const dto = toPlayerRecentMatchesDto(
+      ready([
+        {
+          kind: "played",
+          match: providerMatch({ players: [appearance] }),
+          appearance,
+          listedExternalClubId: "10754",
+        },
+      ]),
+    );
+
+    expect(dto.status === "ready" ? dto.matches[0]?.listedMvpDisplayName : undefined).toBe(
+      "davos282",
+    );
+  });
+});
+
+describe("toPlayerRecentMatchDetailDto", () => {
+  it("keeps the complete roster while the list mapper omits players", () => {
+    const appearance = playerStats({
+      displayName: "davos282",
+      externalClubId: "10754",
+      isMvp: false,
+    });
+    const teammate = playerStats({
+      displayName: "Teammate",
+      externalClubId: "10754",
+      isMvp: false,
+    });
+    const mvp = playerStats({ displayName: "Rival Cap", externalClubId: "2", isMvp: true });
+    const row = {
+      kind: "played",
+      match: providerMatch({ players: [appearance, teammate, mvp] }),
+      appearance,
+      listedExternalClubId: "10754",
+    } satisfies Extract<PlayerRecentProviderMatchResult, { status: "ready" }>["match"];
+
+    const listDto = toPlayerRecentMatchesDto(ready([row]));
+    const detailDto = toPlayerRecentMatchDetailDto({ status: "ready", match: row });
+
+    expect(listDto.status === "ready" ? listDto.matches[0]?.match : undefined).not.toHaveProperty(
+      "players",
+    );
+    expect(listDto.status === "ready" ? listDto.matches[0]?.listedMvpDisplayName : undefined).toBe(
+      null,
+    );
+    expect(detailDto.status === "ready" ? detailDto.match.match.players : []).toEqual([
+      expect.objectContaining({ displayName: "davos282" }),
+      expect.objectContaining({ displayName: "Teammate" }),
+      expect.objectContaining({ displayName: "Rival Cap" }),
+    ]);
+  });
+
+  it("maps all non-ready detail states without extra fields", () => {
+    expect(toPlayerRecentMatchDetailDto({ status: "needs_club" })).toEqual({
+      status: "needs_club",
+    });
+    expect(toPlayerRecentMatchDetailDto({ status: "needs_game_account" })).toEqual({
+      status: "needs_game_account",
+    });
+    expect(toPlayerRecentMatchDetailDto({ status: "not_found" })).toEqual({
+      status: "not_found",
+    });
   });
 });
 

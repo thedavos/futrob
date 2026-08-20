@@ -1,4 +1,7 @@
-import { getMyRecentMatchesResponseSchema } from "@futrob/api-contracts";
+import {
+  getMyRecentMatchResponseSchema,
+  getMyRecentMatchesResponseSchema,
+} from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import clubMatchesFixture from "@/adapters/game-data/ea-clubs/fixtures/club-matches.json";
@@ -147,9 +150,7 @@ describe("apps/api personal statistics routes", () => {
         (row) => row.kind === "played" && row.appearance?.displayName === "Vcaliari",
       ),
     ).toBe(true);
-    expect(
-      body.matches.every((row) => row.match.players.every((player) => player.isMvp === true)),
-    ).toBe(true);
+    expect(body.matches.every((row) => !("players" in row.match))).toBe(true);
   });
 
   it("queries only the selected associated club for recent matches", async () => {
@@ -233,6 +234,135 @@ describe("apps/api personal statistics routes", () => {
     expect(await response.json()).toMatchObject({ code: "api.validation_error" });
     expect(matchCalls).toBe(0);
   });
+
+  it("returns the full roster for a recent provider match detail", async () => {
+    const app = buildApp(
+      createFetch((url) => {
+        if (url.includes("/clubs/info")) return Response.json(clubInfoFixture);
+        if (url.includes("/clubs/matches")) return Response.json(clubMatchesFixture);
+        return Response.json([]);
+      }),
+    );
+    const actor = "actor-recent-detail-ready";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, { externalClubId: "10754", name: "Fera Enjaulada" });
+
+    const response = await app.request(
+      "/api/v1/players/me/recent-matches/ea-clubs/336118610940060?externalClubId=10754",
+      { headers: serviceHeaders(actor) },
+    );
+
+    expect(response.status).toBe(200);
+    const body = await parseResponse(getMyRecentMatchResponseSchema, response);
+    expect(body.status).toBe("ready");
+    if (body.status !== "ready") return;
+    expect(body.match.kind).toBe("played");
+    expect(body.match.match.players.map((player) => player.displayName)).toEqual([
+      "Vcaliari",
+      "Rival Cap",
+    ]);
+  });
+
+  it("validates provider and club association before provider egress", async () => {
+    let matchCalls = 0;
+    const app = buildApp(
+      createFetch((url) => {
+        if (url.includes("/clubs/info")) return Response.json(clubInfoFixture);
+        if (url.includes("/clubs/matches")) matchCalls += 1;
+        return Response.json([]);
+      }),
+    );
+    const actor = "actor-recent-detail-isolation";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, { externalClubId: "10754", name: "Fera Enjaulada" });
+
+    const invalidProvider = await app.request(
+      "/api/v1/players/me/recent-matches/not-a-provider/match-1?externalClubId=10754",
+      { headers: serviceHeaders(actor) },
+    );
+    const otherClub = await app.request(
+      "/api/v1/players/me/recent-matches/ea-clubs/match-1?externalClubId=44001",
+      { headers: serviceHeaders(actor) },
+    );
+    const omittedClub = await app.request("/api/v1/players/me/recent-matches/ea-clubs/match-1", {
+      headers: serviceHeaders(actor),
+    });
+
+    expect(invalidProvider.status).toBe(400);
+    expect(otherClub.status).toBe(400);
+    expect(omittedClub.status).toBe(400);
+    expect(matchCalls).toBe(0);
+  });
+
+  it("returns not_found only after a complete recent window", async () => {
+    const app = buildApp(
+      createFetch((url) => {
+        if (url.includes("/clubs/info")) return Response.json(clubInfoFixture);
+        if (url.includes("/clubs/matches")) return Response.json(clubMatchesFixture);
+        return Response.json([]);
+      }),
+    );
+    const actor = "actor-recent-detail-not-found";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, { externalClubId: "10754", name: "Fera Enjaulada" });
+
+    const response = await app.request(
+      "/api/v1/players/me/recent-matches/ea-clubs/missing?externalClubId=10754",
+      { headers: serviceHeaders(actor) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "not_found" });
+  });
+
+  it("returns not_found for an unregistered provider instead of crashing", async () => {
+    let matchCalls = 0;
+    const app = buildApp(
+      createFetch((url) => {
+        if (url.includes("/clubs/info")) return Response.json(clubInfoFixture);
+        if (url.includes("/clubs/matches")) matchCalls += 1;
+        return Response.json([]);
+      }),
+    );
+    const actor = "actor-recent-detail-unregistered";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, {
+      providerKey: "screenshot-ocr",
+      externalClubId: "ocr-club",
+      name: "OCR Club",
+    });
+
+    const response = await app.request(
+      "/api/v1/players/me/recent-matches/screenshot-ocr/match-1?externalClubId=ocr-club",
+      { headers: serviceHeaders(actor) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "not_found" });
+    expect(matchCalls).toBe(0);
+  });
+
+  it("maps upstream and open-circuit detail failures to 502 then 503", async () => {
+    const app = buildApp(
+      createFetch((url) => {
+        if (url.includes("/clubs/info")) return Response.json(clubInfoFixture);
+        if (url.includes("/clubs/matches")) {
+          return new Response("upstream unavailable", { status: 502 });
+        }
+        return Response.json([]);
+      }),
+    );
+    const actor = "actor-recent-detail-provider-errors";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, { externalClubId: "10754", name: "Fera Enjaulada" });
+    const path = "/api/v1/players/me/recent-matches/ea-clubs/match-1?externalClubId=10754";
+
+    const upstreamFailure = await app.request(path, { headers: serviceHeaders(actor) });
+    const openCircuit = await app.request(path, { headers: serviceHeaders(actor) });
+
+    expect(upstreamFailure.status).toBe(502);
+    expect(openCircuit.status).toBe(503);
+  });
 });
 
 async function onboardPlayerWithAccount(
@@ -255,13 +385,17 @@ async function onboardPlayerWithAccount(
 async function associateClub(
   app: ReturnType<typeof buildApp>,
   actor: string,
-  club: { readonly externalClubId: string; readonly name: string },
+  club: {
+    readonly externalClubId: string;
+    readonly name: string;
+    readonly providerKey?: "ea-clubs" | "manual" | "screenshot-ocr";
+  },
 ): Promise<void> {
   const response = await app.request("/api/v1/players/me/external-club", {
     method: "POST",
     headers: serviceHeaders(actor),
     body: JSON.stringify({
-      providerKey: "ea-clubs",
+      providerKey: club.providerKey ?? "ea-clubs",
       externalClubId: club.externalClubId,
       platform: "common-gen5",
       gameEdition: "fc26",

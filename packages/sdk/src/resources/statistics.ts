@@ -5,6 +5,9 @@ import {
   getCompetitionTeamStatisticsResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  getMyRecentMatchPathSchema,
+  getMyRecentMatchQuerySchema,
+  getMyRecentMatchResponseSchema,
   getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
   getMyStatisticsQuerySchema,
@@ -15,12 +18,17 @@ import {
   type GetCompetitionTeamStatisticsResponse,
   type GetMyMatchesQuery,
   type GetMyMatchesResponse,
+  type GetMyRecentMatchPath,
+  type GetMyRecentMatchQueryInput,
+  type GetMyRecentMatchResponse,
   type GetMyRecentMatchesQueryInput,
   type GetMyRecentMatchesResponse,
   type GetMyStatisticsQuery,
   type GetMyStatisticsResponse,
 } from "@futrob/api-contracts";
 import type { HttpClient } from "../http.ts";
+
+export type GetMyRecentMatchInput = GetMyRecentMatchPath & GetMyRecentMatchQueryInput;
 
 export function createStatisticsResource(http: HttpClient) {
   return {
@@ -58,6 +66,18 @@ export function createStatisticsResource(http: HttpClient) {
         path: `/players/me/recent-matches${queryString ? `?${queryString}` : ""}`,
         method: "GET",
         parse: (data) => getMyRecentMatchesResponseSchema.parse(data),
+      });
+    },
+    async getMyRecentMatch(input: GetMyRecentMatchInput): Promise<GetMyRecentMatchResponse> {
+      const path = getMyRecentMatchPathSchema.parse(input);
+      const query = getMyRecentMatchQuerySchema.parse(input);
+      const search = new URLSearchParams();
+      if (query.externalClubId) search.set("externalClubId", query.externalClubId);
+      const queryString = search.toString();
+      return http.request({
+        path: `/players/me/recent-matches/${encodeURIComponent(path.providerKey)}/${encodeURIComponent(path.externalMatchId)}${queryString ? `?${queryString}` : ""}`,
+        method: "GET",
+        parse: (data) => getMyRecentMatchResponseSchema.parse(data),
       });
     },
     async getCompetitionStandings(input: {

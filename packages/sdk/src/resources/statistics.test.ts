@@ -80,6 +80,28 @@ describe("statistics SDK resource", () => {
     );
   });
 
+  it("encodes the provider match identity and selected club for detail", async () => {
+    let requestedUrl = "";
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input) => {
+        requestedUrl = requestUrl(input);
+        return Response.json({ status: "not_found" });
+      }),
+    });
+
+    await expect(
+      client.statistics.getMyRecentMatch({
+        providerKey: "ea-clubs",
+        externalMatchId: "match/with spaces",
+        externalClubId: "club/10754",
+      }),
+    ).resolves.toEqual({ status: "not_found" });
+    expect(requestedUrl).toBe(
+      "https://app.example.com/api/v1/players/me/recent-matches/ea-clubs/match%2Fwith%20spaces?externalClubId=club%2F10754",
+    );
+  });
+
   it("reads competition standings and team statistics", async () => {
     const requested: string[] = [];
     const client = createFutrobClient({

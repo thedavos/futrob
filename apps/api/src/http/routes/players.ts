@@ -8,6 +8,9 @@ import {
   associateMyPlayerExternalClubResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  getMyRecentMatchPathSchema,
+  getMyRecentMatchQuerySchema,
+  getMyRecentMatchResponseSchema,
   getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
   getMyPlayerProfileResponseSchema,
@@ -25,7 +28,10 @@ import {
   playerGameAccountDto,
   playerProfileDto,
 } from "@/http/mappers/player.ts";
-import { toPlayerRecentMatchesDto } from "@/http/mappers/game-data.ts";
+import {
+  toPlayerRecentMatchDetailDto,
+  toPlayerRecentMatchesDto,
+} from "@/http/mappers/game-data.ts";
 import { playerTeamMembershipDto } from "@/http/mappers/team.ts";
 import {
   createServiceAuthMiddleware,
@@ -242,21 +248,61 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
       ]);
     }
     const listed = await gameData.listPlayerRecentProviderMatches.execute({
-      accounts: details.gameAccounts.map((account) => ({
-        identifier: account.identifier,
-        normalizedIdentifier: account.normalizedIdentifier,
-        providerExternalPlayerId: account.providerExternalPlayerId,
-      })),
-      clubs: clubs.map((club) => ({
-        providerKey: club.providerKey,
-        externalClubId: club.externalClubId,
-        platform: club.platform,
-        gameEdition: club.gameEdition,
-      })),
+      accounts: recentMatchAccounts(details),
+      clubs: clubs.map(toRecentMatchClub),
     });
     if (!listed.isOk()) return failureToHttp(listed.error);
     return jsonResponse(
       getMyRecentMatchesResponseSchema.parse(toPlayerRecentMatchesDto(listed.value)),
+    );
+  });
+
+  secured.get("/players/me/recent-matches/:providerKey/:externalMatchId", async (c) => {
+    const path = getMyRecentMatchPathSchema.safeParse({
+      providerKey: c.req.param("providerKey"),
+      externalMatchId: c.req.param("externalMatchId"),
+    });
+    if (!path.success) return validationErrorResponse(path.error.issues);
+
+    const query = getMyRecentMatchQuerySchema.safeParse({
+      externalClubId: c.req.query("externalClubId") ?? undefined,
+    });
+    if (!query.success) return validationErrorResponse(query.error.issues);
+
+    const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
+    if (query.data.externalClubId === undefined && details.externalClubs.length > 0) {
+      return validationErrorResponse([
+        {
+          code: "custom",
+          path: ["externalClubId"],
+          message: "externalClubId is required when associated clubs exist",
+        },
+      ]);
+    }
+    const selectedClub = details.externalClubs.find(
+      (club) =>
+        club.providerKey === path.data.providerKey &&
+        club.externalClubId === query.data.externalClubId,
+    );
+    if (query.data.externalClubId && details.externalClubs.length > 0 && !selectedClub) {
+      return validationErrorResponse([
+        {
+          code: "custom",
+          path: ["externalClubId"],
+          message: "externalClubId must match a provider-associated club",
+        },
+      ]);
+    }
+
+    const found = await gameData.getPlayerRecentProviderMatch.execute({
+      accounts: recentMatchAccounts(details),
+      club: selectedClub ? toRecentMatchClub(selectedClub) : null,
+      providerKey: path.data.providerKey,
+      externalMatchId: path.data.externalMatchId,
+    });
+    if (!found.isOk()) return failureToHttp(found.error);
+    return jsonResponse(
+      getMyRecentMatchResponseSchema.parse(toPlayerRecentMatchDetailDto(found.value)),
     );
   });
 
@@ -336,4 +382,32 @@ function clubsForRecentMatches<T extends { readonly externalClubId: string }>(
 ): readonly T[] {
   if (externalClubId === undefined) return clubs;
   return clubs.filter((club) => club.externalClubId === externalClubId);
+}
+
+function recentMatchAccounts(details: {
+  readonly gameAccounts: readonly {
+    readonly identifier: string;
+    readonly normalizedIdentifier: string;
+    readonly providerExternalPlayerId: string | null;
+  }[];
+}) {
+  return details.gameAccounts.map((account) => ({
+    identifier: account.identifier,
+    normalizedIdentifier: account.normalizedIdentifier,
+    providerExternalPlayerId: account.providerExternalPlayerId,
+  }));
+}
+
+function toRecentMatchClub(club: {
+  readonly providerKey: "ea-clubs" | "manual" | "screenshot-ocr";
+  readonly externalClubId: string;
+  readonly platform: string;
+  readonly gameEdition: string;
+}) {
+  return {
+    providerKey: club.providerKey,
+    externalClubId: club.externalClubId,
+    platform: club.platform,
+    gameEdition: club.gameEdition,
+  };
 }
