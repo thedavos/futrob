@@ -557,32 +557,30 @@ describe("isDnfMatch", () => {
 });
 
 describe("matchMvpDisplayName", () => {
-  it("uses the appearance when the player is the MVP", () => {
+  it("uses the listed MVP name when the player is the MVP", () => {
     expect(matchMvpDisplayName(recentProviderMatchFixture({ appearance: { isMvp: true } }))).toBe(
       "davos282",
     );
   });
 
   it("does not name the player as MVP on a not_played row", () => {
-    const appearance = recentProviderMatchFixture().appearance;
     expect(
       matchMvpDisplayName(
         recentProviderMatchFixture({
           kind: "not_played",
           listedExternalClubId: "10754",
-          players: [{ ...appearance, externalClubId: "99", displayName: "davos282", isMvp: true }],
+          listedMvpDisplayName: null,
         }),
       ),
     ).toBeNull();
   });
 
-  it("prefers the named MVP in the match roster", () => {
-    const appearance = recentProviderMatchFixture().appearance;
+  it("uses the listed MVP summary for another player", () => {
     expect(
       matchMvpDisplayName(
         recentProviderMatchFixture({
           appearance: { isMvp: false },
-          players: [{ ...appearance, displayName: "Rival Cap", isMvp: true }],
+          listedMvpDisplayName: "Rival Cap",
         }),
       ),
     ).toBe("Rival Cap");

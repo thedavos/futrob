@@ -312,6 +312,69 @@ const es = {
   "player.matches.dnf": "Ganado por desconexión",
   "player.matches.notPlayed": "No jugaste",
   "player.matches.openMatch": "Ver partido",
+  "player.matches.openMatchLabel": ({ home, homeGoals, awayGoals, away }) =>
+    `Ver ${home} ${homeGoals} – ${awayGoals} ${away}`,
+  "player.matchDetail.breadcrumb": "Migas de pan",
+  "player.matchDetail.breadcrumb.match": "Partido",
+  "player.matchDetail.loading": "Cargando plantillas…",
+  "player.matchDetail.error": "No se pudo cargar el partido. Inténtalo de nuevo.",
+  "player.matchDetail.notFound.title": "Partido no encontrado",
+  "player.matchDetail.notFound.description":
+    "Este partido no está disponible en tus 50 partidos recientes.",
+  "player.matchDetail.needsClub.title": "Asocia un club para ver este partido",
+  "player.matchDetail.needsClub.description":
+    "Selecciona o asocia un club para buscar el partido entre sus datos recientes.",
+  "player.matchDetail.needsGameAccount.title": "Añade una cuenta de juego",
+  "player.matchDetail.needsGameAccount.description":
+    "Añade tu identificador de juego para reconocer si participaste en el partido.",
+  "player.matchDetail.selectedClub": "Club seleccionado",
+  "player.matchDetail.opponent": "Rival",
+  "player.matchDetail.yourMatch": "Tu partido",
+  "player.matchDetail.you": "Tú",
+  "player.matchDetail.roster": "Plantilla",
+  "player.matchDetail.roster.empty": "No hay datos de jugadores para esta plantilla.",
+  "player.matchDetail.tab.summary": "Resumen",
+  "player.matchDetail.tab.players": "Jugadores",
+  "player.matchDetail.tab.facts": "Datos del partido",
+  "player.matchDetail.comparison": "Comparación de equipos",
+  "player.matchDetail.performance": "Tu rendimiento",
+  "player.matchDetail.performance.empty.description":
+    "No alineaste con el club seleccionado en este partido.",
+  "player.matchDetail.highlights": "Destacados del partido",
+  "player.matchDetail.highlights.mvp": "MVP",
+  "player.matchDetail.highlights.scorer": "Goleador",
+  "player.matchDetail.highlights.rival": "Mejor del rival",
+  "player.matchDetail.highlights.empty": "No hay destacados para este partido.",
+  "player.matchDetail.highlights.passes": ({ made, attempts }) => `${made}/${attempts} pases`,
+  "player.matchDetail.highlights.assists": ({ count }) =>
+    count === 1 ? "1 asistencia" : `${count} asistencias`,
+  "player.matchDetail.highlights.shots": ({ count }) => (count === 1 ? "1 tiro" : `${count} tiros`),
+  "player.matchDetail.highlights.tackles": ({ count }) =>
+    count === 1 ? "1 entrada" : `${count} entradas`,
+  "player.matchDetail.highlights.rating": ({ rating }) => `${rating} rating`,
+  "player.matchDetail.minutesPlayed": ({ minutes }) => `${minutes} min`,
+  "player.matchDetail.metric.passAccuracy": "Precisión de pase",
+  "player.matchDetail.complete": "Datos completos",
+  "player.matchDetail.partial": "Datos parciales",
+  "player.matchDetail.unknown": "Completitud desconocida",
+  "player.matchDetail.disconnected": "Partido desconectado",
+  "player.matchDetail.forfeit": "Ganado por desconexión",
+  "player.matchDetail.facts.type": "Tipo",
+  "player.matchDetail.facts.completeness": "Completitud",
+  "player.matchDetail.facts.duration": "Duración",
+  "player.matchDetail.facts.game": "Juego",
+  "player.matchDetail.facts.provider": "Proveedor",
+  "player.matchDetail.provider": ({ provider }) => `${provider}`,
+  "player.matchDetail.game": ({ edition, platform }) => `${edition} · ${platform}`,
+  "player.matchDetail.duration.seconds": ({ seconds }) => `${seconds} s`,
+  "player.matchDetail.duration.minutes": ({ minutes }) => `${minutes} min`,
+  "player.matchDetail.duration.minutesSeconds": ({ minutes, seconds }) =>
+    `${minutes} min ${seconds} s`,
+  "player.matchDetail.metric.position": "Posición",
+  "player.matchDetail.position.goalkeeper": "Portero",
+  "player.matchDetail.position.defender": "Defensa",
+  "player.matchDetail.position.midfielder": "Centrocampista",
+  "player.matchDetail.position.forward": "Delantero",
   "player.matches.outcome.win": "Victoria",
   "player.matches.outcome.draw": "Empate",
   "player.matches.outcome.loss": "Derrota",
@@ -427,6 +490,12 @@ export interface MessageParamsByKey {
   readonly "onboarding.review.retry": { readonly seconds: number };
   readonly "player.statistics.matchesCount": { readonly count: number };
   readonly "player.matches.results.count": { readonly count: number };
+  readonly "player.matches.openMatchLabel": {
+    readonly home: string;
+    readonly homeGoals: number;
+    readonly awayGoals: number;
+    readonly away: string;
+  };
   readonly "player.statistics.revision": { readonly revision: number };
   readonly "player.matches.mvp.named": { readonly name: string };
   readonly "player.matches.feat.scorer": { readonly name: string };
@@ -464,6 +533,26 @@ export interface MessageParamsByKey {
   };
   readonly "player.matches.contributions.paceTooltip": { readonly rate: string };
   readonly "player.matches.contributions.shareTooltip": { readonly percent: string };
+  readonly "player.matchDetail.highlights.passes": {
+    readonly made: string;
+    readonly attempts: string;
+  };
+  readonly "player.matchDetail.highlights.assists": { readonly count: number };
+  readonly "player.matchDetail.highlights.shots": { readonly count: number };
+  readonly "player.matchDetail.highlights.tackles": { readonly count: number };
+  readonly "player.matchDetail.highlights.rating": { readonly rating: string };
+  readonly "player.matchDetail.minutesPlayed": { readonly minutes: number };
+  readonly "player.matchDetail.provider": { readonly provider: string };
+  readonly "player.matchDetail.game": {
+    readonly edition: string;
+    readonly platform: string;
+  };
+  readonly "player.matchDetail.duration.seconds": { readonly seconds: number };
+  readonly "player.matchDetail.duration.minutes": { readonly minutes: number };
+  readonly "player.matchDetail.duration.minutesSeconds": {
+    readonly minutes: number;
+    readonly seconds: number;
+  };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -772,6 +861,69 @@ const en: Catalog = {
   "player.matches.dnf": "Won by DNF",
   "player.matches.notPlayed": "You didn't play",
   "player.matches.openMatch": "View match",
+  "player.matches.openMatchLabel": ({ home, homeGoals, awayGoals, away }) =>
+    `View ${home} ${homeGoals} – ${awayGoals} ${away}`,
+  "player.matchDetail.breadcrumb": "Breadcrumb",
+  "player.matchDetail.breadcrumb.match": "Match",
+  "player.matchDetail.loading": "Loading rosters…",
+  "player.matchDetail.error": "Unable to load the match. Try again.",
+  "player.matchDetail.notFound.title": "Match not found",
+  "player.matchDetail.notFound.description":
+    "This match is not available in your 50 most recent matches.",
+  "player.matchDetail.needsClub.title": "Associate a club to view this match",
+  "player.matchDetail.needsClub.description":
+    "Select or associate a club to find the match in its recent data.",
+  "player.matchDetail.needsGameAccount.title": "Add a game account",
+  "player.matchDetail.needsGameAccount.description":
+    "Add your game identifier so we can recognize whether you played in the match.",
+  "player.matchDetail.selectedClub": "Selected club",
+  "player.matchDetail.opponent": "Opponent",
+  "player.matchDetail.yourMatch": "Your match",
+  "player.matchDetail.you": "You",
+  "player.matchDetail.roster": "Roster",
+  "player.matchDetail.roster.empty": "No player data is available for this roster.",
+  "player.matchDetail.tab.summary": "Summary",
+  "player.matchDetail.tab.players": "Players",
+  "player.matchDetail.tab.facts": "Match details",
+  "player.matchDetail.comparison": "Team comparison",
+  "player.matchDetail.performance": "Your performance",
+  "player.matchDetail.performance.empty.description":
+    "You did not line up with the selected club in this match.",
+  "player.matchDetail.highlights": "Match highlights",
+  "player.matchDetail.highlights.mvp": "MVP",
+  "player.matchDetail.highlights.scorer": "Top scorer",
+  "player.matchDetail.highlights.rival": "Best opponent",
+  "player.matchDetail.highlights.empty": "There are no highlights for this match.",
+  "player.matchDetail.highlights.passes": ({ made, attempts }) => `${made}/${attempts} passes`,
+  "player.matchDetail.highlights.assists": ({ count }) =>
+    count === 1 ? "1 assist" : `${count} assists`,
+  "player.matchDetail.highlights.shots": ({ count }) => (count === 1 ? "1 shot" : `${count} shots`),
+  "player.matchDetail.highlights.tackles": ({ count }) =>
+    count === 1 ? "1 tackle" : `${count} tackles`,
+  "player.matchDetail.highlights.rating": ({ rating }) => `${rating} rating`,
+  "player.matchDetail.minutesPlayed": ({ minutes }) => `${minutes} min`,
+  "player.matchDetail.metric.passAccuracy": "Pass accuracy",
+  "player.matchDetail.complete": "Complete data",
+  "player.matchDetail.partial": "Partial data",
+  "player.matchDetail.unknown": "Unknown completeness",
+  "player.matchDetail.disconnected": "Disconnected match",
+  "player.matchDetail.forfeit": "Won by DNF",
+  "player.matchDetail.facts.type": "Type",
+  "player.matchDetail.facts.completeness": "Completeness",
+  "player.matchDetail.facts.duration": "Duration",
+  "player.matchDetail.facts.game": "Game",
+  "player.matchDetail.facts.provider": "Provider",
+  "player.matchDetail.provider": ({ provider }) => `${provider}`,
+  "player.matchDetail.game": ({ edition, platform }) => `${edition} · ${platform}`,
+  "player.matchDetail.duration.seconds": ({ seconds }) => `${seconds} s`,
+  "player.matchDetail.duration.minutes": ({ minutes }) => `${minutes} min`,
+  "player.matchDetail.duration.minutesSeconds": ({ minutes, seconds }) =>
+    `${minutes} min ${seconds} s`,
+  "player.matchDetail.metric.position": "Position",
+  "player.matchDetail.position.goalkeeper": "Goalkeeper",
+  "player.matchDetail.position.defender": "Defender",
+  "player.matchDetail.position.midfielder": "Midfielder",
+  "player.matchDetail.position.forward": "Forward",
   "player.matches.outcome.win": "Win",
   "player.matches.outcome.draw": "Draw",
   "player.matches.outcome.loss": "Lose",

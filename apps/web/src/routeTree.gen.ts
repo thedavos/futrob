@@ -40,6 +40,7 @@ import { Route as ApiV1OpenapiDotyamlRouteImport } from './routes/api/v1/openapi
 import { Route as AppInvitationsAcceptIndexRouteImport } from './routes/_app/invitations/accept/index'
 import { Route as AppInvitationsAcceptPlainTokenRouteImport } from './routes/_app/invitations/accept/$plainToken'
 import { Route as AppOrgsOrgIdIndexRouteImport } from './routes/_app/orgs/$orgId/index'
+import { Route as AppPlayerMatchesIndexRouteImport } from './routes/_app/player_.matches.index'
 import { Route as AppRosterInvitationsAcceptTokenRouteImport } from './routes/_app/roster-invitations/accept.$token'
 import { Route as ApiV1AuthorizationEffectiveAccessRouteImport } from './routes/api/v1/authorization/effective-access'
 import { Route as ApiV1CompetitionsMineRouteImport } from './routes/api/v1/competitions/mine'
@@ -54,6 +55,7 @@ import { Route as ApiV1PlayersMeRouteImport } from './routes/api/v1/players/me'
 import { Route as ApiV1RosterInvitationsAcceptRouteImport } from './routes/api/v1/roster-invitations/accept'
 import { Route as AppOrgsOrgIdCompetitionsIndexRouteImport } from './routes/_app/orgs/$orgId/competitions/index'
 import { Route as AppOrgsOrgIdCompetitionsNewRouteImport } from './routes/_app/orgs/$orgId/competitions/new'
+import { Route as AppPlayerMatchesProviderKeyExternalMatchIdRouteImport } from './routes/_app/player_.matches.$providerKey.$externalMatchId'
 import { Route as ApiV1CompetitionsInvitationsAcceptRouteImport } from './routes/api/v1/competitions/invitations.accept'
 import { Route as ApiV1GameDataClubsExternalClubIdRouteImport } from './routes/api/v1/game-data/clubs/$externalClubId'
 import { Route as ApiV1GameDataClubsSearchRouteImport } from './routes/api/v1/game-data/clubs/search'
@@ -81,6 +83,7 @@ import { Route as ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdInvit
 import { Route as ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsRouteImport } from './routes/api/v1/organizations/$organizationId/competitions/$competitionId/participants'
 import { Route as ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdPublishRouteImport } from './routes/api/v1/organizations/$organizationId/competitions/$competitionId/publish'
 import { Route as ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementRouteImport } from './routes/api/v1/organizations/$organizationId/competitions/$competitionId/team-management'
+import { Route as ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRouteImport } from './routes/api/v1/players/me/recent-matches/$providerKey/$externalMatchId'
 import { Route as ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsEntryIdRouteImport } from './routes/api/v1/organizations/$organizationId/competitions/$competitionId/participants/$entryId'
 import { Route as ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementTeamIdRouteImport } from './routes/api/v1/organizations/$organizationId/competitions/$competitionId/team-management/$teamId'
 import { Route as ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdEntriesEntryIdDecisionRouteImport } from './routes/api/v1/organizations/$organizationId/competitions/$competitionId/entries/$entryId/$decision'
@@ -249,6 +252,11 @@ const AppOrgsOrgIdIndexRoute = AppOrgsOrgIdIndexRouteImport.update({
   path: '/orgs/$orgId/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlayerMatchesIndexRoute = AppPlayerMatchesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppPlayerMatchesRoute,
+} as any)
 const AppRosterInvitationsAcceptTokenRoute =
   AppRosterInvitationsAcceptTokenRouteImport.update({
     id: '/$token',
@@ -325,6 +333,12 @@ const AppOrgsOrgIdCompetitionsNewRoute =
     id: '/orgs/$orgId/competitions/new',
     path: '/orgs/$orgId/competitions/new',
     getParentRoute: () => AppRoute,
+  } as any)
+const AppPlayerMatchesProviderKeyExternalMatchIdRoute =
+  AppPlayerMatchesProviderKeyExternalMatchIdRouteImport.update({
+    id: '/$providerKey/$externalMatchId',
+    path: '/$providerKey/$externalMatchId',
+    getParentRoute: () => AppPlayerMatchesRoute,
   } as any)
 const ApiV1CompetitionsInvitationsAcceptRoute =
   ApiV1CompetitionsInvitationsAcceptRouteImport.update({
@@ -506,6 +520,12 @@ const ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementRou
         ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdRoute,
     } as any,
   )
+const ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRoute =
+  ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRouteImport.update({
+    id: '/$providerKey/$externalMatchId',
+    path: '/$providerKey/$externalMatchId',
+    getParentRoute: () => ApiV1PlayersMeRecentMatchesRoute,
+  } as any)
 const ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsEntryIdRoute =
   ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsEntryIdRouteImport.update(
     {
@@ -598,7 +618,7 @@ export interface FileRoutesByFullPath {
   '/player/competitions': typeof AppPlayerCompetitionsRoute
   '/player/ea-clubs': typeof AppPlayerEaClubsRoute
   '/player/game-accounts': typeof AppPlayerGameAccountsRoute
-  '/player/matches': typeof AppPlayerMatchesRoute
+  '/player/matches': typeof AppPlayerMatchesRouteWithChildren
   '/player/statistics': typeof AppPlayerStatisticsRoute
   '/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -620,8 +640,10 @@ export interface FileRoutesByFullPath {
   '/api/v1/roster-invitations/accept': typeof ApiV1RosterInvitationsAcceptRoute
   '/invitations/accept/': typeof AppInvitationsAcceptIndexRoute
   '/orgs/$orgId/': typeof AppOrgsOrgIdIndexRoute
+  '/player/matches/': typeof AppPlayerMatchesIndexRoute
   '/api/v1/organizations/': typeof ApiV1OrganizationsIndexRoute
   '/orgs/$orgId/competitions/new': typeof AppOrgsOrgIdCompetitionsNewRoute
+  '/player/matches/$providerKey/$externalMatchId': typeof AppPlayerMatchesProviderKeyExternalMatchIdRoute
   '/api/v1/competitions/invitations/accept': typeof ApiV1CompetitionsInvitationsAcceptRoute
   '/api/v1/game-data/clubs/$externalClubId': typeof ApiV1GameDataClubsExternalClubIdRouteWithChildren
   '/api/v1/game-data/clubs/search': typeof ApiV1GameDataClubsSearchRoute
@@ -636,7 +658,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/players/me/external-club': typeof ApiV1PlayersMeExternalClubRoute
   '/api/v1/players/me/game-accounts': typeof ApiV1PlayersMeGameAccountsRoute
   '/api/v1/players/me/matches': typeof ApiV1PlayersMeMatchesRoute
-  '/api/v1/players/me/recent-matches': typeof ApiV1PlayersMeRecentMatchesRoute
+  '/api/v1/players/me/recent-matches': typeof ApiV1PlayersMeRecentMatchesRouteWithChildren
   '/api/v1/players/me/statistics': typeof ApiV1PlayersMeStatisticsRoute
   '/api/v1/players/me/teams': typeof ApiV1PlayersMeTeamsRoute
   '/orgs/$orgId/competitions/': typeof AppOrgsOrgIdCompetitionsIndexRoute
@@ -650,6 +672,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/organizations/$organizationId/competitions/$competitionId/participants': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsRouteWithChildren
   '/api/v1/organizations/$organizationId/competitions/$competitionId/publish': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdPublishRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementRouteWithChildren
+  '/api/v1/players/me/recent-matches/$providerKey/$externalMatchId': typeof ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/participants/$entryId': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsEntryIdRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management/$teamId': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementTeamIdRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/entries/$entryId/$decision': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdEntriesEntryIdDecisionRoute
@@ -677,7 +700,6 @@ export interface FileRoutesByTo {
   '/player/competitions': typeof AppPlayerCompetitionsRoute
   '/player/ea-clubs': typeof AppPlayerEaClubsRoute
   '/player/game-accounts': typeof AppPlayerGameAccountsRoute
-  '/player/matches': typeof AppPlayerMatchesRoute
   '/player/statistics': typeof AppPlayerStatisticsRoute
   '/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -699,8 +721,10 @@ export interface FileRoutesByTo {
   '/api/v1/roster-invitations/accept': typeof ApiV1RosterInvitationsAcceptRoute
   '/invitations/accept': typeof AppInvitationsAcceptIndexRoute
   '/orgs/$orgId': typeof AppOrgsOrgIdIndexRoute
+  '/player/matches': typeof AppPlayerMatchesIndexRoute
   '/api/v1/organizations': typeof ApiV1OrganizationsIndexRoute
   '/orgs/$orgId/competitions/new': typeof AppOrgsOrgIdCompetitionsNewRoute
+  '/player/matches/$providerKey/$externalMatchId': typeof AppPlayerMatchesProviderKeyExternalMatchIdRoute
   '/api/v1/competitions/invitations/accept': typeof ApiV1CompetitionsInvitationsAcceptRoute
   '/api/v1/game-data/clubs/$externalClubId': typeof ApiV1GameDataClubsExternalClubIdRouteWithChildren
   '/api/v1/game-data/clubs/search': typeof ApiV1GameDataClubsSearchRoute
@@ -715,7 +739,7 @@ export interface FileRoutesByTo {
   '/api/v1/players/me/external-club': typeof ApiV1PlayersMeExternalClubRoute
   '/api/v1/players/me/game-accounts': typeof ApiV1PlayersMeGameAccountsRoute
   '/api/v1/players/me/matches': typeof ApiV1PlayersMeMatchesRoute
-  '/api/v1/players/me/recent-matches': typeof ApiV1PlayersMeRecentMatchesRoute
+  '/api/v1/players/me/recent-matches': typeof ApiV1PlayersMeRecentMatchesRouteWithChildren
   '/api/v1/players/me/statistics': typeof ApiV1PlayersMeStatisticsRoute
   '/api/v1/players/me/teams': typeof ApiV1PlayersMeTeamsRoute
   '/orgs/$orgId/competitions': typeof AppOrgsOrgIdCompetitionsIndexRoute
@@ -729,6 +753,7 @@ export interface FileRoutesByTo {
   '/api/v1/organizations/$organizationId/competitions/$competitionId/participants': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsRouteWithChildren
   '/api/v1/organizations/$organizationId/competitions/$competitionId/publish': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdPublishRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementRouteWithChildren
+  '/api/v1/players/me/recent-matches/$providerKey/$externalMatchId': typeof ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/participants/$entryId': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsEntryIdRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management/$teamId': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementTeamIdRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/entries/$entryId/$decision': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdEntriesEntryIdDecisionRoute
@@ -760,7 +785,7 @@ export interface FileRoutesById {
   '/_app/player_/competitions': typeof AppPlayerCompetitionsRoute
   '/_app/player_/ea-clubs': typeof AppPlayerEaClubsRoute
   '/_app/player_/game-accounts': typeof AppPlayerGameAccountsRoute
-  '/_app/player_/matches': typeof AppPlayerMatchesRoute
+  '/_app/player_/matches': typeof AppPlayerMatchesRouteWithChildren
   '/_app/player_/statistics': typeof AppPlayerStatisticsRoute
   '/_app/roster-invitations/accept': typeof AppRosterInvitationsAcceptRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -782,8 +807,10 @@ export interface FileRoutesById {
   '/api/v1/roster-invitations/accept': typeof ApiV1RosterInvitationsAcceptRoute
   '/_app/invitations/accept/': typeof AppInvitationsAcceptIndexRoute
   '/_app/orgs/$orgId/': typeof AppOrgsOrgIdIndexRoute
+  '/_app/player_/matches/': typeof AppPlayerMatchesIndexRoute
   '/api/v1/organizations/': typeof ApiV1OrganizationsIndexRoute
   '/_app/orgs/$orgId/competitions/new': typeof AppOrgsOrgIdCompetitionsNewRoute
+  '/_app/player_/matches/$providerKey/$externalMatchId': typeof AppPlayerMatchesProviderKeyExternalMatchIdRoute
   '/api/v1/competitions/invitations/accept': typeof ApiV1CompetitionsInvitationsAcceptRoute
   '/api/v1/game-data/clubs/$externalClubId': typeof ApiV1GameDataClubsExternalClubIdRouteWithChildren
   '/api/v1/game-data/clubs/search': typeof ApiV1GameDataClubsSearchRoute
@@ -798,7 +825,7 @@ export interface FileRoutesById {
   '/api/v1/players/me/external-club': typeof ApiV1PlayersMeExternalClubRoute
   '/api/v1/players/me/game-accounts': typeof ApiV1PlayersMeGameAccountsRoute
   '/api/v1/players/me/matches': typeof ApiV1PlayersMeMatchesRoute
-  '/api/v1/players/me/recent-matches': typeof ApiV1PlayersMeRecentMatchesRoute
+  '/api/v1/players/me/recent-matches': typeof ApiV1PlayersMeRecentMatchesRouteWithChildren
   '/api/v1/players/me/statistics': typeof ApiV1PlayersMeStatisticsRoute
   '/api/v1/players/me/teams': typeof ApiV1PlayersMeTeamsRoute
   '/_app/orgs/$orgId/competitions/': typeof AppOrgsOrgIdCompetitionsIndexRoute
@@ -812,6 +839,7 @@ export interface FileRoutesById {
   '/api/v1/organizations/$organizationId/competitions/$competitionId/participants': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsRouteWithChildren
   '/api/v1/organizations/$organizationId/competitions/$competitionId/publish': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdPublishRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementRouteWithChildren
+  '/api/v1/players/me/recent-matches/$providerKey/$externalMatchId': typeof ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/participants/$entryId': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdParticipantsEntryIdRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management/$teamId': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementTeamIdRoute
   '/api/v1/organizations/$organizationId/competitions/$competitionId/entries/$entryId/$decision': typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdEntriesEntryIdDecisionRoute
@@ -864,8 +892,10 @@ export interface FileRouteTypes {
     | '/api/v1/roster-invitations/accept'
     | '/invitations/accept/'
     | '/orgs/$orgId/'
+    | '/player/matches/'
     | '/api/v1/organizations/'
     | '/orgs/$orgId/competitions/new'
+    | '/player/matches/$providerKey/$externalMatchId'
     | '/api/v1/competitions/invitations/accept'
     | '/api/v1/game-data/clubs/$externalClubId'
     | '/api/v1/game-data/clubs/search'
@@ -894,6 +924,7 @@ export interface FileRouteTypes {
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/participants'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/publish'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management'
+    | '/api/v1/players/me/recent-matches/$providerKey/$externalMatchId'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/participants/$entryId'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management/$teamId'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/entries/$entryId/$decision'
@@ -921,7 +952,6 @@ export interface FileRouteTypes {
     | '/player/competitions'
     | '/player/ea-clubs'
     | '/player/game-accounts'
-    | '/player/matches'
     | '/player/statistics'
     | '/roster-invitations/accept'
     | '/api/auth/$'
@@ -943,8 +973,10 @@ export interface FileRouteTypes {
     | '/api/v1/roster-invitations/accept'
     | '/invitations/accept'
     | '/orgs/$orgId'
+    | '/player/matches'
     | '/api/v1/organizations'
     | '/orgs/$orgId/competitions/new'
+    | '/player/matches/$providerKey/$externalMatchId'
     | '/api/v1/competitions/invitations/accept'
     | '/api/v1/game-data/clubs/$externalClubId'
     | '/api/v1/game-data/clubs/search'
@@ -973,6 +1005,7 @@ export interface FileRouteTypes {
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/participants'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/publish'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management'
+    | '/api/v1/players/me/recent-matches/$providerKey/$externalMatchId'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/participants/$entryId'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management/$teamId'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/entries/$entryId/$decision'
@@ -1025,8 +1058,10 @@ export interface FileRouteTypes {
     | '/api/v1/roster-invitations/accept'
     | '/_app/invitations/accept/'
     | '/_app/orgs/$orgId/'
+    | '/_app/player_/matches/'
     | '/api/v1/organizations/'
     | '/_app/orgs/$orgId/competitions/new'
+    | '/_app/player_/matches/$providerKey/$externalMatchId'
     | '/api/v1/competitions/invitations/accept'
     | '/api/v1/game-data/clubs/$externalClubId'
     | '/api/v1/game-data/clubs/search'
@@ -1055,6 +1090,7 @@ export interface FileRouteTypes {
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/participants'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/publish'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management'
+    | '/api/v1/players/me/recent-matches/$providerKey/$externalMatchId'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/participants/$entryId'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/team-management/$teamId'
     | '/api/v1/organizations/$organizationId/competitions/$competitionId/entries/$entryId/$decision'
@@ -1311,6 +1347,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgsOrgIdIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/player_/matches/': {
+      id: '/_app/player_/matches/'
+      path: '/'
+      fullPath: '/player/matches/'
+      preLoaderRoute: typeof AppPlayerMatchesIndexRouteImport
+      parentRoute: typeof AppPlayerMatchesRoute
+    }
     '/_app/roster-invitations/accept/$token': {
       id: '/_app/roster-invitations/accept/$token'
       path: '/$token'
@@ -1408,6 +1451,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/orgs/$orgId/competitions/new'
       preLoaderRoute: typeof AppOrgsOrgIdCompetitionsNewRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/player_/matches/$providerKey/$externalMatchId': {
+      id: '/_app/player_/matches/$providerKey/$externalMatchId'
+      path: '/$providerKey/$externalMatchId'
+      fullPath: '/player/matches/$providerKey/$externalMatchId'
+      preLoaderRoute: typeof AppPlayerMatchesProviderKeyExternalMatchIdRouteImport
+      parentRoute: typeof AppPlayerMatchesRoute
     }
     '/api/v1/competitions/invitations/accept': {
       id: '/api/v1/competitions/invitations/accept'
@@ -1598,6 +1648,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdTeamManagementRouteImport
       parentRoute: typeof ApiV1OrganizationsOrganizationIdCompetitionsCompetitionIdRoute
     }
+    '/api/v1/players/me/recent-matches/$providerKey/$externalMatchId': {
+      id: '/api/v1/players/me/recent-matches/$providerKey/$externalMatchId'
+      path: '/$providerKey/$externalMatchId'
+      fullPath: '/api/v1/players/me/recent-matches/$providerKey/$externalMatchId'
+      preLoaderRoute: typeof ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRouteImport
+      parentRoute: typeof ApiV1PlayersMeRecentMatchesRoute
+    }
     '/api/v1/organizations/$organizationId/competitions/$competitionId/participants/$entryId': {
       id: '/api/v1/organizations/$organizationId/competitions/$competitionId/participants/$entryId'
       path: '/$entryId'
@@ -1687,6 +1744,20 @@ const AppOnboardingRouteWithChildren = AppOnboardingRoute._addFileChildren(
   AppOnboardingRouteChildren,
 )
 
+interface AppPlayerMatchesRouteChildren {
+  AppPlayerMatchesIndexRoute: typeof AppPlayerMatchesIndexRoute
+  AppPlayerMatchesProviderKeyExternalMatchIdRoute: typeof AppPlayerMatchesProviderKeyExternalMatchIdRoute
+}
+
+const AppPlayerMatchesRouteChildren: AppPlayerMatchesRouteChildren = {
+  AppPlayerMatchesIndexRoute: AppPlayerMatchesIndexRoute,
+  AppPlayerMatchesProviderKeyExternalMatchIdRoute:
+    AppPlayerMatchesProviderKeyExternalMatchIdRoute,
+}
+
+const AppPlayerMatchesRouteWithChildren =
+  AppPlayerMatchesRoute._addFileChildren(AppPlayerMatchesRouteChildren)
+
 interface AppRosterInvitationsAcceptRouteChildren {
   AppRosterInvitationsAcceptTokenRoute: typeof AppRosterInvitationsAcceptTokenRoute
 }
@@ -1708,7 +1779,7 @@ interface AppRouteChildren {
   AppPlayerCompetitionsRoute: typeof AppPlayerCompetitionsRoute
   AppPlayerEaClubsRoute: typeof AppPlayerEaClubsRoute
   AppPlayerGameAccountsRoute: typeof AppPlayerGameAccountsRoute
-  AppPlayerMatchesRoute: typeof AppPlayerMatchesRoute
+  AppPlayerMatchesRoute: typeof AppPlayerMatchesRouteWithChildren
   AppPlayerStatisticsRoute: typeof AppPlayerStatisticsRoute
   AppRosterInvitationsAcceptRoute: typeof AppRosterInvitationsAcceptRouteWithChildren
   AppOrgsIndexRoute: typeof AppOrgsIndexRoute
@@ -1729,7 +1800,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPlayerCompetitionsRoute: AppPlayerCompetitionsRoute,
   AppPlayerEaClubsRoute: AppPlayerEaClubsRoute,
   AppPlayerGameAccountsRoute: AppPlayerGameAccountsRoute,
-  AppPlayerMatchesRoute: AppPlayerMatchesRoute,
+  AppPlayerMatchesRoute: AppPlayerMatchesRouteWithChildren,
   AppPlayerStatisticsRoute: AppPlayerStatisticsRoute,
   AppRosterInvitationsAcceptRoute: AppRosterInvitationsAcceptRouteWithChildren,
   AppOrgsIndexRoute: AppOrgsIndexRoute,
@@ -1795,12 +1866,27 @@ const ApiV1IdentityOnboardingRouteWithChildren =
     ApiV1IdentityOnboardingRouteChildren,
   )
 
+interface ApiV1PlayersMeRecentMatchesRouteChildren {
+  ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRoute: typeof ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRoute
+}
+
+const ApiV1PlayersMeRecentMatchesRouteChildren: ApiV1PlayersMeRecentMatchesRouteChildren =
+  {
+    ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRoute:
+      ApiV1PlayersMeRecentMatchesProviderKeyExternalMatchIdRoute,
+  }
+
+const ApiV1PlayersMeRecentMatchesRouteWithChildren =
+  ApiV1PlayersMeRecentMatchesRoute._addFileChildren(
+    ApiV1PlayersMeRecentMatchesRouteChildren,
+  )
+
 interface ApiV1PlayersMeRouteChildren {
   ApiV1PlayersMeActiveTeamRoute: typeof ApiV1PlayersMeActiveTeamRoute
   ApiV1PlayersMeExternalClubRoute: typeof ApiV1PlayersMeExternalClubRoute
   ApiV1PlayersMeGameAccountsRoute: typeof ApiV1PlayersMeGameAccountsRoute
   ApiV1PlayersMeMatchesRoute: typeof ApiV1PlayersMeMatchesRoute
-  ApiV1PlayersMeRecentMatchesRoute: typeof ApiV1PlayersMeRecentMatchesRoute
+  ApiV1PlayersMeRecentMatchesRoute: typeof ApiV1PlayersMeRecentMatchesRouteWithChildren
   ApiV1PlayersMeStatisticsRoute: typeof ApiV1PlayersMeStatisticsRoute
   ApiV1PlayersMeTeamsRoute: typeof ApiV1PlayersMeTeamsRoute
 }
@@ -1810,7 +1896,8 @@ const ApiV1PlayersMeRouteChildren: ApiV1PlayersMeRouteChildren = {
   ApiV1PlayersMeExternalClubRoute: ApiV1PlayersMeExternalClubRoute,
   ApiV1PlayersMeGameAccountsRoute: ApiV1PlayersMeGameAccountsRoute,
   ApiV1PlayersMeMatchesRoute: ApiV1PlayersMeMatchesRoute,
-  ApiV1PlayersMeRecentMatchesRoute: ApiV1PlayersMeRecentMatchesRoute,
+  ApiV1PlayersMeRecentMatchesRoute:
+    ApiV1PlayersMeRecentMatchesRouteWithChildren,
   ApiV1PlayersMeStatisticsRoute: ApiV1PlayersMeStatisticsRoute,
   ApiV1PlayersMeTeamsRoute: ApiV1PlayersMeTeamsRoute,
 }

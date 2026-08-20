@@ -25,11 +25,30 @@ vi.mock("@/modules/statistics/presentation/statistics-browser-client.ts", () => 
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
-  ),
+  Link: ({
+    to,
+    params,
+    search,
+    children,
+    ...props
+  }: {
+    to: string;
+    params?: { readonly providerKey: string; readonly externalMatchId: string };
+    search?: { readonly view: string; readonly sort: string };
+    children?: ReactNode;
+  }) => {
+    const path = params
+      ? to
+          .replace("$providerKey", params.providerKey)
+          .replace("$externalMatchId", params.externalMatchId)
+      : to;
+    const query = search ? `?view=${search.view}&sort=${search.sort}` : "";
+    return (
+      <a href={`${path}${query}`} {...props}>
+        {children}
+      </a>
+    );
+  },
 }));
 
 describe("PlayerMatchesPage", () => {
@@ -155,7 +174,9 @@ describe("PlayerMatchesPage", () => {
       "text-emphasis",
     );
     expect(document.querySelector("[data-match-chevron]")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Ver partido" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Ver Inter 2 – 1 Milan" }).getAttribute("href")).toBe(
+      "/player/matches/ea-clubs/ea-1?view=all&sort=newest",
+    );
     expect(document.querySelectorAll("[data-mvp]")).toHaveLength(1);
     expect(document.querySelector("[data-slot='club-crest-avatar']")?.className).not.toContain(
       "rounded-full",
@@ -563,12 +584,11 @@ describe("PlayerMatchesPage", () => {
   });
 
   it("names the match MVP even when it is another player", async () => {
-    const rival = recentProviderMatchFixture().appearance;
     getMyRecentMatches.mockResolvedValue(
       recentMatchesReadyFixture([
         recentProviderMatchFixture({
           appearance: { isMvp: false, displayName: "davos282" },
-          players: [{ ...rival, displayName: "Rival Cap", isMvp: true }],
+          listedMvpDisplayName: "Rival Cap",
         }),
       ]),
     );

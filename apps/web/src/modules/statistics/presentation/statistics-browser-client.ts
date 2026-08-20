@@ -1,12 +1,18 @@
 import {
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  getMyRecentMatchPathSchema,
+  getMyRecentMatchQuerySchema,
+  getMyRecentMatchResponseSchema,
   getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
   type GetMyMatchesQuery,
   type GetMyMatchesResponse,
+  type GetMyRecentMatchPath,
+  type GetMyRecentMatchQueryInput,
+  type GetMyRecentMatchResponse,
   type GetMyRecentMatchesQueryInput,
   type GetMyRecentMatchesResponse,
   type GetMyStatisticsQuery,
@@ -15,6 +21,8 @@ import {
 } from "@futrob/api-contracts";
 import type { z } from "zod";
 import { requestBrowserJson } from "@/shared/infrastructure/http/browser-json-request.ts";
+
+export type GetMyRecentMatchBrowserInput = GetMyRecentMatchPath & GetMyRecentMatchQueryInput;
 
 export class StatisticsClientError extends Error {
   constructor(
@@ -73,6 +81,18 @@ export const statisticsBrowserClient = {
     return requestStatisticsJson(
       `/api/v1/players/me/recent-matches${queryString ? `?${queryString}` : ""}`,
       getMyRecentMatchesResponseSchema,
+    );
+  },
+
+  getMyRecentMatch(input: GetMyRecentMatchBrowserInput): Promise<GetMyRecentMatchResponse> {
+    const path = getMyRecentMatchPathSchema.parse(input);
+    const query = getMyRecentMatchQuerySchema.parse(input);
+    const search = new URLSearchParams();
+    if (query.externalClubId) search.set("externalClubId", query.externalClubId);
+    const queryString = search.toString();
+    return requestStatisticsJson(
+      `/api/v1/players/me/recent-matches/${encodeURIComponent(path.providerKey)}/${encodeURIComponent(path.externalMatchId)}${queryString ? `?${queryString}` : ""}`,
+      getMyRecentMatchResponseSchema,
     );
   },
 };

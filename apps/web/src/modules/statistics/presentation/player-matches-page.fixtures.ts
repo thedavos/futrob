@@ -1,5 +1,6 @@
 import type {
   GetMyRecentMatchesResponse,
+  PlayerRecentProviderMatchDetailDto,
   PlayerRecentProviderMatchDto,
 } from "@futrob/api-contracts";
 
@@ -11,6 +12,8 @@ export const PLAYER_MATCHES_PAGE_NOW = new Date(2026, 7, 14, 15, 0, 0);
 
 type PlayedMatch = Extract<PlayerRecentProviderMatchDto, { kind: "played" }>;
 type NotPlayedMatch = Extract<PlayerRecentProviderMatchDto, { kind: "not_played" }>;
+type PlayedDetail = Extract<PlayerRecentProviderMatchDetailDto, { kind: "played" }>;
+type NotPlayedDetail = Extract<PlayerRecentProviderMatchDetailDto, { kind: "not_played" }>;
 
 type FixtureMatchFields = {
   readonly id: string;
@@ -19,7 +22,6 @@ type FixtureMatchFields = {
   readonly home: PlayedMatch["match"]["home"];
   readonly away: PlayedMatch["match"]["away"];
   readonly mode: PlayedMatch["match"]["game"]["mode"];
-  readonly players: PlayedMatch["match"]["players"];
   readonly metadata: Partial<PlayedMatch["match"]["metadata"]>;
 };
 
@@ -28,12 +30,22 @@ type PlayedFixtureOverrides = Partial<
     readonly kind: "played";
     readonly appearance: Partial<PlayedMatch["appearance"]>;
     readonly listedExternalClubId: string;
+    readonly listedMvpDisplayName: string | null;
   }
 >;
 
 type NotPlayedFixtureOverrides = Partial<FixtureMatchFields> & {
   readonly kind: "not_played";
   readonly listedExternalClubId?: string;
+  readonly listedMvpDisplayName?: string | null;
+};
+
+type PlayedDetailOverrides = PlayedFixtureOverrides & {
+  readonly players?: PlayedDetail["match"]["players"];
+};
+
+type NotPlayedDetailOverrides = NotPlayedFixtureOverrides & {
+  readonly players?: PlayedDetail["match"]["players"];
 };
 
 export function recentProviderMatchFixture(overrides?: PlayedFixtureOverrides): PlayedMatch;
@@ -60,7 +72,6 @@ export function recentProviderMatchFixture(
       goals: 1,
       imageUrl: null,
     },
-    players: overrides.players ?? [],
     metadata: {
       durationSeconds: 540,
       wasDisconnected: false,
@@ -94,14 +105,21 @@ export function recentProviderMatchFixture(
         rating: 8.4,
         ...appearanceOverrides,
       };
+      const listedExternalClubId =
+        "listedExternalClubId" in overrides && overrides.listedExternalClubId !== undefined
+          ? overrides.listedExternalClubId
+          : appearance.externalClubId;
       return {
         kind: "played",
         match,
         appearance,
-        listedExternalClubId:
-          "listedExternalClubId" in overrides && overrides.listedExternalClubId !== undefined
-            ? overrides.listedExternalClubId
-            : appearance.externalClubId,
+        listedExternalClubId,
+        listedMvpDisplayName:
+          "listedMvpDisplayName" in overrides && overrides.listedMvpDisplayName !== undefined
+            ? overrides.listedMvpDisplayName
+            : appearance.isMvp === true
+              ? appearance.displayName
+              : null,
       };
     }
     case "not_played":
@@ -112,10 +130,48 @@ export function recentProviderMatchFixture(
           "listedExternalClubId" in overrides && overrides.listedExternalClubId !== undefined
             ? overrides.listedExternalClubId
             : home.externalClubId,
+        listedMvpDisplayName:
+          "listedMvpDisplayName" in overrides && overrides.listedMvpDisplayName !== undefined
+            ? overrides.listedMvpDisplayName
+            : null,
       };
     default: {
       const _exhaustive: never = kind;
       return _exhaustive;
+    }
+  }
+}
+
+export function recentProviderMatchDetailFixture(overrides?: PlayedDetailOverrides): PlayedDetail;
+export function recentProviderMatchDetailFixture(
+  overrides: NotPlayedDetailOverrides,
+): NotPlayedDetail;
+export function recentProviderMatchDetailFixture(
+  overrides: PlayedDetailOverrides | NotPlayedDetailOverrides = {},
+): PlayerRecentProviderMatchDetailDto {
+  const { players = [], ...listOverrides } = overrides;
+  if (listOverrides.kind === "not_played") {
+    return withRoster(recentProviderMatchFixture(listOverrides), players);
+  }
+  return withRoster(recentProviderMatchFixture(listOverrides), players);
+}
+
+function withRoster(
+  row: PlayerRecentProviderMatchDto,
+  players: PlayedDetail["match"]["players"],
+): PlayerRecentProviderMatchDetailDto {
+  switch (row.kind) {
+    case "played": {
+      const { listedMvpDisplayName: _listedMvpDisplayName, ...rest } = row;
+      return { ...rest, match: { ...rest.match, players } };
+    }
+    case "not_played": {
+      const { listedMvpDisplayName: _listedMvpDisplayName, ...rest } = row;
+      return { ...rest, match: { ...rest.match, players } };
+    }
+    default: {
+      const exhaustive: never = row;
+      return exhaustive;
     }
   }
 }

@@ -59,25 +59,24 @@ export function showsRedCards(redCards: number | null): boolean {
 }
 
 export function matchMvpDisplayName(item: PlayerRecentProviderMatchDto): string | null {
-  const listedMvp = item.match.players.find(
-    (player) => player.isMvp === true && player.externalClubId === item.listedExternalClubId,
-  );
-  if (listedMvp) return listedMvp.displayName;
-  const appearance = playedAppearance(item);
-  if (appearance?.isMvp === true) return appearance.displayName;
-  const named = item.match.players.find((player) => player.isMvp === true);
-  return named && item.kind === "played" ? named.displayName : null;
+  return item.listedMvpDisplayName;
 }
 
 export type MatchOutcome = "win" | "draw" | "loss" | "unknown";
 
 export type MatchSide = "home" | "away";
 
-export function listedClubId(item: PlayerRecentProviderMatchDto): string {
+export function listedClubId(item: { readonly listedExternalClubId: string }): string {
   return item.listedExternalClubId;
 }
 
-export function playerMatchSide(item: PlayerRecentProviderMatchDto): MatchSide | null {
+export function playerMatchSide(item: {
+  readonly listedExternalClubId: string;
+  readonly match: {
+    readonly home: { readonly externalClubId: string };
+    readonly away: { readonly externalClubId: string };
+  };
+}): MatchSide | null {
   const clubId = listedClubId(item);
   if (item.match.home.externalClubId === clubId) return "home";
   if (item.match.away.externalClubId === clubId) return "away";
@@ -396,7 +395,9 @@ function teamGoalShareFromSample({
   return { kind: "ready", ratio: playerGoals / clubGoals };
 }
 
-export function providerMatchMode(item: PlayerRecentProviderMatchDto): ProviderMatchMode | null {
+export function providerMatchMode(item: {
+  readonly match: { readonly game: { readonly mode: string } };
+}): ProviderMatchMode | null {
   switch (item.match.game.mode) {
     case "leagueMatch":
     case "playoffMatch":

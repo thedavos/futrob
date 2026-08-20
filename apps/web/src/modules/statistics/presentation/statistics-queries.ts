@@ -1,12 +1,20 @@
-import { useInfiniteQuery, useQuery, type InfiniteData } from "@tanstack/react-query";
+import { queryOptions, useInfiniteQuery, useQuery, type InfiniteData } from "@tanstack/react-query";
 import {
   getMyMatchesQuerySchema,
   getMyStatisticsQuerySchema,
   type GetMyMatchesQuery,
+  type GetMyRecentMatchesResponse,
+  type GameDataProviderKeyQuery,
   type GetMyStatisticsQuery,
+  type PlayerRecentProviderMatchDto,
 } from "@futrob/api-contracts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
-import { statisticsBrowserClient } from "@/modules/statistics/presentation/statistics-browser-client.ts";
+import {
+  statisticsBrowserClient,
+  type GetMyRecentMatchBrowserInput,
+} from "@/modules/statistics/presentation/statistics-browser-client.ts";
+
+const RECENT_MATCH_DETAIL_STALE_TIME_MS = 30_000;
 
 export function useMyStatisticsQuery(filters: GetMyStatisticsQuery = {}) {
   const query = getMyStatisticsQuerySchema.parse(filters);
@@ -44,5 +52,34 @@ export function useMyRecentMatchesQuery(externalClubId?: string, enabled = true)
       statisticsBrowserClient.getMyRecentMatches(externalClubId ? { externalClubId } : {}),
     enabled,
     retry: false,
+  });
+}
+
+export function recentMatchListSummary(
+  list: GetMyRecentMatchesResponse | undefined,
+  providerKey: GameDataProviderKeyQuery,
+  externalMatchId: string,
+): PlayerRecentProviderMatchDto | undefined {
+  if (list?.status !== "ready") return undefined;
+  return list.matches.find(
+    (row) =>
+      row.match.provider.key === providerKey &&
+      row.match.provider.externalMatchId === externalMatchId,
+  );
+}
+
+export function myRecentMatchQueryOptions(input: GetMyRecentMatchBrowserInput) {
+  return queryOptions({
+    queryKey: queryKeys.gameData.meRecentMatch(input),
+    queryFn: () => statisticsBrowserClient.getMyRecentMatch(input),
+    staleTime: RECENT_MATCH_DETAIL_STALE_TIME_MS,
+    retry: false,
+  });
+}
+
+export function useMyRecentMatchQuery(input: GetMyRecentMatchBrowserInput, enabled = true) {
+  return useQuery({
+    ...myRecentMatchQueryOptions(input),
+    enabled,
   });
 }

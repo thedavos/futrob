@@ -95,6 +95,22 @@ Además, reejecutar el mismo job de sync o la misma confirmación no crea partid
 - **Dado** un PlayerProfile con al menos un club asociado y una cuenta de juego,
 - **cuando** Mis partidos está listo,
 - **entonces** ve los partidos de ese club, clasificados como jugados o «No jugaste», sin mezclarlos con el historial oficial.
+- **Dado** un partido visible en Mis partidos,
+- **cuando** el jugador abre su detalle,
+- **entonces** la URL identifica `providerKey + externalMatchId`, conserva `view` y `sort`, y la query de detalle incluye también el `externalClubId` seleccionado.
+- **y** un breadcrumb (Mis partidos → clubes) conserva `view` y `sort`; debajo reutiliza la fila de marcador de Mis partidos sin el enlace de abrir el partido. Esa fila puede usar la caché de la lista como placeholder, pero las plantillas mantienen loading hasta que finaliza el GET de detalle.
+- **y** el detalle devuelve la plantilla completa aunque la lista siga omitiendo jugadores no MVP.
+- **y** pestañas tipo pills cubren Resumen, Jugadores y Datos del partido. Resumen compara estadísticas de ambos equipos con barras, muestra el rendimiento personal (o que no alineó) y destaca MVP, goleador y mejor del rival.
+- **y** presenta primero el club seleccionado y luego el rival; ordena cada plantilla por rating descendente, deja `null` al final con desempate estable por nombre y muestra todas las estadísticas persistidas en filas responsive sin scroll horizontal.
+- **y** conserva cada cero como `0` y presenta cada `null` como dato no disponible.
+- **y** si `kind = played`, el resumen personal identifica esa aparición y Jugadores marca solo su fila; si `kind = not_played`, la fila reutilizada muestra «No jugaste» sin fila personal.
+- **y** la fila reutilizada muestra tipo, resultado, desconexión/forfeit y MVP igual que en Mis partidos.
+- **Dado** un `providerKey` inválido en la ruta,
+- **cuando** se abre el detalle,
+- **entonces** ve el estado `not_found` de la funcionalidad y no se consulta el backend.
+- **Dado** un partido ausente de la ventana final de 50,
+- **cuando** toda la ventana se cargó,
+- **entonces** el detalle responde `not_found`; si la ventana quedó parcial por un fallo del proveedor, propaga ese fallo y ofrece reintento en lugar de afirmar un falso `not_found`.
 
 ### AC-ONB-001 — Consecuencias multirrol del onboarding
 

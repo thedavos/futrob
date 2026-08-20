@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import {
   Badge,
@@ -35,6 +36,8 @@ import {
   scoringFeatPlayerName,
   showsRedCards,
   showsYellowCards,
+  type MatchSortOrder,
+  type PlayerMatchesView,
   type ProviderMatchMode,
   type ScoringFeat,
 } from "./player-match-view.ts";
@@ -43,14 +46,22 @@ export function ProviderMatchRow({
   dateTimeFormat,
   item,
   numberFormat,
+  sortOrder,
+  showAppearanceStrip = true,
   showMatchType,
+  showOpenMatch = true,
   t,
+  view,
 }: {
   readonly dateTimeFormat: Intl.DateTimeFormat;
   readonly item: PlayerRecentProviderMatchDto;
   readonly numberFormat: Intl.NumberFormat;
+  readonly sortOrder: MatchSortOrder;
+  readonly showAppearanceStrip?: boolean;
   readonly showMatchType: boolean;
+  readonly showOpenMatch?: boolean;
   readonly t: Translator;
+  readonly view: PlayerMatchesView;
 }) {
   const { match } = item;
   const occurredAt = new Date(match.occurredAt);
@@ -102,7 +113,11 @@ export function ProviderMatchRow({
           homeImageUrl={match.home.imageUrl}
         />
         <div className="relative flex min-h-52 flex-1 flex-col px-4 py-4 @lg:px-6 @lg:py-6">
-          <div className="flex items-start justify-between gap-2">
+          <div
+            className={
+              showOpenMatch ? "flex items-start justify-between gap-2" : "flex items-start gap-2"
+            }
+          >
             <MatchHeaderMeta
               items={[
                 typeLabel && mode ? (
@@ -148,17 +163,34 @@ export function ProviderMatchRow({
                 </time>,
               ]}
             />
-            <Button
-              aria-label={t("player.matches.openMatch")}
-              className="shrink-0"
-              data-match-chevron=""
-              dense
-              size="icon"
-              type="button"
-              variant="ghost"
-            >
-              <CaretRightIcon />
-            </Button>
+            {showOpenMatch ? (
+              <Button
+                aria-label={t("player.matches.openMatchLabel", {
+                  away: match.away.name,
+                  awayGoals: match.away.goals,
+                  home: match.home.name,
+                  homeGoals: match.home.goals,
+                })}
+                className="shrink-0"
+                data-match-chevron=""
+                dense
+                render={
+                  <Link
+                    params={{
+                      providerKey: match.provider.key,
+                      externalMatchId: match.provider.externalMatchId,
+                    }}
+                    search={{ view, sort: sortOrder }}
+                    to="/player/matches/$providerKey/$externalMatchId"
+                  />
+                }
+                role="link"
+                size="icon"
+                variant="ghost"
+              >
+                <CaretRightIcon />
+              </Button>
+            ) : null}
           </div>
 
           <div className="flex flex-1 flex-col items-center justify-center gap-2">
@@ -206,7 +238,9 @@ export function ProviderMatchRow({
             ) : null}
           </div>
         </div>
-        <MatchAppearanceStrip item={item} mvpLabel={mvpLabel} numberFormat={numberFormat} t={t} />
+        {showAppearanceStrip ? (
+          <MatchAppearanceStrip item={item} mvpLabel={mvpLabel} numberFormat={numberFormat} t={t} />
+        ) : null}
       </div>
     </li>
   );

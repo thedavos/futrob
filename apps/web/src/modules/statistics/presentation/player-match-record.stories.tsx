@@ -76,13 +76,17 @@ export default meta;
 type Story = StoryObj<StoryArgs>;
 
 export const Playground: Story = {
-  render: (args) => <AverageRatingRing numberFormat={numberFormat} rating={args.rating} />,
+  render: (args) => (
+    <AverageRatingRing label="Rating promedio" numberFormat={numberFormat} rating={args.rating} />
+  ),
 };
 
 export const EmptyRating: Story = {
   name: "Rating ring / Empty",
   args: { rating: null },
-  render: (args) => <AverageRatingRing numberFormat={numberFormat} rating={args.rating} />,
+  render: (args) => (
+    <AverageRatingRing label="Rating promedio" numberFormat={numberFormat} rating={args.rating} />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("img", { name: "Rating promedio" })).toBeVisible();

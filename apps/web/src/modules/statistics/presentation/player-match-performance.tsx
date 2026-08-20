@@ -2,7 +2,7 @@
 
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
-import { Stat, StatLabel, StatValue } from "@futrob/ui";
+import { cn, Stat, StatLabel, StatValue } from "@futrob/ui";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { formatSignedNumber } from "@/shared/presentation/stats/format-signed-number.ts";
@@ -44,7 +44,11 @@ export function PerformancePanel({
   return (
     <div className="flex min-w-0 flex-1 flex-col justify-center items-start">
       <div className="flex min-w-0 items-center gap-6">
-        <AverageRatingRing numberFormat={numberFormat} rating={rating} />
+        <AverageRatingRing
+          label={t("player.matches.performance.averageRating")}
+          numberFormat={numberFormat}
+          rating={rating}
+        />
         <div className="flex min-w-0 flex-col gap-2">
           <Stat>
             <StatValue data-metric="record-matches">
@@ -60,20 +64,23 @@ export function PerformancePanel({
 }
 
 export function AverageRatingRing({
+  className,
+  label,
   numberFormat,
   rating,
 }: {
+  readonly className?: string;
+  readonly label: string;
   readonly numberFormat: Intl.NumberFormat;
   readonly rating: number | null;
 }) {
   const { t } = useI18n();
   const progress = rating === null ? 0 : Math.min(1, Math.max(0, rating / RATING_SCALE_MAX)) * 100;
-  const label = t("player.matches.performance.averageRating");
 
   return (
     <div
       aria-label={rating === null ? label : `${label} ${numberFormat.format(rating)}`}
-      className="relative size-28 shrink-0"
+      className={cn("relative size-28 shrink-0", className)}
       data-rating-ring=""
       role="img"
     >

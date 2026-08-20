@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useRender } from "@base-ui/react/use-render";
 import { CaretRightIcon, DotsThreeIcon } from "@phosphor-icons/react";
 
 import { cn } from "#lib/utils";
@@ -30,17 +31,19 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
   );
 }
 
-function BreadcrumbLink({ className, ...props }: React.ComponentProps<"a">) {
-  return (
-    <a
-      data-slot="breadcrumb-link"
-      className={cn(
+function BreadcrumbLink({ className, render, ...props }: useRender.ComponentProps<"a">) {
+  return useRender({
+    defaultTagName: "a",
+    props: {
+      ...props,
+      className: cn(
         "rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
         className,
-      )}
-      {...props}
-    />
-  );
+      ),
+      "data-slot": "breadcrumb-link",
+    },
+    render,
+  });
 }
 
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {

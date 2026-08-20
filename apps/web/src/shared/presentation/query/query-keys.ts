@@ -1,4 +1,8 @@
-import type { GetMyMatchesQuery, GetMyStatisticsQuery } from "@futrob/api-contracts";
+import type {
+  GetMyMatchesQuery,
+  GetMyRecentMatchPath,
+  GetMyStatisticsQuery,
+} from "@futrob/api-contracts";
 
 export const queryKeys = {
   identity: {
@@ -68,6 +72,11 @@ export const queryKeys = {
       externalClubId
         ? ([...queryKeys.gameData.all, "me", "recent-matches", externalClubId] as const)
         : ([...queryKeys.gameData.all, "me", "recent-matches"] as const),
+    meRecentMatch: (
+      input: GetMyRecentMatchPath & {
+        readonly externalClubId?: string;
+      },
+    ) => [...queryKeys.gameData.meRecentMatches(), "detail", input] as const,
     club: (input: {
       readonly externalClubId: string;
       readonly platform: string;

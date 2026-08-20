@@ -371,8 +371,10 @@ function ReadyMatches({
           historyLabel={t(HISTORY_LABEL_KEYS[activeView])}
           now={now}
           numberFormat={numberFormat}
+          sortOrder={sortOrder}
           showMatchType={showsMatchTypeBadge(activeView)}
           t={t}
+          view={activeView}
         />
       </div>
     </div>
@@ -388,8 +390,10 @@ function MatchDayLists({
   historyLabel,
   now,
   numberFormat,
+  sortOrder,
   showMatchType,
   t,
+  view,
 }: {
   readonly dateTimeFormat: Intl.DateTimeFormat;
   readonly dayDateFormat: Intl.DateTimeFormat;
@@ -399,8 +403,10 @@ function MatchDayLists({
   readonly historyLabel: string;
   readonly now: Date;
   readonly numberFormat: Intl.NumberFormat;
+  readonly sortOrder: MatchSortOrder;
   readonly showMatchType: boolean;
   readonly t: Translator;
+  readonly view: PlayerMatchesView;
 }) {
   if (groups.length === 0) {
     return <MatchesEmpty description={emptyDescription} title={emptyTitle} />;
@@ -423,8 +429,10 @@ function MatchDayLists({
                   item={item}
                   key={`${item.match.provider.key}:${item.match.provider.externalMatchId}`}
                   numberFormat={numberFormat}
+                  sortOrder={sortOrder}
                   showMatchType={showMatchType}
                   t={t}
+                  view={view}
                 />
               ))}
             </ol>

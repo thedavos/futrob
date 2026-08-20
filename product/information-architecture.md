@@ -26,6 +26,7 @@ Futrob
 ├── Aplicación autenticada
 │   ├── Espacio personal del jugador
 │   │   ├── Mis partidos (Recientes + Todos)
+│   │   │   └── Detalle de ProviderMatch
 │   │   ├── Mis estadísticas
 │   │   ├── Datos de juego
 │   │   └── Invitaciones y organizaciones
@@ -151,6 +152,7 @@ crear una organización ni aceptar una invitación.
 
 - **Inicio personal:** resumen de partidos recientes, estadísticas destacadas y estado de vinculación de la cuenta de juego.
 - **Mis partidos:** una lista de `ProviderMatch` del `ExternalClub` seleccionado en el selector de contexto (requiere `PlayerExternalClubAssociation`; si hay varios, el primero hasta que el jugador elija otro). Recientes = últimos 7 días de calendario; Todos = el conjunto que trae el proveedor. Recientes y Todos marcan el tipo de partido (liga, playoff, amistoso) y las tarjetas de la aparición cuando el jugador alineó con ese club. Si no alineó con ese club (identificador en el rival o ausente del partido), la fila permanece con el badge «No jugaste» y sin estadísticas personales; el marcador y el W/D/L siguen el club seleccionado. Un badge de hat-trick, póker o repóker aparece cuando la aparición del club seleccionado tiene 3, 4 o 5+ goles. El historial oficial no vive aquí: está en Mis estadísticas y en `GET /players/me/matches`.
+- **Detalle de partido personal:** `/player/matches/:providerKey/:externalMatchId` abre desde una fila de Mis partidos y conserva `view` y `sort` al volver. Busca solo en la misma ventana final de 50 `ProviderMatch`: no es un registro persistido ni un acceso directo del proveedor. Un breadcrumb (Mis partidos → clubes) sustituye el enlace de volver; debajo reutiliza la misma fila de marcador de Mis partidos, sin el enlace de abrir el partido ni la franja de aparición. La fila puede aparecer desde la caché de la lista, pero el detalle consulta su recurso para obtener las plantillas completas. Debajo, pestañas tipo pills cubren Resumen (comparación de equipos, rendimiento personal y destacados), Jugadores (plantillas) y Datos del partido. Presenta primero el club seleccionado y después el rival; dentro de cada plantilla ordena por rating descendente, deja ratings desconocidos al final y muestra todas las estadísticas persistidas sin convertir `null` en cero. Si el jugador participó, el resumen muestra su rendimiento; si no participó, la fila y el panel de rendimiento indican «No jugaste» sin destacar una fila. Una identidad inválida o ausente usa un estado `not_found`; una ventana parcial incompleta conserva el error recuperable del proveedor.
 - **Mis estadísticas:** solo agregados oficiales.
 - **Competiciones / Clubes EA:** listados; al abrir una entidad se activa el grupo Contexto.
 - **Datos de juego:** vincular o actualizar identificador de jugador (subdestino desde Clubes EA o perfil).
