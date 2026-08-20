@@ -1,4 +1,5 @@
 export * from "./result.ts";
+export { Panic, assertNever } from "./panic.ts";
 export type { DomainEvent } from "./domain-event.ts";
 export {
   asActorId,
