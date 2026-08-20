@@ -6,6 +6,7 @@ import {
   asTeamId,
   type AuthorizationPort,
 } from "@futrob/shared-kernel";
+import { unwrapErr } from "@futrob/test-support";
 import { describe, expect, it } from "vite-plus/test";
 import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-schedule-snapshot.ts";
 import type { EncounterScheduleRepository } from "../domain/ports/encounter-schedule.repository.ts";
@@ -72,8 +73,7 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
       participants: participants(),
     }).execute({ actorId: asActorId("player-1"), snapshot });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("authorization.forbidden");
+    expect(unwrapErr(result).code).toBe("authorization.forbidden");
   });
 
   it("does not reparent an existing encounter to another tenant", async () => {

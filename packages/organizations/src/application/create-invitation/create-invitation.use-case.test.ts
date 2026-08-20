@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { unwrapErr } from "@futrob/test-support";
 import { asCompetitionId } from "@futrob/shared-kernel";
 import { REDEEM_POLICY } from "../../domain/entities/organization-invitation.ts";
 import {
@@ -54,10 +55,9 @@ describe("CreateInvitationUseCase", () => {
         invitedByActorId: organizer,
       });
       expect(result.isOk()).toBe(false);
-      if (!result.isOk()) {
-        expect(InvalidInvitationRole.is(result.error)).toBe(true);
-        expect(result.error.code).toBe("organizations.invalid_role");
-      }
+      const roleError = unwrapErr(result);
+      expect(InvalidInvitationRole.is(roleError)).toBe(true);
+      expect(roleError.code).toBe("organizations.invalid_role");
     }
   });
 
@@ -167,10 +167,9 @@ describe("CreateInvitationUseCase", () => {
         maxRedemptions,
       });
       expect(result.isOk()).toBe(false);
-      if (!result.isOk()) {
-        expect(InvalidInvitationRedeemPolicy.is(result.error)).toBe(true);
-        expect(result.error.code).toBe("organizations.invalid_redeem_policy");
-      }
+      const policyError = unwrapErr(result);
+      expect(InvalidInvitationRedeemPolicy.is(policyError)).toBe(true);
+      expect(policyError.code).toBe("organizations.invalid_redeem_policy");
     }
   });
 
@@ -190,10 +189,8 @@ describe("CreateInvitationUseCase", () => {
       maxRedemptions: 3,
     });
 
-    expect(result.isOk()).toBe(false);
-    if (!result.isOk()) {
-      expect(InvalidInvitationRedeemPolicy.is(result.error)).toBe(true);
-      expect(result.error.code).toBe("organizations.invalid_redeem_policy");
-    }
+    const policyError = unwrapErr(result);
+    expect(InvalidInvitationRedeemPolicy.is(policyError)).toBe(true);
+    expect(policyError.code).toBe("organizations.invalid_redeem_policy");
   });
 });

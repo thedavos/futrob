@@ -1,4 +1,5 @@
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
+import { unwrapErr } from "@futrob/test-support";
 import { describe, expect, it } from "vite-plus/test";
 import {
   ActiveTeamNotOwned,
@@ -747,8 +748,7 @@ describe("team and roster use cases", () => {
       role: "captain",
     });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("teams.roster_membership_not_found");
+    expect(unwrapErr(result).code).toBe("teams.roster_membership_not_found");
   });
 
   it("connects and retrieves a team external club", async () => {

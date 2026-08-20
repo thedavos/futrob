@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { unwrapErr } from "@futrob/test-support";
 import { asActorId, asOrganizationId, type AuthorizationPort } from "@futrob/shared-kernel";
 import type {
   AuthorizationAuditRepository,
@@ -48,8 +49,7 @@ describe("role escalation guards", () => {
       role: "member",
     });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("authorization.last_organizer");
+    expect(unwrapErr(result).code).toBe("authorization.last_organizer");
   });
 
   it("protects the last superuser and rejects a missing assignment", async () => {
@@ -68,12 +68,8 @@ describe("role escalation guards", () => {
     const missing = await useCase.execute({ actorId: first, targetActorId: asActorId("missing") });
     const last = await useCase.execute({ actorId: first, targetActorId: first });
 
-    expect(missing.isErr()).toBe(true);
-    if (missing.isErr()) {
-      expect(missing.error.code).toBe("authorization.platform_role_not_found");
-    }
-    expect(last.isErr()).toBe(true);
-    if (last.isErr()) expect(last.error.code).toBe("authorization.last_superuser");
+    expect(unwrapErr(missing).code).toBe("authorization.platform_role_not_found");
+    expect(unwrapErr(last).code).toBe("authorization.last_superuser");
   });
 
   it("cannot promote a role with capabilities the manager does not hold", async () => {
@@ -119,8 +115,7 @@ describe("role escalation guards", () => {
       role: "organizer",
     });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("authorization.forbidden");
+    expect(unwrapErr(result).code).toBe("authorization.forbidden");
     expect(await harness.memberships.findByOrgAndActor(organizationId, memberId)).toMatchObject({
       role: "member",
     });

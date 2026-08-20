@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { unwrapErr } from "@futrob/test-support";
 import {
   asActorId,
   asOrganizationId,
@@ -39,8 +40,7 @@ describe("contextual access grant management", () => {
       scope: { organizationId },
     });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("authorization.scope_not_found");
+    expect(unwrapErr(result).code).toBe("authorization.scope_not_found");
     expect(grants.rows.size).toBe(0);
   });
 
@@ -67,8 +67,7 @@ describe("contextual access grant management", () => {
       scope: { organizationId: otherOrganizationId },
     });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("authorization.grant_not_found");
+    expect(unwrapErr(result).code).toBe("authorization.grant_not_found");
     expect(grants.rows.has(grant.id)).toBe(true);
   });
 
@@ -99,8 +98,7 @@ describe("contextual access grant management", () => {
       scope: { organizationId },
     });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("authorization.scope_not_found");
+    expect(unwrapErr(result).code).toBe("authorization.scope_not_found");
     expect(grants.rows.get(grant.id)).toEqual(grant);
   });
 
@@ -123,8 +121,7 @@ describe("contextual access grant management", () => {
       dependencies(grants, (permission) => permission === "authorization.grants.manage"),
     ).execute({ actorId, grantId: grant.id, scope: { organizationId } });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("authorization.forbidden");
+    expect(unwrapErr(result).code).toBe("authorization.forbidden");
     expect(grants.rows.has(grant.id)).toBe(true);
   });
 });

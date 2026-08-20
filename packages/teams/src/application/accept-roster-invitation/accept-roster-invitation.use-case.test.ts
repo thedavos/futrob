@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { unwrapErr } from "@futrob/test-support";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { CompetitionRosterMembership } from "../../domain/entities/competition-roster-membership.ts";
 import type { CompetitionRosterState } from "../../domain/entities/competition-roster-state.ts";
@@ -379,10 +380,7 @@ describe("AcceptRosterInvitationUseCase", () => {
     });
 
     expect(first.isOk()).toBe(true);
-    expect(second.isOk()).toBe(false);
-    if (!second.isOk()) {
-      expect(RosterInvitationInvalid.is(second.error)).toBe(true);
-    }
+    expect(RosterInvitationInvalid.is(unwrapErr(second))).toBe(true);
     expect(ctx.rosters.rows).toHaveLength(1);
   });
 
@@ -410,9 +408,9 @@ describe("AcceptRosterInvitationUseCase", () => {
     const losers = [resultA, resultB].filter((r) => !r.isOk());
     expect(winners).toHaveLength(1);
     expect(losers).toHaveLength(1);
-    if (!losers[0]!.isOk()) {
-      expect(RosterInvitationInvalid.is(losers[0]!.error)).toBe(true);
-    }
+    const concurrentLoser = losers[0];
+    if (concurrentLoser === undefined) throw new Error("expected a losing claim");
+    expect(RosterInvitationInvalid.is(unwrapErr(concurrentLoser))).toBe(true);
     expect(ctx.rosters.rows).toHaveLength(1);
   });
 
@@ -597,9 +595,9 @@ describe("AcceptRosterInvitationUseCase multi policy", () => {
     const losers = [resultA, resultB].filter((r) => !r.isOk());
     expect(winners).toHaveLength(1);
     expect(losers).toHaveLength(1);
-    if (!losers[0]!.isOk()) {
-      expect(RosterFull.is(losers[0]!.error)).toBe(true);
-    }
+    const fullRosterLoser = losers[0];
+    if (fullRosterLoser === undefined) throw new Error("expected a losing claim");
+    expect(RosterFull.is(unwrapErr(fullRosterLoser))).toBe(true);
     expect(ctx.rosters.rows).toHaveLength(1);
   });
 

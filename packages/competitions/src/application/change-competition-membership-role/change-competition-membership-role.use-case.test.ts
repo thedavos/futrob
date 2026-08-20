@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { unwrapErr, unwrapOk } from "@futrob/test-support";
 import {
   asActorId,
   asCompetitionId,
@@ -45,8 +46,7 @@ describe("ChangeCompetitionMembershipRoleUseCase", () => {
       role: "captain",
     });
 
-    expect(result.isOk()).toBe(true);
-    if (result.isOk()) expect(result.value.role).toBe("captain");
+    expect(unwrapOk(result).role).toBe("captain");
   });
 
   it("does not reveal membership data without the contextual permission", async () => {
@@ -66,8 +66,7 @@ describe("ChangeCompetitionMembershipRoleUseCase", () => {
       role: "staff",
     });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("authorization.forbidden");
+    expect(unwrapErr(result).code).toBe("authorization.forbidden");
   });
 
   it("cannot assign staff when a hidden cross-context capability is missing", async () => {
@@ -99,11 +98,9 @@ describe("ChangeCompetitionMembershipRoleUseCase", () => {
       role: "staff",
     });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) {
-      expect(result.error.code).toBe("authorization.forbidden");
-      if ("permission" in result.error) expect(result.error.permission).toBe("teams.update");
-    }
+    const error = unwrapErr(result);
+    expect(error.code).toBe("authorization.forbidden");
+    expect("permission" in error ? error.permission : undefined).toBe("teams.update");
   });
 });
 

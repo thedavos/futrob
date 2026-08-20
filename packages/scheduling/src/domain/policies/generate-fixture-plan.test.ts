@@ -1,5 +1,6 @@
 import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
+import type { FixtureEncounter, FixtureParticipantSlot } from "../entities/fixture-plan.ts";
 import { generateFixturePlan } from "./generate-fixture-plan.ts";
 
 const teams = ["alpha", "bravo", "charlie", "delta"].map(asTeamId);
@@ -171,10 +172,8 @@ describe("generateFixturePlan", () => {
       "group-rank",
       "group-rank",
     ]);
-    for (const encounter of qualifierRound?.encounters ?? []) {
-      if (encounter.home.kind === "group-rank" && encounter.away.kind === "group-rank") {
-        expect(encounter.home.groupId).not.toBe(encounter.away.groupId);
-      }
+    for (const encounter of groupRankEncounters(qualifierRound?.encounters ?? [])) {
+      expect(encounter.home.groupId).not.toBe(encounter.away.groupId);
     }
     expect(qualifierRound?.encounters.every((encounter) => encounter.series === null)).toBe(true);
     expect(
@@ -199,9 +198,9 @@ describe("generateFixturePlan", () => {
     ).toHaveLength(2);
     for (const encounter of qualifierRound?.encounters ?? []) {
       expect(encounter.home.kind === "bye" && encounter.away.kind === "bye").toBe(false);
-      if (encounter.home.kind === "group-rank" && encounter.away.kind === "group-rank") {
-        expect(encounter.home.groupId).not.toBe(encounter.away.groupId);
-      }
+    }
+    for (const encounter of groupRankEncounters(qualifierRound?.encounters ?? [])) {
+      expect(encounter.home.groupId).not.toBe(encounter.away.groupId);
     }
   });
 
@@ -251,3 +250,18 @@ describe("generateFixturePlan", () => {
     );
   });
 });
+
+type GroupRankSlot = Extract<FixtureParticipantSlot, { kind: "group-rank" }>;
+
+function groupRankEncounters(
+  encounters: readonly FixtureEncounter[],
+): readonly (FixtureEncounter & { readonly home: GroupRankSlot; readonly away: GroupRankSlot })[] {
+  return encounters.filter(
+    (
+      encounter,
+    ): encounter is FixtureEncounter & {
+      readonly home: GroupRankSlot;
+      readonly away: GroupRankSlot;
+    } => encounter.home.kind === "group-rank" && encounter.away.kind === "group-rank",
+  );
+}

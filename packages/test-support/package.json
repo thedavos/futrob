@@ -9,6 +9,9 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "@futrob/shared-kernel": "0.1.0"
+  },
   "devDependencies": {
     "typescript": "6.0.2"
   }

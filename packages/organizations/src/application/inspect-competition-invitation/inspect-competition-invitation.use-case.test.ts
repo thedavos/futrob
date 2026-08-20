@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { unwrapErr } from "@futrob/test-support";
 import { asCompetitionId } from "@futrob/shared-kernel";
 import { INVITATION_STATUS } from "../../domain/entities/organization-invitation.ts";
 import {
@@ -92,11 +93,9 @@ describe("InspectCompetitionInvitationUseCase", () => {
         actorId: harness.actor("player"),
       });
 
-      expect(result.isOk()).toBe(false);
-      if (!result.isOk()) {
-        expect(kind.is(result.error)).toBe(true);
-        expect(result.error.code).toBe(code);
-      }
+      const error = unwrapErr(result);
+      expect(kind.is(error)).toBe(true);
+      expect(error.code).toBe(code);
       expect((await harness.invitations.findByTokenHash(tokenHash))?.status).toBe(status);
     },
   );
@@ -125,8 +124,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
       actorId: harness.actor("player"),
     });
 
-    expect(result.isOk()).toBe(false);
-    if (!result.isOk()) expect(InvitationExpired.is(result.error)).toBe(true);
+    expect(InvitationExpired.is(unwrapErr(result))).toBe(true);
     const stored = await harness.invitations.findByTokenHash(
       harness.tokens.hashToken(invitation.value.token),
     );
@@ -140,8 +138,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
       token: "missing",
       actorId: harness.actor("player"),
     });
-    expect(missing.isOk()).toBe(false);
-    if (!missing.isOk()) expect(InvitationNotFound.is(missing.error)).toBe(true);
+    expect(InvitationNotFound.is(unwrapErr(missing))).toBe(true);
 
     const organizer = harness.actor("organizer");
     const organization = await new CreateOrganizationUseCase(harness).execute({
@@ -162,11 +159,9 @@ describe("InspectCompetitionInvitationUseCase", () => {
       token: invitation.value.token,
       actorId: harness.actor("player"),
     });
-    expect(invalid.isOk()).toBe(false);
-    if (!invalid.isOk()) {
-      expect(InvitationInvalid.is(invalid.error)).toBe(true);
-      expect(invalid.error.code).toBe("organizations.invitation_invalid");
-    }
+    const invalidError = unwrapErr(invalid);
+    expect(InvitationInvalid.is(invalidError)).toBe(true);
+    expect(invalidError.code).toBe("organizations.invitation_invalid");
   });
 
   it("rejects single-use invitations consumed by another actor", async () => {
@@ -194,8 +189,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
       actorId: harness.actor("loser"),
     });
 
-    expect(result.isOk()).toBe(false);
-    if (!result.isOk()) expect(InvitationInvalid.is(result.error)).toBe(true);
+    expect(InvitationInvalid.is(unwrapErr(result))).toBe(true);
   });
 
   it("reports an exhausted multi invitation but remains valid for an actor who already redeemed it", async () => {
@@ -228,8 +222,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
     });
     const replay = await inspect.execute({ token: invitation.value.token, actorId: firstActor });
 
-    expect(exhausted.isOk()).toBe(false);
-    if (!exhausted.isOk()) expect(InvitationExhausted.is(exhausted.error)).toBe(true);
+    expect(InvitationExhausted.is(unwrapErr(exhausted))).toBe(true);
     expect(replay.isOk()).toBe(true);
   });
 });

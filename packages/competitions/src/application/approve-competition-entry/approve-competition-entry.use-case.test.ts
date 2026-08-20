@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { unwrapErr } from "@futrob/test-support";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "../../domain/entities/competition-entry.ts";
 import { EntryAlreadyDecided } from "../../domain/errors/competition.errors.ts";
@@ -168,8 +169,7 @@ describe("ApproveCompetitionEntryUseCase", () => {
       entryId: entry.id,
     });
 
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) expect(result.error.code).toBe("competitions.entry_not_found");
+    expect(unwrapErr(result).code).toBe("competitions.entry_not_found");
     expect((await entries.findById(entry.organizationId, entry.id))?.status).toBe("pending");
   });
 });

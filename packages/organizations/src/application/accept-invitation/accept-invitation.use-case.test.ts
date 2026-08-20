@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { unwrapErr } from "@futrob/test-support";
 import { asCompetitionId } from "@futrob/shared-kernel";
 import { INVITATION_STATUS } from "../../domain/entities/organization-invitation.ts";
 import {
@@ -161,11 +162,9 @@ describe("AcceptInvitationUseCase", () => {
       actorId: player,
       requireCompetition: true,
     });
-    expect(rejected.isOk()).toBe(false);
-    if (!rejected.isOk()) {
-      expect(InvitationInvalid.is(rejected.error)).toBe(true);
-      expect(rejected.error.code).toBe("organizations.invitation_invalid");
-    }
+    const rejectedError = unwrapErr(rejected);
+    expect(InvitationInvalid.is(rejectedError)).toBe(true);
+    expect(rejectedError.code).toBe("organizations.invitation_invalid");
     expect(await harness.memberships.findByActor(player)).toHaveLength(0);
 
     const competitionInvite = await createInvite.execute({
@@ -216,11 +215,9 @@ describe("AcceptInvitationUseCase", () => {
     const second = await acceptInvite.execute({ token: invite.value.token, actorId: loser });
 
     expect(first.isOk()).toBe(true);
-    expect(second.isOk()).toBe(false);
-    if (!second.isOk()) {
-      expect(InvitationInvalid.is(second.error)).toBe(true);
-      expect(second.error.code).toBe("organizations.invitation_invalid");
-    }
+    const secondError = unwrapErr(second);
+    expect(InvitationInvalid.is(secondError)).toBe(true);
+    expect(secondError.code).toBe("organizations.invitation_invalid");
     expect(await harness.memberships.findByActor(winner)).toHaveLength(1);
     expect(await harness.memberships.findByActor(loser)).toHaveLength(0);
   });
@@ -271,10 +268,11 @@ describe("AcceptInvitationUseCase", () => {
     const losers = outcomes.filter((r) => !r.isOk());
     expect(winners).toHaveLength(1);
     expect(losers).toHaveLength(1);
-    if (!losers[0]!.isOk()) {
-      expect(InvitationInvalid.is(losers[0]!.error)).toBe(true);
-      expect(losers[0]!.error.code).toBe("organizations.invitation_invalid");
-    }
+    const concurrentLoser = losers[0];
+    if (concurrentLoser === undefined) throw new Error("expected a losing claim");
+    const concurrentLoserError = unwrapErr(concurrentLoser);
+    expect(InvitationInvalid.is(concurrentLoserError)).toBe(true);
+    expect(concurrentLoserError.code).toBe("organizations.invitation_invalid");
 
     const winnerId = resultA.isOk() ? actorA : actorB;
     const loserId = resultA.isOk() ? actorB : actorA;
@@ -363,11 +361,9 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
 
     expect(first.isOk()).toBe(true);
     expect(second.isOk()).toBe(true);
-    expect(third.isOk()).toBe(false);
-    if (!third.isOk()) {
-      expect(InvitationExhausted.is(third.error)).toBe(true);
-      expect(third.error.code).toBe("organizations.invitation_exhausted");
-    }
+    const exhaustedError = unwrapErr(third);
+    expect(InvitationExhausted.is(exhaustedError)).toBe(true);
+    expect(exhaustedError.code).toBe("organizations.invitation_exhausted");
     expect(await harness.memberships.findByActor(actorA)).toHaveLength(1);
     expect(await harness.memberships.findByActor(actorB)).toHaveLength(1);
     expect(await harness.memberships.findByActor(actorC)).toHaveLength(0);
@@ -452,10 +448,7 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
       token: invite.value.token,
       actorId: newcomer,
     });
-    expect(firstRealRedeem.isErr()).toBe(true);
-    if (firstRealRedeem.isErr()) {
-      expect(firstRealRedeem.error.code).toBe("organizations.invitation_exhausted");
-    }
+    expect(unwrapErr(firstRealRedeem).code).toBe("organizations.invitation_exhausted");
 
     const storedAfterNewcomer = await harness.invitations.findByTokenHash(
       harness.tokens.hashToken(invite.value.token),
@@ -509,10 +502,9 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     expect(winners).toHaveLength(2);
     expect(losers).toHaveLength(1);
     for (const loser of losers) {
-      if (!loser.isOk()) {
-        expect(InvitationExhausted.is(loser.error)).toBe(true);
-        expect(loser.error.code).toBe("organizations.invitation_exhausted");
-      }
+      const loserError = unwrapErr(loser);
+      expect(InvitationExhausted.is(loserError)).toBe(true);
+      expect(loserError.code).toBe("organizations.invitation_exhausted");
     }
 
     const stored = await harness.invitations.findByTokenHash(
@@ -548,10 +540,8 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     const second = await acceptInvite.execute({ token: invite.value.token, actorId: loser });
 
     expect(first.isOk()).toBe(true);
-    expect(second.isOk()).toBe(false);
-    if (!second.isOk()) {
-      expect(InvitationInvalid.is(second.error)).toBe(true);
-      expect(second.error.code).toBe("organizations.invitation_invalid");
-    }
+    const secondError = unwrapErr(second);
+    expect(InvitationInvalid.is(secondError)).toBe(true);
+    expect(secondError.code).toBe("organizations.invitation_invalid");
   });
 });
