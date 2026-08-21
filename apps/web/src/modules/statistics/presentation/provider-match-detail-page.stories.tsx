@@ -24,7 +24,7 @@ const detail = recentProviderMatchDetailFixture({
   away: { externalClubId: "99", name: "Night Owls", goals: 2, imageUrl: null },
   players: [
     player("davos282", "10754", 8.4, { goals: 3, isMvp: true }),
-    player("Central Fera", "10754", 7.6, { position: "CB", tacklesMade: 5 }),
+    player("Central Fera", "10754", 7.6, { position: "CB", tacklesMade: 5, assists: 2 }),
     player("Portero Fera", "10754", null, { position: "GK", saves: 4 }),
     player("Night Ten", "99", 8.1, { goals: 2 }),
     player("Night Keeper", "99", 6.7, { position: "GK", saves: 6 }),
@@ -148,7 +148,7 @@ export const Ready: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByRole("heading", { name: "Fera Enjaulada – Night Owls" }),
+      await canvas.findByRole("heading", { name: "Fera Enjaulada vs Night Owls" }),
     ).toBeVisible();
     await expect(canvas.getByRole("navigation", { name: "Migas de pan" })).toBeVisible();
     await expect(canvas.getByRole("link", { name: "Mis partidos" })).toBeVisible();
@@ -156,7 +156,7 @@ export const Ready: Story = {
     await expect(canvas.getByText("Comparación de equipos")).toBeVisible();
     await expect(canvas.getByText("Tu rendimiento")).toBeVisible();
     await expect(canvas.getByText("Destacados del partido")).toBeVisible();
-    await expect(canvas.getByText("davos282")).toBeVisible();
+    await expect(canvas.getAllByText("davos282")[0]).toBeVisible();
   },
 };
 

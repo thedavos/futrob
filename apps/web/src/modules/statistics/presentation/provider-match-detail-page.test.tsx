@@ -61,7 +61,10 @@ describe("ProviderMatchDetailView", () => {
 
     renderDetail({ kind: "ready", detail });
 
-    expect(screen.getByRole("heading", { level: 1, name: "Home – Selected away" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1, name: "Home vs Selected away" })).toBeTruthy();
+    expect(
+      screen.getByText("Home vs Selected away", { selector: "[data-slot='breadcrumb-page']" }),
+    ).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Resumen" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Jugadores" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Datos del partido" })).toBeTruthy();
@@ -130,7 +133,10 @@ describe("ProviderMatchDetailView", () => {
 
     renderDetail({ kind: "loading", summary });
 
-    expect(screen.getByRole("heading", { name: "Fera – Rival" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Fera vs Rival" })).toBeTruthy();
+    expect(
+      screen.getByText("Fera vs Rival", { selector: "[data-slot='breadcrumb-page']" }),
+    ).toBeTruthy();
     expect(screen.getByLabelText("Cargando plantillas…")).toBeTruthy();
   });
 

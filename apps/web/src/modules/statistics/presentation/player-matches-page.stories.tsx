@@ -183,7 +183,7 @@ export const Ready: Story = {
     await expect(canvas.getByText("Forma reciente")).toBeVisible();
     await expect(canvas.getByText("Hoy")).toBeVisible();
     await expect(canvas.getByText("Ayer")).toBeVisible();
-    await expect(canvas.getByText("Fera Enjaulada")).toBeVisible();
+    await expect(canvas.getAllByText("Fera Enjaulada")[0]).toBeVisible();
     await expect(canvas.getByText("davos282 MVP")).toBeVisible();
     await expect(canvas.getByText("Hat-trick")).toBeVisible();
     await expect(canvasElement.querySelector("[data-match-type='leagueMatch']")).toHaveTextContent(
@@ -318,7 +318,7 @@ export const NeedsGameAccount: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Añade una cuenta de juego")).toBeVisible();
-    await expect(canvas.getByRole("link", { name: "Revisar datos de juego" })).toHaveAttribute(
+    await expect(canvas.getByRole("button", { name: "Revisar datos de juego" })).toHaveAttribute(
       "href",
       "/player/game-accounts",
     );

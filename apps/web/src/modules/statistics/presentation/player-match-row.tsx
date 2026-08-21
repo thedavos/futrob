@@ -3,23 +3,8 @@
 import { Fragment, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
-import {
-  Badge,
-  Button,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  type Icon,
-  type IconWeight,
-} from "@futrob/ui";
-import {
-  CaretRightIcon,
-  HandshakeIcon,
-  PlugsIcon,
-  RectangleIcon,
-  SoccerBallIcon,
-  StarIcon,
-} from "@phosphor-icons/react";
+import { Badge, Button, Tooltip, TooltipContent, TooltipTrigger } from "@futrob/ui";
+import { CaretRightIcon, PlugsIcon, RectangleIcon, SoccerBallIcon } from "@phosphor-icons/react";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
@@ -35,12 +20,13 @@ import {
   providerMatchMode,
   scoringFeatPlayerName,
   showsRedCards,
-  showsYellowCards,
   type MatchSortOrder,
   type PlayerMatchesView,
   type ProviderMatchMode,
   type ScoringFeat,
 } from "./player-match-view.ts";
+import { MatchAppearanceStrip } from "./player-match-appearance.tsx";
+import { MatchPitchWash } from "./player-match-pitch.tsx";
 
 export function ProviderMatchRow({
   dateTimeFormat,
@@ -264,275 +250,6 @@ function MatchHeaderMeta({ items }: { readonly items: readonly ReactNode[] }) {
   );
 }
 
-function matchScoreWinnerSide(homeGoals: number, awayGoals: number): "home" | "away" | "draw" {
-  if (homeGoals > awayGoals) return "home";
-  if (awayGoals > homeGoals) return "away";
-  return "draw";
-}
-
-type PitchHalfFill = "win" | "loss" | "drawHome" | "drawAway";
-
-function MatchPitchWash({
-  awayGoals,
-  awayImageUrl,
-  homeGoals,
-  homeImageUrl,
-}: {
-  readonly awayGoals: number;
-  readonly awayImageUrl: string | null;
-  readonly homeGoals: number;
-  readonly homeImageUrl: string | null;
-}) {
-  const fills = pitchFillsForResult(matchScoreWinnerSide(homeGoals, awayGoals));
-  return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-      <MatchPitchHalf
-        className="[clip-path:polygon(0_0,58%_0,42%_100%,0_100%)]"
-        fill={fills.home}
-        imageUrl={homeImageUrl}
-        side="home"
-      />
-      <MatchPitchHalf
-        className="[clip-path:polygon(58%_0,100%_0,100%_100%,42%_100%)]"
-        fill={fills.away}
-        imageUrl={awayImageUrl}
-        side="away"
-      />
-    </div>
-  );
-}
-
-type PitchFills = {
-  readonly home: PitchHalfFill;
-  readonly away: PitchHalfFill;
-};
-
-function pitchFillsForResult(result: "home" | "away" | "draw"): PitchFills {
-  switch (result) {
-    case "home":
-      return { home: "win", away: "loss" };
-    case "away":
-      return { home: "loss", away: "win" };
-    case "draw":
-      return { home: "drawHome", away: "drawAway" };
-    default: {
-      const _exhaustive: never = result;
-      return _exhaustive;
-    }
-  }
-}
-
-function MatchPitchHalf({
-  className,
-  fill,
-  imageUrl,
-  side,
-}: {
-  readonly className: string;
-  readonly fill: PitchHalfFill;
-  readonly imageUrl: string | null;
-  readonly side: "home" | "away";
-}) {
-  return (
-    <div
-      className={`absolute inset-0 ${pitchHalfWashClass(fill)} ${className}`}
-      data-pitch-fill={fill}
-      data-pitch-half={side}
-    >
-      {imageUrl === null ? null : (
-        <img
-          alt=""
-          className={`absolute top-1/2 hidden size-[16.1rem] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain opacity-10 outline-none grayscale mix-blend-multiply lg:block dark:mix-blend-soft-light ${pitchWatermarkSideClass(side)}`}
-          data-pitch-watermark={side}
-          referrerPolicy="no-referrer"
-          src={imageUrl}
-        />
-      )}
-    </div>
-  );
-}
-
-function pitchWatermarkSideClass(side: "home" | "away"): string {
-  switch (side) {
-    case "home":
-      return "left-[20%]";
-    case "away":
-      return "left-[80%]";
-    default: {
-      const _exhaustive: never = side;
-      return _exhaustive;
-    }
-  }
-}
-
-function pitchHalfWashClass(fill: PitchHalfFill): string {
-  switch (fill) {
-    case "win":
-      return "bg-primary/10";
-    case "loss":
-      return "bg-danger/10";
-    case "drawHome":
-      return "bg-muted";
-    case "drawAway":
-      return "bg-muted/50";
-    default: {
-      const _exhaustive: never = fill;
-      return _exhaustive;
-    }
-  }
-}
-
-function MatchAppearanceStrip({
-  item,
-  mvpLabel,
-  numberFormat,
-  t,
-}: {
-  readonly item: PlayerRecentProviderMatchDto;
-  readonly mvpLabel: string | null;
-  readonly numberFormat: Intl.NumberFormat;
-  readonly t: Translator;
-}) {
-  const appearance = playedAppearance(item);
-  if (!appearance) return null;
-  const showYellow = showsYellowCards(appearance.yellowCards);
-  const name = appearance.displayName.trim();
-  return (
-    <div className="relative z-10 flex justify-center px-4 pb-3 @lg:pb-4">
-      <div className="flex max-w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 @lg:gap-x-3 @lg:gap-y-2 @lg:rounded-full @lg:bg-surface @lg:px-4 @lg:py-2.5 @lg:smooth-shadow-ring-sm">
-        {mvpLabel ? <MatchMvpBadge label={mvpLabel} /> : null}
-        {mvpLabel === null && name !== "" ? (
-          <span className="inline-flex min-w-0 max-w-[9rem] items-center gap-1">
-            <StarIcon
-              aria-hidden="true"
-              className="size-3.5 shrink-0 text-muted-foreground"
-              weight="fill"
-            />
-            <span className="typo-caption min-w-0 truncate">
-              <span className="font-semibold">{name}</span>
-            </span>
-          </span>
-        ) : null}
-        <AppearanceStripStat
-          icon={SoccerBallIcon}
-          metric="recent-goals"
-          numberFormat={numberFormat}
-          t={t}
-          unitKey="player.matches.appearance.goalsUnit"
-          value={appearance.goals}
-        />
-        <AppearanceStripStat
-          icon={HandshakeIcon}
-          metric="recent-assists"
-          numberFormat={numberFormat}
-          t={t}
-          unitKey="player.matches.appearance.assistsUnit"
-          value={appearance.assists}
-        />
-        {showYellow ? (
-          <AppearanceStripStat
-            icon={RectangleIcon}
-            iconClassName="size-3.5 rotate-90 text-warning"
-            iconWeight="fill"
-            metric="recent-yellow"
-            numberFormat={numberFormat}
-            t={t}
-            unitKey={null}
-            value={appearance.yellowCards}
-          />
-        ) : null}
-        <Badge className="font-semibold" variant={ratingBadgeVariant(appearance.rating)}>
-          <StarIcon
-            aria-hidden="true"
-            className="size-3.5"
-            data-metric-icon="recent-rating"
-            weight="fill"
-          />
-          <span className="typo-caption @max-lg:sr-only">
-            <span className="font-medium">{t("player.metric.rating")}</span>
-          </span>
-          {appearance.rating === null ? (
-            <span className="typo-caption" data-size="empty">
-              <span className="font-medium" data-metric="recent-rating">
-                {t("player.noData")}
-              </span>
-            </span>
-          ) : (
-            <span className="typo-caption tabular-nums">
-              <span className="font-medium" data-metric="recent-rating">
-                {numberFormat.format(appearance.rating)}
-              </span>
-            </span>
-          )}
-        </Badge>
-      </div>
-    </div>
-  );
-}
-
-function MatchMvpBadge({ label }: { readonly label: string }) {
-  return (
-    <Badge data-mvp="" variant="warning">
-      <StarIcon aria-hidden="true" className="text-warning" weight="fill" />
-      <span className="font-medium">{label}</span>
-    </Badge>
-  );
-}
-
-function AppearanceStripStat({
-  icon: MetricIcon,
-  iconClassName = "size-3.5",
-  iconWeight = "regular",
-  metric,
-  numberFormat,
-  t,
-  unitKey,
-  value,
-}: {
-  readonly icon: Icon;
-  readonly iconClassName?: string;
-  readonly iconWeight?: IconWeight;
-  readonly metric: string;
-  readonly numberFormat: Intl.NumberFormat;
-  readonly t: Translator;
-  readonly unitKey:
-    | "player.matches.appearance.goalsUnit"
-    | "player.matches.appearance.assistsUnit"
-    | null;
-  readonly value: number | null;
-}) {
-  return (
-    <span className="inline-flex items-center gap-1 text-muted-foreground">
-      <MetricIcon
-        aria-hidden="true"
-        className={iconClassName}
-        data-metric-icon={metric}
-        weight={iconWeight}
-      />
-      {value === null ? (
-        <span className="typo-caption" data-size="empty">
-          <span className="font-medium" data-metric={metric}>
-            {t("player.noData")}
-          </span>
-        </span>
-      ) : (
-        <>
-          <span className="typo-caption tabular-nums text-foreground">
-            <span className="font-semibold" data-metric={metric}>
-              {numberFormat.format(value)}
-            </span>
-          </span>
-          {unitKey === null ? null : (
-            <span className="typo-caption @max-lg:sr-only">
-              <span className="font-medium">{t(unitKey, { count: value })}</span>
-            </span>
-          )}
-        </>
-      )}
-    </span>
-  );
-}
-
 function notPlayedMessage(item: PlayerRecentProviderMatchDto, t: Translator): string | null {
   return item.kind === "not_played" ? t("player.matches.notPlayed") : null;
 }
@@ -640,10 +357,6 @@ function ScoringFeatBadge({
       <TooltipContent>{t("player.matches.feat.scorer", { name: scorerName })}</TooltipContent>
     </Tooltip>
   );
-}
-
-function ratingBadgeVariant(rating: number | null): "primary" | "outline" {
-  return rating !== null && rating >= 7 ? "primary" : "outline";
 }
 
 function scoreDigitClass(homeGoals: number, awayGoals: number, side: "home" | "away"): string {

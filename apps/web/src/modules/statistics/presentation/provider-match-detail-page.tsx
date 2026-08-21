@@ -303,5 +303,5 @@ function listedItemFromState(
 
 function matchCrumbLabel(item: PlayerRecentProviderMatchDto | undefined, t: Translator): string {
   if (!item) return t("player.matchDetail.breadcrumb.match");
-  return `${item.match.home.name} ${t("player.matches.vs")} ${item.match.away.name}`;
+  return `${item.match.home.name} ${t("player.matchDetail.vs")} ${item.match.away.name}`;
 }
