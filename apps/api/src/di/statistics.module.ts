@@ -33,14 +33,16 @@ import {
   InMemoryTeamMatchContributionRepository,
 } from "@/adapters/statistics/in-memory.repositories";
 import {
-  PostgresCompetitionStandingSnapshotRepository,
   PostgresPlayerCompetitionStatsRepository,
   PostgresPlayerMatchContributionRepository,
   PostgresPlayerPersonalStatsRepository,
+} from "@/adapters/statistics/player-postgres.repositories";
+import {
+  PostgresCompetitionStandingSnapshotRepository,
   PostgresRankingSnapshotRepository,
   PostgresTeamCompetitionStatsRepository,
   PostgresTeamMatchContributionRepository,
-} from "@/adapters/statistics/postgres.repositories";
+} from "@/adapters/statistics/team-postgres.repositories";
 
 export type StatisticsModule = {
   useCases: {

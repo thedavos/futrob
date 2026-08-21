@@ -17,6 +17,7 @@ export {
 } from "./domain/entities/player-aggregate-stats.ts";
 export type { PlayerCompetitionStats } from "./domain/entities/player-competition-stats.ts";
 export type { PlayerPersonalStats } from "./domain/entities/player-personal-stats.ts";
+export type { TeamAggregateStats } from "./domain/entities/team-aggregate-stats.ts";
 export type { TeamCompetitionStats } from "./domain/entities/team-competition-stats.ts";
 export {
   COMPETITION_STANDING_FORMULA_VERSION,

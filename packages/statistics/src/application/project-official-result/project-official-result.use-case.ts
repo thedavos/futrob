@@ -13,10 +13,7 @@ import {
   type TransactionPort,
 } from "@futrob/shared-kernel";
 import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
-import type {
-  TeamMatchContribution,
-  TeamMatchSide,
-} from "../../domain/entities/team-match-contribution.ts";
+import type { TeamMatchContribution } from "../../domain/entities/team-match-contribution.ts";
 import {
   OfficialResultNotFound,
   type ProjectOfficialResultError,
@@ -36,6 +33,13 @@ import {
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
+import {
+  addMatchedProfiles,
+  addMatchedTeams,
+  buildPlayerContributions as projectPlayerContributions,
+  buildTeamContributions as projectTeamContributions,
+  type PlayerProjectionDependencies,
+} from "./project-official-result-projection.ts";
 
 export type ProjectOfficialResultInput =
   | { readonly officialResultId: string; readonly rebuildRankings?: boolean }
@@ -150,7 +154,7 @@ export class ProjectOfficialResultUseCase {
   ): Promise<PlayerMatchContribution[]> {
     switch (officialResult.status) {
       case "approved":
-        return this.buildPlayerContributions(officialResult);
+        return projectPlayerContributions(this.projectionDeps(), officialResult);
       case "voided":
         return [];
       default:
@@ -163,12 +167,22 @@ export class ProjectOfficialResultUseCase {
   ): Promise<TeamMatchContribution[]> {
     switch (officialResult.status) {
       case "approved":
-        return this.buildTeamContributions(officialResult);
+        return projectTeamContributions(
+          { encounterReader: this.deps.encounterReader },
+          officialResult,
+        );
       case "voided":
         return [];
       default:
         return assertNever(officialResult.status, "Unsupported official result status");
     }
+  }
+
+  private projectionDeps(): PlayerProjectionDependencies {
+    return {
+      encounterReader: this.deps.encounterReader,
+      identities: this.deps.identities,
+    };
   }
 
   private async rebuildPlayerAggregates(
@@ -247,246 +261,4 @@ export class ProjectOfficialResultUseCase {
       }),
     );
   }
-
-  private async buildPlayerContributions(
-    officialResult: OfficialResult,
-  ): Promise<PlayerMatchContribution[]> {
-    const encounter =
-      (await this.deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
-    const contributions: PlayerMatchContribution[] = [];
-    for (const slot of officialResult.slots) {
-      for (const player of slot.players) {
-        const teamId = mapExternalClubToTeam({
-          externalClubId: player.externalClubId,
-          homeExternalClubId: slot.homeExternalClubId,
-          awayExternalClubId: slot.awayExternalClubId,
-          homeTeamId: encounter?.homeTeamId ?? null,
-          awayTeamId: encounter?.awayTeamId ?? null,
-        });
-        const resolution = await this.deps.identities.resolve({
-          externalPlayerId: player.externalPlayerId,
-          platform: slot.platform,
-          gameEdition: slot.gameEdition,
-          organizationId: officialResult.organizationId,
-          competitionId: officialResult.competitionId,
-          teamId: teamId ?? undefined,
-        });
-        contributions.push({
-          id: playerContributionId({
-            officialResultId: officialResult.id,
-            revision: officialResult.revision,
-            officialSlot: slot.officialSlot,
-            externalPlayerId: player.externalPlayerId,
-          }),
-          officialResultId: officialResult.id,
-          revision: officialResult.revision,
-          encounterId: officialResult.encounterId,
-          competitionId: officialResult.competitionId,
-          organizationId: officialResult.organizationId,
-          officialSlot: slot.officialSlot,
-          playerProfileId: resolution.status === "matched" ? resolution.playerProfileId : null,
-          gameAccountId: resolution.status === "matched" ? resolution.gameAccountId : null,
-          teamId,
-          correlationStatus: resolution.status,
-          externalPlayerId: player.externalPlayerId,
-          displayName: player.displayName,
-          externalClubId: player.externalClubId,
-          platform: slot.platform,
-          gameEdition: slot.gameEdition,
-          position: player.position,
-          minutesPlayed: player.minutesPlayed,
-          goals: player.goals,
-          assists: player.assists,
-          shots: player.shots,
-          passAttempts: player.passAttempts,
-          passesMade: player.passesMade,
-          tackleAttempts: player.tackleAttempts,
-          tacklesMade: player.tacklesMade,
-          saves: player.saves,
-          yellowCards: player.yellowCards,
-          redCards: player.redCards,
-          isMvp: player.isMvp,
-          rating: player.rating,
-        });
-      }
-    }
-    return contributions;
-  }
-
-  private async buildTeamContributions(
-    officialResult: OfficialResult,
-  ): Promise<TeamMatchContribution[]> {
-    const encounter =
-      (await this.deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
-    const contributions: TeamMatchContribution[] = [];
-    for (const slot of officialResult.slots) {
-      for (const side of ["home", "away"] as const) {
-        const externalClubId = side === "home" ? slot.homeExternalClubId : slot.awayExternalClubId;
-        const goalsFor = side === "home" ? slot.homeGoals : slot.awayGoals;
-        const goalsAgainst = side === "home" ? slot.awayGoals : slot.homeGoals;
-        // Slot home/away clubs map to encounter team IDs (same as player contributions).
-        // Do not use live ExternalClubConnection IDs — re-links must not blank standings.
-        const teamId = mapExternalClubToTeam({
-          externalClubId,
-          homeExternalClubId: slot.homeExternalClubId,
-          awayExternalClubId: slot.awayExternalClubId,
-          homeTeamId: encounter?.homeTeamId ?? null,
-          awayTeamId: encounter?.awayTeamId ?? null,
-        });
-        const correlationStatus = teamId === null ? "unmatched" : "matched";
-        const rolled = rollUpSlotPlayers(
-          slot.players.filter((player) => player.externalClubId === externalClubId),
-        );
-        contributions.push({
-          id: teamContributionId({
-            officialResultId: officialResult.id,
-            revision: officialResult.revision,
-            officialSlot: slot.officialSlot,
-            side,
-          }),
-          officialResultId: officialResult.id,
-          revision: officialResult.revision,
-          encounterId: officialResult.encounterId,
-          competitionId: officialResult.competitionId,
-          organizationId: officialResult.organizationId,
-          officialSlot: slot.officialSlot,
-          teamId,
-          correlationStatus,
-          side,
-          externalClubId,
-          goalsFor,
-          goalsAgainst,
-          platform: slot.platform,
-          gameEdition: slot.gameEdition,
-          ...rolled,
-        });
-      }
-    }
-    return contributions;
-  }
-}
-
-function mapExternalClubToTeam(input: {
-  readonly externalClubId: string;
-  readonly homeExternalClubId: string;
-  readonly awayExternalClubId: string;
-  readonly homeTeamId: TeamId | null;
-  readonly awayTeamId: TeamId | null;
-}): TeamId | null {
-  if (input.externalClubId === input.homeExternalClubId) return input.homeTeamId;
-  if (input.externalClubId === input.awayExternalClubId) return input.awayTeamId;
-  return null;
-}
-
-function addMatchedProfiles(
-  profiles: Set<string>,
-  contributions: readonly PlayerMatchContribution[],
-): void {
-  for (const contribution of contributions) {
-    if (contribution.correlationStatus === "matched" && contribution.playerProfileId !== null) {
-      profiles.add(contribution.playerProfileId);
-    }
-  }
-}
-
-function addMatchedTeams(
-  teams: Set<TeamId>,
-  contributions: readonly TeamMatchContribution[],
-): void {
-  for (const contribution of contributions) {
-    if (contribution.correlationStatus === "matched" && contribution.teamId !== null) {
-      teams.add(contribution.teamId);
-    }
-  }
-}
-
-function playerContributionId(input: {
-  readonly officialResultId: string;
-  readonly revision: number;
-  readonly officialSlot: 1 | 2;
-  readonly externalPlayerId: string;
-}): string {
-  return [
-    input.officialResultId,
-    input.revision,
-    input.officialSlot,
-    encodeURIComponent(input.externalPlayerId),
-  ].join(":");
-}
-
-function teamContributionId(input: {
-  readonly officialResultId: string;
-  readonly revision: number;
-  readonly officialSlot: 1 | 2;
-  readonly side: TeamMatchSide;
-}): string {
-  return [input.officialResultId, input.revision, input.officialSlot, input.side].join(":");
-}
-
-function rollUpSlotPlayers(
-  players: OfficialResult["slots"][number]["players"],
-): Pick<
-  TeamMatchContribution,
-  | "minutesPlayed"
-  | "goals"
-  | "assists"
-  | "shots"
-  | "passAttempts"
-  | "passesMade"
-  | "tackleAttempts"
-  | "tacklesMade"
-  | "saves"
-  | "yellowCards"
-  | "redCards"
-  | "isMvp"
-  | "rating"
-> {
-  if (players.length === 0) {
-    return {
-      minutesPlayed: null,
-      goals: null,
-      assists: null,
-      shots: null,
-      passAttempts: null,
-      passesMade: null,
-      tackleAttempts: null,
-      tacklesMade: null,
-      saves: null,
-      yellowCards: null,
-      redCards: null,
-      isMvp: null,
-      rating: null,
-    };
-  }
-
-  return {
-    minutesPlayed: sumNullable(players.map((player) => player.minutesPlayed)),
-    goals: sumNullable(players.map((player) => player.goals)),
-    assists: sumNullable(players.map((player) => player.assists)),
-    shots: sumNullable(players.map((player) => player.shots)),
-    passAttempts: sumNullable(players.map((player) => player.passAttempts)),
-    passesMade: sumNullable(players.map((player) => player.passesMade)),
-    tackleAttempts: sumNullable(players.map((player) => player.tackleAttempts)),
-    tacklesMade: sumNullable(players.map((player) => player.tacklesMade)),
-    saves: sumNullable(players.map((player) => player.saves)),
-    yellowCards: sumNullable(players.map((player) => player.yellowCards)),
-    redCards: sumNullable(players.map((player) => player.redCards)),
-    isMvp: players.some((player) => player.isMvp === true)
-      ? true
-      : players.every((player) => player.isMvp === false)
-        ? false
-        : null,
-    rating: averageNullable(players.map((player) => player.rating)),
-  };
-}
-
-function sumNullable(values: readonly (number | null)[]): number | null {
-  if (values.every((value) => value === null)) return null;
-  return values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
-}
-
-function averageNullable(values: readonly (number | null)[]): number | null {
-  const present = values.filter((value): value is number => value !== null);
-  if (present.length === 0) return null;
-  return present.reduce((sum, value) => sum + value, 0) / present.length;
 }
