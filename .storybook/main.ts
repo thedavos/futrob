@@ -13,7 +13,11 @@ function getAbsolutePath(packageName: string) {
 
 const config: StorybookConfig = {
   stories: ["../packages/ui/src/**/*.stories.@(ts|tsx)", "../apps/web/src/**/*.stories.@(ts|tsx)"],
-  addons: [getAbsolutePath("@storybook/addon-docs"), getAbsolutePath("@storybook/addon-a11y")],
+  addons: [
+    getAbsolutePath("@storybook/addon-docs"),
+    getAbsolutePath("@storybook/addon-a11y"),
+    getAbsolutePath("@storybook/addon-vitest"),
+  ],
   framework: {
     name: getAbsolutePath("@storybook/react-vite"),
     options: {},
@@ -49,7 +53,7 @@ const config: StorybookConfig = {
       alias: [
         // Match with or without `.ts` — Vite may strip the extension before alias lookup.
         {
-          find: /^@\/modules\/identity\/adapters\/auth\/auth-client(?:\.ts)?$/,
+          find: /^@\/modules\/identity\/(?:adapters\/auth\/)?auth-client(?:\.ts)?$/,
           replacement: resolve(configDir, "mocks/auth-client.ts"),
         },
         {

@@ -41,3 +41,4 @@ npm-debug.log*
 
 # Local agent decision trails (show-me-your-work)
 .audit/
+apps/web/src/routeTree.gen.ts

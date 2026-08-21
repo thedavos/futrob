@@ -1,4 +1,32 @@
-import { defineConfig } from "vite-plus";
+import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import { playwright } from "vite-plus/test/browser-playwright";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { defineConfig, defineProject } from "vite-plus";
+
+const repoRoot = dirname(fileURLToPath(import.meta.url));
+
+/** Storybook component tests (stories as tests) running in a real browser. */
+function storybookVitestProject() {
+  return defineProject({
+    plugins: [
+      storybookTest({
+        configDir: resolve(repoRoot, ".storybook"),
+        // Stories tagged "vitest-skip" are reported as skipped, not silently excluded.
+        tags: { skip: ["vitest-skip"] },
+      }),
+    ],
+    test: {
+      name: "storybook",
+      browser: {
+        enabled: true,
+        headless: true,
+        provider: playwright(),
+        instances: [{ browser: "chromium" }],
+      },
+    },
+  });
+}
 
 /**
  * Root Vite+ config — monorepo quality tooling.
@@ -53,7 +81,14 @@ export default defineConfig({
     ignorePatterns: [
       "**/routeTree.gen.ts",
       "**/paraglide/**",
+      // Size budget applies to production code only; test/story suites grow freely.
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/*.stories.tsx",
+      // Generated / pure-data files — exempt from size limits permanently.
       "packages/api-contracts/scripts/**",
+      "packages/api-contracts/src/v1/openapi/document.ts",
+      "apps/web/src/shared/presentation/i18n/catalogs.ts",
       ".agent/**",
       ".agents/**",
       ".claude/**",
@@ -70,6 +105,7 @@ export default defineConfig({
     rules: {
       "vite-plus/prefer-vite-plus-imports": "error",
       "no-console": ["error", { allow: ["warn", "error"] }],
+      "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
       "anti-slop/no-chained-type-assertions": "error",
       "anti-slop/no-conditional-empty-object-spread": "error",
       "anti-slop/no-known-value-widening": "error",
@@ -234,6 +270,7 @@ export default defineConfig({
       "packages/api-contracts",
       "packages/sdk",
       "packages/shared-kernel",
+      "packages/ea-clubs",
       "packages/identity",
       "packages/game-data",
       "packages/organizations",
@@ -242,7 +279,18 @@ export default defineConfig({
       "packages/scheduling",
       "packages/statistics",
       "packages/teams",
+      // Storybook component tests (stories as tests) in a real browser.
+      storybookVitestProject(),
       "tools/oxlint/futrob",
     ],
+    coverage: {
+      // Ratchet: floors just under the current baseline so coverage can only go up.
+      thresholds: {
+        statements: 72,
+        branches: 65,
+        functions: 69,
+        lines: 74,
+      },
+    },
   },
 });
