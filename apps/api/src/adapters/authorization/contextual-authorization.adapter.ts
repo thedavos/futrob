@@ -1,5 +1,4 @@
 import {
-  COMPETITION_PERMISSIONS,
   COMPETITION_ROLE_PERMISSIONS,
   type CompetitionMembershipRepository,
   type CompetitionEntryRepository,
@@ -11,89 +10,46 @@ import type {
   OrganizationRepository,
   PlatformRoleRepository,
 } from "@futrob/organizations";
-import {
-  ORGANIZATION_PERMISSION,
-  ORGANIZATION_PERMISSIONS,
-  ORGANIZATION_ROLE_PERMISSIONS,
-} from "@futrob/organizations";
-import { RESULT_PERMISSIONS } from "@futrob/results";
-import { ENCOUNTER_PERMISSION, ENCOUNTER_PERMISSIONS } from "@futrob/scheduling";
-import { STATISTICS_PERMISSION, STATISTICS_PERMISSIONS } from "@futrob/statistics";
+import { ENCOUNTER_PERMISSION } from "@futrob/scheduling";
+import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import type {
   ActorId,
   AuthorizationDecision,
   AuthorizationPort,
   AuthorizationScope,
-  AuthorizationScopeType,
   EffectiveAccess,
-  EffectiveRole,
   EncounterId,
   Permission,
 } from "@futrob/shared-kernel";
 import {
   ROSTER_ROLE_PERMISSIONS,
-  TEAM_PERMISSIONS,
   type CompetitionRosterMembershipRepository,
   type CompetitionRosterMembership,
   type PlayerProfileRepository,
   type TeamRepository,
 } from "@futrob/teams";
-
 import type { EncounterScheduleSnapshot as EncounterAuthorizationSnapshot } from "@futrob/scheduling";
+
+import {
+  ALL_PERMISSIONS,
+  contextualCompetitionRolePermissions,
+  contextualOrganizationRolePermissions,
+} from "./contextual-role-permissions.ts";
+import {
+  mostSpecificScope,
+  resolvePermission,
+  uniquePermissions,
+  type Layer,
+} from "./contextual-resolution.ts";
+
+export {
+  ALL_PERMISSIONS,
+  contextualCompetitionRolePermissions,
+  contextualOrganizationRolePermissions,
+} from "./contextual-role-permissions.ts";
 
 export interface EncounterAuthorizationReader {
   findById(encounterId: EncounterId): Promise<EncounterAuthorizationSnapshot | null>;
-}
-
-interface Layer {
-  readonly scopeType: AuthorizationScopeType;
-  readonly scopeId: string;
-  readonly roles: readonly EffectiveRole[];
-  readonly baseline: ReadonlySet<Permission>;
-}
-
-const ALL_PERMISSIONS = [
-  ...ORGANIZATION_PERMISSIONS,
-  ...COMPETITION_PERMISSIONS,
-  ...TEAM_PERMISSIONS,
-  ...ENCOUNTER_PERMISSIONS,
-  ...RESULT_PERMISSIONS,
-  ...STATISTICS_PERMISSIONS,
-] satisfies readonly Permission[];
-
-export function contextualOrganizationRolePermissions(
-  role: keyof typeof ORGANIZATION_ROLE_PERMISSIONS,
-): readonly Permission[] {
-  if (role === "organizer") {
-    return ALL_PERMISSIONS.filter(
-      (permission) => permission !== ORGANIZATION_PERMISSION.superusersManage,
-    );
-  }
-  if (role === "staff") {
-    return [
-      ...ORGANIZATION_ROLE_PERMISSIONS.staff,
-      ...COMPETITION_PERMISSIONS,
-      ...TEAM_PERMISSIONS,
-      ...ENCOUNTER_PERMISSIONS,
-      ...RESULT_PERMISSIONS,
-      ...STATISTICS_PERMISSIONS,
-    ];
-  }
-  return ORGANIZATION_ROLE_PERMISSIONS.member;
-}
-
-export function contextualCompetitionRolePermissions(
-  role: keyof typeof COMPETITION_ROLE_PERMISSIONS,
-): readonly Permission[] {
-  return role === "staff"
-    ? [
-        ...COMPETITION_ROLE_PERMISSIONS.staff,
-        ...TEAM_PERMISSIONS,
-        ...ENCOUNTER_PERMISSIONS,
-        ...RESULT_PERMISSIONS,
-        ...STATISTICS_PERMISSIONS,
-      ]
-    : COMPETITION_ROLE_PERMISSIONS[role];
 }
 
 export class ContextualAuthorizationAdapter implements AuthorizationPort {
@@ -395,61 +351,4 @@ export class ContextualAuthorizationAdapter implements AuthorizationPort {
       }) ?? null
     );
   }
-}
-
-function resolvePermission(
-  permission: Permission,
-  layers: readonly Layer[],
-  grants: readonly {
-    readonly permission: Permission;
-    readonly effect: "allow" | "deny";
-    readonly scopeType: AuthorizationScopeType;
-    readonly scopeId: string;
-  }[],
-) {
-  let allowed = false;
-  let assigned = false;
-  let decidedAt: AuthorizationScopeType = "platform";
-  for (const layer of layers) {
-    const matching = grants.filter(
-      (grant) =>
-        grant.permission === permission &&
-        grant.scopeType === layer.scopeType &&
-        grant.scopeId === layer.scopeId,
-    );
-    if (matching.some((grant) => grant.effect === "deny")) {
-      allowed = false;
-      assigned = true;
-      decidedAt = layer.scopeType;
-      continue;
-    }
-    if (matching.some((grant) => grant.effect === "allow")) {
-      allowed = true;
-      assigned = true;
-      decidedAt = layer.scopeType;
-      continue;
-    }
-    if (layer.baseline.has(permission)) {
-      allowed = true;
-      assigned = true;
-      decidedAt = layer.scopeType;
-    }
-  }
-  return { allowed, assigned, decidedAt } satisfies {
-    readonly allowed: boolean;
-    readonly assigned: boolean;
-    readonly decidedAt: AuthorizationScopeType;
-  };
-}
-
-function uniquePermissions(permissions: readonly Permission[]): readonly Permission[] {
-  return [...new Set(permissions)].sort();
-}
-
-function mostSpecificScope(scope: AuthorizationScope): AuthorizationScopeType {
-  if (scope.encounterId) return "encounter";
-  if (scope.teamId) return "team";
-  if (scope.competitionId) return "competition";
-  if (scope.organizationId) return "organization";
-  return "platform";
 }

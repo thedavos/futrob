@@ -9,12 +9,8 @@ import {
   type RbacMatrixFixture,
   type RbacScopeKey,
 } from "./rbac-matrix.fixture.ts";
-import {
-  RBAC_MATRIX_CASES,
-  rbacMatrixCoverageSummary,
-  type RbacGrantSeed,
-  type RbacMatrixCase,
-} from "./rbac-matrix.registry.ts";
+import { type RbacGrantSeed, type RbacMatrixCase } from "./rbac-matrix.oracle.ts";
+import { RBAC_MATRIX_CASES, rbacMatrixCoverageSummary } from "./rbac-matrix.cases.ts";
 import { InMemoryAccessGrantRepository } from "./in-memory.repository.ts";
 import { PostgresAccessGrantRepository, type AccessGrantRow } from "./postgres.repository.ts";
 
