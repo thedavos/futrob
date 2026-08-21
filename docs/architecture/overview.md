@@ -23,7 +23,7 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 
 - TanStack Start + React en `apps/web`, desplegado en **Cloudflare Workers**.
 - Hexagonal por bounded context: domain/application en `packages/@futrob/<bc>`; adapters en la app.
-- Composition de web solo en `apps/web/src/di/`. Futura `apps/api` tendrá su propio `di/`.
+- Composition: adapters y use cases se instancian en `apps/api/src/di/`; la web consume vía product API ([ADR-0013](/docs/adr/0013-ea-egress-api-only.md)).
 - Better Auth (identidad) + Futrob (autorización/orgs).
 - D1 / R2 / Queues / Cron en web. Tenancy scoped en aplicación (sin RLS Postgres).
 - shadcn/Base UI, Vite+, Sentry en boundaries.
@@ -97,13 +97,14 @@ ConfirmOfficialSelection
 
 ## Composition roots
 
-| Scope            | Archivo                                        | Rol                           |
-| ---------------- | ---------------------------------------------- | ----------------------------- |
-| Proceso / Worker | `bootstrap/create-app-context.ts`              | env, bindings, factories base |
-| Request          | `bootstrap/create-request-context.ts` + `di/*` | sesión, org, módulos          |
-| Jobs             | `bootstrap/register-workers.ts` + `workers/*`  | consumers idempotentes        |
+| Scope           | Archivo                                                                    | Rol                    |
+| --------------- | -------------------------------------------------------------------------- | ---------------------- |
+| Jobs            | `bootstrap/register-workers.ts` + `workers/*`                              | consumers idempotentes |
+| API de producto | `apps/api/src/di/*` (ver [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)) | módulos y adapters     |
 
-Solo `src/di/*.module.ts` instancia adapters y use cases.
+Los composition roots de proceso/request en web (`create-app-context`, `create-request-context`,
+`di/*`) se retiraron con [ADR-0013](/docs/adr/0013-ea-egress-api-only.md): la web consume los use
+cases a través del product API (SDK), no instancia adapters propios.
 
 ## Identidad y tenancy
 
@@ -168,6 +169,7 @@ Un módulo no escribe tablas ajenas; publica eventos / usa ports de lectura.
 - [ADR-0010](/docs/adr/0010-bounded-context-packages.md)
 - [ADR-0011](/docs/adr/0011-tagged-errors.md)
 - [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md)
+- [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)
 - [module-boundaries.md](/docs/architecture/module-boundaries.md)
 - [dependency-graph.md](/docs/architecture/dependency-graph.md)
 

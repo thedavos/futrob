@@ -28,12 +28,10 @@ import {
   eaClubInfoMapSchema,
   eaClubMatchesResponseSchema,
   eaSearchClubsResponseSchema,
-} from "./schemas/ea-clubs.schemas.ts";
-import {
   mapClubInfoToExternalClub,
   mapClubMatchToProviderMatch,
   mapLeaderboardEntryToExternalClub,
-} from "./mappers/ea-clubs.mappers.ts";
+} from "@futrob/ea-clubs";
 
 const MATCH_ENDPOINT = "/clubs/matches";
 const MATCH_SCHEMA_VERSION = "ea-clubs.match.v1";

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-
-import { buildEaClubCrestUrl, crestAssetIdFromCustomKit } from "./build-ea-club-crest-url.ts";
+import { buildEaClubCrestUrl, crestAssetIdFromCustomKit } from "./crest-url.ts";
 
 describe("buildEaClubCrestUrl", () => {
   it("builds the FC26 crest CDN URL", () => {

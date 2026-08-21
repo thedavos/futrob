@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vite-plus/test";
-import searchClubsFixture from "@/adapters/game-data/ea-clubs/fixtures/search-clubs.json";
-import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
-import clubMatchesFixture from "@/adapters/game-data/ea-clubs/fixtures/club-matches.json";
+import searchClubsFixture from "./fixtures/search-clubs.json";
+import clubInfoFixture from "./fixtures/club-info.json";
+import clubMatchesFixture from "./fixtures/club-matches.json";
 import {
   eaClubInfoMapSchema,
   eaClubMatchesResponseSchema,
   eaSearchClubsResponseSchema,
-} from "@/adapters/game-data/ea-clubs/schemas/ea-clubs.schemas.ts";
+} from "./schemas.ts";
 import {
   mapClubInfoToExternalClub,
   mapClubMatchToProviderMatch,
   mapLeaderboardEntryToExternalClub,
-} from "@/adapters/game-data/ea-clubs/mappers/ea-clubs.mappers.ts";
+} from "./mappers.ts";
 
-describe("ea-clubs schemas and mappers (api)", () => {
+describe("ea-clubs schemas and mappers", () => {
   const context = { platform: "common-gen5", gameEdition: "fc26" };
 
   it("parses search fixture and maps to ExternalClub", () => {

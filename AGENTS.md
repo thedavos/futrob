@@ -74,7 +74,8 @@ MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**
   `TransactionPort`, `EventPublisherPort`) y se reutilizan desde los BCs y apps.
   No centralizar ports que expresen vocabulario o reglas propias de un bounded context.
 - Cross-module via package public API, ports/bridges, or outbox events — never foreign adapters/tables.
-- EA specifics only in `apps/web/.../game-data/adapters/providers/ea-clubs/` (until api hosts its own egress adapters).
+- EA egress lives only in `apps/api/.../game-data/adapters/ea-clubs/` (see
+  [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)); web reaches EA data through the product API.
 - Official stats only after `results.official-result-approved`.
 - Organization-scoped D1 queries; no Postgres RLS / Supabase / Vercel as Must.
 - **Expected failures:** domain/application/adapter errors use `TaggedError` from
