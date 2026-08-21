@@ -8,6 +8,7 @@ import { apiErrorResponse } from "@/http/errors.ts";
 import { createRequestCorrelationMiddleware } from "@/http/middleware/request-correlation.ts";
 import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
 import { registerCompetitionRoutes } from "@/http/routes/competitions.ts";
+import { registerCompetitionParticipantRoutes } from "@/http/routes/competitions-participants.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
 import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
@@ -74,6 +75,7 @@ export function createApp(deps: AppDeps): Hono {
   registerProviderHealthRoutes(v1, deps);
   registerGameDataClubRoutes(v1, deps);
   registerCompetitionRoutes(v1, deps);
+  registerCompetitionParticipantRoutes(v1, deps);
   registerOnboardingRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);
   registerPlayerRoutes(v1, deps);
