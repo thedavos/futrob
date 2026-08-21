@@ -1,4 +1,4 @@
-import type { OnboardingDraft } from "./onboarding-flow.tsx";
+import type { OnboardingDraft } from "./onboarding-draft.ts";
 
 export { isIanaTimeZone } from "@/modules/competitions/presentation/validate-competition-draft-input.ts";
 

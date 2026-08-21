@@ -18,7 +18,8 @@ import {
   validOptionalAccount,
   validOrganizationName,
 } from "../onboarding-draft-validators.ts";
-import { competitionFromDraft, useOnboardingFlow } from "../onboarding-flow.tsx";
+import { competitionFromDraft } from "../onboarding-draft.ts";
+import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
 import {
   eaPlatformLabel,

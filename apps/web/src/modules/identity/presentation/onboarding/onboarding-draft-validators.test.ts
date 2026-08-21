@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
-import type { OnboardingDraft } from "./onboarding-flow.tsx";
+import type { OnboardingDraft } from "./onboarding-draft.ts";
 import {
   providerGameEditionFromDraft,
   validCompleteAccount,

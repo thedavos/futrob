@@ -68,9 +68,10 @@ export const EditNavigation: Story = {
       await canvas.findByRole("textbox", { name: "Identificador de EA" }),
       "gamer23",
     );
-    await userEvent.click(await canvas.findByRole("radio", { name: "FC 25" }));
-    await userEvent.click(canvas.getByRole("radio", { name: "Nintendo Switch 1" }));
-    await userEvent.click(canvas.getByRole("button", { name: "Revisar cuenta" }));
+    await userEvent.click(await canvas.findByRole("radio", { name: "FC 26" }));
+    await userEvent.click(canvas.getByRole("radio", { name: "Nintendo Switch 2" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
+    await userEvent.click(await canvas.findByRole("button", { name: "Omitir por ahora" }));
     await userEvent.click(await canvas.findByRole("button", { name: "Editar cuenta de juego" }));
     await expect(
       await canvas.findByRole("heading", { name: "Configura tus datos de juego" }),

@@ -17,7 +17,7 @@ import {
   localizedCompetitionRegions,
   stepsForPath,
 } from "../onboarding-step-meta.ts";
-import type { OnboardingDraft } from "../onboarding-flow.tsx";
+import type { OnboardingDraft } from "../onboarding-draft.ts";
 
 export function CompetitionStep() {
   const flow = useOnboardingFlow();

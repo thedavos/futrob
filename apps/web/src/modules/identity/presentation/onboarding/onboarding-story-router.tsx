@@ -18,7 +18,7 @@ import type { IdentityOnboardingClientError } from "@/modules/identity/presentat
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
-import type { OnboardingGateway } from "./onboarding-flow.tsx";
+import type { OnboardingGateway } from "./onboarding-flow-gateway.ts";
 import { OnboardingFlowProvider } from "./onboarding-flow.tsx";
 import { CompetitionStep } from "./steps/competition-step.tsx";
 import { GameAccountStep } from "./steps/game-account-step.tsx";
