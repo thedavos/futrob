@@ -1,9 +1,9 @@
 name: Health Check
 
 on:
-  schedule:
-    # Every 15 minutes.
-    - cron: "*/15 * * * *"
+  # TODO: Re-enable the cron once production is live.
+  # schedule:
+  #   - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions: {}
