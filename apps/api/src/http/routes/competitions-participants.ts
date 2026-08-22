@@ -254,38 +254,48 @@ export function registerCompetitionParticipantRoutes(app: Hono, deps: AppDeps): 
     const parsed = acceptInvitationRequestSchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
     const actorId = c.get("actorId");
+
+    // Saga order — nothing is persisted until every read-only check passes:
+    //   1. inspect (read-only): validates the token without consuming it.
+    //   2. draft lookup (read-only): a missing competition 404s BEFORE the
+    //      invitation is consumed or any membership exists.
+    //   3. join (idempotent): safe to repeat.
+    //   4. accept (consuming): runs last; if it fails the invitation is still
+    //      pending and a retry heals everything.
+    const inspected = await deps.modules.organizations.inspectCompetitionInvitation.execute({
+      token: parsed.data.token,
+      actorId,
+    });
+    if (!inspected.isOk()) return failureToHttp(inspected.error);
+
+    const organizationId = inspected.value.organizationId;
+    const competitionId = inspected.value.competitionId;
+
+    const draft = await deps.modules.competitions.getDraft.execute({
+      organizationId,
+      competitionId,
+    });
+    if (!draft) {
+      return apiErrorResponse(404, {
+        code: "competitions.not_found",
+        messageKey: "errors.competitions.not_found",
+      });
+    }
+
+    const joined = await deps.modules.competitions.join.execute({
+      organizationId,
+      competitionId,
+      actorId,
+      role: inspected.value.competitionRole,
+    });
+    if (!joined.isOk()) return failureToHttp(joined.error);
+
     const accepted = await deps.modules.organizations.acceptInvitation.execute({
       token: parsed.data.token,
       actorId,
       requireCompetition: true,
     });
     if (!accepted.isOk()) return failureToHttp(accepted.error);
-
-    const competitionId = accepted.value.competitionId!;
-    // Join before reading the draft: join validates the competition exists, so
-    // a missing draft can no longer strand an accepted invitation behind a
-    // permanent 404. Both operations are idempotent, so a transient failure
-    // after acceptance heals on retry.
-    const joined = await deps.modules.competitions.join.execute({
-      organizationId: accepted.value.organizationId,
-      competitionId,
-      actorId,
-      role: accepted.value.competitionRole!,
-    });
-    if (!joined.isOk()) return failureToHttp(joined.error);
-
-    const draft = await deps.modules.competitions.getDraft.execute({
-      organizationId: accepted.value.organizationId,
-      competitionId,
-    });
-    if (!draft) {
-      // Competition vanished between join and read; signal retryable instead
-      // of a permanent 404 now that the actor is already a member.
-      return apiErrorResponse(503, {
-        code: "competitions.not_found",
-        messageKey: "errors.competitions.not_found",
-      });
-    }
 
     return jsonResponse(
       acceptCompetitionInvitationResponseSchema.parse({
