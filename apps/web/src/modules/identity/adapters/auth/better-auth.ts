@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { bearer } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { drizzle } from "drizzle-orm/d1";
 import type { ActorProvisionerPort } from "@futrob/identity";
@@ -55,7 +56,9 @@ export function createAuth(input: {
         },
       },
     },
-    plugins: [tanstackStartCookies()],
+    // `bearer()` lets native clients (apps/mobile) present the session token
+    // via `Authorization: Bearer <token>`; cookies remain the web path.
+    plugins: [tanstackStartCookies(), bearer()],
   });
 }
 

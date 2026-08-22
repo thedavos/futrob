@@ -72,12 +72,14 @@ apps/
 ├── api/                 # Product API (Railway) — Postgres + EA egress
 │   ├── migrations/      # Postgres (organizations, …)
 │   └── src/{adapters,di,http}/
+├── mobile/              # React Native + Expo (Expo Router) — see apps/mobile/README.md
 └── cli/                 # Domain playground — see apps/cli/README.md
 
 packages/
 ├── <bc>/                # @futrob/<bc> — domain + application (no adapters)
 ├── api-contracts/       # Zod / OpenAPI for /api/v1
 ├── sdk/                 # Typed HTTP client (web + React Native / Expo)
+├── ui-tokens/           # Shared design tokens (web CSS + mobile) — generated tokens.css
 ├── ui/                  # Tokens + shadcn primitives
 ├── shared-kernel/       # Result, IDs, domain errors
 └── test-support/
@@ -132,6 +134,7 @@ and attempt overrides are optional Wrangler vars; the defaults are listed in
 - [Packages and SDK](/docs/architecture/packages-and-sdk.md)
 - [AGENTS.md](/AGENTS.md)
 - Skill: [`.cursor/skills/futrob-hexagonal-module/SKILL.md`](/.cursor/skills/futrob-hexagonal-module/SKILL.md)
+- Skill: [`.cursor/skills/futrob-cli/SKILL.md`](/.cursor/skills/futrob-cli/SKILL.md)
 
 ## Commands
 

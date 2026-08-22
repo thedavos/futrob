@@ -17,6 +17,7 @@ See `.cursor/rules/agent-skills.mdc` for the full table and Cloud Agent availabi
 | Skill                             | Use for                                          |
 | --------------------------------- | ------------------------------------------------ |
 | `futrob-hexagonal-module`         | Any module / use case                            |
+| `futrob-cli`                      | Smoke-testing domain/API via `apps/cli` commands |
 | layers-domain / user-needs        | Vocabulary and operator vs spectator jobs        |
 | layers-interaction-flow           | Captain / sync / officialize flows               |
 | layers-surface                    | Screen audit against the model                   |
@@ -55,6 +56,7 @@ See `.cursor/rules/agent-skills.mdc` for the full table and Cloud Agent availabi
 - Deployable Must: `apps/web` (TanStack Start → Cloudflare Workers)
 - Deployable de API de producto: `apps/api` (Hono/Node en Railway; consume `@futrob/<bc>`, dueño de Postgres `DATABASE_URL` y egress Node a EA)
 - CLI local: `apps/cli` — playground (no deployable de producto); ver `/apps/cli/README.md`
+- Móvil: `apps/mobile` — React Native + Expo (Expo Router); consume `/api/v1` vía `@futrob/sdk`; primitivas RN en `apps/mobile/src/ui/`; tokens compartidos en `packages/ui-tokens`
 - Business logic: `packages/<bc>/` (`@futrob/game-data`, `@futrob/results`, …) — domain + application + ports
 - App modules (adapters/server/UI): `apps/web/src/modules/<context>/`
 - Composition web: `apps/web/src/{di,bootstrap,config,context}/`
