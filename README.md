@@ -72,6 +72,7 @@ apps/
 ├── api/                 # Product API (Railway) — Postgres + EA egress
 │   ├── migrations/      # Postgres (organizations, …)
 │   └── src/{adapters,di,http}/
+├── auth/                # Better Auth standalone Worker — see apps/auth/README.md
 ├── mobile/              # React Native + Expo (Expo Router) — see apps/mobile/README.md
 └── cli/                 # Domain playground — see apps/cli/README.md
 

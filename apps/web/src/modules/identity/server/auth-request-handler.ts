@@ -1,45 +1,41 @@
-import { parseAppEnv } from "@/config/env.ts";
-import { CryptoIdGenerator } from "@/shared/application/id-generator.ts";
-
-import { createAuth } from "../adapters/auth/better-auth.ts";
 import { getWorkerEnv } from "../adapters/auth/worker-env.ts";
 
-/** Better Auth HTTP boundary owned by the identity module. */
+function misconfigured() {
+  return Response.json(
+    { code: "auth.misconfigured", messageKey: "errors.auth.misconfigured" },
+    { status: 503 },
+  );
+}
+
+/**
+ * Better Auth HTTP boundary — proxy-only since ADR-0015 stage 3.
+ *
+ * Serving moved to the standalone `futrob-auth` worker; web forwards
+ * same-origin requests (cookies and Bearer flow through untouched). Session
+ * *reads* for SSR/BFF still resolve locally against D1
+ * (`server/authenticated-request-actor.ts`); the schema files under
+ * `../adapters/auth/` are a read model mirror owned by `apps/auth`.
+ */
 export async function handleAuthRequest(request: Request): Promise<Response> {
   const bindings = getWorkerEnv();
+  const authServiceUrl = bindings.FUTROB_AUTH_SERVICE_URL ?? process.env.FUTROB_AUTH_SERVICE_URL;
 
-  if (!bindings.APP_DB) {
-    return Response.json(
-      { code: "auth.misconfigured", messageKey: "errors.auth.misconfigured" },
-      { status: 503 },
-    );
+  if (!authServiceUrl) {
+    return misconfigured();
   }
 
-  const appEnv = parseAppEnv({
-    APP_BASE_URL: bindings.APP_BASE_URL ?? process.env.APP_BASE_URL,
-    BETTER_AUTH_SECRET: bindings.BETTER_AUTH_SECRET ?? process.env.BETTER_AUTH_SECRET,
-    BETTER_AUTH_URL: bindings.BETTER_AUTH_URL ?? process.env.BETTER_AUTH_URL,
-    BETTER_AUTH_TRUSTED_ORIGINS:
-      bindings.BETTER_AUTH_TRUSTED_ORIGINS ?? process.env.BETTER_AUTH_TRUSTED_ORIGINS,
-    EA_CLUBS_BASE_URL: process.env.EA_CLUBS_BASE_URL,
-    INTERNAL_JOB_SECRET: process.env.INTERNAL_JOB_SECRET,
-  });
+  const incoming = new URL(request.url);
+  const base = authServiceUrl.replace(/\/$/, "");
+  const target = `${base}${incoming.pathname}${incoming.search}`;
 
   try {
-    const auth = createAuth({
-      d1: bindings.APP_DB,
-      env: appEnv,
-      ids: new CryptoIdGenerator(),
-    });
-    return await auth.handler(request);
+    return await fetch(new Request(target, request));
   } catch (error) {
-    const message = error instanceof Error ? error.message : "auth failed";
-    if (message.includes("BETTER_AUTH_SECRET")) {
-      return Response.json(
-        { code: "auth.misconfigured", messageKey: "errors.auth.misconfigured" },
-        { status: 503 },
-      );
-    }
-    throw error;
+    const message = error instanceof Error ? error.message : "auth proxy failed";
+    console.error(`[auth-proxy] ${message}`);
+    return Response.json(
+      { code: "auth.unavailable", messageKey: "errors.auth.unavailable" },
+      { status: 502 },
+    );
   }
 }

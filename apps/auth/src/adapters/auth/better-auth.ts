@@ -1,32 +1,35 @@
-// READ-MODEL MIRROR (ADR-0015 stage 3): serving moved to apps/auth. Web only
-// instantiates this to resolve sessions against D1 (`auth.api.getSession`);
-// schema ownership and migrations live in `apps/auth`.
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins";
-import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { drizzle } from "drizzle-orm/d1";
 import type { ActorProvisionerPort } from "@futrob/identity";
 import type { IdGeneratorPort } from "@futrob/shared-kernel";
-import type { AppEnv } from "@/config/env.ts";
-import type { AppD1Database } from "@/shared/infrastructure/d1.ts";
+import type { D1Database } from "@cloudflare/workers-types";
 import { authSchema } from "./drizzle-schema.ts";
 import { createD1ActorProvisioner, credentialSubject, type AuthDb } from "./actor-provisioner.ts";
 
-export function createAuthDb(d1: AppD1Database): AuthDb {
+/** Environment subset required by Better Auth. */
+export interface AuthEnv {
+  readonly BETTER_AUTH_SECRET: string;
+  readonly BETTER_AUTH_URL: string;
+  readonly BETTER_AUTH_TRUSTED_ORIGINS: readonly string[];
+}
+
+export function createAuthDb(d1: D1Database): AuthDb {
   return drizzle(d1, { schema: authSchema });
 }
 
 /**
  * Request-scoped Better Auth instance bound to D1.
  * Instantiate per request (or per handler) — do not share a singleton across isolates.
+ *
+ * Unlike the apps/web embedding, this worker serves plain fetch requests, so
+ * only `bearer()` is enabled: cookies are set/read by Better Auth core
+ * directly on the Request/Response (no TanStack Start bridge needed).
  */
 export function createAuth(input: {
-  readonly d1: AppD1Database;
-  readonly env: Pick<
-    AppEnv,
-    "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL" | "BETTER_AUTH_TRUSTED_ORIGINS"
-  >;
+  readonly d1: D1Database;
+  readonly env: AuthEnv;
   readonly ids: IdGeneratorPort;
   readonly actorProvisioner?: ActorProvisionerPort;
 }) {
@@ -60,8 +63,8 @@ export function createAuth(input: {
       },
     },
     // `bearer()` lets native clients (apps/mobile) present the session token
-    // via `Authorization: Bearer <token>`; cookies remain the web path.
-    plugins: [tanstackStartCookies(), bearer()],
+    // via `Authorization: Bearer <token>`; browsers keep using cookies.
+    plugins: [bearer()],
   });
 }
 

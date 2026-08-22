@@ -8,11 +8,15 @@
     "APP_BASE_URL": "https://futrob.app",
     // Local override: FUTROB_API_BASE_URL in apps/web/.dev.vars
     "FUTROB_API_BASE_URL": "https://api.futrob.app/api/v1",
+    // Standalone auth worker (ADR-0015). Local override: FUTROB_AUTH_SERVICE_URL in .dev.vars
+    "FUTROB_AUTH_SERVICE_URL": "https://futrob-auth.futrob-workers.workers.dev",
   },
   "d1_databases": [
     {
       "binding": "APP_DB",
       "database_name": "futrob-app",
+      // Auth schema ownership: apps/auth (ADR-0015 stage 3). This lineage only
+      // carries web-owned tables (BFF rate limit).
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations",
     },

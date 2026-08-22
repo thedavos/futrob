@@ -12,6 +12,7 @@ declare module "cloudflare:workers" {
     BETTER_AUTH_TRUSTED_ORIGINS?: string;
     APP_BASE_URL?: string;
     FUTROB_API_BASE_URL?: string;
+    FUTROB_AUTH_SERVICE_URL?: string;
     INTERNAL_JOB_SECRET?: string;
     ENVIRONMENT?: string;
     RATE_LIMIT_FINGERPRINT_SECRET?: string;
