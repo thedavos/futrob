@@ -1,0 +1,71 @@
+import { raw, ref, type TokenMap } from "./token.ts";
+
+/** Canonical typography roles shared by web (`typo-*` utilities) and mobile. */
+export const TYPO_ROLES = [
+  "display",
+  "heading",
+  "subtitle",
+  "label",
+  "body",
+  "caption",
+  "score",
+] as const;
+
+export type TypoRole = (typeof TYPO_ROLES)[number];
+
+/** Typography — Manrope; canonical weights 400 / 500 / 600 / 700. */
+export const TYPOGRAPHY_TOKENS: TokenMap = {
+  "font-ui": raw('"Manrope Variable", "Manrope", system-ui, sans-serif'),
+  "font-weight-regular": raw("400"),
+  "font-weight-medium": raw("500"),
+  "font-weight-semibold": raw("600"),
+  "font-weight-bold": raw("700"),
+  "text-xs": raw("0.75rem"),
+  "text-sm": raw("0.875rem"),
+  "text-base": raw("1rem"),
+  "text-lg": raw("1.125rem"),
+  "text-xl": raw("1.25rem"),
+  "text-2xl": raw("1.5rem"),
+  "text-3xl": raw("1.875rem"),
+  "text-4xl": raw("2.25rem"),
+  "text-5xl": raw("3rem"),
+  "text-6xl": raw("3.75rem"),
+  "text-7xl": raw("4.5rem"),
+  "leading-none": raw("1"),
+  "leading-tight": raw("1.1"),
+  "leading-snug": raw("1.3"),
+  "leading-normal": raw("1.55"),
+  "tracking-tight": raw("-0.02em"),
+  "tracking-normal": raw("0"),
+  "tracking-label": raw("0.14em"),
+
+  // Typography roles (consumed by Tailwind @utility in apps/web)
+  "typo-display-size": ref("text-4xl"),
+  "typo-display-weight": ref("font-weight-bold"),
+  "typo-display-leading": raw("0.96"),
+  "typo-display-tracking": ref("tracking-tight"),
+  "typo-heading-size": ref("text-xl"),
+  "typo-heading-weight": ref("font-weight-bold"),
+  "typo-heading-leading": ref("leading-tight"),
+  "typo-heading-tracking": ref("tracking-tight"),
+  "typo-subtitle-size": ref("text-sm"),
+  "typo-subtitle-weight": ref("font-weight-regular"),
+  "typo-subtitle-leading": ref("leading-normal"),
+  "typo-subtitle-tracking": ref("tracking-normal"),
+  "typo-label-size": ref("text-xs"),
+  "typo-label-weight": ref("font-weight-medium"),
+  "typo-label-leading": ref("leading-snug"),
+  "typo-label-tracking": ref("tracking-label"),
+  "typo-body-size": ref("text-sm"),
+  "typo-body-weight": ref("font-weight-regular"),
+  "typo-body-leading": ref("leading-normal"),
+  "typo-body-tracking": ref("tracking-normal"),
+  "typo-caption-size": ref("text-xs"),
+  "typo-caption-weight": ref("font-weight-regular"),
+  "typo-caption-leading": ref("leading-normal"),
+  "typo-caption-tracking": ref("tracking-normal"),
+  "typo-score-size": ref("text-3xl"),
+  "typo-score-weight": ref("font-weight-semibold"),
+  "typo-score-leading": ref("leading-none"),
+  "typo-score-tracking": ref("tracking-tight"),
+};

@@ -9,7 +9,7 @@ Relacionado: [overview](/docs/architecture/overview.md) · [ADR-0001](/docs/adr/
 `packages/` concentra:
 
 1. **Lógica de negocio por BC** (`@futrob/<bc>`: domain + application + ports) compartida por `apps/web` y la futura `apps/api`.
-2. **Contratos y clientes HTTP** (`api-contracts`, `sdk`). `@futrob/sdk` cubre web y el cliente móvil post-MVP (React Native + Expo).
+2. **Contratos y clientes HTTP** (`api-contracts`, `sdk`). `@futrob/sdk` cubre web y el cliente móvil (`apps/mobile`, React Native + Expo).
 3. **Kernel / UI / test-support**.
 
 Adapters de plataforma y UI permanecen en las apps.
@@ -44,7 +44,7 @@ Cross-BC: solo vía import del package público (ej. `@futrob/results` → `@fut
 
 ## Contratos y SDKs
 
-Sin cambio de rol: `@futrob/api-contracts` + `@futrob/sdk`. El SDK **no** importa `@futrob/<bc>` ni adapters; solo HTTP a `/api/v1`. El cliente móvil previsto es React Native + Expo y reutiliza este SDK TypeScript; no hay espejo Dart/Flutter.
+Sin cambio de rol: `@futrob/api-contracts` + `@futrob/sdk`. El SDK **no** importa `@futrob/<bc>` ni adapters; solo HTTP a `/api/v1`. El cliente móvil (`apps/mobile`) es React Native + Expo y reutiliza este SDK TypeScript; no hay espejo Dart/Flutter. Los tokens compartidos viven en `@futrob/ui-tokens`.
 
 ## Relación con apps
 
@@ -57,7 +57,7 @@ flowchart LR
   Web --> UI["packages/ui"]
   SdkTs["sdk"] --> Contracts
   SdkTs --> ApiV1["/api/v1 web y/o api"]
-  Expo["React Native + Expo post-MVP"] --> SdkTs
+  Expo["apps/mobile — React Native + Expo"] --> SdkTs
   BCs --> Kernel["shared-kernel"]
   EaAdapter["ea-clubs adapter en web"] --> EaHttp["proclubs.ea.com"]
   Web --> EaAdapter
@@ -68,5 +68,5 @@ flowchart LR
 - **BC packages** = dominio/application compartible.
 - **`apps/web`** = deployable Must Cloudflare hoy.
 - **`apps/api`** = deployable API de producto (previsto); misma lógica vía packages.
-- **Móvil post-MVP** = React Native + Expo; HTTP con `@futrob/sdk`, sin SDK Dart.
+- **Móvil** = `apps/mobile` (React Native + Expo); HTTP con `@futrob/sdk`, UI con tokens de `@futrob/ui-tokens`, sin SDK Dart.
 - **EA** solo en adapters de app.

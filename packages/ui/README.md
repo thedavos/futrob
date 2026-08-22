@@ -8,13 +8,13 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 
 ## Capas
 
-| Archivo / carpeta  | Responsabilidad                                                                |
-| ------------------ | ------------------------------------------------------------------------------ |
-| `src/tokens.css`   | Paleta OKLCH, tema claro, dark opt-in, tipo, geometría, movimiento y elevación |
-| `src/tailwind.css` | Mapeo semántico Tailwind y utilidades tipográficas                             |
-| `src/styles.css`   | Manrope autohospedada, reset y defaults globales                               |
-| `src/components/`  | Primitivas Futrob sobre Base UI                                                |
-| `src/stories/`     | Contratos visuales, de estados y accesibilidad                                 |
+| Archivo / carpeta  | Responsabilidad                                                                                                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/tokens.css`   | Paleta OKLCH, tema claro, dark opt-in, tipo, geometría, movimiento y elevación. **Artefacto generado** desde [`@futrob/ui-tokens`](../ui-tokens/README.md) — no editar a mano |
+| `src/tailwind.css` | Mapeo semántico Tailwind y utilidades tipográficas                                                                                                                            |
+| `src/styles.css`   | Manrope autohospedada, reset y defaults globales                                                                                                                              |
+| `src/components/`  | Primitivas Futrob sobre Base UI                                                                                                                                               |
+| `src/stories/`     | Contratos visuales, de estados y accesibilidad                                                                                                                                |
 
 ## Contratos
 

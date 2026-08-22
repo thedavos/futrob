@@ -1,8 +1,9 @@
 # Futrob — Especificación del sistema de diseño
 
 **Estado:** canónico para el MVP (producto 2026-07)  
-**Alcance:** marketing, aplicación autenticada y portal público responsive
-**Base técnica:** Tailwind CSS 4, shadcn sobre Base UI, Phosphor Icons y Storybook
+**Alcance:** marketing, aplicación autenticada y portal público responsive  
+**Base técnica:** Tailwind CSS 4, shadcn sobre Base UI, Phosphor Icons y Storybook  
+**Móvil:** React Native + Expo (`apps/mobile`) — ver sección [8](#8-móvil-appsmobile)
 
 ## 1. Dirección de producto
 
@@ -51,7 +52,11 @@ capacidad opt-in, pero ninguna UI debe activarlo mediante `prefers-color-scheme`
 
 ### Color
 
-- La paleta **Pitch Ops** vive en `packages/ui/src/tokens.css` y usa OKLCH.
+- La paleta **Pitch Ops** vive en `packages/ui-tokens` como datos tipados compartidos por web y
+  móvil; `packages/ui/src/tokens.css` es el artefacto generado que consume la web
+  (`npm run generate:css -w @futrob/ui-tokens`). El test de paridad de `@futrob/ui-tokens`
+  garantiza que ambos artefactos no divergen.
+- La paleta **Pitch Ops** usa OKLCH.
 - Verde es marca y acción primaria.
 - `--approved` es una variante verde más profunda y separada de `--primary`; se usa únicamente
   cuando un resultado ya fue auditado/aprobado.
@@ -91,6 +96,7 @@ Familia única autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 
 - No existen tamaños `xs`, `sm` o `lg` para controles. `size` solo expresa forma:
   `default` o `icon`.
 - Esquinas, espacios, duraciones y capas provienen de tokens. No crear rampas paralelas.
+- En móvil la unidad es **dp/pt** con equivalencia `1rem = 16`; ver sección [8](#8-móvil-appsmobile).
 
 ## 3. Contrato de primitivas
 
@@ -212,6 +218,58 @@ Una primitiva nueva o una variante modificada requiere:
 ## 7. Referencias
 
 - Implementación: [`packages/ui/`](/packages/ui/)
+- Tokens compartidos: [`packages/ui-tokens/`](/packages/ui-tokens/)
 - Contratos operativos: [`packages/ui/README.md`](/packages/ui/README.md)
 - Criterios UX: [`product/ux-acceptance.md`](/product/ux-acceptance.md)
 - Lenguaje de marca: [`docs/brand/README.md`](/docs/brand/README.md)
+
+## 8. Móvil (`apps/mobile`)
+
+**Estado:** canónico desde 2026-08.  
+**Base técnica:** React Native + Expo (SDK 54), Expo Router, `react-native-svg`.
+
+La marca y el lenguaje visual son los mismos que en web; cambia la plataforma de render.
+
+### Unidades
+
+| Web                  | Móvil       | Regla                                                                                |
+| -------------------- | ----------- | ------------------------------------------------------------------------------------ |
+| `rem` (1rem = 16 px) | `dp` / `pt` | Conversión fija `1rem = 16`. Los tokens no se redefinen.                             |
+| px CSS               | dp/pt       | Igual equivalencia.                                                                  |
+| OKLCH (`oklch()`)    | sRGB hex    | RN no interpreta `oklch()`; `@futrob/ui-tokens` resuelve a hex al construir el tema. |
+
+### Medidas y densidad
+
+- La altura universal de control se mantiene: **44dp** (`--control-height`).
+- **`dense` no existe en móvil**: toda superficie es touch; nunca por debajo de 44dp.
+- Rampa de esquinas idéntica (`corner-xs…full`) convertida a dp.
+- Sin hover ni focus-visible análogo: estados `pressed`/`focused` nativos con los mismos
+  tokens (`--primary-hover`, `--ring`, `--muted`).
+
+### Tipografía
+
+- Manrope (pesos 400/500/600/700) vía `@expo-google-fonts/manrope`.
+- Mismos roles `typo-*`; tamaños convertidos rem→dp; `letterSpacing` derivado de
+  `em × tamaño` del rol.
+- `typo-label` conserva mayúsculas/tracking para labels y navegación.
+
+### Color y tema
+
+- Tema claro por defecto, igual semántica de tokens (`primary`, `approved`, `danger`,
+  `status-*`). Dark sigue siendo opt-in explícito, nunca del sistema operativo.
+
+### Primitivas móviles
+
+Viven en `apps/mobile/src/ui/` — espejo de contrato, no de implementación:
+
+- `Text` (roles cerrados), `Button` (`primary | secondary | outline | ghost | destructive`),
+  `Input` (label + error + hint), `EmptyState` (flat dashed), `Screen`, `Logo`.
+- Variantes cerradas: prohibido inventar variantes o colores ad hoc, igual que en web.
+- Elevación: solo overlays futuros usarían elevación nativa; nunca combinar borde y sombra.
+- Iconos: catálogo RN pendiente (Phosphor tiene build para RN); MVP no usa iconografía decorativa.
+
+### Marca de app
+
+Iconos y splash se generan desde el logo canónico de `packages/ui` mediante
+`npm run generate:assets -w @futrob/mobile` con colores de `@futrob/ui-tokens`.
+Fondo de splash e icono usan `--background` (light).

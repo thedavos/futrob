@@ -13,12 +13,12 @@ El producto necesita UI, BFF, API privada tipada, auth y jobs de sincronización
 
 Usar workspaces npm con:
 
-| App           | Rol                                                                                                                                                |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web`    | Deployable Must del MVP: TanStack Start + Workers (UI, BFF, `/api/v1` hoy, Queues, Cron)                                                           |
-| `apps/api`    | Deployable de API de producto (Hono/Node en Railway); dueño de Postgres (`DATABASE_URL`) y del egress Node a EA; consume los mismos packages de BC |
-| `apps/cli`    | Tooling local; no se despliega                                                                                                                     |
-| `apps/mobile` | Post-MVP: React Native + Expo. Consume `/api/v1` con `@futrob/sdk`. Fuera del MVP; no hay SDK Dart/Flutter.                                        |
+| App           | Rol                                                                                                                                                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web`    | Deployable Must del MVP: TanStack Start + Workers (UI, BFF, `/api/v1` hoy, Queues, Cron)                                                                                                                                              |
+| `apps/api`    | Deployable de API de producto (Hono/Node en Railway); dueño de Postgres (`DATABASE_URL`) y del egress Node a EA; consume los mismos packages de BC                                                                                    |
+| `apps/cli`    | Tooling local; no se despliega                                                                                                                                                                                                        |
+| `apps/mobile` | Cliente móvil React Native + Expo. Consume `/api/v1` con `@futrob/sdk`; auth vía Better Auth (`/api/auth/*`) de `apps/web`. UI propia en `apps/mobile/src/ui` con tokens compartidos de `@futrob/ui-tokens`. No hay SDK Dart/Flutter. |
 
 La lógica de negocio (**domain + application + ports**) vive en `packages/<bounded-context>/` como `@futrob/<bc>`. Cada app cablea adapters y composition en su propio `di/`.
 
