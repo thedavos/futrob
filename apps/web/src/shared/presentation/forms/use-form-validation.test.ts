@@ -28,7 +28,7 @@ describe("useFormValidation", () => {
     expect(result.current.touchedFields).toEqual({});
   });
 
-  it("validates on group blur and switches that field to live validation", () => {
+  it("validates on group blur and switches that field to live validation", async () => {
     const validate = vi.fn<() => void>();
     const fieldRoot = document.createElement("div");
     const { result } = renderHook(() => useFormValidation<TestField>());
@@ -39,6 +39,11 @@ describe("useFormValidation", () => {
       initialProps.onBlur(createBlurEvent(fieldRoot, null));
     });
 
+    // validate() is deferred past the touched-state commit so Base UI sees
+    // validationMode="onChange" when it runs.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     expect(validate).toHaveBeenCalledOnce();
     expect(result.current.touchedFields.email).toBe(true);
     expect(result.current.getFieldValidationProps("email").validationMode).toBe("onChange");

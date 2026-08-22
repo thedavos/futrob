@@ -236,7 +236,11 @@ export const SaveError: Story = {
 };
 
 export const SavingProgress: Story = {
-  // TODO: estado transitorio aria-busy no observable de forma fiable bajo el runner automatizado.
+  // SKIP (browser runner): con saveProgress colgado, `navigate()` dentro de
+  // goTo queda suspendido y el contenido del paso se desmonta antes de que
+  // `saving` llegue a true, por lo que el botón busy nunca llega a montarse.
+  // En jsdom el flujo pasa (verificado); requiere investigar la interacción
+  // router/mutación de TanStack Start en browser antes de habilitar.
   tags: ["vitest-skip"],
   render: () => (
     <OnboardingStoryRouter
@@ -247,10 +251,20 @@ export const SavingProgress: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("radio", { name: /Organizar/ }));
-    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
-    const action = canvas.getByRole("button", { name: "Continuar" });
-    await expect(action).toHaveAttribute("aria-busy", "true");
-    await expect(action).toBeDisabled();
+    await userEvent.click(await canvas.findByRole("button", { name: "Continuar" }));
+
+    // saveProgress never resolves: while it hangs, the primary action must be
+    // busy and disabled. Poll because the router transition can swap the DOM
+    // node right after the click.
+    let action: HTMLButtonElement | null = null;
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline) {
+      action = canvas.queryByRole("button", { name: "Continuar" });
+      if (action?.getAttribute("aria-busy") === "true") break;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    expect(action?.getAttribute("aria-busy")).toBe("true");
+    expect(action).toBeDisabled();
   },
 };
 

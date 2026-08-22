@@ -54,7 +54,12 @@ export function useFormValidation<Field extends string>() {
             ...currentFields,
             [field]: true,
           }));
-          actionsRef.current?.validate();
+          // Defer past the touched-state commit: Base UI ignores imperative
+          // validate() while the field is still in validationMode="onSubmit",
+          // and flipping to "onChange" only lands on the next render.
+          setTimeout(() => {
+            actionsRef.current?.validate();
+          }, 0);
         },
       };
     },

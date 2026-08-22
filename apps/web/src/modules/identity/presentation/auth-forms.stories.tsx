@@ -148,8 +148,6 @@ export const LoginFieldValidation: Story = {
 /** Login reutiliza el mismo patrón blur → corrección en vivo que signup. */
 export const LoginEmailValidationOnBlur: Story = {
   name: "Login / Email validation on blur",
-  // TODO: la validación on-blur no dispara bajo el runner automatizado; depurar en Base UI.
-  tags: ["vitest-skip"],
   render: () => <AuthRouterDecorator initialPath="/login" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
