@@ -341,13 +341,15 @@ const es = {
   "player.matchDetail.performance": "Tu rendimiento",
   "player.matchDetail.performance.empty.description":
     "No alineaste con el club seleccionado en este partido.",
+  "player.matchDetail.performance.passAccuracy": "Precisión de pase",
+  "player.matchDetail.performance.tackleAccuracy": "Precisión de entradas",
   "player.matchDetail.highlights": "Destacados del partido",
   "player.matchDetail.highlights.mvp": "MVP",
   "player.matchDetail.highlights.scorer": "Goleador",
   "player.matchDetail.highlights.playmaker": "Asistidor",
   "player.matchDetail.highlights.rival": "Mejor del rival",
   "player.matchDetail.highlights.empty": "No hay destacados para este partido.",
-  "player.matchDetail.highlights.passes": ({ made, attempts }) => `${made}/${attempts} pases`,
+  "player.matchDetail.highlights.passAccuracy": ({ percent }) => `${percent} precisión de pase`,
   "player.matchDetail.highlights.assists": ({ count }) =>
     count === 1 ? "1 asistencia" : `${count} asistencias`,
   "player.matchDetail.highlights.shots": ({ count }) => (count === 1 ? "1 tiro" : `${count} tiros`),
@@ -380,6 +382,7 @@ const es = {
   "player.matches.outcome.win": "Victoria",
   "player.matches.outcome.draw": "Empate",
   "player.matches.outcome.loss": "Derrota",
+  "player.matches.finalized": "Finalizado",
   "player.matches.vs": "–",
   "player.matches.appearance.goalsUnit": ({ count }) => (count === 1 ? "gol" : "goles"),
   "player.matches.appearance.assistsUnit": ({ count }) =>
@@ -535,10 +538,7 @@ export interface MessageParamsByKey {
   };
   readonly "player.matches.contributions.paceTooltip": { readonly rate: string };
   readonly "player.matches.contributions.shareTooltip": { readonly percent: string };
-  readonly "player.matchDetail.highlights.passes": {
-    readonly made: string;
-    readonly attempts: string;
-  };
+  readonly "player.matchDetail.highlights.passAccuracy": { readonly percent: string };
   readonly "player.matchDetail.highlights.assists": { readonly count: number };
   readonly "player.matchDetail.highlights.shots": { readonly count: number };
   readonly "player.matchDetail.highlights.tackles": { readonly count: number };
@@ -892,13 +892,15 @@ const en: Catalog = {
   "player.matchDetail.performance": "Your performance",
   "player.matchDetail.performance.empty.description":
     "You did not line up with the selected club in this match.",
+  "player.matchDetail.performance.passAccuracy": "Pass accuracy",
+  "player.matchDetail.performance.tackleAccuracy": "Tackle accuracy",
   "player.matchDetail.highlights": "Match highlights",
   "player.matchDetail.highlights.mvp": "MVP",
   "player.matchDetail.highlights.scorer": "Top scorer",
   "player.matchDetail.highlights.playmaker": "Top assister",
   "player.matchDetail.highlights.rival": "Best opponent",
   "player.matchDetail.highlights.empty": "There are no highlights for this match.",
-  "player.matchDetail.highlights.passes": ({ made, attempts }) => `${made}/${attempts} passes`,
+  "player.matchDetail.highlights.passAccuracy": ({ percent }) => `${percent} pass accuracy`,
   "player.matchDetail.highlights.assists": ({ count }) =>
     count === 1 ? "1 assist" : `${count} assists`,
   "player.matchDetail.highlights.shots": ({ count }) => (count === 1 ? "1 shot" : `${count} shots`),
@@ -931,6 +933,7 @@ const en: Catalog = {
   "player.matches.outcome.win": "Win",
   "player.matches.outcome.draw": "Draw",
   "player.matches.outcome.loss": "Lose",
+  "player.matches.finalized": "Full time",
   "player.matches.vs": "–",
   "player.matches.appearance.goalsUnit": ({ count }) => (count === 1 ? "goal" : "goals"),
   "player.matches.appearance.assistsUnit": ({ count }) => (count === 1 ? "assist" : "assists"),

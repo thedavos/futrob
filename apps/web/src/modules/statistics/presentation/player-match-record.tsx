@@ -24,8 +24,14 @@ const RECORD_STAT_GRID_BASE_CLASS_NAME = "grid grid-cols-1 items-stretch gap-3";
 const RECORD_STAT_GRID_CLASS_NAME = {
   1: `${RECORD_STAT_GRID_BASE_CLASS_NAME} @5xl:grid-cols-[minmax(0,28rem)]`,
   2: `${RECORD_STAT_GRID_BASE_CLASS_NAME} @5xl:grid-cols-[repeat(2,minmax(0,28rem))]`,
-  3: `${RECORD_STAT_GRID_BASE_CLASS_NAME} @5xl:grid-cols-3`,
+  3: `${RECORD_STAT_GRID_BASE_CLASS_NAME} @3xl:grid-cols-2 @5xl:grid-cols-3`,
 } as const satisfies Record<1 | 2 | 3, string>;
+
+const THREE_CARD_PLACEMENT_CLASS_NAME = {
+  performance: "@3xl:col-start-1 @3xl:row-start-1 @5xl:col-start-auto @5xl:row-start-auto",
+  record: "@3xl:col-span-2 @3xl:row-start-2 @5xl:col-span-1 @5xl:row-start-auto",
+  contributions: "@3xl:col-start-2 @3xl:row-start-1 @5xl:col-start-auto @5xl:row-start-auto",
+} as const;
 
 function visibleRecordCardCount(showPerformance: boolean, showContributions: boolean): 1 | 2 | 3 {
   if (showPerformance && showContributions) return 3;
@@ -46,6 +52,7 @@ export function ViewRecord({
   const showPerformance = showsPerformanceStats(record);
   const showContributions = showsContributionStats(record);
   const visibleCards = visibleRecordCardCount(showPerformance, showContributions);
+  const threeCardPlacement = visibleCards === 3 ? THREE_CARD_PLACEMENT_CLASS_NAME : undefined;
 
   return (
     <div className="@container">
@@ -56,6 +63,7 @@ export function ViewRecord({
       >
         {showPerformance ? (
           <SummaryCard
+            className={threeCardPlacement?.performance}
             headingId="player-matches-stats-performance"
             title={t("player.matches.stats.performance")}
           >
@@ -63,6 +71,7 @@ export function ViewRecord({
           </SummaryCard>
         ) : null}
         <SummaryCard
+          className={threeCardPlacement?.record}
           footer={showsRecentForm(matches) ? <RecentForm matches={matches} /> : null}
           headingId="player-matches-stats-record"
           title={t("player.matches.stats.record")}
@@ -99,6 +108,7 @@ export function ViewRecord({
         </SummaryCard>
         {showContributions ? (
           <SummaryCard
+            className={threeCardPlacement?.contributions}
             footer={
               record.contributions.playedAppearances > 0 ? (
                 <ContributionInsights numberFormat={numberFormat} record={record} />
@@ -125,9 +135,9 @@ export function RecordLoading() {
         className={RECORD_STAT_GRID_CLASS_NAME[3]}
         role="status"
       >
-        <SummaryCardLoading />
-        <SummaryCardLoading />
-        <SummaryCardLoading />
+        <SummaryCardLoading className={THREE_CARD_PLACEMENT_CLASS_NAME.performance} />
+        <SummaryCardLoading className={THREE_CARD_PLACEMENT_CLASS_NAME.record} />
+        <SummaryCardLoading className={THREE_CARD_PLACEMENT_CLASS_NAME.contributions} />
       </div>
     </div>
   );

@@ -5,6 +5,13 @@ import type {
 } from "@futrob/api-contracts";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { playerMatchSide } from "./player-match-view.ts";
+import {
+  matchHighlights,
+  type MatchHighlight,
+  type MatchHighlightsModel,
+} from "./provider-match-detail-highlights.ts";
+
+export type { MatchHighlight, MatchHighlightsModel };
 
 export type ProviderPlayer = ProviderMatchDto["players"][number];
 type ProviderTeam = ProviderMatchDto["home"];
@@ -56,36 +63,7 @@ export interface TeamComparisonModel {
   readonly opponent: TeamComparisonSide;
 }
 
-export type MatchHighlight =
-  | {
-      readonly kind: "mvp";
-      readonly player: ProviderPlayer;
-      readonly rating: number | null;
-      readonly assists: number | null;
-      readonly passesMade: number | null;
-      readonly passAttempts: number | null;
-    }
-  | {
-      readonly kind: "scorer";
-      readonly player: ProviderPlayer;
-      readonly goals: number | null;
-      readonly shots: number | null;
-      readonly rating: number | null;
-    }
-  | {
-      readonly kind: "rival";
-      readonly player: ProviderPlayer;
-      readonly rating: number | null;
-      readonly passesMade: number | null;
-      readonly passAttempts: number | null;
-      readonly tacklesMade: number | null;
-    };
-
 export type MatchHighlightKind = MatchHighlight["kind"];
-
-export interface MatchHighlightsModel {
-  readonly items: readonly MatchHighlight[];
-}
 
 export type ProviderPlayerMetricKey =
   | "position"
@@ -319,71 +297,6 @@ function passAccuracy(made: TeamStatValue, attempts: TeamStatValue): TeamStatVal
   return { kind: "ready", value: made.value / attempts.value };
 }
 
-function matchHighlights(sides: ProviderMatchRosterModel): MatchHighlightsModel {
-  const selectedPlayers = sides.selected.players.map((entry) => entry.player);
-  const opponentPlayers = sides.opponent.players.map((entry) => entry.player);
-  const items: MatchHighlight[] = [];
-  const mvp = matchMvpPlayer([...selectedPlayers, ...opponentPlayers]);
-  if (mvp) {
-    items.push({
-      kind: "mvp",
-      player: mvp,
-      rating: mvp.rating,
-      assists: mvp.assists,
-      passesMade: mvp.passesMade,
-      passAttempts: mvp.passAttempts,
-    });
-  }
-  const scorer = matchTopScorer([...selectedPlayers, ...opponentPlayers]);
-  if (scorer) {
-    items.push({
-      kind: "scorer",
-      player: scorer,
-      goals: scorer.goals,
-      shots: scorer.shots,
-      rating: scorer.rating,
-    });
-  }
-  const rival = matchBestOpponent(opponentPlayers);
-  if (rival) {
-    items.push({
-      kind: "rival",
-      player: rival,
-      rating: rival.rating,
-      passesMade: rival.passesMade,
-      passAttempts: rival.passAttempts,
-      tacklesMade: rival.tacklesMade,
-    });
-  }
-  return { items };
-}
-
-function matchMvpPlayer(players: readonly ProviderPlayer[]): ProviderPlayer | null {
-  const flagged = players.filter((player) => player.isMvp === true);
-  return flagged.length === 0 ? null : (sortProviderPlayers(flagged)[0] ?? null);
-}
-
-function matchTopScorer(players: readonly ProviderPlayer[]): ProviderPlayer | null {
-  const scorers = players.filter((player) => player.goals !== null && player.goals > 0);
-  if (scorers.length === 0) return null;
-  return (
-    [...scorers]
-      .map((player, index) => ({ player, index }))
-      .sort((left, right) => {
-        const goalsOrder = (right.player.goals ?? 0) - (left.player.goals ?? 0);
-        if (goalsOrder !== 0) return goalsOrder;
-        const ratingOrder = compareRatings(left.player.rating, right.player.rating);
-        if (ratingOrder !== 0) return ratingOrder;
-        return left.index - right.index;
-      })[0]?.player ?? null
-  );
-}
-
-function matchBestOpponent(players: readonly ProviderPlayer[]): ProviderPlayer | null {
-  const rated = players.filter((player) => player.rating !== null);
-  return rated.length === 0 ? null : (sortProviderPlayers(rated)[0] ?? null);
-}
-
 function rosterSection(
   detail: PlayerRecentProviderMatchDetailDto,
   team: ProviderTeam,
@@ -416,7 +329,7 @@ export function sortProviderPlayers(players: readonly ProviderPlayer[]): readonl
     .map(({ player }) => player);
 }
 
-function compareRatings(left: number | null, right: number | null): number {
+export function compareRatings(left: number | null, right: number | null): number {
   if (left === null && right === null) return 0;
   if (left === null) return 1;
   if (right === null) return -1;

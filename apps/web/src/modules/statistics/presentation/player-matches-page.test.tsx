@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { GetMyRecentMatchesResponse } from "@futrob/api-contracts";
@@ -69,6 +69,12 @@ describe("PlayerMatchesPage", () => {
 
     expect(screen.getByText("Cargando tus partidos…")).toBeTruthy();
     expect(screen.getByLabelText("Cargando el resumen de partidos…")).toBeTruthy();
+    expect(screen.getByLabelText("Cargando el resumen de partidos…").className).toContain(
+      "@3xl:grid-cols-2",
+    );
+    expect(screen.getByLabelText("Cargando el resumen de partidos…").className).toContain(
+      "@5xl:grid-cols-3",
+    );
     expect(screen.queryByText("Oficiales")).toBeNull();
   });
 
@@ -187,6 +193,11 @@ describe("PlayerMatchesPage", () => {
         .closest("[data-slot='badge']")?.className,
     ).toContain("bg-primary");
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
+    const finalizedBadge = document.querySelector("[data-match-status='finalized']");
+    expect(finalizedBadge?.textContent).toBe("Finalizado");
+    expect(finalizedBadge?.getAttribute("data-slot")).toBe("badge");
+    expect(finalizedBadge?.className).toContain("border-border-strong");
+    expect(finalizedBadge?.nextElementSibling?.getAttribute("data-match-score")).toBe("");
     expect(document.querySelector("[data-match-score] .typo-score")?.className).toContain(
       "text-brand-300",
     );
@@ -207,17 +218,46 @@ describe("PlayerMatchesPage", () => {
     expect(homeWatermark?.className).toContain("hidden");
     expect(homeWatermark?.className).toContain("size-[16.1rem]");
     expect(homeWatermark?.className).toContain("left-[20%]");
+    expect(homeWatermark?.className).toContain("origin-left");
+    expect(homeWatermark?.className).toContain("rotate-y-[60deg]");
     expect(homeWinItem.querySelector("[data-pitch-watermark='away']")).toBeNull();
     expect(screen.queryByText("Hat-trick")).toBeNull();
     expect(screen.getByRole("heading", { name: "Rendimiento" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Record" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Contribuciones" })).toBeTruthy();
-    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).toContain(
-      "items-stretch",
-    );
-    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).toContain(
-      "@5xl:grid-cols-3",
-    );
+    const summary = screen.getByRole("group", { name: "Resumen de esta vista" });
+    expect(
+      within(summary)
+        .getAllByRole("heading")
+        .map((heading) => heading.textContent),
+    ).toEqual(["Rendimiento", "Record", "Contribuciones"]);
+    expect(summary.className).toContain("grid-cols-1");
+    expect(summary.className).toContain("items-stretch");
+    expect(summary.className).toContain("@3xl:grid-cols-2");
+    expect(summary.className).toContain("@5xl:grid-cols-3");
+    expect(
+      screen.getByRole("heading", { name: "Rendimiento" }).closest("[data-slot='card']")?.className,
+    ).toContain("@3xl:col-start-1");
+    expect(
+      screen.getByRole("heading", { name: "Rendimiento" }).closest("[data-slot='card']")?.className,
+    ).toContain("@3xl:row-start-1");
+    expect(
+      screen.getByRole("heading", { name: "Contribuciones" }).closest("[data-slot='card']")
+        ?.className,
+    ).toContain("@3xl:col-start-2");
+    expect(
+      screen.getByRole("heading", { name: "Contribuciones" }).closest("[data-slot='card']")
+        ?.className,
+    ).toContain("@3xl:row-start-1");
+    expect(
+      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")?.className,
+    ).toContain("@3xl:col-span-2");
+    expect(
+      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")?.className,
+    ).toContain("@3xl:row-start-2");
+    expect(
+      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")?.className,
+    ).toContain("@5xl:col-span-1");
     expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
     expect(
       screen.getByText("1", { selector: "[data-metric='record-goals-plus-assists']" }),
@@ -351,6 +391,9 @@ describe("PlayerMatchesPage", () => {
 
     expect(await screen.findByText("Atlético Norte")).toBeTruthy();
     expect(screen.getByText("1 August 2026")).toBeTruthy();
+    expect(document.querySelector("[data-match-status='finalized']")?.textContent).toBe(
+      "Full time",
+    );
   });
 
   it("notifies the route when the view changes", async () => {
@@ -435,6 +478,9 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-match-score]")?.className).toContain("bg-foreground");
     expect(document.querySelector("[data-match-score]")?.className).toContain(
       "smooth-shadow-ring-md",
+    );
+    expect(document.querySelector("[data-match-status='finalized']")?.nextElementSibling).toBe(
+      document.querySelector("[data-match-score]"),
     );
     expect(document.querySelector("[data-match-type='leagueMatch']")?.textContent).toBe("Liga");
     expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
@@ -681,11 +727,17 @@ describe("PlayerMatchesPage", () => {
       "@5xl:grid-cols-[minmax(0,28rem)]",
     );
     expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).not.toContain(
+      "@3xl:grid-cols-2",
+    );
+    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).not.toContain(
       "repeat(3",
     );
     expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).not.toContain(
       "repeat(2",
     );
+    expect(
+      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")?.className,
+    ).not.toContain("@3xl:col-span-2");
   });
 });
 

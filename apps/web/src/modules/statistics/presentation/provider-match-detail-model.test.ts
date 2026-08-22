@@ -214,16 +214,17 @@ describe("provider match detail model", () => {
     });
   });
 
-  it("orders highlights as MVP, top scorer, then best opponent", () => {
+  it("orders highlights as MVP, top scorer, playmaker, then best opponent", () => {
     const detail = recentProviderMatchDetailFixture({
       listedExternalClubId: "10754",
       home: { externalClubId: "10754", name: "Home", goals: 3, imageUrl: null },
       away: { externalClubId: "99", name: "Away", goals: 2, imageUrl: null },
       players: [
-        { ...player("Home Cap", "10754", 8.1), isMvp: true, goals: 1 },
-        { ...player("Home Finisher", "10754", 7.2), goals: 3 },
-        { ...player("Away Star", "99", 8.8), goals: 2 },
-        { ...player("Away Reserve", "99", 6.1), goals: 0 },
+        { ...player("Home Cap", "10754", 8.1), isMvp: true, goals: 1, assists: 1 },
+        { ...player("Home Finisher", "10754", 7.2), goals: 3, assists: 0 },
+        { ...player("Home Creator", "10754", 7.0), goals: 0, assists: 2 },
+        { ...player("Away Star", "99", 8.8), goals: 2, assists: 1 },
+        { ...player("Away Reserve", "99", 6.1), goals: 0, assists: 0 },
       ],
     });
 
@@ -235,7 +236,62 @@ describe("provider match detail model", () => {
     ).toEqual([
       ["mvp", "Home Cap"],
       ["scorer", "Home Finisher"],
+      ["playmaker", "Home Creator"],
       ["rival", "Away Star"],
+    ]);
+  });
+
+  it("picks the playmaker by assists, then rating, then original index", () => {
+    const detail = recentProviderMatchDetailFixture({
+      listedExternalClubId: "10754",
+      players: [
+        { ...player("Earlier Equal", "10754", 8.0), assists: 2 },
+        { ...player("Later Equal", "10754", 8.0), assists: 2 },
+        { ...player("Higher Rated", "99", 9.1), assists: 2 },
+        { ...player("Fewer Assists", "99", 9.9), assists: 1 },
+      ],
+    });
+
+    expect(providerMatchDetailModel(detail).highlights.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "playmaker",
+          assists: 2,
+          player: expect.objectContaining({ displayName: "Higher Rated" }),
+        }),
+      ]),
+    );
+  });
+
+  it("breaks equal assist and rating playmaker ties by original index", () => {
+    const detail = recentProviderMatchDetailFixture({
+      listedExternalClubId: "10754",
+      players: [
+        { ...player("Earlier Creator", "10754", 8.0), assists: 2 },
+        { ...player("Later Creator", "99", 8.0), assists: 2 },
+      ],
+    });
+
+    const playmaker = providerMatchDetailModel(detail).highlights.items.find(
+      (item) => item.kind === "playmaker",
+    );
+    expect(playmaker?.player.displayName).toBe("Earlier Creator");
+  });
+
+  it("omits the playmaker highlight when nobody recorded an assist", () => {
+    const detail = recentProviderMatchDetailFixture({
+      listedExternalClubId: "10754",
+      players: [
+        { ...player("Home Cap", "10754", 8.1), isMvp: true, goals: 1, assists: 0 },
+        { ...player("Home Finisher", "10754", 7.2), goals: 3, assists: 0 },
+        { ...player("Away Star", "99", 8.8), goals: 2, assists: 0 },
+      ],
+    });
+
+    expect(providerMatchDetailModel(detail).highlights.items.map((item) => item.kind)).toEqual([
+      "mvp",
+      "scorer",
+      "rival",
     ]);
   });
 

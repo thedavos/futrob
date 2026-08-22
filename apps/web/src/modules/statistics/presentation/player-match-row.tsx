@@ -69,6 +69,7 @@ export function ProviderMatchRow({
     t("player.matches.vs"),
     String(match.away.goals),
     match.away.name,
+    t("player.matches.finalized"),
     typeLabel,
     notPlayedLabel,
     outcomeLabel,
@@ -187,22 +188,27 @@ export function ProviderMatchRow({
                 redCards={listedClubRedCards(item, side, "home")}
                 redCardsLabel={t("player.matches.metric.redCards")}
               />
-              <div
-                className="flex items-center justify-center gap-2.5 rounded-lg bg-foreground px-3.5 py-2.5 text-background smooth-shadow-ring-md"
-                data-match-score=""
-                data-match-outcome={outcome === "unknown" ? undefined : outcome}
-              >
-                <span
-                  className={`typo-score tabular-nums ${scoreDigitClass(match.home.goals, match.away.goals, "home")}`}
+              <div className="flex flex-col items-center gap-2">
+                <Badge data-match-status="finalized" variant="outline">
+                  {t("player.matches.finalized")}
+                </Badge>
+                <div
+                  className="flex items-center justify-center gap-2.5 rounded-lg bg-foreground px-3.5 py-2.5 text-background smooth-shadow-ring-md"
+                  data-match-score=""
+                  data-match-outcome={outcome === "unknown" ? undefined : outcome}
                 >
-                  {match.home.goals}
-                </span>
-                <span className="typo-score px-0.5 leading-none">{t("player.matches.vs")}</span>
-                <span
-                  className={`typo-score tabular-nums ${scoreDigitClass(match.home.goals, match.away.goals, "away")}`}
-                >
-                  {match.away.goals}
-                </span>
+                  <span
+                    className={`typo-score tabular-nums ${scoreDigitClass(match.home.goals, match.away.goals, "home")}`}
+                  >
+                    {match.home.goals}
+                  </span>
+                  <span className="typo-score px-0.5 leading-none">{t("player.matches.vs")}</span>
+                  <span
+                    className={`typo-score tabular-nums ${scoreDigitClass(match.home.goals, match.away.goals, "away")}`}
+                  >
+                    {match.away.goals}
+                  </span>
+                </div>
               </div>
               <MatchClubSide
                 imageUrl={match.away.imageUrl}

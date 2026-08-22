@@ -71,7 +71,7 @@ function MatchPitchHalf({
 }) {
   return (
     <div
-      className={`absolute inset-0 ${pitchHalfWashClass(fill)} ${className}`}
+      className={`absolute inset-0 perspective-[800px] ${pitchHalfWashClass(fill)} ${className}`}
       data-pitch-fill={fill}
       data-pitch-half={side}
     >
@@ -91,9 +91,9 @@ function MatchPitchHalf({
 function pitchWatermarkSideClass(side: "home" | "away"): string {
   switch (side) {
     case "home":
-      return "left-[20%]";
+      return "left-[20%] origin-left rotate-y-[60deg]";
     case "away":
-      return "left-[80%]";
+      return "left-[80%] origin-right -rotate-y-[60deg]";
     default: {
       const _exhaustive: never = side;
       return _exhaustive;

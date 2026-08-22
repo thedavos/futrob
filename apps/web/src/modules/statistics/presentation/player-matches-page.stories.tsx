@@ -186,6 +186,9 @@ export const Ready: Story = {
     await expect(canvas.getAllByText("Fera Enjaulada")[0]).toBeVisible();
     await expect(canvas.getByText("davos282 MVP")).toBeVisible();
     await expect(canvas.getByText("Hat-trick")).toBeVisible();
+    await expect(canvasElement.querySelector("[data-match-status='finalized']")).toHaveTextContent(
+      "Finalizado",
+    );
     await expect(canvasElement.querySelector("[data-match-type='leagueMatch']")).toHaveTextContent(
       "Liga",
     );

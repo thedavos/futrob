@@ -10,6 +10,7 @@ import type { MatchHighlight, MatchHighlightKind } from "./provider-match-detail
 const HIGHLIGHT_TITLE_KEYS = {
   mvp: "player.matchDetail.highlights.mvp",
   scorer: "player.matchDetail.highlights.scorer",
+  playmaker: "player.matchDetail.highlights.playmaker",
   rival: "player.matchDetail.highlights.rival",
 } as const satisfies Record<MatchHighlightKind, ParameterlessMessageKey>;
 
@@ -19,10 +20,12 @@ export const SUMMARY_CARD_CONTENT_CLASS = "px-5 pb-5";
 export function MatchHighlightsCard({
   highlights,
   numberFormat,
+  percentFormat,
   t,
 }: {
   readonly highlights: readonly MatchHighlight[];
   readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
   return (
@@ -42,6 +45,7 @@ export function MatchHighlightsCard({
                 item={item}
                 key={`${item.kind}:${item.player.externalPlayerId}`}
                 numberFormat={numberFormat}
+                percentFormat={percentFormat}
                 t={t}
               />
             ))}
@@ -55,35 +59,41 @@ export function MatchHighlightsCard({
 function HighlightItem({
   item,
   numberFormat,
+  percentFormat,
   t,
 }: {
   readonly item: MatchHighlight;
   readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
   const primary = highlightPrimary(item, numberFormat, t);
-  const secondary = highlightSecondary(item, numberFormat, t);
+  const secondary = highlightSecondary(item, numberFormat, percentFormat, t);
   return (
     <li
-      className="flex h-full min-w-0 items-center justify-center gap-4 rounded-lg border border-border bg-surface px-4 py-4 odd:last:col-span-2"
+      className="flex h-full min-w-0 flex-col justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-4 odd:last:col-span-2"
       data-highlight={item.kind}
     >
-      <Stat align="center" className="shrink-0">
-        <MetricStatValue emptyLabel={t("player.noData")} value={primary.value} />
-        <StatLabel className="text-pretty text-center">{primary.label}</StatLabel>
-      </Stat>
-      <div className="flex min-w-0 flex-col items-center gap-1 text-center">
-        <Badge className="shrink-0" variant="outline">
-          {item.kind === "mvp" ? <StarIcon aria-hidden="true" weight="fill" /> : null}
-          {t(HIGHLIGHT_TITLE_KEYS[item.kind])}
-        </Badge>
-        <p className="typo-body min-w-0 max-w-full truncate font-semibold">
-          {item.player.displayName}
+      <header className="flex min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col items-start gap-1 text-start">
+          <Badge className="shrink-0" variant="outline">
+            {item.kind === "mvp" ? <StarIcon aria-hidden="true" weight="fill" /> : null}
+            {t(HIGHLIGHT_TITLE_KEYS[item.kind])}
+          </Badge>
+          <p className="typo-body min-w-0 max-w-full truncate font-semibold">
+            {item.player.displayName}
+          </p>
+        </div>
+        <Stat align="end" className="shrink-0">
+          <MetricStatValue emptyLabel={t("player.noData")} value={primary.value} />
+          <StatLabel className="text-pretty">{primary.label}</StatLabel>
+        </Stat>
+      </header>
+      {secondary ? (
+        <p className="typo-caption text-pretty text-start text-muted-foreground line-clamp-2">
+          {secondary}
         </p>
-        {secondary ? (
-          <p className="typo-caption text-pretty text-muted-foreground">{secondary}</p>
-        ) : null}
-      </div>
+      ) : null}
     </li>
   );
 }
@@ -114,6 +124,13 @@ function highlightPrimary(
       };
       return primary;
     }
+    case "playmaker": {
+      const primary: HighlightPrimary = {
+        label: t("player.metric.assists"),
+        value: item.assists === null ? null : numberFormat.format(item.assists),
+      };
+      return primary;
+    }
     default: {
       const _exhaustive: never = item;
       return _exhaustive;
@@ -124,6 +141,7 @@ function highlightPrimary(
 function highlightSecondary(
   item: MatchHighlight,
   numberFormat: Intl.NumberFormat,
+  percentFormat: Intl.NumberFormat,
   t: Translator,
 ): string | null {
   switch (item.kind) {
@@ -132,7 +150,7 @@ function highlightSecondary(
         item.assists === null
           ? null
           : t("player.matchDetail.highlights.assists", { count: item.assists }),
-        passLine(item.passesMade, item.passAttempts, numberFormat, t),
+        passLine(item.passesMade, item.passAttempts, percentFormat, t),
       ]);
     case "scorer":
       return joinHighlightLines([
@@ -145,9 +163,18 @@ function highlightSecondary(
               rating: numberFormat.format(item.rating),
             }),
       ]);
+    case "playmaker":
+      return joinHighlightLines([
+        passLine(item.passesMade, item.passAttempts, percentFormat, t),
+        item.rating === null
+          ? null
+          : t("player.matchDetail.highlights.rating", {
+              rating: numberFormat.format(item.rating),
+            }),
+      ]);
     case "rival":
       return joinHighlightLines([
-        passLine(item.passesMade, item.passAttempts, numberFormat, t),
+        passLine(item.passesMade, item.passAttempts, percentFormat, t),
         item.tacklesMade === null
           ? null
           : t("player.matchDetail.highlights.tackles", { count: item.tacklesMade }),
@@ -162,13 +189,12 @@ function highlightSecondary(
 function passLine(
   made: number | null,
   attempts: number | null,
-  numberFormat: Intl.NumberFormat,
+  percentFormat: Intl.NumberFormat,
   t: Translator,
 ): string | null {
-  if (made === null || attempts === null) return null;
-  return t("player.matchDetail.highlights.passes", {
-    made: numberFormat.format(made),
-    attempts: numberFormat.format(attempts),
+  if (made === null || attempts === null || attempts === 0) return null;
+  return t("player.matchDetail.highlights.passAccuracy", {
+    percent: percentFormat.format(made / attempts),
   });
 }
 

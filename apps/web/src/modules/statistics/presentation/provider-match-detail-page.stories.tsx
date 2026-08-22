@@ -153,6 +153,9 @@ export const Ready: Story = {
     await expect(canvas.getByRole("navigation", { name: "Migas de pan" })).toBeVisible();
     await expect(canvas.getByRole("link", { name: "Mis partidos" })).toBeVisible();
     await expect(canvas.getByRole("tab", { name: "Resumen" })).toBeVisible();
+    await expect(canvasElement.querySelector("[data-match-status='finalized']")).toHaveTextContent(
+      "Finalizado",
+    );
     await expect(canvas.getByText("Comparación de equipos")).toBeVisible();
     await expect(canvas.getByText("Tu rendimiento")).toBeVisible();
     await expect(canvas.getByText("Destacados del partido")).toBeVisible();

@@ -44,10 +44,16 @@ export function MatchDetailSummary({
   return (
     <div className="space-y-6">
       <div className="grid items-stretch gap-6 lg:grid-cols-2">
-        <YourPerformanceCard appearance={model.appearance} numberFormat={numberFormat} t={t} />
+        <YourPerformanceCard
+          appearance={model.appearance}
+          numberFormat={numberFormat}
+          percentFormat={percentFormat}
+          t={t}
+        />
         <MatchHighlightsCard
           highlights={model.highlights.items}
           numberFormat={numberFormat}
+          percentFormat={percentFormat}
           t={t}
         />
       </div>
@@ -64,10 +70,12 @@ export function MatchDetailSummary({
 function YourPerformanceCard({
   appearance,
   numberFormat,
+  percentFormat,
   t,
 }: {
   readonly appearance: PlayedAppearance | null;
   readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
   return (
@@ -77,7 +85,12 @@ function YourPerformanceCard({
       </CardHeader>
       <CardContent className={`${SUMMARY_CARD_CONTENT_CLASS} flex flex-1 flex-col`}>
         {appearance ? (
-          <PlayedPerformance appearance={appearance} numberFormat={numberFormat} t={t} />
+          <PlayedPerformance
+            appearance={appearance}
+            numberFormat={numberFormat}
+            percentFormat={percentFormat}
+            t={t}
+          />
         ) : (
           <p className="typo-caption m-auto max-w-prose text-pretty text-center text-muted-foreground">
             {t("player.matchDetail.performance.empty.description")}
@@ -91,10 +104,12 @@ function YourPerformanceCard({
 function PlayedPerformance({
   appearance,
   numberFormat,
+  percentFormat,
   t,
 }: {
   readonly appearance: PlayedAppearance;
   readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
   const positionKey = appearance.position ? providerPositionLabelKey(appearance.position) : null;
@@ -111,8 +126,8 @@ function PlayedPerformance({
     (part): part is string => part !== null,
   );
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-5">
-      <div className="flex shrink-0 items-center justify-between gap-4">
+    <div className="flex min-h-0 flex-1 flex-col justify-start gap-5">
+      <div className="flex shrink-0 items-center justify-start gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <PlayerAvatar name={appearance.displayName} />
           <div className="min-w-0">
@@ -137,45 +152,43 @@ function PlayedPerformance({
           rating={appearance.rating}
         />
       </div>
-      <div className="flex flex-1 items-center">
-        <div className="grid w-full grid-cols-3 gap-3" role="group">
-          <PerformanceStat
-            label={t("player.metric.goals")}
-            metric="goals"
-            t={t}
-            value={appearance.goals === null ? null : numberFormat.format(appearance.goals)}
-          />
-          <PerformanceStat
-            label={t("player.metric.assists")}
-            metric="assists"
-            t={t}
-            value={appearance.assists === null ? null : numberFormat.format(appearance.assists)}
-          />
-          <PerformanceStat
-            label={t("player.metric.shots")}
-            metric="shots"
-            t={t}
-            value={appearance.shots === null ? null : numberFormat.format(appearance.shots)}
-          />
-          <PerformanceStat
-            label={t("player.metric.passesMade")}
-            metric="passesMade"
-            t={t}
-            value={ratioLabel(appearance.passesMade, appearance.passAttempts, numberFormat)}
-          />
-          <PerformanceStat
-            label={t("player.metric.tacklesMade")}
-            metric="tacklesMade"
-            t={t}
-            value={ratioLabel(appearance.tacklesMade, appearance.tackleAttempts, numberFormat)}
-          />
-          <PerformanceStat
-            label={t("player.metric.redCards")}
-            metric="redCards"
-            t={t}
-            value={appearance.redCards === null ? null : numberFormat.format(appearance.redCards)}
-          />
-        </div>
+      <div className="grid w-full grid-cols-3 gap-3" role="group">
+        <PerformanceStat
+          label={t("player.metric.goals")}
+          metric="goals"
+          t={t}
+          value={appearance.goals === null ? null : numberFormat.format(appearance.goals)}
+        />
+        <PerformanceStat
+          label={t("player.metric.assists")}
+          metric="assists"
+          t={t}
+          value={appearance.assists === null ? null : numberFormat.format(appearance.assists)}
+        />
+        <PerformanceStat
+          label={t("player.metric.shots")}
+          metric="shots"
+          t={t}
+          value={appearance.shots === null ? null : numberFormat.format(appearance.shots)}
+        />
+        <PerformanceStat
+          label={t("player.matchDetail.performance.passAccuracy")}
+          metric="passesMade"
+          t={t}
+          value={accuracyPercent(appearance.passesMade, appearance.passAttempts, percentFormat)}
+        />
+        <PerformanceStat
+          label={t("player.matchDetail.performance.tackleAccuracy")}
+          metric="tacklesMade"
+          t={t}
+          value={accuracyPercent(appearance.tacklesMade, appearance.tackleAttempts, percentFormat)}
+        />
+        <PerformanceStat
+          label={t("player.metric.redCards")}
+          metric="redCards"
+          t={t}
+          value={appearance.redCards === null ? null : numberFormat.format(appearance.redCards)}
+        />
       </div>
     </div>
   );
@@ -210,12 +223,11 @@ function PlayerAvatar({ name }: { readonly name: string }) {
   );
 }
 
-function ratioLabel(
+function accuracyPercent(
   made: number | null,
   attempts: number | null,
-  numberFormat: Intl.NumberFormat,
+  percentFormat: Intl.NumberFormat,
 ): string | null {
-  if (made === null) return null;
-  if (attempts === null) return numberFormat.format(made);
-  return `${numberFormat.format(made)}/${numberFormat.format(attempts)}`;
+  if (made === null || attempts === null || attempts === 0) return null;
+  return percentFormat.format(made / attempts);
 }

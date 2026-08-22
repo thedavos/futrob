@@ -74,6 +74,16 @@ describe("ProviderMatchDetailView", () => {
     expect(document.querySelector("[data-highlight='mvp']")?.textContent).toContain("Alpha");
     const personal = document.querySelector("[data-personal-summary]");
     expect(personal?.querySelector("[data-metric='goals']")?.textContent).toBe("0");
+    expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe(
+      passAccuracyPercent("es", 6, 8),
+    );
+    expect(personal?.querySelector("[data-metric='tacklesMade']")?.textContent).toBe(
+      passAccuracyPercent("es", 1, 1),
+    );
+    expect(personal?.textContent).toContain("Precisión de pase");
+    expect(personal?.textContent).toContain("Precisión de entradas");
+    expect(personal?.textContent).not.toContain("Pases completados");
+    expect(personal?.textContent).not.toContain("Entradas completadas");
     expect(personal?.textContent).toContain("Alpha");
     expect(screen.queryByText("Club seleccionado")).toBeNull();
 
@@ -185,6 +195,14 @@ describe("ProviderMatchDetailView", () => {
 
     expect(screen.getByLabelText("Ganado por desconexión")).toBeTruthy();
     expect(document.querySelector("[data-match-dnf]")).toBeTruthy();
+    expect(document.querySelector("[data-match-status='finalized']")?.textContent).toBe(
+      "Finalizado",
+    );
+    expect(
+      document
+        .querySelector("[data-match-status='finalized']")
+        ?.nextElementSibling?.getAttribute("data-match-score"),
+    ).toBe("");
     expect(document.querySelector("[data-match-chevron]")).toBeNull();
   });
 
@@ -245,9 +263,114 @@ describe("ProviderMatchDetailView", () => {
     expect(screen.getByRole("link", { name: "My matches" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Summary" })).toBeTruthy();
     expect(screen.getByText("Your performance")).toBeTruthy();
+    const personal = document.querySelector("[data-personal-summary]");
+    expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe(
+      passAccuracyPercent("en", 6, 8),
+    );
+    expect(personal?.textContent).toContain("Pass accuracy");
+    expect(personal?.textContent).toContain("Tackle accuracy");
+    expect(personal?.textContent).not.toContain("Passes completed");
+    expect(personal?.textContent).not.toContain("Tackles completed");
     await user.click(screen.getByRole("tab", { name: "Players" }));
     expect(screen.getByText("Selected club")).toBeTruthy();
     expect(screen.getByText("Opponent")).toBeTruthy();
+  });
+
+  it.each([
+    ["es", "2 asistencias", "9 tiros", "1 entrada", "precisión de pase"] as const,
+    ["en", "2 assists", "9 shots", "1 tackle", "pass accuracy"] as const,
+  ])(
+    "renders highlight pass accuracy as a locale percent in %s",
+    (locale, assists, shots, tackles, accuracy) => {
+      renderDetail({ kind: "ready", detail: highlightPassDetail() }, locale);
+      const percent = passAccuracyPercent(locale, 10, 15);
+
+      expect(document.querySelector("[data-highlight='mvp']")?.textContent).toContain(
+        `${assists} · ${percent} ${accuracy}`,
+      );
+      expect(document.querySelector("[data-highlight='playmaker']")?.textContent).toContain(
+        `${percent} ${accuracy}`,
+      );
+      expect(document.querySelector("[data-highlight='rival']")?.textContent).toContain(
+        `${percent} ${accuracy} · ${tackles}`,
+      );
+      expect(document.querySelector("[data-highlight='scorer']")?.textContent).toContain(shots);
+      expect(document.body.textContent).not.toContain("10/15");
+    },
+  );
+
+  it.each([
+    ["es", "Precisión de pase", "Precisión de entradas"] as const,
+    ["en", "Pass accuracy", "Tackle accuracy"] as const,
+  ])(
+    "renders personal pass and tackle accuracy as percents in %s",
+    (locale, passLabel, tackleLabel) => {
+      const detail = recentProviderMatchDetailFixture({
+        appearance: {
+          passesMade: 24,
+          passAttempts: 34,
+          tacklesMade: 2,
+          tackleAttempts: 9,
+        },
+      });
+
+      renderDetail({ kind: "ready", detail }, locale);
+      const personal = document.querySelector("[data-personal-summary]");
+
+      expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe(
+        passAccuracyPercent(locale, 24, 34),
+      );
+      expect(personal?.querySelector("[data-metric='tacklesMade']")?.textContent).toBe(
+        passAccuracyPercent(locale, 2, 9),
+      );
+      expect(personal?.textContent).toContain(passLabel);
+      expect(personal?.textContent).toContain(tackleLabel);
+      expect(personal?.textContent).not.toContain("24/34");
+      expect(personal?.textContent).not.toContain("2/9");
+    },
+  );
+
+  it("omits personal pass and tackle percents when attempts are zero or unknown", () => {
+    const detail = recentProviderMatchDetailFixture({
+      appearance: {
+        passesMade: 0,
+        passAttempts: 0,
+        tacklesMade: 2,
+        tackleAttempts: null,
+      },
+    });
+
+    renderDetail({ kind: "ready", detail });
+    const personal = document.querySelector("[data-personal-summary]");
+
+    expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe("Sin datos");
+    expect(personal?.querySelector("[data-metric='tacklesMade']")?.textContent).toBe("Sin datos");
+    expect(personal?.textContent).not.toContain("0 %");
+    expect(personal?.textContent).not.toContain("0%");
+  });
+
+  it("omits highlight pass accuracy when attempts are zero or unknown", () => {
+    const detail = recentProviderMatchDetailFixture({
+      listedExternalClubId: "99",
+      home: { externalClubId: "10754", name: "Home", goals: 1, imageUrl: null },
+      away: { externalClubId: "99", name: "Away", goals: 2, imageUrl: null },
+      players: [
+        player("Alpha", "99", 8, { isMvp: true, assists: 2, passesMade: 0, passAttempts: 0 }),
+        player("Creator", "99", 7.5, { assists: 4, passesMade: null, passAttempts: null }),
+      ],
+    });
+
+    renderDetail({ kind: "ready", detail });
+
+    expect(document.querySelector("[data-highlight='mvp']")?.textContent).toContain(
+      "2 asistencias",
+    );
+    expect(document.querySelector("[data-highlight='mvp']")?.textContent).not.toContain(
+      "precisión",
+    );
+    expect(document.querySelector("[data-highlight='playmaker']")?.textContent).not.toContain(
+      "precisión",
+    );
   });
 });
 
@@ -262,6 +385,32 @@ function renderDetail(
       <ProviderMatchDetailView sort={sort} state={state} view={view} />
     </I18nProvider>,
   );
+}
+
+function highlightPassDetail() {
+  return recentProviderMatchDetailFixture({
+    listedExternalClubId: "99",
+    home: { externalClubId: "10754", name: "Home", goals: 1, imageUrl: null },
+    away: { externalClubId: "99", name: "Away", goals: 2, imageUrl: null },
+    players: [
+      player("Alpha", "99", 8, {
+        isMvp: true,
+        assists: 2,
+        passesMade: 10,
+        passAttempts: 15,
+      }),
+      player("Striker", "99", 7, { goals: 3, shots: 9 }),
+      player("Creator", "99", 7.5, { assists: 4, passesMade: 10, passAttempts: 15 }),
+      player("Opponent", "10754", 9, { passesMade: 10, passAttempts: 15, tacklesMade: 1 }),
+    ],
+  });
+}
+
+function passAccuracyPercent(locale: "es" | "en", made: number, attempts: number): string {
+  return new Intl.NumberFormat(locale === "en" ? "en-GB" : "es-ES", {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format(made / attempts);
 }
 
 function player(
