@@ -6,6 +6,7 @@ import { logCorrelatedError, type CorrelationLogger } from "@/context/request-co
 import type { AppModules } from "@/di/create-modules.ts";
 import { apiErrorResponse } from "@/http/errors.ts";
 import { createRequestCorrelationMiddleware } from "@/http/middleware/request-correlation.ts";
+import { captureUnexpectedError } from "@/observability/sentry.ts";
 import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
 import { registerCompetitionRoutes } from "@/http/routes/competitions.ts";
 import { registerCompetitionParticipantRoutes } from "@/http/routes/competitions-participants.ts";
@@ -61,6 +62,7 @@ export function createApp(deps: AppDeps): Hono {
 
   app.onError((error) => {
     logCorrelatedError("http.request.failed", { errorName: error.name });
+    captureUnexpectedError(error);
     return apiErrorResponse(500, {
       code: "api.unexpected_error",
       messageKey: "errors.api.unexpected_error",
