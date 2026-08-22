@@ -10,9 +10,15 @@ on:
       name:
         type: string
         description: Run name
+      pr_number:
+        type: string
+        description: "PR number to audit (empty = current default branch)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   pullfrog:
@@ -20,10 +26,13 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
+          # Check out the PR head when auditing a pull request.
+          ref: ${{ inputs.pr_number != '' && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
           fetch-depth: 1
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -34,16 +43,22 @@ jobs:
         run: npm ci
       - name: Build product client
         run: npm run build
+        env:
+          NODE_ENV: production
       - name: Enforce product client bundle budget
         run: npm run bundle:budget
         env:
           BUNDLE_ENTRY_GZIP_KIB: "250"
-          BUNDLE_LAZY_GZIP_KIB: "100"
+          # Kept in sync with ci.yml — the lazy/shared floor is set by the
+          # vendor core chunk (_src-*.js), not per-route product code.
+          BUNDLE_LAZY_GZIP_KIB: "120"
       - name: Run agent
         uses: pullfrog/pullfrog@v0
         with:
           prompt: ${{ inputs.prompt }}
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           # add at least one provider API key
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

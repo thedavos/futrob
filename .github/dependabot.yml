@@ -1,0 +1,41 @@
+version: 2
+updates:
+  # Root workspace (toolchain: vite-plus, oxlint, storybook, typescript...)
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    # vite is overridden to vite-plus-core; majors need manual alignment.
+    ignore:
+      - dependency-name: "vite"
+      - dependency-name: "vite-plus"
+
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: npm
+    directory: /apps/api
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

@@ -1,0 +1,35 @@
+name: Health Check
+
+on:
+  schedule:
+    # Every 15 minutes.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    name: Production health
+    runs-on: ubuntu-latest
+    steps:
+      - name: API /api/v1/meta/health
+        run: |
+          http_code=$(curl -sS -o /tmp/health.json -w "%{http_code}" --max-time 15 \
+            "${{ secrets.PROD_API_HEALTH_URL || 'https://api.futrob.app/api/v1/meta/health' }}")
+          echo "HTTP $http_code"
+          cat /tmp/health.json
+          if [ "$http_code" != "200" ]; then
+            echo "::error::API health check failed with HTTP $http_code"
+            exit 1
+          fi
+
+      - name: Web portal
+        run: |
+          http_code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 15 \
+            "${{ secrets.PROD_WEB_URL || 'https://futrob.app' }}")
+          echo "HTTP $http_code"
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Web portal check failed with HTTP $http_code"
+            exit 1
+          fi

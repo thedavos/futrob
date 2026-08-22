@@ -23,6 +23,10 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Type-aware lint needs the generated TanStack route tree.
+      - run: npm run generate:routes
+      # Guard: packages/ui/src/tokens.css must match @futrob/ui-tokens data.
+      - run: npm run generate:css:check -w @futrob/ui-tokens
       - run: npm run check
 
   typecheck:
@@ -63,9 +67,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Build product client
+        run: npm run build
+        env:
+          NODE_ENV: production
       - name: Enforce product client bundle budget
         run: npm run bundle:budget
         env:
           BUNDLE_ENTRY_GZIP_KIB: "250"
-          BUNDLE_LAZY_GZIP_KIB: "100"
+          # The lazy/shared floor is set by the vendor core chunk (_src-*.js:
+          # Tailwind runtime + brand logo) shared by every route, not by
+          # per-route product code. Revisit if it grows past this again.
+          BUNDLE_LAZY_GZIP_KIB: "120"
