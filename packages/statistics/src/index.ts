@@ -9,6 +9,7 @@ export type {
 } from "./domain/entities/team-match-contribution.ts";
 export {
   PLAYER_STATISTIC_METRICS,
+  createEmptyPartialFlags,
   type PlayerAggregateStats,
   type PlayerStatisticMetric,
   type PlayerStatisticPartialFlags,

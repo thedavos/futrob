@@ -16,9 +16,9 @@ import type {
 import { COMPETITION_STANDING_FORMULA_VERSION, RANKING_FORMULA_VERSION } from "@futrob/statistics";
 import {
   competitionStandingRowSchema,
-  playerStatisticPartialFlagsSchema,
-  playerStatisticRatesSchema,
-  playerStatisticTotalsSchema,
+  teamStatisticPartialFlagsSchema,
+  teamStatisticRatesSchema,
+  teamStatisticTotalsSchema,
   rankingEligibilitySchema,
   rankingKindSchema,
   rankingRowSchema,
@@ -138,10 +138,10 @@ export function rehydrateTeamCompetitionStats(row: TeamCompetitionStatsRow): Tea
     organizationId: asOrganizationId(row.organization_id),
     matchesPlayed: Number(row.matches_played),
     minutes: Number(row.minutes),
-    totals: parseJsonRecord(playerStatisticTotalsSchema, row.totals),
-    averages: parseJsonRecord(playerStatisticRatesSchema, row.averages),
-    per90: parseJsonRecord(playerStatisticRatesSchema, row.per90),
-    partial: parseJsonRecord(playerStatisticPartialFlagsSchema, row.partial),
+    totals: parseJsonRecord(teamStatisticTotalsSchema, row.totals),
+    averages: parseJsonRecord(teamStatisticRatesSchema, row.averages),
+    per90: parseJsonRecord(teamStatisticRatesSchema, row.per90),
+    partial: parseJsonRecord(teamStatisticPartialFlagsSchema, row.partial),
     sourceRevisionMax: Number(row.source_revision_max),
     updatedAt: parseDate(row.updated_at),
   };

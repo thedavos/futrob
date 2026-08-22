@@ -24,6 +24,21 @@ export const playerStatisticPartialFlagsSchema = z.record(
   z.union([playerStatisticMetricSchema, z.literal("minutes")]),
   z.boolean(),
 );
+/**
+ * Team stat payloads are a standalone contract (not aliases of the player
+ * schemas): team aggregates persist to their own jsonb columns and must be
+ * free to diverge — e.g. minutes semantics or new team-only metrics — without
+ * touching the player wire format.
+ */
+export const teamStatisticTotalsSchema = z.record(playerStatisticMetricSchema, z.number());
+export const teamStatisticRatesSchema = z.record(
+  playerStatisticMetricSchema,
+  z.number().nullable(),
+);
+export const teamStatisticPartialFlagsSchema = z.record(
+  z.union([playerStatisticMetricSchema, z.literal("minutes")]),
+  z.boolean(),
+);
 
 export const playerPersonalStatsSchema = z.object({
   playerProfileId: z.string().min(1),
