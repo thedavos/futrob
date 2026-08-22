@@ -21,6 +21,16 @@ export class FutrobApiError extends Error {
   }
 }
 
+export class FutrobRequestTimeoutError extends Error {
+  readonly timeoutMs: number;
+
+  constructor(timeoutMs: number) {
+    super(`Request timed out after ${timeoutMs}ms`);
+    this.name = "FutrobRequestTimeoutError";
+    this.timeoutMs = timeoutMs;
+  }
+}
+
 export function parseApiErrorBody(data: HttpResponseBody): ApiErrorBody | null {
   const parsed = apiErrorSchema.safeParse(data);
   return parsed.success ? parsed.data : null;

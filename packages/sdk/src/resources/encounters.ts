@@ -10,25 +10,32 @@ import {
   upsertEncounterScheduleSnapshotRequestSchema,
   type UpsertEncounterScheduleSnapshotRequest,
 } from "@futrob/api-contracts";
-import type { HttpClient } from "../http.ts";
+import type { HttpClient, RequestOptions } from "../http.ts";
+import { apiPath } from "../internal/path.ts";
 
 export function createEncountersResource(http: HttpClient) {
   return {
-    async getScheduleSnapshot(encounterId: string): Promise<EncounterScheduleSnapshotDto> {
+    async getScheduleSnapshot(
+      encounterId: string,
+      options: RequestOptions = {},
+    ): Promise<EncounterScheduleSnapshotDto> {
       return http.request({
-        path: `/encounters/${encodeURIComponent(encounterId)}/schedule-snapshot`,
+        path: apiPath("encounters", encounterId, "schedule-snapshot"),
         method: "GET",
+        options,
         parse: (data) => encounterScheduleSnapshotSchema.parse(data),
       });
     },
     async upsertScheduleSnapshot(
       encounterId: string,
       input: UpsertEncounterScheduleSnapshotRequest,
+      options: RequestOptions = {},
     ): Promise<EncounterScheduleSnapshotDto> {
       return http.request({
-        path: `/encounters/${encodeURIComponent(encounterId)}/schedule-snapshot`,
+        path: apiPath("encounters", encounterId, "schedule-snapshot"),
         method: "PUT",
         body: upsertEncounterScheduleSnapshotRequestSchema.parse(input),
+        options,
         parse: (data) => encounterScheduleSnapshotSchema.parse(data),
       });
     },
@@ -36,11 +43,13 @@ export function createEncountersResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       input: GenerateCompetitionFixtureRequest,
+      options: RequestOptions = {},
     ): Promise<FixturePlanDto> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/fixture`,
+        path: apiPath("organizations", organizationId, "competitions", competitionId, "fixture"),
         method: "POST",
         body: generateCompetitionFixtureRequestSchema.parse(input),
+        options,
         parse: (data) => fixturePlanSchema.parse(data),
       });
     },
@@ -48,10 +57,19 @@ export function createEncountersResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       fixturePlanId: string,
+      options: RequestOptions = {},
     ): Promise<FixturePlanDto> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/fixtures/${encodeURIComponent(fixturePlanId)}`,
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "fixtures",
+          fixturePlanId,
+        ),
         method: "GET",
+        options,
         parse: (data) => fixturePlanSchema.parse(data),
       });
     },
@@ -61,13 +79,24 @@ export function createEncountersResource(http: HttpClient) {
       fixturePlanId: string,
       encounterId: string,
       input: EditFixtureEncounterRequest,
+      options: RequestOptions = {},
     ): Promise<FixturePlanDto> {
       const requestId = input.requestId ?? crypto.randomUUID();
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/fixtures/${encodeURIComponent(fixturePlanId)}/encounters/${encodeURIComponent(encounterId)}`,
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "fixtures",
+          fixturePlanId,
+          "encounters",
+          encounterId,
+        ),
         method: "PATCH",
         requestId,
         body: editFixtureEncounterRequestSchema.parse({ ...input, requestId }),
+        options,
         parse: (data) => fixturePlanSchema.parse(data),
       });
     },

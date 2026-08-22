@@ -1,76 +1,57 @@
 import {
-  acceptRosterInvitationRequestSchema,
-  acceptRosterInvitationResponseSchema,
-  addMyPlayerGameAccountRequestSchema,
-  addMyPlayerGameAccountResponseSchema,
-  associateMyPlayerExternalClubRequestSchema,
-  associateMyPlayerExternalClubResponseSchema,
-  addToRosterRequestSchema,
-  addToRosterResponseSchema,
-  changeRosterRoleRequestSchema,
-  changeRosterRoleResponseSchema,
-  closeRosterResponseSchema,
-  connectTeamExternalClubRequestSchema,
-  connectTeamExternalClubResponseSchema,
-  createRosterInvitationRequestSchema,
-  createRosterInvitationResponseSchema,
-  createTeamRequestSchema,
-  createTeamResponseSchema,
-  getMyPlayerProfileResponseSchema,
-  getMyTeamsResponseSchema,
-  getTeamExternalClubResponseSchema,
-  listOrganizationTeamsResponseSchema,
-  listRosterResponseSchema,
-  openRosterResponseSchema,
-  setActiveTeamRequestSchema,
-  setActiveTeamResponseSchema,
-  type AcceptRosterInvitationRequest,
-  type AcceptRosterInvitationResponse,
-  type AddMyPlayerGameAccountRequest,
-  type AddMyPlayerGameAccountResponse,
-  type AssociateMyPlayerExternalClubRequest,
-  type AssociateMyPlayerExternalClubResponse,
-  type AddToRosterRequest,
-  type AddToRosterResponse,
-  type ChangeRosterRoleRequest,
-  type ChangeRosterRoleResponse,
   competitionTeamManagementDetailResponseSchema,
   competitionTeamManagementListQuerySchema,
   competitionTeamManagementListResponseSchema,
+  createTeamRequestSchema,
+  createTeamResponseSchema,
+  listOrganizationTeamsResponseSchema,
+  type AcceptRosterInvitationRequest,
+  type AddMyPlayerGameAccountRequest,
+  type AddToRosterRequest,
+  type AssociateMyPlayerExternalClubRequest,
+  type ChangeRosterRoleRequest,
   type CompetitionTeamManagementDetailResponse,
   type CompetitionTeamManagementListQuery,
   type CompetitionTeamManagementListResponse,
-  type CloseRosterResponse,
   type ConnectTeamExternalClubRequest,
-  type ConnectTeamExternalClubResponse,
   type CreateRosterInvitationRequestInput,
-  type CreateRosterInvitationResponse,
   type CreateTeamRequest,
   type CreateTeamResponse,
-  type GetMyPlayerProfileResponse,
-  type GetMyTeamsResponse,
-  type GetTeamExternalClubResponse,
   type ListOrganizationTeamsResponse,
-  type ListRosterResponse,
-  type OpenRosterResponse,
   type SetActiveTeamRequest,
-  type SetActiveTeamResponse,
 } from "@futrob/api-contracts";
-import type { HttpClient } from "../http.ts";
+import type { HttpClient, RequestOptions } from "../http.ts";
+import { apiPath } from "../internal/path.ts";
+import { createRosterInvitationsResource } from "./roster-invitations.ts";
+import { createRostersResource } from "./rosters.ts";
+import { createPlayersResource } from "./players.ts";
+import { createTeamExternalClubsResource } from "./external-clubs.ts";
 
 export function createTeamsResource(http: HttpClient) {
+  const players = createPlayersResource(http);
+  const rosters = createRostersResource(http);
+  const rosterInvitations = createRosterInvitationsResource(http);
+  const externalClubs = createTeamExternalClubsResource(http);
+
   return {
+    players,
+    rosters,
+    rosterInvitations,
+    externalClubs,
+
     async listCompetitionManagement(
       organizationId: string,
       competitionId: string,
       query: CompetitionTeamManagementListQuery = { limit: 25 },
+      options: RequestOptions = {},
     ): Promise<CompetitionTeamManagementListResponse> {
       const parsed = competitionTeamManagementListQuerySchema.parse(query);
       const search = new URLSearchParams({ limit: String(parsed.limit) });
       if (parsed.cursor) search.set("cursor", parsed.cursor);
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management?${search.toString()}`,
+        path: `${apiPath("organizations", organizationId, "competitions", competitionId, "team-management")}?${search.toString()}`,
         method: "GET",
+        options,
         parse: (data) => competitionTeamManagementListResponseSchema.parse(data),
       });
     },
@@ -79,205 +60,129 @@ export function createTeamsResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       teamId: string,
+      options: RequestOptions = {},
     ): Promise<CompetitionTeamManagementDetailResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-management/${encodeURIComponent(teamId)}`,
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "team-management",
+          teamId,
+        ),
         method: "GET",
+        options,
         parse: (data) => competitionTeamManagementDetailResponseSchema.parse(data),
-      });
-    },
-
-    async getMyProfile(): Promise<GetMyPlayerProfileResponse> {
-      return http.request({
-        path: "/players/me",
-        method: "GET",
-        parse: (data) => getMyPlayerProfileResponseSchema.parse(data),
-      });
-    },
-
-    async addMyGameAccount(
-      input: AddMyPlayerGameAccountRequest,
-    ): Promise<AddMyPlayerGameAccountResponse> {
-      const body = addMyPlayerGameAccountRequestSchema.parse(input);
-      return http.request({
-        path: "/players/me/game-accounts",
-        method: "POST",
-        body,
-        parse: (data) => addMyPlayerGameAccountResponseSchema.parse(data),
-      });
-    },
-
-    async associateMyExternalClub(
-      input: AssociateMyPlayerExternalClubRequest,
-    ): Promise<AssociateMyPlayerExternalClubResponse> {
-      const body = associateMyPlayerExternalClubRequestSchema.parse(input);
-      return http.request({
-        path: "/players/me/external-club",
-        method: "POST",
-        body,
-        parse: (data) => associateMyPlayerExternalClubResponseSchema.parse(data),
-      });
-    },
-
-    async getMyTeams(): Promise<GetMyTeamsResponse> {
-      return http.request({
-        path: "/players/me/teams",
-        method: "GET",
-        parse: (data) => getMyTeamsResponseSchema.parse(data),
-      });
-    },
-
-    async setActiveTeam(input: SetActiveTeamRequest): Promise<SetActiveTeamResponse> {
-      const body = setActiveTeamRequestSchema.parse(input);
-      return http.request({
-        path: "/players/me/active-team",
-        method: "PUT",
-        body,
-        parse: (data) => setActiveTeamResponseSchema.parse(data),
       });
     },
 
     async createTeam(
       organizationId: string,
       input: CreateTeamRequest,
+      options: RequestOptions = {},
     ): Promise<CreateTeamResponse> {
       const body = createTeamRequestSchema.parse(input);
       return http.request({
-        path: `/organizations/${organizationId}/teams`,
+        path: apiPath("organizations", organizationId, "teams"),
         method: "POST",
         body,
+        options,
         parse: (data) => createTeamResponseSchema.parse(data),
       });
     },
 
-    async listByOrganization(organizationId: string): Promise<ListOrganizationTeamsResponse> {
+    async listByOrganization(
+      organizationId: string,
+      options: RequestOptions = {},
+    ): Promise<ListOrganizationTeamsResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/teams`,
+        path: apiPath("organizations", organizationId, "teams"),
         method: "GET",
+        options,
         parse: (data) => listOrganizationTeamsResponseSchema.parse(data),
       });
     },
 
-    async listRoster(
+    // Backward-compatible flat aliases over the nested resources above.
+    getMyProfile: (options: RequestOptions = {}) => players.getProfile(options),
+
+    addMyGameAccount: (input: AddMyPlayerGameAccountRequest, options: RequestOptions = {}) =>
+      players.addGameAccount(input, options),
+
+    associateMyExternalClub: (
+      input: AssociateMyPlayerExternalClubRequest,
+      options: RequestOptions = {},
+    ) => players.associateExternalClub(input, options),
+
+    getMyTeams: (options: RequestOptions = {}) => players.listTeams(options),
+
+    setActiveTeam: (input: SetActiveTeamRequest, options: RequestOptions = {}) =>
+      players.setActiveTeam(input, options),
+
+    listRoster: (
       organizationId: string,
       competitionId: string,
       teamId: string,
-    ): Promise<ListRosterResponse> {
-      return http.request({
-        path: `/organizations/${organizationId}/competitions/${competitionId}/teams/${teamId}/roster`,
-        method: "GET",
-        parse: (data) => listRosterResponseSchema.parse(data),
-      });
-    },
+      options: RequestOptions = {},
+    ) => rosters.list(organizationId, competitionId, teamId, options),
 
-    async addToRoster(
+    addToRoster: (
       organizationId: string,
       competitionId: string,
       teamId: string,
       input: AddToRosterRequest,
-    ): Promise<AddToRosterResponse> {
-      const body = addToRosterRequestSchema.parse(input);
-      return http.request({
-        path: `/organizations/${organizationId}/competitions/${competitionId}/teams/${teamId}/roster`,
-        method: "POST",
-        body,
-        parse: (data) => addToRosterResponseSchema.parse(data),
-      });
-    },
+      options: RequestOptions = {},
+    ) => rosters.add(organizationId, competitionId, teamId, input, options),
 
-    async changeRosterRole(
+    changeRosterRole: (
       organizationId: string,
       competitionId: string,
       teamId: string,
       membershipId: string,
       input: ChangeRosterRoleRequest,
-    ): Promise<ChangeRosterRoleResponse> {
-      const body = changeRosterRoleRequestSchema.parse(input);
-      return http.request({
-        path: `/organizations/${organizationId}/competitions/${competitionId}/teams/${teamId}/roster/${membershipId}`,
-        method: "PATCH",
-        body,
-        parse: (data) => changeRosterRoleResponseSchema.parse(data),
-      });
-    },
+      options: RequestOptions = {},
+    ) => rosters.changeRole(organizationId, competitionId, teamId, membershipId, input, options),
 
-    async closeRoster(
+    closeRoster: (
       organizationId: string,
       competitionId: string,
       teamId: string,
-    ): Promise<CloseRosterResponse> {
-      return http.request({
-        path: `/organizations/${organizationId}/competitions/${competitionId}/teams/${teamId}/roster/close`,
-        method: "POST",
-        parse: (data) => closeRosterResponseSchema.parse(data),
-      });
-    },
+      options: RequestOptions = {},
+    ) => rosters.close(organizationId, competitionId, teamId, options),
 
-    async openRoster(
+    openRoster: (
       organizationId: string,
       competitionId: string,
       teamId: string,
-    ): Promise<OpenRosterResponse> {
-      return http.request({
-        path: `/organizations/${organizationId}/competitions/${competitionId}/teams/${teamId}/roster/open`,
-        method: "POST",
-        parse: (data) => openRosterResponseSchema.parse(data),
-      });
-    },
+      options: RequestOptions = {},
+    ) => rosters.open(organizationId, competitionId, teamId, options),
 
-    async connectExternalClub(
+    connectExternalClub: (
       organizationId: string,
       competitionId: string,
       teamId: string,
       input: ConnectTeamExternalClubRequest,
-    ): Promise<ConnectTeamExternalClubResponse> {
-      const body = connectTeamExternalClubRequestSchema.parse(input);
-      return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/teams/${encodeURIComponent(teamId)}/external-club`,
-        method: "PUT",
-        body,
-        parse: (data) => connectTeamExternalClubResponseSchema.parse(data),
-      });
-    },
+      options: RequestOptions = {},
+    ) => externalClubs.connect(organizationId, competitionId, teamId, input, options),
 
-    async getExternalClub(
+    getExternalClub: (
       organizationId: string,
       competitionId: string,
       teamId: string,
-    ): Promise<GetTeamExternalClubResponse> {
-      return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/teams/${encodeURIComponent(teamId)}/external-club`,
-        method: "GET",
-        parse: (data) => getTeamExternalClubResponseSchema.parse(data),
-      });
-    },
+      options: RequestOptions = {},
+    ) => externalClubs.retrieve(organizationId, competitionId, teamId, options),
 
-    async createRosterInvitation(
+    createRosterInvitation: (
       organizationId: string,
       competitionId: string,
       teamId: string,
       input: CreateRosterInvitationRequestInput = {},
-    ): Promise<CreateRosterInvitationResponse> {
-      const body = createRosterInvitationRequestSchema.parse(input);
-      return http.request({
-        path: `/organizations/${organizationId}/competitions/${competitionId}/teams/${teamId}/roster-invitations`,
-        method: "POST",
-        body,
-        parse: (data) => createRosterInvitationResponseSchema.parse(data),
-      });
-    },
+      options: RequestOptions = {},
+    ) => rosterInvitations.create(organizationId, competitionId, teamId, input, options),
 
-    async acceptRosterInvitation(
-      input: AcceptRosterInvitationRequest,
-    ): Promise<AcceptRosterInvitationResponse> {
-      const body = acceptRosterInvitationRequestSchema.parse(input);
-      return http.request({
-        path: "/roster-invitations/accept",
-        method: "POST",
-        body,
-        parse: (data) => acceptRosterInvitationResponseSchema.parse(data),
-      });
-    },
+    acceptRosterInvitation: (input: AcceptRosterInvitationRequest, options: RequestOptions = {}) =>
+      rosterInvitations.accept(input, options),
   };
 }
 

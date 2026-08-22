@@ -22,44 +22,55 @@ import {
   type OrganizationNameAvailabilityResponse,
   type ResolvePostAuthDestinationResponse,
 } from "@futrob/api-contracts";
-import type { HttpClient } from "../http.ts";
+import type { HttpClient, RequestOptions } from "../http.ts";
+import { apiPath } from "../internal/path.ts";
 
 export function createOrganizationsResource(http: HttpClient) {
   return {
-    async listMine(): Promise<ListMyMembershipsResponse> {
+    async listMine(options: RequestOptions = {}): Promise<ListMyMembershipsResponse> {
       return http.request({
         path: "/organizations/mine",
         method: "GET",
+        options,
         parse: (data) => listMyMembershipsResponseSchema.parse(data),
       });
     },
 
-    async resolvePostAuthDestination(): Promise<ResolvePostAuthDestinationResponse> {
+    async resolvePostAuthDestination(
+      options: RequestOptions = {},
+    ): Promise<ResolvePostAuthDestinationResponse> {
       return http.request({
         path: "/organizations/post-auth-destination",
         method: "GET",
+        options,
         parse: (data) => resolvePostAuthDestinationResponseSchema.parse(data),
       });
     },
 
-    async create(input: CreateOrganizationRequest): Promise<CreateOrganizationResponse> {
+    async create(
+      input: CreateOrganizationRequest,
+      options: RequestOptions = {},
+    ): Promise<CreateOrganizationResponse> {
       const body = createOrganizationRequestSchema.parse(input);
       return http.request({
         path: "/organizations",
         method: "POST",
         body,
+        options,
         parse: (data) => createOrganizationResponseSchema.parse(data),
       });
     },
 
     async checkNameAvailability(
       input: OrganizationNameAvailabilityRequest,
+      options: RequestOptions = {},
     ): Promise<OrganizationNameAvailabilityResponse> {
       const body = organizationNameAvailabilityRequestSchema.parse(input);
       return http.request({
         path: "/organizations/name-availability",
         method: "POST",
         body,
+        options,
         parse: (data) => organizationNameAvailabilityResponseSchema.parse(data),
       });
     },
@@ -67,12 +78,14 @@ export function createOrganizationsResource(http: HttpClient) {
     async createInvitation(
       organizationId: string,
       input: CreateOrganizationInvitationRequest,
+      options: RequestOptions = {},
     ): Promise<CreateInvitationResponse> {
       const body = createOrganizationInvitationRequestSchema.parse(input);
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/invitations`,
+        path: apiPath("organizations", organizationId, "invitations"),
         method: "POST",
         body,
+        options,
         parse: (data) => createInvitationResponseSchema.parse(data),
       });
     },
@@ -81,22 +94,34 @@ export function createOrganizationsResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       input: CreateCompetitionInvitationRequest,
+      options: RequestOptions = {},
     ): Promise<CreateInvitationResponse> {
       const body = createCompetitionInvitationRequestSchema.parse(input);
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/invitations`,
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "invitations",
+        ),
         method: "POST",
         body,
+        options,
         parse: (data) => createInvitationResponseSchema.parse(data),
       });
     },
 
-    async acceptInvitation(input: AcceptInvitationRequest): Promise<AcceptInvitationResponse> {
+    async acceptInvitation(
+      input: AcceptInvitationRequest,
+      options: RequestOptions = {},
+    ): Promise<AcceptInvitationResponse> {
       const body = acceptInvitationRequestSchema.parse(input);
       return http.request({
         path: "/organizations/invitations/accept",
         method: "POST",
         body,
+        options,
         parse: (data) => acceptInvitationResponseSchema.parse(data),
       });
     },

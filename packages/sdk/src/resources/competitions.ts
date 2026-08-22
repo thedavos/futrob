@@ -32,22 +32,28 @@ import {
   type PublishCompetitionResponse,
   type DecideTeamEntryResponse,
 } from "@futrob/api-contracts";
-import type { HttpClient } from "../http.ts";
+import type { HttpClient, RequestOptions } from "../http.ts";
+import { apiPath } from "../internal/path.ts";
 
 export function createCompetitionsResource(http: HttpClient) {
   return {
-    async listMine(): Promise<ListAccessibleCompetitionsResponse> {
+    async listMine(options: RequestOptions = {}): Promise<ListAccessibleCompetitionsResponse> {
       return http.request({
         path: "/competitions/mine",
         method: "GET",
+        options,
         parse: (data) => listAccessibleCompetitionsResponseSchema.parse(data),
       });
     },
 
-    async list(organizationId: string): Promise<ListOrganizationCompetitionsResponse> {
+    async list(
+      organizationId: string,
+      options: RequestOptions = {},
+    ): Promise<ListOrganizationCompetitionsResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions`,
+        path: apiPath("organizations", organizationId, "competitions"),
         method: "GET",
+        options,
         parse: (data) => listOrganizationCompetitionsResponseSchema.parse(data),
       });
     },
@@ -55,12 +61,14 @@ export function createCompetitionsResource(http: HttpClient) {
     async createDraft(
       organizationId: string,
       input: CreateCompetitionDraftRequest,
+      options: RequestOptions = {},
     ): Promise<CreateCompetitionDraftResponse> {
       const body = createCompetitionDraftRequestSchema.parse(input);
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions`,
+        path: apiPath("organizations", organizationId, "competitions"),
         method: "POST",
         body,
+        options,
         parse: (data) => createCompetitionDraftResponseSchema.parse(data),
       });
     },
@@ -68,10 +76,12 @@ export function createCompetitionsResource(http: HttpClient) {
     async getDraft(
       organizationId: string,
       competitionId: string,
+      options: RequestOptions = {},
     ): Promise<GetCompetitionDraftResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}`,
+        path: apiPath("organizations", organizationId, "competitions", competitionId),
         method: "GET",
+        options,
         parse: (data) => getCompetitionDraftResponseSchema.parse(data),
       });
     },
@@ -80,12 +90,14 @@ export function createCompetitionsResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       input: UpdateCompetitionDraftRequest,
+      options: RequestOptions = {},
     ): Promise<UpdateCompetitionDraftResponse> {
       const body = updateCompetitionDraftRequestSchema.parse(input);
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}`,
+        path: apiPath("organizations", organizationId, "competitions", competitionId),
         method: "PATCH",
         body,
+        options,
         parse: (data) => updateCompetitionDraftResponseSchema.parse(data),
       });
     },
@@ -93,10 +105,18 @@ export function createCompetitionsResource(http: HttpClient) {
     async listParticipants(
       organizationId: string,
       competitionId: string,
+      options: RequestOptions = {},
     ): Promise<ListCompetitionParticipantsResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/participants`,
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "participants",
+        ),
         method: "GET",
+        options,
         parse: (data) => listCompetitionParticipantsResponseSchema.parse(data),
       });
     },
@@ -105,12 +125,20 @@ export function createCompetitionsResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       input: CompetitionParticipantInput,
+      options: RequestOptions = {},
     ): Promise<AddCompetitionParticipantResponse> {
       const body = competitionParticipantInputSchema.parse(input);
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/participants`,
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "participants",
+        ),
         method: "POST",
         body,
+        options,
         parse: (data) => addCompetitionParticipantResponseSchema.parse(data),
       });
     },
@@ -119,10 +147,19 @@ export function createCompetitionsResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       entryId: string,
+      options: RequestOptions = {},
     ): Promise<void> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/participants/${encodeURIComponent(entryId)}`,
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "participants",
+          entryId,
+        ),
         method: "DELETE",
+        options,
         parse: () => undefined,
       });
     },
@@ -130,22 +167,26 @@ export function createCompetitionsResource(http: HttpClient) {
     async publish(
       organizationId: string,
       competitionId: string,
+      options: RequestOptions = {},
     ): Promise<PublishCompetitionResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/publish`,
+        path: apiPath("organizations", organizationId, "competitions", competitionId, "publish"),
         method: "POST",
+        options,
         parse: (data) => publishCompetitionResponseSchema.parse(data),
       });
     },
 
     async acceptInvitation(
       input: AcceptInvitationRequest,
+      options: RequestOptions = {},
     ): Promise<AcceptCompetitionInvitationResponse> {
       const body = acceptInvitationRequestSchema.parse(input);
       return http.request({
         path: "/competitions/invitations/accept",
         method: "POST",
         body,
+        options,
         parse: (data) => acceptCompetitionInvitationResponseSchema.parse(data),
       });
     },
@@ -154,12 +195,14 @@ export function createCompetitionsResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       input: RegisterTeamEntryRequest,
+      options: RequestOptions = {},
     ): Promise<RegisterTeamEntryResponse> {
       const body = registerTeamEntryRequestSchema.parse(input);
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/entries`,
+        path: apiPath("organizations", organizationId, "competitions", competitionId, "entries"),
         method: "POST",
         body,
+        options,
         parse: (data) => registerTeamEntryResponseSchema.parse(data),
       });
     },
@@ -168,10 +211,20 @@ export function createCompetitionsResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       entryId: string,
+      options: RequestOptions = {},
     ): Promise<DecideTeamEntryResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/entries/${encodeURIComponent(entryId)}/approve`,
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "entries",
+          entryId,
+          "approve",
+        ),
         method: "POST",
+        options,
         parse: (data) => decideTeamEntryResponseSchema.parse(data),
       });
     },
@@ -180,10 +233,20 @@ export function createCompetitionsResource(http: HttpClient) {
       organizationId: string,
       competitionId: string,
       entryId: string,
+      options: RequestOptions = {},
     ): Promise<DecideTeamEntryResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/entries/${encodeURIComponent(entryId)}/reject`,
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "entries",
+          entryId,
+          "reject",
+        ),
         method: "POST",
+        options,
         parse: (data) => decideTeamEntryResponseSchema.parse(data),
       });
     },

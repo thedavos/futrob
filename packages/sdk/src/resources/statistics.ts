@@ -26,13 +26,17 @@ import {
   type GetMyStatisticsQuery,
   type GetMyStatisticsResponse,
 } from "@futrob/api-contracts";
-import type { HttpClient } from "../http.ts";
+import type { HttpClient, RequestOptions } from "../http.ts";
+import { apiPath } from "../internal/path.ts";
 
 export type GetMyRecentMatchInput = GetMyRecentMatchPath & GetMyRecentMatchQueryInput;
 
 export function createStatisticsResource(http: HttpClient) {
   return {
-    async getMyStatistics(query: GetMyStatisticsQuery = {}): Promise<GetMyStatisticsResponse> {
+    async getMyStatistics(
+      query: GetMyStatisticsQuery = {},
+      options: RequestOptions = {},
+    ): Promise<GetMyStatisticsResponse> {
       const parsed = getMyStatisticsQuerySchema.parse(query);
       const search = new URLSearchParams();
       appendPersonalStatisticsFilters(search, parsed);
@@ -40,10 +44,14 @@ export function createStatisticsResource(http: HttpClient) {
       return http.request({
         path: `/players/me/statistics${queryString ? `?${queryString}` : ""}`,
         method: "GET",
+        options,
         parse: (data) => getMyStatisticsResponseSchema.parse(data),
       });
     },
-    async getMyMatches(query: Partial<GetMyMatchesQuery> = {}): Promise<GetMyMatchesResponse> {
+    async getMyMatches(
+      query: Partial<GetMyMatchesQuery> = {},
+      options: RequestOptions = {},
+    ): Promise<GetMyMatchesResponse> {
       const parsed = getMyMatchesQuerySchema.parse(query);
       const search = new URLSearchParams();
       appendPersonalStatisticsFilters(search, parsed);
@@ -52,11 +60,13 @@ export function createStatisticsResource(http: HttpClient) {
       return http.request({
         path: `/players/me/matches?${search.toString()}`,
         method: "GET",
+        options,
         parse: (data) => getMyMatchesResponseSchema.parse(data),
       });
     },
     async getMyRecentMatches(
       query: GetMyRecentMatchesQueryInput = {},
+      options: RequestOptions = {},
     ): Promise<GetMyRecentMatchesResponse> {
       const parsed = getMyRecentMatchesQuerySchema.parse(query);
       const search = new URLSearchParams();
@@ -65,46 +75,74 @@ export function createStatisticsResource(http: HttpClient) {
       return http.request({
         path: `/players/me/recent-matches${queryString ? `?${queryString}` : ""}`,
         method: "GET",
+        options,
         parse: (data) => getMyRecentMatchesResponseSchema.parse(data),
       });
     },
-    async getMyRecentMatch(input: GetMyRecentMatchInput): Promise<GetMyRecentMatchResponse> {
+    async getMyRecentMatch(
+      input: GetMyRecentMatchInput,
+      options: RequestOptions = {},
+    ): Promise<GetMyRecentMatchResponse> {
       const path = getMyRecentMatchPathSchema.parse(input);
       const query = getMyRecentMatchQuerySchema.parse(input);
       const search = new URLSearchParams();
       if (query.externalClubId) search.set("externalClubId", query.externalClubId);
       const queryString = search.toString();
       return http.request({
-        path: `/players/me/recent-matches/${encodeURIComponent(path.providerKey)}/${encodeURIComponent(path.externalMatchId)}${queryString ? `?${queryString}` : ""}`,
+        path: `${apiPath("players", "me", "recent-matches", path.providerKey, path.externalMatchId)}${queryString ? `?${queryString}` : ""}`,
         method: "GET",
+        options,
         parse: (data) => getMyRecentMatchResponseSchema.parse(data),
       });
     },
-    async getCompetitionStandings(input: {
-      readonly organizationId: string;
-      readonly competitionId: string;
-    }): Promise<GetCompetitionStandingsResponse> {
+    async getCompetitionStandings(
+      input: {
+        readonly organizationId: string;
+        readonly competitionId: string;
+      },
+      options: RequestOptions = {},
+    ): Promise<GetCompetitionStandingsResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(input.organizationId)}/competitions/${encodeURIComponent(input.competitionId)}/standings`,
+        path: apiPath(
+          "organizations",
+          input.organizationId,
+          "competitions",
+          input.competitionId,
+          "standings",
+        ),
         method: "GET",
+        options,
         parse: (data) => getCompetitionStandingsResponseSchema.parse(data),
       });
     },
-    async getCompetitionTeamStatistics(input: {
-      readonly organizationId: string;
-      readonly competitionId: string;
-    }): Promise<GetCompetitionTeamStatisticsResponse> {
+    async getCompetitionTeamStatistics(
+      input: {
+        readonly organizationId: string;
+        readonly competitionId: string;
+      },
+      options: RequestOptions = {},
+    ): Promise<GetCompetitionTeamStatisticsResponse> {
       return http.request({
-        path: `/organizations/${encodeURIComponent(input.organizationId)}/competitions/${encodeURIComponent(input.competitionId)}/team-statistics`,
+        path: apiPath(
+          "organizations",
+          input.organizationId,
+          "competitions",
+          input.competitionId,
+          "team-statistics",
+        ),
         method: "GET",
+        options,
         parse: (data) => getCompetitionTeamStatisticsResponseSchema.parse(data),
       });
     },
-    async getCompetitionRankings(input: {
-      readonly organizationId: string;
-      readonly competitionId: string;
-      readonly kind?: GetCompetitionRankingsQuery["kind"];
-    }): Promise<GetCompetitionRankingsResponse> {
+    async getCompetitionRankings(
+      input: {
+        readonly organizationId: string;
+        readonly competitionId: string;
+        readonly kind?: GetCompetitionRankingsQuery["kind"];
+      },
+      options: RequestOptions = {},
+    ): Promise<GetCompetitionRankingsResponse> {
       const parsed = getCompetitionRankingsQuerySchema.parse({
         kind: input.kind,
       });
@@ -112,8 +150,9 @@ export function createStatisticsResource(http: HttpClient) {
       if (parsed.kind) search.set("kind", parsed.kind);
       const queryString = search.toString();
       return http.request({
-        path: `/organizations/${encodeURIComponent(input.organizationId)}/competitions/${encodeURIComponent(input.competitionId)}/rankings${queryString ? `?${queryString}` : ""}`,
+        path: `${apiPath("organizations", input.organizationId, "competitions", input.competitionId, "rankings")}${queryString ? `?${queryString}` : ""}`,
         method: "GET",
+        options,
         parse: (data) => getCompetitionRankingsResponseSchema.parse(data),
       });
     },
