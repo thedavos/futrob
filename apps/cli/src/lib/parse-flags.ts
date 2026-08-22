@@ -1,3 +1,5 @@
+import { resolveApiBaseUrl } from "./futrob-client.ts";
+
 export type ParsedFlags = {
   readonly positionals: string[];
   readonly flags: Record<string, string | true>;
@@ -62,4 +64,24 @@ export function flagString(flags: Record<string, string | true>, key: string): s
 
 export function flagBoolean(flags: Record<string, string | true>, key: string): boolean {
   return flags[key] === true || flags[key] === "true";
+}
+
+export type CommonArgs = {
+  readonly positionals: string[];
+  readonly flags: Record<string, string | true>;
+  readonly json: boolean;
+  readonly baseUrl: string;
+  readonly actorId?: string;
+};
+
+/** Shared flags for API-backed commands: `--json`, `--base-url URL`, `--actor ID`. */
+export function parseCommon(args: string[]): CommonArgs {
+  const { positionals, flags } = parseFlags(args);
+  return {
+    positionals,
+    flags,
+    json: flagBoolean(flags, "json"),
+    baseUrl: resolveApiBaseUrl(flagString(flags, "base-url")),
+    actorId: flagString(flags, "actor") ?? process.env.FUTROB_ACTOR_ID,
+  };
 }

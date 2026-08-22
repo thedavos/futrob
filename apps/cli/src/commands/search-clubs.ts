@@ -1,115 +1,84 @@
+import { Effect } from "effect";
 import type { SearchClubsQueryInput } from "@futrob/api-contracts";
-import { FutrobApiError } from "@futrob/sdk";
-import { createCliFutrobClient, resolveApiBaseUrl } from "../lib/futrob-client.ts";
-import { flagBoolean, flagString, parseFlags } from "../lib/parse-flags.ts";
-import { print, printError, printJson } from "../lib/print.ts";
+import { requirePositionals } from "../lib/args.ts";
+import { apiCall } from "../lib/futrob-client.ts";
+import type { ClientConfig } from "../lib/futrob-client.ts";
+import type { CliError } from "../lib/errors.ts";
+import { UsageError } from "../lib/errors.ts";
+import { flagString, parseCommon } from "../lib/parse-flags.ts";
+import { print, printJson } from "../lib/print.ts";
 
-const USAGE = `Uso:
-  npm run cli -- search-clubs <query> [--json] [--base-url URL]
-    [--provider-key ea-clubs] [--platform common-gen5] [--game-edition fc26]
+export const USAGE = `Uso:
+  npm run cli -- club-search <query> [--json]
+    [--provider-key ea-clubs|manual|screenshot-ocr] [--platform p] [--game-edition e]`;
 
-Requiere apps/web en marcha (npm run dev). Default base URL: http://localhost:3000/api/v1
-Env: FUTROB_API_BASE_URL, FUTROB_ACCESS_TOKEN (opcional)`;
-
-type SearchClubsCliArgs = {
-  readonly query: string;
-  readonly baseUrl: string;
+type Args = {
+  readonly config: ClientConfig;
   readonly json: boolean;
+  readonly query: string;
   readonly providerKey?: "ea-clubs" | "manual" | "screenshot-ocr";
   readonly platform?: string;
   readonly gameEdition?: string;
 };
 
-type ProviderKey = NonNullable<SearchClubsCliArgs["providerKey"]>;
+const PROVIDER_KEYS = ["ea-clubs", "manual", "screenshot-ocr"] as const;
 
-function parseProviderKey(value: string | undefined): ProviderKey | "invalid" | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  switch (value) {
-    case "ea-clubs":
-    case "manual":
-    case "screenshot-ocr":
-      return value;
-    default:
-      return "invalid";
-  }
+function parseProviderKey(value: string | undefined): Args["providerKey"] {
+  return PROVIDER_KEYS.find((key) => key === value);
 }
 
-function parseArgs(args: string[]): SearchClubsCliArgs | { error: string } {
-  const { positionals, flags } = parseFlags(args);
-  const query = positionals[0];
-  if (!query) {
-    return { error: "search-clubs requiere un query." };
-  }
+function parseArgs(raw: string[]): Effect.Effect<Args, UsageError> {
+  return Effect.gen(function* () {
+    const common = parseCommon(raw);
+    const [query] = yield* requirePositionals(common.positionals, 1, USAGE);
 
-  const providerKey = parseProviderKey(flagString(flags, "provider-key"));
-  if (providerKey === "invalid") {
-    return { error: "provider-key inválido. Usa ea-clubs | manual | screenshot-ocr." };
-  }
+    const providerKeyRaw = flagString(common.flags, "provider-key");
+    if (providerKeyRaw !== undefined && parseProviderKey(providerKeyRaw) === undefined) {
+      return yield* new UsageError({
+        message: `provider-key inválido: ${providerKeyRaw}. Usa ${PROVIDER_KEYS.join(" | ")}.`,
+        usage: USAGE,
+      });
+    }
 
-  return {
-    query,
-    baseUrl: resolveApiBaseUrl(flagString(flags, "base-url")),
-    json: flagBoolean(flags, "json"),
-    providerKey,
-    platform: flagString(flags, "platform"),
-    gameEdition: flagString(flags, "game-edition"),
-  };
+    return {
+      config: { baseUrl: common.baseUrl, actorId: common.actorId },
+      json: common.json,
+      query,
+      providerKey: parseProviderKey(providerKeyRaw),
+      platform: flagString(common.flags, "platform"),
+      gameEdition: flagString(common.flags, "game-edition"),
+    };
+  });
 }
 
-export async function run(args: string[]): Promise<number> {
-  const parsed = parseArgs(args);
-  if ("error" in parsed) {
-    printError(parsed.error);
-    printError(USAGE);
-    return 1;
-  }
+function buildSearchInput(args: Args): SearchClubsQueryInput {
+  const input: SearchClubsQueryInput = { query: args.query };
+  if (args.providerKey !== undefined) input.providerKey = args.providerKey;
+  if (args.platform !== undefined) input.platform = args.platform;
+  if (args.gameEdition !== undefined) input.gameEdition = args.gameEdition;
+  return input;
+}
 
-  const client = createCliFutrobClient({ baseUrl: parsed.baseUrl });
+export function run(raw: string[]): Effect.Effect<number, CliError> {
+  return Effect.gen(function* () {
+    const args = yield* parseArgs(raw);
+    const response = yield* apiCall(args.config, (client) =>
+      client.gameData.clubs.search(buildSearchInput(args)),
+    );
 
-  try {
-    const searchInput: SearchClubsQueryInput = { query: parsed.query };
-    if (parsed.providerKey !== undefined) {
-      searchInput.providerKey = parsed.providerKey;
-    }
-    if (parsed.platform !== undefined) {
-      searchInput.platform = parsed.platform;
-    }
-    if (parsed.gameEdition !== undefined) {
-      searchInput.gameEdition = parsed.gameEdition;
-    }
-
-    const response = await client.gameData.clubs.search(searchInput);
-
-    if (parsed.json) {
+    if (args.json) {
       printJson(response);
       return 0;
     }
-
     if (response.clubs.length === 0) {
       print("No clubs found.");
       return 0;
     }
-
     for (const club of response.clubs) {
       print(
         `${club.externalClubId}\t${club.name}\t${club.platform}\t${club.gameEdition}\t${club.providerKey}`,
       );
     }
     return 0;
-  } catch (error) {
-    if (error instanceof FutrobApiError) {
-      printError(`API ${error.status}: ${error.code} (${error.messageKey})`);
-      if (error.details !== undefined) {
-        printError(JSON.stringify(error.details));
-      }
-      return 1;
-    }
-
-    const message = error instanceof Error ? error.message : String(error);
-    printError(`Request failed: ${message}`);
-    printError(`Is npm run dev running? Tried ${parsed.baseUrl}`);
-    return 1;
-  }
+  });
 }

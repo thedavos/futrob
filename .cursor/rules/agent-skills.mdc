@@ -21,6 +21,7 @@ Read and follow these when the task matches.
 | Skill | When |
 |---|---|
 | **futrob-hexagonal-module** | Any BC, use case, port, adapter, or server function |
+| **futrob-cli** | Smoke-testing domain use cases or `apps/api` endpoints via `apps/cli` (incl. `e2e-golden-path`); adding CLI commands |
 | **layers-domain** | Clarify or rename domain concepts before coding (Encounter, OfficialMatch, Team, selection) |
 | **layers-interaction-flow** | Captain selection, reschedule, sync → review → officialize flows before UI/API shape |
 | **layers-user-needs** | Operator vs spectator jobs, pains, and opportunities before solution shape |
@@ -58,7 +59,7 @@ Compose from `@futrob/ui`. Do not invent a second visual language.
 
 ## Local tooling
 
-- `apps/cli` is the domain/use-case playground (fakes in memory). See `/apps/cli/README.md`.
+- `apps/cli` is the domain/use-case playground (fakes in memory) and API smoke tool. See `/apps/cli/README.md` and the `futrob-cli` skill above.
 - Product deployable remains `apps/web` only.
 
 ## Do not use for implementation here

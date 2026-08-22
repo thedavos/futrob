@@ -1,6 +1,9 @@
+import { Effect } from "effect";
 import { print } from "../lib/print.ts";
 
-export async function run(): Promise<number> {
-  print("pong");
-  return 0;
+export function run(): Effect.Effect<number> {
+  return Effect.sync(() => {
+    print("pong");
+    return 0;
+  });
 }

@@ -14,11 +14,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@futrob/logger": "0.1.0",
     "@futrob/results": "0.1.0",
     "@futrob/scheduling": "0.1.0",
     "@futrob/sdk": "0.1.0",
     "@futrob/shared-kernel": "0.1.0",
-    "@futrob/test-support": "0.1.0"
+    "@futrob/test-support": "0.1.0",
+    "effect": "^3.22.1"
   },
   "devDependencies": {
     "@types/node": "25.0.3",
