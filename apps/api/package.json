@@ -18,6 +18,7 @@
     "@futrob/ea-clubs": "0.1.0",
     "@futrob/game-data": "0.1.0",
     "@futrob/identity": "0.1.0",
+    "@futrob/logger": "0.1.0",
     "@futrob/organizations": "0.1.0",
     "@futrob/results": "0.1.0",
     "@futrob/scheduling": "0.1.0",

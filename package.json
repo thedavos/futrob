@@ -15,7 +15,7 @@
     "dev:web": "vp dev apps/web",
     "dev:api": "npm run dev -w @futrob/api",
     "web": "npm run dev:web",
-    "web:build": "vp build apps/web",
+    "web:build": "cross-env NODE_ENV=production vp build apps/web",
     "web:preview": "vp preview apps/web",
     "web:deploy": "npm run deploy -w @futrob/web",
     "web:typecheck": "npm run typecheck -w @futrob/web",
@@ -42,6 +42,10 @@
     "generate:openapi": "npm run generate:openapi -w @futrob/api-contracts",
     "generate:routes": "npm run generate:routes -w @futrob/web"
   },
+  "dependencies": {
+    "@sentry/cloudflare": "^10.70.0",
+    "@sentry/node": "^10.70.0"
+  },
   "devDependencies": {
     "@futrob/api-contracts": "^0.1.0",
     "@futrob/web": "^0.1.0",
@@ -59,11 +63,15 @@
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
     "@vitest/coverage-v8": "^4.1.10",
+    "cross-env": "^10.1.0",
+    "expo": "~54.0.37",
+    "expo-router": "~6.0.24",
     "lefthook": "^2.1.10",
     "oxlint": "^1.79.0",
     "playwright": "^1.62.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-native": "0.81.5",
     "shadow-plugin": "^1.2.6",
     "storybook": "10.5.7",
     "tailwindcss": "^4.3.2",
@@ -72,6 +80,9 @@
     "vite-plus": "0.2.8"
   },
   "overrides": {
+    "expo": "~54.0.37",
+    "react-native": "0.81.5",
+    "react-server-dom-webpack": "~19.1.5",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.8"
   },
   "engines": {
