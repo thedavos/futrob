@@ -142,6 +142,14 @@ export default defineConfig({
     },
     overrides: [
       {
+        // The logger package is the sanctioned console sink for the whole repo.
+        files: ["packages/logger/**"],
+        plugins: ["typescript", "import"],
+        rules: {
+          "no-console": "off",
+        },
+      },
+      {
         files: ["apps/web/**", "packages/ui/**"],
         plugins: ["typescript", "react", "jsx-a11y", "import"],
         rules: {
