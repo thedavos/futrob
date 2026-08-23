@@ -47,8 +47,7 @@ export function createAuth(input: {
 
   const db = createAuthDb(input.d1);
   const actorProvisioner =
-    input.actorProvisioner ??
-    createD1ActorProvisioner({ db, clock: input.clock, ids: input.ids });
+    input.actorProvisioner ?? createD1ActorProvisioner({ db, clock: input.clock, ids: input.ids });
 
   return betterAuth({
     appName: "Futrob",

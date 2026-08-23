@@ -49,7 +49,10 @@ export function buildAuthEnv(env: AuthWorkerEnv): AuthEnv {
   }
 
   const publicOrigin = parseHttpOrigin(env.APP_BASE_URL, "APP_BASE_URL");
-  const authOrigin = parseHttpOrigin(env.BETTER_AUTH_URL?.trim() || publicOrigin, "BETTER_AUTH_URL");
+  const authOrigin = parseHttpOrigin(
+    env.BETTER_AUTH_URL?.trim() || publicOrigin,
+    "BETTER_AUTH_URL",
+  );
   const trustedOrigins = parseTrustedOrigins(env.BETTER_AUTH_TRUSTED_ORIGINS).map((origin) =>
     parseHttpOrigin(origin, "BETTER_AUTH_TRUSTED_ORIGINS"),
   );

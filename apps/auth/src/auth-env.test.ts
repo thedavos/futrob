@@ -49,9 +49,9 @@ describe("buildAuthEnv", () => {
   });
 
   it("rejects missing trusted origins instead of trusting the request host", () => {
-    expect(() =>
-      buildAuthEnv({ ...validEnv, BETTER_AUTH_TRUSTED_ORIGINS: undefined }),
-    ).toThrow("BETTER_AUTH_TRUSTED_ORIGINS");
+    expect(() => buildAuthEnv({ ...validEnv, BETTER_AUTH_TRUSTED_ORIGINS: undefined })).toThrow(
+      "BETTER_AUTH_TRUSTED_ORIGINS",
+    );
   });
 
   it("rejects origins with paths, credentials, or non-HTTP protocols", () => {

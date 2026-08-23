@@ -1,9 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import {
-  CREDENTIAL_IDENTITY_PROVIDER,
-  type IdentityProviderKey,
-} from "@futrob/identity";
+import { CREDENTIAL_IDENTITY_PROVIDER, type IdentityProviderKey } from "@futrob/identity";
 import { asActorId, type ActorId } from "@futrob/shared-kernel";
 import { identitySubjects, type authSchema } from "./drizzle-schema.ts";
 
