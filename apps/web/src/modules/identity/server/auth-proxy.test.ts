@@ -47,9 +47,26 @@ describe("auth proxy", () => {
     expect(headers.get("connection")).toBeNull();
     expect(headers.get("cf-connecting-ip")).toBe("1.2.3.4");
     expect(headers.get("x-forwarded-for")).toBeNull();
-    expect(headers.get("x-real-ip")).toBeNull();
+    expect(headers.get("x-real-ip")).toBe("1.2.3.4");
     expect(headers.get("x-forwarded-host")).toBe("futrob.app");
     expect(headers.get("x-forwarded-proto")).toBe("https");
+  });
+
+  it("does not forward a client-supplied x-real-ip when Cloudflare omitted the client IP", () => {
+    const incoming = new URL("https://futrob.app/api/auth/sign-in/email");
+    const headers = buildAuthProxyHeaders(
+      new Request(incoming, {
+        headers: {
+          "x-real-ip": "6.6.6.6",
+          "x-forwarded-for": "6.6.6.6",
+        },
+      }),
+      incoming,
+    );
+
+    expect(headers.get("cf-connecting-ip")).toBeNull();
+    expect(headers.get("x-real-ip")).toBeNull();
+    expect(headers.get("x-forwarded-for")).toBeNull();
   });
 
   it("strips hop-by-hop headers from the upstream response", async () => {
@@ -105,6 +122,7 @@ describe("auth proxy", () => {
     expect(proxiedRequest?.redirect).toBe("manual");
     expect(proxiedRequest?.body).toBeDefined();
     expect(proxiedRequest?.headers.get("cf-connecting-ip")).toBe("1.2.3.4");
+    expect(proxiedRequest?.headers.get("x-real-ip")).toBe("1.2.3.4");
   });
 
   it("returns 404 when the inbound path is outside /api/auth", async () => {

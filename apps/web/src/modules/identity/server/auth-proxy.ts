@@ -50,6 +50,10 @@ export function buildAuthProxyHeaders(request: Request, incoming: URL): Headers 
   const clientIp = request.headers.get("cf-connecting-ip");
   const headers = stripHopByHopHeaders(request.headers);
   if (clientIp) {
+    // Same-zone Worker subrequests derive CF-Connecting-IP from X-Real-IP,
+    // not from a caller-supplied cf-connecting-ip.
+    // https://developers.cloudflare.com/fundamentals/reference/http-headers/
+    headers.set("x-real-ip", clientIp);
     headers.set("cf-connecting-ip", clientIp);
   }
   headers.set("x-forwarded-host", incoming.host);
