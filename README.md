@@ -4,12 +4,13 @@ Multi-tenant platform for EA SPORTS FC leagues and cups. MVP focus: **FC Clubs**
 
 ## Status
 
-Two product deployables are wired and running locally:
+Three product deployables are wired and running locally:
 
-| App                    | Role                                                                  |
-| ---------------------- | --------------------------------------------------------------------- |
-| [`apps/web`](apps/web) | TanStack Start on Cloudflare Workers — UI, Better Auth (D1), BFF      |
-| [`apps/api`](apps/api) | Hono on Node (Railway) — product `/api/v1`, Postgres, EA Clubs egress |
+| App                      | Role                                                                  |
+| ------------------------ | --------------------------------------------------------------------- |
+| [`apps/web`](apps/web)   | TanStack Start on Workers — UI, auth proxy, session reader, BFF       |
+| [`apps/auth`](apps/auth) | Better Auth Worker — credentials, sessions, actors, D1 migrations     |
+| [`apps/api`](apps/api)   | Hono on Node (Railway) — product `/api/v1`, Postgres, EA Clubs egress |
 
 What works today:
 
@@ -24,16 +25,18 @@ Still ahead for MVP: full competition/scheduling/results flows, standings, ranki
 ## Deployable split
 
 ```text
-Browser ──cookie──► apps/web (Workers)
-                      │ Better Auth + Actors (D1)
-                      │ BFF (service auth + ActorId)
-                      ▼
-                    apps/api (Railway)
-                      ├── Postgres (organizations, …)
-                      └── EA Clubs (Node egress)
+Browser ──cookie──► apps/web ──auth proxy──► apps/auth
+Mobile  ──Bearer───────────────────────────► apps/auth
+                       │                         │
+                       └──── session reads ──► D1
+                       │
+                       └── service auth + ActorId ──► apps/api
+                                                       ├── Postgres
+                                                       └── EA Clubs
 ```
 
-- **Auth only** on Workers/D1 (sessions, actors).
+- `apps/auth` writes credentials, sessions, actors, and auth rate limits in D1.
+- `apps/web` reads sessions from that D1 but does not refresh or provision them.
 - **Organizations / memberships / invitations** on `apps/api` + Postgres.
 - UI never talks org persistence to D1.
 
@@ -105,9 +108,8 @@ cp apps/auth/.dev.vars.example apps/auth/.dev.vars
 cp apps/api/.env.example apps/api/.env
 # set DATABASE_URL + INTERNAL_JOB_SECRET (must match web)
 
-# D1 local: auth schema from apps/auth, BFF rate-limit from apps/web
+# One shared D1 migration history, owned by apps/auth
 cd apps/auth && npx wrangler d1 migrations apply futrob-app --local --persist-to ../web/.wrangler/state && cd ../..
-cd apps/web && npx wrangler d1 migrations apply futrob-app --local && cd ../..
 
 # Postgres (organizations) — apply apps/api/migrations/*.sql to DATABASE_URL
 
@@ -149,7 +151,7 @@ vp install                 # or npm ci
 npm run check              # vp check
 npm run test               # vp test
 npm run typecheck
-npm run dev                # web + api in parallel
+npm run dev                # web + api + auth in parallel
 npm run web                # apps/web only
 npm run api                # apps/api only
 npm run build              # vp build apps/web

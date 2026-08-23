@@ -20,12 +20,18 @@ function misconfigured() {
   );
 }
 
-function health(env: AuthWorkerEnv): Response {
+async function health(env: AuthWorkerEnv): Promise<Response> {
   try {
     if (!env.APP_DB) {
       throw new Error("APP_DB is required");
     }
     buildAuthEnv(env);
+    const tables = await env.APP_DB.prepare(
+      "SELECT COUNT(*) AS table_count FROM sqlite_master WHERE type = 'table' AND name IN ('session', 'identity_subjects', 'rateLimit')",
+    ).first<{ table_count: number }>();
+    if (tables?.table_count !== 3) {
+      throw new Error("Auth schema is incomplete");
+    }
     return Response.json({ ok: true, service: "futrob-auth" });
   } catch {
     return Response.json({ ok: false, service: "futrob-auth" }, { status: 503 });
@@ -37,7 +43,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/meta/health") {
-      return health(env);
+      return await health(env);
     }
 
     if (url.pathname !== "/api/auth" && !url.pathname.startsWith("/api/auth/")) {

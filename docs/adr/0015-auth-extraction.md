@@ -30,10 +30,11 @@ plataforma consumida por dos clientes, no un detalle de la web.
        cross-origin).
      - **Etapa 3 (hecha): web deja de servir auth.** El handler es proxy-only
        (503 si falta la var); el ownership del **schema de auth** se movió a
-       `apps/auth` (`migrations/0001_better_auth_and_actors.sql`). Web conserva
-       su propio lineage para tablas que le pertenecen (BFF rate limit). SSR/BFF
-       resuelve la sesión con `getSession` + lookup de `identity_subjects`
-       (`server/authenticated-request-actor.ts`). No provisiona actores.
+       `apps/auth`. La D1 compartida tiene una sola historia en
+       `apps/auth/migrations`, incluso para la tabla web de BFF rate limit.
+       SSR/BFF resuelve la sesión con `getSession` + lookup de
+       `identity_subjects` (`server/authenticated-request-actor.ts`). No
+       provisiona actores ni refresca sesiones.
 4. **El schema se copia, el provisionamiento no.** `drizzle-schema.ts` vive en
    `apps/auth` y `apps/web`; un test de lockstep falla si divergen. Solo
    `apps/auth` puede crear `Actor` e `identity_subjects`; web conserva el lookup
@@ -55,11 +56,12 @@ plataforma consumida por dos clientes, no un detalle de la web.
 
 ## Consecuencias
 
-- Dos workers que comparten base D1: `apps/auth` escribe tablas de auth y
-  actores; `apps/web` solo lee sesión e `identity_subjects`.
+- Dos workers comparten D1: `apps/auth` escribe tablas de auth y actores;
+  `apps/web` solo lee sesión e `identity_subjects`.
 - El `Actor` se provisiona antes de emitir una sesión. Un fallo transitorio se
   puede reparar en el siguiente sign-in sin dejar una cuenta inutilizable.
 - Local dev comparte estado vía `wrangler dev --persist-to ../web/.wrangler/state`.
+- `APP_BASE_URL` define el mismo contrato de cookie segura en auth y web.
 - La superficie pública de auth (`/api/auth/*` + bearer) queda congelada como
   contrato de plataforma: cambios requieren considerar ambos clientes.
 - Etapa 2/3 requieren coordinar `BETTER_AUTH_URL`, `trustedOrigins` y CORS de la
