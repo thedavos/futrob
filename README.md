@@ -8,7 +8,7 @@ Three product deployables are wired and running locally:
 
 | App                      | Role                                                                  |
 | ------------------------ | --------------------------------------------------------------------- |
-| [`apps/web`](apps/web)   | TanStack Start on Workers — UI, auth proxy, session reader, BFF       |
+| [`apps/web`](apps/web)   | TanStack Start on Workers — UI, auth proxy, BFF                       |
 | [`apps/auth`](apps/auth) | Better Auth Worker — credentials, sessions, actors, D1 migrations     |
 | [`apps/api`](apps/api)   | Hono on Node (Railway) — product `/api/v1`, Postgres, EA Clubs egress |
 
@@ -25,10 +25,8 @@ Still ahead for MVP: full competition/scheduling/results flows, standings, ranki
 ## Deployable split
 
 ```text
-Browser ──cookie──► apps/web ──auth proxy──► apps/auth
-Mobile  ──Bearer───────────────────────────► apps/auth
-                       │                         │
-                       └──── session reads ──► D1
+Browser ──cookie──► apps/web ──AUTH_SERVICE──► apps/auth ──► D1
+Mobile  ──Bearer─────────────────────────────► apps/auth ──► D1
                        │
                        └── service auth + ActorId ──► apps/api
                                                        ├── Postgres
@@ -36,7 +34,7 @@ Mobile  ──Bearer────────────────────
 ```
 
 - `apps/auth` writes credentials, sessions, actors, and auth rate limits in D1.
-- `apps/web` reads sessions from that D1 but does not refresh or provision them.
+- `apps/web` asks `AUTH_SERVICE` for `get-session` and only looks up `identity_subjects` (and BFF rate limits) in D1.
 - **Organizations / memberships / invitations** on `apps/api` + Postgres.
 - UI never talks org persistence to D1.
 
@@ -69,7 +67,7 @@ analytics    → premium interpretation
 
 ```text
 apps/
-├── web/                 # Must deployable (Workers) — UI, BFF, session reads
+├── web/                 # Must deployable (Workers) — UI, BFF, AUTH_SERVICE proxy
 │   ├── migrations/      # D1 (BFF rate limit)
 │   └── src/{di,modules,routes,shared,workers}/
 ├── api/                 # Product API (Railway) — Postgres + EA egress

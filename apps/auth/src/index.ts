@@ -8,8 +8,9 @@ import { CryptoIdGenerator } from "./id-generator.ts";
 /**
  * futrob-auth — standalone Better Auth Worker (ADR-0015).
  *
- * Serves `/api/auth/*` (email/password + bearer sessions) against the same D1
- * database as apps/web. Web proxies this origin same-origin and only reads sessions.
+ * Serves `/api/auth/*` (email/password + bearer sessions) against the shared D1
+ * (`futrob-app`). Web proxies this origin same-origin and asks this worker for
+ * `get-session`; it does not read Better Auth session tables itself.
  */
 
 export type { AuthWorkerEnv };

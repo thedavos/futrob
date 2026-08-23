@@ -33,9 +33,10 @@ plataforma consumida por dos clientes, no un detalle de la web.
        (503 si falta la var); el ownership del **schema de auth** se movió a
        `apps/auth`. La D1 compartida tiene una sola historia en
        `apps/auth/migrations`, incluso para la tabla web de BFF rate limit.
-       SSR/BFF resuelve la sesión con `getSession` + lookup de
-       `identity_subjects` (`server/authenticated-request-actor.ts`). No
-       provisiona actores ni refresca sesiones.
+       SSR/BFF resuelve la sesión con `AUTH_SERVICE` `GET /api/auth/get-session`
+       y el lookup de `identity_subjects` en D1
+       (`server/authenticated-request-actor.ts`). No instancia Better Auth ni
+       lee tablas `session`/`user`. No provisiona actores ni refresca sesiones.
 4. **El schema se copia, el provisionamiento no.** `drizzle-schema.ts` vive en
    `apps/auth` y `apps/web`; un test de lockstep falla si divergen. Solo
    `apps/auth` puede crear `Actor` e `identity_subjects`; web conserva el lookup
@@ -58,7 +59,8 @@ plataforma consumida por dos clientes, no un detalle de la web.
 ## Consecuencias
 
 - Dos workers comparten D1: `apps/auth` escribe tablas de auth y actores;
-  `apps/web` solo lee sesión e `identity_subjects`.
+  `apps/web` lee `identity_subjects` y el rate limit del BFF. Las sesiones se
+  resuelven pidiendo `get-session` a `AUTH_SERVICE`, no consultando `session`/`user`.
 - El `Actor` se provisiona antes de emitir una sesión. Un fallo transitorio se
   puede reparar en el siguiente sign-in sin dejar una cuenta inutilizable.
 - Local dev comparte estado vía `wrangler dev --persist-to ../web/.wrangler/state`.

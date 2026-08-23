@@ -32,7 +32,9 @@ npm run dev -w @futrob/auth
 
 El script usa `--persist-to ../web/.wrangler/state`, así que lee/escribe **el mismo
 estado D1 local** que `apps/web`. Sin `--persist-to`, Wrangler crea otro estado
-local bajo `apps/auth/.wrangler/state` que el worker no usa.
+local bajo `apps/auth/.wrangler/state` que el worker no usa. El inspector de
+Wrangler va a `18788` para no chocar con `apps/web` (`13000`) ni con el rango
+por defecto `9229`.
 
 Variables: copia `.dev.vars.example` → `.dev.vars`. `BETTER_AUTH_SECRET` debe
 coincidir con `apps/web/.dev.vars`. `BETTER_AUTH_URL` es el origen público de
