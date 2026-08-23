@@ -6,6 +6,8 @@ APP_BASE_URL=http://localhost:3000
 ENVIRONMENT=development
 # Overrides wrangler.jsonc so the BFF talks to local apps/api, not production.
 FUTROB_API_BASE_URL=http://localhost:8787/api/v1
+# Overrides wrangler.jsonc so /api/auth/* proxies to local apps/auth, not production.
+FUTROB_AUTH_SERVICE_URL=http://localhost:8788
 INTERNAL_JOB_SECRET=replace-with-the-same-value-as-apps-api
 RATE_LIMIT_FINGERPRINT_SECRET=replace-with-an-independent-random-secret
 

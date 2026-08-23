@@ -275,6 +275,7 @@ export default defineConfig({
     projects: [
       "apps/web",
       "apps/api",
+      "apps/auth",
       "packages/api-contracts",
       "packages/sdk",
       "packages/shared-kernel",

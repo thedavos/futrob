@@ -66,13 +66,13 @@ analytics    → premium interpretation
 
 ```text
 apps/
-├── web/                 # Must deployable (Workers) — UI, auth, BFF
-│   ├── migrations/      # D1 (Better Auth + actors)
+├── web/                 # Must deployable (Workers) — UI, BFF, session reads
+│   ├── migrations/      # D1 (BFF rate limit)
 │   └── src/{di,modules,routes,shared,workers}/
 ├── api/                 # Product API (Railway) — Postgres + EA egress
 │   ├── migrations/      # Postgres (organizations, …)
 │   └── src/{adapters,di,http}/
-├── auth/                # Better Auth standalone Worker — see apps/auth/README.md
+├── auth/                # Better Auth Worker — D1 schema owner (user/session/actors)
 ├── mobile/              # React Native + Expo (Expo Router) — see apps/mobile/README.md
 └── cli/                 # Domain playground — see apps/cli/README.md
 
@@ -98,20 +98,25 @@ cp apps/web/.dev.vars.example apps/web/.dev.vars
 # set independent random values for BETTER_AUTH_SECRET,
 # INTERNAL_JOB_SECRET and RATE_LIMIT_FINGERPRINT_SECRET
 
+# Auth worker secrets — BETTER_AUTH_SECRET must match web
+cp apps/auth/.dev.vars.example apps/auth/.dev.vars
+
 # API env
 cp apps/api/.env.example apps/api/.env
 # set DATABASE_URL + INTERNAL_JOB_SECRET (must match web)
 
-# D1 local (auth)
+# D1 local: auth schema from apps/auth, BFF rate-limit from apps/web
+cd apps/auth && npx wrangler d1 migrations apply futrob-app --local && cd ../..
 cd apps/web && npx wrangler d1 migrations apply futrob-app --local && cd ../..
 
 # Postgres (organizations) — apply apps/api/migrations/*.sql to DATABASE_URL
 
-npm run dev                # web (:3000) + api (:8787) in parallel
+npm run dev                # web (:3000) + api (:8787) + auth (:8788)
 ```
 
 Align `INTERNAL_JOB_SECRET` between `apps/web/.dev.vars` and `apps/api/.env` or org BFF calls fail with 401.
-Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` in `apps/web/.dev.vars` (it overrides the production URL in `wrangler.jsonc`) or the BFF calls production and login after-auth requests fail with 500.
+Align `BETTER_AUTH_SECRET` between `apps/web/.dev.vars` and `apps/auth/.dev.vars` or login succeeds and BFF/SSR stay unauthenticated.
+Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` and `FUTROB_AUTH_SERVICE_URL=http://localhost:8788` in `apps/web/.dev.vars` (they override the production URLs in `wrangler.jsonc`) or the BFF talks to production.
 Keep `RATE_LIMIT_FINGERPRINT_SECRET` independent from every other secret. Before deploying the
 Worker, provision it explicitly:
 

@@ -28,10 +28,11 @@ export function createMemoryActorProvisioner(): ActorProvisionerPort & {
 export function createMemoryAuth(input: {
   readonly secret?: string;
   readonly baseURL?: string;
-  readonly actorProvisioner: ActorProvisionerPort;
+  readonly actorProvisioner?: ActorProvisionerPort;
 }) {
   const secret = input.secret ?? "test-secret-at-least-32-characters!!";
   const baseURL = input.baseURL ?? "http://localhost:3000";
+  const actorProvisioner = input.actorProvisioner;
 
   return betterAuth({
     appName: "Futrob",
@@ -47,27 +48,30 @@ export function createMemoryAuth(input: {
     emailAndPassword: {
       enabled: true,
     },
-    databaseHooks: {
-      user: {
-        create: {
-          after: async (user) => {
-            await input.actorProvisioner.ensureActorForSubject(credentialSubject(user.id));
+    databaseHooks: actorProvisioner
+      ? {
+          user: {
+            create: {
+              after: async (user) => {
+                await actorProvisioner.ensureActorForSubject(credentialSubject(user.id));
+              },
+            },
           },
-        },
-      },
-    },
+        }
+      : undefined,
   });
 }
 
 export function createMemorySessionIdentity(input: {
-  readonly actorProvisioner: ActorProvisionerPort;
+  readonly actorProvisioner: ActorProvisionerPort & { readonly store: Map<string, ActorId> };
 }) {
   const auth = createMemoryAuth({ actorProvisioner: input.actorProvisioner });
   return {
     auth,
     sessionIdentity: createSessionIdentityAdapter({
       auth,
-      actorProvisioner: input.actorProvisioner,
+      findActorId: async (userId) =>
+        input.actorProvisioner.store.get(`${CREDENTIAL_IDENTITY_PROVIDER}:${userId}`) ?? null,
     }),
     provider: CREDENTIAL_IDENTITY_PROVIDER,
   };

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { AUTH_BASE_URL } from "@/config/env";
 
 /**
- * Better Auth email/password endpoints served by apps/web (`/api/auth/*`).
+ * Better Auth email/password endpoints served by apps/auth (`/api/auth/*`).
  * Wire payloads are parsed at this boundary; screens only see typed values.
  */
 

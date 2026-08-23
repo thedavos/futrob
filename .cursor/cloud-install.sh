@@ -54,6 +54,9 @@ fi
 if [[ ! -f apps/api/.env ]]; then
   cp apps/api/.env.example apps/api/.env
 fi
+if [[ ! -f apps/auth/.dev.vars ]]; then
+  cp apps/auth/.dev.vars.example apps/auth/.dev.vars
+fi
 
 web_job="$(sed -n 's/^INTERNAL_JOB_SECRET=//p' apps/web/.dev.vars | head -n 1)"
 api_job="$(sed -n 's/^INTERNAL_JOB_SECRET=//p' apps/api/.env | head -n 1)"
@@ -79,6 +82,15 @@ if grep -q '^BETTER_AUTH_SECRET=replace-with-a-local-secret$' apps/web/.dev.vars
   sed -i.bak "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -hex 32)|" apps/web/.dev.vars
   rm -f apps/web/.dev.vars.bak
 fi
+auth_secret="$(sed -n 's/^BETTER_AUTH_SECRET=//p' apps/web/.dev.vars | head -n 1)"
+if [[ -n "$auth_secret" ]]; then
+  if grep -q '^BETTER_AUTH_SECRET=' apps/auth/.dev.vars; then
+    sed -i.bak "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=${auth_secret}|" apps/auth/.dev.vars
+  else
+    printf '\nBETTER_AUTH_SECRET=%s\n' "$auth_secret" >> apps/auth/.dev.vars
+  fi
+  rm -f apps/auth/.dev.vars.bak
+fi
 if grep -q '^RATE_LIMIT_FINGERPRINT_SECRET=replace-with-an-independent-random-secret$' apps/web/.dev.vars; then
   sed -i.bak "s|^RATE_LIMIT_FINGERPRINT_SECRET=.*|RATE_LIMIT_FINGERPRINT_SECRET=$(openssl rand -hex 32)|" apps/web/.dev.vars
   rm -f apps/web/.dev.vars.bak
@@ -93,6 +105,11 @@ fi
 if ! grep -q '^FUTROB_API_BASE_URL=' apps/web/.dev.vars; then
   printf '\nFUTROB_API_BASE_URL=http://localhost:8787/api/v1\n' >> apps/web/.dev.vars
 fi
+if ! grep -q '^FUTROB_AUTH_SERVICE_URL=' apps/web/.dev.vars; then
+  printf '\nFUTROB_AUTH_SERVICE_URL=http://localhost:8788\n' >> apps/web/.dev.vars
+fi
 
 # Non-interactive when stdin is not a TTY (Cloud / CI).
+# Auth schema lives in apps/auth; web lineage is BFF rate-limit only.
+CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/auth
 CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/web

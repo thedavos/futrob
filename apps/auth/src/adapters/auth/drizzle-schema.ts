@@ -1,9 +1,5 @@
 import { integer, sqliteTable, text, primaryKey, index } from "drizzle-orm/sqlite-core";
 
-// Stage 1 mirrors apps/web/migrations schema. Ownership moves here in stage 2
-// (ADR-0015); until then web applies migrations and this worker reads/writes
-// the same tables.
-
 /** Better Auth `user` table (camelCase columns match BA fieldName defaults). */
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),

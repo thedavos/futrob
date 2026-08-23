@@ -24,20 +24,20 @@ plataforma consumida por dos clientes, no un detalle de la web.
    - **Etapa 1 (hecha): parallel run.** El worker comparte D1 (`futrob-app`) y
      secret con web; las sesiones son intercambiables entre orígenes. Web sigue
      sirviendo su auth embebida.
-   - **Etapa 2 (hecha): clientes migran al worker.** Móvil apunta directo vía
-     `EXPO_PUBLIC_FUTROB_AUTH_BASE_URL`; web hace **proxy same-origin**
-     `/api/auth/* → FUTROB_AUTH_SERVICE_URL` (patrón BFF, sin CORS ni cookies
-     cross-origin; con fallback embebido si la var no está definida).
-   - **Etapa 3 (hecha): web deja de servir auth.** El handler es proxy-only
-     (503 si falta la var); el ownership del **schema de auth** se movió a
-     `apps/auth` (`migrations/0001_better_auth_and_actors.sql`). Web conserva
-     su propio lineage para tablas que le pertenecen (BFF rate limit) y la
-     lectura de sesión para SSR/BFF sigue resolviéndose contra D1 con un
-     mirror read-only del schema (`server/authenticated-request-actor.ts`).
-4. **Actor provisioning se replica, no se comparte por import**: los archivos de
-   adaptador (`drizzle-schema`, `actor-provisioner`) viven duplicados en ambas
-   apps durante la etapa 1; la deduplicación irá a `@futrob/identity` cuando el
-   ownership se asiente.
+     - **Etapa 2 (hecha): clientes migran al worker.** Móvil apunta directo vía
+       `EXPO_PUBLIC_FUTROB_AUTH_BASE_URL`; web hace **proxy same-origin**
+       `/api/auth/* → FUTROB_AUTH_SERVICE_URL` (patrón BFF, sin CORS ni cookies
+       cross-origin).
+     - **Etapa 3 (hecha): web deja de servir auth.** El handler es proxy-only
+       (503 si falta la var); el ownership del **schema de auth** se movió a
+       `apps/auth` (`migrations/0001_better_auth_and_actors.sql`). Web conserva
+       su propio lineage para tablas que le pertenecen (BFF rate limit). SSR/BFF
+       resuelve la sesión con `getSession` + lookup de `identity_subjects`
+       (`server/authenticated-request-actor.ts`). No provisiona actores.
+4. **Schema y provisioner se copian, no se extraen al BC.** `drizzle-schema.ts`
+   y `actor-provisioner.ts` viven en `apps/auth` (escritura) y en `apps/web`
+   (lectura de sesión). Un test de lockstep falla si divergen. No van a
+   `@futrob/identity`: ese paquete no exporta adapters ni schemas D1.
 
 ## Alternativas rechazadas
 
@@ -51,8 +51,8 @@ plataforma consumida por dos clientes, no un detalle de la web.
 
 ## Consecuencias
 
-- Dos workers que comparten base D1: las reglas de escritura quedan definidas por
-  tabla (auth tables: dueño transitorio doble hasta etapa 3; resto: sin acceso).
+- Dos workers que comparten base D1: `apps/auth` escribe tablas de auth y
+  actores; `apps/web` solo lee sesión e `identity_subjects`.
 - Local dev comparte estado vía `wrangler dev --persist-to ../web/.wrangler/state`.
 - La superficie pública de auth (`/api/auth/*` + bearer) queda congelada como
   contrato de plataforma: cambios requieren considerar ambos clientes.

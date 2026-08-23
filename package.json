@@ -11,7 +11,7 @@
   "scripts": {
     "prepare": "vp config --no-agent --no-hooks",
     "postinstall": "lefthook install",
-    "dev": "vp run --parallel --log labeled -F @futrob/web -F @futrob/api --fail-if-no-match --ignore-depends-on dev",
+    "dev": "vp run --parallel --log labeled -F @futrob/web -F @futrob/api -F @futrob/auth --fail-if-no-match --ignore-depends-on dev",
     "dev:web": "vp dev apps/web",
     "dev:api": "npm run dev -w @futrob/api",
     "web": "npm run dev:web",

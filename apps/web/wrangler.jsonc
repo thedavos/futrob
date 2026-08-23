@@ -15,8 +15,8 @@
     {
       "binding": "APP_DB",
       "database_name": "futrob-app",
-      // Auth schema ownership: apps/auth (ADR-0015 stage 3). This lineage only
-      // carries web-owned tables (BFF rate limit).
+      // Auth schema ownership: apps/auth (ADR-0015). This lineage only
+      // carries web-owned tables (BFF rate limit). Session reads still use APP_DB.
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations",
     },

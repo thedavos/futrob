@@ -1,7 +1,8 @@
 # Copy to .dev.vars for local development.
 # Local D1 state is shared with apps/web via --persist-to (see package.json dev script).
-BETTER_AUTH_SECRET=change-me-dev-secret
-# Leave empty to default to the worker origin (http://localhost:8788).
-BETTER_AUTH_URL=
+# Must match apps/web/.dev.vars BETTER_AUTH_SECRET or BFF/SSR session reads fail.
+BETTER_AUTH_SECRET=replace-with-a-local-secret
+# Public web origin (cookies and CSRF). Do not leave empty.
+BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000,http://localhost:8788
 APP_BASE_URL=http://localhost:3000

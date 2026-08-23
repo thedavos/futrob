@@ -21,14 +21,13 @@ export function createD1ActorProvisioner(input: {
   };
 }
 
-export async function ensureActorForSubject(
+export async function findActorIdForSubject(
   db: AuthDb,
-  ids: IdGeneratorPort,
   input: {
     readonly provider: IdentityProviderKey;
     readonly subject: string;
   },
-): Promise<ActorId> {
+): Promise<ActorId | null> {
   const existing = await db
     .select({ actorId: identitySubjects.actorId })
     .from(identitySubjects)
@@ -40,8 +39,20 @@ export async function ensureActorForSubject(
     )
     .limit(1);
 
-  if (existing[0]) {
-    return asActorId(existing[0].actorId);
+  return existing[0] ? asActorId(existing[0].actorId) : null;
+}
+
+export async function ensureActorForSubject(
+  db: AuthDb,
+  ids: IdGeneratorPort,
+  input: {
+    readonly provider: IdentityProviderKey;
+    readonly subject: string;
+  },
+): Promise<ActorId> {
+  const existing = await findActorIdForSubject(db, input);
+  if (existing) {
+    return existing;
   }
 
   const actorId = ids.generate();
@@ -56,19 +67,10 @@ export async function ensureActorForSubject(
       createdAt: now,
     });
   } catch {
-    // Concurrent signup: another request may have won the UNIQUE(provider, subject).
-    const raced = await db
-      .select({ actorId: identitySubjects.actorId })
-      .from(identitySubjects)
-      .where(
-        and(
-          eq(identitySubjects.provider, input.provider),
-          eq(identitySubjects.subject, input.subject),
-        ),
-      )
-      .limit(1);
-    if (raced[0]) {
-      return asActorId(raced[0].actorId);
+    await db.delete(actors).where(eq(actors.id, actorId));
+    const raced = await findActorIdForSubject(db, input);
+    if (raced) {
+      return raced;
     }
     throw new Error("identity: failed to provision actor for subject");
   }

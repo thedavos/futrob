@@ -34,7 +34,8 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 
 ```text
 apps/cli/                   # playground local
-apps/api/                   # futuro: API de producto (Node)
+apps/api/                   # API de producto (Node)
+apps/auth/                  # Better Auth Worker (D1 schema owner)
 apps/web/
 ├── wrangler.jsonc
 ├── vite.config.ts
@@ -141,7 +142,7 @@ Proveedores MVP: `ea-clubs`, `manual`. Extensiones futuras (`screenshot-ocr`, co
 
 | Módulo        | Posee                                                                                                               |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
-| identity      | users/sessions/accounts (vía Better Auth + mapping Actor)                                                           |
+| identity      | users/sessions/accounts (Better Auth in `apps/auth` + Actor mapping; web reads sessions)                            |
 | organizations | organizations, normalized names, tenant memberships, grants, platform roles, authorization audit, invitation tokens |
 | competitions  | competitions, rules, stages, entries, competition memberships                                                       |
 | teams         | teams, player profiles, player game accounts, rosters, external club connections                                    |

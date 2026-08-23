@@ -5,15 +5,11 @@ import { drizzle } from "drizzle-orm/d1";
 import type { ActorProvisionerPort } from "@futrob/identity";
 import type { IdGeneratorPort } from "@futrob/shared-kernel";
 import type { D1Database } from "@cloudflare/workers-types";
+import type { AuthEnv } from "../../auth-env.ts";
 import { authSchema } from "./drizzle-schema.ts";
 import { createD1ActorProvisioner, credentialSubject, type AuthDb } from "./actor-provisioner.ts";
 
-/** Environment subset required by Better Auth. */
-export interface AuthEnv {
-  readonly BETTER_AUTH_SECRET: string;
-  readonly BETTER_AUTH_URL: string;
-  readonly BETTER_AUTH_TRUSTED_ORIGINS: readonly string[];
-}
+export type { AuthEnv };
 
 export function createAuthDb(d1: D1Database): AuthDb {
   return drizzle(d1, { schema: authSchema });
@@ -23,9 +19,8 @@ export function createAuthDb(d1: D1Database): AuthDb {
  * Request-scoped Better Auth instance bound to D1.
  * Instantiate per request (or per handler) — do not share a singleton across isolates.
  *
- * Unlike the apps/web embedding, this worker serves plain fetch requests, so
- * only `bearer()` is enabled: cookies are set/read by Better Auth core
- * directly on the Request/Response (no TanStack Start bridge needed).
+ * This worker serves plain fetch requests, so only `bearer()` is enabled.
+ * Cookies are set/read by Better Auth core on the Request/Response.
  */
 export function createAuth(input: {
   readonly d1: D1Database;

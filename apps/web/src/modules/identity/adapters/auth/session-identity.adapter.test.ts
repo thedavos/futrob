@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { describe, expect, it } from "vite-plus/test";
+import { CREDENTIAL_IDENTITY_PROVIDER } from "@futrob/identity";
 import { requireAuthenticatedActor, AuthUnauthenticatedError } from "@/context/auth.ts";
-import { createMemoryActorProvisioner, createMemorySessionIdentity } from "./test-auth.ts";
+import { createSessionIdentityAdapter } from "./session-identity.adapter.ts";
+import {
+  createMemoryActorProvisioner,
+  createMemoryAuth,
+  createMemorySessionIdentity,
+} from "./test-auth.ts";
 
 describe("Better Auth email/password session → ActorId", () => {
   it("signs up, signs in, resolves session to a stable ActorId", async () => {
@@ -34,6 +40,27 @@ describe("Better Auth email/password session → ActorId", () => {
     const again = await requireAuthenticatedActor(sessionIdentity, headers);
     expect(again).toBe(actorId);
     expect(provisioner.store.size).toBe(1);
+  });
+
+  it("throws AuthUnauthenticatedError when the session has no provisioned actor", async () => {
+    const provisioner = createMemoryActorProvisioner();
+    const auth = createMemoryAuth({});
+    const sessionIdentity = createSessionIdentityAdapter({
+      auth,
+      findActorId: async (userId) =>
+        provisioner.store.get(`${CREDENTIAL_IDENTITY_PROVIDER}:${userId}`) ?? null,
+    });
+
+    const email = `orphan-${crypto.randomUUID()}@futrob.test`;
+    const password = "password-at-least-8";
+    await auth.api.signUpEmail({
+      body: { email, password, name: "Orphan" },
+    });
+    const headers = await sessionHeadersFromSignIn(auth, email, password);
+
+    await expect(requireAuthenticatedActor(sessionIdentity, headers)).rejects.toBeInstanceOf(
+      AuthUnauthenticatedError,
+    );
   });
 
   it("throws AuthUnauthenticatedError without a session", async () => {
@@ -87,7 +114,7 @@ describe("Better Auth email/password session → ActorId", () => {
 });
 
 async function sessionHeadersFromSignIn(
-  auth: ReturnType<typeof createMemorySessionIdentity>["auth"],
+  auth: ReturnType<typeof createMemoryAuth>,
   email: string,
   password: string,
 ): Promise<Headers> {
