@@ -63,6 +63,13 @@ export const verification = sqliteTable(
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );
 
+export const rateLimit = sqliteTable("rateLimit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: integer("lastRequest").notNull(),
+});
+
 export const actors = sqliteTable("actors", {
   id: text("id").primaryKey(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
@@ -89,6 +96,7 @@ export const authSchema = {
   session,
   account,
   verification,
+  rateLimit,
   actors,
   identitySubjects,
 };

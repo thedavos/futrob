@@ -5,18 +5,24 @@ import {
   type ActorProvisionerPort,
   type IdentityProviderKey,
 } from "@futrob/identity";
-import { asActorId, type ActorId, type IdGeneratorPort } from "@futrob/shared-kernel";
+import {
+  asActorId,
+  type ActorId,
+  type ClockPort,
+  type IdGeneratorPort,
+} from "@futrob/shared-kernel";
 import { actors, identitySubjects, type authSchema } from "./drizzle-schema.ts";
 
 export type AuthDb = DrizzleD1Database<typeof authSchema>;
 
 export function createD1ActorProvisioner(input: {
   readonly db: AuthDb;
+  readonly clock: ClockPort;
   readonly ids: IdGeneratorPort;
 }): ActorProvisionerPort {
   return {
     async ensureActorForSubject(request) {
-      return ensureActorForSubject(input.db, input.ids, request);
+      return ensureActorForSubject(input.db, input.clock, input.ids, request);
     },
   };
 }
@@ -44,6 +50,7 @@ export async function findActorIdForSubject(
 
 export async function ensureActorForSubject(
   db: AuthDb,
+  clock: ClockPort,
   ids: IdGeneratorPort,
   input: {
     readonly provider: IdentityProviderKey;
@@ -56,7 +63,7 @@ export async function ensureActorForSubject(
   }
 
   const actorId = ids.generate();
-  const now = new Date();
+  const now = clock.now();
 
   await db.insert(actors).values({ id: actorId, createdAt: now });
   try {

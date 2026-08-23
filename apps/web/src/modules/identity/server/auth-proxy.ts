@@ -1,5 +1,6 @@
-const HOP_BY_HOP_HEADERS = [
+const STRIPPED_REQUEST_HEADERS = [
   "connection",
+  "forwarded",
   "keep-alive",
   "proxy-authenticate",
   "proxy-authorization",
@@ -8,6 +9,8 @@ const HOP_BY_HOP_HEADERS = [
   "transfer-encoding",
   "upgrade",
   "host",
+  "x-forwarded-for",
+  "x-real-ip",
 ] as const;
 
 export function resolveAuthServiceUrl(
@@ -15,12 +18,31 @@ export function resolveAuthServiceUrl(
   processUrl: string | undefined,
 ): string | undefined {
   const trimmed = (bindingUrl ?? processUrl)?.trim();
-  return trimmed || undefined;
+  if (!trimmed) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash
+    ) {
+      return undefined;
+    }
+    return url.origin;
+  } catch {
+    return undefined;
+  }
 }
 
 export function buildAuthProxyHeaders(request: Request, incoming: URL): Headers {
   const headers = new Headers(request.headers);
-  for (const name of HOP_BY_HOP_HEADERS) {
+  for (const name of STRIPPED_REQUEST_HEADERS) {
     headers.delete(name);
   }
   for (const name of [...headers.keys()]) {

@@ -42,6 +42,9 @@ export function createAuth(input: {
     emailAndPassword: {
       enabled: false,
     },
+    rateLimit: {
+      enabled: false,
+    },
     plugins: [bearer()],
   });
 }

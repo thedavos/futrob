@@ -8,16 +8,16 @@ base D1 (`futrob-app`) que `apps/web`.
 
 ## Migraciones
 
-Este app es el dueño del schema D1 de **auth** (`0001_better_auth_and_actors`):
+Este app es el dueño del schema D1 de **auth** y de los contadores persistentes
+de rate limit (`0001_better_auth_and_actors`, `0002_better_auth_rate_limit`):
 
 ```bash
 cd apps/auth && npx wrangler d1 migrations apply futrob-app --local
 ```
 
 `apps/web` mantiene su propio lineage para tablas que le pertenecen (BFF rate
-limit) sobre la misma base. Los nombres de archivo no se solapan: auth usa
-`0xxx`, web usa `1xxx` a partir de `0002`. Aplica ambos directorios en un setup
-fresco.
+limit) sobre la misma base. Los nombres completos de migración no se solapan.
+Aplica ambos directorios en un setup fresco.
 
 ## Desarrollo local
 
@@ -34,7 +34,8 @@ estado D1 local** que `apps/web`. Aplica las migraciones desde `apps/auth` (y
 Variables: copia `.dev.vars.example` → `.dev.vars`. `BETTER_AUTH_SECRET` debe
 coincidir con `apps/web/.dev.vars`. `BETTER_AUTH_URL` es el origen público de
 web (`http://localhost:3000`). `APP_BASE_URL` alimenta `trustedOrigins` en
-producción.
+producción. El Worker responde 503 si falta un secreto de al menos 32 caracteres
+o si un origen no es un origen HTTP(S) válido.
 
 ## Endpoints
 
@@ -45,4 +46,6 @@ producción.
 ## Nota de diseño
 
 Sin `tanstackStartCookies()`. Este worker sirve fetch plano. Better Auth lee y
-escribe cookies en Request/Response. Plugins activos: `bearer()`.
+escribe cookies en Request/Response. El plugin `bearer()` atiende clientes
+nativos. Better Auth persiste el rate limit en D1 y confía solo en
+`CF-Connecting-IP`.

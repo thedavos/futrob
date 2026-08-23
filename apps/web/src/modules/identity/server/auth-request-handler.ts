@@ -27,9 +27,8 @@ export async function handleAuthRequest(request: Request): Promise<Response> {
 
   try {
     return await proxyAuthRequest(request, authServiceUrl);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "auth proxy failed";
-    console.error(`[auth-proxy] ${message}`);
+  } catch {
+    console.error(JSON.stringify({ event: "auth.proxy.upstream_failed" }));
     return Response.json(
       { code: "auth.unavailable", messageKey: "errors.auth.unavailable" },
       { status: 502 },

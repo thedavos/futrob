@@ -34,10 +34,14 @@ plataforma consumida por dos clientes, no un detalle de la web.
        su propio lineage para tablas que le pertenecen (BFF rate limit). SSR/BFF
        resuelve la sesión con `getSession` + lookup de `identity_subjects`
        (`server/authenticated-request-actor.ts`). No provisiona actores.
-4. **Schema y provisioner se copian, no se extraen al BC.** `drizzle-schema.ts`
-   y `actor-provisioner.ts` viven en `apps/auth` (escritura) y en `apps/web`
-   (lectura de sesión). Un test de lockstep falla si divergen. No van a
-   `@futrob/identity`: ese paquete no exporta adapters ni schemas D1.
+4. **El schema se copia, el provisionamiento no.** `drizzle-schema.ts` vive en
+   `apps/auth` y `apps/web`; un test de lockstep falla si divergen. Solo
+   `apps/auth` puede crear `Actor` e `identity_subjects`; web conserva el lookup
+   de solo lectura que resuelve una sesión. Estos adapters no van a
+   `@futrob/identity`.
+5. **Rate limit durable.** Better Auth usa D1 para sus contadores y toma la IP
+   únicamente de `CF-Connecting-IP`. Esto cubre sign-in, sign-up y recuperación
+   de credenciales aunque el Worker cambie de isolate.
 
 ## Alternativas rechazadas
 
@@ -53,6 +57,8 @@ plataforma consumida por dos clientes, no un detalle de la web.
 
 - Dos workers que comparten base D1: `apps/auth` escribe tablas de auth y
   actores; `apps/web` solo lee sesión e `identity_subjects`.
+- El `Actor` se provisiona antes de emitir una sesión. Un fallo transitorio se
+  puede reparar en el siguiente sign-in sin dejar una cuenta inutilizable.
 - Local dev comparte estado vía `wrangler dev --persist-to ../web/.wrangler/state`.
 - La superficie pública de auth (`/api/auth/*` + bearer) queda congelada como
   contrato de plataforma: cambios requieren considerar ambos clientes.

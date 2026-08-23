@@ -12,7 +12,14 @@ describe("auth proxy helpers", () => {
     expect(resolveAuthServiceUrl("http://localhost:8788", undefined)).toBe("http://localhost:8788");
   });
 
-  it("strips hop-by-hop and cf- headers and forwards host/proto", () => {
+  it("rejects service URLs that are not plain HTTP origins", () => {
+    expect(resolveAuthServiceUrl("javascript:alert(1)", undefined)).toBeUndefined();
+    expect(resolveAuthServiceUrl("https://user:secret@auth.test", undefined)).toBeUndefined();
+    expect(resolveAuthServiceUrl("https://auth.test/api/auth", undefined)).toBeUndefined();
+    expect(resolveAuthServiceUrl("https://auth.test/", undefined)).toBe("https://auth.test");
+  });
+
+  it("strips transport and spoofable proxy headers and forwards host/proto", () => {
     const incoming = new URL("https://futrob.app/api/auth/sign-in/email");
     const request = new Request(incoming, {
       method: "POST",
@@ -22,6 +29,8 @@ describe("auth proxy helpers", () => {
         host: "futrob.app",
         connection: "keep-alive",
         "cf-connecting-ip": "1.2.3.4",
+        "x-forwarded-for": "6.6.6.6",
+        "x-real-ip": "6.6.6.6",
       },
     });
 
@@ -31,6 +40,8 @@ describe("auth proxy helpers", () => {
     expect(headers.get("host")).toBeNull();
     expect(headers.get("connection")).toBeNull();
     expect(headers.get("cf-connecting-ip")).toBeNull();
+    expect(headers.get("x-forwarded-for")).toBeNull();
+    expect(headers.get("x-real-ip")).toBeNull();
     expect(headers.get("x-forwarded-host")).toBe("futrob.app");
     expect(headers.get("x-forwarded-proto")).toBe("https");
   });

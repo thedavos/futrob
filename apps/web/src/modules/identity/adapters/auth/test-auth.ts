@@ -50,10 +50,10 @@ export function createMemoryAuth(input: {
     },
     databaseHooks: actorProvisioner
       ? {
-          user: {
+          session: {
             create: {
-              after: async (user) => {
-                await actorProvisioner.ensureActorForSubject(credentialSubject(user.id));
+              before: async (session) => {
+                await actorProvisioner.ensureActorForSubject(credentialSubject(session.userId));
               },
             },
           },
