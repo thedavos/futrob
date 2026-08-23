@@ -97,6 +97,7 @@ describe("apps/api http game-data clubs", () => {
         provider: "ea-clubs",
         requestId,
         status: 200,
+        url: expect.stringMatching(/\/allTimeLeaderboard\/search\?.*clubName=Fera/),
       }),
     );
   });

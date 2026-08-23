@@ -14,7 +14,10 @@ export function resolveApiLogFormat(): "json" | "styled" {
   return parsed.success ? parsed.data : "styled";
 }
 
-const baseLogger = createConsoleLogger({ format: resolveApiLogFormat(), scope: "api" });
+export const apiConsoleLogger = createConsoleLogger({
+  format: resolveApiLogFormat(),
+  scope: "api",
+});
 
 const accessLogEntrySchema = z.object({
   event: z.literal("http.request.completed"),
@@ -38,16 +41,16 @@ export const styledConsoleCorrelationLogger: CorrelationLogger = {
   info(entry) {
     const accessLine = renderAccessLog(entry);
     if (accessLine) {
-      baseLogger.info(accessLine);
+      apiConsoleLogger.info(accessLine);
       return;
     }
-    baseLogger.info(
+    apiConsoleLogger.info(
       entry.event,
       Object.fromEntries(Object.entries(entry).filter(([key]) => key !== "event")),
     );
   },
   error(entry) {
-    baseLogger.error(
+    apiConsoleLogger.error(
       entry.event,
       Object.fromEntries(Object.entries(entry).filter(([key]) => key !== "event")),
     );

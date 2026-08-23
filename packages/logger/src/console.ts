@@ -35,19 +35,20 @@ function eventLine(emitter: Emitter, level: LogLevel, event: string, fields: Log
     emitter.format === "styled"
       ? `${DIM}[${styledTimestamp()}]${RESET} `
       : `[${styledTimestamp()}] `;
+  const fieldsSuffix = formatFields(fields, emitter.format === "styled");
   if (emitter.format === "plain") {
-    const fieldText =
-      Object.keys(fields).length > 0
-        ? ` ${Object.entries(fields)
-            .map(([key, value]) => `${key}=${String(value)}`)
-            .join(" ")}`
-        : "";
-    return `${stamp}[${level.toUpperCase()}] ${fullEvent}${fieldText}`;
+    return `${stamp}[${level.toUpperCase()}] ${fullEvent}${fieldsSuffix}`;
   }
   const label = `${levelLabelColor(level)}${level.toUpperCase()}${RESET}`;
-  const coloredEvent =
-    level === "error" ? `${MAGENTA}${fullEvent}${RESET}` : `${MAGENTA}${fullEvent}${RESET}`;
-  return `${stamp}${label} ${coloredEvent}`;
+  const coloredEvent = `${MAGENTA}${fullEvent}${RESET}`;
+  return `${stamp}${label} ${coloredEvent}${fieldsSuffix}`;
+}
+
+function formatFields(fields: LogFields, styled: boolean): string {
+  const entries = Object.entries(fields);
+  if (entries.length === 0) return "";
+  const text = entries.map(([key, value]) => `${key}=${String(value)}`).join(" ");
+  return styled ? ` ${DIM}${text}${RESET}` : ` ${text}`;
 }
 
 /** Compact access-log line for HTTP requests; verbs and statuses are colored. */

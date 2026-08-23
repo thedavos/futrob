@@ -4,6 +4,7 @@ import { createApp } from "@/app.ts";
 import { loadEnv } from "@/config/env.ts";
 import { consoleCorrelationLogger } from "@/context/request-correlation.ts";
 import {
+  apiConsoleLogger,
   shouldUseJsonLogs,
   styledConsoleCorrelationLogger,
 } from "@/context/styled-console-logger.ts";
@@ -39,7 +40,9 @@ const app = createApp({
 });
 
 const server = serve({ fetch: app.fetch, port: env.port }, (info) => {
-  console.log(`futrob api listening on http://localhost:${info.port}/api/v1`);
+  apiConsoleLogger.info("server.listening", {
+    url: `http://localhost:${info.port}/api/v1`,
+  });
 });
 
 const shutdown = (): void => {

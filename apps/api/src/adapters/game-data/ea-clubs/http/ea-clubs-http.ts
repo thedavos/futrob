@@ -167,6 +167,7 @@ export class EaClubsHttpClient {
       logCorrelatedInfo("provider.request.completed", {
         provider: "ea-clubs",
         operation: path,
+        url: url.toString(),
         status: response.status,
         durationMs: Math.round(performance.now() - startedAt),
         attempt,
@@ -192,6 +193,7 @@ export class EaClubsHttpClient {
       logCorrelatedError("provider.request.failed", {
         provider: "ea-clubs",
         operation: path,
+        url: url.toString(),
         errorName: aborted ? "TimeoutError" : cause instanceof Error ? cause.name : "UnknownError",
         durationMs: Math.round(performance.now() - startedAt),
         attempt,
