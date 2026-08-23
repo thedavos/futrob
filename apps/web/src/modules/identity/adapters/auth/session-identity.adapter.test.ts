@@ -74,6 +74,24 @@ describe("Better Auth email/password session → ActorId", () => {
     );
   });
 
+  it("uses the secure session cookie contract for the production origin", async () => {
+    const auth = createMemoryAuth({ baseURL: "https://futrob.app" });
+    const response = await auth.handler(
+      new Request("https://futrob.app/api/auth/sign-up/email", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: `secure-cookie-${crypto.randomUUID()}@futrob.test`,
+          password: "password-at-least-8",
+          name: "Secure cookie",
+        }),
+      }),
+    );
+
+    expect(response.ok).toBe(true);
+    expect(response.headers.get("set-cookie")).toContain("__Secure-better-auth.session_token=");
+  });
+
   it("exposes sign-up, sign-in, and get-session via auth.handler", async () => {
     const provisioner = createMemoryActorProvisioner();
     const { auth } = createMemorySessionIdentity({ actorProvisioner: provisioner });

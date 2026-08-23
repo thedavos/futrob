@@ -42,6 +42,9 @@ export function createAuth(input: {
     emailAndPassword: {
       enabled: false,
     },
+    session: {
+      disableSessionRefresh: true,
+    },
     rateLimit: {
       enabled: false,
     },

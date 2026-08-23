@@ -18,8 +18,15 @@ describe("parseAppEnv trusted origins", () => {
     ]);
   });
 
-  it("defaults trusted origins to localhost when unset", () => {
+  it("derives the cookie and trusted-origin contract from APP_BASE_URL", () => {
+    const env = parseAppEnv({ APP_BASE_URL: "https://futrob.app" });
+    expect(env.BETTER_AUTH_URL).toBe("https://futrob.app");
+    expect(env.BETTER_AUTH_TRUSTED_ORIGINS).toEqual(["https://futrob.app"]);
+  });
+
+  it("defaults the local cookie contract to localhost", () => {
     const env = parseAppEnv({});
+    expect(env.BETTER_AUTH_URL).toBe("http://localhost:3000");
     expect(env.BETTER_AUTH_TRUSTED_ORIGINS).toEqual(["http://localhost:3000"]);
   });
 });
