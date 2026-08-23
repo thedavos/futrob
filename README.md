@@ -4,13 +4,14 @@ Multi-tenant platform for EA SPORTS FC leagues and cups. MVP focus: **FC Clubs**
 
 ## Status
 
-Three product deployables are wired and running locally:
+Four product deployables are part of the MVP and wired locally:
 
-| App                      | Role                                                                  |
-| ------------------------ | --------------------------------------------------------------------- |
-| [`apps/web`](apps/web)   | TanStack Start on Workers — UI, auth proxy, BFF                       |
-| [`apps/auth`](apps/auth) | Better Auth Worker — credentials, sessions, actors, D1 migrations     |
-| [`apps/api`](apps/api)   | Hono on Node (Railway) — product `/api/v1`, Postgres, EA Clubs egress |
+| App                          | Role                                                                  |
+| ---------------------------- | --------------------------------------------------------------------- |
+| [`apps/web`](apps/web)       | TanStack Start on Workers — UI, auth proxy, BFF                       |
+| [`apps/auth`](apps/auth)     | Better Auth Worker — credentials, sessions, actors, D1 migrations     |
+| [`apps/api`](apps/api)       | Hono on Node (Railway) — product `/api/v1`, Postgres, EA Clubs egress |
+| [`apps/mobile`](apps/mobile) | React Native + Expo — native authenticated client via `@futrob/sdk`   |
 
 What works today:
 
@@ -20,13 +21,14 @@ What works today:
 - Game-data club search against EA Clubs through `apps/api`
 - Hexagonal BCs in `packages/@futrob/*` (domain/application); adapters only in apps
 
-Still ahead for MVP: full competition/scheduling/results flows, standings, rankings, and the public portal.
+Still ahead for MVP: full competition/scheduling/results flows, standings, rankings, the public portal, and authenticated feature parity in the native mobile app.
 
 ## Deployable split
 
 ```text
 Browser ──cookie──► apps/web ──AUTH_SERVICE──► apps/auth ──► D1
-Mobile  ──Bearer─────────────────────────────► apps/auth ──► D1
+Mobile  ──Bearer──► apps/auth ──────────────────► D1
+Mobile  ──Bearer──► apps/web /api/v1 BFF
                        │
                        └── service auth + ActorId ──► apps/api
                                                        ├── Postgres
@@ -54,7 +56,7 @@ analytics    → premium interpretation
 | ------------- | -------------------------------------------------------- |
 | Web           | TanStack Start + React (`apps/web`) → Cloudflare Workers |
 | API           | Hono + Node (`apps/api`) → Railway                       |
-| Mobile        | React Native + Expo post-MVP, vía `@futrob/sdk`          |
+| Mobile        | React Native + Expo MVP, vía `@futrob/sdk`               |
 | Architecture  | Hexagonal BCs in `packages/<bc>`; DI in each app         |
 | Auth          | Better Auth (D1) + Futrob organizations (Postgres)       |
 | Data (web)    | D1 (auth/actors), R2, Queues, Cron                       |
@@ -155,6 +157,9 @@ npm run api                # apps/api only
 npm run build              # vp build apps/web
 npm run storybook          # catálogo UI + web en :6006
 npm run storybook:build    # build estático de Storybook
+npm run start -w @futrob/mobile
+npm run ios -w @futrob/mobile
+npm run android -w @futrob/mobile
 npm run format             # vp fmt
 npm run lint               # vp lint
 npm run cli -- help

@@ -1,6 +1,6 @@
 # Packages Futrob — guía
 
-Código compartido del monorepo. La **lógica de negocio** (domain + application + ports) vive en `@futrob/<bounded-context>`. Las apps (`web`, futura `api`, `cli`) componen adapters y HTTP encima.
+Código compartido del monorepo. La **lógica de negocio** (domain + application + ports) vive en `@futrob/<bounded-context>`. `apps/api` compone adapters y HTTP; `apps/web` actúa como UI/BFF, `apps/mobile` consume el contrato mediante `@futrob/sdk` y `apps/cli` compone su playground local.
 
 Documento canónico: [`/docs/architecture/packages-and-sdk.md`](/docs/architecture/packages-and-sdk.md) · [ADR-0010](/docs/adr/0010-bounded-context-packages.md).
 

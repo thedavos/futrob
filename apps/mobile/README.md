@@ -1,7 +1,16 @@
 # `apps/mobile`
 
-Cliente móvil Futrob (React Native + Expo SDK 54, Expo Router). Consumió
-post-MVP en los ADRs; ahora sale junto a web y API.
+Cliente móvil nativo Must del MVP de Futrob (React Native + Expo SDK 54, Expo Router). Sale junto a web, API y auth.
+
+## Alcance MVP
+
+- Auth y onboarding con los mismos destinos y consecuencias que web.
+- Espacio personal: cuentas de juego, clubes EA, equipos/contexto activo, invitaciones, partidos y estadísticas.
+- Operación por permiso: organizaciones, competiciones, participantes, equipos/plantillas, fixtures, Match Center, reprogramaciones, resultados oficiales, tabla y rankings.
+- Landing y portal público permanecen web responsive y se abren mediante deep links.
+- Push nativo no es requisito del MVP; las notificaciones Must siguen siendo in-app/web y correo.
+
+La implementación actual es fundacional: auth, SecureStore, cliente SDK, tokens/primitivas y un home inicial. Los módulos funcionales anteriores siguen siendo trabajo del MVP; este README describe el contrato objetivo sin afirmar que ya esté completo.
 
 ## Arquitectura
 
@@ -45,7 +54,7 @@ apps/mobile/
 │   ├── index.tsx              # gate de sesión
 │   ├── (auth)/login.tsx       # inicio de sesión
 │   ├── (auth)/signup.tsx      # registro → onboarding
-│   ├── (onboarding)/welcome.tsx  # intro de configuración (pasos; API pendiente Bearer)
+│   ├── (onboarding)/welcome.tsx  # intro fundacional; flujo completo pendiente
 │   └── (home)/index.tsx       # home vacío con guard de sesión
 ├── assets/                    # generados por scripts/generate-assets.mjs
 └── src/

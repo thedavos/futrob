@@ -1,9 +1,11 @@
 # Arquitectura canónica de Futrob
 
 Estado: canónica para el MVP  
-Fecha: 2026-07-23  
-Plataforma web Must: Cloudflare Workers + D1 + R2 + Queues + Cron Triggers  
-Lógica de negocio: packages `@futrob/<bc>` (compartida con futura `apps/api`)
+Fecha: 2026-08-23
+
+Superficies Must: web TanStack Start + Workers y mobile React Native + Expo
+
+Lógica de negocio: packages `@futrob/<bc>` en `apps/api`; clientes web/mobile consumen `/api/v1` mediante `@futrob/sdk`
 
 ## Propósito
 
@@ -22,8 +24,10 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 ## Drivers
 
 - TanStack Start + React en `apps/web`, desplegado en **Cloudflare Workers**.
+- React Native + Expo en `apps/mobile`, deployable Must del MVP para flujos autenticados.
 - Hexagonal por bounded context: domain/application en `packages/@futrob/<bc>`; adapters en la app.
 - Composition: adapters y use cases se instancian en `apps/api/src/di/`; la web consume vía product API ([ADR-0013](/docs/adr/0013-ea-egress-api-only.md)).
+- Mobile consume el BFF `/api/v1` con `@futrob/sdk` y sesión Bearer; no importa BC, adapters ni secretos internos.
 - Better Auth (identidad) + Futrob (autorización/orgs).
 - D1 / R2 / Queues / Cron en web. Tenancy scoped en aplicación (sin RLS Postgres).
 - shadcn/Base UI, Vite+, Sentry en boundaries.
@@ -36,6 +40,7 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 apps/cli/                   # playground local
 apps/api/                   # API de producto (Node)
 apps/auth/                  # Better Auth Worker (D1 schema owner)
+apps/mobile/                # React Native + Expo; cliente nativo MVP vía SDK
 apps/web/
 ├── wrangler.jsonc
 ├── vite.config.ts
@@ -64,7 +69,7 @@ packages/<context>/src/
 └── index.ts         # API pública del package
 ```
 
-En `apps/web`, el módulo de app conserva adapters/server/presentation y reexporta el package.
+En `apps/web`, el módulo de app conserva BFF/presentation y reexporta el package cuando la UI necesita sus contratos públicos. `apps/mobile` mantiene UI y estado de cliente propios; comparte contratos HTTP y tokens, no render trees ni dominio.
 
 ## Flujo de dependencias
 
@@ -75,6 +80,15 @@ Routes / UI
   → domain/entities + domain/ports
   → adapters (app)
   → D1 / R2 / Queues / EA HTTP / email / Sentry
+```
+
+Clientes:
+
+```text
+apps/web UI    → BFF /api/v1 ─┐
+                              ├→ @futrob/sdk → apps/api → use cases/adapters
+apps/mobile UI → BFF /api/v1 ─┘
+apps/mobile    → apps/auth /api/auth (Bearer session)
 ```
 
 Asíncrono:
@@ -126,6 +140,8 @@ cases a través del product API (SDK), no instancia adapters propios.
   (`COMPETITION_PERMISSION`, `ORGANIZATION_PERMISSION`, `TEAM_PERMISSION`), no literales ni
   nombres de rol. Nav, shell commands y pantallas de competición ocultan acciones; el backend
   sigue siendo la barrera real.
+- En `apps/mobile`, la presentación aplica la misma regla con `EffectiveAccess`: no compara roles ni
+  inventa permisos, falla cerrada durante loading/403 y deja la autorización definitiva a la API.
 - Un `Actor` puede tener un perfil personal de jugador y consultar su propia proyección sin pertenecer a una organización.
 - La ruta HTTP de onboarding orquesta APIs públicas de `organizations`, `competitions` y `teams`;
   `identity` solo persiste el estado del recorrido y se completa al final.

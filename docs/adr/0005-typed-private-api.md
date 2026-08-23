@@ -2,12 +2,12 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-10
-- Actualizada: 2026-08-18
+- Actualizada: 2026-08-23
 - Relacionado: [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md)
 
 ## Contexto
 
-Aunque el MVP es web-only, se necesita un contrato HTTP estable para clientes futuros y para no acoplar el negocio solo a server functions de TanStack.
+El MVP tiene clientes web y mobile, por lo que necesita un contrato HTTP estable y no puede acoplar el negocio a server functions de TanStack.
 
 ## Decisión
 
@@ -18,7 +18,7 @@ No hay API pública de terceros en el MVP.
 ## Consecuencias
 
 - Contratos versionados y testeables.
-- Un cliente React Native + Expo (u otros) puede aparecer sin reescribir dominio; consume `@futrob/sdk`.
+- `apps/mobile` consume `@futrob/sdk` sin reescribir ni importar el dominio.
 
 ## Alternativas rechazadas
 

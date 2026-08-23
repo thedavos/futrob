@@ -7,12 +7,15 @@ Relacionado: [overview](/docs/architecture/overview.md) · [module-boundaries](/
 
 ```mermaid
 flowchart TD
-  Routes["routes / UI"] --> Server["module server fns"]
-  Server --> DI["di modules"]
+  WebUI["apps/web UI"] --> BFF["apps/web /api/v1 BFF"]
+  MobileUI["apps/mobile UI"] --> SDK["@futrob/sdk"]
+  BFF --> SDK
+  SDK --> ApiRoutes["apps/api HTTP routes"]
+  ApiRoutes --> DI["apps/api di modules"]
   DI --> AppLayer["application use cases"]
   AppLayer --> Domain["domain + ports"]
   Domain --> Adapters["adapters"]
-  Adapters --> CF["D1 / R2 / Queues / HTTP / Sentry"]
+  Adapters --> Infra["Postgres / provider HTTP / events / Sentry"]
 
   Results["results"] -->|"ProviderMatchReaderPort"| GameData["game-data"]
   Results -->|"EncounterReaderPort"| Scheduling["scheduling"]

@@ -23,14 +23,14 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 ## Capas dentro de un BC
 
-| Capa               | Dónde                           | Puede                                        | No puede                                |
-| ------------------ | ------------------------------- | -------------------------------------------- | --------------------------------------- |
-| `domain`           | `packages/<bc>`                 | TS, `@futrob/shared-kernel`, tipos propios   | React, Zod, D1, fetch, Wrangler, Sentry |
-| `application`      | `packages/<bc>`                 | domain + ports                               | adapters concretos, routes, UI          |
-| `adapters`         | app (`apps/web` / futura `api`) | application/domain vía package, infra de app | UI de otro módulo; internals ajenos     |
-| `server`           | app                             | use cases vía DI; Zod input                  | reglas de dominio                       |
-| `presentation`     | app                             | view models / server fns públicas            | repositories concretos                  |
-| package `index.ts` | `packages/<bc>`                 | use cases, types, ports                      | adapters, schemas DB, mappers           |
+| Capa               | Dónde                        | Puede                                        | No puede                                |
+| ------------------ | ---------------------------- | -------------------------------------------- | --------------------------------------- |
+| `domain`           | `packages/<bc>`              | TS, `@futrob/shared-kernel`, tipos propios   | React, Zod, D1, fetch, Wrangler, Sentry |
+| `application`      | `packages/<bc>`              | domain + ports                               | adapters concretos, routes, UI          |
+| `adapters`         | `apps/api` o app propietaria | application/domain vía package, infra de app | UI de otro módulo; internals ajenos     |
+| `server`           | app                          | use cases vía DI; Zod input                  | reglas de dominio                       |
+| `presentation`     | app                          | view models / server fns públicas            | repositories concretos                  |
+| package `index.ts` | `packages/<bc>`              | use cases, types, ports                      | adapters, schemas DB, mappers           |
 
 ## Separación crítica
 
@@ -87,6 +87,10 @@ En presentation (`apps/web`), gatear UI solo con el set `allowed` de EffectiveAc
 `can` / `useCan` / `useCapabilities` y las constantes exportadas por cada BC. No comparar roles
 en React ni inventar strings de permiso fuera del catálogo del BC.
 
+En `apps/mobile`, aplicar la misma regla sobre `EffectiveAccess` desde hooks/estado nativos. La app
+no importa bounded contexts ni adapters: consume contratos mediante `@futrob/sdk` y deja la
+autorización definitiva a `apps/api`.
+
 ## Cross-module prohibido
 
 ```text
@@ -133,4 +137,4 @@ analytics.snapshot-generated
 
 ## Persistencia
 
-Adapters de persistencia de **web** usan D1 (no Postgres). Cache/opcional: KV o Cache API. Colas: Cloudflare Queues. Objetos grandes: R2. Una futura `apps/api` podrá usar otros adapters de plataforma sin mover el dominio en packages.
+Los adapters de persistencia de producto viven en `apps/api` y usan Postgres o stores in-memory de desarrollo. `apps/auth` es dueño de D1 para identidad; `apps/web` conserva infraestructura BFF/Workers y `apps/mobile` no accede directamente a ninguna persistencia. Cambiar de plataforma no mueve el dominio fuera de packages.
