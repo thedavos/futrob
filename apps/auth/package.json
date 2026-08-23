@@ -1,0 +1,25 @@
+{
+  "name": "@futrob/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8788 --persist-to ../web/.wrangler/state",
+    "deploy": "wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@futrob/identity": "0.1.0",
+    "@futrob/shared-kernel": "0.1.0",
+    "better-auth": "^1.6.24",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260702.0",
+    "typescript": "6.0.2",
+    "vite-plus": "0.2.8",
+    "wrangler": "^4.120.1"
+  }
+}

@@ -208,6 +208,11 @@ const es = {
     "Alcanzaste el límite temporal. Espera antes de intentarlo nuevamente.",
   "errors.product_api.unreachable": "No pudimos conectar con el servicio. Inténtalo nuevamente.",
   "errors.product_api.bff_misconfigured": "La conexión con el servicio no está configurada.",
+  "errors.auth.misconfigured": "El servicio de autenticación no está configurado.",
+  "errors.auth.unavailable":
+    "No pudimos conectar con el servicio de autenticación. Inténtalo nuevamente.",
+  "errors.auth.unhandled": "No pudimos completar el inicio de sesión. Inténtalo nuevamente.",
+  "errors.auth.unauthenticated": "Necesitas iniciar sesión para continuar.",
   "errors.organizations.invitation_not_found":
     "No encontramos esa invitación. Revisa el código e inténtalo nuevamente.",
   "errors.organizations.invitation_expired":
@@ -759,6 +764,10 @@ const en: Catalog = {
   "errors.api.rate_limited": "You reached the temporary limit. Wait before trying again.",
   "errors.product_api.unreachable": "We couldn't reach the service. Try again.",
   "errors.product_api.bff_misconfigured": "The service connection isn't configured.",
+  "errors.auth.misconfigured": "The authentication service isn't configured.",
+  "errors.auth.unavailable": "We couldn't reach the authentication service. Try again.",
+  "errors.auth.unhandled": "We couldn't complete sign-in. Try again.",
+  "errors.auth.unauthenticated": "You need to sign in to continue.",
   "errors.organizations.invitation_not_found":
     "We couldn't find that invitation. Check the code and try again.",
   "errors.organizations.invitation_expired":

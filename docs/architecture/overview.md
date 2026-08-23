@@ -34,7 +34,8 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 
 ```text
 apps/cli/                   # playground local
-apps/api/                   # futuro: API de producto (Node)
+apps/api/                   # API de producto (Node)
+apps/auth/                  # Better Auth Worker (D1 schema owner)
 apps/web/
 ├── wrangler.jsonc
 ├── vite.config.ts
@@ -141,7 +142,7 @@ Proveedores MVP: `ea-clubs`, `manual`. Extensiones futuras (`screenshot-ocr`, co
 
 | Módulo        | Posee                                                                                                               |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
-| identity      | users/sessions/accounts (vía Better Auth + mapping Actor)                                                           |
+| identity      | users/sessions/accounts (Better Auth in `apps/auth` + Actor mapping; web reads sessions)                            |
 | organizations | organizations, normalized names, tenant memberships, grants, platform roles, authorization audit, invitation tokens |
 | competitions  | competitions, rules, stages, entries, competition memberships                                                       |
 | teams         | teams, player profiles, player game accounts, rosters, external club connections                                    |
@@ -171,6 +172,7 @@ Un módulo no escribe tablas ajenas; publica eventos / usa ports de lectura.
 - [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md)
 - [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)
 - [ADR-0014](/docs/adr/0014-shared-ui-tokens-and-mobile-ui.md)
+- [ADR-0015](/docs/adr/0015-auth-extraction.md)
 - [module-boundaries.md](/docs/architecture/module-boundaries.md)
 - [dependency-graph.md](/docs/architecture/dependency-graph.md)
 

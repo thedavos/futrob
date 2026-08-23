@@ -5,5 +5,5 @@ export {
   createSessionIdentityAdapter,
   AuthUnauthenticatedError,
 } from "./adapters/auth/session-identity.adapter.ts";
-export { createD1ActorProvisioner } from "./adapters/auth/actor-provisioner.ts";
+export { findActorIdForSubject } from "./adapters/auth/actor-provisioner.ts";
 export { getWorkerBindings } from "./server/worker-bindings.ts";

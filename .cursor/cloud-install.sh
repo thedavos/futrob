@@ -44,15 +44,18 @@ fi
 EOF
 fi
 
-# Only esbuild / sharp / workerd may run install scripts (package.json allowScripts).
-# Fail closed on npm 12+ rather than skipping native postinstalls silently.
-npm ci --strict-allow-scripts
+# CI prevents Lefthook's dependency postinstall from replacing Cloud Agent hooks.
+# Dependency scripts remain fail-closed through package.json allowScripts.
+CI=1 npm ci --strict-allow-scripts
 
 if [[ ! -f apps/web/.dev.vars ]]; then
   cp apps/web/.dev.vars.example apps/web/.dev.vars
 fi
 if [[ ! -f apps/api/.env ]]; then
   cp apps/api/.env.example apps/api/.env
+fi
+if [[ ! -f apps/auth/.dev.vars ]]; then
+  cp apps/auth/.dev.vars.example apps/auth/.dev.vars
 fi
 
 web_job="$(sed -n 's/^INTERNAL_JOB_SECRET=//p' apps/web/.dev.vars | head -n 1)"
@@ -79,6 +82,15 @@ if grep -q '^BETTER_AUTH_SECRET=replace-with-a-local-secret$' apps/web/.dev.vars
   sed -i.bak "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -hex 32)|" apps/web/.dev.vars
   rm -f apps/web/.dev.vars.bak
 fi
+auth_secret="$(sed -n 's/^BETTER_AUTH_SECRET=//p' apps/web/.dev.vars | head -n 1)"
+if [[ -n "$auth_secret" ]]; then
+  if grep -q '^BETTER_AUTH_SECRET=' apps/auth/.dev.vars; then
+    sed -i.bak "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=${auth_secret}|" apps/auth/.dev.vars
+  else
+    printf '\nBETTER_AUTH_SECRET=%s\n' "$auth_secret" >> apps/auth/.dev.vars
+  fi
+  rm -f apps/auth/.dev.vars.bak
+fi
 if grep -q '^RATE_LIMIT_FINGERPRINT_SECRET=replace-with-an-independent-random-secret$' apps/web/.dev.vars; then
   sed -i.bak "s|^RATE_LIMIT_FINGERPRINT_SECRET=.*|RATE_LIMIT_FINGERPRINT_SECRET=$(openssl rand -hex 32)|" apps/web/.dev.vars
   rm -f apps/web/.dev.vars.bak
@@ -93,6 +105,6 @@ fi
 if ! grep -q '^FUTROB_API_BASE_URL=' apps/web/.dev.vars; then
   printf '\nFUTROB_API_BASE_URL=http://localhost:8787/api/v1\n' >> apps/web/.dev.vars
 fi
-
 # Non-interactive when stdin is not a TTY (Cloud / CI).
-CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/web
+# apps/auth owns the one migration history for the D1 shared with web.
+CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/auth --persist-to "$ROOT/apps/web/.wrangler/state"

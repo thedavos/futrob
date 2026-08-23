@@ -4,12 +4,13 @@ Multi-tenant platform for EA SPORTS FC leagues and cups. MVP focus: **FC Clubs**
 
 ## Status
 
-Two product deployables are wired and running locally:
+Three product deployables are wired and running locally:
 
-| App                    | Role                                                                  |
-| ---------------------- | --------------------------------------------------------------------- |
-| [`apps/web`](apps/web) | TanStack Start on Cloudflare Workers — UI, Better Auth (D1), BFF      |
-| [`apps/api`](apps/api) | Hono on Node (Railway) — product `/api/v1`, Postgres, EA Clubs egress |
+| App                      | Role                                                                  |
+| ------------------------ | --------------------------------------------------------------------- |
+| [`apps/web`](apps/web)   | TanStack Start on Workers — UI, auth proxy, session reader, BFF       |
+| [`apps/auth`](apps/auth) | Better Auth Worker — credentials, sessions, actors, D1 migrations     |
+| [`apps/api`](apps/api)   | Hono on Node (Railway) — product `/api/v1`, Postgres, EA Clubs egress |
 
 What works today:
 
@@ -24,16 +25,18 @@ Still ahead for MVP: full competition/scheduling/results flows, standings, ranki
 ## Deployable split
 
 ```text
-Browser ──cookie──► apps/web (Workers)
-                      │ Better Auth + Actors (D1)
-                      │ BFF (service auth + ActorId)
-                      ▼
-                    apps/api (Railway)
-                      ├── Postgres (organizations, …)
-                      └── EA Clubs (Node egress)
+Browser ──cookie──► apps/web ──auth proxy──► apps/auth
+Mobile  ──Bearer───────────────────────────► apps/auth
+                       │                         │
+                       └──── session reads ──► D1
+                       │
+                       └── service auth + ActorId ──► apps/api
+                                                       ├── Postgres
+                                                       └── EA Clubs
 ```
 
-- **Auth only** on Workers/D1 (sessions, actors).
+- `apps/auth` writes credentials, sessions, actors, and auth rate limits in D1.
+- `apps/web` reads sessions from that D1 but does not refresh or provision them.
 - **Organizations / memberships / invitations** on `apps/api` + Postgres.
 - UI never talks org persistence to D1.
 
@@ -66,12 +69,13 @@ analytics    → premium interpretation
 
 ```text
 apps/
-├── web/                 # Must deployable (Workers) — UI, auth, BFF
-│   ├── migrations/      # D1 (Better Auth + actors)
+├── web/                 # Must deployable (Workers) — UI, BFF, session reads
+│   ├── migrations/      # D1 (BFF rate limit)
 │   └── src/{di,modules,routes,shared,workers}/
 ├── api/                 # Product API (Railway) — Postgres + EA egress
 │   ├── migrations/      # Postgres (organizations, …)
 │   └── src/{adapters,di,http}/
+├── auth/                # Better Auth Worker — D1 schema owner (user/session/actors)
 ├── mobile/              # React Native + Expo (Expo Router) — see apps/mobile/README.md
 └── cli/                 # Domain playground — see apps/cli/README.md
 
@@ -97,20 +101,24 @@ cp apps/web/.dev.vars.example apps/web/.dev.vars
 # set independent random values for BETTER_AUTH_SECRET,
 # INTERNAL_JOB_SECRET and RATE_LIMIT_FINGERPRINT_SECRET
 
+# Auth worker secrets — BETTER_AUTH_SECRET must match web
+cp apps/auth/.dev.vars.example apps/auth/.dev.vars
+
 # API env
 cp apps/api/.env.example apps/api/.env
 # set DATABASE_URL + INTERNAL_JOB_SECRET (must match web)
 
-# D1 local (auth)
-cd apps/web && npx wrangler d1 migrations apply futrob-app --local && cd ../..
+# One shared D1 migration history, owned by apps/auth
+cd apps/auth && npx wrangler d1 migrations apply futrob-app --local --persist-to ../web/.wrangler/state && cd ../..
 
 # Postgres (organizations) — apply apps/api/migrations/*.sql to DATABASE_URL
 
-npm run dev                # web (:3000) + api (:8787) in parallel
+npm run dev                # web (:3000) + api (:8787) + auth (:8788)
 ```
 
 Align `INTERNAL_JOB_SECRET` between `apps/web/.dev.vars` and `apps/api/.env` or org BFF calls fail with 401.
-Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` in `apps/web/.dev.vars` (it overrides the production URL in `wrangler.jsonc`) or the BFF calls production and login after-auth requests fail with 500.
+Align `BETTER_AUTH_SECRET` between `apps/web/.dev.vars` and `apps/auth/.dev.vars` or login succeeds and BFF/SSR stay unauthenticated.
+Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` in `apps/web/.dev.vars`. Web reaches auth through the `AUTH_SERVICE` service binding, which Wrangler connects to the local `futrob-auth` Worker.
 Keep `RATE_LIMIT_FINGERPRINT_SECRET` independent from every other secret. Before deploying the
 Worker, provision it explicitly:
 
@@ -143,7 +151,7 @@ vp install                 # or npm ci
 npm run check              # vp check
 npm run test               # vp test
 npm run typecheck
-npm run dev                # web + api in parallel
+npm run dev                # web + api + auth in parallel
 npm run web                # apps/web only
 npm run api                # apps/api only
 npm run build              # vp build apps/web

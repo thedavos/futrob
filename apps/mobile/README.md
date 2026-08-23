@@ -8,10 +8,10 @@ post-MVP en los ADRs; ahora sale junto a web y API.
 - **Lógica de negocio:** ninguna local. Toda la lógica vive en
   `packages/<bc>/`; el estado de servidor se consume vía `@futrob/sdk`
   (HTTP a `/api/v1`).
-- **Auth:** Better Auth de `apps/web` (`/api/auth/*`) consumido con fetch; la sesión se
-  guarda en SecureStore (`src/modules/identity/`). `/api/v1` acepta Bearer (plugin
-  `bearer()` en web): el cliente tipado vive en `src/modules/api/futrob-client.ts`
-  (`getFutrobClient()`), que adjunta el token automáticamente.
+- **Auth:** Better Auth servido por el worker `apps/auth` (`EXPO_PUBLIC_FUTROB_AUTH_BASE_URL`,
+  default `http://localhost:8788`; fallback al origen de web, que proxea `/api/auth`). Sesión en SecureStore
+  (`src/modules/identity/`). `/api/v1` acepta Bearer: el cliente tipado vive en
+  `src/modules/api/futrob-client.ts` (`getFutrobClient()`), que adjunta el token.
 - **UI:** primitivas RN propias en `src/ui/` que respetan
   [`product/design-system-spec.md`](../../product/design-system-spec.md);
   colores/tipo/geometría provienen de `@futrob/ui-tokens`.
@@ -31,6 +31,7 @@ Variables (`.env` local o shell):
 
 ```sh
 EXPO_PUBLIC_FUTROB_API_BASE_URL=http://localhost:3000
+EXPO_PUBLIC_FUTROB_AUTH_BASE_URL=http://localhost:8788
 ```
 
 En dispositivo físico usa la IP LAN de tu máquina, no `localhost`.

@@ -2,11 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { handleAuthRequest } from "@/modules/identity/server/auth-request-handler.ts";
 
 /**
- * Better Auth catch-all.
- * Ready endpoints (email/password):
- * - POST /api/auth/sign-up/email
- * - POST /api/auth/sign-in/email
- * - GET  /api/auth/get-session
+ * Same-origin proxy to the `futrob-auth` worker (ADR-0015).
+ * Email/password and get-session are served by apps/auth.
  */
 export const Route = createFileRoute("/api/auth/$")({
   server: {

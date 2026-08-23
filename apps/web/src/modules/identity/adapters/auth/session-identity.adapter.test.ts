@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { describe, expect, it } from "vite-plus/test";
+import { CREDENTIAL_IDENTITY_PROVIDER } from "@futrob/identity";
 import { requireAuthenticatedActor, AuthUnauthenticatedError } from "@/context/auth.ts";
-import { createMemoryActorProvisioner, createMemorySessionIdentity } from "./test-auth.ts";
+import { createSessionIdentityAdapter } from "./session-identity.adapter.ts";
+import {
+  createMemoryActorProvisioner,
+  createMemoryAuth,
+  createMemorySessionIdentity,
+} from "./test-auth.ts";
 
 describe("Better Auth email/password session → ActorId", () => {
   it("signs up, signs in, resolves session to a stable ActorId", async () => {
@@ -36,6 +42,27 @@ describe("Better Auth email/password session → ActorId", () => {
     expect(provisioner.store.size).toBe(1);
   });
 
+  it("throws AuthUnauthenticatedError when the session has no provisioned actor", async () => {
+    const provisioner = createMemoryActorProvisioner();
+    const auth = createMemoryAuth({});
+    const sessionIdentity = createSessionIdentityAdapter({
+      auth,
+      findActorId: async (userId) =>
+        provisioner.store.get(`${CREDENTIAL_IDENTITY_PROVIDER}:${userId}`) ?? null,
+    });
+
+    const email = `orphan-${crypto.randomUUID()}@futrob.test`;
+    const password = "password-at-least-8";
+    await auth.api.signUpEmail({
+      body: { email, password, name: "Orphan" },
+    });
+    const headers = await sessionHeadersFromSignIn(auth, email, password);
+
+    await expect(requireAuthenticatedActor(sessionIdentity, headers)).rejects.toBeInstanceOf(
+      AuthUnauthenticatedError,
+    );
+  });
+
   it("throws AuthUnauthenticatedError without a session", async () => {
     const provisioner = createMemoryActorProvisioner();
     const { sessionIdentity } = createMemorySessionIdentity({
@@ -45,6 +72,24 @@ describe("Better Auth email/password session → ActorId", () => {
     await expect(requireAuthenticatedActor(sessionIdentity, new Headers())).rejects.toBeInstanceOf(
       AuthUnauthenticatedError,
     );
+  });
+
+  it("uses the secure session cookie contract for the production origin", async () => {
+    const auth = createMemoryAuth({ baseURL: "https://futrob.app" });
+    const response = await auth.handler(
+      new Request("https://futrob.app/api/auth/sign-up/email", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: `secure-cookie-${crypto.randomUUID()}@futrob.test`,
+          password: "password-at-least-8",
+          name: "Secure cookie",
+        }),
+      }),
+    );
+
+    expect(response.ok).toBe(true);
+    expect(response.headers.get("set-cookie")).toContain("__Secure-better-auth.session_token=");
   });
 
   it("exposes sign-up, sign-in, and get-session via auth.handler", async () => {
@@ -87,7 +132,7 @@ describe("Better Auth email/password session → ActorId", () => {
 });
 
 async function sessionHeadersFromSignIn(
-  auth: ReturnType<typeof createMemorySessionIdentity>["auth"],
+  auth: ReturnType<typeof createMemoryAuth>,
   email: string,
   password: string,
 ): Promise<Headers> {

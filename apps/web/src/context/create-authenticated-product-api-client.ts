@@ -3,7 +3,6 @@ import { parseAppEnv } from "@/config/env.ts";
 import { createProductApiClient } from "@/context/product-api-client.ts";
 import { resolveAuthenticatedRequestActor } from "@/modules/identity/server/authenticated-request-actor.ts";
 import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
-import { CryptoIdGenerator } from "@/shared/application/id-generator.ts";
 import { createBffRequestCorrelation } from "@/shared/infrastructure/http/request-correlation.ts";
 
 export {
@@ -42,11 +41,9 @@ export async function createAuthenticatedProductApiClient(request: Request, requ
     throw new ProductApiBffMisconfiguredError("INTERNAL_JOB_SECRET is required");
   }
 
-  const ids = new CryptoIdGenerator();
   const actorId = await resolveAuthenticatedRequestActor({
     d1: bindings.APP_DB,
     env: appEnv,
-    ids,
     headers: request.headers,
   });
   const client = createProductApiClient({

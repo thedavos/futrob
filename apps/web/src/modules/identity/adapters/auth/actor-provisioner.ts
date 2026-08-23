@@ -1,34 +1,18 @@
 import { and, eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import {
-  CREDENTIAL_IDENTITY_PROVIDER,
-  type ActorProvisionerPort,
-  type IdentityProviderKey,
-} from "@futrob/identity";
-import { asActorId, type ActorId, type IdGeneratorPort } from "@futrob/shared-kernel";
-import { actors, identitySubjects, type authSchema } from "./drizzle-schema.ts";
+import { CREDENTIAL_IDENTITY_PROVIDER, type IdentityProviderKey } from "@futrob/identity";
+import { asActorId, type ActorId } from "@futrob/shared-kernel";
+import { identitySubjects, type authSchema } from "./drizzle-schema.ts";
 
 export type AuthDb = DrizzleD1Database<typeof authSchema>;
 
-export function createD1ActorProvisioner(input: {
-  readonly db: AuthDb;
-  readonly ids: IdGeneratorPort;
-}): ActorProvisionerPort {
-  return {
-    async ensureActorForSubject(request) {
-      return ensureActorForSubject(input.db, input.ids, request);
-    },
-  };
-}
-
-export async function ensureActorForSubject(
+export async function findActorIdForSubject(
   db: AuthDb,
-  ids: IdGeneratorPort,
   input: {
     readonly provider: IdentityProviderKey;
     readonly subject: string;
   },
-): Promise<ActorId> {
+): Promise<ActorId | null> {
   const existing = await db
     .select({ actorId: identitySubjects.actorId })
     .from(identitySubjects)
@@ -40,40 +24,7 @@ export async function ensureActorForSubject(
     )
     .limit(1);
 
-  if (existing[0]) {
-    return asActorId(existing[0].actorId);
-  }
-
-  const actorId = ids.generate();
-  const now = new Date();
-
-  await db.insert(actors).values({ id: actorId, createdAt: now });
-  try {
-    await db.insert(identitySubjects).values({
-      provider: input.provider,
-      subject: input.subject,
-      actorId,
-      createdAt: now,
-    });
-  } catch {
-    // Concurrent signup: another request may have won the UNIQUE(provider, subject).
-    const raced = await db
-      .select({ actorId: identitySubjects.actorId })
-      .from(identitySubjects)
-      .where(
-        and(
-          eq(identitySubjects.provider, input.provider),
-          eq(identitySubjects.subject, input.subject),
-        ),
-      )
-      .limit(1);
-    if (raced[0]) {
-      return asActorId(raced[0].actorId);
-    }
-    throw new Error("identity: failed to provision actor for subject");
-  }
-
-  return asActorId(actorId);
+  return existing[0] ? asActorId(existing[0].actorId) : null;
 }
 
 export function credentialSubject(userId: string) {

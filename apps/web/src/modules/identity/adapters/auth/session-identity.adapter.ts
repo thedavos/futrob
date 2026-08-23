@@ -1,6 +1,5 @@
-import type { ActorProvisionerPort, SessionIdentityPort, RequestHeaders } from "@futrob/identity";
+import type { SessionIdentityPort, RequestHeaders } from "@futrob/identity";
 import { asActorId, type ActorId } from "@futrob/shared-kernel";
-import { credentialSubject } from "./actor-provisioner.ts";
 
 /** Narrow surface so memory-adapter test auth and D1 auth share the same adapter. */
 export interface AuthSessionApi {
@@ -11,7 +10,7 @@ export interface AuthSessionApi {
 
 export function createSessionIdentityAdapter(input: {
   readonly auth: AuthSessionApi;
-  readonly actorProvisioner: ActorProvisionerPort;
+  readonly findActorId: (subject: string) => Promise<ActorId | null>;
 }): SessionIdentityPort {
   return {
     async resolveActorId(headers) {
@@ -20,7 +19,7 @@ export function createSessionIdentityAdapter(input: {
         return null;
       }
 
-      return input.actorProvisioner.ensureActorForSubject(credentialSubject(session.user.id));
+      return input.findActorId(session.user.id);
     },
   };
 }
