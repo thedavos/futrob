@@ -20,7 +20,13 @@ async function createAppPlugins() {
 
   return [
     devtools(),
-    !isVitest && cloudflare({ viteEnvironment: { name: "ssr" } }),
+    !isVitest &&
+      cloudflare({
+        viteEnvironment: { name: "ssr" },
+        // Keep this off Node's 9229–9232 range so parallel `wrangler dev`
+        // (apps/auth) and other local inspectors do not race the same port.
+        inspectorPort: 13000,
+      }),
     tanstackStart(),
     // React plugin must come after tanstackStart.
     viteReact(),
