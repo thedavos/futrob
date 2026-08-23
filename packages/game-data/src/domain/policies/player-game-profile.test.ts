@@ -29,7 +29,7 @@ function stats(overrides: Partial<ProviderPlayerMatchStats> = {}): ProviderPlaye
 }
 
 function sample(
-  overrides: Partial<PlayerGameAppearanceSample> & {
+  overrides: Omit<Partial<PlayerGameAppearanceSample>, "appearance"> & {
     readonly appearance?: Partial<ProviderPlayerMatchStats>;
   } = {},
 ): PlayerGameAppearanceSample {

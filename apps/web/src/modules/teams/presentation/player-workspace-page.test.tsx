@@ -106,9 +106,9 @@ describe("PlayerWorkspacePage", () => {
     expect(screen.getByRole("button", { name: "Abrir Mis partidos" }).getAttribute("href")).toBe(
       "/player/matches",
     );
-    expect(
-      screen.getByRole("button", { name: "Abrir Mis estadísticas" }).getAttribute("href"),
-    ).toBe("/player/statistics");
+    expect(screen.getByRole("button", { name: "Abrir tu perfil" }).getAttribute("href")).toBe(
+      "/player/statistics",
+    );
 
     fireEvent.click(screen.getByRole("radio", { name: /Beta FC/ }));
     await waitFor(() => {
@@ -127,11 +127,11 @@ describe("PlayerWorkspacePage", () => {
     renderPage("en");
 
     expect(await screen.findByRole("heading", { name: "My matches" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "My statistics" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Your profile" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Open My matches" }).getAttribute("href")).toBe(
       "/player/matches",
     );
-    expect(screen.getByRole("button", { name: "Open My statistics" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("button", { name: "Open your profile" }).getAttribute("href")).toBe(
       "/player/statistics",
     );
   });

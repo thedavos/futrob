@@ -4,6 +4,8 @@ import {
   type PlayerGameAppearanceSample,
   type PlayerGameOutcome,
 } from "./player-attribute-overview.ts";
+
+export type { PlayerGameAppearanceSample };
 import {
   nextEloRating,
   PLAYER_ELO_START,
