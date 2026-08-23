@@ -107,4 +107,4 @@ if ! grep -q '^FUTROB_API_BASE_URL=' apps/web/.dev.vars; then
 fi
 # Non-interactive when stdin is not a TTY (Cloud / CI).
 # apps/auth owns the one migration history for the D1 shared with web.
-CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/auth --persist-to ../web/.wrangler/state
+CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/auth --persist-to "$ROOT/apps/web/.wrangler/state"
