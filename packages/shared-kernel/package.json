@@ -11,7 +11,7 @@
     "test": "vp test"
   },
   "dependencies": {
-    "better-result": "^3.0.0"
+    "better-result": "^3.0.1"
   },
   "devDependencies": {
     "typescript": "6.0.2"
