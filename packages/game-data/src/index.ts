@@ -83,6 +83,30 @@ export {
   type PlayerRecentProviderMatch,
 } from "./application/list-player-recent-provider-matches/list-player-recent-provider-matches.use-case.ts";
 export {
+  GetPlayerGameProfileUseCase,
+  type GetPlayerGameProfileInput,
+  type PlayerGameProfileResult,
+} from "./application/get-player-game-profile/get-player-game-profile.use-case.ts";
+export type {
+  AttributeCategory,
+  AttributeCategoryScore,
+  AttributeComponent,
+  AttributeComponentKey,
+  PlayerGameAppearanceSample,
+  PlayerGameOutcome,
+} from "./domain/policies/player-attribute-overview.ts";
+export type { PlayerPitchRole } from "./domain/policies/player-pitch-role.ts";
+export type {
+  PlayerEloSnapshot,
+  PlayerEvolutionPoint,
+  PlayerGameProfile,
+  PlayerGameStatBlock,
+  PlayerIdentity,
+  PlayerPositionStatBlock,
+  PlayerTeamStatBlock,
+} from "./domain/policies/player-game-profile.ts";
+export { buildPlayerGameProfile } from "./domain/policies/player-game-profile.ts";
+export {
   GetPlayerRecentProviderMatchUseCase,
   type GetPlayerRecentProviderMatchInput,
   type PlayerRecentProviderMatchResult,
