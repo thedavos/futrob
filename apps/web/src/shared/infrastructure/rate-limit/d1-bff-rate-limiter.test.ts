@@ -12,7 +12,7 @@ import {
 import { D1BffRateLimiter } from "./d1-bff-rate-limiter.ts";
 
 const migration = readFileSync(
-  new URL("../../../../migrations/0002_bff_rate_limit.sql", import.meta.url),
+  new URL("../../../../../auth/migrations/0002_bff_rate_limit.sql", import.meta.url),
   "utf8",
 );
 
