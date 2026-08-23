@@ -1,14 +1,15 @@
 # Futrob — Documento maestro de producto y PRD del MVP
 
 **Estado:** canónico  
-**Fecha:** 2026-07-17  
+**Fecha:** 2026-08-23
+
 **Precedencia:** la solicitud vigente del usuario prevalece sobre este documento cuando exista conflicto.
 
 Futrob es una plataforma especializada en crear, operar y seguir ligas, copas y torneos de EA SPORTS FC. Su primer enfoque es **FC Clubs**, utilizando los datos de `proclubs.ea.com/api` para identificar partidos, registrar resultados oficiales, almacenar estadísticas y generar rankings y analíticas.
 
 ## 1. Resumen ejecutivo
 
-Futrob resuelve la operación completa de una competición de EA SPORTS FC: creación, inscripción, gestión de equipos y plantillas, calendarización, reprogramaciones, selección de partidos oficiales, confirmación de resultados, estadísticas, rankings, sanciones y publicación de información para espectadores.
+Futrob resuelve la operación completa de una competición de EA SPORTS FC desde la web y la aplicación móvil nativa: creación, inscripción, gestión de equipos y plantillas, calendarización, reprogramaciones, selección de partidos oficiales, confirmación de resultados, estadísticas, rankings, sanciones y publicación de información para espectadores.
 
 La plataforma debe distinguir claramente entre:
 
@@ -128,11 +129,13 @@ Incluye, entre otros: organizaciones, membresías, usuarios, actores, estado de 
 
 ### Incluido
 
-Aplicación web responsive; auth, perfiles personales de jugador y organizaciones/permisos; competiciones FC Clubs; ediciones configurables; formatos MVP; equipos y plantillas; fixtures y Match Center; 1–2 partidos oficiales; resultados individuales/agregados; reprogramación; vinculación y sync EA; selección/confirmación; disputas básicas; espacio personal con partidos y estadísticas individuales; tabla/bracket/stats/rankings esenciales; portal público; auditoría; primera capa de analíticas premium.
+Aplicación web responsive y aplicación móvil nativa React Native + Expo; auth y onboarding equivalentes; perfiles personales de jugador y organizaciones/permisos; competiciones FC Clubs; ediciones configurables; formatos MVP; equipos y plantillas; fixtures y Match Center; 1–2 partidos oficiales; resultados individuales/agregados; reprogramación; vinculación y sync EA; selección/confirmación; disputas básicas; espacio personal con partidos y estadísticas individuales; tabla/bracket/stats/rankings esenciales; portal público web; auditoría; primera capa de analíticas premium.
+
+La app nativa cubre los flujos autenticados Must aplicables al rol del actor —jugador, capitán/subcapitán y organizador/staff— mediante `@futrob/sdk` y los mismos contratos `/api/v1`. No duplica lógica de negocio ni adapters de persistencia. La landing de marketing y el portal público siguen siendo superficies web responsive; pueden abrirse desde enlaces de la app sin requerir una segunda implementación nativa.
 
 ### Fuera del MVP
 
-App nativa (React Native + Expo, vía `@futrob/sdk`); FC Temporadas/Amistosos; marketplace; fantasy; streaming; white-label completo; doble eliminación y suizo; automatización de pagos/premios; predicciones con IA; OCR de capturas como fuente primaria de resultados; WhatsApp/Telegram como canal operativo del MVP.
+FC Temporadas/Amistosos; marketplace; fantasy; streaming; white-label completo; doble eliminación y suizo; automatización de pagos/premios; predicciones con IA; OCR de capturas como fuente primaria de resultados; WhatsApp/Telegram y push nativo como canales operativos del MVP.
 
 ## 21–23. Métricas, riesgos y roadmap
 

@@ -5,8 +5,8 @@
 
 ## 1. Alcance y coherencia
 
-- **UX-SCP-001** Landing, app y portal se identifican como Futrob y comparten tipografía, tokens y componentes.
-- **UX-SCP-002** La UI presenta ligas/copas EA SPORTS FC Clubs. No ofrece app nativa (React Native + Expo es post-MVP), fantasy, streaming propio, fútbol real ni OCR como camino feliz.
+- **UX-SCP-001** Landing, web, app nativa y portal se identifican como Futrob y comparten tipografía, tokens y lenguaje visual; web y React Native mantienen render trees propios.
+- **UX-SCP-002** La UI web y la app nativa React Native + Expo presentan ligas/copas EA SPORTS FC Clubs. No ofrecen fantasy, streaming propio, fútbol real ni OCR como camino feliz.
 - **UX-SCP-003** La navegación base no cambia por formato; se ocultan destinos no aplicables (p. ej. bracket en liga pura).
 - **UX-SCP-004** Toda UI de resultado distingue Enfrentamiento, Partido oficial, Partido EA y Serie (resolución).
 - **UX-SCP-005** Candidatos EA y resultados oficiales tienen presentación visual distinta.
@@ -23,7 +23,7 @@
 
 - **UX-NAV-001** La app muestra organización activa y, dentro de competición, la competición activa.
 - **UX-NAV-002** Sidebar expandida/colapsada usable; iconos colapsados con nombre accesible.
-- **UX-NAV-003** Mobile: destinos frecuentes + Más; nada crítico solo en sidebar oculta.
+- **UX-NAV-003** Web responsive usa Sheet; la app nativa usa tabs para destinos frecuentes + Más/Stack. Nada crítico queda solo en una sidebar oculta.
 - **UX-NAV-004** Destino activo con `aria-current="page"` y no solo color.
 - **UX-NAV-005** Volver desde detalle conserva filtros/scroll.
 - **UX-NAV-006** URL directa de Encounter renderiza página completa.
@@ -33,6 +33,8 @@
 - **UX-NAV-010** `/player` no renderiza el espacio personal hasta confirmar que el actor completó el onboarding; si está incompleto o la comprobación falla, vuelve de forma segura a `/onboarding`.
 - **UX-NAV-011** Invitados y organizadores atraviesan Cuenta; omitir los datos EA conserva un perfil personal utilizable.
 - **UX-NAV-012** El organizador termina en la configuración de su competición draft sin una consulta de destino adicional.
+- **UX-NAV-013** La app nativa conserva el contexto activo —espacio personal, club EA, organización o competición— al navegar entre tabs y al reanudar desde background.
+- **UX-NAV-014** Un deep link de invitación recibido sin sesión reanuda la aceptación después del login/signup y nunca pierde ni registra el token en telemetría.
 
 ## 4. Wizard / creación de competición
 
@@ -78,8 +80,8 @@
 
 ## 9. Accesibilidad y i18n
 
-- **UX-A11Y-001** Teclado completo en flujos críticos; foco visible; restauración en diálogos.
-- **UX-A11Y-002** Contraste AA; estado no solo por color; targets ≥ 44 px en móvil.
-- **UX-A11Y-003** `prefers-reduced-motion` respetado.
-- **UX-I18N-001** Flujos críticos en `es` y `en`.
+- **UX-A11Y-001** Web ofrece teclado completo, foco visible y restauración en diálogos; mobile expone labels, roles, hints y orden de lectura correctos a VoiceOver/TalkBack.
+- **UX-A11Y-002** Contraste AA; estado no solo por color; targets ≥ 44 px en web touch y ≥ 44 dp en la app nativa.
+- **UX-A11Y-003** Web respeta `prefers-reduced-motion`; mobile respeta la preferencia equivalente del sistema.
+- **UX-I18N-001** Flujos críticos web y mobile en `es` y `en`.
 - **UX-I18N-002** Horarios muestran zona de competición cuando el contexto de fixture lo requiere.

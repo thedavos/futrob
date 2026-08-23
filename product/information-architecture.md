@@ -1,6 +1,6 @@
 # Futrob — Arquitectura de información
 
-**Objetivo:** estructura coherente entre landing, aplicación operativa y portal público para el MVP centrado en FC Clubs y datos EA.
+**Objetivo:** estructura coherente entre landing, aplicación web, aplicación móvil nativa y portal público para el MVP centrado en FC Clubs y datos EA.
 
 **Fuente:** [prd.md](/product/prd.md)
 
@@ -12,6 +12,7 @@
 4. **Operar y observar son experiencias distintas.** La app autenticada privilegia excepciones y acciones; el portal privilegia seguimiento.
 5. **Profundidad máxima práctica de tres niveles.** Organización, competición y recurso; tabs dentro del recurso para el resto.
 6. **Estado preservado.** Volver del detalle conserva búsqueda, filtros, vista y scroll.
+7. **Misma arquitectura de información, navegación propia por plataforma.** Web y mobile comparten destinos, vocabulario, permisos y contexto; no fuerzan el mismo chrome ni el mismo render tree.
 
 ## 2. Mapa global
 
@@ -36,6 +37,12 @@ Futrob
 │   ├── Notificaciones
 │   ├── Organización / roles
 │   └── Configuración personal
+├── Aplicación móvil nativa
+│   ├── Auth + onboarding
+│   ├── Espacio personal del jugador
+│   ├── Contexto de organización / competición
+│   ├── Equipos, fixtures y Match Center
+│   └── Estadísticas, rankings y notificaciones in-app
 ├── Superusuario (plataforma)
 └── Portal público de competición
     ├── Portada
@@ -90,7 +97,9 @@ Regiones de la sidebar (scroll independiente del contenido central):
 2. **Content (scroll):** tareas del espacio activo (placeholder hasta que existan colas de dominio).
 3. **Footer sticky:** navegación General (Inicio, Competiciones, …).
 
-Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive en el header de la sidebar. Mobile usa Sheet con las mismas regiones.
+Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive en el header de la sidebar. La web responsive usa Sheet con las mismas regiones.
+
+La app nativa usa Expo Router con tabs para los destinos frecuentes y Stack/overlays nativos para detalle y operaciones. **Más** agrupa destinos secundarios. El selector de contexto permanece siempre accesible desde el header; cambiar de tab no cambia por sí solo el espacio, club, organización o competición activos.
 
 El command bar muestra la identidad del jugador (identificador de juego y club seleccionado) y acciones contextuales (stubs cuando el handler aún no existe). La action bar inferior solo aparece cuando una página registra acciones.
 
@@ -185,7 +194,7 @@ La vista personal no muestra disputas, payloads EA crudos, tokens ni datos admin
 | Analíticas      | Premium / operativa                             |
 | Reglamento      | Reglamento y configuración                      |
 
-Mobile: Sheet con la misma sidebar; nada crítico solo en sidebar oculta (selector accesible).
+Web responsive: Sheet con la misma sidebar. App nativa: tabs + Más/Stack con la misma arquitectura de destinos. Nada crítico queda solo en una sidebar oculta y el selector de contexto es accesible en ambas superficies.
 
 ### Menú de cuenta
 
@@ -195,7 +204,7 @@ La navegación General vive en el footer sticky de la sidebar.
 
 ## 5. Match Center (recurso central)
 
-Ruta conceptual: `/orgs/:orgId/competitions/:competitionId/encounters/:encounterId`
+Ruta conceptual web: `/orgs/:orgId/competitions/:competitionId/encounters/:encounterId`. Mobile conserva los mismos identificadores en una ruta Expo equivalente y en sus deep links; no inventa un recurso `Match` alternativo.
 
 ### Cabecera
 

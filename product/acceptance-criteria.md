@@ -12,6 +12,7 @@ El MVP solo puede declararse completo si:
 4. No hay hallazgos críticos/altos abiertos de autorización, aislamiento o integridad de datos EA.
 5. No se han implementado capacidades Won't como si fueran parte del MVP.
 6. Las capacidades Should omitidas se reportan explícitamente como parciales.
+7. Los escenarios `AC-MOB-*` pasan en builds nativos de desarrollo de iOS y Android; no basta con ejecutar la app como web de Expo.
 
 ## 2. E2E canónico
 
@@ -25,6 +26,8 @@ El MVP solo puede declararse completo si:
 - **entonces** existen Encounter, OfficialMatch y Series de resolución, los payloads EA originales permanecen privados, el resultado oficializa una sola vez, se actualizan estadísticas y standings o bracket, el portal público muestra el resultado y AuditLog conserva el recorrido.
 
 Además, reejecutar el mismo job de sync o la misma confirmación no crea partidos, stats, notificaciones ni auditorías duplicadas.
+
+El recorrido operativo autenticado debe poder completarse tanto desde `apps/web` como desde `apps/mobile` con los mismos resultados de negocio y decisiones de autorización. La publicación se verifica en el portal web responsive; no se exige duplicar el portal como pantalla nativa.
 
 ## 3. Landing, shell y portal
 
@@ -279,3 +282,45 @@ Además, reejecutar el mismo job de sync o la misma confirmación no crea partid
 - **Dado** un job de sync, una confirmación o un outbox event ya procesado,
 - **cuando** se reentrega,
 - **entonces** no hay efectos de negocio duplicados.
+
+## 11. Aplicación móvil nativa
+
+### AC-MOB-001 — Auth, sesión y onboarding nativos
+
+**Cubre:** FTR-AUTH-001…003, FTR-MOB-001…004.
+
+- **Dado** un usuario nuevo en una instalación nativa iOS o Android,
+- **cuando** se registra,
+- **entonces** Better Auth crea la sesión, mobile guarda el token en SecureStore y entra directamente al onboarding sin abrir el home autenticado.
+- **Dado** un usuario existente,
+- **cuando** inicia sesión,
+- **entonces** mobile consulta primero `actor_onboarding`; si está incompleto reanuda el paso persistido y, si está completo, resuelve espacio personal, organización o competición con la misma regla que web.
+- **y** los caminos jugador, organización e invitación producen las mismas entidades y destinos que sus equivalentes web.
+- **y** cerrar sesión invalida la sesión remota y elimina las credenciales locales.
+- **y** una respuesta 401/403, un fallo de red o una sesión revocada produce un estado recuperable y seguro, nunca un home autenticado con datos stale.
+
+### AC-MOB-002 — Paridad funcional por rol
+
+**Cubre:** FTR-MOB-001, FTR-MOB-004, FTR-RBAC-002, FR-01…18.
+
+- **Dado** un jugador autenticado,
+- **cuando** usa la app nativa,
+- **entonces** puede gestionar sus cuentas de juego y clubes EA, elegir equipo/contexto activo, aceptar invitaciones y consultar Mis partidos, detalle y Mis estadísticas.
+- **Dado** un capitán o subcapitán con permisos,
+- **entonces** puede gestionar su plantilla, vincular el club EA, consultar fixtures/Encounter, reprogramar y participar en la selección/confirmación oficial.
+- **Dado** un organizador o staff con permisos,
+- **entonces** puede crear y reanudar organización/competición, administrar participantes/equipos, publicar, operar fixtures y resolver selecciones o disputas.
+- **y** en todos los casos mobile muestra u oculta acciones con `EffectiveAccess`, mientras la API vuelve a autorizar cada operación.
+- **y** ejecutar una misma operación válida desde web o mobile produce el mismo estado de dominio, auditoría y proyecciones.
+
+### AC-MOB-003 — Contratos, accesibilidad y deep links
+
+**Cubre:** FTR-MOB-002…004, NFR-08, NFR-10, UX-NAV-014.
+
+- **Dado** una build de `apps/mobile`,
+- **entonces** no contiene imports de `@futrob/<bc>`, adapters, secretos internos ni acceso directo a persistencia; consume contratos versionados mediante `@futrob/sdk`.
+- **y** los flujos críticos funcionan en ES/EN, respetan safe areas, tienen targets de al menos 44 dp y nombres accesibles para VoiceOver/TalkBack.
+- **Dado** un deep link de invitación de competición o plantilla,
+- **cuando** la app está cerrada, en background o sin sesión,
+- **entonces** conserva el destino, completa auth si hace falta y reanuda la aceptación sin exponer el token en logs o analytics.
+- **y** los enlaces a landing o portal público abren la superficie web responsive; no se exige una copia nativa del contenido público.

@@ -1,12 +1,13 @@
 # Futrob MVP — Requisitos verificables
 
-**Versión de contrato:** 2.0  
+**Versión de contrato:** 2.1
+
 **Fuente base:** [prd.md](/product/prd.md)  
 **Precedencia:** solicitud vigente del usuario > este documento > defaults de [open-decisions.md](/product/open-decisions.md).
 
 ## 1. Objetivo y resultado del MVP
 
-Futrob debe permitir que un organizador opere de extremo a extremo una competición web de **EA SPORTS FC Clubs**: desde organización y equipos hasta fixture, sincronización con EA, selección de partidos oficiales, confirmación, estadísticas, rankings y portal público.
+Futrob debe permitir que un organizador opere de extremo a extremo una competición de **EA SPORTS FC Clubs** desde la web responsive y la aplicación móvil nativa: desde organización y equipos hasta fixture, sincronización con EA, selección de partidos oficiales, confirmación, estadísticas y rankings. La landing y el portal público permanecen como superficies web responsive.
 
 El MVP se considera funcional cuando se puede completar el recorrido E2E descrito en `AC-E2E-001` de [acceptance-criteria.md](/product/acceptance-criteria.md), incluidos aislamiento por organización, auditoría y publicación.
 
@@ -24,7 +25,7 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 | ID             | Requisito verificable                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | FR-01          | Crear organizaciones, asignar roles contextuales (superusuario, organizador, staff, capitán, subcapitán, jugador, espectador) y aislar datos privados por organización.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| FTR-AUTH-001   | Autenticar usuarios en la web con Better Auth y asociar cada sesión a un actor Futrob verificable.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| FTR-AUTH-001   | Autenticar usuarios en web y mobile con Better Auth y asociar cada sesión a un actor Futrob verificable; web usa cookie/sesión y mobile almacena el token Bearer en SecureStore.                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | FTR-AUTH-002   | Después del registro, entrar directamente al onboarding. Después del login, consultar primero si el actor completó el onboarding y solo entonces resolver su destino por membresías.                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | FTR-AUTH-003   | Persistir por actor si completó el onboarding, junto con fecha, versión y camino elegido; si no lo completó, impedir destinos autenticados y redirigirlo al onboarding.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | FTR-PLAYER-001 | Permitir que un actor autenticado cree y use un perfil personal de jugador sin organización ni invitación.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -106,13 +107,17 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 | FR-17       | Proteger analíticas premium mediante suscripción o permisos.                                                                                                                                                          |
 | FTR-PUB-001 | Datos privados, tokens, identificadores de plataforma internos y payloads EA crudos no llegan al portal público.                                                                                                      |
 
-### 3.9 Superficies web y notificaciones
+### 3.9 Superficies web, mobile y notificaciones
 
-| ID          | Requisito verificable                                                                                                                                                  |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FTR-WEB-001 | Landing pública responsive con propuesta de valor FC Clubs / datos EA, creación y acceso.                                                                              |
-| FTR-WEB-002 | Shell autenticado con espacio personal, organización, competición, Match Center, fixtures, standings/bracket, equipos, disputas, analytics y settings según permiso.   |
-| FTR-NTF-001 | Notificar por web y correo: inscripción, partido próximo, reprogramación, candidatos EA, selección propuesta, resultado/disputa, decisión del organizador y sanciones. |
+| ID          | Requisito verificable                                                                                                                                                                                                                                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FTR-WEB-001 | Landing pública responsive con propuesta de valor FC Clubs / datos EA, creación y acceso.                                                                                                                                                                                                                                    |
+| FTR-WEB-002 | Shell autenticado con espacio personal, organización, competición, Match Center, fixtures, standings/bracket, equipos, disputas, analytics y settings según permiso.                                                                                                                                                         |
+| FTR-MOB-001 | Entregar `apps/mobile` como aplicación nativa React Native + Expo del MVP, con los flujos autenticados Must aplicables a jugador, capitán/subcapitán y organizador/staff. Landing y portal público no requieren duplicación nativa.                                                                                          |
+| FTR-MOB-002 | Registro, login y onboarding mobile deben respetar las mismas decisiones y destinos que web: registro → onboarding; login → comprobar onboarding → resolver espacio personal, organización o competición. Los deep links de invitación deben conservar el token y reanudar el flujo tras autenticarse.                       |
+| FTR-MOB-003 | Mobile consume `/api/v1` exclusivamente mediante `@futrob/sdk`, usa los mismos contratos y permisos efectivos que web y no importa bounded contexts, adapters ni persistencia. La sesión de usuario llega al BFF como Bearer; el secreto interno y `ActorId` nunca se distribuyen en el binario.                             |
+| FTR-MOB-004 | La navegación nativa ofrece espacio personal y contextos de organización/competición, estados loading/vacío/error/éxito, cierre de sesión remoto, reintento seguro, ES/EN, safe areas y targets de al menos 44 dp. Las acciones se ocultan o bloquean con `EffectiveAccess`; el backend conserva la barrera de autorización. |
+| FTR-NTF-001 | Notificar por web y correo: inscripción, partido próximo, reprogramación, candidatos EA, selección propuesta, resultado/disputa, decisión del organizador y sanciones. Push nativo no es requisito del MVP.                                                                                                                  |
 
 ## 4. Requisitos Should
 
@@ -125,31 +130,33 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 ## 5. Requisitos Won't (MVP)
 
-| ID      | Exclusión                                                             |
-| ------- | --------------------------------------------------------------------- |
-| WONT-01 | Aplicación móvil nativa (React Native + Expo; consume `@futrob/sdk`). |
-| WONT-02 | FC Temporadas y FC Amistosos como modalidades operativas.             |
-| WONT-03 | Marketplace, fantasy, streaming propio, white-label completo.         |
-| WONT-04 | Doble eliminación, sistema suizo, divisiones con ascenso/descenso.    |
-| WONT-05 | Automatización de pagos y premios.                                    |
-| WONT-06 | Predicciones con IA.                                                  |
-| WONT-07 | OCR de capturas como fuente primaria de resultados.                   |
-| WONT-08 | WhatsApp/Telegram/push como canales operativos del MVP.               |
-| WONT-09 | API pública de terceros.                                              |
+`WONT-01` se retiró al incorporar `apps/mobile` al MVP. Los demás identificadores no se renumeran para preservar referencias estables.
+
+| ID      | Exclusión                                                          |
+| ------- | ------------------------------------------------------------------ |
+| WONT-02 | FC Temporadas y FC Amistosos como modalidades operativas.          |
+| WONT-03 | Marketplace, fantasy, streaming propio, white-label completo.      |
+| WONT-04 | Doble eliminación, sistema suizo, divisiones con ascenso/descenso. |
+| WONT-05 | Automatización de pagos y premios.                                 |
+| WONT-06 | Predicciones con IA.                                               |
+| WONT-07 | OCR de capturas como fuente primaria de resultados.                |
+| WONT-08 | WhatsApp/Telegram/push nativo como canales operativos del MVP.     |
+| WONT-09 | API pública de terceros.                                           |
 
 ## 6. Requisitos no funcionales
 
-| ID     | Requisito                                                                                                                            |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| NFR-01 | Arquitectura desacoplada del proveedor EA.                                                                                           |
-| NFR-02 | Procesamiento idempotente de sincronizaciones, selecciones, oficializaciones y notificaciones.                                       |
-| NFR-03 | Caché, deduplicación, reintentos con backoff y circuit breaker hacia EA.                                                             |
-| NFR-04 | Persistencia del payload original y capacidad de reprocesar estadísticas sin volver a consultar EA.                                  |
-| NFR-05 | Auditoría de acciones sensibles con actor, motivo, correlación y tiempo.                                                             |
-| NFR-06 | Control de acceso por organización, competición, equipo y perfil personal; un jugador solo puede leer su propia proyección personal. |
-| NFR-07 | Manejo correcto de zonas horarias (IANA).                                                                                            |
-| NFR-08 | Diseño responsive y accesible (WCAG 2.2 AA).                                                                                         |
-| NFR-09 | Observabilidad de jobs, errores y salud del proveedor.                                                                               |
+| ID     | Requisito                                                                                                                                                                |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| NFR-01 | Arquitectura desacoplada del proveedor EA.                                                                                                                               |
+| NFR-02 | Procesamiento idempotente de sincronizaciones, selecciones, oficializaciones y notificaciones.                                                                           |
+| NFR-03 | Caché, deduplicación, reintentos con backoff y circuit breaker hacia EA.                                                                                                 |
+| NFR-04 | Persistencia del payload original y capacidad de reprocesar estadísticas sin volver a consultar EA.                                                                      |
+| NFR-05 | Auditoría de acciones sensibles con actor, motivo, correlación y tiempo.                                                                                                 |
+| NFR-06 | Control de acceso por organización, competición, equipo y perfil personal; un jugador solo puede leer su propia proyección personal.                                     |
+| NFR-07 | Manejo correcto de zonas horarias (IANA).                                                                                                                                |
+| NFR-08 | Diseño responsive web y accesibilidad equivalente en mobile; WCAG 2.2 AA donde aplique y targets touch de al menos 44 dp.                                                |
+| NFR-09 | Observabilidad de jobs, errores y salud del proveedor.                                                                                                                   |
+| NFR-10 | Paridad de contratos entre web y mobile: ambos consumen `/api/v1` mediante `@futrob/sdk`; los tokens visuales se comparten con `@futrob/ui-tokens`, no los render trees. |
 
 ## 7. Modelo de datos conceptual
 
@@ -159,12 +166,12 @@ Entidades conceptuales mínimas (nombres de persistencia orientativos):
 
 ## 8. Roadmap por fases
 
-1. **Fundamentos** — auth, perfiles personales de jugador, organizaciones, roles, competiciones, equipos y plantillas.
-2. **Operación competitiva** — fixtures, enfrentamientos, reprogramaciones, Match Center, portal.
+1. **Fundamentos** — auth, onboarding y shells web/mobile; perfiles personales de jugador, organizaciones, roles, competiciones, equipos y plantillas.
+2. **Operación competitiva** — flujos web/mobile de fixtures, enfrentamientos, reprogramaciones y Match Center; portal web.
 3. **EA Data Layer** — vinculación, sync, almacenamiento, normalización, observabilidad.
 4. **Resultados oficiales** — candidatos, selección, confirmación, disputas, agregado, proyecciones.
 5. **Estadísticas y premium** — rankings, premios, analíticas.
-6. **Expansión** — otras modalidades, móvil (React Native + Expo), white-label, más integraciones.
+6. **Expansión** — otras modalidades, white-label, push nativo y más integraciones.
 
 ## 9. Trazabilidad
 
