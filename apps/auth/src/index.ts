@@ -1,6 +1,7 @@
 import type { IdGeneratorPort } from "@futrob/shared-kernel";
 import { createAuth } from "./adapters/auth/better-auth.ts";
 import { buildAuthEnv, type AuthEnv, type AuthWorkerEnv } from "./auth-env.ts";
+import { isAuthSchemaReady } from "./auth-readiness.ts";
 import { SystemClock } from "./clock.ts";
 import { CryptoIdGenerator } from "./id-generator.ts";
 
@@ -26,10 +27,7 @@ async function health(env: AuthWorkerEnv): Promise<Response> {
       throw new Error("APP_DB is required");
     }
     buildAuthEnv(env);
-    const tables = await env.APP_DB.prepare(
-      "SELECT COUNT(*) AS table_count FROM sqlite_master WHERE type = 'table' AND name IN ('session', 'identity_subjects', 'rateLimit')",
-    ).first<{ table_count: number }>();
-    if (tables?.table_count !== 3) {
+    if (!(await isAuthSchemaReady(env.APP_DB))) {
       throw new Error("Auth schema is incomplete");
     }
     return Response.json({ ok: true, service: "futrob-auth" });
