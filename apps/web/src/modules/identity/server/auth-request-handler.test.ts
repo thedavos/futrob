@@ -47,7 +47,7 @@ describe("auth proxy helpers", () => {
   });
 
   it("forwards path, query, and body with redirect: manual", async () => {
-    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response("ok", { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new Request("http://localhost:3000/api/auth/sign-in/email?next=1", {
@@ -59,8 +59,11 @@ describe("auth proxy helpers", () => {
     await proxyAuthRequest(request, "http://localhost:8788/");
 
     expect(fetchMock).toHaveBeenCalledOnce();
-    const target = fetchMock.mock.calls[0]?.[0];
-    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    const call = fetchMock.mock.calls.at(0);
+    if (!call) {
+      throw new Error("Expected the auth proxy to call fetch");
+    }
+    const [target, init] = call;
     expect(target).toBe("http://localhost:8788/api/auth/sign-in/email?next=1");
     expect(init?.method).toBe("POST");
     expect(init?.redirect).toBe("manual");
