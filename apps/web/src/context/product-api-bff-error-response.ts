@@ -2,6 +2,10 @@ import type { RequestId } from "@futrob/api-contracts";
 import { FutrobApiError } from "@futrob/sdk";
 import { AuthUnauthenticatedError } from "@/context/auth.ts";
 import { ProductApiUnreachableError } from "@/context/product-api-client.ts";
+import {
+  AuthServiceMisconfiguredError,
+  AuthServiceUnavailableError,
+} from "@/modules/identity/server/auth-errors.ts";
 import { apiErrorResponse } from "@/shared/infrastructure/http/api-response.ts";
 import { BffRateLimitUnavailableError } from "@/shared/infrastructure/rate-limit/enforce-bff-rate-limit.ts";
 
@@ -12,6 +16,8 @@ export interface ProductApiBffMisconfiguredFailure extends Error {
 export type ClassifiedProductApiBffError =
   | { readonly kind: "rate_limit_unavailable"; readonly error: BffRateLimitUnavailableError }
   | { readonly kind: "misconfigured"; readonly error: ProductApiBffMisconfiguredFailure }
+  | { readonly kind: "auth_misconfigured"; readonly error: AuthServiceMisconfiguredError }
+  | { readonly kind: "auth_unavailable"; readonly error: AuthServiceUnavailableError }
   | { readonly kind: "unauthenticated"; readonly error: AuthUnauthenticatedError }
   | { readonly kind: "unreachable"; readonly error: ProductApiUnreachableError }
   | { readonly kind: "futrob_api"; readonly error: FutrobApiError }
@@ -23,6 +29,12 @@ export function classifyProductApiBffError(error: Error): ClassifiedProductApiBf
   }
   if (isProductApiBffMisconfiguredFailure(error)) {
     return { kind: "misconfigured", error };
+  }
+  if (error instanceof AuthServiceMisconfiguredError) {
+    return { kind: "auth_misconfigured", error };
+  }
+  if (error instanceof AuthServiceUnavailableError) {
+    return { kind: "auth_unavailable", error };
   }
   if (error instanceof AuthUnauthenticatedError) {
     return { kind: "unauthenticated", error };
@@ -56,6 +68,24 @@ export function productApiBffErrorResponse(
         {
           code: error.error.code,
           messageKey: "errors.product_api.bff_misconfigured",
+        },
+        requestId,
+      );
+    case "auth_misconfigured":
+      return apiErrorResponse(
+        503,
+        {
+          code: error.error.code,
+          messageKey: "errors.auth.misconfigured",
+        },
+        requestId,
+      );
+    case "auth_unavailable":
+      return apiErrorResponse(
+        503,
+        {
+          code: error.error.code,
+          messageKey: "errors.auth.unavailable",
         },
         requestId,
       );
@@ -98,6 +128,10 @@ export function productApiBffErrorResponse(
         },
         requestId,
       );
+    default: {
+      const _exhaustive: never = error;
+      throw new Error(`unhandled BFF error kind: ${JSON.stringify(_exhaustive)}`);
+    }
   }
 }
 

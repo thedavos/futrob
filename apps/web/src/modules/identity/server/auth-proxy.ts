@@ -1,7 +1,10 @@
+import { z } from "zod";
 import { apiErrorResponse } from "@/shared/infrastructure/http/api-response.ts";
+import { AuthServiceUnavailableError } from "./auth-errors.ts";
 
 export const AUTH_PROXY_TIMEOUT_MS = 10_000;
 const AUTH_SERVICE_ORIGIN = "https://futrob-auth.internal";
+const AUTH_SESSION_PATH = "/api/auth/get-session";
 
 const HOP_BY_HOP_HEADERS = [
   "connection",
@@ -111,6 +114,59 @@ export async function forwardAuthRequest(
     return apiErrorResponse(502, {
       code: "auth.unavailable",
       messageKey: "errors.auth.unavailable",
+    });
+  }
+}
+
+const authSessionUserSchema = z.object({
+  user: z.object({ id: z.string().min(1) }),
+});
+
+/**
+ * Resolve the Better Auth user id via AUTH_SERVICE. Web does not read
+ * session/user tables from D1 — that stays on apps/auth.
+ */
+export async function fetchAuthSessionUserId(
+  request: Request,
+  authService: AuthServiceBinding,
+  timeoutMs: number = AUTH_PROXY_TIMEOUT_MS,
+): Promise<string | null> {
+  const incoming = new URL(request.url);
+  try {
+    const upstream = await authService.fetch(
+      new Request(`${AUTH_SERVICE_ORIGIN}${AUTH_SESSION_PATH}`, {
+        method: "GET",
+        headers: buildAuthProxyHeaders(request, incoming),
+        redirect: "manual",
+        signal: AbortSignal.timeout(timeoutMs),
+      }),
+    );
+
+    if (upstream.status === 401 || upstream.status === 403) {
+      return null;
+    }
+    if (!upstream.ok) {
+      throw new AuthServiceUnavailableError({
+        code: "auth.unavailable",
+        message: "Authentication service is unavailable",
+      });
+    }
+
+    const raw: unknown = await upstream.json().catch(() => null);
+    if (raw == null) {
+      return null;
+    }
+    const parsed = authSessionUserSchema.safeParse(raw);
+    return parsed.success ? parsed.data.user.id : null;
+  } catch (error) {
+    if (error instanceof AuthServiceUnavailableError) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : "auth session lookup failed";
+    console.error(JSON.stringify({ event: "auth.session.upstream_failed", message }));
+    throw new AuthServiceUnavailableError({
+      code: "auth.unavailable",
+      message,
     });
   }
 }

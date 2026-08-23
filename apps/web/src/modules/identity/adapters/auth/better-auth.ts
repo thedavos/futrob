@@ -1,5 +1,6 @@
-// Session read-model (ADR-0015 stage 3): serving lives in apps/auth. Web only
-// instantiates Better Auth to call `auth.api.getSession` against D1.
+// Session schema lockstep with apps/auth (ADR-0015). Serving and session
+// reads live in apps/auth; web only uses this Drizzle schema to look up
+// `identity_subjects` after AUTH_SERVICE get-session.
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins";
@@ -14,8 +15,8 @@ export function createAuthDb(d1: AppD1Database): AuthDb {
 }
 
 /**
- * Request-scoped Better Auth instance bound to D1 for session reads.
- * Instantiate per request. Do not enable sign-up, hooks, or cookie serving here.
+ * Request-scoped Better Auth instance bound to D1. Kept for tests and the
+ * schema adapter; the live session path uses AUTH_SERVICE, not this helper.
  */
 export function createAuth(input: {
   readonly d1: AppD1Database;

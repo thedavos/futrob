@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { AuthServiceUnavailableError } from "./auth-errors.ts";
 import {
   buildAuthProxyHeaders,
   buildAuthProxyTarget,
+  fetchAuthSessionUserId,
   forwardAuthRequest,
   isAuthApiPath,
   proxyAuthRequest,
@@ -176,5 +178,46 @@ describe("auth proxy", () => {
       1,
     );
     expect(response.status).toBe(502);
+  });
+});
+
+describe("fetchAuthSessionUserId", () => {
+  it("returns the user id from AUTH_SERVICE get-session", async () => {
+    const fetchMock = vi.fn<AuthServiceBinding["fetch"]>(
+      async () =>
+        new Response(JSON.stringify({ user: { id: "user-1" }, session: { id: "sess-1" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+
+    const userId = await fetchAuthSessionUserId(
+      new Request("http://localhost:3000/api/v1/players/me/teams", {
+        headers: { cookie: "better-auth.session_token=abc" },
+      }),
+      { fetch: fetchMock },
+    );
+
+    expect(userId).toBe("user-1");
+    const proxied = fetchMock.mock.calls[0]?.[0];
+    expect(proxied?.url).toBe("https://futrob-auth.internal/api/auth/get-session");
+    expect(proxied?.method).toBe("GET");
+    expect(proxied?.headers.get("cookie")).toBe("better-auth.session_token=abc");
+  });
+
+  it("returns null when auth has no session", async () => {
+    const userId = await fetchAuthSessionUserId(
+      new Request("http://localhost:3000/api/v1/players/me"),
+      { fetch: async () => new Response("null", { status: 200 }) },
+    );
+    expect(userId).toBeNull();
+  });
+
+  it("throws AuthServiceUnavailableError when auth returns 500", async () => {
+    await expect(
+      fetchAuthSessionUserId(new Request("http://localhost:3000/api/v1/players/me"), {
+        fetch: async () => new Response("nope", { status: 500 }),
+      }),
+    ).rejects.toBeInstanceOf(AuthServiceUnavailableError);
   });
 });

@@ -43,8 +43,8 @@ export async function createAuthenticatedProductApiClient(request: Request, requ
 
   const actorId = await resolveAuthenticatedRequestActor({
     d1: bindings.APP_DB,
-    env: appEnv,
-    headers: request.headers,
+    authService: bindings.AUTH_SERVICE,
+    request,
   });
   const client = createProductApiClient({
     actorId,

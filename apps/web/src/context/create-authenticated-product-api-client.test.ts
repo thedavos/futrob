@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vite-plus/test";
 import { FutrobApiError } from "@futrob/sdk";
 import {
+  AuthServiceMisconfiguredError,
+  AuthServiceUnavailableError,
+} from "@/modules/identity/server/auth-errors.ts";
+import { BffRateLimitUnavailableError } from "@/shared/infrastructure/rate-limit/enforce-bff-rate-limit.ts";
+import {
   productApiBffErrorResponse,
   productApiBffErrorResponseForError,
 } from "./product-api-bff-error-response.ts";
 import { ProductApiUnreachableError } from "./product-api-client.ts";
-import { BffRateLimitUnavailableError } from "@/shared/infrastructure/rate-limit/enforce-bff-rate-limit.ts";
 
 describe("productApiBffErrorResponse", () => {
   it("keeps the BFF request ID when the downstream error disagrees", async () => {
@@ -71,6 +75,42 @@ describe("productApiBffErrorResponse", () => {
     expect(await response.json()).toEqual({
       code: "product_api.unreachable",
       messageKey: "errors.product_api.unreachable",
+      requestId,
+    });
+  });
+
+  it("returns a sanitized 503 when AUTH_SERVICE is missing", async () => {
+    const requestId = "2c9f1a44-0b7e-4d2a-9f11-8a6c3b1d0e22";
+    const response = productApiBffErrorResponseForError(
+      new AuthServiceMisconfiguredError({
+        code: "auth.misconfigured",
+        message: "AUTH_SERVICE binding is required",
+      }),
+      requestId,
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      code: "auth.misconfigured",
+      messageKey: "errors.auth.misconfigured",
+      requestId,
+    });
+  });
+
+  it("returns a sanitized 503 when AUTH_SERVICE is unreachable", async () => {
+    const requestId = "8e4c2b11-5a90-4f3d-b7c6-1d2e3f4a5b60";
+    const response = productApiBffErrorResponseForError(
+      new AuthServiceUnavailableError({
+        code: "auth.unavailable",
+        message: "Authentication service is unavailable",
+      }),
+      requestId,
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      code: "auth.unavailable",
+      messageKey: "errors.auth.unavailable",
       requestId,
     });
   });
