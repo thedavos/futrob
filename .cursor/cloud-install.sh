@@ -44,9 +44,9 @@ fi
 EOF
 fi
 
-# Cloud Agents manage their own hooks path; skip Lefthook's root postinstall here.
+# CI prevents Lefthook's dependency postinstall from replacing Cloud Agent hooks.
 # Dependency scripts remain fail-closed through package.json allowScripts.
-LEFTHOOK=0 npm ci --strict-allow-scripts
+CI=1 npm ci --strict-allow-scripts
 
 if [[ ! -f apps/web/.dev.vars ]]; then
   cp apps/web/.dev.vars.example apps/web/.dev.vars
