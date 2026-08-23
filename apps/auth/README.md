@@ -12,7 +12,8 @@ Este app es el dueño del schema D1 de **auth** y de los contadores persistentes
 de rate limit (`0001_better_auth_and_actors`, `0002_better_auth_rate_limit`):
 
 ```bash
-cd apps/auth && npx wrangler d1 migrations apply futrob-app --local
+cd apps/auth
+npx wrangler d1 migrations apply futrob-app --local --persist-to ../web/.wrangler/state
 ```
 
 `apps/web` mantiene su propio lineage para tablas que le pertenecen (BFF rate
@@ -29,7 +30,9 @@ npm run dev -w @futrob/auth
 
 El script usa `--persist-to ../web/.wrangler/state`, así que lee/escribe **el mismo
 estado D1 local** que `apps/web`. Aplica las migraciones desde `apps/auth` (y
-`0002` desde `apps/web`) antes de levantar el worker.
+`0002` desde `apps/web`) antes de levantar el worker. Sin `--persist-to`,
+Wrangler crea otro estado local bajo `apps/auth/.wrangler/state` que el worker
+no usa.
 
 Variables: copia `.dev.vars.example` → `.dev.vars`. `BETTER_AUTH_SECRET` debe
 coincidir con `apps/web/.dev.vars`. `BETTER_AUTH_URL` es el origen público de

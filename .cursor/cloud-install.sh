@@ -111,5 +111,5 @@ fi
 
 # Non-interactive when stdin is not a TTY (Cloud / CI).
 # Auth schema lives in apps/auth; web lineage is BFF rate-limit only.
-CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/auth
+CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/auth --persist-to ../web/.wrangler/state
 CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/web

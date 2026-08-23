@@ -91,7 +91,7 @@
   "allowScripts": {
     "esbuild": true,
     "fsevents": false,
-    "lefthook": true,
+    "lefthook": false,
     "sharp": true,
     "workerd": true
   }

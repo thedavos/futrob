@@ -106,7 +106,7 @@ cp apps/api/.env.example apps/api/.env
 # set DATABASE_URL + INTERNAL_JOB_SECRET (must match web)
 
 # D1 local: auth schema from apps/auth, BFF rate-limit from apps/web
-cd apps/auth && npx wrangler d1 migrations apply futrob-app --local && cd ../..
+cd apps/auth && npx wrangler d1 migrations apply futrob-app --local --persist-to ../web/.wrangler/state && cd ../..
 cd apps/web && npx wrangler d1 migrations apply futrob-app --local && cd ../..
 
 # Postgres (organizations) — apply apps/api/migrations/*.sql to DATABASE_URL
