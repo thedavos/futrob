@@ -20,7 +20,9 @@ describe("auth proxy", () => {
     expect(
       buildAuthProxyTarget(new URL("http://localhost:3000/api/auth/sign-in/email?next=1")),
     ).toBe("https://futrob-auth.internal/api/auth/sign-in/email?next=1");
-    expect(buildAuthProxyTarget(new URL("http://localhost:3000/api/v1/players/me"))).toBeUndefined();
+    expect(
+      buildAuthProxyTarget(new URL("http://localhost:3000/api/v1/players/me")),
+    ).toBeUndefined();
   });
 
   it("strips spoofable proxy headers and preserves Cloudflare's client IP", () => {
