@@ -13,34 +13,12 @@ const STRIPPED_REQUEST_HEADERS = [
   "x-real-ip",
 ] as const;
 
-export function resolveAuthServiceUrl(
-  bindingUrl: string | undefined,
-  processUrl: string | undefined,
-): string | undefined {
-  const trimmed = (bindingUrl ?? processUrl)?.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-
-  try {
-    const url = new URL(trimmed);
-    if (
-      (url.protocol !== "http:" && url.protocol !== "https:") ||
-      url.username ||
-      url.password ||
-      url.pathname !== "/" ||
-      url.search ||
-      url.hash
-    ) {
-      return undefined;
-    }
-    return url.origin;
-  } catch {
-    return undefined;
-  }
+export interface AuthServiceBinding {
+  fetch(request: Request): Promise<Response>;
 }
 
 export function buildAuthProxyHeaders(request: Request, incoming: URL): Headers {
+  const clientIp = request.headers.get("cf-connecting-ip");
   const headers = new Headers(request.headers);
   for (const name of STRIPPED_REQUEST_HEADERS) {
     headers.delete(name);
@@ -50,6 +28,9 @@ export function buildAuthProxyHeaders(request: Request, incoming: URL): Headers 
       headers.delete(name);
     }
   }
+  if (clientIp) {
+    headers.set("cf-connecting-ip", clientIp);
+  }
   headers.set("x-forwarded-host", incoming.host);
   headers.set("x-forwarded-proto", incoming.protocol.replace(/:$/, ""));
   return headers;
@@ -57,11 +38,10 @@ export function buildAuthProxyHeaders(request: Request, incoming: URL): Headers 
 
 export async function proxyAuthRequest(
   request: Request,
-  authServiceUrl: string,
+  authService: AuthServiceBinding,
 ): Promise<Response> {
   const incoming = new URL(request.url);
-  const base = authServiceUrl.replace(/\/$/, "");
-  const target = `${base}${incoming.pathname}${incoming.search}`;
+  const target = `https://futrob-auth.internal${incoming.pathname}${incoming.search}`;
   const method = request.method.toUpperCase();
   const body = method === "GET" || method === "HEAD" ? undefined : request.body;
   const init: RequestInit & { duplex?: "half" } = {
@@ -75,5 +55,5 @@ export async function proxyAuthRequest(
     init.duplex = "half";
   }
 
-  return await fetch(target, init);
+  return await authService.fetch(new Request(target, init));
 }

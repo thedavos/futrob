@@ -8,9 +8,8 @@
     "APP_BASE_URL": "https://futrob.app",
     // Local override: FUTROB_API_BASE_URL in apps/web/.dev.vars
     "FUTROB_API_BASE_URL": "https://api.futrob.app/api/v1",
-    // Standalone auth worker (ADR-0015). Local override: FUTROB_AUTH_SERVICE_URL in .dev.vars
-    "FUTROB_AUTH_SERVICE_URL": "https://futrob-auth.futrob-workers.workers.dev",
   },
+  "services": [{ "binding": "AUTH_SERVICE", "service": "futrob-auth" }],
   "d1_databases": [
     {
       "binding": "APP_DB",

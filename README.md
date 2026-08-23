@@ -118,7 +118,7 @@ npm run dev                # web (:3000) + api (:8787) + auth (:8788)
 
 Align `INTERNAL_JOB_SECRET` between `apps/web/.dev.vars` and `apps/api/.env` or org BFF calls fail with 401.
 Align `BETTER_AUTH_SECRET` between `apps/web/.dev.vars` and `apps/auth/.dev.vars` or login succeeds and BFF/SSR stay unauthenticated.
-Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` and `FUTROB_AUTH_SERVICE_URL=http://localhost:8788` in `apps/web/.dev.vars` (they override the production URLs in `wrangler.jsonc`) or the BFF talks to production.
+Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` in `apps/web/.dev.vars`. Web reaches auth through the `AUTH_SERVICE` service binding, which Wrangler connects to the local `futrob-auth` Worker.
 Keep `RATE_LIMIT_FINGERPRINT_SECRET` independent from every other secret. Before deploying the
 Worker, provision it explicitly:
 

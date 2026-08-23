@@ -25,9 +25,10 @@ plataforma consumida por dos clientes, no un detalle de la web.
      secret con web; las sesiones son intercambiables entre orígenes. Web sigue
      sirviendo su auth embebida.
      - **Etapa 2 (hecha): clientes migran al worker.** Móvil apunta directo vía
-       `EXPO_PUBLIC_FUTROB_AUTH_BASE_URL`; web hace **proxy same-origin**
-       `/api/auth/* → FUTROB_AUTH_SERVICE_URL` (patrón BFF, sin CORS ni cookies
-       cross-origin).
+       `EXPO_PUBLIC_FUTROB_AUTH_BASE_URL`; web hace **proxy same-origin** por el
+       service binding `AUTH_SERVICE` (patrón BFF, sin CORS ni cookies
+       cross-origin). El canal interno conserva `CF-Connecting-IP` para que el
+       rate limit separe clientes.
      - **Etapa 3 (hecha): web deja de servir auth.** El handler es proxy-only
        (503 si falta la var); el ownership del **schema de auth** se movió a
        `apps/auth`. La D1 compartida tiene una sola historia en

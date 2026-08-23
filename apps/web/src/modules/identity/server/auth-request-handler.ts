@@ -1,5 +1,5 @@
 import { getWorkerEnv } from "../adapters/auth/worker-env.ts";
-import { proxyAuthRequest, resolveAuthServiceUrl } from "./auth-proxy.ts";
+import { proxyAuthRequest } from "./auth-proxy.ts";
 
 function misconfigured() {
   return Response.json(
@@ -16,17 +16,12 @@ function misconfigured() {
  */
 export async function handleAuthRequest(request: Request): Promise<Response> {
   const bindings = getWorkerEnv();
-  const authServiceUrl = resolveAuthServiceUrl(
-    bindings.FUTROB_AUTH_SERVICE_URL,
-    process.env.FUTROB_AUTH_SERVICE_URL,
-  );
-
-  if (!authServiceUrl) {
+  if (!bindings.AUTH_SERVICE) {
     return misconfigured();
   }
 
   try {
-    return await proxyAuthRequest(request, authServiceUrl);
+    return await proxyAuthRequest(request, bindings.AUTH_SERVICE);
   } catch {
     console.error(JSON.stringify({ event: "auth.proxy.upstream_failed" }));
     return Response.json(
