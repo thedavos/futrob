@@ -10,6 +10,8 @@ import {
   getMyRecentMatchResponseSchema,
   getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
+  getMyGameProfileQuerySchema,
+  getMyGameProfileResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
   type GetCompetitionRankingsQuery,
@@ -23,6 +25,8 @@ import {
   type GetMyRecentMatchResponse,
   type GetMyRecentMatchesQueryInput,
   type GetMyRecentMatchesResponse,
+  type GetMyGameProfileQueryInput,
+  type GetMyGameProfileResponse,
   type GetMyStatisticsQuery,
   type GetMyStatisticsResponse,
 } from "@futrob/api-contracts";
@@ -77,6 +81,21 @@ export function createStatisticsResource(http: HttpClient) {
         method: "GET",
         options,
         parse: (data) => getMyRecentMatchesResponseSchema.parse(data),
+      });
+    },
+    async getMyGameProfile(
+      query: GetMyGameProfileQueryInput = {},
+      options: RequestOptions = {},
+    ): Promise<GetMyGameProfileResponse> {
+      const parsed = getMyGameProfileQuerySchema.parse(query);
+      const search = new URLSearchParams();
+      if (parsed.externalClubId) search.set("externalClubId", parsed.externalClubId);
+      const queryString = search.toString();
+      return http.request({
+        path: `/players/me/game-profile${queryString ? `?${queryString}` : ""}`,
+        method: "GET",
+        options,
+        parse: (data) => getMyGameProfileResponseSchema.parse(data),
       });
     },
     async getMyRecentMatch(

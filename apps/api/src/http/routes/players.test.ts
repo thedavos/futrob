@@ -1,4 +1,5 @@
 import {
+  getMyGameProfileResponseSchema,
   getMyRecentMatchResponseSchema,
   getMyRecentMatchesResponseSchema,
 } from "@futrob/api-contracts";
@@ -151,6 +152,38 @@ describe("apps/api personal statistics routes", () => {
       ),
     ).toBe(true);
     expect(body.matches.every((row) => !("players" in row.match))).toBe(true);
+  });
+
+  it("returns a ready game profile from played appearances", async () => {
+    const app = buildApp(
+      createFetch((url) => {
+        if (url.includes("/clubs/info")) return Response.json(clubInfoFixture);
+        if (url.includes("/clubs/matches")) return Response.json(clubMatchesFixture);
+        return Response.json([]);
+      }),
+    );
+    const actor = "actor-game-profile-ready";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, { externalClubId: "10754", name: "Fera Enjaulada" });
+
+    const response = await app.request("/api/v1/players/me/game-profile", {
+      headers: serviceHeaders(actor),
+    });
+
+    expect(response.status).toBe(200);
+    const body = await parseResponse(getMyGameProfileResponseSchema, response);
+    expect(body.status).toBe("ready");
+    if (body.status !== "ready") return;
+    expect(body.profile.sampleSize).toBeGreaterThan(0);
+    expect(body.profile.identity.displayName).toBe("Vcaliari");
+    expect(body.profile.attributes.map((row) => row.category)).toEqual([
+      "attack",
+      "pass",
+      "defense",
+      "impact",
+      "discipline",
+    ]);
+    expect(body.profile.summary.matchesPlayed).toBe(body.profile.sampleSize);
   });
 
   it("queries only the selected associated club for recent matches", async () => {

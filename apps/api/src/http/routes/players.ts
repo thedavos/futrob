@@ -1,11 +1,12 @@
 import { Hono } from "hono";
-import type { PlayerMatchContribution } from "@futrob/statistics";
 import { asCompetitionId, asTeamId, TaggedError } from "@futrob/shared-kernel";
 import {
   addMyPlayerGameAccountRequestSchema,
   addMyPlayerGameAccountResponseSchema,
   associateMyPlayerExternalClubRequestSchema,
   associateMyPlayerExternalClubResponseSchema,
+  getMyGameProfileQuerySchema,
+  getMyGameProfileResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
   getMyRecentMatchPathSchema,
@@ -29,6 +30,7 @@ import {
   playerProfileDto,
 } from "@/http/mappers/player.ts";
 import {
+  toPlayerGameProfileDto,
   toPlayerRecentMatchDetailDto,
   toPlayerRecentMatchesDto,
 } from "@/http/mappers/game-data.ts";
@@ -195,36 +197,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     }
     return jsonResponse(
       getMyMatchesResponseSchema.parse({
-        matches: page.items.map((row: PlayerMatchContribution) => ({
-          id: row.id,
-          officialResultId: row.officialResultId,
-          revision: row.revision,
-          encounterId: row.encounterId,
-          competitionId: row.competitionId,
-          organizationId: row.organizationId,
-          officialSlot: row.officialSlot,
-          teamId: row.teamId,
-          correlationStatus: row.correlationStatus,
-          externalPlayerId: row.externalPlayerId,
-          displayName: row.displayName,
-          externalClubId: row.externalClubId,
-          platform: row.platform,
-          gameEdition: row.gameEdition,
-          position: row.position,
-          minutesPlayed: row.minutesPlayed,
-          goals: row.goals,
-          assists: row.assists,
-          shots: row.shots,
-          passAttempts: row.passAttempts,
-          passesMade: row.passesMade,
-          tackleAttempts: row.tackleAttempts,
-          tacklesMade: row.tacklesMade,
-          saves: row.saves,
-          yellowCards: row.yellowCards,
-          redCards: row.redCards,
-          isMvp: row.isMvp,
-          rating: row.rating,
-        })),
+        matches: page.items,
         nextCursor: page.nextCursor,
       }),
     );
@@ -254,6 +227,33 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     if (!listed.isOk()) return failureToHttp(listed.error);
     return jsonResponse(
       getMyRecentMatchesResponseSchema.parse(toPlayerRecentMatchesDto(listed.value)),
+    );
+  });
+
+  secured.get("/players/me/game-profile", async (c) => {
+    const parsed = getMyGameProfileQuerySchema.safeParse({
+      externalClubId: c.req.query("externalClubId") ?? undefined,
+    });
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+
+    const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
+    const clubs = clubsForRecentMatches(details.externalClubs, parsed.data.externalClubId);
+    if (parsed.data.externalClubId && details.externalClubs.length > 0 && clubs.length === 0) {
+      return validationErrorResponse([
+        {
+          code: "custom",
+          path: ["externalClubId"],
+          message: "externalClubId must match an associated club",
+        },
+      ]);
+    }
+    const profile = await gameData.getPlayerGameProfile.execute({
+      accounts: recentMatchAccounts(details),
+      clubs: clubs.map(toRecentMatchClub),
+    });
+    if (!profile.isOk()) return failureToHttp(profile.error);
+    return jsonResponse(
+      getMyGameProfileResponseSchema.parse(toPlayerGameProfileDto(profile.value)),
     );
   });
 

@@ -1,19 +1,115 @@
 import type {
+  AttributeCategoryScore,
+  AttributeComponent,
   ExternalClub,
+  PlayerGameProfile,
+  PlayerGameProfileResult,
+  PlayerGameStatBlock,
+  PlayerPositionStatBlock,
   PlayerRecentMatchesResult,
   PlayerRecentProviderMatchResult,
   PlayerRecentProviderMatch,
+  PlayerTeamStatBlock,
   ProviderMatch,
 } from "@futrob/game-data";
 import type {
   ExternalClubDto,
+  GetMyGameProfileResponse,
   GetMyRecentMatchResponse,
   GetMyRecentMatchesResponse,
+  PlayerGameProfileDto,
   PlayerRecentProviderMatchDetailDto,
   PlayerRecentProviderMatchDto,
   ProviderMatchDto,
   ProviderMatchListDto,
 } from "@futrob/api-contracts";
+
+export function toPlayerGameProfileDto(result: PlayerGameProfileResult): GetMyGameProfileResponse {
+  switch (result.status) {
+    case "needs_club":
+      return { status: "needs_club" };
+    case "needs_game_account":
+      return { status: "needs_game_account" };
+    case "ready":
+      return { status: "ready", profile: serializePlayerGameProfile(result.profile) };
+    default: {
+      const _exhaustive: never = result;
+      return _exhaustive;
+    }
+  }
+}
+
+function serializePlayerGameProfile(profile: PlayerGameProfile): PlayerGameProfileDto {
+  return {
+    identity: {
+      displayName: profile.identity.displayName,
+      preferredPosition: profile.identity.preferredPosition,
+      preferredRole: profile.identity.preferredRole,
+    },
+    sampleSize: profile.sampleSize,
+    elo: { rating: profile.elo.rating, ratedMatches: profile.elo.ratedMatches },
+    attributes: profile.attributes.map(serializeAttributeCategory),
+    evolution: profile.evolution.map((point) => ({
+      occurredAt: point.occurredAt.toISOString(),
+      elo: point.elo,
+      rating: point.rating,
+      outcome: point.outcome,
+    })),
+    summary: serializeStatBlock(profile.summary),
+    byTeam: profile.byTeam.map(serializeTeamBlock),
+    byPosition: profile.byPosition.map(serializePositionBlock),
+  };
+}
+
+function serializeAttributeCategory(category: AttributeCategoryScore) {
+  return {
+    category: category.category,
+    score: category.score,
+    components: category.components.map(serializeAttributeComponent),
+  };
+}
+
+function serializeAttributeComponent(item: AttributeComponent) {
+  return {
+    key: item.key,
+    weight: item.weight,
+    raw: item.raw,
+    rawKind: item.rawKind,
+    score: item.score,
+    points: item.points,
+    confidence: item.confidence,
+    sampleCount: item.sampleCount,
+  };
+}
+
+function serializeStatBlock(block: PlayerGameStatBlock) {
+  return {
+    matchesPlayed: block.matchesPlayed,
+    wins: block.wins,
+    draws: block.draws,
+    losses: block.losses,
+    minutes: block.minutes,
+    totals: { ...block.totals },
+    averages: { ...block.averages },
+    partial: { ...block.partial },
+  };
+}
+
+function serializeTeamBlock(block: PlayerTeamStatBlock) {
+  return {
+    clubId: block.clubId,
+    clubName: block.clubName,
+    ...serializeStatBlock(block),
+  };
+}
+
+function serializePositionBlock(block: PlayerPositionStatBlock) {
+  return {
+    position: block.position,
+    role: block.role,
+    ...serializeStatBlock(block),
+  };
+}
 
 export function toExternalClubDto(club: ExternalClub): ExternalClubDto {
   return {

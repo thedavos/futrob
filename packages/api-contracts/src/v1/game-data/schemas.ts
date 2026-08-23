@@ -199,6 +199,148 @@ export const getMyRecentMatchResponseSchema = z.discriminatedUnion("status", [
 
 export type GetMyRecentMatchResponse = z.infer<typeof getMyRecentMatchResponseSchema>;
 
+const playerGameStatTotalsSchema = z.object({
+  goals: z.number(),
+  assists: z.number(),
+  shots: z.number(),
+  passAttempts: z.number(),
+  passesMade: z.number(),
+  tackleAttempts: z.number(),
+  tacklesMade: z.number(),
+  saves: z.number(),
+  yellowCards: z.number(),
+  redCards: z.number(),
+  mvpAwards: z.number(),
+  rating: z.number(),
+});
+
+const playerGameStatRatesSchema = z.object({
+  goals: z.number().nullable(),
+  assists: z.number().nullable(),
+  shots: z.number().nullable(),
+  passAttempts: z.number().nullable(),
+  passesMade: z.number().nullable(),
+  tackleAttempts: z.number().nullable(),
+  tacklesMade: z.number().nullable(),
+  saves: z.number().nullable(),
+  yellowCards: z.number().nullable(),
+  redCards: z.number().nullable(),
+  mvpAwards: z.number().nullable(),
+  rating: z.number().nullable(),
+});
+
+const playerGameStatPartialSchema = z.object({
+  minutes: z.boolean(),
+  goals: z.boolean(),
+  assists: z.boolean(),
+  shots: z.boolean(),
+  passAttempts: z.boolean(),
+  passesMade: z.boolean(),
+  tackleAttempts: z.boolean(),
+  tacklesMade: z.boolean(),
+  saves: z.boolean(),
+  yellowCards: z.boolean(),
+  redCards: z.boolean(),
+  mvpAwards: z.boolean(),
+  rating: z.boolean(),
+});
+
+export const playerGameStatBlockSchema = z.object({
+  matchesPlayed: z.number().int().nonnegative(),
+  wins: z.number().int().nonnegative(),
+  draws: z.number().int().nonnegative(),
+  losses: z.number().int().nonnegative(),
+  minutes: z.number().nullable(),
+  totals: playerGameStatTotalsSchema,
+  averages: playerGameStatRatesSchema,
+  partial: playerGameStatPartialSchema,
+});
+
+export const playerAttributeComponentSchema = z.object({
+  key: z.enum([
+    "goalsPerMatch",
+    "shotsPerMatch",
+    "shotAccuracy",
+    "offensiveRoleRating",
+    "passSuccess",
+    "passVolume",
+    "tacklesMadePerMatch",
+    "tackleSuccess",
+    "defensiveRoleRating",
+    "averageRating",
+    "winRate",
+    "goalsAssistsPerMatch",
+    "fewerRedsPerMatch",
+  ]),
+  weight: z.number().min(0).max(1),
+  raw: z.number().nullable(),
+  rawKind: z.enum(["perMatch", "percent", "rating", "score"]),
+  score: z.number().nullable(),
+  points: z.number().int(),
+  confidence: z.number().min(0).max(1),
+  sampleCount: z.number().int().nonnegative(),
+});
+
+export const playerAttributeCategorySchema = z.object({
+  category: z.enum(["attack", "pass", "defense", "impact", "discipline"]),
+  score: z.number().int().min(0).max(100),
+  components: z.array(playerAttributeComponentSchema),
+});
+
+export const playerGameProfileSchema = z.object({
+  identity: z.object({
+    displayName: z.string().min(1),
+    preferredPosition: z.string().min(1).nullable(),
+    preferredRole: z.enum(["attack", "midfield", "defense", "goalkeeper", "unknown"]),
+  }),
+  sampleSize: z.number().int().nonnegative(),
+  elo: z.object({
+    rating: z.number().int(),
+    ratedMatches: z.number().int().nonnegative(),
+  }),
+  attributes: z.array(playerAttributeCategorySchema),
+  evolution: z.array(
+    z.object({
+      occurredAt: z.string().datetime(),
+      elo: z.number().int(),
+      rating: z.number().nullable(),
+      outcome: z.enum(["win", "draw", "loss", "unknown"]),
+    }),
+  ),
+  summary: playerGameStatBlockSchema,
+  byTeam: z.array(
+    playerGameStatBlockSchema.extend({
+      clubId: z.string().min(1),
+      clubName: z.string().min(1),
+    }),
+  ),
+  byPosition: z.array(
+    playerGameStatBlockSchema.extend({
+      position: z.string().min(1),
+      role: z.enum(["attack", "midfield", "defense", "goalkeeper", "unknown"]),
+    }),
+  ),
+});
+
+export const getMyGameProfileQuerySchema = z.object({
+  externalClubId: z.string().trim().min(1).optional(),
+});
+
+export type GetMyGameProfileQuery = z.infer<typeof getMyGameProfileQuerySchema>;
+export type GetMyGameProfileQueryInput = z.input<typeof getMyGameProfileQuerySchema>;
+
+export const getMyGameProfileResponseSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("needs_club") }),
+  z.object({ status: z.literal("needs_game_account") }),
+  z.object({
+    status: z.literal("ready"),
+    profile: playerGameProfileSchema,
+  }),
+]);
+
+export type GetMyGameProfileResponse = z.infer<typeof getMyGameProfileResponseSchema>;
+export type PlayerGameProfileDto = z.infer<typeof playerGameProfileSchema>;
+
 export const enqueueProviderSyncJobRequestSchema = z.object({
   organizationId: z.string().trim().min(1),
   providerKey: z.literal("ea-clubs"),

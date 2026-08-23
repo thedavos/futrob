@@ -80,6 +80,20 @@ describe("statistics SDK resource", () => {
     );
   });
 
+  it("reads the personal game profile", async () => {
+    let requestedUrl = "";
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input) => {
+        requestedUrl = requestUrl(input);
+        return Response.json({ status: "needs_club" });
+      }),
+    });
+
+    await expect(client.statistics.getMyGameProfile()).resolves.toEqual({ status: "needs_club" });
+    expect(requestedUrl).toBe("https://app.example.com/api/v1/players/me/game-profile");
+  });
+
   it("encodes the provider match identity and selected club for detail", async () => {
     let requestedUrl = "";
     const client = createFutrobClient({
