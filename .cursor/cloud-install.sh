@@ -44,9 +44,9 @@ fi
 EOF
 fi
 
-# Only esbuild / sharp / workerd may run install scripts (package.json allowScripts).
-# Fail closed on npm 12+ rather than skipping native postinstalls silently.
-npm ci --strict-allow-scripts
+# Cloud Agents manage their own hooks path; skip Lefthook's root postinstall here.
+# Dependency scripts remain fail-closed through package.json allowScripts.
+LEFTHOOK=0 npm ci --strict-allow-scripts
 
 if [[ ! -f apps/web/.dev.vars ]]; then
   cp apps/web/.dev.vars.example apps/web/.dev.vars

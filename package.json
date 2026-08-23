@@ -91,6 +91,7 @@
   "packageManager": "npm@11.16.0",
   "allowScripts": {
     "esbuild": true,
+    "fsevents": false,
     "lefthook": true,
     "sharp": true,
     "workerd": true
