@@ -33,11 +33,13 @@ function ProtectedPlayerStatistics() {
     };
   }, [navigate]);
 
-  return allowed ? (
-    <PlayerStatisticsPage />
-  ) : (
-    <main className="flex min-h-svh items-center justify-center px-5 text-sm text-muted-foreground">
-      {t("player.onboarding.checking")}
-    </main>
-  );
+  if (!allowed) {
+    return (
+      <main className="flex min-h-svh items-center justify-center px-5 text-sm text-muted-foreground">
+        {t("player.onboarding.checking")}
+      </main>
+    );
+  }
+
+  return <PlayerStatisticsPage />;
 }

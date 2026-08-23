@@ -52,9 +52,9 @@ export const WithEyebrowAndActions: Story = {
   render: () => (
     <PageHeader className="w-full max-w-5xl">
       <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
-      <PageHeaderTitle>Mis estadísticas</PageHeaderTitle>
+      <PageHeaderTitle>davos282</PageHeaderTitle>
       <PageHeaderDescription>
-        Agregados individuales construidos únicamente desde resultados oficiales aprobados.
+        Delantero · 28 partidos jugados. Tú como jugador.
       </PageHeaderDescription>
       <PageHeaderActions>
         <Button variant="link">Volver al espacio personal</Button>

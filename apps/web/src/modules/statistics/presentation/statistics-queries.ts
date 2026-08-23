@@ -55,6 +55,16 @@ export function useMyRecentMatchesQuery(externalClubId?: string, enabled = true)
   });
 }
 
+export function useMyGameProfileQuery(externalClubId?: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.gameData.meGameProfile(externalClubId),
+    queryFn: () =>
+      statisticsBrowserClient.getMyGameProfile(externalClubId ? { externalClubId } : {}),
+    enabled,
+    retry: false,
+  });
+}
+
 export function recentMatchListSummary(
   list: GetMyRecentMatchesResponse | undefined,
   providerKey: GameDataProviderKeyQuery,

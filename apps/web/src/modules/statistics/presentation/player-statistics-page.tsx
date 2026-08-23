@@ -1,10 +1,12 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import type { PlayerPersonalStatsDto } from "@futrob/api-contracts";
+import type { PlayerGameProfileDto } from "@futrob/api-contracts";
 import {
   Alert,
   AlertDescription,
+  Avatar,
+  AvatarFallback,
   Badge,
   Button,
   EmptyState,
@@ -19,103 +21,200 @@ import {
   Skeleton,
   Stat,
   StatGroup,
+  StatHint,
   StatLabel,
   StatValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
+import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
-import { useMyStatisticsQuery } from "./statistics-queries.ts";
-
-type StatisticMetric = keyof PlayerPersonalStatsDto["totals"];
-
-const STATISTIC_METRICS = [
-  "goals",
-  "assists",
-  "shots",
-  "passAttempts",
-  "passesMade",
-  "tackleAttempts",
-  "tacklesMade",
-  "saves",
-  "yellowCards",
-  "redCards",
-  "mvpAwards",
-  "rating",
-] as const satisfies readonly StatisticMetric[];
-
-const METRIC_KEYS = {
-  goals: "player.metric.goals",
-  assists: "player.metric.assists",
-  shots: "player.metric.shots",
-  passAttempts: "player.metric.passAttempts",
-  passesMade: "player.metric.passesMade",
-  tackleAttempts: "player.metric.tackleAttempts",
-  tacklesMade: "player.metric.tacklesMade",
-  saves: "player.metric.saves",
-  yellowCards: "player.metric.yellowCards",
-  redCards: "player.metric.redCards",
-  mvpAwards: "player.metric.mvpAwards",
-  rating: "player.metric.rating",
-} as const satisfies Record<StatisticMetric, ParameterlessMessageKey>;
+import { PlayerGameProfileAttributes } from "./player-game-profile-attributes.tsx";
+import { PlayerGameProfileBreakdown } from "./player-game-profile-breakdown.tsx";
+import { providerPositionLabelKey } from "./provider-match-detail-model.ts";
+import { useMyGameProfileQuery } from "./statistics-queries.ts";
 
 export function PlayerStatisticsPage() {
   const { t, locale } = useI18n();
-  const statisticsQuery = useMyStatisticsQuery();
   const numberFormat = new Intl.NumberFormat(locale === "en" ? "en-GB" : "es-ES", {
     maximumFractionDigits: 2,
   });
+  const percentFormat = new Intl.NumberFormat(locale === "en" ? "en-GB" : "es-ES", {
+    style: "percent",
+    maximumFractionDigits: 0,
+  });
+  const dateFormat = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "es-ES", {
+    day: "2-digit",
+    month: "short",
+  });
+  const profileQuery = useMyGameProfileQuery();
+  const readyProfile =
+    profileQuery.data?.status === "ready" && profileQuery.data.profile.sampleSize > 0
+      ? profileQuery.data.profile
+      : null;
 
   return (
     <main className="w-full">
-      <StatisticsPageHeader t={t} />
-
-      {statisticsQuery.isPending ? (
-        <StatisticsLoading t={t} />
-      ) : statisticsQuery.isError ? (
+      <PageHeader>
+        <PageHeaderEyebrow>{t("player.workspace.eyebrow")}</PageHeaderEyebrow>
+        {readyProfile ? (
+          <div className="col-start-1 flex min-w-0 items-center gap-4">
+            <Avatar className="size-14">
+              <AvatarFallback className="typo-label">
+                {initialsFromName(readyProfile.identity.displayName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <PageHeaderTitle>{readyProfile.identity.displayName}</PageHeaderTitle>
+              <PageHeaderDescription>{identityDescription(readyProfile, t)}</PageHeaderDescription>
+            </div>
+          </div>
+        ) : (
+          <>
+            <PageHeaderTitle>{t("player.statistics.title")}</PageHeaderTitle>
+            <PageHeaderDescription>{t("player.statistics.description")}</PageHeaderDescription>
+          </>
+        )}
+        <PageHeaderActions>
+          <Button render={<Link to="/player" />} variant="link">
+            {t("player.backToWorkspace")}
+          </Button>
+        </PageHeaderActions>
+      </PageHeader>
+      {profileQuery.isPending ? <ProfileLoading t={t} /> : null}
+      {profileQuery.isError ? (
         <Alert variant="destructive">
           <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
             <span>{t("player.statistics.error")}</span>
-            <Button onClick={() => void statisticsQuery.refetch()} variant="secondary">
+            <Button onClick={() => void profileQuery.refetch()} variant="secondary">
               {t("player.retry")}
             </Button>
           </AlertDescription>
         </Alert>
-      ) : statisticsQuery.data.statistics === null ? (
-        <OfficialHistoryEmpty t={t} />
-      ) : (
-        <StatisticsContent
+      ) : null}
+      {profileQuery.data?.status === "needs_club" ? (
+        <ProfileEmpty
+          actionHref="/player/ea-clubs"
+          actionLabel={t("shell.workspace.addClub")}
+          description={t("player.statistics.needsClub.description")}
+          title={t("player.statistics.needsClub.title")}
+        />
+      ) : null}
+      {profileQuery.data?.status === "needs_game_account" ? (
+        <ProfileEmpty
+          actionHref="/player/game-accounts"
+          actionLabel={t("player.gameData.review")}
+          description={t("player.statistics.needsGameAccount.description")}
+          title={t("player.statistics.needsGameAccount.title")}
+        />
+      ) : null}
+      {profileQuery.data?.status === "ready" && profileQuery.data.profile.sampleSize === 0 ? (
+        <ProfileEmpty
+          actionHref="/player/matches"
+          actionLabel={t("player.nav.matches")}
+          description={t("player.statistics.emptyDescription")}
+          title={t("player.statistics.emptyTitle")}
+        />
+      ) : null}
+      {readyProfile ? (
+        <ProfileReady
+          dateFormat={dateFormat}
           numberFormat={numberFormat}
-          statistics={statisticsQuery.data.statistics}
+          percentFormat={percentFormat}
+          profile={readyProfile}
           t={t}
         />
-      )}
+      ) : null}
     </main>
   );
 }
 
-function StatisticsPageHeader({ t }: { readonly t: Translator }) {
+function ProfileReady({
+  dateFormat,
+  numberFormat,
+  percentFormat,
+  profile,
+  t,
+}: {
+  readonly dateFormat: Intl.DateTimeFormat;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
+  readonly profile: PlayerGameProfileDto;
+  readonly t: Translator;
+}) {
+  const hasPartial = Object.values(profile.summary.partial).some(Boolean);
+
   return (
-    <PageHeader>
-      <PageHeaderEyebrow>{t("player.workspace.eyebrow")}</PageHeaderEyebrow>
-      <PageHeaderTitle>{t("player.statistics.title")}</PageHeaderTitle>
-      <PageHeaderDescription>{t("player.statistics.description")}</PageHeaderDescription>
-      <PageHeaderActions>
-        <Button render={<Link to="/player" />} variant="link">
-          {t("player.backToWorkspace")}
-        </Button>
-      </PageHeaderActions>
-    </PageHeader>
+    <div className="space-y-8">
+      <section aria-label={t("player.statistics.summary")} className="space-y-4">
+        <p className="typo-caption text-muted-foreground">{t("player.statistics.sampleHint")}</p>
+        <StatGroup>
+          <Stat>
+            <StatLabel>{t("player.statistics.elo")}</StatLabel>
+            <StatValue>{profile.elo.rating}</StatValue>
+            <StatHint>
+              {t("player.statistics.elo.hint", { count: profile.elo.ratedMatches })}
+            </StatHint>
+          </Stat>
+          <Stat>
+            <StatLabel>{t("player.statistics.record")}</StatLabel>
+            <StatValue>
+              {`${profile.summary.wins}–${profile.summary.draws}–${profile.summary.losses}`}
+            </StatValue>
+          </Stat>
+          <Stat>
+            <StatLabel>{t("player.metric.rating")}</StatLabel>
+            <StatValue>
+              {profile.summary.averages.rating === null
+                ? t("player.noData")
+                : numberFormat.format(profile.summary.averages.rating)}
+            </StatValue>
+          </Stat>
+          <Stat>
+            <StatLabel>{t("player.metric.goals")}</StatLabel>
+            <StatValue>{numberFormat.format(profile.summary.totals.goals)}</StatValue>
+          </Stat>
+        </StatGroup>
+        {hasPartial ? (
+          <Alert>
+            <AlertDescription>{t("player.partialData.description")}</AlertDescription>
+          </Alert>
+        ) : null}
+      </section>
+
+      <PlayerGameProfileAttributes
+        numberFormat={numberFormat}
+        percentFormat={percentFormat}
+        profile={profile}
+        t={t}
+      />
+
+      <section aria-label={t("player.statistics.evolution")} className="space-y-3">
+        <h2 className="typo-label">{t("player.statistics.evolution")}</h2>
+        {profile.evolution.length === 0 ? (
+          <p className="typo-caption text-muted-foreground">
+            {t("player.statistics.evolution.empty")}
+          </p>
+        ) : (
+          <ol className="flex flex-wrap gap-2">
+            {profile.evolution.slice(-12).map((point) => (
+              <li key={point.occurredAt}>
+                <Badge variant={outcomeBadge(point.outcome)}>
+                  {`${dateFormat.format(new Date(point.occurredAt))} · ${point.elo}${
+                    point.rating === null ? "" : ` · ${numberFormat.format(point.rating)}`
+                  } · ${outcomeLabel(point.outcome, t)}`}
+                </Badge>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+
+      <PlayerGameProfileBreakdown numberFormat={numberFormat} profile={profile} t={t} />
+    </div>
   );
 }
 
-function StatisticsLoading({ t }: { readonly t: Translator }) {
+function ProfileLoading({ t }: { readonly t: Translator }) {
   return (
     <section aria-busy="true" aria-label={t("player.statistics.loading")} className="space-y-4">
       <p className="typo-caption text-muted-foreground">{t("player.statistics.loading")}</p>
@@ -129,113 +228,75 @@ function StatisticsLoading({ t }: { readonly t: Translator }) {
   );
 }
 
-function OfficialHistoryEmpty({ t }: { readonly t: Translator }) {
+function ProfileEmpty({
+  actionHref,
+  actionLabel,
+  description,
+  title,
+}: {
+  readonly actionHref: "/player/ea-clubs" | "/player/game-accounts" | "/player/matches";
+  readonly actionLabel: string;
+  readonly description: string;
+  readonly title: string;
+}) {
   return (
     <EmptyState>
-      <EmptyStateTitle>{t("player.statistics.emptyTitle")}</EmptyStateTitle>
-      <EmptyStateDescription>{t("player.official.emptyDescription")}</EmptyStateDescription>
+      <EmptyStateTitle>{title}</EmptyStateTitle>
+      <EmptyStateDescription>{description}</EmptyStateDescription>
       <EmptyStateActions>
-        <Button render={<Link to="/player/game-accounts" />}>{t("player.gameData.review")}</Button>
+        <Button render={<Link to={actionHref} />}>{actionLabel}</Button>
       </EmptyStateActions>
     </EmptyState>
   );
 }
 
-function StatisticsContent({
-  statistics,
-  numberFormat,
-  t,
-}: {
-  readonly statistics: PlayerPersonalStatsDto;
-  readonly numberFormat: Intl.NumberFormat;
-  readonly t: Translator;
-}) {
-  const hasPartialData = Object.values(statistics.partial).some(Boolean);
-
-  return (
-    <div className="space-y-6">
-      <section className="rounded-lg border border-border bg-surface p-5">
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="typo-label">
-              {t("player.statistics.matchesCount", { count: statistics.matchesPlayed })}
-            </h2>
-            <p className="typo-caption mt-1 text-muted-foreground">
-              {t("player.statistics.revision", { revision: statistics.sourceRevisionMax })}
-            </p>
-          </div>
-          {hasPartialData ? <Badge variant="warning">{t("player.partialData")}</Badge> : null}
-        </div>
-        <StatGroup>
-          <Stat>
-            <StatLabel>{t("player.metric.matches")}</StatLabel>
-            <StatValue>{statistics.matchesPlayed}</StatValue>
-          </Stat>
-          <Stat>
-            <StatLabel>{t("player.metric.minutes")}</StatLabel>
-            <StatValue>{numberFormat.format(statistics.minutes)}</StatValue>
-          </Stat>
-          <Stat>
-            <StatLabel>{t("player.metric.goals")}</StatLabel>
-            <StatValue>{numberFormat.format(statistics.totals.goals)}</StatValue>
-          </Stat>
-          <Stat>
-            <StatLabel>{t("player.metric.assists")}</StatLabel>
-            <StatValue>{numberFormat.format(statistics.totals.assists)}</StatValue>
-          </Stat>
-        </StatGroup>
-      </section>
-
-      {hasPartialData ? (
-        <Alert>
-          <AlertDescription>{t("player.partialData.description")}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      <Table aria-label={t("player.statistics.tableLabel")} dense>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("player.statistics.metric")}</TableHead>
-            <TableHead className="text-right">{t("player.statistics.total")}</TableHead>
-            <TableHead className="text-right">{t("player.statistics.average")}</TableHead>
-            <TableHead className="text-right">{t("player.statistics.per90")}</TableHead>
-            <TableHead>{t("player.statistics.status")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {STATISTIC_METRICS.map((metric) => (
-            <TableRow key={metric}>
-              <TableCell className="font-medium">{t(METRIC_KEYS[metric])}</TableCell>
-              <TableCell className="typo-score text-right">
-                {numberFormat.format(statistics.totals[metric])}
-              </TableCell>
-              <TableCell className="typo-score text-right">
-                {formatNullableNumber(statistics.averages[metric], numberFormat, t)}
-              </TableCell>
-              <TableCell className="typo-score text-right">
-                {formatNullableNumber(statistics.per90[metric], numberFormat, t)}
-              </TableCell>
-              <TableCell>
-                {statistics.partial[metric] ? (
-                  <Badge variant="warning">{t("player.partialData")}</Badge>
-                ) : (
-                  <span className="typo-caption text-muted-foreground">
-                    {t("player.completeData")}
-                  </span>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
+function identityDescription(profile: PlayerGameProfileDto, t: Translator): string {
+  return `${positionLabel(profile.identity, t)} · ${t("player.statistics.matchesCount", {
+    count: profile.sampleSize,
+  })}`;
 }
 
-function formatNullableNumber(
-  value: number | null,
-  numberFormat: Intl.NumberFormat,
+function positionLabel(identity: PlayerGameProfileDto["identity"], t: Translator): string {
+  if (identity.preferredPosition === null) return t("player.position.unknown");
+  const key = providerPositionLabelKey(identity.preferredPosition);
+  return key ? t(key) : identity.preferredPosition;
+}
+
+function outcomeLabel(
+  outcome: PlayerGameProfileDto["evolution"][number]["outcome"],
   t: Translator,
 ): string {
-  return value === null ? t("player.noData") : numberFormat.format(value);
+  switch (outcome) {
+    case "win":
+      return t("player.matches.outcome.win");
+    case "draw":
+      return t("player.matches.outcome.draw");
+    case "loss":
+      return t("player.matches.outcome.loss");
+    case "unknown":
+      return t("player.matches.outcome.unknown");
+    default: {
+      const _exhaustive: never = outcome;
+      return _exhaustive;
+    }
+  }
+}
+
+function outcomeBadge(
+  outcome: PlayerGameProfileDto["evolution"][number]["outcome"],
+): "approved" | "neutral" | "destructive" | "outline" {
+  switch (outcome) {
+    case "win":
+      return "approved";
+    case "draw":
+      return "neutral";
+    case "loss":
+      return "destructive";
+    case "unknown":
+      return "outline";
+    default: {
+      const _exhaustive: never = outcome;
+      return _exhaustive;
+    }
+  }
 }

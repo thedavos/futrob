@@ -6,6 +6,8 @@ import {
   getMyRecentMatchResponseSchema,
   getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
+  getMyGameProfileQuerySchema,
+  getMyGameProfileResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
   type GetMyMatchesQuery,
@@ -15,6 +17,8 @@ import {
   type GetMyRecentMatchResponse,
   type GetMyRecentMatchesQueryInput,
   type GetMyRecentMatchesResponse,
+  type GetMyGameProfileQueryInput,
+  type GetMyGameProfileResponse,
   type GetMyStatisticsQuery,
   type GetMyStatisticsResponse,
   type RequestId,
@@ -81,6 +85,17 @@ export const statisticsBrowserClient = {
     return requestStatisticsJson(
       `/api/v1/players/me/recent-matches${queryString ? `?${queryString}` : ""}`,
       getMyRecentMatchesResponseSchema,
+    );
+  },
+
+  getMyGameProfile(filters: GetMyGameProfileQueryInput = {}): Promise<GetMyGameProfileResponse> {
+    const query = getMyGameProfileQuerySchema.parse(filters);
+    const search = new URLSearchParams();
+    if (query.externalClubId) search.set("externalClubId", query.externalClubId);
+    const queryString = search.toString();
+    return requestStatisticsJson(
+      `/api/v1/players/me/game-profile${queryString ? `?${queryString}` : ""}`,
+      getMyGameProfileResponseSchema,
     );
   },
 

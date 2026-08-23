@@ -387,6 +387,7 @@ const es = {
   "player.matches.outcome.win": "Victoria",
   "player.matches.outcome.draw": "Empate",
   "player.matches.outcome.loss": "Derrota",
+  "player.matches.outcome.unknown": "Sin resultado",
   "player.matches.finalized": "Finalizado",
   "player.matches.vs": "–",
   "player.matches.appearance.goalsUnit": ({ count }) => (count === 1 ? "gol" : "goles"),
@@ -429,36 +430,69 @@ const es = {
   "player.matches.feat.poker": "Póker",
   "player.matches.feat.repoker": "Repóker",
   "player.matches.feat.scorer": ({ name }) => `Hecho por ${name}`,
-  "player.matches.official.title": "Oficiales",
-  "player.matches.official.loading": "Cargando partidos oficiales…",
-  "player.matches.official.error": "No pudimos cargar tus partidos oficiales.",
-  "player.matches.official.emptyDescription":
-    "Los partidos oficiales aparecen cuando una organización aprueba un resultado que coincida contigo.",
-  "player.matches.official.badge": "Oficial",
-  "player.statistics.title": "Mis estadísticas",
+  "player.statistics.title": "Tu perfil",
   "player.statistics.description":
-    "Agregados individuales construidos únicamente desde resultados oficiales aprobados.",
-  "player.statistics.loading": "Cargando tus estadísticas…",
-  "player.statistics.error": "No pudimos cargar tus estadísticas.",
-  "player.statistics.emptyTitle": "Aún no hay estadísticas oficiales",
-  "player.statistics.open": "Abrir Mis estadísticas",
-  "player.statistics.matchesCount": ({ count }) => `${count} partidos oficiales`,
-  "player.statistics.revision": ({ revision }) =>
-    `Actualizado con la revisión oficial ${revision}.`,
-  "player.statistics.tableLabel": "Estadísticas oficiales del jugador",
+    "Tú como jugador: ELO, atributos y estadísticas de todos los partidos que has jugado.",
+  "player.statistics.loading": "Cargando tu perfil…",
+  "player.statistics.error": "No pudimos cargar tu perfil.",
+  "player.statistics.emptyTitle": "Aún no hay apariciones tuyas",
+  "player.statistics.emptyDescription":
+    "Cuando alinees, esta página será tu perfil de jugador: ELO, atributos y evolución.",
+  "player.statistics.needsClub.title": "Asocia un club para reconocer tus partidos",
+  "player.statistics.needsClub.description":
+    "Tu perfil se arma con tus apariciones. Un club asociado nos deja encontrarlas.",
+  "player.statistics.needsGameAccount.title": "Registra tu identificador de juego",
+  "player.statistics.needsGameAccount.description":
+    "Sin cuenta de juego no podemos reconocerte en los partidos.",
+  "player.statistics.open": "Abrir tu perfil",
+  "player.statistics.matchesCount": ({ count }) => `${count} partidos jugados`,
+  "player.statistics.sampleHint": "Sobre tus apariciones recientes (hasta 50 partidos).",
+  "player.statistics.tableLabel": "Estadísticas del jugador",
   "player.statistics.metric": "Métrica",
   "player.statistics.total": "Total",
   "player.statistics.average": "Promedio",
-  "player.statistics.per90": "Por 90",
   "player.statistics.status": "Estado",
-  "player.official.emptyDescription":
-    "Vincula tus datos de juego y vuelve cuando una organización haya aprobado resultados que coincidan con tu jugador.",
+  "player.statistics.elo": "ELO",
+  "player.statistics.elo.hint": ({ count }) =>
+    count === 1 ? "1 partido puntuado" : `${count} partidos puntuados`,
+  "player.statistics.record": "W–D–L",
+  "player.statistics.summary": "Resumen",
+  "player.statistics.attributes": "Perfil por categorías",
+  "player.statistics.evolution": "Evolución",
+  "player.statistics.evolution.empty": "Juega más partidos para ver tu evolución.",
+  "player.statistics.tab.general": "Generales",
+  "player.statistics.tab.team": "Por equipo",
+  "player.statistics.tab.position": "Por posición",
+  "player.statistics.attribute.attack": "Ataque",
+  "player.statistics.attribute.pass": "Pase",
+  "player.statistics.attribute.defense": "Defensa",
+  "player.statistics.attribute.impact": "Impacto",
+  "player.statistics.attribute.discipline": "Disciplina",
+  "player.statistics.component.goalsPerMatch": "Goles por partido",
+  "player.statistics.component.shotsPerMatch": "Tiros por partido",
+  "player.statistics.component.shotAccuracy": "Acierto de tiro",
+  "player.statistics.component.offensiveRoleRating": "Rating ofensivo por rol",
+  "player.statistics.component.passSuccess": "% éxito de pase",
+  "player.statistics.component.passVolume": "Cantidad de pases",
+  "player.statistics.component.tacklesMadePerMatch": "Entradas con éxito por partido",
+  "player.statistics.component.tackleSuccess": "% éxito entradas",
+  "player.statistics.component.defensiveRoleRating": "Rating en posiciones defensivas",
+  "player.statistics.component.averageRating": "Rating promedio",
+  "player.statistics.component.winRate": "% victorias",
+  "player.statistics.component.goalsAssistsPerMatch": "G+A por partido",
+  "player.statistics.component.fewerRedsPerMatch": "Disciplina (menos rojas por partido)",
+  "player.statistics.component.points": ({ points }) => `${points} puntos`,
+  "player.statistics.component.confidence": ({ percent }) => `confianza ${percent}%`,
+  "player.statistics.component.weightedMatches": ({ count }) =>
+    count === 1 ? "1 pj ponderado" : `${count} pj ponderados`,
+  "player.statistics.team": "Equipo",
+  "player.statistics.position": "Posición",
   "player.gameData.review": "Revisar datos de juego",
   "player.backToWorkspace": "Volver al espacio personal",
   "player.retry": "Reintentar",
   "player.partialData": "Datos parciales",
   "player.partialData.description":
-    "Algunas métricas no estuvieron disponibles en todos los partidos oficiales y se marcan en la tabla.",
+    "Algunas métricas no estuvieron disponibles en todos los partidos y se marcan en la tabla.",
   "player.completeData": "Completo",
   "player.noData": "Sin datos",
   "player.onboarding.checking": "Comprobando tu onboarding…",
@@ -499,6 +533,10 @@ export interface MessageParamsByKey {
   readonly "onboarding.review.edit": { readonly label: string };
   readonly "onboarding.review.retry": { readonly seconds: number };
   readonly "player.statistics.matchesCount": { readonly count: number };
+  readonly "player.statistics.elo.hint": { readonly count: number };
+  readonly "player.statistics.component.points": { readonly points: number };
+  readonly "player.statistics.component.confidence": { readonly percent: number };
+  readonly "player.statistics.component.weightedMatches": { readonly count: number };
   readonly "player.matches.results.count": { readonly count: number };
   readonly "player.matches.openMatchLabel": {
     readonly home: string;
@@ -506,7 +544,6 @@ export interface MessageParamsByKey {
     readonly awayGoals: number;
     readonly away: string;
   };
-  readonly "player.statistics.revision": { readonly revision: number };
   readonly "player.matches.mvp.named": { readonly name: string };
   readonly "player.matches.feat.scorer": { readonly name: string };
   readonly "player.matches.appearance.goalsUnit": { readonly count: number };
@@ -942,6 +979,7 @@ const en: Catalog = {
   "player.matches.outcome.win": "Win",
   "player.matches.outcome.draw": "Draw",
   "player.matches.outcome.loss": "Lose",
+  "player.matches.outcome.unknown": "No result",
   "player.matches.finalized": "Full time",
   "player.matches.vs": "–",
   "player.matches.appearance.goalsUnit": ({ count }) => (count === 1 ? "goal" : "goals"),
@@ -983,36 +1021,71 @@ const en: Catalog = {
   "player.matches.feat.poker": "Poker",
   "player.matches.feat.repoker": "Repoker",
   "player.matches.feat.scorer": ({ name }) => `By ${name}`,
-  "player.matches.official.title": "Official",
-  "player.matches.official.loading": "Loading official matches…",
-  "player.matches.official.error": "We could not load your official matches.",
-  "player.matches.official.emptyDescription":
-    "Official matches appear when an organization approves a result that matches you.",
-  "player.matches.official.badge": "Official",
-  "player.statistics.title": "My statistics",
+  "player.statistics.title": "Your profile",
   "player.statistics.description":
-    "Individual aggregates built only from approved official results.",
-  "player.statistics.loading": "Loading your statistics…",
-  "player.statistics.error": "We could not load your statistics.",
-  "player.statistics.emptyTitle": "No official statistics yet",
-  "player.statistics.open": "Open My statistics",
+    "You as a player: ELO, attributes and statistics from every match you have played.",
+  "player.statistics.loading": "Loading your profile…",
+  "player.statistics.error": "We could not load your profile.",
+  "player.statistics.emptyTitle": "No appearances of yours yet",
+  "player.statistics.emptyDescription":
+    "When you play, this page becomes your player profile: ELO, attributes and evolution.",
+  "player.statistics.needsClub.title": "Associate a club to recognise your matches",
+  "player.statistics.needsClub.description":
+    "Your profile is built from your appearances. An associated club lets us find them.",
+  "player.statistics.needsGameAccount.title": "Register your game identifier",
+  "player.statistics.needsGameAccount.description":
+    "Without a game account we cannot recognise you in matches.",
+  "player.statistics.open": "Open your profile",
   "player.statistics.matchesCount": ({ count }) =>
-    count === 1 ? "1 official match" : `${count} official matches`,
-  "player.statistics.revision": ({ revision }) => `Updated from official revision ${revision}.`,
-  "player.statistics.tableLabel": "Official player statistics",
+    count === 1 ? "1 match played" : `${count} matches played`,
+  "player.statistics.sampleHint": "From your recent appearances (up to 50 matches).",
+  "player.statistics.tableLabel": "Player statistics",
   "player.statistics.metric": "Metric",
   "player.statistics.total": "Total",
   "player.statistics.average": "Average",
-  "player.statistics.per90": "Per 90",
   "player.statistics.status": "Status",
-  "player.official.emptyDescription":
-    "Link your game data and return after an organization approves results that match your player.",
+  "player.statistics.elo": "ELO",
+  "player.statistics.elo.hint": ({ count }) =>
+    count === 1 ? "1 rated match" : `${count} rated matches`,
+  "player.statistics.record": "W–D–L",
+  "player.statistics.summary": "Summary",
+  "player.statistics.attributes": "Profile by category",
+  "player.statistics.evolution": "Evolution",
+  "player.statistics.evolution.empty": "Play more matches to see your evolution.",
+  "player.statistics.tab.general": "Overall",
+  "player.statistics.tab.team": "By team",
+  "player.statistics.tab.position": "By position",
+  "player.statistics.attribute.attack": "Attack",
+  "player.statistics.attribute.pass": "Passing",
+  "player.statistics.attribute.defense": "Defense",
+  "player.statistics.attribute.impact": "Impact",
+  "player.statistics.attribute.discipline": "Discipline",
+  "player.statistics.component.goalsPerMatch": "Goals per match",
+  "player.statistics.component.shotsPerMatch": "Shots per match",
+  "player.statistics.component.shotAccuracy": "Shot conversion",
+  "player.statistics.component.offensiveRoleRating": "Offensive rating by role",
+  "player.statistics.component.passSuccess": "Pass success %",
+  "player.statistics.component.passVolume": "Pass volume",
+  "player.statistics.component.tacklesMadePerMatch": "Successful tackles per match",
+  "player.statistics.component.tackleSuccess": "Tackle success %",
+  "player.statistics.component.defensiveRoleRating": "Rating in defensive positions",
+  "player.statistics.component.averageRating": "Average rating",
+  "player.statistics.component.winRate": "Win %",
+  "player.statistics.component.goalsAssistsPerMatch": "G+A per match",
+  "player.statistics.component.fewerRedsPerMatch": "Discipline (fewer reds per match)",
+  "player.statistics.component.points": ({ points }) =>
+    points === 1 ? "1 point" : `${points} points`,
+  "player.statistics.component.confidence": ({ percent }) => `${percent}% confidence`,
+  "player.statistics.component.weightedMatches": ({ count }) =>
+    count === 1 ? "1 weighted match" : `${count} weighted matches`,
+  "player.statistics.team": "Team",
+  "player.statistics.position": "Position",
   "player.gameData.review": "Review game data",
   "player.backToWorkspace": "Back to personal workspace",
   "player.retry": "Try again",
   "player.partialData": "Partial data",
   "player.partialData.description":
-    "Some metrics were unavailable in one or more official matches and are flagged in the table.",
+    "Some metrics were unavailable in one or more matches and are flagged in the table.",
   "player.completeData": "Complete",
   "player.noData": "No data",
   "player.onboarding.checking": "Checking your onboarding…",

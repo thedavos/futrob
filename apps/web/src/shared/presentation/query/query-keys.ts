@@ -72,6 +72,10 @@ export const queryKeys = {
       externalClubId
         ? ([...queryKeys.gameData.all, "me", "recent-matches", externalClubId] as const)
         : ([...queryKeys.gameData.all, "me", "recent-matches"] as const),
+    meGameProfile: (externalClubId?: string) =>
+      externalClubId
+        ? ([...queryKeys.gameData.all, "me", "game-profile", externalClubId] as const)
+        : ([...queryKeys.gameData.all, "me", "game-profile"] as const),
     meRecentMatch: (
       input: GetMyRecentMatchPath & {
         readonly externalClubId?: string;
