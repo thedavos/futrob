@@ -1,41 +1,37 @@
 version: 2
 updates:
-  # Root workspace (toolchain: vite-plus, oxlint, storybook, typescript...)
+  # npm workspaces share one root lockfile. Configure only `/` — extra
+  # directory entries for apps/web or apps/api produce package.json-only
+  # PRs that fail `npm ci` (lockfile out of sync).
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 10
     groups:
       minor-and-patch:
         update-types:
           - "minor"
           - "patch"
-    # vite is overridden to vite-plus-core; majors need manual alignment.
     ignore:
+      # vite is overridden to vite-plus-core; bump both in lockstep.
       - dependency-name: "vite"
       - dependency-name: "vite-plus"
-
-  - package-ecosystem: npm
-    directory: /apps/web
-    schedule:
-      interval: weekly
-    groups:
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
-
-  - package-ecosystem: npm
-    directory: /apps/api
-    schedule:
-      interval: weekly
-    groups:
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
+      # Must match the Vitest version bundled by vite-plus.
+      - dependency-name: "@vitest/coverage-v8"
+      - dependency-name: "@vitest/browser"
+      - dependency-name: "@vitest/browser-playwright"
+      # Expo SDK 54 pins these. RN 0.x "minors" and expo-* 57.x are SDK upgrades.
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
