@@ -28,6 +28,9 @@ import {
 import { MatchAppearanceStrip } from "./player-match-appearance.tsx";
 import { MatchPitchWash } from "./player-match-pitch.tsx";
 
+/** Opaque chip fill so pitch-wash tints cannot drop caption contrast below WCAG AA. */
+const ON_PITCH_SURFACE = "bg-surface";
+
 export function ProviderMatchRow({
   dateTimeFormat,
   item,
@@ -108,13 +111,18 @@ export function ProviderMatchRow({
             <MatchHeaderMeta
               items={[
                 typeLabel && mode ? (
-                  <Badge data-match-type={mode} key="type" variant={matchTypeBadgeVariant(mode)}>
+                  <Badge
+                    className={ON_PITCH_SURFACE}
+                    data-match-type={mode}
+                    key="type"
+                    variant={matchTypeBadgeVariant(mode)}
+                  >
                     {typeLabel}
                   </Badge>
                 ) : null,
                 outcomeLabel ? (
                   <span
-                    className={`typo-caption font-semibold ${MATCH_OUTCOME_TEXT_CLASS[outcome]}`}
+                    className={`typo-caption font-semibold ${ON_PITCH_SURFACE} ${MATCH_OUTCOME_TEXT_CLASS[outcome]}`}
                     data-match-outcome={outcome === "unknown" ? undefined : outcome}
                     key="outcome"
                   >
@@ -349,7 +357,12 @@ function ScoringFeatBadge({
   readonly t: Translator;
 }) {
   const badge = (
-    <Badge data-feat-scorer={scorerName ?? undefined} data-scoring-feat={feat} variant="warning">
+    <Badge
+      className={ON_PITCH_SURFACE}
+      data-feat-scorer={scorerName ?? undefined}
+      data-scoring-feat={feat}
+      variant="warning"
+    >
       <SoccerBallIcon aria-hidden="true" />
       {featLabel}
     </Badge>

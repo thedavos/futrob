@@ -179,6 +179,12 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
       "text-emphasis",
     );
+    expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
+      "bg-surface",
+    );
+    expect(
+      document.querySelector("[data-match-outcome='win']:not([data-match-score])")?.className,
+    ).toContain("bg-surface");
     expect(document.querySelector("[data-match-chevron]")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ver Inter 2 – 1 Milan" }).getAttribute("href")).toBe(
       "/player/matches/ea-clubs/ea-1?view=all&sort=newest",
@@ -486,6 +492,9 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
       "text-emphasis",
     );
+    expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
+      "bg-surface",
+    );
     expect(document.querySelector("[data-match-type='playoffMatch']")?.textContent).toBe("Playoff");
     expect(document.querySelector("[data-match-type='playoffMatch']")?.className).toContain(
       "text-info",
@@ -507,6 +516,9 @@ describe("PlayerMatchesPage", () => {
     );
     expect(document.querySelector("[data-scoring-feat='hatTrick']")?.textContent).toContain(
       "Hat-trick",
+    );
+    expect(document.querySelector("[data-scoring-feat='hatTrick']")?.className).toContain(
+      "bg-surface",
     );
     expect(screen.getByText("1", { selector: "[data-metric='recent-yellow']" })).toBeTruthy();
     expect(screen.getByText("2", { selector: "[data-metric='recent-yellow']" })).toBeTruthy();
@@ -570,6 +582,9 @@ describe("PlayerMatchesPage", () => {
     expect(await screen.findByText("Norte FC")).toBeTruthy();
     expect(document.querySelector("[data-scoring-feat='hatTrick']")?.textContent).toContain(
       "Hat-trick",
+    );
+    expect(document.querySelector("[data-scoring-feat='hatTrick']")?.className).toContain(
+      "bg-surface",
     );
     expect(
       document.querySelector("[data-scoring-feat='hatTrick']")?.getAttribute("data-feat-scorer"),
