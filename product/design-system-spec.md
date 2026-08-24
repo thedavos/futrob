@@ -226,7 +226,7 @@ Una primitiva nueva o una variante modificada requiere:
 ## 8. Móvil (`apps/mobile`)
 
 **Estado:** canónico desde 2026-08.  
-**Base técnica:** React Native + Expo (SDK 54), Expo Router, `react-native-svg`.
+**Base técnica:** React Native + Expo (SDK 57), Expo Router, `react-native-svg`.
 
 La marca y el lenguaje visual son los mismos que en web; cambia la plataforma de render.
 

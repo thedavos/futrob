@@ -1,6 +1,6 @@
 # `apps/mobile`
 
-Cliente móvil nativo Must del MVP de Futrob (React Native + Expo SDK 54, Expo Router). Sale junto a web, API y auth.
+Cliente móvil nativo Must del MVP de Futrob (React Native + Expo SDK 57, Expo Router). Sale junto a web, API y auth.
 
 ## Alcance MVP
 

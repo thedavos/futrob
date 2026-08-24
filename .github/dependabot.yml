@@ -21,7 +21,7 @@ updates:
       - dependency-name: "@vitest/coverage-v8"
       - dependency-name: "@vitest/browser"
       - dependency-name: "@vitest/browser-playwright"
-      # Expo SDK 54 pins these. RN 0.x "minors" and expo-* 57.x are SDK upgrades.
+      # Expo SDK 57 pins these. RN 0.x "minors" and expo-* majors are SDK upgrades.
       - dependency-name: "react-native"
       - dependency-name: "react-native-*"
       - dependency-name: "expo"
