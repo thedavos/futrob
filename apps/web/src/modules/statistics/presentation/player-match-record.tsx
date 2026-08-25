@@ -100,7 +100,7 @@ function recordGridStyle(visibleCards: 1 | 2 | 3) {
       return styles.cards1;
     case 2:
       return styles.cards2;
-    default:
+    case 3:
       return styles.cards3;
   }
 }
