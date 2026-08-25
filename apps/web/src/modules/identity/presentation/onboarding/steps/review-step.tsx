@@ -1,6 +1,95 @@
 "use client";
 
-import { Badge, Button, Card, CardContent, type Icon } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import {
+  applyStyles,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  colors,
+  media,
+  typography,
+  type Icon,
+} from "@futrob/ui";
+
+const styles = stylex.create({
+  card: {
+    marginInline: "auto",
+    width: "100%",
+    maxWidth: "42rem",
+  },
+  content: {
+    padding: 0,
+  },
+  row: {
+    display: "grid",
+    minHeight: "4rem",
+    gap: "0.25rem",
+    borderTopWidth: {
+      default: 1,
+      ":first-child": 0,
+    },
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+    paddingInline: {
+      default: "1.25rem",
+      [media.sm]: "1.5rem",
+    },
+    paddingBlock: "1rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "minmax(0, 1fr) auto",
+    },
+    alignItems: {
+      default: "start",
+      [media.sm]: "center",
+    },
+    columnGap: {
+      default: null,
+      [media.sm]: "1.5rem",
+    },
+  },
+  term: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    fontWeight: 600,
+  },
+  icon: {
+    width: "1.25rem",
+    height: "1.25rem",
+  },
+  detail: {
+    display: {
+      default: "grid",
+      [media.sm]: "flex",
+    },
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr) auto",
+      [media.sm]: null,
+    },
+    alignItems: "center",
+    gap: "0.75rem",
+    paddingLeft: {
+      default: "2rem",
+      [media.sm]: 0,
+    },
+    justifyContent: {
+      default: null,
+      [media.sm]: "flex-end",
+    },
+    textAlign: {
+      default: "left",
+      [media.sm]: "right",
+    },
+  },
+  incomplete: {
+    marginTop: "1rem",
+    textAlign: "center",
+    color: colors.mutedForeground,
+  },
+});
 import {
   ShieldIcon,
   SignpostIcon,
@@ -58,19 +147,27 @@ export function OnboardingReview() {
       steps={stepsForPath(t, path)}
       title={t("onboarding.review.title")}
     >
-      <Card className="mx-auto w-full max-w-2xl" variant="elevated">
-        <CardContent className="p-0">
+      <Card
+        className={applyStyles(styles.card).className}
+        style={applyStyles(styles.card).style}
+        variant="elevated"
+      >
+        <CardContent
+          className={applyStyles(styles.content).className}
+          style={applyStyles(styles.content).style}
+        >
           <dl>
             {rows.map((row) => (
-              <div
-                className="grid min-h-16 gap-1 border-t border-border-subtle px-5 py-4 first:border-t-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-x-6 sm:px-6"
-                key={row.label}
-              >
-                <dt className="flex items-center gap-3 font-semibold">
-                  <row.icon aria-hidden="true" className="size-5" />
+              <div key={row.label} {...applyStyles(styles.row)}>
+                <dt {...applyStyles(styles.term)}>
+                  <row.icon
+                    aria-hidden="true"
+                    className={applyStyles(styles.icon).className}
+                    style={applyStyles(styles.icon).style}
+                  />
                   {row.label}
                 </dt>
-                <dd className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pl-8 text-left sm:flex sm:justify-end sm:pl-0 sm:text-right">
+                <dd {...applyStyles(styles.detail)}>
                   {row.value ? (
                     <span>{row.value}</span>
                   ) : (
@@ -92,7 +189,7 @@ export function OnboardingReview() {
         </CardContent>
       </Card>
       {!canFinish ? (
-        <p className="mt-4 text-center typo-caption text-muted-foreground">
+        <p {...applyStyles(typography.caption, styles.incomplete)}>
           {t("onboarding.review.incomplete")}
         </p>
       ) : null}

@@ -1,6 +1,40 @@
 "use client";
 
-import { ChoiceGroup, ChoiceGroupIndicator, ChoiceGroupItem, type Icon } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import {
+  applyStyles,
+  ChoiceGroup,
+  ChoiceGroupIndicator,
+  ChoiceGroupItem,
+  colors,
+  media,
+  typography,
+  type Icon,
+} from "@futrob/ui";
+
+const styles = stylex.create({
+  group: {
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(3, minmax(0, 1fr))",
+    },
+  },
+  icon: {
+    width: "2rem",
+    height: "2rem",
+  },
+  copy: {
+    display: "grid",
+    minWidth: 0,
+    gap: "0.25rem",
+  },
+  label: {
+    fontWeight: 600,
+  },
+  description: {
+    color: colors.mutedForeground,
+  },
+});
 import { TicketIcon, TrophyIcon, UserIcon } from "@phosphor-icons/react";
 import type { OnboardingPathDto } from "@futrob/api-contracts";
 import { ONBOARDING_PATH } from "@futrob/identity";
@@ -23,7 +57,8 @@ export function IntentChoiceStep() {
     >
       <ChoiceGroup<OnboardingPathDto | "">
         aria-label={t("onboarding.intention.aria")}
-        className="grid-cols-1 sm:grid-cols-3"
+        className={applyStyles(styles.group).className}
+        style={applyStyles(styles.group).style}
         onValueChange={(value) => value && flow.setPath(value)}
         value={flow.path ?? ""}
       >
@@ -82,10 +117,14 @@ function IntentChoice({
   return (
     <ChoiceGroupItem value={value}>
       <ChoiceGroupIndicator />
-      <Icon aria-hidden="true" className="size-8" />
-      <span className="grid min-w-0 gap-1">
-        <span className="font-semibold">{label}</span>
-        <span className="typo-caption text-muted-foreground">{children}</span>
+      <Icon
+        aria-hidden="true"
+        className={applyStyles(styles.icon).className}
+        style={applyStyles(styles.icon).style}
+      />
+      <span {...applyStyles(styles.copy)}>
+        <span {...applyStyles(styles.label)}>{label}</span>
+        <span {...applyStyles(typography.caption, styles.description)}>{children}</span>
       </span>
     </ChoiceGroupItem>
   );
