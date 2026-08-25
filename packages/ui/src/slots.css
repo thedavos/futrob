@@ -75,6 +75,25 @@
   opacity: 0.5;
 }
 
+/* Old Label `group-data-[disabled=true]` — ancestor marks the group disabled. */
+:is([data-disabled], [data-disabled="true"]) [data-slot="label"] {
+  pointer-events: none;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Old Label `peer-disabled` — following sibling of a disabled control. */
+:is([data-slot="checkbox"], [data-slot="switch"], [data-slot="input"]):is(
+    :disabled,
+    [disabled],
+    [data-disabled],
+    [data-disabled="true"]
+  )
+  ~ [data-slot="label"] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 [data-slot="input"]::file-selector-button {
   margin-right: 0.75rem;
   display: inline-flex;
