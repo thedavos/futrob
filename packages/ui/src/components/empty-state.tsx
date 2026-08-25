@@ -117,10 +117,4 @@ function EmptyStateActions({ className, style, ...props }: React.ComponentProps<
   );
 }
 
-export {
-  EmptyState,
-  EmptyStateActions,
-  EmptyStateDescription,
-  EmptyStateIcon,
-  EmptyStateTitle,
-};
+export { EmptyState, EmptyStateActions, EmptyStateDescription, EmptyStateIcon, EmptyStateTitle };

@@ -117,9 +117,7 @@ function Alert({
 }
 
 function AlertTitle({ className, style, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div data-slot="alert-title" {...applyHost(className, style, styles.title)} {...props} />
-  );
+  return <div data-slot="alert-title" {...applyHost(className, style, styles.title)} {...props} />;
 }
 
 function AlertDescription({ className, style, ...props }: React.ComponentProps<"div">) {
