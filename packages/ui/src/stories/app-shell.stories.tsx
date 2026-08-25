@@ -12,7 +12,9 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, media, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
+import { media } from "#styles/media.stylex";
 
 import { ActionBar, ActionBarEnd, ActionBarStart } from "../components/action-bar";
 import { Avatar, AvatarFallback } from "../components/avatar";
@@ -297,7 +299,9 @@ function HeaderCollapseToggle() {
 
 function AccountAndCollapseRow({ compact = false }: { readonly compact?: boolean }) {
   return (
-    <div {...applyHost(undefined, undefined, styles.accountRow, compact && styles.accountRowCompact)}>
+    <div
+      {...applyHost(undefined, undefined, styles.accountRow, compact && styles.accountRowCompact)}
+    >
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label="Abrir menú de cuenta"
@@ -446,7 +450,10 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton dense>
-                <TrophyIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.iconSm)} />
+                <TrophyIcon
+                  aria-hidden="true"
+                  {...applyHost(undefined, undefined, styles.iconSm)}
+                />
                 Competiciones
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -461,7 +468,10 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton dense>
-                <TicketIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.iconSm)} />
+                <TicketIcon
+                  aria-hidden="true"
+                  {...applyHost(undefined, undefined, styles.iconSm)}
+                />
                 Invitaciones
               </SidebarMenuButton>
             </SidebarMenuItem>

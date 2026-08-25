@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";
 import { Input } from "../components/input";
@@ -74,7 +75,9 @@ export const Density: Story = {
   render: () => (
     <div {...applyHost(undefined, undefined, styles.stack)}>
       <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>Universal · 44 px</p>
+        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>
+          Universal · 44 px
+        </p>
         <Input placeholder="Buscar encuentro" />
       </div>
       <div {...applyHost(undefined, undefined, styles.group)}>

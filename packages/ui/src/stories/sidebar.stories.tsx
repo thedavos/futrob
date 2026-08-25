@@ -12,7 +12,9 @@ import {
 } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, media, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
+import { media } from "#styles/media.stylex";
 
 import { Avatar, AvatarFallback } from "../components/avatar";
 import { Button } from "../components/button";
@@ -394,7 +396,9 @@ function DemoAccountRow({
   readonly shortName?: string;
 }) {
   return (
-    <div {...applyHost(undefined, undefined, styles.accountRow, compact && styles.accountRowCompact)}>
+    <div
+      {...applyHost(undefined, undefined, styles.accountRow, compact && styles.accountRowCompact)}
+    >
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label="Abrir menú de cuenta"
@@ -731,7 +735,10 @@ export const HeaderAccountRow: Story = {
   name: "Header account and collapse",
   render: () => (
     <div {...applyHost(undefined, undefined, styles.sample)}>
-      <SidebarProvider data-density="dense" {...applyHost(undefined, undefined, styles.providerAuto)}>
+      <SidebarProvider
+        data-density="dense"
+        {...applyHost(undefined, undefined, styles.providerAuto)}
+      >
         <DemoAccountRow dense shortName="David" />
       </SidebarProvider>
     </div>
@@ -743,7 +750,10 @@ export const HeaderWithSelector: Story = {
   name: "Header with context selector",
   render: () => (
     <div {...applyHost(undefined, undefined, styles.sample)}>
-      <SidebarProvider data-density="dense" {...applyHost(undefined, undefined, styles.providerAuto)}>
+      <SidebarProvider
+        data-density="dense"
+        {...applyHost(undefined, undefined, styles.providerAuto)}
+      >
         <div {...applyHost(undefined, undefined, styles.sampleStack)}>
           <DemoAccountRow dense shortName="David" />
           <DemoWorkspaceSelector dense />

@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, media, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
+import { media } from "#styles/media.stylex";
 
 import { FUTROB_ICON_CATALOG } from "../icons/catalog";
 
@@ -160,20 +162,30 @@ export const Playground: Story = {
         </h1>
         <p {...applyHost(undefined, undefined, typography.subtitle, styles.subtitle)}>
           Inventario de los iconos usados en `@futrob/ui` y en la presentación de `apps/web`. Peso
-          canónico: <span {...applyHost(undefined, undefined, typography.label, styles.label)}>regular</span>
-          .
+          canónico:{" "}
+          <span {...applyHost(undefined, undefined, typography.label, styles.label)}>regular</span>.
         </p>
       </header>
       <ul {...applyHost(undefined, undefined, styles.grid)}>
         {FUTROB_ICON_CATALOG.map(({ name, label, usage, Icon }) => (
           <li key={name} {...applyHost(undefined, undefined, styles.card)}>
             <span {...applyHost(undefined, undefined, styles.mark)}>
-              <Icon aria-hidden="true" weight="regular" {...applyHost(undefined, undefined, styles.iconSm)} />
+              <Icon
+                aria-hidden="true"
+                weight="regular"
+                {...applyHost(undefined, undefined, styles.iconSm)}
+              />
             </span>
             <span {...applyHost(undefined, undefined, styles.copy)}>
-              <span {...applyHost(undefined, undefined, typography.label, styles.label)}>{label}</span>
-              <code {...applyHost(undefined, undefined, typography.caption, styles.name)}>{name}</code>
-              <span {...applyHost(undefined, undefined, typography.caption, styles.muted)}>{usage}</span>
+              <span {...applyHost(undefined, undefined, typography.label, styles.label)}>
+                {label}
+              </span>
+              <code {...applyHost(undefined, undefined, typography.caption, styles.name)}>
+                {name}
+              </code>
+              <span {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+                {usage}
+              </span>
             </span>
           </li>
         ))}
@@ -190,7 +202,8 @@ export const Weights: Story = {
     return (
       <div {...applyHost(undefined, undefined, styles.weights)}>
         <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
-          Futrob usa <span {...applyHost(undefined, undefined, typography.label, styles.label)}>regular</span>{" "}
+          Futrob usa{" "}
+          <span {...applyHost(undefined, undefined, typography.label, styles.label)}>regular</span>{" "}
           por defecto. Los demás pesos existen en Phosphor; no los mezcles en UI operativa sin
           decisión de diseño.
         </p>

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, colors, typography } from "@futrob/ui";
+import { applyHost, applyStyles, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Logo } from "../logo";
 
@@ -211,9 +212,9 @@ export const Decorative: Story = {
   render: () => (
     <div {...applyHost(undefined, undefined, styles.decorative)}>
       <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
-        Sin <code {...applyHost(undefined, undefined, styles.code)}>title</code> el SVG es decorativo
-        (<code {...applyHost(undefined, undefined, styles.code)}>aria-hidden</code>) cuando el
-        wordmark visible ya dice Futrob.
+        Sin <code {...applyHost(undefined, undefined, styles.code)}>title</code> el SVG es
+        decorativo (<code {...applyHost(undefined, undefined, styles.code)}>aria-hidden</code>)
+        cuando el wordmark visible ya dice Futrob.
       </p>
       <div {...applyHost(undefined, undefined, styles.inlineRow)}>
         <Logo {...applyHost(undefined, undefined, styles.logoSm)} />

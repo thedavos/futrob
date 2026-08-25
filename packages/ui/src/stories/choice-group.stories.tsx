@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { GameControllerIcon, TrophyIcon, UserIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, media } from "@futrob/ui";
+import { applyHost, applyStyles } from "@futrob/ui";
+import { media } from "#styles/media.stylex";
 
 import { ChoiceGroup, ChoiceGroupIndicator, ChoiceGroupItem } from "../components/choice-group";
 

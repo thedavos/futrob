@@ -10,7 +10,8 @@ import {
 } from "@phosphor-icons/react";
 import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors } from "@futrob/ui";
+import { applyHost } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Button } from "../components/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";

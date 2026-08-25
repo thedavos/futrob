@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, media, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
+import { media } from "#styles/media.stylex";
 
 import { Alert, AlertDescription, AlertTitle } from "../components/alert";
 import { Button } from "../components/button";

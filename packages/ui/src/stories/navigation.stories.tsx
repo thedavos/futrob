@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors } from "@futrob/ui";
+import { applyHost } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import {
   Breadcrumb,
@@ -70,7 +71,9 @@ export const CompetitionNavigation: Story = {
           </p>
         </TabsContent>
         <TabsContent value="matches">
-          <p {...applyHost(undefined, undefined, styles.muted)}>Calendario y resultados por jornada.</p>
+          <p {...applyHost(undefined, undefined, styles.muted)}>
+            Calendario y resultados por jornada.
+          </p>
         </TabsContent>
         <TabsContent value="statistics">
           <p {...applyHost(undefined, undefined, styles.muted)}>
@@ -96,7 +99,9 @@ export const PillsTabs: Story = {
           <TabsIndicator />
         </TabsList>
         <TabsContent value="recent">
-          <p {...applyHost(undefined, undefined, styles.muted)}>Apariciones de los últimos 7 días.</p>
+          <p {...applyHost(undefined, undefined, styles.muted)}>
+            Apariciones de los últimos 7 días.
+          </p>
         </TabsContent>
         <TabsContent value="league">
           <p {...applyHost(undefined, undefined, styles.muted)}>Partidos de liga.</p>

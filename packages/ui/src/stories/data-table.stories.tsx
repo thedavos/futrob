@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DotsThreeIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, vis } from "@futrob/ui";
+import { applyHost, vis } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Badge } from "../components/badge";
 import { Button } from "../components/button";
@@ -59,7 +60,9 @@ export const MatchAuditRows: Story = {
           {matches.map((match) => (
             <TableRow key={match.id}>
               <TableCell {...applyHost(undefined, undefined, styles.matchId)}>{match.id}</TableCell>
-              <TableCell {...applyHost(undefined, undefined, styles.medium)}>{match.home}</TableCell>
+              <TableCell {...applyHost(undefined, undefined, styles.medium)}>
+                {match.home}
+              </TableCell>
               <TableCell>{match.away}</TableCell>
               <TableCell {...applyHost(undefined, undefined, styles.semibold)}>
                 {match.score}

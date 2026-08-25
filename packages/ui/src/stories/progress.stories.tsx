@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, colors, typography } from "@futrob/ui";
+import { applyHost, applyStyles, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import {
   Progress,

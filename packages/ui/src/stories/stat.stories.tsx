@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, media, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
+import { media } from "#styles/media.stylex";
 
 import { Skeleton } from "../components/skeleton";
 import { Stat, StatGroup, StatHint, StatLabel, StatValue } from "../components/stat";
@@ -429,7 +431,10 @@ export const HighlightedScore: Story = {
         <StatValue>2</StatValue>
         <StatHint>Night Owls</StatHint>
       </Stat>
-      <span aria-hidden="true" {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+      <span
+        aria-hidden="true"
+        {...applyHost(undefined, undefined, typography.caption, styles.muted)}
+      >
         —
       </span>
       <Stat align="center">

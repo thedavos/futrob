@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/collapsible";
 
@@ -120,12 +121,16 @@ export const Sections: Story = {
         ] as const
       ).map(([title, body]) => (
         <Collapsible key={title} {...applyHost(undefined, undefined, styles.section)}>
-          <CollapsibleTrigger {...applyHost(undefined, undefined, typography.label, styles.trigger)}>
+          <CollapsibleTrigger
+            {...applyHost(undefined, undefined, typography.label, styles.trigger)}
+          >
             {title}
             <CaretRightIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.caret)} />
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <p {...applyHost(undefined, undefined, typography.caption, styles.captionPad)}>{body}</p>
+            <p {...applyHost(undefined, undefined, typography.caption, styles.captionPad)}>
+              {body}
+            </p>
           </CollapsibleContent>
         </Collapsible>
       ))}
@@ -140,7 +145,10 @@ export const Disabled: Story = {
         {...applyHost(undefined, undefined, typography.label, styles.triggerDisabled)}
       >
         Historial (sin permiso)
-        <CaretRightIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.caretStatic)} />
+        <CaretRightIcon
+          aria-hidden="true"
+          {...applyHost(undefined, undefined, styles.caretStatic)}
+        />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <p {...applyHost(undefined, undefined, typography.caption, styles.captionPad)}>

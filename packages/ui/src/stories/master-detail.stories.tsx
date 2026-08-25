@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { ActionBar, ActionBarEnd, ActionBarStart } from "../components/action-bar";
 import { Button } from "../components/button";

@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { InfoIcon, ListIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors } from "@futrob/ui";
+import { applyHost } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import {
   AlertDialog,

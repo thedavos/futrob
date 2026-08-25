@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ArrowUpRightIcon, PlusIcon, MagnifyingGlassIcon, GearIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Button } from "../components/button";
 import { ButtonIcon } from "../components/button-icon";
@@ -98,7 +99,9 @@ export const UniversalAndDense: Story = {
   render: () => (
     <div {...applyHost(undefined, undefined, styles.stack)}>
       <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>Universal · 44 px</p>
+        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>
+          Universal · 44 px
+        </p>
         <div {...applyHost(undefined, undefined, styles.row)}>
           <Button>
             <GearIcon />

@@ -68,6 +68,10 @@ const config: StorybookConfig = {
           find: "@",
           replacement: webSrc,
         },
+        {
+          find: /^#styles\/(.*)$/,
+          replacement: resolve(repoRoot, "packages/ui/src/styles/$1"),
+        },
         ...(Array.isArray(viteConfig.resolve?.alias)
           ? viteConfig.resolve.alias
           : Object.entries(viteConfig.resolve?.alias ?? {}).map(([find, replacement]) => ({
