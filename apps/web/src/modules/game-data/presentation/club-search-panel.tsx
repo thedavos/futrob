@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ExternalClubDto } from "@futrob/api-contracts";
-import { EA_SEARCH_PLATFORM, EA_SEARCH_PLATFORM_OPTIONS } from "@futrob/api-contracts";
+import { EA_SEARCH_PLATFORM, type ExternalClubDto } from "@futrob/api-contracts";
 import {
   Avatar,
   AvatarFallback,
@@ -21,6 +20,7 @@ import {
   readFormString,
 } from "@futrob/ui";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 import {
@@ -28,17 +28,8 @@ import {
   type SupportError,
 } from "@/shared/presentation/support-error-alert.tsx";
 import { GameDataClientError } from "./game-data-browser-client.ts";
+import { eaPlatformLabel, eaSearchPlatforms } from "./ea-club-search-meta.ts";
 import { useSearchClubsMutation } from "./game-data-queries.ts";
-
-const PLATFORMS = EA_SEARCH_PLATFORM_OPTIONS.map((option) => ({
-  value: option.value,
-  label:
-    option.value === EA_SEARCH_PLATFORM.NINTENDO
-      ? "Nintendo Switch (nx)"
-      : option.value === EA_SEARCH_PLATFORM.CROSS_GEN
-        ? "Cross-gen (common-gen5)"
-        : option.label,
-}));
 
 type ClubSearchValues = {
   query: string;
@@ -48,6 +39,7 @@ type ClubSearchValues = {
 type ClubSearchField = keyof ClubSearchValues;
 
 export function ClubSearchPanel() {
+  const { t } = useI18n();
   const [clubs, setClubs] = useState<ExternalClubDto[]>([]);
   const [error, setError] = useState<SupportError | null>(null);
   const [searched, setSearched] = useState(false);
@@ -129,12 +121,17 @@ export function ClubSearchPanel() {
           name="platform"
         >
           <FieldLabel>Plataforma</FieldLabel>
-          <Select defaultValue={EA_SEARCH_PLATFORM.NINTENDO} disabled={loading} name="platform">
+          <Select
+            defaultValue={EA_SEARCH_PLATFORM.NINTENDO}
+            disabled={loading}
+            items={[...eaSearchPlatforms]}
+            name="platform"
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PLATFORMS.map((option) => (
+              {eaSearchPlatforms.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -181,7 +178,7 @@ export function ClubSearchPanel() {
                   <div className="min-w-0">
                     <strong className="text-sm sm:text-base">{club.name}</strong>
                     <p className="typo-label mt-0.5 text-muted-foreground">
-                      {club.platform} · {club.gameEdition}
+                      {eaPlatformLabel(club.platform)} · {club.gameEdition}
                     </p>
                   </div>
                 </div>
@@ -194,10 +191,7 @@ export function ClubSearchPanel() {
         ) : null}
 
         {!searched && !error ? (
-          <p className="text-sm text-muted-foreground">
-            Consume el BFF same-origin (
-            <code className="text-xs">/api/v1/game-data/clubs/search</code>).
-          </p>
+          <p className="typo-caption text-muted-foreground">{t("gameData.clubSearch.source")}</p>
         ) : null}
       </div>
     </div>
