@@ -1,7 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Field, FieldDescription, FieldError, FieldLabel, Input } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Field, FieldDescription, FieldError, FieldLabel, Input } from "@futrob/ui";
+
+const styles = stylex.create({
+  body: {
+    marginInline: "auto",
+    width: "100%",
+    maxWidth: "36rem",
+  },
+});
 import {
   SupportErrorAlert,
   type SupportErrorAlertCopy,
@@ -71,7 +80,7 @@ export function InvitationStep() {
       steps={stepsForPath(t, "invitation")}
       title={t("onboarding.invitation.title")}
     >
-      <div className="mx-auto w-full max-w-xl">
+      <div {...applyStyles(styles.body)}>
         <Field invalid={Boolean(validationError || previewError)}>
           <FieldLabel htmlFor="invitation-token">
             {t("onboarding.invitation.token.label")}

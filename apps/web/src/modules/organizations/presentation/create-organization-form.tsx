@@ -1,7 +1,37 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Field, FieldError, FieldLabel, Form, Input, readFormString } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import {
+  applyStyles,
+  Button,
+  Field,
+  FieldError,
+  FieldLabel,
+  Form,
+  Input,
+  readFormString,
+} from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+const styles = stylex.create({
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.25rem",
+  },
+  error: {
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "color-mix(in oklab, var(--destructive) 40%, transparent)",
+    backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
+    paddingInline: "0.75rem",
+    paddingBlock: "0.625rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.destructive,
+  },
+});
 import { useNavigate } from "@tanstack/react-router";
 import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
 import { useCreateOrganizationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
@@ -57,15 +87,13 @@ export function CreateOrganizationForm({
   return (
     <Form<CreateOrganizationValues>
       aria-busy={submitting}
-      className="space-y-5"
+      className={applyStyles(styles.form).className}
       errors={validation.formErrors}
       onFormSubmit={handleSubmit}
+      style={applyStyles(styles.form).style}
     >
       {error ? (
-        <div
-          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-          role="alert"
-        >
+        <div role="alert" {...applyStyles(styles.error)}>
           {error}
         </div>
       ) : null}

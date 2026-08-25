@@ -10,6 +10,9 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
@@ -23,6 +26,19 @@ import {
   configurePlayerMatchesStory,
   type PlayerMatchesStoryState,
 } from "./player-matches-story-client.ts";
+
+const styles = stylex.create({
+  stub: {
+    padding: "1.5rem",
+    color: colors.mutedForeground,
+  },
+  frame: {
+    minHeight: "100svh",
+    backgroundColor: colors.background,
+    paddingInline: "1.5rem",
+    paddingBlock: "1.5rem",
+  },
+});
 
 const STORY_CLUB_ID = "10754";
 
@@ -123,7 +139,9 @@ function PlayerMatchesStoryShell({
       getParentRoute: () => rootRoute,
       path: "/player/game-accounts",
       component: () => (
-        <p className="typo-body p-6 text-muted-foreground">Datos de juego (stub de Storybook)</p>
+        <p {...applyProps(undefined, undefined, typography.body, styles.stub)}>
+          Datos de juego (stub de Storybook)
+        </p>
       ),
     });
     return createRouter({
@@ -135,7 +153,7 @@ function PlayerMatchesStoryShell({
   return (
     <QueryClientProvider client={client}>
       <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
-        <div className="min-h-svh bg-background px-6 py-6">
+        <div {...applyProps(undefined, undefined, styles.frame)}>
           <RouterProvider router={router} />
         </div>
       </I18nProvider>

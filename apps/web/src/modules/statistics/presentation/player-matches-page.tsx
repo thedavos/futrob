@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { GetMyRecentMatchesResponse } from "@futrob/api-contracts";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   Button,
   EmptyState,
   EmptyStateActions,
@@ -20,7 +22,6 @@ import { AddClubDialog } from "@/modules/teams/presentation/add-club-dialog.tsx"
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { useWorkspaceSelectedClubId } from "@/shared/presentation/shell/use-workspace-selection.tsx";
-import {} from "./player-match-copy.ts";
 import { RecordLoading } from "./player-match-record.tsx";
 import type { MatchSortOrder, PlayerMatchesView } from "./player-match-view.ts";
 import { useMyRecentMatchesQuery } from "./statistics-queries.ts";
@@ -33,6 +34,25 @@ import {
   sectionStatus,
 } from "./player-matches-list.tsx";
 import type { SectionStatus } from "./player-matches-list.tsx";
+
+const styles = stylex.create({
+  main: {
+    width: "100%",
+  },
+  pending: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+  },
+  pendingBody: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+  },
+  empty: {
+    minHeight: 0,
+  },
+});
 
 export type { PlayerMatchesView };
 
@@ -160,7 +180,7 @@ function PlayerMatchesPageLoaded({
   }
 
   return (
-    <main className="w-full">
+    <main {...applyStyles(styles.main)}>
       <TooltipProvider>
         <PageHeader>
           <PageHeaderTitle>{t("player.matches.title")}</PageHeaderTitle>
@@ -220,9 +240,9 @@ function MatchesBody({
 }) {
   if (status === "pending") {
     return (
-      <div className="space-y-8">
+      <div {...applyStyles(styles.pending)}>
         <RecordLoading />
-        <div className="flex flex-col gap-6">
+        <div {...applyStyles(styles.pendingBody)}>
           <MatchesToolbar
             activeView={activeView}
             onSortChange={onSortChange}
@@ -253,7 +273,7 @@ function MatchesBody({
       );
     case "needs_game_account":
       return (
-        <EmptyState className="min-h-0">
+        <EmptyState {...applyStyles(styles.empty)}>
           <EmptyStateIcon>
             <GameControllerIcon aria-hidden="true" />
           </EmptyStateIcon>

@@ -1,8 +1,32 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";
 import { Input } from "../components/input";
 import { Label } from "../components/label";
+
+const styles = stylex.create({
+  field: {
+    width: "min(24rem, calc(100vw - 2rem))",
+  },
+  labeled: {
+    display: "grid",
+    width: "min(24rem, calc(100vw - 2rem))",
+    gap: "0.5rem",
+  },
+  stack: {
+    display: "grid",
+    width: "min(24rem, calc(100vw - 2rem))",
+    gap: "1.25rem",
+  },
+  group: {
+    display: "grid",
+    gap: "0.5rem",
+  },
+  muted: { color: colors.mutedForeground },
+});
 
 const meta = {
   title: "Primitives/Input",
@@ -32,7 +56,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <div className="w-[min(24rem,calc(100vw-2rem))]">
+    <div {...applyProps(undefined, undefined, styles.field)}>
       <Input {...args} />
     </div>
   ),
@@ -40,7 +64,7 @@ export const Playground: Story = {
 
 export const WithLabel: Story = {
   render: () => (
-    <div className="grid w-[min(24rem,calc(100vw-2rem))] gap-2">
+    <div {...applyProps(undefined, undefined, styles.labeled)}>
       <Label htmlFor="competition-name">Nombre de la competición</Label>
       <Input id="competition-name" placeholder="Liga Metropolitana" />
     </div>
@@ -49,13 +73,17 @@ export const WithLabel: Story = {
 
 export const Density: Story = {
   render: () => (
-    <div className="grid w-[min(24rem,calc(100vw-2rem))] gap-5">
-      <div className="grid gap-2">
-        <p className="typo-label text-muted-foreground">Universal · 44 px</p>
+    <div {...applyProps(undefined, undefined, styles.stack)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>
+          Universal · 44 px
+        </p>
         <Input placeholder="Buscar encuentro" />
       </div>
-      <div className="grid gap-2">
-        <p className="typo-label text-muted-foreground">Dense · 36 px en desktop</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>
+          Dense · 36 px en desktop
+        </p>
         <Input dense placeholder="Filtrar filas" />
       </div>
     </div>
@@ -64,7 +92,7 @@ export const Density: Story = {
 
 export const States: Story = {
   render: () => (
-    <div className="grid w-[min(24rem,calc(100vw-2rem))] gap-5">
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       <Field name="email">
         <FieldLabel>Correo</FieldLabel>
         <Input defaultValue="capitan@futrob.app" type="email" />

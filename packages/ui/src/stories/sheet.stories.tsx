@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ListIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Button } from "../components/button";
 import {
@@ -12,6 +15,31 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../components/sheet";
+
+const styles = stylex.create({
+  nav: {
+    display: "grid",
+    gap: "0.25rem",
+    fontSize: "var(--text-sm)",
+  },
+  navLink: {
+    borderRadius: "var(--corner-lg)",
+    paddingInline: "0.75rem",
+    paddingBlock: "0.625rem",
+    fontWeight: 500,
+    backgroundColor: {
+      default: null,
+      ":hover": colors.muted,
+    },
+  },
+  full: { width: "100%" },
+  sides: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.75rem",
+  },
+  muted: { color: colors.mutedForeground },
+});
 
 const meta = {
   title: "Primitives/Sheet",
@@ -34,20 +62,20 @@ export const Playground: Story = {
           <SheetDescription>Áreas de la competición activa.</SheetDescription>
         </SheetHeader>
         <SheetBody>
-          <nav className="grid gap-1 text-sm">
-            <a className="rounded-lg px-3 py-2.5 font-medium hover:bg-muted" href="#">
+          <nav {...applyProps(undefined, undefined, styles.nav)}>
+            <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
               Resumen
             </a>
-            <a className="rounded-lg px-3 py-2.5 font-medium hover:bg-muted" href="#">
+            <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
               Partidos
             </a>
-            <a className="rounded-lg px-3 py-2.5 font-medium hover:bg-muted" href="#">
+            <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
               Estadísticas
             </a>
           </nav>
         </SheetBody>
         <SheetFooter>
-          <Button className="w-full">Ir al panel</Button>
+          <Button {...applyProps(undefined, undefined, styles.full)}>Ir al panel</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
@@ -56,7 +84,7 @@ export const Playground: Story = {
 
 export const Sides: Story = {
   render: () => (
-    <div className="flex flex-wrap gap-3">
+    <div {...applyProps(undefined, undefined, styles.sides)}>
       {(["left", "right", "top", "bottom"] as const).map((side) => (
         <Sheet key={side}>
           <SheetTrigger render={<Button variant="outline" />}>{side}</SheetTrigger>
@@ -66,7 +94,9 @@ export const Sides: Story = {
               <SheetDescription>Panel anclado al borde de la pantalla.</SheetDescription>
             </SheetHeader>
             <SheetBody>
-              <p className="typo-caption text-muted-foreground">Contenido del sheet {side}.</p>
+              <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
+                Contenido del sheet {side}.
+              </p>
             </SheetBody>
           </SheetContent>
         </Sheet>

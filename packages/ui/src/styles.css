@@ -1,4 +1,6 @@
 @import "./tokens.css";
+@import "./elevation.css";
+@import "./slots.css";
 
 @font-face {
   font-family: "Manrope Variable";
@@ -9,102 +11,105 @@
     format("woff2-variations");
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+/*
+ * Keep document defaults in `reset` so they lose to StyleX `@layer priority*`.
+ * Unlayered rules would beat every StyleX declaration (`useCSSLayers: true`).
+ */
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-html {
-  min-width: 20rem;
-  min-height: 100%;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-ui);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  html {
+    min-width: 20rem;
+    min-height: 100%;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-ui);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-body {
-  min-height: 100vh;
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-size: var(--typo-body-size);
-  font-weight: var(--typo-body-weight);
-  line-height: var(--typo-body-leading);
-  letter-spacing: var(--typo-body-tracking);
-}
+  body {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: var(--typo-body-size);
+    font-weight: var(--typo-body-weight);
+    line-height: var(--typo-body-leading);
+    letter-spacing: var(--typo-body-tracking);
+  }
 
-input,
-select,
-textarea {
-  color: inherit;
-}
+  input,
+  select,
+  textarea {
+    color: inherit;
+  }
 
-button,
-[role="button"] {
-  touch-action: manipulation;
-}
-
-a:not([class]) {
-  color: inherit;
-  text-decoration-thickness: from-font;
-  text-underline-position: from-font;
-  text-decoration-skip-ink: auto;
-}
-
-img,
-svg {
-  max-width: 100%;
-}
-
-img:not([class*="outline"]) {
-  outline: 1px solid oklch(0 0 0 / 0.1);
-  outline-offset: -1px;
-}
-
-.dark img:not([class*="outline"]),
-[data-theme="dark"] img:not([class*="outline"]) {
-  outline-color: oklch(1 0 0 / 0.1);
-}
-
-h1,
-h2,
-h3,
-h4,
-p {
-  margin-block: 0;
-}
-
-h1,
-h2,
-h3,
-h4 {
-  font-weight: var(--typo-heading-weight);
-  line-height: var(--typo-heading-leading);
-  letter-spacing: var(--typo-heading-tracking);
-  text-wrap: balance;
-}
-
-p {
-  text-wrap: pretty;
-}
-
-::selection {
-  background: var(--brand-300);
-  color: var(--neutral-950);
-}
-
-/* In @layer base so component utilities (e.g. `font-semibold`, `outline-none`) can override. */
-@layer base {
   button,
   input,
   select,
   textarea {
     font: inherit;
+  }
+
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  a:not([class]) {
+    color: inherit;
+    text-decoration-thickness: from-font;
+    text-underline-position: from-font;
+    text-decoration-skip-ink: auto;
+  }
+
+  img,
+  svg {
+    max-width: 100%;
+  }
+
+  img:not([data-outline="none"]) {
+    outline: 1px solid oklch(0 0 0 / 0.1);
+    outline-offset: -1px;
+  }
+
+  .dark img:not([data-outline="none"]),
+  [data-theme="dark"] img:not([data-outline="none"]) {
+    outline-color: oklch(1 0 0 / 0.1);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p {
+    margin-block: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: var(--typo-heading-weight);
+    line-height: var(--typo-heading-leading);
+    letter-spacing: var(--typo-heading-tracking);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--brand-300);
+    color: var(--neutral-950);
   }
 
   :focus-visible {
@@ -115,35 +120,23 @@ p {
   :focus-visible[aria-invalid="true"] {
     outline-color: var(--danger);
   }
-}
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
+  @media print {
+    :root,
+    .dark,
+    [data-theme="dark"] {
+      color-scheme: light;
+      --background: var(--neutral-0);
+      --foreground: var(--neutral-1000);
+      --surface: var(--neutral-0);
+      --border-subtle: var(--neutral-200);
+      --border: var(--neutral-300);
+      --border-strong: var(--neutral-450);
+    }
 
-@media print {
-  :root,
-  .dark,
-  [data-theme="dark"] {
-    color-scheme: light;
-    --background: var(--neutral-0);
-    --foreground: var(--neutral-1000);
-    --surface: var(--neutral-0);
-    --border-subtle: var(--neutral-200);
-    --border: var(--neutral-300);
-    --border-strong: var(--neutral-450);
-  }
-
-  body {
-    background: var(--neutral-0);
-    color: var(--neutral-1000);
+    body {
+      background: var(--neutral-0);
+      color: var(--neutral-1000);
+    }
   }
 }

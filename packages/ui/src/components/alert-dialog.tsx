@@ -1,23 +1,96 @@
+import type { ComponentProps } from "react";
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyProps } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { elevation } from "#styles/elevation";
+import { media } from "#styles/media.stylex";
+
+const styles = stylex.create({
+  backdrop: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 50,
+    backgroundColor: "color-mix(in oklab, var(--neutral-950) 55%, transparent)",
+    backdropFilter: "blur(2px)",
+    transitionProperty: "opacity",
+    transitionDuration: "var(--duration-normal)",
+  },
+  viewport: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 50,
+    display: "grid",
+    placeItems: "center",
+    overflowY: "auto",
+    padding: "1rem",
+  },
+  content: {
+    width: "100%",
+    maxWidth: "28rem",
+    transformOrigin: "center",
+    borderRadius: "var(--corner-xl)",
+    backgroundColor: colors.popover,
+    padding: "1.5rem",
+    color: colors.popoverForeground,
+    transitionProperty: "opacity, scale",
+    transitionDuration: "var(--duration-normal)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+    outlineWidth: 0,
+    outlineStyle: "none",
+  },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+    textAlign: "left",
+  },
+  footer: {
+    marginTop: "1.5rem",
+    display: "flex",
+    flexDirection: {
+      default: "column-reverse",
+      [media.sm]: "row",
+    },
+    justifyContent: {
+      default: null,
+      [media.sm]: "flex-end",
+    },
+    gap: "0.5rem",
+  },
+  title: {
+    fontSize: "1.125rem",
+    lineHeight: "var(--leading-tight)",
+    fontWeight: 600,
+    letterSpacing: "var(--tracking-tight)",
+    color: colors.foreground,
+  },
+  description: {
+    fontSize: "0.875rem",
+    lineHeight: 1.625,
+    color: colors.mutedForeground,
+  },
+});
 
 const AlertDialog = AlertDialogPrimitive.Root;
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 const AlertDialogAction = AlertDialogPrimitive.Close;
 const AlertDialogCancel = AlertDialogPrimitive.Close;
 
-function AlertDialogContent({ children, className, ...props }: AlertDialogPrimitive.Popup.Props) {
+function AlertDialogContent({
+  children,
+  className,
+  style,
+  ...props
+}: AlertDialogPrimitive.Popup.Props) {
   return (
     <AlertDialogPrimitive.Portal>
-      <AlertDialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-neutral-950/55 backdrop-blur-[2px] transition-opacity duration-(--duration-normal) data-ending-style:opacity-0 data-starting-style:opacity-0" />
-      <AlertDialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4">
+      <AlertDialogPrimitive.Backdrop {...applyProps(undefined, undefined, styles.backdrop)} />
+      <AlertDialogPrimitive.Viewport {...applyProps(undefined, undefined, styles.viewport)}>
         <AlertDialogPrimitive.Popup
           data-slot="alert-dialog-content"
-          className={cn(
-            "w-full max-w-md origin-center rounded-xl bg-popover p-6 text-popover-foreground smooth-shadow-ring-lg transition-[opacity,scale] duration-(--duration-normal) ease-(--ease-emphasized) outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
-            className,
-          )}
+          {...applyProps(className, style, styles.content, elevation.lg)}
           {...props}
         >
           {children}
@@ -27,44 +100,45 @@ function AlertDialogContent({ children, className, ...props }: AlertDialogPrimit
   );
 }
 
-function AlertDialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+function AlertDialogHeader({ className, style, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn("flex flex-col gap-2 text-left", className)}
+      {...applyProps(className, style, styles.header)}
       {...props}
     />
   );
 }
 
-function AlertDialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+function AlertDialogFooter({ className, style, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-dialog-footer"
-      className={cn("mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+      {...applyProps(className, style, styles.footer)}
       {...props}
     />
   );
 }
 
-function AlertDialogTitle({ className, ...props }: AlertDialogPrimitive.Title.Props) {
+function AlertDialogTitle({ className, style, ...props }: AlertDialogPrimitive.Title.Props) {
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn(
-        "text-lg font-semibold leading-tight tracking-tight text-foreground",
-        className,
-      )}
+      {...applyProps(className, style, styles.title)}
       {...props}
     />
   );
 }
 
-function AlertDialogDescription({ className, ...props }: AlertDialogPrimitive.Description.Props) {
+function AlertDialogDescription({
+  className,
+  style,
+  ...props
+}: AlertDialogPrimitive.Description.Props) {
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-sm leading-relaxed text-muted-foreground", className)}
+      {...applyProps(className, style, styles.description)}
       {...props}
     />
   );

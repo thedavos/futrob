@@ -1,16 +1,20 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
+  applyStyles,
   Button,
   ChoiceGroup,
   Field,
   FieldError,
   FieldLabel,
   Input,
+  typography,
 } from "@futrob/ui";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { InfoIcon } from "@phosphor-icons/react";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
@@ -24,6 +28,78 @@ import { OnboardingActions } from "../onboarding-actions.tsx";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
 import { stepsForPath } from "../onboarding-step-meta.ts";
+
+const styles = stylex.create({
+  body: {
+    marginInline: "auto",
+    display: "grid",
+    width: "100%",
+    maxWidth: "42rem",
+    gap: "2rem",
+  },
+  reuseAlert: {
+    gridTemplateColumns: {
+      default: null,
+      [media.sm]: "auto minmax(0, 1fr) auto",
+    },
+    alignItems: {
+      default: null,
+      [media.sm]: "center",
+    },
+    columnGap: {
+      default: null,
+      [media.sm]: "1rem",
+    },
+  },
+  reuseIcon: {
+    marginTop: {
+      default: null,
+      [media.sm]: 0,
+    },
+  },
+  reuseAction: {
+    gridColumnStart: {
+      default: 2,
+      [media.sm]: 3,
+    },
+    gridRowStart: {
+      default: null,
+      [media.sm]: 1,
+    },
+    marginTop: {
+      default: "0.5rem",
+      [media.sm]: 0,
+    },
+    width: {
+      default: "100%",
+      [media.sm]: "auto",
+    },
+  },
+  fieldGap: {
+    gap: "0.75rem",
+  },
+  fieldset: {
+    margin: 0,
+    borderWidth: 0,
+    padding: 0,
+  },
+  legend: {
+    marginBottom: "0.75rem",
+  },
+  platformGrid: {
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(3, minmax(0, 1fr))",
+      [media.lg]: "repeat(5, minmax(0, 1fr))",
+    },
+  },
+});
+
+const reuseAlert = applyStyles(styles.reuseAlert);
+const reuseIcon = applyStyles(styles.reuseIcon);
+const reuseAction = applyStyles(styles.reuseAction);
+const fieldGap = applyStyles(styles.fieldGap);
+const platformGrid = applyStyles(styles.platformGrid);
 
 export function GameAccountStep() {
   const flow = useOnboardingFlow();
@@ -84,18 +160,15 @@ export function GameAccountStep() {
       steps={stepsForPath(t, path)}
       title={t("onboarding.account.title")}
     >
-      <div className="mx-auto grid w-full max-w-2xl gap-8">
+      <div {...applyStyles(styles.body)}>
         {path === "organization" &&
         flow.draft.competitionPlatform &&
         flow.draft.competitionGameEdition.trim() ? (
-          <Alert
-            className="sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-x-4 sm:[&>svg]:mt-0"
-            variant="info"
-          >
-            <InfoIcon aria-hidden="true" />
+          <Alert className={reuseAlert.className} style={reuseAlert.style} variant="info">
+            <InfoIcon aria-hidden="true" className={reuseIcon.className} style={reuseIcon.style} />
             <AlertDescription>{t("onboarding.account.reuse.description")}</AlertDescription>
             <Button
-              className="col-start-2 mt-2 w-full sm:col-start-3 sm:row-start-1 sm:mt-0 sm:w-auto"
+              className={reuseAction.className}
               onClick={() =>
                 flow.updateDraft({
                   platform: flow.draft.competitionPlatform,
@@ -105,6 +178,7 @@ export function GameAccountStep() {
                   ),
                 })
               }
+              style={reuseAction.style}
               variant="outline"
             >
               {t("onboarding.account.reuse.action")}
@@ -112,8 +186,9 @@ export function GameAccountStep() {
           </Alert>
         ) : null}
         <Field
-          className="gap-3"
+          className={fieldGap.className}
           invalid={Boolean(validationError && !draft.gameAccountIdentifier.trim())}
+          style={fieldGap.style}
         >
           <FieldLabel htmlFor="game-account-identifier">
             {t("onboarding.account.identifier.label")}
@@ -139,19 +214,20 @@ export function GameAccountStep() {
           ) : null}
         </Field>
 
-        <fieldset className="m-0 border-0 p-0" data-platform-group>
-          <legend className="mb-3 typo-label" id={platformLabelId}>
+        <fieldset {...applyStyles(styles.fieldset)} data-platform-group="">
+          <legend {...applyStyles(typography.label, styles.legend)} id={platformLabelId}>
             {t("onboarding.account.platform.label")}
           </legend>
           <ChoiceGroup<GamePlatformDto | "">
             aria-describedby={invalidField === "platform" ? validationErrorId : undefined}
             aria-invalid={invalidField === "platform"}
             aria-labelledby={platformLabelId}
-            className="grid-cols-1 sm:grid-cols-3 lg:grid-cols-5"
+            className={platformGrid.className}
             onValueChange={(value) => {
               if (value) flow.updateDraft({ platform: value });
               setValidationErrorKey(null);
             }}
+            style={platformGrid.style}
             value={draft.platform ?? ""}
           >
             <PlatformChoice label="PlayStation" value={GAME_PLATFORM.PLAYSTATION} />

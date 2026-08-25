@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@futrob/ui";
+import { applyStyles, Badge } from "@futrob/ui";
 import { StarIcon } from "@phosphor-icons/react";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
@@ -12,6 +12,7 @@ import {
   type ProviderMatchRosterModel,
   type ProviderRosterSection,
 } from "./provider-match-detail-model.ts";
+import { rosterTypography, styles } from "./provider-match-detail-rosters.styles.ts";
 
 export function MatchRosters({
   numberFormat,
@@ -23,7 +24,7 @@ export function MatchRosters({
   readonly t: Translator;
 }) {
   return (
-    <div className="space-y-10">
+    <div {...applyStyles(styles.stack)}>
       <RosterSection
         kind="selected"
         label={t("player.matchDetail.selectedClub")}
@@ -55,37 +56,41 @@ function RosterSection({
   readonly section: ProviderRosterSection;
   readonly t: Translator;
 }) {
+  const crest = applyStyles(styles.crest);
   return (
-    <section className="space-y-4" data-roster={kind}>
-      <div className="flex min-w-0 items-center gap-3">
+    <section data-roster={kind} {...applyStyles(styles.section)}>
+      <div {...applyStyles(styles.heading)}>
         <ClubCrestAvatar
-          className="size-10 shrink-0"
+          className={crest.className}
           framed={false}
           imageUrl={section.team.imageUrl}
           name={section.team.name}
+          style={crest.style}
         />
-        <div className="min-w-0">
-          <p className="typo-caption text-muted-foreground">{label}</p>
-          <h2 className="typo-subtitle truncate font-semibold">{section.team.name}</h2>
+        <div {...applyStyles(styles.headingCopy)}>
+          <p {...applyStyles(rosterTypography.caption, styles.muted)}>{label}</p>
+          <h2 {...applyStyles(rosterTypography.subtitle, styles.teamName)}>{section.team.name}</h2>
         </div>
       </div>
       {section.players.length === 0 ? (
-        <p className="typo-caption rounded-xl border border-border px-4 py-5 text-muted-foreground">
+        <p {...applyStyles(rosterTypography.caption, styles.empty)}>
           {t("player.matchDetail.roster.empty")}
         </p>
       ) : (
-        <ol className="overflow-hidden rounded-xl border border-border bg-surface">
+        <ol {...applyStyles(styles.list)}>
           {section.players.map(({ isPersonal, player }) => (
             <li
-              className="border-b border-border px-4 py-4 last:border-b-0 sm:px-5"
               data-personal-player={isPersonal ? "" : undefined}
               data-player-name={player.displayName}
               data-roster-player=""
               key={`${player.externalClubId}:${player.externalPlayerId}`}
+              {...applyStyles(styles.row)}
             >
-              <div className="mb-4 flex min-w-0 items-center justify-between gap-3">
-                <p className="typo-subtitle min-w-0 truncate font-semibold">{player.displayName}</p>
-                <div className="flex shrink-0 items-center gap-2">
+              <div {...applyStyles(styles.rowHeader)}>
+                <p {...applyStyles(rosterTypography.subtitle, styles.playerName)}>
+                  {player.displayName}
+                </p>
+                <div {...applyStyles(styles.badges)}>
                   {isPersonal ? (
                     <Badge variant="outline">{t("player.matchDetail.you")}</Badge>
                   ) : null}
@@ -116,7 +121,7 @@ function PlayerMetrics({
   readonly t: Translator;
 }) {
   return (
-    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4 lg:grid-cols-7">
+    <dl {...applyStyles(styles.metrics)}>
       {PROVIDER_PLAYER_METRICS.map((metric) => (
         <PlayerMetric
           key={metric.key}
@@ -142,11 +147,11 @@ function PlayerMetric({
   readonly t: Translator;
 }) {
   return (
-    <div className="min-w-0">
-      <dt className="typo-caption truncate text-muted-foreground">{t(metric.labelKey)}</dt>
+    <div {...applyStyles(styles.metric)}>
+      <dt {...applyStyles(rosterTypography.caption, styles.metricLabel)}>{t(metric.labelKey)}</dt>
       <dd
-        className="typo-caption mt-0.5 font-semibold tabular-nums"
         data-player-metric={metric.key}
+        {...applyStyles(rosterTypography.caption, styles.metricValue)}
       >
         {metricValue(metric, player, numberFormat, t)}
       </dd>

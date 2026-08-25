@@ -22,7 +22,9 @@ import {
   SelectValue,
   Separator,
   Skeleton,
+  applyStyles,
 } from "@futrob/ui";
+import { listTypography, styles } from "./player-matches-list.styles.ts";
 import { SoccerBallIcon } from "@phosphor-icons/react";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
@@ -81,11 +83,11 @@ export function ReadyMatches({
   const groups = groupMatchesByDay(visibleMatches);
 
   return (
-    <div className="space-y-8">
+    <div {...applyStyles(styles.stack)}>
       {visibleMatches.length > 0 ? (
         <ViewRecord matches={visibleMatches} numberFormat={numberFormat} record={record} />
       ) : null}
-      <div className="flex flex-col gap-6">
+      <div {...applyStyles(styles.body)}>
         <MatchesToolbar
           activeView={activeView}
           onSortChange={onSortChange}
@@ -145,16 +147,16 @@ export function MatchDayLists({
   }
 
   return (
-    <div className="space-y-8" role="region" aria-label={historyLabel}>
+    <div aria-label={historyLabel} role="region" {...applyStyles(styles.stack)}>
       {groups.map((group) => {
         const kind = calendarDayKind(group.occurredAt, now);
         const heading = dayHeading(kind, group.occurredAt, dayDateFormat, t);
         return (
-          <section className="flex flex-col gap-4" key={group.dayKey}>
-            <h2 className="typo-label text-muted-foreground">
+          <section key={group.dayKey} {...applyStyles(styles.day)}>
+            <h2 {...applyStyles(listTypography.label, styles.dayHeading)}>
               <time dateTime={group.dayKey}>{heading}</time>
             </h2>
-            <ol className="flex flex-col gap-3">
+            <ol {...applyStyles(styles.dayList)}>
               {group.matches.map((item) => (
                 <ProviderMatchRow
                   dateTimeFormat={dateTimeFormat}
@@ -190,30 +192,38 @@ export function MatchesToolbar({
   readonly sortOrder: MatchSortOrder;
   readonly t: Translator;
 }) {
+  const toolbar = applyStyles(styles.toolbar);
+  const toolbarContent = applyStyles(styles.toolbarContent);
+  const views = applyStyles(styles.views);
+  const viewPill = applyStyles(styles.viewPill);
+  const separator = applyStyles(styles.separator);
+  const sortTrigger = applyStyles(styles.sortTrigger);
   return (
-    <Card className="@container">
-      <CardContent className="flex flex-col gap-4 px-4 py-3 @3xl:flex-row @3xl:items-center @3xl:gap-x-4 @3xl:gap-y-2">
+    <Card className={toolbar.className} style={toolbar.style}>
+      <CardContent className={toolbarContent.className} style={toolbarContent.style}>
         <ChoiceGroup<PlayerMatchesView>
           aria-label={t("player.matches.view.label")}
-          className="grid min-w-0 grid-cols-2 gap-2 @xl:flex @xl:flex-wrap"
+          className={views.className}
           onValueChange={(value) => {
             if (isPlayerMatchesView(value)) onViewChange(value);
           }}
+          style={views.style}
           value={activeView}
         >
           {PLAYER_MATCHES_VIEWS.map((view) => (
             <ChoiceGroupItem
               appearance="pill"
-              className="w-full rounded-lg border-border-strong px-4 font-semibold data-[checked]:border-transparent data-[checked]:bg-primary data-[checked]:text-primary-foreground data-[checked]:hover:bg-primary-hover @xl:w-auto min-h-(--control-height-dense) max-sm:min-h-(--control-height-touch)"
+              className={viewPill.className}
               key={view}
+              style={viewPill.style}
               value={view}
             >
               {t(VIEW_FILTER_KEYS[view])}
             </ChoiceGroupItem>
           ))}
         </ChoiceGroup>
-        <Separator className="hidden h-8 @3xl:block" orientation="vertical" />
-        <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+        <Separator className={separator.className} orientation="vertical" style={separator.style} />
+        <div {...applyStyles(styles.toolbarEnd)}>
           <Select
             itemToStringLabel={(value) =>
               isMatchSortOrder(value) ? t(MATCH_SORT_KEYS[value]) : ""
@@ -229,8 +239,9 @@ export function MatchesToolbar({
           >
             <SelectTrigger
               aria-label={t("player.matches.sort.label")}
-              className="w-max min-w-40 max-w-full"
+              className={sortTrigger.className}
               dense
+              style={sortTrigger.style}
             >
               <SelectValue />
             </SelectTrigger>
@@ -243,10 +254,7 @@ export function MatchesToolbar({
             </SelectContent>
           </Select>
           {resultCount === undefined ? null : (
-            <p
-              className="typo-caption shrink-0 font-medium whitespace-nowrap tabular-nums text-muted-foreground"
-              role="status"
-            >
+            <p role="status" {...applyStyles(listTypography.caption, styles.count)}>
               {t("player.matches.results.count", { count: resultCount })}
             </p>
           )}
@@ -266,7 +274,7 @@ export function MatchesEmpty({
   readonly title: string;
 }) {
   return (
-    <EmptyState className="min-h-0">
+    <EmptyState {...applyStyles(styles.empty)}>
       <EmptyStateIcon>
         <SoccerBallIcon aria-hidden="true" />
       </EmptyStateIcon>
@@ -283,13 +291,13 @@ export function MatchesLoading({ label }: { readonly label: string }) {
       aria-busy="true"
       aria-live="polite"
       aria-label={label}
-      className="flex flex-col gap-6"
       role="status"
+      {...applyStyles(styles.loading)}
     >
-      <p className="typo-caption text-muted-foreground">{label}</p>
-      <div className="space-y-3">
-        <Skeleton className="h-36" />
-        <Skeleton className="h-36" />
+      <p {...applyStyles(listTypography.caption, styles.muted)}>{label}</p>
+      <div {...applyStyles(styles.skeletonStack)}>
+        <Skeleton {...applyStyles(styles.skeleton)} />
+        <Skeleton {...applyStyles(styles.skeleton)} />
       </div>
     </div>
   );
@@ -306,7 +314,7 @@ export function SectionError({
 }) {
   return (
     <Alert variant="destructive">
-      <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+      <AlertDescription {...applyStyles(styles.error)}>
         <span>{message}</span>
         <Button onClick={onRetry} variant="secondary">
           {t("player.retry")}

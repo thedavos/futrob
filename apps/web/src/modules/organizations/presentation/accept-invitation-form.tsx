@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Field, FieldError, FieldLabel, Form, Input, readFormString } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import {
+  applyStyles,
+  Button,
+  Field,
+  FieldError,
+  FieldLabel,
+  Form,
+  Input,
+  readFormString,
+} from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
 import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
@@ -12,6 +22,16 @@ import {
   type SupportError,
 } from "@/shared/presentation/support-error-alert.tsx";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
+
+const styles = stylex.create({
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.25rem",
+  },
+});
+
+const form = applyStyles(styles.form);
 
 type AcceptInvitationValues = {
   token: string;
@@ -66,9 +86,10 @@ export function AcceptInvitationForm({ initialToken = "" }: Readonly<{ initialTo
   return (
     <Form<AcceptInvitationValues>
       aria-busy={submitting}
-      className="space-y-5"
+      className={form.className}
       errors={validation.formErrors}
       onFormSubmit={handleSubmit}
+      style={form.style}
     >
       {error ? (
         <SupportErrorAlert

@@ -1,20 +1,121 @@
+import type { ComponentProps } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyProps } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { elevation } from "#styles/elevation";
+import { media } from "#styles/media.stylex";
+
+const styles = stylex.create({
+  backdrop: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 50,
+    backgroundColor: "color-mix(in oklab, var(--neutral-950) 55%, transparent)",
+    backdropFilter: "blur(2px)",
+    transitionProperty: "opacity",
+    transitionDuration: "var(--duration-normal)",
+  },
+  viewport: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 50,
+    display: "grid",
+    placeItems: "center",
+    overflowY: "auto",
+    padding: "1rem",
+  },
+  content: {
+    position: "relative",
+    width: "100%",
+    maxWidth: "32rem",
+    transformOrigin: "center",
+    borderRadius: "var(--corner-xl)",
+    backgroundColor: colors.popover,
+    padding: "1.5rem",
+    color: colors.popoverForeground,
+    transitionProperty: "opacity, scale",
+    transitionDuration: "var(--duration-normal)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+    outlineWidth: 0,
+    outlineStyle: "none",
+  },
+  close: {
+    position: "absolute",
+    top: "1rem",
+    right: "1rem",
+    display: "inline-flex",
+    width: "2.5rem",
+    height: "2.5rem",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "var(--corner-lg)",
+    color: {
+      default: colors.mutedForeground,
+      ":hover": colors.foreground,
+    },
+    backgroundColor: {
+      default: "transparent",
+      ":hover": colors.muted,
+    },
+    transitionProperty: "color, background-color",
+    transitionDuration: "var(--duration-normal)",
+    outlineWidth: 0,
+    outlineStyle: "none",
+    boxShadow: {
+      default: null,
+      ":focus-visible": "0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent)",
+    },
+  },
+  closeIcon: {
+    width: "1rem",
+    height: "1rem",
+  },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+    paddingRight: "2.5rem",
+    textAlign: "left",
+  },
+  footer: {
+    marginTop: "1.5rem",
+    display: "flex",
+    flexDirection: {
+      default: "column-reverse",
+      [media.sm]: "row",
+    },
+    justifyContent: {
+      default: null,
+      [media.sm]: "flex-end",
+    },
+    gap: "0.5rem",
+  },
+  title: {
+    fontSize: "1.125rem",
+    lineHeight: "var(--leading-tight)",
+    fontWeight: 600,
+    letterSpacing: "var(--tracking-tight)",
+    color: colors.foreground,
+  },
+  description: {
+    fontSize: "0.875rem",
+    lineHeight: 1.625,
+    color: colors.mutedForeground,
+  },
+});
 
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogClose = DialogPrimitive.Close;
 
-function DialogBackdrop({ className, ...props }: DialogPrimitive.Backdrop.Props) {
+function DialogBackdrop({ className, style, ...props }: DialogPrimitive.Backdrop.Props) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-backdrop"
-      className={cn(
-        "fixed inset-0 z-50 bg-neutral-950/55 backdrop-blur-[2px] transition-opacity duration-(--duration-normal) data-ending-style:opacity-0 data-starting-style:opacity-0",
-        className,
-      )}
+      {...applyProps(className, style, styles.backdrop)}
       {...props}
     />
   );
@@ -24,26 +125,29 @@ type DialogContentProps = DialogPrimitive.Popup.Props & {
   hideClose?: boolean;
 };
 
-function DialogContent({ children, className, hideClose = false, ...props }: DialogContentProps) {
+function DialogContent({
+  children,
+  className,
+  style,
+  hideClose = false,
+  ...props
+}: DialogContentProps) {
   return (
     <DialogPrimitive.Portal>
       <DialogBackdrop />
-      <DialogPrimitive.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4">
+      <DialogPrimitive.Viewport {...applyProps(undefined, undefined, styles.viewport)}>
         <DialogPrimitive.Popup
           data-slot="dialog-content"
-          className={cn(
-            "relative w-full max-w-lg origin-center rounded-xl bg-popover p-6 text-popover-foreground smooth-shadow-ring-lg transition-[opacity,scale] duration-(--duration-normal) ease-(--ease-emphasized) outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
-            className,
-          )}
+          {...applyProps(className, style, styles.content, elevation.lg)}
           {...props}
         >
           {children}
           {!hideClose && (
             <DialogPrimitive.Close
               aria-label="Cerrar"
-              className="absolute top-4 right-4 inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+              {...applyProps(undefined, undefined, styles.close)}
             >
-              <XIcon aria-hidden="true" className="size-4" />
+              <XIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.closeIcon)} />
             </DialogPrimitive.Close>
           )}
         </DialogPrimitive.Popup>
@@ -52,44 +156,33 @@ function DialogContent({ children, className, hideClose = false, ...props }: Dia
   );
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DialogHeader({ className, style, ...props }: ComponentProps<"div">) {
   return (
-    <div
-      data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 pr-10 text-left", className)}
-      {...props}
-    />
+    <div data-slot="dialog-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
-function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+function DialogFooter({ className, style, ...props }: ComponentProps<"div">) {
   return (
-    <div
-      data-slot="dialog-footer"
-      className={cn("mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
-      {...props}
-    />
+    <div data-slot="dialog-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
 }
 
-function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+function DialogTitle({ className, style, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn(
-        "text-lg font-semibold leading-tight tracking-tight text-foreground",
-        className,
-      )}
+      {...applyProps(className, style, styles.title)}
       {...props}
     />
   );
 }
 
-function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
+function DialogDescription({ className, style, ...props }: DialogPrimitive.Description.Props) {
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-sm leading-relaxed text-muted-foreground", className)}
+      {...applyProps(className, style, styles.description)}
       {...props}
     />
   );

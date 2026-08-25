@@ -1,6 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardHeader } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, applyStyles, Card, CardContent, CardHeader, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
@@ -11,8 +13,106 @@ import {
   type TeamStatValue,
 } from "./provider-match-detail-model.ts";
 
-const COMPARISON_CARD_HEADER_CLASS = "flex flex-col gap-6 space-y-0 px-5 pt-5 pb-4";
-const COMPARISON_ROW_CLASS = "grid grid-cols-[3.5rem_minmax(0,1fr)_3.5rem] gap-x-3";
+const styles = stylex.create({
+  card: {
+    minWidth: 0,
+  },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+    paddingInline: "1.25rem",
+    paddingTop: "1.25rem",
+    paddingBottom: "1rem",
+  },
+  clubs: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    alignItems: "center",
+    gap: "0.75rem",
+  },
+  content: {
+    paddingInline: "1.25rem",
+    paddingBottom: "1.25rem",
+  },
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+  },
+  club: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  clubEnd: {
+    justifyContent: "flex-end",
+  },
+  clubName: {
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  clubNameEnd: {
+    textAlign: "end",
+  },
+  crest: {
+    width: "2rem",
+    height: "2rem",
+    flexShrink: 0,
+  },
+  row: {
+    display: "grid",
+    gridTemplateColumns: "3.5rem minmax(0, 1fr) 3.5rem",
+    gridTemplateRows: "auto auto",
+    columnGap: "0.75rem",
+    rowGap: "0.25rem",
+    alignItems: "center",
+  },
+  metricLabel: {
+    gridColumn: "span 3",
+    textAlign: "center",
+    color: colors.mutedForeground,
+  },
+  selectedValue: {
+    textAlign: "end",
+    whiteSpace: "nowrap",
+    fontVariantNumeric: "tabular-nums",
+    fontWeight: 600,
+  },
+  bars: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    alignItems: "center",
+    gap: "0.25rem",
+  },
+  opponentValue: {
+    whiteSpace: "nowrap",
+    fontVariantNumeric: "tabular-nums",
+    fontWeight: 600,
+  },
+  bar: {
+    height: "0.375rem",
+    overflow: "hidden",
+    borderRadius: "var(--corner-full)",
+    backgroundColor: colors.muted,
+  },
+  fill: {
+    height: "100%",
+    borderRadius: "var(--corner-full)",
+  },
+  fillPrimary: {
+    backgroundColor: colors.primary,
+  },
+  fillMuted: {
+    backgroundColor: "color-mix(in oklab, var(--muted-foreground) 45%, transparent)",
+  },
+  fillEnd: {
+    marginInlineStart: "auto",
+  },
+});
 
 export function TeamComparisonCard({
   comparison,
@@ -25,17 +125,20 @@ export function TeamComparisonCard({
   readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
+  const card = applyStyles(styles.card);
+  const header = applyStyles(styles.header);
+  const content = applyStyles(styles.content);
   return (
-    <Card className="min-w-0" data-team-comparison="">
-      <CardHeader className={COMPARISON_CARD_HEADER_CLASS}>
-        <h2 className="typo-label">{t("player.matchDetail.comparison")}</h2>
-        <div className="grid grid-cols-2 items-center gap-3">
+    <Card className={card.className} data-team-comparison="" style={card.style}>
+      <CardHeader className={header.className} style={header.style}>
+        <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.comparison")}</h2>
+        <div {...applyStyles(styles.clubs)}>
           <ComparisonClubSide side="selected" team={comparison.selected.team} />
           <ComparisonClubSide side="opponent" team={comparison.opponent.team} />
         </div>
       </CardHeader>
-      <CardContent className="px-5 pb-5">
-        <ul className="flex flex-col gap-3">
+      <CardContent className={content.className} style={content.style}>
+        <ul {...applyStyles(styles.list)}>
           {TEAM_COMPARISON_METRICS.map((metric) => (
             <ComparisonMetricRow
               key={metric.key}
@@ -61,26 +164,28 @@ function ComparisonClubSide({
   readonly team: TeamComparisonModel["selected"]["team"];
 }) {
   const isOpponent = side === "opponent";
+  const crest = applyStyles(styles.crest);
   return (
-    <div
-      className={`flex min-w-0 items-center gap-2 ${isOpponent ? "justify-end" : ""}`}
-      data-comparison-club={side}
-    >
+    <div data-comparison-club={side} {...applyStyles(styles.club, isOpponent && styles.clubEnd)}>
       {isOpponent ? null : (
         <ClubCrestAvatar
-          className="size-8 shrink-0"
+          className={crest.className}
           framed={false}
           imageUrl={team.imageUrl}
           name={team.name}
+          style={crest.style}
         />
       )}
-      <p className={`typo-body min-w-0 truncate ${isOpponent ? "text-end" : ""}`}>{team.name}</p>
+      <p {...applyStyles(typography.body, styles.clubName, isOpponent && styles.clubNameEnd)}>
+        {team.name}
+      </p>
       {isOpponent ? (
         <ClubCrestAvatar
-          className="size-8 shrink-0"
+          className={crest.className}
           framed={false}
           imageUrl={team.imageUrl}
           name={team.name}
+          style={crest.style}
         />
       ) : null}
     </div>
@@ -109,18 +214,16 @@ function ComparisonMetricRow({
   return (
     <li
       aria-label={`${label}: ${statValueSpoken(selected, metric, numberFormat, percentFormat, t)} ${statValueSpoken(opponent, metric, numberFormat, percentFormat, t)}`}
-      className={`${COMPARISON_ROW_CLASS} grid-rows-[auto_auto] items-center gap-y-1`}
       data-comparison-metric={metric.key}
+      {...applyStyles(styles.row)}
     >
-      <p className="typo-label col-span-3 text-center text-pretty text-muted-foreground">{label}</p>
-      <p className="typo-caption text-end whitespace-nowrap tabular-nums font-semibold">
-        {selectedLabel}
-      </p>
-      <div className="grid grid-cols-2 items-center gap-1">
+      <p {...applyStyles(typography.label, styles.metricLabel)}>{label}</p>
+      <p {...applyStyles(typography.caption, styles.selectedValue)}>{selectedLabel}</p>
+      <div {...applyStyles(styles.bars)}>
         <ComparisonBar fill="primary" percent={shares.selected} side="selected" />
         <ComparisonBar fill="muted" percent={shares.opponent} side="opponent" />
       </div>
-      <p className="typo-caption whitespace-nowrap tabular-nums font-semibold">{opponentLabel}</p>
+      <p {...applyStyles(typography.caption, styles.opponentValue)}>{opponentLabel}</p>
     </li>
   );
 }
@@ -135,11 +238,16 @@ function ComparisonBar({
   readonly side: "selected" | "opponent";
 }) {
   return (
-    <div className="h-1.5 overflow-hidden rounded-full bg-muted" data-comparison-bar={side}>
+    <div data-comparison-bar={side} {...applyStyles(styles.bar)}>
       <div
-        className={`h-full rounded-full ${fill === "primary" ? "bg-primary" : "bg-muted-foreground/45"} ${side === "selected" ? "ms-auto" : ""}`}
         data-comparison-fill={String(Math.round(percent))}
-        style={{ width: `${percent}%` }}
+        {...applyProps(
+          undefined,
+          { width: `${percent}%` },
+          styles.fill,
+          fill === "primary" ? styles.fillPrimary : styles.fillMuted,
+          side === "selected" && styles.fillEnd,
+        )}
       />
     </div>
   );

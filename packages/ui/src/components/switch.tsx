@@ -1,20 +1,92 @@
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyProps } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
 
-function Switch({ className, ...props }: SwitchPrimitive.Root.Props) {
+const styles = stylex.create({
+  root: {
+    position: "relative",
+    display: "inline-flex",
+    height: "1.5rem",
+    width: "2.75rem",
+    flexShrink: 0,
+    alignItems: "center",
+    borderRadius: "var(--corner-full)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: {
+      default: "transparent",
+      ":focus-visible": colors.ring,
+      ':is([aria-invalid="true"])': colors.danger,
+      ':is([aria-invalid="true"]):focus-visible': colors.danger,
+    },
+    backgroundColor: {
+      default: colors.input,
+      ":is([data-checked])": colors.primary,
+      ":is([data-unchecked])": colors.input,
+    },
+    padding: "0.125rem",
+    transitionProperty: "background-color, border-color, box-shadow",
+    transitionDuration: "var(--duration-normal)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+    outlineWidth: 0,
+    outlineStyle: "none",
+    boxShadow: {
+      default: null,
+      ":focus-visible": "0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent)",
+      ':is([aria-invalid="true"])': "0 0 0 2px color-mix(in oklab, var(--danger) 15%, transparent)",
+      ':is([aria-invalid="true"]):focus-visible':
+        "0 0 0 2px color-mix(in oklab, var(--danger) 25%, transparent)",
+    },
+    cursor: {
+      default: null,
+      ":disabled": "not-allowed",
+    },
+    opacity: {
+      default: 1,
+      ":disabled": 0.5,
+    },
+    "::after": {
+      content: '""',
+      position: "absolute",
+      top: "-0.5rem",
+      bottom: "-0.5rem",
+      left: "-0.375rem",
+      right: "-0.375rem",
+    },
+  },
+  thumb: {
+    pointerEvents: "none",
+    display: "block",
+    width: "1.25rem",
+    height: "1.25rem",
+    borderRadius: "var(--corner-full)",
+    backgroundColor: {
+      default: colors.surface,
+      ":is([data-checked])": colors.primaryForeground,
+    },
+    transitionProperty: "translate",
+    transitionDuration: "var(--duration-normal)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+    translate: {
+      default: "0 0",
+      ":is([data-checked])": "1.25rem 0",
+      ":is([data-unchecked])": "0 0",
+    },
+  },
+});
+
+function Switch({ className, style, ...props }: SwitchPrimitive.Root.Props) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
-      className={cn(
-        "peer group/switch relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-transparent bg-input p-0.5 transition-[background-color,border-color,box-shadow] duration-(--duration-normal) ease-(--ease-emphasized) outline-none after:absolute after:-inset-y-2 after:-inset-x-1.5 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-50 data-checked:bg-primary data-unchecked:bg-input aria-invalid:border-danger aria-invalid:ring-2 aria-invalid:ring-danger/15 aria-invalid:focus-visible:border-danger aria-invalid:focus-visible:ring-danger/25",
-        className,
-      )}
+      {...applyProps(className, style, styles.root)}
       {...props}
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        className="pointer-events-none block size-5 rounded-full bg-surface transition-transform duration-(--duration-normal) ease-(--ease-emphasized) data-checked:translate-x-5 data-unchecked:translate-x-0 data-checked:bg-primary-foreground"
+        {...applyProps(undefined, undefined, styles.thumb)}
       />
     </SwitchPrimitive.Root>
   );

@@ -1,12 +1,21 @@
 import { z } from "zod";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Select, SelectContent, SelectItem, SelectTrigger } from "@futrob/ui";
 import { useI18n } from "./i18n-provider.tsx";
 import { SUPPORTED_LOCALES } from "./catalogs.ts";
 
 const localeSchema = z.enum(SUPPORTED_LOCALES);
 
+const styles = stylex.create({
+  trigger: {
+    width: "auto",
+    minWidth: "8rem",
+  },
+});
+
 export function LocaleSelect() {
   const { locale, setLocale, t } = useI18n();
+  const trigger = applyStyles(styles.trigger);
   return (
     <Select
       items={[
@@ -19,7 +28,11 @@ export function LocaleSelect() {
       }}
       value={locale}
     >
-      <SelectTrigger aria-label={t("locale.label")} className="w-auto min-w-32">
+      <SelectTrigger
+        aria-label={t("locale.label")}
+        className={trigger.className}
+        style={trigger.style}
+      >
         {locale === "es" ? t("locale.es") : t("locale.en")}
       </SelectTrigger>
       <SelectContent align="end">

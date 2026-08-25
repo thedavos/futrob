@@ -1,0 +1,18 @@
+import "./guard-unplugin-css.cjs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import stylex from "@stylexjs/unplugin";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+
+export function futrobStylex() {
+  return stylex.vite({
+    useCSSLayers: { before: ["reset"] },
+    runtimeInjection: false,
+    dev: process.env.NODE_ENV !== "production",
+    unstable_moduleResolution: {
+      type: "commonJS",
+      rootDir: repoRoot,
+    },
+  });
+}

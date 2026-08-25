@@ -1,7 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Field, FieldError, FieldLabel, Input } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Field, FieldError, FieldLabel, Input } from "@futrob/ui";
+
+const styles = stylex.create({
+  body: {
+    marginInline: "auto",
+    width: "100%",
+    maxWidth: "36rem",
+  },
+});
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { OnboardingActions } from "../onboarding-actions.tsx";
@@ -49,7 +58,7 @@ export function OrganizationStep() {
       steps={stepsForPath(t, "organization")}
       title={t("onboarding.organization.title")}
     >
-      <div className="mx-auto w-full max-w-xl">
+      <div {...applyStyles(styles.body)}>
         <Field invalid={Boolean(validationError)}>
           <FieldLabel htmlFor="organization-name">
             {t("onboarding.organization.name.label")}

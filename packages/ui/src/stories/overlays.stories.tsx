@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { InfoIcon, ListIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import {
   AlertDialog,
@@ -43,6 +46,43 @@ import {
 } from "../components/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
 
+const styles = stylex.create({
+  panel: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.75rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  scores: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.75rem",
+    paddingBlock: "1.25rem",
+  },
+  nav: {
+    display: "grid",
+    gap: "0.25rem",
+    fontSize: "var(--text-sm)",
+  },
+  navLink: {
+    borderRadius: "var(--corner-lg)",
+    paddingInline: "0.75rem",
+    paddingBlock: "0.625rem",
+    fontWeight: 500,
+    backgroundColor: {
+      default: null,
+      ":hover": colors.muted,
+    },
+  },
+  full: { width: "100%" },
+});
+
 const meta = {
   title: "Patterns/Overlays",
 } satisfies Meta;
@@ -53,7 +93,7 @@ type Story = StoryObj<typeof meta>;
 export const OverlaySet: Story = {
   render: () => (
     <TooltipProvider>
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-6">
+      <div {...applyProps(undefined, undefined, styles.panel)}>
         <Dialog>
           <DialogTrigger render={<Button variant="outline" />}>Editar partido</DialogTrigger>
           <DialogContent>
@@ -63,7 +103,7 @@ export const OverlaySet: Story = {
                 Revisa el resultado antes de enviarlo a auditoría.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-3 py-5">
+            <div {...applyProps(undefined, undefined, styles.scores)}>
               <Input aria-label="Goles del equipo local" defaultValue="3" type="number" />
               <Input aria-label="Goles del equipo visitante" defaultValue="1" type="number" />
             </div>
@@ -116,20 +156,20 @@ export const OverlaySet: Story = {
               <SheetDescription>Áreas de la competición activa.</SheetDescription>
             </SheetHeader>
             <SheetBody>
-              <nav className="grid gap-1 text-sm">
-                <a className="rounded-lg px-3 py-2.5 font-medium hover:bg-muted" href="#">
+              <nav {...applyProps(undefined, undefined, styles.nav)}>
+                <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
                   Resumen
                 </a>
-                <a className="rounded-lg px-3 py-2.5 font-medium hover:bg-muted" href="#">
+                <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
                   Partidos
                 </a>
-                <a className="rounded-lg px-3 py-2.5 font-medium hover:bg-muted" href="#">
+                <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
                   Estadísticas
                 </a>
               </nav>
             </SheetBody>
             <SheetFooter>
-              <Button className="w-full">Ir al panel</Button>
+              <Button {...applyProps(undefined, undefined, styles.full)}>Ir al panel</Button>
             </SheetFooter>
           </SheetContent>
         </Sheet>

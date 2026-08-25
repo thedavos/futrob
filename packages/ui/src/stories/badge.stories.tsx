@@ -1,7 +1,26 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CheckCircleIcon, LightningIcon, StarIcon, WarningIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Badge } from "../components/badge";
+
+const styles = stylex.create({
+  panel: {
+    display: "flex",
+    maxWidth: "42rem",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.5rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+});
 
 const meta = {
   title: "Primitives/Badge",
@@ -35,7 +54,7 @@ export const Playground: Story = {};
 
 export const ClosedVariants: Story = {
   render: () => (
-    <div className="flex max-w-2xl flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-6">
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Badge variant="neutral">Pendiente</Badge>
       <Badge variant="primary">Acción</Badge>
       <Badge variant="approved">

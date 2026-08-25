@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps } from "@futrob/ui";
 
 import {
   Select,
@@ -7,6 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/select";
+
+const styles = stylex.create({
+  wide: { width: "14rem" },
+  dense: { width: "10rem" },
+});
 
 const meta = {
   title: "Primitives/Select",
@@ -20,7 +27,7 @@ type Story = StoryObj<typeof meta>;
 export const Playground: Story = {
   render: () => (
     <Select defaultValue="ps5">
-      <SelectTrigger aria-label="Plataforma" className="w-56">
+      <SelectTrigger aria-label="Plataforma" {...applyProps(undefined, undefined, styles.wide)}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -35,7 +42,7 @@ export const Playground: Story = {
 export const Dense: Story = {
   render: () => (
     <Select defaultValue="a">
-      <SelectTrigger aria-label="Cancha" className="w-40" dense>
+      <SelectTrigger aria-label="Cancha" dense {...applyProps(undefined, undefined, styles.dense)}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

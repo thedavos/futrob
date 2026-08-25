@@ -9,6 +9,10 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { expect, within } from "storybook/test";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   recentProviderMatchDetailFixture,
@@ -18,6 +22,18 @@ import {
   ProviderMatchDetailView,
   type ProviderMatchDetailViewState,
 } from "./provider-match-detail-page.tsx";
+
+const styles = stylex.create({
+  frame: {
+    minHeight: "100svh",
+    backgroundColor: colors.background,
+    paddingInline: {
+      default: "1.25rem",
+      [media.lg]: "2.5rem",
+    },
+    paddingBlock: "1.5rem",
+  },
+});
 
 const detail = recentProviderMatchDetailFixture({
   home: { externalClubId: "10754", name: "Fera Enjaulada", goals: 3, imageUrl: null },
@@ -106,7 +122,7 @@ function DetailStory({ scenario }: StoryArgs) {
   }, [scenario]);
   return (
     <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
-      <div className="min-h-svh bg-background px-5 py-6 lg:px-10">
+      <div {...applyProps(undefined, undefined, styles.frame)}>
         <RouterProvider router={router} />
       </div>
     </I18nProvider>

@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import {
   Breadcrumb,
@@ -11,6 +14,25 @@ import {
 } from "../components/breadcrumb";
 import { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "../components/tabs";
 
+const styles = stylex.create({
+  panel: {
+    width: "min(46rem, calc(100vw - 2rem))",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  tabs: {
+    marginTop: "1.5rem",
+  },
+  muted: {
+    fontSize: "var(--text-sm)",
+    color: colors.mutedForeground,
+  },
+});
+
 const meta = {
   title: "Patterns/Navigation",
 } satisfies Meta;
@@ -20,7 +42,7 @@ type Story = StoryObj<typeof meta>;
 
 export const CompetitionNavigation: Story = {
   render: () => (
-    <div className="w-[min(46rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-6">
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -36,7 +58,7 @@ export const CompetitionNavigation: Story = {
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <Tabs className="mt-6" defaultValue="overview">
+      <Tabs defaultValue="overview" {...applyProps(undefined, undefined, styles.tabs)}>
         <TabsList>
           <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="matches">Partidos</TabsTrigger>
@@ -44,15 +66,17 @@ export const CompetitionNavigation: Story = {
           <TabsIndicator />
         </TabsList>
         <TabsContent value="overview">
-          <p className="text-sm text-muted-foreground">
+          <p {...applyProps(undefined, undefined, styles.muted)}>
             Estado operativo, alertas y próximos partidos de la competición.
           </p>
         </TabsContent>
         <TabsContent value="matches">
-          <p className="text-sm text-muted-foreground">Calendario y resultados por jornada.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>
+            Calendario y resultados por jornada.
+          </p>
         </TabsContent>
         <TabsContent value="statistics">
-          <p className="text-sm text-muted-foreground">
+          <p {...applyProps(undefined, undefined, styles.muted)}>
             Gráficos, líderes y auditoría de estadísticas.
           </p>
         </TabsContent>
@@ -64,7 +88,7 @@ export const CompetitionNavigation: Story = {
 export const PillsTabs: Story = {
   name: "Tabs pills",
   render: () => (
-    <div className="w-[min(46rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-6">
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Tabs defaultValue="recent" variant="pills">
         <TabsList>
           <TabsTrigger value="recent">Recientes</TabsTrigger>
@@ -75,19 +99,21 @@ export const PillsTabs: Story = {
           <TabsIndicator />
         </TabsList>
         <TabsContent value="recent">
-          <p className="text-sm text-muted-foreground">Apariciones de los últimos 7 días.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>
+            Apariciones de los últimos 7 días.
+          </p>
         </TabsContent>
         <TabsContent value="league">
-          <p className="text-sm text-muted-foreground">Partidos de liga.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>Partidos de liga.</p>
         </TabsContent>
         <TabsContent value="playoff">
-          <p className="text-sm text-muted-foreground">Partidos de playoff.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>Partidos de playoff.</p>
         </TabsContent>
         <TabsContent value="friendly">
-          <p className="text-sm text-muted-foreground">Partidos amistosos.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>Partidos amistosos.</p>
         </TabsContent>
         <TabsContent value="all">
-          <p className="text-sm text-muted-foreground">Todas las apariciones.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>Todas las apariciones.</p>
         </TabsContent>
       </Tabs>
     </div>

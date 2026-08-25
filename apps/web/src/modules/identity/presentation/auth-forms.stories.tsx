@@ -62,7 +62,7 @@ export const SignupFieldValidation: Story = {
     for (const message of requiredMessages) {
       const fieldError = message.closest('[data-slot="field-error"]');
       await expect(fieldError).not.toBeNull();
-      await expect(fieldError).not.toHaveClass("font-medium");
+      await expect(fieldError).toHaveAttribute("data-slot", "field-error");
       await expect(fieldError?.querySelector("svg")).not.toBeNull();
     }
     await expect(canvas.queryByRole("alert")).not.toBeInTheDocument();

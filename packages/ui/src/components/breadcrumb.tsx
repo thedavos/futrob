@@ -1,69 +1,109 @@
 import * as React from "react";
 import { useRender } from "@base-ui/react/use-render";
 import { CaretRightIcon, DotsThreeIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyProps } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { media } from "#styles/media.stylex";
+import { vis } from "#styles/sr-only";
+
+const styles = stylex.create({
+  list: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: {
+      default: "0.375rem",
+      [media.sm]: "0.5rem",
+    },
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+  item: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.375rem",
+  },
+  link: {
+    borderRadius: "var(--corner-sm)",
+    color: {
+      default: colors.mutedForeground,
+      ":hover": colors.foreground,
+    },
+    transitionProperty: "color",
+    transitionDuration: "var(--duration-normal)",
+    outlineWidth: 0,
+    outlineStyle: "none",
+    boxShadow: {
+      default: null,
+      ":focus-visible": "0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent)",
+    },
+  },
+  page: {
+    fontWeight: 500,
+    color: colors.foreground,
+  },
+  ellipsis: {
+    display: "flex",
+    width: "2rem",
+    height: "2rem",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ellipsisIcon: {
+    width: "1rem",
+    height: "1rem",
+  },
+});
 
 function Breadcrumb(props: React.ComponentProps<"nav">) {
   return <nav aria-label="Migas de pan" data-slot="breadcrumb" {...props} />;
 }
 
-function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
+function BreadcrumbList({ className, style, ...props }: React.ComponentProps<"ol">) {
   return (
-    <ol
-      data-slot="breadcrumb-list"
-      className={cn(
-        "flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground sm:gap-2",
-        className,
-      )}
-      {...props}
-    />
+    <ol data-slot="breadcrumb-list" {...applyProps(className, style, styles.list)} {...props} />
   );
 }
 
-function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
+function BreadcrumbItem({ className, style, ...props }: React.ComponentProps<"li">) {
   return (
-    <li
-      data-slot="breadcrumb-item"
-      className={cn("inline-flex items-center gap-1.5", className)}
-      {...props}
-    />
+    <li data-slot="breadcrumb-item" {...applyProps(className, style, styles.item)} {...props} />
   );
 }
 
-function BreadcrumbLink({ className, render, ...props }: useRender.ComponentProps<"a">) {
+function BreadcrumbLink({ className, style, render, ...props }: useRender.ComponentProps<"a">) {
   return useRender({
     defaultTagName: "a",
     props: {
       ...props,
-      className: cn(
-        "rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
-        className,
-      ),
+      ...applyProps(className, style, styles.link),
       "data-slot": "breadcrumb-link",
     },
     render,
   });
 }
 
-function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
+function BreadcrumbPage({ className, style, ...props }: React.ComponentProps<"span">) {
   return (
     <span
       aria-current="page"
       data-slot="breadcrumb-page"
-      className={cn("font-medium text-foreground", className)}
+      {...applyProps(className, style, styles.page)}
       {...props}
     />
   );
 }
 
-function BreadcrumbSeparator({ children, className, ...props }: React.ComponentProps<"li">) {
+function BreadcrumbSeparator({ children, className, style, ...props }: React.ComponentProps<"li">) {
   return (
     <li
       aria-hidden="true"
       data-slot="breadcrumb-separator"
       role="presentation"
-      className={cn("[&>svg]:size-3.5", className)}
+      {...applyProps(className, style)}
       {...props}
     >
       {children ?? <CaretRightIcon />}
@@ -71,17 +111,17 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
   );
 }
 
-function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<"span">) {
+function BreadcrumbEllipsis({ className, style, ...props }: React.ComponentProps<"span">) {
   return (
     <span
       aria-hidden="true"
       data-slot="breadcrumb-ellipsis"
       role="presentation"
-      className={cn("flex size-8 items-center justify-center", className)}
+      {...applyProps(className, style, styles.ellipsis)}
       {...props}
     >
-      <DotsThreeIcon className="size-4" />
-      <span className="sr-only">Más</span>
+      <DotsThreeIcon {...applyProps(undefined, undefined, styles.ellipsisIcon)} />
+      <span {...applyProps(undefined, undefined, vis.srOnly)}>Más</span>
     </span>
   );
 }

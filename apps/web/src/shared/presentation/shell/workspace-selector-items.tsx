@@ -1,13 +1,17 @@
 "use client";
 
 import type { ComponentType, SVGProps } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   DropdownMenuLabel,
   DropdownMenuItem,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { BuildingsIcon, PlusIcon, TrophyIcon } from "@phosphor-icons/react";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -18,6 +22,72 @@ import {
 } from "./workspace-selector-model.ts";
 import { WORKSPACE_ROLE_ICONS, workspaceRoleMessageKey } from "./workspace-role-icons.ts";
 
+const styles = stylex.create({
+  header: {
+    display: "flex",
+    alignItems: "center",
+  },
+  headerLabel: {
+    minWidth: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    paddingBlock: "0.375rem",
+    paddingInlineEnd: "0.25rem",
+  },
+  headerAction: {
+    width: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+    },
+    height: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+    },
+    minHeight: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+    },
+    flexShrink: 0,
+    justifyContent: "center",
+    padding: 0,
+    color: colors.mutedForeground,
+  },
+  tooltipTrigger: {
+    display: "inline-flex",
+  },
+  icon: {
+    width: "1rem",
+    height: "1rem",
+  },
+  iconMuted: {
+    width: "1rem",
+    height: "1rem",
+    flexShrink: 0,
+    color: colors.mutedForeground,
+  },
+  itemBetween: {
+    justifyContent: "space-between",
+  },
+  identity: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  truncate: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  roleTrigger: {
+    marginLeft: "auto",
+    display: "inline-flex",
+    flexShrink: 0,
+    color: colors.mutedForeground,
+  },
+});
+
 export function SectionHeaderAction({
   title,
   actionLabel,
@@ -27,17 +97,26 @@ export function SectionHeaderAction({
   readonly actionLabel: string;
   readonly onAction: () => void;
 }) {
+  const label = applyStyles(styles.headerLabel);
+  const action = applyStyles(styles.headerAction);
+  const trigger = applyStyles(styles.tooltipTrigger);
+  const icon = applyStyles(styles.icon);
   return (
-    <div className="flex items-center">
-      <DropdownMenuLabel className="min-w-0 flex-1 py-1.5 pe-1">{title}</DropdownMenuLabel>
+    <div {...applyStyles(styles.header)}>
+      <DropdownMenuLabel className={label.className} style={label.style}>
+        {title}
+      </DropdownMenuLabel>
       <DropdownMenuItem
         aria-label={actionLabel}
-        className="size-(--control-height-dense) min-h-(--control-height-dense) shrink-0 justify-center p-0 text-muted-foreground max-sm:size-(--control-height-touch) max-sm:min-h-(--control-height-touch)"
+        className={action.className}
         onClick={onAction}
+        style={action.style}
       >
         <Tooltip>
-          <TooltipTrigger render={<span className="inline-flex" tabIndex={-1} />}>
-            <PlusIcon aria-hidden="true" className="size-4" />
+          <TooltipTrigger
+            render={<span className={trigger.className} style={trigger.style} tabIndex={-1} />}
+          >
+            <PlusIcon aria-hidden="true" className={icon.className} style={icon.style} />
           </TooltipTrigger>
           <TooltipContent>{actionLabel}</TooltipContent>
         </Tooltip>
@@ -59,15 +138,18 @@ export function RoleAwareMenuItem({
 }) {
   const { t } = useI18n();
   const roleLabel = t(workspaceRoleMessageKey(role));
+  const item = applyStyles(styles.itemBetween);
+  const icon = applyStyles(styles.iconMuted);
   return (
     <DropdownMenuItem
       aria-label={`${name}, ${roleLabel}`}
-      className="justify-between"
+      className={item.className}
       onClick={onSelect}
+      style={item.style}
     >
-      <span className="flex min-w-0 items-center gap-2">
-        <EntityIcon aria-hidden="true" className="size-4 shrink-0" />
-        <span className="truncate">{name}</span>
+      <span {...applyStyles(styles.identity)}>
+        <EntityIcon aria-hidden="true" className={icon.className} style={icon.style} />
+        <span {...applyStyles(styles.truncate)}>{name}</span>
       </span>
       <RoleIcon role={role} />
     </DropdownMenuItem>
@@ -85,17 +167,19 @@ export function AssociatedClubMenuItem({
 }) {
   const { t } = useI18n();
   const roleLabel = t(workspaceRoleMessageKey(club.role));
+  const item = applyStyles(styles.itemBetween);
   return (
     <DropdownMenuItem
       aria-current={selected ? "true" : undefined}
       aria-label={`${club.name}, ${roleLabel}`}
-      className="justify-between"
+      className={item.className}
       data-active={selected ? "" : undefined}
       onClick={onSelect}
+      style={item.style}
     >
-      <span className="flex min-w-0 items-center gap-2">
+      <span {...applyStyles(styles.identity)}>
         <ClubCrestAvatar imageUrl={club.imageUrl} name={club.name} />
-        <span className="truncate">{club.name}</span>
+        <span {...applyStyles(styles.truncate)}>{club.name}</span>
       </span>
       <RoleIcon role={club.role} />
     </DropdownMenuItem>
@@ -106,14 +190,14 @@ export function RoleIcon({ role }: { readonly role: WorkspaceDisplayRole }) {
   const { t } = useI18n();
   const Icon = WORKSPACE_ROLE_ICONS[role];
   const label = t(workspaceRoleMessageKey(role));
+  const trigger = applyStyles(styles.roleTrigger);
+  const icon = applyStyles(styles.icon);
   return (
     <Tooltip>
       <TooltipTrigger
-        render={
-          <span className="ml-auto inline-flex shrink-0 text-muted-foreground" tabIndex={-1} />
-        }
+        render={<span className={trigger.className} style={trigger.style} tabIndex={-1} />}
       >
-        <Icon aria-hidden="true" className="size-4" />
+        <Icon aria-hidden="true" className={icon.className} style={icon.style} />
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
@@ -127,7 +211,7 @@ export function SelectorTriggerIcon({
   readonly selection: WorkspaceSelection;
   readonly clubs: readonly WorkspaceSelectorClubOption[];
 }) {
-  const className = "size-4 shrink-0 text-muted-foreground";
+  const icon = applyStyles(styles.iconMuted);
   switch (selection.kind) {
     case WORKSPACE_SELECTION_KIND.personal: {
       const club =
@@ -135,13 +219,13 @@ export function SelectorTriggerIcon({
       return club ? (
         <ClubCrestAvatar imageUrl={club.imageUrl} name={club.name} />
       ) : (
-        <PlusIcon aria-hidden="true" className={className} />
+        <PlusIcon aria-hidden="true" className={icon.className} style={icon.style} />
       );
     }
     case WORKSPACE_SELECTION_KIND.organization:
-      return <BuildingsIcon aria-hidden="true" className={className} />;
+      return <BuildingsIcon aria-hidden="true" className={icon.className} style={icon.style} />;
     case WORKSPACE_SELECTION_KIND.competition:
-      return <TrophyIcon aria-hidden="true" className={className} />;
+      return <TrophyIcon aria-hidden="true" className={icon.className} style={icon.style} />;
     default: {
       const _exhaustive: never = selection;
       return _exhaustive;

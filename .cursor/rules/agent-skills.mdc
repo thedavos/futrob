@@ -36,12 +36,13 @@ Compose from `@futrob/ui`. Do not invent a second visual language.
 | **shadcn** (Vercel plugin / CLI) | Add or change primitives in `packages/ui`; compose in web presentation. Base UI only — see `ui-shadcn.mdc` |
 | **better-ui** | Visual pass: density, polish, empty/error states, operator vs spectator UI |
 | **better-layout** | Grouping, spacing, reading order, breakpoints, progressive disclosure |
-| **better-typography** | Type roles, wrapping, tabular numbers, measure — keep Manrope + `typo-*` |
+| **futrob-stylex** | Author or migrate web styles (`packages/ui`, `apps/web` presentation) |
+| **better-typography** | Type roles, wrapping, tabular numbers, measure — keep Manrope + `typography.*` |
 | **better-accessibility** | Focus, keyboard, names, 44 px targets, reduced motion |
 | **better-colors** | Contrast and semantic tokens only; do not invent new primitive colors |
 | **better-writing** | Labels, errors, empty copy; Spanish/English; `typo-caption` is sentence case |
 | **design-empty-states** | First-use, filtered-empty, permission, and recoverable-error panels |
-| **smooth-shadow-ring** | Elevated surfaces. Never pair `border`/`ring` with `shadow` |
+| **StyleX elevation** | Elevated surfaces via `elevation.sm|md|lg`. Never pair `border`/`ring` with `shadow` |
 | **gsap** (gsap-skills plugin) | Landing / bracket zoom/pan presence, intentional transitions. Never in domain/application. Respect `prefers-reduced-motion` |
 
 ## App and platform

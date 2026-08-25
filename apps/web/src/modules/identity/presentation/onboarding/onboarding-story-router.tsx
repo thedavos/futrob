@@ -8,6 +8,8 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, typography } from "@futrob/ui";
 import type {
   OnboardingPathDto,
   OnboardingStatusDto,
@@ -27,6 +29,12 @@ import { InvitationStep } from "./steps/invitation-step.tsx";
 import { OrganizationStep } from "./steps/organization-step.tsx";
 import { OnboardingReview } from "./steps/review-step.tsx";
 import { ClubStep } from "./steps/club-step.tsx";
+
+const styles = stylex.create({
+  stub: {
+    padding: "2rem",
+  },
+});
 
 type OnboardingStoryPath =
   | "/onboarding/intention"
@@ -273,30 +281,34 @@ function createOnboardingStoryRouter(
       getParentRoute: () => rootRoute,
       path: "/player",
       component: () => (
-        <main className="p-8">
-          <h1 className="typo-heading">Espacio personal</h1>
+        <main {...applyProps(undefined, undefined, styles.stub)}>
+          <h1 {...applyProps(undefined, undefined, typography.heading)}>Espacio personal</h1>
         </main>
       ),
     }),
     createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs",
-      component: () => <main className="p-8">Organizaciones</main>,
+      component: () => (
+        <main {...applyProps(undefined, undefined, styles.stub)}>Organizaciones</main>
+      ),
     }),
     createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId",
-      component: () => <main className="p-8">Organización</main>,
+      component: () => <main {...applyProps(undefined, undefined, styles.stub)}>Organización</main>,
     }),
     createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId/setup",
-      component: () => <main className="p-8">Configurar competición</main>,
+      component: () => (
+        <main {...applyProps(undefined, undefined, styles.stub)}>Configurar competición</main>
+      ),
     }),
     createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId",
-      component: () => <main className="p-8">Competición</main>,
+      component: () => <main {...applyProps(undefined, undefined, styles.stub)}>Competición</main>,
     }),
   ];
 

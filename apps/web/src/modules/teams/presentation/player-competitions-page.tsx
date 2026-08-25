@@ -1,18 +1,82 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
+  applyStyles,
   Button,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
+  typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { TrophyIcon } from "@phosphor-icons/react";
 import { useMyTeamsQuery } from "./player-queries.ts";
+
+const styles = stylex.create({
+  main: {
+    width: "100%",
+  },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+  },
+  lede: {
+    maxWidth: "36rem",
+    color: colors.mutedForeground,
+  },
+  body: {
+    marginTop: "3rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+  },
+  status: {
+    color: colors.mutedForeground,
+  },
+  list: {
+    overflow: "hidden",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.borderSubtle,
+    backgroundColor: colors.surface,
+  },
+  item: {
+    display: "flex",
+    minHeight: "var(--control-height)",
+    alignItems: "center",
+    gap: "1rem",
+    paddingInline: "1rem",
+    paddingBlock: "0.75rem",
+    borderTopWidth: {
+      default: 1,
+      ":first-child": 0,
+    },
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+  },
+  copy: {
+    display: "grid",
+    minWidth: 0,
+    gap: "0.25rem",
+  },
+  name: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontWeight: 600,
+  },
+  meta: {
+    color: colors.mutedForeground,
+  },
+});
 
 type PlayerCompetitionRow = {
   readonly competitionId: string;
@@ -25,17 +89,17 @@ export function PlayerCompetitionsPage() {
   const competitions = competitionsFromTeams(teamsQuery.data?.teams ?? []);
 
   return (
-    <main className="w-full">
-      <header className="space-y-3">
-        <div className="space-y-3">
-          <h1 className="typo-heading">Competiciones</h1>
-          <p className="typo-subtitle max-w-xl text-muted-foreground">
+    <main {...applyStyles(styles.main)}>
+      <header {...applyStyles(styles.header)}>
+        <div {...applyStyles(styles.header)}>
+          <h1 {...applyStyles(typography.heading)}>Competiciones</h1>
+          <p {...applyStyles(typography.subtitle, styles.lede)}>
             Competiciones en las que participas con un equipo.
           </p>
         </div>
       </header>
 
-      <div className="mt-12 space-y-8">
+      <div {...applyStyles(styles.body)}>
         {teamsQuery.isError ? (
           <Alert variant="destructive">
             <AlertDescription>
@@ -45,7 +109,7 @@ export function PlayerCompetitionsPage() {
         ) : null}
 
         {teamsQuery.isPending ? (
-          <p className="typo-caption text-muted-foreground">Cargando competiciones…</p>
+          <p {...applyStyles(typography.caption, styles.status)}>Cargando competiciones…</p>
         ) : competitions.length === 0 ? (
           <EmptyState>
             <EmptyStateIcon>
@@ -61,17 +125,12 @@ export function PlayerCompetitionsPage() {
             </EmptyStateActions>
           </EmptyState>
         ) : (
-          <ul className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface">
+          <ul {...applyStyles(styles.list)}>
             {competitions.map((competition) => (
-              <li
-                className="flex min-h-(--control-height) items-center gap-4 px-4 py-3"
-                key={competition.competitionId}
-              >
-                <span className="grid min-w-0 gap-1">
-                  <span className="truncate font-semibold">
-                    Competición {competition.competitionId}
-                  </span>
-                  <span className="typo-caption text-muted-foreground">
+              <li key={competition.competitionId} {...applyStyles(styles.item)}>
+                <span {...applyStyles(styles.copy)}>
+                  <span {...applyStyles(styles.name)}>Competición {competition.competitionId}</span>
+                  <span {...applyStyles(typography.caption, styles.meta)}>
                     Equipo {competition.teamName}
                   </span>
                 </span>

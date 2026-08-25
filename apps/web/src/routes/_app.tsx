@@ -1,7 +1,28 @@
 import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { AuthenticatedShell } from "@/shared/presentation/shell/authenticated-shell.tsx";
+
+const styles = stylex.create({
+  pending: {
+    display: "flex",
+    minHeight: "100svh",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+  bare: {
+    minHeight: "100svh",
+    backgroundColor: colors.background,
+    color: colors.foreground,
+  },
+});
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -24,16 +45,12 @@ function AppLayout() {
   }, [location.pathname, navigate, session.data?.user, session.isPending]);
 
   if (session.isPending || session.data?.user == null) {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-background text-sm text-muted-foreground">
-        Comprobando sesión…
-      </div>
-    );
+    return <div {...applyStyles(styles.pending)}>Comprobando sesión…</div>;
   }
 
   if (bare) {
     return (
-      <div className="min-h-svh bg-background text-foreground">
+      <div {...applyStyles(styles.bare)}>
         <Outlet />
       </div>
     );

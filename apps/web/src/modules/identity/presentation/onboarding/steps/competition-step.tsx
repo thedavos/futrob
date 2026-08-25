@@ -7,6 +7,8 @@ import {
   type CompetitionDraftFieldsValue,
   validateCompetitionDraftFields,
 } from "@/modules/competitions/presentation/validate-competition-draft-input.ts";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { OnboardingActions } from "../onboarding-actions.tsx";
@@ -18,6 +20,14 @@ import {
   stepsForPath,
 } from "../onboarding-step-meta.ts";
 import type { OnboardingDraft } from "../onboarding-draft.ts";
+
+const styles = stylex.create({
+  body: {
+    marginInline: "auto",
+    width: "100%",
+    maxWidth: "42rem",
+  },
+});
 
 export function CompetitionStep() {
   const flow = useOnboardingFlow();
@@ -77,7 +87,7 @@ export function CompetitionStep() {
       steps={stepsForPath(t, "organization")}
       title={t("onboarding.competition.title")}
     >
-      <div className="mx-auto w-full max-w-2xl">
+      <div {...applyStyles(styles.body)}>
         <CompetitionDraftFields
           copy={{
             nameLabel: t("onboarding.competition.name.label"),

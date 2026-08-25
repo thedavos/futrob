@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Form } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Button, Form, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useNavigate } from "@tanstack/react-router";
 import { CompetitionDraftFields } from "@/modules/competitions/presentation/competition-draft-fields.tsx";
 import { CompetitionsClientError } from "@/modules/competitions/presentation/competitions-browser-client.ts";
@@ -13,6 +15,31 @@ import {
   type CompetitionDraftFieldsValue,
   validateCompetitionDraftFields,
 } from "@/modules/competitions/presentation/validate-competition-draft-input.ts";
+
+const styles = stylex.create({
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+  },
+  error: {
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "color-mix(in oklab, var(--destructive) 40%, transparent)",
+    backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
+    paddingInline: "0.75rem",
+    paddingBlock: "0.625rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.destructive,
+  },
+  forbidden: {
+    color: colors.mutedForeground,
+  },
+});
+
+const form = applyStyles(styles.form);
 
 function browserTimeZone(): string {
   if (!("Intl" in globalThis)) return "America/Lima";
@@ -89,12 +116,14 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
   }
 
   return (
-    <Form aria-busy={submitting} className="space-y-8" onFormSubmit={handleSubmit}>
+    <Form
+      aria-busy={submitting}
+      className={form.className}
+      onFormSubmit={handleSubmit}
+      style={form.style}
+    >
       {error ? (
-        <div
-          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-          role="alert"
-        >
+        <div role="alert" {...applyStyles(styles.error)}>
           {error}
         </div>
       ) : null}
@@ -112,7 +141,7 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
           {submitting ? "Creando…" : "Crear competición"}
         </Button>
       ) : create.loading ? null : (
-        <p className="typo-caption text-muted-foreground">
+        <p {...applyStyles(typography.caption, styles.forbidden)}>
           No tienes permiso para crear competiciones en esta organización.
         </p>
       )}

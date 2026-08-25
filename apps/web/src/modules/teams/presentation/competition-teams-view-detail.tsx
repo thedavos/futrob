@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  applyStyles,
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -22,6 +23,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  typography,
 } from "@futrob/ui";
 import { ArrowLeftIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
@@ -34,12 +36,21 @@ import {
 } from "./competition-team-actions.tsx";
 import type { CompetitionTeamsViewProps } from "./competition-teams-view.tsx";
 import { EntryBadge, entryStatusLabel } from "./competition-teams-view-entry.tsx";
+import { styles } from "./competition-teams-view-detail.styles.ts";
+
+const empty = applyStyles(styles.empty);
+const skeletonTitle = applyStyles(styles.skeletonTitle);
+const skeletonStats = applyStyles(styles.skeletonStats);
+const skeletonTable = applyStyles(styles.skeletonTable);
+const back = applyStyles(styles.back);
+const stats = applyStyles(styles.stats);
+const avatar = applyStyles(styles.avatar);
 
 export function TeamDetail(props: CompetitionTeamsViewProps) {
   if (!props.selectedTeamId) {
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col p-5 sm:p-8">
-        <EmptyState className="min-h-0 min-w-0 flex-1 border-0">
+      <div {...applyStyles(styles.emptyWrap)}>
+        <EmptyState className={empty.className} style={empty.style}>
           <EmptyStateIcon>
             <UsersThreeIcon />
           </EmptyStateIcon>
@@ -51,43 +62,41 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
   }
   if (props.loadingDetail || !props.detail) {
     return (
-      <div aria-label="Cargando detalle del equipo" className="grid gap-4 p-5 sm:p-8" role="status">
-        <Skeleton className="h-10 w-64 max-w-full" />
-        <Skeleton className="h-28" />
-        <Skeleton className="h-64" />
+      <div aria-label="Cargando detalle del equipo" role="status" {...applyStyles(styles.loading)}>
+        <Skeleton className={skeletonTitle.className} style={skeletonTitle.style} />
+        <Skeleton className={skeletonStats.className} style={skeletonStats.style} />
+        <Skeleton className={skeletonTable.className} style={skeletonTable.style} />
       </div>
     );
   }
   const { detail, capabilities } = props;
   return (
-    <div className="grid gap-8 p-5 sm:p-8">
-      <div className="flex flex-wrap items-start justify-between gap-6">
-        <div className="flex min-w-0 flex-col gap-3">
+    <div {...applyStyles(styles.detail)}>
+      <div {...applyStyles(styles.header)}>
+        <div {...applyStyles(styles.identity)}>
           <Button
-            className="self-start md:hidden"
+            className={back.className}
             onClick={() => props.onSelectTeam(null)}
+            style={back.style}
             variant="ghost"
           >
             <ArrowLeftIcon aria-hidden="true" /> Volver a equipos
           </Button>
-          <div className="flex min-w-0 flex-col gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h2
-                className="truncate text-xl font-bold tracking-tight text-balance"
-                title={detail.team.name}
-              >
+          <div {...applyStyles(styles.titleBlock)}>
+            <div {...applyStyles(styles.titleRow)}>
+              <h2 title={detail.team.name} {...applyStyles(styles.title)}>
                 {detail.team.name}
               </h2>
               <EntryBadge status={detail.entry.status} />
             </div>
-            <p className="typo-caption text-muted-foreground">
+            <p {...applyStyles(typography.caption, styles.muted)}>
               {detail.externalClub
                 ? `${detail.externalClub.externalClubName} · ${detail.externalClub.platform}`
                 : "Sin club EA asociado"}
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div {...applyStyles(styles.actions)}>
           {capabilities.manageInvitations ? (
             <InvitationDialog
               busy={props.busy}
@@ -104,7 +113,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
         </div>
       </div>
 
-      <StatGroup className="rounded-lg bg-muted p-4">
+      <StatGroup className={stats.className} style={stats.style}>
         <Stat>
           <StatLabel>Cupo</StatLabel>
           <StatValue size="compact">
@@ -131,9 +140,9 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
         </Stat>
       </StatGroup>
 
-      <section className="grid gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-base font-semibold">Plantilla</h3>
+      <section {...applyStyles(styles.roster)}>
+        <div {...applyStyles(styles.rosterHeader)}>
+          <h3 {...applyStyles(styles.sectionTitle)}>Plantilla</h3>
           {capabilities.manageRoster ? (
             <ConfirmAction
               confirmLabel={detail.roster.state === "open" ? "Cerrar plantilla" : "Abrir plantilla"}
@@ -159,7 +168,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
           <TableBody>
             {detail.members.length === 0 ? (
               <TableRow>
-                <TableEmpty className="typo-caption" colSpan={2}>
+                <TableEmpty className={applyStyles(typography.caption).className} colSpan={2}>
                   Sin jugadores.
                 </TableEmpty>
               </TableRow>
@@ -167,8 +176,8 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
               detail.members.map((member) => (
                 <TableRow key={member.membership.id}>
                   <TableCell>
-                    <span className="flex min-w-0 items-center gap-3">
-                      <Avatar className="size-8">
+                    <span {...applyStyles(styles.player)}>
+                      <Avatar className={avatar.className} style={avatar.style}>
                         {member.presentation.avatarUrl ? (
                           <AvatarImage alt="" src={member.presentation.avatarUrl} />
                         ) : null}
@@ -177,8 +186,8 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
                         </AvatarFallback>
                       </Avatar>
                       <span
-                        className="truncate font-semibold"
                         title={member.presentation.displayName}
+                        {...applyStyles(styles.playerName)}
                       >
                         {member.presentation.displayName}
                       </span>
@@ -194,7 +203,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
                         role={member.membership.role}
                       />
                     ) : (
-                      <span className="font-medium">{roleLabel[member.membership.role]}</span>
+                      <span {...applyStyles(styles.role)}>{roleLabel[member.membership.role]}</span>
                     )}
                   </TableCell>
                 </TableRow>
@@ -205,14 +214,14 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
       </section>
 
       {capabilities.manageEntries && detail.entry.status === "pending" ? (
-        <section className="flex flex-wrap items-center justify-between gap-6 rounded-lg border border-border p-4">
-          <div className="flex min-w-0 max-w-[65ch] flex-col gap-1">
-            <h3 className="text-base font-semibold">Decidir inscripción</h3>
-            <p className="typo-caption text-pretty text-muted-foreground">
+        <section {...applyStyles(styles.decision)}>
+          <div {...applyStyles(styles.decisionCopy)}>
+            <h3 {...applyStyles(styles.sectionTitle)}>Decidir inscripción</h3>
+            <p {...applyStyles(typography.caption, styles.muted)}>
               Aprueba o rechaza al equipo. No cambia el club EA.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div {...applyStyles(styles.actions)}>
             <ConfirmAction
               confirmLabel="Rechazar inscripción"
               description="El equipo quedará rechazado en esta competición."

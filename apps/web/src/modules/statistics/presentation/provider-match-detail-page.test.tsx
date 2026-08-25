@@ -89,11 +89,11 @@ describe("ProviderMatchDetailView", () => {
 
     await user.click(screen.getByRole("tab", { name: "Jugadores" }));
 
-    expect(screen.getByText("Tú").className).toContain("text-foreground");
+    expect(screen.getByText("Tú").getAttribute("data-variant")).toBe("outline");
     const mvpBadge = screen
       .getAllByText("MVP")
       .find((element) => element.getAttribute("data-slot") === "badge");
-    expect(mvpBadge?.className).toContain("text-foreground");
+    expect(mvpBadge?.getAttribute("data-variant")).toBe("outline");
     const selected = document.querySelector("[data-roster='selected']");
     const opponent = document.querySelector("[data-roster='opponent']");
     expect(selected?.querySelector("h2")?.textContent).toContain("Selected away");

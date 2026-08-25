@@ -1,7 +1,8 @@
 "use client";
 
 import { z } from "zod";
-import { Field, FieldLabel, Input } from "@futrob/ui";
+import { applyStyles, Field, FieldLabel, Input, typography } from "@futrob/ui";
+import { styles } from "./competition-setup-steps.styles.ts";
 import type {
   CompetitionDraftDto,
   CompetitionFormatDto,
@@ -39,7 +40,7 @@ export function InformationStep({
   disabled: boolean;
 }) {
   return (
-    <section className="grid gap-6">
+    <section {...applyStyles(styles.section)}>
       <StepHeading title="Información" copy="Identidad operativa del torneo FC Clubs." />
       <Field>
         <FieldLabel htmlFor="competition-name">Nombre</FieldLabel>
@@ -61,7 +62,7 @@ export function InformationStep({
           value={form.gameEdition}
         />
       </Field>
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div {...applyStyles(styles.pair)}>
         <SelectField
           disabled={disabled}
           id="competition-platform"
@@ -101,14 +102,14 @@ export function FormatStep({
   disabled: boolean;
 }) {
   return (
-    <section className="grid gap-6">
+    <section {...applyStyles(styles.section)}>
       <StepHeading
         title="Formato"
         copy="La modalidad del MVP es FC Clubs. El formato define qué etapas requieren reglas."
       />
-      <div className="rounded-lg bg-muted p-4">
-        <p className="typo-label">Modalidad</p>
-        <p className="mt-1">FC Clubs</p>
+      <div {...applyStyles(styles.mutedCard)}>
+        <p {...applyStyles(typography.label)}>Modalidad</p>
+        <p {...applyStyles(styles.modalityValue)}>FC Clubs</p>
       </div>
       <SelectField
         disabled={disabled}
@@ -132,7 +133,7 @@ export function RulesStep({
   disabled: boolean;
 }) {
   return (
-    <section className="grid gap-8">
+    <section {...applyStyles(styles.rules)}>
       <StepHeading
         title="Reglas"
         copy="Configura partidos, puntos, roster y reprogramación. No existe una regla de verificación EA."
@@ -176,9 +177,9 @@ export function MatchRulesEditor({
   disabled: boolean;
 }) {
   return (
-    <fieldset className="grid gap-5 border-0 p-0">
-      <legend className="typo-label">{label}</legend>
-      <div className="grid gap-5 sm:grid-cols-2">
+    <fieldset {...applyStyles(styles.fieldset)}>
+      <legend {...applyStyles(typography.label)}>{label}</legend>
+      <div {...applyStyles(styles.pairTight)}>
         <SelectField
           disabled={disabled}
           id={`${label}-matches`}
@@ -214,7 +215,7 @@ export function MatchRulesEditor({
           value={rules.resolutionMode}
         />
       </div>
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div {...applyStyles(styles.triple)}>
         <NumberField
           disabled={disabled}
           label="Victoria"
@@ -287,21 +288,21 @@ export function ReviewStep({
   participantCount: number;
 }) {
   return (
-    <section className="grid gap-6">
+    <section {...applyStyles(styles.section)}>
       <StepHeading
         title="Revisión"
         copy="Publicar bloquea identidad, formato, reglas y participantes."
       />
-      <dl className="grid gap-4 sm:grid-cols-2">
+      <dl {...applyStyles(styles.reviewGrid)}>
         {[
           ["Nombre", draft.competition.name],
           ["Formato", draft.competition.format],
           ["Plataforma", draft.competition.platform],
           ["Participantes aprobados", String(participantCount)],
         ].map(([term, value]) => (
-          <div className="rounded-lg bg-muted p-4" key={term}>
-            <dt className="typo-caption text-muted-foreground">{term}</dt>
-            <dd className="mt-1 font-semibold">{value}</dd>
+          <div key={term} {...applyStyles(styles.mutedCard)}>
+            <dt {...applyStyles(typography.caption, styles.reviewTerm)}>{term}</dt>
+            <dd {...applyStyles(styles.reviewValue)}>{value}</dd>
           </div>
         ))}
       </dl>

@@ -1,5 +1,9 @@
 "use client";
 
+import { applyStyles } from "@futrob/ui";
+
+import { styles } from "./player-match-pitch.styles";
+
 function matchScoreWinnerSide(homeGoals: number, awayGoals: number): "home" | "away" | "draw" {
   if (homeGoals > awayGoals) return "home";
   if (awayGoals > homeGoals) return "away";
@@ -21,19 +25,9 @@ export function MatchPitchWash({
 }) {
   const fills = pitchFillsForResult(matchScoreWinnerSide(homeGoals, awayGoals));
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-      <MatchPitchHalf
-        className="[clip-path:polygon(0_0,58%_0,42%_100%,0_100%)]"
-        fill={fills.home}
-        imageUrl={homeImageUrl}
-        side="home"
-      />
-      <MatchPitchHalf
-        className="[clip-path:polygon(58%_0,100%_0,100%_100%,42%_100%)]"
-        fill={fills.away}
-        imageUrl={awayImageUrl}
-        side="away"
-      />
+    <div aria-hidden="true" {...applyStyles(styles.root)}>
+      <MatchPitchHalf fill={fills.home} imageUrl={homeImageUrl} side="home" />
+      <MatchPitchHalf fill={fills.away} imageUrl={awayImageUrl} side="away" />
     </div>
   );
 }
@@ -58,62 +52,54 @@ function pitchFillsForResult(result: "home" | "away" | "draw"): PitchFills {
   }
 }
 
+function pitchHalfWash(fill: PitchHalfFill) {
+  switch (fill) {
+    case "win":
+      return styles.washWin;
+    case "loss":
+      return styles.washLoss;
+    case "drawHome":
+      return styles.washDrawHome;
+    case "drawAway":
+      return styles.washDrawAway;
+    default: {
+      const _exhaustive: never = fill;
+      return _exhaustive;
+    }
+  }
+}
+
 function MatchPitchHalf({
-  className,
   fill,
   imageUrl,
   side,
 }: {
-  readonly className: string;
   readonly fill: PitchHalfFill;
   readonly imageUrl: string | null;
   readonly side: "home" | "away";
 }) {
   return (
     <div
-      className={`absolute inset-0 perspective-[800px] ${pitchHalfWashClass(fill)} ${className}`}
       data-pitch-fill={fill}
       data-pitch-half={side}
+      {...applyStyles(
+        styles.half,
+        side === "home" ? styles.halfHome : styles.halfAway,
+        pitchHalfWash(fill),
+      )}
     >
       {imageUrl === null ? null : (
         <img
           alt=""
-          className={`absolute top-1/2 hidden size-[16.1rem] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain opacity-10 outline-none grayscale mix-blend-multiply lg:block dark:mix-blend-soft-light ${pitchWatermarkSideClass(side)}`}
           data-pitch-watermark={side}
           referrerPolicy="no-referrer"
           src={imageUrl}
+          {...applyStyles(
+            styles.watermark,
+            side === "home" ? styles.watermarkHome : styles.watermarkAway,
+          )}
         />
       )}
     </div>
   );
-}
-
-function pitchWatermarkSideClass(side: "home" | "away"): string {
-  switch (side) {
-    case "home":
-      return "left-[20%] origin-left rotate-y-[60deg]";
-    case "away":
-      return "left-[80%] origin-right -rotate-y-[60deg]";
-    default: {
-      const _exhaustive: never = side;
-      return _exhaustive;
-    }
-  }
-}
-
-function pitchHalfWashClass(fill: PitchHalfFill): string {
-  switch (fill) {
-    case "win":
-      return "bg-primary/10";
-    case "loss":
-      return "bg-danger/10";
-    case "drawHome":
-      return "bg-muted";
-    case "drawAway":
-      return "bg-muted/50";
-    default: {
-      const _exhaustive: never = fill;
-      return _exhaustive;
-    }
-  }
 }

@@ -1,9 +1,28 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DotsThreeIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, vis } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Badge } from "../components/badge";
 import { Button } from "../components/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/table";
+
+const styles = stylex.create({
+  wrap: {
+    marginInline: "auto",
+    width: "100%",
+    maxWidth: "64rem",
+  },
+  actionsHead: { width: "3.5rem" },
+  matchId: {
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    fontSize: "var(--text-xs)",
+    color: colors.mutedForeground,
+  },
+  medium: { fontWeight: 500 },
+  semibold: { fontWeight: 600 },
+});
 
 const meta = {
   title: "Patterns/Data table",
@@ -23,7 +42,7 @@ const matches = [
 
 export const MatchAuditRows: Story = {
   render: () => (
-    <div className="mx-auto w-full max-w-5xl">
+    <div {...applyProps(undefined, undefined, styles.wrap)}>
       <Table dense>
         <TableHeader>
           <TableRow>
@@ -32,18 +51,24 @@ export const MatchAuditRows: Story = {
             <TableHead>Visitante</TableHead>
             <TableHead>Marcador</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead className="w-14">
-              <span className="sr-only">Acciones</span>
+            <TableHead {...applyProps(undefined, undefined, styles.actionsHead)}>
+              <span {...applyProps(undefined, undefined, vis.srOnly)}>Acciones</span>
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {matches.map((match) => (
             <TableRow key={match.id}>
-              <TableCell className="font-mono text-xs text-muted-foreground">{match.id}</TableCell>
-              <TableCell className="font-medium">{match.home}</TableCell>
+              <TableCell {...applyProps(undefined, undefined, styles.matchId)}>
+                {match.id}
+              </TableCell>
+              <TableCell {...applyProps(undefined, undefined, styles.medium)}>
+                {match.home}
+              </TableCell>
               <TableCell>{match.away}</TableCell>
-              <TableCell className="font-semibold">{match.score}</TableCell>
+              <TableCell {...applyProps(undefined, undefined, styles.semibold)}>
+                {match.score}
+              </TableCell>
               <TableCell>
                 <Badge
                   variant={

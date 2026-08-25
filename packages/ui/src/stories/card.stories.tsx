@@ -1,4 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, applyStyles, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
+import { media } from "#styles/media.stylex";
 
 import {
   Card,
@@ -10,19 +14,41 @@ import {
 } from "../components/card";
 import { Button } from "../components/button";
 
+const styles = stylex.create({
+  playground: {
+    width: "min(28rem, calc(100vw - 2rem))",
+  },
+  footerEnd: {
+    justifyContent: "flex-end",
+  },
+  compare: {
+    display: "grid",
+    width: "min(56rem, calc(100vw - 2rem))",
+    gap: "2rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+  muted: { color: colors.mutedForeground },
+});
+
+const playground = applyStyles(styles.playground);
+
 const meta = {
   title: "Primitives/Card",
   component: Card,
   parameters: { layout: "centered" },
   args: {
-    className: "w-[min(28rem,calc(100vw-2rem))]",
+    className: playground.className,
+    style: playground.style,
     variant: "flat",
   },
   argTypes: {
     variant: {
       control: "select",
       options: ["flat", "elevated"],
-      description: "flat = border only (default). elevated = smooth-shadow-ring-md (no border).",
+      description: "flat = border only (default). elevated = StyleX elevation.md (no border).",
     },
   },
 } satisfies Meta<typeof Card>;
@@ -38,7 +64,7 @@ export const Playground: Story = {
         <CardDescription>Preferencias que podrás modificar más adelante.</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="typo-body">FC 26 · PlayStation</p>
+        <p {...applyProps(undefined, undefined, typography.body)}>FC 26 · PlayStation</p>
       </CardContent>
     </Card>
   ),
@@ -53,11 +79,11 @@ export const Flat: Story = {
         <CardDescription>Revisa los datos antes de continuar.</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="typo-caption text-muted-foreground">
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
           El código se solicitará nuevamente si cierras esta página.
         </p>
       </CardContent>
-      <CardFooter className="justify-end">
+      <CardFooter {...applyProps(undefined, undefined, styles.footerEnd)}>
         <Button variant="outline">Volver</Button>
         <Button>Continuar</Button>
       </CardFooter>
@@ -74,11 +100,11 @@ export const Elevated: Story = {
         <CardDescription>Elevación suave con ring embebido (sin border).</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="typo-caption text-muted-foreground">
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
           Usa esta variante solo para entidades autónomas sobre fondo plano.
         </p>
       </CardContent>
-      <CardFooter className="justify-end">
+      <CardFooter {...applyProps(undefined, undefined, styles.footerEnd)}>
         <Button variant="outline">Volver</Button>
         <Button>Continuar</Button>
       </CardFooter>
@@ -89,23 +115,27 @@ export const Elevated: Story = {
 export const Compare: Story = {
   parameters: { layout: "padded" },
   render: () => (
-    <div className="grid w-[min(56rem,calc(100vw-2rem))] gap-8 sm:grid-cols-2">
+    <div {...applyProps(undefined, undefined, styles.compare)}>
       <Card variant="flat">
         <CardHeader>
           <CardTitle>flat</CardTitle>
           <CardDescription>Borde estructural · sin sombra.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="typo-body">Default del sistema. Listas, forms y paneles densos.</p>
+          <p {...applyProps(undefined, undefined, typography.body)}>
+            Default del sistema. Listas, forms y paneles densos.
+          </p>
         </CardContent>
       </Card>
       <Card variant="elevated">
         <CardHeader>
           <CardTitle>elevated</CardTitle>
-          <CardDescription>smooth-shadow-ring-sm · sin border.</CardDescription>
+          <CardDescription>elevation.sm · sin border.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="typo-body">Entidades autónomas sobre fondo plano (onboarding, resumen).</p>
+          <p {...applyProps(undefined, undefined, typography.body)}>
+            Entidades autónomas sobre fondo plano (onboarding, resumen).
+          </p>
         </CardContent>
       </Card>
     </div>

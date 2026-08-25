@@ -65,7 +65,7 @@ export const BLUE_SCALE = {
   900: oklch(0.379, 0.146, 265.522),
 } satisfies Record<string, Oklch>;
 
-/** Categorical highlight scale. Not mapped to Tailwind — consume via `emphasis`. */
+/** Categorical highlight scale. Consume via the `emphasis` semantic token. */
 export const VIOLET_SCALE = {
   50: oklch(0.97, 0.014, 300),
   100: oklch(0.932, 0.032, 300),

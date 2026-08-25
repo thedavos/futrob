@@ -111,7 +111,7 @@ If the story imports `apps/web` modules that touch auth, router, SDK, or Workers
 4. **Import** with the package’s local convention:
    - UI package: relative imports without `.js` extension (Vite + `moduleResolution: Bundler`)
    - Web package: `@/` aliases are fine inside `apps/web` stories
-5. **Compose** wrappers with tokens (`rounded-xl border-border bg-surface`, `typo-caption` labels for demos). Prefer flat/line; avoid nested card spam.
+5. **Compose** wrappers with StyleX (`applyProps`, `typography.caption`, `colors.surface`). Prefer flat/line; avoid nested card spam.
 6. **Update Storybook** whenever the primitive contract changes (AGENTS / UI contract).
 7. **Verify**:
    - `npm run storybook` — story appears under the expected title and renders without console errors
@@ -129,7 +129,7 @@ If the story imports `apps/web` modules that touch auth, router, SDK, or Workers
 
 - Stories that only screenshot happy path and skip `disabled` / invalid / dense
 - Duplicating product business rules inside UI package stories
-- Hardcoding hex colors or one-off font sizes instead of `typo-*` / tokens
+- Hardcoding hex colors or one-off font sizes instead of `typography.*` / tokens
 - Importing `@futrob/<bc>` domain packages into `packages/ui` stories
 - Leaving broken imports that need Workers bindings “for later”
 - Using `!important` utilities to paper over typography/token conflicts — fix the role/token instead

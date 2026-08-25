@@ -1,5 +1,8 @@
 "use client";
 
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link } from "@tanstack/react-router";
 import type { MembershipSummaryDto } from "@futrob/api-contracts";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
@@ -10,27 +13,88 @@ const ROLE_LABEL = {
   member: "Miembro",
 } satisfies Record<MembershipSummaryDto["role"], string>;
 
+const styles = stylex.create({
+  error: {
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.destructive,
+  },
+  muted: {
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+  link: {
+    textUnderlineOffset: "4px",
+    textDecorationLine: {
+      default: "none",
+      ":hover": "underline",
+    },
+  },
+  list: {
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.borderSubtle,
+  },
+  item: {
+    borderTopWidth: {
+      default: 1,
+      ":first-child": 0,
+    },
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+  },
+  row: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: "1rem",
+    paddingBlock: "1rem",
+    transitionProperty: "background-color, color, border-color",
+    transitionDuration: "var(--duration-fast)",
+    transitionTimingFunction: "var(--ease-standard)",
+    color: {
+      default: null,
+      ":hover": colors.primary,
+    },
+  },
+  name: {
+    fontWeight: 500,
+  },
+  role: {
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+});
+
+const link = applyStyles(styles.link);
+const row = applyStyles(styles.row);
+
 export function OrganizationPicker() {
   const membershipsQuery = useMyMembershipsQuery();
   const memberships = membershipsQuery.data?.memberships;
 
   if (membershipsQuery.isError) {
-    return <p className="text-sm text-destructive">No se pudieron cargar tus organizaciones.</p>;
+    return <p {...applyStyles(styles.error)}>No se pudieron cargar tus organizaciones.</p>;
   }
 
   if (memberships == null) {
-    return <p className="text-sm text-muted-foreground">Cargando organizaciones…</p>;
+    return <p {...applyStyles(styles.muted)}>Cargando organizaciones…</p>;
   }
 
   if (memberships.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p {...applyStyles(styles.muted)}>
         Aún no perteneces a ninguna organización. Puedes{" "}
-        <Link className="underline-offset-4 hover:underline" to="/orgs/new">
+        <Link className={link.className} style={link.style} to="/orgs/new">
           crear una
         </Link>{" "}
         o{" "}
-        <Link className="underline-offset-4 hover:underline" to="/invitations/accept">
+        <Link className={link.className} style={link.style} to="/invitations/accept">
           aceptar una invitación
         </Link>
         .
@@ -39,16 +103,17 @@ export function OrganizationPicker() {
   }
 
   return (
-    <ul className="divide-y divide-border-subtle border-y border-border-subtle">
+    <ul {...applyStyles(styles.list)}>
       {memberships.map((membership) => (
-        <li key={membership.organizationId}>
+        <li key={membership.organizationId} {...applyStyles(styles.item)}>
           <Link
-            className="flex items-baseline justify-between gap-4 py-4 transition-colors hover:text-primary"
+            className={row.className}
             params={{ orgId: membership.organizationId }}
+            style={row.style}
             to="/orgs/$orgId"
           >
-            <span className="font-medium">{membership.organizationName}</span>
-            <span className="text-sm text-muted-foreground">{ROLE_LABEL[membership.role]}</span>
+            <span {...applyStyles(styles.name)}>{membership.organizationName}</span>
+            <span {...applyStyles(styles.role)}>{ROLE_LABEL[membership.role]}</span>
           </Link>
         </li>
       ))}

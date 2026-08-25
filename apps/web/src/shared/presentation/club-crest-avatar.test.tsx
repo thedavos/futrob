@@ -31,17 +31,27 @@ describe("ClubCrestAvatar", () => {
     );
     const image = container.querySelector('[data-slot="club-crest-image"]');
     expect(image).toBeTruthy();
-    fireEvent.error(image!);
+    if (image != null) {
+      fireEvent.error(image);
+    }
     expect(container.textContent).toContain("NO");
   });
 
   it("omits the circular frame when framed is false", () => {
-    const { container } = render(
+    const framed = render(
+      <ClubCrestAvatar imageUrl="https://example.com/crest.png" name="Night Owls" />,
+    );
+    const unframed = render(
       <ClubCrestAvatar framed={false} imageUrl="https://example.com/crest.png" name="Night Owls" />,
     );
-    const avatar = container.querySelector('[data-slot="club-crest-avatar"]');
-    const image = container.querySelector('[data-slot="club-crest-image"]');
-    expect(avatar?.className).not.toContain("rounded-full");
-    expect(image?.className).toContain("outline-none");
+    const framedAvatar = framed.container.querySelector('[data-slot="club-crest-avatar"]');
+    const unframedAvatar = unframed.container.querySelector('[data-slot="club-crest-avatar"]');
+    const image = unframed.container.querySelector('[data-slot="club-crest-image"]');
+    expect(unframedAvatar).toBeTruthy();
+    expect(image).toBeTruthy();
+    expect(framedAvatar?.className).not.toEqual(unframedAvatar?.className);
+    expect(image?.getAttribute("data-outline")).toBe("none");
+    const framedImage = framed.container.querySelector('[data-slot="club-crest-image"]');
+    expect(framedImage?.getAttribute("data-outline")).toBeNull();
   });
 });

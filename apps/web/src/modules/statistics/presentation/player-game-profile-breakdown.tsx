@@ -1,5 +1,7 @@
 import type { PlayerGameProfileDto } from "@futrob/api-contracts";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   Badge,
   Table,
   TableBody,
@@ -11,7 +13,9 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 
@@ -48,6 +52,25 @@ const METRIC_KEYS = {
   rating: "player.metric.rating",
 } as const satisfies Record<StatisticMetric, ParameterlessMessageKey>;
 
+const styles = stylex.create({
+  tabs: {
+    width: "fit-content",
+    maxWidth: "100%",
+  },
+  panel: {
+    paddingTop: "1.5rem",
+  },
+  end: {
+    textAlign: "end",
+  },
+  medium: {
+    fontWeight: 500,
+  },
+  complete: {
+    color: colors.mutedForeground,
+  },
+});
+
 export function PlayerGameProfileBreakdown({
   profile,
   numberFormat,
@@ -59,12 +82,12 @@ export function PlayerGameProfileBreakdown({
 }) {
   return (
     <Tabs defaultValue="general" variant="pills">
-      <TabsList className="w-fit max-w-full">
+      <TabsList {...applyStyles(styles.tabs)}>
         <TabsTrigger value="general">{t("player.statistics.tab.general")}</TabsTrigger>
         <TabsTrigger value="team">{t("player.statistics.tab.team")}</TabsTrigger>
         <TabsTrigger value="position">{t("player.statistics.tab.position")}</TabsTrigger>
       </TabsList>
-      <TabsContent className="pt-6" value="general">
+      <TabsContent value="general" {...applyStyles(styles.panel)}>
         <MetricsTable
           groupLabel={null}
           numberFormat={numberFormat}
@@ -72,7 +95,7 @@ export function PlayerGameProfileBreakdown({
           t={t}
         />
       </TabsContent>
-      <TabsContent className="pt-6" value="team">
+      <TabsContent value="team" {...applyStyles(styles.panel)}>
         <MetricsTable
           groupLabel={t("player.statistics.team")}
           numberFormat={numberFormat}
@@ -80,7 +103,7 @@ export function PlayerGameProfileBreakdown({
           t={t}
         />
       </TabsContent>
-      <TabsContent className="pt-6" value="position">
+      <TabsContent value="position" {...applyStyles(styles.panel)}>
         <MetricsTable
           groupLabel={t("player.statistics.position")}
           numberFormat={numberFormat}
@@ -113,8 +136,8 @@ function MetricsTable({
         <TableRow>
           {showGroup ? <TableHead>{groupLabel}</TableHead> : null}
           <TableHead>{t("player.statistics.metric")}</TableHead>
-          <TableHead className="text-right">{t("player.statistics.total")}</TableHead>
-          <TableHead className="text-right">{t("player.statistics.average")}</TableHead>
+          <TableHead {...applyStyles(styles.end)}>{t("player.statistics.total")}</TableHead>
+          <TableHead {...applyStyles(styles.end)}>{t("player.statistics.average")}</TableHead>
           <TableHead>{t("player.statistics.status")}</TableHead>
         </TableRow>
       </TableHeader>
@@ -122,21 +145,23 @@ function MetricsTable({
         {rows.flatMap((row) =>
           STATISTIC_METRICS.map((metric) => (
             <TableRow key={`${row.label}-${metric}`}>
-              {showGroup ? <TableCell className="font-medium">{row.label}</TableCell> : null}
-              <TableCell className={showGroup ? undefined : "font-medium"}>
+              {showGroup ? (
+                <TableCell {...applyStyles(styles.medium)}>{row.label}</TableCell>
+              ) : null}
+              <TableCell {...(showGroup ? {} : applyStyles(styles.medium))}>
                 {t(METRIC_KEYS[metric])}
               </TableCell>
-              <TableCell className="typo-score text-right">
+              <TableCell {...applyStyles(typography.score, styles.end)}>
                 {numberFormat.format(row.stats.totals[metric])}
               </TableCell>
-              <TableCell className="typo-score text-right">
+              <TableCell {...applyStyles(typography.score, styles.end)}>
                 {formatNullable(row.stats.averages[metric], numberFormat, t)}
               </TableCell>
               <TableCell>
                 {row.stats.partial[metric] ? (
                   <Badge variant="warning">{t("player.partialData")}</Badge>
                 ) : (
-                  <span className="typo-caption text-muted-foreground">
+                  <span {...applyStyles(typography.caption, styles.complete)}>
                     {t("player.completeData")}
                   </span>
                 )}

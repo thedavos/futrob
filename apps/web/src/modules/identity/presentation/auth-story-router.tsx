@@ -7,23 +7,43 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { AuthFormHeader } from "@/modules/identity/presentation/auth-form-header.tsx";
 import { LoginForm } from "@/modules/identity/presentation/login-form.tsx";
 import { SignupForm } from "@/modules/identity/presentation/signup-form.tsx";
 
+const styles = stylex.create({
+  shell: {
+    width: "min(26rem, calc(100vw - 2rem))",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: {
+      default: "1.5rem",
+      [media.sm]: "2rem",
+    },
+  },
+  muted: { color: colors.mutedForeground },
+  stack: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+  },
+});
+
 function AuthStoryShell({ children }: { children: ReactNode }) {
-  return (
-    <div className="w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-6 sm:p-8">
-      {children}
-    </div>
-  );
+  return <div {...applyProps(undefined, undefined, styles.shell)}>{children}</div>;
 }
 
 function StubPage({ label }: { label: string }) {
   return (
     <AuthStoryShell>
-      <p className="typo-body text-muted-foreground">{label}</p>
+      <p {...applyProps(undefined, undefined, typography.body, styles.muted)}>{label}</p>
     </AuthStoryShell>
   );
 }
@@ -38,7 +58,7 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     path: "/login",
     component: () => (
       <AuthStoryShell>
-        <div className="flex flex-col gap-8">
+        <div {...applyProps(undefined, undefined, styles.stack)}>
           <AuthFormHeader
             description="Continúa gestionando tu competición."
             title="Inicia sesión"
@@ -54,7 +74,7 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     path: "/signup",
     component: () => (
       <AuthStoryShell>
-        <div className="flex flex-col gap-8">
+        <div {...applyProps(undefined, undefined, styles.stack)}>
           <AuthFormHeader
             description="Empieza gratis y organiza tu competición con más control, orden y transparencia."
             title="Crea tu cuenta"

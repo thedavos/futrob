@@ -13,7 +13,7 @@ Multi-tenant EA SPORTS FC competitions (MVP: FC Clubs) with hexagonal feature mo
 - Cloudflare Workers, D1, R2, Queues, Cron Triggers
 - Better Auth (identity) + Futrob organizations (authorization)
 - Hexagonal BCs in `packages/@futrob/<bc>` (domain/application); adapters under `apps/web/src/modules/*`; DI only in `apps/web/src/di/` (and future `apps/api`)
-- shadcn/Base UI, Tailwind, Vite+, Sentry at boundaries
+- shadcn/Base UI, StyleX, Vite+, Sentry at boundaries
 - game-data providers: EA Clubs adapter today; manual/others later
 
 ## Vocabulary

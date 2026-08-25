@@ -1,6 +1,8 @@
 "use client";
 
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   Avatar,
   AvatarFallback,
   Badge,
@@ -9,7 +11,10 @@ import {
   CardHeader,
   Stat,
   StatLabel,
+  typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { StarIcon } from "@phosphor-icons/react";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
@@ -23,9 +28,108 @@ import {
 import { TeamComparisonCard } from "./provider-match-detail-summary-comparison.tsx";
 import {
   MatchHighlightsCard,
-  SUMMARY_CARD_CONTENT_CLASS,
-  SUMMARY_CARD_HEADER_CLASS,
+  summaryCard,
+  summaryCardContent,
+  summaryCardHeader,
 } from "./provider-match-detail-summary-highlights.tsx";
+
+const styles = stylex.create({
+  stack: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+  },
+  grid: {
+    display: "grid",
+    alignItems: "stretch",
+    gap: "1.5rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.lg]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+  empty: {
+    margin: "auto",
+    maxWidth: "65ch",
+    textAlign: "center",
+    color: colors.mutedForeground,
+  },
+  played: {
+    display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    gap: "1.25rem",
+  },
+  identityRow: {
+    display: "flex",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: "1rem",
+  },
+  identity: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.75rem",
+  },
+  identityCopy: {
+    minWidth: 0,
+  },
+  nameRow: {
+    display: "flex",
+    minWidth: 0,
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  name: {
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontWeight: 600,
+  },
+  meta: {
+    marginTop: "0.125rem",
+    color: colors.mutedForeground,
+  },
+  metrics: {
+    display: "grid",
+    width: "100%",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: "0.75rem",
+  },
+  metric: {
+    display: "flex",
+    height: "100%",
+    minWidth: 0,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingInline: "0.75rem",
+    paddingBlock: "1rem",
+  },
+  metricStat: {
+    minWidth: 0,
+  },
+  metricLabel: {
+    textAlign: "center",
+  },
+  avatar: {
+    width: "2.75rem",
+    height: "2.75rem",
+  },
+});
 
 export function MatchDetailSummary({
   model,
@@ -42,8 +146,8 @@ export function MatchDetailSummary({
   });
 
   return (
-    <div className="space-y-6">
-      <div className="grid items-stretch gap-6 lg:grid-cols-2">
+    <div {...applyStyles(styles.stack)}>
+      <div {...applyStyles(styles.grid)}>
         <YourPerformanceCard
           appearance={model.appearance}
           numberFormat={numberFormat}
@@ -78,12 +182,15 @@ function YourPerformanceCard({
   readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
+  const card = applyStyles(summaryCard);
+  const header = applyStyles(summaryCardHeader);
+  const content = applyStyles(summaryCardContent);
   return (
-    <Card className="flex h-full min-w-0 flex-col" data-personal-summary="">
-      <CardHeader className={SUMMARY_CARD_HEADER_CLASS}>
-        <h2 className="typo-label">{t("player.matchDetail.performance")}</h2>
+    <Card className={card.className} data-personal-summary="" style={card.style}>
+      <CardHeader className={header.className} style={header.style}>
+        <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.performance")}</h2>
       </CardHeader>
-      <CardContent className={`${SUMMARY_CARD_CONTENT_CLASS} flex flex-1 flex-col`}>
+      <CardContent className={content.className} style={content.style}>
         {appearance ? (
           <PlayedPerformance
             appearance={appearance}
@@ -92,7 +199,7 @@ function YourPerformanceCard({
             t={t}
           />
         ) : (
-          <p className="typo-caption m-auto max-w-prose text-pretty text-center text-muted-foreground">
+          <p {...applyStyles(typography.caption, styles.empty)}>
             {t("player.matchDetail.performance.empty.description")}
           </p>
         )}
@@ -126,13 +233,13 @@ function PlayedPerformance({
     (part): part is string => part !== null,
   );
   return (
-    <div className="flex min-h-0 flex-1 flex-col justify-start gap-5">
-      <div className="flex shrink-0 items-center justify-start gap-4">
-        <div className="flex min-w-0 items-center gap-3">
+    <div {...applyStyles(styles.played)}>
+      <div {...applyStyles(styles.identityRow)}>
+        <div {...applyStyles(styles.identity)}>
           <PlayerAvatar name={appearance.displayName} />
-          <div className="min-w-0">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <p className="typo-body min-w-0 truncate font-semibold">{appearance.displayName}</p>
+          <div {...applyStyles(styles.identityCopy)}>
+            <div {...applyStyles(styles.nameRow)}>
+              <p {...applyStyles(typography.body, styles.name)}>{appearance.displayName}</p>
               {appearance.isMvp === true ? (
                 <Badge variant="outline">
                   <StarIcon aria-hidden="true" weight="fill" />
@@ -140,19 +247,17 @@ function PlayedPerformance({
                 </Badge>
               ) : null}
             </div>
-            <p className="typo-caption mt-0.5 text-pretty text-muted-foreground">
-              {identityMeta.join(" · ")}
-            </p>
+            <p {...applyStyles(typography.caption, styles.meta)}>{identityMeta.join(" · ")}</p>
           </div>
         </div>
         <AverageRatingRing
-          className="size-20"
           label={t("player.metric.rating")}
           numberFormat={numberFormat}
           rating={appearance.rating}
+          size="compact"
         />
       </div>
-      <div className="grid w-full grid-cols-3 gap-3" role="group">
+      <div role="group" {...applyStyles(styles.metrics)}>
         <PerformanceStat
           label={t("player.metric.goals")}
           metric="goals"
@@ -205,11 +310,15 @@ function PerformanceStat({
   readonly t: Translator;
   readonly value: string | null;
 }) {
+  const metricStat = applyStyles(styles.metricStat);
+  const metricLabel = applyStyles(styles.metricLabel);
   return (
-    <div className="flex h-full min-w-0 flex-col items-center justify-center rounded-lg border border-border bg-surface px-3 py-4">
-      <Stat align="center" className="min-w-0">
+    <div {...applyStyles(styles.metric)}>
+      <Stat align="center" className={metricStat.className} style={metricStat.style}>
         <MetricStatValue emptyLabel={t("player.noData")} metric={metric} value={value} />
-        <StatLabel className="text-pretty text-center">{label}</StatLabel>
+        <StatLabel className={metricLabel.className} style={metricLabel.style}>
+          {label}
+        </StatLabel>
       </Stat>
     </div>
   );
@@ -217,7 +326,7 @@ function PerformanceStat({
 
 function PlayerAvatar({ name }: { readonly name: string }) {
   return (
-    <Avatar className="size-11">
+    <Avatar {...applyStyles(styles.avatar)}>
       <AvatarFallback>{initialsFromName(name)}</AvatarFallback>
     </Avatar>
   );

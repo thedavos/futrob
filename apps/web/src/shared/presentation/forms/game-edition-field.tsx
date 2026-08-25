@@ -1,5 +1,7 @@
 import type { Ref } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   ChoiceGroup,
   ChoiceGroupIndicator,
   ChoiceGroupItem,
@@ -7,7 +9,9 @@ import {
   FieldError,
   FieldLabel,
   Input,
+  typography,
 } from "@futrob/ui";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { FieldsetError } from "@/shared/presentation/forms/fieldset-error.tsx";
 import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
 
@@ -24,6 +28,32 @@ const defaultCopy: GameEditionFieldCopy = {
   customName: "Nombre de la edición",
   customPlaceholder: "ej. FC 24",
 };
+
+const styles = stylex.create({
+  fieldset: {
+    margin: 0,
+    borderWidth: 0,
+    padding: 0,
+  },
+  legend: {
+    marginBottom: "0.75rem",
+  },
+  group: {
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(3, minmax(0, 1fr))",
+    },
+  },
+  indicator: {
+    position: "static",
+    width: "1.25rem",
+    height: "1.25rem",
+  },
+  customField: {
+    marginTop: "1rem",
+    gap: "0.75rem",
+  },
+});
 
 export function GameEditionField({
   legendId,
@@ -50,35 +80,39 @@ export function GameEditionField({
   readonly disabled?: boolean;
   readonly copy?: GameEditionFieldCopy;
 }) {
+  const group = applyStyles(styles.group);
+  const indicator = applyStyles(styles.indicator);
+  const customField = applyStyles(styles.customField);
   return (
-    <fieldset className="m-0 border-0 p-0" data-edition-group data-competition-edition>
-      <legend className="mb-3 typo-label" id={legendId}>
+    <fieldset data-competition-edition data-edition-group {...applyStyles(styles.fieldset)}>
+      <legend id={legendId} {...applyStyles(typography.label, styles.legend)}>
         {copy.legend}
       </legend>
       <ChoiceGroup
         aria-describedby={invalid ? errorId : undefined}
         aria-invalid={invalid}
         aria-labelledby={legendId}
-        className="grid-cols-1 sm:grid-cols-3"
+        className={group.className}
         onValueChange={(next: string) => {
           const isCustom = next === "__other__";
           onValueChange({ value: isCustom ? "" : next, custom: isCustom });
         }}
+        style={group.style}
         value={custom ? "__other__" : value}
       >
         {knownGameEditions.map((edition) => (
           <ChoiceGroupItem appearance="pill" disabled={disabled} key={edition} value={edition}>
-            <ChoiceGroupIndicator className="static size-5" />
+            <ChoiceGroupIndicator className={indicator.className} style={indicator.style} />
             {edition}
           </ChoiceGroupItem>
         ))}
         <ChoiceGroupItem appearance="pill" disabled={disabled} value="__other__">
-          <ChoiceGroupIndicator className="static size-5" />
+          <ChoiceGroupIndicator className={indicator.className} style={indicator.style} />
           {copy.other}
         </ChoiceGroupItem>
       </ChoiceGroup>
       {custom ? (
-        <Field className="mt-4 gap-3" invalid={invalid}>
+        <Field className={customField.className} invalid={invalid} style={customField.style}>
           <FieldLabel htmlFor={customInputId}>{copy.customName}</FieldLabel>
           <Input
             aria-describedby={invalid ? errorId : undefined}

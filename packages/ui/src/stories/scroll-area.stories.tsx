@@ -1,6 +1,82 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { ScrollArea, ScrollAreaContent } from "../components/scroll-area";
+
+const styles = stylex.create({
+  playground: {
+    height: "14rem",
+    width: "min(24rem, calc(100vw - 2rem))",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  playgroundContent: {
+    display: "grid",
+    gap: "0.75rem",
+    padding: "1rem",
+  },
+  foreground: { color: colors.foreground },
+  labeled: {
+    display: "grid",
+    gap: "0.5rem",
+  },
+  muted: { color: colors.mutedForeground },
+  list: {
+    height: "16rem",
+    width: "min(28rem, calc(100vw - 2rem))",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  listContent: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  row: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.75rem",
+    paddingInline: "1rem",
+    paddingBlock: "0.75rem",
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.border,
+  },
+  horizontal: {
+    width: "min(22rem, calc(100vw - 2rem))",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  horizontalContent: {
+    display: "flex",
+    width: "max-content",
+    gap: "0.75rem",
+    padding: "1rem",
+  },
+  chip: {
+    display: "inline-flex",
+    height: "2.5rem",
+    alignItems: "center",
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.muted,
+    paddingInline: "0.75rem",
+    color: colors.foreground,
+  },
+});
 
 const meta = {
   title: "Primitives/ScrollArea",
@@ -24,10 +100,10 @@ const candidateRows = [
 
 export const Playground: Story = {
   render: () => (
-    <ScrollArea className="h-56 w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface">
-      <ScrollAreaContent className="grid gap-3 p-4">
+    <ScrollArea {...applyProps(undefined, undefined, styles.playground)}>
+      <ScrollAreaContent {...applyProps(undefined, undefined, styles.playgroundContent)}>
         {candidateRows.map((row) => (
-          <p key={row} className="typo-body text-foreground">
+          <p key={row} {...applyProps(undefined, undefined, typography.body, styles.foreground)}>
             {row}
           </p>
         ))}
@@ -38,14 +114,16 @@ export const Playground: Story = {
 
 export const VerticalList: Story = {
   render: () => (
-    <div className="grid gap-2">
-      <p className="typo-label text-muted-foreground">Candidatos EA</p>
-      <ScrollArea className="h-64 w-[min(28rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface">
-        <ScrollAreaContent className="divide-y divide-border">
+    <div {...applyProps(undefined, undefined, styles.labeled)}>
+      <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>Candidatos EA</p>
+      <ScrollArea {...applyProps(undefined, undefined, styles.list)}>
+        <ScrollAreaContent {...applyProps(undefined, undefined, styles.listContent)}>
           {candidateRows.map((row) => (
-            <div key={row} className="flex items-center justify-between gap-3 px-4 py-3">
-              <p className="typo-body text-foreground">{row}</p>
-              <span className="typo-caption text-muted-foreground">Sin usar</span>
+            <div key={row} {...applyProps(undefined, undefined, styles.row)}>
+              <p {...applyProps(undefined, undefined, typography.body, styles.foreground)}>{row}</p>
+              <span {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
+                Sin usar
+              </span>
             </div>
           ))}
         </ScrollAreaContent>
@@ -56,14 +134,11 @@ export const VerticalList: Story = {
 
 export const HorizontalOverflow: Story = {
   render: () => (
-    <ScrollArea className="w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface">
-      <ScrollAreaContent className="flex w-max gap-3 p-4">
+    <ScrollArea {...applyProps(undefined, undefined, styles.horizontal)}>
+      <ScrollAreaContent {...applyProps(undefined, undefined, styles.horizontalContent)}>
         {["Vista previa", "Selección", "Historial", "Estadísticas", "Auditoría", "Admin"].map(
           (tab) => (
-            <span
-              key={tab}
-              className="typo-label inline-flex h-10 items-center rounded-lg border border-border bg-muted px-3 text-foreground"
-            >
+            <span key={tab} {...applyProps(undefined, undefined, typography.label, styles.chip)}>
               {tab}
             </span>
           ),

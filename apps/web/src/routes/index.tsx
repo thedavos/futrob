@@ -1,4 +1,8 @@
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { createFileRoute } from "@tanstack/react-router";
+
 import { DEFAULT_LOCALE } from "@/shared/presentation/i18n/locale.ts";
 import { getUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
@@ -9,6 +13,19 @@ import { FinalCtaSection } from "@/shared/presentation/landing/final-cta-section
 import { LandingHeader } from "@/shared/presentation/landing/landing-header.tsx";
 import { LandingHero } from "@/shared/presentation/landing/landing-hero.tsx";
 import { MechanismSection } from "@/shared/presentation/landing/mechanism-section.tsx";
+
+const styles = stylex.create({
+  main: {
+    minHeight: "100vh",
+    backgroundColor: colors.background,
+    color: colors.foreground,
+  },
+  heroShell: {
+    display: "flex",
+    minHeight: "100dvh",
+    flexDirection: "column",
+  },
+});
 
 export const Route = createFileRoute("/")({
   loader: () => getUiLocale(),
@@ -26,8 +43,8 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="flex min-h-dvh flex-col">
+    <main {...applyStyles(styles.main)}>
+      <div {...applyStyles(styles.heroShell)}>
         <LandingHeader />
         <LandingHero />
       </div>

@@ -1,8 +1,53 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ArrowUpRightIcon, PlusIcon, MagnifyingGlassIcon, GearIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, typography } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Button } from "../components/button";
 import { ButtonIcon } from "../components/button-icon";
+
+const styles = stylex.create({
+  panel: {
+    display: "flex",
+    maxWidth: "42rem",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.75rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  stack: {
+    display: "grid",
+    gap: "1.25rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  group: {
+    display: "grid",
+    gap: "0.5rem",
+  },
+  muted: { color: colors.mutedForeground },
+  row: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  marketing: {
+    borderRadius: "var(--corner-xl)",
+    backgroundColor: colors.neutral950,
+    padding: "2rem",
+  },
+});
 
 const meta = {
   title: "Primitives/Button",
@@ -33,7 +78,7 @@ export const Playground: Story = {};
 
 export const ClosedVariants: Story = {
   render: () => (
-    <div className="flex max-w-2xl flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-6">
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Button>
         <PlusIcon />
         Crear competición
@@ -52,10 +97,12 @@ export const ClosedVariants: Story = {
 
 export const UniversalAndDense: Story = {
   render: () => (
-    <div className="grid gap-5 rounded-xl border border-border bg-surface p-6">
-      <div className="grid gap-2">
-        <p className="typo-label text-muted-foreground">Universal · 44 px</p>
-        <div className="flex flex-wrap items-center gap-2">
+    <div {...applyProps(undefined, undefined, styles.stack)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>
+          Universal · 44 px
+        </p>
+        <div {...applyProps(undefined, undefined, styles.row)}>
           <Button>
             <GearIcon />
             Configurar torneo
@@ -65,9 +112,11 @@ export const UniversalAndDense: Story = {
           </Button>
         </div>
       </div>
-      <div className="grid gap-2">
-        <p className="typo-label text-muted-foreground">Dense · 36 px en desktop</p>
-        <div className="flex flex-wrap items-center gap-2">
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>
+          Dense · 36 px en desktop
+        </p>
+        <div {...applyProps(undefined, undefined, styles.row)}>
           <Button dense variant="outline">
             Editar fila
           </Button>
@@ -82,7 +131,7 @@ export const UniversalAndDense: Story = {
 
 export const MarketingCta: Story = {
   render: () => (
-    <div className="rounded-xl bg-neutral-950 p-8">
+    <div {...applyProps(undefined, undefined, styles.marketing)}>
       <Button>
         Organiza tu torneo
         <ButtonIcon>

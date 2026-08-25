@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   Button,
   Dialog,
   DialogContent,
@@ -10,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { DEFAULT_EA_SEARCH_GAME_EDITION } from "@/modules/game-data/presentation/ea-club-search-meta.ts";
 import {
   EaClubLinkForm,
@@ -18,6 +21,27 @@ import {
 import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import { useAssociateMyExternalClubMutation } from "@/modules/teams/presentation/player-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+
+const styles = stylex.create({
+  content: {
+    maxWidth: "42rem",
+  },
+  form: {
+    marginTop: "1.25rem",
+  },
+  error: {
+    marginTop: "1rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.destructive,
+  },
+  footer: {
+    marginTop: "1.5rem",
+  },
+});
+
+const content = applyStyles(styles.content);
+const footer = applyStyles(styles.footer);
 
 export function AddClubDialog({
   open,
@@ -64,12 +88,12 @@ export function AddClubDialog({
       }}
       open={open}
     >
-      <DialogContent className="max-w-2xl">
+      <DialogContent className={content.className} style={content.style}>
         <DialogHeader>
           <DialogTitle>{t("shell.workspace.addClub.title")}</DialogTitle>
           <DialogDescription>{t("shell.workspace.addClub.description")}</DialogDescription>
         </DialogHeader>
-        <div className="mt-5">
+        <div {...applyStyles(styles.form)}>
           <EaClubLinkForm
             busy={associate.isPending}
             onClear={() => setSelected(null)}
@@ -84,11 +108,11 @@ export function AddClubDialog({
           />
         </div>
         {error ? (
-          <p className="mt-4 text-sm text-destructive" role="alert">
+          <p role="alert" {...applyStyles(styles.error)}>
             {error}
           </p>
         ) : null}
-        <DialogFooter className="mt-6">
+        <DialogFooter className={footer.className} style={footer.style}>
           <Button
             disabled={!selected || associate.isPending}
             onClick={() => void confirm()}

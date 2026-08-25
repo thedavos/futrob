@@ -1,18 +1,62 @@
 "use client";
 
 import { useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
+  applyStyles,
   Button,
   Field,
   FieldLabel,
   Input,
+  typography,
   useCopyToClipboard,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { CheckIcon, WarningCircleIcon, CopyIcon, LinkSimpleIcon } from "@phosphor-icons/react";
 import { buildInvitationShareUrl } from "@/modules/organizations/presentation/invitation-share-url.ts";
 import { useCreateCompetitionInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
+
+const styles = stylex.create({
+  section: {
+    marginTop: "2.5rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  title: {
+    fontSize: "1.25rem",
+    lineHeight: "1.75rem",
+    fontWeight: 600,
+  },
+  copy: {
+    color: colors.mutedForeground,
+  },
+  icon: {
+    width: "1rem",
+    height: "1rem",
+  },
+  share: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.borderSubtle,
+    paddingBlock: "1rem",
+  },
+});
+
+const icon = applyStyles(styles.icon);
 
 export function CreateCompetitionInvitationPanel({
   organizationId,
@@ -46,12 +90,12 @@ export function CreateCompetitionInvitationPanel({
   }
 
   return (
-    <section aria-labelledby="invite-link-title" className="mt-10 space-y-4">
-      <div className="space-y-2">
-        <h2 className="text-xl font-semibold" id="invite-link-title">
+    <section aria-labelledby="invite-link-title" {...applyStyles(styles.section)}>
+      <div {...applyStyles(styles.header)}>
+        <h2 {...applyStyles(styles.title)} id="invite-link-title">
           Invitar jugadores
         </h2>
-        <p className="typo-caption text-muted-foreground">
+        <p {...applyStyles(typography.caption, styles.copy)}>
           Genera un link de acceso a esta competición. Una persona puede usarlo una vez.
         </p>
       </div>
@@ -68,21 +112,21 @@ export function CreateCompetitionInvitationPanel({
         onClick={() => void handleCreate()}
         type="button"
       >
-        <LinkSimpleIcon aria-hidden="true" className="size-4" />
+        <LinkSimpleIcon aria-hidden="true" className={icon.className} style={icon.style} />
         Generar link de invitación
       </Button>
 
       {shareUrl ? (
-        <div className="space-y-3 border-y border-border-subtle py-4">
+        <div {...applyStyles(styles.share)}>
           <Field name="shareUrl">
             <FieldLabel htmlFor="invitation-share-url">Link compartible</FieldLabel>
             <Input id="invitation-share-url" name="shareUrl" readOnly value={shareUrl} />
           </Field>
           <Button onClick={() => void handleCopy()} type="button" variant="outline">
             {isCopied ? (
-              <CheckIcon aria-hidden="true" className="size-4" />
+              <CheckIcon aria-hidden="true" className={icon.className} style={icon.style} />
             ) : (
-              <CopyIcon aria-hidden="true" className="size-4" />
+              <CopyIcon aria-hidden="true" className={icon.className} style={icon.style} />
             )}
             {isCopied ? "Copiado" : "Copiar link"}
           </Button>

@@ -1,62 +1,86 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyProps } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { typography } from "#styles/typography";
 
-function PageHeader({ className, ...props }: React.ComponentProps<"header">) {
+const styles = stylex.create({
+  root: {
+    marginBottom: "2rem",
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    alignItems: "start",
+    columnGap: "1rem",
+    rowGap: "0.5rem",
+  },
+  eyebrow: {
+    gridColumnStart: 1,
+    color: colors.mutedForeground,
+  },
+  title: {
+    gridColumnStart: 1,
+    textWrap: "balance",
+  },
+  description: {
+    gridColumnStart: 1,
+    maxWidth: "42rem",
+    color: colors.mutedForeground,
+  },
+  actions: {
+    gridColumnStart: 2,
+    gridRowStart: 1,
+    gridRowEnd: "span 3",
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: "0.5rem",
+    alignSelf: "start",
+  },
+});
+
+function PageHeader({ className, style, ...props }: React.ComponentProps<"header">) {
   return (
-    <header
-      data-slot="page-header"
-      className={cn(
-        "mb-8 grid grid-cols-1 items-start gap-x-4 gap-y-2",
-        "has-[[data-slot=page-header-actions]]:grid-cols-[minmax(0,1fr)_auto]",
-        className,
-      )}
-      {...props}
-    />
+    <header data-slot="page-header" {...applyProps(className, style, styles.root)} {...props} />
   );
 }
 
-function PageHeaderEyebrow({ className, ...props }: React.ComponentProps<"p">) {
+function PageHeaderEyebrow({ className, style, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       data-slot="page-header-eyebrow"
-      className={cn("typo-label col-start-1 text-muted-foreground", className)}
+      {...applyProps(className, style, typography.label, styles.eyebrow)}
       {...props}
     />
   );
 }
 
-function PageHeaderTitle({ className, ...props }: React.ComponentProps<"h1">) {
+function PageHeaderTitle({ className, style, ...props }: React.ComponentProps<"h1">) {
   return (
     <h1
       data-slot="page-header-title"
-      className={cn("typo-heading col-start-1 text-balance", className)}
+      {...applyProps(className, style, typography.heading, styles.title)}
       {...props}
     />
   );
 }
 
-function PageHeaderDescription({ className, ...props }: React.ComponentProps<"p">) {
+function PageHeaderDescription({ className, style, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       data-slot="page-header-description"
-      className={cn(
-        "typo-subtitle col-start-1 max-w-2xl text-pretty text-muted-foreground",
-        className,
-      )}
+      {...applyProps(className, style, typography.subtitle, styles.description)}
       {...props}
     />
   );
 }
 
-function PageHeaderActions({ className, ...props }: React.ComponentProps<"div">) {
+function PageHeaderActions({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="page-header-actions"
-      className={cn(
-        "col-start-2 row-start-1 row-span-3 flex flex-wrap items-center justify-end gap-2 self-start",
-        className,
-      )}
+      {...applyProps(className, style, styles.actions)}
       {...props}
     />
   );

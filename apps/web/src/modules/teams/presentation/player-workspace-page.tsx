@@ -1,6 +1,8 @@
 import { useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { Link } from "@tanstack/react-router";
 import {
+  applyStyles,
   Button,
   ChoiceGroup,
   ChoiceGroupIndicator,
@@ -9,7 +11,10 @@ import {
   EmptyStateActions,
   EmptyStateDescription,
   EmptyStateTitle,
+  typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import type { PlayerGameAccountDto, PlayerTeamMembershipDto } from "@futrob/api-contracts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
@@ -17,6 +22,145 @@ import {
   useMyTeamsQuery,
   useSetActiveTeamMutation,
 } from "./player-queries.ts";
+
+const styles = stylex.create({
+  main: {
+    width: "100%",
+  },
+  intro: {
+    marginBottom: "2rem",
+    maxWidth: "42rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  muted: {
+    color: colors.mutedForeground,
+  },
+  title: {
+    fontSize: {
+      default: "var(--text-3xl)",
+      [media.sm]: "var(--text-4xl)",
+    },
+  },
+  panel: {
+    overflow: "hidden",
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  shortcut: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "1rem",
+    paddingInline: "1.25rem",
+    paddingBlock: "1rem",
+    borderTopWidth: {
+      default: 1,
+      ":first-child": 0,
+    },
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+  },
+  shortcutCopy: {
+    maxWidth: "42rem",
+  },
+  shortcutTitle: {
+    fontWeight: 600,
+  },
+  shortcutHint: {
+    marginTop: "0.25rem",
+    color: colors.mutedForeground,
+  },
+  card: {
+    marginTop: "2rem",
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: {
+      default: "1.25rem",
+      [media.sm]: "1.5rem",
+    },
+  },
+  cardHeader: {
+    marginBottom: "1rem",
+  },
+  cardTitle: {
+    fontSize: "1rem",
+    lineHeight: "1.5rem",
+    fontWeight: 600,
+  },
+  cardHint: {
+    marginTop: "0.375rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+  teamGrid: {
+    gridTemplateColumns: "minmax(0, 1fr)",
+  },
+  teamItem: {
+    display: "flex",
+    width: "100%",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "0.75rem",
+  },
+  teamCopy: {
+    display: "grid",
+    gap: "0.25rem",
+    textAlign: "left",
+  },
+  teamName: {
+    fontWeight: 600,
+  },
+  error: {
+    marginTop: "0.75rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.destructive,
+  },
+  gameHeader: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "1rem",
+  },
+  accounts: {
+    marginTop: "0.5rem",
+    display: "grid",
+    gap: "0.5rem",
+  },
+  account: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.5rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+  },
+  orgHint: {
+    marginTop: "0.375rem",
+    maxWidth: "42rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+  orgActions: {
+    marginTop: "1.25rem",
+    justifyContent: "flex-start",
+  },
+});
+
+const teamGrid = applyStyles(styles.teamGrid);
+const orgActions = applyStyles(styles.orgActions);
 
 export function PlayerWorkspacePage() {
   const { t } = useI18n();
@@ -41,21 +185,21 @@ export function PlayerWorkspacePage() {
   }
 
   return (
-    <main className="w-full">
-      <div className="mb-8 max-w-2xl space-y-2">
-        <p className="typo-label text-muted-foreground">Espacio personal</p>
-        <h1 className="typo-heading text-3xl sm:text-4xl">Tu espacio de jugador</h1>
-        <p className="typo-body text-muted-foreground">
+    <main {...applyStyles(styles.main)}>
+      <div {...applyStyles(styles.intro)}>
+        <p {...applyStyles(typography.label, styles.muted)}>Espacio personal</p>
+        <h1 {...applyStyles(typography.heading, styles.title)}>Tu espacio de jugador</h1>
+        <p {...applyStyles(typography.body, styles.muted)}>
           Consulta tus partidos y estadísticas individuales sin pertenecer todavía a una
           organización.
         </p>
       </div>
 
-      <section className="divide-y divide-border-subtle rounded-lg border border-border bg-surface">
-        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
-          <div className="max-w-2xl">
-            <h2 className="font-semibold">{t("player.matches.title")}</h2>
-            <p className="typo-caption mt-1 text-muted-foreground">
+      <section {...applyStyles(styles.panel)}>
+        <div {...applyStyles(styles.shortcut)}>
+          <div {...applyStyles(styles.shortcutCopy)}>
+            <h2 {...applyStyles(styles.shortcutTitle)}>{t("player.matches.title")}</h2>
+            <p {...applyStyles(typography.caption, styles.shortcutHint)}>
               {t("player.matches.description")}
             </p>
           </div>
@@ -66,10 +210,10 @@ export function PlayerWorkspacePage() {
             {t("player.matches.open")}
           </Button>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
-          <div className="max-w-2xl">
-            <h2 className="font-semibold">{t("player.statistics.title")}</h2>
-            <p className="typo-caption mt-1 text-muted-foreground">
+        <div {...applyStyles(styles.shortcut)}>
+          <div {...applyStyles(styles.shortcutCopy)}>
+            <h2 {...applyStyles(styles.shortcutTitle)}>{t("player.statistics.title")}</h2>
+            <p {...applyStyles(typography.caption, styles.shortcutHint)}>
               {t("player.statistics.description")}
             </p>
           </div>
@@ -79,10 +223,10 @@ export function PlayerWorkspacePage() {
         </div>
       </section>
 
-      <section className="mt-8 rounded-lg border border-border bg-surface p-5 sm:p-6">
-        <div className="mb-4">
-          <h2 className="text-base font-semibold">Mis equipos</h2>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+      <section {...applyStyles(styles.card)}>
+        <div {...applyStyles(styles.cardHeader)}>
+          <h2 {...applyStyles(styles.cardTitle)}>Mis equipos</h2>
+          <p {...applyStyles(styles.cardHint)}>
             Puedes pertenecer a varios equipos en competiciones distintas. Elige uno como activo
             para tu espacio personal.
           </p>
@@ -97,9 +241,10 @@ export function PlayerWorkspacePage() {
         ) : (
           <ChoiceGroup<string>
             aria-label="Equipo activo"
-            className="grid-cols-1"
+            className={teamGrid.className}
             disabled={savingActive}
             onValueChange={(value) => void handleActiveChange(value)}
+            style={teamGrid.style}
             value={activeId}
           >
             {teams.map((item) => (
@@ -108,10 +253,10 @@ export function PlayerWorkspacePage() {
                 key={item.membership.id}
                 value={item.membership.id}
               >
-                <span className="flex w-full items-start justify-between gap-3">
-                  <span className="grid gap-1 text-left">
-                    <span className="font-semibold">{item.team.name}</span>
-                    <span className="typo-caption text-muted-foreground">
+                <span {...applyStyles(styles.teamItem)}>
+                  <span {...applyStyles(styles.teamCopy)}>
+                    <span {...applyStyles(styles.teamName)}>{item.team.name}</span>
+                    <span {...applyStyles(typography.caption, styles.muted)}>
                       Competición {item.membership.competitionId} · Rol{" "}
                       {rosterRoleLabel(item.membership.role)}
                     </span>
@@ -123,20 +268,20 @@ export function PlayerWorkspacePage() {
           </ChoiceGroup>
         )}
         {activeError ? (
-          <p className="mt-3 text-sm text-destructive" role="alert">
+          <p role="alert" {...applyStyles(styles.error)}>
             {activeError}
           </p>
         ) : null}
       </section>
 
-      <section className="mt-8 rounded-lg border border-border bg-surface p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <section {...applyStyles(styles.card)}>
+        <div {...applyStyles(styles.gameHeader)}>
           <div>
-            <h2 className="text-base font-semibold">Datos de juego</h2>
+            <h2 {...applyStyles(styles.cardTitle)}>Datos de juego</h2>
             {accounts.length > 0 ? (
-              <div className="mt-2 grid gap-2">
+              <div {...applyStyles(styles.accounts)}>
                 {accounts.map((account) => (
-                  <div className="flex flex-wrap items-center gap-2 text-sm" key={account.id}>
+                  <div key={account.id} {...applyStyles(styles.account)}>
                     <span>
                       {account.identifier} · {platformLabel(account.platform)} ·{" "}
                       {account.gameEdition}
@@ -145,7 +290,7 @@ export function PlayerWorkspacePage() {
                 ))}
               </div>
             ) : (
-              <p className="mt-1.5 text-sm text-muted-foreground">
+              <p {...applyStyles(styles.cardHint)}>
                 Vincula un identificador para preparar la asociación con tus partidos oficiales.
               </p>
             )}
@@ -156,13 +301,13 @@ export function PlayerWorkspacePage() {
         </div>
       </section>
 
-      <section className="mt-8 rounded-lg border border-border bg-surface p-5 sm:p-6">
-        <h2 className="text-base font-semibold">¿Quieres competir en una organización?</h2>
-        <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
+      <section {...applyStyles(styles.card)}>
+        <h2 {...applyStyles(styles.cardTitle)}>¿Quieres competir en una organización?</h2>
+        <p {...applyStyles(styles.orgHint)}>
           Puedes aceptar una invitación o crear una organización más adelante. Tu espacio personal y
           tu historial se conservarán.
         </p>
-        <EmptyStateActions className="mt-5 justify-start">
+        <EmptyStateActions className={orgActions.className} style={orgActions.style}>
           <Button render={<Link to="/invitations/accept" />}>Aceptar invitación</Button>
           <Button render={<Link to="/orgs/new" />} variant="secondary">
             Crear organización

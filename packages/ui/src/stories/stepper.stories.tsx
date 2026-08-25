@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, applyStyles } from "@futrob/ui";
 
 import { Stepper } from "../components/stepper";
 
@@ -9,12 +11,26 @@ const steps = [
   { id: "review", label: "Confirmar" },
 ] as const;
 
+const styles = stylex.create({
+  playground: {
+    width: "min(46rem, calc(100vw - 2rem))",
+  },
+  stack: {
+    display: "grid",
+    width: "min(46rem, calc(100vw - 2rem))",
+    gap: "3rem",
+  },
+});
+
+const playground = applyStyles(styles.playground);
+
 const meta = {
   title: "Primitives/Stepper",
   component: Stepper,
   parameters: { layout: "centered" },
   args: {
-    className: "w-[min(46rem,calc(100vw-2rem))]",
+    className: playground.className,
+    style: playground.style,
     currentStepId: "game",
     steps,
   },
@@ -27,7 +43,7 @@ export const Playground: Story = {};
 
 export const ProgressStates: Story = {
   render: () => (
-    <div className="grid w-[min(46rem,calc(100vw-2rem))] gap-12">
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       {steps.map((step) => (
         <Stepper currentStepId={step.id} key={step.id} steps={steps} />
       ))}
@@ -37,7 +53,7 @@ export const ProgressStates: Story = {
 
 export const BranchLengths: Story = {
   render: () => (
-    <div className="grid w-[min(46rem,calc(100vw-2rem))] gap-12">
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       <Stepper
         currentStepId="invitation"
         steps={[

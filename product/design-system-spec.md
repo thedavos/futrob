@@ -2,7 +2,7 @@
 
 **Estado:** canónico para el MVP (producto 2026-07)  
 **Alcance:** marketing, aplicación autenticada y portal público responsive  
-**Base técnica:** Tailwind CSS 4, shadcn sobre Base UI, Phosphor Icons y Storybook  
+**Base técnica:** StyleX, shadcn sobre Base UI (comportamiento), Phosphor Icons y Storybook  
 **Móvil:** React Native + Expo (`apps/mobile`) — ver sección [8](#8-móvil-appsmobile)
 
 ## 1. Dirección de producto
@@ -20,9 +20,9 @@ oficial”.
 1. **Light por defecto.** Marketing, producto y portal arrancan siempre en tema claro. Dark es
    una opción explícita futura, no una preferencia automática del sistema operativo.
 2. **Flat/line.** La estructura se expresa con espacio, tipografía y bordes de 1 px. Las sombras
-   ambientales usan `smooth-shadow-ring-*` (shadow-plugin) en overlays por defecto, y en
-   variantes opt-in `elevated` de `Card`, `EmptyState` y `Alert` (vía `elevation`) para
-   superficies aisladas sobre fondo plano.
+   ambientales usan StyleX `elevation.sm|md|lg` (valores en `elevation.css`) en overlays por
+   defecto, y en variantes opt-in `elevated` de `Card`, `EmptyState` y `Alert` (vía `elevation`)
+   para superficies aisladas sobre fondo plano.
 3. **Filas antes que tarjetas.** Partidos, candidatos, plantillas, auditorías y rankings se
    modelan como filas o tablas. Cards solo para entidades autónomas.
 4. **Estado explícito.** Texto + icono/forma; el color nunca comunica un estado por sí solo.
@@ -35,8 +35,8 @@ oficial”.
 
 - Dashboard de cards uniformes o cards anidadas.
 - Gradientes decorativos, glassmorphism global y sombras en controles estáticos.
-- Combinar `border-*` / `ring-*` con `shadow-*` en la misma superficie elevada (doble borde).
-  Usar `smooth-shadow-ring-*` (overlays, `Card`/`EmptyState` elevated, `Alert elevation`) en su lugar.
+- Combinar `border` / `ring` con `shadow` en la misma superficie elevada (doble borde).
+  Usar `elevation.sm|md|lg` (overlays, `Card`/`EmptyState` elevated, `Alert elevation`) en su lugar.
 - Tamaños o colores arbitrarios dentro de pantallas.
 - Badges solo por color.
 - Usar el verde de aprobación para selección, sincronización o estados provisionales.
@@ -72,20 +72,21 @@ capacidad opt-in, pero ninguna UI debe activarlo mediante `prefers-color-scheme`
 
 Familia única autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 600 y 700.
 
-| Rol      | Clase           | Uso principal                                                  |
-| -------- | --------------- | -------------------------------------------------------------- |
-| Display  | `typo-display`  | Headlines de marketing                                         |
-| Heading  | `typo-heading`  | Títulos de página y panel                                      |
-| Subtitle | `typo-subtitle` | Frase de apoyo bajo un heading                                 |
-| Body     | `typo-body`     | Párrafos y contenido de lectura                                |
-| Label    | `typo-label`    | Labels de formulario, navegación, columnas y estados compactos |
-| Caption  | `typo-caption`  | Hints, metadata, timestamps y texto secundario sentence-case   |
-| Score    | `typo-score`    | Marcadores y valores deportivos con cifras tabular             |
+| Rol      | StyleX                | Uso principal                                                  |
+| -------- | --------------------- | -------------------------------------------------------------- |
+| Display  | `typography.display`  | Headlines de marketing                                         |
+| Heading  | `typography.heading`  | Títulos de página y panel                                      |
+| Subtitle | `typography.subtitle` | Frase de apoyo bajo un heading                                 |
+| Body     | `typography.body`     | Párrafos y contenido de lectura                                |
+| Label    | `typography.label`    | Labels de formulario, navegación, columnas y estados compactos |
+| Caption  | `typography.caption`  | Hints, metadata, timestamps y texto secundario sentence-case   |
+| Score    | `typography.score`    | Marcadores y valores deportivos con cifras tabular             |
 
-`typo-label` es el contrato predeterminado para etiquetas de formulario y navegación.
-`typo-caption` cubre metadata y ayudas; el color secundario se aplica con tokens
-(`text-muted-foreground`), no con otro rol. Las utilidades viven en
-`packages/ui/src/tailwind.css`; los valores viven en `packages/ui/src/tokens.css`.
+`typography.label` es el contrato predeterminado para etiquetas de formulario y navegación.
+`typography.caption` cubre metadata y ayudas; el color secundario se aplica con tokens
+(`colors.mutedForeground`), no con otro rol. Los estilos viven en
+`packages/ui/src/styles/typography.ts`; los valores viven en `packages/ui/src/tokens.css`.
+Guía de authoring: [`/docs/architecture/stylex.md`](/docs/architecture/stylex.md).
 
 ### Geometría y densidad
 
@@ -111,7 +112,7 @@ variantes cerradas.
 - `ChoiceGroup` para selección única con apariencias cerradas `tile` y `pill`
 - `Alert`
   - `variant`: semántica (`default` | `info` | `success` | `warning` | `destructive`).
-  - `elevation="flat"` (default) con borde; `elevation="elevated"` usa `smooth-shadow-ring-md`
+  - `elevation="flat"` (default) con borde; `elevation="elevated"` usa `elevation.md`
     sin border (paneles de aviso aislados, no alerts inline en forms densos).
 
 Cada campo debe tener nombre accesible, descripción/error asociado y estado inválido visible.
@@ -125,7 +126,7 @@ Los formularios muestran validación junto al campo y un resumen solo cuando apo
 - `Stepper` para progreso secuencial no interactivo
 - `Collapsible` para secciones expandibles de detalle (Encounter, filtros, historial)
 
-La navegación de producto usa `typo-label`. El estado activo no depende únicamente del color.
+La navegación de producto usa `typography.label`. El estado activo no depende únicamente del color.
 
 ### Datos
 
@@ -133,14 +134,14 @@ La navegación de producto usa `typo-label`. El estado activo no depende únicam
 - `Badge` con variantes `approved` (solo resultados oficiales) y `emphasis` (acento categórico; no es un estado)
 - `Card` para entidades o resúmenes autónomos
   - `variant="flat"` (default): borde estructural, sin elevación.
-  - `variant="elevated"`: `smooth-shadow-ring-md`. Sin `border`/`ring` en el mismo elemento.
+  - `variant="elevated"`: `elevation.md`. Sin `border`/`ring` en el mismo elemento.
     Solo entidades autónomas sobre fondo plano. No usar en grids densas, forms ni cards anidadas.
 - `EmptyState`
   - `variant="flat"` (default): borde dashed.
-  - `variant="elevated"`: `smooth-shadow-ring-md` para paneles vacíos aislados.
+  - `variant="elevated"`: `elevation.md` para paneles vacíos aislados.
 - `Skeleton`
 - `Stat` (KPI): `StatLabel` + `StatValue` + `StatHint` opcional; `StatGroup` para strips.
-  - `StatValue` size: `default` (`typo-score`) | `compact` (strip denso).
+  - `StatValue` size: `default` (`typography.score`) | `compact` (strip denso).
   - `tone`: `default` | `muted` | `success` | `warning` | `error` (`error` → token danger).
     `muted` para valores no disponibles (`—`). El color no comunica solo; acompaña label/hint.
     El formateo (locale, `%`, miles) es de la presentación; el primitivo no conoce dominio.
@@ -152,10 +153,10 @@ La navegación de producto usa `typo-label`. El estado activo no depende únicam
 
 ### Overlays
 
-- `Dialog` / `AlertDialog`: `smooth-shadow-ring-lg` (sin border en el popup).
-- `Popover` / `SelectContent`: `smooth-shadow-ring-md`.
-- `Sheet`: `smooth-shadow-ring-lg` (sin border perimetral; divisores internos sí).
-- `Tooltip`: `smooth-shadow-sm` (sin ring; no lleva borde).
+- `Dialog` / `AlertDialog`: `elevation.lg` (sin border en el popup).
+- `Popover` / `SelectContent`: `elevation.md`.
+- `Sheet`: `elevation.lg` (sin border perimetral; divisores internos sí).
+- `Tooltip`: sombra suave sin ring (no lleva borde).
 
 Base UI debe conservar focus trap, restauración de foco, Escape y asociación de título y
 descripción. No mezclar borde + sombra en el mismo elemento.
@@ -249,9 +250,9 @@ La marca y el lenguaje visual son los mismos que en web; cambia la plataforma de
 ### Tipografía
 
 - Manrope (pesos 400/500/600/700) vía `@expo-google-fonts/manrope`.
-- Mismos roles `typo-*`; tamaños convertidos rem→dp; `letterSpacing` derivado de
+- Mismos roles `typography.*`; tamaños convertidos rem→dp; `letterSpacing` derivado de
   `em × tamaño` del rol.
-- `typo-label` conserva mayúsculas/tracking para labels y navegación.
+- `typography.label` conserva mayúsculas/tracking para labels y navegación.
 
 ### Color y tema
 

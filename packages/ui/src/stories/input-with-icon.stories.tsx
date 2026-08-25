@@ -9,10 +9,56 @@ import {
   MagnifyingGlassIcon,
 } from "@phosphor-icons/react";
 import { expect, userEvent, within } from "storybook/test";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps } from "@futrob/ui";
+import { colors } from "#styles/tokens.stylex";
 
 import { Button } from "../components/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";
 import { InputWithIcon } from "../components/input-with-icon";
+
+const styles = stylex.create({
+  field: {
+    width: "min(24rem, calc(100vw - 2rem))",
+  },
+  stack: {
+    display: "grid",
+    width: "min(24rem, calc(100vw - 2rem))",
+    gap: "1.25rem",
+  },
+  endAction: {
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    color: {
+      default: colors.mutedForeground,
+      ":hover": colors.foreground,
+    },
+  },
+  iconWrap: {
+    position: "relative",
+    width: "1rem",
+    height: "1rem",
+  },
+  icon: {
+    position: "absolute",
+    inset: 0,
+    width: "1rem",
+    height: "1rem",
+    transitionProperty: "opacity, filter, scale",
+    transitionDuration: "var(--duration-slow)",
+    transitionTimingFunction: "var(--ease-standard)",
+  },
+  iconHidden: {
+    scale: 0.25,
+    opacity: 0,
+    filter: "blur(4px)",
+  },
+  iconVisible: {
+    scale: 1,
+    opacity: 1,
+    filter: "blur(0)",
+  },
+});
 
 const meta = {
   title: "Primitives/InputWithIcon",
@@ -46,7 +92,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <Field className="w-[min(24rem,calc(100vw-2rem))]" name="search">
+    <Field name="search" {...applyProps(undefined, undefined, styles.field)}>
       <FieldLabel>Buscar encuentro</FieldLabel>
       <InputWithIcon {...args} />
       <FieldDescription>Busca por equipo, jornada o rival.</FieldDescription>
@@ -56,7 +102,7 @@ export const Playground: Story = {
 
 export const AdornmentPositions: Story = {
   render: () => (
-    <div className="grid w-[min(24rem,calc(100vw-2rem))] gap-5">
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       <Field name="start-icon">
         <FieldLabel>Icono inicial</FieldLabel>
         <InputWithIcon placeholder="Buscar equipo" startIcon={MagnifyingGlassIcon} type="search" />
@@ -85,7 +131,7 @@ function PasswordWithVisibilityAction() {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
-    <Field className="w-[min(24rem,calc(100vw-2rem))]" name="password">
+    <Field name="password" {...applyProps(undefined, undefined, styles.field)}>
       <FieldLabel>Contraseña</FieldLabel>
       <InputWithIcon
         autoComplete="new-password"
@@ -93,23 +139,29 @@ function PasswordWithVisibilityAction() {
           <Button
             aria-label={isVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
             aria-pressed={isVisible}
-            className="rounded-l-none text-muted-foreground hover:text-foreground"
             onClick={() => setIsVisible((visible) => !visible)}
             size="icon"
             static
             type="button"
             variant="ghost"
+            {...applyProps(undefined, undefined, styles.endAction)}
           >
-            <span className="relative size-4" aria-hidden="true">
+            <span aria-hidden="true" {...applyProps(undefined, undefined, styles.iconWrap)}>
               <EyeIcon
-                className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
-                  isVisible ? "scale-[0.25] opacity-0 blur-[4px]" : "scale-100 opacity-100 blur-0"
-                }`}
+                {...applyProps(
+                  undefined,
+                  undefined,
+                  styles.icon,
+                  isVisible ? styles.iconHidden : styles.iconVisible,
+                )}
               />
               <EyeSlashIcon
-                className={`absolute inset-0 size-4 transition-[opacity,filter,scale] duration-(--duration-slow) ease-(--ease-standard) ${
-                  isVisible ? "scale-100 opacity-100 blur-0" : "scale-[0.25] opacity-0 blur-[4px]"
-                }`}
+                {...applyProps(
+                  undefined,
+                  undefined,
+                  styles.icon,
+                  isVisible ? styles.iconVisible : styles.iconHidden,
+                )}
               />
             </span>
           </Button>
@@ -146,7 +198,7 @@ export const InteractiveEndAction: Story = {
 
 export const DensityAndStates: Story = {
   render: () => (
-    <div className="grid w-[min(24rem,calc(100vw-2rem))] gap-5">
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       <Field name="universal">
         <FieldLabel>Universal · 44 px</FieldLabel>
         <InputWithIcon endIcon={CheckCircleIcon} startIcon={EnvelopeSimpleIcon} type="email" />
@@ -190,7 +242,7 @@ export const DensityAndStates: Story = {
     const fieldError = errorText.closest('[data-slot="field-error"]');
 
     await expect(fieldError).not.toBeNull();
-    await expect(fieldError).not.toHaveClass("font-medium");
+    await expect(fieldError).toHaveAttribute("data-slot", "field-error");
     await expect(fieldError?.querySelector("svg")).not.toBeNull();
   },
 };

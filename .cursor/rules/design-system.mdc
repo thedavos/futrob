@@ -15,16 +15,16 @@ The canonical specification is `product/design-system-spec.md`. Futrob is a comp
 3. Express every status with text plus icon or shape; color is supplementary.
 4. Visually separate EA candidates from approved official results.
 5. Use compact desktop density and at least 44 px touch targets on mobile.
-6. Avoid nested cards, uniform dashboard grids, generic purple gradients, pervasive glass effects, and heavy shadows. Elevation uses `smooth-shadow-ring-*` (never pair `border`/`ring` with `shadow`). Opt-in: `Card`/`EmptyState` `variant="elevated"`, `Alert` `elevation="elevated"`. Overlays are elevated by default.
+6. Avoid nested cards, uniform dashboard grids, generic purple gradients, pervasive glass effects, and heavy shadows. Elevation uses StyleX `elevation.sm|md|lg` (never pair `border`/`ring` with `shadow`). Opt-in: `Card`/`EmptyState` `variant="elevated"`, `Alert` `elevation="elevated"`. Overlays are elevated by default.
 7. Use one component language: shadcn on Base UI for behavior, Futrob tokens for identity.
 
 ## Identity and tokens
 
 - One self-hosted family: Manrope variable. Canonical weights only: **400** (regular), **500** (medium), **600** (semibold), **700** (bold). Do not use 200, 300, or 800.
-- Hierarchy comes from the role utilities `typo-display` (700), `typo-heading` (700), `typo-subtitle` (400), `typo-body` (400), `typo-label` (500), `typo-caption` (400), and `typo-score` (600) — never from a second family.
-- Scores and changing numeric values use `typo-score`, which carries `tabular-nums`.
+- Hierarchy comes from the StyleX roles `typography.display` (700), `typography.heading` (700), `typography.subtitle` (400), `typography.body` (400), `typography.label` (500), `typography.caption` (400), and `typography.score` (600) — never from a second family.
+- Scores and changing numeric values use `typography.score`, which carries `tabular-nums`.
 - Semantic CSS variables are the source of truth for component color.
-- Corner radii come from the `--corner-*` ramp in `packages/ui`; apps map it onto Tailwind's `rounded-*` scale and must not redefine it.
+- Corner radii come from the `--corner-*` ramp in `packages/ui`; consume `var(--corner-*)` in StyleX and do not redefine the ramp.
 - Control heights come from the `--control-height-*` ramp. Compact on desktop, `--control-height-touch` (44 px) below the `sm` breakpoint.
 - Border tiers: `--border-subtle` inside groups, `--border` as default separator, `--border-strong` and `--input` for control boundaries that must clear 3:1.
 - Transitions use `--duration-*` and `--ease-*` so the reduced-motion override actually applies. Never hardcode a duration.

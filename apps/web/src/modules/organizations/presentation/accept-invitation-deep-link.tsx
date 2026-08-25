@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Logo } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Button, Logo, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { useNavigate } from "@tanstack/react-router";
 import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
 import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
@@ -11,6 +14,51 @@ import {
   type SupportError,
 } from "@/shared/presentation/support-error-alert.tsx";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
+
+const styles = stylex.create({
+  main: {
+    marginInline: "auto",
+    width: "100%",
+    maxWidth: "36rem",
+    paddingInline: {
+      default: "1.25rem",
+      [media.sm]: "2rem",
+    },
+    paddingBlock: "2.5rem",
+  },
+  brand: {
+    marginBottom: "2.5rem",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.625rem",
+  },
+  logo: {
+    height: 32,
+    width: "auto",
+  },
+  wordmark: {
+    fontWeight: 600,
+    letterSpacing: "0.025em",
+  },
+  header: {
+    marginBottom: "2rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  subtitle: {
+    color: colors.mutedForeground,
+  },
+  errorStack: {
+    display: "grid",
+    gap: "1rem",
+  },
+  waiting: {
+    color: colors.mutedForeground,
+  },
+});
+
+const logo = applyStyles(styles.logo);
 
 export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: string }>) {
   const navigate = useNavigate();
@@ -60,19 +108,19 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
   }, [acceptToken]);
 
   return (
-    <main className="mx-auto w-full max-w-xl px-5 py-10 sm:px-8">
-      <header className="mb-10 flex items-center gap-2.5">
-        <Logo className="h-8 w-auto" />
-        <span className="font-semibold tracking-wide">Futrob</span>
+    <main {...applyStyles(styles.main)}>
+      <header {...applyStyles(styles.brand)}>
+        <Logo className={logo.className} style={logo.style} />
+        <span {...applyStyles(styles.wordmark)}>Futrob</span>
       </header>
-      <div className="mb-8 space-y-2">
-        <h1 className="typo-heading">Únete a una competición</h1>
-        <p className="typo-subtitle text-muted-foreground">
+      <div {...applyStyles(styles.header)}>
+        <h1 {...applyStyles(typography.heading)}>Únete a una competición</h1>
+        <p {...applyStyles(typography.subtitle, styles.subtitle)}>
           {error ? "No se pudo completar la invitación." : "Estamos validando tu invitación…"}
         </p>
       </div>
       {error ? (
-        <div className="grid gap-4">
+        <div {...applyStyles(styles.errorStack)}>
           <SupportErrorAlert
             error={{ ...error, retryAfterSeconds: retry.remainingSeconds || undefined }}
           />
@@ -89,7 +137,7 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
           </Button>
         </div>
       ) : (
-        <p className="typo-caption text-muted-foreground">Un momento…</p>
+        <p {...applyStyles(typography.caption, styles.waiting)}>Un momento…</p>
       )}
     </main>
   );

@@ -1,8 +1,10 @@
 import * as React from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
-import { cva } from "class-variance-authority";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyProps } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { typography } from "#styles/typography";
 
 type TabsVariant = "line" | "pills";
 
@@ -26,61 +28,143 @@ function Tabs({ variant = "line", ...props }: TabsProps) {
   );
 }
 
-const tabsListVariants = cva(
-  "relative flex min-h-(--control-height) overflow-x-auto text-muted-foreground",
-  {
-    variants: {
-      variant: {
-        line: "items-end gap-5 border-b border-border",
-        pills: "items-center gap-1 rounded-lg bg-muted p-1",
-      },
+const styles = stylex.create({
+  list: {
+    position: "relative",
+    display: "flex",
+    minHeight: "var(--control-height)",
+    overflowX: "auto",
+    color: colors.mutedForeground,
+  },
+  listLine: {
+    alignItems: "flex-end",
+    gap: "1.25rem",
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.border,
+  },
+  listPills: {
+    alignItems: "center",
+    gap: "0.25rem",
+    borderRadius: "var(--corner-lg)",
+    backgroundColor: colors.muted,
+    padding: "0.25rem",
+  },
+  trigger: {
+    display: "inline-flex",
+    minHeight: "var(--control-height)",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.5rem",
+    color: {
+      default: colors.mutedForeground,
+      ":hover": colors.foreground,
+      ":is([data-active])": colors.foreground,
     },
-    defaultVariants: {
-      variant: "line",
+    transitionProperty: "color, background-color",
+    transitionDuration: "var(--duration-normal)",
+    outlineWidth: 0,
+    outlineStyle: "none",
+    boxShadow: {
+      default: null,
+      ":focus-visible": "0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent)",
+    },
+    pointerEvents: {
+      default: null,
+      ":disabled": "none",
+    },
+    opacity: {
+      default: 1,
+      ":disabled": 0.5,
     },
   },
-);
-
-const tabsTriggerVariants = cva(
-  "typo-label inline-flex min-h-(--control-height) shrink-0 items-center justify-center gap-2 text-muted-foreground transition-colors duration-(--duration-normal) outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/25 disabled:pointer-events-none disabled:opacity-50 data-active:text-foreground",
-  {
-    variants: {
-      variant: {
-        line: "border-b-2 border-transparent px-0 focus-visible:rounded-sm",
-        pills: "rounded-md px-3 focus-visible:rounded-md data-active:bg-surface",
-      },
-    },
-    defaultVariants: {
-      variant: "line",
+  triggerLine: {
+    borderBottomWidth: 2,
+    borderBottomStyle: "solid",
+    borderBottomColor: "transparent",
+    paddingInline: 0,
+    borderRadius: {
+      default: null,
+      ":focus-visible": "var(--corner-sm)",
     },
   },
-);
+  triggerPills: {
+    borderRadius: {
+      default: "var(--corner-md)",
+      ":focus-visible": "var(--corner-md)",
+    },
+    paddingInline: "0.75rem",
+    backgroundColor: {
+      default: null,
+      ":is([data-active])": colors.surface,
+    },
+  },
+  indicator: {
+    position: "absolute",
+    bottom: -1,
+    left: 0,
+    height: "0.125rem",
+    width: "var(--active-tab-width)",
+    translate: "var(--active-tab-left) 0",
+    borderRadius: "var(--corner-full)",
+    backgroundColor: colors.primary,
+    transitionProperty: "translate, width",
+    transitionDuration: "var(--duration-slow)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+  },
+  content: {
+    paddingBlock: "1.25rem",
+    outlineWidth: 0,
+    outlineStyle: "none",
+    boxShadow: {
+      default: null,
+      ":focus-visible": "0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent)",
+    },
+  },
+});
 
-function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
+const listVariantStyles = {
+  line: styles.listLine,
+  pills: styles.listPills,
+} as const;
+
+const triggerVariantStyles = {
+  line: styles.triggerLine,
+  pills: styles.triggerPills,
+} as const;
+
+function TabsList({ className, style, ...props }: TabsPrimitive.List.Props) {
   const variant = useTabsVariant();
 
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn(tabsListVariants({ variant }), className)}
+      {...applyProps(className, style, styles.list, listVariantStyles[variant])}
       {...props}
     />
   );
 }
 
-function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
+function TabsTrigger({ className, style, ...props }: TabsPrimitive.Tab.Props) {
   const variant = useTabsVariant();
 
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
-      className={cn(tabsTriggerVariants({ variant }), className)}
+      {...applyProps(
+        className,
+        style,
+        typography.label,
+        styles.trigger,
+        triggerVariantStyles[variant],
+      )}
       {...props}
     />
   );
 }
 
-function TabsIndicator({ className, ...props }: TabsPrimitive.Indicator.Props) {
+function TabsIndicator({ className, style, ...props }: TabsPrimitive.Indicator.Props) {
   const variant = useTabsVariant();
 
   switch (variant) {
@@ -90,10 +174,7 @@ function TabsIndicator({ className, ...props }: TabsPrimitive.Indicator.Props) {
       return (
         <TabsPrimitive.Indicator
           data-slot="tabs-indicator"
-          className={cn(
-            "absolute bottom-[-1px] left-0 h-0.5 w-(--active-tab-width) translate-x-(--active-tab-left) rounded-full bg-primary transition-[translate,width] duration-(--duration-slow) ease-(--ease-emphasized)",
-            className,
-          )}
+          {...applyProps(className, style, styles.indicator)}
           {...props}
         />
       );
@@ -104,11 +185,11 @@ function TabsIndicator({ className, ...props }: TabsPrimitive.Indicator.Props) {
   }
 }
 
-function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
+function TabsContent({ className, style, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      className={cn("py-5 outline-none focus-visible:ring-2 focus-visible:ring-ring/25", className)}
+      {...applyProps(className, style, styles.content)}
       {...props}
     />
   );

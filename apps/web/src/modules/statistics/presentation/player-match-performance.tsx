@@ -2,7 +2,10 @@
 
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
-import { cn, Stat, StatLabel, StatValue } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, applyStyles, Stat, StatLabel, StatValue, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import type { CSSProperties } from "react";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { formatSignedNumber } from "@/shared/presentation/stats/format-signed-number.ts";
@@ -16,17 +19,104 @@ import {
 
 type TrendDirection = "up" | "down" | "flat";
 
-const TREND_TONE_CLASS = {
-  up: "text-primary",
-  down: "text-danger",
-  flat: "text-muted-foreground",
-} as const satisfies Record<TrendDirection, string>;
-
 const TREND_STATUS_KEYS = {
   up: "player.matches.performance.improved",
   down: "player.matches.performance.declined",
   flat: "player.matches.performance.unchanged",
 } as const satisfies Record<TrendDirection, ParameterlessMessageKey>;
+
+const styles = stylex.create({
+  panel: {
+    display: "flex",
+    minWidth: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  row: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "1.5rem",
+  },
+  stats: {
+    display: "flex",
+    minWidth: 0,
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  ring: {
+    position: "relative",
+    width: "7rem",
+    height: "7rem",
+    flexShrink: 0,
+  },
+  ringCompact: {
+    width: "5rem",
+    height: "5rem",
+  },
+  svg: {
+    width: "100%",
+    height: "100%",
+    transform: "rotate(-90deg)",
+  },
+  track: {
+    fill: "none",
+    stroke: colors.muted,
+  },
+  progress: {
+    fill: "none",
+    stroke: colors.primary,
+  },
+  ringLabel: {
+    position: "absolute",
+    inset: "0.7rem",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+  },
+  ringCaption: {
+    color: colors.mutedForeground,
+    lineHeight: 1.25,
+  },
+  trend: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.25rem",
+  },
+  trendUp: { color: colors.primary },
+  trendDown: { color: colors.danger },
+  trendFlat: { color: colors.mutedForeground },
+  trendIcon: {
+    width: "0.875rem",
+    height: "0.875rem",
+    flexShrink: 0,
+  },
+  trendCopy: {
+    minWidth: 0,
+  },
+  trendDelta: {
+    fontWeight: 500,
+    fontVariantNumeric: "tabular-nums",
+  },
+});
+
+function trendTone(direction: TrendDirection) {
+  switch (direction) {
+    case "up":
+      return styles.trendUp;
+    case "down":
+      return styles.trendDown;
+    case "flat":
+      return styles.trendFlat;
+  }
+}
 
 export function PerformancePanel({
   matches,
@@ -42,14 +132,14 @@ export function PerformancePanel({
   if (rating === null) return null;
   const trend = ratingTrendVsLast(matches);
   return (
-    <div className="flex min-w-0 flex-1 flex-col justify-center items-start">
-      <div className="flex min-w-0 items-center gap-6">
+    <div {...applyStyles(styles.panel)}>
+      <div {...applyStyles(styles.row)}>
         <AverageRatingRing
           label={t("player.matches.performance.averageRating")}
           numberFormat={numberFormat}
           rating={rating}
         />
-        <div className="flex min-w-0 flex-col gap-2">
+        <div {...applyStyles(styles.stats)}>
           <Stat>
             <StatValue data-metric="record-matches">
               {numberFormat.format(matches.length)}
@@ -68,11 +158,15 @@ export function AverageRatingRing({
   label,
   numberFormat,
   rating,
+  size = "default",
+  style,
 }: {
   readonly className?: string;
   readonly label: string;
   readonly numberFormat: Intl.NumberFormat;
   readonly rating: number | null;
+  readonly size?: "default" | "compact";
+  readonly style?: CSSProperties;
 }) {
   const { t } = useI18n();
   const progress = rating === null ? 0 : Math.min(1, Math.max(0, rating / RATING_SCALE_MAX)) * 100;
@@ -80,21 +174,20 @@ export function AverageRatingRing({
   return (
     <div
       aria-label={rating === null ? label : `${label} ${numberFormat.format(rating)}`}
-      className={cn("relative size-28 shrink-0", className)}
       data-rating-ring=""
       role="img"
+      {...applyProps(className, style, styles.ring, size === "compact" && styles.ringCompact)}
     >
-      <svg aria-hidden="true" className="size-full -rotate-90" viewBox="0 0 36 36">
+      <svg aria-hidden="true" viewBox="0 0 36 36" {...applyStyles(styles.svg)}>
         <circle
-          className="fill-none stroke-muted"
           cx="18"
           cy="18"
           pathLength="100"
           r="15.915"
           strokeWidth="2.5"
+          {...applyStyles(styles.track)}
         />
         <circle
-          className="fill-none stroke-primary"
           cx="18"
           cy="18"
           data-rating-progress={String(Math.round(progress))}
@@ -103,15 +196,16 @@ export function AverageRatingRing({
           strokeDasharray={`${progress} 100`}
           strokeLinecap="round"
           strokeWidth="2.5"
+          {...applyStyles(styles.progress)}
         />
       </svg>
-      <div className="absolute inset-[0.7rem] flex flex-col items-center justify-center text-center">
+      <div {...applyStyles(styles.ringLabel)}>
         <MetricStatValue
           emptyLabel={t("player.noData")}
           metric="record-rating"
           value={rating === null ? null : numberFormat.format(rating)}
         />
-        <p className="typo-caption text-pretty leading-tight text-muted-foreground">{label}</p>
+        <p {...applyStyles(typography.caption, styles.ringCaption)}>{label}</p>
       </div>
     </div>
   );
@@ -136,12 +230,14 @@ function RatingTrendStat({
         delta: formatSignedNumber(trend.delta, numberFormat),
         count: trend.window,
       })}
-      className={`flex min-w-0 items-center gap-1 ${TREND_TONE_CLASS[direction]}`}
       data-rating-trend={direction}
+      {...applyStyles(styles.trend, trendTone(direction))}
     >
-      {direction === "flat" ? null : <TrendIcon aria-hidden="true" className="size-3.5 shrink-0" />}
-      <span className="typo-caption min-w-0 text-pretty">
-        <span className="font-medium tabular-nums">
+      {direction === "flat" ? null : (
+        <TrendIcon aria-hidden="true" {...applyStyles(styles.trendIcon)} />
+      )}
+      <span {...applyStyles(typography.caption, styles.trendCopy)}>
+        <span {...applyStyles(styles.trendDelta)}>
           {formatSignedNumber(trend.delta, numberFormat)}
         </span>{" "}
         {t("player.matches.performance.vsLast", { count: trend.window })}

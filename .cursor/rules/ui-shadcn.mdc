@@ -8,7 +8,7 @@ alwaysApply: false
 
 - New or substantially changed product UI uses primitives from `packages/ui` generated with the repository's shadcn configuration in `components.json`.
 - Base UI is the required primitive layer. Do not add a parallel primitive toolkit or paste a variant generated for another base.
-- Add missing primitives with the shadcn CLI from the repository root, verify generated paths, then adapt them through Futrob tokens rather than editing vendor assumptions in feature code.
+- Add missing primitives with the shadcn CLI from the repository root, verify generated paths, then restyle them with StyleX and Futrob tokens. Do not keep generated Tailwind/`cn()`/`cva` in the tree.
 - Feature presentation in `apps/web/src/features/*` composes primitives. Business-specific components such as `MatchRow`, `SeriesScore`, and `BracketNode` stay with the feature until genuine cross-feature reuse exists.
 - `packages/ui` must not import business packages.
 

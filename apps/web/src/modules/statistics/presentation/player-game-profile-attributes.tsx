@@ -1,11 +1,16 @@
 import type { PlayerGameProfileDto } from "@futrob/api-contracts";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   Progress,
   ProgressIndicator,
   ProgressLabel,
   ProgressTrack,
   ProgressValue,
+  typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 
@@ -36,6 +41,41 @@ const COMPONENT_KEYS = {
   fewerRedsPerMatch: "player.statistics.component.fewerRedsPerMatch",
 } as const satisfies Record<AttributeComponent["key"], ParameterlessMessageKey>;
 
+const styles = stylex.create({
+  section: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  grid: {
+    display: "grid",
+    gap: "1rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.lg]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+  card: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1rem",
+  },
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  item: {
+    color: colors.mutedForeground,
+  },
+});
+
 export function PlayerGameProfileAttributes({
   profile,
   numberFormat,
@@ -48,14 +88,11 @@ export function PlayerGameProfileAttributes({
   readonly t: Translator;
 }) {
   return (
-    <section className="space-y-4" aria-label={t("player.statistics.attributes")}>
-      <h2 className="typo-label">{t("player.statistics.attributes")}</h2>
-      <div className="grid gap-4 lg:grid-cols-2">
+    <section aria-label={t("player.statistics.attributes")} {...applyStyles(styles.section)}>
+      <h2 {...applyStyles(typography.label)}>{t("player.statistics.attributes")}</h2>
+      <div {...applyStyles(styles.grid)}>
         {profile.attributes.map((category) => (
-          <article
-            className="space-y-3 rounded-lg border border-border bg-surface p-4"
-            key={category.category}
-          >
+          <article key={category.category} {...applyStyles(styles.card)}>
             <Progress value={category.score}>
               <ProgressLabel>{t(CATEGORY_KEYS[category.category])}</ProgressLabel>
               <ProgressValue>{() => String(category.score)}</ProgressValue>
@@ -63,9 +100,9 @@ export function PlayerGameProfileAttributes({
                 <ProgressIndicator />
               </ProgressTrack>
             </Progress>
-            <ul className="space-y-1">
+            <ul {...applyStyles(styles.list)}>
               {category.components.map((component) => (
-                <li className="typo-caption text-muted-foreground" key={component.key}>
+                <li key={component.key} {...applyStyles(typography.caption, styles.item)}>
                   {formatComponentLine(component, numberFormat, percentFormat, t)}
                 </li>
               ))}

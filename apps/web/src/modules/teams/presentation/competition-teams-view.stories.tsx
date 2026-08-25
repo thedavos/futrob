@@ -1,7 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles } from "@futrob/ui";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { CompetitionTeamsView, type CompetitionTeamsViewProps } from "./competition-teams-view.tsx";
 import { teamManagementFixture, teamSummaryFixture } from "./competition-teams-view.fixtures.ts";
+
+const styles = stylex.create({
+  frame: {
+    display: "flex",
+    height: "100svh",
+    flexDirection: "column",
+  },
+});
 
 const noOp = async () => undefined;
 const detail = teamManagementFixture();
@@ -33,7 +43,7 @@ const meta = {
   args: defaultArgs,
   decorators: [
     (Story) => (
-      <div className="flex h-svh flex-col">
+      <div {...applyStyles(styles.frame)}>
         <Story />
       </div>
     ),

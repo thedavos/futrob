@@ -1,6 +1,33 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyProps } from "#styles/apply";
+
+const styles = stylex.create({
+  root: {
+    display: "inline-flex",
+    width: "1.75rem",
+    height: "1.75rem",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "var(--corner-full)",
+    backgroundColor: "color-mix(in oklab, currentColor 10%, transparent)",
+    transitionProperty: "opacity, translate, scale",
+    transitionDuration: "var(--duration-normal)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+    translate: {
+      default: "0 0",
+      [stylex.when.ancestor(":hover")]: "0.125rem -1px",
+      [stylex.when.ancestor(":active")]: "0 0",
+    },
+    scale: {
+      default: 1,
+      [stylex.when.ancestor(":hover")]: 1.05,
+      [stylex.when.ancestor(":active")]: 1,
+    },
+  },
+});
 
 /**
  * Futrob's distinctive nested icon island for marketing CTAs.
@@ -9,16 +36,14 @@ import { cn } from "#lib/utils";
 function ButtonIcon({
   "aria-hidden": ariaHidden = true,
   className,
+  style,
   ...props
 }: React.ComponentProps<"span">) {
   return (
     <span
       aria-hidden={ariaHidden}
       data-slot="button-icon"
-      className={cn(
-        "inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-current/10 transition-[opacity,translate,scale] duration-(--duration-normal) ease-(--ease-emphasized) group-hover/button:translate-x-0.5 group-hover/button:-translate-y-px group-hover/button:scale-105 group-active/button:translate-x-0 group-active/button:translate-y-0 group-active/button:scale-100 [&_svg]:size-3.5",
-        className,
-      )}
+      {...applyProps(className, style, styles.root)}
       {...props}
     />
   );

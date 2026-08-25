@@ -1,12 +1,75 @@
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyProps } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { typography } from "#styles/typography";
 
-function Progress({ className, children, ...props }: ProgressPrimitive.Root.Props) {
+const pulse = stylex.keyframes({
+  "0%, 100%": { opacity: 1 },
+  "50%": { opacity: 0.5 },
+});
+
+const styles = stylex.create({
+  root: {
+    display: "grid",
+    width: "100%",
+    gridTemplateColumns: "1fr auto",
+    alignItems: "center",
+    columnGap: "0.75rem",
+    rowGap: "0.5rem",
+  },
+  track: {
+    position: "relative",
+    gridColumn: "1 / -1",
+    height: "0.375rem",
+    width: "100%",
+    overflow: "hidden",
+    borderRadius: "var(--corner-full)",
+    backgroundColor: colors.muted,
+  },
+  indicator: {
+    height: "100%",
+    borderRadius: "var(--corner-full)",
+    backgroundColor: colors.primary,
+    transitionProperty: "width",
+    transitionDuration: "var(--duration-slow)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+    width: {
+      default: null,
+      ":is([data-indeterminate])": "33.333%",
+    },
+    animationName: {
+      default: "none",
+      ":is([data-indeterminate])": pulse,
+    },
+    animationDuration: {
+      default: null,
+      ":is([data-indeterminate])": "2s",
+    },
+    animationTimingFunction: {
+      default: null,
+      ":is([data-indeterminate])": "cubic-bezier(0.4, 0, 0.6, 1)",
+    },
+    animationIterationCount: {
+      default: null,
+      ":is([data-indeterminate])": "infinite",
+    },
+  },
+  label: {
+    color: colors.foreground,
+  },
+  value: {
+    fontVariantNumeric: "tabular-nums",
+    color: colors.mutedForeground,
+  },
+});
+
+function Progress({ className, style, children, ...props }: ProgressPrimitive.Root.Props) {
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
-      className={cn("grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2", className)}
+      {...applyProps(className, style, styles.root)}
       {...props}
     >
       {children}
@@ -14,47 +77,41 @@ function Progress({ className, children, ...props }: ProgressPrimitive.Root.Prop
   );
 }
 
-function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
+function ProgressTrack({ className, style, ...props }: ProgressPrimitive.Track.Props) {
   return (
     <ProgressPrimitive.Track
       data-slot="progress-track"
-      className={cn(
-        "relative col-span-full h-1.5 w-full overflow-hidden rounded-full bg-muted",
-        className,
-      )}
+      {...applyProps(className, style, styles.track)}
       {...props}
     />
   );
 }
 
-function ProgressIndicator({ className, ...props }: ProgressPrimitive.Indicator.Props) {
+function ProgressIndicator({ className, style, ...props }: ProgressPrimitive.Indicator.Props) {
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      className={cn(
-        "h-full rounded-full bg-primary transition-[width] duration-(--duration-slow) ease-(--ease-emphasized) data-indeterminate:w-1/3 data-indeterminate:animate-pulse",
-        className,
-      )}
+      {...applyProps(className, style, styles.indicator)}
       {...props}
     />
   );
 }
 
-function ProgressLabel({ className, ...props }: ProgressPrimitive.Label.Props) {
+function ProgressLabel({ className, style, ...props }: ProgressPrimitive.Label.Props) {
   return (
     <ProgressPrimitive.Label
       data-slot="progress-label"
-      className={cn("typo-label text-foreground", className)}
+      {...applyProps(className, style, typography.label, styles.label)}
       {...props}
     />
   );
 }
 
-function ProgressValue({ className, ...props }: ProgressPrimitive.Value.Props) {
+function ProgressValue({ className, style, ...props }: ProgressPrimitive.Value.Props) {
   return (
     <ProgressPrimitive.Value
       data-slot="progress-value"
-      className={cn("typo-caption tabular-nums text-muted-foreground", className)}
+      {...applyProps(className, style, typography.caption, styles.value)}
       {...props}
     />
   );

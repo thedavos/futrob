@@ -30,7 +30,7 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 - Mobile consume el BFF `/api/v1` con `@futrob/sdk` y sesión Bearer; no importa BC, adapters ni secretos internos.
 - Better Auth (identidad) + Futrob (autorización/orgs).
 - D1 / R2 / Queues / Cron en web. Tenancy scoped en aplicación (sin RLS Postgres).
-- shadcn/Base UI, Vite+, Sentry en boundaries.
+- shadcn/Base UI, StyleX, Vite+, Sentry en boundaries.
 - `apps/cli` para ejercitar dominio/use cases en local (no es deployable de producto).
 - `billing` queda fuera del MVP inicial.
 
@@ -189,6 +189,7 @@ Un módulo no escribe tablas ajenas; publica eventos / usa ports de lectura.
 - [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)
 - [ADR-0014](/docs/adr/0014-shared-ui-tokens-and-mobile-ui.md)
 - [ADR-0015](/docs/adr/0015-auth-extraction.md)
+- [stylex.md](/docs/architecture/stylex.md)
 - [module-boundaries.md](/docs/architecture/module-boundaries.md)
 - [dependency-graph.md](/docs/architecture/dependency-graph.md)
 

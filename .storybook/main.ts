@@ -1,7 +1,7 @@
 import type { StorybookConfig } from "@storybook/react-vite";
-import tailwindcss from "@tailwindcss/vite";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { futrobStylex } from "../tools/stylex/vite-plugin.ts";
 
 const configDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(configDir, "..");
@@ -45,8 +45,8 @@ const config: StorybookConfig = {
           return null;
         },
       },
+      futrobStylex(),
       ...(viteConfig.plugins ?? []),
-      tailwindcss(),
     ];
     viteConfig.resolve = {
       ...viteConfig.resolve,
@@ -67,6 +67,10 @@ const config: StorybookConfig = {
         {
           find: "@",
           replacement: webSrc,
+        },
+        {
+          find: /^#styles\/(.*)$/,
+          replacement: resolve(repoRoot, "packages/ui/src/styles/$1"),
         },
         ...(Array.isArray(viteConfig.resolve?.alias)
           ? viteConfig.resolve.alias

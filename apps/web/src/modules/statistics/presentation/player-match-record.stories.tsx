@@ -1,13 +1,23 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
-import { TooltipProvider } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, TooltipProvider } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { recentProviderMatchFixture } from "./player-matches-page.fixtures.ts";
 import { RecentForm } from "./player-match-form.tsx";
 import { AverageRatingRing, PerformancePanel } from "./player-match-performance.tsx";
 import { RecordLoading, ViewRecord } from "./player-match-record.tsx";
 import { summarizeMatchRecord } from "./player-match-view.ts";
+
+const styles = stylex.create({
+  frame: {
+    maxWidth: "64rem",
+    backgroundColor: colors.background,
+    padding: "1.5rem",
+  },
+});
 
 const numberFormat = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 });
 
@@ -63,7 +73,7 @@ const meta = {
     (Story) => (
       <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
         <TooltipProvider>
-          <div className="max-w-5xl bg-background p-6">
+          <div {...applyProps(undefined, undefined, styles.frame)}>
             <Story />
           </div>
         </TooltipProvider>

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
+  applyStyles,
   Button,
   Field,
   FieldError,
@@ -12,7 +14,9 @@ import {
   Input,
   readFormString,
   hasBrowserWindow,
+  typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CheckCircleIcon } from "@phosphor-icons/react";
 import { resolveSafeRedirect } from "@/modules/identity/presentation/safe-redirect.ts";
@@ -24,6 +28,32 @@ import {
   type SupportError,
 } from "@/shared/presentation/support-error-alert.tsx";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
+
+const styles = stylex.create({
+  pending: {
+    color: colors.mutedForeground,
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.25rem",
+  },
+  hint: {
+    color: colors.mutedForeground,
+  },
+  signup: {
+    fontWeight: 500,
+    color: colors.foreground,
+    textUnderlineOffset: "4px",
+    textDecorationLine: {
+      default: "none",
+      ":hover": "underline",
+    },
+  },
+});
+
+const form = applyStyles(styles.form);
+const signup = applyStyles(styles.signup);
 
 type AcceptRosterInvitationValues = {
   token: string;
@@ -117,7 +147,7 @@ export function AcceptRosterInvitationForm(props: {
 
   if (props.autoAccept && submitting && error === null) {
     return (
-      <p className="typo-subtitle text-muted-foreground">
+      <p {...applyStyles(typography.subtitle, styles.pending)}>
         Procesando tu invitación a la plantilla…
       </p>
     );
@@ -126,9 +156,10 @@ export function AcceptRosterInvitationForm(props: {
   return (
     <Form<AcceptRosterInvitationValues>
       aria-busy={submitting}
-      className="space-y-5"
+      className={form.className}
       errors={validation.formErrors}
       onFormSubmit={handleSubmit}
+      style={form.style}
     >
       {error ? (
         <SupportErrorAlert
@@ -172,12 +203,13 @@ export function AcceptRosterInvitationForm(props: {
               : "Unirme a la plantilla"}
       </Button>
 
-      <p className="typo-caption text-muted-foreground">
+      <p {...applyStyles(typography.caption, styles.hint)}>
         ¿No tienes cuenta?{" "}
         <Link
-          className="font-medium text-foreground underline-offset-4 hover:underline"
-          to="/signup"
+          className={signup.className}
           search={signupSearchWithCurrentPath()}
+          style={signup.style}
+          to="/signup"
         >
           Crear una cuenta
         </Link>

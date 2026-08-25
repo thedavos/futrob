@@ -1,7 +1,43 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
+import * as stylex from "@stylexjs/stylex";
+import { applyProps, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { CommandBarIdentityMark } from "./command-bar-identity-mark.tsx";
 import type { CommandBarIdentity } from "./command-bar-identity.ts";
+
+const styles = stylex.create({
+  chrome: {
+    display: "flex",
+    height: "3.5rem",
+    alignItems: "center",
+    gap: "0.75rem",
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingInline: "1.25rem",
+  },
+  slot: {
+    display: "flex",
+    minWidth: 0,
+    flex: 1,
+    alignItems: "center",
+  },
+  states: {
+    display: "flex",
+    maxWidth: "36rem",
+    flexDirection: "column",
+    gap: "1.5rem",
+  },
+  group: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  muted: { color: colors.mutedForeground },
+});
 
 type StoryArgs = CommandBarIdentity & {
   readonly emptyLabel: string;
@@ -32,8 +68,8 @@ type Story = StoryObj<StoryArgs>;
 
 function Chrome({ children }: { readonly children: ReactNode }) {
   return (
-    <header className="flex h-14 items-center gap-3 rounded-lg border border-border bg-surface px-5">
-      <div className="flex min-w-0 flex-1 items-center">{children}</div>
+    <header {...applyProps(undefined, undefined, styles.chrome)}>
+      <div {...applyProps(undefined, undefined, styles.slot)}>{children}</div>
     </header>
   );
 }
@@ -61,9 +97,9 @@ export const Playground: Story = {
 export const States: Story = {
   name: "States",
   render: () => (
-    <div className="flex max-w-xl flex-col gap-6">
-      <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground">Cuenta y club</p>
+    <div {...applyProps(undefined, undefined, styles.states)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Cuenta y club</p>
         <Chrome>
           <CommandBarIdentityMark
             emptyLabel="Espacio personal"
@@ -75,8 +111,10 @@ export const States: Story = {
           />
         </Chrome>
       </div>
-      <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground">Solo identificador</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
+          Solo identificador
+        </p>
         <Chrome>
           <CommandBarIdentityMark
             emptyLabel="Espacio personal"
@@ -84,8 +122,8 @@ export const States: Story = {
           />
         </Chrome>
       </div>
-      <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground">Solo club</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Solo club</p>
         <Chrome>
           <CommandBarIdentityMark
             emptyLabel="Espacio personal"
@@ -93,8 +131,8 @@ export const States: Story = {
           />
         </Chrome>
       </div>
-      <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground">Sin datos</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Sin datos</p>
         <Chrome>
           <CommandBarIdentityMark
             emptyLabel="Espacio personal"
@@ -102,8 +140,8 @@ export const States: Story = {
           />
         </Chrome>
       </div>
-      <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground">Cargando</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Cargando</p>
         <Chrome>
           <CommandBarIdentityMark
             emptyLabel="Espacio personal"

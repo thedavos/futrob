@@ -4,6 +4,9 @@ import { useState } from "react";
 import type { ExternalClubDto, RosterMembershipRoleDto } from "@futrob/api-contracts";
 import { rosterMembershipRoleSchema } from "@futrob/api-contracts";
 import {
+  applyStyles,
+  typography,
+  vis,
   Alert,
   AlertDescription,
   AlertDialog,
@@ -42,6 +45,11 @@ import {
   PlusIcon,
 } from "@phosphor-icons/react";
 import { runAction } from "@/shared/presentation/run-action.ts";
+import { styles } from "./competition-team-actions.styles.ts";
+
+const copy = applyStyles(styles.copy);
+const searchAlert = applyStyles(styles.searchAlert);
+const roleTrigger = applyStyles(styles.roleTrigger);
 
 export const roleLabel = {
   player: "Jugador",
@@ -76,7 +84,7 @@ export function InvitationDialog({
             El enlace solo da acceso a este Team y respeta el cupo y estado actuales.
           </DialogDescription>
         </DialogHeader>
-        <div className="mt-5 grid gap-4">
+        <div {...applyStyles(styles.fields)}>
           <Field name="invitation-role">
             <FieldLabel>Rol inicial</FieldLabel>
             <Select
@@ -116,18 +124,19 @@ export function InvitationDialog({
             </Select>
           </Field>
           {invitationUrl ? (
-            <div className="rounded-lg bg-muted p-3">
-              <p className="typo-label text-muted-foreground">Enlace creado</p>
-              <p className="mt-1 break-all text-sm">{invitationUrl}</p>
+            <div {...applyStyles(styles.created)}>
+              <p {...applyStyles(typography.label, styles.createdLabel)}>Enlace creado</p>
+              <p {...applyStyles(styles.createdUrl)}>{invitationUrl}</p>
               <Button
-                className="mt-3"
+                className={copy.className}
                 onClick={() => void copyToClipboard(invitationUrl)}
+                style={copy.style}
                 variant="outline"
               >
                 {isCopied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
                 {isCopied ? "Copiado" : "Copiar enlace"}
               </Button>
-              <span aria-live="polite" className="sr-only">
+              <span aria-live="polite" {...applyStyles(vis.srOnly)}>
                 {isCopied ? "Enlace copiado" : ""}
               </span>
             </div>
@@ -183,7 +192,7 @@ export function ExternalClubDialog({
             Esta asociación es operativa para localizar partidos. No verifica propiedad.
           </DialogDescription>
         </DialogHeader>
-        <div className="mt-5 flex gap-2">
+        <div {...applyStyles(styles.search)}>
           <Input
             aria-label="Nombre del club EA"
             onChange={(event) => setQuery(event.target.value)}
@@ -194,15 +203,12 @@ export function ExternalClubDialog({
             <MagnifyingGlassIcon aria-hidden="true" /> {searching ? "Buscando…" : "Buscar"}
           </Button>
         </div>
-        <ul className="mt-4 grid max-h-72 gap-2 overflow-y-auto">
+        <ul {...applyStyles(styles.results)}>
           {results.map((club) => (
-            <li
-              className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
-              key={`${club.providerKey}:${club.externalClubId}`}
-            >
-              <span className="min-w-0">
-                <strong className="block truncate text-sm">{club.name}</strong>
-                <span className="typo-caption text-muted-foreground">
+            <li key={`${club.providerKey}:${club.externalClubId}`} {...applyStyles(styles.result)}>
+              <span {...applyStyles(styles.resultCopy)}>
+                <strong {...applyStyles(styles.resultName)}>{club.name}</strong>
+                <span {...applyStyles(typography.caption, styles.resultMeta)}>
                   {club.platform} · {club.gameEdition}
                 </span>
               </span>
@@ -216,13 +222,13 @@ export function ExternalClubDialog({
           ))}
         </ul>
         {searchFailed ? (
-          <Alert className="mt-4" variant="destructive">
+          <Alert className={searchAlert.className} style={searchAlert.style} variant="destructive">
             <AlertDescription>
               No pudimos buscar clubes. Conservamos tu selección para que puedas reintentar.
             </AlertDescription>
           </Alert>
         ) : results.length === 0 ? (
-          <p className="typo-caption mt-4 text-muted-foreground">
+          <p {...applyStyles(typography.caption, styles.searchHint)}>
             Busca por nombre para elegir un club.
           </p>
         ) : null}
@@ -255,7 +261,11 @@ export function RosterRoleEditor({
         }}
         value={role}
       >
-        <SelectTrigger aria-label={`Rol de ${displayName}`} className="w-40">
+        <SelectTrigger
+          aria-label={`Rol de ${displayName}`}
+          className={roleTrigger.className}
+          style={roleTrigger.style}
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

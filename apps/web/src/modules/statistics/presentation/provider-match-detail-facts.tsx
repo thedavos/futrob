@@ -1,10 +1,52 @@
 "use client";
 
 import type { PlayerRecentProviderMatchDetailDto } from "@futrob/api-contracts";
-import { Badge, Card, CardContent, CardHeader } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Badge, Card, CardContent, CardHeader, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { MATCH_TYPE_KEYS } from "./player-match-copy.ts";
 import { providerMatchMode } from "./player-match-view.ts";
+
+const styles = stylex.create({
+  header: {
+    paddingInline: "1.25rem",
+    paddingBlock: "1rem",
+  },
+  title: {
+    fontWeight: 600,
+  },
+  content: {
+    paddingInline: "1.25rem",
+    paddingBottom: "1.25rem",
+  },
+  list: {
+    display: "grid",
+    columnGap: "1.5rem",
+    rowGap: "1rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+  flags: {
+    marginTop: "1.25rem",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.5rem",
+  },
+  fact: {
+    minWidth: 0,
+  },
+  label: {
+    color: colors.mutedForeground,
+  },
+  value: {
+    marginTop: "0.125rem",
+    fontWeight: 600,
+  },
+});
 
 export function MatchFacts({
   detail,
@@ -16,13 +58,17 @@ export function MatchFacts({
   const mode = providerMatchMode(detail);
   const durationSeconds = detail.match.metadata.durationSeconds;
   const duration = matchDurationLabel(durationSeconds, t);
+  const header = applyStyles(styles.header);
+  const content = applyStyles(styles.content);
   return (
     <Card data-match-facts="">
-      <CardHeader className="px-5 py-4">
-        <h2 className="typo-subtitle font-semibold">{t("player.matchDetail.tab.facts")}</h2>
+      <CardHeader className={header.className} style={header.style}>
+        <h2 {...applyStyles(typography.subtitle, styles.title)}>
+          {t("player.matchDetail.tab.facts")}
+        </h2>
       </CardHeader>
-      <CardContent className="px-5 pb-5">
-        <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+      <CardContent className={content.className} style={content.style}>
+        <dl {...applyStyles(styles.list)}>
           <Fact
             label={t("player.matchDetail.facts.type")}
             value={mode ? t(MATCH_TYPE_KEYS[mode]) : t("player.noData")}
@@ -49,7 +95,7 @@ export function MatchFacts({
           />
         </dl>
         {detail.match.metadata.wasDisconnected || detail.match.metadata.winnerByForfeit ? (
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div {...applyStyles(styles.flags)}>
             {detail.match.metadata.wasDisconnected ? (
               <Badge variant="outline">{t("player.matchDetail.disconnected")}</Badge>
             ) : null}
@@ -65,9 +111,9 @@ export function MatchFacts({
 
 function Fact({ label, value }: { readonly label: string; readonly value: string }) {
   return (
-    <div className="min-w-0">
-      <dt className="typo-caption text-muted-foreground">{label}</dt>
-      <dd className="typo-caption mt-0.5 font-semibold">{value}</dd>
+    <div {...applyStyles(styles.fact)}>
+      <dt {...applyStyles(typography.caption, styles.label)}>{label}</dt>
+      <dd {...applyStyles(typography.caption, styles.value)}>{value}</dd>
     </div>
   );
 }
@@ -82,11 +128,11 @@ function DurationFact({
   readonly value: string;
 }) {
   return (
-    <div className="min-w-0">
-      <dt className="typo-caption text-muted-foreground">{label}</dt>
+    <div {...applyStyles(styles.fact)}>
+      <dt {...applyStyles(typography.caption, styles.label)}>{label}</dt>
       <dd
-        className="typo-caption mt-0.5 font-semibold"
         {...(durationSeconds === null ? {} : { "data-match-duration": durationSeconds })}
+        {...applyStyles(typography.caption, styles.value)}
       >
         {value}
       </dd>

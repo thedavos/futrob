@@ -1,0 +1,47 @@
+/*
+ * Former shadow-plugin `smooth-shadow-ring-*` values, owned by Futrob.
+ * Hairline ring is the last shadow layer — do not also set border/ring.
+ */
+
+:root {
+  --smooth-shadow-color: black;
+  --smooth-ring-color: rgba(0, 0, 0, 0.05);
+  --elevation-shadow-sm:
+    0 18px 47px 0 color-mix(in srgb, var(--smooth-shadow-color) 3%, transparent),
+    0 7.5px 19px 0 color-mix(in srgb, var(--smooth-shadow-color) 2%, transparent),
+    0 4px 10.5px 0 color-mix(in srgb, var(--smooth-shadow-color) 2%, transparent),
+    0 2.3px 5.8px 0 color-mix(in srgb, var(--smooth-shadow-color) 1%, transparent),
+    0 1.2px 3.1px 0 color-mix(in srgb, var(--smooth-shadow-color) 1%, transparent),
+    0 0.5px 1.3px 0 color-mix(in srgb, var(--smooth-shadow-color) 1%, transparent),
+    0 0 0 1px var(--smooth-ring-color);
+  --elevation-shadow-md:
+    0 17.54px 23.39px 0 color-mix(in srgb, var(--smooth-shadow-color) 4%, transparent),
+    0 9.4px 12.5px 0 color-mix(in srgb, var(--smooth-shadow-color) 3%, transparent),
+    0 5.25px 7px 0 color-mix(in srgb, var(--smooth-shadow-color) 2%, transparent),
+    0 2.79px 3.72px -2px color-mix(in srgb, var(--smooth-shadow-color) 1%, transparent),
+    0 1.16px 1.5px 0 color-mix(in srgb, var(--smooth-shadow-color) 1%, transparent),
+    0 0 0 1px var(--smooth-ring-color);
+  --elevation-shadow-lg:
+    0 25px 50px 0 color-mix(in srgb, var(--smooth-shadow-color) 5%, transparent),
+    0 12px 24px 0 color-mix(in srgb, var(--smooth-shadow-color) 4%, transparent),
+    0 6px 12px 0 color-mix(in srgb, var(--smooth-shadow-color) 3%, transparent),
+    0 3px 6px 0 color-mix(in srgb, var(--smooth-shadow-color) 2%, transparent),
+    0 1.5px 3px 0 color-mix(in srgb, var(--smooth-shadow-color) 2%, transparent),
+    0 0 0 1px var(--smooth-ring-color);
+}
+
+@supports (color: light-dark(black, white)) {
+  :root {
+    --smooth-ring-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.18));
+  }
+}
+
+.light,
+[data-theme="light"] {
+  --smooth-ring-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark,
+[data-theme="dark"] {
+  --smooth-ring-color: rgba(255, 255, 255, 0.18);
+}
