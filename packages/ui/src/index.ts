@@ -92,7 +92,30 @@ export { Input } from "./components/input";
 export type { InputProps } from "./components/input";
 export { InputWithIcon } from "./components/input-with-icon";
 export type { InputWithIconProps } from "./components/input-with-icon";
+export { Body } from "./components/body";
+export type { BodyElement, BodyProps, BodySize } from "./components/body";
+export { Caption } from "./components/caption";
+export type { CaptionElement, CaptionProps } from "./components/caption";
+export { Display } from "./components/display";
+export type { DisplayLevel, DisplayProps } from "./components/display";
+export { Eyebrow } from "./components/eyebrow";
+export type { EyebrowElement, EyebrowProps } from "./components/eyebrow";
+export { Heading } from "./components/heading";
+export type { HeadingLevel, HeadingProps } from "./components/heading";
 export { Label } from "./components/label";
+export type { LabelProps } from "./components/label";
+export { MetaItem, MetaList, MetaTerm, MetaValue } from "./components/meta-list";
+export type { MetaListColumns, MetaListProps, MetaValueProps } from "./components/meta-list";
+export { Score } from "./components/score";
+export type { ScoreAlign, ScoreElement, ScoreProps } from "./components/score";
+export { SectionTitle } from "./components/section-title";
+export type { SectionTitleLevel, SectionTitleProps } from "./components/section-title";
+export { Subtitle } from "./components/subtitle";
+export type { SubtitleElement, SubtitleProps } from "./components/subtitle";
+export { Text } from "./components/text";
+export type { TextElement, TextLook, TextProps } from "./components/text";
+export { TextLink } from "./components/text-link";
+export type { TextLinkProps, TextLinkText } from "./components/text-link";
 export { MasterDetail } from "./components/master-detail";
 export type { MasterDetailProps } from "./components/master-detail";
 export {
@@ -102,6 +125,7 @@ export {
   PageHeaderEyebrow,
   PageHeaderTitle,
 } from "./components/page-header";
+export type { PageHeaderTitleSize } from "./components/page-header";
 export {
   Popover,
   PopoverClose,
@@ -192,6 +216,9 @@ export type { StyleXStyles } from "./styles/apply";
 export { colors } from "./styles/tokens.stylex";
 export { media } from "./styles/media.stylex";
 export { typography } from "./styles/typography";
+export type { TextTone } from "./styles/typography";
+export type { TextAlign } from "./styles/text-align";
+export type { TextWeight } from "./styles/text-weight";
 export { elevation } from "./styles/elevation";
 export { motion } from "./styles/motion";
 export { vis } from "./styles/sr-only";

@@ -85,12 +85,12 @@
   --leading-normal: 1.55;
   --tracking-tight: -0.02em;
   --tracking-normal: 0;
-  --tracking-label: 0.14em;
+  --tracking-label: 0.04em;
 
   /* Typography roles (consumed by StyleX `typography.*` and mobile StyleSheet) */
   --typo-display-size: var(--text-4xl);
   --typo-display-weight: var(--font-weight-bold);
-  --typo-display-leading: 0.96;
+  --typo-display-leading: var(--leading-tight);
   --typo-display-tracking: var(--tracking-tight);
   --typo-heading-size: var(--text-xl);
   --typo-heading-weight: var(--font-weight-bold);

@@ -2,14 +2,14 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 
-import { Button } from "../components/button";
+import { Button } from "../button";
 import {
   PageHeader,
   PageHeaderActions,
   PageHeaderDescription,
   PageHeaderEyebrow,
   PageHeaderTitle,
-} from "../components/page-header";
+} from "./page-header.tsx";
 
 const styles = stylex.create({
   header: {
@@ -19,7 +19,7 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Patterns/PageHeader",
+  title: "Primitives/PageHeader",
   component: PageHeader,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof PageHeader>;
@@ -52,6 +52,19 @@ export const WithDescription: Story = {
     <PageHeader {...applyProps(undefined, undefined, styles.header)}>
       <PageHeaderTitle>Mis partidos</PageHeaderTitle>
       <PageHeaderDescription>Apariciones en el club seleccionado.</PageHeaderDescription>
+    </PageHeader>
+  ),
+};
+
+export const LargeTitle: Story = {
+  name: "Large title",
+  render: () => (
+    <PageHeader {...applyProps(undefined, undefined, styles.header)}>
+      <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
+      <PageHeaderTitle size="lg">Tu espacio de jugador</PageHeaderTitle>
+      <PageHeaderDescription>
+        Consulta tus partidos y estadísticas individuales sin pertenecer todavía a una organización.
+      </PageHeaderDescription>
     </PageHeader>
   ),
 };

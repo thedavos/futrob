@@ -104,6 +104,27 @@ Guía de authoring: [`/docs/architecture/stylex.md`](/docs/architecture/stylex.m
 Las primitivas viven en `@futrob/ui`, no conocen competiciones, EA, roles ni permisos y exponen
 variantes cerradas.
 
+### Texto
+
+Primitivas que aplican los roles `typography.*`. El elemento semántico (`as`) elige el tag;
+el look desciende con el nivel.
+
+- `Display` — headlines de marketing (`h1` por defecto; `PageHeaderTitle` es el `h1` de producto; `size="lg"` 30→36px en homes de producto)
+- `Heading` — títulos de panel (`h2`–`h6`; `h2`/`h3` usan `typography.heading`, `h4`–`h6` usan `typography.subtitle`)
+- `Subtitle` — frase de apoyo; `tone` `muted` por defecto
+- `Body` — cuerpo flexible (`size` `sm` 12px · `md` 14px · `lg` 16px); `measure` opt-in para lectura (65ch); `weight` / `tone` / `align`
+- `Text` — prosa/chrome flexible (`look` `body` \| `caption` \| `label` \| `subtitle`; `as` `span` por defecto). Títulos y marcador van en `Display` / `Heading` / `SectionTitle` / `Score`
+- `Caption` — metadata y hints sentence-case; `tone` `muted` por defecto
+- `Score` — cualquier cifra que cambia (marcador, %, conteo, celda); `align` `start` \| `center` \| `end`; `tone` `muted` para no disponible (`—`). El color de estado vive en `StatValue`
+- `Eyebrow` — kicker sobre un título (`typography.label` muted). No es un `<label>`
+- `SectionTitle` — heading semántico (`h2`–`h4`) con look de label (“Rendimiento”, “Atributos”)
+- `TextLink` — enlace de texto (no `Button variant="link"`); `text` `body` \| `caption` \| `label`; `render` para el router
+- `MetaList` — `dl` de metadata (`MetaItem` + `MetaTerm` + `MetaValue`); `columns` `1` \| `2`
+- `Label` — `<label>` de formulario. Navegación y columnas reutilizan el rol vía `FieldLabel` / `TableHead`
+
+No inventar tamaños fuera de la rampa (`text-xs`…`text-7xl`) ni un `Text` con `size` 1–9.
+`Body size` solo `sm`/`md`/`lg`. Títulos y cifras siguen en `Display` / `Heading` / `SectionTitle` / `Score`.
+
 ### Formularios
 
 - `Form`
@@ -252,7 +273,7 @@ La marca y el lenguaje visual son los mismos que en web; cambia la plataforma de
 - Manrope (pesos 400/500/600/700) vía `@expo-google-fonts/manrope`.
 - Mismos roles `typography.*`; tamaños convertidos rem→dp; `letterSpacing` derivado de
   `em × tamaño` del rol.
-- `typography.label` conserva mayúsculas/tracking para labels y navegación.
+- `typography.label` usa tracking ligero (`0.04em`). Mayúsculas son opt-in (p. ej. kicker de landing), no el default.
 
 ### Color y tema
 

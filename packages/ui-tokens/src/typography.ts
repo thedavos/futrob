@@ -37,12 +37,12 @@ export const TYPOGRAPHY_TOKENS: TokenMap = {
   "leading-normal": raw("1.55"),
   "tracking-tight": raw("-0.02em"),
   "tracking-normal": raw("0"),
-  "tracking-label": raw("0.14em"),
+  "tracking-label": raw("0.04em"),
 
   // Typography roles (consumed by StyleX `typography.*` and mobile StyleSheet)
   "typo-display-size": ref("text-4xl"),
   "typo-display-weight": ref("font-weight-bold"),
-  "typo-display-leading": raw("0.96"),
+  "typo-display-leading": ref("leading-tight"),
   "typo-display-tracking": ref("tracking-tight"),
   "typo-heading-size": ref("text-xl"),
   "typo-heading-weight": ref("font-weight-bold"),

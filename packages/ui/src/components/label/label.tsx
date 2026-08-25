@@ -1,4 +1,4 @@
-import * as React from "react";
+import type { ComponentProps } from "react";
 import * as stylex from "@stylexjs/stylex";
 
 import { applyProps } from "#styles/apply";
@@ -16,13 +16,15 @@ const styles = stylex.create({
   },
 });
 
-function Label({ className, style, ...props }: React.ComponentProps<"label">) {
+export type LabelProps = ComponentProps<"label">;
+
+function Label({ className, style, ...props }: LabelProps) {
   return (
     // Consumers must pass `htmlFor` or wrap an associated control.
     // eslint-disable-next-line jsx-a11y/label-has-associated-control -- primitive forwards label semantics via props
     <label
       data-slot="label"
-      {...applyProps(className, style, typography.label, styles.base)}
+      {...applyProps(className, style, typography.host, typography.label, styles.base)}
       {...props}
     />
   );

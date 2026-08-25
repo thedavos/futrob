@@ -5,6 +5,7 @@
   "type": "module",
   "imports": {
     "#components/*": "./src/components/*.tsx",
+    "#components/*/index": "./src/components/*/index.ts",
     "#lib/*": "./src/lib/*.ts",
     "#hooks/*": "./src/hooks/*.ts",
     "#styles/*": "./src/styles/*.ts"
@@ -17,6 +18,7 @@
     "./styles.css": "./src/styles.css",
     "./tokens.css": "./src/tokens.css",
     "./components/*": "./src/components/*.tsx",
+    "./components/*/index": "./src/components/*/index.ts",
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts"
   },

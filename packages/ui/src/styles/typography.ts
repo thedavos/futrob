@@ -58,4 +58,18 @@ export const typography = stylex.create({
     letterSpacing: "var(--typo-score-tracking)",
     fontVariantNumeric: "tabular-nums",
   },
+  host: {
+    margin: 0,
+    overflowWrap: "break-word",
+  },
+  measure: {
+    maxWidth: "65ch",
+  },
+  truncate: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
 });
+
+export type TextTone = "default" | "muted";

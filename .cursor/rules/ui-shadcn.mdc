@@ -12,7 +12,7 @@ alwaysApply: false
 - Feature presentation in `apps/web/src/features/*` composes primitives. Business-specific components such as `MatchRow`, `SeriesScore`, and `BracketNode` stay with the feature until genuine cross-feature reuse exists.
 - `packages/ui` must not import business packages.
 
-Prefer component primitives for buttons, fields, selects, dialogs, sheets, popovers, tooltips, tabs, menus, toasts, scroll areas, collapsibles, checkboxes, switches, and progress. Native semantic elements remain appropriate when they provide the correct behavior and no component abstraction is needed.
+Prefer component primitives for buttons, fields, selects, dialogs, sheets, popovers, tooltips, tabs, menus, toasts, scroll areas, collapsibles, checkboxes, switches, and progress. Product copy uses `Display`, `Heading`, `Subtitle`, `Body`, `Text`, `Caption`, `Score`, `Eyebrow`, `SectionTitle`, `TextLink`, `MetaList`, and `Label` instead of raw headings with ad-hoc font sizes. Native semantic elements remain appropriate when they provide the correct behavior and no component abstraction is needed.
 
 ## Composition rules
 

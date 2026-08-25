@@ -20,7 +20,7 @@ Atomic, compile-time CSS with typed tokens. Conditions (hover, dark-capable vars
 | Apply helper | `packages/ui/src/styles/apply.ts` (`applyProps`, `applyStyles`)                                  |
 | Document CSS | `packages/ui/src/styles.css` in `@layer reset`; StyleX lists that layer in `useCSSLayers.before` |
 
-Dev HMR uses `virtual:stylex:runtime` from a client module. Production CSS is appended to the existing `styles.css` asset. `tools/stylex/guard-unplugin-css.cjs` keeps Vite from crashing if LightningCSS sees a transient empty selector while `defineConsts` are still resolving ([StyleX #1497](https://github.com/facebook/stylex/issues/1497)).
+Dev first paint loads `/virtual:stylex.css` from the root document `<head>`. `virtual:stylex:runtime` stays on a client module for HMR only. Production CSS is appended to the existing `styles.css` asset. `tools/stylex/guard-unplugin-css.cjs` keeps Vite from crashing if LightningCSS sees a transient empty selector while `defineConsts` are still resolving ([StyleX #1497](https://github.com/facebook/stylex/issues/1497)).
 
 ## Practices
 
@@ -40,20 +40,19 @@ Follow `.cursor/skills/futrob-stylex/SKILL.md`. Summary:
 - Hairline-ring shadows in `elevation.css`.
 - React Native styles in `apps/mobile`.
 
-## Follow-up: folder per primitive
+## Folder per primitive
 
-Out of this PR. `packages/ui/src/components` stays flat (`button.tsx` + `src/stories/button.stories.tsx`).
-
-A later PR should move each primitive into its own directory:
+New primitives live in their own directory. Existing flat files migrate in later PRs.
 
 ```text
-components/button/
-  button.tsx
-  button.styles.ts    # only if stylex.create would push the file past ~400 lines
-  button.stories.tsx
+components/heading/
+  heading.tsx
+  heading.test.ts
+  heading.styles.ts    # only if stylex.create would push the file past ~400 lines
+  heading.stories.tsx
   index.ts
 ```
 
 Do not name component styles `*.stylex.ts`. That suffix is reserved for `defineVars` / `defineConsts`.
 
-Keep composition stories (`forms`, `overlays`, `navigation`, `app-shell`, `data-table`, `icons`) under `src/stories/patterns/`. Public imports stay `@futrob/ui`. Update `#components/*` in `packages/ui/package.json` when the folders land.
+Keep composition stories (`forms`, `overlays`, `navigation`, `app-shell`, `data-table`, `icons`, `typography`) under `src/stories/patterns/`. Public imports stay `@futrob/ui`. `#components/*` still resolves flat `*.tsx`; folder primitives are imported from the package barrel.

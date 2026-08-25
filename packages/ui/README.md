@@ -8,15 +8,15 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 
 ## Capas
 
-| Archivo / carpeta   | Responsabilidad                                                                                                                                                                                                                              |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/tokens.css`    | Paleta OKLCH, tema claro, dark opt-in, tipo, geometría, movimiento. **Artefacto generado** desde [`@futrob/ui-tokens`](../ui-tokens/README.md) — no editar a mano                                                                            |
-| `src/styles/*.ts`   | Tokens StyleX (`colors`, `media`), `typography`, `elevation`, `applyProps`                                                                                                                                                                   |
-| `src/elevation.css` | Sombras elevadas + hairline ring (nunca con `border`/`ring` en el mismo elemento)                                                                                                                                                            |
-| `src/slots.css`     | Selectores que StyleX no expresa en un solo elemento (densidad de tabla, SVG hijos, enter/exit)                                                                                                                                              |
-| `src/styles.css`    | Manrope autohospedada, reset, defaults globales, importa tokens/elevation/slots                                                                                                                                                              |
-| `src/components/`   | Primitivas Futrob sobre Base UI + StyleX. Hoy son archivos planos; un PR posterior las mueve a una carpeta por primitiva (`button/button.tsx` + story). Ver [StyleX follow-up](/docs/architecture/stylex.md#follow-up-folder-per-primitive). |
-| `src/stories/`      | Contratos visuales, de estados y accesibilidad. Las stories 1:1 se colocalizarán con el primitivo; los patrones (`forms`, `overlays`, `app-shell`) se quedan aquí.                                                                           |
+| Archivo / carpeta   | Responsabilidad                                                                                                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/tokens.css`    | Paleta OKLCH, tema claro, dark opt-in, tipo, geometría, movimiento. **Artefacto generado** desde [`@futrob/ui-tokens`](../ui-tokens/README.md) — no editar a mano                |
+| `src/styles/*.ts`   | Tokens StyleX (`colors`, `media`), `typography`, `elevation`, `applyProps`                                                                                                       |
+| `src/elevation.css` | Sombras elevadas + hairline ring (nunca con `border`/`ring` en el mismo elemento)                                                                                                |
+| `src/slots.css`     | Selectores que StyleX no expresa en un solo elemento (densidad de tabla, SVG hijos, enter/exit)                                                                                  |
+| `src/styles.css`    | Manrope autohospedada, reset, defaults globales, importa tokens/elevation/slots                                                                                                  |
+| `src/components/`   | Primitivas Futrob sobre Base UI + StyleX. Las nuevas viven en carpeta por primitiva (`heading/heading.tsx` + test + story + `index.ts`). Las planas se migran en PRs siguientes. |
+| `src/stories/`      | Patrones de composición (`forms`, `overlays`, `app-shell`, `typography`). Las stories 1:1 de primitivas nuevas viven junto al componente.                                        |
 
 ## Contratos
 
@@ -25,6 +25,7 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 - `dense` es la única compactación: 36 px en desktop y 44 px en touch.
 - Variantes cerradas. No añadir `xs`/`sm`/`lg` ni colores ad hoc.
 - `typography.label` es el estilo de labels; `typography.caption` cubre metadata y hints; `typography.subtitle` apoya headings.
+- Texto de producto: `Display`, `Heading`, `Subtitle`, `Body`, `Text`, `Caption`, `Score`, `Eyebrow`, `SectionTitle`, `TextLink`, `Label`.
 - Flat/line en controles y contenido. Overlays usan `elevation.sm|md|lg` por defecto.
   `Card` / `EmptyState` admiten `variant="elevated"`; `Alert` admite `elevation="elevated"`.
   No combinar `border`/`ring` con `shadow` en el mismo elemento.
@@ -64,6 +65,13 @@ Datos:
 Overlays:
 
 - `Dialog`, `AlertDialog`, `Popover`, `Tooltip`, `Sheet`
+
+Texto:
+
+- `Display`, `Heading`, `Subtitle`, `Body`, `Text` (`look` `body` \| `caption` \| `label` \| `subtitle`), `Caption`, `Score`
+- `Eyebrow`, `SectionTitle`, `TextLink`
+- `MetaList`, `MetaItem`, `MetaTerm`, `MetaValue`
+- `Label` (asociación de formulario; `FieldLabel` para campos Base UI)
 
 Acciones y soporte:
 
@@ -174,9 +182,13 @@ Después:
 
 1. Revisa el diff; no aceptes un overwrite automático de tokens o primitivas afinadas.
 2. Reduce la API a variantes cerradas y restylea con StyleX + tokens Futrob. No dejes Tailwind/`cn()`/`cva`.
-3. Exporta desde `src/index.ts`.
-4. Añade o actualiza stories.
-5. Ejecuta `npm run typecheck`, `npm run check` y `npm run storybook:build`.
+3. Coloca la primitiva nueva en `src/components/<name>/` (`<name>.tsx`, `<name>.test.ts`,
+   `<name>.stories.tsx`, `index.ts`). Extrae `<name>.styles.ts` solo si `stylex.create`
+   empujaría el archivo por encima de ~400 líneas. No uses el sufijo `*.stylex.ts` para
+   estilos de componente.
+4. Exporta desde `src/index.ts`.
+5. Añade o actualiza stories.
+6. Ejecuta `npm run typecheck`, `npm run check` y `npm run storybook:build`.
 
 Especificación canónica:
 [`/product/design-system-spec.md`](/product/design-system-spec.md).

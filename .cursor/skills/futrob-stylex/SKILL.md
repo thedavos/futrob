@@ -28,7 +28,7 @@ Mobile (`apps/mobile`) stays on React Native `StyleSheet` + `@futrob/ui-tokens`.
 
 ## Authoring rules
 
-1. One `stylex.create` per file (or colocated `*.styles.ts` if the file would exceed 400 lines).
+1. One `stylex.create` per file (or colocated `*.styles.ts` if the file would exceed 400 lines). New primitives use `components/<name>/` (`<name>.tsx`, test, stories, `index.ts`).
 2. Descriptive keys (`base`, `dense`, `title`) — not `$1`.
 3. camelCase properties. Split multi-value shorthands (`borderWidth` + `borderStyle` + `borderColor`). Single-value `padding: 16` is fine.
 4. Numbers are px. Other units are strings (`"1.5rem"`, `"50%"`).
