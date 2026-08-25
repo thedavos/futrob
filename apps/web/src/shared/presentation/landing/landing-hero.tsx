@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, typography } from "@futrob/ui";
+import { applyStyles, Body, Button, Display, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { Link } from "@tanstack/react-router";
@@ -54,16 +54,6 @@ const styles = stylex.create({
     flexDirection: "column",
     gap: "1.5rem",
   },
-  title: {
-    fontSize: {
-      default: "var(--text-5xl)",
-      [media.sm]: "var(--text-6xl)",
-    },
-    lineHeight: 1,
-    fontWeight: 700,
-    letterSpacing: "var(--tracking-tight)",
-    textWrap: "balance",
-  },
   titleHighlight: {
     color: colors.primary,
   },
@@ -98,18 +88,18 @@ export function LandingHero() {
         <div {...applyStyles(styles.copy)}>
           <p {...applyStyles(typography.label, styles.eyebrow)}>{t("landing.hero.eyebrow")}</p>
           <div {...applyStyles(styles.stack)}>
-            <h1 {...applyStyles(styles.title)}>
+            <Display>
               {t("landing.hero.titleLead")}{" "}
               <span {...applyStyles(styles.titleHighlight)}>
                 {t("landing.hero.titleHighlight")}
               </span>
               .
-            </h1>
-            <p {...applyStyles(typography.body, styles.subtitle)}>
+            </Display>
+            <Body tone="muted" {...applyStyles(styles.subtitle)}>
               {t("landing.hero.subtitleLead")}
               <br />
               {t("landing.hero.subtitleRest")}
-            </p>
+            </Body>
           </div>
           <div {...applyStyles(styles.actions)}>
             <Button render={<Link to="/signup" />}>{t("landing.hero.cta.primary")}</Button>

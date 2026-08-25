@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, typography } from "@futrob/ui";
+import { applyStyles, Badge, Display, Score, Subtitle, Text } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
@@ -160,16 +160,14 @@ export function EncounterRowsSection() {
     <section {...applyStyles(styles.section)}>
       <div {...applyStyles(styles.inner)}>
         <div {...applyStyles(styles.copy)}>
-          <h2 {...applyStyles(typography.display)}>{t("landing.matches.title")}</h2>
-          <p {...applyStyles(typography.subtitle, styles.subtitle)}>
-            {t("landing.matches.subtitle")}
-          </p>
+          <Display as="h2">{t("landing.matches.title")}</Display>
+          <Subtitle {...applyStyles(styles.subtitle)}>{t("landing.matches.subtitle")}</Subtitle>
         </div>
         <div {...applyStyles(styles.table)}>
           <div {...applyStyles(styles.tableHeader)}>
-            <span {...applyStyles(typography.label, styles.matchday)}>
+            <Text look="label" tone="muted" {...applyStyles(styles.matchday)}>
               {t("landing.matches.matchday")}
-            </span>
+            </Text>
           </div>
           <ul {...applyStyles(styles.rows)}>
             {ROWS.map((row) => (
@@ -183,11 +181,16 @@ export function EncounterRowsSection() {
                   />
                   <span {...applyStyles(styles.teamName)}>{row.home}</span>
                 </span>
-                <span {...applyStyles(typography.score, styles.score)}>
+                <Score
+                  as="span"
+                  align="center"
+                  tone={row.homeGoals === null || row.awayGoals === null ? "muted" : "default"}
+                  {...applyStyles(styles.score)}
+                >
                   {row.homeGoals === null || row.awayGoals === null
                     ? "—"
-                    : `${row.homeGoals} – ${row.awayGoals}`}
-                </span>
+                    : `${row.homeGoals}–${row.awayGoals}`}
+                </Score>
                 <span {...applyStyles(styles.team, styles.teamAway)}>
                   <span {...applyStyles(styles.teamName)}>{row.away}</span>
                   <ClubCrestAvatar

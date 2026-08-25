@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Logo, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { applyStyles, Logo, PageHeader, PageHeaderDescription, PageHeaderTitle } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { AcceptRosterInvitationForm } from "@/modules/teams/presentation/accept-roster-invitation-form.tsx";
 
@@ -30,15 +29,6 @@ const styles = stylex.create({
     fontWeight: 600,
     letterSpacing: "0.025em",
   },
-  intro: {
-    marginBottom: "2rem",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  subtitle: {
-    color: colors.mutedForeground,
-  },
 });
 
 export const Route = createFileRoute("/_app/roster-invitations/accept/$token")({
@@ -56,12 +46,12 @@ function AcceptRosterInvitationTokenPage() {
         <Logo className={logo.className} style={logo.style} />
         <span {...applyStyles(styles.wordmark)}>Futrob</span>
       </header>
-      <div {...applyStyles(styles.intro)}>
-        <h1 {...applyStyles(typography.heading)}>Únete a una plantilla</h1>
-        <p {...applyStyles(typography.subtitle, styles.subtitle)}>
+      <PageHeader>
+        <PageHeaderTitle>Únete a una plantilla</PageHeaderTitle>
+        <PageHeaderDescription>
           Estamos procesando tu invitación para unirte al equipo.
-        </p>
-      </div>
+        </PageHeaderDescription>
+      </PageHeader>
       <AcceptRosterInvitationForm autoAccept initialToken={token} />
     </main>
   );

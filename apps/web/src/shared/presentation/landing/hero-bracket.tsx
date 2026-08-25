@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { applyProps, applyStyles, Badge, typography } from "@futrob/ui";
+import { applyProps, applyStyles, Badge, Caption } from "@futrob/ui";
 
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -96,9 +96,9 @@ export function HeroBracket() {
                   aria-hidden="true"
                   {...applyStyles(styles.pipelineDot, STAGE_DOT[stage.key])}
                 />
-                <span {...applyStyles(typography.caption, styles.pipelineLabel)}>
+                <Caption as="span" {...applyStyles(styles.pipelineLabel)}>
                   {t(`landing.stage.${stage.key}`)}
-                </span>
+                </Caption>
               </li>
             ))}
           </ol>
@@ -267,9 +267,9 @@ function SemiFinalCard({
   return (
     <div {...applyStyles(styles.sfCard, position)}>
       <div {...applyStyles(badge ? styles.sfHeaderWithBadge : styles.sfHeader)}>
-        <span {...applyStyles(typography.caption, styles.mutedCaption)}>
+        <Caption as="span" {...applyStyles(styles.mutedCaption)}>
           {t("landing.bracket.semifinal")}
-        </span>
+        </Caption>
         {badge ? <span {...applyStyles(styles.shrink)}>{badge}</span> : null}
       </div>
       <ul {...applyStyles(styles.sfList)}>
@@ -292,9 +292,9 @@ function FinalCard({ position }: { readonly position: (typeof styles)["final"] }
   return (
     <div {...applyStyles(styles.finalCard, position)}>
       <div {...applyStyles(styles.finalHeader)}>
-        <span {...applyStyles(typography.caption, styles.mutedCaption)}>
+        <Caption as="span" {...applyStyles(styles.mutedCaption)}>
           {t("landing.bracket.final")}
-        </span>
+        </Caption>
         <span {...applyStyles(styles.shrink)}>
           <Badge variant="approved">{t("landing.status.approved")}</Badge>
         </span>

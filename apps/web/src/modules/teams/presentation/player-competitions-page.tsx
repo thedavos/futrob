@@ -7,11 +7,15 @@ import {
   AlertDescription,
   applyStyles,
   Button,
+  Caption,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderTitle,
   typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -22,17 +26,8 @@ const styles = stylex.create({
   main: {
     width: "100%",
   },
-  header: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
-  },
-  lede: {
-    maxWidth: "36rem",
-    color: colors.mutedForeground,
-  },
   body: {
-    marginTop: "3rem",
+    marginTop: "1rem",
     display: "flex",
     flexDirection: "column",
     gap: "2rem",
@@ -90,14 +85,12 @@ export function PlayerCompetitionsPage() {
 
   return (
     <main {...applyStyles(styles.main)}>
-      <header {...applyStyles(styles.header)}>
-        <div {...applyStyles(styles.header)}>
-          <h1 {...applyStyles(typography.heading)}>Competiciones</h1>
-          <p {...applyStyles(typography.subtitle, styles.lede)}>
-            Competiciones en las que participas con un equipo.
-          </p>
-        </div>
-      </header>
+      <PageHeader>
+        <PageHeaderTitle>Competiciones</PageHeaderTitle>
+        <PageHeaderDescription>
+          Competiciones en las que participas con un equipo.
+        </PageHeaderDescription>
+      </PageHeader>
 
       <div {...applyStyles(styles.body)}>
         {teamsQuery.isError ? (
@@ -109,7 +102,7 @@ export function PlayerCompetitionsPage() {
         ) : null}
 
         {teamsQuery.isPending ? (
-          <p {...applyStyles(typography.caption, styles.status)}>Cargando competiciones…</p>
+          <Caption {...applyStyles(styles.status)}>Cargando competiciones…</Caption>
         ) : competitions.length === 0 ? (
           <EmptyState>
             <EmptyStateIcon>

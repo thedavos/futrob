@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, typography } from "@futrob/ui";
+import { applyStyles, Display, Subtitle } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { ClubSearchPanel } from "@/modules/game-data/presentation/club-search-panel.tsx";
@@ -62,8 +62,8 @@ export function DemoSearchSection() {
     <section id="demo" {...applyStyles(styles.section)}>
       <div {...applyStyles(styles.inner)}>
         <div {...applyStyles(styles.copy)}>
-          <h2 {...applyStyles(typography.display)}>{t("landing.demo.title")}</h2>
-          <p {...applyStyles(typography.subtitle, styles.subtitle)}>{t("landing.demo.subtitle")}</p>
+          <Display as="h2">{t("landing.demo.title")}</Display>
+          <Subtitle {...applyStyles(styles.subtitle)}>{t("landing.demo.subtitle")}</Subtitle>
         </div>
         <ClubSearchPanel />
       </div>

@@ -2,7 +2,14 @@
 
 import { useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, typography } from "@futrob/ui";
+import {
+  applyStyles,
+  Caption,
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderTitle,
+  TextLink,
+} from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { OrganizationPicker } from "@/modules/organizations/presentation/organization-picker.tsx";
@@ -23,27 +30,7 @@ const styles = stylex.create({
   main: {
     width: "100%",
   },
-  header: {
-    marginBottom: "1.5rem",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  copy: {
-    fontSize: "0.875rem",
-    lineHeight: "1.25rem",
-    color: colors.mutedForeground,
-  },
-  link: {
-    textUnderlineOffset: "4px",
-    textDecorationLine: {
-      default: "none",
-      ":hover": "underline",
-    },
-  },
 });
-
-const link = applyStyles(styles.link);
 
 export function OrgsIndexPage() {
   const navigate = useNavigate();
@@ -69,20 +56,22 @@ export function OrgsIndexPage() {
   const showPicker = membershipsQuery.isError || (memberships != null && memberships.length > 1);
 
   if (!showPicker) {
-    return <main {...applyStyles(styles.loading)}>Cargando organizaciones…</main>;
+    return (
+      <main {...applyStyles(styles.loading)}>
+        <Caption>Cargando organizaciones…</Caption>
+      </main>
+    );
   }
 
   return (
     <main {...applyStyles(styles.main)}>
-      <div {...applyStyles(styles.header)}>
-        <h1 {...applyStyles(typography.heading)}>Tus organizaciones</h1>
-        <p {...applyStyles(styles.copy)}>
+      <PageHeader>
+        <PageHeaderTitle>Tus organizaciones</PageHeaderTitle>
+        <PageHeaderDescription>
           Elige con cuál quieres continuar.{" "}
-          <Link className={link.className} style={link.style} to="/invitations/accept">
-            Unirme a otra
-          </Link>
-        </p>
-      </div>
+          <TextLink render={<Link to="/invitations/accept" />}>Unirme a otra</TextLink>
+        </PageHeaderDescription>
+      </PageHeader>
       <OrganizationPicker />
     </main>
   );

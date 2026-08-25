@@ -2,8 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, Logo, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
+import {
+  applyStyles,
+  Button,
+  Caption,
+  Logo,
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderTitle,
+} from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { useNavigate } from "@tanstack/react-router";
 import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
@@ -40,21 +47,9 @@ const styles = stylex.create({
     fontWeight: 600,
     letterSpacing: "0.025em",
   },
-  header: {
-    marginBottom: "2rem",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  subtitle: {
-    color: colors.mutedForeground,
-  },
   errorStack: {
     display: "grid",
     gap: "1rem",
-  },
-  waiting: {
-    color: colors.mutedForeground,
   },
 });
 
@@ -113,12 +108,12 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
         <Logo className={logo.className} style={logo.style} />
         <span {...applyStyles(styles.wordmark)}>Futrob</span>
       </header>
-      <div {...applyStyles(styles.header)}>
-        <h1 {...applyStyles(typography.heading)}>Únete a una competición</h1>
-        <p {...applyStyles(typography.subtitle, styles.subtitle)}>
+      <PageHeader>
+        <PageHeaderTitle>Únete a una competición</PageHeaderTitle>
+        <PageHeaderDescription>
           {error ? "No se pudo completar la invitación." : "Estamos validando tu invitación…"}
-        </p>
-      </div>
+        </PageHeaderDescription>
+      </PageHeader>
       {error ? (
         <div {...applyStyles(styles.errorStack)}>
           <SupportErrorAlert
@@ -137,7 +132,7 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
           </Button>
         </div>
       ) : (
-        <p {...applyStyles(typography.caption, styles.waiting)}>Un momento…</p>
+        <Caption>Un momento…</Caption>
       )}
     </main>
   );

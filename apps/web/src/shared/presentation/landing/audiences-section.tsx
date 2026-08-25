@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, typography, type Icon } from "@futrob/ui";
+import { applyStyles, Body, Display, Subtitle, Text, type Icon } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import {
@@ -149,10 +149,8 @@ export function AudiencesSection() {
       <div {...applyStyles(styles.inner)}>
         <div {...applyStyles(styles.players)}>
           <div {...applyStyles(styles.copy)}>
-            <h2 {...applyStyles(typography.display)}>{t("landing.players.title")}</h2>
-            <p {...applyStyles(typography.subtitle, styles.subtitle)}>
-              {t("landing.players.subtitle")}
-            </p>
+            <Display as="h2">{t("landing.players.title")}</Display>
+            <Subtitle {...applyStyles(styles.subtitle)}>{t("landing.players.subtitle")}</Subtitle>
           </div>
           <ul {...applyStyles(styles.playerList)}>
             {PLAYER_POINTS.map((point) => (
@@ -164,9 +162,9 @@ export function AudiencesSection() {
                   <h3 {...applyStyles(styles.playerTitle)}>
                     {t(`landing.players.${point.key}.title`)}
                   </h3>
-                  <p {...applyStyles(typography.body, styles.playerBody)}>
+                  <Body tone="muted" {...applyStyles(styles.playerBody)}>
                     {t(`landing.players.${point.key}.description`)}
-                  </p>
+                  </Body>
                 </div>
               </li>
             ))}
@@ -174,10 +172,8 @@ export function AudiencesSection() {
         </div>
         <div {...applyStyles(styles.portal)}>
           <div {...applyStyles(styles.portalCopy)}>
-            <h2 {...applyStyles(typography.display)}>{t("landing.portal.title")}</h2>
-            <p {...applyStyles(typography.subtitle, styles.subtitle)}>
-              {t("landing.portal.subtitle")}
-            </p>
+            <Display as="h2">{t("landing.portal.title")}</Display>
+            <Subtitle {...applyStyles(styles.subtitle)}>{t("landing.portal.subtitle")}</Subtitle>
           </div>
           <ul {...applyStyles(styles.portalList)}>
             {PORTAL_POINTS.map((point) => (
@@ -185,9 +181,9 @@ export function AudiencesSection() {
                 <span aria-hidden="true">
                   <point.icon className={icon.className} style={icon.style} />
                 </span>
-                <span {...applyStyles(typography.body, styles.portalLabel)}>
+                <Text as="span" look="body" weight="medium" {...applyStyles(styles.portalLabel)}>
                   {t(`landing.portal.point.${point.key}`)}
-                </span>
+                </Text>
               </li>
             ))}
           </ul>

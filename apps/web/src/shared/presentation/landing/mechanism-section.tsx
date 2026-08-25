@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, typography, type Icon } from "@futrob/ui";
+import { applyStyles, Body, Display, Subtitle, type Icon } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import {
@@ -155,10 +155,8 @@ export function MechanismSection() {
     <section id="mecanismo" {...applyStyles(styles.section)}>
       <div {...applyStyles(styles.inner)}>
         <div {...applyStyles(styles.copy)}>
-          <h2 {...applyStyles(typography.display)}>{t("landing.mechanism.title")}</h2>
-          <p {...applyStyles(typography.subtitle, styles.subtitle)}>
-            {t("landing.mechanism.subtitle")}
-          </p>
+          <Display as="h2">{t("landing.mechanism.title")}</Display>
+          <Subtitle {...applyStyles(styles.subtitle)}>{t("landing.mechanism.subtitle")}</Subtitle>
         </div>
         <ol {...applyStyles(styles.list)}>
           {STEPS.map((step) => {
@@ -173,9 +171,9 @@ export function MechanismSection() {
                   <step.icon aria-hidden="true" className={icon.className} style={icon.style} />
                   <h3 {...applyStyles(styles.title)}>{t(`landing.mechanism.${step.key}.title`)}</h3>
                 </div>
-                <p {...applyStyles(typography.body, styles.body)}>
+                <Body tone="muted" {...applyStyles(styles.body)}>
                   {t(`landing.mechanism.${step.key}.description`)}
-                </p>
+                </Body>
               </li>
             );
           })}

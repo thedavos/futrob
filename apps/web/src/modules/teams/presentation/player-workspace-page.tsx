@@ -11,6 +11,10 @@ import {
   EmptyStateActions,
   EmptyStateDescription,
   EmptyStateTitle,
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderEyebrow,
+  PageHeaderTitle,
   typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -27,21 +31,8 @@ const styles = stylex.create({
   main: {
     width: "100%",
   },
-  intro: {
-    marginBottom: "2rem",
-    maxWidth: "42rem",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
   muted: {
     color: colors.mutedForeground,
-  },
-  title: {
-    fontSize: {
-      default: "var(--text-3xl)",
-      [media.sm]: "var(--text-4xl)",
-    },
   },
   panel: {
     overflow: "hidden",
@@ -186,14 +177,14 @@ export function PlayerWorkspacePage() {
 
   return (
     <main {...applyStyles(styles.main)}>
-      <div {...applyStyles(styles.intro)}>
-        <p {...applyStyles(typography.label, styles.muted)}>Espacio personal</p>
-        <h1 {...applyStyles(typography.heading, styles.title)}>Tu espacio de jugador</h1>
-        <p {...applyStyles(typography.body, styles.muted)}>
+      <PageHeader>
+        <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
+        <PageHeaderTitle size="lg">Tu espacio de jugador</PageHeaderTitle>
+        <PageHeaderDescription>
           Consulta tus partidos y estadísticas individuales sin pertenecer todavía a una
           organización.
-        </p>
-      </div>
+        </PageHeaderDescription>
+      </PageHeader>
 
       <section {...applyStyles(styles.panel)}>
         <div {...applyStyles(styles.shortcut)}>

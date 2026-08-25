@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, Logo, typography } from "@futrob/ui";
+import { applyStyles, Button, Caption, Display, Logo, Subtitle } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { Link } from "@tanstack/react-router";
@@ -107,10 +107,10 @@ export function FinalCtaSection() {
       <section {...applyStyles(styles.section)}>
         <div {...applyStyles(styles.inner)}>
           <div {...applyStyles(styles.copy)}>
-            <h2 {...applyStyles(typography.display, styles.title)}>{t("landing.cta.title")}</h2>
-            <p {...applyStyles(typography.subtitle, styles.subtitle)}>
-              {t("landing.cta.subtitle")}
-            </p>
+            <Display as="h2" {...applyStyles(styles.title)}>
+              {t("landing.cta.title")}
+            </Display>
+            <Subtitle {...applyStyles(styles.subtitle)}>{t("landing.cta.subtitle")}</Subtitle>
           </div>
           <div {...applyStyles(styles.actions)}>
             <Button render={<Link to="/signup" />}>{t("landing.cta.primary")}</Button>
@@ -125,17 +125,17 @@ export function FinalCtaSection() {
           <div {...applyStyles(styles.brand)}>
             <Logo className={logo.className} monochrome style={logo.style} />
             <div {...applyStyles(styles.taglines)}>
-              <span {...applyStyles(typography.caption, styles.mutedCaption)}>
+              <Caption as="span" {...applyStyles(styles.mutedCaption)}>
                 {t("landing.footer.tagline")}
-              </span>
-              <span {...applyStyles(typography.caption, styles.mutedCaption)}>
+              </Caption>
+              <Caption as="span" {...applyStyles(styles.mutedCaption)}>
                 {t("landing.footer.madeBy")}
-              </span>
+              </Caption>
             </div>
           </div>
-          <span {...applyStyles(typography.caption, styles.mutedCaption)}>
+          <Caption as="span" {...applyStyles(styles.mutedCaption)}>
             {t("landing.footer.legal")}
-          </span>
+          </Caption>
         </div>
       </footer>
     </>

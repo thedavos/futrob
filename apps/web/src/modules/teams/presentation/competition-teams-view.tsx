@@ -13,7 +13,8 @@ import {
   AlertTitle,
   applyStyles,
   MasterDetail,
-  typography,
+  PageHeaderDescription,
+  PageHeaderTitle,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
@@ -50,10 +51,6 @@ const styles = stylex.create({
       [media.sm]: "2rem",
     },
     paddingBlock: "1.25rem",
-  },
-  lede: {
-    maxWidth: "65ch",
-    color: colors.mutedForeground,
   },
   alerts: {
     display: "grid",
@@ -131,10 +128,8 @@ export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
   return (
     <main data-shell-bleed="" {...applyStyles(styles.main)}>
       <header {...applyStyles(styles.header)}>
-        <h1 {...applyStyles(typography.heading)}>Equipos y plantillas</h1>
-        <p {...applyStyles(typography.subtitle, styles.lede)}>
-          Inscripciones, plantillas y clubes EA.
-        </p>
+        <PageHeaderTitle>Equipos y plantillas</PageHeaderTitle>
+        <PageHeaderDescription>Inscripciones, plantillas y clubes EA.</PageHeaderDescription>
       </header>
       {props.error || props.capabilities.unavailable ? (
         <div {...applyStyles(styles.alerts)}>

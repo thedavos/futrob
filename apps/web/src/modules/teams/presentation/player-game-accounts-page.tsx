@@ -16,6 +16,11 @@ import {
   FieldLabel,
   Form,
   Input,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderDescription,
+  PageHeaderEyebrow,
+  PageHeaderTitle,
   Select,
   SelectContent,
   SelectItem,
@@ -35,18 +40,6 @@ import { useAddMyGameAccountMutation, useMyPlayerProfileQuery } from "./player-q
 const styles = stylex.create({
   main: {
     width: "100%",
-  },
-  header: {
-    marginBottom: "2rem",
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: "1rem",
-  },
-  intro: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
   },
   muted: {
     color: colors.mutedForeground,
@@ -165,19 +158,19 @@ export function PlayerGameAccountsPage() {
 
   return (
     <main {...applyStyles(styles.main)}>
-      <div {...applyStyles(styles.header)}>
-        <div {...applyStyles(styles.intro)}>
-          <p {...applyStyles(typography.label, styles.muted)}>Espacio personal</p>
-          <h1 {...applyStyles(typography.heading)}>Datos de juego</h1>
-          <p {...applyStyles(typography.subtitle, styles.muted)}>
-            Registra tus identificadores de EA sin compartir credenciales. Futrob los usará para
-            localizar tus partidos y estadísticas.
-          </p>
-        </div>
-        <Button render={<Link to="/player" />} variant="link">
-          Volver al espacio personal
-        </Button>
-      </div>
+      <PageHeader>
+        <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
+        <PageHeaderTitle>Datos de juego</PageHeaderTitle>
+        <PageHeaderDescription>
+          Registra tus identificadores de EA sin compartir credenciales. Futrob los usará para
+          localizar tus partidos y estadísticas.
+        </PageHeaderDescription>
+        <PageHeaderActions>
+          <Button render={<Link to="/player" />} variant="link">
+            Volver al espacio personal
+          </Button>
+        </PageHeaderActions>
+      </PageHeader>
 
       {error || profileQuery.isError ? (
         <Alert className={alert.className} style={alert.style} variant="destructive">

@@ -2,7 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, Button, Card, CardContent, Stepper, typography } from "@futrob/ui";
+import {
+  applyStyles,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  PageHeaderDescription,
+  PageHeaderTitle,
+  Stepper,
+  Subtitle,
+} from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import type {
@@ -44,9 +54,6 @@ const styles = stylex.create({
     display: "grid",
     gap: "0.75rem",
     textAlign: "center",
-  },
-  subtitle: {
-    color: colors.mutedForeground,
   },
   stepper: {
     marginBottom: "2.5rem",
@@ -156,7 +163,7 @@ export function CompetitionSetupPage({
   if (!draft || !form)
     return (
       <main>
-        <p {...applyStyles(typography.subtitle, styles.loading)}>Cargando competición…</p>
+        <Subtitle {...applyStyles(styles.loading)}>Cargando competición…</Subtitle>
       </main>
     );
 
@@ -166,11 +173,11 @@ export function CompetitionSetupPage({
         <div>
           <Badge variant="neutral">{readOnly ? "Publicada" : "Borrador"}</Badge>
         </div>
-        <h1 {...applyStyles(typography.heading)}>Configurar {draft.competition.name}</h1>
-        <p {...applyStyles(typography.subtitle, styles.subtitle)}>
+        <PageHeaderTitle>Configurar {draft.competition.name}</PageHeaderTitle>
+        <PageHeaderDescription>
           Guarda el avance y vuelve cuando quieras. La asociación EA es declarativa y no verifica
           propiedad.
-        </p>
+        </PageHeaderDescription>
       </header>
       <Stepper
         aria-label="Configuración de competición"
