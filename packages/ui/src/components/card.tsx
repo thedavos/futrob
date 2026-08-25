@@ -1,70 +1,105 @@
 import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyHost } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { elevation } from "#styles/elevation";
+import { typography } from "#styles/typography";
 
-const cardVariants = cva("rounded-xl bg-surface text-foreground", {
-  variants: {
-    variant: {
-      /** Flat/line default: structural border, no ambient elevation. */
-      flat: "border border-border",
-      /**
-       * Soft elevation via shadow-plugin. Uses a baked-in hairline ring —
-       * never pair with `border-*` / `ring-*` on the same element.
-       */
-      elevated: "smooth-shadow-ring-sm",
-    },
+const styles = stylex.create({
+  root: {
+    borderRadius: "var(--corner-xl)",
+    backgroundColor: colors.surface,
+    color: colors.foreground,
   },
-  defaultVariants: {
-    variant: "flat",
+  flat: {
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+  },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.375rem",
+    padding: "1.5rem",
+  },
+  title: {
+    fontSize: "1.125rem",
+    lineHeight: "1.75rem",
+    fontWeight: 600,
+  },
+  description: {
+    color: colors.mutedForeground,
+  },
+  content: {
+    paddingInline: "1.5rem",
+    paddingBottom: "1.5rem",
+  },
+  footer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+    paddingInline: "1.5rem",
+    paddingBlock: "1rem",
   },
 });
 
-type CardProps = React.ComponentProps<"section"> & VariantProps<typeof cardVariants>;
+export type CardVariant = "flat" | "elevated";
 
-function Card({ className, variant = "flat", ...props }: CardProps) {
+type CardProps = React.ComponentProps<"section"> & {
+  variant?: CardVariant;
+};
+
+function Card({ className, style, variant = "flat", ...props }: CardProps) {
   return (
     <section
       data-slot="card"
-      data-variant={variant ?? "flat"}
-      className={cn(cardVariants({ variant }), className)}
+      data-variant={variant}
+      {...applyHost(
+        className,
+        style,
+        styles.root,
+        variant === "elevated" ? elevation.sm : styles.flat,
+      )}
       {...props}
     />
   );
 }
 
-function CardHeader({ className, ...props }: React.ComponentProps<"header">) {
-  return <header data-slot="card-header" className={cn("space-y-1.5 p-6", className)} {...props} />;
-}
-
-function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
+function CardHeader({ className, style, ...props }: React.ComponentProps<"header">) {
   return (
-    <h3 data-slot="card-title" className={cn("text-lg font-semibold", className)} {...props} />
+    <header data-slot="card-header" {...applyHost(className, style, styles.header)} {...props} />
   );
 }
 
-function CardDescription({ className, ...props }: React.ComponentProps<"p">) {
+function CardTitle({ className, style, ...props }: React.ComponentProps<"h3">) {
+  return <h3 data-slot="card-title" {...applyHost(className, style, styles.title)} {...props} />;
+}
+
+function CardDescription({ className, style, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       data-slot="card-description"
-      className={cn("typo-caption text-muted-foreground", className)}
+      {...applyHost(className, style, typography.caption, styles.description)}
       {...props}
     />
   );
 }
 
-function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="card-content" className={cn("px-6 pb-6", className)} {...props} />;
-}
-
-function CardFooter({ className, ...props }: React.ComponentProps<"footer">) {
+function CardContent({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
-    <footer
-      data-slot="card-footer"
-      className={cn("flex items-center gap-3 border-t border-border-subtle px-6 py-4", className)}
-      {...props}
-    />
+    <div data-slot="card-content" {...applyHost(className, style, styles.content)} {...props} />
   );
 }
 
-export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, cardVariants };
+function CardFooter({ className, style, ...props }: React.ComponentProps<"footer">) {
+  return (
+    <footer data-slot="card-footer" {...applyHost(className, style, styles.footer)} {...props} />
+  );
+}
+
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };
+export type { CardProps };

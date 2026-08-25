@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite-plus";
 import { devtools } from "@tanstack/devtools-vite";
+import { futrobStylex } from "../../tools/stylex/vite-plugin.ts";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const isVitest = process.env.VITEST != null;
@@ -63,7 +64,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 860,
     manifest: true,
   },
-  plugins: [tailwindcss(), createAppPlugins()],
+  plugins: [futrobStylex(), tailwindcss(), createAppPlugins()],
   test: {
     name: "web",
     environment: "node",

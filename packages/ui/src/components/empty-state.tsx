@@ -1,77 +1,117 @@
 import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyHost } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { elevation } from "#styles/elevation";
 
-const emptyStateVariants = cva(
-  "flex min-h-56 w-full flex-col items-center justify-center gap-4 rounded-lg bg-surface p-8 text-center",
-  {
-    variants: {
-      variant: {
-        /** Dashed structural border; default empty panels. */
-        flat: "border border-dashed border-border-strong",
-        /** Soft elevation for an isolated empty panel on a flat background. */
-        elevated: "smooth-shadow-ring-md",
-      },
-    },
-    defaultVariants: {
-      variant: "flat",
-    },
+const styles = stylex.create({
+  root: {
+    display: "flex",
+    minHeight: "14rem",
+    width: "100%",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "1rem",
+    borderRadius: "var(--corner-lg)",
+    backgroundColor: colors.surface,
+    padding: "2rem",
+    textAlign: "center",
   },
-);
+  flat: {
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.borderStrong,
+  },
+  icon: {
+    display: "flex",
+    width: "2.75rem",
+    height: "2.75rem",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "var(--corner-full)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.muted,
+    color: colors.mutedForeground,
+  },
+  title: {
+    fontSize: "1rem",
+    lineHeight: "1.5rem",
+    fontWeight: 600,
+    color: colors.foreground,
+  },
+  description: {
+    maxWidth: "28rem",
+    fontSize: "0.875rem",
+    lineHeight: 1.625,
+    color: colors.mutedForeground,
+  },
+  actions: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.5rem",
+  },
+});
 
-type EmptyStateProps = React.ComponentProps<"div"> & VariantProps<typeof emptyStateVariants>;
+export type EmptyStateVariant = "flat" | "elevated";
 
-function EmptyState({ className, variant = "flat", ...props }: EmptyStateProps) {
+type EmptyStateProps = React.ComponentProps<"div"> & {
+  variant?: EmptyStateVariant;
+};
+
+function EmptyState({ className, style, variant = "flat", ...props }: EmptyStateProps) {
   return (
     <div
       data-slot="empty-state"
-      data-variant={variant ?? "flat"}
-      className={cn(emptyStateVariants({ variant }), className)}
-      {...props}
-    />
-  );
-}
-
-function EmptyStateIcon({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      aria-hidden="true"
-      data-slot="empty-state-icon"
-      className={cn(
-        "flex size-11 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground [&_svg]:size-5",
+      data-variant={variant}
+      {...applyHost(
         className,
+        style,
+        styles.root,
+        variant === "elevated" ? elevation.md : styles.flat,
       )}
       {...props}
     />
   );
 }
 
-function EmptyStateTitle({ className, ...props }: React.ComponentProps<"h3">) {
+function EmptyStateIcon({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
-    <h3
-      data-slot="empty-state-title"
-      className={cn("text-base font-semibold text-foreground", className)}
+    <div
+      aria-hidden="true"
+      data-slot="empty-state-icon"
+      {...applyHost(className, style, styles.icon)}
       {...props}
     />
   );
 }
 
-function EmptyStateDescription({ className, ...props }: React.ComponentProps<"p">) {
+function EmptyStateTitle({ className, style, ...props }: React.ComponentProps<"h3">) {
+  return (
+    <h3 data-slot="empty-state-title" {...applyHost(className, style, styles.title)} {...props} />
+  );
+}
+
+function EmptyStateDescription({ className, style, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       data-slot="empty-state-description"
-      className={cn("max-w-md text-sm leading-relaxed text-muted-foreground", className)}
+      {...applyHost(className, style, styles.description)}
       {...props}
     />
   );
 }
 
-function EmptyStateActions({ className, ...props }: React.ComponentProps<"div">) {
+function EmptyStateActions({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="empty-state-actions"
-      className={cn("flex flex-wrap items-center justify-center gap-2", className)}
+      {...applyHost(className, style, styles.actions)}
       {...props}
     />
   );
@@ -83,5 +123,4 @@ export {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  emptyStateVariants,
 };

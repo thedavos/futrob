@@ -1,105 +1,155 @@
 import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyHost } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { typography } from "#styles/typography";
 
-const statVariants = cva("flex min-w-0 flex-col gap-1", {
-  variants: {
-    align: {
-      start: "items-start text-left",
-      center: "items-center text-center",
-      end: "items-end text-right",
-    },
+const styles = stylex.create({
+  root: {
+    display: "flex",
+    minWidth: 0,
+    flexDirection: "column",
+    gap: "0.25rem",
   },
-  defaultVariants: {
-    align: "start",
+  alignStart: {
+    alignItems: "flex-start",
+    textAlign: "left",
+  },
+  alignCenter: {
+    alignItems: "center",
+    textAlign: "center",
+  },
+  alignEnd: {
+    alignItems: "flex-end",
+    textAlign: "right",
+  },
+  label: {
+    color: colors.mutedForeground,
+  },
+  value: {
+    minWidth: 0,
+    maxWidth: "100%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  sizeCompact: {
+    fontSize: "1.25rem",
+    lineHeight: 1,
+    fontWeight: 600,
+    letterSpacing: "-0.02em",
+    fontVariantNumeric: "tabular-nums",
+  },
+  toneDefault: { color: colors.foreground },
+  toneMuted: { color: colors.mutedForeground },
+  toneSuccess: { color: colors.success },
+  toneWarning: { color: colors.warning },
+  toneError: { color: colors.danger },
+  hint: {
+    color: colors.mutedForeground,
+  },
+  group: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    columnGap: "2rem",
+    rowGap: "1.25rem",
   },
 });
 
-const statValueVariants = cva("min-w-0 max-w-full truncate text-foreground", {
-  variants: {
-    size: {
-      /** Marcador / KPI destacado (`typo-score`). */
-      default: "typo-score",
-      /** Strip denso de KPIs en dashboards y resúmenes. */
-      compact: "text-xl font-semibold leading-none tracking-tight tabular-nums",
-      /** Copy sentence-case when there is no numeric value (`typo-caption`). */
-      empty: "typo-caption",
-    },
-    tone: {
-      default: "text-foreground",
-      muted: "text-muted-foreground",
-      success: "text-success",
-      warning: "text-warning",
-      error: "text-danger",
-    },
-  },
-  defaultVariants: {
-    size: "default",
-    tone: "default",
-  },
-});
+const alignStyles = {
+  start: styles.alignStart,
+  center: styles.alignCenter,
+  end: styles.alignEnd,
+} as const;
 
-type StatProps = React.ComponentProps<"div"> & VariantProps<typeof statVariants>;
+const sizeStyles = {
+  default: typography.score,
+  compact: styles.sizeCompact,
+  empty: typography.caption,
+} as const;
 
-function Stat({ className, align = "start", ...props }: StatProps) {
+const toneStyles = {
+  default: styles.toneDefault,
+  muted: styles.toneMuted,
+  success: styles.toneSuccess,
+  warning: styles.toneWarning,
+  error: styles.toneError,
+} as const;
+
+export type StatAlign = keyof typeof alignStyles;
+export type StatValueSize = keyof typeof sizeStyles;
+export type StatValueTone = keyof typeof toneStyles;
+
+type StatProps = React.ComponentProps<"div"> & {
+  align?: StatAlign;
+};
+
+function Stat({ className, style, align = "start", ...props }: StatProps) {
   return (
     <div
       data-slot="stat"
-      data-align={align ?? "start"}
-      className={cn(statVariants({ align }), className)}
+      data-align={align}
+      {...applyHost(className, style, styles.root, alignStyles[align])}
       {...props}
     />
   );
 }
 
-function StatLabel({ className, ...props }: React.ComponentProps<"div">) {
+function StatLabel({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="stat-label"
-      className={cn("typo-label text-muted-foreground", className)}
+      {...applyHost(className, style, typography.label, styles.label)}
       {...props}
     />
   );
 }
 
-type StatValueProps = React.ComponentProps<"div"> & VariantProps<typeof statValueVariants>;
+type StatValueProps = React.ComponentProps<"div"> & {
+  size?: StatValueSize;
+  tone?: StatValueTone;
+};
 
-function StatValue({ className, size = "default", tone = "default", ...props }: StatValueProps) {
+function StatValue({
+  className,
+  style,
+  size = "default",
+  tone = "default",
+  ...props
+}: StatValueProps) {
   return (
     <div
       data-slot="stat-value"
-      data-size={size ?? "default"}
-      data-tone={tone ?? "default"}
-      className={cn(statValueVariants({ size, tone }), className)}
+      data-size={size}
+      data-tone={tone}
+      {...applyHost(className, style, styles.value, sizeStyles[size], toneStyles[tone])}
       {...props}
     />
   );
 }
 
-function StatHint({ className, ...props }: React.ComponentProps<"p">) {
+function StatHint({ className, style, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       data-slot="stat-hint"
-      className={cn("typo-caption text-muted-foreground", className)}
+      {...applyHost(className, style, typography.caption, styles.hint)}
       {...props}
     />
   );
 }
 
-function StatGroup({ className, ...props }: React.ComponentProps<"div">) {
+function StatGroup({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="stat-group"
       role="group"
-      className={cn(
-        "flex flex-wrap items-start gap-x-8 gap-y-5 [&>[data-slot=stat]]:min-w-[4.5rem]",
-        className,
-      )}
+      {...applyHost(className, style, styles.group)}
       {...props}
     />
   );
 }
 
-export { Stat, StatGroup, StatHint, StatLabel, StatValue, statValueVariants, statVariants };
+export { Stat, StatGroup, StatHint, StatLabel, StatValue };
 export type { StatProps, StatValueProps };

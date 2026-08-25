@@ -1,4 +1,6 @@
 @import "./tokens.css";
+@import "./elevation.css";
+@import "./slots.css";
 
 @font-face {
   font-family: "Manrope Variable";
@@ -42,6 +44,13 @@ input,
 select,
 textarea {
   color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 button,
@@ -98,35 +107,13 @@ p {
   color: var(--neutral-950);
 }
 
-/* In @layer base so component utilities (e.g. `font-semibold`, `outline-none`) can override. */
-@layer base {
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 3px;
-  }
-
-  :focus-visible[aria-invalid="true"] {
-    outline-color: var(--danger);
-  }
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+:focus-visible[aria-invalid="true"] {
+  outline-color: var(--danger);
 }
 
 @media print {

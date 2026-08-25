@@ -1,38 +1,50 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyHost } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
 
-function ActionBar({ className, ...props }: React.ComponentProps<"div">) {
+const styles = stylex.create({
+  root: {
+    display: "flex",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: "0.5rem",
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingInline: "1rem",
+    paddingBlock: "0.75rem",
+  },
+  start: {
+    marginRight: "auto",
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  end: {
+    display: "flex",
+    flexShrink: 0,
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+});
+
+function ActionBar({ className, style, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="action-bar" {...applyHost(className, style, styles.root)} {...props} />;
+}
+
+function ActionBarStart({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
-      data-slot="action-bar"
-      className={cn(
-        "flex shrink-0 items-center justify-end gap-2 border-t border-border bg-surface px-4 py-3",
-        className,
-      )}
-      {...props}
-    />
+    <div data-slot="action-bar-start" {...applyHost(className, style, styles.start)} {...props} />
   );
 }
 
-function ActionBarStart({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="action-bar-start"
-      className={cn("mr-auto flex min-w-0 items-center gap-2", className)}
-      {...props}
-    />
-  );
-}
-
-function ActionBarEnd({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="action-bar-end"
-      className={cn("flex shrink-0 items-center gap-2", className)}
-      {...props}
-    />
-  );
+function ActionBarEnd({ className, style, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="action-bar-end" {...applyHost(className, style, styles.end)} {...props} />;
 }
 
 export { ActionBar, ActionBarEnd, ActionBarStart };

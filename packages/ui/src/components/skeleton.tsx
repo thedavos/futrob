@@ -1,13 +1,23 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyHost } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { motion } from "#styles/motion";
 
-function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+const styles = stylex.create({
+  base: {
+    borderRadius: "var(--corner-md)",
+    backgroundColor: colors.muted,
+  },
+});
+
+function Skeleton({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       aria-hidden="true"
       data-slot="skeleton"
-      className={cn("animate-pulse rounded-md bg-muted", className)}
+      {...applyHost(className, style, styles.base, motion.pulse)}
       {...props}
     />
   );
