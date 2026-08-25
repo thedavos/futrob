@@ -1,7 +1,81 @@
 import type { ComponentProps } from "react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyHost } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { elevation } from "#styles/elevation";
+import { typography } from "#styles/typography";
+
+const styles = stylex.create({
+  positioner: {
+    zIndex: 50,
+    outlineWidth: 0,
+    outlineStyle: "none",
+  },
+  content: {
+    maxHeight: "min(24rem, var(--available-height))",
+    minWidth: "14rem",
+    transformOrigin: "var(--transform-origin)",
+    overflowY: "auto",
+    borderRadius: "var(--corner-lg)",
+    backgroundColor: colors.popover,
+    padding: "0.375rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.popoverForeground,
+    outlineWidth: 0,
+    outlineStyle: "none",
+    transitionProperty: "opacity, scale",
+    transitionDuration: "var(--duration-normal)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+    scale: {
+      default: 1,
+      ":is([data-starting-style])": 0.95,
+      ":is([data-ending-style])": 0.95,
+    },
+  },
+  label: {
+    paddingInline: "0.625rem",
+    paddingBlock: "0.5rem",
+    color: colors.mutedForeground,
+  },
+  item: {
+    display: "flex",
+    minHeight: "2.75rem",
+    cursor: "pointer",
+    alignItems: "center",
+    gap: "0.5rem",
+    borderRadius: "var(--corner-md)",
+    paddingInline: "0.625rem",
+    paddingBlock: "0.5rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    outlineWidth: 0,
+    outlineStyle: "none",
+    userSelect: "none",
+    backgroundColor: {
+      default: null,
+      ":is([data-highlighted])": colors.muted,
+    },
+    pointerEvents: {
+      default: null,
+      ":is([data-disabled])": "none",
+    },
+    opacity: {
+      default: 1,
+      ":is([data-disabled])": 0.5,
+    },
+  },
+  itemInset: {
+    paddingLeft: "2rem",
+  },
+  separator: {
+    marginBlock: "0.375rem",
+    height: 1,
+    backgroundColor: colors.border,
+  },
+});
 
 const DropdownMenu = MenuPrimitive.Root;
 const DropdownMenuTrigger = MenuPrimitive.Trigger;
@@ -11,6 +85,7 @@ const DropdownMenuGroup = MenuPrimitive.Group;
 function DropdownMenuContent({
   align = "start",
   className,
+  style,
   side = "bottom",
   sideOffset = 8,
   ...props
@@ -20,16 +95,13 @@ function DropdownMenuContent({
     <DropdownMenuPortal>
       <MenuPrimitive.Positioner
         align={align}
-        className="z-50 outline-none"
+        {...applyHost(undefined, undefined, styles.positioner)}
         side={side}
         sideOffset={sideOffset}
       >
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
-          className={cn(
-            "max-h-[min(24rem,var(--available-height))] min-w-56 origin-(--transform-origin) overflow-y-auto rounded-lg bg-popover p-1.5 text-sm text-popover-foreground smooth-shadow-ring-md outline-none transition-[opacity,scale] duration-(--duration-normal) ease-(--ease-emphasized) data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
-            className,
-          )}
+          {...applyHost(className, style, styles.content, elevation.md)}
           {...props}
         />
       </MenuPrimitive.Positioner>
@@ -37,11 +109,11 @@ function DropdownMenuContent({
   );
 }
 
-function DropdownMenuLabel({ className, ...props }: MenuPrimitive.GroupLabel.Props) {
+function DropdownMenuLabel({ className, style, ...props }: MenuPrimitive.GroupLabel.Props) {
   return (
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
-      className={cn("px-2.5 py-2 typo-label text-muted-foreground", className)}
+      {...applyHost(className, style, typography.label, styles.label)}
       {...props}
     />
   );
@@ -49,17 +121,14 @@ function DropdownMenuLabel({ className, ...props }: MenuPrimitive.GroupLabel.Pro
 
 function DropdownMenuItem({
   className,
+  style,
   inset,
   ...props
 }: MenuPrimitive.Item.Props & { inset?: boolean }) {
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
-      className={cn(
-        "flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm outline-none select-none data-highlighted:bg-muted data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-        inset && "pl-8",
-        className,
-      )}
+      {...applyHost(className, style, styles.item, inset && styles.itemInset)}
       {...props}
     />
   );
@@ -67,12 +136,13 @@ function DropdownMenuItem({
 
 function DropdownMenuSeparator({
   className,
+  style,
   ...props
 }: ComponentProps<typeof MenuPrimitive.Separator>) {
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn("my-1.5 h-px bg-border", className)}
+      {...applyHost(className, style, styles.separator)}
       {...props}
     />
   );

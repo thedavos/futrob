@@ -1,6 +1,48 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyHost } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { elevation } from "#styles/elevation";
+
+const styles = stylex.create({
+  positioner: {
+    zIndex: 50,
+    outlineWidth: 0,
+    outlineStyle: "none",
+  },
+  content: {
+    width: "18rem",
+    transformOrigin: "var(--transform-origin)",
+    borderRadius: "var(--corner-lg)",
+    backgroundColor: colors.popover,
+    padding: "1rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.popoverForeground,
+    transitionProperty: "opacity, scale",
+    transitionDuration: "var(--duration-normal)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+    outlineWidth: 0,
+    outlineStyle: "none",
+    scale: {
+      default: 1,
+      ":is([data-starting-style])": 0.95,
+      ":is([data-ending-style])": 0.95,
+    },
+  },
+  title: {
+    fontWeight: 600,
+    lineHeight: 1.375,
+    color: colors.foreground,
+  },
+  description: {
+    marginTop: "0.25rem",
+    fontSize: "0.875rem",
+    lineHeight: 1.625,
+    color: colors.mutedForeground,
+  },
+});
 
 const Popover = PopoverPrimitive.Root;
 const PopoverTrigger = PopoverPrimitive.Trigger;
@@ -10,6 +52,7 @@ function PopoverContent({
   align = "center",
   children,
   className,
+  style,
   side = "bottom",
   sideOffset = 8,
   ...props
@@ -19,16 +62,13 @@ function PopoverContent({
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
         align={align}
-        className="z-50 outline-none"
+        {...applyHost(undefined, undefined, styles.positioner)}
         side={side}
         sideOffset={sideOffset}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
-          className={cn(
-            "w-72 origin-(--transform-origin) rounded-lg bg-popover p-4 text-sm text-popover-foreground smooth-shadow-ring-md transition-[opacity,scale] duration-(--duration-normal) ease-(--ease-emphasized) outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
-            className,
-          )}
+          {...applyHost(className, style, styles.content, elevation.md)}
           {...props}
         >
           {children}
@@ -38,21 +78,21 @@ function PopoverContent({
   );
 }
 
-function PopoverTitle({ className, ...props }: PopoverPrimitive.Title.Props) {
+function PopoverTitle({ className, style, ...props }: PopoverPrimitive.Title.Props) {
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
-      className={cn("font-semibold leading-snug text-foreground", className)}
+      {...applyHost(className, style, styles.title)}
       {...props}
     />
   );
 }
 
-function PopoverDescription({ className, ...props }: PopoverPrimitive.Description.Props) {
+function PopoverDescription({ className, style, ...props }: PopoverPrimitive.Description.Props) {
   return (
     <PopoverPrimitive.Description
       data-slot="popover-description"
-      className={cn("mt-1 text-sm leading-relaxed text-muted-foreground", className)}
+      {...applyHost(className, style, styles.description)}
       {...props}
     />
   );

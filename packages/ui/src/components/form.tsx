@@ -1,6 +1,6 @@
 import { Form as FormPrimitive } from "@base-ui/react/form";
 
-import { cn } from "#lib/utils";
+import { applyHost } from "#styles/apply";
 import type { FormFieldValue } from "#lib/read-form-string";
 
 type FormValuesRecord = { readonly [key: string]: FormFieldValue };
@@ -11,13 +11,14 @@ type FormErrors<Field extends string = string> = Partial<Record<Field, string | 
 
 function Form<FormValues extends object = FormValuesRecord>({
   className,
+  style,
   validationMode = "onSubmit",
   ...props
 }: FormProps<FormValues>) {
   return (
     <FormPrimitive
       data-slot="form"
-      className={cn(className)}
+      {...applyHost(className, style)}
       validationMode={validationMode}
       {...props}
     />

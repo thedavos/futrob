@@ -7,7 +7,8 @@ export { Logo } from "./logo";
 export type { LogoProps } from "./logo";
 
 export { ActionBar, ActionBarEnd, ActionBarStart } from "./components/action-bar";
-export { Alert, AlertDescription, AlertTitle, alertVariants } from "./components/alert";
+export { Alert, AlertDescription, AlertTitle } from "./components/alert";
+export type { AlertElevation, AlertVariant } from "./components/alert";
 export {
   AlertDialog,
   AlertDialogAction,
@@ -28,8 +29,8 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
-  cardVariants,
 } from "./components/card";
+export type { CardProps, CardVariant } from "./components/card";
 export {
   ChoiceGroup,
   ChoiceGroupIndicator,
@@ -79,8 +80,8 @@ export {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  emptyStateVariants,
 } from "./components/empty-state";
+export type { EmptyStateVariant } from "./components/empty-state";
 export { Field, FieldDescription, FieldError, FieldLabel, FieldValidity } from "./components/field";
 export type { FieldActions } from "./components/field";
 export { Form } from "./components/form";
@@ -155,19 +156,12 @@ export {
   SidebarMenuLink,
   SidebarProvider,
   SidebarRail,
+  sidebarMenuButtonStyles,
   sidebarMenuButtonVariants,
   useSidebar,
 } from "./components/sidebar";
 export { Skeleton } from "./components/skeleton";
-export {
-  Stat,
-  StatGroup,
-  StatHint,
-  StatLabel,
-  StatValue,
-  statValueVariants,
-  statVariants,
-} from "./components/stat";
+export { Stat, StatGroup, StatHint, StatLabel, StatValue } from "./components/stat";
 export type { StatProps, StatValueProps } from "./components/stat";
 export { Stepper } from "./components/stepper";
 export type { StepperStep } from "./components/stepper";
@@ -193,4 +187,12 @@ export { useCopyToClipboard } from "./hooks/use-copy-to-clipboard";
 export type { Icon, IconProps, IconWeight } from "./lib/icon";
 export { FUTROB_ICON_CATALOG } from "./icons/catalog";
 export type { FutrobIconEntry } from "./icons/catalog";
+export { applyHost, applyStyles } from "./styles/apply";
+export type { StyleXStyles } from "./styles/apply";
+export { colors } from "./styles/tokens.stylex";
+export { media } from "./styles/media.stylex";
+export { typography } from "./styles/typography";
+export { elevation } from "./styles/elevation";
+export { motion } from "./styles/motion";
+export { vis } from "./styles/sr-only";
 export { cn } from "./lib/utils";

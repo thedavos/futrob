@@ -1,6 +1,9 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 
-import { cn } from "#lib/utils";
+import { applyHost } from "#styles/apply";
+import { colors } from "#styles/tokens.stylex";
+import { typography } from "#styles/typography";
 
 type TableProps = React.ComponentProps<"table"> & {
   /** Reduces row height to 36px on desktop. Touch layouts remain comfortable. */
@@ -8,99 +11,135 @@ type TableProps = React.ComponentProps<"table"> & {
   containerClassName?: string;
 };
 
-function Table({ className, containerClassName, dense = false, ...props }: TableProps) {
+const styles = stylex.create({
+  container: {
+    position: "relative",
+    width: "100%",
+    overflowX: "auto",
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+  },
+  table: {
+    width: "100%",
+    captionSide: "bottom",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+  },
+  header: {
+    backgroundColor: "color-mix(in oklab, var(--muted) 60%, transparent)",
+  },
+  footer: {
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.border,
+    backgroundColor: "color-mix(in oklab, var(--muted) 60%, transparent)",
+    fontWeight: 600,
+  },
+  row: {
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.borderSubtle,
+    backgroundColor: {
+      default: colors.surface,
+      ":hover": "color-mix(in oklab, var(--muted) 45%, transparent)",
+      ':is([data-state="selected"])': "color-mix(in oklab, var(--primary) 8%, transparent)",
+    },
+    transitionProperty: "background-color",
+    transitionDuration: "var(--duration-normal)",
+  },
+  head: {
+    height: "var(--control-height)",
+    paddingInline: "0.75rem",
+    textAlign: "left",
+    verticalAlign: "middle",
+    color: colors.mutedForeground,
+    paddingRight: {
+      default: "0.75rem",
+      ":has([role=checkbox])": 0,
+    },
+  },
+  cell: {
+    height: "var(--control-height)",
+    paddingInline: "0.75rem",
+    paddingBlock: "0.5rem",
+    verticalAlign: "middle",
+    color: colors.foreground,
+    fontVariantNumeric: "tabular-nums",
+    paddingRight: {
+      default: "0.75rem",
+      ":has([role=checkbox])": 0,
+    },
+  },
+  caption: {
+    marginTop: "0.75rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+  empty: {
+    height: "8rem",
+    textAlign: "center",
+    color: colors.mutedForeground,
+  },
+});
+
+function Table({ className, style, containerClassName, dense = false, ...props }: TableProps) {
   return (
     <div
       data-slot="table-container"
-      className={cn(
-        "relative w-full overflow-x-auto rounded-lg border border-border",
-        containerClassName,
-      )}
+      {...applyHost(containerClassName, undefined, styles.container)}
     >
       <table
         data-slot="table"
         data-density={dense ? "dense" : "default"}
-        className={cn("group/table w-full caption-bottom text-sm", className)}
+        {...applyHost(className, style, styles.table)}
         {...props}
       />
     </div>
   );
 }
 
-function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
+function TableHeader({ className, style, ...props }: React.ComponentProps<"thead">) {
   return (
-    <thead
-      data-slot="table-header"
-      className={cn("bg-muted/60 [&_tr]:border-b [&_tr]:border-border", className)}
-      {...props}
-    />
+    <thead data-slot="table-header" {...applyHost(className, style, styles.header)} {...props} />
   );
 }
 
-function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
+function TableBody({ className, style, ...props }: React.ComponentProps<"tbody">) {
+  return <tbody data-slot="table-body" {...applyHost(className, style)} {...props} />;
+}
+
+function TableFooter({ className, style, ...props }: React.ComponentProps<"tfoot">) {
   return (
-    <tbody
-      data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
-      {...props}
-    />
+    <tfoot data-slot="table-footer" {...applyHost(className, style, styles.footer)} {...props} />
   );
 }
 
-function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
-  return (
-    <tfoot
-      data-slot="table-footer"
-      className={cn("border-t border-border bg-muted/60 font-semibold", className)}
-      {...props}
-    />
-  );
+function TableRow({ className, style, ...props }: React.ComponentProps<"tr">) {
+  return <tr data-slot="table-row" {...applyHost(className, style, styles.row)} {...props} />;
 }
 
-function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
-  return (
-    <tr
-      data-slot="table-row"
-      className={cn(
-        "border-b border-border-subtle bg-surface transition-colors hover:bg-muted/45 data-[state=selected]:bg-primary/8",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+function TableHead({ className, style, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
-      className={cn(
-        "typo-label h-(--control-height) px-3 text-left align-middle text-muted-foreground group-data-[density=dense]/table:h-(--control-height-dense) max-sm:group-data-[density=dense]/table:h-(--control-height-touch) [&:has([role=checkbox])]:pr-0",
-        className,
-      )}
+      {...applyHost(className, style, typography.label, styles.head)}
       {...props}
     />
   );
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
-  return (
-    <td
-      data-slot="table-cell"
-      className={cn(
-        "h-(--control-height) px-3 py-2 align-middle text-foreground tabular-nums group-data-[density=dense]/table:h-(--control-height-dense) group-data-[density=dense]/table:py-1.5 max-sm:group-data-[density=dense]/table:h-(--control-height-touch) [&:has([role=checkbox])]:pr-0",
-        className,
-      )}
-      {...props}
-    />
-  );
+function TableCell({ className, style, ...props }: React.ComponentProps<"td">) {
+  return <td data-slot="table-cell" {...applyHost(className, style, styles.cell)} {...props} />;
 }
 
-function TableCaption({ className, ...props }: React.ComponentProps<"caption">) {
+function TableCaption({ className, style, ...props }: React.ComponentProps<"caption">) {
   return (
     <caption
       data-slot="table-caption"
-      className={cn("mt-3 text-sm text-muted-foreground", className)}
+      {...applyHost(className, style, styles.caption)}
       {...props}
     />
   );
@@ -109,18 +148,19 @@ function TableCaption({ className, ...props }: React.ComponentProps<"caption">) 
 function TableEmpty({
   children = "No hay datos para mostrar.",
   className,
+  style,
   colSpan,
   ...props
 }: React.ComponentProps<"td">) {
   return (
-    <TableCell
+    <td
       data-slot="table-empty"
-      className={cn("h-32 text-center text-muted-foreground", className)}
       colSpan={colSpan}
+      {...applyHost(className, style, styles.cell, styles.empty)}
       {...props}
     >
       {children}
-    </TableCell>
+    </td>
   );
 }
 
