@@ -228,7 +228,11 @@ function QuarterFinalCard({
 }: {
   readonly home: BracketTeam;
   readonly away: BracketTeam;
-  readonly position: (typeof styles)["qf1"];
+  readonly position:
+    | (typeof styles)["qf1"]
+    | (typeof styles)["qf2"]
+    | (typeof styles)["qf3"]
+    | (typeof styles)["qf4"];
 }) {
   return (
     <div {...applyStyles(styles.qfCard, position)}>
@@ -257,7 +261,7 @@ function SemiFinalCard({
   readonly home: BracketTeam;
   readonly away: BracketTeam;
   readonly badge?: ReactNode;
-  readonly position: (typeof styles)["sfTop"];
+  readonly position: (typeof styles)["sfTop"] | (typeof styles)["sfBottom"];
 }) {
   const { t } = useI18n();
   return (
