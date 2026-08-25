@@ -1,8 +1,23 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, colors } from "@futrob/ui";
 import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { PlayerStatisticsPage } from "@/modules/statistics/presentation/player-statistics-page.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+
+const styles = stylex.create({
+  pending: {
+    display: "flex",
+    minHeight: "100svh",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingInline: "1.25rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+});
 
 export const Route = createFileRoute("/_app/player_/statistics")({
   component: ProtectedPlayerStatistics,
@@ -35,9 +50,7 @@ function ProtectedPlayerStatistics() {
 
   if (!allowed) {
     return (
-      <main className="flex min-h-svh items-center justify-center px-5 text-sm text-muted-foreground">
-        {t("player.onboarding.checking")}
-      </main>
+      <main {...applyStyles(styles.pending)}>{t("player.onboarding.checking")}</main>
     );
   }
 

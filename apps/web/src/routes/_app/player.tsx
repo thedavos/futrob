@@ -1,7 +1,23 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, colors } from "@futrob/ui";
 import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { PlayerWorkspacePage } from "@/modules/teams/presentation/player-workspace-page.tsx";
+
+const styles = stylex.create({
+  pending: {
+    display: "flex",
+    minHeight: "100svh",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+    paddingInline: "1.25rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+});
 
 export const Route = createFileRoute("/_app/player")({
   component: PlayerRoute,
@@ -37,9 +53,7 @@ function PlayerRoute() {
 
   if (!allowed) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-background px-5 text-sm text-muted-foreground">
-        Comprobando tu onboarding…
-      </main>
+      <main {...applyStyles(styles.pending)}>Comprobando tu onboarding…</main>
     );
   }
 

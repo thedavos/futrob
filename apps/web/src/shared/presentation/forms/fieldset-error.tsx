@@ -1,4 +1,24 @@
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, colors } from "@futrob/ui";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+
+const styles = stylex.create({
+  root: {
+    marginTop: "0.75rem",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "0.375rem",
+    fontSize: "0.75rem",
+    lineHeight: 1.5,
+    color: colors.danger,
+  },
+  icon: {
+    marginTop: "0.125rem",
+    width: "0.75rem",
+    height: "0.75rem",
+    flexShrink: 0,
+  },
+});
 
 export function FieldsetError({
   id,
@@ -7,9 +27,15 @@ export function FieldsetError({
   readonly id: string;
   readonly children: string | null;
 }) {
+  const icon = applyStyles(styles.icon);
   return (
-    <p className="mt-3 flex items-start gap-1.5 text-xs leading-normal text-danger" id={id}>
-      <WarningCircleIcon aria-hidden="true" className="mt-0.5 size-3 shrink-0" strokeWidth={1.5} />
+    <p id={id} {...applyStyles(styles.root)}>
+      <WarningCircleIcon
+        aria-hidden="true"
+        className={icon.className}
+        style={icon.style}
+        strokeWidth={1.5}
+      />
       <span>{children}</span>
     </p>
   );

@@ -1,5 +1,15 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ActionBar, Button, SidebarInset, SidebarProvider, SidebarRail } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import {
+  ActionBar,
+  applyStyles,
+  Button,
+  colors,
+  media,
+  SidebarInset,
+  SidebarProvider,
+  SidebarRail,
+} from "@futrob/ui";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import {
   ShellActionBarProvider,
@@ -27,6 +37,67 @@ import {
 } from "@/shared/presentation/shell/command-bar-identity.ts";
 import { CommandBarIdentityMark } from "@/shared/presentation/shell/command-bar-identity-mark.tsx";
 import { DesktopSidebar, MobileNav } from "@/shared/presentation/shell/shell-sidebar-nav.tsx";
+
+const styles = stylex.create({
+  skipLink: {
+    position: { default: "absolute", ":focus": "absolute" },
+    width: { default: 1, ":focus": "auto" },
+    height: { default: 1, ":focus": "auto" },
+    paddingInline: { default: 0, ":focus": "0.75rem" },
+    paddingBlock: { default: 0, ":focus": "0.5rem" },
+    margin: { default: -1, ":focus": "0.75rem" },
+    overflow: { default: "hidden", ":focus": "visible" },
+    clip: { default: "rect(0, 0, 0, 0)", ":focus": "auto" },
+    whiteSpace: { default: "nowrap", ":focus": "normal" },
+    borderWidth: 0,
+    zIndex: { default: null, ":focus": 50 },
+    borderRadius: { default: null, ":focus": "var(--corner-lg)" },
+    backgroundColor: { default: null, ":focus": colors.surface },
+    boxShadow: {
+      default: null,
+      ":focus": "0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent)",
+    },
+  },
+  main: {
+    display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    flexDirection: "column",
+    overflowY: "auto",
+    paddingInline: { default: "1.5rem", ":has([data-shell-bleed])": 0 },
+    paddingBlock: { default: "1.5rem", ":has([data-shell-bleed])": 0 },
+  },
+  commandBar: {
+    display: {
+      default: "none",
+      [media.md]: "flex",
+    },
+    height: "3.5rem",
+    flexShrink: 0,
+    alignItems: "center",
+    gap: "0.75rem",
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.border,
+    paddingInline: "1.25rem",
+  },
+  identity: {
+    display: "flex",
+    minWidth: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    alignItems: "center",
+  },
+  commands: {
+    display: "flex",
+    flexShrink: 0,
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+});
 
 export { DesktopSidebar, MobileNav } from "@/shared/presentation/shell/shell-sidebar-nav.tsx";
 
@@ -71,10 +142,7 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
       onCollapsedChange={onCollapsedChange}
     >
       <ShellActionBarProvider>
-        <a
-          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-3 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2 focus:ring-2 focus:ring-ring/25"
-          href="#app-main"
-        >
+        <a href="#app-main" {...applyStyles(styles.skipLink)}>
           Saltar al contenido
         </a>
         <DesktopSidebar
@@ -104,10 +172,7 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
             onAddClub={() => setAddClubOpen(true)}
             selection={selectionState.selection}
           />
-          <div
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6 has-[[data-shell-bleed]]:p-0"
-            id="app-main"
-          >
+          <div id="app-main" {...applyStyles(styles.main)}>
             {children}
           </div>
           <ShellActionBarSlot />
@@ -143,12 +208,12 @@ function CommandBar({
   const emptyLabel = t("player.workspace.eyebrow");
 
   return (
-    <header className="hidden h-14 shrink-0 items-center gap-3 border-b border-border px-5 md:flex">
-      <div className="flex min-w-0 flex-1 items-center">
+    <header {...applyStyles(styles.commandBar)}>
+      <div {...applyStyles(styles.identity)}>
         <CommandBarIdentityMark emptyLabel={emptyLabel} identity={identity} ready={identityReady} />
       </div>
       {commands.length > 0 ? (
-        <div className="flex shrink-0 items-center gap-2">
+        <div {...applyStyles(styles.commands)}>
           {commands.map((command) => (
             <Button
               dense

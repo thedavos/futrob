@@ -1,8 +1,8 @@
 "use client";
 
-import type { Icon } from "@futrob/ui";
-import { cn } from "@futrob/ui";
 import type { ComponentProps } from "react";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, applyStyles, colors, media, typography, type Icon } from "@futrob/ui";
 
 export type QueueTaskTone = "default" | "urgent" | "waiting" | "resolved";
 
@@ -30,28 +30,129 @@ type QueueTaskItemLinkProps = QueueTaskItemSharedProps &
 
 export type QueueTaskItemProps = QueueTaskItemButtonProps | QueueTaskItemLinkProps;
 
+const styles = stylex.create({
+  item: {
+    minWidth: 0,
+  },
+  trigger: {
+    display: "flex",
+    width: "100%",
+    cursor: "pointer",
+    gap: "0.625rem",
+    borderRadius: "var(--corner-lg)",
+    textAlign: "start",
+    color: colors.foreground,
+    outlineWidth: 0,
+    outlineStyle: "none",
+    transitionProperty: "color, background-color",
+    transitionDuration: "var(--duration-fast)",
+    transitionTimingFunction: "var(--ease-standard)",
+    boxShadow: {
+      default: null,
+      ":focus-visible": "0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent)",
+    },
+    pointerEvents: {
+      default: null,
+      ":disabled": "none",
+    },
+    opacity: {
+      default: 1,
+      ":disabled": 0.5,
+    },
+  },
+  triggerIdle: {
+    backgroundColor: {
+      default: "transparent",
+      ":hover": "color-mix(in oklab, var(--muted) 70%, transparent)",
+    },
+  },
+  triggerActive: {
+    backgroundColor: colors.muted,
+  },
+  triggerDense: {
+    minHeight: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+    },
+  },
+  triggerComfortable: {
+    minHeight: "var(--control-height)",
+  },
+  triggerCompact: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingInline: 0,
+    minWidth: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+    },
+  },
+  triggerExpanded: {
+    alignItems: "flex-start",
+    paddingInline: "0.625rem",
+    paddingBlock: "0.375rem",
+  },
+  icon: {
+    display: "flex",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconCompact: {
+    width: "1rem",
+    height: "1rem",
+  },
+  iconExpanded: {
+    height: "1.25rem",
+    width: "1rem",
+  },
+  iconUrgent: {
+    color: colors.warning,
+  },
+  iconMuted: {
+    color: colors.mutedForeground,
+  },
+  copy: {
+    display: "flex",
+    minWidth: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  title: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    fontWeight: 600,
+    color: colors.foreground,
+  },
+  subtitle: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontWeight: 500,
+    color: colors.mutedForeground,
+  },
+  meta: {
+    flexShrink: 0,
+    fontWeight: 500,
+    lineHeight: "1.25rem",
+    fontVariantNumeric: "tabular-nums",
+  },
+  metaUrgent: {
+    color: colors.warning,
+  },
+  metaMuted: {
+    color: colors.mutedForeground,
+  },
+});
+
 function accessibleName(title: string, subtitle: string | undefined): string {
   return subtitle ? `${title}. ${subtitle}` : title;
-}
-
-function triggerClassName(options: {
-  readonly active: boolean;
-  readonly className: string | undefined;
-  readonly compact: boolean;
-  readonly dense: boolean;
-}): string {
-  const { active, className, compact, dense } = options;
-  return cn(
-    "flex w-full cursor-pointer gap-2.5 rounded-lg text-start text-foreground outline-none transition-[color,background-color] duration-(--duration-fast) ease-(--ease-standard) focus-visible:ring-2 focus-visible:ring-ring/25 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-    active ? "bg-muted" : "hover:bg-muted/70",
-    dense
-      ? "min-h-(--control-height-dense) max-sm:min-h-(--control-height-touch)"
-      : "min-h-(--control-height)",
-    compact
-      ? "items-center justify-center px-0 min-w-(--control-height-dense) max-sm:min-w-(--control-height-touch)"
-      : "items-start px-2.5 py-1.5",
-    className,
-  );
 }
 
 function QueueTaskItemContent({
@@ -75,41 +176,36 @@ function QueueTaskItemContent({
     <>
       <span
         aria-hidden="true"
-        className={cn(
-          "flex shrink-0 items-center justify-center",
-          compact ? "size-4" : "h-5 w-4",
-          tone === "urgent" ? "text-warning" : "text-muted-foreground",
-        )}
         data-slot="queue-task-item-icon"
+        {...applyStyles(
+          styles.icon,
+          compact ? styles.iconCompact : styles.iconExpanded,
+          tone === "urgent" ? styles.iconUrgent : styles.iconMuted,
+        )}
       >
         <IconComponent weight={active ? "fill" : "regular"} />
       </span>
       {compact ? null : (
         <>
-          <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span
-              className="truncate text-sm font-semibold leading-5 text-foreground"
-              title={title}
-            >
+          <span {...applyStyles(styles.copy)}>
+            <span title={title} {...applyStyles(styles.title)}>
               {title}
             </span>
             {subtitle ? (
-              <span
-                className="typo-caption truncate font-medium text-muted-foreground"
-                title={subtitle}
-              >
+              <span title={subtitle} {...applyStyles(typography.caption, styles.subtitle)}>
                 {subtitle}
               </span>
             ) : null}
           </span>
           {meta ? (
             <span
-              className={cn(
-                "typo-caption shrink-0 font-medium leading-5 tabular-nums",
-                tone === "urgent" ? "text-warning" : "text-muted-foreground",
-              )}
               data-slot="queue-task-item-meta"
               title={meta}
+              {...applyStyles(
+                typography.caption,
+                styles.meta,
+                tone === "urgent" ? styles.metaUrgent : styles.metaMuted,
+              )}
             >
               {meta}
             </span>
@@ -133,14 +229,21 @@ function QueueTaskItemButton({
   ...rest
 }: QueueTaskItemButtonProps) {
   const name = accessibleName(title, subtitle);
+  const trigger = applyHost(
+    className,
+    undefined,
+    styles.trigger,
+    active ? styles.triggerActive : styles.triggerIdle,
+    dense ? styles.triggerDense : styles.triggerComfortable,
+    compact ? styles.triggerCompact : styles.triggerExpanded,
+  );
 
   return (
-    <li className="min-w-0" data-slot="queue-task-item">
+    <li data-slot="queue-task-item" {...applyStyles(styles.item)}>
       <button
         {...rest}
         aria-current={active ? "true" : undefined}
         aria-label={compact ? name : undefined}
-        className={triggerClassName({ active, className, compact, dense })}
         data-active={active ? "true" : undefined}
         data-compact={compact ? "true" : undefined}
         data-density={dense ? "dense" : "default"}
@@ -148,6 +251,7 @@ function QueueTaskItemButton({
         data-tone={tone}
         title={compact ? name : undefined}
         type="button"
+        {...trigger}
       >
         <QueueTaskItemContent
           IconComponent={IconComponent}
@@ -177,14 +281,21 @@ function QueueTaskItemLink({
   ...rest
 }: QueueTaskItemLinkProps) {
   const name = accessibleName(title, subtitle);
+  const trigger = applyHost(
+    className,
+    undefined,
+    styles.trigger,
+    active ? styles.triggerActive : styles.triggerIdle,
+    dense ? styles.triggerDense : styles.triggerComfortable,
+    compact ? styles.triggerCompact : styles.triggerExpanded,
+  );
 
   return (
-    <li className="min-w-0" data-slot="queue-task-item">
+    <li data-slot="queue-task-item" {...applyStyles(styles.item)}>
       <a
         {...rest}
         aria-current={active ? "page" : undefined}
         aria-label={compact ? name : undefined}
-        className={triggerClassName({ active, className, compact, dense })}
         data-active={active ? "true" : undefined}
         data-compact={compact ? "true" : undefined}
         data-density={dense ? "dense" : "default"}
@@ -192,6 +303,7 @@ function QueueTaskItemLink({
         data-tone={tone}
         href={href}
         title={compact ? name : undefined}
+        {...trigger}
       >
         <QueueTaskItemContent
           IconComponent={IconComponent}

@@ -1,6 +1,9 @@
-import { Link } from "@tanstack/react-router";
+import { createLink } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   Button,
+  colors,
   Sheet,
   SheetBody,
   SheetContent,
@@ -16,8 +19,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  cn,
-  sidebarMenuButtonVariants,
+  SidebarMenuLink,
+  typography,
   useSidebar,
 } from "@futrob/ui";
 import {
@@ -39,6 +42,93 @@ import { WorkspaceSelector } from "@/shared/presentation/shell/workspace-selecto
 import type { WorkspaceSelectorModel } from "@/shared/presentation/shell/workspace-selector-model.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
+const SidebarNavLink = createLink(SidebarMenuLink);
+
+const styles = stylex.create({
+  sheet: {
+    width: "min(20rem, 90vw)",
+    padding: 0,
+  },
+  sheetBody: {
+    padding: 0,
+  },
+  sheetColumn: {
+    display: "flex",
+    height: "100%",
+    minHeight: 0,
+    flexDirection: "column",
+  },
+  mobileTitle: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    fontWeight: 500,
+  },
+  headerCompact: {
+    alignItems: "center",
+    gap: "0.5rem",
+    padding: "0.5rem",
+  },
+  headerExpanded: {
+    gap: "0.75rem",
+  },
+  headerRow: {
+    display: "flex",
+    width: "100%",
+    alignItems: "center",
+    gap: "0.25rem",
+  },
+  headerRowCompact: {
+    flexDirection: "column",
+  },
+  collapseButton: {
+    marginLeft: "auto",
+    flexShrink: 0,
+  },
+  contentCompact: {
+    alignItems: "center",
+    padding: "0.5rem",
+  },
+  footerCompact: {
+    alignItems: "center",
+    padding: "0.5rem",
+  },
+  queueEmpty: {
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.borderStrong,
+    paddingInline: "0.75rem",
+    paddingBlock: "1rem",
+    textAlign: "center",
+  },
+  queueTitle: {
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    fontWeight: 500,
+    color: colors.foreground,
+  },
+  queueDescription: {
+    color: colors.mutedForeground,
+  },
+  navIcon: {
+    width: "1rem",
+    height: "1rem",
+    flexShrink: 0,
+  },
+  navLabel: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  navCompact: {
+    justifyContent: "center",
+    paddingInline: 0,
+  },
+});
+
 export type ShellSidebarProps = {
   readonly selection: WorkspaceSelection;
   readonly pathname: string;
@@ -58,6 +148,8 @@ export function DesktopSidebar(props: ShellSidebarProps) {
 
 export function MobileNav(props: ShellSidebarProps & { readonly title: string }) {
   const { openMobile, setOpenMobile } = useSidebar();
+  const sheet = applyStyles(styles.sheet);
+  const sheetBody = applyStyles(styles.sheetBody);
 
   return (
     <>
@@ -67,12 +159,12 @@ export function MobileNav(props: ShellSidebarProps & { readonly title: string })
         >
           <ListIcon aria-hidden="true" />
         </SheetTrigger>
-        <SheetContent className="w-[min(20rem,90vw)] p-0" side="left">
+        <SheetContent className={sheet.className} side="left" style={sheet.style}>
           <SheetHeader>
             <SheetTitle>Navegación</SheetTitle>
           </SheetHeader>
-          <SheetBody className="p-0">
-            <div className="flex h-full min-h-0 flex-col">
+          <SheetBody className={sheetBody.className} style={sheetBody.style}>
+            <div {...applyStyles(styles.sheetColumn)}>
               <ShellSidebarBody
                 {...props}
                 forceExpanded
@@ -85,7 +177,7 @@ export function MobileNav(props: ShellSidebarProps & { readonly title: string })
           </SheetBody>
         </SheetContent>
       </Sheet>
-      <span className="truncate text-sm font-medium">{props.title}</span>
+      <span {...applyStyles(styles.mobileTitle)}>{props.title}</span>
     </>
   );
 }
@@ -106,19 +198,24 @@ function ShellSidebarBody({
   const context = contextNavFor(selection, allowedPermissions);
   const footerItems = context.items.length > 0 ? context.items : general.items;
   const showCollapseControl = !forceExpanded;
+  const header = applyStyles(compact ? styles.headerCompact : styles.headerExpanded);
+  const collapse = applyStyles(styles.collapseButton);
+  const contentCompact = applyStyles(styles.contentCompact);
+  const footerCompact = applyStyles(styles.footerCompact);
 
   return (
     <>
-      <SidebarHeader className={compact ? "items-center gap-2 p-2" : "gap-3"}>
-        <div className={cn("flex w-full items-center gap-1", compact && "flex-col")}>
+      <SidebarHeader className={header.className} style={header.style}>
+        <div {...applyStyles(styles.headerRow, compact && styles.headerRowCompact)}>
           <AccountMenu compact={compact} />
           {showCollapseControl ? (
             <Button
               aria-label={collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
-              className={compact ? undefined : "ml-auto shrink-0"}
+              className={compact ? undefined : collapse.className}
               dense
               onClick={toggleCollapsed}
               size="icon"
+              style={compact ? undefined : collapse.style}
               variant="ghost"
             >
               {collapsed ? (
@@ -139,7 +236,7 @@ function ShellSidebarBody({
         )}
       </SidebarHeader>
       {compact ? (
-        <SidebarContent className="items-center p-2">
+        <SidebarContent className={contentCompact.className} style={contentCompact.style}>
           <Button
             aria-label={t("shell.queue.expand")}
             dense
@@ -159,7 +256,10 @@ function ShellSidebarBody({
           </SidebarGroup>
         </SidebarContent>
       )}
-      <SidebarFooter className={compact ? "items-center p-2" : undefined}>
+      <SidebarFooter
+        className={compact ? footerCompact.className : undefined}
+        style={compact ? footerCompact.style : undefined}
+      >
         <NavItemList compact={compact} items={footerItems} pathname={pathname} />
       </SidebarFooter>
     </>
@@ -170,9 +270,11 @@ function QueuePlaceholder() {
   const { t } = useI18n();
 
   return (
-    <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
-      <p className="text-sm font-medium text-foreground">{t("shell.queue.empty.title")}</p>
-      <p className="typo-caption text-muted-foreground">{t("shell.queue.empty.description")}</p>
+    <div {...applyStyles(styles.queueEmpty)}>
+      <p {...applyStyles(styles.queueTitle)}>{t("shell.queue.empty.title")}</p>
+      <p {...applyStyles(typography.caption, styles.queueDescription)}>
+        {t("shell.queue.empty.description")}
+      </p>
     </div>
   );
 }
@@ -187,6 +289,8 @@ function NavItemList({
   readonly compact?: boolean;
 }) {
   const activeHref = resolveActiveNavHref(pathname, items);
+  const icon = applyStyles(styles.navIcon);
+  const compactButton = applyStyles(styles.navCompact);
 
   return (
     <SidebarMenu>
@@ -195,8 +299,10 @@ function NavItemList({
         const Icon = item.icon ? SHELL_NAV_ICONS[item.icon] : null;
         const label = (
           <>
-            {Icon ? <Icon aria-hidden="true" className="size-4 shrink-0" /> : null}
-            {compact ? null : <span className="truncate">{item.label}</span>}
+            {Icon ? (
+              <Icon aria-hidden="true" className={icon.className} style={icon.style} />
+            ) : null}
+            {compact ? null : <span {...applyStyles(styles.navLabel)}>{item.label}</span>}
           </>
         );
         return (
@@ -206,26 +312,27 @@ function NavItemList({
                 active={active}
                 aria-current={active ? "page" : undefined}
                 aria-label={item.label}
-                className={compact ? "justify-center px-0" : undefined}
+                className={compact ? compactButton.className : undefined}
                 dense
                 disabled
+                style={compact ? compactButton.style : undefined}
                 title={item.label}
               >
                 {label}
               </SidebarMenuButton>
             ) : (
-              <Link
+              <SidebarNavLink
+                active={active}
                 aria-current={active ? "page" : undefined}
                 aria-label={item.label}
-                className={cn(
-                  sidebarMenuButtonVariants({ active, dense: true }),
-                  compact && "justify-center px-0",
-                )}
+                className={compact ? compactButton.className : undefined}
+                dense
+                style={compact ? compactButton.style : undefined}
                 title={item.label}
                 to={item.href}
               >
                 {label}
-              </Link>
+              </SidebarNavLink>
             )}
           </SidebarMenuItem>
         );

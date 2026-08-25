@@ -1,24 +1,114 @@
 "use client";
 
-import { Button, Logo } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Button, colors, Logo, media, typography } from "@futrob/ui";
 import { Link } from "@tanstack/react-router";
+
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+
+const styles = stylex.create({
+  section: {
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+  },
+  inner: {
+    marginInline: "auto",
+    maxWidth: "80rem",
+    paddingInline: {
+      default: "1.25rem",
+      [media.sm]: "2rem",
+    },
+    paddingBlock: {
+      default: "6rem",
+      [media.lg]: "8rem",
+    },
+    textAlign: "center",
+  },
+  copy: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+  },
+  title: {
+    marginInline: "auto",
+    maxWidth: "48rem",
+  },
+  subtitle: {
+    marginInline: "auto",
+    maxWidth: "36rem",
+    color: colors.mutedForeground,
+    fontSize: {
+      default: null,
+      [media.sm]: "var(--text-base)",
+    },
+    lineHeight: {
+      default: null,
+      [media.sm]: "1.5rem",
+    },
+  },
+  actions: {
+    marginTop: "3rem",
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: "0.75rem",
+  },
+  footer: {
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+  },
+  footerInner: {
+    marginInline: "auto",
+    display: "flex",
+    maxWidth: "80rem",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    columnGap: "2rem",
+    rowGap: "1rem",
+    paddingInline: {
+      default: "1.25rem",
+      [media.sm]: "2rem",
+    },
+    paddingBlock: "2rem",
+  },
+  brand: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "flex-start",
+    gap: "0.5rem",
+  },
+  logo: {
+    marginTop: 1,
+    height: "1.25rem",
+    width: "auto",
+    flexShrink: 0,
+    color: colors.mutedForeground,
+  },
+  taglines: {
+    display: "flex",
+    minWidth: 0,
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  mutedCaption: {
+    color: colors.mutedForeground,
+  },
+});
 
 export function FinalCtaSection() {
   const { t } = useI18n();
+  const logo = applyStyles(styles.logo);
   return (
     <>
-      <section className="border-t border-border-subtle">
-        <div className="mx-auto max-w-7xl px-5 py-24 text-center sm:px-8 lg:py-32">
-          <div className="flex flex-col gap-6">
-            <h2 className="typo-display mx-auto max-w-3xl text-balance">
-              {t("landing.cta.title")}
-            </h2>
-            <p className="typo-subtitle mx-auto max-w-xl text-muted-foreground sm:text-base">
-              {t("landing.cta.subtitle")}
-            </p>
+      <section {...applyStyles(styles.section)}>
+        <div {...applyStyles(styles.inner)}>
+          <div {...applyStyles(styles.copy)}>
+            <h2 {...applyStyles(typography.display, styles.title)}>{t("landing.cta.title")}</h2>
+            <p {...applyStyles(typography.subtitle, styles.subtitle)}>{t("landing.cta.subtitle")}</p>
           </div>
-          <div className="mt-12 flex flex-wrap justify-center gap-3">
+          <div {...applyStyles(styles.actions)}>
             <Button render={<Link to="/signup" />}>{t("landing.cta.primary")}</Button>
             <Button render={<Link to="/login" />} variant="ghost">
               {t("landing.cta.secondary")}
@@ -26,20 +116,22 @@ export function FinalCtaSection() {
           </div>
         </div>
       </section>
-      <footer className="border-t border-border-subtle">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-start gap-x-8 gap-y-4 px-5 py-8 sm:px-8">
-          <div className="flex min-w-0 items-start gap-2">
-            <Logo className="mt-px h-5 w-auto shrink-0 text-muted-foreground" monochrome />
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="typo-caption text-muted-foreground">
+      <footer {...applyStyles(styles.footer)}>
+        <div {...applyStyles(styles.footerInner)}>
+          <div {...applyStyles(styles.brand)}>
+            <Logo className={logo.className} monochrome style={logo.style} />
+            <div {...applyStyles(styles.taglines)}>
+              <span {...applyStyles(typography.caption, styles.mutedCaption)}>
                 {t("landing.footer.tagline")}
               </span>
-              <span className="typo-caption text-muted-foreground">
+              <span {...applyStyles(typography.caption, styles.mutedCaption)}>
                 {t("landing.footer.madeBy")}
               </span>
             </div>
           </div>
-          <span className="typo-caption text-muted-foreground">{t("landing.footer.legal")}</span>
+          <span {...applyStyles(typography.caption, styles.mutedCaption)}>
+            {t("landing.footer.legal")}
+          </span>
         </div>
       </footer>
     </>

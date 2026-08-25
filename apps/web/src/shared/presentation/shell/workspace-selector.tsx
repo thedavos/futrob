@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   Button,
   Dialog,
   DialogContent,
@@ -41,6 +43,59 @@ import {
 } from "./workspace-selector-items.tsx";
 import { workspaceRoleMessageKey } from "./workspace-role-icons.ts";
 
+const styles = stylex.create({
+  trigger: {
+    width: "100%",
+    justifyContent: "space-between",
+    fontWeight: 500,
+  },
+  triggerLabel: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  truncate: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  caret: {
+    width: "1rem",
+    height: "1rem",
+    flexShrink: 0,
+    transitionProperty: "transform",
+    transitionDuration: "var(--duration-normal)",
+    transitionTimingFunction: "var(--ease-emphasized)",
+  },
+  menu: {
+    minWidth: "14rem",
+  },
+  dialogBody: {
+    marginTop: "1.25rem",
+  },
+  orgList: {
+    marginTop: "1.25rem",
+    display: "grid",
+    gap: "0.5rem",
+  },
+  orgButton: {
+    width: "100%",
+    justifyContent: "space-between",
+  },
+  orgIdentity: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  orgIcon: {
+    width: "1rem",
+    height: "1rem",
+    flexShrink: 0,
+  },
+});
+
 export {
   AssociatedClubMenuItem,
   RoleAwareMenuItem,
@@ -74,6 +129,11 @@ export function WorkspaceSelector({
   const { t } = useI18n();
   const [dialog, setDialog] = useState<CompetitionHostDialog>({ kind: "closed" });
 
+  const trigger = applyStyles(styles.trigger);
+  const caret = applyStyles(styles.caret);
+  const menu = applyStyles(styles.menu);
+  const orgButton = applyStyles(styles.orgButton);
+  const orgIcon = applyStyles(styles.orgIcon);
   const selectedClub =
     selection.kind === WORKSPACE_SELECTION_KIND.personal
       ? (model.clubs.find((club) => club.externalClubId === selection.externalClubId) ??
@@ -123,12 +183,17 @@ export function WorkspaceSelector({
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button className="group w-full justify-between font-medium" dense variant="outline" />
+            <Button
+              className={trigger.className}
+              dense
+              style={trigger.style}
+              variant="outline"
+            />
           }
         >
-          <span className="flex min-w-0 items-center gap-2">
+          <span {...applyStyles(styles.triggerLabel)}>
             <SelectorTriggerIcon clubs={model.clubs} selection={selection} />
-            <span className="truncate">
+            <span {...applyStyles(styles.truncate)}>
               {selectorTriggerLabel(
                 selection,
                 personalLabel,
@@ -139,10 +204,12 @@ export function WorkspaceSelector({
           </span>
           <CaretDownIcon
             aria-hidden="true"
-            className="size-4 shrink-0 transition-transform duration-(--duration-normal) ease-(--ease-emphasized) group-aria-expanded:rotate-180"
+            className={caret.className}
+            data-caret="expand"
+            style={caret.style}
           />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-56">
+        <DropdownMenuContent align="start" className={menu.className} style={menu.style}>
           <TooltipProvider>
             <DropdownMenuGroup>
               <SectionHeaderAction
@@ -240,7 +307,7 @@ export function WorkspaceSelector({
               {t("shell.workspace.createOrganizationForCompetition.description")}
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-5">
+          <div {...applyStyles(styles.dialogBody)}>
             <CreateOrganizationForm
               onCreated={(created) => {
                 setDialog({ kind: "closed" });
@@ -268,7 +335,7 @@ export function WorkspaceSelector({
             </DialogDescription>
           </DialogHeader>
           <TooltipProvider>
-            <ul className="mt-5 grid gap-2">
+            <ul {...applyStyles(styles.orgList)}>
               {(dialog.kind === "pick-organization" ? dialog.organizations : []).map(
                 (organization) => {
                   const roleLabel = t(workspaceRoleMessageKey(organization.role));
@@ -276,7 +343,7 @@ export function WorkspaceSelector({
                     <li key={organization.organizationId}>
                       <Button
                         aria-label={`${organization.name}, ${roleLabel}`}
-                        className="w-full justify-between"
+                        className={orgButton.className}
                         onClick={() => {
                           setDialog({ kind: "closed" });
                           void navigate({
@@ -284,11 +351,16 @@ export function WorkspaceSelector({
                             params: { orgId: organization.organizationId },
                           });
                         }}
+                        style={orgButton.style}
                         variant="outline"
                       >
-                        <span className="flex min-w-0 items-center gap-2">
-                          <BuildingsIcon aria-hidden="true" className="size-4 shrink-0" />
-                          <span className="truncate">{organization.name}</span>
+                        <span {...applyStyles(styles.orgIdentity)}>
+                          <BuildingsIcon
+                            aria-hidden="true"
+                            className={orgIcon.className}
+                            style={orgIcon.style}
+                          />
+                          <span {...applyStyles(styles.truncate)}>{organization.name}</span>
                         </span>
                         <RoleIcon role={organization.role} />
                       </Button>

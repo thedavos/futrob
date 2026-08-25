@@ -1,11 +1,36 @@
 import type { ReactNode } from "react";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, colors, media, typography } from "@futrob/ui";
 import { InfoIcon } from "@phosphor-icons/react";
 
+const styles = stylex.create({
+  wrap: {
+    marginTop: {
+      default: "0.75rem",
+      [media.sm]: "1rem",
+    },
+  },
+  hint: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    gap: "0.5rem",
+    color: colors.mutedForeground,
+  },
+  icon: {
+    marginTop: "0.125rem",
+    width: "1rem",
+    height: "1rem",
+    flexShrink: 0,
+  },
+});
+
 export function OnboardingHint({ children }: Readonly<{ children: ReactNode }>) {
+  const icon = applyStyles(styles.icon);
   return (
-    <div className="mt-3 sm:mt-4">
-      <p className="typo-caption flex items-start justify-center gap-2 text-muted-foreground">
-        <InfoIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+    <div {...applyStyles(styles.wrap)}>
+      <p {...applyStyles(typography.caption, styles.hint)}>
+        <InfoIcon aria-hidden="true" className={icon.className} style={icon.style} />
         <span>{children}</span>
       </p>
     </div>

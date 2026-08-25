@@ -1,11 +1,11 @@
 "use client";
 
 import { ChartLineUpIcon } from "@phosphor-icons/react";
-import { Stat, StatGroup, StatLabel } from "@futrob/ui";
+import { applyStyles, Stat, StatGroup, StatLabel } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
-import { STAT_TRIPLE_GRID_CLASS_NAME } from "@/shared/presentation/stats/summary-card.tsx";
+import { statTripleGrid } from "@/shared/presentation/stats/summary-card.tsx";
 import { TooltipStat } from "@/shared/presentation/stats/tooltip-stat.tsx";
 import type {
   ContributionPace,
@@ -69,7 +69,10 @@ export function ContributionInsights({
   const share = contributionShareView(record.contributions.teamGoalShare, numberFormat, t);
 
   return (
-    <StatGroup className={`${STAT_TRIPLE_GRID_CLASS_NAME} [&>*]:min-w-0`}>
+    <StatGroup
+      className={applyStyles(statTripleGrid).className}
+      style={applyStyles(statTripleGrid).style}
+    >
       <TooltipStat
         label={t("player.matches.contributions.contributed")}
         tooltip={contributed.tooltip}

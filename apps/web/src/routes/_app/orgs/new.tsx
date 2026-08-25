@@ -1,14 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, colors, typography } from "@futrob/ui";
 import { CreateOrganizationForm } from "@/modules/organizations/presentation/create-organization-form.tsx";
+
+const styles = stylex.create({
+  main: {
+    width: "100%",
+    maxWidth: "36rem",
+  },
+  intro: {
+    marginBottom: "2rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  subtitle: {
+    color: colors.mutedForeground,
+  },
+});
 
 export const Route = createFileRoute("/_app/orgs/new")({ component: NewOrganizationPage });
 
 function NewOrganizationPage() {
   return (
-    <main className="w-full max-w-xl">
-      <div className="mb-8 space-y-2">
-        <h1 className="typo-heading">Crear organización</h1>
-        <p className="typo-subtitle text-muted-foreground">
+    <main {...applyStyles(styles.main)}>
+      <div {...applyStyles(styles.intro)}>
+        <h1 {...applyStyles(typography.heading)}>Crear organización</h1>
+        <p {...applyStyles(typography.subtitle, styles.subtitle)}>
           Crea otro espacio para administrar competiciones y equipos.
         </p>
       </div>

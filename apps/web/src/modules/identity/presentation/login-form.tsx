@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   Button,
+  colors,
   Field,
   FieldError,
   FieldLabel,
@@ -27,6 +30,54 @@ import {
   type LoginValues,
 } from "@/modules/identity/presentation/login-form-validation.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+
+const styles = stylex.create({
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+  },
+  fields: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  error: {
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "color-mix(in oklab, var(--destructive) 40%, transparent)",
+    backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
+    paddingInline: "0.75rem",
+    paddingBlock: "0.625rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.destructive,
+  },
+  actions: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+  },
+  submit: {
+    width: "100%",
+  },
+  footer: {
+    textAlign: "center",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+  link: {
+    fontWeight: 500,
+    color: colors.foreground,
+    textUnderlineOffset: "4px",
+    textDecorationLine: {
+      default: "none",
+      ":hover": "underline",
+    },
+  },
+});
 
 function loginErrorMessage(error: AuthClientError): string {
   if (error.status === 0) {
@@ -53,6 +104,9 @@ export function LoginForm() {
   const validation = useFormValidation<LoginField>();
 
   const isSubmitting = state.status === "submitting" || state.status === "success";
+  const form = applyStyles(styles.form);
+  const submit = applyStyles(styles.submit);
+  const link = applyStyles(styles.link);
 
   async function handleSubmit(formValues: LoginValues) {
     const values: LoginValues = {
@@ -85,16 +139,14 @@ export function LoginForm() {
   return (
     <Form<LoginValues>
       aria-busy={isSubmitting}
-      className="flex flex-col gap-8"
+      className={form.className}
       errors={validation.formErrors}
       onFormSubmit={handleSubmit}
+      style={form.style}
     >
-      <div className="flex flex-col gap-4">
+      <div {...applyStyles(styles.fields)}>
         {state.status === "error" && state.message !== undefined ? (
-          <div
-            className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
-            role="alert"
-          >
+          <div role="alert" {...applyStyles(styles.error)}>
             {state.message}
           </div>
         ) : null}
@@ -138,18 +190,14 @@ export function LoginForm() {
         </Field>
       </div>
 
-      <div className="flex flex-col gap-6">
-        <Button className="w-full" disabled={isSubmitting} type="submit">
+      <div {...applyStyles(styles.actions)}>
+        <Button className={submit.className} disabled={isSubmitting} style={submit.style} type="submit">
           Iniciar sesión
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p {...applyStyles(styles.footer)}>
           ¿Aún no tienes cuenta?{" "}
-          <Link
-            className="font-medium text-foreground underline-offset-4 hover:underline"
-            search={{ redirectTo }}
-            to="/signup"
-          >
+          <Link className={link.className} search={{ redirectTo }} style={link.style} to="/signup">
             Crear una cuenta
           </Link>
         </p>

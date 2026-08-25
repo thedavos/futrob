@@ -1,12 +1,12 @@
 "use client";
 
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
-import { StatGroup, StatValue } from "@futrob/ui";
+import { applyStyles, StatGroup, StatValue } from "@futrob/ui";
 import { EqualsIcon, TrendDownIcon, TrophyIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { IconStat } from "@/shared/presentation/stats/icon-stat.tsx";
 import {
-  STAT_TRIPLE_GRID_CLASS_NAME,
+  statTripleGrid,
   SummaryCard,
   SummaryCardLoading,
 } from "@/shared/presentation/stats/summary-card.tsx";
@@ -76,7 +76,10 @@ export function ViewRecord({
           headingId="player-matches-stats-record"
           title={t("player.matches.stats.record")}
         >
-          <StatGroup className={STAT_TRIPLE_GRID_CLASS_NAME}>
+          <StatGroup
+            className={applyStyles(statTripleGrid).className}
+            style={applyStyles(statTripleGrid).style}
+          >
             <IconStat
               icon={TrophyIcon}
               label={t("player.matches.record.wins")}
