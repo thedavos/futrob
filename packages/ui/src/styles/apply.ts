@@ -6,13 +6,9 @@ export type { StyleXStyles };
 
 type StyleArg = StyleXStyles | object | null | undefined | false;
 
-/** Leftover React or Base UI `className` (string, or a render-state function). */
 type HostClassName = string | ((state: never) => string | undefined);
-
-/** Leftover React or Base UI `style` (CSS properties, or a render-state function). */
 type HostStyle = CSSProperties | ((state: never) => CSSProperties | undefined);
 
-/** Per-primitive Base UI state bag. `applyProps` only forwards it. */
 interface HostRenderState {}
 
 type AppliedClassName = string | ((state: HostRenderState) => string | undefined);
@@ -28,11 +24,6 @@ type StaticAppliedProps = {
   readonly style?: CSSProperties;
 };
 
-/**
- * Compile StyleX tokens to `{ className, style }`. Last argument wins, same as
- * `stylex.props` / the old `cn(...)` order. Use `applyProps` when leftover
- * React or Base UI `className` / `style` must merge in.
- */
 export function applyStyles(...styles: StyleArg[]) {
   // SAFETY: stylex.props rest overloads expect CompiledStyles tuples; tokens
   // from stylex.create are that compiled form at every applyStyles call site.

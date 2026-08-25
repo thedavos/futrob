@@ -15,12 +15,12 @@ describe("applyProps", () => {
       undefined,
     );
 
-    expect(applied.className).toBeTypeOf("function");
-    if (!(applied.className instanceof Function)) {
-      throw new Error("expected className callback");
+    const leftoverClass = applied.className;
+    expect(leftoverClass).toBeTypeOf("function");
+    if (leftoverClass instanceof Function) {
+      expect(leftoverClass({ pressed: true })).toBe("is-pressed");
+      expect(leftoverClass({ pressed: false })).toBeUndefined();
     }
-    expect(applied.className({ pressed: true })).toBe("is-pressed");
-    expect(applied.className({ pressed: false })).toBeUndefined();
   });
 
   it("keeps leftover style callbacks callable with primitive state", () => {
@@ -28,11 +28,11 @@ describe("applyProps", () => {
       state.open ? { opacity: 0.5 } : undefined,
     );
 
-    expect(applied.style).toBeTypeOf("function");
-    if (!(applied.style instanceof Function)) {
-      throw new Error("expected style callback");
+    const leftoverStyle = applied.style;
+    expect(leftoverStyle).toBeTypeOf("function");
+    if (leftoverStyle instanceof Function) {
+      expect(leftoverStyle({ open: true })).toEqual({ opacity: 0.5 });
+      expect(leftoverStyle({ open: false })).toBeUndefined();
     }
-    expect(applied.style({ open: true })).toEqual({ opacity: 0.5 });
-    expect(applied.style({ open: false })).toBeUndefined();
   });
 });

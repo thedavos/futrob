@@ -31,7 +31,9 @@ describe("ClubCrestAvatar", () => {
     );
     const image = container.querySelector('[data-slot="club-crest-image"]');
     expect(image).toBeTruthy();
-    fireEvent.error(image!);
+    if (image != null) {
+      fireEvent.error(image);
+    }
     expect(container.textContent).toContain("NO");
   });
 

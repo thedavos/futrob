@@ -60,7 +60,6 @@ export function ClubCrestAvatar({
   readonly framed?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  const showImage = Boolean(imageUrl) && !failed;
 
   return (
     <span
@@ -68,14 +67,14 @@ export function ClubCrestAvatar({
       data-slot="club-crest-avatar"
       {...applyProps(className, style, styles.root, framed ? styles.framed : styles.unframed)}
     >
-      {showImage ? (
+      {imageUrl && !failed ? (
         <img
           alt=""
           data-outline={framed ? undefined : "none"}
           data-slot="club-crest-image"
           onError={() => setFailed(true)}
           referrerPolicy="no-referrer"
-          src={imageUrl!}
+          src={imageUrl}
           {...applyStyles(styles.image, !framed && styles.imageUnframed)}
         />
       ) : (

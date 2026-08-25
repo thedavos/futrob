@@ -75,14 +75,14 @@
   opacity: 0.5;
 }
 
-/* Old Label `group-data-[disabled=true]` — ancestor marks the group disabled. */
+/* Ancestor group: old Label `group-data-[disabled=true]`. */
 :is([data-disabled], [data-disabled="true"]) [data-slot="label"] {
   pointer-events: none;
   cursor: not-allowed;
   opacity: 0.5;
 }
 
-/* Old Label `peer-disabled` — following sibling of a disabled control. */
+/* Following sibling of a disabled control: old Label `peer-disabled`. */
 :is([data-slot="checkbox"], [data-slot="switch"], [data-slot="input"]):is(
     :disabled,
     [disabled],

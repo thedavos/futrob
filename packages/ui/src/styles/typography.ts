@@ -2,7 +2,6 @@ import * as stylex from "@stylexjs/stylex";
 
 import { media } from "./media.stylex.ts";
 
-/** Canonical type roles. Prefer these over ad-hoc font-size / weight. */
 export const typography = stylex.create({
   display: {
     fontSize: {

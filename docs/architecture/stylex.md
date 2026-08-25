@@ -13,7 +13,7 @@ Atomic, compile-time CSS with typed tokens. Conditions (hover, dark-capable vars
 | ------------ | ------------------------------------------------------------------------------------------------ |
 | Runtime      | `@stylexjs/stylex`                                                                               |
 | Compiler     | `@stylexjs/unplugin` via `tools/stylex/vite-plugin.ts`                                           |
-| Web Vite     | `apps/web/vite.config.ts` — StyleX before React / Start                                          |
+| Web Vite     | StyleX before React / Start in `apps/web/vite.config.ts`                                         |
 | Storybook    | `.storybook/main.ts`                                                                             |
 | Tokens       | `packages/ui/src/styles/tokens.stylex.ts`, `media.stylex.ts` (import those files, not a barrel)  |
 | Roles        | `packages/ui/src/styles/typography.ts`, `elevation.ts`                                           |

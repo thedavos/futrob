@@ -5,7 +5,6 @@ import stylex from "@stylexjs/unplugin";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
-/** Shared StyleX compiler for `apps/web` and Storybook. */
 export function futrobStylex() {
   return stylex.vite({
     useCSSLayers: { before: ["reset"] },
