@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -102,11 +102,11 @@ export const CompleteForm: Story = {
     <Form
       onFormSubmit={() => undefined}
       validationMode="onBlur"
-      {...applyHost(undefined, undefined, styles.form)}
+      {...applyProps(undefined, undefined, styles.form)}
     >
       <div>
-        <p {...applyHost(undefined, undefined, typography.label, styles.eyebrow)}>Configuración</p>
-        <h2 {...applyHost(undefined, undefined, styles.title)}>Crear competición</h2>
+        <p {...applyProps(undefined, undefined, typography.label, styles.eyebrow)}>Configuración</p>
+        <h2 {...applyProps(undefined, undefined, styles.title)}>Crear competición</h2>
       </div>
       <Field
         name="name"
@@ -136,16 +136,16 @@ export const CompleteForm: Story = {
         <FieldLabel>Notas operativas</FieldLabel>
         <Textarea placeholder="Criterios, horarios o excepciones…" />
       </Field>
-      <label htmlFor="audit-checkbox" {...applyHost(undefined, undefined, styles.audit)}>
+      <label htmlFor="audit-checkbox" {...applyProps(undefined, undefined, styles.audit)}>
         <Checkbox defaultChecked id="audit-checkbox" name="audit" />
         <span>
           Exigir auditoría antes de oficializar resultados
-          <span {...applyHost(undefined, undefined, styles.auditHint)}>
+          <span {...applyProps(undefined, undefined, styles.auditHint)}>
             El staff deberá revisar las estadísticas importadas.
           </span>
         </span>
       </label>
-      <div {...applyHost(undefined, undefined, styles.actions)}>
+      <div {...applyProps(undefined, undefined, styles.actions)}>
         <Button type="button" variant="ghost">
           Cancelar
         </Button>
@@ -157,7 +157,7 @@ export const CompleteForm: Story = {
 
 export const ValidationAndStatus: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.status)}>
+    <div {...applyProps(undefined, undefined, styles.status)}>
       <Field invalid name="team-code">
         <FieldLabel>Código del equipo</FieldLabel>
         <Input aria-invalid="true" defaultValue="@@@" />
@@ -174,7 +174,7 @@ export const ValidationAndStatus: Story = {
 
 export const DenseOperatorForm: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.dense)}>
+    <div {...applyProps(undefined, undefined, styles.dense)}>
       <Field>
         <FieldLabel>Jornada</FieldLabel>
         <Input defaultValue="12" dense type="number" />

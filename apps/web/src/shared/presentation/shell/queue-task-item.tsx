@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, typography, type Icon } from "@futrob/ui";
+import { applyProps, applyStyles, typography, type Icon } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 export type QueueTaskTone = "default" | "urgent" | "waiting" | "resolved";
@@ -230,7 +230,7 @@ function QueueTaskItemButton({
   ...rest
 }: QueueTaskItemButtonProps) {
   const name = accessibleName(title, subtitle);
-  const trigger = applyHost(
+  const trigger = applyProps(
     className,
     undefined,
     styles.trigger,
@@ -282,7 +282,7 @@ function QueueTaskItemLink({
   ...rest
 }: QueueTaskItemLinkProps) {
   const name = accessibleName(title, subtitle);
-  const trigger = applyHost(
+  const trigger = applyProps(
     className,
     undefined,
     styles.trigger,

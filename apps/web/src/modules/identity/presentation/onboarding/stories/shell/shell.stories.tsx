@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, Button, Card, CardContent } from "@futrob/ui";
+import { applyProps, Button, Card, CardContent } from "@futrob/ui";
 
 import { OnboardingShell } from "../../onboarding-shell.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -45,7 +45,7 @@ const meta = {
     description: "Selecciona la edición y la plataforma donde competirás.",
     children: (
       <Card>
-        <CardContent {...applyHost(undefined, undefined, styles.padMd)}>
+        <CardContent {...applyProps(undefined, undefined, styles.padMd)}>
           Contenido del paso
         </CardContent>
       </Card>
@@ -61,12 +61,12 @@ export const Playground: Story = {};
 export const Desktop: Story = {
   args: {
     children: (
-      <div {...applyHost(undefined, undefined, styles.twoCol)}>
+      <div {...applyProps(undefined, undefined, styles.twoCol)}>
         <Card>
-          <CardContent {...applyHost(undefined, undefined, styles.padLg)}>Opción uno</CardContent>
+          <CardContent {...applyProps(undefined, undefined, styles.padLg)}>Opción uno</CardContent>
         </Card>
         <Card>
-          <CardContent {...applyHost(undefined, undefined, styles.padLg)}>Opción dos</CardContent>
+          <CardContent {...applyProps(undefined, undefined, styles.padLg)}>Opción dos</CardContent>
         </Card>
       </div>
     ),
@@ -91,7 +91,9 @@ export const English: Story = {
         title="Set up your game"
       >
         <Card>
-          <CardContent {...applyHost(undefined, undefined, styles.padMd)}>Step content</CardContent>
+          <CardContent {...applyProps(undefined, undefined, styles.padMd)}>
+            Step content
+          </CardContent>
         </Card>
       </OnboardingShell>
     </I18nProvider>
@@ -101,15 +103,15 @@ export const English: Story = {
 export const LongContent: Story = {
   args: {
     children: (
-      <div {...applyHost(undefined, undefined, styles.stack)}>
+      <div {...applyProps(undefined, undefined, styles.stack)}>
         {Array.from({ length: 4 }, (_, index) => (
           <Card key={index}>
-            <CardContent {...applyHost(undefined, undefined, styles.padMd)}>
+            <CardContent {...applyProps(undefined, undefined, styles.padMd)}>
               Sección {index + 1} con contenido suficiente para validar el crecimiento vertical.
             </CardContent>
           </Card>
         ))}
-        <Button {...applyHost(undefined, undefined, styles.full)}>Continuar</Button>
+        <Button {...applyProps(undefined, undefined, styles.full)}>Continuar</Button>
       </div>
     ),
   },

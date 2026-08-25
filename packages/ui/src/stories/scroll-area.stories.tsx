@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { ScrollArea, ScrollAreaContent } from "../components/scroll-area";
@@ -100,10 +100,10 @@ const candidateRows = [
 
 export const Playground: Story = {
   render: () => (
-    <ScrollArea {...applyHost(undefined, undefined, styles.playground)}>
-      <ScrollAreaContent {...applyHost(undefined, undefined, styles.playgroundContent)}>
+    <ScrollArea {...applyProps(undefined, undefined, styles.playground)}>
+      <ScrollAreaContent {...applyProps(undefined, undefined, styles.playgroundContent)}>
         {candidateRows.map((row) => (
-          <p key={row} {...applyHost(undefined, undefined, typography.body, styles.foreground)}>
+          <p key={row} {...applyProps(undefined, undefined, typography.body, styles.foreground)}>
             {row}
           </p>
         ))}
@@ -114,14 +114,14 @@ export const Playground: Story = {
 
 export const VerticalList: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.labeled)}>
-      <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>Candidatos EA</p>
-      <ScrollArea {...applyHost(undefined, undefined, styles.list)}>
-        <ScrollAreaContent {...applyHost(undefined, undefined, styles.listContent)}>
+    <div {...applyProps(undefined, undefined, styles.labeled)}>
+      <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>Candidatos EA</p>
+      <ScrollArea {...applyProps(undefined, undefined, styles.list)}>
+        <ScrollAreaContent {...applyProps(undefined, undefined, styles.listContent)}>
           {candidateRows.map((row) => (
-            <div key={row} {...applyHost(undefined, undefined, styles.row)}>
-              <p {...applyHost(undefined, undefined, typography.body, styles.foreground)}>{row}</p>
-              <span {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+            <div key={row} {...applyProps(undefined, undefined, styles.row)}>
+              <p {...applyProps(undefined, undefined, typography.body, styles.foreground)}>{row}</p>
+              <span {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
                 Sin usar
               </span>
             </div>
@@ -134,11 +134,11 @@ export const VerticalList: Story = {
 
 export const HorizontalOverflow: Story = {
   render: () => (
-    <ScrollArea {...applyHost(undefined, undefined, styles.horizontal)}>
-      <ScrollAreaContent {...applyHost(undefined, undefined, styles.horizontalContent)}>
+    <ScrollArea {...applyProps(undefined, undefined, styles.horizontal)}>
+      <ScrollAreaContent {...applyProps(undefined, undefined, styles.horizontalContent)}>
         {["Vista previa", "Selección", "Historial", "Estadísticas", "Auditoría", "Admin"].map(
           (tab) => (
-            <span key={tab} {...applyHost(undefined, undefined, typography.label, styles.chip)}>
+            <span key={tab} {...applyProps(undefined, undefined, typography.label, styles.chip)}>
               {tab}
             </span>
           ),

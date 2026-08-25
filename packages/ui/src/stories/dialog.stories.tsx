@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost } from "@futrob/ui";
+import { applyProps } from "@futrob/ui";
 
 import { Button } from "../components/button";
 import {
@@ -42,7 +42,7 @@ export const Playground: Story = {
           <DialogTitle>Editar marcador</DialogTitle>
           <DialogDescription>Revisa el resultado antes de enviarlo a auditoría.</DialogDescription>
         </DialogHeader>
-        <div {...applyHost(undefined, undefined, styles.scores)}>
+        <div {...applyProps(undefined, undefined, styles.scores)}>
           <Input aria-label="Goles del equipo local" defaultValue="3" type="number" />
           <Input aria-label="Goles del equipo visitante" defaultValue="1" type="number" />
         </div>

@@ -10,7 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost } from "@futrob/ui";
+import { applyProps } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { Button } from "../components/button";
@@ -92,7 +92,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <Field name="search" {...applyHost(undefined, undefined, styles.field)}>
+    <Field name="search" {...applyProps(undefined, undefined, styles.field)}>
       <FieldLabel>Buscar encuentro</FieldLabel>
       <InputWithIcon {...args} />
       <FieldDescription>Busca por equipo, jornada o rival.</FieldDescription>
@@ -102,7 +102,7 @@ export const Playground: Story = {
 
 export const AdornmentPositions: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.stack)}>
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       <Field name="start-icon">
         <FieldLabel>Icono inicial</FieldLabel>
         <InputWithIcon placeholder="Buscar equipo" startIcon={MagnifyingGlassIcon} type="search" />
@@ -131,7 +131,7 @@ function PasswordWithVisibilityAction() {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
-    <Field name="password" {...applyHost(undefined, undefined, styles.field)}>
+    <Field name="password" {...applyProps(undefined, undefined, styles.field)}>
       <FieldLabel>Contraseña</FieldLabel>
       <InputWithIcon
         autoComplete="new-password"
@@ -144,11 +144,11 @@ function PasswordWithVisibilityAction() {
             static
             type="button"
             variant="ghost"
-            {...applyHost(undefined, undefined, styles.endAction)}
+            {...applyProps(undefined, undefined, styles.endAction)}
           >
-            <span aria-hidden="true" {...applyHost(undefined, undefined, styles.iconWrap)}>
+            <span aria-hidden="true" {...applyProps(undefined, undefined, styles.iconWrap)}>
               <EyeIcon
-                {...applyHost(
+                {...applyProps(
                   undefined,
                   undefined,
                   styles.icon,
@@ -156,7 +156,7 @@ function PasswordWithVisibilityAction() {
                 )}
               />
               <EyeSlashIcon
-                {...applyHost(
+                {...applyProps(
                   undefined,
                   undefined,
                   styles.icon,
@@ -198,7 +198,7 @@ export const InteractiveEndAction: Story = {
 
 export const DensityAndStates: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.stack)}>
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       <Field name="universal">
         <FieldLabel>Universal · 44 px</FieldLabel>
         <InputWithIcon endIcon={CheckCircleIcon} startIcon={EnvelopeSimpleIcon} type="email" />

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, typography } from "@futrob/ui";
+import { applyProps, applyStyles, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -64,7 +64,7 @@ export const Playground: Story = {
         <CardDescription>Preferencias que podrás modificar más adelante.</CardDescription>
       </CardHeader>
       <CardContent>
-        <p {...applyHost(undefined, undefined, typography.body)}>FC 26 · PlayStation</p>
+        <p {...applyProps(undefined, undefined, typography.body)}>FC 26 · PlayStation</p>
       </CardContent>
     </Card>
   ),
@@ -79,11 +79,11 @@ export const Flat: Story = {
         <CardDescription>Revisa los datos antes de continuar.</CardDescription>
       </CardHeader>
       <CardContent>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
           El código se solicitará nuevamente si cierras esta página.
         </p>
       </CardContent>
-      <CardFooter {...applyHost(undefined, undefined, styles.footerEnd)}>
+      <CardFooter {...applyProps(undefined, undefined, styles.footerEnd)}>
         <Button variant="outline">Volver</Button>
         <Button>Continuar</Button>
       </CardFooter>
@@ -100,11 +100,11 @@ export const Elevated: Story = {
         <CardDescription>Elevación suave con ring embebido (sin border).</CardDescription>
       </CardHeader>
       <CardContent>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
           Usa esta variante solo para entidades autónomas sobre fondo plano.
         </p>
       </CardContent>
-      <CardFooter {...applyHost(undefined, undefined, styles.footerEnd)}>
+      <CardFooter {...applyProps(undefined, undefined, styles.footerEnd)}>
         <Button variant="outline">Volver</Button>
         <Button>Continuar</Button>
       </CardFooter>
@@ -115,14 +115,14 @@ export const Elevated: Story = {
 export const Compare: Story = {
   parameters: { layout: "padded" },
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.compare)}>
+    <div {...applyProps(undefined, undefined, styles.compare)}>
       <Card variant="flat">
         <CardHeader>
           <CardTitle>flat</CardTitle>
           <CardDescription>Borde estructural · sin sombra.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p {...applyHost(undefined, undefined, typography.body)}>
+          <p {...applyProps(undefined, undefined, typography.body)}>
             Default del sistema. Listas, forms y paneles densos.
           </p>
         </CardContent>
@@ -133,7 +133,7 @@ export const Compare: Story = {
           <CardDescription>elevation.sm · sin border.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p {...applyHost(undefined, undefined, typography.body)}>
+          <p {...applyProps(undefined, undefined, typography.body)}>
             Entidades autónomas sobre fondo plano (onboarding, resumen).
           </p>
         </CardContent>

@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 import { typography } from "#styles/typography";
@@ -195,7 +195,7 @@ export const sidebarMenuButtonStyles = {
   compact: styles.menuButtonCompact,
 } as const;
 
-/** StyleX map for menu-button variants. Prefer `sidebarMenuButtonStyles` + `applyHost`. */
+/** StyleX map for menu-button variants. Prefer `sidebarMenuButtonStyles` + `applyProps`. */
 export const sidebarMenuButtonVariants = {
   active: styles.menuButtonActive,
   dense: styles.menuButtonDense,
@@ -241,7 +241,7 @@ function SidebarProvider({
       <div
         data-slot="sidebar-provider"
         data-collapsed={collapsed ? "true" : undefined}
-        {...applyHost(className, style, styles.provider)}
+        {...applyProps(className, style, styles.provider)}
         {...props}
       >
         {children}
@@ -257,7 +257,7 @@ function Sidebar({ className, style, ...props }: React.ComponentProps<"aside">) 
     <aside
       data-slot="sidebar"
       data-collapsed={collapsed ? "true" : undefined}
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.sidebar,
@@ -270,25 +270,25 @@ function Sidebar({ className, style, ...props }: React.ComponentProps<"aside">) 
 
 function SidebarHeader({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
-    <div data-slot="sidebar-header" {...applyHost(className, style, styles.header)} {...props} />
+    <div data-slot="sidebar-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
 function SidebarContent({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
-    <div data-slot="sidebar-content" {...applyHost(className, style, styles.content)} {...props} />
+    <div data-slot="sidebar-content" {...applyProps(className, style, styles.content)} {...props} />
   );
 }
 
 function SidebarFooter({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
-    <div data-slot="sidebar-footer" {...applyHost(className, style, styles.footer)} {...props} />
+    <div data-slot="sidebar-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
 }
 
 function SidebarGroup({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
-    <div data-slot="sidebar-group" {...applyHost(className, style, styles.group)} {...props} />
+    <div data-slot="sidebar-group" {...applyProps(className, style, styles.group)} {...props} />
   );
 }
 
@@ -296,21 +296,21 @@ function SidebarGroupLabel({ className, style, ...props }: React.ComponentProps<
   return (
     <p
       data-slot="sidebar-group-label"
-      {...applyHost(className, style, typography.label, styles.groupLabel)}
+      {...applyProps(className, style, typography.label, styles.groupLabel)}
       {...props}
     />
   );
 }
 
 function SidebarMenu({ className, style, ...props }: React.ComponentProps<"ul">) {
-  return <ul data-slot="sidebar-menu" {...applyHost(className, style, styles.menu)} {...props} />;
+  return <ul data-slot="sidebar-menu" {...applyProps(className, style, styles.menu)} {...props} />;
 }
 
 function SidebarMenuItem({ className, style, ...props }: React.ComponentProps<"li">) {
   return (
     <li
       data-slot="sidebar-menu-item"
-      {...applyHost(className, style, styles.menuItem)}
+      {...applyProps(className, style, styles.menuItem)}
       {...props}
     />
   );
@@ -334,7 +334,7 @@ function SidebarMenuButton({
       data-active={active ? "true" : undefined}
       data-density={dense ? "dense" : "default"}
       type="button"
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.menuButton,
@@ -363,7 +363,7 @@ function SidebarMenuLink({
       data-slot="sidebar-menu-link"
       data-active={active ? "true" : undefined}
       data-density={dense ? "dense" : "default"}
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.menuButton,
@@ -377,12 +377,12 @@ function SidebarMenuLink({
 
 function SidebarInset({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
-    <div data-slot="sidebar-inset" {...applyHost(className, style, styles.inset)} {...props} />
+    <div data-slot="sidebar-inset" {...applyProps(className, style, styles.inset)} {...props} />
   );
 }
 
 function SidebarRail({ className, style, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="sidebar-rail" {...applyHost(className, style, styles.rail)} {...props} />;
+  return <div data-slot="sidebar-rail" {...applyProps(className, style, styles.rail)} {...props} />;
 }
 
 export {

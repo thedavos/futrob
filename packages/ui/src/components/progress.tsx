@@ -1,7 +1,7 @@
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -69,7 +69,7 @@ function Progress({ className, style, children, ...props }: ProgressPrimitive.Ro
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
-      {...applyHost(className, style, styles.root)}
+      {...applyProps(className, style, styles.root)}
       {...props}
     >
       {children}
@@ -81,7 +81,7 @@ function ProgressTrack({ className, style, ...props }: ProgressPrimitive.Track.P
   return (
     <ProgressPrimitive.Track
       data-slot="progress-track"
-      {...applyHost(className, style, styles.track)}
+      {...applyProps(className, style, styles.track)}
       {...props}
     />
   );
@@ -91,7 +91,7 @@ function ProgressIndicator({ className, style, ...props }: ProgressPrimitive.Ind
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      {...applyHost(className, style, styles.indicator)}
+      {...applyProps(className, style, styles.indicator)}
       {...props}
     />
   );
@@ -101,7 +101,7 @@ function ProgressLabel({ className, style, ...props }: ProgressPrimitive.Label.P
   return (
     <ProgressPrimitive.Label
       data-slot="progress-label"
-      {...applyHost(className, style, typography.label, styles.label)}
+      {...applyProps(className, style, typography.label, styles.label)}
       {...props}
     />
   );
@@ -111,7 +111,7 @@ function ProgressValue({ className, style, ...props }: ProgressPrimitive.Value.P
   return (
     <ProgressPrimitive.Value
       data-slot="progress-value"
-      {...applyHost(className, style, typography.caption, styles.value)}
+      {...applyProps(className, style, typography.caption, styles.value)}
       {...props}
     />
   );

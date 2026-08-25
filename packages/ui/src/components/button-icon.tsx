@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 
 const styles = stylex.create({
   root: {
@@ -43,7 +43,7 @@ function ButtonIcon({
     <span
       aria-hidden={ariaHidden}
       data-slot="button-icon"
-      {...applyHost(className, style, styles.root)}
+      {...applyProps(className, style, styles.root)}
       {...props}
     />
   );

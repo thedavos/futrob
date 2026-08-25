@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";
@@ -56,7 +56,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <div {...applyHost(undefined, undefined, styles.field)}>
+    <div {...applyProps(undefined, undefined, styles.field)}>
       <Input {...args} />
     </div>
   ),
@@ -64,7 +64,7 @@ export const Playground: Story = {
 
 export const WithLabel: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.labeled)}>
+    <div {...applyProps(undefined, undefined, styles.labeled)}>
       <Label htmlFor="competition-name">Nombre de la competición</Label>
       <Input id="competition-name" placeholder="Liga Metropolitana" />
     </div>
@@ -73,15 +73,15 @@ export const WithLabel: Story = {
 
 export const Density: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.stack)}>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>
+    <div {...applyProps(undefined, undefined, styles.stack)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>
           Universal · 44 px
         </p>
         <Input placeholder="Buscar encuentro" />
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>
           Dense · 36 px en desktop
         </p>
         <Input dense placeholder="Filtrar filas" />
@@ -92,7 +92,7 @@ export const Density: Story = {
 
 export const States: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.stack)}>
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       <Field name="email">
         <FieldLabel>Correo</FieldLabel>
         <Input defaultValue="capitan@futrob.app" type="email" />

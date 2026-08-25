@@ -1,7 +1,7 @@
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -81,12 +81,12 @@ function Switch({ className, style, ...props }: SwitchPrimitive.Root.Props) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
-      {...applyHost(className, style, styles.root)}
+      {...applyProps(className, style, styles.root)}
       {...props}
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        {...applyHost(undefined, undefined, styles.thumb)}
+        {...applyProps(undefined, undefined, styles.thumb)}
       />
     </SwitchPrimitive.Root>
   );

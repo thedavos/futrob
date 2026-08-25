@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost } from "@futrob/ui";
+import { applyProps } from "@futrob/ui";
 import { SupportErrorAlert } from "./support-error-alert.tsx";
 
 const styles = stylex.create({
@@ -22,7 +22,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div {...applyHost(undefined, undefined, styles.frame)}>
+      <div {...applyProps(undefined, undefined, styles.frame)}>
         <Story />
       </div>
     ),

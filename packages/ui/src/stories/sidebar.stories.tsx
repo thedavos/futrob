@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -375,7 +375,7 @@ function HeaderCollapseControl() {
       onClick={toggleCollapsed}
       size="icon"
       variant="ghost"
-      {...applyHost(undefined, undefined, !collapsed && styles.collapseExpanded)}
+      {...applyProps(undefined, undefined, !collapsed && styles.collapseExpanded)}
     >
       {collapsed ? (
         <SidebarExpandIcon aria-hidden="true" />
@@ -397,7 +397,7 @@ function DemoAccountRow({
 }) {
   return (
     <div
-      {...applyHost(undefined, undefined, styles.accountRow, compact && styles.accountRowCompact)}
+      {...applyProps(undefined, undefined, styles.accountRow, compact && styles.accountRowCompact)}
     >
       <DropdownMenu>
         <DropdownMenuTrigger
@@ -407,7 +407,7 @@ function DemoAccountRow({
               dense={dense}
               size={compact ? "icon" : "default"}
               variant="ghost"
-              {...applyHost(
+              {...applyProps(
                 undefined,
                 undefined,
                 compact ? styles.accountTriggerCompact : styles.accountTrigger,
@@ -416,33 +416,33 @@ function DemoAccountRow({
           }
         >
           <span
-            {...applyHost(
+            {...applyProps(
               undefined,
               undefined,
               styles.accountInner,
               compact && styles.accountInnerCompact,
             )}
           >
-            <Avatar {...applyHost(undefined, undefined, styles.avatar)}>
-              <AvatarFallback {...applyHost(undefined, undefined, styles.avatarFallback)}>
+            <Avatar {...applyProps(undefined, undefined, styles.avatar)}>
+              <AvatarFallback {...applyProps(undefined, undefined, styles.avatarFallback)}>
                 DV
               </AvatarFallback>
             </Avatar>
             {compact ? null : (
-              <span {...applyHost(undefined, undefined, styles.nameRow)}>
-                <span title="David Vargas" {...applyHost(undefined, undefined, styles.name)}>
+              <span {...applyProps(undefined, undefined, styles.nameRow)}>
+                <span title="David Vargas" {...applyProps(undefined, undefined, styles.name)}>
                   {shortName}
                 </span>
                 <CaretDownIcon
                   aria-hidden="true"
                   weight="bold"
-                  {...applyHost(undefined, undefined, styles.caretSm)}
+                  {...applyProps(undefined, undefined, styles.caretSm)}
                 />
               </span>
             )}
           </span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" {...applyHost(undefined, undefined, styles.menu)}>
+        <DropdownMenuContent align="start" {...applyProps(undefined, undefined, styles.menu)}>
           <DropdownMenuItem>Perfil</DropdownMenuItem>
           <DropdownMenuItem>Configuración</DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -462,15 +462,15 @@ function WorkspaceSectionHeader({
   readonly title: string;
 }) {
   return (
-    <div {...applyHost(undefined, undefined, styles.sectionRow)}>
-      <DropdownMenuLabel {...applyHost(undefined, undefined, styles.sectionLabel)}>
+    <div {...applyProps(undefined, undefined, styles.sectionRow)}>
+      <DropdownMenuLabel {...applyProps(undefined, undefined, styles.sectionLabel)}>
         {title}
       </DropdownMenuLabel>
       <DropdownMenuItem
         aria-label={actionLabel}
-        {...applyHost(undefined, undefined, styles.sectionAction)}
+        {...applyProps(undefined, undefined, styles.sectionAction)}
       >
-        <PlusIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.iconSm)} />
+        <PlusIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.iconSm)} />
       </DropdownMenuItem>
     </div>
   );
@@ -484,21 +484,21 @@ function DemoWorkspaceSelector({ dense = true }: { readonly dense?: boolean }) {
           <Button
             dense={dense}
             variant="outline"
-            {...applyHost(undefined, undefined, styles.workspaceTrigger)}
+            {...applyProps(undefined, undefined, styles.workspaceTrigger)}
           />
         }
       >
-        <span {...applyHost(undefined, undefined, styles.workspaceInner)}>
-          <TrophyIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.iconShrink)} />
-          <span {...applyHost(undefined, undefined, styles.truncate)}>La Copa del Barrio</span>
+        <span {...applyProps(undefined, undefined, styles.workspaceInner)}>
+          <TrophyIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.iconShrink)} />
+          <span {...applyProps(undefined, undefined, styles.truncate)}>La Copa del Barrio</span>
         </span>
-        <CaretDownIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.caret)} />
+        <CaretDownIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.caret)} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" {...applyHost(undefined, undefined, styles.menuWide)}>
+      <DropdownMenuContent align="start" {...applyProps(undefined, undefined, styles.menuWide)}>
         <DropdownMenuGroup>
           <WorkspaceSectionHeader actionLabel="Crear competición" title="Competiciones" />
           <DropdownMenuItem>
-            <TrophyIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.iconSm)} />
+            <TrophyIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.iconSm)} />
             La Copa del Barrio
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -540,30 +540,30 @@ function DemoShell({
       data-density={dense ? "dense" : undefined}
       defaultCollapsed={defaultCollapsed}
       onCollapsedChange={controlled ? setCollapsed : undefined}
-      {...applyHost(undefined, undefined, styles.provider)}
+      {...applyProps(undefined, undefined, styles.provider)}
     >
       {children ?? (
         <>
           <DemoSidebar dense={dense} longContent={longContent} />
           <SidebarInset>
             {showRail ? (
-              <SidebarRail {...applyHost(undefined, undefined, styles.rail)}>
+              <SidebarRail {...applyProps(undefined, undefined, styles.rail)}>
                 <Button aria-label="Abrir navegación" dense size="icon" variant="outline">
                   <HouseIcon aria-hidden="true" />
                 </Button>
-                <span {...applyHost(undefined, undefined, styles.railLabel)}>Inicio</span>
+                <span {...applyProps(undefined, undefined, styles.railLabel)}>Inicio</span>
               </SidebarRail>
             ) : null}
-            <header {...applyHost(undefined, undefined, styles.pageHeader)}>
-              <h1 {...applyHost(undefined, undefined, typography.heading, styles.pageTitle)}>
+            <header {...applyProps(undefined, undefined, styles.pageHeader)}>
+              <h1 {...applyProps(undefined, undefined, typography.heading, styles.pageTitle)}>
                 Espacio personal
               </h1>
             </header>
-            <div {...applyHost(undefined, undefined, styles.pageBody)}>
+            <div {...applyProps(undefined, undefined, styles.pageBody)}>
               Contenido principal con scroll independiente.
               {longContent
                 ? Array.from({ length: 30 }, (_, index) => (
-                    <p key={index} {...applyHost(undefined, undefined, styles.pageLine)}>
+                    <p key={index} {...applyProps(undefined, undefined, styles.pageLine)}>
                       Línea de contenido {index + 1}
                     </p>
                   ))
@@ -589,19 +589,26 @@ function DemoSidebar({
   const compact = compactOverride ?? collapsed;
 
   return (
-    <Sidebar aria-label="Navegación principal" {...applyHost(undefined, undefined, styles.sidebar)}>
+    <Sidebar
+      aria-label="Navegación principal"
+      {...applyProps(undefined, undefined, styles.sidebar)}
+    >
       <SidebarHeader
-        {...applyHost(undefined, undefined, compact ? styles.headerCompact : styles.headerExpanded)}
+        {...applyProps(
+          undefined,
+          undefined,
+          compact ? styles.headerCompact : styles.headerExpanded,
+        )}
       >
         <DemoAccountRow compact={compact} dense={dense} />
         {compact ? null : <DemoWorkspaceSelector dense={dense} />}
       </SidebarHeader>
       {compact ? (
-        <SidebarContent {...applyHost(undefined, undefined, styles.contentCompact)}>
+        <SidebarContent {...applyProps(undefined, undefined, styles.contentCompact)}>
           <SidebarMenuButton
             aria-label="Tareas"
             dense={dense}
-            {...applyHost(undefined, undefined, styles.iconOnly)}
+            {...applyProps(undefined, undefined, styles.iconOnly)}
           >
             <CheckSquareOffsetIcon aria-hidden="true" />
           </SidebarMenuButton>
@@ -610,9 +617,9 @@ function DemoSidebar({
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>Tareas</SidebarGroupLabel>
-            <div {...applyHost(undefined, undefined, styles.emptyQueue)}>
-              <p {...applyHost(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
-              <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+            <div {...applyProps(undefined, undefined, styles.emptyQueue)}>
+              <p {...applyProps(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
+              <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
                 Las tareas del espacio activo aparecerán aquí.
               </p>
             </div>
@@ -627,14 +634,14 @@ function DemoSidebar({
           </SidebarGroup>
         </SidebarContent>
       )}
-      <SidebarFooter {...applyHost(undefined, undefined, compact && styles.footerCompact)}>
+      <SidebarFooter {...applyProps(undefined, undefined, compact && styles.footerCompact)}>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               active
               aria-label="Inicio"
               dense={dense}
-              {...applyHost(undefined, undefined, compact && styles.iconOnly)}
+              {...applyProps(undefined, undefined, compact && styles.iconOnly)}
             >
               <HouseIcon aria-hidden="true" />
               {compact ? null : "Inicio"}
@@ -644,7 +651,7 @@ function DemoSidebar({
             <SidebarMenuButton
               aria-label="Competiciones"
               dense={dense}
-              {...applyHost(undefined, undefined, compact && styles.iconOnly)}
+              {...applyProps(undefined, undefined, compact && styles.iconOnly)}
             >
               <TrophyIcon aria-hidden="true" />
               {compact ? null : "Competiciones"}
@@ -654,7 +661,7 @@ function DemoSidebar({
             <SidebarMenuButton
               aria-label="Clubes EA"
               dense={dense}
-              {...applyHost(undefined, undefined, compact && styles.iconOnly)}
+              {...applyProps(undefined, undefined, compact && styles.iconOnly)}
             >
               <GameControllerIcon aria-hidden="true" />
               {compact ? null : "Clubes EA"}
@@ -664,7 +671,7 @@ function DemoSidebar({
             <SidebarMenuButton
               aria-label="Invitaciones"
               dense={dense}
-              {...applyHost(undefined, undefined, compact && styles.iconOnly)}
+              {...applyProps(undefined, undefined, compact && styles.iconOnly)}
             >
               <TicketIcon aria-hidden="true" />
               {compact ? null : "Invitaciones"}
@@ -683,33 +690,33 @@ export const Playground: Story = {
 export const Regions: Story = {
   name: "Header content footer",
   render: () => (
-    <SidebarProvider data-density="dense" {...applyHost(undefined, undefined, styles.provider)}>
+    <SidebarProvider data-density="dense" {...applyProps(undefined, undefined, styles.provider)}>
       <Sidebar
         aria-label="Regiones de la barra lateral"
-        {...applyHost(undefined, undefined, styles.sidebar)}
+        {...applyProps(undefined, undefined, styles.sidebar)}
       >
-        <SidebarHeader {...applyHost(undefined, undefined, styles.headerExpanded)}>
-          <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+        <SidebarHeader {...applyProps(undefined, undefined, styles.headerExpanded)}>
+          <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
             Header sticky
           </p>
           <DemoAccountRow dense />
           <DemoWorkspaceSelector dense />
         </SidebarHeader>
         <SidebarContent>
-          <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+          <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
             Content con scroll
           </p>
           <SidebarGroup>
             <SidebarGroupLabel>Tareas</SidebarGroupLabel>
-            <div {...applyHost(undefined, undefined, styles.emptyQueue)}>
-              <p {...applyHost(undefined, undefined, styles.emptyTitlePlain)}>
+            <div {...applyProps(undefined, undefined, styles.emptyQueue)}>
+              <p {...applyProps(undefined, undefined, styles.emptyTitlePlain)}>
                 Sin tareas pendientes
               </p>
             </div>
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <p {...applyHost(undefined, undefined, typography.caption, styles.captionPad)}>
+          <p {...applyProps(undefined, undefined, typography.caption, styles.captionPad)}>
             Footer sticky
           </p>
           <SidebarMenu>
@@ -723,7 +730,7 @@ export const Regions: Story = {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div {...applyHost(undefined, undefined, styles.insetCenter)}>
+        <div {...applyProps(undefined, undefined, styles.insetCenter)}>
           Inset: header y footer de la sidebar no scrollean con el content.
         </div>
       </SidebarInset>
@@ -734,10 +741,10 @@ export const Regions: Story = {
 export const HeaderAccountRow: Story = {
   name: "Header account and collapse",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.sample)}>
+    <div {...applyProps(undefined, undefined, styles.sample)}>
       <SidebarProvider
         data-density="dense"
-        {...applyHost(undefined, undefined, styles.providerAuto)}
+        {...applyProps(undefined, undefined, styles.providerAuto)}
       >
         <DemoAccountRow dense shortName="David" />
       </SidebarProvider>
@@ -749,12 +756,12 @@ export const HeaderAccountRow: Story = {
 export const HeaderWithSelector: Story = {
   name: "Header with context selector",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.sample)}>
+    <div {...applyProps(undefined, undefined, styles.sample)}>
       <SidebarProvider
         data-density="dense"
-        {...applyHost(undefined, undefined, styles.providerAuto)}
+        {...applyProps(undefined, undefined, styles.providerAuto)}
       >
-        <div {...applyHost(undefined, undefined, styles.sampleStack)}>
+        <div {...applyProps(undefined, undefined, styles.sampleStack)}>
           <DemoAccountRow dense shortName="David" />
           <DemoWorkspaceSelector dense />
         </div>
@@ -767,36 +774,36 @@ export const HeaderWithSelector: Story = {
 export const MenuButtonStates: Story = {
   name: "Menu button states",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.states)}>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>Default</p>
+    <div {...applyProps(undefined, undefined, styles.states)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>Default</p>
         <SidebarMenuButton>
           <HouseIcon aria-hidden="true" />
           Inicio
         </SidebarMenuButton>
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>Active</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>Active</p>
         <SidebarMenuButton active>
           <TrophyIcon aria-hidden="true" />
           Competiciones
         </SidebarMenuButton>
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>Disabled</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>Disabled</p>
         <SidebarMenuButton disabled title="Próximamente">
           <GameControllerIcon aria-hidden="true" />
           Clubes EA
         </SidebarMenuButton>
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>
           Icon-only · aria-label
         </p>
         <SidebarMenuButton
           aria-label="Invitaciones"
           dense
-          {...applyHost(undefined, undefined, styles.iconOnlyWide)}
+          {...applyProps(undefined, undefined, styles.iconOnlyWide)}
         >
           <TicketIcon aria-hidden="true" />
         </SidebarMenuButton>
@@ -809,7 +816,7 @@ export const MenuButtonStates: Story = {
 export const MenuLink: Story = {
   name: "Menu link",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.sample)}>
+    <div {...applyProps(undefined, undefined, styles.sample)}>
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuLink active dense href="#inicio">
@@ -828,7 +835,7 @@ export const MenuLink: Story = {
             aria-disabled="true"
             dense
             href="#stub"
-            {...applyHost(undefined, undefined, styles.disabledLink)}
+            {...applyProps(undefined, undefined, styles.disabledLink)}
           >
             <TicketIcon aria-hidden="true" />
             Invitaciones
@@ -842,9 +849,9 @@ export const MenuLink: Story = {
 
 export const Density: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.density)}>
-      <div {...applyHost(undefined, undefined, styles.densityPanel)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.densityLabel)}>
+    <div {...applyProps(undefined, undefined, styles.density)}>
+      <div {...applyProps(undefined, undefined, styles.densityPanel)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.densityLabel)}>
           Universal · 44 px
         </p>
         <SidebarMenu>
@@ -862,8 +869,8 @@ export const Density: Story = {
           </SidebarMenuItem>
         </SidebarMenu>
       </div>
-      <div {...applyHost(undefined, undefined, styles.densityPanel)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.densityLabel)}>
+      <div {...applyProps(undefined, undefined, styles.densityPanel)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.densityLabel)}>
           Dense · 36 px en desktop
         </p>
         <SidebarMenu>
@@ -908,18 +915,18 @@ export const WithMobileRail: Story = {
 export const EmptyQueue: Story = {
   name: "Empty queue content",
   render: () => (
-    <SidebarProvider data-density="dense" {...applyHost(undefined, undefined, styles.provider)}>
-      <Sidebar aria-label="Tareas" {...applyHost(undefined, undefined, styles.sidebar)}>
-        <SidebarHeader {...applyHost(undefined, undefined, styles.headerExpanded)}>
+    <SidebarProvider data-density="dense" {...applyProps(undefined, undefined, styles.provider)}>
+      <Sidebar aria-label="Tareas" {...applyProps(undefined, undefined, styles.sidebar)}>
+        <SidebarHeader {...applyProps(undefined, undefined, styles.headerExpanded)}>
           <DemoAccountRow dense shortName="David" />
           <DemoWorkspaceSelector dense />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>Tareas</SidebarGroupLabel>
-            <div {...applyHost(undefined, undefined, styles.emptyQueue)}>
-              <p {...applyHost(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
-              <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+            <div {...applyProps(undefined, undefined, styles.emptyQueue)}>
+              <p {...applyProps(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
+              <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
                 Las tareas del espacio activo aparecerán aquí.
               </p>
             </div>
@@ -937,7 +944,7 @@ export const EmptyQueue: Story = {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div {...applyHost(undefined, undefined, styles.insetPad)}>
+        <div {...applyProps(undefined, undefined, styles.insetPad)}>
           Estado vacío de la cola en content.
         </div>
       </SidebarInset>

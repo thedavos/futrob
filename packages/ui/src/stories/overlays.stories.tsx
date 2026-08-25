@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { InfoIcon, ListIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost } from "@futrob/ui";
+import { applyProps } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import {
@@ -93,7 +93,7 @@ type Story = StoryObj<typeof meta>;
 export const OverlaySet: Story = {
   render: () => (
     <TooltipProvider>
-      <div {...applyHost(undefined, undefined, styles.panel)}>
+      <div {...applyProps(undefined, undefined, styles.panel)}>
         <Dialog>
           <DialogTrigger render={<Button variant="outline" />}>Editar partido</DialogTrigger>
           <DialogContent>
@@ -103,7 +103,7 @@ export const OverlaySet: Story = {
                 Revisa el resultado antes de enviarlo a auditoría.
               </DialogDescription>
             </DialogHeader>
-            <div {...applyHost(undefined, undefined, styles.scores)}>
+            <div {...applyProps(undefined, undefined, styles.scores)}>
               <Input aria-label="Goles del equipo local" defaultValue="3" type="number" />
               <Input aria-label="Goles del equipo visitante" defaultValue="1" type="number" />
             </div>
@@ -156,20 +156,20 @@ export const OverlaySet: Story = {
               <SheetDescription>Áreas de la competición activa.</SheetDescription>
             </SheetHeader>
             <SheetBody>
-              <nav {...applyHost(undefined, undefined, styles.nav)}>
-                <a href="#" {...applyHost(undefined, undefined, styles.navLink)}>
+              <nav {...applyProps(undefined, undefined, styles.nav)}>
+                <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
                   Resumen
                 </a>
-                <a href="#" {...applyHost(undefined, undefined, styles.navLink)}>
+                <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
                   Partidos
                 </a>
-                <a href="#" {...applyHost(undefined, undefined, styles.navLink)}>
+                <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
                   Estadísticas
                 </a>
               </nav>
             </SheetBody>
             <SheetFooter>
-              <Button {...applyHost(undefined, undefined, styles.full)}>Ir al panel</Button>
+              <Button {...applyProps(undefined, undefined, styles.full)}>Ir al panel</Button>
             </SheetFooter>
           </SheetContent>
         </Sheet>

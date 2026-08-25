@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { Field, FieldDescription, FieldError, FieldLabel } from "../components/field";
@@ -80,9 +80,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <label htmlFor="switch-playground" {...applyHost(undefined, undefined, styles.playground)}>
+    <label htmlFor="switch-playground" {...applyProps(undefined, undefined, styles.playground)}>
       <Switch id="switch-playground" {...args} />
-      <span {...applyHost(undefined, undefined, typography.label, styles.foreground)}>
+      <span {...applyProps(undefined, undefined, typography.label, styles.foreground)}>
         Publicar portal
       </span>
     </label>
@@ -91,33 +91,33 @@ export const Playground: Story = {
 
 export const States: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
-      <label htmlFor="switch-off" {...applyHost(undefined, undefined, styles.row)}>
-        <span {...applyHost(undefined, undefined, typography.label, styles.foreground)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
+      <label htmlFor="switch-off" {...applyProps(undefined, undefined, styles.row)}>
+        <span {...applyProps(undefined, undefined, typography.label, styles.foreground)}>
           Desactivado
         </span>
         <Switch id="switch-off" />
       </label>
-      <label htmlFor="switch-on" {...applyHost(undefined, undefined, styles.row)}>
-        <span {...applyHost(undefined, undefined, typography.label, styles.foreground)}>
+      <label htmlFor="switch-on" {...applyProps(undefined, undefined, styles.row)}>
+        <span {...applyProps(undefined, undefined, typography.label, styles.foreground)}>
           Activado
         </span>
         <Switch defaultChecked id="switch-on" />
       </label>
-      <label htmlFor="switch-disabled" {...applyHost(undefined, undefined, styles.row)}>
-        <span {...applyHost(undefined, undefined, typography.label, styles.muted)}>
+      <label htmlFor="switch-disabled" {...applyProps(undefined, undefined, styles.row)}>
+        <span {...applyProps(undefined, undefined, typography.label, styles.muted)}>
           Deshabilitado
         </span>
         <Switch disabled id="switch-disabled" />
       </label>
-      <label htmlFor="switch-on-disabled" {...applyHost(undefined, undefined, styles.row)}>
-        <span {...applyHost(undefined, undefined, typography.label, styles.muted)}>
+      <label htmlFor="switch-on-disabled" {...applyProps(undefined, undefined, styles.row)}>
+        <span {...applyProps(undefined, undefined, typography.label, styles.muted)}>
           Activado · deshabilitado
         </span>
         <Switch defaultChecked disabled id="switch-on-disabled" />
       </label>
-      <label htmlFor="switch-invalid" {...applyHost(undefined, undefined, styles.row)}>
-        <span {...applyHost(undefined, undefined, typography.label, styles.foreground)}>
+      <label htmlFor="switch-invalid" {...applyProps(undefined, undefined, styles.row)}>
+        <span {...applyProps(undefined, undefined, typography.label, styles.foreground)}>
           Inválido
         </span>
         <Switch aria-invalid id="switch-invalid" />
@@ -128,11 +128,11 @@ export const States: Story = {
 
 export const WithLabel: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
-      <div {...applyHost(undefined, undefined, styles.labeled)}>
-        <div {...applyHost(undefined, undefined, styles.copy)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
+      <div {...applyProps(undefined, undefined, styles.labeled)}>
+        <div {...applyProps(undefined, undefined, styles.copy)}>
           <Label htmlFor="notify-captains">Avisar a capitanes</Label>
-          <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+          <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
             Envía un aviso cuando se proponga un resultado.
           </p>
         </div>
@@ -144,10 +144,10 @@ export const WithLabel: Story = {
 
 export const InForm: Story = {
   render: () => (
-    <Form {...applyHost(undefined, undefined, styles.form)}>
+    <Form {...applyProps(undefined, undefined, styles.form)}>
       <Field name="publishPortal">
-        <div {...applyHost(undefined, undefined, styles.labeled)}>
-          <div {...applyHost(undefined, undefined, styles.copy)}>
+        <div {...applyProps(undefined, undefined, styles.labeled)}>
+          <div {...applyProps(undefined, undefined, styles.copy)}>
             <FieldLabel>Publicar portal</FieldLabel>
             <FieldDescription>
               El portal público solo muestra resultados oficiales aprobados.

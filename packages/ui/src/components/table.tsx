@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -89,12 +89,12 @@ function Table({ className, style, containerClassName, dense = false, ...props }
   return (
     <div
       data-slot="table-container"
-      {...applyHost(containerClassName, undefined, styles.container)}
+      {...applyProps(containerClassName, undefined, styles.container)}
     >
       <table
         data-slot="table"
         data-density={dense ? "dense" : "default"}
-        {...applyHost(className, style, styles.table)}
+        {...applyProps(className, style, styles.table)}
         {...props}
       />
     </div>
@@ -103,43 +103,43 @@ function Table({ className, style, containerClassName, dense = false, ...props }
 
 function TableHeader({ className, style, ...props }: React.ComponentProps<"thead">) {
   return (
-    <thead data-slot="table-header" {...applyHost(className, style, styles.header)} {...props} />
+    <thead data-slot="table-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
 function TableBody({ className, style, ...props }: React.ComponentProps<"tbody">) {
-  return <tbody data-slot="table-body" {...applyHost(className, style)} {...props} />;
+  return <tbody data-slot="table-body" {...applyProps(className, style)} {...props} />;
 }
 
 function TableFooter({ className, style, ...props }: React.ComponentProps<"tfoot">) {
   return (
-    <tfoot data-slot="table-footer" {...applyHost(className, style, styles.footer)} {...props} />
+    <tfoot data-slot="table-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
 }
 
 function TableRow({ className, style, ...props }: React.ComponentProps<"tr">) {
-  return <tr data-slot="table-row" {...applyHost(className, style, styles.row)} {...props} />;
+  return <tr data-slot="table-row" {...applyProps(className, style, styles.row)} {...props} />;
 }
 
 function TableHead({ className, style, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
-      {...applyHost(className, style, typography.label, styles.head)}
+      {...applyProps(className, style, typography.label, styles.head)}
       {...props}
     />
   );
 }
 
 function TableCell({ className, style, ...props }: React.ComponentProps<"td">) {
-  return <td data-slot="table-cell" {...applyHost(className, style, styles.cell)} {...props} />;
+  return <td data-slot="table-cell" {...applyProps(className, style, styles.cell)} {...props} />;
 }
 
 function TableCaption({ className, style, ...props }: React.ComponentProps<"caption">) {
   return (
     <caption
       data-slot="table-caption"
-      {...applyHost(className, style, styles.caption)}
+      {...applyProps(className, style, styles.caption)}
       {...props}
     />
   );
@@ -156,7 +156,7 @@ function TableEmpty({
     <td
       data-slot="table-empty"
       colSpan={colSpan}
-      {...applyHost(className, style, styles.cell, styles.empty)}
+      {...applyProps(className, style, styles.cell, styles.empty)}
       {...props}
     >
       {children}

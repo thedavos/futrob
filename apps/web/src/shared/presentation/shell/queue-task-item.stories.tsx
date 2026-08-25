@@ -19,7 +19,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-  applyHost,
+  applyProps,
   Button,
   motion,
   typography,
@@ -167,7 +167,7 @@ export const Playground: Story = {
 export const States: Story = {
   name: "States",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.states)}>
+    <div {...applyProps(undefined, undefined, styles.states)}>
       <QueuePanel label="default / active / disabled / resolved">
         <QueueTaskItem
           icon={CheckSquareIcon}
@@ -236,7 +236,7 @@ export const States: Story = {
 export const Density: Story = {
   name: "Density",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.density)}>
+    <div {...applyProps(undefined, undefined, styles.density)}>
       <QueuePanel label="dense (default shell)">
         <QueueTaskItem
           dense
@@ -485,12 +485,12 @@ export const OrganizerContext: Story = {
 export const Empty: Story = {
   name: "Empty queue",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
-      <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
-      <div {...applyHost(undefined, undefined, styles.emptyBox)}>
-        <div {...applyHost(undefined, undefined, styles.emptyCopy)}>
-          <p {...applyHost(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
-          <p {...applyHost(undefined, undefined, typography.caption, styles.emptyHint)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
+      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
+      <div {...applyProps(undefined, undefined, styles.emptyBox)}>
+        <div {...applyProps(undefined, undefined, styles.emptyCopy)}>
+          <p {...applyProps(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
+          <p {...applyProps(undefined, undefined, typography.caption, styles.emptyHint)}>
             Las tareas del espacio activo aparecerán aquí.
           </p>
         </div>
@@ -502,17 +502,17 @@ export const Empty: Story = {
 export const Loading: Story = {
   name: "Loading",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
-      <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
+      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
       <ul
         aria-busy="true"
         aria-label="Cargando tareas"
         role="status"
-        {...applyHost(undefined, undefined, styles.list)}
+        {...applyProps(undefined, undefined, styles.list)}
       >
-        <li {...applyHost(undefined, undefined, motion.pulse, styles.skeleton)} />
-        <li {...applyHost(undefined, undefined, motion.pulse, styles.skeleton)} />
-        <li {...applyHost(undefined, undefined, motion.pulse, styles.skeleton)} />
+        <li {...applyProps(undefined, undefined, motion.pulse, styles.skeleton)} />
+        <li {...applyProps(undefined, undefined, motion.pulse, styles.skeleton)} />
+        <li {...applyProps(undefined, undefined, motion.pulse, styles.skeleton)} />
       </ul>
     </div>
   ),
@@ -521,15 +521,15 @@ export const Loading: Story = {
 export const ErrorState: Story = {
   name: "Error",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
-      <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
-      <Alert variant="destructive" {...applyHost(undefined, undefined, styles.alert)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
+      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
+      <Alert variant="destructive" {...applyProps(undefined, undefined, styles.alert)}>
         <WarningCircleIcon aria-hidden="true" />
-        <AlertTitle {...applyHost(undefined, undefined, styles.alertTitle)}>
+        <AlertTitle {...applyProps(undefined, undefined, styles.alertTitle)}>
           No se pudieron cargar las tareas
         </AlertTitle>
-        <AlertDescription {...applyHost(undefined, undefined, styles.alertBody)}>
-          <span {...applyHost(undefined, undefined, typography.caption, styles.alertHint)}>
+        <AlertDescription {...applyProps(undefined, undefined, styles.alertBody)}>
+          <span {...applyProps(undefined, undefined, typography.caption, styles.alertHint)}>
             Conservamos el espacio activo para que puedas reintentar.
           </span>
           <Button dense type="button" variant="outline">
@@ -553,22 +553,22 @@ function QueuePanel({
   readonly rail?: boolean;
 }) {
   const heading = (
-    <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>{label}</p>
+    <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>{label}</p>
   );
-  const list = <ul {...applyHost(undefined, undefined, styles.list)}>{children}</ul>;
+  const list = <ul {...applyProps(undefined, undefined, styles.list)}>{children}</ul>;
 
   if (rail) {
     return (
-      <div {...applyHost(className, undefined, styles.railWrap)}>
+      <div {...applyProps(className, undefined, styles.railWrap)}>
         {heading}
-        <div {...applyHost(undefined, undefined, styles.rail)}>{list}</div>
+        <div {...applyProps(undefined, undefined, styles.rail)}>{list}</div>
       </div>
     );
   }
 
   return (
-    <div {...applyHost(className, undefined, styles.panel)}>
-      <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>{label}</p>
+    <div {...applyProps(className, undefined, styles.panel)}>
+      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>{label}</p>
       {list}
     </div>
   );

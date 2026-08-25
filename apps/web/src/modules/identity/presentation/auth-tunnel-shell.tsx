@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, Logo, typography } from "@futrob/ui";
+import { applyProps, applyStyles, Logo, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 const styles = stylex.create({
@@ -119,7 +119,7 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
   return (
     <main {...applyStyles(styles.main)}>
       <section
-        {...applyHost(
+        {...applyProps(
           undefined,
           // SAFETY: custom properties are valid host styles; CSSProperties
           // does not list arbitrary `--*` names.

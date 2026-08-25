@@ -11,7 +11,7 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 | Archivo / carpeta   | Responsabilidad                                                                                                                                                   |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/tokens.css`    | Paleta OKLCH, tema claro, dark opt-in, tipo, geometría, movimiento. **Artefacto generado** desde [`@futrob/ui-tokens`](../ui-tokens/README.md) — no editar a mano |
-| `src/styles/*.ts`   | Tokens StyleX (`colors`, `media`), `typography`, `elevation`, `applyHost`                                                                                         |
+| `src/styles/*.ts`   | Tokens StyleX (`colors`, `media`), `typography`, `elevation`, `applyProps`                                                                                        |
 | `src/elevation.css` | Sombras elevadas + hairline ring (nunca con `border`/`ring` en el mismo elemento)                                                                                 |
 | `src/slots.css`     | Selectores que StyleX no expresa en un solo elemento (densidad de tabla, SVG hijos, enter/exit)                                                                   |
 | `src/styles.css`    | Manrope autohospedada, reset, defaults globales, importa tokens/elevation/slots                                                                                   |
@@ -87,13 +87,13 @@ Los estilos de producto se escriben con StyleX. Importa `colors` desde
 Los componentes se importan desde la API pública:
 
 ```tsx
-import { applyHost, Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo, readFormString } from "@futrob/ui";
+import { applyProps, Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo, readFormString } from "@futrob/ui";
 import { CheckCircleIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
 const logo = stylex.create({ mark: { height: "2rem", width: "auto" } });
 
-<Logo {...applyHost(undefined, undefined, logo.mark)} title="Futrob" />
+<Logo {...applyProps(undefined, undefined, logo.mark)} title="Futrob" />
 <Form validationMode="onBlur">
   <Field
     name="name"

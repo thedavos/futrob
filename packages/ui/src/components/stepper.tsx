@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { CheckIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 import { typography } from "#styles/typography";
@@ -162,8 +162,8 @@ function Stepper({
   );
 
   return (
-    <nav aria-label={ariaLabel} data-slot="stepper" {...applyHost(className, style, styles.root)}>
-      <ol {...applyHost(undefined, undefined, styles.list)}>
+    <nav aria-label={ariaLabel} data-slot="stepper" {...applyProps(className, style, styles.root)}>
+      <ol {...applyProps(undefined, undefined, styles.list)}>
         {steps.map((step, index) => {
           const completed = index < currentIndex;
           const current = index === currentIndex;
@@ -172,12 +172,12 @@ function Stepper({
               aria-current={current ? "step" : undefined}
               data-status={completed ? "completed" : current ? "current" : "upcoming"}
               key={step.id}
-              {...applyHost(undefined, undefined, styles.item)}
+              {...applyProps(undefined, undefined, styles.item)}
             >
               {index < steps.length - 1 ? (
                 <span
                   aria-hidden="true"
-                  {...applyHost(
+                  {...applyProps(
                     undefined,
                     undefined,
                     styles.connector,
@@ -187,7 +187,7 @@ function Stepper({
               ) : null}
               <span
                 aria-hidden="true"
-                {...applyHost(
+                {...applyProps(
                   undefined,
                   undefined,
                   styles.marker,
@@ -196,13 +196,13 @@ function Stepper({
                 )}
               >
                 {completed ? (
-                  <CheckIcon {...applyHost(undefined, undefined, styles.markerIcon)} />
+                  <CheckIcon {...applyProps(undefined, undefined, styles.markerIcon)} />
                 ) : (
                   index + 1
                 )}
               </span>
               <span
-                {...applyHost(
+                {...applyProps(
                   undefined,
                   undefined,
                   typography.caption,
@@ -218,7 +218,7 @@ function Stepper({
           );
         })}
       </ol>
-      <p {...applyHost(undefined, undefined, typography.caption, styles.mobileSummary)}>
+      <p {...applyProps(undefined, undefined, typography.caption, styles.mobileSummary)}>
         {mobileSummary(currentIndex + 1, steps.length, steps[currentIndex]?.label ?? "")}
       </p>
     </nav>

@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -42,7 +42,7 @@ const styles = stylex.create({
 
 function PageHeader({ className, style, ...props }: React.ComponentProps<"header">) {
   return (
-    <header data-slot="page-header" {...applyHost(className, style, styles.root)} {...props} />
+    <header data-slot="page-header" {...applyProps(className, style, styles.root)} {...props} />
   );
 }
 
@@ -50,7 +50,7 @@ function PageHeaderEyebrow({ className, style, ...props }: React.ComponentProps<
   return (
     <p
       data-slot="page-header-eyebrow"
-      {...applyHost(className, style, typography.label, styles.eyebrow)}
+      {...applyProps(className, style, typography.label, styles.eyebrow)}
       {...props}
     />
   );
@@ -60,7 +60,7 @@ function PageHeaderTitle({ className, style, ...props }: React.ComponentProps<"h
   return (
     <h1
       data-slot="page-header-title"
-      {...applyHost(className, style, typography.heading, styles.title)}
+      {...applyProps(className, style, typography.heading, styles.title)}
       {...props}
     />
   );
@@ -70,7 +70,7 @@ function PageHeaderDescription({ className, style, ...props }: React.ComponentPr
   return (
     <p
       data-slot="page-header-description"
-      {...applyHost(className, style, typography.subtitle, styles.description)}
+      {...applyProps(className, style, typography.subtitle, styles.description)}
       {...props}
     />
   );
@@ -80,7 +80,7 @@ function PageHeaderActions({ className, style, ...props }: React.ComponentProps<
   return (
     <div
       data-slot="page-header-actions"
-      {...applyHost(className, style, styles.actions)}
+      {...applyProps(className, style, styles.actions)}
       {...props}
     />
   );

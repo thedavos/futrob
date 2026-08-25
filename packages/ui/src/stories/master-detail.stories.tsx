@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { ActionBar, ActionBarEnd, ActionBarStart } from "../components/action-bar";
@@ -89,16 +89,16 @@ export const SplitPanes: Story = {
     const selected = ITEMS.find((item) => item.id === selectedId) ?? null;
 
     return (
-      <div {...applyHost(undefined, undefined, styles.shell)}>
+      <div {...applyProps(undefined, undefined, styles.shell)}>
         <MasterDetail
           detail={
             selected ? (
-              <div {...applyHost(undefined, undefined, styles.detail)}>
-                <div {...applyHost(undefined, undefined, styles.detailBody)}>
-                  <h2 {...applyHost(undefined, undefined, typography.heading, styles.heading)}>
+              <div {...applyProps(undefined, undefined, styles.detail)}>
+                <div {...applyProps(undefined, undefined, styles.detailBody)}>
+                  <h2 {...applyProps(undefined, undefined, typography.heading, styles.heading)}>
                     {selected.title}
                   </h2>
-                  <p {...applyHost(undefined, undefined, styles.muted)}>
+                  <p {...applyProps(undefined, undefined, styles.muted)}>
                     Detalle operativo. Scroll independiente del listado.
                   </p>
                 </div>
@@ -116,19 +116,19 @@ export const SplitPanes: Story = {
                 </ActionBar>
               </div>
             ) : (
-              <div {...applyHost(undefined, undefined, styles.empty)}>
+              <div {...applyProps(undefined, undefined, styles.empty)}>
                 Selecciona un enfrentamiento
               </div>
             )
           }
           master={
-            <ul {...applyHost(undefined, undefined, styles.list)}>
+            <ul {...applyProps(undefined, undefined, styles.list)}>
               {ITEMS.map((item) => (
                 <li key={item.id}>
                   <button
                     onClick={() => setSelectedId(item.id)}
                     type="button"
-                    {...applyHost(
+                    {...applyProps(
                       undefined,
                       undefined,
                       styles.item,

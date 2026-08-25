@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
@@ -87,7 +87,7 @@ function SelectorHost({
 }) {
   const [selection, setSelection] = useState(() => selectionFor(selectionKind, model));
   return (
-    <div {...applyHost(undefined, undefined, styles.host)}>
+    <div {...applyProps(undefined, undefined, styles.host)}>
       <WorkspaceSelector
         model={model}
         onRequestAddClub={() => undefined}
@@ -116,7 +116,7 @@ function WorkspaceSelectorStoryShell({
   const router = useMemo(() => {
     const rootRoute = createRootRoute({
       component: () => (
-        <div {...applyHost(undefined, undefined, styles.shell)}>
+        <div {...applyProps(undefined, undefined, styles.shell)}>
           <SelectorHost model={model} selectionKind={selectionKind} />
           <Outlet />
         </div>
@@ -170,8 +170,8 @@ function TriggerStateRow({
   readonly children: ReactNode;
 }) {
   return (
-    <div {...applyHost(undefined, undefined, styles.row)}>
-      <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>{label}</p>
+    <div {...applyProps(undefined, undefined, styles.row)}>
+      <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>{label}</p>
       {children}
     </div>
   );
@@ -320,7 +320,7 @@ export const FilledPortfolio: Story = {
 export const TriggerStates: Story = {
   name: "Trigger states",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.states)}>
+    <div {...applyProps(undefined, undefined, styles.states)}>
       <TriggerStateRow label="Personal sin club">
         <WorkspaceSelectorStoryShell model={emptyModel} selectionKind="personal" />
       </TriggerStateRow>

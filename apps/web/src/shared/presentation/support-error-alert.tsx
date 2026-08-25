@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { RequestId } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
 import {
-  applyHost,
+  applyProps,
   applyStyles,
   Alert,
   AlertDescription,
@@ -149,7 +149,7 @@ export function SupportErrorAlert({
 }: Readonly<{ error: SupportError; className?: string; copy?: SupportErrorAlertCopy }>) {
   const { copyToClipboard, isCopied } = useCopyToClipboard();
   const [copyFailed, setCopyFailed] = useState(false);
-  const alert = applyHost(className, undefined, styles.alert);
+  const alert = applyProps(className, undefined, styles.alert);
   const icon = applyStyles(styles.icon);
   const title = applyStyles(styles.title);
   const description = applyStyles(styles.description);

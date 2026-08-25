@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -286,7 +286,7 @@ function HeaderCollapseToggle() {
       onClick={toggleCollapsed}
       size="icon"
       variant="ghost"
-      {...applyHost(undefined, undefined, !collapsed && styles.collapseExpanded)}
+      {...applyProps(undefined, undefined, !collapsed && styles.collapseExpanded)}
     >
       {collapsed ? (
         <SidebarExpandIcon aria-hidden="true" />
@@ -300,7 +300,7 @@ function HeaderCollapseToggle() {
 function AccountAndCollapseRow({ compact = false }: { readonly compact?: boolean }) {
   return (
     <div
-      {...applyHost(undefined, undefined, styles.accountRow, compact && styles.accountRowCompact)}
+      {...applyProps(undefined, undefined, styles.accountRow, compact && styles.accountRowCompact)}
     >
       <DropdownMenu>
         <DropdownMenuTrigger
@@ -310,7 +310,7 @@ function AccountAndCollapseRow({ compact = false }: { readonly compact?: boolean
               dense
               size={compact ? "icon" : "default"}
               variant="ghost"
-              {...applyHost(
+              {...applyProps(
                 undefined,
                 undefined,
                 compact ? styles.accountTriggerCompact : styles.accountTrigger,
@@ -319,31 +319,31 @@ function AccountAndCollapseRow({ compact = false }: { readonly compact?: boolean
           }
         >
           <span
-            {...applyHost(
+            {...applyProps(
               undefined,
               undefined,
               styles.accountInner,
               compact && styles.accountInnerCompact,
             )}
           >
-            <Avatar {...applyHost(undefined, undefined, styles.avatar)}>
-              <AvatarFallback {...applyHost(undefined, undefined, styles.avatarFallback)}>
+            <Avatar {...applyProps(undefined, undefined, styles.avatar)}>
+              <AvatarFallback {...applyProps(undefined, undefined, styles.avatarFallback)}>
                 DV
               </AvatarFallback>
             </Avatar>
             {compact ? null : (
-              <span {...applyHost(undefined, undefined, styles.nameRow)}>
-                <span {...applyHost(undefined, undefined, styles.name)}>David</span>
+              <span {...applyProps(undefined, undefined, styles.nameRow)}>
+                <span {...applyProps(undefined, undefined, styles.name)}>David</span>
                 <CaretDownIcon
                   aria-hidden="true"
                   weight="bold"
-                  {...applyHost(undefined, undefined, styles.caretSm)}
+                  {...applyProps(undefined, undefined, styles.caretSm)}
                 />
               </span>
             )}
           </span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" {...applyHost(undefined, undefined, styles.menu)}>
+        <DropdownMenuContent align="start" {...applyProps(undefined, undefined, styles.menu)}>
           <DropdownMenuItem>Perfil</DropdownMenuItem>
           <DropdownMenuItem>Configuración</DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -363,15 +363,15 @@ function WorkspaceSectionHeader({
   readonly title: string;
 }) {
   return (
-    <div {...applyHost(undefined, undefined, styles.sectionRow)}>
-      <DropdownMenuLabel {...applyHost(undefined, undefined, styles.sectionLabel)}>
+    <div {...applyProps(undefined, undefined, styles.sectionRow)}>
+      <DropdownMenuLabel {...applyProps(undefined, undefined, styles.sectionLabel)}>
         {title}
       </DropdownMenuLabel>
       <DropdownMenuItem
         aria-label={actionLabel}
-        {...applyHost(undefined, undefined, styles.sectionAction)}
+        {...applyProps(undefined, undefined, styles.sectionAction)}
       >
-        <PlusIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.iconSm)} />
+        <PlusIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.iconSm)} />
       </DropdownMenuItem>
     </div>
   );
@@ -385,21 +385,21 @@ function WorkspaceSelectorDemo() {
           <Button
             dense
             variant="outline"
-            {...applyHost(undefined, undefined, styles.workspaceTrigger)}
+            {...applyProps(undefined, undefined, styles.workspaceTrigger)}
           />
         }
       >
-        <span {...applyHost(undefined, undefined, styles.workspaceInner)}>
-          <TrophyIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.iconShrink)} />
-          <span {...applyHost(undefined, undefined, styles.truncate)}>La Copa del Barrio</span>
+        <span {...applyProps(undefined, undefined, styles.workspaceInner)}>
+          <TrophyIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.iconShrink)} />
+          <span {...applyProps(undefined, undefined, styles.truncate)}>La Copa del Barrio</span>
         </span>
-        <CaretDownIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.caret)} />
+        <CaretDownIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.caret)} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent {...applyHost(undefined, undefined, styles.menu)}>
+      <DropdownMenuContent {...applyProps(undefined, undefined, styles.menu)}>
         <DropdownMenuGroup>
           <WorkspaceSectionHeader actionLabel="Crear competición" title="Competiciones" />
           <DropdownMenuItem>
-            <TrophyIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.iconSm)} />
+            <TrophyIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.iconSm)} />
             La Copa del Barrio
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -422,19 +422,19 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
     <SidebarProvider
       data-density="dense"
       defaultCollapsed={false}
-      {...applyHost(undefined, undefined, styles.provider)}
+      {...applyProps(undefined, undefined, styles.provider)}
     >
       <Sidebar>
-        <SidebarHeader {...applyHost(undefined, undefined, styles.headerExpanded)}>
+        <SidebarHeader {...applyProps(undefined, undefined, styles.headerExpanded)}>
           <AccountAndCollapseRow />
           <WorkspaceSelectorDemo />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>Tareas</SidebarGroupLabel>
-            <div {...applyHost(undefined, undefined, styles.emptyQueue)}>
-              <p {...applyHost(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
-              <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+            <div {...applyProps(undefined, undefined, styles.emptyQueue)}>
+              <p {...applyProps(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
+              <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
                 Las tareas del espacio activo aparecerán aquí.
               </p>
             </div>
@@ -444,7 +444,10 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton active dense>
-                <HouseIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.iconSm)} />
+                <HouseIcon
+                  aria-hidden="true"
+                  {...applyProps(undefined, undefined, styles.iconSm)}
+                />
                 Inicio
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -452,7 +455,7 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
               <SidebarMenuButton dense>
                 <TrophyIcon
                   aria-hidden="true"
-                  {...applyHost(undefined, undefined, styles.iconSm)}
+                  {...applyProps(undefined, undefined, styles.iconSm)}
                 />
                 Competiciones
               </SidebarMenuButton>
@@ -461,7 +464,7 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
               <SidebarMenuButton dense>
                 <GameControllerIcon
                   aria-hidden="true"
-                  {...applyHost(undefined, undefined, styles.iconSm)}
+                  {...applyProps(undefined, undefined, styles.iconSm)}
                 />
                 Clubes EA
               </SidebarMenuButton>
@@ -470,7 +473,7 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
               <SidebarMenuButton dense>
                 <TicketIcon
                   aria-hidden="true"
-                  {...applyHost(undefined, undefined, styles.iconSm)}
+                  {...applyProps(undefined, undefined, styles.iconSm)}
                 />
                 Invitaciones
               </SidebarMenuButton>
@@ -479,15 +482,17 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header {...applyHost(undefined, undefined, styles.pageHeader)}>
-          <h1 {...applyHost(undefined, undefined, typography.heading, styles.pageTitle)}>Inicio</h1>
+        <header {...applyProps(undefined, undefined, styles.pageHeader)}>
+          <h1 {...applyProps(undefined, undefined, typography.heading, styles.pageTitle)}>
+            Inicio
+          </h1>
           <Button dense disabled variant="outline">
             Sync EA
           </Button>
         </header>
-        <div {...applyHost(undefined, undefined, styles.pageBody)}>
+        <div {...applyProps(undefined, undefined, styles.pageBody)}>
           <p>Contenido de la página con scroll independiente.</p>
-          <div {...applyHost(undefined, undefined, styles.pageLines)}>
+          <div {...applyProps(undefined, undefined, styles.pageLines)}>
             {Array.from({ length: 24 }, (_, index) => (
               <p key={index}>Fila de contenido {index + 1}</p>
             ))}
@@ -496,7 +501,7 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
         {showActionBar ? (
           <ActionBar>
             <ActionBarStart>
-              <span {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+              <span {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
                 Cambios sin guardar
               </span>
             </ActionBarStart>
@@ -529,29 +534,29 @@ export const CollapsedRail: Story = {
         collapsed={collapsed}
         data-density="dense"
         onCollapsedChange={setCollapsed}
-        {...applyHost(undefined, undefined, styles.provider)}
+        {...applyProps(undefined, undefined, styles.provider)}
       >
         <Sidebar>
-          <SidebarHeader {...applyHost(undefined, undefined, styles.headerCompact)}>
+          <SidebarHeader {...applyProps(undefined, undefined, styles.headerCompact)}>
             <AccountAndCollapseRow compact />
           </SidebarHeader>
-          <SidebarContent {...applyHost(undefined, undefined, styles.contentCompact)}>
+          <SidebarContent {...applyProps(undefined, undefined, styles.contentCompact)}>
             <SidebarMenuButton
               aria-label="Tareas"
               dense
-              {...applyHost(undefined, undefined, styles.iconOnly)}
+              {...applyProps(undefined, undefined, styles.iconOnly)}
             >
               <CheckSquareOffsetIcon aria-hidden="true" />
             </SidebarMenuButton>
           </SidebarContent>
-          <SidebarFooter {...applyHost(undefined, undefined, styles.footerCompact)}>
+          <SidebarFooter {...applyProps(undefined, undefined, styles.footerCompact)}>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   active
                   aria-label="Inicio"
                   dense
-                  {...applyHost(undefined, undefined, styles.iconOnly)}
+                  {...applyProps(undefined, undefined, styles.iconOnly)}
                 >
                   <HouseIcon aria-hidden="true" />
                 </SidebarMenuButton>
@@ -560,7 +565,7 @@ export const CollapsedRail: Story = {
                 <SidebarMenuButton
                   aria-label="Competiciones"
                   dense
-                  {...applyHost(undefined, undefined, styles.iconOnly)}
+                  {...applyProps(undefined, undefined, styles.iconOnly)}
                 >
                   <TrophyIcon aria-hidden="true" />
                 </SidebarMenuButton>
@@ -569,12 +574,12 @@ export const CollapsedRail: Story = {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header {...applyHost(undefined, undefined, styles.pageHeaderCompact)}>
-            <h1 {...applyHost(undefined, undefined, typography.heading, styles.pageTitlePlain)}>
+          <header {...applyProps(undefined, undefined, styles.pageHeaderCompact)}>
+            <h1 {...applyProps(undefined, undefined, typography.heading, styles.pageTitlePlain)}>
               Focus mode
             </h1>
           </header>
-          <div {...applyHost(undefined, undefined, styles.insetPad)}>
+          <div {...applyProps(undefined, undefined, styles.insetPad)}>
             Icon rail colapsado. Expandir restaura el selector y las tareas.
           </div>
         </SidebarInset>

@@ -2,7 +2,7 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 import { formFieldValueSchema, type FormFieldValue } from "#lib/read-form-string";
@@ -64,7 +64,7 @@ function Field({ className, style, validate, ...props }: FieldProps) {
   return (
     <FieldPrimitive.Root
       data-slot="field"
-      {...applyHost(className, style, styles.root)}
+      {...applyProps(className, style, styles.root)}
       validate={wrappedValidate}
       {...props}
     />
@@ -75,7 +75,7 @@ function FieldLabel({ className, style, ...props }: FieldPrimitive.Label.Props) 
   return (
     <FieldPrimitive.Label
       data-slot="field-label"
-      {...applyHost(className, style, typography.label, styles.label)}
+      {...applyProps(className, style, typography.label, styles.label)}
       {...props}
     />
   );
@@ -85,7 +85,7 @@ function FieldDescription({ className, style, ...props }: FieldPrimitive.Descrip
   return (
     <FieldPrimitive.Description
       data-slot="field-description"
-      {...applyHost(className, style, styles.description)}
+      {...applyProps(className, style, styles.description)}
       {...props}
     />
   );
@@ -95,12 +95,12 @@ function FieldError({ className, style, ...props }: Omit<FieldPrimitive.Error.Pr
   return (
     <FieldPrimitive.Error
       data-slot="field-error"
-      {...applyHost(className, style, styles.error)}
+      {...applyProps(className, style, styles.error)}
       render={(elementProps) => (
         <div {...elementProps}>
           <WarningCircleIcon
             aria-hidden="true"
-            {...applyHost(undefined, undefined, styles.errorIcon)}
+            {...applyProps(undefined, undefined, styles.errorIcon)}
             strokeWidth={1.5}
           />
           <span>{elementProps.children}</span>

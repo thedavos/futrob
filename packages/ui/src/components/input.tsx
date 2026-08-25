@@ -1,7 +1,7 @@
 import { Input as InputPrimitive } from "@base-ui/react/input";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -78,7 +78,7 @@ function Input({ className, style, dense = false, type, ...props }: InputProps) 
       type={type}
       data-slot="input"
       data-density={dense ? "dense" : "default"}
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.base,

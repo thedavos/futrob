@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ArrowUpRightIcon, PlusIcon, MagnifyingGlassIcon, GearIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { Button } from "../components/button";
@@ -78,7 +78,7 @@ export const Playground: Story = {};
 
 export const ClosedVariants: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Button>
         <PlusIcon />
         Crear competición
@@ -97,12 +97,12 @@ export const ClosedVariants: Story = {
 
 export const UniversalAndDense: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.stack)}>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>
+    <div {...applyProps(undefined, undefined, styles.stack)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>
           Universal · 44 px
         </p>
-        <div {...applyHost(undefined, undefined, styles.row)}>
+        <div {...applyProps(undefined, undefined, styles.row)}>
           <Button>
             <GearIcon />
             Configurar torneo
@@ -112,11 +112,11 @@ export const UniversalAndDense: Story = {
           </Button>
         </div>
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.muted)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.muted)}>
           Dense · 36 px en desktop
         </p>
-        <div {...applyHost(undefined, undefined, styles.row)}>
+        <div {...applyProps(undefined, undefined, styles.row)}>
           <Button dense variant="outline">
             Editar fila
           </Button>
@@ -131,7 +131,7 @@ export const UniversalAndDense: Story = {
 
 export const MarketingCta: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.marketing)}>
+    <div {...applyProps(undefined, undefined, styles.marketing)}>
       <Button>
         Organiza tu torneo
         <ButtonIcon>

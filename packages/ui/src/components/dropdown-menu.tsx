@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { typography } from "#styles/typography";
@@ -95,13 +95,13 @@ function DropdownMenuContent({
     <DropdownMenuPortal>
       <MenuPrimitive.Positioner
         align={align}
-        {...applyHost(undefined, undefined, styles.positioner)}
+        {...applyProps(undefined, undefined, styles.positioner)}
         side={side}
         sideOffset={sideOffset}
       >
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
-          {...applyHost(className, style, styles.content, elevation.md)}
+          {...applyProps(className, style, styles.content, elevation.md)}
           {...props}
         />
       </MenuPrimitive.Positioner>
@@ -113,7 +113,7 @@ function DropdownMenuLabel({ className, style, ...props }: MenuPrimitive.GroupLa
   return (
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
-      {...applyHost(className, style, typography.label, styles.label)}
+      {...applyProps(className, style, typography.label, styles.label)}
       {...props}
     />
   );
@@ -128,7 +128,7 @@ function DropdownMenuItem({
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
-      {...applyHost(className, style, styles.item, inset && styles.itemInset)}
+      {...applyProps(className, style, styles.item, inset && styles.itemInset)}
       {...props}
     />
   );
@@ -142,7 +142,7 @@ function DropdownMenuSeparator({
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      {...applyHost(className, style, styles.separator)}
+      {...applyProps(className, style, styles.separator)}
       {...props}
     />
   );

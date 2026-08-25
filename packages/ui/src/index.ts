@@ -187,7 +187,7 @@ export { useCopyToClipboard } from "./hooks/use-copy-to-clipboard";
 export type { Icon, IconProps, IconWeight } from "./lib/icon";
 export { FUTROB_ICON_CATALOG } from "./icons/catalog";
 export type { FutrobIconEntry } from "./icons/catalog";
-export { applyHost, applyStyles } from "./styles/apply";
+export { applyProps, applyStyles } from "./styles/apply";
 export type { StyleXStyles } from "./styles/apply";
 export { colors } from "./styles/tokens.stylex";
 export { media } from "./styles/media.stylex";

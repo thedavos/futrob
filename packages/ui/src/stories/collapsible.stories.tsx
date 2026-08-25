@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/collapsible";
@@ -91,17 +91,17 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <Collapsible {...args} {...applyHost(undefined, undefined, styles.playground)}>
-      <CollapsibleTrigger {...applyHost(undefined, undefined, typography.label, styles.trigger)}>
+    <Collapsible {...args} {...applyProps(undefined, undefined, styles.playground)}>
+      <CollapsibleTrigger {...applyProps(undefined, undefined, typography.label, styles.trigger)}>
         Candidatos EA
-        <CaretRightIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.caret)} />
+        <CaretRightIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.caret)} />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div {...applyHost(undefined, undefined, styles.body)}>
-          <p {...applyHost(undefined, undefined, typography.body, styles.foreground)}>
+        <div {...applyProps(undefined, undefined, styles.body)}>
+          <p {...applyProps(undefined, undefined, typography.body, styles.foreground)}>
             Real Nova vs Atlético Sur · 2-1
           </p>
-          <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+          <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
             Revisa sides, duración y jugadores clave antes de proponer.
           </p>
         </div>
@@ -112,7 +112,7 @@ export const Playground: Story = {
 
 export const Sections: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.sections)}>
+    <div {...applyProps(undefined, undefined, styles.sections)}>
       {(
         [
           ["Resumen", "Marcador, jornada y estado del enfrentamiento."],
@@ -120,15 +120,18 @@ export const Sections: Story = {
           ["Candidatos EA", "Observaciones del proveedor listas para selección."],
         ] as const
       ).map(([title, body]) => (
-        <Collapsible key={title} {...applyHost(undefined, undefined, styles.section)}>
+        <Collapsible key={title} {...applyProps(undefined, undefined, styles.section)}>
           <CollapsibleTrigger
-            {...applyHost(undefined, undefined, typography.label, styles.trigger)}
+            {...applyProps(undefined, undefined, typography.label, styles.trigger)}
           >
             {title}
-            <CaretRightIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.caret)} />
+            <CaretRightIcon
+              aria-hidden="true"
+              {...applyProps(undefined, undefined, styles.caret)}
+            />
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <p {...applyHost(undefined, undefined, typography.caption, styles.captionPad)}>
+            <p {...applyProps(undefined, undefined, typography.caption, styles.captionPad)}>
               {body}
             </p>
           </CollapsibleContent>
@@ -140,18 +143,18 @@ export const Sections: Story = {
 
 export const Disabled: Story = {
   render: () => (
-    <Collapsible disabled {...applyHost(undefined, undefined, styles.playground)}>
+    <Collapsible disabled {...applyProps(undefined, undefined, styles.playground)}>
       <CollapsibleTrigger
-        {...applyHost(undefined, undefined, typography.label, styles.triggerDisabled)}
+        {...applyProps(undefined, undefined, typography.label, styles.triggerDisabled)}
       >
         Historial (sin permiso)
         <CaretRightIcon
           aria-hidden="true"
-          {...applyHost(undefined, undefined, styles.caretStatic)}
+          {...applyProps(undefined, undefined, styles.caretStatic)}
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.captionPad)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.captionPad)}>
           Solo el staff autorizado puede auditar este historial.
         </p>
       </CollapsibleContent>

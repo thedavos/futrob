@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ListIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { Button } from "../components/button";
@@ -62,20 +62,20 @@ export const Playground: Story = {
           <SheetDescription>Áreas de la competición activa.</SheetDescription>
         </SheetHeader>
         <SheetBody>
-          <nav {...applyHost(undefined, undefined, styles.nav)}>
-            <a href="#" {...applyHost(undefined, undefined, styles.navLink)}>
+          <nav {...applyProps(undefined, undefined, styles.nav)}>
+            <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
               Resumen
             </a>
-            <a href="#" {...applyHost(undefined, undefined, styles.navLink)}>
+            <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
               Partidos
             </a>
-            <a href="#" {...applyHost(undefined, undefined, styles.navLink)}>
+            <a href="#" {...applyProps(undefined, undefined, styles.navLink)}>
               Estadísticas
             </a>
           </nav>
         </SheetBody>
         <SheetFooter>
-          <Button {...applyHost(undefined, undefined, styles.full)}>Ir al panel</Button>
+          <Button {...applyProps(undefined, undefined, styles.full)}>Ir al panel</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
@@ -84,7 +84,7 @@ export const Playground: Story = {
 
 export const Sides: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.sides)}>
+    <div {...applyProps(undefined, undefined, styles.sides)}>
       {(["left", "right", "top", "bottom"] as const).map((side) => (
         <Sheet key={side}>
           <SheetTrigger render={<Button variant="outline" />}>{side}</SheetTrigger>
@@ -94,7 +94,7 @@ export const Sides: Story = {
               <SheetDescription>Panel anclado al borde de la pantalla.</SheetDescription>
             </SheetHeader>
             <SheetBody>
-              <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+              <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
                 Contenido del sheet {side}.
               </p>
             </SheetBody>

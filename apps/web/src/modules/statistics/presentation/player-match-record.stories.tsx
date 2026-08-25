@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, TooltipProvider } from "@futrob/ui";
+import { applyProps, TooltipProvider } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { recentProviderMatchFixture } from "./player-matches-page.fixtures.ts";
@@ -73,7 +73,7 @@ const meta = {
     (Story) => (
       <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
         <TooltipProvider>
-          <div {...applyHost(undefined, undefined, styles.frame)}>
+          <div {...applyProps(undefined, undefined, styles.frame)}>
             <Story />
           </div>
         </TooltipProvider>

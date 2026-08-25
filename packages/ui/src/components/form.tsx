@@ -1,6 +1,6 @@
 import { Form as FormPrimitive } from "@base-ui/react/form";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import type { FormFieldValue } from "#lib/read-form-string";
 
 type FormValuesRecord = { readonly [key: string]: FormFieldValue };
@@ -18,7 +18,7 @@ function Form<FormValues extends object = FormValuesRecord>({
   return (
     <FormPrimitive
       data-slot="form"
-      {...applyHost(className, style)}
+      {...applyProps(className, style)}
       validationMode={validationMode}
       {...props}
     />

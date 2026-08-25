@@ -13,8 +13,9 @@ type HostClassName = string | ((state: never) => string | undefined);
 type HostStyle = CSSProperties | ((state: never) => CSSProperties | undefined);
 
 /**
- * Apply StyleX styles to a host element. Last argument wins, same as
- * `stylex.props` / the old `cn(...)` order.
+ * Compile StyleX tokens to `{ className, style }`. Last argument wins, same as
+ * `stylex.props` / the old `cn(...)` order. Use `applyProps` when leftover
+ * React or Base UI `className` / `style` must merge in.
  */
 export function applyStyles(...styles: StyleArg[]) {
   // SAFETY: stylex.props rest overloads expect CompiledStyles tuples; tokens
@@ -33,13 +34,17 @@ function leftoverHostStyle(htmlStyle: HostStyle | undefined): CSSProperties | un
 }
 
 /**
- * Merge compiled StyleX output with leftover `className` / inline `style`
- * (Base UI `render`, SVG marks, tests). Prefer `sx` StyleX tokens over
- * raw class strings.
+ * Spread props for an element: leftover `className` / `style` plus compiled
+ * StyleX tokens (Base UI `render`, SVG marks, tests). Last token wins.
+ * Prefer StyleX tokens over raw class strings.
  */
-export function applyHost(className?: HostClassName, htmlStyle?: HostStyle, ...styles: StyleArg[]) {
+export function applyProps(
+  className?: HostClassName,
+  htmlStyle?: HostStyle,
+  ...styles: StyleArg[]
+) {
   // SAFETY: stylex.props rest overloads expect CompiledStyles tuples; tokens
-  // from stylex.create are that compiled form at every applyHost call site.
+  // from stylex.create are that compiled form at every applyProps call site.
   const applied = stylex.props(...(styles as never[]));
   const leftoverClass = leftoverClassName(className);
   const leftoverStyle = leftoverHostStyle(htmlStyle);

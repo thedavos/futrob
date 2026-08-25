@@ -1,7 +1,7 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -50,13 +50,13 @@ function TooltipContent({
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Positioner
         align={align}
-        {...applyHost(undefined, undefined, styles.positioner)}
+        {...applyProps(undefined, undefined, styles.positioner)}
         side={side}
         sideOffset={sideOffset}
       >
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
-          {...applyHost(className, style, styles.content)}
+          {...applyProps(className, style, styles.content)}
           {...props}
         />
       </TooltipPrimitive.Positioner>

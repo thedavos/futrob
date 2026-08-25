@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -34,17 +34,19 @@ const styles = stylex.create({
 });
 
 function ActionBar({ className, style, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="action-bar" {...applyHost(className, style, styles.root)} {...props} />;
+  return <div data-slot="action-bar" {...applyProps(className, style, styles.root)} {...props} />;
 }
 
 function ActionBarStart({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
-    <div data-slot="action-bar-start" {...applyHost(className, style, styles.start)} {...props} />
+    <div data-slot="action-bar-start" {...applyProps(className, style, styles.start)} {...props} />
   );
 }
 
 function ActionBarEnd({ className, style, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="action-bar-end" {...applyHost(className, style, styles.end)} {...props} />;
+  return (
+    <div data-slot="action-bar-end" {...applyProps(className, style, styles.end)} {...props} />
+  );
 }
 
 export { ActionBar, ActionBarEnd, ActionBarStart };

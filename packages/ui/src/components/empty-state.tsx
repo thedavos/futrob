@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 
@@ -69,7 +69,7 @@ function EmptyState({ className, style, variant = "flat", ...props }: EmptyState
     <div
       data-slot="empty-state"
       data-variant={variant}
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.root,
@@ -85,7 +85,7 @@ function EmptyStateIcon({ className, style, ...props }: React.ComponentProps<"di
     <div
       aria-hidden="true"
       data-slot="empty-state-icon"
-      {...applyHost(className, style, styles.icon)}
+      {...applyProps(className, style, styles.icon)}
       {...props}
     />
   );
@@ -93,7 +93,7 @@ function EmptyStateIcon({ className, style, ...props }: React.ComponentProps<"di
 
 function EmptyStateTitle({ className, style, ...props }: React.ComponentProps<"h3">) {
   return (
-    <h3 data-slot="empty-state-title" {...applyHost(className, style, styles.title)} {...props} />
+    <h3 data-slot="empty-state-title" {...applyProps(className, style, styles.title)} {...props} />
   );
 }
 
@@ -101,7 +101,7 @@ function EmptyStateDescription({ className, style, ...props }: React.ComponentPr
   return (
     <p
       data-slot="empty-state-description"
-      {...applyHost(className, style, styles.description)}
+      {...applyProps(className, style, styles.description)}
       {...props}
     />
   );
@@ -111,7 +111,7 @@ function EmptyStateActions({ className, style, ...props }: React.ComponentProps<
   return (
     <div
       data-slot="empty-state-actions"
-      {...applyHost(className, style, styles.actions)}
+      {...applyProps(className, style, styles.actions)}
       {...props}
     />
   );

@@ -20,13 +20,13 @@ semánticos, nunca escalas crudas ni colores escritos directamente en JSX.
 El componente público está en [`packages/ui/src/logo.tsx`](/packages/ui/src/logo.tsx):
 
 ```tsx
-import { applyHost, Logo } from "@futrob/ui";
+import { applyProps, Logo } from "@futrob/ui";
 import * as stylex from "@stylexjs/stylex";
 
 const logo = stylex.create({ mark: { height: "2rem", width: "auto" } });
 
-<Logo {...applyHost(undefined, undefined, logo.mark)} title="Futrob" />
-<Logo {...applyHost(undefined, undefined, logo.mark)} monochrome />
+<Logo {...applyProps(undefined, undefined, logo.mark)} title="Futrob" />
+<Logo {...applyProps(undefined, undefined, logo.mark)} monochrome />
 ```
 
 - Sin `title`, el SVG es decorativo. Úsalo así junto al wordmark visible “Futrob”.

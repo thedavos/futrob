@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
@@ -86,11 +86,11 @@ function AlertDialogContent({
 }: AlertDialogPrimitive.Popup.Props) {
   return (
     <AlertDialogPrimitive.Portal>
-      <AlertDialogPrimitive.Backdrop {...applyHost(undefined, undefined, styles.backdrop)} />
-      <AlertDialogPrimitive.Viewport {...applyHost(undefined, undefined, styles.viewport)}>
+      <AlertDialogPrimitive.Backdrop {...applyProps(undefined, undefined, styles.backdrop)} />
+      <AlertDialogPrimitive.Viewport {...applyProps(undefined, undefined, styles.viewport)}>
         <AlertDialogPrimitive.Popup
           data-slot="alert-dialog-content"
-          {...applyHost(className, style, styles.content, elevation.lg)}
+          {...applyProps(className, style, styles.content, elevation.lg)}
           {...props}
         >
           {children}
@@ -104,7 +104,7 @@ function AlertDialogHeader({ className, style, ...props }: ComponentProps<"div">
   return (
     <div
       data-slot="alert-dialog-header"
-      {...applyHost(className, style, styles.header)}
+      {...applyProps(className, style, styles.header)}
       {...props}
     />
   );
@@ -114,7 +114,7 @@ function AlertDialogFooter({ className, style, ...props }: ComponentProps<"div">
   return (
     <div
       data-slot="alert-dialog-footer"
-      {...applyHost(className, style, styles.footer)}
+      {...applyProps(className, style, styles.footer)}
       {...props}
     />
   );
@@ -124,7 +124,7 @@ function AlertDialogTitle({ className, style, ...props }: AlertDialogPrimitive.T
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      {...applyHost(className, style, styles.title)}
+      {...applyProps(className, style, styles.title)}
       {...props}
     />
   );
@@ -138,7 +138,7 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      {...applyHost(className, style, styles.description)}
+      {...applyProps(className, style, styles.description)}
       {...props}
     />
   );

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, typography } from "@futrob/ui";
+import { applyProps, applyStyles, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import {
@@ -77,7 +77,7 @@ export const Playground: Story = {
 
 export const States: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Progress value={0}>
         <ProgressLabel>En cola</ProgressLabel>
         <ProgressValue />
@@ -112,13 +112,13 @@ export const States: Story = {
 
 export const TrackOnly: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.trackOnly)}>
-      <Progress value={35} {...applyHost(undefined, undefined, styles.singleCol)}>
+    <div {...applyProps(undefined, undefined, styles.trackOnly)}>
+      <Progress value={35} {...applyProps(undefined, undefined, styles.singleCol)}>
         <ProgressTrack>
           <ProgressIndicator />
         </ProgressTrack>
       </Progress>
-      <p {...applyHost(undefined, undefined, typography.caption, styles.hint)}>
+      <p {...applyProps(undefined, undefined, typography.caption, styles.hint)}>
         Barra compacta para toolbars y filas densas.
       </p>
     </div>

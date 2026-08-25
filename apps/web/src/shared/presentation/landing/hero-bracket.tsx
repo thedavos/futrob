@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { applyHost, applyStyles, Badge, typography } from "@futrob/ui";
+import { applyProps, applyStyles, Badge, typography } from "@futrob/ui";
 
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -86,7 +86,7 @@ export function HeroBracket() {
             {STAGES.map((stage) => (
               <li
                 key={stage.key}
-                {...applyHost(
+                {...applyProps(
                   undefined,
                   { left: `${stage.position}%`, top: "90%" },
                   styles.pipelineItem,

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost } from "@futrob/ui";
+import { applyProps } from "@futrob/ui";
 
 import { Button } from "../components/button";
 import {
@@ -29,7 +29,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: () => (
-    <PageHeader {...applyHost(undefined, undefined, styles.header)}>
+    <PageHeader {...applyProps(undefined, undefined, styles.header)}>
       <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
       <PageHeaderTitle>Mis partidos</PageHeaderTitle>
       <PageHeaderDescription>Apariciones en el club seleccionado.</PageHeaderDescription>
@@ -40,7 +40,7 @@ export const Playground: Story = {
 export const TitleOnly: Story = {
   name: "Title only",
   render: () => (
-    <PageHeader {...applyHost(undefined, undefined, styles.header)}>
+    <PageHeader {...applyProps(undefined, undefined, styles.header)}>
       <PageHeaderTitle>Mis partidos</PageHeaderTitle>
     </PageHeader>
   ),
@@ -49,7 +49,7 @@ export const TitleOnly: Story = {
 export const WithDescription: Story = {
   name: "With description",
   render: () => (
-    <PageHeader {...applyHost(undefined, undefined, styles.header)}>
+    <PageHeader {...applyProps(undefined, undefined, styles.header)}>
       <PageHeaderTitle>Mis partidos</PageHeaderTitle>
       <PageHeaderDescription>Apariciones en el club seleccionado.</PageHeaderDescription>
     </PageHeader>
@@ -59,7 +59,7 @@ export const WithDescription: Story = {
 export const WithEyebrowAndActions: Story = {
   name: "With eyebrow and actions",
   render: () => (
-    <PageHeader {...applyHost(undefined, undefined, styles.header)}>
+    <PageHeader {...applyProps(undefined, undefined, styles.header)}>
       <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
       <PageHeaderTitle>davos282</PageHeaderTitle>
       <PageHeaderDescription>

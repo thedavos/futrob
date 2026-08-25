@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CheckCircleIcon, LightningIcon, StarIcon, WarningIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost } from "@futrob/ui";
+import { applyProps } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { Badge } from "../components/badge";
@@ -54,7 +54,7 @@ export const Playground: Story = {};
 
 export const ClosedVariants: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Badge variant="neutral">Pendiente</Badge>
       <Badge variant="primary">Acción</Badge>
       <Badge variant="approved">

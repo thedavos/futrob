@@ -2,7 +2,7 @@ import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { CheckIcon, MinusIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -77,21 +77,21 @@ function Checkbox({ className, style, ...props }: CheckboxPrimitive.Root.Props) 
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
-      {...applyHost(className, style, styles.root)}
+      {...applyProps(className, style, styles.root)}
       {...props}
     >
       <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"
-        {...applyHost(undefined, undefined, styles.indicator, stylex.defaultMarker())}
+        {...applyProps(undefined, undefined, styles.indicator, stylex.defaultMarker())}
       >
         <CheckIcon
           aria-hidden="true"
-          {...applyHost(undefined, undefined, styles.checkIcon)}
+          {...applyProps(undefined, undefined, styles.checkIcon)}
           strokeWidth={2.5}
         />
         <MinusIcon
           aria-hidden="true"
-          {...applyHost(undefined, undefined, styles.minusIcon)}
+          {...applyProps(undefined, undefined, styles.minusIcon)}
           strokeWidth={2.5}
         />
       </CheckboxPrimitive.Indicator>

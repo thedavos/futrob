@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { expect, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost } from "@futrob/ui";
+import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -122,7 +122,7 @@ function DetailStory({ scenario }: StoryArgs) {
   }, [scenario]);
   return (
     <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
-      <div {...applyHost(undefined, undefined, styles.frame)}>
+      <div {...applyProps(undefined, undefined, styles.frame)}>
         <RouterProvider router={router} />
       </div>
     </I18nProvider>

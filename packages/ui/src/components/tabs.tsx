@@ -2,7 +2,7 @@ import * as React from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -140,7 +140,7 @@ function TabsList({ className, style, ...props }: TabsPrimitive.List.Props) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      {...applyHost(className, style, styles.list, listVariantStyles[variant])}
+      {...applyProps(className, style, styles.list, listVariantStyles[variant])}
       {...props}
     />
   );
@@ -152,7 +152,7 @@ function TabsTrigger({ className, style, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         typography.label,
@@ -174,7 +174,7 @@ function TabsIndicator({ className, style, ...props }: TabsPrimitive.Indicator.P
       return (
         <TabsPrimitive.Indicator
           data-slot="tabs-indicator"
-          {...applyHost(className, style, styles.indicator)}
+          {...applyProps(className, style, styles.indicator)}
           {...props}
         />
       );
@@ -189,7 +189,7 @@ function TabsContent({ className, style, ...props }: TabsPrimitive.Panel.Props) 
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      {...applyHost(className, style, styles.content)}
+      {...applyProps(className, style, styles.content)}
       {...props}
     />
   );

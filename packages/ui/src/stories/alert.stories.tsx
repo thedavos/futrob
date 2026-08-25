@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { WarningCircleIcon, CheckCircleIcon, InfoIcon, WarningIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles } from "@futrob/ui";
+import { applyProps, applyStyles } from "@futrob/ui";
 import { media } from "#styles/media.stylex";
 
 import { Alert, AlertDescription, AlertTitle } from "../components/alert";
@@ -67,7 +67,7 @@ export const Playground: Story = {
 
 export const ClosedVariants: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.variants)}>
+    <div {...applyProps(undefined, undefined, styles.variants)}>
       <Alert variant="default">
         <InfoIcon />
         <AlertTitle>Aviso</AlertTitle>
@@ -101,7 +101,7 @@ export const ClosedVariants: Story = {
 
 export const Elevation: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.elevation)}>
+    <div {...applyProps(undefined, undefined, styles.elevation)}>
       <Alert elevation="flat" variant="warning">
         <WarningIcon />
         <AlertTitle>flat</AlertTitle>

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost } from "@futrob/ui";
+import { applyProps } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import {
@@ -42,7 +42,7 @@ type Story = StoryObj<typeof meta>;
 
 export const CompetitionNavigation: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -58,7 +58,7 @@ export const CompetitionNavigation: Story = {
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <Tabs defaultValue="overview" {...applyHost(undefined, undefined, styles.tabs)}>
+      <Tabs defaultValue="overview" {...applyProps(undefined, undefined, styles.tabs)}>
         <TabsList>
           <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="matches">Partidos</TabsTrigger>
@@ -66,17 +66,17 @@ export const CompetitionNavigation: Story = {
           <TabsIndicator />
         </TabsList>
         <TabsContent value="overview">
-          <p {...applyHost(undefined, undefined, styles.muted)}>
+          <p {...applyProps(undefined, undefined, styles.muted)}>
             Estado operativo, alertas y próximos partidos de la competición.
           </p>
         </TabsContent>
         <TabsContent value="matches">
-          <p {...applyHost(undefined, undefined, styles.muted)}>
+          <p {...applyProps(undefined, undefined, styles.muted)}>
             Calendario y resultados por jornada.
           </p>
         </TabsContent>
         <TabsContent value="statistics">
-          <p {...applyHost(undefined, undefined, styles.muted)}>
+          <p {...applyProps(undefined, undefined, styles.muted)}>
             Gráficos, líderes y auditoría de estadísticas.
           </p>
         </TabsContent>
@@ -88,7 +88,7 @@ export const CompetitionNavigation: Story = {
 export const PillsTabs: Story = {
   name: "Tabs pills",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Tabs defaultValue="recent" variant="pills">
         <TabsList>
           <TabsTrigger value="recent">Recientes</TabsTrigger>
@@ -99,21 +99,21 @@ export const PillsTabs: Story = {
           <TabsIndicator />
         </TabsList>
         <TabsContent value="recent">
-          <p {...applyHost(undefined, undefined, styles.muted)}>
+          <p {...applyProps(undefined, undefined, styles.muted)}>
             Apariciones de los últimos 7 días.
           </p>
         </TabsContent>
         <TabsContent value="league">
-          <p {...applyHost(undefined, undefined, styles.muted)}>Partidos de liga.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>Partidos de liga.</p>
         </TabsContent>
         <TabsContent value="playoff">
-          <p {...applyHost(undefined, undefined, styles.muted)}>Partidos de playoff.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>Partidos de playoff.</p>
         </TabsContent>
         <TabsContent value="friendly">
-          <p {...applyHost(undefined, undefined, styles.muted)}>Partidos amistosos.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>Partidos amistosos.</p>
         </TabsContent>
         <TabsContent value="all">
-          <p {...applyHost(undefined, undefined, styles.muted)}>Todas las apariciones.</p>
+          <p {...applyProps(undefined, undefined, styles.muted)}>Todas las apariciones.</p>
         </TabsContent>
       </Tabs>
     </div>

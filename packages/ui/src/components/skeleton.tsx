@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { motion } from "#styles/motion";
 
@@ -17,7 +17,7 @@ function Skeleton({ className, style, ...props }: React.ComponentProps<"div">) {
     <div
       aria-hidden="true"
       data-slot="skeleton"
-      {...applyHost(className, style, styles.base, motion.pulse)}
+      {...applyProps(className, style, styles.base, motion.pulse)}
       {...props}
     />
   );

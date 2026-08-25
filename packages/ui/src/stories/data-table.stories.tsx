@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DotsThreeIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, vis } from "@futrob/ui";
+import { applyProps, vis } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { Badge } from "../components/badge";
@@ -42,7 +42,7 @@ const matches = [
 
 export const MatchAuditRows: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.wrap)}>
+    <div {...applyProps(undefined, undefined, styles.wrap)}>
       <Table dense>
         <TableHeader>
           <TableRow>
@@ -51,20 +51,22 @@ export const MatchAuditRows: Story = {
             <TableHead>Visitante</TableHead>
             <TableHead>Marcador</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead {...applyHost(undefined, undefined, styles.actionsHead)}>
-              <span {...applyHost(undefined, undefined, vis.srOnly)}>Acciones</span>
+            <TableHead {...applyProps(undefined, undefined, styles.actionsHead)}>
+              <span {...applyProps(undefined, undefined, vis.srOnly)}>Acciones</span>
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {matches.map((match) => (
             <TableRow key={match.id}>
-              <TableCell {...applyHost(undefined, undefined, styles.matchId)}>{match.id}</TableCell>
-              <TableCell {...applyHost(undefined, undefined, styles.medium)}>
+              <TableCell {...applyProps(undefined, undefined, styles.matchId)}>
+                {match.id}
+              </TableCell>
+              <TableCell {...applyProps(undefined, undefined, styles.medium)}>
                 {match.home}
               </TableCell>
               <TableCell>{match.away}</TableCell>
-              <TableCell {...applyHost(undefined, undefined, styles.semibold)}>
+              <TableCell {...applyProps(undefined, undefined, styles.semibold)}>
                 {match.score}
               </TableCell>
               <TableCell>

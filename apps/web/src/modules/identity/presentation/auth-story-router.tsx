@@ -8,7 +8,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { AuthFormHeader } from "@/modules/identity/presentation/auth-form-header.tsx";
@@ -37,13 +37,13 @@ const styles = stylex.create({
 });
 
 function AuthStoryShell({ children }: { children: ReactNode }) {
-  return <div {...applyHost(undefined, undefined, styles.shell)}>{children}</div>;
+  return <div {...applyProps(undefined, undefined, styles.shell)}>{children}</div>;
 }
 
 function StubPage({ label }: { label: string }) {
   return (
     <AuthStoryShell>
-      <p {...applyHost(undefined, undefined, typography.body, styles.muted)}>{label}</p>
+      <p {...applyProps(undefined, undefined, typography.body, styles.muted)}>{label}</p>
     </AuthStoryShell>
   );
 }
@@ -58,7 +58,7 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     path: "/login",
     component: () => (
       <AuthStoryShell>
-        <div {...applyHost(undefined, undefined, styles.stack)}>
+        <div {...applyProps(undefined, undefined, styles.stack)}>
           <AuthFormHeader
             description="Continúa gestionando tu competición."
             title="Inicia sesión"
@@ -74,7 +74,7 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     path: "/signup",
     component: () => (
       <AuthStoryShell>
-        <div {...applyHost(undefined, undefined, styles.stack)}>
+        <div {...applyProps(undefined, undefined, styles.stack)}>
           <AuthFormHeader
             description="Empieza gratis y organiza tu competición con más control, orden y transparencia."
             title="Crea tu cuenta"

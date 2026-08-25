@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { ActionBar, ActionBarEnd, ActionBarStart } from "../components/action-bar";
@@ -25,7 +25,7 @@ export const Default: Story = {
   render: () => (
     <ActionBar>
       <ActionBarStart>
-        <span {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+        <span {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
           3 cambios pendientes
         </span>
       </ActionBarStart>

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles } from "@futrob/ui";
+import { applyProps, applyStyles } from "@futrob/ui";
 
 import { Stepper } from "../components/stepper";
 
@@ -43,7 +43,7 @@ export const Playground: Story = {};
 
 export const ProgressStates: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.stack)}>
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       {steps.map((step) => (
         <Stepper currentStepId={step.id} key={step.id} steps={steps} />
       ))}
@@ -53,7 +53,7 @@ export const ProgressStates: Story = {
 
 export const BranchLengths: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.stack)}>
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       <Stepper
         currentStepId="invitation"
         steps={[

@@ -3,7 +3,7 @@ import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 import { CheckIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -151,7 +151,7 @@ function ChoiceGroup<Value>({ className, style, ...props }: RadioGroupPrimitive.
   return (
     <RadioGroupPrimitive
       data-slot="choice-group"
-      {...applyHost(className, style, styles.group)}
+      {...applyProps(className, style, styles.group)}
       {...props}
     />
   );
@@ -171,7 +171,7 @@ function ChoiceGroupItem<Value>({
     <Radio.Root
       data-slot="choice-group-item"
       data-appearance={appearance}
-      {...applyHost(className, style, styles.item, appearanceStyles[appearance])}
+      {...applyProps(className, style, styles.item, appearanceStyles[appearance])}
       {...props}
     />
   );
@@ -182,12 +182,12 @@ function ChoiceGroupIndicator({ className, style, ...props }: Radio.Indicator.Pr
     <Radio.Indicator
       keepMounted
       data-slot="choice-group-indicator"
-      {...applyHost(className, style, styles.indicator)}
+      {...applyProps(className, style, styles.indicator)}
       {...props}
     >
       <CheckIcon
         aria-hidden="true"
-        {...applyHost(undefined, undefined, styles.indicatorIcon)}
+        {...applyProps(undefined, undefined, styles.indicatorIcon)}
         strokeWidth={2.5}
       />
     </Radio.Indicator>

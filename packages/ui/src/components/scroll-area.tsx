@@ -1,7 +1,7 @@
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -61,12 +61,12 @@ function ScrollArea({ className, style, children, ...props }: ScrollAreaPrimitiv
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
-      {...applyHost(className, style, styles.root)}
+      {...applyProps(className, style, styles.root)}
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        {...applyHost(undefined, undefined, styles.viewport)}
+        {...applyProps(undefined, undefined, styles.viewport)}
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
@@ -87,7 +87,7 @@ function ScrollBar({
     <ScrollAreaPrimitive.Scrollbar
       data-slot="scroll-area-scrollbar"
       orientation={orientation}
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.scrollbar,
@@ -97,7 +97,7 @@ function ScrollBar({
     >
       <ScrollAreaPrimitive.Thumb
         data-slot="scroll-area-thumb"
-        {...applyHost(undefined, undefined, styles.thumb)}
+        {...applyProps(undefined, undefined, styles.thumb)}
       />
     </ScrollAreaPrimitive.Scrollbar>
   );
@@ -107,7 +107,7 @@ function ScrollAreaContent({ className, style, ...props }: ScrollAreaPrimitive.C
   return (
     <ScrollAreaPrimitive.Content
       data-slot="scroll-area-content"
-      {...applyHost(className, style, styles.content)}
+      {...applyProps(className, style, styles.content)}
       {...props}
     />
   );

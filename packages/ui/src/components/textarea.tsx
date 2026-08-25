@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -75,7 +75,7 @@ function Textarea({ className, style, dense = false, ...props }: TextareaProps) 
     <textarea
       data-slot="textarea"
       data-density={dense ? "dense" : "default"}
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.base,

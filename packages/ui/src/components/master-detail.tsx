@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -82,12 +82,12 @@ function MasterDetail({
     <div
       data-slot="master-detail"
       data-selected={showDetailMobile ? "true" : undefined}
-      {...applyHost(className, style, styles.root)}
+      {...applyProps(className, style, styles.root)}
       {...props}
     >
       <div
         data-slot="master-detail-master"
-        {...applyHost(
+        {...applyProps(
           undefined,
           undefined,
           styles.master,
@@ -98,7 +98,7 @@ function MasterDetail({
       </div>
       <div
         data-slot="master-detail-detail"
-        {...applyHost(
+        {...applyProps(
           undefined,
           undefined,
           styles.detail,

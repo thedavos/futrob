@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -91,7 +91,7 @@ function Stat({ className, style, align = "start", ...props }: StatProps) {
     <div
       data-slot="stat"
       data-align={align}
-      {...applyHost(className, style, styles.root, alignStyles[align])}
+      {...applyProps(className, style, styles.root, alignStyles[align])}
       {...props}
     />
   );
@@ -101,7 +101,7 @@ function StatLabel({ className, style, ...props }: React.ComponentProps<"div">) 
   return (
     <div
       data-slot="stat-label"
-      {...applyHost(className, style, typography.label, styles.label)}
+      {...applyProps(className, style, typography.label, styles.label)}
       {...props}
     />
   );
@@ -124,7 +124,7 @@ function StatValue({
       data-slot="stat-value"
       data-size={size}
       data-tone={tone}
-      {...applyHost(className, style, styles.value, sizeStyles[size], toneStyles[tone])}
+      {...applyProps(className, style, styles.value, sizeStyles[size], toneStyles[tone])}
       {...props}
     />
   );
@@ -134,7 +134,7 @@ function StatHint({ className, style, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       data-slot="stat-hint"
-      {...applyHost(className, style, typography.caption, styles.hint)}
+      {...applyProps(className, style, typography.caption, styles.hint)}
       {...props}
     />
   );
@@ -145,7 +145,7 @@ function StatGroup({ className, style, ...props }: React.ComponentProps<"div">) 
     <div
       data-slot="stat-group"
       role="group"
-      {...applyHost(className, style, styles.group)}
+      {...applyProps(className, style, styles.group)}
       {...props}
     />
   );

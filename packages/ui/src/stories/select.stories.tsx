@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost } from "@futrob/ui";
+import { applyProps } from "@futrob/ui";
 
 import {
   Select,
@@ -27,7 +27,7 @@ type Story = StoryObj<typeof meta>;
 export const Playground: Story = {
   render: () => (
     <Select defaultValue="ps5">
-      <SelectTrigger aria-label="Plataforma" {...applyHost(undefined, undefined, styles.wide)}>
+      <SelectTrigger aria-label="Plataforma" {...applyProps(undefined, undefined, styles.wide)}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -42,7 +42,7 @@ export const Playground: Story = {
 export const Dense: Story = {
   render: () => (
     <Select defaultValue="a">
-      <SelectTrigger aria-label="Cancha" dense {...applyHost(undefined, undefined, styles.dense)}>
+      <SelectTrigger aria-label="Cancha" dense {...applyProps(undefined, undefined, styles.dense)}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

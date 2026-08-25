@@ -3,7 +3,7 @@
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, Stat, StatLabel, StatValue, typography } from "@futrob/ui";
+import { applyProps, applyStyles, Stat, StatLabel, StatValue, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type { CSSProperties } from "react";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
@@ -176,7 +176,7 @@ export function AverageRatingRing({
       aria-label={rating === null ? label : `${label} ${numberFormat.format(rating)}`}
       data-rating-ring=""
       role="img"
-      {...applyHost(className, style, styles.ring, size === "compact" && styles.ringCompact)}
+      {...applyProps(className, style, styles.ring, size === "compact" && styles.ringCompact)}
     >
       <svg aria-hidden="true" viewBox="0 0 36 36" {...applyStyles(styles.svg)}>
         <circle

@@ -3,7 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 
 import { Input, type InputProps } from "#components/input";
 import type { Icon } from "#lib/icon";
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 type EndAdornment =
@@ -69,25 +69,25 @@ function InputWithIcon({
       data-has-start={StartIcon != null ? "true" : undefined}
       data-has-end={EndIcon != null ? "true" : undefined}
       data-has-end-action={hasEndAction ? "true" : undefined}
-      {...applyHost(undefined, undefined, styles.root)}
+      {...applyProps(undefined, undefined, styles.root)}
     >
       <Input className={className} style={style} {...props} />
       {StartIcon == null ? null : (
         <StartIcon
           aria-hidden="true"
           data-slot="input-start-icon"
-          {...applyHost(undefined, undefined, styles.icon, styles.startIcon)}
+          {...applyProps(undefined, undefined, styles.icon, styles.startIcon)}
         />
       )}
       {EndIcon == null ? null : (
         <EndIcon
           aria-hidden="true"
           data-slot="input-end-icon"
-          {...applyHost(undefined, undefined, styles.icon, styles.endIcon)}
+          {...applyProps(undefined, undefined, styles.icon, styles.endIcon)}
         />
       )}
       {hasEndAction ? (
-        <div data-slot="input-end-action" {...applyHost(undefined, undefined, styles.endAction)}>
+        <div data-slot="input-end-action" {...applyProps(undefined, undefined, styles.endAction)}>
           {endAction}
         </div>
       ) : null}

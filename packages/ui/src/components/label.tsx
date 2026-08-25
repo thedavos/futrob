@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -22,7 +22,7 @@ function Label({ className, style, ...props }: React.ComponentProps<"label">) {
     // eslint-disable-next-line jsx-a11y/label-has-associated-control -- primitive forwards label semantics via props
     <label
       data-slot="label"
-      {...applyHost(className, style, typography.label, styles.base)}
+      {...applyProps(className, style, typography.label, styles.base)}
       {...props}
     />
   );

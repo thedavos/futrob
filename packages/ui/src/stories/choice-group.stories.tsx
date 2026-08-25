@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { GameControllerIcon, TrophyIcon, UserIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles } from "@futrob/ui";
+import { applyProps, applyStyles } from "@futrob/ui";
 import { media } from "#styles/media.stylex";
 
 import { ChoiceGroup, ChoiceGroupIndicator, ChoiceGroupItem } from "../components/choice-group";
@@ -64,18 +64,18 @@ export const Playground: Story = {
     <ChoiceGroup {...args}>
       <ChoiceGroupItem value="organization">
         <ChoiceGroupIndicator />
-        <TrophyIcon {...applyHost(undefined, undefined, styles.icon)} />
-        <span {...applyHost(undefined, undefined, styles.semibold)}>Organizar</span>
+        <TrophyIcon {...applyProps(undefined, undefined, styles.icon)} />
+        <span {...applyProps(undefined, undefined, styles.semibold)}>Organizar</span>
       </ChoiceGroupItem>
       <ChoiceGroupItem value="player">
         <ChoiceGroupIndicator />
-        <UserIcon {...applyHost(undefined, undefined, styles.icon)} />
-        <span {...applyHost(undefined, undefined, styles.semibold)}>Jugar</span>
+        <UserIcon {...applyProps(undefined, undefined, styles.icon)} />
+        <span {...applyProps(undefined, undefined, styles.semibold)}>Jugar</span>
       </ChoiceGroupItem>
       <ChoiceGroupItem disabled value="unavailable">
         <ChoiceGroupIndicator />
-        <GameControllerIcon {...applyHost(undefined, undefined, styles.icon)} />
-        <span {...applyHost(undefined, undefined, styles.semibold)}>Próximamente</span>
+        <GameControllerIcon {...applyProps(undefined, undefined, styles.icon)} />
+        <span {...applyProps(undefined, undefined, styles.semibold)}>Próximamente</span>
       </ChoiceGroupItem>
     </ChoiceGroup>
   ),
@@ -83,29 +83,29 @@ export const Playground: Story = {
 
 export const ClosedVariants: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.stack)}>
+    <div {...applyProps(undefined, undefined, styles.stack)}>
       <ChoiceGroup
         aria-label="Tarjetas"
         defaultValue="one"
-        {...applyHost(undefined, undefined, styles.twoCols)}
+        {...applyProps(undefined, undefined, styles.twoCols)}
       >
         <ChoiceGroupItem value="one">
           <ChoiceGroupIndicator />
-          <span {...applyHost(undefined, undefined, styles.semibold)}>Tarjeta seleccionada</span>
+          <span {...applyProps(undefined, undefined, styles.semibold)}>Tarjeta seleccionada</span>
         </ChoiceGroupItem>
         <ChoiceGroupItem value="two">
           <ChoiceGroupIndicator />
-          <span {...applyHost(undefined, undefined, styles.semibold)}>Otra tarjeta</span>
+          <span {...applyProps(undefined, undefined, styles.semibold)}>Otra tarjeta</span>
         </ChoiceGroupItem>
       </ChoiceGroup>
       <ChoiceGroup
         aria-label="Píldoras"
         defaultValue="fc26"
-        {...applyHost(undefined, undefined, styles.threeCols)}
+        {...applyProps(undefined, undefined, styles.threeCols)}
       >
         {["fc25", "fc26", "otra"].map((value) => (
           <ChoiceGroupItem appearance="pill" key={value} value={value}>
-            <ChoiceGroupIndicator {...applyHost(undefined, undefined, styles.indicator)} />
+            <ChoiceGroupIndicator {...applyProps(undefined, undefined, styles.indicator)} />
             {value === "otra" ? "Otra" : value.toUpperCase()}
           </ChoiceGroupItem>
         ))}
@@ -119,7 +119,7 @@ export const States: Story = {
     <ChoiceGroup
       aria-label="Estados"
       defaultValue="selected"
-      {...applyHost(undefined, undefined, styles.states)}
+      {...applyProps(undefined, undefined, styles.states)}
     >
       <ChoiceGroupItem value="selected">
         <ChoiceGroupIndicator />
@@ -151,7 +151,7 @@ export const HoverAndFocus: Story = {
     <ChoiceGroup
       aria-label="Estados interactivos"
       defaultValue="selected"
-      {...applyHost(undefined, undefined, styles.states)}
+      {...applyProps(undefined, undefined, styles.states)}
     >
       <ChoiceGroupItem value="selected">
         <ChoiceGroupIndicator />

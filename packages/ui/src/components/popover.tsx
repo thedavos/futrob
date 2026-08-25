@@ -1,7 +1,7 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 
@@ -62,13 +62,13 @@ function PopoverContent({
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
         align={align}
-        {...applyHost(undefined, undefined, styles.positioner)}
+        {...applyProps(undefined, undefined, styles.positioner)}
         side={side}
         sideOffset={sideOffset}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
-          {...applyHost(className, style, styles.content, elevation.md)}
+          {...applyProps(className, style, styles.content, elevation.md)}
           {...props}
         >
           {children}
@@ -82,7 +82,7 @@ function PopoverTitle({ className, style, ...props }: PopoverPrimitive.Title.Pro
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
-      {...applyHost(className, style, styles.title)}
+      {...applyProps(className, style, styles.title)}
       {...props}
     />
   );
@@ -92,7 +92,7 @@ function PopoverDescription({ className, style, ...props }: PopoverPrimitive.Des
   return (
     <PopoverPrimitive.Description
       data-slot="popover-description"
-      {...applyHost(className, style, styles.description)}
+      {...applyProps(className, style, styles.description)}
       {...props}
     />
   );

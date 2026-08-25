@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 
@@ -104,7 +104,7 @@ function Alert({
       data-elevation={elevationProp}
       data-variant={variant}
       role="alert"
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.base,
@@ -117,14 +117,14 @@ function Alert({
 }
 
 function AlertTitle({ className, style, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="alert-title" {...applyHost(className, style, styles.title)} {...props} />;
+  return <div data-slot="alert-title" {...applyProps(className, style, styles.title)} {...props} />;
 }
 
 function AlertDescription({ className, style, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-description"
-      {...applyHost(className, style, styles.description)}
+      {...applyProps(className, style, styles.description)}
       {...props}
     />
   );

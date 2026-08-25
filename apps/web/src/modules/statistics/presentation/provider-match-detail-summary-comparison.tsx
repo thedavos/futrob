@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, Card, CardContent, CardHeader, typography } from "@futrob/ui";
+import { applyProps, applyStyles, Card, CardContent, CardHeader, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
@@ -241,7 +241,7 @@ function ComparisonBar({
     <div data-comparison-bar={side} {...applyStyles(styles.bar)}>
       <div
         data-comparison-fill={String(Math.round(percent))}
-        {...applyHost(
+        {...applyProps(
           undefined,
           { width: `${percent}%` },
           styles.fill,

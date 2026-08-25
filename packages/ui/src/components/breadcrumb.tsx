@@ -3,7 +3,7 @@ import { useRender } from "@base-ui/react/use-render";
 import { CaretRightIcon, DotsThreeIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 import { vis } from "#styles/sr-only";
@@ -64,13 +64,13 @@ function Breadcrumb(props: React.ComponentProps<"nav">) {
 
 function BreadcrumbList({ className, style, ...props }: React.ComponentProps<"ol">) {
   return (
-    <ol data-slot="breadcrumb-list" {...applyHost(className, style, styles.list)} {...props} />
+    <ol data-slot="breadcrumb-list" {...applyProps(className, style, styles.list)} {...props} />
   );
 }
 
 function BreadcrumbItem({ className, style, ...props }: React.ComponentProps<"li">) {
   return (
-    <li data-slot="breadcrumb-item" {...applyHost(className, style, styles.item)} {...props} />
+    <li data-slot="breadcrumb-item" {...applyProps(className, style, styles.item)} {...props} />
   );
 }
 
@@ -79,7 +79,7 @@ function BreadcrumbLink({ className, style, render, ...props }: useRender.Compon
     defaultTagName: "a",
     props: {
       ...props,
-      ...applyHost(className, style, styles.link),
+      ...applyProps(className, style, styles.link),
       "data-slot": "breadcrumb-link",
     },
     render,
@@ -91,7 +91,7 @@ function BreadcrumbPage({ className, style, ...props }: React.ComponentProps<"sp
     <span
       aria-current="page"
       data-slot="breadcrumb-page"
-      {...applyHost(className, style, styles.page)}
+      {...applyProps(className, style, styles.page)}
       {...props}
     />
   );
@@ -103,7 +103,7 @@ function BreadcrumbSeparator({ children, className, style, ...props }: React.Com
       aria-hidden="true"
       data-slot="breadcrumb-separator"
       role="presentation"
-      {...applyHost(className, style)}
+      {...applyProps(className, style)}
       {...props}
     >
       {children ?? <CaretRightIcon />}
@@ -117,11 +117,11 @@ function BreadcrumbEllipsis({ className, style, ...props }: React.ComponentProps
       aria-hidden="true"
       data-slot="breadcrumb-ellipsis"
       role="presentation"
-      {...applyHost(className, style, styles.ellipsis)}
+      {...applyProps(className, style, styles.ellipsis)}
       {...props}
     >
-      <DotsThreeIcon {...applyHost(undefined, undefined, styles.ellipsisIcon)} />
-      <span {...applyHost(undefined, undefined, vis.srOnly)}>Más</span>
+      <DotsThreeIcon {...applyProps(undefined, undefined, styles.ellipsisIcon)} />
+      <span {...applyProps(undefined, undefined, vis.srOnly)}>Más</span>
     </span>
   );
 }

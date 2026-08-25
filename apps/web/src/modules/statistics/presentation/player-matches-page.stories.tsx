@@ -11,7 +11,7 @@ import {
 } from "@tanstack/react-router";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
@@ -139,7 +139,7 @@ function PlayerMatchesStoryShell({
       getParentRoute: () => rootRoute,
       path: "/player/game-accounts",
       component: () => (
-        <p {...applyHost(undefined, undefined, typography.body, styles.stub)}>
+        <p {...applyProps(undefined, undefined, typography.body, styles.stub)}>
           Datos de juego (stub de Storybook)
         </p>
       ),
@@ -153,7 +153,7 @@ function PlayerMatchesStoryShell({
   return (
     <QueryClientProvider client={client}>
       <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
-        <div {...applyHost(undefined, undefined, styles.frame)}>
+        <div {...applyProps(undefined, undefined, styles.frame)}>
           <RouterProvider router={router} />
         </div>
       </I18nProvider>

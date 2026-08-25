@@ -1,6 +1,6 @@
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, Card, CardContent, Skeleton, typography } from "@futrob/ui";
+import { applyProps, applyStyles, Card, CardContent, Skeleton, typography } from "@futrob/ui";
 
 const styles = stylex.create({
   card: {
@@ -62,7 +62,7 @@ export function SummaryCard({
   readonly style?: CSSProperties;
   readonly title: string;
 } & Omit<ComponentProps<typeof Card>, "children" | "className" | "style">) {
-  const card = applyHost(className, style, styles.card);
+  const card = applyProps(className, style, styles.card);
   const content = applyStyles(styles.content);
   return (
     <Card aria-labelledby={headingId} className={card.className} style={card.style} {...props}>
@@ -87,7 +87,7 @@ export function SummaryCardLoading({
   readonly className?: string;
   readonly style?: CSSProperties;
 } & Omit<ComponentProps<typeof Card>, "children" | "className" | "style">) {
-  const card = applyHost(className, style, styles.card);
+  const card = applyProps(className, style, styles.card);
   const content = applyStyles(styles.loadingContent);
   const title = applyStyles(styles.skeletonTitle);
   const value = applyStyles(styles.skeletonValue);

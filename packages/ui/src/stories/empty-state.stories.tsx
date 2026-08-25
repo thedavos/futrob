@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { TrayIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles } from "@futrob/ui";
+import { applyProps, applyStyles } from "@futrob/ui";
 import { media } from "#styles/media.stylex";
 
 import { Button } from "../components/button";
@@ -104,7 +104,7 @@ export const Elevated: Story = {
 
 export const Compare: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.compare)}>
+    <div {...applyProps(undefined, undefined, styles.compare)}>
       <EmptyState variant="flat">
         <EmptyStateIcon>
           <TrayIcon />

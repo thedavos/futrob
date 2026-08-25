@@ -1,7 +1,7 @@
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -41,7 +41,7 @@ function Avatar({ className, style, ...props }: AvatarPrimitive.Root.Props) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
-      {...applyHost(className, style, styles.root)}
+      {...applyProps(className, style, styles.root)}
       {...props}
     />
   );
@@ -51,7 +51,7 @@ function AvatarImage({ className, style, ...props }: AvatarPrimitive.Image.Props
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
-      {...applyHost(className, style, styles.image)}
+      {...applyProps(className, style, styles.image)}
       {...props}
     />
   );
@@ -61,7 +61,7 @@ function AvatarFallback({ className, style, ...props }: AvatarPrimitive.Fallback
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
-      {...applyHost(className, style, typography.caption, styles.fallback)}
+      {...applyProps(className, style, typography.caption, styles.fallback)}
       {...props}
     />
   );

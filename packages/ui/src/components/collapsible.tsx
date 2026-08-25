@@ -1,7 +1,7 @@
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -71,7 +71,7 @@ function Collapsible({ className, style, ...props }: CollapsiblePrimitive.Root.P
   return (
     <CollapsiblePrimitive.Root
       data-slot="collapsible"
-      {...applyHost(className, style, styles.root)}
+      {...applyProps(className, style, styles.root)}
       {...props}
     />
   );
@@ -81,7 +81,7 @@ function CollapsibleTrigger({ className, style, ...props }: CollapsiblePrimitive
   return (
     <CollapsiblePrimitive.Trigger
       data-slot="collapsible-trigger"
-      {...applyHost(className, style, styles.trigger, stylex.defaultMarker())}
+      {...applyProps(className, style, styles.trigger, stylex.defaultMarker())}
       {...props}
     />
   );
@@ -91,7 +91,7 @@ function CollapsibleContent({ className, style, ...props }: CollapsiblePrimitive
   return (
     <CollapsiblePrimitive.Panel
       data-slot="collapsible-content"
-      {...applyHost(className, style, styles.content)}
+      {...applyProps(className, style, styles.content)}
       {...props}
     />
   );

@@ -9,7 +9,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import type {
   OnboardingPathDto,
   OnboardingStatusDto,
@@ -281,8 +281,8 @@ function createOnboardingStoryRouter(
       getParentRoute: () => rootRoute,
       path: "/player",
       component: () => (
-        <main {...applyHost(undefined, undefined, styles.stub)}>
-          <h1 {...applyHost(undefined, undefined, typography.heading)}>Espacio personal</h1>
+        <main {...applyProps(undefined, undefined, styles.stub)}>
+          <h1 {...applyProps(undefined, undefined, typography.heading)}>Espacio personal</h1>
         </main>
       ),
     }),
@@ -290,25 +290,25 @@ function createOnboardingStoryRouter(
       getParentRoute: () => rootRoute,
       path: "/orgs",
       component: () => (
-        <main {...applyHost(undefined, undefined, styles.stub)}>Organizaciones</main>
+        <main {...applyProps(undefined, undefined, styles.stub)}>Organizaciones</main>
       ),
     }),
     createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId",
-      component: () => <main {...applyHost(undefined, undefined, styles.stub)}>Organización</main>,
+      component: () => <main {...applyProps(undefined, undefined, styles.stub)}>Organización</main>,
     }),
     createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId/setup",
       component: () => (
-        <main {...applyHost(undefined, undefined, styles.stub)}>Configurar competición</main>
+        <main {...applyProps(undefined, undefined, styles.stub)}>Configurar competición</main>
       ),
     }),
     createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId",
-      component: () => <main {...applyHost(undefined, undefined, styles.stub)}>Competición</main>,
+      component: () => <main {...applyProps(undefined, undefined, styles.stub)}>Competición</main>,
     }),
   ];
 

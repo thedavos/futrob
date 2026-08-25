@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles } from "@futrob/ui";
+import { applyProps, applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 
@@ -66,7 +66,7 @@ export function ClubCrestAvatar({
     <span
       aria-hidden="true"
       data-slot="club-crest-avatar"
-      {...applyHost(className, style, styles.root, framed ? styles.framed : styles.unframed)}
+      {...applyProps(className, style, styles.root, framed ? styles.framed : styles.unframed)}
     >
       {showImage ? (
         <img
@@ -78,7 +78,7 @@ export function ClubCrestAvatar({
           {...applyStyles(styles.image, !framed && styles.imageUnframed)}
         />
       ) : (
-        <span {...applyHost(fallbackClassName, undefined, styles.fallback)}>
+        <span {...applyProps(fallbackClassName, undefined, styles.fallback)}>
           {initialsFromName(name)}
         </span>
       )}

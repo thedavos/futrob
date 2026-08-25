@@ -1,7 +1,7 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -200,7 +200,7 @@ function Button({
       data-density={dense ? "dense" : "default"}
       nativeButton={nativeButton ?? render == null}
       render={render}
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.base,

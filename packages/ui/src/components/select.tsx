@@ -2,7 +2,7 @@ import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { CheckIcon, CaretDownIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
@@ -177,7 +177,7 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-density={dense ? "dense" : "default"}
-      {...applyHost(
+      {...applyProps(
         className,
         style,
         styles.trigger,
@@ -190,7 +190,7 @@ function SelectTrigger({
         <CaretDownIcon
           aria-hidden="true"
           data-slot="select-trigger-icon"
-          {...applyHost(undefined, undefined, styles.triggerIcon)}
+          {...applyProps(undefined, undefined, styles.triggerIcon)}
         />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
@@ -212,12 +212,12 @@ function SelectContent({
       <SelectPrimitive.Positioner
         align={align}
         alignItemWithTrigger={alignItemWithTrigger}
-        {...applyHost(undefined, undefined, styles.positioner)}
+        {...applyProps(undefined, undefined, styles.positioner)}
         sideOffset={sideOffset}
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
-          {...applyHost(className, style, styles.content, elevation.md)}
+          {...applyProps(className, style, styles.content, elevation.md)}
           {...props}
         >
           <SelectPrimitive.List>{children}</SelectPrimitive.List>
@@ -231,7 +231,7 @@ function SelectLabel({ className, style, ...props }: SelectPrimitive.Label.Props
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      {...applyHost(className, style, typography.label, styles.label)}
+      {...applyProps(className, style, typography.label, styles.label)}
       {...props}
     />
   );
@@ -241,14 +241,14 @@ function SelectItem({ children, className, style, ...props }: SelectPrimitive.It
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      {...applyHost(className, style, styles.item)}
+      {...applyProps(className, style, styles.item)}
       {...props}
     >
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-      <SelectPrimitive.ItemIndicator {...applyHost(undefined, undefined, styles.itemIndicator)}>
+      <SelectPrimitive.ItemIndicator {...applyProps(undefined, undefined, styles.itemIndicator)}>
         <CheckIcon
           aria-hidden="true"
-          {...applyHost(undefined, undefined, styles.itemIndicatorIcon)}
+          {...applyProps(undefined, undefined, styles.itemIndicatorIcon)}
         />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
@@ -259,7 +259,7 @@ function SelectSeparator({ className, style, ...props }: SelectPrimitive.Separat
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      {...applyHost(className, style, styles.separator)}
+      {...applyProps(className, style, styles.separator)}
       {...props}
     />
   );

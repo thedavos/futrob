@@ -3,7 +3,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
@@ -161,18 +161,18 @@ function SheetContent({
 }: DialogPrimitive.Popup.Props & { side?: SheetSide }) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Backdrop {...applyHost(undefined, undefined, styles.backdrop)} />
+      <DialogPrimitive.Backdrop {...applyProps(undefined, undefined, styles.backdrop)} />
       <DialogPrimitive.Popup
         data-slot="sheet-content"
-        {...applyHost(className, style, styles.content, elevation.lg, sideStyles[side])}
+        {...applyProps(className, style, styles.content, elevation.lg, sideStyles[side])}
         {...props}
       >
         {children}
         <DialogPrimitive.Close
           aria-label="Cerrar"
-          {...applyHost(undefined, undefined, styles.close)}
+          {...applyProps(undefined, undefined, styles.close)}
         >
-          <XIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.closeIcon)} />
+          <XIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.closeIcon)} />
         </DialogPrimitive.Close>
       </DialogPrimitive.Popup>
     </DialogPrimitive.Portal>
@@ -181,17 +181,17 @@ function SheetContent({
 
 function SheetHeader({ className, style, ...props }: ComponentProps<"div">) {
   return (
-    <div data-slot="sheet-header" {...applyHost(className, style, styles.header)} {...props} />
+    <div data-slot="sheet-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
 function SheetBody({ className, style, ...props }: ComponentProps<"div">) {
-  return <div data-slot="sheet-body" {...applyHost(className, style, styles.body)} {...props} />;
+  return <div data-slot="sheet-body" {...applyProps(className, style, styles.body)} {...props} />;
 }
 
 function SheetFooter({ className, style, ...props }: ComponentProps<"div">) {
   return (
-    <div data-slot="sheet-footer" {...applyHost(className, style, styles.footer)} {...props} />
+    <div data-slot="sheet-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
 }
 
@@ -199,7 +199,7 @@ function SheetTitle({ className, style, ...props }: DialogPrimitive.Title.Props)
   return (
     <DialogPrimitive.Title
       data-slot="sheet-title"
-      {...applyHost(className, style, styles.title)}
+      {...applyProps(className, style, styles.title)}
       {...props}
     />
   );
@@ -209,7 +209,7 @@ function SheetDescription({ className, style, ...props }: DialogPrimitive.Descri
   return (
     <DialogPrimitive.Description
       data-slot="sheet-description"
-      {...applyHost(className, style, styles.description)}
+      {...applyProps(className, style, styles.description)}
       {...props}
     />
   );

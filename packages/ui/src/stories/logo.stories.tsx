@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, typography } from "@futrob/ui";
+import { applyProps, applyStyles, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 
 import { Logo } from "../logo";
@@ -145,7 +145,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <div {...applyHost(undefined, undefined, styles.panel)}>
+    <div {...applyProps(undefined, undefined, styles.panel)}>
       <Logo {...args} />
     </div>
   ),
@@ -163,16 +163,16 @@ export const Brand: Story = {
 
 export const Monochrome: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.monoRow)}>
-      <div {...applyHost(undefined, undefined, styles.monoOnSurface)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.caption)}>On surface</p>
-        <Logo monochrome title="Futrob" {...applyHost(undefined, undefined, styles.logoMd)} />
+    <div {...applyProps(undefined, undefined, styles.monoRow)}>
+      <div {...applyProps(undefined, undefined, styles.monoOnSurface)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.caption)}>On surface</p>
+        <Logo monochrome title="Futrob" {...applyProps(undefined, undefined, styles.logoMd)} />
       </div>
-      <div {...applyHost(undefined, undefined, styles.monoOnDark)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.captionOnDark)}>
+      <div {...applyProps(undefined, undefined, styles.monoOnDark)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.captionOnDark)}>
           On dark / print
         </p>
-        <Logo monochrome title="Futrob" {...applyHost(undefined, undefined, styles.logoMd)} />
+        <Logo monochrome title="Futrob" {...applyProps(undefined, undefined, styles.logoMd)} />
       </div>
     </div>
   ),
@@ -180,18 +180,20 @@ export const Monochrome: Story = {
 
 export const Sizes: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.sizes)}>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Header · 36 px</p>
-        <Logo title="Futrob" {...applyHost(undefined, undefined, styles.logoSm)} />
+    <div {...applyProps(undefined, undefined, styles.sizes)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
+          Header · 36 px
+        </p>
+        <Logo title="Futrob" {...applyProps(undefined, undefined, styles.logoSm)} />
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Auth · 48 px</p>
-        <Logo title="Futrob" {...applyHost(undefined, undefined, styles.logoMd)} />
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Auth · 48 px</p>
+        <Logo title="Futrob" {...applyProps(undefined, undefined, styles.logoMd)} />
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Hero · 64 px</p>
-        <Logo title="Futrob" {...applyHost(undefined, undefined, styles.logoLg)} />
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Hero · 64 px</p>
+        <Logo title="Futrob" {...applyProps(undefined, undefined, styles.logoLg)} />
       </div>
     </div>
   ),
@@ -200,9 +202,9 @@ export const Sizes: Story = {
 export const WithWordmark: Story = {
   name: "With wordmark",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.wordmark)}>
-      <Logo aria-hidden="true" {...applyHost(undefined, undefined, styles.logoSm)} />
-      <span {...applyHost(undefined, undefined, typography.heading, styles.heading)}>Futrob</span>
+    <div {...applyProps(undefined, undefined, styles.wordmark)}>
+      <Logo aria-hidden="true" {...applyProps(undefined, undefined, styles.logoSm)} />
+      <span {...applyProps(undefined, undefined, typography.heading, styles.heading)}>Futrob</span>
     </div>
   ),
 };
@@ -210,15 +212,17 @@ export const WithWordmark: Story = {
 export const Decorative: Story = {
   name: "Decorative (no title)",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.decorative)}>
-      <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
-        Sin <code {...applyHost(undefined, undefined, styles.code)}>title</code> el SVG es
-        decorativo (<code {...applyHost(undefined, undefined, styles.code)}>aria-hidden</code>)
+    <div {...applyProps(undefined, undefined, styles.decorative)}>
+      <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
+        Sin <code {...applyProps(undefined, undefined, styles.code)}>title</code> el SVG es
+        decorativo (<code {...applyProps(undefined, undefined, styles.code)}>aria-hidden</code>)
         cuando el wordmark visible ya dice Futrob.
       </p>
-      <div {...applyHost(undefined, undefined, styles.inlineRow)}>
-        <Logo {...applyHost(undefined, undefined, styles.logoSm)} />
-        <span {...applyHost(undefined, undefined, typography.heading, styles.heading)}>Futrob</span>
+      <div {...applyProps(undefined, undefined, styles.inlineRow)}>
+        <Logo {...applyProps(undefined, undefined, styles.logoSm)} />
+        <span {...applyProps(undefined, undefined, typography.heading, styles.heading)}>
+          Futrob
+        </span>
       </div>
     </div>
   ),

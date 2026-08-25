@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { CommandBarIdentityMark } from "./command-bar-identity-mark.tsx";
 import type { CommandBarIdentity } from "./command-bar-identity.ts";
@@ -68,8 +68,8 @@ type Story = StoryObj<StoryArgs>;
 
 function Chrome({ children }: { readonly children: ReactNode }) {
   return (
-    <header {...applyHost(undefined, undefined, styles.chrome)}>
-      <div {...applyHost(undefined, undefined, styles.slot)}>{children}</div>
+    <header {...applyProps(undefined, undefined, styles.chrome)}>
+      <div {...applyProps(undefined, undefined, styles.slot)}>{children}</div>
     </header>
   );
 }
@@ -97,9 +97,9 @@ export const Playground: Story = {
 export const States: Story = {
   name: "States",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.states)}>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Cuenta y club</p>
+    <div {...applyProps(undefined, undefined, styles.states)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Cuenta y club</p>
         <Chrome>
           <CommandBarIdentityMark
             emptyLabel="Espacio personal"
@@ -111,8 +111,8 @@ export const States: Story = {
           />
         </Chrome>
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
           Solo identificador
         </p>
         <Chrome>
@@ -122,8 +122,8 @@ export const States: Story = {
           />
         </Chrome>
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Solo club</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Solo club</p>
         <Chrome>
           <CommandBarIdentityMark
             emptyLabel="Espacio personal"
@@ -131,8 +131,8 @@ export const States: Story = {
           />
         </Chrome>
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Sin datos</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Sin datos</p>
         <Chrome>
           <CommandBarIdentityMark
             emptyLabel="Espacio personal"
@@ -140,8 +140,8 @@ export const States: Story = {
           />
         </Chrome>
       </div>
-      <div {...applyHost(undefined, undefined, styles.group)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Cargando</p>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Cargando</p>
         <Chrome>
           <CommandBarIdentityMark
             emptyLabel="Espacio personal"

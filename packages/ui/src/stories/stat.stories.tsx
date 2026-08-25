@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, typography } from "@futrob/ui";
+import { applyProps, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -152,9 +152,9 @@ export const Playground: Story = {
 export const ClosedVariants: Story = {
   name: "Align and size",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.compare)}>
-      <div {...applyHost(undefined, undefined, styles.panel)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>align</p>
+    <div {...applyProps(undefined, undefined, styles.compare)}>
+      <div {...applyProps(undefined, undefined, styles.panel)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>align</p>
         <StatGroup>
           <Stat align="start">
             <StatLabel>Inicio</StatLabel>
@@ -170,8 +170,8 @@ export const ClosedVariants: Story = {
           </Stat>
         </StatGroup>
       </div>
-      <div {...applyHost(undefined, undefined, styles.panel)}>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>size</p>
+      <div {...applyProps(undefined, undefined, styles.panel)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>size</p>
         <StatGroup>
           <Stat>
             <StatLabel>default</StatLabel>
@@ -196,8 +196,8 @@ export const ClosedVariants: Story = {
 export const NumericStates: Story = {
   name: "Numeric states",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panelLg)}>
-      <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+    <div {...applyProps(undefined, undefined, styles.panelLg)}>
+      <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
         El formateo (locale, %, decimales) ocurre fuera del primitivo; Stat solo presenta el valor.
       </p>
       <StatGroup>
@@ -253,8 +253,8 @@ export const NumericStates: Story = {
 
 export const Tones: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panelMd)}>
-      <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+    <div {...applyProps(undefined, undefined, styles.panelMd)}>
+      <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
         El color refuerza el valor; el label y el hint siguen comunicando el significado.
       </p>
       <StatGroup>
@@ -301,7 +301,7 @@ export const Tones: Story = {
 export const EmptyAndUnavailable: Story = {
   name: "Empty and unavailable",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panelMdStack)}>
+    <div {...applyProps(undefined, undefined, styles.panelMdStack)}>
       <StatGroup>
         <Stat>
           <StatLabel>Partidos</StatLabel>
@@ -336,23 +336,23 @@ export const EmptyAndUnavailable: Story = {
 
 export const Loading: Story = {
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.panelPlain)}>
+    <div {...applyProps(undefined, undefined, styles.panelPlain)}>
       <StatGroup aria-busy="true" aria-label="Cargando estadísticas">
         <Stat>
           <StatLabel>Partidos</StatLabel>
-          <Skeleton {...applyHost(undefined, undefined, styles.skeletonSm)} />
+          <Skeleton {...applyProps(undefined, undefined, styles.skeletonSm)} />
         </Stat>
         <Stat>
           <StatLabel>Goles</StatLabel>
-          <Skeleton {...applyHost(undefined, undefined, styles.skeletonXs)} />
+          <Skeleton {...applyProps(undefined, undefined, styles.skeletonXs)} />
         </Stat>
         <Stat>
           <StatLabel>Asistencias</StatLabel>
-          <Skeleton {...applyHost(undefined, undefined, styles.skeletonXs)} />
+          <Skeleton {...applyProps(undefined, undefined, styles.skeletonXs)} />
         </Stat>
         <Stat>
           <StatLabel>Rating</StatLabel>
-          <Skeleton {...applyHost(undefined, undefined, styles.skeletonMd)} />
+          <Skeleton {...applyProps(undefined, undefined, styles.skeletonMd)} />
         </Stat>
       </StatGroup>
     </div>
@@ -362,9 +362,9 @@ export const Loading: Story = {
 export const PlayerKpiStrip: Story = {
   name: "Player KPI strip",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.strip)}>
-      <div {...applyHost(undefined, undefined, styles.stripPanel)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.label)}>Con datos</p>
+    <div {...applyProps(undefined, undefined, styles.strip)}>
+      <div {...applyProps(undefined, undefined, styles.stripPanel)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.label)}>Con datos</p>
         <StatGroup>
           <Stat>
             <StatLabel>PJ</StatLabel>
@@ -384,8 +384,8 @@ export const PlayerKpiStrip: Story = {
           </Stat>
         </StatGroup>
       </div>
-      <div {...applyHost(undefined, undefined, styles.stripPanel)}>
-        <p {...applyHost(undefined, undefined, typography.label, styles.label)}>
+      <div {...applyProps(undefined, undefined, styles.stripPanel)}>
+        <p {...applyProps(undefined, undefined, typography.label, styles.label)}>
           Sin datos oficiales
         </p>
         <StatGroup>
@@ -414,7 +414,7 @@ export const PlayerKpiStrip: Story = {
             </StatValue>
           </Stat>
         </StatGroup>
-        <p {...applyHost(undefined, undefined, typography.caption, styles.hint)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.hint)}>
           Solo resultados oficiales aprobados. No incluye amistosos ni candidatos EA.
         </p>
       </div>
@@ -425,7 +425,7 @@ export const PlayerKpiStrip: Story = {
 export const HighlightedScore: Story = {
   name: "Highlighted score",
   render: () => (
-    <div {...applyHost(undefined, undefined, styles.score)}>
+    <div {...applyProps(undefined, undefined, styles.score)}>
       <Stat align="center">
         <StatLabel>Local</StatLabel>
         <StatValue>2</StatValue>
@@ -433,7 +433,7 @@ export const HighlightedScore: Story = {
       </Stat>
       <span
         aria-hidden="true"
-        {...applyHost(undefined, undefined, typography.caption, styles.muted)}
+        {...applyProps(undefined, undefined, typography.caption, styles.muted)}
       >
         —
       </span>

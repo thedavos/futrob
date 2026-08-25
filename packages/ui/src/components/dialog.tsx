@@ -3,7 +3,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyHost } from "#styles/apply";
+import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
@@ -115,7 +115,7 @@ function DialogBackdrop({ className, style, ...props }: DialogPrimitive.Backdrop
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-backdrop"
-      {...applyHost(className, style, styles.backdrop)}
+      {...applyProps(className, style, styles.backdrop)}
       {...props}
     />
   );
@@ -135,19 +135,19 @@ function DialogContent({
   return (
     <DialogPrimitive.Portal>
       <DialogBackdrop />
-      <DialogPrimitive.Viewport {...applyHost(undefined, undefined, styles.viewport)}>
+      <DialogPrimitive.Viewport {...applyProps(undefined, undefined, styles.viewport)}>
         <DialogPrimitive.Popup
           data-slot="dialog-content"
-          {...applyHost(className, style, styles.content, elevation.lg)}
+          {...applyProps(className, style, styles.content, elevation.lg)}
           {...props}
         >
           {children}
           {!hideClose && (
             <DialogPrimitive.Close
               aria-label="Cerrar"
-              {...applyHost(undefined, undefined, styles.close)}
+              {...applyProps(undefined, undefined, styles.close)}
             >
-              <XIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.closeIcon)} />
+              <XIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.closeIcon)} />
             </DialogPrimitive.Close>
           )}
         </DialogPrimitive.Popup>
@@ -158,13 +158,13 @@ function DialogContent({
 
 function DialogHeader({ className, style, ...props }: ComponentProps<"div">) {
   return (
-    <div data-slot="dialog-header" {...applyHost(className, style, styles.header)} {...props} />
+    <div data-slot="dialog-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
 function DialogFooter({ className, style, ...props }: ComponentProps<"div">) {
   return (
-    <div data-slot="dialog-footer" {...applyHost(className, style, styles.footer)} {...props} />
+    <div data-slot="dialog-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
 }
 
@@ -172,7 +172,7 @@ function DialogTitle({ className, style, ...props }: DialogPrimitive.Title.Props
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      {...applyHost(className, style, styles.title)}
+      {...applyProps(className, style, styles.title)}
       {...props}
     />
   );
@@ -182,7 +182,7 @@ function DialogDescription({ className, style, ...props }: DialogPrimitive.Descr
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      {...applyHost(className, style, styles.description)}
+      {...applyProps(className, style, styles.description)}
       {...props}
     />
   );
