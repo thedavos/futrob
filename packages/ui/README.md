@@ -8,15 +8,15 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 
 ## Capas
 
-| Archivo / carpeta   | Responsabilidad                                                                                                                                                   |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/tokens.css`    | Paleta OKLCH, tema claro, dark opt-in, tipo, geometría, movimiento. **Artefacto generado** desde [`@futrob/ui-tokens`](../ui-tokens/README.md) — no editar a mano |
-| `src/styles/*.ts`   | Tokens StyleX (`colors`, `media`), `typography`, `elevation`, `applyProps`                                                                                        |
-| `src/elevation.css` | Sombras elevadas + hairline ring (nunca con `border`/`ring` en el mismo elemento)                                                                                 |
-| `src/slots.css`     | Selectores que StyleX no expresa en un solo elemento (densidad de tabla, SVG hijos, enter/exit)                                                                   |
-| `src/styles.css`    | Manrope autohospedada, reset, defaults globales, importa tokens/elevation/slots                                                                                   |
-| `src/components/`   | Primitivas Futrob sobre Base UI + StyleX                                                                                                                          |
-| `src/stories/`      | Contratos visuales, de estados y accesibilidad                                                                                                                    |
+| Archivo / carpeta   | Responsabilidad                                                                                                                                                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/tokens.css`    | Paleta OKLCH, tema claro, dark opt-in, tipo, geometría, movimiento. **Artefacto generado** desde [`@futrob/ui-tokens`](../ui-tokens/README.md) — no editar a mano                                                                            |
+| `src/styles/*.ts`   | Tokens StyleX (`colors`, `media`), `typography`, `elevation`, `applyProps`                                                                                                                                                                   |
+| `src/elevation.css` | Sombras elevadas + hairline ring (nunca con `border`/`ring` en el mismo elemento)                                                                                                                                                            |
+| `src/slots.css`     | Selectores que StyleX no expresa en un solo elemento (densidad de tabla, SVG hijos, enter/exit)                                                                                                                                              |
+| `src/styles.css`    | Manrope autohospedada, reset, defaults globales, importa tokens/elevation/slots                                                                                                                                                              |
+| `src/components/`   | Primitivas Futrob sobre Base UI + StyleX. Hoy son archivos planos; un PR posterior las mueve a una carpeta por primitiva (`button/button.tsx` + story). Ver [StyleX follow-up](/docs/architecture/stylex.md#follow-up-folder-per-primitive). |
+| `src/stories/`      | Contratos visuales, de estados y accesibilidad. Las stories 1:1 se colocalizarán con el primitivo; los patrones (`forms`, `overlays`, `app-shell`) se quedan aquí.                                                                           |
 
 ## Contratos
 

@@ -39,3 +39,21 @@ Follow `.cursor/skills/futrob-stylex/SKILL.md`. Summary:
 - Reset and document defaults in `styles.css` (`@layer reset`).
 - Hairline-ring shadows in `elevation.css`.
 - React Native styles in `apps/mobile`.
+
+## Follow-up: folder per primitive
+
+Out of this PR. `packages/ui/src/components` stays flat (`button.tsx` + `src/stories/button.stories.tsx`).
+
+A later PR should move each primitive into its own directory:
+
+```text
+components/button/
+  button.tsx
+  button.styles.ts    # only if stylex.create would push the file past ~400 lines
+  button.stories.tsx
+  index.ts
+```
+
+Do not name component styles `*.stylex.ts`. That suffix is reserved for `defineVars` / `defineConsts`.
+
+Keep composition stories (`forms`, `overlays`, `navigation`, `app-shell`, `data-table`, `icons`) under `src/stories/patterns/`. Public imports stay `@futrob/ui`. Update `#components/*` in `packages/ui/package.json` when the folders land.
