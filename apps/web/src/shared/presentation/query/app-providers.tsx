@@ -7,6 +7,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { createAppQueryClient } from "./create-query-client.ts";
 
 if (import.meta.env.DEV) {
+  // HMR only. First paint uses the /virtual:stylex.css link in __root.tsx.
   void import("virtual:stylex:runtime");
 }
 

@@ -48,6 +48,7 @@ export const Route = createRootRoute({
       ],
       links: [
         { rel: "stylesheet", href: appStyles },
+        ...(import.meta.env.DEV ? [{ rel: "stylesheet", href: "/virtual:stylex.css" }] : []),
         { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
         { rel: "icon", href: "/favicon.ico", sizes: "any" },
         { rel: "icon", href: "/icons/favicon-32.png", type: "image/png", sizes: "32x32" },
