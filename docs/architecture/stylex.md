@@ -9,15 +9,16 @@ Atomic, compile-time CSS with typed tokens. Conditions (hover, dark-capable vars
 
 ## Setup
 
-| Piece        | Location                                                                                        |
-| ------------ | ----------------------------------------------------------------------------------------------- |
-| Runtime      | `@stylexjs/stylex`                                                                              |
-| Compiler     | `@stylexjs/unplugin` via `tools/stylex/vite-plugin.ts`                                          |
-| Web Vite     | `apps/web/vite.config.ts` — StyleX before React / Start                                         |
-| Storybook    | `.storybook/main.ts`                                                                            |
-| Tokens       | `packages/ui/src/styles/tokens.stylex.ts`, `media.stylex.ts` (import those files, not a barrel) |
-| Roles        | `packages/ui/src/styles/typography.ts`, `elevation.ts`                                          |
-| Apply helper | `packages/ui/src/styles/apply.ts` (`applyProps`, `applyStyles`)                                 |
+| Piece        | Location                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| Runtime      | `@stylexjs/stylex`                                                                               |
+| Compiler     | `@stylexjs/unplugin` via `tools/stylex/vite-plugin.ts`                                           |
+| Web Vite     | `apps/web/vite.config.ts` — StyleX before React / Start                                          |
+| Storybook    | `.storybook/main.ts`                                                                             |
+| Tokens       | `packages/ui/src/styles/tokens.stylex.ts`, `media.stylex.ts` (import those files, not a barrel)  |
+| Roles        | `packages/ui/src/styles/typography.ts`, `elevation.ts`                                           |
+| Apply helper | `packages/ui/src/styles/apply.ts` (`applyProps`, `applyStyles`)                                  |
+| Document CSS | `packages/ui/src/styles.css` in `@layer reset`; StyleX lists that layer in `useCSSLayers.before` |
 
 Dev HMR uses `virtual:stylex:runtime` from a client module. Production CSS is appended to the existing `styles.css` asset. `tools/stylex/guard-unplugin-css.cjs` keeps Vite from crashing if LightningCSS sees a transient empty selector while `defineConsts` are still resolving ([StyleX #1497](https://github.com/facebook/stylex/issues/1497)).
 
@@ -35,6 +36,6 @@ Follow `.cursor/skills/futrob-stylex/SKILL.md`. Summary:
 ## What is not StyleX
 
 - Generated `tokens.css` (OKLCH + semantic theme).
-- Reset and document defaults in `styles.css`.
+- Reset and document defaults in `styles.css` (`@layer reset`).
 - Hairline-ring shadows in `elevation.css`.
 - React Native styles in `apps/mobile`.

@@ -8,7 +8,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 /** Shared StyleX compiler for `apps/web` and Storybook. */
 export function futrobStylex() {
   return stylex.vite({
-    useCSSLayers: true,
+    useCSSLayers: { before: ["reset"] },
     runtimeInjection: false,
     dev: process.env.NODE_ENV !== "production",
     unstable_moduleResolution: {

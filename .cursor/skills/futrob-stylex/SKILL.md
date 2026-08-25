@@ -39,7 +39,7 @@ opacity: { default: 1, ":hover": 0.8, ":disabled": 0.5 },
 display: { default: "block", [media.sm]: "flex" },
 ```
 
-6. Spread leftover `className` / `style` plus StyleX tokens with `applyProps(className, style, styles.base, cond && styles.active)` from `@futrob/ui`. Last token wins. Use `applyStyles(...tokens)` when there is no leftover class or style.
+6. Spread leftover `className` / `style` plus StyleX tokens with `applyProps(className, style, styles.base, cond && styles.active)` from `@futrob/ui`. Last token wins. Keep Base UI render-state callbacks callable — do not drop functions. Use `applyStyles(...tokens)` when there is no leftover class or style.
 7. Do not spread `stylex.props` onto capitalized components. Pass `className` / `style` (or a StyleX token the component applies on its host).
 8. `space-y-*` / `divide-*` → `display: "flex"` + `gap` on the parent.
 9. `group` / `peer` → `stylex.when.ancestor` / `stylex.when.siblingBefore` + `stylex.defaultMarker()`, or a `data-slot` rule in `packages/ui/src/slots.css`.
@@ -53,7 +53,7 @@ Closed variants stay as typed unions + StyleX maps. Do not reintroduce CVA.
 
 ## Global CSS that stays
 
-`packages/ui/src/styles.css` — reset, Manrope, selection, focus outline.
+`packages/ui/src/styles.css` — reset, Manrope, selection, focus outline, all inside `@layer reset` so StyleX `priority*` layers win.
 `packages/ui/src/elevation.css` — shadow + hairline ring variables.
 `packages/ui/src/slots.css` — only selectors StyleX cannot express (descendants, table density, Base UI enter/exit).
 
