@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useOnboardingStatusQuery } from "@/modules/identity/presentation/identity-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 

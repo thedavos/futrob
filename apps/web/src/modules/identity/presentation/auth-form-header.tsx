@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 interface AuthFormHeaderProps {
   title: string;
   description?: string;

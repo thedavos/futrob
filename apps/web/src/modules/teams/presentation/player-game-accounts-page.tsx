@@ -24,7 +24,8 @@ import {
   readFormString,
   typography,
 } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { Link } from "@tanstack/react-router";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";

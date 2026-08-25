@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 
 export const styles = stylex.create({
   fields: {

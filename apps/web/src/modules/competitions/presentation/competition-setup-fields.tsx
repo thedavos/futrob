@@ -17,7 +17,7 @@ import {
   SelectValue,
   typography,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 
 const styles = stylex.create({

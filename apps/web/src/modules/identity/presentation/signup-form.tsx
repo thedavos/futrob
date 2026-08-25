@@ -15,7 +15,7 @@ import {
   readFormString,
   type FormErrors,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link } from "@tanstack/react-router";
 import {
   EyeIcon,

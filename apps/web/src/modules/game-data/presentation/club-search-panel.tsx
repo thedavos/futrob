@@ -22,7 +22,8 @@ import {
   typography,
   readFormString,
 } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";

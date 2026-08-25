@@ -8,7 +8,8 @@ import {
   SidebarProvider,
   SidebarRail,
 } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import {
   ShellActionBarProvider,

@@ -13,7 +13,7 @@ import {
   typography,
   useCopyToClipboard,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { CheckIcon, WarningCircleIcon, CopyIcon, LinkSimpleIcon } from "@phosphor-icons/react";
 import { buildInvitationShareUrl } from "@/modules/organizations/presentation/invitation-share-url.ts";
 import { useCreateCompetitionInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";

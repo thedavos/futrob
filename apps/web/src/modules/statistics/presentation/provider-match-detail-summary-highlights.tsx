@@ -11,7 +11,8 @@ import {
   StatLabel,
   typography,
 } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { StarIcon } from "@phosphor-icons/react";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";

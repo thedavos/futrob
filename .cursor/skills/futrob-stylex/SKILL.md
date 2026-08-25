@@ -19,8 +19,8 @@ Mobile (`apps/mobile`) stays on React Native `StyleSheet` + `@futrob/ui-tokens`.
 
 - Semantic CSS variables in `packages/ui/src/tokens.css` remain the source of truth (generated from `@futrob/ui-tokens`).
 - Dark theme still flips those variables via `.dark` / `[data-theme="dark"]`. Do not use `prefers-color-scheme` to enable dark.
-- Consume colors through `colors` from `@futrob/ui/styles/public.stylex` (StyleX cannot follow the package barrel for `defineVars`).
-- Breakpoints: `media` from the same `public.stylex` entry (`sm` 40rem, `md` 48rem, `lg` 64rem, `maxSm` for touch density).
+- Consume colors through `colors` from `@futrob/ui/styles/tokens.stylex` (StyleX cannot follow a barrel for `defineVars`).
+- Breakpoints: `media` from `@futrob/ui/styles/media.stylex` (`sm` 40rem, `md` 48rem, `lg` 64rem, `maxSm` for touch density).
 - Type roles: `typography.display|heading|subtitle|label|body|caption|score`.
 - Elevation: `elevation.sm|md|lg` (former `smooth-shadow-ring-*`). Never pair with `border` / `ring` on the same element.
 
@@ -59,6 +59,6 @@ Closed variants stay as typed unions + StyleX maps. Do not reintroduce CVA.
 
 ## Checklist
 
-- Import `applyHost`, `typography`, and `elevation` from `@futrob/ui`. Import `colors` and `media` from `@futrob/ui/styles/public.stylex`.
+- Import `applyHost`, `typography`, and `elevation` from `@futrob/ui`. Import `colors` from `@futrob/ui/styles/tokens.stylex` and `media` from `@futrob/ui/styles/media.stylex`.
 - Resolve each former Tailwind class to the CSS it produced, then reshape — do not guess.
 - Flag anything that needed `slots.css` or markup restructuring.

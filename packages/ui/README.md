@@ -79,8 +79,9 @@ La aplicación importa los estilos una sola vez:
 @import "@futrob/ui/styles.css";
 ```
 
-Los estilos de producto se escriben con StyleX. Importa `colors` / `media` desde
-`@futrob/ui/styles/public.stylex` (el compilador no sigue el barrel del package). Guía:
+Los estilos de producto se escriben con StyleX. Importa `colors` desde
+`@futrob/ui/styles/tokens.stylex` y `media` desde `@futrob/ui/styles/media.stylex`
+(el compilador no sigue reexportaciones). Guía:
 [`/docs/architecture/stylex.md`](/docs/architecture/stylex.md).
 
 Los componentes se importan desde la API pública:

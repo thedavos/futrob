@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { applyHost, applyStyles, Logo, typography } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 const styles = stylex.create({
   main: {
     display: "grid",
@@ -120,17 +121,19 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
       <section
         {...applyHost(
           undefined,
+          // SAFETY: custom properties are valid host styles; CSSProperties
+          // does not list arbitrary `--*` names.
           {
-            ["--background" as string]: "var(--neutral-0)",
-            ["--border" as string]: "var(--neutral-300)",
-            ["--border-subtle" as string]: "var(--neutral-200)",
-            ["--destructive" as string]: "var(--red-700)",
-            ["--foreground" as string]: "var(--neutral-950)",
-            ["--input" as string]: "var(--neutral-450)",
-            ["--muted-foreground" as string]: "var(--neutral-600)",
-            ["--primary" as string]: "var(--brand-700)",
-            ["--primary-foreground" as string]: "var(--neutral-0)",
-            ["--ring" as string]: "var(--brand-600)",
+            "--background": "var(--neutral-0)",
+            "--border": "var(--neutral-300)",
+            "--border-subtle": "var(--neutral-200)",
+            "--destructive": "var(--red-700)",
+            "--foreground": "var(--neutral-950)",
+            "--input": "var(--neutral-450)",
+            "--muted-foreground": "var(--neutral-600)",
+            "--primary": "var(--brand-700)",
+            "--primary-foreground": "var(--neutral-0)",
+            "--ring": "var(--brand-600)",
           } as CSSProperties,
           styles.formPanel,
         )}

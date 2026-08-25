@@ -12,7 +12,7 @@ import {
   Input,
   readFormString,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 const styles = stylex.create({
   form: {
     display: "flex",

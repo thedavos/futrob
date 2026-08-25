@@ -3,7 +3,7 @@
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Tooltip, TooltipContent, TooltipTrigger, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { FORM_OUTCOME_SHORT_KEYS, FORM_SEGMENT_TOOLTIP_KEYS } from "./player-match-copy.ts";

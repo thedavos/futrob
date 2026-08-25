@@ -1,7 +1,7 @@
 import { useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Button } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 const styles = stylex.create({
   pending: {
     display: "flex",

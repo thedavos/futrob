@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 
 const styles = stylex.create({

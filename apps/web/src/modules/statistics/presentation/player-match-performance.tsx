@@ -4,7 +4,7 @@ import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 import { applyHost, applyStyles, Stat, StatLabel, StatValue, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type { CSSProperties } from "react";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -113,7 +113,7 @@ function trendTone(direction: TrendDirection) {
       return styles.trendUp;
     case "down":
       return styles.trendDown;
-    default:
+    case "flat":
       return styles.trendFlat;
   }
 }

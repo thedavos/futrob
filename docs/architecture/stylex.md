@@ -9,24 +9,24 @@ Atomic, compile-time CSS with typed tokens. Conditions (hover, dark-capable vars
 
 ## Setup
 
-| Piece        | Location                                                                                                     |
-| ------------ | ------------------------------------------------------------------------------------------------------------ |
-| Runtime      | `@stylexjs/stylex`                                                                                           |
-| Compiler     | `@stylexjs/unplugin` via `tools/stylex/vite-plugin.ts`                                                       |
-| Web Vite     | `apps/web/vite.config.ts` — StyleX before React / Start                                                      |
-| Storybook    | `.storybook/main.ts`                                                                                         |
-| Tokens       | `packages/ui/src/styles/tokens.stylex.ts`, `media.stylex.ts` (apps import `@futrob/ui/styles/public.stylex`) |
-| Roles        | `packages/ui/src/styles/typography.ts`, `elevation.ts`                                                       |
-| Apply helper | `packages/ui/src/styles/apply.ts` (`applyHost`, `applyStyles`)                                               |
+| Piece        | Location                                                                                        |
+| ------------ | ----------------------------------------------------------------------------------------------- |
+| Runtime      | `@stylexjs/stylex`                                                                              |
+| Compiler     | `@stylexjs/unplugin` via `tools/stylex/vite-plugin.ts`                                          |
+| Web Vite     | `apps/web/vite.config.ts` — StyleX before React / Start                                         |
+| Storybook    | `.storybook/main.ts`                                                                            |
+| Tokens       | `packages/ui/src/styles/tokens.stylex.ts`, `media.stylex.ts` (import those files, not a barrel) |
+| Roles        | `packages/ui/src/styles/typography.ts`, `elevation.ts`                                          |
+| Apply helper | `packages/ui/src/styles/apply.ts` (`applyHost`, `applyStyles`)                                  |
 
-Dev HMR uses `virtual:stylex:runtime` from a client module. Production CSS is appended to the existing `styles.css` asset.
+Dev HMR uses `virtual:stylex:runtime` from a client module. Production CSS is appended to the existing `styles.css` asset. `tools/stylex/guard-unplugin-css.cjs` keeps Vite from crashing if LightningCSS sees a transient empty selector while `defineConsts` are still resolving ([StyleX #1497](https://github.com/facebook/stylex/issues/1497)).
 
 ## Practices
 
 Follow `.cursor/skills/futrob-stylex/SKILL.md`. Summary:
 
 - Colocate `stylex.create` with the component. Do not rebuild a utility library.
-- Import `colors` / `media` from `@futrob/ui/styles/public.stylex` inside `stylex.create`. The package barrel is for runtime helpers (`applyHost`, `typography`), not StyleX variables.
+- Import `colors` from `@futrob/ui/styles/tokens.stylex` and `media` from `@futrob/ui/styles/media.stylex` inside `stylex.create`. StyleX cannot follow `defineVars` / `defineConsts` through a re-export. The package barrel is for runtime helpers (`applyHost`, `typography`).
 - Conditions require `default`. Last `applyHost` / `stylex.props` argument wins.
 - Longhand or single-value shorthands only.
 - `stylex.when.*` + markers replace `group` / `peer`. Remaining descendant rules live in `slots.css`.

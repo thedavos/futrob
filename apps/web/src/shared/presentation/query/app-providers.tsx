@@ -1,5 +1,7 @@
 "use client";
 
+import "@futrob/ui/styles/media.stylex";
+import "@futrob/ui/styles/tokens.stylex";
 import { useState, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createAppQueryClient } from "./create-query-client.ts";

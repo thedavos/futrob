@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 
 import type { MatchOutcome } from "./player-match-view.ts";
 
@@ -40,7 +40,7 @@ export function matchOutcomeTextStyle(outcome: MatchOutcome) {
       return styles.outcomeDraw;
     case "loss":
       return styles.outcomeLoss;
-    default:
+    case "unknown":
       return styles.outcomeUnknown;
   }
 }
@@ -53,7 +53,7 @@ export function formSegmentStyle(outcome: MatchOutcome) {
       return styles.segmentDraw;
     case "loss":
       return styles.segmentLoss;
-    default:
+    case "unknown":
       return styles.segmentUnknown;
   }
 }
@@ -66,7 +66,7 @@ export function formResultFillStyle(outcome: MatchOutcome) {
       return styles.fillDraw;
     case "loss":
       return styles.fillLoss;
-    default:
+    case "unknown":
       return styles.fillUnknown;
   }
 }

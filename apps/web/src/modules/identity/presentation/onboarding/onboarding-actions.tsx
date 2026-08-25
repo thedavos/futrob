@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Button } from "@futrob/ui";
-import { media } from "@futrob/ui/styles/public.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 

@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 
 export const styles = stylex.create({
   frame: {

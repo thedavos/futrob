@@ -3,7 +3,7 @@ import { expect, within } from "storybook/test";
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
 import { applyHost, TooltipProvider } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { recentProviderMatchFixture } from "./player-matches-page.fixtures.ts";
 import { RecentForm } from "./player-match-form.tsx";

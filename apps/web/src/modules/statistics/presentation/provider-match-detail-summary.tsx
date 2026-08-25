@@ -13,7 +13,8 @@ import {
   StatLabel,
   typography,
 } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { StarIcon } from "@phosphor-icons/react";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";

@@ -14,7 +14,7 @@ import {
   EmptyStateTitle,
   typography,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { TrophyIcon } from "@phosphor-icons/react";
 import { useMyTeamsQuery } from "./player-queries.ts";
 

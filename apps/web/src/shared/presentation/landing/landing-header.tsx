@@ -2,7 +2,7 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Button, Logo, typography } from "@futrob/ui";
-import { media } from "@futrob/ui/styles/public.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { Link } from "@tanstack/react-router";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";

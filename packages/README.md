@@ -38,7 +38,7 @@ BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`,
   44 px touch).
 - Primitivas con variantes cerradas y estilo flat/line.
 - `typography.label` para labels y navegación; metadata puede usar sentence-case.
-- Estilos web con StyleX (`applyHost`, `typography.*`, `colors` vía `@futrob/ui/styles/public.stylex`).
+- Estilos web con StyleX (`applyHost`, `typography.*`, `colors` vía `@futrob/ui/styles/tokens.stylex`).
 - Verde primario = marca/acción; `approved` = resultado oficialmente aprobado.
 - `ButtonIcon` se reserva para CTA de marketing.
 - Formularios, navegación, tablas/filas y overlays deben componerse desde `@futrob/ui`, no

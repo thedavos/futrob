@@ -11,7 +11,8 @@ import {
 import { expect, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyHost } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   recentProviderMatchDetailFixture,

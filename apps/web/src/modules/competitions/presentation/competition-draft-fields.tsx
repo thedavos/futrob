@@ -17,7 +17,7 @@ import {
   SelectValue,
   typography,
 } from "@futrob/ui";
-import { media } from "@futrob/ui/styles/public.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { competitionFormatSchema, competitionRegionSchema } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";

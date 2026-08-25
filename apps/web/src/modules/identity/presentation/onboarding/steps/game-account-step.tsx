@@ -14,7 +14,7 @@ import {
   Input,
   typography,
 } from "@futrob/ui";
-import { media } from "@futrob/ui/styles/public.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { InfoIcon } from "@phosphor-icons/react";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Button, Form, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useNavigate } from "@tanstack/react-router";
 import { CompetitionDraftFields } from "@/modules/competitions/presentation/competition-draft-fields.tsx";
 import { CompetitionsClientError } from "@/modules/competitions/presentation/competitions-browser-client.ts";

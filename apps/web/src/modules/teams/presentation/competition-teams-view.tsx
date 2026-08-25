@@ -15,7 +15,8 @@ import {
   MasterDetail,
   typography,
 } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { LockIcon } from "@phosphor-icons/react";
 import {
   SupportErrorAlert,

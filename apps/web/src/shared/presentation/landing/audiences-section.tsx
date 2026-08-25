@@ -2,7 +2,8 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, typography, type Icon } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import {
   CalendarCheckIcon,
   ChartLineUpIcon,

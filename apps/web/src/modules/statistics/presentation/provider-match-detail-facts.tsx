@@ -3,7 +3,8 @@
 import type { PlayerRecentProviderMatchDetailDto } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Badge, Card, CardContent, CardHeader, typography } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { MATCH_TYPE_KEYS } from "./player-match-copy.ts";
 import { providerMatchMode } from "./player-match-view.ts";

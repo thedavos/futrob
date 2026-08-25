@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Stat, StatLabel, Tooltip, TooltipContent, TooltipTrigger } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 const styles = stylex.create({
   trigger: {
     minHeight: "2.75rem",

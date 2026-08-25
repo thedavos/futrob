@@ -2,7 +2,7 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { EaLogo } from "@/shared/presentation/ea-logo.tsx";
 import { commandBarIdentityLabel, type CommandBarIdentity } from "./command-bar-identity.ts";

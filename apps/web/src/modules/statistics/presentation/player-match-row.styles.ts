@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { elevation, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 export const styles = stylex.create({
   item: {
     position: "relative",

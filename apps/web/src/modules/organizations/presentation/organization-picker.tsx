@@ -2,7 +2,7 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link } from "@tanstack/react-router";
 import type { MembershipSummaryDto } from "@futrob/api-contracts";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";

@@ -16,7 +16,8 @@ import {
   EmptyStateTitle,
   typography,
 } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { Link } from "@tanstack/react-router";
 import { asEaSearchPlatform, gamePlatformForEaSearchLogo } from "@futrob/api-contracts";
 import type { PlayerExternalClubAssociationDto } from "@futrob/api-contracts";

@@ -9,7 +9,8 @@ import {
   ProgressValue,
   typography,
 } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 

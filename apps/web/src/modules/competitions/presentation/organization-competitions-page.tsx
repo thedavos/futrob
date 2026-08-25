@@ -16,7 +16,7 @@ import {
   EmptyStateTitle,
   typography,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { TrophyIcon } from "@phosphor-icons/react";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { useCan } from "@/shared/presentation/permissions/index.ts";

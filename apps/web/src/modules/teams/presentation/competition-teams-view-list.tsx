@@ -12,7 +12,8 @@ import {
   Skeleton,
   typography,
 } from "@futrob/ui";
-import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { CircleNotchIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { runAction } from "@/shared/presentation/run-action.ts";
 import type { CompetitionTeamsViewProps } from "./competition-teams-view.tsx";

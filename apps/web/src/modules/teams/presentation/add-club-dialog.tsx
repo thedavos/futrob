@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/public.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { DEFAULT_EA_SEARCH_GAME_EDITION } from "@/modules/game-data/presentation/ea-club-search-meta.ts";
 import {
   EaClubLinkForm,
