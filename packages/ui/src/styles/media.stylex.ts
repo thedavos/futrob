@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
 /**
- * Breakpoints aligned with Tailwind v4 defaults that Futrob already used.
+ * Breakpoints Futrob already used (40rem / 48rem / 64rem / 80rem).
  * `maxSm` is the touch-density cutoff (`max-sm:`).
  */
 export const media = stylex.defineConsts({

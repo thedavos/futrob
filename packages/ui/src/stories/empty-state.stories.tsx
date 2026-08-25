@@ -116,7 +116,7 @@ export const Compare: Story = {
           <TrayIcon />
         </EmptyStateIcon>
         <EmptyStateTitle>elevated</EmptyStateTitle>
-        <EmptyStateDescription>smooth-shadow-ring-md · panel aislado.</EmptyStateDescription>
+        <EmptyStateDescription>elevation.md · panel aislado.</EmptyStateDescription>
       </EmptyState>
     </div>
   ),

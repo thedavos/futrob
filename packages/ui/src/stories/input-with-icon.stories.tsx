@@ -241,7 +241,7 @@ export const DensityAndStates: Story = {
     const fieldError = errorText.closest('[data-slot="field-error"]');
 
     await expect(fieldError).not.toBeNull();
-    await expect(fieldError).not.toHaveClass("font-medium");
+    await expect(fieldError).toHaveAttribute("data-slot", "field-error");
     await expect(fieldError?.querySelector("svg")).not.toBeNull();
   },
 };

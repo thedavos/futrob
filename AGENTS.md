@@ -21,12 +21,13 @@ See `.cursor/rules/agent-skills.mdc` for the full table and Cloud Agent availabi
 | layers-domain / user-needs        | Vocabulary and operator vs spectator jobs        |
 | layers-interaction-flow           | Captain / sync / officialize flows               |
 | layers-surface                    | Screen audit against the model                   |
-| shadcn (+ Base UI)                | `packages/ui` primitives                         |
+| shadcn (+ Base UI)                | Primitive behavior only; restyle with StyleX     |
 | better-ui / layout / a11y         | Visual pass, structure, 44 px targets            |
-| better-typography / writing       | `typo-*` roles, ES/EN copy                       |
+| futrob-stylex                     | StyleX authoring in `packages/ui` and web UI     |
+| better-typography / writing       | `typography.*` roles, ES/EN copy                 |
 | better-colors                     | Contrast on existing semantic tokens             |
 | design-empty-states               | Empty, filtered-empty, permission, error         |
-| smooth-shadow-ring                | Elevated surfaces (never `border` + `shadow`)    |
+| StyleX elevation                  | Elevated surfaces (`elevation.sm                 | md  | lg`) |
 | gsap                              | Landing / bracket motion (presentation only)     |
 | tanstack-start / query            | Routes, SSR, client `/api/v1` state (ADR-0012)   |
 | web-perf / seo                    | Portal budgets; crawlable published content only |
@@ -39,14 +40,14 @@ See `.cursor/rules/agent-skills.mdc` for the full table and Cloud Agent availabi
 - Read `product/design-system-spec.md` and `packages/ui/README.md` before UI work.
 - Light is the default across marketing, product and public portal. Dark is explicit opt-in.
 - Controls are 44 px. `dense` is the only compact mode: 36 px on desktop and 44 px on touch.
-- Use flat/line hierarchy; ambient elevation uses `smooth-shadow-ring-*` on overlays and
+- Use flat/line hierarchy; ambient elevation uses StyleX `elevation.sm|md|lg` on overlays and
   opt-in `Card`/`EmptyState` `variant="elevated"` / `Alert elevation="elevated"`.
   Never pair `border`/`ring` with `shadow`.
 - Green means brand/primary action. Use the separate `approved` semantic token only for
   officially approved results.
-- Use `typo-label` for labels and navigation; use `typo-caption` for metadata, hints and secondary sentence-case copy; use `typo-subtitle` for support lines under headings.
+- Use `typography.label` for labels and navigation; use `typography.caption` for metadata, hints and secondary sentence-case copy; use `typography.subtitle` for support lines under headings.
 - `ButtonIcon` is marketing CTA language, not an operator/table embellishment.
-- Variants are closed. Do not invent new primitive colors or sizes with `className`.
+- Variants are closed. Do not invent new primitive colors or sizes; colocate StyleX styles.
 - Icons: Phosphor (`@phosphor-icons/react`, exports `*Icon`, weight `regular`). Type icon props with `Icon` from `@futrob/ui`.
 - Build forms, navigation, tables/rows and overlays from `@futrob/ui`.
 - Update Storybook whenever a primitive contract or state changes.

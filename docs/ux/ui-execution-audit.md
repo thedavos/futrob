@@ -8,7 +8,7 @@
 | Area                           | Status                                                                 |
 | ------------------------------ | ---------------------------------------------------------------------- |
 | Theme                          | Light default; dark remains explicit opt-in                            |
-| Foundations                    | Pitch Ops OKLCH tokens, Manrope roles, semantic Tailwind mapping       |
+| Foundations                    | Pitch Ops OKLCH tokens, Manrope roles, StyleX semantic tokens          |
 | Sizing                         | Universal 44 px controls; `dense` 36 px desktop / 44 px touch          |
 | Visual language                | Flat/line; ambient elevation limited to floating layers                |
 | Forms                          | Field, Input, Textarea, Select, Checkbox, validation and Alert         |
@@ -17,7 +17,7 @@
 | Overlays                       | Dialog, AlertDialog, Popover, Tooltip and Sheet on Base UI             |
 | Component documentation        | Storybook with docs and a11y addon                                     |
 | Product integration            | Home CTAs and EA club search consume `@futrob/ui` primitives           |
-| Tailwind package source scan   | Corrected to scan `packages/ui/src`; no inline safelist                |
+| StyleX package source scan     | Styles live in `packages/ui/src` + `apps/web` presentation             |
 | Anchor/button color regression | Global anchor reset no longer overrides class-based component variants |
 
 ## Guardrails

@@ -85,7 +85,7 @@ const rootBody = [
   section(null, scaleDeclarations("blue", BLUE_SCALE)),
   [""],
   section(
-    "Categorical highlight scale. Not mapped to Tailwind — consume via --emphasis.",
+    "Categorical highlight scale. Consume via --emphasis.",
     scaleDeclarations("violet", VIOLET_SCALE),
   ),
   [""],
@@ -95,7 +95,7 @@ const rootBody = [
   ),
   [""],
   section(
-    "Typography roles (consumed by Tailwind @utility in apps/web)",
+    "Typography roles (consumed by StyleX `typography.*` and mobile StyleSheet)",
     declarations(typographyRoles),
   ),
   [""],
@@ -111,7 +111,7 @@ const rootBody = [
   ),
   [""],
   section(
-    "Flat/line controls use borders. Elevated surfaces use shadow-plugin\n     `smooth-shadow-ring-*` (never pair with border/ring on the same element).",
+    "Flat/line controls use borders. Elevated surfaces use StyleX `elevation.*`\n     (never pair with border/ring on the same element).",
     [],
   ),
   [""],

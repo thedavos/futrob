@@ -1,6 +1,5 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite-plus";
 import { devtools } from "@tanstack/devtools-vite";
@@ -64,7 +63,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 860,
     manifest: true,
   },
-  plugins: [futrobStylex(), tailwindcss(), createAppPlugins()],
+  plugins: [futrobStylex(), createAppPlugins()],
   test: {
     name: "web",
     environment: "node",

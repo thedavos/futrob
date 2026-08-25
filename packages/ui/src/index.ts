@@ -195,4 +195,3 @@ export { typography } from "./styles/typography";
 export { elevation } from "./styles/elevation";
 export { motion } from "./styles/motion";
 export { vis } from "./styles/sr-only";
-export { cn } from "./lib/utils";

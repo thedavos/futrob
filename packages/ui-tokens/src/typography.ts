@@ -1,6 +1,6 @@
 import { raw, ref, type TokenMap } from "./token.ts";
 
-/** Canonical typography roles shared by web (`typo-*` utilities) and mobile. */
+/** Canonical typography roles shared by web (`typography.*` StyleX) and mobile. */
 export const TYPO_ROLES = [
   "display",
   "heading",
@@ -39,7 +39,7 @@ export const TYPOGRAPHY_TOKENS: TokenMap = {
   "tracking-normal": raw("0"),
   "tracking-label": raw("0.14em"),
 
-  // Typography roles (consumed by Tailwind @utility in apps/web)
+  // Typography roles (consumed by StyleX `typography.*` and mobile StyleSheet)
   "typo-display-size": ref("text-4xl"),
   "typo-display-weight": ref("font-weight-bold"),
   "typo-display-leading": raw("0.96"),

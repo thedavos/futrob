@@ -37,7 +37,8 @@ BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`,
 - Altura universal de controles: 44 px. `dense` es la única compactación (36 px desktop,
   44 px touch).
 - Primitivas con variantes cerradas y estilo flat/line.
-- `typo-label` para labels y navegación; metadata puede usar sentence-case.
+- `typography.label` para labels y navegación; metadata puede usar sentence-case.
+- Estilos web con StyleX (`applyHost`, `typography.*`, `colors` vía `@futrob/ui/styles/public.stylex`).
 - Verde primario = marca/acción; `approved` = resultado oficialmente aprobado.
 - `ButtonIcon` se reserva para CTA de marketing.
 - Formularios, navegación, tablas/filas y overlays deben componerse desde `@futrob/ui`, no

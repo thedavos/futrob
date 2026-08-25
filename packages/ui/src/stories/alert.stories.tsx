@@ -109,7 +109,7 @@ export const Elevation: Story = {
       <Alert elevation="elevated" variant="warning">
         <WarningIcon />
         <AlertTitle>elevated</AlertTitle>
-        <AlertDescription>smooth-shadow-ring-md · panel aislado.</AlertDescription>
+        <AlertDescription>elevation.md · panel aislado.</AlertDescription>
       </Alert>
     </div>
   ),

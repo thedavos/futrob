@@ -8,13 +8,15 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 
 ## Capas
 
-| Archivo / carpeta  | Responsabilidad                                                                                                                                                               |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/tokens.css`   | Paleta OKLCH, tema claro, dark opt-in, tipo, geometría, movimiento y elevación. **Artefacto generado** desde [`@futrob/ui-tokens`](../ui-tokens/README.md) — no editar a mano |
-| `src/tailwind.css` | Mapeo semántico Tailwind y utilidades tipográficas                                                                                                                            |
-| `src/styles.css`   | Manrope autohospedada, reset y defaults globales                                                                                                                              |
-| `src/components/`  | Primitivas Futrob sobre Base UI                                                                                                                                               |
-| `src/stories/`     | Contratos visuales, de estados y accesibilidad                                                                                                                                |
+| Archivo / carpeta   | Responsabilidad                                                                                                                                                   |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/tokens.css`    | Paleta OKLCH, tema claro, dark opt-in, tipo, geometría, movimiento. **Artefacto generado** desde [`@futrob/ui-tokens`](../ui-tokens/README.md) — no editar a mano |
+| `src/styles/*.ts`   | Tokens StyleX (`colors`, `media`), `typography`, `elevation`, `applyHost`                                                                                         |
+| `src/elevation.css` | Sombras elevadas + hairline ring (nunca con `border`/`ring` en el mismo elemento)                                                                                 |
+| `src/slots.css`     | Selectores que StyleX no expresa en un solo elemento (densidad de tabla, SVG hijos, enter/exit)                                                                   |
+| `src/styles.css`    | Manrope autohospedada, reset, defaults globales, importa tokens/elevation/slots                                                                                   |
+| `src/components/`   | Primitivas Futrob sobre Base UI + StyleX                                                                                                                          |
+| `src/stories/`      | Contratos visuales, de estados y accesibilidad                                                                                                                    |
 
 ## Contratos
 
@@ -22,8 +24,8 @@ primaria; `approved` es una semántica separada para resultados oficialmente apr
 - Controles universales de 44 px.
 - `dense` es la única compactación: 36 px en desktop y 44 px en touch.
 - Variantes cerradas. No añadir `xs`/`sm`/`lg` ni colores ad hoc.
-- `typo-label` es el estilo de labels; `typo-caption` cubre metadata y hints; `typo-subtitle` apoya headings.
-- Flat/line en controles y contenido. Overlays usan `smooth-shadow-ring-*` por defecto.
+- `typography.label` es el estilo de labels; `typography.caption` cubre metadata y hints; `typography.subtitle` apoya headings.
+- Flat/line en controles y contenido. Overlays usan `elevation.sm|md|lg` por defecto.
   `Card` / `EmptyState` admiten `variant="elevated"`; `Alert` admite `elevation="elevated"`.
   No combinar `border`/`ring` con `shadow` en el mismo elemento.
 - `ButtonIcon` es exclusivo de CTA de marketing.
@@ -74,23 +76,23 @@ Acciones y soporte:
 La aplicación importa los estilos una sola vez:
 
 ```css
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadow-plugin";
-@import "shadcn/tailwind.css";
 @import "@futrob/ui/styles.css";
-@import "@futrob/ui/tailwind.css";
-
-@source "../../../packages/ui/src";
 ```
+
+Los estilos de producto se escriben con StyleX. Importa `colors` / `media` desde
+`@futrob/ui/styles/public.stylex` (el compilador no sigue el barrel del package). Guía:
+[`/docs/architecture/stylex.md`](/docs/architecture/stylex.md).
 
 Los componentes se importan desde la API pública:
 
 ```tsx
-import { Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo, readFormString } from "@futrob/ui";
+import { applyHost, Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo, readFormString } from "@futrob/ui";
 import { CheckCircleIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
 
-<Logo className="h-8 w-auto" />
+const logo = stylex.create({ mark: { height: "2rem", width: "auto" } });
+
+<Logo {...applyHost(undefined, undefined, logo.mark)} title="Futrob" />
 <Form validationMode="onBlur">
   <Field
     name="name"
@@ -136,7 +138,7 @@ controles densos de forma contextual; onboarding y marketing se quedan en altura
 <Table dense>{/* … */}</Table>
 ```
 
-No reduzcas manualmente altura o padding con `className`. En mobile, la primitiva preserva el
+No reduzcas manualmente altura o padding. En mobile, la primitiva preserva el
 objetivo táctil de 44 px.
 
 ## Storybook
@@ -170,7 +172,7 @@ npx shadcn@latest add dialog -c packages/ui
 Después:
 
 1. Revisa el diff; no aceptes un overwrite automático de tokens o primitivas afinadas.
-2. Reduce la API a variantes cerradas y aplica los tokens Futrob.
+2. Reduce la API a variantes cerradas y restylea con StyleX + tokens Futrob. No dejes Tailwind/`cn()`/`cva`.
 3. Exporta desde `src/index.ts`.
 4. Añade o actualiza stories.
 5. Ejecuta `npm run typecheck`, `npm run check` y `npm run storybook:build`.

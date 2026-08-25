@@ -8,10 +8,10 @@
 
 El cliente móvil (`apps/mobile`, React Native + Expo) sale junto a web y API. La lógica de
 negocio ya es compartible vía `@futrob/<bc>` + `@futrob/sdk`, pero la identidad visual vivía
-solo en `packages/ui` (Tailwind CSS 4 + Base UI sobre DOM), que no ejecuta en React Native:
+solo en `packages/ui` (StyleX + Base UI sobre DOM), que no ejecuta en React Native:
 
 - Base UI renderiza elementos del navegador; RN no tiene DOM.
-- Tailwind y `tokens.css` son CSS; RN no interpreta `oklch()` ni custom properties.
+- StyleX y `tokens.css` son CSS; RN no interpreta `oklch()` ni custom properties.
 - Phosphor, formularios y overlays tienen APIs distintas por plataforma.
 
 ## Decisión

@@ -1,9 +1,1 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadow-plugin";
-@import "shadcn/tailwind.css";
 @import "@futrob/ui/styles.css";
-@import "@futrob/ui/tailwind.css";
-
-@source "./src";
-@source "../../../packages/ui/src";

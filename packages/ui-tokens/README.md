@@ -36,6 +36,6 @@ mismos comentarios de sección y las declaraciones byte a byte).
 
 ## Consumo
 
-- **Web:** sigue importando `@futrob/ui/styles.css` — no cambia.
+- **Web:** importa `@futrob/ui/styles.css` y consume roles con StyleX `typography.*`.
 - **Móvil:** importa `themeToHexColors(LIGHT_THEME)` (o tokens sueltos) desde
   `@futrob/ui-tokens` y construye el objeto tema de la app.

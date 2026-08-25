@@ -46,7 +46,7 @@ const meta = {
     variant: {
       control: "select",
       options: ["flat", "elevated"],
-      description: "flat = border only (default). elevated = smooth-shadow-ring-md (no border).",
+      description: "flat = border only (default). elevated = StyleX elevation.md (no border).",
     },
   },
 } satisfies Meta<typeof Card>;
@@ -128,7 +128,7 @@ export const Compare: Story = {
       <Card variant="elevated">
         <CardHeader>
           <CardTitle>elevated</CardTitle>
-          <CardDescription>smooth-shadow-ring-sm · sin border.</CardDescription>
+          <CardDescription>elevation.sm · sin border.</CardDescription>
         </CardHeader>
         <CardContent>
           <p {...applyHost(undefined, undefined, typography.body)}>
