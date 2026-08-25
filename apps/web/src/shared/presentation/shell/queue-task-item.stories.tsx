@@ -21,10 +21,10 @@ import {
   AlertTitle,
   applyHost,
   Button,
-  colors,
   motion,
   typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import type { ComponentProps, ReactNode } from "react";
 
 import { QueueTaskItem } from "./queue-task-item.tsx";

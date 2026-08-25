@@ -1,7 +1,8 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, colors, media, typography } from "@futrob/ui";
+import { applyStyles, Button, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { Link } from "@tanstack/react-router";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -98,7 +99,9 @@ export function LandingHero() {
           <div {...applyStyles(styles.stack)}>
             <h1 {...applyStyles(styles.title)}>
               {t("landing.hero.titleLead")}{" "}
-              <span {...applyStyles(styles.titleHighlight)}>{t("landing.hero.titleHighlight")}</span>
+              <span {...applyStyles(styles.titleHighlight)}>
+                {t("landing.hero.titleHighlight")}
+              </span>
               .
             </h1>
             <p {...applyStyles(typography.body, styles.subtitle)}>

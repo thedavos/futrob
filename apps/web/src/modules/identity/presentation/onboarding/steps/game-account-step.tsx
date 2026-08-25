@@ -12,9 +12,9 @@ import {
   FieldError,
   FieldLabel,
   Input,
-  media,
   typography,
 } from "@futrob/ui";
+import { media } from "@futrob/ui/styles/public.stylex";
 import { InfoIcon } from "@phosphor-icons/react";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
@@ -164,16 +164,8 @@ export function GameAccountStep() {
         {path === "organization" &&
         flow.draft.competitionPlatform &&
         flow.draft.competitionGameEdition.trim() ? (
-          <Alert
-            className={reuseAlert.className}
-            style={reuseAlert.style}
-            variant="info"
-          >
-            <InfoIcon
-              aria-hidden="true"
-              className={reuseIcon.className}
-              style={reuseIcon.style}
-            />
+          <Alert className={reuseAlert.className} style={reuseAlert.style} variant="info">
+            <InfoIcon aria-hidden="true" className={reuseIcon.className} style={reuseIcon.style} />
             <AlertDescription>{t("onboarding.account.reuse.description")}</AlertDescription>
             <Button
               className={reuseAction.className}

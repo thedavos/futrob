@@ -1,7 +1,8 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, Button, colors, Field, FieldLabel, Input, media, typography } from "@futrob/ui";
+import { applyStyles, Badge, Button, Field, FieldLabel, Input, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import type {
   CompetitionEntryDto,
   CompetitionEntryStatusDto,

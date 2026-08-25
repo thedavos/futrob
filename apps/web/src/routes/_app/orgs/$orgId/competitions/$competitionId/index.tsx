@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, typography } from "@futrob/ui";
-
+import { applyStyles, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 const styles = stylex.create({
   main: {
     width: "100%",
@@ -43,12 +43,7 @@ function CompetitionHomePage() {
         <p {...applyStyles(styles.body)}>
           Tu acceso está listo. La experiencia de competición se completará en una próxima entrega.
         </p>
-        <Link
-          className={link.className}
-          params={{ orgId }}
-          style={link.style}
-          to="/orgs/$orgId"
-        >
+        <Link className={link.className} params={{ orgId }} style={link.style} to="/orgs/$orgId">
           Ir a la organización
         </Link>
       </div>

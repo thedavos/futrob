@@ -2,7 +2,8 @@
 
 import { ChartLineUpIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, Stat, StatGroup, StatLabel, typography } from "@futrob/ui";
+import { applyStyles, Stat, StatGroup, StatLabel, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
@@ -74,7 +75,10 @@ export function ContributionsHero({
         </StatLabel>
       </Stat>
       {composition ? (
-        <p data-contribution-composition="" {...applyStyles(typography.caption, styles.composition)}>
+        <p
+          data-contribution-composition=""
+          {...applyStyles(typography.caption, styles.composition)}
+        >
           {composition}
         </p>
       ) : null}

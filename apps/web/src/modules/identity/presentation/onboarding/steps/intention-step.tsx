@@ -6,12 +6,10 @@ import {
   ChoiceGroup,
   ChoiceGroupIndicator,
   ChoiceGroupItem,
-  colors,
-  media,
   typography,
   type Icon,
 } from "@futrob/ui";
-
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 const styles = stylex.create({
   group: {
     gridTemplateColumns: {

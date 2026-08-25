@@ -289,7 +289,9 @@ function createOnboardingStoryRouter(
     createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs",
-      component: () => <main {...applyHost(undefined, undefined, styles.stub)}>Organizaciones</main>,
+      component: () => (
+        <main {...applyHost(undefined, undefined, styles.stub)}>Organizaciones</main>
+      ),
     }),
     createRoute({
       getParentRoute: () => rootRoute,

@@ -1,6 +1,6 @@
-import * as stylex from "@stylexjs/stylex"
-import { colors, media, typography } from "@futrob/ui"
-
+import * as stylex from "@stylexjs/stylex";
+import { typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 export const styles = stylex.create({
   stack: {
     display: "flex",
@@ -110,9 +110,9 @@ export const styles = stylex.create({
     fontWeight: 600,
     fontVariantNumeric: "tabular-nums",
   },
-})
+});
 
 export const rosterTypography = {
   caption: typography.caption,
   subtitle: typography.subtitle,
-}
+};

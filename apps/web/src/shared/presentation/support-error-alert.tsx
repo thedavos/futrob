@@ -10,10 +10,10 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  colors,
   useCopyToClipboard,
   vis,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { CheckIcon, CopyIcon, WarningCircleIcon } from "@phosphor-icons/react";
 
 export interface SupportError {
@@ -179,8 +179,7 @@ export function SupportErrorAlert({
           {error.requestId ? (
             <span {...applyStyles(styles.codeRow)}>
               <span {...applyStyles(styles.codeLabel)}>
-                {copy.codeLabel}{" "}
-                <code {...applyStyles(styles.code)}>{error.requestId}</code>
+                {copy.codeLabel} <code {...applyStyles(styles.code)}>{error.requestId}</code>
               </span>
               <Button
                 aria-label={copy.copyAria}
@@ -194,9 +193,7 @@ export function SupportErrorAlert({
                   <CheckIcon className={checkIcon.className} style={checkIcon.style} />
                 </span>
                 <span {...applyStyles(styles.labelSwap)}>
-                  <span
-                    {...applyStyles(styles.labelLayer, isCopied && styles.labelHidden)}
-                  >
+                  <span {...applyStyles(styles.labelLayer, isCopied && styles.labelHidden)}>
                     {copy.copyAction}
                   </span>
                   <span

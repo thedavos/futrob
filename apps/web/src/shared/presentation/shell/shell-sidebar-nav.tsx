@@ -3,7 +3,6 @@ import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
-  colors,
   Sheet,
   SheetBody,
   SheetContent,
@@ -23,6 +22,7 @@ import {
   typography,
   useSidebar,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import {
   CheckSquareOffsetIcon,
   ListIcon,

@@ -9,13 +9,11 @@ import {
   AvatarFallback,
   AvatarImage,
   Button,
-  colors,
   Field,
   FieldError,
   FieldLabel,
   Form,
   Input,
-  media,
   Select,
   SelectContent,
   SelectItem,
@@ -24,6 +22,7 @@ import {
   typography,
   readFormString,
 } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
@@ -300,10 +299,7 @@ export function ClubSearchPanel() {
         {!error && clubs.length > 0 ? (
           <ul {...applyStyles(styles.list)}>
             {clubs.map((club) => (
-              <li
-                key={`${club.providerKey}:${club.externalClubId}`}
-                {...applyStyles(styles.item)}
-              >
+              <li key={`${club.providerKey}:${club.externalClubId}`} {...applyStyles(styles.item)}>
                 <div {...applyStyles(styles.identity)}>
                   <Avatar className={avatar.className} style={avatar.style}>
                     {club.imageUrl ? <AvatarImage alt="" src={club.imageUrl} /> : null}
@@ -323,7 +319,9 @@ export function ClubSearchPanel() {
         ) : null}
 
         {!searched && !error ? (
-          <p {...applyStyles(typography.caption, styles.source)}>{t("gameData.clubSearch.source")}</p>
+          <p {...applyStyles(typography.caption, styles.source)}>
+            {t("gameData.clubSearch.source")}
+          </p>
         ) : null}
       </div>
     </div>

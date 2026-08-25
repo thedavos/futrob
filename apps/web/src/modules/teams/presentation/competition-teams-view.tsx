@@ -12,11 +12,10 @@ import {
   AlertDescription,
   AlertTitle,
   applyStyles,
-  colors,
   MasterDetail,
-  media,
   typography,
 } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { LockIcon } from "@phosphor-icons/react";
 import {
   SupportErrorAlert,

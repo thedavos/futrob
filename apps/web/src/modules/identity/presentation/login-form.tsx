@@ -5,7 +5,6 @@ import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
-  colors,
   Field,
   FieldError,
   FieldLabel,
@@ -13,6 +12,7 @@ import {
   InputWithIcon,
   readFormString,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { Link } from "@tanstack/react-router";
 import { LockIcon, EnvelopeSimpleIcon } from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/auth-client.ts";
@@ -191,7 +191,12 @@ export function LoginForm() {
       </div>
 
       <div {...applyStyles(styles.actions)}>
-        <Button className={submit.className} disabled={isSubmitting} style={submit.style} type="submit">
+        <Button
+          className={submit.className}
+          disabled={isSubmitting}
+          style={submit.style}
+          type="submit"
+        >
           Iniciar sesión
         </Button>
 

@@ -1,7 +1,8 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, media, typography, type Icon } from "@futrob/ui";
+import { applyStyles, typography, type Icon } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import {
   ArrowsClockwiseIcon,
   GlobeIcon,
@@ -168,11 +169,7 @@ export function MechanismSection() {
                   <span {...applyStyles(styles.railLine)} />
                 </div>
                 <div {...applyStyles(styles.headingRow)}>
-                  <step.icon
-                    aria-hidden="true"
-                    className={icon.className}
-                    style={icon.style}
-                  />
+                  <step.icon aria-hidden="true" className={icon.className} style={icon.style} />
                   <h3 {...applyStyles(styles.title)}>{t(`landing.mechanism.${step.key}.title`)}</h3>
                 </div>
                 <p {...applyStyles(typography.body, styles.body)}>

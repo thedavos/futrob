@@ -9,7 +9,6 @@ import {
   applyStyles,
   Badge,
   Button,
-  colors,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
@@ -17,6 +16,7 @@ import {
   EmptyStateTitle,
   typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { TrophyIcon } from "@phosphor-icons/react";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
@@ -174,12 +174,7 @@ function CompetitionRow({ competition }: { readonly competition: CompetitionDto 
 
   return (
     <li {...applyStyles(styles.item)}>
-      <Link
-        className={row.className}
-        params={href.params}
-        style={row.style}
-        to={href.to}
-      >
+      <Link className={row.className} params={href.params} style={row.style} to={href.to}>
         <span {...applyStyles(styles.copy)}>
           <span {...applyStyles(styles.name)}>{competition.name}</span>
           <span {...applyStyles(typography.caption, styles.meta)}>{competition.gameEdition}</span>

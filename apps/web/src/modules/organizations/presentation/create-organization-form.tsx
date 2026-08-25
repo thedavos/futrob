@@ -5,7 +5,6 @@ import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
-  colors,
   Field,
   FieldError,
   FieldLabel,
@@ -13,7 +12,7 @@ import {
   Input,
   readFormString,
 } from "@futrob/ui";
-
+import { colors } from "@futrob/ui/styles/public.stylex";
 const styles = stylex.create({
   form: {
     display: "flex",

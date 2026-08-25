@@ -1,7 +1,7 @@
-import * as stylex from "@stylexjs/stylex"
-import { colors } from "@futrob/ui"
+import * as stylex from "@stylexjs/stylex";
+import { colors } from "@futrob/ui/styles/public.stylex";
 
-import type { MatchOutcome } from "./player-match-view.ts"
+import type { MatchOutcome } from "./player-match-view.ts";
 
 const styles = stylex.create({
   outcomeWin: { color: colors.primary },
@@ -30,43 +30,43 @@ const styles = stylex.create({
     backgroundColor: "color-mix(in oklab, var(--muted-foreground) 40%, transparent)",
     color: colors.mutedForeground,
   },
-})
+});
 
 export function matchOutcomeTextStyle(outcome: MatchOutcome) {
   switch (outcome) {
     case "win":
-      return styles.outcomeWin
+      return styles.outcomeWin;
     case "draw":
-      return styles.outcomeDraw
+      return styles.outcomeDraw;
     case "loss":
-      return styles.outcomeLoss
+      return styles.outcomeLoss;
     default:
-      return styles.outcomeUnknown
+      return styles.outcomeUnknown;
   }
 }
 
 export function formSegmentStyle(outcome: MatchOutcome) {
   switch (outcome) {
     case "win":
-      return styles.segmentWin
+      return styles.segmentWin;
     case "draw":
-      return styles.segmentDraw
+      return styles.segmentDraw;
     case "loss":
-      return styles.segmentLoss
+      return styles.segmentLoss;
     default:
-      return styles.segmentUnknown
+      return styles.segmentUnknown;
   }
 }
 
 export function formResultFillStyle(outcome: MatchOutcome) {
   switch (outcome) {
     case "win":
-      return styles.fillWin
+      return styles.fillWin;
     case "draw":
-      return styles.fillDraw
+      return styles.fillDraw;
     case "loss":
-      return styles.fillLoss
+      return styles.fillLoss;
     default:
-      return styles.fillUnknown
+      return styles.fillUnknown;
   }
 }

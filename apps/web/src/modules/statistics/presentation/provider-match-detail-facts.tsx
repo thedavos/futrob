@@ -1,11 +1,12 @@
-"use client"
+"use client";
 
-import type { PlayerRecentProviderMatchDetailDto } from "@futrob/api-contracts"
-import * as stylex from "@stylexjs/stylex"
-import { applyStyles, Badge, Card, CardContent, CardHeader, colors, media, typography } from "@futrob/ui"
-import type { Translator } from "@/shared/presentation/i18n/translate.ts"
-import { MATCH_TYPE_KEYS } from "./player-match-copy.ts"
-import { providerMatchMode } from "./player-match-view.ts"
+import type { PlayerRecentProviderMatchDetailDto } from "@futrob/api-contracts";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Badge, Card, CardContent, CardHeader, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { MATCH_TYPE_KEYS } from "./player-match-copy.ts";
+import { providerMatchMode } from "./player-match-view.ts";
 
 const styles = stylex.create({
   header: {
@@ -44,24 +45,26 @@ const styles = stylex.create({
     marginTop: "0.125rem",
     fontWeight: 600,
   },
-})
+});
 
 export function MatchFacts({
   detail,
   t,
 }: {
-  readonly detail: PlayerRecentProviderMatchDetailDto
-  readonly t: Translator
+  readonly detail: PlayerRecentProviderMatchDetailDto;
+  readonly t: Translator;
 }) {
-  const mode = providerMatchMode(detail)
-  const durationSeconds = detail.match.metadata.durationSeconds
-  const duration = matchDurationLabel(durationSeconds, t)
-  const header = applyStyles(styles.header)
-  const content = applyStyles(styles.content)
+  const mode = providerMatchMode(detail);
+  const durationSeconds = detail.match.metadata.durationSeconds;
+  const duration = matchDurationLabel(durationSeconds, t);
+  const header = applyStyles(styles.header);
+  const content = applyStyles(styles.content);
   return (
     <Card data-match-facts="">
       <CardHeader className={header.className} style={header.style}>
-        <h2 {...applyStyles(typography.subtitle, styles.title)}>{t("player.matchDetail.tab.facts")}</h2>
+        <h2 {...applyStyles(typography.subtitle, styles.title)}>
+          {t("player.matchDetail.tab.facts")}
+        </h2>
       </CardHeader>
       <CardContent className={content.className} style={content.style}>
         <dl {...applyStyles(styles.list)}>
@@ -102,7 +105,7 @@ export function MatchFacts({
         ) : null}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function Fact({ label, value }: { readonly label: string; readonly value: string }) {
@@ -111,7 +114,7 @@ function Fact({ label, value }: { readonly label: string; readonly value: string
       <dt {...applyStyles(typography.caption, styles.label)}>{label}</dt>
       <dd {...applyStyles(typography.caption, styles.value)}>{value}</dd>
     </div>
-  )
+  );
 }
 
 function DurationFact({
@@ -119,9 +122,9 @@ function DurationFact({
   label,
   value,
 }: {
-  readonly durationSeconds: number | null
-  readonly label: string
-  readonly value: string
+  readonly durationSeconds: number | null;
+  readonly label: string;
+  readonly value: string;
 }) {
   return (
     <div {...applyStyles(styles.fact)}>
@@ -133,16 +136,16 @@ function DurationFact({
         {value}
       </dd>
     </div>
-  )
+  );
 }
 
 function matchDurationLabel(durationSeconds: number | null, t: Translator): string | null {
-  if (durationSeconds === null || durationSeconds < 0) return null
-  const minutes = Math.floor(durationSeconds / 60)
-  const seconds = durationSeconds % 60
-  if (minutes === 0) return t("player.matchDetail.duration.seconds", { seconds })
-  if (seconds === 0) return t("player.matchDetail.duration.minutes", { minutes })
-  return t("player.matchDetail.duration.minutesSeconds", { minutes, seconds })
+  if (durationSeconds === null || durationSeconds < 0) return null;
+  const minutes = Math.floor(durationSeconds / 60);
+  const seconds = durationSeconds % 60;
+  if (minutes === 0) return t("player.matchDetail.duration.seconds", { seconds });
+  if (seconds === 0) return t("player.matchDetail.duration.minutes", { minutes });
+  return t("player.matchDetail.duration.minutesSeconds", { minutes, seconds });
 }
 
 function completenessLabel(
@@ -151,14 +154,14 @@ function completenessLabel(
 ): string {
   switch (completeness) {
     case "complete":
-      return t("player.matchDetail.complete")
+      return t("player.matchDetail.complete");
     case "partial":
-      return t("player.matchDetail.partial")
+      return t("player.matchDetail.partial");
     case "unknown":
-      return t("player.matchDetail.unknown")
+      return t("player.matchDetail.unknown");
     default: {
-      const _exhaustive: never = completeness
-      return _exhaustive
+      const _exhaustive: never = completeness;
+      return _exhaustive;
     }
   }
 }

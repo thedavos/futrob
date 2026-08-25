@@ -5,7 +5,6 @@ import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
-  colors,
   Field,
   FieldDescription,
   FieldError,
@@ -16,6 +15,7 @@ import {
   readFormString,
   type FormErrors,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { Link } from "@tanstack/react-router";
 import {
   EyeIcon,
@@ -168,7 +168,10 @@ export function SignupForm() {
   const isSubmitting = state.status === "submitting" || state.status === "success";
   const form = applyStyles(styles.form);
   const toggle = applyStyles(styles.toggle);
-  const eye = applyStyles(styles.swapIcon, isPasswordVisible ? styles.swapHidden : styles.swapVisible);
+  const eye = applyStyles(
+    styles.swapIcon,
+    isPasswordVisible ? styles.swapHidden : styles.swapVisible,
+  );
   const eyeSlash = applyStyles(
     styles.swapIcon,
     isPasswordVisible ? styles.swapVisible : styles.swapHidden,

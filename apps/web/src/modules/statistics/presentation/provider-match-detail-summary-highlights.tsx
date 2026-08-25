@@ -1,30 +1,29 @@
-"use client"
+"use client";
 
-import * as stylex from "@stylexjs/stylex"
+import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Badge,
   Card,
   CardContent,
   CardHeader,
-  colors,
-  media,
   Stat,
   StatLabel,
   typography,
-} from "@futrob/ui"
-import { StarIcon } from "@phosphor-icons/react"
-import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts"
-import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx"
-import type { Translator } from "@/shared/presentation/i18n/translate.ts"
-import type { MatchHighlight, MatchHighlightKind } from "./provider-match-detail-model.ts"
+} from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { StarIcon } from "@phosphor-icons/react";
+import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
+import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import type { MatchHighlight, MatchHighlightKind } from "./provider-match-detail-model.ts";
 
 const HIGHLIGHT_TITLE_KEYS = {
   mvp: "player.matchDetail.highlights.mvp",
   scorer: "player.matchDetail.highlights.scorer",
   playmaker: "player.matchDetail.highlights.playmaker",
   rival: "player.matchDetail.highlights.rival",
-} as const satisfies Record<MatchHighlightKind, ParameterlessMessageKey>
+} as const satisfies Record<MatchHighlightKind, ParameterlessMessageKey>;
 
 const styles = stylex.create({
   card: {
@@ -125,11 +124,11 @@ const styles = stylex.create({
   pretty: {
     textWrap: "pretty",
   },
-})
+});
 
-export const summaryCardHeader = styles.header
-export const summaryCardContent = styles.content
-export const summaryCard = styles.card
+export const summaryCardHeader = styles.header;
+export const summaryCardContent = styles.content;
+export const summaryCard = styles.card;
 
 export function MatchHighlightsCard({
   highlights,
@@ -137,20 +136,16 @@ export function MatchHighlightsCard({
   percentFormat,
   t,
 }: {
-  readonly highlights: readonly MatchHighlight[]
-  readonly numberFormat: Intl.NumberFormat
-  readonly percentFormat: Intl.NumberFormat
-  readonly t: Translator
+  readonly highlights: readonly MatchHighlight[];
+  readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
+  readonly t: Translator;
 }) {
-  const card = applyStyles(styles.card)
-  const header = applyStyles(styles.header)
-  const content = applyStyles(styles.content)
+  const card = applyStyles(styles.card);
+  const header = applyStyles(styles.header);
+  const content = applyStyles(styles.content);
   return (
-    <Card
-      className={card.className}
-      data-match-highlights=""
-      style={card.style}
-    >
+    <Card className={card.className} data-match-highlights="" style={card.style}>
       <CardHeader className={header.className} style={header.style}>
         <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.highlights")}</h2>
       </CardHeader>
@@ -174,7 +169,7 @@ export function MatchHighlightsCard({
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function HighlightItem({
@@ -183,15 +178,15 @@ function HighlightItem({
   percentFormat,
   t,
 }: {
-  readonly item: MatchHighlight
-  readonly numberFormat: Intl.NumberFormat
-  readonly percentFormat: Intl.NumberFormat
-  readonly t: Translator
+  readonly item: MatchHighlight;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
+  readonly t: Translator;
 }) {
-  const primary = highlightPrimary(item, numberFormat, t)
-  const secondary = highlightSecondary(item, numberFormat, percentFormat, t)
-  const badge = applyStyles(styles.badge)
-  const stat = applyStyles(styles.stat)
+  const primary = highlightPrimary(item, numberFormat, t);
+  const secondary = highlightSecondary(item, numberFormat, percentFormat, t);
+  const badge = applyStyles(styles.badge);
+  const stat = applyStyles(styles.stat);
   return (
     <li data-highlight={item.kind} {...applyStyles(styles.item)}>
       <header {...applyStyles(styles.itemHeader)}>
@@ -207,16 +202,14 @@ function HighlightItem({
           <StatLabel {...applyStyles(styles.pretty)}>{primary.label}</StatLabel>
         </Stat>
       </header>
-      {secondary ? (
-        <p {...applyStyles(typography.caption, styles.secondary)}>{secondary}</p>
-      ) : null}
+      {secondary ? <p {...applyStyles(typography.caption, styles.secondary)}>{secondary}</p> : null}
     </li>
-  )
+  );
 }
 
 interface HighlightPrimary {
-  readonly label: string
-  readonly value: string | null
+  readonly label: string;
+  readonly value: string | null;
 }
 
 function highlightPrimary(
@@ -230,26 +223,26 @@ function highlightPrimary(
       const primary: HighlightPrimary = {
         label: t("player.metric.rating"),
         value: item.rating === null ? null : numberFormat.format(item.rating),
-      }
-      return primary
+      };
+      return primary;
     }
     case "scorer": {
       const primary: HighlightPrimary = {
         label: t("player.metric.goals"),
         value: item.goals === null ? null : numberFormat.format(item.goals),
-      }
-      return primary
+      };
+      return primary;
     }
     case "playmaker": {
       const primary: HighlightPrimary = {
         label: t("player.metric.assists"),
         value: item.assists === null ? null : numberFormat.format(item.assists),
-      }
-      return primary
+      };
+      return primary;
     }
     default: {
-      const _exhaustive: never = item
-      return _exhaustive
+      const _exhaustive: never = item;
+      return _exhaustive;
     }
   }
 }
@@ -267,7 +260,7 @@ function highlightSecondary(
           ? null
           : t("player.matchDetail.highlights.assists", { count: item.assists }),
         passLine(item.passesMade, item.passAttempts, percentFormat, t),
-      ])
+      ]);
     case "scorer":
       return joinHighlightLines([
         item.shots === null
@@ -278,7 +271,7 @@ function highlightSecondary(
           : t("player.matchDetail.highlights.rating", {
               rating: numberFormat.format(item.rating),
             }),
-      ])
+      ]);
     case "playmaker":
       return joinHighlightLines([
         passLine(item.passesMade, item.passAttempts, percentFormat, t),
@@ -287,17 +280,17 @@ function highlightSecondary(
           : t("player.matchDetail.highlights.rating", {
               rating: numberFormat.format(item.rating),
             }),
-      ])
+      ]);
     case "rival":
       return joinHighlightLines([
         passLine(item.passesMade, item.passAttempts, percentFormat, t),
         item.tacklesMade === null
           ? null
           : t("player.matchDetail.highlights.tackles", { count: item.tacklesMade }),
-      ])
+      ]);
     default: {
-      const _exhaustive: never = item
-      return _exhaustive
+      const _exhaustive: never = item;
+      return _exhaustive;
     }
   }
 }
@@ -308,13 +301,13 @@ function passLine(
   percentFormat: Intl.NumberFormat,
   t: Translator,
 ): string | null {
-  if (made === null || attempts === null || attempts === 0) return null
+  if (made === null || attempts === null || attempts === 0) return null;
   return t("player.matchDetail.highlights.passAccuracy", {
     percent: percentFormat.format(made / attempts),
-  })
+  });
 }
 
 function joinHighlightLines(parts: readonly (string | null)[]): string | null {
-  const lines = parts.filter((part): part is string => part !== null)
-  return lines.length === 0 ? null : lines.join(" · ")
+  const lines = parts.filter((part): part is string => part !== null);
+  return lines.length === 0 ? null : lines.join(" · ");
 }

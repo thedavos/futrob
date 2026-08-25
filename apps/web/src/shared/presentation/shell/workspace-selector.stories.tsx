@@ -10,7 +10,8 @@ import {
 } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
 import { WorkspaceSelector } from "./workspace-selector.tsx";

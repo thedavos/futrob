@@ -10,7 +10,6 @@ import {
   FieldError,
   FieldLabel,
   Input,
-  media,
   Select,
   SelectContent,
   SelectItem,
@@ -18,6 +17,7 @@ import {
   SelectValue,
   typography,
 } from "@futrob/ui";
+import { media } from "@futrob/ui/styles/public.stylex";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { competitionFormatSchema, competitionRegionSchema } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";

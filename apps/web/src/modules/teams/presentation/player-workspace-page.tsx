@@ -7,14 +7,13 @@ import {
   ChoiceGroup,
   ChoiceGroupIndicator,
   ChoiceGroupItem,
-  colors,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
   EmptyStateTitle,
-  media,
   typography,
 } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import type { PlayerGameAccountDto, PlayerTeamMembershipDto } from "@futrob/api-contracts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {

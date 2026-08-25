@@ -148,7 +148,9 @@ function ProfileReady({
   return (
     <div {...applyStyles(styles.ready)}>
       <section aria-label={t("player.statistics.summary")} {...applyStyles(styles.section)}>
-        <p {...applyStyles(pageTypography.caption, styles.muted)}>{t("player.statistics.sampleHint")}</p>
+        <p {...applyStyles(pageTypography.caption, styles.muted)}>
+          {t("player.statistics.sampleHint")}
+        </p>
         <StatGroup>
           <Stat>
             <StatLabel>{t("player.statistics.elo")}</StatLabel>
@@ -218,7 +220,11 @@ function ProfileReady({
 
 function ProfileLoading({ t }: { readonly t: Translator }) {
   return (
-    <section aria-busy="true" aria-label={t("player.statistics.loading")} {...applyStyles(styles.loading)}>
+    <section
+      aria-busy="true"
+      aria-label={t("player.statistics.loading")}
+      {...applyStyles(styles.loading)}
+    >
       <p {...applyStyles(pageTypography.caption, styles.muted)}>{t("player.statistics.loading")}</p>
       <div {...applyStyles(styles.loadingGrid)}>
         <Skeleton {...applyStyles(styles.skeletonStat)} />

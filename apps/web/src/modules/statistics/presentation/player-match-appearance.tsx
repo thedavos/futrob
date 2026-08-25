@@ -1,11 +1,12 @@
-"use client"
+"use client";
 
-import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts"
-import * as stylex from "@stylexjs/stylex"
-import { applyStyles, Badge, colors, typography, type Icon, type IconWeight } from "@futrob/ui"
-import { HandshakeIcon, RectangleIcon, SoccerBallIcon, StarIcon } from "@phosphor-icons/react"
-import type { Translator } from "@/shared/presentation/i18n/translate.ts"
-import { playedAppearance, showsYellowCards } from "./player-match-view.ts"
+import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Badge, typography, type Icon, type IconWeight } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
+import { HandshakeIcon, RectangleIcon, SoccerBallIcon, StarIcon } from "@phosphor-icons/react";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { playedAppearance, showsYellowCards } from "./player-match-view.ts";
 
 const styles = stylex.create({
   wrap: {
@@ -143,7 +144,7 @@ const styles = stylex.create({
   valueStrong: {
     fontWeight: 600,
   },
-})
+});
 
 export function MatchAppearanceStrip({
   item,
@@ -151,15 +152,15 @@ export function MatchAppearanceStrip({
   numberFormat,
   t,
 }: {
-  readonly item: PlayerRecentProviderMatchDto
-  readonly mvpLabel: string | null
-  readonly numberFormat: Intl.NumberFormat
-  readonly t: Translator
+  readonly item: PlayerRecentProviderMatchDto;
+  readonly mvpLabel: string | null;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly t: Translator;
 }) {
-  const appearance = playedAppearance(item)
-  if (!appearance) return null
-  const showYellow = showsYellowCards(appearance.yellowCards)
-  const name = appearance.displayName.trim()
+  const appearance = playedAppearance(item);
+  if (!appearance) return null;
+  const showYellow = showsYellowCards(appearance.yellowCards);
+  const name = appearance.displayName.trim();
   return (
     <div {...applyStyles(styles.wrap)}>
       <div {...applyStyles(styles.strip)}>
@@ -226,7 +227,7 @@ export function MatchAppearanceStrip({
         </Badge>
       </div>
     </div>
-  )
+  );
 }
 
 function MatchMvpBadge({ label }: { readonly label: string }) {
@@ -235,7 +236,7 @@ function MatchMvpBadge({ label }: { readonly label: string }) {
       <StarIcon aria-hidden="true" weight="fill" {...applyStyles(styles.mvpIcon)} />
       <span {...applyStyles(styles.mvpLabel)}>{label}</span>
     </Badge>
-  )
+  );
 }
 
 function AppearanceStripStat({
@@ -248,17 +249,17 @@ function AppearanceStripStat({
   unitKey,
   value,
 }: {
-  readonly icon: Icon
-  readonly iconStyle?: "default" | "yellow"
-  readonly iconWeight?: IconWeight
-  readonly metric: string
-  readonly numberFormat: Intl.NumberFormat
-  readonly t: Translator
+  readonly icon: Icon;
+  readonly iconStyle?: "default" | "yellow";
+  readonly iconWeight?: IconWeight;
+  readonly metric: string;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly t: Translator;
   readonly unitKey:
     | "player.matches.appearance.goalsUnit"
     | "player.matches.appearance.assistsUnit"
-    | null
-  readonly value: number | null
+    | null;
+  readonly value: number | null;
 }) {
   return (
     <span {...applyStyles(styles.stat)}>
@@ -289,9 +290,9 @@ function AppearanceStripStat({
         </>
       )}
     </span>
-  )
+  );
 }
 
 function ratingBadgeVariant(rating: number | null): "primary" | "outline" {
-  return rating !== null && rating >= 7 ? "primary" : "outline"
+  return rating !== null && rating >= 7 ? "primary" : "outline";
 }

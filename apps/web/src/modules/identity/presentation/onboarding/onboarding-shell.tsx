@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, Logo, media, Stepper, typography, type StepperStep } from "@futrob/ui";
+import { applyStyles, Logo, Stepper, typography, type StepperStep } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import {
   SupportErrorAlert,
   type SupportError,

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors } from "@futrob/ui";
+import { applyStyles } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { PlayerEaClubsPage } from "@/modules/teams/presentation/player-ea-clubs-page.tsx";
 import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
 

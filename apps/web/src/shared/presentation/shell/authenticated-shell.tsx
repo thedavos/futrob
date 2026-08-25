@@ -4,12 +4,11 @@ import {
   ActionBar,
   applyStyles,
   Button,
-  colors,
-  media,
   SidebarInset,
   SidebarProvider,
   SidebarRail,
 } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import {
   ShellActionBarProvider,

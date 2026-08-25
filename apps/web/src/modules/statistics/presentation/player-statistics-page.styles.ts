@@ -1,6 +1,6 @@
-import * as stylex from "@stylexjs/stylex"
-import { colors, media, typography } from "@futrob/ui"
-
+import * as stylex from "@stylexjs/stylex";
+import { typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 export const styles = stylex.create({
   main: {
     width: "100%",
@@ -68,9 +68,9 @@ export const styles = stylex.create({
   skeletonChart: {
     height: "18rem",
   },
-})
+});
 
 export const pageTypography = {
   caption: typography.caption,
   label: typography.label,
-}
+};

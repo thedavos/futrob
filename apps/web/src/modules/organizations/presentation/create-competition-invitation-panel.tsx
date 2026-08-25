@@ -7,13 +7,13 @@ import {
   AlertDescription,
   applyStyles,
   Button,
-  colors,
   Field,
   FieldLabel,
   Input,
   typography,
   useCopyToClipboard,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { CheckIcon, WarningCircleIcon, CopyIcon, LinkSimpleIcon } from "@phosphor-icons/react";
 import { buildInvitationShareUrl } from "@/modules/organizations/presentation/invitation-share-url.ts";
 import { useCreateCompetitionInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
@@ -112,11 +112,7 @@ export function CreateCompetitionInvitationPanel({
         onClick={() => void handleCreate()}
         type="button"
       >
-        <LinkSimpleIcon
-          aria-hidden="true"
-          className={icon.className}
-          style={icon.style}
-        />
+        <LinkSimpleIcon aria-hidden="true" className={icon.className} style={icon.style} />
         Generar link de invitación
       </Button>
 

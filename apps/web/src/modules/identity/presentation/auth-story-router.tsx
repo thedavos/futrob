@@ -8,8 +8,8 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, media, typography } from "@futrob/ui";
-
+import { applyHost, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { AuthFormHeader } from "@/modules/identity/presentation/auth-form-header.tsx";
 import { LoginForm } from "@/modules/identity/presentation/login-form.tsx";
 import { SignupForm } from "@/modules/identity/presentation/signup-form.tsx";

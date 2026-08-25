@@ -28,7 +28,11 @@ export function LocaleSelect() {
       }}
       value={locale}
     >
-      <SelectTrigger aria-label={t("locale.label")} className={trigger.className} style={trigger.style}>
+      <SelectTrigger
+        aria-label={t("locale.label")}
+        className={trigger.className}
+        style={trigger.style}
+      >
         {locale === "es" ? t("locale.es") : t("locale.en")}
       </SelectTrigger>
       <SelectContent align="end">

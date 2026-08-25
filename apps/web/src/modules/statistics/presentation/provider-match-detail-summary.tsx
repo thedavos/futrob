@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as stylex from "@stylexjs/stylex"
+import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Avatar,
@@ -9,29 +9,28 @@ import {
   Card,
   CardContent,
   CardHeader,
-  colors,
-  media,
   Stat,
   StatLabel,
   typography,
-} from "@futrob/ui"
-import { StarIcon } from "@phosphor-icons/react"
-import { initialsFromName } from "@/shared/presentation/initials-from-name.ts"
-import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx"
-import type { Translator } from "@/shared/presentation/i18n/translate.ts"
-import { AverageRatingRing } from "./player-match-performance.tsx"
+} from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
+import { StarIcon } from "@phosphor-icons/react";
+import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
+import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { AverageRatingRing } from "./player-match-performance.tsx";
 import {
   providerPositionLabelKey,
   type PlayedAppearance,
   type ProviderMatchDetailModel,
-} from "./provider-match-detail-model.ts"
-import { TeamComparisonCard } from "./provider-match-detail-summary-comparison.tsx"
+} from "./provider-match-detail-model.ts";
+import { TeamComparisonCard } from "./provider-match-detail-summary-comparison.tsx";
 import {
   MatchHighlightsCard,
   summaryCard,
   summaryCardContent,
   summaryCardHeader,
-} from "./provider-match-detail-summary-highlights.tsx"
+} from "./provider-match-detail-summary-highlights.tsx";
 
 const styles = stylex.create({
   stack: {
@@ -129,21 +128,21 @@ const styles = stylex.create({
     width: "2.75rem",
     height: "2.75rem",
   },
-})
+});
 
 export function MatchDetailSummary({
   model,
   numberFormat,
   t,
 }: {
-  readonly model: ProviderMatchDetailModel
-  readonly numberFormat: Intl.NumberFormat
-  readonly t: Translator
+  readonly model: ProviderMatchDetailModel;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly t: Translator;
 }) {
   const percentFormat = new Intl.NumberFormat(numberFormat.resolvedOptions().locale, {
     style: "percent",
     maximumFractionDigits: 0,
-  })
+  });
 
   return (
     <div {...applyStyles(styles.stack)}>
@@ -168,7 +167,7 @@ export function MatchDetailSummary({
         t={t}
       />
     </div>
-  )
+  );
 }
 
 function YourPerformanceCard({
@@ -177,14 +176,14 @@ function YourPerformanceCard({
   percentFormat,
   t,
 }: {
-  readonly appearance: PlayedAppearance | null
-  readonly numberFormat: Intl.NumberFormat
-  readonly percentFormat: Intl.NumberFormat
-  readonly t: Translator
+  readonly appearance: PlayedAppearance | null;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
+  readonly t: Translator;
 }) {
-  const card = applyStyles(summaryCard)
-  const header = applyStyles(summaryCardHeader)
-  const content = applyStyles(summaryCardContent)
+  const card = applyStyles(summaryCard);
+  const header = applyStyles(summaryCardHeader);
+  const content = applyStyles(summaryCardContent);
   return (
     <Card className={card.className} data-personal-summary="" style={card.style}>
       <CardHeader className={header.className} style={header.style}>
@@ -205,7 +204,7 @@ function YourPerformanceCard({
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function PlayedPerformance({
@@ -214,24 +213,24 @@ function PlayedPerformance({
   percentFormat,
   t,
 }: {
-  readonly appearance: PlayedAppearance
-  readonly numberFormat: Intl.NumberFormat
-  readonly percentFormat: Intl.NumberFormat
-  readonly t: Translator
+  readonly appearance: PlayedAppearance;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
+  readonly t: Translator;
 }) {
-  const positionKey = appearance.position ? providerPositionLabelKey(appearance.position) : null
+  const positionKey = appearance.position ? providerPositionLabelKey(appearance.position) : null;
   const positionLabel = appearance.position
     ? positionKey
       ? t(positionKey)
       : appearance.position
-    : t("player.position.unknown")
+    : t("player.position.unknown");
   const minutesLabel =
     appearance.minutesPlayed === null
       ? null
-      : t("player.matchDetail.minutesPlayed", { minutes: appearance.minutesPlayed })
+      : t("player.matchDetail.minutesPlayed", { minutes: appearance.minutesPlayed });
   const identityMeta = [positionLabel, minutesLabel].filter(
     (part): part is string => part !== null,
-  )
+  );
   return (
     <div {...applyStyles(styles.played)}>
       <div {...applyStyles(styles.identityRow)}>
@@ -296,7 +295,7 @@ function PlayedPerformance({
         />
       </div>
     </div>
-  )
+  );
 }
 
 function PerformanceStat({
@@ -305,13 +304,13 @@ function PerformanceStat({
   t,
   value,
 }: {
-  readonly label: string
-  readonly metric: string
-  readonly t: Translator
-  readonly value: string | null
+  readonly label: string;
+  readonly metric: string;
+  readonly t: Translator;
+  readonly value: string | null;
 }) {
-  const metricStat = applyStyles(styles.metricStat)
-  const metricLabel = applyStyles(styles.metricLabel)
+  const metricStat = applyStyles(styles.metricStat);
+  const metricLabel = applyStyles(styles.metricLabel);
   return (
     <div {...applyStyles(styles.metric)}>
       <Stat align="center" className={metricStat.className} style={metricStat.style}>
@@ -321,7 +320,7 @@ function PerformanceStat({
         </StatLabel>
       </Stat>
     </div>
-  )
+  );
 }
 
 function PlayerAvatar({ name }: { readonly name: string }) {
@@ -329,7 +328,7 @@ function PlayerAvatar({ name }: { readonly name: string }) {
     <Avatar {...applyStyles(styles.avatar)}>
       <AvatarFallback>{initialsFromName(name)}</AvatarFallback>
     </Avatar>
-  )
+  );
 }
 
 function accuracyPercent(
@@ -337,6 +336,6 @@ function accuracyPercent(
   attempts: number | null,
   percentFormat: Intl.NumberFormat,
 ): string | null {
-  if (made === null || attempts === null || attempts === 0) return null
-  return percentFormat.format(made / attempts)
+  if (made === null || attempts === null || attempts === 0) return null;
+  return percentFormat.format(made / attempts);
 }

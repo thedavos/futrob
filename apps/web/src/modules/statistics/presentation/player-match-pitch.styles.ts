@@ -1,5 +1,5 @@
-import * as stylex from "@stylexjs/stylex"
-import { colors, media } from "@futrob/ui"
+import * as stylex from "@stylexjs/stylex";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 
 export const styles = stylex.create({
   root: {
@@ -61,4 +61,4 @@ export const styles = stylex.create({
     transformOrigin: "right",
     transform: "translate(-50%, -50%) rotateY(-60deg)",
   },
-})
+});

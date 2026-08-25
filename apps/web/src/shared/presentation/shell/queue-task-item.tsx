@@ -2,8 +2,8 @@
 
 import type { ComponentProps } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, colors, media, typography, type Icon } from "@futrob/ui";
-
+import { applyHost, applyStyles, typography, type Icon } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 export type QueueTaskTone = "default" | "urgent" | "waiting" | "resolved";
 
 type QueueTaskItemSharedProps = {

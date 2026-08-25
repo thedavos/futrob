@@ -1,7 +1,8 @@
 import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors } from "@futrob/ui";
+import { applyStyles } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { AuthenticatedShell } from "@/shared/presentation/shell/authenticated-shell.tsx";
 

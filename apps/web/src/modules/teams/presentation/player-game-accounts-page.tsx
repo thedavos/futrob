@@ -11,13 +11,11 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  colors,
   Field,
   FieldError,
   FieldLabel,
   Form,
   Input,
-  media,
   Select,
   SelectContent,
   SelectItem,
@@ -26,6 +24,7 @@ import {
   readFormString,
   typography,
 } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { Link } from "@tanstack/react-router";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";

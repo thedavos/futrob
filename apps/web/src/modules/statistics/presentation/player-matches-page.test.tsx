@@ -69,9 +69,9 @@ describe("PlayerMatchesPage", () => {
 
     expect(screen.getByText("Cargando tus partidos…")).toBeTruthy();
     expect(screen.getByLabelText("Cargando el resumen de partidos…")).toBeTruthy();
-    expect(screen.getByLabelText("Cargando el resumen de partidos…").getAttribute("data-record-cards")).toBe(
-      "3",
-    );
+    expect(
+      screen.getByLabelText("Cargando el resumen de partidos…").getAttribute("data-record-cards"),
+    ).toBe("3");
     expect(screen.queryByText("Oficiales")).toBeNull();
   });
 
@@ -173,18 +173,20 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-metric-icon='recent-rating']")).toBeTruthy();
     expect(document.querySelector("[data-metric-icon='recent-yellow']")).toBeTruthy();
     expect(document.querySelector("[data-match-type='leagueMatch']")?.textContent).toBe("Liga");
-    expect(document.querySelector("[data-match-type='leagueMatch']")?.getAttribute("data-variant")).toBe(
-      "emphasis",
-    );
-    expect(document.querySelector("[data-match-outcome='win']:not([data-match-score])")).toBeTruthy();
+    expect(
+      document.querySelector("[data-match-type='leagueMatch']")?.getAttribute("data-variant"),
+    ).toBe("emphasis");
+    expect(
+      document.querySelector("[data-match-outcome='win']:not([data-match-score])"),
+    ).toBeTruthy();
     expect(document.querySelector("[data-match-chevron]")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ver Inter 2 – 1 Milan" }).getAttribute("href")).toBe(
       "/player/matches/ea-clubs/ea-1?view=all&sort=newest",
     );
     expect(document.querySelectorAll("[data-mvp]")).toHaveLength(1);
-    expect(document.querySelector("[data-slot='club-crest-avatar']")?.getAttribute("data-slot")).toBe(
-      "club-crest-avatar",
-    );
+    expect(
+      document.querySelector("[data-slot='club-crest-avatar']")?.getAttribute("data-slot"),
+    ).toBe("club-crest-avatar");
     expect(
       screen
         .getByText("8,4", { selector: "[data-metric='recent-rating']" })
@@ -201,12 +203,12 @@ describe("PlayerMatchesPage", () => {
       "2",
     );
     const homeWinItem = screen.getByRole("listitem", { name: /Inter 2 – 1 Milan/ });
-    expect(homeWinItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill")).toBe(
-      "win",
-    );
-    expect(homeWinItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill")).toBe(
-      "loss",
-    );
+    expect(
+      homeWinItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill"),
+    ).toBe("win");
+    expect(
+      homeWinItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill"),
+    ).toBe("loss");
     const homeWatermark = homeWinItem.querySelector("[data-pitch-watermark='home']");
     expect(homeWatermark?.getAttribute("src")).toBe("https://example.com/inter.png");
     expect(homeWinItem.querySelector("[data-pitch-watermark='away']")).toBeNull();
@@ -222,7 +224,9 @@ describe("PlayerMatchesPage", () => {
     ).toEqual(["Rendimiento", "Record", "Contribuciones"]);
     expect(summary.getAttribute("data-record-cards")).toBe("3");
     expect(
-      screen.getByRole("heading", { name: "Rendimiento" }).closest("[data-slot='card']")
+      screen
+        .getByRole("heading", { name: "Rendimiento" })
+        .closest("[data-slot='card']")
         ?.getAttribute("data-record-slot"),
     ).toBe("performance");
     expect(
@@ -232,7 +236,9 @@ describe("PlayerMatchesPage", () => {
         ?.getAttribute("data-record-slot"),
     ).toBe("contributions");
     expect(
-      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")
+      screen
+        .getByRole("heading", { name: "Record" })
+        .closest("[data-slot='card']")
         ?.getAttribute("data-record-slot"),
     ).toBe("record");
     expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
@@ -318,12 +324,12 @@ describe("PlayerMatchesPage", () => {
     );
     expect(document.querySelector("[data-match-outcome='draw']")).toBeTruthy();
     const drawItem = screen.getByRole("listitem", { name: /Atlético Norte 1 – 1 Fera Enjaulada/ });
-    expect(drawItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill")).toBe(
-      "drawHome",
-    );
-    expect(drawItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill")).toBe(
-      "drawAway",
-    );
+    expect(
+      drawItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill"),
+    ).toBe("drawHome");
+    expect(
+      drawItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill"),
+    ).toBe("drawAway");
     expect(drawItem.querySelector("[data-pitch-fill='win']")).toBeNull();
     expect(drawItem.querySelector("[data-pitch-fill='loss']")).toBeNull();
     expect(document.querySelector("[data-form-segment='draw']")).toBeTruthy();
@@ -454,29 +460,29 @@ describe("PlayerMatchesPage", () => {
       document.querySelector("[data-match-score]"),
     );
     expect(document.querySelector("[data-match-type='leagueMatch']")?.textContent).toBe("Liga");
-    expect(document.querySelector("[data-match-type='leagueMatch']")?.getAttribute("data-variant")).toBe(
-      "emphasis",
-    );
+    expect(
+      document.querySelector("[data-match-type='leagueMatch']")?.getAttribute("data-variant"),
+    ).toBe("emphasis");
     expect(document.querySelector("[data-match-type='playoffMatch']")?.textContent).toBe("Playoff");
-    expect(document.querySelector("[data-match-type='playoffMatch']")?.getAttribute("data-variant")).toBe(
-      "info",
-    );
+    expect(
+      document.querySelector("[data-match-type='playoffMatch']")?.getAttribute("data-variant"),
+    ).toBe("info");
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
     expect(document.querySelector("[data-match-outcome='loss']")).toBeTruthy();
     const awayWinItem = screen.getByRole("listitem", { name: /Cuervos FC 0 – 3 Fera Barranco/ });
-    expect(awayWinItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill")).toBe(
-      "win",
-    );
-    expect(awayWinItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill")).toBe(
-      "loss",
-    );
+    expect(
+      awayWinItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill"),
+    ).toBe("win");
+    expect(
+      awayWinItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill"),
+    ).toBe("loss");
     expect(document.querySelector("[data-match-outcome='loss']")).toBeTruthy();
     expect(document.querySelector("[data-scoring-feat='hatTrick']")?.textContent).toContain(
       "Hat-trick",
     );
-    expect(document.querySelector("[data-scoring-feat='hatTrick']")?.getAttribute("data-variant")).toBe(
-      "warning",
-    );
+    expect(
+      document.querySelector("[data-scoring-feat='hatTrick']")?.getAttribute("data-variant"),
+    ).toBe("warning");
     expect(screen.getByText("1", { selector: "[data-metric='recent-yellow']" })).toBeTruthy();
     expect(screen.getByText("2", { selector: "[data-metric='recent-yellow']" })).toBeTruthy();
     expect(screen.getByText("1", { selector: "[data-metric='recent-red']" })).toBeTruthy();
@@ -535,9 +541,9 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-scoring-feat='hatTrick']")?.textContent).toContain(
       "Hat-trick",
     );
-    expect(document.querySelector("[data-scoring-feat='hatTrick']")?.getAttribute("data-variant")).toBe(
-      "warning",
-    );
+    expect(
+      document.querySelector("[data-scoring-feat='hatTrick']")?.getAttribute("data-variant"),
+    ).toBe("warning");
     expect(
       document.querySelector("[data-scoring-feat='hatTrick']")?.getAttribute("data-feat-scorer"),
     ).toBe("davos282");
@@ -690,11 +696,15 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-metric='record-pace']")).toBeNull();
     expect(document.querySelector("[data-metric='record-share']")).toBeNull();
     expect(document.querySelector("[data-rating-ring]")).toBeNull();
-    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).getAttribute("data-record-cards")).toBe(
-      "1",
-    );
     expect(
-      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")
+      screen
+        .getByRole("group", { name: "Resumen de esta vista" })
+        .getAttribute("data-record-cards"),
+    ).toBe("1");
+    expect(
+      screen
+        .getByRole("heading", { name: "Record" })
+        .closest("[data-slot='card']")
         ?.getAttribute("data-record-slot"),
     ).toBe("record");
   });

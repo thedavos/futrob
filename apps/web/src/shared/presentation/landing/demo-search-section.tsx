@@ -1,8 +1,8 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, media, typography } from "@futrob/ui";
-
+import { applyStyles, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { ClubSearchPanel } from "@/modules/game-data/presentation/club-search-panel.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 

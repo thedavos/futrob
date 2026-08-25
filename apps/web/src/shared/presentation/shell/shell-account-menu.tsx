@@ -7,13 +7,13 @@ import {
   Avatar,
   AvatarFallback,
   Button,
-  colors,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
@@ -127,7 +127,12 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
           )}
         </span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className={menu.className} side="bottom" style={menu.style}>
+      <DropdownMenuContent
+        align="start"
+        className={menu.className}
+        side="bottom"
+        style={menu.style}
+      >
         {items.map((item) => (
           <DropdownMenuItem
             disabled={item.stub}

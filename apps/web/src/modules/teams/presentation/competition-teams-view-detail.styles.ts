@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { colors, media } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 
 export const styles = stylex.create({
   emptyWrap: {

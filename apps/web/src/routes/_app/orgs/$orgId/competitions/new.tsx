@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, typography } from "@futrob/ui";
+import { applyStyles, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { CreateCompetitionForm } from "@/modules/competitions/presentation/create-competition-form.tsx";
 
 const styles = stylex.create({

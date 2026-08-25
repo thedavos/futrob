@@ -1,18 +1,8 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import {
-  applyStyles,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  colors,
-  media,
-  typography,
-  type Icon,
-} from "@futrob/ui";
-
+import { applyStyles, Badge, Button, Card, CardContent, typography, type Icon } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 const styles = stylex.create({
   card: {
     marginInline: "auto",

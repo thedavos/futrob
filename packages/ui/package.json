@@ -11,6 +11,9 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./styles/public.stylex": "./src/styles/public.stylex.ts",
+    "./styles/tokens.stylex": "./src/styles/tokens.stylex.ts",
+    "./styles/media.stylex": "./src/styles/media.stylex.ts",
     "./styles.css": "./src/styles.css",
     "./tailwind.css": "./src/tailwind.css",
     "./tokens.css": "./src/tokens.css",

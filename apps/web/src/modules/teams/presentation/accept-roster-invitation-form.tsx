@@ -7,7 +7,6 @@ import {
   AlertDescription,
   applyStyles,
   Button,
-  colors,
   Field,
   FieldError,
   FieldLabel,
@@ -17,6 +16,7 @@ import {
   hasBrowserWindow,
   typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CheckCircleIcon } from "@phosphor-icons/react";
 import { resolveSafeRedirect } from "@/modules/identity/presentation/safe-redirect.ts";

@@ -1,25 +1,25 @@
-"use client"
+"use client";
 
-import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts"
-import * as stylex from "@stylexjs/stylex"
-import { applyStyles, StatGroup, StatValue } from "@futrob/ui"
-import { EqualsIcon, TrendDownIcon, TrophyIcon } from "@phosphor-icons/react"
-import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx"
-import { IconStat } from "@/shared/presentation/stats/icon-stat.tsx"
+import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, StatGroup, StatValue } from "@futrob/ui";
+import { EqualsIcon, TrendDownIcon, TrophyIcon } from "@phosphor-icons/react";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { IconStat } from "@/shared/presentation/stats/icon-stat.tsx";
 import {
   statTripleGrid,
   SummaryCard,
   SummaryCardLoading,
-} from "@/shared/presentation/stats/summary-card.tsx"
-import { ContributionInsights, ContributionsHero } from "./player-match-contributions.tsx"
-import { RecentForm } from "./player-match-form.tsx"
-import { PerformancePanel } from "./player-match-performance.tsx"
+} from "@/shared/presentation/stats/summary-card.tsx";
+import { ContributionInsights, ContributionsHero } from "./player-match-contributions.tsx";
+import { RecentForm } from "./player-match-form.tsx";
+import { PerformancePanel } from "./player-match-performance.tsx";
 import {
   showsContributionStats,
   showsPerformanceStats,
   showsRecentForm,
   type MatchRecordSummary,
-} from "./player-match-view.ts"
+} from "./player-match-view.ts";
 
 const styles = stylex.create({
   container: {
@@ -86,22 +86,22 @@ const styles = stylex.create({
       "@container (min-width: 64rem)": "auto",
     },
   },
-})
+});
 
 function visibleRecordCardCount(showPerformance: boolean, showContributions: boolean): 1 | 2 | 3 {
-  if (showPerformance && showContributions) return 3
-  if (showPerformance || showContributions) return 2
-  return 1
+  if (showPerformance && showContributions) return 3;
+  if (showPerformance || showContributions) return 2;
+  return 1;
 }
 
 function recordGridStyle(visibleCards: 1 | 2 | 3) {
   switch (visibleCards) {
     case 1:
-      return styles.cards1
+      return styles.cards1;
     case 2:
-      return styles.cards2
+      return styles.cards2;
     default:
-      return styles.cards3
+      return styles.cards3;
   }
 }
 
@@ -110,15 +110,15 @@ export function ViewRecord({
   numberFormat,
   record,
 }: {
-  readonly matches: readonly PlayerRecentProviderMatchDto[]
-  readonly numberFormat: Intl.NumberFormat
-  readonly record: MatchRecordSummary
+  readonly matches: readonly PlayerRecentProviderMatchDto[];
+  readonly numberFormat: Intl.NumberFormat;
+  readonly record: MatchRecordSummary;
 }) {
-  const { t } = useI18n()
-  const showPerformance = showsPerformanceStats(record)
-  const showContributions = showsContributionStats(record)
-  const visibleCards = visibleRecordCardCount(showPerformance, showContributions)
-  const threeCard = visibleCards === 3
+  const { t } = useI18n();
+  const showPerformance = showsPerformanceStats(record);
+  const showContributions = showsContributionStats(record);
+  const visibleCards = visibleRecordCardCount(showPerformance, showContributions);
+  const threeCard = visibleCards === 3;
 
   return (
     <div {...applyStyles(styles.container)}>
@@ -195,11 +195,11 @@ export function ViewRecord({
         ) : null}
       </div>
     </div>
-  )
+  );
 }
 
 export function RecordLoading() {
-  const { t } = useI18n()
+  const { t } = useI18n();
   return (
     <div {...applyStyles(styles.container)}>
       <div
@@ -220,5 +220,5 @@ export function RecordLoading() {
         />
       </div>
     </div>
-  )
+  );
 }

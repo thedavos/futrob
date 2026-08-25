@@ -251,7 +251,9 @@ function RosterLoading({ t }: { readonly t: Translator }) {
       role="status"
       {...applyStyles(styles.loading)}
     >
-      <p {...applyStyles(detailTypography.caption, styles.muted)}>{t("player.matchDetail.loading")}</p>
+      <p {...applyStyles(detailTypography.caption, styles.muted)}>
+        {t("player.matchDetail.loading")}
+      </p>
       {[0, 1].map((section) => (
         <div key={section} {...applyStyles(styles.loadingSection)}>
           <Skeleton {...applyStyles(styles.skeletonTitle)} />

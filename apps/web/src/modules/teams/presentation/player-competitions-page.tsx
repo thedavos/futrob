@@ -7,7 +7,6 @@ import {
   AlertDescription,
   applyStyles,
   Button,
-  colors,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
@@ -15,6 +14,7 @@ import {
   EmptyStateTitle,
   typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { TrophyIcon } from "@phosphor-icons/react";
 import { useMyTeamsQuery } from "./player-queries.ts";
 
@@ -129,9 +129,7 @@ export function PlayerCompetitionsPage() {
             {competitions.map((competition) => (
               <li key={competition.competitionId} {...applyStyles(styles.item)}>
                 <span {...applyStyles(styles.copy)}>
-                  <span {...applyStyles(styles.name)}>
-                    Competición {competition.competitionId}
-                  </span>
+                  <span {...applyStyles(styles.name)}>Competición {competition.competitionId}</span>
                   <span {...applyStyles(typography.caption, styles.meta)}>
                     Equipo {competition.teamName}
                   </span>

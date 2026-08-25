@@ -1,28 +1,29 @@
-"use client"
+"use client";
 
-import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts"
-import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react"
-import * as stylex from "@stylexjs/stylex"
-import { applyHost, applyStyles, colors, Stat, StatLabel, StatValue, typography } from "@futrob/ui"
-import type { CSSProperties } from "react"
-import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts"
-import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx"
-import { formatSignedNumber } from "@/shared/presentation/stats/format-signed-number.ts"
-import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx"
+import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
+import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, applyStyles, Stat, StatLabel, StatValue, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
+import type { CSSProperties } from "react";
+import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { formatSignedNumber } from "@/shared/presentation/stats/format-signed-number.ts";
+import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
 import {
   ratingTrendVsLast,
   RATING_SCALE_MAX,
   type MatchRecordSummary,
   type RatingTrend,
-} from "./player-match-view.ts"
+} from "./player-match-view.ts";
 
-type TrendDirection = "up" | "down" | "flat"
+type TrendDirection = "up" | "down" | "flat";
 
 const TREND_STATUS_KEYS = {
   up: "player.matches.performance.improved",
   down: "player.matches.performance.declined",
   flat: "player.matches.performance.unchanged",
-} as const satisfies Record<TrendDirection, ParameterlessMessageKey>
+} as const satisfies Record<TrendDirection, ParameterlessMessageKey>;
 
 const styles = stylex.create({
   panel: {
@@ -104,16 +105,16 @@ const styles = stylex.create({
     fontWeight: 500,
     fontVariantNumeric: "tabular-nums",
   },
-})
+});
 
 function trendTone(direction: TrendDirection) {
   switch (direction) {
     case "up":
-      return styles.trendUp
+      return styles.trendUp;
     case "down":
-      return styles.trendDown
+      return styles.trendDown;
     default:
-      return styles.trendFlat
+      return styles.trendFlat;
   }
 }
 
@@ -122,14 +123,14 @@ export function PerformancePanel({
   numberFormat,
   record,
 }: {
-  readonly matches: readonly PlayerRecentProviderMatchDto[]
-  readonly numberFormat: Intl.NumberFormat
-  readonly record: MatchRecordSummary
+  readonly matches: readonly PlayerRecentProviderMatchDto[];
+  readonly numberFormat: Intl.NumberFormat;
+  readonly record: MatchRecordSummary;
 }) {
-  const { t } = useI18n()
-  const rating = record.averageRating
-  if (rating === null) return null
-  const trend = ratingTrendVsLast(matches)
+  const { t } = useI18n();
+  const rating = record.averageRating;
+  if (rating === null) return null;
+  const trend = ratingTrendVsLast(matches);
   return (
     <div {...applyStyles(styles.panel)}>
       <div {...applyStyles(styles.row)}>
@@ -140,14 +141,16 @@ export function PerformancePanel({
         />
         <div {...applyStyles(styles.stats)}>
           <Stat>
-            <StatValue data-metric="record-matches">{numberFormat.format(matches.length)}</StatValue>
+            <StatValue data-metric="record-matches">
+              {numberFormat.format(matches.length)}
+            </StatValue>
             <StatLabel>{t("player.metric.matches")}</StatLabel>
           </Stat>
           {trend ? <RatingTrendStat numberFormat={numberFormat} trend={trend} /> : null}
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function AverageRatingRing({
@@ -158,15 +161,15 @@ export function AverageRatingRing({
   size = "default",
   style,
 }: {
-  readonly className?: string
-  readonly label: string
-  readonly numberFormat: Intl.NumberFormat
-  readonly rating: number | null
-  readonly size?: "default" | "compact"
-  readonly style?: CSSProperties
+  readonly className?: string;
+  readonly label: string;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly rating: number | null;
+  readonly size?: "default" | "compact";
+  readonly style?: CSSProperties;
 }) {
-  const { t } = useI18n()
-  const progress = rating === null ? 0 : Math.min(1, Math.max(0, rating / RATING_SCALE_MAX)) * 100
+  const { t } = useI18n();
+  const progress = rating === null ? 0 : Math.min(1, Math.max(0, rating / RATING_SCALE_MAX)) * 100;
 
   return (
     <div
@@ -205,20 +208,20 @@ export function AverageRatingRing({
         <p {...applyStyles(typography.caption, styles.ringCaption)}>{label}</p>
       </div>
     </div>
-  )
+  );
 }
 
 function RatingTrendStat({
   numberFormat,
   trend,
 }: {
-  readonly numberFormat: Intl.NumberFormat
-  readonly trend: RatingTrend
+  readonly numberFormat: Intl.NumberFormat;
+  readonly trend: RatingTrend;
 }) {
-  const { t } = useI18n()
-  const direction = trendDirection(trend.delta)
-  const TrendIcon = direction === "down" ? TrendDownIcon : TrendUpIcon
-  const statusLabel = t(TREND_STATUS_KEYS[direction])
+  const { t } = useI18n();
+  const direction = trendDirection(trend.delta);
+  const TrendIcon = direction === "down" ? TrendDownIcon : TrendUpIcon;
+  const statusLabel = t(TREND_STATUS_KEYS[direction]);
 
   return (
     <p
@@ -240,11 +243,11 @@ function RatingTrendStat({
         {t("player.matches.performance.vsLast", { count: trend.window })}
       </span>
     </p>
-  )
+  );
 }
 
 function trendDirection(delta: number): TrendDirection {
-  if (delta > 0.005) return "up"
-  if (delta < -0.005) return "down"
-  return "flat"
+  if (delta > 0.005) return "up";
+  if (delta < -0.005) return "down";
+  return "flat";
 }

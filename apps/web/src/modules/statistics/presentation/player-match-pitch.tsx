@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { applyStyles } from "@futrob/ui"
+import { applyStyles } from "@futrob/ui";
 
-import { styles } from "./player-match-pitch.styles"
+import { styles } from "./player-match-pitch.styles";
 
 function matchScoreWinnerSide(homeGoals: number, awayGoals: number): "home" | "away" | "draw" {
-  if (homeGoals > awayGoals) return "home"
-  if (awayGoals > homeGoals) return "away"
-  return "draw"
+  if (homeGoals > awayGoals) return "home";
+  if (awayGoals > homeGoals) return "away";
+  return "draw";
 }
 
-type PitchHalfFill = "win" | "loss" | "drawHome" | "drawAway"
+type PitchHalfFill = "win" | "loss" | "drawHome" | "drawAway";
 
 export function MatchPitchWash({
   awayGoals,
@@ -18,36 +18,36 @@ export function MatchPitchWash({
   homeGoals,
   homeImageUrl,
 }: {
-  readonly awayGoals: number
-  readonly awayImageUrl: string | null
-  readonly homeGoals: number
-  readonly homeImageUrl: string | null
+  readonly awayGoals: number;
+  readonly awayImageUrl: string | null;
+  readonly homeGoals: number;
+  readonly homeImageUrl: string | null;
 }) {
-  const fills = pitchFillsForResult(matchScoreWinnerSide(homeGoals, awayGoals))
+  const fills = pitchFillsForResult(matchScoreWinnerSide(homeGoals, awayGoals));
   return (
     <div aria-hidden="true" {...applyStyles(styles.root)}>
       <MatchPitchHalf fill={fills.home} imageUrl={homeImageUrl} side="home" />
       <MatchPitchHalf fill={fills.away} imageUrl={awayImageUrl} side="away" />
     </div>
-  )
+  );
 }
 
 type PitchFills = {
-  readonly home: PitchHalfFill
-  readonly away: PitchHalfFill
-}
+  readonly home: PitchHalfFill;
+  readonly away: PitchHalfFill;
+};
 
 function pitchFillsForResult(result: "home" | "away" | "draw"): PitchFills {
   switch (result) {
     case "home":
-      return { home: "win", away: "loss" }
+      return { home: "win", away: "loss" };
     case "away":
-      return { home: "loss", away: "win" }
+      return { home: "loss", away: "win" };
     case "draw":
-      return { home: "drawHome", away: "drawAway" }
+      return { home: "drawHome", away: "drawAway" };
     default: {
-      const _exhaustive: never = result
-      return _exhaustive
+      const _exhaustive: never = result;
+      return _exhaustive;
     }
   }
 }
@@ -55,16 +55,16 @@ function pitchFillsForResult(result: "home" | "away" | "draw"): PitchFills {
 function pitchHalfWash(fill: PitchHalfFill) {
   switch (fill) {
     case "win":
-      return styles.washWin
+      return styles.washWin;
     case "loss":
-      return styles.washLoss
+      return styles.washLoss;
     case "drawHome":
-      return styles.washDrawHome
+      return styles.washDrawHome;
     case "drawAway":
-      return styles.washDrawAway
+      return styles.washDrawAway;
     default: {
-      const _exhaustive: never = fill
-      return _exhaustive
+      const _exhaustive: never = fill;
+      return _exhaustive;
     }
   }
 }
@@ -74,9 +74,9 @@ function MatchPitchHalf({
   imageUrl,
   side,
 }: {
-  readonly fill: PitchHalfFill
-  readonly imageUrl: string | null
-  readonly side: "home" | "away"
+  readonly fill: PitchHalfFill;
+  readonly imageUrl: string | null;
+  readonly side: "home" | "away";
 }) {
   return (
     <div
@@ -101,5 +101,5 @@ function MatchPitchHalf({
         />
       )}
     </div>
-  )
+  );
 }

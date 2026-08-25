@@ -5,15 +5,14 @@ import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
-  colors,
   EmptyState,
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  media,
   Skeleton,
   typography,
 } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { CircleNotchIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { runAction } from "@/shared/presentation/run-action.ts";
 import type { CompetitionTeamsViewProps } from "./competition-teams-view.tsx";

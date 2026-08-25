@@ -9,9 +9,9 @@ import {
   FieldError,
   FieldLabel,
   Input,
-  media,
   typography,
 } from "@futrob/ui";
+import { media } from "@futrob/ui/styles/public.stylex";
 import { FieldsetError } from "@/shared/presentation/forms/fieldset-error.tsx";
 import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
 

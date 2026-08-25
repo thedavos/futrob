@@ -1,6 +1,6 @@
-import * as stylex from "@stylexjs/stylex"
-import { colors, elevation, typography } from "@futrob/ui"
-
+import * as stylex from "@stylexjs/stylex";
+import { elevation, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 export const styles = stylex.create({
   item: {
     position: "relative",
@@ -204,14 +204,14 @@ export const styles = stylex.create({
     display: "inline-flex",
     maxWidth: "100%",
   },
-})
+});
 
 export const rowTypography = {
   caption: typography.caption,
   subtitle: typography.subtitle,
   score: typography.score,
-}
+};
 
 export const rowElevation = {
   score: elevation.md,
-}
+};

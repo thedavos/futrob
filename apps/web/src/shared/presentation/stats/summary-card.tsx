@@ -65,12 +65,7 @@ export function SummaryCard({
   const card = applyHost(className, style, styles.card);
   const content = applyStyles(styles.content);
   return (
-    <Card
-      aria-labelledby={headingId}
-      className={card.className}
-      style={card.style}
-      {...props}
-    >
+    <Card aria-labelledby={headingId} className={card.className} style={card.style} {...props}>
       <CardContent className={content.className} style={content.style}>
         <h2 id={headingId} {...applyStyles(typography.label)}>
           {title}

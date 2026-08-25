@@ -185,7 +185,10 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
                           {initialsFromName(member.presentation.displayName)}
                         </AvatarFallback>
                       </Avatar>
-                      <span title={member.presentation.displayName} {...applyStyles(styles.playerName)}>
+                      <span
+                        title={member.presentation.displayName}
+                        {...applyStyles(styles.playerName)}
+                      >
                         {member.presentation.displayName}
                       </span>
                     </span>

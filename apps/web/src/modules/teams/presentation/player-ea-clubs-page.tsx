@@ -10,14 +10,13 @@ import {
   AvatarImage,
   Badge,
   Button,
-  colors,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
   EmptyStateTitle,
-  media,
   typography,
 } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { Link } from "@tanstack/react-router";
 import { asEaSearchPlatform, gamePlatformForEaSearchLogo } from "@futrob/api-contracts";
 import type { PlayerExternalClubAssociationDto } from "@futrob/api-contracts";

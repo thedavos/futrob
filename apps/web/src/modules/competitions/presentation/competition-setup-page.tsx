@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, Button, Card, CardContent, colors, media, Stepper, typography } from "@futrob/ui";
+import { applyStyles, Badge, Button, Card, CardContent, Stepper, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import type {
   CompetitionDraftDto,
   CompetitionFormatDto,

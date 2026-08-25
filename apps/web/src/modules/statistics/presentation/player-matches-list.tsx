@@ -222,11 +222,7 @@ export function MatchesToolbar({
             </ChoiceGroupItem>
           ))}
         </ChoiceGroup>
-        <Separator
-          className={separator.className}
-          orientation="vertical"
-          style={separator.style}
-        />
+        <Separator className={separator.className} orientation="vertical" style={separator.style} />
         <div {...applyStyles(styles.toolbarEnd)}>
           <Select
             itemToStringLabel={(value) =>

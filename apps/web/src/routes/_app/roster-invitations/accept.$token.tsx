@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, Logo, media, typography } from "@futrob/ui";
+import { applyStyles, Logo, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { AcceptRosterInvitationForm } from "@/modules/teams/presentation/accept-roster-invitation-form.tsx";
 
 const styles = stylex.create({

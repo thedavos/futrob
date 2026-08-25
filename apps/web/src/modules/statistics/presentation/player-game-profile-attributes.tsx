@@ -2,8 +2,6 @@ import type { PlayerGameProfileDto } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
-  colors,
-  media,
   Progress,
   ProgressIndicator,
   ProgressLabel,
@@ -11,6 +9,7 @@ import {
   ProgressValue,
   typography,
 } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 

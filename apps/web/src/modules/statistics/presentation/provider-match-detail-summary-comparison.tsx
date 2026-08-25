@@ -1,16 +1,17 @@
-"use client"
+"use client";
 
-import * as stylex from "@stylexjs/stylex"
-import { applyHost, applyStyles, Card, CardContent, CardHeader, colors, typography } from "@futrob/ui"
-import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx"
-import type { Translator } from "@/shared/presentation/i18n/translate.ts"
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, applyStyles, Card, CardContent, CardHeader, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
+import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
   comparisonBarShares,
   TEAM_COMPARISON_METRICS,
   type TeamComparisonMetric,
   type TeamComparisonModel,
   type TeamStatValue,
-} from "./provider-match-detail-model.ts"
+} from "./provider-match-detail-model.ts";
 
 const styles = stylex.create({
   card: {
@@ -111,7 +112,7 @@ const styles = stylex.create({
   fillEnd: {
     marginInlineStart: "auto",
   },
-})
+});
 
 export function TeamComparisonCard({
   comparison,
@@ -119,14 +120,14 @@ export function TeamComparisonCard({
   percentFormat,
   t,
 }: {
-  readonly comparison: TeamComparisonModel
-  readonly numberFormat: Intl.NumberFormat
-  readonly percentFormat: Intl.NumberFormat
-  readonly t: Translator
+  readonly comparison: TeamComparisonModel;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly percentFormat: Intl.NumberFormat;
+  readonly t: Translator;
 }) {
-  const card = applyStyles(styles.card)
-  const header = applyStyles(styles.header)
-  const content = applyStyles(styles.content)
+  const card = applyStyles(styles.card);
+  const header = applyStyles(styles.header);
+  const content = applyStyles(styles.content);
   return (
     <Card className={card.className} data-team-comparison="" style={card.style}>
       <CardHeader className={header.className} style={header.style}>
@@ -152,23 +153,20 @@ export function TeamComparisonCard({
         </ul>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function ComparisonClubSide({
   side,
   team,
 }: {
-  readonly side: "selected" | "opponent"
-  readonly team: TeamComparisonModel["selected"]["team"]
+  readonly side: "selected" | "opponent";
+  readonly team: TeamComparisonModel["selected"]["team"];
 }) {
-  const isOpponent = side === "opponent"
-  const crest = applyStyles(styles.crest)
+  const isOpponent = side === "opponent";
+  const crest = applyStyles(styles.crest);
   return (
-    <div
-      data-comparison-club={side}
-      {...applyStyles(styles.club, isOpponent && styles.clubEnd)}
-    >
+    <div data-comparison-club={side} {...applyStyles(styles.club, isOpponent && styles.clubEnd)}>
       {isOpponent ? null : (
         <ClubCrestAvatar
           className={crest.className}
@@ -191,7 +189,7 @@ function ComparisonClubSide({
         />
       ) : null}
     </div>
-  )
+  );
 }
 
 function ComparisonMetricRow({
@@ -202,17 +200,17 @@ function ComparisonMetricRow({
   selected,
   t,
 }: {
-  readonly metric: TeamComparisonMetric
-  readonly numberFormat: Intl.NumberFormat
-  readonly opponent: TeamStatValue
-  readonly percentFormat: Intl.NumberFormat
-  readonly selected: TeamStatValue
-  readonly t: Translator
+  readonly metric: TeamComparisonMetric;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly opponent: TeamStatValue;
+  readonly percentFormat: Intl.NumberFormat;
+  readonly selected: TeamStatValue;
+  readonly t: Translator;
 }) {
-  const shares = comparisonBarShares(selected, opponent)
-  const label = t(metric.labelKey)
-  const selectedLabel = formatStatValue(selected, metric, numberFormat, percentFormat)
-  const opponentLabel = formatStatValue(opponent, metric, numberFormat, percentFormat)
+  const shares = comparisonBarShares(selected, opponent);
+  const label = t(metric.labelKey);
+  const selectedLabel = formatStatValue(selected, metric, numberFormat, percentFormat);
+  const opponentLabel = formatStatValue(opponent, metric, numberFormat, percentFormat);
   return (
     <li
       aria-label={`${label}: ${statValueSpoken(selected, metric, numberFormat, percentFormat, t)} ${statValueSpoken(opponent, metric, numberFormat, percentFormat, t)}`}
@@ -227,7 +225,7 @@ function ComparisonMetricRow({
       </div>
       <p {...applyStyles(typography.caption, styles.opponentValue)}>{opponentLabel}</p>
     </li>
-  )
+  );
 }
 
 function ComparisonBar({
@@ -235,9 +233,9 @@ function ComparisonBar({
   percent,
   side,
 }: {
-  readonly fill: "primary" | "muted"
-  readonly percent: number
-  readonly side: "selected" | "opponent"
+  readonly fill: "primary" | "muted";
+  readonly percent: number;
+  readonly side: "selected" | "opponent";
 }) {
   return (
     <div data-comparison-bar={side} {...applyStyles(styles.bar)}>
@@ -252,7 +250,7 @@ function ComparisonBar({
         )}
       />
     </div>
-  )
+  );
 }
 
 function formatStatValue(
@@ -261,15 +259,15 @@ function formatStatValue(
   numberFormat: Intl.NumberFormat,
   percentFormat: Intl.NumberFormat,
 ): string {
-  if (value.kind === "unknown") return "—"
+  if (value.kind === "unknown") return "—";
   switch (metric.format) {
     case "count":
-      return numberFormat.format(value.value)
+      return numberFormat.format(value.value);
     case "percent":
-      return percentFormat.format(value.value)
+      return percentFormat.format(value.value);
     default: {
-      const _exhaustive: never = metric.format
-      return _exhaustive
+      const _exhaustive: never = metric.format;
+      return _exhaustive;
     }
   }
 }
@@ -281,6 +279,6 @@ function statValueSpoken(
   percentFormat: Intl.NumberFormat,
   t: Translator,
 ): string {
-  if (value.kind === "unknown") return t("player.noData")
-  return formatStatValue(value, metric, numberFormat, percentFormat)
+  if (value.kind === "unknown") return t("player.noData");
+  return formatStatValue(value, metric, numberFormat, percentFormat);
 }

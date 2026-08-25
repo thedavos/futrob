@@ -57,11 +57,7 @@ const QUARTERFINALS = [
 export function HeroBracket() {
   const { t } = useI18n();
   return (
-    <div
-      aria-label={t("landing.hero.bracketAria")}
-      role="img"
-      {...applyStyles(styles.frame)}
-    >
+    <div aria-label={t("landing.hero.bracketAria")} role="img" {...applyStyles(styles.frame)}>
       <div {...applyStyles(styles.canvas)}>
         <div {...applyStyles(styles.stage)}>
           <BracketLinesMobile />
@@ -344,19 +340,13 @@ function BracketTeamRow({
           style={crest.style}
         />
         <span
-          {...applyStyles(
-            styles.teamName,
-            winner ? styles.teamNameWinner : styles.teamNameQuiet,
-          )}
+          {...applyStyles(styles.teamName, winner ? styles.teamNameWinner : styles.teamNameQuiet)}
         >
           {team.name}
         </span>
       </span>
       <span
-        {...applyStyles(
-          styles.teamGoals,
-          winner ? styles.teamGoalsWinner : styles.teamGoalsQuiet,
-        )}
+        {...applyStyles(styles.teamGoals, winner ? styles.teamGoalsWinner : styles.teamGoalsQuiet)}
       >
         {team.goals ?? "–"}
       </span>

@@ -1,19 +1,20 @@
-"use client"
+"use client";
 
-import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts"
-import * as stylex from "@stylexjs/stylex"
-import { applyStyles, colors, Tooltip, TooltipContent, TooltipTrigger, typography } from "@futrob/ui"
-import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx"
-import type { Translator } from "@/shared/presentation/i18n/translate.ts"
-import { FORM_OUTCOME_SHORT_KEYS, FORM_SEGMENT_TOOLTIP_KEYS } from "./player-match-copy.ts"
-import { formResultFillStyle, formSegmentStyle } from "./player-match-tone.ts"
+import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Tooltip, TooltipContent, TooltipTrigger, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { FORM_OUTCOME_SHORT_KEYS, FORM_SEGMENT_TOOLTIP_KEYS } from "./player-match-copy.ts";
+import { formResultFillStyle, formSegmentStyle } from "./player-match-tone.ts";
 import {
   formTimeline,
   lastFormGames,
   matchOutcome,
   opponentClubName,
   playerMatchSide,
-} from "./player-match-view.ts"
+} from "./player-match-view.ts";
 
 const styles = stylex.create({
   root: {
@@ -87,16 +88,16 @@ const styles = stylex.create({
     justifyContent: "center",
     borderRadius: "var(--corner-md)",
   },
-})
+});
 
 export function RecentForm({
   matches,
 }: {
-  readonly matches: readonly PlayerRecentProviderMatchDto[]
+  readonly matches: readonly PlayerRecentProviderMatchDto[];
 }) {
-  const { t } = useI18n()
-  const timeline = formTimeline(matches)
-  const lastGames = lastFormGames(matches)
+  const { t } = useI18n();
+  const timeline = formTimeline(matches);
+  const lastGames = lastFormGames(matches);
 
   return (
     <div
@@ -121,13 +122,13 @@ export function RecentForm({
         </ol>
       </div>
     </div>
-  )
+  );
 }
 
 function FormSegment({ item }: { readonly item: PlayerRecentProviderMatchDto }) {
-  const { t } = useI18n()
-  const outcome = matchOutcome(item)
-  const label = formSegmentLabel(item, t)
+  const { t } = useI18n();
+  const outcome = matchOutcome(item);
+  const label = formSegmentLabel(item, t);
 
   return (
     <Tooltip>
@@ -143,13 +144,13 @@ function FormSegment({ item }: { readonly item: PlayerRecentProviderMatchDto }) 
       />
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
-  )
+  );
 }
 
 function FormResultMark({ item }: { readonly item: PlayerRecentProviderMatchDto }) {
-  const { t } = useI18n()
-  const outcome = matchOutcome(item)
-  const label = formSegmentLabel(item, t)
+  const { t } = useI18n();
+  const outcome = matchOutcome(item);
+  const label = formSegmentLabel(item, t);
 
   return (
     <li>
@@ -170,28 +171,28 @@ function FormResultMark({ item }: { readonly item: PlayerRecentProviderMatchDto 
         <TooltipContent>{label}</TooltipContent>
       </Tooltip>
     </li>
-  )
+  );
 }
 
 function formSegmentLabel(item: PlayerRecentProviderMatchDto, t: Translator): string {
-  const outcome = matchOutcome(item)
-  const opponent = opponentClubName(item)
+  const outcome = matchOutcome(item);
+  const opponent = opponentClubName(item);
   if (outcome === "unknown" || opponent === null) {
     return t("player.matches.form.unknownMatch", {
       home: item.match.home.name,
       away: item.match.away.name,
       score: `${item.match.home.goals} ${t("player.matches.vs")} ${item.match.away.goals}`,
-    })
+    });
   }
   return t(FORM_SEGMENT_TOOLTIP_KEYS[outcome], {
     score: listedScoreline(item, t),
     opponent,
-  })
+  });
 }
 
 function listedScoreline(item: PlayerRecentProviderMatchDto, t: Translator): string {
-  const side = playerMatchSide(item)
-  const scored = side === "away" ? item.match.away.goals : item.match.home.goals
-  const conceded = side === "away" ? item.match.home.goals : item.match.away.goals
-  return `${scored} ${t("player.matches.vs")} ${conceded}`
+  const side = playerMatchSide(item);
+  const scored = side === "away" ? item.match.away.goals : item.match.home.goals;
+  const conceded = side === "away" ? item.match.home.goals : item.match.away.goals;
+  return `${scored} ${t("player.matches.vs")} ${conceded}`;
 }

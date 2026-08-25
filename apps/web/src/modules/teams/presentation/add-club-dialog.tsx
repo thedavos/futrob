@@ -5,7 +5,6 @@ import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
-  colors,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -13,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { DEFAULT_EA_SEARCH_GAME_EDITION } from "@/modules/game-data/presentation/ea-club-search-meta.ts";
 import {
   EaClubLinkForm,

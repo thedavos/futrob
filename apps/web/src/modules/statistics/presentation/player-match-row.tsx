@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { Fragment, type ReactNode } from "react"
-import { Link } from "@tanstack/react-router"
-import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts"
-import { applyStyles, Badge, Button } from "@futrob/ui"
-import { CaretRightIcon, PlugsIcon } from "@phosphor-icons/react"
-import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx"
-import type { Translator } from "@/shared/presentation/i18n/translate.ts"
-import { MATCH_OUTCOME_KEYS, MATCH_TYPE_KEYS, SCORING_FEAT_KEYS } from "./player-match-copy.ts"
+import { Fragment, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
+import { applyStyles, Badge, Button } from "@futrob/ui";
+import { CaretRightIcon, PlugsIcon } from "@phosphor-icons/react";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { MATCH_OUTCOME_KEYS, MATCH_TYPE_KEYS, SCORING_FEAT_KEYS } from "./player-match-copy.ts";
 import {
   appearanceRedCardsAria,
   listedClubRedCards,
@@ -16,9 +16,9 @@ import {
   notPlayedMessage,
   scoreDigitStyle,
   ScoringFeatBadge,
-} from "./player-match-row-parts.tsx"
-import { rowElevation, rowTypography, styles } from "./player-match-row.styles.ts"
-import { matchOutcomeTextStyle } from "./player-match-tone.ts"
+} from "./player-match-row-parts.tsx";
+import { rowElevation, rowTypography, styles } from "./player-match-row.styles.ts";
+import { matchOutcomeTextStyle } from "./player-match-tone.ts";
 import {
   appearanceScoringFeat,
   isDnfMatch,
@@ -29,9 +29,9 @@ import {
   scoringFeatPlayerName,
   type MatchSortOrder,
   type PlayerMatchesView,
-} from "./player-match-view.ts"
-import { MatchAppearanceStrip } from "./player-match-appearance.tsx"
-import { MatchPitchWash } from "./player-match-pitch.tsx"
+} from "./player-match-view.ts";
+import { MatchAppearanceStrip } from "./player-match-appearance.tsx";
+import { MatchPitchWash } from "./player-match-pitch.tsx";
 
 export function ProviderMatchRow({
   dateTimeFormat,
@@ -44,30 +44,30 @@ export function ProviderMatchRow({
   t,
   view,
 }: {
-  readonly dateTimeFormat: Intl.DateTimeFormat
-  readonly item: PlayerRecentProviderMatchDto
-  readonly numberFormat: Intl.NumberFormat
-  readonly sortOrder: MatchSortOrder
-  readonly showAppearanceStrip?: boolean
-  readonly showMatchType: boolean
-  readonly showOpenMatch?: boolean
-  readonly t: Translator
-  readonly view: PlayerMatchesView
+  readonly dateTimeFormat: Intl.DateTimeFormat;
+  readonly item: PlayerRecentProviderMatchDto;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly sortOrder: MatchSortOrder;
+  readonly showAppearanceStrip?: boolean;
+  readonly showMatchType: boolean;
+  readonly showOpenMatch?: boolean;
+  readonly t: Translator;
+  readonly view: PlayerMatchesView;
 }) {
-  const { match } = item
-  const occurredAt = new Date(match.occurredAt)
-  const mode = providerMatchMode(item)
-  const typeLabel = showMatchType && mode ? t(MATCH_TYPE_KEYS[mode]) : null
-  const outcome = matchOutcome(item)
-  const outcomeLabel = outcome === "unknown" ? null : t(MATCH_OUTCOME_KEYS[outcome])
-  const feat = appearanceScoringFeat(item)
-  const featLabel = feat ? t(SCORING_FEAT_KEYS[feat]) : null
-  const featScorerName = scoringFeatPlayerName(item)
-  const mvpName = matchMvpDisplayName(item)
-  const mvpLabel = mvpName ? t("player.matches.mvp.named", { name: mvpName }) : null
-  const dnf = isDnfMatch(item)
-  const notPlayedLabel = notPlayedMessage(item, t)
-  const side = playerMatchSide(item)
+  const { match } = item;
+  const occurredAt = new Date(match.occurredAt);
+  const mode = providerMatchMode(item);
+  const typeLabel = showMatchType && mode ? t(MATCH_TYPE_KEYS[mode]) : null;
+  const outcome = matchOutcome(item);
+  const outcomeLabel = outcome === "unknown" ? null : t(MATCH_OUTCOME_KEYS[outcome]);
+  const feat = appearanceScoringFeat(item);
+  const featLabel = feat ? t(SCORING_FEAT_KEYS[feat]) : null;
+  const featScorerName = scoringFeatPlayerName(item);
+  const mvpName = matchMvpDisplayName(item);
+  const mvpLabel = mvpName ? t("player.matches.mvp.named", { name: mvpName }) : null;
+  const dnf = isDnfMatch(item);
+  const notPlayedLabel = notPlayedMessage(item, t);
+  const side = playerMatchSide(item);
   const accessibleName = [
     match.home.name,
     String(match.home.goals),
@@ -85,16 +85,16 @@ export function ProviderMatchRow({
     dateTimeFormat.format(occurredAt),
   ]
     .filter((part): part is string => part !== null)
-    .join(" ")
+    .join(" ");
 
-  const { locale } = useI18n()
+  const { locale } = useI18n();
   const timeLabel = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "es-ES", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
     hourCycle: "h23",
-  }).format(occurredAt)
-  const surface = applyStyles(styles.onPitchSurface)
+  }).format(occurredAt);
+  const surface = applyStyles(styles.onPitchSurface);
 
   return (
     <li aria-label={accessibleName} {...applyStyles(styles.item)}>
@@ -135,7 +135,11 @@ export function ProviderMatchRow({
                   </span>
                 ) : null,
                 notPlayedLabel ? (
-                  <span data-played="false" key="played" {...applyStyles(rowTypography.caption, styles.muted)}>
+                  <span
+                    data-played="false"
+                    key="played"
+                    {...applyStyles(rowTypography.caption, styles.muted)}
+                  >
                     <span {...applyStyles(styles.medium)}>{notPlayedLabel}</span>
                   </span>
                 ) : null,
@@ -208,9 +212,7 @@ export function ProviderMatchRow({
                 >
                   <span
                     data-score-digit="home"
-                    data-score-lead={
-                      match.home.goals > match.away.goals ? "home" : undefined
-                    }
+                    data-score-lead={match.home.goals > match.away.goals ? "home" : undefined}
                     {...applyStyles(
                       rowTypography.score,
                       styles.scoreDigit,
@@ -219,12 +221,12 @@ export function ProviderMatchRow({
                   >
                     {match.home.goals}
                   </span>
-                  <span {...applyStyles(rowTypography.score, styles.vs)}>{t("player.matches.vs")}</span>
+                  <span {...applyStyles(rowTypography.score, styles.vs)}>
+                    {t("player.matches.vs")}
+                  </span>
                   <span
                     data-score-digit="away"
-                    data-score-lead={
-                      match.away.goals > match.home.goals ? "away" : undefined
-                    }
+                    data-score-lead={match.away.goals > match.home.goals ? "away" : undefined}
                     {...applyStyles(
                       rowTypography.score,
                       styles.scoreDigit,
@@ -260,11 +262,11 @@ export function ProviderMatchRow({
         ) : null}
       </div>
     </li>
-  )
+  );
 }
 
 function MatchHeaderMeta({ items }: { readonly items: readonly ReactNode[] }) {
-  const parts = items.filter((item) => item !== null && item !== false && item !== undefined)
+  const parts = items.filter((item) => item !== null && item !== false && item !== undefined);
   return (
     <div {...applyStyles(styles.meta)}>
       {parts.map((part, index) => (
@@ -278,5 +280,5 @@ function MatchHeaderMeta({ items }: { readonly items: readonly ReactNode[] }) {
         </Fragment>
       ))}
     </div>
-  )
+  );
 }

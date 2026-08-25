@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, colors, Logo, media, typography } from "@futrob/ui";
-
+import { applyHost, applyStyles, Logo, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 const styles = stylex.create({
   main: {
     display: "grid",
@@ -91,7 +91,8 @@ const styles = stylex.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundImage: "linear-gradient(to top, rgb(0 0 0 / 0.8), rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.15))",
+    backgroundImage:
+      "linear-gradient(to top, rgb(0 0 0 / 0.8), rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.15))",
   },
   copy: {
     position: "relative",
@@ -142,12 +143,7 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
       </section>
 
       <section {...applyStyles(styles.visual)}>
-        <img
-          alt=""
-          aria-hidden="true"
-          src="/auth/tunnel-hero.jpg"
-          {...applyStyles(styles.image)}
-        />
+        <img alt="" aria-hidden="true" src="/auth/tunnel-hero.jpg" {...applyStyles(styles.image)} />
         <div aria-hidden="true" {...applyStyles(styles.wash)} />
 
         <div {...applyStyles(styles.copy)}>

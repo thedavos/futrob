@@ -1,6 +1,6 @@
-import * as stylex from "@stylexjs/stylex"
-import { colors, media, typography } from "@futrob/ui"
-
+import * as stylex from "@stylexjs/stylex";
+import { typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 export const styles = stylex.create({
   stack: {
     display: "flex",
@@ -147,9 +147,9 @@ export const styles = stylex.create({
     justifyContent: "space-between",
     gap: "0.75rem",
   },
-})
+});
 
 export const listTypography = {
   caption: typography.caption,
   label: typography.label,
-}
+};

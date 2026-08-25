@@ -1,8 +1,8 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, colors, media, typography } from "@futrob/ui";
-
+import { applyStyles, Badge, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 

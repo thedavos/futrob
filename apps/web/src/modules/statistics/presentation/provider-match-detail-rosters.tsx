@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { applyStyles, Badge } from "@futrob/ui"
-import { StarIcon } from "@phosphor-icons/react"
-import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx"
-import type { Translator } from "@/shared/presentation/i18n/translate.ts"
+import { applyStyles, Badge } from "@futrob/ui";
+import { StarIcon } from "@phosphor-icons/react";
+import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
   PROVIDER_PLAYER_METRICS,
   providerPositionLabelKey,
@@ -11,17 +11,17 @@ import {
   type ProviderPlayerMetric,
   type ProviderMatchRosterModel,
   type ProviderRosterSection,
-} from "./provider-match-detail-model.ts"
-import { rosterTypography, styles } from "./provider-match-detail-rosters.styles.ts"
+} from "./provider-match-detail-model.ts";
+import { rosterTypography, styles } from "./provider-match-detail-rosters.styles.ts";
 
 export function MatchRosters({
   numberFormat,
   sides,
   t,
 }: {
-  readonly numberFormat: Intl.NumberFormat
-  readonly sides: ProviderMatchRosterModel
-  readonly t: Translator
+  readonly numberFormat: Intl.NumberFormat;
+  readonly sides: ProviderMatchRosterModel;
+  readonly t: Translator;
 }) {
   return (
     <div {...applyStyles(styles.stack)}>
@@ -40,7 +40,7 @@ export function MatchRosters({
         t={t}
       />
     </div>
-  )
+  );
 }
 
 function RosterSection({
@@ -50,13 +50,13 @@ function RosterSection({
   section,
   t,
 }: {
-  readonly kind: "selected" | "opponent"
-  readonly label: string
-  readonly numberFormat: Intl.NumberFormat
-  readonly section: ProviderRosterSection
-  readonly t: Translator
+  readonly kind: "selected" | "opponent";
+  readonly label: string;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly section: ProviderRosterSection;
+  readonly t: Translator;
 }) {
-  const crest = applyStyles(styles.crest)
+  const crest = applyStyles(styles.crest);
   return (
     <section data-roster={kind} {...applyStyles(styles.section)}>
       <div {...applyStyles(styles.heading)}>
@@ -91,7 +91,9 @@ function RosterSection({
                   {player.displayName}
                 </p>
                 <div {...applyStyles(styles.badges)}>
-                  {isPersonal ? <Badge variant="outline">{t("player.matchDetail.you")}</Badge> : null}
+                  {isPersonal ? (
+                    <Badge variant="outline">{t("player.matchDetail.you")}</Badge>
+                  ) : null}
                   {player.isMvp ? (
                     <Badge variant="outline">
                       <StarIcon aria-hidden="true" weight="fill" />
@@ -106,7 +108,7 @@ function RosterSection({
         </ol>
       )}
     </section>
-  )
+  );
 }
 
 function PlayerMetrics({
@@ -114,9 +116,9 @@ function PlayerMetrics({
   player,
   t,
 }: {
-  readonly numberFormat: Intl.NumberFormat
-  readonly player: ProviderPlayer
-  readonly t: Translator
+  readonly numberFormat: Intl.NumberFormat;
+  readonly player: ProviderPlayer;
+  readonly t: Translator;
 }) {
   return (
     <dl {...applyStyles(styles.metrics)}>
@@ -130,7 +132,7 @@ function PlayerMetrics({
         />
       ))}
     </dl>
-  )
+  );
 }
 
 function PlayerMetric({
@@ -139,10 +141,10 @@ function PlayerMetric({
   player,
   t,
 }: {
-  readonly metric: ProviderPlayerMetric
-  readonly numberFormat: Intl.NumberFormat
-  readonly player: ProviderPlayer
-  readonly t: Translator
+  readonly metric: ProviderPlayerMetric;
+  readonly numberFormat: Intl.NumberFormat;
+  readonly player: ProviderPlayer;
+  readonly t: Translator;
 }) {
   return (
     <div {...applyStyles(styles.metric)}>
@@ -154,7 +156,7 @@ function PlayerMetric({
         {metricValue(metric, player, numberFormat, t)}
       </dd>
     </div>
-  )
+  );
 }
 
 function metricValue(
@@ -165,18 +167,18 @@ function metricValue(
 ): string {
   switch (metric.kind) {
     case "text": {
-      const value = player.position
-      if (value === null) return "—"
-      const positionKey = providerPositionLabelKey(value)
-      return positionKey ? t(positionKey) : value
+      const value = player.position;
+      if (value === null) return "—";
+      const positionKey = providerPositionLabelKey(value);
+      return positionKey ? t(positionKey) : value;
     }
     case "number": {
-      const value = player[metric.key]
-      return value === null ? "—" : numberFormat.format(value)
+      const value = player[metric.key];
+      return value === null ? "—" : numberFormat.format(value);
     }
     default: {
-      const _exhaustive: never = metric
-      return _exhaustive
+      const _exhaustive: never = metric;
+      return _exhaustive;
     }
   }
 }

@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, colors, typography } from "@futrob/ui";
+import { applyHost, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { CommandBarIdentityMark } from "./command-bar-identity-mark.tsx";
 import type { CommandBarIdentity } from "./command-bar-identity.ts";
 

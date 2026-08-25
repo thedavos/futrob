@@ -183,12 +183,7 @@ export function WorkspaceSelector({
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button
-              className={trigger.className}
-              dense
-              style={trigger.style}
-              variant="outline"
-            />
+            <Button className={trigger.className} dense style={trigger.style} variant="outline" />
           }
         >
           <span {...applyStyles(styles.triggerLabel)}>

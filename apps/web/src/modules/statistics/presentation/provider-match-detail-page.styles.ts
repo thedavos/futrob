@@ -1,6 +1,6 @@
-import * as stylex from "@stylexjs/stylex"
-import { colors, typography, vis } from "@futrob/ui"
-
+import * as stylex from "@stylexjs/stylex";
+import { typography, vis } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 export const styles = stylex.create({
   main: {
     width: "100%",
@@ -62,12 +62,12 @@ export const styles = stylex.create({
   empty: {
     minHeight: 0,
   },
-})
+});
 
 export const detailTypography = {
   caption: typography.caption,
-}
+};
 
 export const detailVis = {
   srOnly: vis.srOnly,
-}
+};

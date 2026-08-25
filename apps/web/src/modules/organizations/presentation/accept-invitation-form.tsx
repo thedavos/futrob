@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, Field, FieldError, FieldLabel, Form, Input, readFormString } from "@futrob/ui";
+import {
+  applyStyles,
+  Button,
+  Field,
+  FieldError,
+  FieldLabel,
+  Form,
+  Input,
+  readFormString,
+} from "@futrob/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
 import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";

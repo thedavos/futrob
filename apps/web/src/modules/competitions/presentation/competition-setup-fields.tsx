@@ -7,7 +7,6 @@ import {
   AlertDescription,
   applyStyles,
   Checkbox,
-  colors,
   Field,
   FieldLabel,
   Input,
@@ -18,6 +17,7 @@ import {
   SelectValue,
   typography,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 
 const styles = stylex.create({

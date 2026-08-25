@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, typography } from "@futrob/ui";
-
+import { applyStyles, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 const styles = stylex.create({
   main: {
     width: "100%",

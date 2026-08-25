@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, typography } from "@futrob/ui";
+import { applyStyles, typography } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { OrganizationPicker } from "@/modules/organizations/presentation/organization-picker.tsx";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";

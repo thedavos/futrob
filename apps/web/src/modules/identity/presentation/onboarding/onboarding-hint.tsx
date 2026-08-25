@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors, media, typography } from "@futrob/ui";
+import { applyStyles, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { InfoIcon } from "@phosphor-icons/react";
 
 const styles = stylex.create({

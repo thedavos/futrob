@@ -2,8 +2,8 @@
 
 import { useState, type CSSProperties } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyHost, applyStyles, colors } from "@futrob/ui";
-
+import { applyHost, applyStyles } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 
 const styles = stylex.create({

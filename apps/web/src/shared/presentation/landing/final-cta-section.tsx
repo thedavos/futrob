@@ -1,7 +1,8 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, colors, Logo, media, typography } from "@futrob/ui";
+import { applyStyles, Button, Logo, typography } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { Link } from "@tanstack/react-router";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -106,7 +107,9 @@ export function FinalCtaSection() {
         <div {...applyStyles(styles.inner)}>
           <div {...applyStyles(styles.copy)}>
             <h2 {...applyStyles(typography.display, styles.title)}>{t("landing.cta.title")}</h2>
-            <p {...applyStyles(typography.subtitle, styles.subtitle)}>{t("landing.cta.subtitle")}</p>
+            <p {...applyStyles(typography.subtitle, styles.subtitle)}>
+              {t("landing.cta.subtitle")}
+            </p>
           </div>
           <div {...applyStyles(styles.actions)}>
             <Button render={<Link to="/signup" />}>{t("landing.cta.primary")}</Button>

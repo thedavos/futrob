@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, colors } from "@futrob/ui";
+import { applyStyles } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/public.stylex";
 import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { PlayerStatisticsPage } from "@/modules/statistics/presentation/player-statistics-page.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -49,9 +50,7 @@ function ProtectedPlayerStatistics() {
   }, [navigate]);
 
   if (!allowed) {
-    return (
-      <main {...applyStyles(styles.pending)}>{t("player.onboarding.checking")}</main>
-    );
+    return <main {...applyStyles(styles.pending)}>{t("player.onboarding.checking")}</main>;
   }
 
   return <PlayerStatisticsPage />;

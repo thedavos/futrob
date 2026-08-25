@@ -205,10 +205,7 @@ export function ExternalClubDialog({
         </div>
         <ul {...applyStyles(styles.results)}>
           {results.map((club) => (
-            <li
-              key={`${club.providerKey}:${club.externalClubId}`}
-              {...applyStyles(styles.result)}
-            >
+            <li key={`${club.providerKey}:${club.externalClubId}`} {...applyStyles(styles.result)}>
               <span {...applyStyles(styles.resultCopy)}>
                 <strong {...applyStyles(styles.resultName)}>{club.name}</strong>
                 <span {...applyStyles(typography.caption, styles.resultMeta)}>

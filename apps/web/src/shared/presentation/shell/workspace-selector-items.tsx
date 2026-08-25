@@ -4,14 +4,13 @@ import type { ComponentType, SVGProps } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
-  colors,
   DropdownMenuLabel,
   DropdownMenuItem,
-  media,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@futrob/ui";
+import { colors, media } from "@futrob/ui/styles/public.stylex";
 import { BuildingsIcon, PlusIcon, TrophyIcon } from "@phosphor-icons/react";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
