@@ -512,6 +512,79 @@ const es = {
   "player.metric.matches": "Partidos",
   "player.metric.minutes": "Minutos",
   "player.position.unknown": "Posición sin datos",
+  "landing.meta.title": "Futrob | Del partido de EA al resultado oficial",
+  "landing.meta.description":
+    "Opera ligas y copas de FC Clubs con datos reales de EA: selección auditable de partidos oficiales, tabla, rankings y portal público.",
+  "landing.nav.aria": "Acceso",
+  "landing.nav.login": "Iniciar sesión",
+  "landing.nav.signup": "Crear cuenta",
+  "landing.hero.eyebrow": "Competiciones FC Clubs",
+  "landing.hero.titleLead": "Del partido de EA al",
+  "landing.hero.titleHighlight": "resultado oficial",
+  "landing.hero.subtitleLead": "Los capitanes eligen los partidos que cuentan.",
+  "landing.hero.subtitleRest":
+    "Tú apruebas el resultado y Futrob actualiza la tabla automáticamente.",
+  "landing.hero.cta.primary": "Crear cuenta",
+  "landing.hero.cta.secondary": "Ver cómo funciona",
+  "landing.hero.bracketAria":
+    "Bracket: la final entre Real Cuervos y Atlético Norte terminó 2 a 1 con el resultado aprobado, tras la sincronización con EA, la selección de los capitanes y la aprobación.",
+  "landing.status.approved": "Aprobado",
+  "landing.status.candidate": "Candidato EA",
+  "landing.status.selecting": "En selección",
+  "landing.status.synced": "Sync EA",
+  "landing.status.scheduled": "Programado",
+  "landing.stage.sync": "Sync EA",
+  "landing.stage.selection": "Selección",
+  "landing.stage.approval": "Aprobación",
+  "landing.stage.publication": "Publicación",
+  "landing.bracket.final": "Final",
+  "landing.bracket.semifinal": "Semifinal",
+  "landing.matches.title": "La mesa de operaciones",
+  "landing.matches.subtitle":
+    "Cada enfrentamiento muestra de dónde viene su resultado y en qué estado está. Nada se publica sin pasar por la aprobación.",
+  "landing.matches.matchday": "Jornada 4 · Liga Metropolitana",
+  "landing.mechanism.title": "Cómo un partido se vuelve oficial",
+  "landing.mechanism.subtitle": "El mismo recorrido para cada resultado, siempre auditable.",
+  "landing.mechanism.sync.title": "Sync EA",
+  "landing.mechanism.sync.description":
+    "Futrob sincroniza los partidos de tus clubs desde EA y los guarda como candidatos, nunca como oficiales.",
+  "landing.mechanism.selection.title": "Selección",
+  "landing.mechanism.selection.description":
+    "Los capitanes eligen cuáles partidos cuentan para el enfrentamiento, con vista previa de la serie.",
+  "landing.mechanism.approval.title": "Aprobación",
+  "landing.mechanism.approval.description":
+    "El resultado confirmado queda aprobado y auditado. El sync nunca auto-oficializa.",
+  "landing.mechanism.publication.title": "Publicación",
+  "landing.mechanism.publication.description":
+    "Solo lo aprobado actualiza tabla, bracket, rankings y el portal público.",
+  "landing.demo.title": "Pruébalo contra la API real",
+  "landing.demo.subtitle":
+    "Busca tu club de EA Clubs. Es la misma capa de datos que alimenta tus competiciones.",
+  "gameData.clubSearch.source": "Resultados de /api/v1/game-data/clubs/search.",
+  "landing.players.title": "Para jugadores: tus partidos, tus números",
+  "landing.players.subtitle":
+    "El perfil personal existe sin organización: vincula tu club EA y sigue tu rendimiento.",
+  "landing.players.matches.title": "Mis partidos",
+  "landing.players.matches.description":
+    "Recientes y todos, con liga, playoff o amistoso marcados en cada tarjeta.",
+  "landing.players.stats.title": "Mis estadísticas",
+  "landing.players.stats.description":
+    "Historial oficial de contribuciones: goles, asistencias y ratings por partido.",
+  "landing.players.feats.title": "Hazañas marcadas",
+  "landing.players.feats.description": "Hat-trick, póker y repóker se reconocen en cada aparición.",
+  "landing.portal.title": "Un portal público a la altura de tu torneo",
+  "landing.portal.subtitle":
+    "Publica portada, equipos, calendario, resultados, tabla, bracket y rankings — cuando tú decides.",
+  "landing.portal.point.teams": "Equipos y calendario siempre al día",
+  "landing.portal.point.results": "Resultados y tabla oficiales",
+  "landing.portal.point.rankings": "Rankings de jugadores y equipos",
+  "landing.cta.title": "¿Listo para poner tu competición bajo control?",
+  "landing.cta.subtitle": "Crea tu organización y publica tu primera competición hoy.",
+  "landing.cta.primary": "Crear cuenta",
+  "landing.cta.secondary": "Iniciar sesión",
+  "landing.footer.tagline": "Preciso para operar. Claro para competir.",
+  "landing.footer.madeBy": "Futrob es creado por Davion Software.",
+  "landing.footer.legal": "© 2026 Futrob",
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
@@ -1105,6 +1178,79 @@ const en: Catalog = {
   "player.metric.matches": "Matches",
   "player.metric.minutes": "Minutes",
   "player.position.unknown": "Position unavailable",
+  "landing.meta.title": "Futrob | From the EA match to the official result",
+  "landing.meta.description":
+    "Run FC Clubs leagues and cups with real EA data: auditable official-match selection, standings, rankings, and a public portal.",
+  "landing.nav.aria": "Access",
+  "landing.nav.login": "Log in",
+  "landing.nav.signup": "Create account",
+  "landing.hero.eyebrow": "FC Clubs competitions",
+  "landing.hero.titleLead": "From the EA match to the",
+  "landing.hero.titleHighlight": "official result",
+  "landing.hero.subtitleLead": "Captains pick the matches that count.",
+  "landing.hero.subtitleRest": "You approve the result and Futrob updates the table automatically.",
+  "landing.hero.cta.primary": "Create account",
+  "landing.hero.cta.secondary": "See how it works",
+  "landing.hero.bracketAria":
+    "Bracket: the final between Real Cuervos and Atlético Norte ended 2 to 1 with the result approved, after the EA sync, the captains' selection, and approval.",
+  "landing.status.approved": "Approved",
+  "landing.status.candidate": "EA candidate",
+  "landing.status.selecting": "In selection",
+  "landing.status.synced": "EA sync",
+  "landing.status.scheduled": "Scheduled",
+  "landing.stage.sync": "EA sync",
+  "landing.stage.selection": "Selection",
+  "landing.stage.approval": "Approval",
+  "landing.stage.publication": "Publication",
+  "landing.bracket.final": "Final",
+  "landing.bracket.semifinal": "Semifinal",
+  "landing.matches.title": "The operations table",
+  "landing.matches.subtitle":
+    "Every encounter shows where its result comes from and what state it is in. Nothing is published without approval.",
+  "landing.matches.matchday": "Matchday 4 · Metropolitan League",
+  "landing.mechanism.title": "How a match becomes official",
+  "landing.mechanism.subtitle": "The same journey for every result, always auditable.",
+  "landing.mechanism.sync.title": "EA sync",
+  "landing.mechanism.sync.description":
+    "Futrob syncs your clubs' matches from EA and stores them as candidates, never as official.",
+  "landing.mechanism.selection.title": "Selection",
+  "landing.mechanism.selection.description":
+    "Captains choose which matches count for the encounter, with a series preview.",
+  "landing.mechanism.approval.title": "Approval",
+  "landing.mechanism.approval.description":
+    "The confirmed result is approved and audited. Sync never auto-officializes.",
+  "landing.mechanism.publication.title": "Publication",
+  "landing.mechanism.publication.description":
+    "Only approved results update the table, bracket, rankings, and public portal.",
+  "landing.demo.title": "Try it against the real API",
+  "landing.demo.subtitle":
+    "Search for your EA Clubs team. It is the same data layer that powers your competitions.",
+  "gameData.clubSearch.source": "Results from /api/v1/game-data/clubs/search.",
+  "landing.players.title": "For players: your matches, your numbers",
+  "landing.players.subtitle":
+    "The personal profile exists without an organization: link your EA club and track your performance.",
+  "landing.players.matches.title": "My matches",
+  "landing.players.matches.description":
+    "Recent and all, with league, playoff, or friendly marked on each card.",
+  "landing.players.stats.title": "My stats",
+  "landing.players.stats.description":
+    "Official contribution history: goals, assists, and ratings per match.",
+  "landing.players.feats.title": "Marked feats",
+  "landing.players.feats.description":
+    "Hat-tricks and four- or five-goal hauls are recognized on every appearance.",
+  "landing.portal.title": "A public portal worthy of your tournament",
+  "landing.portal.subtitle":
+    "Publish cover, teams, schedule, results, table, bracket, and rankings — when you decide.",
+  "landing.portal.point.teams": "Teams and schedule always up to date",
+  "landing.portal.point.results": "Official results and table",
+  "landing.portal.point.rankings": "Player and team rankings",
+  "landing.cta.title": "Ready to put your competition under control?",
+  "landing.cta.subtitle": "Create your organization and publish your first competition today.",
+  "landing.cta.primary": "Create account",
+  "landing.cta.secondary": "Log in",
+  "landing.footer.tagline": "Precise to operate. Clear to compete.",
+  "landing.footer.madeBy": "Futrob is made by Davion Software.",
+  "landing.footer.legal": "© 2026 Futrob",
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;
