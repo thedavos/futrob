@@ -279,6 +279,7 @@ export default defineConfig({
       "packages/api-contracts",
       "packages/sdk",
       "packages/shared-kernel",
+      "packages/ui",
       "packages/ea-clubs",
       "packages/identity",
       "packages/game-data",
