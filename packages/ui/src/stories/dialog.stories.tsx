@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost } from "@futrob/ui";
 
 import { Button } from "../components/button";
 import {
@@ -12,6 +14,15 @@ import {
   DialogTrigger,
 } from "../components/dialog";
 import { Input } from "../components/input";
+
+const styles = stylex.create({
+  scores: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.75rem",
+    paddingBlock: "1.25rem",
+  },
+});
 
 const meta = {
   title: "Primitives/Dialog",
@@ -31,7 +42,7 @@ export const Playground: Story = {
           <DialogTitle>Editar marcador</DialogTitle>
           <DialogDescription>Revisa el resultado antes de enviarlo a auditoría.</DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 py-5">
+        <div {...applyHost(undefined, undefined, styles.scores)}>
           <Input aria-label="Goles del equipo local" defaultValue="3" type="number" />
           <Input aria-label="Goles del equipo visitante" defaultValue="1" type="number" />
         </div>

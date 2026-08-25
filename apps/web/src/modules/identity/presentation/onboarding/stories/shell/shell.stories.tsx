@@ -1,8 +1,25 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button, Card, CardContent } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, Button, Card, CardContent } from "@futrob/ui";
 
 import { OnboardingShell } from "../../onboarding-shell.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+
+const styles = stylex.create({
+  padMd: { padding: "1.5rem" },
+  padLg: { padding: "2rem" },
+  twoCol: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "1rem",
+  },
+  stack: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+  },
+  full: { width: "100%" },
+});
 
 const steps = [
   { id: "intention", label: "Inicio" },
@@ -28,7 +45,9 @@ const meta = {
     description: "Selecciona la edición y la plataforma donde competirás.",
     children: (
       <Card>
-        <CardContent className="p-6">Contenido del paso</CardContent>
+        <CardContent {...applyHost(undefined, undefined, styles.padMd)}>
+          Contenido del paso
+        </CardContent>
       </Card>
     ),
   },
@@ -42,12 +61,12 @@ export const Playground: Story = {};
 export const Desktop: Story = {
   args: {
     children: (
-      <div className="grid grid-cols-2 gap-4">
+      <div {...applyHost(undefined, undefined, styles.twoCol)}>
         <Card>
-          <CardContent className="p-8">Opción uno</CardContent>
+          <CardContent {...applyHost(undefined, undefined, styles.padLg)}>Opción uno</CardContent>
         </Card>
         <Card>
-          <CardContent className="p-8">Opción dos</CardContent>
+          <CardContent {...applyHost(undefined, undefined, styles.padLg)}>Opción dos</CardContent>
         </Card>
       </div>
     ),
@@ -72,7 +91,7 @@ export const English: Story = {
         title="Set up your game"
       >
         <Card>
-          <CardContent className="p-6">Step content</CardContent>
+          <CardContent {...applyHost(undefined, undefined, styles.padMd)}>Step content</CardContent>
         </Card>
       </OnboardingShell>
     </I18nProvider>
@@ -82,15 +101,15 @@ export const English: Story = {
 export const LongContent: Story = {
   args: {
     children: (
-      <div className="space-y-6">
+      <div {...applyHost(undefined, undefined, styles.stack)}>
         {Array.from({ length: 4 }, (_, index) => (
           <Card key={index}>
-            <CardContent className="p-6">
+            <CardContent {...applyHost(undefined, undefined, styles.padMd)}>
               Sección {index + 1} con contenido suficiente para validar el crecimiento vertical.
             </CardContent>
           </Card>
         ))}
-        <Button className="w-full">Continuar</Button>
+        <Button {...applyHost(undefined, undefined, styles.full)}>Continuar</Button>
       </div>
     ),
   },

@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { TrayIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, applyStyles, media } from "@futrob/ui";
 
 import { Button } from "../components/button";
 import {
@@ -10,12 +12,33 @@ import {
   EmptyStateTitle,
 } from "../components/empty-state";
 
+const styles = stylex.create({
+  playground: {
+    marginInline: "auto",
+    maxWidth: "32rem",
+  },
+  compare: {
+    marginInline: "auto",
+    display: "grid",
+    width: "100%",
+    maxWidth: "56rem",
+    gap: "2rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+});
+
+const playground = applyStyles(styles.playground);
+
 const meta = {
   title: "Primitives/EmptyState",
   component: EmptyState,
   parameters: { layout: "padded" },
   args: {
-    className: "mx-auto max-w-lg",
+    className: playground.className,
+    style: playground.style,
     variant: "flat",
   },
   argTypes: {
@@ -80,7 +103,7 @@ export const Elevated: Story = {
 
 export const Compare: Story = {
   render: () => (
-    <div className="mx-auto grid w-full max-w-4xl gap-8 sm:grid-cols-2">
+    <div {...applyHost(undefined, undefined, styles.compare)}>
       <EmptyState variant="flat">
         <EmptyStateIcon>
           <TrayIcon />

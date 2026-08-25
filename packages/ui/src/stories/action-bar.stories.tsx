@@ -1,7 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, colors, typography } from "@futrob/ui";
 
 import { ActionBar, ActionBarEnd, ActionBarStart } from "../components/action-bar";
 import { Button } from "../components/button";
+
+const styles = stylex.create({
+  muted: { color: colors.mutedForeground },
+});
 
 const meta = {
   title: "Components/ActionBar",
@@ -18,7 +24,9 @@ export const Default: Story = {
   render: () => (
     <ActionBar>
       <ActionBarStart>
-        <span className="typo-caption text-muted-foreground">3 cambios pendientes</span>
+        <span {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+          3 cambios pendientes
+        </span>
       </ActionBarStart>
       <ActionBarEnd>
         <Button dense variant="outline">

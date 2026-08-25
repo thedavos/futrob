@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, colors, media, typography } from "@futrob/ui";
 
 import { Alert, AlertDescription, AlertTitle } from "../components/alert";
 import { Button } from "../components/button";
@@ -17,6 +19,72 @@ import {
 } from "../components/select";
 import { Textarea } from "../components/textarea";
 
+const styles = stylex.create({
+  form: {
+    display: "grid",
+    width: "min(32rem, calc(100vw - 2rem))",
+    gap: "1.25rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  eyebrow: { color: colors.primary },
+  title: {
+    marginTop: "0.25rem",
+    fontSize: "var(--text-xl)",
+    fontWeight: 600,
+  },
+  audit: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "0.75rem",
+    fontSize: "var(--text-sm)",
+    lineHeight: 1.625,
+  },
+  auditHint: {
+    display: "block",
+    color: colors.mutedForeground,
+  },
+  actions: {
+    display: "flex",
+    flexDirection: {
+      default: "column-reverse",
+      [media.sm]: "row",
+    },
+    justifyContent: {
+      default: null,
+      [media.sm]: "flex-end",
+    },
+    gap: "0.5rem",
+  },
+  status: {
+    display: "grid",
+    width: "min(32rem, calc(100vw - 2rem))",
+    gap: "1.25rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  dense: {
+    display: "grid",
+    width: "min(32rem, calc(100vw - 2rem))",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.75rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.25rem",
+  },
+});
+
 const meta = {
   title: "Patterns/Forms",
   parameters: {
@@ -30,13 +98,13 @@ type Story = StoryObj<typeof meta>;
 export const CompleteForm: Story = {
   render: () => (
     <Form
-      className="grid w-[min(32rem,calc(100vw-2rem))] gap-5 rounded-xl border border-border bg-surface p-6"
       onFormSubmit={() => undefined}
       validationMode="onBlur"
+      {...applyHost(undefined, undefined, styles.form)}
     >
       <div>
-        <p className="typo-label text-primary">Configuración</p>
-        <h2 className="mt-1 text-xl font-semibold">Crear competición</h2>
+        <p {...applyHost(undefined, undefined, typography.label, styles.eyebrow)}>Configuración</p>
+        <h2 {...applyHost(undefined, undefined, styles.title)}>Crear competición</h2>
       </div>
       <Field
         name="name"
@@ -66,16 +134,16 @@ export const CompleteForm: Story = {
         <FieldLabel>Notas operativas</FieldLabel>
         <Textarea placeholder="Criterios, horarios o excepciones…" />
       </Field>
-      <label className="flex items-start gap-3 text-sm leading-relaxed" htmlFor="audit-checkbox">
+      <label htmlFor="audit-checkbox" {...applyHost(undefined, undefined, styles.audit)}>
         <Checkbox defaultChecked id="audit-checkbox" name="audit" />
         <span>
           Exigir auditoría antes de oficializar resultados
-          <span className="block text-muted-foreground">
+          <span {...applyHost(undefined, undefined, styles.auditHint)}>
             El staff deberá revisar las estadísticas importadas.
           </span>
         </span>
       </label>
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <div {...applyHost(undefined, undefined, styles.actions)}>
         <Button type="button" variant="ghost">
           Cancelar
         </Button>
@@ -87,7 +155,7 @@ export const CompleteForm: Story = {
 
 export const ValidationAndStatus: Story = {
   render: () => (
-    <div className="grid w-[min(32rem,calc(100vw-2rem))] gap-5 rounded-xl border border-border bg-surface p-6">
+    <div {...applyHost(undefined, undefined, styles.status)}>
       <Field invalid name="team-code">
         <FieldLabel>Código del equipo</FieldLabel>
         <Input aria-invalid="true" defaultValue="@@@" />
@@ -104,7 +172,7 @@ export const ValidationAndStatus: Story = {
 
 export const DenseOperatorForm: Story = {
   render: () => (
-    <div className="grid w-[min(32rem,calc(100vw-2rem))] grid-cols-2 gap-3 rounded-xl border border-border bg-surface p-5">
+    <div {...applyHost(undefined, undefined, styles.dense)}>
       <Field>
         <FieldLabel>Jornada</FieldLabel>
         <Input defaultValue="12" dense type="number" />

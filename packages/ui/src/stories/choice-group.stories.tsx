@@ -1,8 +1,47 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { GameControllerIcon, TrophyIcon, UserIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, applyStyles, media } from "@futrob/ui";
 
 import { ChoiceGroup, ChoiceGroupIndicator, ChoiceGroupItem } from "../components/choice-group";
+
+const styles = stylex.create({
+  playground: {
+    width: "min(48rem, calc(100vw - 2rem))",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(3, minmax(0, 1fr))",
+    },
+  },
+  stack: {
+    display: "grid",
+    width: "min(44rem, calc(100vw - 2rem))",
+    gap: "2rem",
+  },
+  twoCols: {
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  },
+  threeCols: {
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  },
+  states: {
+    width: "min(44rem, calc(100vw - 2rem))",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  },
+  icon: {
+    width: "1.75rem",
+    height: "1.75rem",
+  },
+  semibold: { fontWeight: 600 },
+  indicator: {
+    position: "static",
+    width: "1.25rem",
+    height: "1.25rem",
+  },
+});
+
+const playground = applyStyles(styles.playground);
 
 const meta = {
   title: "Primitives/ChoiceGroup",
@@ -10,7 +49,8 @@ const meta = {
   parameters: { layout: "centered" },
   args: {
     "aria-label": "Elige una intención",
-    className: "w-[min(48rem,calc(100vw-2rem))] grid-cols-1 sm:grid-cols-3",
+    className: playground.className,
+    style: playground.style,
     defaultValue: "organization",
   },
 } satisfies Meta<typeof ChoiceGroup<string>>;
@@ -23,18 +63,18 @@ export const Playground: Story = {
     <ChoiceGroup {...args}>
       <ChoiceGroupItem value="organization">
         <ChoiceGroupIndicator />
-        <TrophyIcon className="size-7" />
-        <span className="font-semibold">Organizar</span>
+        <TrophyIcon {...applyHost(undefined, undefined, styles.icon)} />
+        <span {...applyHost(undefined, undefined, styles.semibold)}>Organizar</span>
       </ChoiceGroupItem>
       <ChoiceGroupItem value="player">
         <ChoiceGroupIndicator />
-        <UserIcon className="size-7" />
-        <span className="font-semibold">Jugar</span>
+        <UserIcon {...applyHost(undefined, undefined, styles.icon)} />
+        <span {...applyHost(undefined, undefined, styles.semibold)}>Jugar</span>
       </ChoiceGroupItem>
       <ChoiceGroupItem disabled value="unavailable">
         <ChoiceGroupIndicator />
-        <GameControllerIcon className="size-7" />
-        <span className="font-semibold">Próximamente</span>
+        <GameControllerIcon {...applyHost(undefined, undefined, styles.icon)} />
+        <span {...applyHost(undefined, undefined, styles.semibold)}>Próximamente</span>
       </ChoiceGroupItem>
     </ChoiceGroup>
   ),
@@ -42,21 +82,29 @@ export const Playground: Story = {
 
 export const ClosedVariants: Story = {
   render: () => (
-    <div className="grid w-[min(44rem,calc(100vw-2rem))] gap-8">
-      <ChoiceGroup aria-label="Tarjetas" className="grid-cols-2" defaultValue="one">
+    <div {...applyHost(undefined, undefined, styles.stack)}>
+      <ChoiceGroup
+        aria-label="Tarjetas"
+        defaultValue="one"
+        {...applyHost(undefined, undefined, styles.twoCols)}
+      >
         <ChoiceGroupItem value="one">
           <ChoiceGroupIndicator />
-          <span className="font-semibold">Tarjeta seleccionada</span>
+          <span {...applyHost(undefined, undefined, styles.semibold)}>Tarjeta seleccionada</span>
         </ChoiceGroupItem>
         <ChoiceGroupItem value="two">
           <ChoiceGroupIndicator />
-          <span className="font-semibold">Otra tarjeta</span>
+          <span {...applyHost(undefined, undefined, styles.semibold)}>Otra tarjeta</span>
         </ChoiceGroupItem>
       </ChoiceGroup>
-      <ChoiceGroup aria-label="Píldoras" className="grid-cols-3" defaultValue="fc26">
+      <ChoiceGroup
+        aria-label="Píldoras"
+        defaultValue="fc26"
+        {...applyHost(undefined, undefined, styles.threeCols)}
+      >
         {["fc25", "fc26", "otra"].map((value) => (
           <ChoiceGroupItem appearance="pill" key={value} value={value}>
-            <ChoiceGroupIndicator className="static size-5" />
+            <ChoiceGroupIndicator {...applyHost(undefined, undefined, styles.indicator)} />
             {value === "otra" ? "Otra" : value.toUpperCase()}
           </ChoiceGroupItem>
         ))}
@@ -69,8 +117,8 @@ export const States: Story = {
   render: () => (
     <ChoiceGroup
       aria-label="Estados"
-      className="w-[min(44rem,calc(100vw-2rem))] grid-cols-3"
       defaultValue="selected"
+      {...applyHost(undefined, undefined, styles.states)}
     >
       <ChoiceGroupItem value="selected">
         <ChoiceGroupIndicator />
@@ -101,8 +149,8 @@ export const HoverAndFocus: Story = {
   render: () => (
     <ChoiceGroup
       aria-label="Estados interactivos"
-      className="w-[min(44rem,calc(100vw-2rem))] grid-cols-3"
       defaultValue="selected"
+      {...applyHost(undefined, undefined, styles.states)}
     >
       <ChoiceGroupItem value="selected">
         <ChoiceGroupIndicator />

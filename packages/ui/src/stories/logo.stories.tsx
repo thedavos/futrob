@@ -1,6 +1,124 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, applyStyles, colors, typography } from "@futrob/ui";
 
 import { Logo } from "../logo";
+
+const styles = stylex.create({
+  playgroundLogo: {
+    height: "3rem",
+    width: "auto",
+    maxWidth: "none",
+  },
+  brandLogo: {
+    height: "4rem",
+    width: "auto",
+  },
+  logoMd: {
+    height: "3rem",
+    width: "auto",
+  },
+  logoSm: {
+    height: "2.25rem",
+    width: "auto",
+  },
+  logoLg: {
+    height: "4rem",
+    width: "auto",
+  },
+  panel: {
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "2rem",
+    color: colors.foreground,
+  },
+  monoRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "flex-end",
+    gap: "2rem",
+  },
+  monoOnSurface: {
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+    color: colors.foreground,
+  },
+  monoOnDark: {
+    borderRadius: "var(--corner-xl)",
+    backgroundColor: colors.foreground,
+    padding: "1.5rem",
+    color: colors.background,
+  },
+  caption: {
+    marginBottom: "0.75rem",
+    color: colors.mutedForeground,
+  },
+  captionOnDark: {
+    marginBottom: "0.75rem",
+    color: "color-mix(in oklab, var(--background) 70%, transparent)",
+  },
+  muted: { color: colors.mutedForeground },
+  sizes: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "flex-end",
+    gap: "1.5rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  group: {
+    display: "grid",
+    gap: "0.5rem",
+  },
+  wordmark: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingInline: "1.25rem",
+    paddingBlock: "1rem",
+  },
+  heading: {
+    letterSpacing: "0.025em",
+  },
+  decorative: {
+    display: "grid",
+    maxWidth: "24rem",
+    gap: "0.75rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  code: {
+    fontSize: "var(--text-xs)",
+  },
+  inlineRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+  },
+});
+
+const playgroundLogo = applyStyles(styles.playgroundLogo);
+const brandLogo = applyStyles(styles.brandLogo);
 
 const meta = {
   title: "Primitives/Logo",
@@ -9,7 +127,8 @@ const meta = {
     layout: "centered",
   },
   args: {
-    className: "h-12 w-auto max-w-none",
+    className: playgroundLogo.className,
+    style: playgroundLogo.style,
     monochrome: false,
     title: "Futrob",
   },
@@ -25,7 +144,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <div className="rounded-xl border border-border bg-surface p-8 text-foreground">
+    <div {...applyHost(undefined, undefined, styles.panel)}>
       <Logo {...args} />
     </div>
   ),
@@ -36,20 +155,23 @@ export const Brand: Story = {
   args: {
     monochrome: false,
     title: "Futrob",
-    className: "h-16 w-auto",
+    className: brandLogo.className,
+    style: brandLogo.style,
   },
 };
 
 export const Monochrome: Story = {
   render: () => (
-    <div className="flex flex-wrap items-end gap-8">
-      <div className="rounded-xl border border-border bg-surface p-6 text-foreground">
-        <p className="typo-caption mb-3 text-muted-foreground">On surface</p>
-        <Logo className="h-12 w-auto" monochrome title="Futrob" />
+    <div {...applyHost(undefined, undefined, styles.monoRow)}>
+      <div {...applyHost(undefined, undefined, styles.monoOnSurface)}>
+        <p {...applyHost(undefined, undefined, typography.caption, styles.caption)}>On surface</p>
+        <Logo monochrome title="Futrob" {...applyHost(undefined, undefined, styles.logoMd)} />
       </div>
-      <div className="rounded-xl bg-foreground p-6 text-background">
-        <p className="typo-caption mb-3 text-background/70">On dark / print</p>
-        <Logo className="h-12 w-auto" monochrome title="Futrob" />
+      <div {...applyHost(undefined, undefined, styles.monoOnDark)}>
+        <p {...applyHost(undefined, undefined, typography.caption, styles.captionOnDark)}>
+          On dark / print
+        </p>
+        <Logo monochrome title="Futrob" {...applyHost(undefined, undefined, styles.logoMd)} />
       </div>
     </div>
   ),
@@ -57,18 +179,18 @@ export const Monochrome: Story = {
 
 export const Sizes: Story = {
   render: () => (
-    <div className="flex flex-wrap items-end gap-6 rounded-xl border border-border bg-surface p-6">
-      <div className="grid gap-2">
-        <p className="typo-caption text-muted-foreground">Header · 36 px</p>
-        <Logo className="h-9 w-auto" title="Futrob" />
+    <div {...applyHost(undefined, undefined, styles.sizes)}>
+      <div {...applyHost(undefined, undefined, styles.group)}>
+        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Header · 36 px</p>
+        <Logo title="Futrob" {...applyHost(undefined, undefined, styles.logoSm)} />
       </div>
-      <div className="grid gap-2">
-        <p className="typo-caption text-muted-foreground">Auth · 48 px</p>
-        <Logo className="h-12 w-auto" title="Futrob" />
+      <div {...applyHost(undefined, undefined, styles.group)}>
+        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Auth · 48 px</p>
+        <Logo title="Futrob" {...applyHost(undefined, undefined, styles.logoMd)} />
       </div>
-      <div className="grid gap-2">
-        <p className="typo-caption text-muted-foreground">Hero · 64 px</p>
-        <Logo className="h-16 w-auto" title="Futrob" />
+      <div {...applyHost(undefined, undefined, styles.group)}>
+        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>Hero · 64 px</p>
+        <Logo title="Futrob" {...applyHost(undefined, undefined, styles.logoLg)} />
       </div>
     </div>
   ),
@@ -77,9 +199,9 @@ export const Sizes: Story = {
 export const WithWordmark: Story = {
   name: "With wordmark",
   render: () => (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-5 py-4">
-      <Logo aria-hidden="true" className="h-9 w-auto" />
-      <span className="typo-heading tracking-wide">Futrob</span>
+    <div {...applyHost(undefined, undefined, styles.wordmark)}>
+      <Logo aria-hidden="true" {...applyHost(undefined, undefined, styles.logoSm)} />
+      <span {...applyHost(undefined, undefined, typography.heading, styles.heading)}>Futrob</span>
     </div>
   ),
 };
@@ -87,14 +209,15 @@ export const WithWordmark: Story = {
 export const Decorative: Story = {
   name: "Decorative (no title)",
   render: () => (
-    <div className="grid max-w-sm gap-3 rounded-xl border border-border bg-surface p-6">
-      <p className="typo-caption text-muted-foreground">
-        Sin <code className="text-xs">title</code> el SVG es decorativo (
-        <code className="text-xs">aria-hidden</code>) cuando el wordmark visible ya dice Futrob.
+    <div {...applyHost(undefined, undefined, styles.decorative)}>
+      <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
+        Sin <code {...applyHost(undefined, undefined, styles.code)}>title</code> el SVG es decorativo
+        (<code {...applyHost(undefined, undefined, styles.code)}>aria-hidden</code>) cuando el
+        wordmark visible ya dice Futrob.
       </p>
-      <div className="flex items-center gap-3">
-        <Logo className="h-9 w-auto" />
-        <span className="typo-heading tracking-wide">Futrob</span>
+      <div {...applyHost(undefined, undefined, styles.inlineRow)}>
+        <Logo {...applyHost(undefined, undefined, styles.logoSm)} />
+        <span {...applyHost(undefined, undefined, typography.heading, styles.heading)}>Futrob</span>
       </div>
     </div>
   ),

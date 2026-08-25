@@ -14,10 +14,114 @@ import {
   UserPlusIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { Alert, AlertDescription, AlertTitle, Button, cn } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  applyHost,
+  Button,
+  colors,
+  motion,
+  typography,
+} from "@futrob/ui";
 import type { ComponentProps, ReactNode } from "react";
 
 import { QueueTaskItem } from "./queue-task-item.tsx";
+
+const styles = stylex.create({
+  states: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+  },
+  density: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "1.5rem",
+  },
+  panel: {
+    display: "flex",
+    width: "18rem",
+    flexDirection: "column",
+    gap: "1rem",
+    borderRadius: "var(--corner-2xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "0.75rem",
+  },
+  heading: {
+    paddingInline: "0.625rem",
+    fontWeight: 600,
+    textWrap: "pretty",
+    color: colors.mutedForeground,
+  },
+  emptyBox: {
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.borderStrong,
+    paddingInline: "0.75rem",
+    paddingBlock: "1rem",
+    textAlign: "center",
+  },
+  emptyCopy: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  emptyTitle: {
+    fontSize: "var(--text-sm)",
+    fontWeight: 600,
+    textWrap: "pretty",
+    color: colors.foreground,
+  },
+  emptyHint: {
+    fontWeight: 500,
+    textWrap: "pretty",
+    color: colors.mutedForeground,
+  },
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  skeleton: {
+    height: "2.5rem",
+    borderRadius: "var(--corner-lg)",
+    backgroundColor: colors.muted,
+  },
+  alert: {
+    rowGap: "0.75rem",
+  },
+  alertTitle: {
+    fontWeight: 700,
+  },
+  alertBody: {
+    display: "grid",
+    gap: "1rem",
+  },
+  alertHint: {
+    fontWeight: 500,
+    textWrap: "pretty",
+  },
+  railWrap: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  rail: {
+    width: "fit-content",
+    borderRadius: "var(--corner-2xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "0.5rem",
+  },
+});
 
 type StoryArgs = ComponentProps<typeof QueueTaskItem>;
 
@@ -63,7 +167,7 @@ export const Playground: Story = {
 export const States: Story = {
   name: "States",
   render: () => (
-    <div className="flex flex-col gap-6">
+    <div {...applyHost(undefined, undefined, styles.states)}>
       <QueuePanel label="default / active / disabled / resolved">
         <QueueTaskItem
           icon={CheckSquareIcon}
@@ -132,7 +236,7 @@ export const States: Story = {
 export const Density: Story = {
   name: "Density",
   render: () => (
-    <div className="flex flex-wrap gap-6">
+    <div {...applyHost(undefined, undefined, styles.density)}>
       <QueuePanel label="dense (default shell)">
         <QueueTaskItem
           dense
@@ -381,12 +485,12 @@ export const OrganizerContext: Story = {
 export const Empty: Story = {
   name: "Empty queue",
   render: () => (
-    <div className="flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3">
-      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Tareas</p>
-      <div className="rounded-lg border border-dashed border-border-strong px-3 py-4 text-center">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-pretty text-foreground">Sin tareas pendientes</p>
-          <p className="typo-caption font-medium text-pretty text-muted-foreground">
+    <div {...applyHost(undefined, undefined, styles.panel)}>
+      <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
+      <div {...applyHost(undefined, undefined, styles.emptyBox)}>
+        <div {...applyHost(undefined, undefined, styles.emptyCopy)}>
+          <p {...applyHost(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
+          <p {...applyHost(undefined, undefined, typography.caption, styles.emptyHint)}>
             Las tareas del espacio activo aparecerán aquí.
           </p>
         </div>
@@ -398,17 +502,17 @@ export const Empty: Story = {
 export const Loading: Story = {
   name: "Loading",
   render: () => (
-    <div className="flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3">
-      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Tareas</p>
+    <div {...applyHost(undefined, undefined, styles.panel)}>
+      <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
       <ul
         aria-busy="true"
         aria-label="Cargando tareas"
-        className="flex flex-col gap-2"
         role="status"
+        {...applyHost(undefined, undefined, styles.list)}
       >
-        <li className="h-10 animate-pulse rounded-lg bg-muted" />
-        <li className="h-10 animate-pulse rounded-lg bg-muted" />
-        <li className="h-10 animate-pulse rounded-lg bg-muted" />
+        <li {...applyHost(undefined, undefined, motion.pulse, styles.skeleton)} />
+        <li {...applyHost(undefined, undefined, motion.pulse, styles.skeleton)} />
+        <li {...applyHost(undefined, undefined, motion.pulse, styles.skeleton)} />
       </ul>
     </div>
   ),
@@ -417,13 +521,15 @@ export const Loading: Story = {
 export const ErrorState: Story = {
   name: "Error",
   render: () => (
-    <div className="flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3">
-      <p className="px-2.5 typo-label font-semibold text-muted-foreground">Tareas</p>
-      <Alert className="gap-y-3" variant="destructive">
+    <div {...applyHost(undefined, undefined, styles.panel)}>
+      <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
+      <Alert variant="destructive" {...applyHost(undefined, undefined, styles.alert)}>
         <WarningCircleIcon aria-hidden="true" />
-        <AlertTitle className="font-bold">No se pudieron cargar las tareas</AlertTitle>
-        <AlertDescription className="grid gap-4">
-          <span className="typo-caption font-medium text-pretty">
+        <AlertTitle {...applyHost(undefined, undefined, styles.alertTitle)}>
+          No se pudieron cargar las tareas
+        </AlertTitle>
+        <AlertDescription {...applyHost(undefined, undefined, styles.alertBody)}>
+          <span {...applyHost(undefined, undefined, typography.caption, styles.alertHint)}>
             Conservamos el espacio activo para que puedas reintentar.
           </span>
           <Button dense type="button" variant="outline">
@@ -447,27 +553,22 @@ function QueuePanel({
   readonly rail?: boolean;
 }) {
   const heading = (
-    <p className="typo-label font-semibold text-pretty text-muted-foreground">{label}</p>
+    <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>{label}</p>
   );
-  const list = <ul className="flex flex-col gap-2">{children}</ul>;
+  const list = <ul {...applyHost(undefined, undefined, styles.list)}>{children}</ul>;
 
   if (rail) {
     return (
-      <div className={cn("flex flex-col gap-4", className)}>
+      <div {...applyHost(className, undefined, styles.railWrap)}>
         {heading}
-        <div className="w-fit rounded-2xl border border-border bg-surface p-2">{list}</div>
+        <div {...applyHost(undefined, undefined, styles.rail)}>{list}</div>
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "flex w-72 flex-col gap-4 rounded-2xl border border-border bg-surface p-3",
-        className,
-      )}
-    >
-      <p className="px-2.5 typo-label font-semibold text-pretty text-muted-foreground">{label}</p>
+    <div {...applyHost(className, undefined, styles.panel)}>
+      <p {...applyHost(undefined, undefined, typography.label, styles.heading)}>{label}</p>
       {list}
     </div>
   );

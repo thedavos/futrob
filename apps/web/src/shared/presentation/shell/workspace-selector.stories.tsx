@@ -9,6 +9,8 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, colors, typography } from "@futrob/ui";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
 import { WorkspaceSelector } from "./workspace-selector.tsx";
@@ -16,6 +18,29 @@ import {
   buildWorkspaceSelectorModel,
   type WorkspaceSelectorModel,
 } from "./workspace-selector-model.ts";
+
+const styles = stylex.create({
+  host: {
+    width: "min(18rem, calc(100vw - 2rem))",
+  },
+  shell: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  row: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  muted: { color: colors.mutedForeground },
+  states: {
+    display: "flex",
+    width: "min(18rem, calc(100vw - 2rem))",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+});
 
 type StoryArgs = {
   readonly selectionKind: "personal" | "organization" | "competition";
@@ -61,7 +86,7 @@ function SelectorHost({
 }) {
   const [selection, setSelection] = useState(() => selectionFor(selectionKind, model));
   return (
-    <div className="w-[min(18rem,calc(100vw-2rem))]">
+    <div {...applyHost(undefined, undefined, styles.host)}>
       <WorkspaceSelector
         model={model}
         onRequestAddClub={() => undefined}
@@ -90,7 +115,7 @@ function WorkspaceSelectorStoryShell({
   const router = useMemo(() => {
     const rootRoute = createRootRoute({
       component: () => (
-        <div className="space-y-4">
+        <div {...applyHost(undefined, undefined, styles.shell)}>
           <SelectorHost model={model} selectionKind={selectionKind} />
           <Outlet />
         </div>
@@ -144,8 +169,8 @@ function TriggerStateRow({
   readonly children: ReactNode;
 }) {
   return (
-    <div className="space-y-1">
-      <p className="typo-caption text-muted-foreground">{label}</p>
+    <div {...applyHost(undefined, undefined, styles.row)}>
+      <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>{label}</p>
       {children}
     </div>
   );
@@ -294,7 +319,7 @@ export const FilledPortfolio: Story = {
 export const TriggerStates: Story = {
   name: "Trigger states",
   render: () => (
-    <div className="flex w-[min(18rem,calc(100vw-2rem))] flex-col gap-4">
+    <div {...applyHost(undefined, undefined, styles.states)}>
       <TriggerStateRow label="Personal sin club">
         <WorkspaceSelectorStoryShell model={emptyModel} selectionKind="personal" />
       </TriggerStateRow>

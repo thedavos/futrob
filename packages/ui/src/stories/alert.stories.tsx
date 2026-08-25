@@ -1,14 +1,39 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { WarningCircleIcon, CheckCircleIcon, InfoIcon, WarningIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, applyStyles, media } from "@futrob/ui";
 
 import { Alert, AlertDescription, AlertTitle } from "../components/alert";
+
+const styles = stylex.create({
+  playground: {
+    width: "min(28rem, calc(100vw - 2rem))",
+  },
+  variants: {
+    display: "grid",
+    width: "min(28rem, calc(100vw - 2rem))",
+    gap: "1rem",
+  },
+  elevation: {
+    display: "grid",
+    width: "min(40rem, calc(100vw - 2rem))",
+    gap: "1.5rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+});
+
+const playground = applyStyles(styles.playground);
 
 const meta = {
   title: "Primitives/Alert",
   component: Alert,
   parameters: { layout: "centered" },
   args: {
-    className: "w-[min(28rem,calc(100vw-2rem))]",
+    className: playground.className,
+    style: playground.style,
     elevation: "flat",
     variant: "default",
   },
@@ -41,7 +66,7 @@ export const Playground: Story = {
 
 export const ClosedVariants: Story = {
   render: () => (
-    <div className="grid w-[min(28rem,calc(100vw-2rem))] gap-4">
+    <div {...applyHost(undefined, undefined, styles.variants)}>
       <Alert variant="default">
         <InfoIcon />
         <AlertTitle>Aviso</AlertTitle>
@@ -75,7 +100,7 @@ export const ClosedVariants: Story = {
 
 export const Elevation: Story = {
   render: () => (
-    <div className="grid w-[min(40rem,calc(100vw-2rem))] gap-6 sm:grid-cols-2">
+    <div {...applyHost(undefined, undefined, styles.elevation)}>
       <Alert elevation="flat" variant="warning">
         <WarningIcon />
         <AlertTitle>flat</AlertTitle>

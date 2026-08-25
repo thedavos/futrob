@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost } from "@futrob/ui";
 
 import { Button } from "../components/button";
 import {
@@ -8,6 +10,13 @@ import {
   PageHeaderEyebrow,
   PageHeaderTitle,
 } from "../components/page-header";
+
+const styles = stylex.create({
+  header: {
+    width: "100%",
+    maxWidth: "64rem",
+  },
+});
 
 const meta = {
   title: "Patterns/PageHeader",
@@ -20,7 +29,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: () => (
-    <PageHeader className="w-full max-w-5xl">
+    <PageHeader {...applyHost(undefined, undefined, styles.header)}>
       <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
       <PageHeaderTitle>Mis partidos</PageHeaderTitle>
       <PageHeaderDescription>Apariciones en el club seleccionado.</PageHeaderDescription>
@@ -31,7 +40,7 @@ export const Playground: Story = {
 export const TitleOnly: Story = {
   name: "Title only",
   render: () => (
-    <PageHeader className="w-full max-w-5xl">
+    <PageHeader {...applyHost(undefined, undefined, styles.header)}>
       <PageHeaderTitle>Mis partidos</PageHeaderTitle>
     </PageHeader>
   ),
@@ -40,7 +49,7 @@ export const TitleOnly: Story = {
 export const WithDescription: Story = {
   name: "With description",
   render: () => (
-    <PageHeader className="w-full max-w-5xl">
+    <PageHeader {...applyHost(undefined, undefined, styles.header)}>
       <PageHeaderTitle>Mis partidos</PageHeaderTitle>
       <PageHeaderDescription>Apariciones en el club seleccionado.</PageHeaderDescription>
     </PageHeader>
@@ -50,7 +59,7 @@ export const WithDescription: Story = {
 export const WithEyebrowAndActions: Story = {
   name: "With eyebrow and actions",
   render: () => (
-    <PageHeader className="w-full max-w-5xl">
+    <PageHeader {...applyHost(undefined, undefined, styles.header)}>
       <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
       <PageHeaderTitle>davos282</PageHeaderTitle>
       <PageHeaderDescription>

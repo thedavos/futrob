@@ -1,7 +1,123 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, colors, media, typography } from "@futrob/ui";
 
 import { Skeleton } from "../components/skeleton";
 import { Stat, StatGroup, StatHint, StatLabel, StatValue } from "../components/stat";
+
+const styles = stylex.create({
+  compare: {
+    display: "grid",
+    width: "100%",
+    maxWidth: "48rem",
+    gap: "2rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+  panel: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.25rem",
+  },
+  panelLg: {
+    display: "flex",
+    width: "100%",
+    maxWidth: "56rem",
+    flexDirection: "column",
+    gap: "1.5rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  panelMd: {
+    display: "flex",
+    width: "100%",
+    maxWidth: "48rem",
+    flexDirection: "column",
+    gap: "1rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  panelMdStack: {
+    display: "flex",
+    width: "100%",
+    maxWidth: "48rem",
+    flexDirection: "column",
+    gap: "1.5rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  panelPlain: {
+    width: "100%",
+    maxWidth: "48rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  strip: {
+    display: "flex",
+    width: "100%",
+    maxWidth: "48rem",
+    flexDirection: "column",
+    gap: "2rem",
+  },
+  stripPanel: {
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "1.5rem",
+  },
+  score: {
+    display: "flex",
+    width: "100%",
+    maxWidth: "28rem",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "2.5rem",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "2rem",
+  },
+  muted: { color: colors.mutedForeground },
+  label: {
+    marginBottom: "1rem",
+    color: colors.mutedForeground,
+  },
+  hint: {
+    marginTop: "1rem",
+    color: colors.mutedForeground,
+  },
+  skeletonSm: { height: "2rem", width: "3rem" },
+  skeletonXs: { height: "2rem", width: "2.5rem" },
+  skeletonMd: { height: "2rem", width: "3.5rem" },
+});
 
 const meta = {
   title: "Primitives/Stat",
@@ -34,9 +150,9 @@ export const Playground: Story = {
 export const ClosedVariants: Story = {
   name: "Align and size",
   render: () => (
-    <div className="grid w-full max-w-3xl gap-8 sm:grid-cols-2">
-      <div className="space-y-4 rounded-xl border border-border bg-surface p-5">
-        <p className="typo-caption text-muted-foreground">align</p>
+    <div {...applyHost(undefined, undefined, styles.compare)}>
+      <div {...applyHost(undefined, undefined, styles.panel)}>
+        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>align</p>
         <StatGroup>
           <Stat align="start">
             <StatLabel>Inicio</StatLabel>
@@ -52,8 +168,8 @@ export const ClosedVariants: Story = {
           </Stat>
         </StatGroup>
       </div>
-      <div className="space-y-4 rounded-xl border border-border bg-surface p-5">
-        <p className="typo-caption text-muted-foreground">size</p>
+      <div {...applyHost(undefined, undefined, styles.panel)}>
+        <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>size</p>
         <StatGroup>
           <Stat>
             <StatLabel>default</StatLabel>
@@ -78,8 +194,8 @@ export const ClosedVariants: Story = {
 export const NumericStates: Story = {
   name: "Numeric states",
   render: () => (
-    <div className="w-full max-w-4xl space-y-6 rounded-xl border border-border bg-surface p-6">
-      <p className="typo-caption text-muted-foreground">
+    <div {...applyHost(undefined, undefined, styles.panelLg)}>
+      <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
         El formateo (locale, %, decimales) ocurre fuera del primitivo; Stat solo presenta el valor.
       </p>
       <StatGroup>
@@ -135,8 +251,8 @@ export const NumericStates: Story = {
 
 export const Tones: Story = {
   render: () => (
-    <div className="w-full max-w-3xl space-y-4 rounded-xl border border-border bg-surface p-6">
-      <p className="typo-caption text-muted-foreground">
+    <div {...applyHost(undefined, undefined, styles.panelMd)}>
+      <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
         El color refuerza el valor; el label y el hint siguen comunicando el significado.
       </p>
       <StatGroup>
@@ -183,7 +299,7 @@ export const Tones: Story = {
 export const EmptyAndUnavailable: Story = {
   name: "Empty and unavailable",
   render: () => (
-    <div className="w-full max-w-3xl space-y-6 rounded-xl border border-border bg-surface p-6">
+    <div {...applyHost(undefined, undefined, styles.panelMdStack)}>
       <StatGroup>
         <Stat>
           <StatLabel>Partidos</StatLabel>
@@ -218,23 +334,23 @@ export const EmptyAndUnavailable: Story = {
 
 export const Loading: Story = {
   render: () => (
-    <div className="w-full max-w-3xl rounded-xl border border-border bg-surface p-6">
+    <div {...applyHost(undefined, undefined, styles.panelPlain)}>
       <StatGroup aria-busy="true" aria-label="Cargando estadísticas">
         <Stat>
           <StatLabel>Partidos</StatLabel>
-          <Skeleton className="h-8 w-12" />
+          <Skeleton {...applyHost(undefined, undefined, styles.skeletonSm)} />
         </Stat>
         <Stat>
           <StatLabel>Goles</StatLabel>
-          <Skeleton className="h-8 w-10" />
+          <Skeleton {...applyHost(undefined, undefined, styles.skeletonXs)} />
         </Stat>
         <Stat>
           <StatLabel>Asistencias</StatLabel>
-          <Skeleton className="h-8 w-10" />
+          <Skeleton {...applyHost(undefined, undefined, styles.skeletonXs)} />
         </Stat>
         <Stat>
           <StatLabel>Rating</StatLabel>
-          <Skeleton className="h-8 w-14" />
+          <Skeleton {...applyHost(undefined, undefined, styles.skeletonMd)} />
         </Stat>
       </StatGroup>
     </div>
@@ -244,9 +360,9 @@ export const Loading: Story = {
 export const PlayerKpiStrip: Story = {
   name: "Player KPI strip",
   render: () => (
-    <div className="w-full max-w-3xl space-y-8">
-      <div className="rounded-xl border border-border bg-surface p-6">
-        <p className="typo-label mb-4 text-muted-foreground">Con datos</p>
+    <div {...applyHost(undefined, undefined, styles.strip)}>
+      <div {...applyHost(undefined, undefined, styles.stripPanel)}>
+        <p {...applyHost(undefined, undefined, typography.label, styles.label)}>Con datos</p>
         <StatGroup>
           <Stat>
             <StatLabel>PJ</StatLabel>
@@ -266,8 +382,10 @@ export const PlayerKpiStrip: Story = {
           </Stat>
         </StatGroup>
       </div>
-      <div className="rounded-xl border border-border bg-surface p-6">
-        <p className="typo-label mb-4 text-muted-foreground">Sin datos oficiales</p>
+      <div {...applyHost(undefined, undefined, styles.stripPanel)}>
+        <p {...applyHost(undefined, undefined, typography.label, styles.label)}>
+          Sin datos oficiales
+        </p>
         <StatGroup>
           <Stat>
             <StatLabel>PJ</StatLabel>
@@ -294,7 +412,7 @@ export const PlayerKpiStrip: Story = {
             </StatValue>
           </Stat>
         </StatGroup>
-        <p className="typo-caption mt-4 text-muted-foreground">
+        <p {...applyHost(undefined, undefined, typography.caption, styles.hint)}>
           Solo resultados oficiales aprobados. No incluye amistosos ni candidatos EA.
         </p>
       </div>
@@ -305,13 +423,13 @@ export const PlayerKpiStrip: Story = {
 export const HighlightedScore: Story = {
   name: "Highlighted score",
   render: () => (
-    <div className="flex w-full max-w-md items-center justify-center gap-10 rounded-xl border border-border bg-surface p-8">
+    <div {...applyHost(undefined, undefined, styles.score)}>
       <Stat align="center">
         <StatLabel>Local</StatLabel>
         <StatValue>2</StatValue>
         <StatHint>Night Owls</StatHint>
       </Stat>
-      <span className="typo-caption text-muted-foreground" aria-hidden="true">
+      <span aria-hidden="true" {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
         —
       </span>
       <Stat align="center">

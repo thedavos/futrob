@@ -1,7 +1,75 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CaretRightIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost, colors, typography } from "@futrob/ui";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/collapsible";
+
+const styles = stylex.create({
+  playground: {
+    width: "min(24rem, calc(100vw - 2rem))",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "0.75rem",
+  },
+  trigger: {
+    borderWidth: 0,
+    paddingInline: "0.5rem",
+    backgroundColor: {
+      default: null,
+      ":hover": colors.muted,
+    },
+  },
+  triggerDisabled: {
+    borderWidth: 0,
+    paddingInline: "0.5rem",
+  },
+  caret: {
+    width: "1rem",
+    height: "1rem",
+    color: colors.mutedForeground,
+    transitionProperty: "transform",
+    transitionDuration: "var(--duration-normal)",
+    transform: {
+      default: null,
+      ":is([data-panel-open] *)": "rotate(90deg)",
+    },
+  },
+  caretStatic: {
+    width: "1rem",
+    height: "1rem",
+    color: colors.mutedForeground,
+  },
+  body: {
+    display: "grid",
+    gap: "0.5rem",
+    paddingInline: "0.5rem",
+    paddingBlock: "0.75rem",
+  },
+  foreground: { color: colors.foreground },
+  muted: { color: colors.mutedForeground },
+  captionPad: {
+    paddingInline: "0.5rem",
+    paddingBlock: "0.75rem",
+    color: colors.mutedForeground,
+  },
+  sections: {
+    display: "grid",
+    width: "min(28rem, calc(100vw - 2rem))",
+    gap: "0.75rem",
+  },
+  section: {
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: "0.5rem",
+  },
+});
 
 const meta = {
   title: "Primitives/Collapsible",
@@ -22,21 +90,17 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   render: (args) => (
-    <Collapsible
-      {...args}
-      className="w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-3"
-    >
-      <CollapsibleTrigger className="typo-label border-0 px-2 hover:bg-muted">
+    <Collapsible {...args} {...applyHost(undefined, undefined, styles.playground)}>
+      <CollapsibleTrigger {...applyHost(undefined, undefined, typography.label, styles.trigger)}>
         Candidatos EA
-        <CaretRightIcon
-          aria-hidden="true"
-          className="size-4 text-muted-foreground transition-transform duration-(--duration-normal) group-data-panel-open/collapsible-trigger:rotate-90"
-        />
+        <CaretRightIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.caret)} />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="grid gap-2 px-2 py-3">
-          <p className="typo-body text-foreground">Real Nova vs Atlético Sur · 2-1</p>
-          <p className="typo-caption text-muted-foreground">
+        <div {...applyHost(undefined, undefined, styles.body)}>
+          <p {...applyHost(undefined, undefined, typography.body, styles.foreground)}>
+            Real Nova vs Atlético Sur · 2-1
+          </p>
+          <p {...applyHost(undefined, undefined, typography.caption, styles.muted)}>
             Revisa sides, duración y jugadores clave antes de proponer.
           </p>
         </div>
@@ -47,7 +111,7 @@ export const Playground: Story = {
 
 export const Sections: Story = {
   render: () => (
-    <div className="grid w-[min(28rem,calc(100vw-2rem))] gap-3">
+    <div {...applyHost(undefined, undefined, styles.sections)}>
       {(
         [
           ["Resumen", "Marcador, jornada y estado del enfrentamiento."],
@@ -55,16 +119,13 @@ export const Sections: Story = {
           ["Candidatos EA", "Observaciones del proveedor listas para selección."],
         ] as const
       ).map(([title, body]) => (
-        <Collapsible key={title} className="rounded-xl border border-border bg-surface p-2">
-          <CollapsibleTrigger className="typo-label border-0 px-2 hover:bg-muted">
+        <Collapsible key={title} {...applyHost(undefined, undefined, styles.section)}>
+          <CollapsibleTrigger {...applyHost(undefined, undefined, typography.label, styles.trigger)}>
             {title}
-            <CaretRightIcon
-              aria-hidden="true"
-              className="size-4 text-muted-foreground transition-transform duration-(--duration-normal) group-data-panel-open/collapsible-trigger:rotate-90"
-            />
+            <CaretRightIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.caret)} />
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <p className="typo-caption px-2 py-3 text-muted-foreground">{body}</p>
+            <p {...applyHost(undefined, undefined, typography.caption, styles.captionPad)}>{body}</p>
           </CollapsibleContent>
         </Collapsible>
       ))}
@@ -74,16 +135,15 @@ export const Sections: Story = {
 
 export const Disabled: Story = {
   render: () => (
-    <Collapsible
-      disabled
-      className="w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-3"
-    >
-      <CollapsibleTrigger className="typo-label border-0 px-2">
+    <Collapsible disabled {...applyHost(undefined, undefined, styles.playground)}>
+      <CollapsibleTrigger
+        {...applyHost(undefined, undefined, typography.label, styles.triggerDisabled)}
+      >
         Historial (sin permiso)
-        <CaretRightIcon aria-hidden="true" className="size-4 text-muted-foreground" />
+        <CaretRightIcon aria-hidden="true" {...applyHost(undefined, undefined, styles.caretStatic)} />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <p className="typo-caption px-2 py-3 text-muted-foreground">
+        <p {...applyHost(undefined, undefined, typography.caption, styles.captionPad)}>
           Solo el staff autorizado puede auditar este historial.
         </p>
       </CollapsibleContent>

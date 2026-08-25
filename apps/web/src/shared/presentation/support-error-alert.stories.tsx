@@ -1,5 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as stylex from "@stylexjs/stylex";
+import { applyHost } from "@futrob/ui";
 import { SupportErrorAlert } from "./support-error-alert.tsx";
+
+const styles = stylex.create({
+  frame: {
+    marginInline: "auto",
+    maxWidth: "42rem",
+    padding: "1.25rem",
+  },
+});
 
 const meta = {
   title: "Product/Shared/Support error alert",
@@ -12,7 +22,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="mx-auto max-w-2xl p-5">
+      <div {...applyHost(undefined, undefined, styles.frame)}>
         <Story />
       </div>
     ),
