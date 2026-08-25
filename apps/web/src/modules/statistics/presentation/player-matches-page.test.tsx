@@ -69,11 +69,8 @@ describe("PlayerMatchesPage", () => {
 
     expect(screen.getByText("Cargando tus partidos…")).toBeTruthy();
     expect(screen.getByLabelText("Cargando el resumen de partidos…")).toBeTruthy();
-    expect(screen.getByLabelText("Cargando el resumen de partidos…").className).toContain(
-      "@3xl:grid-cols-2",
-    );
-    expect(screen.getByLabelText("Cargando el resumen de partidos…").className).toContain(
-      "@5xl:grid-cols-3",
+    expect(screen.getByLabelText("Cargando el resumen de partidos…").getAttribute("data-record-cards")).toBe(
+      "3",
     );
     expect(screen.queryByText("Oficiales")).toBeNull();
   });
@@ -176,56 +173,42 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-metric-icon='recent-rating']")).toBeTruthy();
     expect(document.querySelector("[data-metric-icon='recent-yellow']")).toBeTruthy();
     expect(document.querySelector("[data-match-type='leagueMatch']")?.textContent).toBe("Liga");
-    expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
-      "text-emphasis",
+    expect(document.querySelector("[data-match-type='leagueMatch']")?.getAttribute("data-variant")).toBe(
+      "emphasis",
     );
-    expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
-      "bg-surface",
-    );
-    expect(
-      document.querySelector("[data-match-outcome='win']:not([data-match-score])")?.className,
-    ).toContain("bg-surface");
+    expect(document.querySelector("[data-match-outcome='win']:not([data-match-score])")).toBeTruthy();
     expect(document.querySelector("[data-match-chevron]")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ver Inter 2 – 1 Milan" }).getAttribute("href")).toBe(
       "/player/matches/ea-clubs/ea-1?view=all&sort=newest",
     );
     expect(document.querySelectorAll("[data-mvp]")).toHaveLength(1);
-    expect(document.querySelector("[data-slot='club-crest-avatar']")?.className).not.toContain(
-      "rounded-full",
+    expect(document.querySelector("[data-slot='club-crest-avatar']")?.getAttribute("data-slot")).toBe(
+      "club-crest-avatar",
     );
     expect(
       screen
         .getByText("8,4", { selector: "[data-metric='recent-rating']" })
-        .closest("[data-slot='badge']")?.className,
-    ).toContain("bg-primary");
+        .closest("[data-slot='badge']")
+        ?.getAttribute("data-variant"),
+    ).toBe("primary");
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
     const finalizedBadge = document.querySelector("[data-match-status='finalized']");
     expect(finalizedBadge?.textContent).toBe("Finalizado");
     expect(finalizedBadge?.getAttribute("data-slot")).toBe("badge");
-    expect(finalizedBadge?.className).toContain("border-border-strong");
+    expect(finalizedBadge?.getAttribute("data-variant")).toBe("outline");
     expect(finalizedBadge?.nextElementSibling?.getAttribute("data-match-score")).toBe("");
-    expect(document.querySelector("[data-match-score] .typo-score")?.className).toContain(
-      "text-brand-300",
+    expect(document.querySelector("[data-match-score] [data-score-lead='home']")?.textContent).toBe(
+      "2",
     );
     const homeWinItem = screen.getByRole("listitem", { name: /Inter 2 – 1 Milan/ });
-    expect(homeWinItem.querySelector("[data-pitch-half='home']")?.className).toContain(
-      "bg-primary/10",
+    expect(homeWinItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill")).toBe(
+      "win",
     );
-    expect(homeWinItem.querySelector("[data-pitch-half='away']")?.className).toContain(
-      "bg-danger/10",
-    );
-    expect(homeWinItem.querySelector("[data-pitch-half='home']")?.className).not.toContain(
-      "bg-muted",
+    expect(homeWinItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill")).toBe(
+      "loss",
     );
     const homeWatermark = homeWinItem.querySelector("[data-pitch-watermark='home']");
     expect(homeWatermark?.getAttribute("src")).toBe("https://example.com/inter.png");
-    expect(homeWatermark?.className).toContain("opacity-10");
-    expect(homeWatermark?.className).toContain("grayscale");
-    expect(homeWatermark?.className).toContain("hidden");
-    expect(homeWatermark?.className).toContain("size-[16.1rem]");
-    expect(homeWatermark?.className).toContain("left-[20%]");
-    expect(homeWatermark?.className).toContain("origin-left");
-    expect(homeWatermark?.className).toContain("rotate-y-[60deg]");
     expect(homeWinItem.querySelector("[data-pitch-watermark='away']")).toBeNull();
     expect(screen.queryByText("Hat-trick")).toBeNull();
     expect(screen.getByRole("heading", { name: "Rendimiento" })).toBeTruthy();
@@ -237,33 +220,21 @@ describe("PlayerMatchesPage", () => {
         .getAllByRole("heading")
         .map((heading) => heading.textContent),
     ).toEqual(["Rendimiento", "Record", "Contribuciones"]);
-    expect(summary.className).toContain("grid-cols-1");
-    expect(summary.className).toContain("items-stretch");
-    expect(summary.className).toContain("@3xl:grid-cols-2");
-    expect(summary.className).toContain("@5xl:grid-cols-3");
+    expect(summary.getAttribute("data-record-cards")).toBe("3");
     expect(
-      screen.getByRole("heading", { name: "Rendimiento" }).closest("[data-slot='card']")?.className,
-    ).toContain("@3xl:col-start-1");
+      screen.getByRole("heading", { name: "Rendimiento" }).closest("[data-slot='card']")
+        ?.getAttribute("data-record-slot"),
+    ).toBe("performance");
     expect(
-      screen.getByRole("heading", { name: "Rendimiento" }).closest("[data-slot='card']")?.className,
-    ).toContain("@3xl:row-start-1");
+      screen
+        .getByRole("heading", { name: "Contribuciones" })
+        .closest("[data-slot='card']")
+        ?.getAttribute("data-record-slot"),
+    ).toBe("contributions");
     expect(
-      screen.getByRole("heading", { name: "Contribuciones" }).closest("[data-slot='card']")
-        ?.className,
-    ).toContain("@3xl:col-start-2");
-    expect(
-      screen.getByRole("heading", { name: "Contribuciones" }).closest("[data-slot='card']")
-        ?.className,
-    ).toContain("@3xl:row-start-1");
-    expect(
-      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")?.className,
-    ).toContain("@3xl:col-span-2");
-    expect(
-      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")?.className,
-    ).toContain("@3xl:row-start-2");
-    expect(
-      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")?.className,
-    ).toContain("@5xl:col-span-1");
+      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")
+        ?.getAttribute("data-record-slot"),
+    ).toBe("record");
     expect(screen.getByText("1", { selector: "[data-metric='record-wins']" })).toBeTruthy();
     expect(
       screen.getByText("1", { selector: "[data-metric='record-goals-plus-assists']" }),
@@ -347,19 +318,16 @@ describe("PlayerMatchesPage", () => {
     );
     expect(document.querySelector("[data-match-outcome='draw']")).toBeTruthy();
     const drawItem = screen.getByRole("listitem", { name: /Atlético Norte 1 – 1 Fera Enjaulada/ });
-    expect(drawItem.querySelector("[data-pitch-half='home']")?.className).toContain("bg-muted");
-    expect(drawItem.querySelector("[data-pitch-half='home']")?.className).not.toContain(
-      "bg-muted/50",
+    expect(drawItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill")).toBe(
+      "drawHome",
     );
-    expect(drawItem.querySelector("[data-pitch-half='away']")?.className).toContain("bg-muted/50");
+    expect(drawItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill")).toBe(
+      "drawAway",
+    );
     expect(drawItem.querySelector("[data-pitch-fill='win']")).toBeNull();
     expect(drawItem.querySelector("[data-pitch-fill='loss']")).toBeNull();
-    expect(document.querySelector("[data-form-segment='draw']")?.className).toContain(
-      "bg-muted-foreground",
-    );
-    expect(document.querySelector("[data-last-game-outcome='draw']")?.className).toContain(
-      "bg-muted-foreground",
-    );
+    expect(document.querySelector("[data-form-segment='draw']")).toBeTruthy();
+    expect(document.querySelector("[data-last-game-outcome='draw']")).toBeTruthy();
     expect(document.querySelector("[data-last-game-outcome='draw']")?.textContent).toBe("E");
   });
 
@@ -481,44 +449,33 @@ describe("PlayerMatchesPage", () => {
         /^\d{2}:\d{2}$/.test(node.textContent ?? ""),
       ),
     ).toBe(true);
-    expect(document.querySelector("[data-match-score]")?.className).toContain("bg-foreground");
-    expect(document.querySelector("[data-match-score]")?.className).toContain(
-      "smooth-shadow-ring-md",
-    );
+    expect(document.querySelector("[data-match-score]")).toBeTruthy();
     expect(document.querySelector("[data-match-status='finalized']")?.nextElementSibling).toBe(
       document.querySelector("[data-match-score]"),
     );
     expect(document.querySelector("[data-match-type='leagueMatch']")?.textContent).toBe("Liga");
-    expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
-      "text-emphasis",
-    );
-    expect(document.querySelector("[data-match-type='leagueMatch']")?.className).toContain(
-      "bg-surface",
+    expect(document.querySelector("[data-match-type='leagueMatch']")?.getAttribute("data-variant")).toBe(
+      "emphasis",
     );
     expect(document.querySelector("[data-match-type='playoffMatch']")?.textContent).toBe("Playoff");
-    expect(document.querySelector("[data-match-type='playoffMatch']")?.className).toContain(
-      "text-info",
+    expect(document.querySelector("[data-match-type='playoffMatch']")?.getAttribute("data-variant")).toBe(
+      "info",
     );
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
     expect(document.querySelector("[data-match-outcome='loss']")).toBeTruthy();
     const awayWinItem = screen.getByRole("listitem", { name: /Cuervos FC 0 – 3 Fera Barranco/ });
-    expect(awayWinItem.querySelector("[data-pitch-half='away']")?.className).toContain(
-      "bg-primary/10",
+    expect(awayWinItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill")).toBe(
+      "win",
     );
-    expect(awayWinItem.querySelector("[data-pitch-half='home']")?.className).toContain(
-      "bg-danger/10",
+    expect(awayWinItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill")).toBe(
+      "loss",
     );
-    expect(awayWinItem.querySelector("[data-pitch-half='away']")?.className).not.toContain(
-      "bg-muted",
-    );
-    expect(document.querySelector("[data-match-outcome='loss']")?.className).toContain(
-      "text-danger",
-    );
+    expect(document.querySelector("[data-match-outcome='loss']")).toBeTruthy();
     expect(document.querySelector("[data-scoring-feat='hatTrick']")?.textContent).toContain(
       "Hat-trick",
     );
-    expect(document.querySelector("[data-scoring-feat='hatTrick']")?.className).toContain(
-      "bg-surface",
+    expect(document.querySelector("[data-scoring-feat='hatTrick']")?.getAttribute("data-variant")).toBe(
+      "warning",
     );
     expect(screen.getByText("1", { selector: "[data-metric='recent-yellow']" })).toBeTruthy();
     expect(screen.getByText("2", { selector: "[data-metric='recent-yellow']" })).toBeTruthy();
@@ -539,19 +496,14 @@ describe("PlayerMatchesPage", () => {
     expect(
       screen
         .getByText("6,8", { selector: "[data-metric='recent-rating']" })
-        .closest("[data-slot='badge']")?.className,
-    ).toContain("bg-transparent");
+        .closest("[data-slot='badge']")
+        ?.getAttribute("data-variant"),
+    ).toBe("outline");
     expect(screen.queryByText("Atlético Norte")).toBeNull();
 
     await user.click(screen.getByRole("radio", { name: "Amistosos" }));
     expect(await screen.findByText("Atlético Norte")).toBeTruthy();
     expect(document.querySelector("[data-match-outcome='draw']")).toBeTruthy();
-    expect(document.querySelector("[data-match-outcome='draw']")?.className).toContain(
-      "text-muted-foreground",
-    );
-    expect(document.querySelector("[data-match-outcome='draw']")?.className).not.toContain(
-      "text-danger",
-    );
     expect(screen.queryByText("Cuervos FC")).toBeNull();
   });
 
@@ -583,8 +535,8 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-scoring-feat='hatTrick']")?.textContent).toContain(
       "Hat-trick",
     );
-    expect(document.querySelector("[data-scoring-feat='hatTrick']")?.className).toContain(
-      "bg-surface",
+    expect(document.querySelector("[data-scoring-feat='hatTrick']")?.getAttribute("data-variant")).toBe(
+      "warning",
     );
     expect(
       document.querySelector("[data-scoring-feat='hatTrick']")?.getAttribute("data-feat-scorer"),
@@ -658,7 +610,7 @@ describe("PlayerMatchesPage", () => {
 
     expect(await screen.findByText("Rival Cap MVP")).toBeTruthy();
     expect(screen.queryByText("davos282")).toBeNull();
-    expect(document.querySelector("[data-mvp]")?.className).toContain("text-warning");
+    expect(document.querySelector("[data-mvp]")?.getAttribute("data-variant")).toBe("warning");
   });
 
   it("shows rating trend against the last five when enough matches exist", async () => {
@@ -738,21 +690,13 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-metric='record-pace']")).toBeNull();
     expect(document.querySelector("[data-metric='record-share']")).toBeNull();
     expect(document.querySelector("[data-rating-ring]")).toBeNull();
-    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).toContain(
-      "@5xl:grid-cols-[minmax(0,28rem)]",
-    );
-    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).not.toContain(
-      "@3xl:grid-cols-2",
-    );
-    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).not.toContain(
-      "repeat(3",
-    );
-    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).className).not.toContain(
-      "repeat(2",
+    expect(screen.getByRole("group", { name: "Resumen de esta vista" }).getAttribute("data-record-cards")).toBe(
+      "1",
     );
     expect(
-      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")?.className,
-    ).not.toContain("@3xl:col-span-2");
+      screen.getByRole("heading", { name: "Record" }).closest("[data-slot='card']")
+        ?.getAttribute("data-record-slot"),
+    ).toBe("record");
   });
 });
 

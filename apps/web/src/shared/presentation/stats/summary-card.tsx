@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { applyHost, applyStyles, Card, CardContent, Skeleton, typography } from "@futrob/ui";
 
@@ -51,18 +51,26 @@ export function SummaryCard({
   className,
   footer,
   headingId,
+  style,
   title,
+  ...props
 }: {
   readonly children: ReactNode;
   readonly className?: string;
   readonly footer?: ReactNode;
   readonly headingId: string;
+  readonly style?: CSSProperties;
   readonly title: string;
-}) {
-  const card = applyHost(className, undefined, styles.card);
+} & Omit<ComponentProps<typeof Card>, "children" | "className" | "style">) {
+  const card = applyHost(className, style, styles.card);
   const content = applyStyles(styles.content);
   return (
-    <Card aria-labelledby={headingId} className={card.className} style={card.style}>
+    <Card
+      aria-labelledby={headingId}
+      className={card.className}
+      style={card.style}
+      {...props}
+    >
       <CardContent className={content.className} style={content.style}>
         <h2 id={headingId} {...applyStyles(typography.label)}>
           {title}
@@ -76,13 +84,20 @@ export function SummaryCard({
   );
 }
 
-export function SummaryCardLoading({ className }: { readonly className?: string }) {
-  const card = applyHost(className, undefined, styles.card);
+export function SummaryCardLoading({
+  className,
+  style,
+  ...props
+}: {
+  readonly className?: string;
+  readonly style?: CSSProperties;
+} & Omit<ComponentProps<typeof Card>, "children" | "className" | "style">) {
+  const card = applyHost(className, style, styles.card);
   const content = applyStyles(styles.loadingContent);
   const title = applyStyles(styles.skeletonTitle);
   const value = applyStyles(styles.skeletonValue);
   return (
-    <Card className={card.className} style={card.style}>
+    <Card className={card.className} style={card.style} {...props}>
       <CardContent className={content.className} style={content.style}>
         <Skeleton className={title.className} style={title.style} />
         <Skeleton className={value.className} style={value.style} />

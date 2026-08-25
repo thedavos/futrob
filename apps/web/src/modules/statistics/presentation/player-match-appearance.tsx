@@ -1,10 +1,149 @@
-"use client";
+"use client"
 
-import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
-import { Badge, type Icon, type IconWeight } from "@futrob/ui";
-import { HandshakeIcon, RectangleIcon, SoccerBallIcon, StarIcon } from "@phosphor-icons/react";
-import type { Translator } from "@/shared/presentation/i18n/translate.ts";
-import { playedAppearance, showsYellowCards } from "./player-match-view.ts";
+import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts"
+import * as stylex from "@stylexjs/stylex"
+import { applyStyles, Badge, colors, typography, type Icon, type IconWeight } from "@futrob/ui"
+import { HandshakeIcon, RectangleIcon, SoccerBallIcon, StarIcon } from "@phosphor-icons/react"
+import type { Translator } from "@/shared/presentation/i18n/translate.ts"
+import { playedAppearance, showsYellowCards } from "./player-match-view.ts"
+
+const styles = stylex.create({
+  wrap: {
+    position: "relative",
+    zIndex: 10,
+    display: "flex",
+    justifyContent: "center",
+    paddingInline: "1rem",
+    paddingBottom: {
+      default: "0.75rem",
+      "@container (min-width: 32rem)": "1rem",
+    },
+  },
+  strip: {
+    display: "flex",
+    maxWidth: "100%",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    columnGap: {
+      default: "0.625rem",
+      "@container (min-width: 32rem)": "0.75rem",
+    },
+    rowGap: {
+      default: "0.25rem",
+      "@container (min-width: 32rem)": "0.5rem",
+    },
+    borderRadius: {
+      default: null,
+      "@container (min-width: 32rem)": "var(--corner-full)",
+    },
+    backgroundColor: {
+      default: null,
+      "@container (min-width: 32rem)": colors.surface,
+    },
+    paddingInline: {
+      default: null,
+      "@container (min-width: 32rem)": "1rem",
+    },
+    paddingBlock: {
+      default: null,
+      "@container (min-width: 32rem)": "0.625rem",
+    },
+    boxShadow: {
+      default: null,
+      "@container (min-width: 32rem)": "var(--elevation-shadow-sm)",
+    },
+  },
+  name: {
+    display: "inline-flex",
+    minWidth: 0,
+    maxWidth: "9rem",
+    alignItems: "center",
+    gap: "0.25rem",
+  },
+  nameIcon: {
+    width: "0.875rem",
+    height: "0.875rem",
+    flexShrink: 0,
+    color: colors.mutedForeground,
+  },
+  nameText: {
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  nameStrong: {
+    fontWeight: 600,
+  },
+  badgeStrong: {
+    fontWeight: 600,
+  },
+  icon: {
+    width: "0.875rem",
+    height: "0.875rem",
+  },
+  cqSrOnly: {
+    position: {
+      default: "absolute",
+      "@container (min-width: 32rem)": "static",
+    },
+    width: {
+      default: 1,
+      "@container (min-width: 32rem)": "auto",
+    },
+    height: {
+      default: 1,
+      "@container (min-width: 32rem)": "auto",
+    },
+    padding: 0,
+    margin: {
+      default: -1,
+      "@container (min-width: 32rem)": 0,
+    },
+    overflow: {
+      default: "hidden",
+      "@container (min-width: 32rem)": "visible",
+    },
+    clip: {
+      default: "rect(0, 0, 0, 0)",
+      "@container (min-width: 32rem)": "auto",
+    },
+    whiteSpace: {
+      default: "nowrap",
+      "@container (min-width: 32rem)": "normal",
+    },
+    borderWidth: 0,
+  },
+  mvpIcon: {
+    color: colors.warning,
+  },
+  mvpLabel: {
+    fontWeight: 500,
+  },
+  stat: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.25rem",
+    color: colors.mutedForeground,
+  },
+  yellowIcon: {
+    width: "0.875rem",
+    height: "0.875rem",
+    transform: "rotate(90deg)",
+    color: colors.warning,
+  },
+  medium: {
+    fontWeight: 500,
+  },
+  value: {
+    fontVariantNumeric: "tabular-nums",
+    color: colors.foreground,
+  },
+  valueStrong: {
+    fontWeight: 600,
+  },
+})
 
 export function MatchAppearanceStrip({
   item,
@@ -12,28 +151,24 @@ export function MatchAppearanceStrip({
   numberFormat,
   t,
 }: {
-  readonly item: PlayerRecentProviderMatchDto;
-  readonly mvpLabel: string | null;
-  readonly numberFormat: Intl.NumberFormat;
-  readonly t: Translator;
+  readonly item: PlayerRecentProviderMatchDto
+  readonly mvpLabel: string | null
+  readonly numberFormat: Intl.NumberFormat
+  readonly t: Translator
 }) {
-  const appearance = playedAppearance(item);
-  if (!appearance) return null;
-  const showYellow = showsYellowCards(appearance.yellowCards);
-  const name = appearance.displayName.trim();
+  const appearance = playedAppearance(item)
+  if (!appearance) return null
+  const showYellow = showsYellowCards(appearance.yellowCards)
+  const name = appearance.displayName.trim()
   return (
-    <div className="relative z-10 flex justify-center px-4 pb-3 @lg:pb-4">
-      <div className="flex max-w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 @lg:gap-x-3 @lg:gap-y-2 @lg:rounded-full @lg:bg-surface @lg:px-4 @lg:py-2.5 @lg:smooth-shadow-ring-sm">
+    <div {...applyStyles(styles.wrap)}>
+      <div {...applyStyles(styles.strip)}>
         {mvpLabel ? <MatchMvpBadge label={mvpLabel} /> : null}
         {mvpLabel === null && name !== "" ? (
-          <span className="inline-flex min-w-0 max-w-[9rem] items-center gap-1">
-            <StarIcon
-              aria-hidden="true"
-              className="size-3.5 shrink-0 text-muted-foreground"
-              weight="fill"
-            />
-            <span className="typo-caption min-w-0 truncate">
-              <span className="font-semibold">{name}</span>
+          <span {...applyStyles(styles.name)}>
+            <StarIcon aria-hidden="true" weight="fill" {...applyStyles(styles.nameIcon)} />
+            <span {...applyStyles(typography.caption, styles.nameText)}>
+              <span {...applyStyles(styles.nameStrong)}>{name}</span>
             </span>
           </span>
         ) : null}
@@ -56,7 +191,7 @@ export function MatchAppearanceStrip({
         {showYellow ? (
           <AppearanceStripStat
             icon={RectangleIcon}
-            iconClassName="size-3.5 rotate-90 text-warning"
+            iconStyle="yellow"
             iconWeight="fill"
             metric="recent-yellow"
             numberFormat={numberFormat}
@@ -65,25 +200,25 @@ export function MatchAppearanceStrip({
             value={appearance.yellowCards}
           />
         ) : null}
-        <Badge className="font-semibold" variant={ratingBadgeVariant(appearance.rating)}>
+        <Badge variant={ratingBadgeVariant(appearance.rating)} {...applyStyles(styles.badgeStrong)}>
           <StarIcon
             aria-hidden="true"
-            className="size-3.5"
             data-metric-icon="recent-rating"
             weight="fill"
+            {...applyStyles(styles.icon)}
           />
-          <span className="typo-caption @max-lg:sr-only">
-            <span className="font-medium">{t("player.metric.rating")}</span>
+          <span {...applyStyles(typography.caption, styles.cqSrOnly)}>
+            <span {...applyStyles(styles.medium)}>{t("player.metric.rating")}</span>
           </span>
           {appearance.rating === null ? (
-            <span className="typo-caption" data-size="empty">
-              <span className="font-medium" data-metric="recent-rating">
+            <span data-size="empty" {...applyStyles(typography.caption)}>
+              <span data-metric="recent-rating" {...applyStyles(styles.medium)}>
                 {t("player.noData")}
               </span>
             </span>
           ) : (
-            <span className="typo-caption tabular-nums">
-              <span className="font-medium" data-metric="recent-rating">
+            <span {...applyStyles(typography.caption, styles.value)}>
+              <span data-metric="recent-rating" {...applyStyles(styles.medium)}>
                 {numberFormat.format(appearance.rating)}
               </span>
             </span>
@@ -91,21 +226,21 @@ export function MatchAppearanceStrip({
         </Badge>
       </div>
     </div>
-  );
+  )
 }
 
 function MatchMvpBadge({ label }: { readonly label: string }) {
   return (
     <Badge data-mvp="" variant="warning">
-      <StarIcon aria-hidden="true" className="text-warning" weight="fill" />
-      <span className="font-medium">{label}</span>
+      <StarIcon aria-hidden="true" weight="fill" {...applyStyles(styles.mvpIcon)} />
+      <span {...applyStyles(styles.mvpLabel)}>{label}</span>
     </Badge>
-  );
+  )
 }
 
 function AppearanceStripStat({
   icon: MetricIcon,
-  iconClassName = "size-3.5",
+  iconStyle = "default",
   iconWeight = "regular",
   metric,
   numberFormat,
@@ -113,50 +248,50 @@ function AppearanceStripStat({
   unitKey,
   value,
 }: {
-  readonly icon: Icon;
-  readonly iconClassName?: string;
-  readonly iconWeight?: IconWeight;
-  readonly metric: string;
-  readonly numberFormat: Intl.NumberFormat;
-  readonly t: Translator;
+  readonly icon: Icon
+  readonly iconStyle?: "default" | "yellow"
+  readonly iconWeight?: IconWeight
+  readonly metric: string
+  readonly numberFormat: Intl.NumberFormat
+  readonly t: Translator
   readonly unitKey:
     | "player.matches.appearance.goalsUnit"
     | "player.matches.appearance.assistsUnit"
-    | null;
-  readonly value: number | null;
+    | null
+  readonly value: number | null
 }) {
   return (
-    <span className="inline-flex items-center gap-1 text-muted-foreground">
+    <span {...applyStyles(styles.stat)}>
       <MetricIcon
         aria-hidden="true"
-        className={iconClassName}
         data-metric-icon={metric}
         weight={iconWeight}
+        {...applyStyles(iconStyle === "yellow" ? styles.yellowIcon : styles.icon)}
       />
       {value === null ? (
-        <span className="typo-caption" data-size="empty">
-          <span className="font-medium" data-metric={metric}>
+        <span data-size="empty" {...applyStyles(typography.caption)}>
+          <span data-metric={metric} {...applyStyles(styles.medium)}>
             {t("player.noData")}
           </span>
         </span>
       ) : (
         <>
-          <span className="typo-caption tabular-nums text-foreground">
-            <span className="font-semibold" data-metric={metric}>
+          <span {...applyStyles(typography.caption, styles.value)}>
+            <span data-metric={metric} {...applyStyles(styles.valueStrong)}>
               {numberFormat.format(value)}
             </span>
           </span>
           {unitKey === null ? null : (
-            <span className="typo-caption @max-lg:sr-only">
-              <span className="font-medium">{t(unitKey, { count: value })}</span>
+            <span {...applyStyles(typography.caption, styles.cqSrOnly)}>
+              <span {...applyStyles(styles.medium)}>{t(unitKey, { count: value })}</span>
             </span>
           )}
         </>
       )}
     </span>
-  );
+  )
 }
 
 function ratingBadgeVariant(rating: number | null): "primary" | "outline" {
-  return rating !== null && rating >= 7 ? "primary" : "outline";
+  return rating !== null && rating >= 7 ? "primary" : "outline"
 }

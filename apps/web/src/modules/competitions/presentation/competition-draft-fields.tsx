@@ -1,18 +1,22 @@
 "use client";
 
 import { useId, useRef, type Ref } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
+  applyStyles,
   ChoiceGroup,
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
   Input,
+  media,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  typography,
 } from "@futrob/ui";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { competitionFormatSchema, competitionRegionSchema } from "@futrob/api-contracts";
@@ -32,6 +36,51 @@ import {
   type GameEditionFieldCopy,
 } from "@/shared/presentation/forms/game-edition-field.tsx";
 import { PlatformChoice } from "@/shared/presentation/forms/platform-choice.tsx";
+
+const styles = stylex.create({
+  stack: {
+    display: "grid",
+    gap: "2rem",
+  },
+  fieldGap: {
+    gap: "0.75rem",
+  },
+  fieldset: {
+    margin: 0,
+    borderWidth: 0,
+    padding: 0,
+  },
+  legend: {
+    marginBottom: "0.75rem",
+  },
+  platformGrid: {
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(3, minmax(0, 1fr))",
+      [media.lg]: "repeat(5, minmax(0, 1fr))",
+    },
+  },
+  pair: {
+    display: "grid",
+    gap: {
+      default: "2rem",
+      [media.sm]: "1rem",
+    },
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+  selectContent: {
+    maxHeight: "var(--available-height)",
+    overflowY: "auto",
+    overscrollBehavior: "contain",
+  },
+});
+
+const fieldGap = applyStyles(styles.fieldGap);
+const platformGrid = applyStyles(styles.platformGrid);
+const selectContent = applyStyles(styles.selectContent);
 
 export type CompetitionDraftFieldsProps = {
   readonly value: CompetitionDraftFieldsValue;
@@ -108,8 +157,13 @@ export function CompetitionDraftFields({
   }
 
   return (
-    <div className="grid gap-8">
-      <Field className="gap-3" invalid={fieldError?.field === "name"} name="name">
+    <div {...applyStyles(styles.stack)}>
+      <Field
+        className={fieldGap.className}
+        invalid={fieldError?.field === "name"}
+        name="name"
+        style={fieldGap.style}
+      >
         <FieldLabel htmlFor={`${idPrefix}-name`}>{copy.nameLabel}</FieldLabel>
         <Input
           aria-describedby={fieldError?.field === "name" ? errorId : undefined}
@@ -150,19 +204,20 @@ export function CompetitionDraftFields({
         value={value.gameEdition}
       />
 
-      <fieldset className="m-0 border-0 p-0" data-competition-platform>
-        <legend className="mb-3 typo-label" id={platformLabelId}>
+      <fieldset {...applyStyles(styles.fieldset)} data-competition-platform="">
+        <legend {...applyStyles(typography.label, styles.legend)} id={platformLabelId}>
           {copy.platformLabel}
         </legend>
         <ChoiceGroup<GamePlatformDto | "">
           aria-describedby={fieldError?.field === "platform" ? errorId : undefined}
           aria-invalid={fieldError?.field === "platform"}
           aria-labelledby={platformLabelId}
-          className="grid-cols-1 sm:grid-cols-3 lg:grid-cols-5"
+          className={platformGrid.className}
           onValueChange={(next) => {
             if (next) onChange({ platform: next });
             clearError();
           }}
+          style={platformGrid.style}
           value={value.platform ?? ""}
         >
           <PlatformChoice label="PlayStation" value={GAME_PLATFORM.PLAYSTATION} />
@@ -176,8 +231,13 @@ export function CompetitionDraftFields({
         ) : null}
       </fieldset>
 
-      <div className="grid gap-8 sm:grid-cols-2 sm:gap-4">
-        <Field className="gap-3" data-competition-region invalid={fieldError?.field === "region"}>
+      <div {...applyStyles(styles.pair)}>
+        <Field
+          className={fieldGap.className}
+          data-competition-region=""
+          invalid={fieldError?.field === "region"}
+          style={fieldGap.style}
+        >
           <FieldLabel htmlFor={`${idPrefix}-region`}>{copy.regionLabel}</FieldLabel>
           <Select
             items={copy.regions}
@@ -212,7 +272,11 @@ export function CompetitionDraftFields({
           ) : null}
         </Field>
 
-        <Field className="gap-3" invalid={fieldError?.field === "time-zone"}>
+        <Field
+          className={fieldGap.className}
+          invalid={fieldError?.field === "time-zone"}
+          style={fieldGap.style}
+        >
           <FieldLabel htmlFor={`${idPrefix}-time-zone`}>{copy.timeZoneLabel}</FieldLabel>
           <Select
             items={competitionTimeZones}
@@ -231,7 +295,7 @@ export function CompetitionDraftFields({
             >
               <SelectValue placeholder={copy.timeZonePlaceholder} />
             </SelectTrigger>
-            <SelectContent className="max-h-(--available-height) overflow-y-auto overscroll-contain">
+            <SelectContent className={selectContent.className} style={selectContent.style}>
               {competitionTimeZones.map((tz) => (
                 <SelectItem key={tz.value} value={tz.value}>
                   {tz.label}
@@ -247,7 +311,12 @@ export function CompetitionDraftFields({
         </Field>
       </div>
 
-      <Field className="gap-3" data-competition-format invalid={fieldError?.field === "format"}>
+      <Field
+        className={fieldGap.className}
+        data-competition-format=""
+        invalid={fieldError?.field === "format"}
+        style={fieldGap.style}
+      >
         <FieldLabel htmlFor={`${idPrefix}-format`}>
           {showFormatDescription ? copy.initialFormatLabel : copy.formatLabel}
         </FieldLabel>

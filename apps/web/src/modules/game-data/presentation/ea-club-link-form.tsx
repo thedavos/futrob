@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import {
+  applyStyles,
   Badge,
   Button,
   ChoiceGroup,
@@ -18,6 +19,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  typography,
 } from "@futrob/ui";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import {
@@ -43,9 +45,18 @@ import { SupportErrorAlert } from "@/shared/presentation/support-error-alert.tsx
 import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { styles } from "./ea-club-link-form.styles.ts";
 
-const clubResultItemClassName =
-  "min-h-0 flex-row items-center justify-start gap-4 rounded-xl py-3 pr-14 pl-3 text-left sm:min-h-0 sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:p-3 sm:pr-14 sm:text-left";
+const fieldGap = applyStyles(styles.fieldGap);
+const platformTrigger = applyStyles(styles.platformTrigger);
+const logo = applyStyles(styles.logo);
+const platformMenu = applyStyles(styles.platformMenu);
+const searchButton = applyStyles(styles.searchButton);
+const results = applyStyles(styles.results);
+const resultItem = applyStyles(styles.resultItem);
+const crest = applyStyles(styles.crest);
+const fallback = applyStyles(styles.fallback);
+const chipIcon = applyStyles(styles.chipIcon);
 
 type ClubSearchState =
   | { readonly status: "idle" }
@@ -180,9 +191,9 @@ export function EaClubLinkForm({
             : null;
 
   return (
-    <div className="grid w-full gap-6">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-        <Field className="gap-3">
+    <div {...applyStyles(styles.root)}>
+      <div {...applyStyles(styles.search)}>
+        <Field className={fieldGap.className} style={fieldGap.style}>
           <FieldLabel htmlFor={clubNameId}>{t("onboarding.club.name.label")}</FieldLabel>
           <Input
             autoComplete="off"
@@ -203,7 +214,7 @@ export function EaClubLinkForm({
             value={query}
           />
         </Field>
-        <div className="flex items-center gap-2 max-sm:w-full">
+        <div {...applyStyles(styles.actions)}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger
@@ -236,17 +247,28 @@ export function EaClubLinkForm({
           >
             <SelectTrigger
               aria-label={t("onboarding.club.platform.aria")}
-              className="size-(--control-height) max-sm:size-(--control-height-touch) shrink-0 cursor-pointer justify-center gap-0 border-border-strong p-0 [&_[data-slot=select-trigger-icon]]:hidden"
+              className={platformTrigger.className}
+              data-hide-icon="true"
+              style={platformTrigger.style}
             >
-              <PlatformLogo className="size-4" platform={gamePlatformForEaSearchLogo(platform)} />
+              <PlatformLogo
+                className={logo.className}
+                platform={gamePlatformForEaSearchLogo(platform)}
+                style={logo.style}
+              />
             </SelectTrigger>
-            <SelectContent align="end" className="min-w-52">
+            <SelectContent
+              align="end"
+              className={platformMenu.className}
+              style={platformMenu.style}
+            >
               {eaSearchPlatforms.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  <span className="inline-flex items-center gap-2">
+                  <span {...applyStyles(styles.platformOption)}>
                     <PlatformLogo
-                      className="size-4"
+                      className={logo.className}
                       platform={gamePlatformForEaSearchLogo(option.value)}
+                      style={logo.style}
                     />
                     {option.label}
                   </span>
@@ -255,9 +277,10 @@ export function EaClubLinkForm({
             </SelectContent>
           </Select>
           <Button
-            className="min-w-0 flex-1 sm:flex-none"
+            className={searchButton.className}
             disabled={!query.trim() || search.status === "loading" || busy || retry.blocked}
             onClick={() => void searchClubs()}
+            style={searchButton.style}
             variant="outline"
           >
             {search.status === "loading"
@@ -269,7 +292,7 @@ export function EaClubLinkForm({
         </div>
       </div>
 
-      <div aria-live="polite" className="min-h-5 typo-caption text-muted-foreground" id={statusId}>
+      <div aria-live="polite" id={statusId} {...applyStyles(typography.caption, styles.status)}>
         {liveStatus}
       </div>
 
@@ -298,28 +321,31 @@ export function EaClubLinkForm({
         <ChoiceGroup
           aria-describedby={statusId}
           aria-label={t("onboarding.club.results.aria")}
-          className="grid-cols-1"
+          className={results.className}
           onValueChange={(value: string) => {
             const club = search.clubs.find((item) => item.externalClubId === value);
             if (club) selectClub(club);
           }}
+          style={results.style}
           value={selected?.externalClubId ?? ""}
         >
           {search.clubs.map((club) => (
             <ChoiceGroupItem
-              className={clubResultItemClassName}
+              className={resultItem.className}
               key={club.externalClubId}
+              style={resultItem.style}
               value={club.externalClubId}
             >
               <ChoiceGroupIndicator />
               <ClubCrestAvatar
-                className="size-12 outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
-                fallbackClassName="text-sm"
+                className={crest.className}
+                fallbackClassName={fallback.className}
                 imageUrl={club.imageUrl}
                 name={club.name}
+                style={crest.style}
               />
-              <span className="grid min-w-0 flex-1 gap-2 text-left">
-                <span className="min-w-0 truncate font-semibold leading-normal">{club.name}</span>
+              <span {...applyStyles(styles.resultCopy)}>
+                <span {...applyStyles(styles.resultName)}>{club.name}</span>
                 <ClubMetaChips gameEdition={club.gameEdition} platform={club.platform} />
               </span>
             </ChoiceGroupItem>
@@ -328,15 +354,16 @@ export function EaClubLinkForm({
       ) : null}
 
       {selected && search.status !== "success" ? (
-        <div className="flex items-center gap-4 rounded-xl border border-border-subtle bg-surface px-3 py-3">
+        <div {...applyStyles(styles.selected)}>
           <ClubCrestAvatar
-            className="size-12 outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
-            fallbackClassName="text-sm"
+            className={crest.className}
+            fallbackClassName={fallback.className}
             imageUrl={selected.imageUrl}
             name={selected.name}
+            style={crest.style}
           />
-          <div className="grid min-w-0 flex-1 gap-2 text-left">
-            <p className="min-w-0 truncate font-semibold leading-normal">{selected.name}</p>
+          <div {...applyStyles(styles.resultCopy)}>
+            <p {...applyStyles(styles.resultName)}>{selected.name}</p>
             <ClubMetaChips gameEdition={selected.gameEdition} platform={selected.platform} />
           </div>
         </div>
@@ -354,15 +381,19 @@ function ClubMetaChips({
 }) {
   const eaPlatform = asEaSearchPlatform(platform);
   return (
-    <span className="flex flex-wrap items-center gap-2">
+    <span {...applyStyles(styles.chips)}>
       <Badge variant="outline">
         {eaPlatform ? (
-          <PlatformLogo className="size-3.5" platform={gamePlatformForEaSearchLogo(eaPlatform)} />
+          <PlatformLogo
+            className={chipIcon.className}
+            platform={gamePlatformForEaSearchLogo(eaPlatform)}
+            style={chipIcon.style}
+          />
         ) : null}
         {eaPlatformLabel(platform)}
       </Badge>
       <Badge variant="outline">
-        <EaLogo className="size-3.5" />
+        <EaLogo className={chipIcon.className} style={chipIcon.style} />
         {formatProviderGameEdition(gameEdition)}
       </Badge>
     </span>

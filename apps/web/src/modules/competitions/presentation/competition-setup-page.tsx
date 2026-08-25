@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, CardContent, Stepper } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, Badge, Button, Card, CardContent, colors, media, Stepper, typography } from "@futrob/ui";
 import type {
   CompetitionDraftDto,
   CompetitionFormatDto,
@@ -28,6 +29,50 @@ import {
   useRemoveCompetitionParticipantMutation,
   useUpdateCompetitionDraftMutation,
 } from "./competition-queries.ts";
+
+const styles = stylex.create({
+  loading: {
+    color: colors.mutedForeground,
+  },
+  main: {
+    width: "100%",
+  },
+  header: {
+    marginBottom: "2rem",
+    display: "grid",
+    gap: "0.75rem",
+    textAlign: "center",
+  },
+  subtitle: {
+    color: colors.mutedForeground,
+  },
+  stepper: {
+    marginBottom: "2.5rem",
+  },
+  content: {
+    display: "grid",
+    gap: "1.5rem",
+    padding: {
+      default: "1.25rem",
+      [media.sm]: "2rem",
+    },
+  },
+  actions: {
+    marginTop: "1.5rem",
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: "0.75rem",
+  },
+  actionGroup: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.75rem",
+  },
+});
+
+const stepper = applyStyles(styles.stepper);
+const content = applyStyles(styles.content);
 
 export type CompetitionSetupStep = "information" | "format" | "rules" | "participants" | "review";
 const steps = [
@@ -109,27 +154,28 @@ export function CompetitionSetupPage({
   if (!draft || !form)
     return (
       <main>
-        <p className="typo-subtitle text-muted-foreground">Cargando competición…</p>
+        <p {...applyStyles(typography.subtitle, styles.loading)}>Cargando competición…</p>
       </main>
     );
 
   return (
-    <main className="w-full">
-      <header className="mb-8 grid gap-3 text-center">
+    <main {...applyStyles(styles.main)}>
+      <header {...applyStyles(styles.header)}>
         <div>
           <Badge variant="neutral">{readOnly ? "Publicada" : "Borrador"}</Badge>
         </div>
-        <h1 className="typo-heading">Configurar {draft.competition.name}</h1>
-        <p className="typo-subtitle text-muted-foreground">
+        <h1 {...applyStyles(typography.heading)}>Configurar {draft.competition.name}</h1>
+        <p {...applyStyles(typography.subtitle, styles.subtitle)}>
           Guarda el avance y vuelve cuando quieras. La asociación EA es declarativa y no verifica
           propiedad.
         </p>
       </header>
       <Stepper
         aria-label="Configuración de competición"
-        className="mb-10"
+        className={stepper.className}
         currentStepId={currentStep}
         steps={steps}
+        style={stepper.style}
       />
       {error ? (
         <PageAlert>
@@ -137,7 +183,7 @@ export function CompetitionSetupPage({
         </PageAlert>
       ) : null}
       <Card>
-        <CardContent className="grid gap-6 p-5 sm:p-8">
+        <CardContent className={content.className} style={content.style}>
           {currentStep === "information" ? (
             <InformationStep
               disabled={readOnly}
@@ -187,7 +233,7 @@ export function CompetitionSetupPage({
           ) : null}
         </CardContent>
       </Card>
-      <div className="mt-6 flex flex-wrap justify-between gap-3">
+      <div {...applyStyles(styles.actions)}>
         <Button
           disabled={currentStep === "information" || busy}
           onClick={() => move(-1)}
@@ -195,7 +241,7 @@ export function CompetitionSetupPage({
         >
           Anterior
         </Button>
-        <div className="flex flex-wrap gap-3">
+        <div {...applyStyles(styles.actionGroup)}>
           {!readOnly && currentStep !== "participants" && currentStep !== "review" ? (
             <Button disabled={busy} onClick={() => void save()} variant="outline">
               {update.isPending ? "Guardando…" : "Guardar"}

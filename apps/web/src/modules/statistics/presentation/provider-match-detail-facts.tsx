@@ -1,28 +1,70 @@
-"use client";
+"use client"
 
-import type { PlayerRecentProviderMatchDetailDto } from "@futrob/api-contracts";
-import { Badge, Card, CardContent, CardHeader } from "@futrob/ui";
-import type { Translator } from "@/shared/presentation/i18n/translate.ts";
-import { MATCH_TYPE_KEYS } from "./player-match-copy.ts";
-import { providerMatchMode } from "./player-match-view.ts";
+import type { PlayerRecentProviderMatchDetailDto } from "@futrob/api-contracts"
+import * as stylex from "@stylexjs/stylex"
+import { applyStyles, Badge, Card, CardContent, CardHeader, colors, media, typography } from "@futrob/ui"
+import type { Translator } from "@/shared/presentation/i18n/translate.ts"
+import { MATCH_TYPE_KEYS } from "./player-match-copy.ts"
+import { providerMatchMode } from "./player-match-view.ts"
+
+const styles = stylex.create({
+  header: {
+    paddingInline: "1.25rem",
+    paddingBlock: "1rem",
+  },
+  title: {
+    fontWeight: 600,
+  },
+  content: {
+    paddingInline: "1.25rem",
+    paddingBottom: "1.25rem",
+  },
+  list: {
+    display: "grid",
+    columnGap: "1.5rem",
+    rowGap: "1rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+  flags: {
+    marginTop: "1.25rem",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.5rem",
+  },
+  fact: {
+    minWidth: 0,
+  },
+  label: {
+    color: colors.mutedForeground,
+  },
+  value: {
+    marginTop: "0.125rem",
+    fontWeight: 600,
+  },
+})
 
 export function MatchFacts({
   detail,
   t,
 }: {
-  readonly detail: PlayerRecentProviderMatchDetailDto;
-  readonly t: Translator;
+  readonly detail: PlayerRecentProviderMatchDetailDto
+  readonly t: Translator
 }) {
-  const mode = providerMatchMode(detail);
-  const durationSeconds = detail.match.metadata.durationSeconds;
-  const duration = matchDurationLabel(durationSeconds, t);
+  const mode = providerMatchMode(detail)
+  const durationSeconds = detail.match.metadata.durationSeconds
+  const duration = matchDurationLabel(durationSeconds, t)
+  const header = applyStyles(styles.header)
+  const content = applyStyles(styles.content)
   return (
     <Card data-match-facts="">
-      <CardHeader className="px-5 py-4">
-        <h2 className="typo-subtitle font-semibold">{t("player.matchDetail.tab.facts")}</h2>
+      <CardHeader className={header.className} style={header.style}>
+        <h2 {...applyStyles(typography.subtitle, styles.title)}>{t("player.matchDetail.tab.facts")}</h2>
       </CardHeader>
-      <CardContent className="px-5 pb-5">
-        <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+      <CardContent className={content.className} style={content.style}>
+        <dl {...applyStyles(styles.list)}>
           <Fact
             label={t("player.matchDetail.facts.type")}
             value={mode ? t(MATCH_TYPE_KEYS[mode]) : t("player.noData")}
@@ -49,7 +91,7 @@ export function MatchFacts({
           />
         </dl>
         {detail.match.metadata.wasDisconnected || detail.match.metadata.winnerByForfeit ? (
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div {...applyStyles(styles.flags)}>
             {detail.match.metadata.wasDisconnected ? (
               <Badge variant="outline">{t("player.matchDetail.disconnected")}</Badge>
             ) : null}
@@ -60,16 +102,16 @@ export function MatchFacts({
         ) : null}
       </CardContent>
     </Card>
-  );
+  )
 }
 
 function Fact({ label, value }: { readonly label: string; readonly value: string }) {
   return (
-    <div className="min-w-0">
-      <dt className="typo-caption text-muted-foreground">{label}</dt>
-      <dd className="typo-caption mt-0.5 font-semibold">{value}</dd>
+    <div {...applyStyles(styles.fact)}>
+      <dt {...applyStyles(typography.caption, styles.label)}>{label}</dt>
+      <dd {...applyStyles(typography.caption, styles.value)}>{value}</dd>
     </div>
-  );
+  )
 }
 
 function DurationFact({
@@ -77,30 +119,30 @@ function DurationFact({
   label,
   value,
 }: {
-  readonly durationSeconds: number | null;
-  readonly label: string;
-  readonly value: string;
+  readonly durationSeconds: number | null
+  readonly label: string
+  readonly value: string
 }) {
   return (
-    <div className="min-w-0">
-      <dt className="typo-caption text-muted-foreground">{label}</dt>
+    <div {...applyStyles(styles.fact)}>
+      <dt {...applyStyles(typography.caption, styles.label)}>{label}</dt>
       <dd
-        className="typo-caption mt-0.5 font-semibold"
         {...(durationSeconds === null ? {} : { "data-match-duration": durationSeconds })}
+        {...applyStyles(typography.caption, styles.value)}
       >
         {value}
       </dd>
     </div>
-  );
+  )
 }
 
 function matchDurationLabel(durationSeconds: number | null, t: Translator): string | null {
-  if (durationSeconds === null || durationSeconds < 0) return null;
-  const minutes = Math.floor(durationSeconds / 60);
-  const seconds = durationSeconds % 60;
-  if (minutes === 0) return t("player.matchDetail.duration.seconds", { seconds });
-  if (seconds === 0) return t("player.matchDetail.duration.minutes", { minutes });
-  return t("player.matchDetail.duration.minutesSeconds", { minutes, seconds });
+  if (durationSeconds === null || durationSeconds < 0) return null
+  const minutes = Math.floor(durationSeconds / 60)
+  const seconds = durationSeconds % 60
+  if (minutes === 0) return t("player.matchDetail.duration.seconds", { seconds })
+  if (seconds === 0) return t("player.matchDetail.duration.minutes", { minutes })
+  return t("player.matchDetail.duration.minutesSeconds", { minutes, seconds })
 }
 
 function completenessLabel(
@@ -109,14 +151,14 @@ function completenessLabel(
 ): string {
   switch (completeness) {
     case "complete":
-      return t("player.matchDetail.complete");
+      return t("player.matchDetail.complete")
     case "partial":
-      return t("player.matchDetail.partial");
+      return t("player.matchDetail.partial")
     case "unknown":
-      return t("player.matchDetail.unknown");
+      return t("player.matchDetail.unknown")
     default: {
-      const _exhaustive: never = completeness;
-      return _exhaustive;
+      const _exhaustive: never = completeness
+      return _exhaustive
     }
   }
 }

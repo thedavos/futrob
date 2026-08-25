@@ -1,7 +1,8 @@
 "use client";
 
 import { ChartLineUpIcon } from "@phosphor-icons/react";
-import { applyStyles, Stat, StatGroup, StatLabel } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, colors, Stat, StatGroup, StatLabel, typography } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
@@ -14,6 +15,32 @@ import type {
   TeamGoalShare,
 } from "./player-match-view.ts";
 
+const styles = stylex.create({
+  hero: {
+    display: "flex",
+    minWidth: 0,
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  heroStat: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: "0.375rem",
+  },
+  heroLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.25rem",
+  },
+  icon: {
+    width: "0.875rem",
+    height: "0.875rem",
+  },
+  composition: {
+    color: colors.mutedForeground,
+  },
+});
+
 export function ContributionsHero({
   numberFormat,
   record,
@@ -24,9 +51,11 @@ export function ContributionsHero({
   const { t } = useI18n();
   const composition = contributionCompositionCopy(record.goals, record.assists, t);
 
+  const heroStat = applyStyles(styles.heroStat);
+  const heroLabel = applyStyles(styles.heroLabel);
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <Stat className="flex-row items-baseline gap-1.5">
+    <div {...applyStyles(styles.hero)}>
+      <Stat className={heroStat.className} style={heroStat.style}>
         <MetricStatValue
           emptyLabel={t("player.noData")}
           metric="record-goals-plus-assists"
@@ -34,21 +63,18 @@ export function ContributionsHero({
             record.goalsPlusAssists === null ? null : numberFormat.format(record.goalsPlusAssists)
           }
         />
-        <StatLabel className="flex items-center gap-1">
+        <StatLabel className={heroLabel.className} style={heroLabel.style}>
           <ChartLineUpIcon
             aria-hidden="true"
-            className="size-3.5"
             data-metric-icon="record-goals-plus-assists"
             weight="regular"
+            {...applyStyles(styles.icon)}
           />
           {t("player.metric.goalsPlusAssists")}
         </StatLabel>
       </Stat>
       {composition ? (
-        <p
-          className="typo-caption text-pretty text-muted-foreground"
-          data-contribution-composition=""
-        >
+        <p data-contribution-composition="" {...applyStyles(typography.caption, styles.composition)}>
           {composition}
         </p>
       ) : null}

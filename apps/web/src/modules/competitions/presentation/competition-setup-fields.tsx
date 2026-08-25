@@ -1,10 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
+  applyStyles,
   Checkbox,
+  colors,
   Field,
   FieldLabel,
   Input,
@@ -13,8 +16,35 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  typography,
 } from "@futrob/ui";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+
+const styles = stylex.create({
+  toggle: {
+    display: "flex",
+    minHeight: "2.75rem",
+    alignItems: "center",
+    gap: "0.75rem",
+  },
+  heading: {
+    display: "grid",
+    gap: "0.5rem",
+  },
+  title: {
+    fontSize: "1.25rem",
+    lineHeight: "1.75rem",
+    fontWeight: 600,
+  },
+  copy: {
+    color: colors.mutedForeground,
+  },
+  alert: {
+    marginBottom: "1.25rem",
+  },
+});
+
+const alert = applyStyles(styles.alert);
 
 export function SelectField({
   id,
@@ -98,9 +128,9 @@ export function RuleToggle({
 }) {
   const id = `rule-${label.toLowerCase().replaceAll(" ", "-")}`;
   return (
-    <div className="flex min-h-11 items-center gap-3">
+    <div {...applyStyles(styles.toggle)}>
       <Checkbox checked={checked} disabled={disabled} id={id} onCheckedChange={onChange} />
-      <label className="typo-label" htmlFor={id}>
+      <label {...applyStyles(typography.label)} htmlFor={id}>
         {label}
       </label>
     </div>
@@ -108,15 +138,15 @@ export function RuleToggle({
 }
 export function StepHeading({ title, copy }: { title: string; copy: string }) {
   return (
-    <header className="grid gap-2">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <p className="typo-caption text-muted-foreground">{copy}</p>
+    <header {...applyStyles(styles.heading)}>
+      <h2 {...applyStyles(styles.title)}>{title}</h2>
+      <p {...applyStyles(typography.caption, styles.copy)}>{copy}</p>
     </header>
   );
 }
 export function PageAlert({ children }: { children: ReactNode }) {
   return (
-    <Alert className="mb-5" variant="destructive">
+    <Alert className={alert.className} style={alert.style} variant="destructive">
       <WarningCircleIcon aria-hidden="true" />
       <AlertDescription>{children}</AlertDescription>
     </Alert>

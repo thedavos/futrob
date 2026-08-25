@@ -1,31 +1,116 @@
 "use client";
 
 import { useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
+  applyStyles,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  colors,
   Field,
   FieldError,
   FieldLabel,
   Form,
   Input,
+  media,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   readFormString,
+  typography,
 } from "@futrob/ui";
 import { Link } from "@tanstack/react-router";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { useAddMyGameAccountMutation, useMyPlayerProfileQuery } from "./player-queries.ts";
+
+const styles = stylex.create({
+  main: {
+    width: "100%",
+  },
+  header: {
+    marginBottom: "2rem",
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "1rem",
+  },
+  intro: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  muted: {
+    color: colors.mutedForeground,
+  },
+  alert: {
+    marginBottom: "1.5rem",
+  },
+  form: {
+    display: "grid",
+    gap: "1.25rem",
+  },
+  pair: {
+    display: "grid",
+    gap: "1.25rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+  submit: {
+    width: {
+      default: "100%",
+      [media.sm]: "fit-content",
+    },
+  },
+  linked: {
+    marginTop: "2rem",
+  },
+  linkedTitle: {
+    marginBottom: "1rem",
+    fontSize: "1.125rem",
+    lineHeight: "1.75rem",
+    fontWeight: 600,
+  },
+  linkedEmpty: {
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
+  list: {
+    overflow: "hidden",
+    borderRadius: "var(--corner-lg)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+  },
+  item: {
+    paddingInline: "1rem",
+    paddingBlock: "0.75rem",
+    borderTopWidth: {
+      default: 1,
+      ":first-child": 0,
+    },
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+  },
+  identifier: {
+    fontWeight: 600,
+  },
+});
+
+const alert = applyStyles(styles.alert);
+const form = applyStyles(styles.form);
+const submit = applyStyles(styles.submit);
 
 const GAME_PLATFORMS = GAME_PLATFORM_VALUES;
 
@@ -79,12 +164,12 @@ export function PlayerGameAccountsPage() {
   }
 
   return (
-    <main className="w-full">
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <p className="typo-label text-muted-foreground">Espacio personal</p>
-          <h1 className="typo-heading">Datos de juego</h1>
-          <p className="typo-subtitle text-muted-foreground">
+    <main {...applyStyles(styles.main)}>
+      <div {...applyStyles(styles.header)}>
+        <div {...applyStyles(styles.intro)}>
+          <p {...applyStyles(typography.label, styles.muted)}>Espacio personal</p>
+          <h1 {...applyStyles(typography.heading)}>Datos de juego</h1>
+          <p {...applyStyles(typography.subtitle, styles.muted)}>
             Registra tus identificadores de EA sin compartir credenciales. Futrob los usará para
             localizar tus partidos y estadísticas.
           </p>
@@ -95,7 +180,7 @@ export function PlayerGameAccountsPage() {
       </div>
 
       {error || profileQuery.isError ? (
-        <Alert className="mb-6" variant="destructive">
+        <Alert className={alert.className} style={alert.style} variant="destructive">
           <AlertDescription>
             {error ?? "No se pudieron cargar tus cuentas de juego."}
           </AlertDescription>
@@ -109,10 +194,11 @@ export function PlayerGameAccountsPage() {
         <CardContent>
           <Form<AddGameAccountValues>
             aria-busy={submitting}
-            className="grid gap-5"
+            className={form.className}
             errors={validation.formErrors}
             key={formKey}
             onFormSubmit={handleSubmit}
+            style={form.style}
           >
             <Field
               {...validation.getFieldValidationProps("identifier")}
@@ -131,7 +217,7 @@ export function PlayerGameAccountsPage() {
               />
               <FieldError />
             </Field>
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div {...applyStyles(styles.pair)}>
               <Field
                 {...validation.getFieldValidationProps("platform")}
                 disabled={submitting}
@@ -174,26 +260,31 @@ export function PlayerGameAccountsPage() {
                 <FieldError />
               </Field>
             </div>
-            <Button className="w-full sm:w-fit" disabled={submitting} type="submit">
+            <Button
+              className={submit.className}
+              disabled={submitting}
+              style={submit.style}
+              type="submit"
+            >
               {submitting ? "Guardando…" : "Añadir cuenta"}
             </Button>
           </Form>
         </CardContent>
       </Card>
 
-      <section className="mt-8">
-        <h2 className="mb-4 text-lg font-semibold">Cuentas vinculadas</h2>
+      <section {...applyStyles(styles.linked)}>
+        <h2 {...applyStyles(styles.linkedTitle)}>Cuentas vinculadas</h2>
         {loading ? (
-          <p className="text-sm text-muted-foreground">Cargando cuentas…</p>
+          <p {...applyStyles(styles.linkedEmpty)}>Cargando cuentas…</p>
         ) : accounts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Todavía no vinculaste ninguna cuenta.</p>
+          <p {...applyStyles(styles.linkedEmpty)}>Todavía no vinculaste ninguna cuenta.</p>
         ) : (
-          <div className="divide-y divide-border-subtle rounded-lg border border-border">
+          <div {...applyStyles(styles.list)}>
             {accounts.map((account) => (
-              <div className="px-4 py-3" key={account.id}>
+              <div key={account.id} {...applyStyles(styles.item)}>
                 <div>
-                  <p className="font-semibold">{account.identifier}</p>
-                  <p className="typo-caption text-muted-foreground">
+                  <p {...applyStyles(styles.identifier)}>{account.identifier}</p>
+                  <p {...applyStyles(typography.caption, styles.muted)}>
                     {platformLabel(account.platform)} · {account.gameEdition}
                   </p>
                 </div>

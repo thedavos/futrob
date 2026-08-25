@@ -1,22 +1,72 @@
-import type { MatchOutcome } from "./player-match-view.ts";
+import * as stylex from "@stylexjs/stylex"
+import { colors } from "@futrob/ui"
 
-export const MATCH_OUTCOME_TEXT_CLASS = {
-  win: "text-primary",
-  draw: "text-muted-foreground",
-  loss: "text-danger",
-  unknown: "text-muted-foreground",
-} as const satisfies Record<MatchOutcome, string>;
+import type { MatchOutcome } from "./player-match-view.ts"
 
-export const FORM_SEGMENT_CLASS = {
-  win: "bg-primary",
-  draw: "bg-muted-foreground",
-  loss: "bg-danger",
-  unknown: "bg-muted-foreground/40",
-} as const satisfies Record<MatchOutcome, string>;
+const styles = stylex.create({
+  outcomeWin: { color: colors.primary },
+  outcomeDraw: { color: colors.mutedForeground },
+  outcomeLoss: { color: colors.danger },
+  outcomeUnknown: { color: colors.mutedForeground },
+  segmentWin: { backgroundColor: colors.primary },
+  segmentDraw: { backgroundColor: colors.mutedForeground },
+  segmentLoss: { backgroundColor: colors.danger },
+  segmentUnknown: {
+    backgroundColor: "color-mix(in oklab, var(--muted-foreground) 40%, transparent)",
+  },
+  fillWin: {
+    backgroundColor: colors.primary,
+    color: colors.primaryForeground,
+  },
+  fillDraw: {
+    backgroundColor: colors.mutedForeground,
+    color: colors.background,
+  },
+  fillLoss: {
+    backgroundColor: colors.danger,
+    color: colors.dangerForeground,
+  },
+  fillUnknown: {
+    backgroundColor: "color-mix(in oklab, var(--muted-foreground) 40%, transparent)",
+    color: colors.mutedForeground,
+  },
+})
 
-export const FORM_RESULT_FILL_CLASS = {
-  win: "bg-primary text-primary-foreground",
-  draw: "bg-muted-foreground text-background",
-  loss: "bg-danger text-danger-foreground",
-  unknown: "bg-muted text-muted-foreground",
-} as const satisfies Record<MatchOutcome, string>;
+export function matchOutcomeTextStyle(outcome: MatchOutcome) {
+  switch (outcome) {
+    case "win":
+      return styles.outcomeWin
+    case "draw":
+      return styles.outcomeDraw
+    case "loss":
+      return styles.outcomeLoss
+    default:
+      return styles.outcomeUnknown
+  }
+}
+
+export function formSegmentStyle(outcome: MatchOutcome) {
+  switch (outcome) {
+    case "win":
+      return styles.segmentWin
+    case "draw":
+      return styles.segmentDraw
+    case "loss":
+      return styles.segmentLoss
+    default:
+      return styles.segmentUnknown
+  }
+}
+
+export function formResultFillStyle(outcome: MatchOutcome) {
+  switch (outcome) {
+    case "win":
+      return styles.fillWin
+    case "draw":
+      return styles.fillDraw
+    case "loss":
+      return styles.fillLoss
+    default:
+      return styles.fillUnknown
+  }
+}

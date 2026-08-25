@@ -84,6 +84,7 @@ function Badge({
   return (
     <span
       data-slot="badge"
+      data-variant={variant}
       {...applyHost(className, style, styles.base, variantStyles[variant])}
       {...props}
     />

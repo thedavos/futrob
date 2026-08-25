@@ -1,64 +1,133 @@
-"use client";
+"use client"
 
-import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@futrob/ui";
-import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import type { Translator } from "@/shared/presentation/i18n/translate.ts";
-import { FORM_OUTCOME_SHORT_KEYS, FORM_SEGMENT_TOOLTIP_KEYS } from "./player-match-copy.ts";
-import { FORM_RESULT_FILL_CLASS, FORM_SEGMENT_CLASS } from "./player-match-tone.ts";
+import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts"
+import * as stylex from "@stylexjs/stylex"
+import { applyStyles, colors, Tooltip, TooltipContent, TooltipTrigger, typography } from "@futrob/ui"
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx"
+import type { Translator } from "@/shared/presentation/i18n/translate.ts"
+import { FORM_OUTCOME_SHORT_KEYS, FORM_SEGMENT_TOOLTIP_KEYS } from "./player-match-copy.ts"
+import { formResultFillStyle, formSegmentStyle } from "./player-match-tone.ts"
 import {
   formTimeline,
   lastFormGames,
   matchOutcome,
   opponentClubName,
   playerMatchSide,
-} from "./player-match-view.ts";
+} from "./player-match-view.ts"
+
+const styles = stylex.create({
+  root: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  bar: {
+    display: "flex",
+    height: "0.625rem",
+    width: "100%",
+    gap: "0.125rem",
+    overflow: "hidden",
+    borderRadius: "var(--corner-full)",
+    backgroundColor: colors.surface,
+  },
+  footer: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.5rem",
+  },
+  heading: {
+    fontWeight: 500,
+    minWidth: 0,
+    color: colors.mutedForeground,
+  },
+  lastGames: {
+    display: "flex",
+    flexShrink: 0,
+    flexWrap: "wrap",
+    gap: "0.25rem",
+  },
+  segment: {
+    minWidth: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    position: {
+      default: null,
+      ":focus-visible": "relative",
+    },
+    zIndex: {
+      default: null,
+      ":focus-visible": 10,
+    },
+    outlineWidth: {
+      default: null,
+      ":focus-visible": 2,
+    },
+    outlineStyle: {
+      default: null,
+      ":focus-visible": "solid",
+    },
+    outlineOffset: {
+      default: null,
+      ":focus-visible": "-2px",
+    },
+    outlineColor: {
+      default: null,
+      ":focus-visible": colors.ring,
+    },
+  },
+  result: {
+    display: "inline-flex",
+    width: "1.75rem",
+    height: "1.75rem",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "var(--corner-md)",
+  },
+})
 
 export function RecentForm({
   matches,
 }: {
-  readonly matches: readonly PlayerRecentProviderMatchDto[];
+  readonly matches: readonly PlayerRecentProviderMatchDto[]
 }) {
-  const { t } = useI18n();
-  const timeline = formTimeline(matches);
-  const lastGames = lastFormGames(matches);
+  const { t } = useI18n()
+  const timeline = formTimeline(matches)
+  const lastGames = lastFormGames(matches)
 
   return (
     <div
       aria-labelledby="player-matches-form-heading"
-      className="flex flex-col gap-2"
       data-recent-form=""
       role="group"
+      {...applyStyles(styles.root)}
     >
-      <div
-        className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-surface"
-        data-recent-form-bar=""
-      >
+      <div data-recent-form-bar="" {...applyStyles(styles.bar)}>
         {timeline.map((item) => (
           <FormSegment item={item} key={item.match.id} />
         ))}
       </div>
-      <div className="flex min-w-0 items-center justify-between gap-2">
-        <p
-          className="typo-caption font-medium min-w-0 text-muted-foreground"
-          id="player-matches-form-heading"
-        >
+      <div {...applyStyles(styles.footer)}>
+        <p id="player-matches-form-heading" {...applyStyles(typography.caption, styles.heading)}>
           {t("player.matches.form.label")}
         </p>
-        <ol className="flex shrink-0 flex-wrap gap-1" data-last-games="">
+        <ol data-last-games="" {...applyStyles(styles.lastGames)}>
           {lastGames.map((item) => (
             <FormResultMark item={item} key={item.match.id} />
           ))}
         </ol>
       </div>
     </div>
-  );
+  )
 }
 
 function FormSegment({ item }: { readonly item: PlayerRecentProviderMatchDto }) {
-  const { t } = useI18n();
-  const outcome = matchOutcome(item);
-  const label = formSegmentLabel(item, t);
+  const { t } = useI18n()
+  const outcome = matchOutcome(item)
+  const label = formSegmentLabel(item, t)
 
   return (
     <Tooltip>
@@ -66,21 +135,21 @@ function FormSegment({ item }: { readonly item: PlayerRecentProviderMatchDto }) 
         render={
           <button
             aria-label={label}
-            className={`min-w-0 flex-1 focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring ${FORM_SEGMENT_CLASS[outcome]}`}
             data-form-segment={outcome}
             type="button"
+            {...applyStyles(styles.segment, formSegmentStyle(outcome))}
           />
         }
       />
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
-  );
+  )
 }
 
 function FormResultMark({ item }: { readonly item: PlayerRecentProviderMatchDto }) {
-  const { t } = useI18n();
-  const outcome = matchOutcome(item);
-  const label = formSegmentLabel(item, t);
+  const { t } = useI18n()
+  const outcome = matchOutcome(item)
+  const label = formSegmentLabel(item, t)
 
   return (
     <li>
@@ -89,10 +158,10 @@ function FormResultMark({ item }: { readonly item: PlayerRecentProviderMatchDto 
           render={
             <button
               aria-label={label}
-              className={`inline-flex size-7 shrink-0 items-center justify-center rounded-md typo-label ${FORM_RESULT_FILL_CLASS[outcome]}`}
               data-last-game={item.match.id}
               data-last-game-outcome={outcome}
               type="button"
+              {...applyStyles(styles.result, typography.label, formResultFillStyle(outcome))}
             />
           }
         >
@@ -101,28 +170,28 @@ function FormResultMark({ item }: { readonly item: PlayerRecentProviderMatchDto 
         <TooltipContent>{label}</TooltipContent>
       </Tooltip>
     </li>
-  );
+  )
 }
 
 function formSegmentLabel(item: PlayerRecentProviderMatchDto, t: Translator): string {
-  const outcome = matchOutcome(item);
-  const opponent = opponentClubName(item);
+  const outcome = matchOutcome(item)
+  const opponent = opponentClubName(item)
   if (outcome === "unknown" || opponent === null) {
     return t("player.matches.form.unknownMatch", {
       home: item.match.home.name,
       away: item.match.away.name,
       score: `${item.match.home.goals} ${t("player.matches.vs")} ${item.match.away.goals}`,
-    });
+    })
   }
   return t(FORM_SEGMENT_TOOLTIP_KEYS[outcome], {
     score: listedScoreline(item, t),
     opponent,
-  });
+  })
 }
 
 function listedScoreline(item: PlayerRecentProviderMatchDto, t: Translator): string {
-  const side = playerMatchSide(item);
-  const scored = side === "away" ? item.match.away.goals : item.match.home.goals;
-  const conceded = side === "away" ? item.match.home.goals : item.match.away.goals;
-  return `${scored} ${t("player.matches.vs")} ${conceded}`;
+  const side = playerMatchSide(item)
+  const scored = side === "away" ? item.match.away.goals : item.match.home.goals
+  const conceded = side === "away" ? item.match.home.goals : item.match.away.goals
+  return `${scored} ${t("player.matches.vs")} ${conceded}`
 }

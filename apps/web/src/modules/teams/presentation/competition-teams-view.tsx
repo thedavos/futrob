@@ -6,7 +6,17 @@ import type {
   ExternalClubDto,
   RosterMembershipRoleDto,
 } from "@futrob/api-contracts";
-import { Alert, AlertDescription, AlertTitle, MasterDetail } from "@futrob/ui";
+import * as stylex from "@stylexjs/stylex";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  applyStyles,
+  colors,
+  MasterDetail,
+  media,
+  typography,
+} from "@futrob/ui";
 import { LockIcon } from "@phosphor-icons/react";
 import {
   SupportErrorAlert,
@@ -14,6 +24,74 @@ import {
 } from "@/shared/presentation/support-error-alert.tsx";
 import { TeamDetail } from "./competition-teams-view-detail.tsx";
 import { TeamList } from "./competition-teams-view-list.tsx";
+
+const styles = stylex.create({
+  main: {
+    display: "flex",
+    height: "100%",
+    minHeight: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    flexDirection: "column",
+    backgroundColor: colors.background,
+    color: colors.foreground,
+  },
+  header: {
+    display: "flex",
+    flexShrink: 0,
+    flexDirection: "column",
+    gap: "0.5rem",
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.border,
+    paddingInline: {
+      default: "1.25rem",
+      [media.sm]: "2rem",
+    },
+    paddingBlock: "1.25rem",
+  },
+  lede: {
+    maxWidth: "65ch",
+    color: colors.mutedForeground,
+  },
+  alerts: {
+    display: "grid",
+    flexShrink: 0,
+    gap: "0.75rem",
+    paddingInline: {
+      default: "1.25rem",
+      [media.sm]: "2rem",
+    },
+    paddingBlock: "1.25rem",
+  },
+  lock: {
+    display: "flex",
+    height: 24,
+    width: 16,
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    color: colors.warning,
+  },
+  lockIcon: {
+    width: "1rem",
+    height: "1rem",
+  },
+  alertTitle: {
+    fontSize: "1rem",
+    fontWeight: 400,
+    lineHeight: "1.5rem",
+  },
+  alertDescription: {
+    fontSize: "0.875rem",
+    fontWeight: 400,
+  },
+});
+
+const alertTitle = applyStyles(styles.alertTitle);
+const alertDescription = applyStyles(styles.alertDescription);
+const lockIcon = applyStyles(styles.lockIcon);
 
 export type TeamConsoleCapabilities = {
   readonly manageRoster: boolean;
@@ -51,31 +129,28 @@ export type CompetitionTeamsViewProps = {
 
 export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
   return (
-    <main
-      className="flex h-full min-h-0 flex-1 flex-col bg-background text-foreground"
-      data-shell-bleed=""
-    >
-      <header className="flex shrink-0 flex-col gap-2 border-b border-border px-5 py-5 sm:px-8">
-        <h1 className="typo-heading">Equipos y plantillas</h1>
-        <p className="typo-subtitle max-w-[65ch] text-pretty text-muted-foreground">
+    <main data-shell-bleed="" {...applyStyles(styles.main)}>
+      <header {...applyStyles(styles.header)}>
+        <h1 {...applyStyles(typography.heading)}>Equipos y plantillas</h1>
+        <p {...applyStyles(typography.subtitle, styles.lede)}>
           Inscripciones, plantillas y clubes EA.
         </p>
       </header>
       {props.error || props.capabilities.unavailable ? (
-        <div className="grid shrink-0 gap-3 px-5 py-5 sm:px-8">
+        <div {...applyStyles(styles.alerts)}>
           {props.error ? <SupportErrorAlert error={props.error} /> : null}
           {props.capabilities.unavailable ? (
             <Alert variant="warning">
-              <span
-                aria-hidden="true"
-                className="flex h-6 w-4 shrink-0 items-center justify-center text-warning"
-              >
-                <LockIcon className="size-4" />
+              <span aria-hidden="true" {...applyStyles(styles.lock)}>
+                <LockIcon className={lockIcon.className} style={lockIcon.style} />
               </span>
-              <AlertTitle className="text-base font-normal leading-6">
+              <AlertTitle className={alertTitle.className} style={alertTitle.style}>
                 Permisos no confirmados
               </AlertTitle>
-              <AlertDescription className="text-sm font-normal">
+              <AlertDescription
+                className={alertDescription.className}
+                style={alertDescription.style}
+              >
                 No se pudieron confirmar. Las acciones están deshabilitadas.
               </AlertDescription>
             </Alert>

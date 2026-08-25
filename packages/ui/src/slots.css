@@ -127,6 +127,10 @@
   flex-shrink: 0;
 }
 
+[data-slot="select-trigger"][data-hide-icon="true"] [data-slot="select-trigger-icon"] {
+  display: none;
+}
+
 [data-slot="dropdown-menu-item"] svg {
   pointer-events: none;
   width: 1rem;

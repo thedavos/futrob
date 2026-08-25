@@ -3,6 +3,7 @@
 import { Link } from "@tanstack/react-router";
 import type { PlayerGameProfileDto } from "@futrob/api-contracts";
 import {
+  applyStyles,
   Alert,
   AlertDescription,
   Avatar,
@@ -25,6 +26,7 @@ import {
   StatLabel,
   StatValue,
 } from "@futrob/ui";
+import { pageTypography, styles } from "./player-statistics-page.styles.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
@@ -53,17 +55,17 @@ export function PlayerStatisticsPage() {
       : null;
 
   return (
-    <main className="w-full">
+    <main {...applyStyles(styles.main)}>
       <PageHeader>
         <PageHeaderEyebrow>{t("player.workspace.eyebrow")}</PageHeaderEyebrow>
         {readyProfile ? (
-          <div className="col-start-1 flex min-w-0 items-center gap-4">
-            <Avatar className="size-14">
-              <AvatarFallback className="typo-label">
+          <div {...applyStyles(styles.identity)}>
+            <Avatar {...applyStyles(styles.avatar)}>
+              <AvatarFallback {...applyStyles(pageTypography.label)}>
                 {initialsFromName(readyProfile.identity.displayName)}
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0">
+            <div {...applyStyles(styles.identityCopy)}>
               <PageHeaderTitle>{readyProfile.identity.displayName}</PageHeaderTitle>
               <PageHeaderDescription>{identityDescription(readyProfile, t)}</PageHeaderDescription>
             </div>
@@ -83,7 +85,7 @@ export function PlayerStatisticsPage() {
       {profileQuery.isPending ? <ProfileLoading t={t} /> : null}
       {profileQuery.isError ? (
         <Alert variant="destructive">
-          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+          <AlertDescription {...applyStyles(styles.error)}>
             <span>{t("player.statistics.error")}</span>
             <Button onClick={() => void profileQuery.refetch()} variant="secondary">
               {t("player.retry")}
@@ -144,9 +146,9 @@ function ProfileReady({
   const hasPartial = Object.values(profile.summary.partial).some(Boolean);
 
   return (
-    <div className="space-y-8">
-      <section aria-label={t("player.statistics.summary")} className="space-y-4">
-        <p className="typo-caption text-muted-foreground">{t("player.statistics.sampleHint")}</p>
+    <div {...applyStyles(styles.ready)}>
+      <section aria-label={t("player.statistics.summary")} {...applyStyles(styles.section)}>
+        <p {...applyStyles(pageTypography.caption, styles.muted)}>{t("player.statistics.sampleHint")}</p>
         <StatGroup>
           <Stat>
             <StatLabel>{t("player.statistics.elo")}</StatLabel>
@@ -188,14 +190,14 @@ function ProfileReady({
         t={t}
       />
 
-      <section aria-label={t("player.statistics.evolution")} className="space-y-3">
-        <h2 className="typo-label">{t("player.statistics.evolution")}</h2>
+      <section aria-label={t("player.statistics.evolution")} {...applyStyles(styles.evolution)}>
+        <h2 {...applyStyles(pageTypography.label)}>{t("player.statistics.evolution")}</h2>
         {profile.evolution.length === 0 ? (
-          <p className="typo-caption text-muted-foreground">
+          <p {...applyStyles(pageTypography.caption, styles.muted)}>
             {t("player.statistics.evolution.empty")}
           </p>
         ) : (
-          <ol className="flex flex-wrap gap-2">
+          <ol {...applyStyles(styles.evolutionList)}>
             {profile.evolution.slice(-12).map((point) => (
               <li key={point.occurredAt}>
                 <Badge variant={outcomeBadge(point.outcome)}>
@@ -216,14 +218,14 @@ function ProfileReady({
 
 function ProfileLoading({ t }: { readonly t: Translator }) {
   return (
-    <section aria-busy="true" aria-label={t("player.statistics.loading")} className="space-y-4">
-      <p className="typo-caption text-muted-foreground">{t("player.statistics.loading")}</p>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Skeleton className="h-20" />
-        <Skeleton className="h-20" />
-        <Skeleton className="h-20" />
+    <section aria-busy="true" aria-label={t("player.statistics.loading")} {...applyStyles(styles.loading)}>
+      <p {...applyStyles(pageTypography.caption, styles.muted)}>{t("player.statistics.loading")}</p>
+      <div {...applyStyles(styles.loadingGrid)}>
+        <Skeleton {...applyStyles(styles.skeletonStat)} />
+        <Skeleton {...applyStyles(styles.skeletonStat)} />
+        <Skeleton {...applyStyles(styles.skeletonStat)} />
       </div>
-      <Skeleton className="h-72" />
+      <Skeleton {...applyStyles(styles.skeletonChart)} />
     </section>
   );
 }

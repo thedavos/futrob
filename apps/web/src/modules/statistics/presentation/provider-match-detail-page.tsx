@@ -7,6 +7,7 @@ import type {
   PlayerRecentProviderMatchDto,
 } from "@futrob/api-contracts";
 import {
+  applyStyles,
   Alert,
   AlertDescription,
   Breadcrumb,
@@ -28,6 +29,7 @@ import {
   TabsTrigger,
   TooltipProvider,
 } from "@futrob/ui";
+import { detailTypography, detailVis, styles } from "./provider-match-detail-page.styles.ts";
 import { GameControllerIcon, SoccerBallIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
@@ -73,9 +75,9 @@ export function ProviderMatchDetailView({
 
   return (
     <TooltipProvider>
-      <main className="w-full space-y-6">
-        <header className="space-y-4">
-          {listed ? <h1 className="sr-only">{pageLabel}</h1> : null}
+      <main {...applyStyles(styles.main)}>
+        <header {...applyStyles(styles.header)}>
+          {listed ? <h1 {...applyStyles(detailVis.srOnly)}>{pageLabel}</h1> : null}
           <MatchDetailBreadcrumb pageLabel={pageLabel} sort={sort} t={t} view={view} />
           {listed ? (
             <MatchScoreboard
@@ -87,7 +89,7 @@ export function ProviderMatchDetailView({
               view={view}
             />
           ) : state.kind === "loading" ? (
-            <Skeleton className="min-h-52 w-full rounded-xl" />
+            <Skeleton {...applyStyles(styles.skeletonBoard)} />
           ) : null}
         </header>
         <MatchDetailBody numberFormat={numberFormat} state={state} t={t} />
@@ -140,7 +142,7 @@ function MatchScoreboard({
   readonly view: PlayerMatchesView;
 }) {
   return (
-    <ol className="m-0 list-none p-0">
+    <ol {...applyStyles(styles.scoreboard)}>
       <ProviderMatchRow
         dateTimeFormat={dateTimeFormat}
         item={item}
@@ -205,7 +207,7 @@ function MatchDetailBody({
     case "error":
       return (
         <Alert variant="destructive">
-          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+          <AlertDescription {...applyStyles(styles.error)}>
             <span>{t("player.matchDetail.error")}</span>
             <Button onClick={state.retry} variant="secondary">
               {t("common.retry")}
@@ -217,18 +219,18 @@ function MatchDetailBody({
       const model = providerMatchDetailModel(state.detail);
       return (
         <Tabs defaultValue="summary" variant="pills">
-          <TabsList className="w-fit max-w-full">
+          <TabsList {...applyStyles(styles.tabs)}>
             <TabsTrigger value="summary">{t("player.matchDetail.tab.summary")}</TabsTrigger>
             <TabsTrigger value="players">{t("player.matchDetail.tab.players")}</TabsTrigger>
             <TabsTrigger value="facts">{t("player.matchDetail.tab.facts")}</TabsTrigger>
           </TabsList>
-          <TabsContent className="pt-6" value="summary">
+          <TabsContent value="summary" {...applyStyles(styles.panel)}>
             <MatchDetailSummary model={model} numberFormat={numberFormat} t={t} />
           </TabsContent>
-          <TabsContent className="pt-6" value="players">
+          <TabsContent value="players" {...applyStyles(styles.panel)}>
             <MatchRosters numberFormat={numberFormat} sides={model.sides} t={t} />
           </TabsContent>
-          <TabsContent className="pt-6" value="facts">
+          <TabsContent value="facts" {...applyStyles(styles.panel)}>
             <MatchFacts detail={state.detail} t={t} />
           </TabsContent>
         </Tabs>
@@ -246,14 +248,14 @@ function RosterLoading({ t }: { readonly t: Translator }) {
     <div
       aria-busy="true"
       aria-label={t("player.matchDetail.loading")}
-      className="space-y-8"
       role="status"
+      {...applyStyles(styles.loading)}
     >
-      <p className="typo-caption text-muted-foreground">{t("player.matchDetail.loading")}</p>
+      <p {...applyStyles(detailTypography.caption, styles.muted)}>{t("player.matchDetail.loading")}</p>
       {[0, 1].map((section) => (
-        <div className="space-y-3" key={section}>
-          <Skeleton className="h-10 w-48 max-w-full" />
-          <Skeleton className="h-44 w-full" />
+        <div key={section} {...applyStyles(styles.loadingSection)}>
+          <Skeleton {...applyStyles(styles.skeletonTitle)} />
+          <Skeleton {...applyStyles(styles.skeletonBody)} />
         </div>
       ))}
     </div>
@@ -272,7 +274,7 @@ function DetailEmptyState({
   readonly title: string;
 }) {
   return (
-    <EmptyState className="min-h-0">
+    <EmptyState {...applyStyles(styles.empty)}>
       <EmptyStateIcon>{icon}</EmptyStateIcon>
       <EmptyStateTitle>{title}</EmptyStateTitle>
       <EmptyStateDescription>{description}</EmptyStateDescription>
