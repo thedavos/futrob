@@ -48,5 +48,8 @@ describe("ClubCrestAvatar", () => {
     expect(unframedAvatar).toBeTruthy();
     expect(image).toBeTruthy();
     expect(framedAvatar?.className).not.toEqual(unframedAvatar?.className);
+    expect(image?.getAttribute("data-outline")).toBe("none");
+    const framedImage = framed.container.querySelector('[data-slot="club-crest-image"]');
+    expect(framedImage?.getAttribute("data-outline")).toBeNull();
   });
 });

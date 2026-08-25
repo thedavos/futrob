@@ -71,6 +71,7 @@ export function ClubCrestAvatar({
       {showImage ? (
         <img
           alt=""
+          data-outline={framed ? undefined : "none"}
           data-slot="club-crest-image"
           onError={() => setFailed(true)}
           referrerPolicy="no-referrer"
