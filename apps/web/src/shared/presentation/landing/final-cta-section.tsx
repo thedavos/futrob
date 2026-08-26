@@ -64,9 +64,11 @@ const styles = stylex.create({
   footerInner: {
     marginInline: "auto",
     display: "flex",
+    width: "100%",
     maxWidth: "80rem",
     flexWrap: "wrap",
     alignItems: "flex-start",
+    justifyContent: "space-between",
     columnGap: "2rem",
     rowGap: "1rem",
     paddingInline: {
@@ -78,8 +80,17 @@ const styles = stylex.create({
   brand: {
     display: "flex",
     minWidth: 0,
+    flexGrow: {
+      default: 1,
+      [media.sm]: 0,
+    },
+    flexShrink: 1,
+    flexBasis: {
+      default: "100%",
+      [media.sm]: "auto",
+    },
     alignItems: "flex-start",
-    gap: "0.5rem",
+    columnGap: "0.5rem",
   },
   logo: {
     marginTop: 1,
@@ -92,10 +103,10 @@ const styles = stylex.create({
     display: "flex",
     minWidth: 0,
     flexDirection: "column",
-    gap: "0.25rem",
+    rowGap: "0.25rem",
   },
-  mutedCaption: {
-    color: colors.mutedForeground,
+  legal: {
+    flexShrink: 0,
   },
 });
 
@@ -125,17 +136,13 @@ export function FinalCtaSection() {
           <div {...applyStyles(styles.brand)}>
             <Logo className={logo.className} monochrome style={logo.style} />
             <div {...applyStyles(styles.taglines)}>
-              <Caption as="span" {...applyStyles(styles.mutedCaption)}>
-                {t("landing.footer.tagline")}
-              </Caption>
-              <Caption as="span" {...applyStyles(styles.mutedCaption)}>
-                {t("landing.footer.madeBy")}
-              </Caption>
+              <Caption as="span">{t("landing.footer.tagline")}</Caption>
+              <Caption as="span">{t("landing.footer.madeBy")}</Caption>
             </div>
           </div>
-          <Caption as="span" {...applyStyles(styles.mutedCaption)}>
-            {t("landing.footer.legal")}
-          </Caption>
+          <div {...applyStyles(styles.legal)}>
+            <Caption as="span">{t("landing.footer.legal")}</Caption>
+          </div>
         </div>
       </footer>
     </>
