@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { typography } from "#styles/typography";
@@ -49,7 +49,8 @@ const styles = stylex.create({
 
 export type CardVariant = "flat" | "elevated";
 
-type CardProps = React.ComponentProps<"section"> & {
+type CardProps = Omit<React.ComponentProps<"section">, "className"> & {
+  className?: HostClassName;
   variant?: CardVariant;
 };
 
@@ -69,17 +70,29 @@ function Card({ className, style, variant = "flat", ...props }: CardProps) {
   );
 }
 
-function CardHeader({ className, style, ...props }: React.ComponentProps<"header">) {
+function CardHeader({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"header">, "className"> & { className?: HostClassName }) {
   return (
     <header data-slot="card-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
-function CardTitle({ className, style, ...props }: React.ComponentProps<"h3">) {
+function CardTitle({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"h3">, "className"> & { className?: HostClassName }) {
   return <h3 data-slot="card-title" {...applyProps(className, style, styles.title)} {...props} />;
 }
 
-function CardDescription({ className, style, ...props }: React.ComponentProps<"p">) {
+function CardDescription({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"p">, "className"> & { className?: HostClassName }) {
   return (
     <p
       data-slot="card-description"
@@ -89,13 +102,21 @@ function CardDescription({ className, style, ...props }: React.ComponentProps<"p
   );
 }
 
-function CardContent({ className, style, ...props }: React.ComponentProps<"div">) {
+function CardContent({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div data-slot="card-content" {...applyProps(className, style, styles.content)} {...props} />
   );
 }
 
-function CardFooter({ className, style, ...props }: React.ComponentProps<"footer">) {
+function CardFooter({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"footer">, "className"> & { className?: HostClassName }) {
   return (
     <footer data-slot="card-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );

@@ -186,7 +186,7 @@ export {
 } from "./components/sidebar";
 export { Skeleton } from "./components/skeleton";
 export { Stat, StatGroup, StatHint, StatLabel, StatValue } from "./components/stat";
-export type { StatProps, StatValueProps } from "./components/stat";
+export type { StatGroupLayout, StatGroupProps, StatProps, StatValueProps } from "./components/stat";
 export { Stepper } from "./components/stepper";
 export type { StepperStep } from "./components/stepper";
 export { Switch } from "./components/switch";
@@ -212,7 +212,7 @@ export type { Icon, IconProps, IconWeight } from "./lib/icon";
 export { FUTROB_ICON_CATALOG } from "./icons/catalog";
 export type { FutrobIconEntry } from "./icons/catalog";
 export { applyProps, applyStyles } from "./styles/apply";
-export type { StyleXStyles } from "./styles/apply";
+export type { HostClassName, StyleXStyles } from "./styles/apply";
 export { colors } from "./styles/tokens.stylex";
 export { media } from "./styles/media.stylex";
 export { typography } from "./styles/typography";

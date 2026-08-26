@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 
@@ -60,7 +60,8 @@ const styles = stylex.create({
 
 export type EmptyStateVariant = "flat" | "elevated";
 
-type EmptyStateProps = React.ComponentProps<"div"> & {
+type EmptyStateProps = Omit<React.ComponentProps<"div">, "className"> & {
+  className?: HostClassName;
   variant?: EmptyStateVariant;
 };
 
