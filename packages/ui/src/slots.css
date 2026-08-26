@@ -109,6 +109,10 @@
   min-width: 4.5rem;
 }
 
+[data-slot="stat-group"][data-layout="triple"] > * {
+  min-width: 0;
+}
+
 [data-slot="queue-task-item-trigger"] svg {
   pointer-events: none;
   width: 1rem;

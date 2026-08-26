@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -56,6 +56,13 @@ const styles = stylex.create({
     columnGap: "2rem",
     rowGap: "1.25rem",
   },
+  triple: {
+    display: "grid",
+    width: "100%",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    columnGap: "0.75rem",
+    rowGap: "0.75rem",
+  },
 });
 
 const alignStyles = {
@@ -81,9 +88,11 @@ const toneStyles = {
 export type StatAlign = keyof typeof alignStyles;
 export type StatValueSize = keyof typeof sizeStyles;
 export type StatValueTone = keyof typeof toneStyles;
+export type StatGroupLayout = "wrap" | "triple";
 
-type StatProps = React.ComponentProps<"div"> & {
+type StatProps = Omit<React.ComponentProps<"div">, "className"> & {
   align?: StatAlign;
+  className?: HostClassName;
 };
 
 function Stat({ className, style, align = "start", ...props }: StatProps) {
@@ -97,7 +106,11 @@ function Stat({ className, style, align = "start", ...props }: StatProps) {
   );
 }
 
-function StatLabel({ className, style, ...props }: React.ComponentProps<"div">) {
+function StatLabel({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div
       data-slot="stat-label"
@@ -107,7 +120,8 @@ function StatLabel({ className, style, ...props }: React.ComponentProps<"div">) 
   );
 }
 
-type StatValueProps = React.ComponentProps<"div"> & {
+type StatValueProps = Omit<React.ComponentProps<"div">, "className"> & {
+  className?: HostClassName;
   size?: StatValueSize;
   tone?: StatValueTone;
 };
@@ -130,7 +144,11 @@ function StatValue({
   );
 }
 
-function StatHint({ className, style, ...props }: React.ComponentProps<"p">) {
+function StatHint({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"p">, "className"> & { className?: HostClassName }) {
   return (
     <p
       data-slot="stat-hint"
@@ -140,16 +158,22 @@ function StatHint({ className, style, ...props }: React.ComponentProps<"p">) {
   );
 }
 
-function StatGroup({ className, style, ...props }: React.ComponentProps<"div">) {
+type StatGroupProps = Omit<React.ComponentProps<"div">, "className"> & {
+  className?: HostClassName;
+  layout?: StatGroupLayout;
+};
+
+function StatGroup({ className, style, layout = "wrap", ...props }: StatGroupProps) {
   return (
     <div
       data-slot="stat-group"
+      data-layout={layout}
       role="group"
-      {...applyProps(className, style, styles.group)}
+      {...applyProps(className, style, styles.group, layout === "triple" && styles.triple)}
       {...props}
     />
   );
 }
 
 export { Stat, StatGroup, StatHint, StatLabel, StatValue };
-export type { StatProps, StatValueProps };
+export type { StatGroupProps, StatProps, StatValueProps };

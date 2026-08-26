@@ -359,6 +359,28 @@ export const Loading: Story = {
   ),
 };
 
+export const TripleLayout: Story = {
+  name: "Triple layout",
+  render: () => (
+    <div {...applyProps(undefined, undefined, styles.panel)}>
+      <StatGroup layout="triple">
+        <Stat>
+          <StatLabel>Victorias</StatLabel>
+          <StatValue size="compact">12</StatValue>
+        </Stat>
+        <Stat>
+          <StatLabel>Empates</StatLabel>
+          <StatValue size="compact">4</StatValue>
+        </Stat>
+        <Stat>
+          <StatLabel>Derrotas</StatLabel>
+          <StatValue size="compact">3</StatValue>
+        </Stat>
+      </StatGroup>
+    </div>
+  ),
+};
+
 export const PlayerKpiStrip: Story = {
   name: "Player KPI strip",
   render: () => (
