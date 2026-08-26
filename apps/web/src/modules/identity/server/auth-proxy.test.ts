@@ -3,6 +3,7 @@ import { AuthServiceUnavailableError } from "./auth-errors.ts";
 import {
   buildAuthProxyHeaders,
   buildAuthProxyTarget,
+  buildAuthSessionHeaders,
   fetchAuthSessionUserId,
   forwardAuthRequest,
   isAuthApiPath,
@@ -69,6 +70,29 @@ describe("auth proxy", () => {
     expect(headers.get("cf-connecting-ip")).toBeNull();
     expect(headers.get("x-real-ip")).toBeNull();
     expect(headers.get("x-forwarded-for")).toBeNull();
+  });
+
+  it("drops entity headers when looking up the session from a POST BFF request", () => {
+    const incoming = new URL("http://localhost:3000/api/v1/players/me/external-club");
+    const headers = buildAuthSessionHeaders(
+      new Request(incoming, {
+        method: "POST",
+        headers: {
+          cookie: "better-auth.session_token=abc",
+          "content-type": "application/json",
+          "content-length": "120",
+          "content-encoding": "identity",
+        },
+        body: JSON.stringify({ name: "White Lions" }),
+      }),
+      incoming,
+    );
+
+    expect(headers.get("cookie")).toBe("better-auth.session_token=abc");
+    expect(headers.get("content-type")).toBeNull();
+    expect(headers.get("content-length")).toBeNull();
+    expect(headers.get("content-encoding")).toBeNull();
+    expect(headers.get("x-forwarded-host")).toBe("localhost:3000");
   });
 
   it("strips hop-by-hop headers from the upstream response", async () => {
@@ -203,6 +227,34 @@ describe("fetchAuthSessionUserId", () => {
     expect(proxied?.url).toBe("https://futrob-auth.internal/api/auth/get-session");
     expect(proxied?.method).toBe("GET");
     expect(proxied?.headers.get("cookie")).toBe("better-auth.session_token=abc");
+  });
+
+  it("does not forward POST entity headers to get-session", async () => {
+    const fetchMock = vi.fn<AuthServiceBinding["fetch"]>(
+      async () => new Response("null", { status: 200 }),
+    );
+
+    await fetchAuthSessionUserId(
+      new Request("http://localhost:3000/api/v1/players/me/external-club", {
+        method: "POST",
+        headers: {
+          cookie: "better-auth.session_token=abc",
+          "content-type": "application/json",
+          "content-length": "64",
+        },
+        body: JSON.stringify({
+          providerKey: "ea-clubs",
+          name: "White Lions",
+        }),
+      }),
+      { fetch: fetchMock },
+    );
+
+    const proxied = fetchMock.mock.calls[0]?.[0];
+    expect(proxied?.method).toBe("GET");
+    expect(proxied?.headers.get("cookie")).toBe("better-auth.session_token=abc");
+    expect(proxied?.headers.get("content-type")).toBeNull();
+    expect(proxied?.headers.get("content-length")).toBeNull();
   });
 
   it("returns null when auth has no session", async () => {

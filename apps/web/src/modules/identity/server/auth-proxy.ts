@@ -21,6 +21,15 @@ const HOP_BY_HOP_HEADERS = [
   "x-real-ip",
 ] as const;
 
+/** Entity headers from a BFF POST/PUT must not ride along on GET /get-session. */
+const ENTITY_BODY_HEADERS = [
+  "content-encoding",
+  "content-language",
+  "content-length",
+  "content-range",
+  "content-type",
+] as const;
+
 export interface AuthServiceBinding {
   fetch(request: Request): Promise<Response>;
 }
@@ -61,6 +70,15 @@ export function buildAuthProxyHeaders(request: Request, incoming: URL): Headers 
   }
   headers.set("x-forwarded-host", incoming.host);
   headers.set("x-forwarded-proto", incoming.protocol.replace(/:$/, ""));
+  return headers;
+}
+
+/** Session lookup is always GET; drop the originating request's entity headers. */
+export function buildAuthSessionHeaders(request: Request, incoming: URL): Headers {
+  const headers = buildAuthProxyHeaders(request, incoming);
+  for (const name of ENTITY_BODY_HEADERS) {
+    headers.delete(name);
+  }
   return headers;
 }
 
@@ -136,7 +154,7 @@ export async function fetchAuthSessionUserId(
     const upstream = await authService.fetch(
       new Request(`${AUTH_SERVICE_ORIGIN}${AUTH_SESSION_PATH}`, {
         method: "GET",
-        headers: buildAuthProxyHeaders(request, incoming),
+        headers: buildAuthSessionHeaders(request, incoming),
         redirect: "manual",
         signal: AbortSignal.timeout(timeoutMs),
       }),
