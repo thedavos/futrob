@@ -1,4 +1,5 @@
 import type {
+  GetMyGameProfileResponse,
   GetMyMatchesResponse,
   GetMyRecentMatchesResponse,
   GetMyStatisticsResponse,
@@ -22,14 +23,23 @@ export type PlayerMatchesStoryState = {
   readonly recent: "pending" | "error" | GetMyRecentMatchesResponse;
 };
 
+export type PlayerStatisticsStoryState = {
+  readonly profile: "pending" | "error" | GetMyGameProfileResponse;
+};
+
 const hang = <T>(): Promise<T> => new Promise(() => undefined);
 
-let state: PlayerMatchesStoryState = {
+let state: PlayerMatchesStoryState & PlayerStatisticsStoryState = {
   recent: { status: "needs_club" },
+  profile: { status: "needs_club" },
 };
 
 export function configurePlayerMatchesStory(next: PlayerMatchesStoryState): void {
-  state = next;
+  state = { ...state, ...next };
+}
+
+export function configurePlayerStatisticsStory(next: PlayerStatisticsStoryState): void {
+  state = { ...state, ...next };
 }
 
 export const statisticsBrowserClient = {
@@ -50,5 +60,16 @@ export const statisticsBrowserClient = {
       return Promise.reject(new StatisticsClientError(503, "game_data.unavailable"));
     }
     return Promise.resolve(recent);
+  },
+
+  getMyGameProfile(_query?: {
+    readonly externalClubId?: string;
+  }): Promise<GetMyGameProfileResponse> {
+    const profile = state.profile;
+    if (profile === "pending") return hang();
+    if (profile === "error") {
+      return Promise.reject(new StatisticsClientError(503, "game_data.unavailable"));
+    }
+    return Promise.resolve(profile);
   },
 };
