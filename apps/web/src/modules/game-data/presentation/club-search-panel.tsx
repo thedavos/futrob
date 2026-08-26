@@ -9,16 +9,13 @@ import {
   AvatarFallback,
   AvatarImage,
   Button,
+  ChoiceGroup,
+  ChoiceGroupItem,
   Field,
   FieldError,
   FieldLabel,
   Form,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   typography,
   readFormString,
 } from "@futrob/ui";
@@ -86,6 +83,19 @@ const styles = stylex.create({
       [media.sm]: "1.5rem",
     },
     paddingBlock: "1.25rem",
+  },
+  fieldset: {
+    margin: 0,
+    borderWidth: 0,
+    padding: 0,
+  },
+  legend: {
+    marginBottom: "0.5rem",
+  },
+  pills: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.5rem",
   },
   submit: {
     width: {
@@ -170,6 +180,7 @@ export function ClubSearchPanel() {
   const [clubs, setClubs] = useState<ExternalClubDto[]>([]);
   const [error, setError] = useState<SupportError | null>(null);
   const [searched, setSearched] = useState(false);
+  const [platform, setPlatform] = useState(EA_SEARCH_PLATFORM.NINTENDO);
   const validation = useFormValidation<ClubSearchField>();
   const searchClubs = useSearchClubsMutation();
   const retry = useRetryAfterCountdown();
@@ -184,7 +195,7 @@ export function ClubSearchPanel() {
     }
 
     const trimmed = formValues.query.trim();
-    const platform = formValues.platform || EA_SEARCH_PLATFORM.NINTENDO;
+    const selectedPlatform = formValues.platform || platform;
 
     setError(null);
     validation.clearServerErrors();
@@ -192,7 +203,7 @@ export function ClubSearchPanel() {
     try {
       const result = await searchClubs.mutateAsync({
         query: trimmed,
-        platform,
+        platform: selectedPlatform,
       });
       setClubs(result.clubs);
       setSearched(true);
@@ -231,6 +242,28 @@ export function ClubSearchPanel() {
         onFormSubmit={handleSubmit}
         style={form.style}
       >
+        <fieldset {...applyStyles(styles.fieldset)}>
+          <legend id="club-search-platform" {...applyStyles(typography.label, styles.legend)}>
+            Plataforma
+          </legend>
+          <ChoiceGroup
+            aria-labelledby="club-search-platform"
+            className={styles.pills}
+            disabled={loading}
+            onValueChange={(value) => {
+              if (value) setPlatform(value);
+            }}
+            value={platform}
+          >
+            {eaSearchPlatforms.map((option) => (
+              <ChoiceGroupItem appearance="pill" dense key={option.value} value={option.value}>
+                {option.label}
+              </ChoiceGroupItem>
+            ))}
+          </ChoiceGroup>
+          <input name="platform" type="hidden" value={platform} />
+        </fieldset>
+
         <Field
           {...validation.getFieldValidationProps("query")}
           disabled={loading}
@@ -242,31 +275,6 @@ export function ClubSearchPanel() {
           <FieldLabel>Nombre del club</FieldLabel>
           <Input autoComplete="off" disabled={loading} name="query" placeholder="Ej. Cuervos" />
           <FieldError />
-        </Field>
-
-        <Field
-          {...validation.getFieldValidationProps("platform")}
-          disabled={loading}
-          name="platform"
-        >
-          <FieldLabel>Plataforma</FieldLabel>
-          <Select
-            defaultValue={EA_SEARCH_PLATFORM.NINTENDO}
-            disabled={loading}
-            items={[...eaSearchPlatforms]}
-            name="platform"
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {eaSearchPlatforms.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </Field>
 
         <Button

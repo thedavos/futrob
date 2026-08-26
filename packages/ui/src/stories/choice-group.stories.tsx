@@ -110,6 +110,17 @@ export const ClosedVariants: Story = {
           </ChoiceGroupItem>
         ))}
       </ChoiceGroup>
+      <ChoiceGroup
+        aria-label="Píldoras compactas"
+        defaultValue="xbox"
+        {...applyProps(undefined, undefined, styles.threeCols)}
+      >
+        {["crossgen", "xbox", "switch"].map((value) => (
+          <ChoiceGroupItem appearance="pill" dense key={value} value={value}>
+            {value === "crossgen" ? "Cross-gen" : value === "xbox" ? "Xbox" : "Switch"}
+          </ChoiceGroupItem>
+        ))}
+      </ChoiceGroup>
     </div>
   ),
 };

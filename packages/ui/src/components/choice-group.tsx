@@ -3,7 +3,7 @@ import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 import { CheckIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -103,6 +103,16 @@ const styles = stylex.create({
     paddingInline: "1.25rem",
     paddingBlock: "0.5rem",
   },
+  pillDense: {
+    minHeight: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+    },
+    paddingInline: "0.75rem",
+    paddingBlock: 0,
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+  },
   indicator: {
     position: "absolute",
     right: "0.75rem",
@@ -147,7 +157,11 @@ const appearanceStyles = {
 
 export type ChoiceGroupAppearance = keyof typeof appearanceStyles;
 
-function ChoiceGroup<Value>({ className, style, ...props }: RadioGroupPrimitive.Props<Value>) {
+function ChoiceGroup<Value>({
+  className,
+  style,
+  ...props
+}: Omit<RadioGroupPrimitive.Props<Value>, "className"> & { className?: HostClassName }) {
   return (
     <RadioGroupPrimitive
       data-slot="choice-group"
@@ -159,11 +173,14 @@ function ChoiceGroup<Value>({ className, style, ...props }: RadioGroupPrimitive.
 
 type ChoiceGroupItemProps<Value = string> = Radio.Root.Props<Value> & {
   appearance?: ChoiceGroupAppearance;
+  /** Compact desktop/operator mode. Touch layouts stay at the accessible 44px target. */
+  dense?: boolean;
 };
 
 function ChoiceGroupItem<Value>({
   appearance = "tile",
   className,
+  dense = false,
   style,
   ...props
 }: ChoiceGroupItemProps<Value>) {
@@ -171,7 +188,14 @@ function ChoiceGroupItem<Value>({
     <Radio.Root
       data-slot="choice-group-item"
       data-appearance={appearance}
-      {...applyProps(className, style, styles.item, appearanceStyles[appearance])}
+      data-density={dense ? "dense" : "default"}
+      {...applyProps(
+        className,
+        style,
+        styles.item,
+        appearanceStyles[appearance],
+        dense && appearance === "pill" && styles.pillDense,
+      )}
       {...props}
     />
   );
