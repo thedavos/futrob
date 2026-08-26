@@ -11,7 +11,7 @@ base D1 (`futrob-app`) que `apps/web`.
 Este app es el dueño de la única historia de migraciones para la D1 compartida:
 schema de auth, tabla web de BFF rate limit y rate limit de Better Auth
 (`0001_better_auth_and_actors`, `0002_bff_rate_limit`,
-`0003_better_auth_rate_limit`).
+`0003_better_auth_rate_limit`, `0004_better_auth_account_issuer`).
 
 ```bash
 cd apps/auth

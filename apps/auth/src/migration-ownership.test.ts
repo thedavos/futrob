@@ -23,6 +23,7 @@ describe("shared D1 migration ownership", () => {
       "0001_better_auth_and_actors.sql",
       "0002_bff_rate_limit.sql",
       "0003_better_auth_rate_limit.sql",
+      "0004_better_auth_account_issuer.sql",
     ]);
     expect(new Set(prefixes).size).toBe(names.length);
     expect(sqlNames(webMigrations)).toEqual([]);

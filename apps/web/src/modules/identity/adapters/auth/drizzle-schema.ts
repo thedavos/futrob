@@ -1,4 +1,11 @@
-import { integer, sqliteTable, text, primaryKey, index } from "drizzle-orm/sqlite-core";
+import {
+  integer,
+  sqliteTable,
+  text,
+  primaryKey,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 /** Better Auth `user` table (camelCase columns match BA fieldName defaults). */
 export const user = sqliteTable("user", {
@@ -34,6 +41,7 @@ export const account = sqliteTable(
     id: text("id").primaryKey(),
     accountId: text("accountId").notNull(),
     providerId: text("providerId").notNull(),
+    issuer: text("issuer").notNull(),
     userId: text("userId")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -47,7 +55,10 @@ export const account = sqliteTable(
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
     updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
   },
-  (t) => [index("account_userId_idx").on(t.userId)],
+  (t) => [
+    index("account_userId_idx").on(t.userId),
+    uniqueIndex("account_issuer_accountId_uidx").on(t.issuer, t.accountId),
+  ],
 );
 
 export const verification = sqliteTable(
