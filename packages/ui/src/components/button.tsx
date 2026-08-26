@@ -27,6 +27,7 @@ const styles = stylex.create({
     lineHeight: "1.25rem",
     fontWeight: 600,
     whiteSpace: "nowrap",
+    textDecorationLine: "none",
     transitionProperty: "background-color, border-color, color, scale",
     transitionDuration: "var(--duration-normal)",
     transitionTimingFunction: "var(--ease-emphasized)",
