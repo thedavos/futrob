@@ -7,7 +7,6 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import { Link } from "@tanstack/react-router";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { HeroBracket } from "@/shared/presentation/landing/hero-bracket.tsx";
 
 const styles = stylex.create({
   section: {
@@ -21,23 +20,15 @@ const styles = stylex.create({
   },
   inner: {
     marginInline: "auto",
-    display: "grid",
+    display: "flex",
     width: "100%",
     maxWidth: "80rem",
     alignItems: "center",
-    gap: {
-      default: "2.5rem",
-      [media.lg]: "4rem",
-    },
     paddingInline: {
       default: "1.25rem",
       [media.sm]: "2rem",
     },
     paddingBlock: "2rem",
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.lg]: "0.85fr 1.15fr",
-    },
   },
   copy: {
     maxWidth: "36rem",
@@ -75,9 +66,6 @@ const styles = stylex.create({
     flexWrap: "wrap",
     gap: "0.75rem",
   },
-  figure: {
-    minWidth: 0,
-  },
 });
 
 export function LandingHero() {
@@ -108,9 +96,6 @@ export function LandingHero() {
             </Button>
           </div>
         </div>
-        <figure {...applyStyles(styles.figure)}>
-          <HeroBracket />
-        </figure>
       </div>
     </section>
   );
