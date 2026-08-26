@@ -7,7 +7,6 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
-import { statTripleGrid } from "@/shared/presentation/stats/summary-card.tsx";
 import { TooltipStat } from "@/shared/presentation/stats/tooltip-stat.tsx";
 import type {
   ContributionPace,
@@ -52,11 +51,9 @@ export function ContributionsHero({
   const { t } = useI18n();
   const composition = contributionCompositionCopy(record.goals, record.assists, t);
 
-  const heroStat = applyStyles(styles.heroStat);
-  const heroLabel = applyStyles(styles.heroLabel);
   return (
     <div {...applyStyles(styles.hero)}>
-      <Stat className={heroStat.className} style={heroStat.style}>
+      <Stat className={styles.heroStat}>
         <MetricStatValue
           emptyLabel={t("player.noData")}
           metric="record-goals-plus-assists"
@@ -64,7 +61,7 @@ export function ContributionsHero({
             record.goalsPlusAssists === null ? null : numberFormat.format(record.goalsPlusAssists)
           }
         />
-        <StatLabel className={heroLabel.className} style={heroLabel.style}>
+        <StatLabel className={styles.heroLabel}>
           <ChartLineUpIcon
             aria-hidden="true"
             data-metric-icon="record-goals-plus-assists"
@@ -99,10 +96,7 @@ export function ContributionInsights({
   const share = contributionShareView(record.contributions.teamGoalShare, numberFormat, t);
 
   return (
-    <StatGroup
-      className={applyStyles(statTripleGrid).className}
-      style={applyStyles(statTripleGrid).style}
-    >
+    <StatGroup layout="triple">
       <TooltipStat
         label={t("player.matches.contributions.contributed")}
         tooltip={contributed.tooltip}

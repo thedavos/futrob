@@ -9,7 +9,12 @@ const styles = stylex.create({
     minHeight: "2.75rem",
     minWidth: 0,
     width: "100%",
+    padding: 0,
+    borderWidth: 0,
+    borderStyle: "solid",
     borderRadius: "var(--corner-md)",
+    backgroundColor: "transparent",
+    color: "inherit",
     textAlign: "left",
     outlineWidth: {
       default: 0,
@@ -43,7 +48,6 @@ export function TooltipStat({
   readonly tooltip: string;
 }) {
   const trigger = applyStyles(styles.trigger);
-  const stat = applyStyles(styles.stat);
   return (
     <Tooltip>
       <TooltipTrigger
@@ -56,7 +60,7 @@ export function TooltipStat({
           />
         }
       >
-        <Stat className={stat.className} style={stat.style}>
+        <Stat className={styles.stat}>
           {children}
           <StatLabel>{label}</StatLabel>
         </Stat>

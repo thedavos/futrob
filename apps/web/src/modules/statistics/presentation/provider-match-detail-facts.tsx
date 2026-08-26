@@ -58,16 +58,14 @@ export function MatchFacts({
   const mode = providerMatchMode(detail);
   const durationSeconds = detail.match.metadata.durationSeconds;
   const duration = matchDurationLabel(durationSeconds, t);
-  const header = applyStyles(styles.header);
-  const content = applyStyles(styles.content);
   return (
     <Card data-match-facts="">
-      <CardHeader className={header.className} style={header.style}>
+      <CardHeader className={styles.header}>
         <h2 {...applyStyles(typography.subtitle, styles.title)}>
           {t("player.matchDetail.tab.facts")}
         </h2>
       </CardHeader>
-      <CardContent className={content.className} style={content.style}>
+      <CardContent className={styles.content}>
         <dl {...applyStyles(styles.list)}>
           <Fact
             label={t("player.matchDetail.facts.type")}

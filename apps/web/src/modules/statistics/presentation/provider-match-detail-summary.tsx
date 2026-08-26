@@ -182,15 +182,12 @@ function YourPerformanceCard({
   readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
-  const card = applyStyles(summaryCard);
-  const header = applyStyles(summaryCardHeader);
-  const content = applyStyles(summaryCardContent);
   return (
-    <Card className={card.className} data-personal-summary="" style={card.style}>
-      <CardHeader className={header.className} style={header.style}>
+    <Card className={summaryCard} data-personal-summary="">
+      <CardHeader className={summaryCardHeader}>
         <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.performance")}</h2>
       </CardHeader>
-      <CardContent className={content.className} style={content.style}>
+      <CardContent className={summaryCardContent}>
         {appearance ? (
           <PlayedPerformance
             appearance={appearance}
@@ -310,15 +307,11 @@ function PerformanceStat({
   readonly t: Translator;
   readonly value: string | null;
 }) {
-  const metricStat = applyStyles(styles.metricStat);
-  const metricLabel = applyStyles(styles.metricLabel);
   return (
     <div {...applyStyles(styles.metric)}>
-      <Stat align="center" className={metricStat.className} style={metricStat.style}>
+      <Stat align="center" className={styles.metricStat}>
         <MetricStatValue emptyLabel={t("player.noData")} metric={metric} value={value} />
-        <StatLabel className={metricLabel.className} style={metricLabel.style}>
-          {label}
-        </StatLabel>
+        <StatLabel className={styles.metricLabel}>{label}</StatLabel>
       </Stat>
     </div>
   );

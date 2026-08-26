@@ -127,7 +127,6 @@ export function ProviderMatchRow({
                     {...applyStyles(
                       rowTypography.caption,
                       styles.outcome,
-                      styles.onPitchSurface,
                       matchOutcomeTextStyle(outcome),
                     )}
                   >

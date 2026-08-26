@@ -52,7 +52,8 @@ export const styles = stylex.create({
       "@container (min-width: 48rem)": "0.5rem",
     },
     paddingInline: "1rem",
-    paddingBlock: "0.75rem",
+    paddingTop: "0.75rem",
+    paddingBottom: "0.75rem",
   },
   views: {
     display: {

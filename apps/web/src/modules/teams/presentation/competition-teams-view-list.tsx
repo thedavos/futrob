@@ -113,7 +113,6 @@ const styles = stylex.create({
 });
 
 const skeleton = applyStyles(styles.skeleton);
-const empty = applyStyles(styles.empty);
 const more = applyStyles(styles.more);
 const spinner = applyStyles(styles.spinner);
 
@@ -138,7 +137,7 @@ export function TeamList({
   if (items.length === 0) {
     return (
       <div {...applyStyles(styles.emptyWrap)}>
-        <EmptyState className={empty.className} style={empty.style}>
+        <EmptyState className={styles.empty}>
           <EmptyStateIcon>
             <UsersThreeIcon />
           </EmptyStateIcon>

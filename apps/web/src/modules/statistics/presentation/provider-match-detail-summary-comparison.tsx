@@ -125,19 +125,16 @@ export function TeamComparisonCard({
   readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
-  const card = applyStyles(styles.card);
-  const header = applyStyles(styles.header);
-  const content = applyStyles(styles.content);
   return (
-    <Card className={card.className} data-team-comparison="" style={card.style}>
-      <CardHeader className={header.className} style={header.style}>
+    <Card className={styles.card} data-team-comparison="">
+      <CardHeader className={styles.header}>
         <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.comparison")}</h2>
         <div {...applyStyles(styles.clubs)}>
           <ComparisonClubSide side="selected" team={comparison.selected.team} />
           <ComparisonClubSide side="opponent" team={comparison.opponent.team} />
         </div>
       </CardHeader>
-      <CardContent className={content.className} style={content.style}>
+      <CardContent className={styles.content}>
         <ul {...applyStyles(styles.list)}>
           {TEAM_COMPARISON_METRICS.map((metric) => (
             <ComparisonMetricRow

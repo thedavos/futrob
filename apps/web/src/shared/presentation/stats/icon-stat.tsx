@@ -30,12 +30,10 @@ export function IconStat({
   readonly label: string;
   readonly metric: string;
 }) {
-  const stat = applyStyles(styles.stat);
-  const labelSx = applyStyles(styles.label);
   const icon = applyStyles(styles.icon);
   return (
-    <Stat className={stat.className} style={stat.style}>
-      <StatLabel className={labelSx.className} style={labelSx.style}>
+    <Stat className={styles.stat}>
+      <StatLabel className={styles.label}>
         <MetricIcon
           aria-hidden="true"
           className={icon.className}

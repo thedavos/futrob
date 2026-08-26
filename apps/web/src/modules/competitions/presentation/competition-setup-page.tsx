@@ -61,7 +61,15 @@ const styles = stylex.create({
   content: {
     display: "grid",
     gap: "1.5rem",
-    padding: {
+    paddingInline: {
+      default: "1.25rem",
+      [media.sm]: "2rem",
+    },
+    paddingTop: {
+      default: "1.25rem",
+      [media.sm]: "2rem",
+    },
+    paddingBottom: {
       default: "1.25rem",
       [media.sm]: "2rem",
     },
@@ -81,7 +89,6 @@ const styles = stylex.create({
 });
 
 const stepper = applyStyles(styles.stepper);
-const content = applyStyles(styles.content);
 
 export type CompetitionSetupStep = "information" | "format" | "rules" | "participants" | "review";
 const steps = [
@@ -192,7 +199,7 @@ export function CompetitionSetupPage({
         </PageAlert>
       ) : null}
       <Card>
-        <CardContent className={content.className} style={content.style}>
+        <CardContent className={styles.content}>
           {currentStep === "information" ? (
             <InformationStep
               disabled={readOnly}

@@ -6,11 +6,7 @@ import { applyStyles, StatGroup, StatValue } from "@futrob/ui";
 import { EqualsIcon, TrendDownIcon, TrophyIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { IconStat } from "@/shared/presentation/stats/icon-stat.tsx";
-import {
-  statTripleGrid,
-  SummaryCard,
-  SummaryCardLoading,
-} from "@/shared/presentation/stats/summary-card.tsx";
+import { SummaryCard, SummaryCardLoading } from "@/shared/presentation/stats/summary-card.tsx";
 import { ContributionInsights, ContributionsHero } from "./player-match-contributions.tsx";
 import { RecentForm } from "./player-match-form.tsx";
 import { PerformancePanel } from "./player-match-performance.tsx";
@@ -130,25 +126,22 @@ export function ViewRecord({
       >
         {showPerformance ? (
           <SummaryCard
+            className={threeCard ? styles.placePerformance : undefined}
             data-record-slot="performance"
             headingId="player-matches-stats-performance"
             title={t("player.matches.stats.performance")}
-            {...(threeCard ? applyStyles(styles.placePerformance) : {})}
           >
             <PerformancePanel matches={matches} numberFormat={numberFormat} record={record} />
           </SummaryCard>
         ) : null}
         <SummaryCard
+          className={threeCard ? styles.placeRecord : undefined}
           data-record-slot="record"
           footer={showsRecentForm(matches) ? <RecentForm matches={matches} /> : null}
           headingId="player-matches-stats-record"
           title={t("player.matches.stats.record")}
-          {...(threeCard ? applyStyles(styles.placeRecord) : {})}
         >
-          <StatGroup
-            className={applyStyles(statTripleGrid).className}
-            style={applyStyles(statTripleGrid).style}
-          >
+          <StatGroup layout="triple">
             <IconStat
               icon={TrophyIcon}
               label={t("player.matches.record.wins")}
@@ -180,6 +173,7 @@ export function ViewRecord({
         </SummaryCard>
         {showContributions ? (
           <SummaryCard
+            className={threeCard ? styles.placeContributions : undefined}
             data-record-slot="contributions"
             footer={
               record.contributions.playedAppearances > 0 ? (
@@ -188,7 +182,6 @@ export function ViewRecord({
             }
             headingId="player-matches-stats-contributions"
             title={t("player.matches.stats.contributions")}
-            {...(threeCard ? applyStyles(styles.placeContributions) : {})}
           >
             <ContributionsHero numberFormat={numberFormat} record={record} />
           </SummaryCard>
@@ -209,14 +202,11 @@ export function RecordLoading() {
         role="status"
         {...applyStyles(styles.grid, styles.cards3)}
       >
+        <SummaryCardLoading className={styles.placePerformance} data-record-slot="performance" />
+        <SummaryCardLoading className={styles.placeRecord} data-record-slot="record" />
         <SummaryCardLoading
-          data-record-slot="performance"
-          {...applyStyles(styles.placePerformance)}
-        />
-        <SummaryCardLoading data-record-slot="record" {...applyStyles(styles.placeRecord)} />
-        <SummaryCardLoading
+          className={styles.placeContributions}
           data-record-slot="contributions"
-          {...applyStyles(styles.placeContributions)}
         />
       </div>
     </div>

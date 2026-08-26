@@ -1,24 +1,28 @@
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyProps, applyStyles, Card, CardContent, Skeleton, typography } from "@futrob/ui";
+import {
+  applyProps,
+  applyStyles,
+  Card,
+  CardContent,
+  Skeleton,
+  typography,
+  type HostClassName,
+} from "@futrob/ui";
 
 const styles = stylex.create({
   card: {
     height: "100%",
     minWidth: 0,
   },
-  tripleGrid: {
-    display: "grid",
-    width: "100%",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: "0.75rem",
-  },
   content: {
     display: "flex",
     height: "100%",
     flexDirection: "column",
     gap: "0.5rem",
-    padding: "1rem",
+    paddingInline: "1rem",
+    paddingTop: "1rem",
+    paddingBottom: "1rem",
   },
   body: {
     height: "100%",
@@ -31,7 +35,9 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     gap: "0.75rem",
-    padding: "1rem",
+    paddingInline: "1rem",
+    paddingTop: "1rem",
+    paddingBottom: "1rem",
   },
   skeletonTitle: {
     height: "1rem",
@@ -43,9 +49,6 @@ const styles = stylex.create({
   },
 });
 
-/** Layout token for three-up Stat groups. Stat already sets minWidth: 0. */
-export const statTripleGrid = styles.tripleGrid;
-
 export function SummaryCard({
   children,
   className,
@@ -56,17 +59,16 @@ export function SummaryCard({
   ...props
 }: {
   readonly children: ReactNode;
-  readonly className?: string;
+  readonly className?: HostClassName;
   readonly footer?: ReactNode;
   readonly headingId: string;
   readonly style?: CSSProperties;
   readonly title: string;
 } & Omit<ComponentProps<typeof Card>, "children" | "className" | "style">) {
   const card = applyProps(className, style, styles.card);
-  const content = applyStyles(styles.content);
   return (
     <Card aria-labelledby={headingId} className={card.className} style={card.style} {...props}>
-      <CardContent className={content.className} style={content.style}>
+      <CardContent className={styles.content}>
         <h2 id={headingId} {...applyStyles(typography.label)}>
           {title}
         </h2>
@@ -84,16 +86,15 @@ export function SummaryCardLoading({
   style,
   ...props
 }: {
-  readonly className?: string;
+  readonly className?: HostClassName;
   readonly style?: CSSProperties;
 } & Omit<ComponentProps<typeof Card>, "children" | "className" | "style">) {
   const card = applyProps(className, style, styles.card);
-  const content = applyStyles(styles.loadingContent);
   const title = applyStyles(styles.skeletonTitle);
   const value = applyStyles(styles.skeletonValue);
   return (
     <Card className={card.className} style={card.style} {...props}>
-      <CardContent className={content.className} style={content.style}>
+      <CardContent className={styles.loadingContent}>
         <Skeleton className={title.className} style={title.style} />
         <Skeleton className={value.className} style={value.style} />
       </CardContent>

@@ -38,19 +38,17 @@ import type { CompetitionTeamsViewProps } from "./competition-teams-view.tsx";
 import { EntryBadge, entryStatusLabel } from "./competition-teams-view-entry.tsx";
 import { styles } from "./competition-teams-view-detail.styles.ts";
 
-const empty = applyStyles(styles.empty);
 const skeletonTitle = applyStyles(styles.skeletonTitle);
 const skeletonStats = applyStyles(styles.skeletonStats);
 const skeletonTable = applyStyles(styles.skeletonTable);
 const back = applyStyles(styles.back);
-const stats = applyStyles(styles.stats);
 const avatar = applyStyles(styles.avatar);
 
 export function TeamDetail(props: CompetitionTeamsViewProps) {
   if (!props.selectedTeamId) {
     return (
       <div {...applyStyles(styles.emptyWrap)}>
-        <EmptyState className={empty.className} style={empty.style}>
+        <EmptyState className={styles.empty}>
           <EmptyStateIcon>
             <UsersThreeIcon />
           </EmptyStateIcon>
@@ -113,7 +111,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
         </div>
       </div>
 
-      <StatGroup className={stats.className} style={stats.style}>
+      <StatGroup className={styles.stats}>
         <Stat>
           <StatLabel>Cupo</StatLabel>
           <StatValue size="compact">

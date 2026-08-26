@@ -142,15 +142,12 @@ export function MatchHighlightsCard({
   readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
-  const card = applyStyles(styles.card);
-  const header = applyStyles(styles.header);
-  const content = applyStyles(styles.content);
   return (
-    <Card className={card.className} data-match-highlights="" style={card.style}>
-      <CardHeader className={header.className} style={header.style}>
+    <Card className={styles.card} data-match-highlights="">
+      <CardHeader className={styles.header}>
         <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.highlights")}</h2>
       </CardHeader>
-      <CardContent className={content.className} style={content.style}>
+      <CardContent className={styles.content}>
         {highlights.length === 0 ? (
           <p {...applyStyles(typography.caption, styles.empty)}>
             {t("player.matchDetail.highlights.empty")}
@@ -187,7 +184,6 @@ function HighlightItem({
   const primary = highlightPrimary(item, numberFormat, t);
   const secondary = highlightSecondary(item, numberFormat, percentFormat, t);
   const badge = applyStyles(styles.badge);
-  const stat = applyStyles(styles.stat);
   return (
     <li data-highlight={item.kind} {...applyStyles(styles.item)}>
       <header {...applyStyles(styles.itemHeader)}>
@@ -198,9 +194,9 @@ function HighlightItem({
           </Badge>
           <p {...applyStyles(typography.body, styles.name)}>{item.player.displayName}</p>
         </div>
-        <Stat align="end" className={stat.className} style={stat.style}>
+        <Stat align="end" className={styles.stat}>
           <MetricStatValue emptyLabel={t("player.noData")} value={primary.value} />
-          <StatLabel {...applyStyles(styles.pretty)}>{primary.label}</StatLabel>
+          <StatLabel className={styles.pretty}>{primary.label}</StatLabel>
         </Stat>
       </header>
       {secondary ? <p {...applyStyles(typography.caption, styles.secondary)}>{secondary}</p> : null}

@@ -192,15 +192,13 @@ export function MatchesToolbar({
   readonly sortOrder: MatchSortOrder;
   readonly t: Translator;
 }) {
-  const toolbar = applyStyles(styles.toolbar);
-  const toolbarContent = applyStyles(styles.toolbarContent);
   const views = applyStyles(styles.views);
   const viewPill = applyStyles(styles.viewPill);
   const separator = applyStyles(styles.separator);
   const sortTrigger = applyStyles(styles.sortTrigger);
   return (
-    <Card className={toolbar.className} style={toolbar.style}>
-      <CardContent className={toolbarContent.className} style={toolbarContent.style}>
+    <Card className={styles.toolbar}>
+      <CardContent className={styles.toolbarContent}>
         <ChoiceGroup<PlayerMatchesView>
           aria-label={t("player.matches.view.label")}
           className={views.className}
