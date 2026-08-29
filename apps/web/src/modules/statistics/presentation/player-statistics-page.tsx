@@ -77,7 +77,7 @@ export function PlayerStatisticsPage() {
           </>
         )}
         <PageHeaderActions>
-          <Button render={<Link to="/player" />} variant="link">
+          <Button render={<Link to="/player" />} role="link" variant="link">
             {t("player.backToWorkspace")}
           </Button>
         </PageHeaderActions>
@@ -252,7 +252,9 @@ function ProfileEmpty({
       <EmptyStateTitle>{title}</EmptyStateTitle>
       <EmptyStateDescription>{description}</EmptyStateDescription>
       <EmptyStateActions>
-        <Button render={<Link to={actionHref} />}>{actionLabel}</Button>
+        <Button render={<Link to={actionHref} />} role="link">
+          {actionLabel}
+        </Button>
       </EmptyStateActions>
     </EmptyState>
   );
