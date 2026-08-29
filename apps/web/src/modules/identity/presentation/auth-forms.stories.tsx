@@ -88,9 +88,9 @@ export const SignupPasswordValidationMessage: Story = {
 
     await userEvent.click(canvas.getByLabelText("Correo electrónico"));
 
-    await expect(canvas.queryByText(passwordHint)).not.toBeInTheDocument();
-    const passwordError = canvas.getByText("Incluye al menos una letra.");
+    const passwordError = await canvas.findByText("Incluye al menos una letra.");
     await expect(passwordError).toBeVisible();
+    await expect(canvas.queryByText(passwordHint)).not.toBeInTheDocument();
     await expect(password).toHaveAttribute(
       "aria-describedby",
       passwordError.closest('[data-slot="field-error"]')?.id,
