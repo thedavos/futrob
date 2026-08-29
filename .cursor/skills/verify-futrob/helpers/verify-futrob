@@ -1,0 +1,267 @@
+#!/usr/bin/env bash
+# verify-futrob — launch / doctor / cleanup / evidence-dir for the Futrob web stack.
+# Invocation (repo root): .cursor/skills/verify-futrob/helpers/verify-futrob <command>
+set -euo pipefail
+
+WEB_PORT=3000
+API_PORT=8787
+AUTH_PORT=8788
+# Vite+ web binds IPv6 [::1] only. localhost resolves to that; 127.0.0.1 does not.
+WEB_URL="http://localhost:${WEB_PORT}"
+API_PING_URL="http://localhost:${API_PORT}/api/v1/meta/ping"
+AUTH_HEALTH_URL="http://localhost:${AUTH_PORT}/meta/health"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SKILL_DIR}/../../.." && pwd)"
+RUN_DIR="${SKILL_DIR}/.run"
+EVIDENCE_ROOT="${SKILL_DIR}/evidence"
+LOCK_FILE="${RUN_DIR}/lock"
+LOG_FILE="${RUN_DIR}/dev.log"
+PID_FILE="${RUN_DIR}/dev.pid"
+PGID_FILE="${RUN_DIR}/dev.pgid"
+RUN_ID_FILE="${RUN_DIR}/run-id"
+
+usage() {
+  echo "Usage: .cursor/skills/verify-futrob/helpers/verify-futrob launch|doctor|cleanup|evidence-dir" >&2
+  exit 2
+}
+
+port_pids() {
+  local port="$1"
+  lsof -nP -iTCP:"${port}" -sTCP:LISTEN -t 2>/dev/null || true
+}
+
+http_code() {
+  curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$1" 2>/dev/null || echo "000"
+}
+
+http_body() {
+  curl -sS --max-time 5 "$1" 2>/dev/null || true
+}
+
+require_env_files() {
+  local missing=0
+  for rel in apps/web/.dev.vars apps/auth/.dev.vars apps/api/.env; do
+    if [[ ! -f "${REPO_ROOT}/${rel}" ]]; then
+      echo "doctor: missing ${rel} (copy the matching .example and align secrets)" >&2
+      missing=1
+    fi
+  done
+  return "${missing}"
+}
+
+lock_owned() {
+  [[ -f "${PID_FILE}" ]] || return 1
+  local pid
+  pid="$(cat "${PID_FILE}")"
+  kill -0 "${pid}" 2>/dev/null
+}
+
+cmd_launch() {
+  if [[ -f "${PID_FILE}" ]] && lock_owned; then
+    echo "launch: already running (pid $(cat "${PID_FILE}"), run $(cat "${RUN_ID_FILE}"))"
+    cmd_doctor
+    return 0
+  fi
+
+  local busy=0
+  for port in "${WEB_PORT}" "${API_PORT}" "${AUTH_PORT}"; do
+    if [[ -n "$(port_pids "${port}")" ]]; then
+      echo "launch: port ${port} is already listening. Refuse to double-drive a shared instance." >&2
+      echo "launch: stop that stack, or attach only if the operator asked to reuse their npm run dev." >&2
+      busy=1
+    fi
+  done
+  if [[ "${busy}" -ne 0 ]]; then
+    exit 1
+  fi
+
+  if ! require_env_files; then
+    exit 1
+  fi
+
+  mkdir -p "${RUN_DIR}" "${EVIDENCE_ROOT}"
+  local run_id
+  run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  echo "${run_id}" >"${RUN_ID_FILE}"
+  mkdir -p "${EVIDENCE_ROOT}/${run_id}"
+
+  echo "launch: starting npm run dev (run ${run_id})"
+  # New session so cleanup can kill the group we started, never by process name.
+  # setsid is Linux; macOS Python provides os.setsid.
+  (
+    cd "${REPO_ROOT}"
+    if command -v setsid >/dev/null 2>&1; then
+      exec setsid npm run dev
+    else
+      exec python3 -c 'import os, sys; os.setsid(); os.execvp("npm", ["npm", "run", "dev"])'
+    fi
+  ) >"${LOG_FILE}" 2>&1 &
+  local pid=$!
+  echo "${pid}" >"${PID_FILE}"
+  sleep 0.4
+  local pgid
+  pgid="$(ps -o pgid= -p "${pid}" 2>/dev/null | tr -d ' ' || true)"
+  if [[ -z "${pgid}" ]]; then
+    pgid="${pid}"
+  fi
+  echo "${pgid}" >"${PGID_FILE}"
+  printf 'run_id=%s\npid=%s\nstarted_at=%s\n' "${run_id}" "${pid}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"${LOCK_FILE}"
+
+  local waited=0
+  local limit=180
+  while ((waited < limit)); do
+    if ! kill -0 "${pid}" 2>/dev/null; then
+      echo "launch: npm run dev exited early. Last log lines:" >&2
+      tail -n 40 "${LOG_FILE}" >&2 || true
+      rm -f "${PID_FILE}" "${PGID_FILE}" "${LOCK_FILE}"
+      exit 1
+    fi
+    if doctor_probes; then
+      echo "launch: ready (web :${WEB_PORT}, api :${API_PORT}, auth :${AUTH_PORT})"
+      echo "launch: evidence ${EVIDENCE_ROOT}/${run_id}"
+      echo "launch: log ${LOG_FILE}"
+      return 0
+    fi
+    sleep 2
+    waited=$((waited + 2))
+  done
+
+  echo "launch: timed out after ${limit}s waiting for health probes." >&2
+  tail -n 40 "${LOG_FILE}" >&2 || true
+  exit 1
+}
+
+doctor_probes() {
+  local web_code api_code auth_code
+  web_code="$(http_code "${WEB_URL}/")"
+  api_code="$(http_code "${API_PING_URL}")"
+  auth_code="$(http_code "${AUTH_HEALTH_URL}")"
+
+  [[ "${web_code}" == "200" ]] || return 1
+  [[ "${api_code}" == "200" ]] || return 1
+  [[ "${auth_code}" == "200" ]] || return 1
+
+  local web_body api_body auth_body
+  web_body="$(http_body "${WEB_URL}/")"
+  api_body="$(http_body "${API_PING_URL}")"
+  auth_body="$(http_body "${AUTH_HEALTH_URL}")"
+
+  [[ "${web_body}" == *Futrob* ]] || return 1
+  [[ "${api_body}" == *'"ok":true'* && "${api_body}" == *'"service":"futrob"'* ]] || return 1
+  [[ "${auth_body}" == *'"ok":true'* && "${auth_body}" == *'"service":"futrob-auth"'* ]] || return 1
+  return 0
+}
+
+cmd_doctor() {
+  local ok=0
+  echo "doctor: repo ${REPO_ROOT}"
+
+  if require_env_files; then
+    echo "doctor: env files present"
+  else
+    ok=1
+  fi
+
+  if [[ -f "${PID_FILE}" ]]; then
+    local pid
+    pid="$(cat "${PID_FILE}")"
+    if kill -0 "${pid}" 2>/dev/null; then
+      echo "doctor: owned launch pid ${pid} (run $(cat "${RUN_ID_FILE}" 2>/dev/null || echo unknown))"
+    else
+      echo "doctor: lock pid ${pid} is not running" >&2
+      ok=1
+    fi
+  else
+    echo "doctor: no launch lock (foreign or attach-only stack)"
+    for port in "${WEB_PORT}" "${API_PORT}" "${AUTH_PORT}"; do
+      local pids
+      pids="$(port_pids "${port}")"
+      if [[ -n "${pids}" ]]; then
+        echo "doctor: port ${port} owned by foreign pid(s) ${pids}"
+      else
+        echo "doctor: port ${port} is free"
+        ok=1
+      fi
+    done
+  fi
+
+  local web_code api_code auth_code
+  web_code="$(http_code "${WEB_URL}/")"
+  api_code="$(http_code "${API_PING_URL}")"
+  auth_code="$(http_code "${AUTH_HEALTH_URL}")"
+  echo "doctor: GET ${WEB_URL}/ → ${web_code}"
+  echo "doctor: GET ${API_PING_URL} → ${api_code} $(http_body "${API_PING_URL}")"
+  echo "doctor: GET ${AUTH_HEALTH_URL} → ${auth_code} $(http_body "${AUTH_HEALTH_URL}")"
+
+  if doctor_probes; then
+    echo "doctor: ready"
+  else
+    echo "doctor: not ready" >&2
+    ok=1
+  fi
+
+  return "${ok}"
+}
+
+cmd_evidence_dir() {
+  mkdir -p "${EVIDENCE_ROOT}"
+  local run_id="ad-hoc"
+  if [[ -f "${RUN_ID_FILE}" ]]; then
+    run_id="$(cat "${RUN_ID_FILE}")"
+  fi
+  local dir="${EVIDENCE_ROOT}/${run_id}"
+  mkdir -p "${dir}"
+  echo "${dir}"
+}
+
+cmd_cleanup() {
+  if [[ ! -f "${PID_FILE}" ]]; then
+    echo "cleanup: no owned launch; left foreign processes alone"
+    return 0
+  fi
+  local pid pgid
+  pid="$(cat "${PID_FILE}")"
+  pgid="$(cat "${PGID_FILE}" 2>/dev/null || echo "${pid}")"
+  echo "cleanup: stopping process group ${pgid} (pid ${pid})"
+  kill -- "-${pgid}" 2>/dev/null || kill "${pid}" 2>/dev/null || true
+  local i=0
+  while ((i < 20)); do
+    local leftover=""
+    leftover="$(port_pids "${WEB_PORT}") $(port_pids "${API_PORT}") $(port_pids "${AUTH_PORT}")"
+    leftover="$(echo "${leftover}" | tr ' ' '\n' | awk 'NF' || true)"
+    if [[ -z "${leftover}" ]] && ! kill -0 "${pid}" 2>/dev/null; then
+      break
+    fi
+    # Only signal listeners that still share our process group.
+    local listener
+    for listener in ${leftover}; do
+      local listener_pgid
+      listener_pgid="$(ps -o pgid= -p "${listener}" 2>/dev/null | tr -d ' ' || true)"
+      if [[ "${listener_pgid}" == "${pgid}" ]]; then
+        kill "${listener}" 2>/dev/null || true
+      fi
+    done
+    sleep 0.5
+    i=$((i + 1))
+  done
+  if kill -0 "${pid}" 2>/dev/null; then
+    kill -9 -- "-${pgid}" 2>/dev/null || kill -9 "${pid}" 2>/dev/null || true
+  fi
+  rm -f "${PID_FILE}" "${PGID_FILE}" "${LOCK_FILE}" "${RUN_ID_FILE}"
+  echo "cleanup: removed .run lock; evidence kept under ${EVIDENCE_ROOT}/"
+}
+
+main() {
+  local cmd="${1:-}"
+  case "${cmd}" in
+    launch) cmd_launch ;;
+    doctor) cmd_doctor ;;
+    cleanup) cmd_cleanup ;;
+    evidence-dir) cmd_evidence_dir ;;
+    *) usage ;;
+  esac
+}
+
+main "$@"

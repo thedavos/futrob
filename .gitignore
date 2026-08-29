@@ -41,4 +41,8 @@ npm-debug.log*
 
 # Local agent decision trails (show-me-your-work)
 .audit/
+
+# verify-futrob run lock (evidence/ is kept on disk, not committed)
+.cursor/skills/verify-futrob/.run/
+.cursor/skills/verify-futrob/evidence/
 apps/web/src/routeTree.gen.ts
