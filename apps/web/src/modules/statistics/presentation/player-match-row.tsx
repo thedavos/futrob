@@ -12,13 +12,13 @@ import {
   appearanceRedCardsAria,
   listedClubRedCards,
   MatchClubSide,
+  MatchOutcomeCaption,
   matchTypeBadgeVariant,
   notPlayedMessage,
   scoreDigitStyle,
   ScoringFeatBadge,
 } from "./player-match-row-parts.tsx";
 import { rowElevation, rowTypography, styles } from "./player-match-row.styles.ts";
-import { matchOutcomeTextStyle } from "./player-match-tone.ts";
 import {
   appearanceScoringFeat,
   isDnfMatch,
@@ -120,18 +120,8 @@ export function ProviderMatchRow({
                     {typeLabel}
                   </Badge>
                 ) : null,
-                outcomeLabel ? (
-                  <span
-                    data-match-outcome={outcome === "unknown" ? undefined : outcome}
-                    key="outcome"
-                    {...applyStyles(
-                      rowTypography.caption,
-                      styles.outcome,
-                      matchOutcomeTextStyle(outcome),
-                    )}
-                  >
-                    {outcomeLabel}
-                  </span>
+                outcomeLabel && outcome !== "unknown" ? (
+                  <MatchOutcomeCaption key="outcome" label={outcomeLabel} outcome={outcome} />
                 ) : null,
                 notPlayedLabel ? (
                   <span
@@ -201,9 +191,12 @@ export function ProviderMatchRow({
                 redCardsLabel={t("player.matches.metric.redCards")}
               />
               <div {...applyStyles(styles.scoreStack)}>
-                <Badge data-match-status="finalized" variant="outline">
+                <span
+                  data-match-status="finalized"
+                  {...applyStyles(rowTypography.caption, styles.status)}
+                >
                   {t("player.matches.finalized")}
-                </Badge>
+                </span>
                 <div
                   data-match-outcome={outcome === "unknown" ? undefined : outcome}
                   data-match-score=""

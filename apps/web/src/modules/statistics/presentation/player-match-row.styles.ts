@@ -46,7 +46,16 @@ export const styles = stylex.create({
     backgroundColor: colors.surface,
   },
   outcome: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.25rem",
     fontWeight: 600,
+    color: colors.foreground,
+  },
+  outcomeIcon: {
+    width: "0.875rem",
+    height: "0.875rem",
+    flexShrink: 0,
   },
   muted: {
     color: colors.mutedForeground,
@@ -61,6 +70,10 @@ export const styles = stylex.create({
   dnfIcon: {
     width: "0.875rem",
     height: "0.875rem",
+  },
+  status: {
+    fontWeight: 600,
+    color: colors.mutedForeground,
   },
   when: {
     fontVariantNumeric: "tabular-nums",

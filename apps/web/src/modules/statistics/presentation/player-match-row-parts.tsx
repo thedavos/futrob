@@ -1,12 +1,19 @@
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
-import { applyStyles, Badge, Tooltip, TooltipContent, TooltipTrigger } from "@futrob/ui";
-import { RectangleIcon, SoccerBallIcon } from "@phosphor-icons/react";
+import { applyStyles, Badge, Tooltip, TooltipContent, TooltipTrigger, type Icon } from "@futrob/ui";
+import {
+  EqualsIcon,
+  RectangleIcon,
+  SoccerBallIcon,
+  TrendDownIcon,
+  TrophyIcon,
+} from "@phosphor-icons/react";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { rowTypography, styles } from "./player-match-row.styles.ts";
 import {
   playedAppearance,
   showsRedCards,
+  type MatchOutcome,
   type ProviderMatchMode,
   type ScoringFeat,
 } from "./player-match-view.ts";
@@ -53,6 +60,41 @@ export function matchTypeBadgeVariant(mode: ProviderMatchMode): "emphasis" | "in
       return _exhaustive;
     }
   }
+}
+
+export function matchOutcomeIcon(outcome: Exclude<MatchOutcome, "unknown">): Icon {
+  switch (outcome) {
+    case "win":
+      return TrophyIcon;
+    case "draw":
+      return EqualsIcon;
+    case "loss":
+      return TrendDownIcon;
+    default: {
+      const _exhaustive: never = outcome;
+      return _exhaustive;
+    }
+  }
+}
+
+export function MatchOutcomeCaption({
+  label,
+  outcome,
+}: {
+  readonly label: string;
+  readonly outcome: Exclude<MatchOutcome, "unknown">;
+}) {
+  const OutcomeIcon = matchOutcomeIcon(outcome);
+  return (
+    <span data-match-outcome={outcome} {...applyStyles(rowTypography.caption, styles.outcome)}>
+      <OutcomeIcon
+        aria-hidden="true"
+        data-match-outcome-icon={outcome}
+        {...applyStyles(styles.outcomeIcon)}
+      />
+      {label}
+    </span>
+  );
 }
 
 export function MatchClubSide({

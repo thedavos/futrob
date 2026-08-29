@@ -176,9 +176,11 @@ describe("PlayerMatchesPage", () => {
     expect(
       document.querySelector("[data-match-type='leagueMatch']")?.getAttribute("data-variant"),
     ).toBe("emphasis");
-    expect(
-      document.querySelector("[data-match-outcome='win']:not([data-match-score])"),
-    ).toBeTruthy();
+    const outcomeCaption = document.querySelector(
+      "[data-match-outcome='win']:not([data-match-score])",
+    );
+    expect(outcomeCaption?.textContent).toContain("Victoria");
+    expect(outcomeCaption?.querySelector("[data-match-outcome-icon='win']")).toBeTruthy();
     expect(document.querySelector("[data-match-chevron]")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ver Inter 2 – 1 Milan" }).getAttribute("href")).toBe(
       "/player/matches/ea-clubs/ea-1?view=all&sort=newest",
@@ -194,11 +196,10 @@ describe("PlayerMatchesPage", () => {
         ?.getAttribute("data-variant"),
     ).toBe("primary");
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
-    const finalizedBadge = document.querySelector("[data-match-status='finalized']");
-    expect(finalizedBadge?.textContent).toBe("Finalizado");
-    expect(finalizedBadge?.getAttribute("data-slot")).toBe("badge");
-    expect(finalizedBadge?.getAttribute("data-variant")).toBe("outline");
-    expect(finalizedBadge?.nextElementSibling?.getAttribute("data-match-score")).toBe("");
+    const finalizedStatus = document.querySelector("[data-match-status='finalized']");
+    expect(finalizedStatus?.textContent).toBe("Finalizado");
+    expect(finalizedStatus?.getAttribute("data-slot")).toBeNull();
+    expect(finalizedStatus?.nextElementSibling?.getAttribute("data-match-score")).toBe("");
     expect(document.querySelector("[data-match-score] [data-score-lead='home']")?.textContent).toBe(
       "2",
     );

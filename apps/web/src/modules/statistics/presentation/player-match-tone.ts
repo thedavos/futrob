@@ -4,10 +4,6 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type { MatchOutcome } from "./player-match-view.ts";
 
 const styles = stylex.create({
-  outcomeWin: { color: colors.primary },
-  outcomeDraw: { color: colors.mutedForeground },
-  outcomeLoss: { color: colors.danger },
-  outcomeUnknown: { color: colors.mutedForeground },
   segmentWin: { backgroundColor: colors.primary },
   segmentDraw: { backgroundColor: colors.mutedForeground },
   segmentLoss: { backgroundColor: colors.danger },
@@ -31,19 +27,6 @@ const styles = stylex.create({
     color: colors.mutedForeground,
   },
 });
-
-export function matchOutcomeTextStyle(outcome: MatchOutcome) {
-  switch (outcome) {
-    case "win":
-      return styles.outcomeWin;
-    case "draw":
-      return styles.outcomeDraw;
-    case "loss":
-      return styles.outcomeLoss;
-    case "unknown":
-      return styles.outcomeUnknown;
-  }
-}
 
 export function formSegmentStyle(outcome: MatchOutcome) {
   switch (outcome) {
