@@ -2,3 +2,17 @@ pre-commit:
   commands:
     check-staged:
       run: vp staged
+
+# Mirrors CI Format & Lint + Typecheck. Test, build, and bundle budget stay in CI.
+pre-push:
+  jobs:
+    - name: generate
+      run: npm run generate:routes && npm run generate:css:check -w @futrob/ui-tokens
+    - name: verify
+      group:
+        parallel: true
+        jobs:
+          - name: check
+            run: npm run check
+          - name: typecheck
+            run: npm run typecheck
