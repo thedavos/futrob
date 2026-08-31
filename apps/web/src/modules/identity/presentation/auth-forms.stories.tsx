@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import { AuthRouterDecorator } from "./auth-story-router.tsx";
 
@@ -154,17 +154,21 @@ export const LoginEmailValidationOnBlur: Story = {
     const email = canvas.getByLabelText("Correo electrónico");
 
     await userEvent.type(email, "correo-invalido");
-    await userEvent.tab();
+    await userEvent.click(canvas.getByLabelText("Contraseña"));
 
-    await expect(await canvas.findByText("Ingresa un correo electrónico válido.")).toBeVisible();
+    const emailError = await canvas.findByText("Ingresa un correo electrónico válido.");
+    const fieldError = emailError.closest('[data-slot="field-error"]');
+    await expect(fieldError).not.toBeNull();
+    await expect(fieldError).toBeVisible();
+    await expect(email).toHaveAttribute("aria-describedby", fieldError?.id);
     await expect(email).toHaveAttribute("aria-invalid", "true");
 
     await userEvent.clear(email);
     await userEvent.type(email, "ana@ejemplo.com");
 
-    await expect(
-      canvas.queryByText("Ingresa un correo electrónico válido."),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(canvas.queryByText("Ingresa un correo electrónico válido.")).not.toBeInTheDocument();
+    });
     await expect(email).not.toHaveAttribute("aria-invalid");
   },
 };
