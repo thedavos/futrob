@@ -16,7 +16,7 @@
   "dependencies": {
     "@futrob/shared-kernel": "0.1.0",
     "yaml": "^2.8.0",
-    "zod": "4.4.3"
+    "zod": "4.5.1"
   },
   "devDependencies": {
     "tsx": "4.23.12",
