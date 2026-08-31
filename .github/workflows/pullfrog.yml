@@ -49,8 +49,8 @@ jobs:
         run: npm run bundle:budget
         env:
           BUNDLE_ENTRY_GZIP_KIB: "250"
-          # Kept in sync with ci.yml — the lazy/shared floor is set by the
-          # vendor core chunk (_src-*.js), not per-route product code.
+          # Kept in sync with ci.yml — see apps/web/vite.config.ts for the
+          # React / Zod / Base UI splits that keep src-* under this cap.
           BUNDLE_LAZY_GZIP_KIB: "120"
       - name: Run agent
         uses: pullfrog/pullfrog@v0

@@ -77,10 +77,10 @@ describe("PlayerStatisticsPage", () => {
     ).toEqual(["V–E–D", "Rating", "Goles", "Asistencias"]);
     expect(screen.getByText("16–4–8")).toBeTruthy();
     expect(screen.getByText(/de victorias/)).toBeTruthy();
-    expect(screen.getAllByText("Sin resultado").length).toBeGreaterThan(0);
     expect(screen.getByText("11")).toBeTruthy();
     expect(screen.getByText("0,39 por partido")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Rating por partido" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Rating por partido" })).toBeTruthy();
+    expect(screen.getAllByText("Sin resultado").length).toBeGreaterThan(0);
     expect(screen.queryByRole("tab")).toBeNull();
     expect(screen.getByRole("heading", { name: "Récord" })).toBeTruthy();
     expect(screen.getByText("16 victorias")).toBeTruthy();
@@ -102,7 +102,7 @@ describe("PlayerStatisticsPage", () => {
 
     expect(await screen.findByRole("heading", { name: "davos282" })).toBeTruthy();
     expect(screen.getByText("Delantero · Night Owls · 28 partidos jugados")).toBeTruthy();
-    expect(screen.getByText("Ataque")).toBeTruthy();
+    expect(await screen.findByText("Ataque")).toBeTruthy();
     expect(screen.getByText("Goles por partido")).toBeTruthy();
     expect(screen.getByText(/0,14 · 4 puntos/)).toBeTruthy();
   });

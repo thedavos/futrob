@@ -62,6 +62,22 @@ export default defineConfig({
     // incomparable budget based on uncompressed bytes.
     chunkSizeWarningLimit: 860,
     manifest: true,
+    rolldownOptions: {
+      output: {
+        // Keep shared vendors out of `src-*.js` so the lazy/shared gzip budget
+        // stays a per-file cap instead of a growing dump.
+        codeSplitting: {
+          groups: [
+            {
+              name: "react",
+              test: /[/\\]node_modules[/\\](?:react|react-dom|scheduler)(?:[/\\]|$)/,
+            },
+            { name: "zod", test: /[/\\]node_modules[/\\]zod(?:[/\\]|$)/ },
+            { name: "base-ui", test: /[/\\]node_modules[/\\]@base-ui[/\\]/ },
+          ],
+        },
+      },
+    },
   },
   plugins: [futrobStylex(), createAppPlugins()],
   test: {

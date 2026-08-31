@@ -75,7 +75,7 @@ jobs:
         run: npm run bundle:budget
         env:
           BUNDLE_ENTRY_GZIP_KIB: "250"
-          # The lazy/shared floor is set by the vendor core chunk (_src-*.js:
-          # Tailwind runtime + brand logo) shared by every route, not by
-          # per-route product code. Revisit if it grows past this again.
+          # Per-file gzip cap for non-entry JS. Recharts stays on the
+          # statistics charts chunk; React, Zod, and Base UI are split
+          # out of the shared src-* chunk in apps/web/vite.config.ts.
           BUNDLE_LAZY_GZIP_KIB: "120"

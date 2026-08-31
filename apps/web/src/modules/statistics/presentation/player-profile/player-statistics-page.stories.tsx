@@ -207,7 +207,7 @@ export const Ready: Story = {
     await expect(canvas.getAllByText("Sin resultado")[0]).toBeVisible();
     await expect(canvas.getByText("11")).toBeVisible();
     await expect(canvas.getByText("0,39 por partido")).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Atributos" })).toBeVisible();
+    await expect(await canvas.findByRole("heading", { name: "Atributos" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Rating por partido" })).toBeVisible();
     await expect(canvas.queryByRole("tab")).toBeNull();
     await expect(canvas.getByRole("heading", { name: "Récord" })).toBeVisible();
@@ -256,7 +256,9 @@ export const EmptyEvolution: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("heading", { name: "davos282" })).toBeVisible();
-    await expect(canvas.getByText("Aún no hay partidos para trazar tu rating.")).toBeVisible();
+    await expect(
+      await canvas.findByText("Aún no hay partidos para trazar tu rating."),
+    ).toBeVisible();
   },
 };
 
@@ -267,7 +269,7 @@ export const UnavailableRating: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("heading", { name: "davos282" })).toBeVisible();
-    await expect(canvas.getByText("Estos partidos no incluyen rating.")).toBeVisible();
+    await expect(await canvas.findByText("Estos partidos no incluyen rating.")).toBeVisible();
     await expect(canvas.queryByRole("tab")).toBeNull();
   },
 };

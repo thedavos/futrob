@@ -1,5 +1,6 @@
 "use client";
 
+import { lazy, Suspense } from "react";
 import { Link } from "@tanstack/react-router";
 import type { PlayerGameProfileDto } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
@@ -23,11 +24,13 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { useMyGameProfileQuery } from "../statistics-queries.ts";
-import { PlayerProfileAttributes } from "./player-profile-attributes.tsx";
-import { PlayerProfileEvolutionChart } from "./player-profile-evolution-chart.tsx";
-import { PlayerProfileFormChart } from "./player-profile-form-chart.tsx";
 import { PlayerProfileIdentity } from "./player-profile-identity.tsx";
 import { PlayerProfileKpis } from "./player-profile-kpis.tsx";
+
+const playerProfileChartsModule = import("./player-profile-charts.tsx");
+const PlayerProfileCharts = lazy(() =>
+  playerProfileChartsModule.then((module) => ({ default: module.PlayerProfileCharts })),
+);
 
 const styles = stylex.create({
   main: {
@@ -44,14 +47,6 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     gap: "2rem",
-  },
-  charts: {
-    display: "grid",
-    gap: "1.5rem",
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.lg]: "minmax(0, 1.9fr) minmax(0, 1fr)",
-    },
   },
   loading: {
     display: "flex",
@@ -182,22 +177,22 @@ function ProfileReady({
           <AlertDescription>{t("player.partialData.description")}</AlertDescription>
         </Alert>
       ) : null}
-      <div {...applyStyles(styles.charts)}>
-        <PlayerProfileEvolutionChart
+      <Suspense fallback={<ChartSectionFallback t={t} />}>
+        <PlayerProfileCharts
           dateFormat={dateFormat}
           numberFormat={numberFormat}
+          percentFormat={percentFormat}
           profile={profile}
           t={t}
         />
-        <PlayerProfileFormChart percentFormat={percentFormat} profile={profile} t={t} />
-      </div>
-      <PlayerProfileAttributes
-        numberFormat={numberFormat}
-        percentFormat={percentFormat}
-        profile={profile}
-        t={t}
-      />
+      </Suspense>
     </div>
+  );
+}
+
+function ChartSectionFallback({ t }: { readonly t: Translator }) {
+  return (
+    <Skeleton aria-label={t("player.statistics.loading")} {...applyStyles(styles.skeletonChart)} />
   );
 }
 
