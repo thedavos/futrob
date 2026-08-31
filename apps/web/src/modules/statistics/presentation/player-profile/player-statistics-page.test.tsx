@@ -7,6 +7,7 @@ import type { GetMyGameProfileResponse, PlayerGameProfileDto } from "@futrob/api
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerStatisticsPage } from "./player-statistics-page.tsx";
+import { gameProfileReadyFixture } from "./player-statistics-page.fixtures.ts";
 
 const getMyGameProfile = vi.fn<() => Promise<GetMyGameProfileResponse>>();
 
@@ -24,6 +25,12 @@ vi.mock("@tanstack/react-router", () => ({
   ),
 }));
 
+class ResizeObserverStub {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+
 describe("PlayerStatisticsPage", () => {
   afterEach(() => {
     cleanup();
@@ -33,14 +40,15 @@ describe("PlayerStatisticsPage", () => {
   it("shows a loading state", () => {
     getMyGameProfile.mockReturnValue(new Promise(() => undefined));
     renderPage();
-    expect(screen.getByText("Cargando tu perfil…")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Mis estadísticas" })).toBeTruthy();
+    expect(screen.getByText("Cargando tus estadísticas…")).toBeTruthy();
   });
 
   it("shows a recoverable error", async () => {
     getMyGameProfile.mockRejectedValue(new Error("offline"));
     renderPage();
     expect((await screen.findByRole("alert")).textContent).toContain(
-      "No pudimos cargar tu perfil.",
+      "No pudimos cargar tus estadísticas.",
     );
   });
 
@@ -50,20 +58,62 @@ describe("PlayerStatisticsPage", () => {
     expect(await screen.findByText("Asocia un club para reconocer tus partidos")).toBeTruthy();
   });
 
-  it("renders elo, attributes and general statistics from played matches", async () => {
-    getMyGameProfile.mockResolvedValue({ status: "ready", profile: profileFixture() });
+  it("renders identity, kpis, charts and category profile from played matches", async () => {
+    getMyGameProfile.mockResolvedValue({
+      status: "ready",
+      profile: gameProfileReadyFixture(),
+    });
     renderPage();
 
     expect(await screen.findByRole("heading", { name: "davos282" })).toBeTruthy();
-    expect(screen.getByText("Delantero · 28 partidos jugados")).toBeTruthy();
-    expect(screen.getByText("1512")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Mis estadísticas" })).toBeTruthy();
+    expect(screen.getByText("Delantero · Cuervos FC1 · 28 partidos jugados")).toBeTruthy();
+    expect(
+      [
+        ...screen
+          .getByRole("region", { name: "Resumen" })
+          .querySelectorAll("[data-slot='stat-label']"),
+      ].map((label) => label.textContent),
+    ).toEqual(["V–E–D", "Rating", "Goles", "Asistencias"]);
+    expect(screen.getByText("16–4–8")).toBeTruthy();
+    expect(screen.getByText(/de victorias/)).toBeTruthy();
+    expect(screen.getAllByText("Sin resultado").length).toBeGreaterThan(0);
+    expect(screen.getByText("11")).toBeTruthy();
+    expect(screen.getByText("0,39 por partido")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Rating por partido" })).toBeTruthy();
+    expect(screen.queryByRole("tab")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Récord" })).toBeTruthy();
+    expect(screen.getByText("16 victorias")).toBeTruthy();
+    expect(screen.getByText("4 empates")).toBeTruthy();
+    expect(screen.getByText("8 derrotas")).toBeTruthy();
+    expect(screen.getByText("Últimos 5 partidos")).toBeTruthy();
+    expect(screen.queryByText("2 victorias · 1 empate · 1 derrota · 1 sin resultado")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Atributos" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Desglose" })).toBeNull();
+    expect(screen.getByText("Punto fuerte")).toBeTruthy();
+    expect(screen.getByText("A mejorar")).toBeTruthy();
+    expect(screen.queryByRole("tab", { name: "Generales" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Volver al espacio personal" })).toBeNull();
+  });
+
+  it("renders a compact fixture without hiding the selected category detail", async () => {
+    getMyGameProfile.mockResolvedValue({ status: "ready", profile: compactProfileFixture() });
+    renderPage();
+
+    expect(await screen.findByRole("heading", { name: "davos282" })).toBeTruthy();
+    expect(screen.getByText("Delantero · Night Owls · 28 partidos jugados")).toBeTruthy();
     expect(screen.getByText("Ataque")).toBeTruthy();
-    expect(screen.getByText(/Goles por partido: 30% → 0,14 \(4 puntos\)/)).toBeTruthy();
-    expect(screen.getByText("Generales")).toBeTruthy();
+    expect(screen.getByText("Goles por partido")).toBeTruthy();
+    expect(screen.getByText(/0,14 · 4 puntos/)).toBeTruthy();
   });
 });
 
 function renderPage() {
+  Object.defineProperty(window, "ResizeObserver", {
+    writable: true,
+    configurable: true,
+    value: ResizeObserverStub,
+  });
   return render(
     <QueryTestProvider>
       <I18nProvider initialLocale="es">
@@ -73,7 +123,7 @@ function renderPage() {
   );
 }
 
-function profileFixture(): PlayerGameProfileDto {
+function compactProfileFixture(): PlayerGameProfileDto {
   const emptyRates = {
     goals: 0.14,
     assists: 0,
@@ -134,7 +184,6 @@ function profileFixture(): PlayerGameProfileDto {
       preferredPosition: "forward",
       preferredRole: "attack",
     },
-    elo: { rating: 1512, ratedMatches: 28 },
     attributes: [
       {
         category: "attack",
@@ -156,7 +205,6 @@ function profileFixture(): PlayerGameProfileDto {
     evolution: [
       {
         occurredAt: "2026-08-10T02:00:00.000Z",
-        elo: 1512,
         rating: 6.6,
         outcome: "win",
       },

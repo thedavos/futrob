@@ -1,0 +1,9 @@
+/* Recharts focuses SVG nodes on click. StyleX cannot target those descendants. */
+[data-slot="player-chart"] :is(:focus, :focus-visible) {
+  outline: none;
+}
+
+/* Tooltip lives inside the chart SVG wrapper; keep it above the donut center copy. */
+[data-slot="player-chart"] .recharts-tooltip-wrapper {
+  z-index: 2;
+}

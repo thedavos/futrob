@@ -4,7 +4,7 @@ import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
-import { PlayerStatisticsPage } from "@/modules/statistics/presentation/player-statistics-page.tsx";
+import { PlayerStatisticsPage } from "@/modules/statistics/presentation/player-profile/player-statistics-page.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 const styles = stylex.create({

@@ -127,7 +127,12 @@ describe("PlayerWorkspacePage", () => {
     renderPage("en");
 
     expect(await screen.findByRole("heading", { name: "My matches" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Your profile" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "My statistics" })).toBeTruthy();
+    expect(
+      screen.getByText(
+        "You as a player: rating, attributes and statistics from every match you have played.",
+      ),
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Open My matches" }).getAttribute("href")).toBe(
       "/player/matches",
     );

@@ -214,11 +214,11 @@ function readyAttributes(): PlayerGameProfileDto["attributes"] {
 
 function readyEvolution(): PlayerGameProfileDto["evolution"] {
   return [
-    { occurredAt: "2026-07-20T22:10:00.000Z", elo: 1468, rating: 6.4, outcome: "loss" },
-    { occurredAt: "2026-07-27T23:05:00.000Z", elo: 1481, rating: 7.1, outcome: "win" },
-    { occurredAt: "2026-08-03T00:40:00.000Z", elo: 1488, rating: null, outcome: "draw" },
-    { occurredAt: "2026-08-10T02:00:00.000Z", elo: 1504, rating: 7.8, outcome: "win" },
-    { occurredAt: "2026-08-17T01:20:00.000Z", elo: 1512, rating: 7.2, outcome: "unknown" },
+    { occurredAt: "2026-07-20T22:10:00.000Z", rating: 6.4, outcome: "loss" },
+    { occurredAt: "2026-07-27T23:05:00.000Z", rating: 7.1, outcome: "win" },
+    { occurredAt: "2026-08-03T00:40:00.000Z", rating: null, outcome: "draw" },
+    { occurredAt: "2026-08-10T02:00:00.000Z", rating: 7.8, outcome: "win" },
+    { occurredAt: "2026-08-17T01:20:00.000Z", rating: 7.2, outcome: "unknown" },
   ];
 }
 
@@ -234,7 +234,6 @@ export function gameProfileReadyFixture(
       preferredPosition: "forward",
       preferredRole: "attack",
     },
-    elo: { rating: 1512, ratedMatches: 28 },
     attributes: readyAttributes(),
     evolution: readyEvolution(),
     summary,
@@ -273,7 +272,6 @@ export function gameProfileReadyFixture(
 export function gameProfileEmptySampleFixture(): PlayerGameProfileDto {
   return gameProfileReadyFixture({
     sampleSize: 0,
-    elo: { rating: 1500, ratedMatches: 0 },
     attributes: [],
     evolution: [],
     summary: statBlock({
@@ -321,4 +319,10 @@ export function gameProfilePartialFixture(): PlayerGameProfileDto {
 
 export function gameProfileEmptyEvolutionFixture(): PlayerGameProfileDto {
   return gameProfileReadyFixture({ evolution: [] });
+}
+
+export function gameProfileUnavailableRatingFixture(): PlayerGameProfileDto {
+  return gameProfileReadyFixture({
+    evolution: readyEvolution().map((point) => ({ ...point, rating: null })),
+  });
 }
