@@ -55,20 +55,20 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 
 | Control | Handle |
 | --- | --- |
-| Brand home | link `Futrob` |
+| Brand home | link `Futrob` on landing only (auth tunnel logo is not a link) |
 | Landing login | button/link `Iniciar sesión` |
 | Landing signup | button/link `Crear cuenta` |
 | Hero primary CTA | `Crear cuenta` → `/signup` |
 | Hero secondary CTA | `Ver cómo funciona` → `#mecanismo` |
 | Landing nav landmark | `Acceso` |
 | Login heading | `Inicia sesión` |
-| Login email | textbox named `ejemplo@correo.com` (visible label `Correo electrónico`) |
-| Login password | textbox named `Ingresa tu contraseña` (visible label `Contraseña`) |
+| Login email | textbox `Correo electrónico` (placeholder `ejemplo@correo.com`) |
+| Login password | textbox `Contraseña` (placeholder `Ingresa tu contraseña`) |
 | Login submit | button `Iniciar sesión` |
 | Signup heading | `Crea tu cuenta` |
-| Signup name | textbox named `Ingresa tu nombre completo` (visible label `Nombre completo`) |
-| Signup email | textbox named `ejemplo@correo.com` |
-| Signup password | textbox named `Crea una contraseña` |
+| Signup name | textbox `Nombre completo` (placeholder `Ingresa tu nombre completo`) |
+| Signup email | textbox `Correo electrónico` (placeholder `ejemplo@correo.com`) |
+| Signup password | textbox `Contraseña` (placeholder `Crea una contraseña`; hint requires letters and numbers) |
 | Signup submit | button `Crear cuenta` |
 | Onboarding intention | radiogroup `Intención del onboarding` |
 | Player path | radio `Empezar como jugador` |
@@ -158,6 +158,8 @@ These are real product destinations. Do not claim them verified through a differ
 - Match Center / official selection / confirmation (no scheduling/results UI)
 - Native iOS/Android (`AC-MOB-*` — Expo web is not that proof)
 - Superuser / provider-health admin
+- Player club / game-account / competitions / invitations (`/player/ea-clubs`, `/player/game-accounts`, `/player/competitions`, invitation accept routes)
+- Organizer and invitation onboarding (do not claim them via the player path)
 
 ## Maintenance
 

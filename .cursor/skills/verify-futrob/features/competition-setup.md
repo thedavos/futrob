@@ -46,4 +46,6 @@ Preconditions:
 - `e2e-golden-path` stops at fixture. It does not sync EA, select official matches, or publish a portal.
 - Fixture-managed encounters reject manual `snapshot-set` with 409 `fixture_managed_conflict`.
 - Unique org names: reuse of `Verify Org <run-id>` can fail. Always include the run id.
+- After `Crear competición`, the URL is `/orgs/$orgId/competitions/$competitionId/setup` without `?step=`. The wizard defaults to `information`. Assert heading `Información` and field `Nombre`.
+- Org home and the competitions empty state use `Nueva competición` to open the draft form. The form submit label remains `Crear competición`.
 - Never treat the CLI twin as a substitute for the UI entry points listed above.

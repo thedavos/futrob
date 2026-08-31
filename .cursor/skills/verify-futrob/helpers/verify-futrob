@@ -37,7 +37,8 @@ http_code() {
 }
 
 http_body() {
-  curl -sS --max-time 5 "$1" 2>/dev/null || true
+  # Vite HTML can contain NULs; strip them so bash command substitution does not warn.
+  curl -sS --max-time 5 "$1" 2>/dev/null | tr -d '\000' || true
 }
 
 require_env_files() {
