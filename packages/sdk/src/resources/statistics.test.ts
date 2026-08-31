@@ -94,6 +94,62 @@ describe("statistics SDK resource", () => {
     expect(requestedUrl).toBe("https://app.example.com/api/v1/players/me/game-profile");
   });
 
+  it("strips legacy ELO fields from a ready game profile", async () => {
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async () =>
+        Response.json({
+          status: "ready",
+          profile: {
+            identity: {
+              displayName: "davos282",
+              preferredPosition: "forward",
+              preferredRole: "attack",
+            },
+            sampleSize: 1,
+            elo: { rating: 1512, ratedMatches: 1 },
+            attributes: [],
+            evolution: [
+              {
+                occurredAt: "2026-08-01T00:00:00.000Z",
+                elo: 1512,
+                rating: 7.2,
+                outcome: "win",
+              },
+            ],
+            summary: emptyStatBlock(),
+            byTeam: [],
+            byPosition: [],
+          },
+        }),
+      ),
+    });
+
+    const response = await client.statistics.getMyGameProfile();
+    expect(response).toEqual({
+      status: "ready",
+      profile: {
+        identity: {
+          displayName: "davos282",
+          preferredPosition: "forward",
+          preferredRole: "attack",
+        },
+        sampleSize: 1,
+        attributes: [],
+        evolution: [
+          {
+            occurredAt: "2026-08-01T00:00:00.000Z",
+            rating: 7.2,
+            outcome: "win",
+          },
+        ],
+        summary: emptyStatBlock(),
+        byTeam: [],
+        byPosition: [],
+      },
+    });
+  });
+
   it("encodes the provider match identity and selected club for detail", async () => {
     let requestedUrl = "";
     const client = createFutrobClient({
@@ -154,3 +210,48 @@ describe("statistics SDK resource", () => {
     ]);
   });
 });
+
+function emptyStatBlock() {
+  const zeros = {
+    goals: 0,
+    assists: 0,
+    shots: 0,
+    passAttempts: 0,
+    passesMade: 0,
+    tackleAttempts: 0,
+    tacklesMade: 0,
+    saves: 0,
+    yellowCards: 0,
+    redCards: 0,
+    mvpAwards: 0,
+    rating: 0,
+  };
+  const partial = {
+    minutes: false,
+    goals: false,
+    assists: false,
+    shots: false,
+    passAttempts: false,
+    passesMade: false,
+    tackleAttempts: false,
+    tacklesMade: false,
+    saves: false,
+    yellowCards: false,
+    redCards: false,
+    mvpAwards: false,
+    rating: false,
+  };
+  return {
+    matchesPlayed: 1,
+    wins: 1,
+    draws: 0,
+    losses: 0,
+    minutes: 90,
+    totals: zeros,
+    averages: {
+      ...zeros,
+      rating: 7.2,
+    },
+    partial,
+  };
+}

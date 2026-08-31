@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { ProviderPlayerMatchStats } from "../entities/provider-match.ts";
 import { computePlayerAttributeOverview } from "./player-attribute-overview.ts";
-import { playerEloFromOutcomes, PLAYER_ELO_START } from "./player-game-elo.ts";
 import { buildPlayerGameProfile, type PlayerGameAppearanceSample } from "./player-game-profile.ts";
 import { playerPitchRole } from "./player-pitch-role.ts";
 
@@ -52,22 +51,6 @@ describe("playerPitchRole", () => {
     expect(playerPitchRole("defender")).toBe("defense");
     expect(playerPitchRole("goalkeeper")).toBe("goalkeeper");
     expect(playerPitchRole(null)).toBe("unknown");
-  });
-});
-
-describe("playerEloFromOutcomes", () => {
-  it("starts at 1500 with no rated matches", () => {
-    expect(playerEloFromOutcomes([])).toEqual({ rating: PLAYER_ELO_START, ratedMatches: 0 });
-  });
-
-  it("gains rating after a win against an equal opponent", () => {
-    const afterWin = playerEloFromOutcomes(["win"]);
-    expect(afterWin.rating).toBeGreaterThan(PLAYER_ELO_START);
-    expect(afterWin.ratedMatches).toBe(1);
-  });
-
-  it("loses rating after a loss", () => {
-    expect(playerEloFromOutcomes(["loss"]).rating).toBeLessThan(PLAYER_ELO_START);
   });
 });
 
@@ -128,8 +111,47 @@ describe("buildPlayerGameProfile", () => {
     expect(profile.summary.totals.goals).toBe(2);
     expect(profile.byTeam).toHaveLength(2);
     expect(profile.byPosition.map((row) => row.position)).toEqual(["forward", "midfielder"]);
-    expect(profile.evolution).toHaveLength(2);
-    expect(profile.elo.ratedMatches).toBe(2);
+    expect(profile.evolution).toEqual([
+      {
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        rating: 6.6,
+        outcome: "win",
+      },
+      {
+        occurredAt: new Date("2026-08-02T00:00:00.000Z"),
+        rating: 6.6,
+        outcome: "loss",
+      },
+    ]);
+    expect(profile).not.toHaveProperty("elo");
+  });
+
+  it("orders evolution chronologically and keeps null ratings with outcomes", () => {
+    const profile = buildPlayerGameProfile([
+      sample({
+        occurredAt: new Date("2026-08-02T00:00:00.000Z"),
+        outcome: "draw",
+        appearance: { rating: 7.1 },
+      }),
+      sample({
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        outcome: "unknown",
+        appearance: { rating: null },
+      }),
+    ]);
+
+    expect(profile.evolution).toEqual([
+      {
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        rating: null,
+        outcome: "unknown",
+      },
+      {
+        occurredAt: new Date("2026-08-02T00:00:00.000Z"),
+        rating: 7.1,
+        outcome: "draw",
+      },
+    ]);
   });
 
   it("returns empty aggregates when there are no played matches", () => {
@@ -137,7 +159,8 @@ describe("buildPlayerGameProfile", () => {
     expect(profile.sampleSize).toBe(0);
     expect(profile.identity.displayName).toBe("Davos282");
     expect(profile.identity.preferredPosition).toBeNull();
-    expect(profile.elo.rating).toBe(PLAYER_ELO_START);
+    expect(profile.evolution).toEqual([]);
+    expect(profile).not.toHaveProperty("elo");
     expect(profile.summary.matchesPlayed).toBe(0);
     expect(profile.attributes).toHaveLength(5);
   });

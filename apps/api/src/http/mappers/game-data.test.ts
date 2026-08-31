@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vite-plus/test";
-import type {
-  PlayerRecentMatchesResult,
-  PlayerRecentProviderMatchResult,
-  ProviderMatch,
-  ProviderPlayerMatchStats,
+import {
+  buildPlayerGameProfile,
+  type PlayerGameAppearanceSample,
+  type PlayerRecentMatchesResult,
+  type PlayerRecentProviderMatchResult,
+  type ProviderMatch,
+  type ProviderPlayerMatchStats,
 } from "@futrob/game-data";
-import { toPlayerRecentMatchDetailDto, toPlayerRecentMatchesDto } from "./game-data.ts";
+import {
+  toPlayerGameProfileDto,
+  toPlayerRecentMatchDetailDto,
+  toPlayerRecentMatchesDto,
+} from "./game-data.ts";
 
 describe("toPlayerRecentMatchesDto", () => {
   it("maps a played row with appearance, no roster, and listed-club MVP only", () => {
@@ -149,6 +155,52 @@ describe("toPlayerRecentMatchDetailDto", () => {
   });
 });
 
+describe("toPlayerGameProfileDto", () => {
+  it("serializes a rating-only profile without ELO fields", () => {
+    const appearance = playerStats({ displayName: "davos282", rating: 7.1 });
+    const later = { ...playerStats({ displayName: "davos282" }), rating: null };
+    const dto = toPlayerGameProfileDto({
+      status: "ready",
+      profile: buildPlayerGameProfile([
+        appearanceSample({
+          occurredAt: new Date("2026-08-02T00:00:00.000Z"),
+          appearance: later,
+          outcome: "draw",
+        }),
+        appearanceSample({
+          occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+          appearance,
+          outcome: "win",
+        }),
+      ]),
+    });
+
+    expect(dto.status).toBe("ready");
+    if (dto.status !== "ready") return;
+    expect(dto.profile).not.toHaveProperty("elo");
+    expect(dto.profile.evolution).toEqual([
+      {
+        occurredAt: "2026-08-01T00:00:00.000Z",
+        rating: 7.1,
+        outcome: "win",
+      },
+      {
+        occurredAt: "2026-08-02T00:00:00.000Z",
+        rating: null,
+        outcome: "draw",
+      },
+    ]);
+    expect(dto.profile.evolution[0]).not.toHaveProperty("elo");
+  });
+
+  it("maps prerequisite states without a profile bag", () => {
+    expect(toPlayerGameProfileDto({ status: "needs_club" })).toEqual({ status: "needs_club" });
+    expect(toPlayerGameProfileDto({ status: "needs_game_account" })).toEqual({
+      status: "needs_game_account",
+    });
+  });
+});
+
 function ready(
   matches: Extract<PlayerRecentMatchesResult, { status: "ready" }>["matches"],
 ): PlayerRecentMatchesResult {
@@ -196,5 +248,21 @@ function playerStats(
     redCards: input.redCards ?? 0,
     isMvp: input.isMvp ?? false,
     rating: input.rating ?? 7,
+  };
+}
+
+function appearanceSample(input: {
+  readonly occurredAt: Date;
+  readonly appearance: ProviderPlayerMatchStats;
+  readonly outcome: PlayerGameAppearanceSample["outcome"];
+}): PlayerGameAppearanceSample {
+  return {
+    occurredAt: input.occurredAt,
+    clubId: input.appearance.externalClubId,
+    clubName: "Home",
+    position: input.appearance.position,
+    role: "midfield",
+    outcome: input.outcome,
+    appearance: input.appearance,
   };
 }

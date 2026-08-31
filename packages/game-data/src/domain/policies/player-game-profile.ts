@@ -6,12 +6,6 @@ import {
 } from "./player-attribute-overview.ts";
 
 export type { PlayerGameAppearanceSample };
-import {
-  nextEloRating,
-  PLAYER_ELO_START,
-  playerEloFromOutcomes,
-  type RatedMatchOutcome,
-} from "./player-game-elo.ts";
 import type { PlayerPitchRole } from "./player-pitch-role.ts";
 
 export type PlayerStatisticMetric =
@@ -62,14 +56,8 @@ export interface PlayerGameStatBlock {
   readonly partial: { readonly [K in PlayerStatisticMetric | "minutes"]: boolean };
 }
 
-export interface PlayerEloSnapshot {
-  readonly rating: number;
-  readonly ratedMatches: number;
-}
-
 export interface PlayerEvolutionPoint {
   readonly occurredAt: Date;
-  readonly elo: number;
   readonly rating: number | null;
   readonly outcome: PlayerGameOutcome;
 }
@@ -93,7 +81,6 @@ export interface PlayerIdentity {
 export interface PlayerGameProfile {
   readonly identity: PlayerIdentity;
   readonly sampleSize: number;
-  readonly elo: PlayerEloSnapshot;
   readonly attributes: readonly AttributeCategoryScore[];
   readonly evolution: readonly PlayerEvolutionPoint[];
   readonly summary: PlayerGameStatBlock;
@@ -108,15 +95,11 @@ export function buildPlayerGameProfile(
   const chronological = [...samples].sort(
     (left, right) => left.occurredAt.getTime() - right.occurredAt.getTime(),
   );
-  const ratedOutcomes = chronological
-    .map((sample) => sample.outcome)
-    .filter((outcome): outcome is RatedMatchOutcome => outcome !== "unknown");
   const byPosition = groupByPosition(samples);
 
   return {
     identity: identityFrom(samples, byPosition, declaredDisplayName),
     sampleSize: samples.length,
-    elo: playerEloFromOutcomes(ratedOutcomes),
     attributes: computePlayerAttributeOverview(samples),
     evolution: evolutionFrom(chronological),
     summary: summarizeSamples(samples),
@@ -160,20 +143,11 @@ function mostFrequent(values: readonly string[]): string | null {
 function evolutionFrom(
   chronological: readonly PlayerGameAppearanceSample[],
 ): PlayerEvolutionPoint[] {
-  let elo = PLAYER_ELO_START;
-  const points: PlayerEvolutionPoint[] = [];
-  for (const sample of chronological) {
-    if (sample.outcome !== "unknown") {
-      elo = nextEloRating(elo, sample.outcome);
-    }
-    points.push({
-      occurredAt: sample.occurredAt,
-      elo: Math.round(elo),
-      rating: sample.appearance.rating,
-      outcome: sample.outcome,
-    });
-  }
-  return points;
+  return chronological.map((sample) => ({
+    occurredAt: sample.occurredAt,
+    rating: sample.appearance.rating,
+    outcome: sample.outcome,
+  }));
 }
 
 function groupByTeam(samples: readonly PlayerGameAppearanceSample[]): PlayerTeamStatBlock[] {
