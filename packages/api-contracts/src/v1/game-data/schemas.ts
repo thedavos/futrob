@@ -294,15 +294,10 @@ export const playerGameProfileSchema = z.object({
     preferredRole: z.enum(["attack", "midfield", "defense", "goalkeeper", "unknown"]),
   }),
   sampleSize: z.number().int().nonnegative(),
-  elo: z.object({
-    rating: z.number().int(),
-    ratedMatches: z.number().int().nonnegative(),
-  }),
   attributes: z.array(playerAttributeCategorySchema),
   evolution: z.array(
     z.object({
       occurredAt: z.string().datetime(),
-      elo: z.number().int(),
       rating: z.number().nullable(),
       outcome: z.enum(["win", "draw", "loss", "unknown"]),
     }),

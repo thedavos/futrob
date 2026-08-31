@@ -16,16 +16,17 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
+  configurePlayerStatisticsStory,
+  type PlayerStatisticsStoryState,
+} from "../player-matches-story-client.ts";
+import {
   gameProfileEmptyEvolutionFixture,
   gameProfileEmptySampleFixture,
   gameProfilePartialFixture,
   gameProfileReadyFixture,
+  gameProfileUnavailableRatingFixture,
 } from "./player-statistics-page.fixtures.ts";
 import { PlayerStatisticsPage } from "./player-statistics-page.tsx";
-import {
-  configurePlayerStatisticsStory,
-  type PlayerStatisticsStoryState,
-} from "./player-matches-story-client.ts";
 
 const styles = stylex.create({
   stub: {
@@ -49,6 +50,7 @@ const SCENARIO_IDS = [
   "empty",
   "partial",
   "emptyEvolution",
+  "unavailableRating",
 ] as const;
 
 type ScenarioId = (typeof SCENARIO_IDS)[number];
@@ -75,6 +77,8 @@ function scenarioState(id: ScenarioId): PlayerStatisticsStoryState {
       return { profile: { status: "ready", profile: gameProfilePartialFixture() } };
     case "emptyEvolution":
       return { profile: { status: "ready", profile: gameProfileEmptyEvolutionFixture() } };
+    case "unavailableRating":
+      return { profile: { status: "ready", profile: gameProfileUnavailableRatingFixture() } };
     default: {
       const _exhaustive: never = id;
       return _exhaustive;
@@ -188,25 +192,46 @@ export const Ready: Story = {
   render: (args) => <PlayerStatisticsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByRole("heading", { name: "davos282" })).toBeVisible();
-    await expect(canvas.getByText("Delantero · 28 partidos jugados")).toBeVisible();
-    await expect(canvas.getByText("1512")).toBeVisible();
+    await expect(await canvas.findByRole("heading", { name: "Mis estadísticas" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "davos282" })).toBeVisible();
+    await expect(canvas.getByText("Delantero · Cuervos FC1 · 28 partidos jugados")).toBeVisible();
+    expect(
+      [
+        ...canvas
+          .getByRole("region", { name: "Resumen" })
+          .querySelectorAll("[data-slot='stat-label']"),
+      ].map((label) => label.textContent),
+    ).toEqual(["V–E–D", "Rating", "Goles", "Asistencias"]);
     await expect(canvas.getByText("16–4–8")).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Perfil por categorías" })).toBeVisible();
-    await expect(canvas.getByText("Ataque")).toBeVisible();
-    await expect(canvas.getByText("Pase")).toBeVisible();
-    await expect(canvas.getByText("Defensa")).toBeVisible();
-    await expect(canvas.getByText("Impacto")).toBeVisible();
-    await expect(canvas.getByText("Disciplina")).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Evolución" })).toBeVisible();
-    await expect(canvas.getByRole("tab", { name: "Generales" })).toBeVisible();
-    await expect(canvas.getByRole("tab", { name: "Por equipo" })).toBeVisible();
-    await expect(canvas.getByRole("tab", { name: "Por posición" })).toBeVisible();
-    await expect(canvas.getByRole("link", { name: "Volver al espacio personal" })).toHaveAttribute(
-      "href",
-      "/player",
-    );
+    await expect(canvas.getByText(/de victorias/)).toBeVisible();
+    await expect(canvas.getByText("1 sin resultado")).toBeVisible();
+    await expect(canvas.getAllByText("Sin resultado")[0]).toBeVisible();
+    await expect(canvas.getByText("11")).toBeVisible();
+    await expect(canvas.getByText("0,39 por partido")).toBeVisible();
+    await expect(await canvas.findByRole("heading", { name: "Atributos" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Rating por partido" })).toBeVisible();
+    await expect(canvas.queryByRole("tab")).toBeNull();
+    await expect(canvas.getByRole("heading", { name: "Récord" })).toBeVisible();
+    await expect(canvas.getByText("16 victorias")).toBeVisible();
+    await expect(canvas.getByText("4 empates")).toBeVisible();
+    await expect(canvas.getByText("8 derrotas")).toBeVisible();
+    await expect(canvas.getByText("Últimos 5 partidos")).toBeVisible();
+    await expect(canvas.queryByRole("heading", { name: "Desglose" })).toBeNull();
+    await expect(canvas.queryByRole("link", { name: "Volver al espacio personal" })).toBeNull();
     await expect(canvas.queryByText("Datos parciales")).toBeNull();
+  },
+};
+
+export const CategoryDetail: Story = {
+  name: "Category detail",
+  args: { scenario: "ready" },
+  render: (args) => <PlayerStatisticsStoryShell key={args.scenario} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { name: "Disciplina · 88" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Pase 68" }));
+    await expect(canvas.getByRole("heading", { name: "Pase · 68" })).toBeVisible();
+    await expect(canvas.getByText("Éxito de pase")).toBeVisible();
   },
 };
 
@@ -219,11 +244,9 @@ export const PartialData: Story = {
     await expect(await canvas.findByRole("heading", { name: "davos282" })).toBeVisible();
     await expect(canvas.getAllByText("Sin datos").length).toBeGreaterThan(0);
     await expect(
-      canvas.getByText(
-        "Algunas métricas no estuvieron disponibles en todos los partidos y se marcan en la tabla.",
-      ),
+      canvas.getByText("Algunas métricas no estuvieron disponibles en todos los partidos."),
     ).toBeVisible();
-    await expect(canvas.getAllByText("Datos parciales").length).toBeGreaterThan(0);
+    await expect(canvas.queryByRole("heading", { name: "Desglose" })).toBeNull();
   },
 };
 
@@ -234,7 +257,21 @@ export const EmptyEvolution: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("heading", { name: "davos282" })).toBeVisible();
-    await expect(canvas.getByText("Juega más partidos para ver tu evolución.")).toBeVisible();
+    await expect(
+      await canvas.findByText("Aún no hay partidos para trazar tu rating."),
+    ).toBeVisible();
+  },
+};
+
+export const UnavailableRating: Story = {
+  name: "Unavailable rating",
+  args: { scenario: "unavailableRating" },
+  render: (args) => <PlayerStatisticsStoryShell key={args.scenario} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { name: "davos282" })).toBeVisible();
+    await expect(await canvas.findByText("Estos partidos no incluyen rating.")).toBeVisible();
+    await expect(canvas.queryByRole("tab")).toBeNull();
   },
 };
 
@@ -244,9 +281,9 @@ export const Loading: Story = {
   render: (args) => <PlayerStatisticsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Cargando tu perfil…")).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Tu perfil" })).toBeVisible();
-    await expect(canvas.queryByText("1512")).toBeNull();
+    await expect(canvas.getByText("Cargando tus estadísticas…")).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Mis estadísticas" })).toBeVisible();
+    await expect(canvas.queryByText("11")).toBeNull();
   },
 };
 
@@ -300,23 +337,9 @@ export const ErrorState: Story = {
   render: (args) => <PlayerStatisticsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText("No pudimos cargar tu perfil.")).toBeVisible();
+    await expect(await canvas.findByText("No pudimos cargar tus estadísticas.")).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Reintentar" })).toBeVisible();
-    await expect(canvas.queryByText("1512")).toBeNull();
-  },
-};
-
-export const ByTeam: Story = {
-  name: "By team",
-  args: { scenario: "ready" },
-  render: (args) => <PlayerStatisticsStoryShell key={args.scenario} {...args} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(await canvas.findByRole("heading", { name: "davos282" })).toBeVisible();
-    await userEvent.click(canvas.getByRole("tab", { name: "Por equipo" }));
-    await expect(canvas.getByRole("columnheader", { name: "Equipo" })).toBeVisible();
-    await expect(canvas.getAllByText("Cuervos FC1")[0]).toBeVisible();
-    await expect(canvas.getAllByText("White Lions")[0]).toBeVisible();
+    await expect(canvas.queryByText("11")).toBeNull();
   },
 };
 

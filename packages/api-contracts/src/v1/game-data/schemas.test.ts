@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  getMyGameProfileResponseSchema,
   getMyRecentMatchPathSchema,
   getMyRecentMatchQuerySchema,
   getMyRecentMatchResponseSchema,
   getMyRecentMatchesResponseSchema,
+  playerGameProfileSchema,
   playerRecentProviderMatchSchema,
 } from "./schemas.ts";
 
@@ -94,6 +96,48 @@ describe("getMyRecentMatch schemas", () => {
   });
 });
 
+describe("playerGameProfileSchema", () => {
+  it("accepts a rating-only profile", () => {
+    expect(playerGameProfileSchema.parse(profilePayload())).toEqual(profilePayload());
+  });
+
+  it("accepts a legacy API payload and strips ELO fields", () => {
+    const parsed = getMyGameProfileResponseSchema.parse({
+      status: "ready",
+      profile: {
+        ...profilePayload(),
+        elo: { rating: 1512, ratedMatches: 28 },
+        evolution: [
+          {
+            occurredAt: "2026-08-01T00:00:00.000Z",
+            elo: 1512,
+            rating: 7.2,
+            outcome: "win",
+          },
+        ],
+      },
+    });
+
+    expect(parsed).toEqual({
+      status: "ready",
+      profile: {
+        ...profilePayload(),
+        evolution: [
+          {
+            occurredAt: "2026-08-01T00:00:00.000Z",
+            rating: 7.2,
+            outcome: "win",
+          },
+        ],
+      },
+    });
+    expect(parsed.status === "ready" ? parsed.profile : undefined).not.toHaveProperty("elo");
+    expect(parsed.status === "ready" ? parsed.profile.evolution[0] : undefined).not.toHaveProperty(
+      "elo",
+    );
+  });
+});
+
 function detailMatch(kind: "played" | "not_played") {
   const player = {
     externalPlayerId: "player-1",
@@ -151,5 +195,80 @@ function listMatch(kind: "played" | "not_played") {
     match,
     listedExternalClubId: "10754",
     listedMvpDisplayName: null,
+  };
+}
+
+function profilePayload() {
+  const rates = {
+    goals: 0.64,
+    assists: 0.39,
+    shots: 2.29,
+    passAttempts: 14.71,
+    passesMade: 12.07,
+    tackleAttempts: 1.93,
+    tacklesMade: 1.32,
+    saves: 0,
+    yellowCards: 0.11,
+    redCards: 0,
+    mvpAwards: 0.14,
+    rating: 7.2,
+  };
+  const totals = {
+    goals: 18,
+    assists: 11,
+    shots: 64,
+    passAttempts: 412,
+    passesMade: 338,
+    tackleAttempts: 54,
+    tacklesMade: 37,
+    saves: 0,
+    yellowCards: 3,
+    redCards: 0,
+    mvpAwards: 4,
+    rating: 201.6,
+  };
+  const partial = {
+    minutes: false,
+    goals: false,
+    assists: false,
+    shots: false,
+    passAttempts: false,
+    passesMade: false,
+    tackleAttempts: false,
+    tacklesMade: false,
+    saves: false,
+    yellowCards: false,
+    redCards: false,
+    mvpAwards: false,
+    rating: false,
+  };
+  const summary = {
+    matchesPlayed: 28,
+    wins: 16,
+    draws: 4,
+    losses: 8,
+    minutes: 2520,
+    totals,
+    averages: rates,
+    partial,
+  };
+  return {
+    identity: {
+      displayName: "davos282",
+      preferredPosition: "forward",
+      preferredRole: "attack" as const,
+    },
+    sampleSize: 28,
+    attributes: [],
+    evolution: [
+      {
+        occurredAt: "2026-08-01T00:00:00.000Z",
+        rating: 7.2,
+        outcome: "win" as const,
+      },
+    ],
+    summary,
+    byTeam: [{ clubId: "club-1", clubName: "Cuervos FC1", ...summary }],
+    byPosition: [{ position: "forward", role: "attack" as const, ...summary }],
   };
 }

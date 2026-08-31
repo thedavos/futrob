@@ -97,7 +97,6 @@ export type {
 } from "./domain/policies/player-attribute-overview.ts";
 export type { PlayerPitchRole } from "./domain/policies/player-pitch-role.ts";
 export type {
-  PlayerEloSnapshot,
   PlayerEvolutionPoint,
   PlayerGameProfile,
   PlayerGameStatBlock,

@@ -47,11 +47,9 @@ function serializePlayerGameProfile(profile: PlayerGameProfile): PlayerGameProfi
       preferredRole: profile.identity.preferredRole,
     },
     sampleSize: profile.sampleSize,
-    elo: { rating: profile.elo.rating, ratedMatches: profile.elo.ratedMatches },
     attributes: profile.attributes.map(serializeAttributeCategory),
     evolution: profile.evolution.map((point) => ({
       occurredAt: point.occurredAt.toISOString(),
-      elo: point.elo,
       rating: point.rating,
       outcome: point.outcome,
     })),

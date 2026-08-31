@@ -3,6 +3,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import * as stylex from "@stylexjs/stylex";
 
 import { applyProps } from "#styles/apply";
+import { media } from "#styles/media.stylex";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -18,25 +19,35 @@ type TabsProps = TabsPrimitive.Root.Props & {
   readonly variant?: TabsVariant;
 };
 
-function Tabs({ variant = "line", ...props }: TabsProps) {
+function Tabs({ variant = "line", className, style, ...props }: TabsProps) {
   const resolvedVariant = variant ?? "line";
 
   return (
     <TabsVariantContext.Provider value={resolvedVariant}>
-      <TabsPrimitive.Root data-slot="tabs" data-variant={resolvedVariant} {...props} />
+      <TabsPrimitive.Root
+        data-slot="tabs"
+        data-variant={resolvedVariant}
+        {...applyProps(className, style, styles.root)}
+        {...props}
+      />
     </TabsVariantContext.Provider>
   );
 }
 
 const styles = stylex.create({
+  root: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
   list: {
     position: "relative",
     display: "flex",
-    minHeight: "var(--control-height)",
     overflowX: "auto",
     color: colors.mutedForeground,
   },
   listLine: {
+    minHeight: "var(--control-height)",
     alignItems: "flex-end",
     gap: "1.25rem",
     borderBottomWidth: 1,
@@ -44,19 +55,28 @@ const styles = stylex.create({
     borderBottomColor: colors.border,
   },
   listPills: {
+    display: "inline-flex",
+    width: "fit-content",
+    maxWidth: "100%",
+    height: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+    },
+    minHeight: "unset",
     alignItems: "center",
-    gap: "0.25rem",
+    justifyContent: "center",
+    gap: 0,
     borderRadius: "var(--corner-lg)",
     backgroundColor: colors.muted,
-    padding: "0.25rem",
+    padding: 3,
   },
   trigger: {
     display: "inline-flex",
-    minHeight: "var(--control-height)",
     flexShrink: 0,
     alignItems: "center",
     justifyContent: "center",
-    gap: "0.5rem",
+    gap: "0.375rem",
+    whiteSpace: "nowrap",
     color: {
       default: colors.mutedForeground,
       ":hover": colors.foreground,
@@ -80,6 +100,7 @@ const styles = stylex.create({
     },
   },
   triggerLine: {
+    minHeight: "var(--control-height)",
     borderBottomWidth: 2,
     borderBottomStyle: "solid",
     borderBottomColor: "transparent",
@@ -90,14 +111,17 @@ const styles = stylex.create({
     },
   },
   triggerPills: {
-    borderRadius: {
-      default: "var(--corner-md)",
-      ":focus-visible": "var(--corner-md)",
-    },
-    paddingInline: "0.75rem",
+    height: "100%",
+    minHeight: "unset",
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "auto",
+    borderRadius: "var(--corner-md)",
+    paddingInline: "0.5rem",
+    paddingBlock: "0.25rem",
     backgroundColor: {
-      default: null,
-      ":is([data-active])": colors.surface,
+      default: "transparent",
+      ":is([data-active])": colors.background,
     },
   },
   indicator: {
@@ -114,6 +138,7 @@ const styles = stylex.create({
     transitionTimingFunction: "var(--ease-emphasized)",
   },
   content: {
+    flexGrow: 1,
     paddingBlock: "1.25rem",
     outlineWidth: 0,
     outlineStyle: "none",
@@ -140,6 +165,7 @@ function TabsList({ className, style, ...props }: TabsPrimitive.List.Props) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
+      data-variant={variant}
       {...applyProps(className, style, styles.list, listVariantStyles[variant])}
       {...props}
     />

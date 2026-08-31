@@ -184,6 +184,8 @@ describe("apps/api personal statistics routes", () => {
       "discipline",
     ]);
     expect(body.profile.summary.matchesPlayed).toBe(body.profile.sampleSize);
+    expect(body.profile).not.toHaveProperty("elo");
+    expect(body.profile.evolution.every((point) => !("elo" in point))).toBe(true);
   });
 
   it("queries only the selected associated club for recent matches", async () => {
