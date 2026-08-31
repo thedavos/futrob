@@ -326,3 +326,36 @@ export function gameProfileUnavailableRatingFixture(): PlayerGameProfileDto {
     evolution: readyEvolution().map((point) => ({ ...point, rating: null })),
   });
 }
+
+export function gameProfileUnknownOnlyFormFixture(): PlayerGameProfileDto {
+  const summary = statBlock({
+    matchesPlayed: 2,
+    wins: 0,
+    draws: 0,
+    losses: 0,
+    minutes: 180,
+  });
+  return gameProfileReadyFixture({
+    sampleSize: 2,
+    summary,
+    evolution: [
+      { occurredAt: "2026-08-01T00:00:00.000Z", rating: 6.8, outcome: "unknown" },
+      { occurredAt: "2026-08-02T00:00:00.000Z", rating: 7.1, outcome: "unknown" },
+    ],
+    byTeam: [{ clubId: "725178", clubName: "Cuervos FC1", ...summary }],
+    byPosition: [{ position: "forward", role: "attack", ...summary }],
+  });
+}
+
+export function gameProfileUnavailableGoalsFixture(): PlayerGameProfileDto {
+  const ready = gameProfileReadyFixture();
+  const summary = statBlock({
+    totals: { ...ready.summary.totals, goals: 0 },
+    averages: { ...ready.summary.averages, goals: null },
+  });
+  return gameProfileReadyFixture({
+    summary,
+    byTeam: [{ clubId: "725178", clubName: "Cuervos FC1", ...summary }],
+    byPosition: [{ position: "forward", role: "attack", ...summary }],
+  });
+}

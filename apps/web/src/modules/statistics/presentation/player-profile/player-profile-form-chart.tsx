@@ -26,6 +26,8 @@ import {
   chartTooltipFromParsed,
 } from "./player-profile-chart-tooltip.ts";
 import {
+  formOutcomeSplit,
+  hasFormResults,
   lastOutcomes,
   outcomeColor,
   winPercent,
@@ -184,6 +186,7 @@ const swatchTone = {
   win: styles.swatchWin,
   draw: styles.swatchDraw,
   loss: styles.swatchLoss,
+  unknown: styles.swatchUnknown,
 } as const;
 
 export function PlayerProfileFormChart({
@@ -198,9 +201,9 @@ export function PlayerProfileFormChart({
   const winsShare = winPercent(profile.summary);
   const winShareLabel = winsShare === null ? null : percentFormat.format(winsShare / 100);
   const slices = formSlices(profile, t);
+  const pieSlices = slices.filter((slice) => slice.value > 0);
   const recent = lastOutcomes(profile.evolution, LAST_FIVE);
-  const hasUnknown = profile.evolution.some((point) => point.outcome === "unknown");
-  const hasResults = slices.some((slice) => slice.value > 0);
+  const hasResults = hasFormResults(formOutcomeSplit(profile.summary, profile.evolution));
 
   return (
     <Card className={styles.card}>
@@ -229,7 +232,7 @@ export function PlayerProfileFormChart({
                       <Pie
                         cx="50%"
                         cy="50%"
-                        data={slices}
+                        data={pieSlices}
                         dataKey="value"
                         innerRadius={56}
                         isAnimationActive={false}
@@ -238,7 +241,7 @@ export function PlayerProfileFormChart({
                         paddingAngle={2}
                         stroke="none"
                       >
-                        {slices.map((slice) => (
+                        {pieSlices.map((slice) => (
                           <Cell
                             fill={outcomeColor(slice.outcome)}
                             key={slice.outcome}
@@ -280,12 +283,6 @@ export function PlayerProfileFormChart({
                     <Caption as="span">{slice.label}</Caption>
                   </li>
                 ))}
-                {hasUnknown ? (
-                  <li {...applyStyles(styles.legendItem)}>
-                    <span {...applyStyles(styles.swatch, styles.swatchUnknown)} />
-                    <Caption as="span">{outcomeLabel("unknown", t)}</Caption>
-                  </li>
-                ) : null}
               </ul>
             </div>
             {recent.length === 0 ? null : (
@@ -315,31 +312,37 @@ export function PlayerProfileFormChart({
   );
 }
 
-function formSlices(
-  profile: PlayerGameProfileDto,
-  t: Translator,
-): readonly {
-  readonly outcome: Exclude<MatchOutcome, "unknown">;
+type FormSlice = {
+  readonly outcome: MatchOutcome;
   readonly value: number;
   readonly label: string;
-}[] {
-  return [
+};
+
+function formSlices(profile: PlayerGameProfileDto, t: Translator): readonly FormSlice[] {
+  const split = formOutcomeSplit(profile.summary, profile.evolution);
+  const slices: readonly FormSlice[] = [
     {
       outcome: "win",
-      value: profile.summary.wins,
-      label: t("player.statistics.form.wins", { count: profile.summary.wins }),
+      value: split.wins,
+      label: t("player.statistics.form.wins", { count: split.wins }),
     },
     {
       outcome: "draw",
-      value: profile.summary.draws,
-      label: t("player.statistics.form.draws", { count: profile.summary.draws }),
+      value: split.draws,
+      label: t("player.statistics.form.draws", { count: split.draws }),
     },
     {
       outcome: "loss",
-      value: profile.summary.losses,
-      label: t("player.statistics.form.losses", { count: profile.summary.losses }),
+      value: split.losses,
+      label: t("player.statistics.form.losses", { count: split.losses }),
+    },
+    {
+      outcome: "unknown",
+      value: split.unknowns,
+      label: t("player.statistics.form.unknowns", { count: split.unknowns }),
     },
   ];
+  return slices.filter((slice) => slice.outcome !== "unknown" || slice.value > 0);
 }
 
 function formBadgeVariant(

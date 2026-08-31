@@ -113,7 +113,12 @@ export function PlayerProfileKpis({
         <KpiStat
           icon={<KpiIcon icon={SoccerBallIcon} />}
           label={t("player.metric.goals")}
-          value={numberFormat.format(profile.summary.totals.goals)}
+          value={
+            goalsAverage === null
+              ? t("player.noData")
+              : numberFormat.format(profile.summary.totals.goals)
+          }
+          valueTone={goalsAverage === null ? "muted" : "default"}
           hint={
             goalsAverage === null ? null : (
               <StatHint>

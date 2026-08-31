@@ -2,6 +2,8 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   attributeExtremes,
   defaultAttributeCategory,
+  formOutcomeSplit,
+  hasFormResults,
   lastOutcomeSplit,
   lastOutcomes,
   playedMatchCount,
@@ -88,6 +90,32 @@ describe("player-profile-model", () => {
       strength: expect.objectContaining({ category: "discipline", score: 88 }),
       toImprove: expect.objectContaining({ category: "defense", score: 41 }),
     });
+  });
+
+  it("counts unknown outcomes in the form split", () => {
+    const profile = gameProfileReadyFixture();
+    expect(formOutcomeSplit(profile.summary, profile.evolution)).toEqual({
+      wins: 16,
+      draws: 4,
+      losses: 8,
+      unknowns: 1,
+    });
+    expect(
+      formOutcomeSplit({ ...profile.summary, wins: 0, draws: 0, losses: 0 }, [
+        { occurredAt: "2026-08-01T00:00:00.000Z", rating: null, outcome: "unknown" },
+        { occurredAt: "2026-08-02T00:00:00.000Z", rating: null, outcome: "unknown" },
+      ]),
+    ).toEqual({
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      unknowns: 2,
+    });
+  });
+
+  it("treats unknown-only samples as a non-empty form", () => {
+    expect(hasFormResults({ wins: 0, draws: 0, losses: 0, unknowns: 2 })).toBe(true);
+    expect(hasFormResults({ wins: 0, draws: 0, losses: 0, unknowns: 0 })).toBe(false);
   });
 
   it("uses the first club as the identity club", () => {

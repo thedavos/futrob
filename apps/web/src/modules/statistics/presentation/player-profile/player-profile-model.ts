@@ -71,6 +71,22 @@ export function lastOutcomeSplit(
   return outcomeSplit(lastOutcomes(evolution, count));
 }
 
+export function formOutcomeSplit(
+  summary: PlayerGameProfileDto["summary"],
+  evolution: PlayerGameProfileDto["evolution"],
+): OutcomeSplit {
+  return {
+    wins: summary.wins,
+    draws: summary.draws,
+    losses: summary.losses,
+    unknowns: outcomeSplit(evolution.map((point) => point.outcome)).unknowns,
+  };
+}
+
+export function hasFormResults(split: OutcomeSplit): boolean {
+  return split.wins + split.draws + split.losses + split.unknowns > 0;
+}
+
 export function primaryClubName(profile: PlayerGameProfileDto): string | null {
   return profile.byTeam[0]?.clubName ?? null;
 }

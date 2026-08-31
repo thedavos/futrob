@@ -204,6 +204,7 @@ export const Ready: Story = {
     ).toEqual(["V–E–D", "Rating", "Goles", "Asistencias"]);
     await expect(canvas.getByText("16–4–8")).toBeVisible();
     await expect(canvas.getByText(/de victorias/)).toBeVisible();
+    await expect(canvas.getByText("1 sin resultado")).toBeVisible();
     await expect(canvas.getAllByText("Sin resultado")[0]).toBeVisible();
     await expect(canvas.getByText("11")).toBeVisible();
     await expect(canvas.getByText("0,39 por partido")).toBeVisible();

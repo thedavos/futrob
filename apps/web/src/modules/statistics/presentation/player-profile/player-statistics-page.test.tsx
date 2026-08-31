@@ -7,7 +7,11 @@ import type { GetMyGameProfileResponse, PlayerGameProfileDto } from "@futrob/api
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerStatisticsPage } from "./player-statistics-page.tsx";
-import { gameProfileReadyFixture } from "./player-statistics-page.fixtures.ts";
+import {
+  gameProfileReadyFixture,
+  gameProfileUnavailableGoalsFixture,
+  gameProfileUnknownOnlyFormFixture,
+} from "./player-statistics-page.fixtures.ts";
 
 const getMyGameProfile = vi.fn<() => Promise<GetMyGameProfileResponse>>();
 
@@ -80,6 +84,7 @@ describe("PlayerStatisticsPage", () => {
     expect(screen.getByText("11")).toBeTruthy();
     expect(screen.getByText("0,39 por partido")).toBeTruthy();
     expect(await screen.findByRole("heading", { name: "Rating por partido" })).toBeTruthy();
+    expect(screen.getByText("1 sin resultado")).toBeTruthy();
     expect(screen.getAllByText("Sin resultado").length).toBeGreaterThan(0);
     expect(screen.queryByRole("tab")).toBeNull();
     expect(screen.getByRole("heading", { name: "Récord" })).toBeTruthy();
@@ -105,6 +110,32 @@ describe("PlayerStatisticsPage", () => {
     expect(await screen.findByText("Ataque")).toBeTruthy();
     expect(screen.getByText("Goles por partido")).toBeTruthy();
     expect(screen.getByText(/0,14 · 4 puntos/)).toBeTruthy();
+  });
+
+  it("keeps the form chart when every sample is unknown", async () => {
+    getMyGameProfile.mockResolvedValue({
+      status: "ready",
+      profile: gameProfileUnknownOnlyFormFixture(),
+    });
+    renderPage();
+
+    expect(await screen.findByRole("heading", { name: "Récord" })).toBeTruthy();
+    expect(screen.getByText("2 sin resultado")).toBeTruthy();
+    expect(screen.queryByText("Aún no hay partidos para armar tu récord.")).toBeNull();
+  });
+
+  it("shows no-data for goals when the average is unavailable", async () => {
+    getMyGameProfile.mockResolvedValue({
+      status: "ready",
+      profile: gameProfileUnavailableGoalsFixture(),
+    });
+    renderPage();
+
+    expect(await screen.findByRole("heading", { name: "davos282" })).toBeTruthy();
+    const goals = screen.getByRole("region", { name: "Resumen" });
+    expect(goals.textContent).toContain("Goles");
+    expect(goals.textContent).toContain("Sin datos");
+    expect(goals.textContent).not.toContain("0,64");
   });
 });
 
