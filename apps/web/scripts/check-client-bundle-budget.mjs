@@ -10,7 +10,8 @@ const clientAssetsDirectory = path.join(clientOutputDirectory, "assets");
 const clientManifestPath = path.join(clientOutputDirectory, ".vite/manifest.json");
 
 const entryBudgetKiB = readBudget("BUNDLE_ENTRY_GZIP_KIB", 250);
-const lazyBudgetKiB = readBudget("BUNDLE_LAZY_GZIP_KIB", 100);
+// Keep the default in sync with BUNDLE_LAZY_GZIP_KIB in ci.yml / pullfrog.yml.
+const lazyBudgetKiB = readBudget("BUNDLE_LAZY_GZIP_KIB", 120);
 
 assertBuildOutputExists();
 
