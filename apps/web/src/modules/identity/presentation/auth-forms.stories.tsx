@@ -89,7 +89,9 @@ export const SignupPasswordValidationMessage: Story = {
     await userEvent.click(canvas.getByLabelText("Correo electrónico"));
 
     const passwordError = await canvas.findByText("Incluye al menos una letra.");
-    await expect(passwordError).toBeVisible();
+    await waitFor(() => {
+      expect(passwordError).toBeVisible();
+    });
     await expect(canvas.queryByText(passwordHint)).not.toBeInTheDocument();
     await expect(password).toHaveAttribute(
       "aria-describedby",
@@ -159,7 +161,9 @@ export const LoginEmailValidationOnBlur: Story = {
     const emailError = await canvas.findByText("Ingresa un correo electrónico válido.");
     const fieldError = emailError.closest('[data-slot="field-error"]');
     await expect(fieldError).not.toBeNull();
-    await expect(fieldError).toBeVisible();
+    await waitFor(() => {
+      expect(fieldError).toBeVisible();
+    });
     await expect(email).toHaveAttribute("aria-describedby", fieldError?.id);
     await expect(email).toHaveAttribute("aria-invalid", "true");
 

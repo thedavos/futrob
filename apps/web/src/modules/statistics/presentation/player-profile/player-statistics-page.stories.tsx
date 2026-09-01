@@ -219,14 +219,14 @@ export const Ready: Story = {
     ).toEqual(["V–E–D", "Rating", "Goles", "Asistencias"]);
     await expect(canvas.getByText("16–4–8")).toBeVisible();
     await expect(canvas.getByText(/de victorias/)).toBeVisible();
-    await expect(canvas.getByText("1 sin resultado")).toBeVisible();
-    await expect(canvas.getAllByText("Sin resultado")[0]).toBeVisible();
     await expect(canvas.getByText("11")).toBeVisible();
     await expect(canvas.getByText("0,39 por partido")).toBeVisible();
-    await expect(await canvas.findByRole("heading", { name: "Atributos" })).toBeVisible();
+    await expect(await canvas.findByRole("heading", { name: "Récord" })).toBeVisible();
+    await expect(canvas.getByText("1 sin resultado")).toBeVisible();
+    await expect(canvas.getAllByText("Sin resultado")[0]).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Atributos" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Rating por partido" })).toBeVisible();
     await expect(canvas.queryByRole("tab")).toBeNull();
-    await expect(canvas.getByRole("heading", { name: "Récord" })).toBeVisible();
     await expect(canvas.getByText("16 victorias")).toBeVisible();
     await expect(canvas.getByText("4 empates")).toBeVisible();
     await expect(canvas.getByText("8 derrotas")).toBeVisible();
@@ -243,7 +243,8 @@ export const CategoryDetail: Story = {
   render: (args) => <PlayerStatisticsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByRole("heading", { name: "Disciplina · 88" })).toBeVisible();
+    await expect(await canvas.findByRole("heading", { name: "Atributos" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Disciplina · 88" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Pase 68" }));
     await expect(canvas.getByRole("heading", { name: "Pase · 68" })).toBeVisible();
     await expect(canvas.getByText("Éxito de pase")).toBeVisible();
