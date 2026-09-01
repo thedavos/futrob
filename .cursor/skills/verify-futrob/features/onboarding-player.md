@@ -42,3 +42,4 @@ Preconditions:
 - Re-finishing must not create a second organization or competition. This recipe never creates those.
 - Organizer (`Organizar`) and invitation (`Unirme`) are other entry points. Completing the player path does not verify them.
 - `/player` shows `Comprobando tu onboarding…` while the status request runs. Wait for the heading, not the pending copy.
+- The incomplete-actor guard lands on `/onboarding` and typically syncs to `/onboarding/intention`. The player radio may stay selected; that is not a finished workspace.

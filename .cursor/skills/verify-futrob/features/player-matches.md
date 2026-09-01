@@ -34,8 +34,8 @@ Preconditions:
 
 ## Gotchas
 
-- Recientes (last 7 calendar days) and Todos are different windows. An older match missing from Recientes is not a Todos failure.
+- There is no Recientes time-window tab. `view=recent` in the URL is remapped to `all`. Radios `Todos` / `Liga` / `Playoff` / `Amistosos` filter provider match mode, not calendar days.
 - KPI on Mis partidos follow the active **view**, not official standings.
 - `No jugaste` on a row is valid when the identifier did not appear for the selected club. Do not treat it as a load error.
 - Linking a club during this recipe is a different feature (EA search). If you link one, say so; do not silently switch the empty-state proof.
-- Official history is `GET /players/me/matches` / Mis estadísticas — not this list.
+- Official standings and disputes stay off this list. `/player/statistics` (`Mis estadísticas`) is the personal EA recent-profile, not a separate official-history list.
