@@ -98,3 +98,34 @@ describe("personal provider match detail query", () => {
     expect(requests).toBe(2);
   });
 });
+
+describe("personal game profile query keys", () => {
+  it("isolates club and period in the cache key", () => {
+    expect(
+      queryKeys.gameData.meGameProfile({
+        externalClubId: "10754",
+        from: "2026-08-25T05:00:00.000Z",
+        to: "2026-09-01T05:00:00.000Z",
+      }),
+    ).not.toEqual(
+      queryKeys.gameData.meGameProfile({
+        externalClubId: "44001",
+        from: "2026-08-25T05:00:00.000Z",
+        to: "2026-09-01T05:00:00.000Z",
+      }),
+    );
+    expect(
+      queryKeys.gameData.meGameProfile({
+        externalClubId: "10754",
+        from: "2026-08-25T05:00:00.000Z",
+        to: "2026-09-01T05:00:00.000Z",
+      }),
+    ).not.toEqual(
+      queryKeys.gameData.meGameProfile({
+        externalClubId: "10754",
+        from: "2026-08-01T05:00:00.000Z",
+        to: "2026-08-08T05:00:00.000Z",
+      }),
+    );
+  });
+});

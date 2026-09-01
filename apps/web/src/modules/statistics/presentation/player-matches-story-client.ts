@@ -64,6 +64,8 @@ export const statisticsBrowserClient = {
 
   getMyGameProfile(_query?: {
     readonly externalClubId?: string;
+    readonly from?: string;
+    readonly to?: string;
   }): Promise<GetMyGameProfileResponse> {
     const profile = state.profile;
     if (profile === "pending") return hang();

@@ -20,13 +20,17 @@ import {
   type PlayerStatisticsStoryState,
 } from "../player-matches-story-client.ts";
 import {
+  PLAYER_STATISTICS_RANGE,
   gameProfileEmptyEvolutionFixture,
   gameProfileEmptySampleFixture,
   gameProfilePartialFixture,
   gameProfileReadyFixture,
   gameProfileUnavailableRatingFixture,
 } from "./player-statistics-page.fixtures.ts";
+import { gameProfileQueryFromRange } from "./player-statistics-period.ts";
 import { PlayerStatisticsPage } from "./player-statistics-page.tsx";
+
+function ignorePeriodChange(): void {}
 
 const styles = stylex.create({
   stub: {
@@ -91,7 +95,11 @@ function hydratePlayerStatisticsQueries(
   state: PlayerStatisticsStoryState,
 ): void {
   if (state.profile !== "pending" && state.profile !== "error") {
-    client.setQueryData(queryKeys.gameData.meGameProfile(), state.profile);
+    const query = gameProfileQueryFromRange({
+      externalClubId: "10754",
+      range: PLAYER_STATISTICS_RANGE,
+    });
+    client.setQueryData(queryKeys.gameData.meGameProfile(query), state.profile);
   }
 }
 
@@ -120,7 +128,13 @@ function PlayerStatisticsStoryShell({ scenario }: { readonly scenario: ScenarioI
     const statisticsRoute = createRoute({
       getParentRoute: () => rootRoute,
       path: "/player/statistics",
-      component: PlayerStatisticsPage,
+      component: () => (
+        <PlayerStatisticsPage
+          externalClubId="10754"
+          onPeriodChange={ignorePeriodChange}
+          period={PLAYER_STATISTICS_RANGE}
+        />
+      ),
     });
     const workspaceRoute = createRoute({
       getParentRoute: () => rootRoute,
@@ -194,6 +208,7 @@ export const Ready: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("heading", { name: "Mis estadísticas" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "davos282" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Rango de fechas" })).toBeVisible();
     await expect(canvas.getByText("Delantero · Cuervos FC1 · 28 partidos jugados")).toBeVisible();
     expect(
       [
@@ -324,6 +339,12 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Aún no hay apariciones tuyas")).toBeVisible();
+    await expect(
+      canvas.getByText(
+        "Solo vemos los últimos 50 partidos que EA tiene ahora. Si no hay apariciones en el rango, prueba otras fechas.",
+      ),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Rango de fechas" })).toBeVisible();
     await expect(canvas.getByRole("link", { name: "Mis partidos" })).toHaveAttribute(
       "href",
       "/player/matches",

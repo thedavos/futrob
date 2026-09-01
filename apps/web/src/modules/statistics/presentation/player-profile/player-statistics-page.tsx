@@ -23,9 +23,15 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { useWorkspaceSelectedClubId } from "@/shared/presentation/shell/use-workspace-selection.tsx";
 import { useMyGameProfileQuery } from "../statistics-queries.ts";
 import { PlayerProfileIdentity } from "./player-profile-identity.tsx";
 import { PlayerProfileKpis } from "./player-profile-kpis.tsx";
+import { PlayerProfilePeriodFilter } from "./player-profile-period-filter.tsx";
+import {
+  gameProfileQueryFromRange,
+  type PlayerStatisticsCalendarRange,
+} from "./player-statistics-period.ts";
 
 const playerProfileChartsModule = import("./player-profile-charts.tsx");
 const PlayerProfileCharts = lazy(() =>
@@ -35,6 +41,13 @@ const PlayerProfileCharts = lazy(() =>
 const styles = stylex.create({
   main: {
     width: "100%",
+  },
+  identityRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "1rem",
+    marginBottom: "2rem",
   },
   error: {
     display: "flex",
@@ -73,8 +86,60 @@ const styles = stylex.create({
   },
 });
 
-export function PlayerStatisticsPage() {
+export function PlayerStatisticsPage({
+  externalClubId: clubIdProp,
+  onPeriodChange,
+  period,
+}: {
+  readonly externalClubId?: string;
+  readonly onPeriodChange: (next: PlayerStatisticsCalendarRange) => void;
+  readonly period: PlayerStatisticsCalendarRange;
+}) {
+  if (clubIdProp !== undefined) {
+    return (
+      <PlayerStatisticsPageLoaded
+        externalClubId={clubIdProp}
+        onPeriodChange={onPeriodChange}
+        period={period}
+        profileReady
+      />
+    );
+  }
+  return <PlayerStatisticsFromWorkspace onPeriodChange={onPeriodChange} period={period} />;
+}
+
+function PlayerStatisticsFromWorkspace({
+  onPeriodChange,
+  period,
+}: {
+  readonly onPeriodChange: (next: PlayerStatisticsCalendarRange) => void;
+  readonly period: PlayerStatisticsCalendarRange;
+}) {
+  const selectedClub = useWorkspaceSelectedClubId();
+  return (
+    <PlayerStatisticsPageLoaded
+      externalClubId={selectedClub.externalClubId}
+      onPeriodChange={onPeriodChange}
+      period={period}
+      profileReady={selectedClub.profileReady}
+    />
+  );
+}
+
+function PlayerStatisticsPageLoaded({
+  externalClubId,
+  onPeriodChange,
+  period,
+  profileReady,
+}: {
+  readonly externalClubId: string | undefined;
+  readonly onPeriodChange: (next: PlayerStatisticsCalendarRange) => void;
+  readonly period: PlayerStatisticsCalendarRange;
+  readonly profileReady: boolean;
+}) {
   const { t, locale } = useI18n();
+  const query = gameProfileQueryFromRange({ externalClubId, range: period });
+  const profileQuery = useMyGameProfileQuery(query, profileReady);
   const numberFormat = new Intl.NumberFormat(locale === "en" ? "en-GB" : "es-ES", {
     maximumFractionDigits: 2,
   });
@@ -86,7 +151,6 @@ export function PlayerStatisticsPage() {
     day: "numeric",
     month: "short",
   });
-  const profileQuery = useMyGameProfileQuery();
   const readyProfile =
     profileQuery.data?.status === "ready" && profileQuery.data.profile.sampleSize > 0
       ? profileQuery.data.profile
@@ -100,6 +164,15 @@ export function PlayerStatisticsPage() {
           <PageHeaderDescription>{t("player.statistics.description")}</PageHeaderDescription>
         )}
       </PageHeader>
+      <div {...applyStyles(styles.identityRow)}>
+        {readyProfile ? <PlayerProfileIdentity profile={readyProfile} t={t} /> : null}
+        <PlayerProfilePeriodFilter
+          dateFormat={dateFormat}
+          onApply={onPeriodChange}
+          range={period}
+          t={t}
+        />
+      </div>
       {profileQuery.isPending ? <ProfileLoading t={t} /> : null}
       {profileQuery.isError ? (
         <Alert variant="destructive">
@@ -165,7 +238,6 @@ function ProfileReady({
 
   return (
     <div {...applyStyles(styles.ready)}>
-      <PlayerProfileIdentity profile={profile} t={t} />
       <PlayerProfileKpis
         numberFormat={numberFormat}
         percentFormat={percentFormat}

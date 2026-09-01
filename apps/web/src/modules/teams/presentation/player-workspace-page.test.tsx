@@ -130,7 +130,7 @@ describe("PlayerWorkspacePage", () => {
     expect(screen.getByRole("heading", { name: "My statistics" })).toBeTruthy();
     expect(
       screen.getByText(
-        "You as a player: rating, attributes and statistics from every match you have played.",
+        "You as a player: rating, attributes and statistics from your recent matches.",
       ),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Open My matches" }).getAttribute("href")).toBe(
