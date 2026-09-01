@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  getMyGameProfileQuerySchema,
   getMyGameProfileResponseSchema,
   getMyRecentMatchPathSchema,
   getMyRecentMatchQuerySchema,
@@ -91,6 +92,44 @@ describe("getMyRecentMatch schemas", () => {
       getMyRecentMatchPathSchema.safeParse({
         providerKey: "unknown-provider",
         externalMatchId: "match-1",
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("getMyGameProfileQuerySchema", () => {
+  it("accepts a club without a period", () => {
+    expect(getMyGameProfileQuerySchema.parse({ externalClubId: " 10754 " })).toEqual({
+      externalClubId: "10754",
+    });
+  });
+
+  it("accepts an inclusive-from exclusive-to period", () => {
+    expect(
+      getMyGameProfileQuerySchema.parse({
+        from: "2026-08-25T05:00:00.000Z",
+        to: "2026-09-01T05:00:00.000Z",
+      }),
+    ).toEqual({
+      from: "2026-08-25T05:00:00.000Z",
+      to: "2026-09-01T05:00:00.000Z",
+    });
+  });
+
+  it("rejects a lone bound or a reversed period", () => {
+    expect(
+      getMyGameProfileQuerySchema.safeParse({ from: "2026-08-25T00:00:00.000Z" }).success,
+    ).toBe(false);
+    expect(
+      getMyGameProfileQuerySchema.safeParse({
+        from: "2026-09-01T00:00:00.000Z",
+        to: "2026-08-25T00:00:00.000Z",
+      }).success,
+    ).toBe(false);
+    expect(
+      getMyGameProfileQuerySchema.safeParse({
+        from: "2026-08-25T00:00:00.000Z",
+        to: "2026-08-25T00:00:00.000Z",
       }).success,
     ).toBe(false);
   });

@@ -85,6 +85,7 @@ export {
 export {
   GetPlayerGameProfileUseCase,
   type GetPlayerGameProfileInput,
+  type PlayerGameProfilePeriod,
   type PlayerGameProfileResult,
 } from "./application/get-player-game-profile/get-player-game-profile.use-case.ts";
 export type {

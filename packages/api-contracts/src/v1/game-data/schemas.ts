@@ -317,9 +317,29 @@ export const playerGameProfileSchema = z.object({
   ),
 });
 
-export const getMyGameProfileQuerySchema = z.object({
-  externalClubId: z.string().trim().min(1).optional(),
-});
+export const getMyGameProfileQuerySchema = z
+  .object({
+    externalClubId: z.string().trim().min(1).optional(),
+    from: z.string().datetime().optional(),
+    to: z.string().datetime().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if ((value.from === undefined) !== (value.to === undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: value.from === undefined ? ["from"] : ["to"],
+        message: "from and to must be provided together",
+      });
+      return;
+    }
+    if (value.from !== undefined && value.to !== undefined && value.from >= value.to) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["to"],
+        message: "to must be after from",
+      });
+    }
+  });
 
 export type GetMyGameProfileQuery = z.infer<typeof getMyGameProfileQuerySchema>;
 export type GetMyGameProfileQueryInput = z.input<typeof getMyGameProfileQuerySchema>;
