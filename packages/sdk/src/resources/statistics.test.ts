@@ -94,6 +94,26 @@ describe("statistics SDK resource", () => {
     expect(requestedUrl).toBe("https://app.example.com/api/v1/players/me/game-profile");
   });
 
+  it("forwards the selected club and period on the personal game profile", async () => {
+    let requestedUrl = "";
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input) => {
+        requestedUrl = requestUrl(input);
+        return Response.json({ status: "needs_club" });
+      }),
+    });
+
+    await client.statistics.getMyGameProfile({
+      externalClubId: "10754",
+      from: "2026-08-25T05:00:00.000Z",
+      to: "2026-09-01T05:00:00.000Z",
+    });
+    expect(requestedUrl).toBe(
+      "https://app.example.com/api/v1/players/me/game-profile?externalClubId=10754&from=2026-08-25T05%3A00%3A00.000Z&to=2026-09-01T05%3A00%3A00.000Z",
+    );
+  });
+
   it("strips legacy ELO fields from a ready game profile", async () => {
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",

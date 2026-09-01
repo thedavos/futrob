@@ -12,9 +12,15 @@ import {
 } from "../player-recent-match-window/player-recent-match-window.ts";
 import type { GameDataProviderRegistryPort } from "../../domain/ports/game-data-provider-registry.port.ts";
 
+export interface PlayerGameProfilePeriod {
+  readonly from: Date;
+  readonly to: Date;
+}
+
 export interface GetPlayerGameProfileInput {
   readonly accounts: readonly PlayerRecentMatchIdentity[];
   readonly clubs: readonly PlayerRecentMatchClub[];
+  readonly period?: PlayerGameProfilePeriod;
 }
 
 export type PlayerGameProfileResult =
@@ -37,14 +43,20 @@ export class GetPlayerGameProfileUseCase {
 
     const window = await this.windowLoader.load(input);
     if (!window.isOk()) return err(window.error);
+    const samples = window.value.matches
+      .flatMap((row) => samplesFromListedMatch(row))
+      .filter((sample) => isInPeriod(sample.occurredAt, input.period));
     return ok({
       status: "ready",
-      profile: buildPlayerGameProfile(
-        window.value.matches.flatMap((row) => samplesFromListedMatch(row)),
-        input.accounts[0]?.identifier ?? null,
-      ),
+      profile: buildPlayerGameProfile(samples, input.accounts[0]?.identifier ?? null),
     });
   }
+}
+
+function isInPeriod(occurredAt: Date, period: PlayerGameProfilePeriod | undefined): boolean {
+  if (!period) return true;
+  const time = occurredAt.getTime();
+  return time >= period.from.getTime() && time < period.to.getTime();
 }
 
 function samplesFromListedMatch(row: PlayerRecentProviderMatch) {

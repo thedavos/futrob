@@ -17,6 +17,7 @@ import {
   type GetMyRecentMatchResponse,
   type GetMyRecentMatchesQueryInput,
   type GetMyRecentMatchesResponse,
+  type GetMyGameProfileQuery,
   type GetMyGameProfileQueryInput,
   type GetMyGameProfileResponse,
   type GetMyStatisticsQuery,
@@ -91,7 +92,7 @@ export const statisticsBrowserClient = {
   getMyGameProfile(filters: GetMyGameProfileQueryInput = {}): Promise<GetMyGameProfileResponse> {
     const query = getMyGameProfileQuerySchema.parse(filters);
     const search = new URLSearchParams();
-    if (query.externalClubId) search.set("externalClubId", query.externalClubId);
+    appendGameProfileFilters(search, query);
     const queryString = search.toString();
     return requestStatisticsJson(
       `/api/v1/players/me/game-profile${queryString ? `?${queryString}` : ""}`,
@@ -120,4 +121,10 @@ function appendPersonalStatisticsFilters(
     const value = filters[key];
     if (value !== undefined) search.set(key, value);
   }
+}
+
+function appendGameProfileFilters(search: URLSearchParams, filters: GetMyGameProfileQuery): void {
+  if (filters.externalClubId) search.set("externalClubId", filters.externalClubId);
+  if (filters.from) search.set("from", filters.from);
+  if (filters.to) search.set("to", filters.to);
 }

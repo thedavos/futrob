@@ -188,6 +188,21 @@ describe("apps/api personal statistics routes", () => {
     expect(body.profile.evolution.every((point) => !("elo" in point))).toBe(true);
   });
 
+  it("rejects a game-profile query that sends only one period bound", async () => {
+    const app = buildApp(createFetch(() => Response.json([])));
+    const actor = "actor-game-profile-period";
+    await onboardPlayerWithAccount(app, actor);
+    await associateClub(app, actor, { externalClubId: "10754", name: "Fera Enjaulada" });
+
+    const response = await app.request(
+      "/api/v1/players/me/game-profile?from=2026-08-25T00:00:00.000Z",
+      { headers: serviceHeaders(actor) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: "api.validation_error" });
+  });
+
   it("queries only the selected associated club for recent matches", async () => {
     const matchUrls: string[] = [];
     const app = buildApp(

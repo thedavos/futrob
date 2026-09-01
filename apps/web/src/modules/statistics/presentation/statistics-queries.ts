@@ -1,10 +1,12 @@
 import { queryOptions, useInfiniteQuery, useQuery, type InfiniteData } from "@tanstack/react-query";
 import {
+  getMyGameProfileQuerySchema,
   getMyMatchesQuerySchema,
   getMyStatisticsQuerySchema,
   type GetMyMatchesQuery,
   type GetMyRecentMatchesResponse,
   type GameDataProviderKeyQuery,
+  type GetMyGameProfileQueryInput,
   type GetMyStatisticsQuery,
   type PlayerRecentProviderMatchDto,
 } from "@futrob/api-contracts";
@@ -55,11 +57,11 @@ export function useMyRecentMatchesQuery(externalClubId?: string, enabled = true)
   });
 }
 
-export function useMyGameProfileQuery(externalClubId?: string, enabled = true) {
+export function useMyGameProfileQuery(filters: GetMyGameProfileQueryInput = {}, enabled = true) {
+  const query = getMyGameProfileQuerySchema.parse(filters);
   return useQuery({
-    queryKey: queryKeys.gameData.meGameProfile(externalClubId),
-    queryFn: () =>
-      statisticsBrowserClient.getMyGameProfile(externalClubId ? { externalClubId } : {}),
+    queryKey: queryKeys.gameData.meGameProfile(query),
+    queryFn: () => statisticsBrowserClient.getMyGameProfile(query),
     enabled,
     retry: false,
   });

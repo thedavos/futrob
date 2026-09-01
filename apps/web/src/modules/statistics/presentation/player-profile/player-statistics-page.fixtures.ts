@@ -1,4 +1,8 @@
 import type { PlayerGameProfileDto } from "@futrob/api-contracts";
+import { defaultPlayerStatisticsWeek } from "./player-statistics-period.ts";
+
+export const PLAYER_STATISTICS_NOW = new Date(2026, 7, 31, 18, 30, 0);
+export const PLAYER_STATISTICS_RANGE = defaultPlayerStatisticsWeek(PLAYER_STATISTICS_NOW);
 
 type StatBlock = PlayerGameProfileDto["summary"];
 type AttributeCategory = PlayerGameProfileDto["attributes"][number];

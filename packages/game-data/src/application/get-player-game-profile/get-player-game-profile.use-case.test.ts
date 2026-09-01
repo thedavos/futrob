@@ -64,6 +64,65 @@ describe("GetPlayerGameProfileUseCase", () => {
     expect(result.value.profile.byTeam[0]?.clubName).toBe("Home");
     expect(result.value.profile.byPosition[0]?.position).toBe("forward");
   });
+
+  it("keeps a match on the inclusive from bound and drops the exclusive to bound", async () => {
+    const provider = recordingProvider({
+      leagueMatch: [
+        match({
+          occurredAt: new Date("2026-08-25T05:00:00.000Z"),
+          players: [
+            playerStats({ displayName: "Davos282", externalPlayerId: "player-1", goals: 2 }),
+          ],
+        }),
+        match({
+          occurredAt: new Date("2026-09-01T05:00:00.000Z"),
+          externalMatchId: "2",
+          players: [
+            playerStats({ displayName: "Davos282", externalPlayerId: "player-1", goals: 4 }),
+          ],
+        }),
+      ],
+    });
+    const result = await new GetPlayerGameProfileUseCase(registryOf(provider)).execute({
+      accounts: [account()],
+      clubs: [club()],
+      period: {
+        from: new Date("2026-08-25T05:00:00.000Z"),
+        to: new Date("2026-09-01T05:00:00.000Z"),
+      },
+    });
+
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk() || result.value.status !== "ready") return;
+    expect(result.value.profile.sampleSize).toBe(1);
+    expect(result.value.profile.summary.totals.goals).toBe(2);
+    expect(result.value.profile.evolution).toEqual([
+      { occurredAt: new Date("2026-08-25T05:00:00.000Z"), rating: 7, outcome: "win" },
+    ]);
+  });
+
+  it("returns a ready empty profile when the period has no appearances", async () => {
+    const provider = recordingProvider({
+      leagueMatch: [
+        match({
+          players: [playerStats({ displayName: "Davos282", externalPlayerId: "player-1" })],
+        }),
+      ],
+    });
+    const result = await new GetPlayerGameProfileUseCase(registryOf(provider)).execute({
+      accounts: [account()],
+      clubs: [club()],
+      period: {
+        from: new Date("2026-08-10T00:00:00.000Z"),
+        to: new Date("2026-08-17T00:00:00.000Z"),
+      },
+    });
+
+    expect(result.isOk()).toBe(true);
+    if (!result.isOk() || result.value.status !== "ready") return;
+    expect(result.value.profile.sampleSize).toBe(0);
+    expect(result.value.profile.identity.displayName).toBe("Davos282");
+  });
 });
 
 function recordingProvider(
@@ -134,12 +193,17 @@ function account() {
   };
 }
 
-function match(input: { readonly players: readonly ProviderPlayerMatchStats[] }): ProviderMatch {
+function match(input: {
+  readonly players: readonly ProviderPlayerMatchStats[];
+  readonly occurredAt?: Date;
+  readonly externalMatchId?: string;
+}): ProviderMatch {
+  const externalMatchId = input.externalMatchId ?? "1";
   return {
-    id: "ea-clubs:1",
-    provider: { key: "ea-clubs", externalMatchId: "1" },
+    id: `ea-clubs:${externalMatchId}`,
+    provider: { key: "ea-clubs", externalMatchId },
     game: { edition: "fc26", platform: "common-gen5", mode: "leagueMatch" },
-    occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+    occurredAt: input.occurredAt ?? new Date("2026-08-01T00:00:00.000Z"),
     home: { externalClubId: "10754", name: "Home", goals: 1, imageUrl: null },
     away: { externalClubId: "2", name: "Away", goals: 0, imageUrl: null },
     players: input.players,

@@ -25,6 +25,7 @@ import {
   type GetMyRecentMatchResponse,
   type GetMyRecentMatchesQueryInput,
   type GetMyRecentMatchesResponse,
+  type GetMyGameProfileQuery,
   type GetMyGameProfileQueryInput,
   type GetMyGameProfileResponse,
   type GetMyStatisticsQuery,
@@ -89,7 +90,7 @@ export function createStatisticsResource(http: HttpClient) {
     ): Promise<GetMyGameProfileResponse> {
       const parsed = getMyGameProfileQuerySchema.parse(query);
       const search = new URLSearchParams();
-      if (parsed.externalClubId) search.set("externalClubId", parsed.externalClubId);
+      appendGameProfileFilters(search, parsed);
       const queryString = search.toString();
       return http.request({
         path: `/players/me/game-profile${queryString ? `?${queryString}` : ""}`,
@@ -188,4 +189,10 @@ function appendPersonalStatisticsFilters(
     const value = filters[key];
     if (value) search.set(key, value);
   }
+}
+
+function appendGameProfileFilters(search: URLSearchParams, filters: GetMyGameProfileQuery): void {
+  if (filters.externalClubId) search.set("externalClubId", filters.externalClubId);
+  if (filters.from) search.set("from", filters.from);
+  if (filters.to) search.set("to", filters.to);
 }

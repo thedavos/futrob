@@ -2,22 +2,30 @@
 
 import type { ReactNode } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import type { GetMyGameProfileResponse, PlayerGameProfileDto } from "@futrob/api-contracts";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type {
+  GetMyGameProfileQueryInput,
+  GetMyGameProfileResponse,
+  PlayerGameProfileDto,
+} from "@futrob/api-contracts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerStatisticsPage } from "./player-statistics-page.tsx";
 import {
+  PLAYER_STATISTICS_RANGE,
   gameProfileReadyFixture,
   gameProfileUnavailableGoalsFixture,
   gameProfileUnknownOnlyFormFixture,
 } from "./player-statistics-page.fixtures.ts";
+import { gameProfileQueryFromRange } from "./player-statistics-period.ts";
 
-const getMyGameProfile = vi.fn<() => Promise<GetMyGameProfileResponse>>();
+const getMyGameProfile =
+  vi.fn<(query?: GetMyGameProfileQueryInput) => Promise<GetMyGameProfileResponse>>();
 
 vi.mock("@/modules/statistics/presentation/statistics-browser-client.ts", () => ({
   statisticsBrowserClient: {
-    getMyGameProfile: () => getMyGameProfile(),
+    getMyGameProfile: (query?: GetMyGameProfileQueryInput) => getMyGameProfile(query),
   },
 }));
 
@@ -36,9 +44,14 @@ class ResizeObserverStub {
 }
 
 describe("PlayerStatisticsPage", () => {
+  beforeEach(() => {
+    vi.stubGlobal("PointerEvent", MouseEvent);
+  });
+
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("shows a loading state", () => {
@@ -46,6 +59,7 @@ describe("PlayerStatisticsPage", () => {
     renderPage();
     expect(screen.getByRole("heading", { name: "Mis estadísticas" })).toBeTruthy();
     expect(screen.getByText("Cargando tus estadísticas…")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Rango de fechas" })).toBeTruthy();
   });
 
   it("shows a recoverable error", async () => {
@@ -60,6 +74,62 @@ describe("PlayerStatisticsPage", () => {
     getMyGameProfile.mockResolvedValue({ status: "needs_club" });
     renderPage();
     expect(await screen.findByText("Asocia un club para reconocer tus partidos")).toBeTruthy();
+  });
+
+  it("requests the selected club and default week", async () => {
+    getMyGameProfile.mockResolvedValue({ status: "ready", profile: gameProfileReadyFixture() });
+    renderPage();
+    expect(await screen.findByRole("heading", { name: "davos282" })).toBeTruthy();
+    expect(getMyGameProfile).toHaveBeenCalledWith(
+      gameProfileQueryFromRange({
+        externalClubId: "10754",
+        range: PLAYER_STATISTICS_RANGE,
+      }),
+    );
+  });
+
+  it("requests a new club without keeping the previous profile", async () => {
+    getMyGameProfile.mockResolvedValue({ status: "ready", profile: gameProfileReadyFixture() });
+    const view = renderPage({ externalClubId: "10754" });
+    expect(await screen.findByRole("heading", { name: "davos282" })).toBeTruthy();
+
+    getMyGameProfile.mockResolvedValue({ status: "ready", profile: compactProfileFixture() });
+    view.rerender(
+      <QueryTestProvider>
+        <I18nProvider initialLocale="es">
+          <PlayerStatisticsPage
+            externalClubId="44001"
+            onPeriodChange={() => undefined}
+            period={PLAYER_STATISTICS_RANGE}
+          />
+        </I18nProvider>
+      </QueryTestProvider>,
+    );
+
+    expect(await screen.findByText("Delantero · Night Owls · 28 partidos jugados")).toBeTruthy();
+    expect(getMyGameProfile).toHaveBeenLastCalledWith(
+      gameProfileQueryFromRange({
+        externalClubId: "44001",
+        range: PLAYER_STATISTICS_RANGE,
+      }),
+    );
+  });
+
+  it("applies a new date range from the filter", async () => {
+    getMyGameProfile.mockResolvedValue({ status: "ready", profile: gameProfileReadyFixture() });
+    const onPeriodChange = vi.fn();
+    const user = userEvent.setup();
+    renderPage({ onPeriodChange });
+
+    expect(await screen.findByRole("heading", { name: "davos282" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Rango de fechas" }));
+    await user.clear(screen.getByLabelText("Desde"));
+    await user.type(screen.getByLabelText("Desde"), "2026-08-01");
+    await user.clear(screen.getByLabelText("Hasta"));
+    await user.type(screen.getByLabelText("Hasta"), "2026-08-07");
+    await user.click(screen.getByRole("button", { name: "Aplicar" }));
+
+    expect(onPeriodChange).toHaveBeenCalledWith({ from: "2026-08-01", to: "2026-08-07" });
   });
 
   it("renders identity, kpis, charts and category profile from played matches", async () => {
@@ -137,9 +207,28 @@ describe("PlayerStatisticsPage", () => {
     expect(goals.textContent).toContain("Sin datos");
     expect(goals.textContent).not.toContain("0,64");
   });
+
+  it("explains the EA window when the range has no appearances", async () => {
+    getMyGameProfile.mockResolvedValue({
+      status: "ready",
+      profile: { ...gameProfileReadyFixture(), sampleSize: 0 },
+    });
+    renderPage();
+    expect(await screen.findByText("Aún no hay apariciones tuyas")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Solo vemos los últimos 50 partidos que EA tiene ahora. Si no hay apariciones en el rango, prueba otras fechas.",
+      ),
+    ).toBeTruthy();
+  });
 });
 
-function renderPage() {
+function renderPage(
+  options: {
+    readonly externalClubId?: string;
+    readonly onPeriodChange?: (next: { readonly from: string; readonly to: string }) => void;
+  } = {},
+) {
   Object.defineProperty(window, "ResizeObserver", {
     writable: true,
     configurable: true,
@@ -148,7 +237,11 @@ function renderPage() {
   return render(
     <QueryTestProvider>
       <I18nProvider initialLocale="es">
-        <PlayerStatisticsPage />
+        <PlayerStatisticsPage
+          externalClubId={options.externalClubId ?? "10754"}
+          onPeriodChange={options.onPeriodChange ?? (() => undefined)}
+          period={PLAYER_STATISTICS_RANGE}
+        />
       </I18nProvider>
     </QueryTestProvider>,
   );

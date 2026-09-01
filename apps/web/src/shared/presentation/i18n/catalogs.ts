@@ -432,12 +432,18 @@ const es = {
   "player.matches.feat.scorer": ({ name }) => `Hecho por ${name}`,
   "player.statistics.title": "Mis estadísticas",
   "player.statistics.description":
-    "Tú como jugador: rating, atributos y estadísticas de todos los partidos que has jugado.",
+    "Tú como jugador: rating, atributos y estadísticas de tus partidos recientes.",
   "player.statistics.loading": "Cargando tus estadísticas…",
   "player.statistics.error": "No pudimos cargar tus estadísticas.",
   "player.statistics.emptyTitle": "Aún no hay apariciones tuyas",
   "player.statistics.emptyDescription":
-    "Cuando alinees, esta página mostrará tu rating, atributos y evolución.",
+    "Solo vemos los últimos 50 partidos que EA tiene ahora. Si no hay apariciones en el rango, prueba otras fechas.",
+  "player.statistics.period.label": "Rango de fechas",
+  "player.statistics.period.from": "Desde",
+  "player.statistics.period.to": "Hasta",
+  "player.statistics.period.apply": "Aplicar",
+  "player.statistics.period.invalid": "Elige una fecha de inicio anterior o igual a la de fin.",
+  "player.statistics.period.summary": ({ from, to }) => `${from} – ${to}`,
   "player.statistics.needsClub.title": "Asocia un club para reconocer tus partidos",
   "player.statistics.needsClub.description":
     "Tu perfil se arma con tus apariciones. Un club asociado nos deja encontrarlas.",
@@ -610,6 +616,7 @@ export interface MessageParamsByKey {
   readonly "onboarding.invitation.retry": { readonly seconds: number };
   readonly "onboarding.review.edit": { readonly label: string };
   readonly "onboarding.review.retry": { readonly seconds: number };
+  readonly "player.statistics.period.summary": { readonly from: string; readonly to: string };
   readonly "player.statistics.matchesCount": { readonly count: number };
   readonly "player.statistics.record.hint": { readonly percent: string };
   readonly "player.statistics.assists.hint": { readonly average: string };
@@ -1109,12 +1116,18 @@ const en: Catalog = {
   "player.matches.feat.scorer": ({ name }) => `By ${name}`,
   "player.statistics.title": "My statistics",
   "player.statistics.description":
-    "You as a player: rating, attributes and statistics from every match you have played.",
+    "You as a player: rating, attributes and statistics from your recent matches.",
   "player.statistics.loading": "Loading your statistics…",
   "player.statistics.error": "We could not load your statistics.",
   "player.statistics.emptyTitle": "No appearances of yours yet",
   "player.statistics.emptyDescription":
-    "When you play, this page will show your rating, attributes and evolution.",
+    "We can only see the last 50 matches EA has available. If there are no appearances in the range, try other dates.",
+  "player.statistics.period.label": "Date range",
+  "player.statistics.period.from": "From",
+  "player.statistics.period.to": "To",
+  "player.statistics.period.apply": "Apply",
+  "player.statistics.period.invalid": "Choose a start date on or before the end date.",
+  "player.statistics.period.summary": ({ from, to }) => `${from} – ${to}`,
   "player.statistics.needsClub.title": "Associate a club to recognise your matches",
   "player.statistics.needsClub.description":
     "Your profile is built from your appearances. An associated club lets us find them.",

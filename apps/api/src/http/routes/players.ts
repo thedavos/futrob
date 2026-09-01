@@ -20,6 +20,7 @@ import {
   getMyTeamsResponseSchema,
   setActiveTeamRequestSchema,
   setActiveTeamResponseSchema,
+  type GetMyGameProfileQuery,
   type GetMyStatisticsQuery,
 } from "@futrob/api-contracts";
 import type { AppDeps } from "@/app.ts";
@@ -233,6 +234,8 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
   secured.get("/players/me/game-profile", async (c) => {
     const parsed = getMyGameProfileQuerySchema.safeParse({
       externalClubId: c.req.query("externalClubId") ?? undefined,
+      from: c.req.query("from") ?? undefined,
+      to: c.req.query("to") ?? undefined,
     });
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
 
@@ -250,6 +253,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     const profile = await gameData.getPlayerGameProfile.execute({
       accounts: recentMatchAccounts(details),
       clubs: clubs.map(toRecentMatchClub),
+      period: gameProfilePeriod(parsed.data),
     });
     if (!profile.isOk()) return failureToHttp(profile.error);
     return jsonResponse(
@@ -396,6 +400,13 @@ function recentMatchAccounts(details: {
     normalizedIdentifier: account.normalizedIdentifier,
     providerExternalPlayerId: account.providerExternalPlayerId,
   }));
+}
+
+function gameProfilePeriod(
+  query: GetMyGameProfileQuery,
+): { readonly from: Date; readonly to: Date } | undefined {
+  if (query.from === undefined || query.to === undefined) return undefined;
+  return { from: new Date(query.from), to: new Date(query.to) };
 }
 
 function toRecentMatchClub(club: {
