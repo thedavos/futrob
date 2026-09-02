@@ -182,6 +182,12 @@ export const Ready: Story = {
 export const NotPlayed: Story = {
   args: { scenario: "notPlayed" },
   render: (args) => <DetailStory {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("No jugaste")).toBeVisible();
+    await expect(canvas.queryByText("Tu rendimiento")).toBeNull();
+    await expect(canvas.getByText("Destacados del partido")).toBeVisible();
+  },
 };
 
 export const Loading: Story = {

@@ -48,12 +48,6 @@ const styles = stylex.create({
       [media.lg]: "repeat(2, minmax(0, 1fr))",
     },
   },
-  empty: {
-    margin: "auto",
-    maxWidth: "65ch",
-    textAlign: "center",
-    color: colors.mutedForeground,
-  },
   played: {
     display: "flex",
     minHeight: 0,
@@ -145,22 +139,30 @@ export function MatchDetailSummary({
     maximumFractionDigits: 0,
   });
 
+  const highlights = (
+    <MatchHighlightsCard
+      highlights={model.highlights.items}
+      numberFormat={numberFormat}
+      percentFormat={percentFormat}
+      t={t}
+    />
+  );
+
   return (
     <div {...applyStyles(styles.stack)}>
-      <div {...applyStyles(styles.grid)}>
-        <YourPerformanceCard
-          appearance={model.appearance}
-          numberFormat={numberFormat}
-          percentFormat={percentFormat}
-          t={t}
-        />
-        <MatchHighlightsCard
-          highlights={model.highlights.items}
-          numberFormat={numberFormat}
-          percentFormat={percentFormat}
-          t={t}
-        />
-      </div>
+      {model.appearance ? (
+        <div {...applyStyles(styles.grid)}>
+          <YourPerformanceCard
+            appearance={model.appearance}
+            numberFormat={numberFormat}
+            percentFormat={percentFormat}
+            t={t}
+          />
+          {highlights}
+        </div>
+      ) : (
+        highlights
+      )}
       <TeamComparisonCard
         comparison={model.comparison}
         numberFormat={numberFormat}
@@ -177,7 +179,7 @@ function YourPerformanceCard({
   percentFormat,
   t,
 }: {
-  readonly appearance: PlayedAppearance | null;
+  readonly appearance: PlayedAppearance;
   readonly numberFormat: Intl.NumberFormat;
   readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
@@ -188,18 +190,12 @@ function YourPerformanceCard({
         <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.performance")}</h2>
       </CardHeader>
       <CardContent className={summaryCardContent}>
-        {appearance ? (
-          <PlayedPerformance
-            appearance={appearance}
-            numberFormat={numberFormat}
-            percentFormat={percentFormat}
-            t={t}
-          />
-        ) : (
-          <p {...applyStyles(typography.caption, styles.empty)}>
-            {t("player.matchDetail.performance.empty.description")}
-          </p>
-        )}
+        <PlayedPerformance
+          appearance={appearance}
+          numberFormat={numberFormat}
+          percentFormat={percentFormat}
+          t={t}
+        />
       </CardContent>
     </Card>
   );

@@ -344,8 +344,6 @@ const es = {
   "player.matchDetail.tab.facts": "Datos del partido",
   "player.matchDetail.comparison": "Comparación de equipos",
   "player.matchDetail.performance": "Tu rendimiento",
-  "player.matchDetail.performance.empty.description":
-    "No alineaste con el club seleccionado en este partido.",
   "player.matchDetail.performance.passAccuracy": "Precisión de pase",
   "player.matchDetail.performance.tackleAccuracy": "Precisión de entradas",
   "player.matchDetail.highlights": "Destacados del partido",
@@ -1029,8 +1027,6 @@ const en: Catalog = {
   "player.matchDetail.tab.facts": "Match details",
   "player.matchDetail.comparison": "Team comparison",
   "player.matchDetail.performance": "Your performance",
-  "player.matchDetail.performance.empty.description":
-    "You did not line up with the selected club in this match.",
   "player.matchDetail.performance.passAccuracy": "Pass accuracy",
   "player.matchDetail.performance.tackleAccuracy": "Tackle accuracy",
   "player.matchDetail.highlights": "Match highlights",

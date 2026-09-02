@@ -128,7 +128,9 @@ describe("ProviderMatchDetailView", () => {
 
     expect(document.querySelector("[data-played='false']")).toBeTruthy();
     expect(screen.getByText("No jugaste")).toBeTruthy();
-    expect(screen.getByText("No alineaste con el club seleccionado en este partido.")).toBeTruthy();
+    expect(screen.queryByText("Tu rendimiento")).toBeNull();
+    expect(document.querySelector("[data-personal-summary]")).toBeNull();
+    expect(screen.getByText("Destacados del partido")).toBeTruthy();
     expect(document.querySelector("[data-personal-player]")).toBeNull();
 
     await user.click(screen.getByRole("tab", { name: "Jugadores" }));
