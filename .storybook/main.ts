@@ -11,6 +11,52 @@ function getAbsolutePath(packageName: string) {
   return dirname(fileURLToPath(import.meta.resolve(`${packageName}/package.json`)));
 }
 
+type BrowserClientMock = {
+  readonly file: string;
+  readonly skip: string;
+  readonly names: readonly string[];
+};
+
+function webPresentation(file: string): string {
+  return resolve(webSrc, file);
+}
+
+const browserClientMocks: readonly BrowserClientMock[] = [
+  {
+    file: webPresentation("modules/statistics/presentation/player-matches-story-client.ts"),
+    skip: "player-matches-story-client",
+    names: ["statistics-browser-client"],
+  },
+  {
+    file: webPresentation("modules/teams/presentation/player-story-client.ts"),
+    skip: "player-story-client",
+    names: ["teams-browser-client"],
+  },
+  {
+    file: webPresentation("modules/organizations/presentation/organizations-story-client.ts"),
+    skip: "organizations-story-client",
+    names: ["organizations-browser-client"],
+  },
+];
+
+function mockFileFor(name: string): string {
+  const mock = browserClientMocks.find((item) => item.names.includes(name));
+  if (!mock) {
+    throw new Error(`Missing Storybook browser-client mock for ${name}`);
+  }
+  return mock.file;
+}
+
+function matchesBrowserClient(id: string, mock: BrowserClientMock): boolean {
+  return mock.names.some(
+    (name) =>
+      id === `./${name}.ts` ||
+      id === `./${name}` ||
+      id.endsWith(`/${name}.ts`) ||
+      id.endsWith(`/${name}`),
+  );
+}
+
 const config: StorybookConfig = {
   stories: ["../packages/ui/src/**/*.stories.@(ts|tsx)", "../apps/web/src/**/*.stories.@(ts|tsx)"],
   addons: [
@@ -23,24 +69,18 @@ const config: StorybookConfig = {
     options: {},
   },
   async viteFinal(viteConfig) {
-    const statisticsStoryClient = resolve(
-      webSrc,
-      "modules/statistics/presentation/player-matches-story-client.ts",
-    );
+    const statisticsStoryClient = mockFileFor("statistics-browser-client");
+    const teamsStoryClient = mockFileFor("teams-browser-client");
+    const organizationsStoryClient = mockFileFor("organizations-browser-client");
     viteConfig.plugins = [
       {
-        name: "storybook-mock-statistics-browser-client",
+        name: "storybook-mock-browser-clients",
         enforce: "pre",
         resolveId(source: string) {
           const id = source.replaceAll("\\", "/").split("?")[0] ?? source;
-          if (id.includes("player-matches-story-client")) return null;
-          if (
-            id === "./statistics-browser-client.ts" ||
-            id === "./statistics-browser-client" ||
-            id.endsWith("/statistics-browser-client.ts") ||
-            id.endsWith("/statistics-browser-client")
-          ) {
-            return statisticsStoryClient;
+          for (const mock of browserClientMocks) {
+            if (id.includes(mock.skip)) continue;
+            if (matchesBrowserClient(id, mock)) return mock.file;
           }
           return null;
         },
@@ -58,7 +98,11 @@ const config: StorybookConfig = {
         },
         {
           find: /^@\/modules\/organizations\/presentation\/organizations-browser-client(?:\.ts)?$/,
-          replacement: resolve(configDir, "mocks/organizations-browser-client.ts"),
+          replacement: organizationsStoryClient,
+        },
+        {
+          find: /^@\/modules\/teams\/presentation\/teams-browser-client(?:\.ts)?$/,
+          replacement: teamsStoryClient,
         },
         {
           find: /^@\/modules\/statistics\/presentation\/statistics-browser-client(?:\.ts)?$/,
