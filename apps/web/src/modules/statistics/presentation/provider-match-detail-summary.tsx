@@ -14,7 +14,6 @@ import {
   typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
 import { StarIcon } from "@phosphor-icons/react";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
@@ -25,28 +24,14 @@ import {
   type PlayedAppearance,
   type ProviderMatchDetailModel,
 } from "./provider-match-detail-model.ts";
-import { TeamComparisonCard } from "./provider-match-detail-summary-comparison.tsx";
-import {
-  MatchHighlightsCard,
-  summaryCard,
-  summaryCardContent,
-  summaryCardHeader,
-} from "./provider-match-detail-summary-highlights.tsx";
+import { TeamComparisonSection } from "./provider-match-detail-summary-comparison.tsx";
+import { MatchHighlightsSection } from "./provider-match-detail-summary-highlights.tsx";
 
 const styles = stylex.create({
   stack: {
     display: "flex",
     flexDirection: "column",
     gap: "1.5rem",
-  },
-  grid: {
-    display: "grid",
-    alignItems: "stretch",
-    gap: "1.5rem",
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.lg]: "repeat(2, minmax(0, 1fr))",
-    },
   },
   played: {
     display: "flex",
@@ -98,6 +83,28 @@ const styles = stylex.create({
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: "0.75rem",
   },
+  performanceCard: {
+    display: "flex",
+    minWidth: 0,
+    flexDirection: "column",
+  },
+  performanceHeader: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+    paddingInline: "1.25rem",
+    paddingTop: "1.25rem",
+    paddingBottom: "1rem",
+  },
+  performanceContent: {
+    paddingInline: "1.25rem",
+    paddingBottom: "1.25rem",
+    display: "flex",
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    flexDirection: "column",
+  },
   metric: {
     display: "flex",
     height: "100%",
@@ -139,31 +146,23 @@ export function MatchDetailSummary({
     maximumFractionDigits: 0,
   });
 
-  const highlights = (
-    <MatchHighlightsCard
-      highlights={model.highlights.items}
-      numberFormat={numberFormat}
-      percentFormat={percentFormat}
-      t={t}
-    />
-  );
-
   return (
     <div {...applyStyles(styles.stack)}>
       {model.appearance ? (
-        <div {...applyStyles(styles.grid)}>
-          <YourPerformanceCard
-            appearance={model.appearance}
-            numberFormat={numberFormat}
-            percentFormat={percentFormat}
-            t={t}
-          />
-          {highlights}
-        </div>
-      ) : (
-        highlights
-      )}
-      <TeamComparisonCard
+        <YourPerformanceCard
+          appearance={model.appearance}
+          numberFormat={numberFormat}
+          percentFormat={percentFormat}
+          t={t}
+        />
+      ) : null}
+      <MatchHighlightsSection
+        highlights={model.highlights.items}
+        numberFormat={numberFormat}
+        percentFormat={percentFormat}
+        t={t}
+      />
+      <TeamComparisonSection
         comparison={model.comparison}
         numberFormat={numberFormat}
         percentFormat={percentFormat}
@@ -185,11 +184,11 @@ function YourPerformanceCard({
   readonly t: Translator;
 }) {
   return (
-    <Card className={summaryCard} data-personal-summary="">
-      <CardHeader className={summaryCardHeader}>
+    <Card className={styles.performanceCard} data-personal-summary="">
+      <CardHeader className={styles.performanceHeader}>
         <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.performance")}</h2>
       </CardHeader>
-      <CardContent className={summaryCardContent}>
+      <CardContent className={styles.performanceContent}>
         <PlayedPerformance
           appearance={appearance}
           numberFormat={numberFormat}

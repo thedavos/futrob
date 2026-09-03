@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps, applyStyles, Card, CardContent, CardHeader, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -14,13 +15,18 @@ import {
 } from "./provider-match-detail-model.ts";
 
 const styles = stylex.create({
+  section: {
+    display: "flex",
+    minWidth: 0,
+    flexDirection: "column",
+    gap: "1rem",
+  },
   card: {
     minWidth: 0,
   },
   header: {
     display: "flex",
     flexDirection: "column",
-    gap: "1.5rem",
     paddingInline: "1.25rem",
     paddingTop: "1.25rem",
     paddingBottom: "1rem",
@@ -114,7 +120,7 @@ const styles = stylex.create({
   },
 });
 
-export function TeamComparisonCard({
+export function TeamComparisonSection({
   comparison,
   numberFormat,
   percentFormat,
@@ -125,31 +131,36 @@ export function TeamComparisonCard({
   readonly percentFormat: Intl.NumberFormat;
   readonly t: Translator;
 }) {
+  const headingId = useId();
   return (
-    <Card className={styles.card} data-team-comparison="">
-      <CardHeader className={styles.header}>
-        <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.comparison")}</h2>
-        <div {...applyStyles(styles.clubs)}>
-          <ComparisonClubSide side="selected" team={comparison.selected.team} />
-          <ComparisonClubSide side="opponent" team={comparison.opponent.team} />
-        </div>
-      </CardHeader>
-      <CardContent className={styles.content}>
-        <ul {...applyStyles(styles.list)}>
-          {TEAM_COMPARISON_METRICS.map((metric) => (
-            <ComparisonMetricRow
-              key={metric.key}
-              metric={metric}
-              numberFormat={numberFormat}
-              opponent={comparison.opponent.stats[metric.key]}
-              percentFormat={percentFormat}
-              selected={comparison.selected.stats[metric.key]}
-              t={t}
-            />
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
+    <section data-team-comparison="" {...applyStyles(styles.section)}>
+      <h2 id={headingId} {...applyStyles(typography.label)}>
+        {t("player.matchDetail.comparison")}
+      </h2>
+      <Card aria-labelledby={headingId} className={styles.card}>
+        <CardHeader className={styles.header}>
+          <div {...applyStyles(styles.clubs)}>
+            <ComparisonClubSide side="selected" team={comparison.selected.team} />
+            <ComparisonClubSide side="opponent" team={comparison.opponent.team} />
+          </div>
+        </CardHeader>
+        <CardContent className={styles.content}>
+          <ul {...applyStyles(styles.list)}>
+            {TEAM_COMPARISON_METRICS.map((metric) => (
+              <ComparisonMetricRow
+                key={metric.key}
+                metric={metric}
+                numberFormat={numberFormat}
+                opponent={comparison.opponent.stats[metric.key]}
+                percentFormat={percentFormat}
+                selected={comparison.selected.stats[metric.key]}
+                t={t}
+              />
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 

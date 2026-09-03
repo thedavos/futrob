@@ -1,16 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import {
-  applyStyles,
-  Badge,
-  Card,
-  CardContent,
-  CardHeader,
-  Stat,
-  StatLabel,
-  typography,
-} from "@futrob/ui";
+import { applyStyles, Badge, Stat, StatLabel, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { StarIcon } from "@phosphor-icons/react";
@@ -27,33 +18,14 @@ const HIGHLIGHT_TITLE_KEYS = {
 } as const satisfies Record<MatchHighlightKind, ParameterlessMessageKey>;
 
 const styles = stylex.create({
-  card: {
+  section: {
     display: "flex",
-    height: "100%",
     minWidth: 0,
     flexDirection: "column",
-  },
-  header: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-    paddingInline: "1.25rem",
-    paddingTop: "1.25rem",
-    paddingBottom: "1rem",
-  },
-  content: {
-    paddingInline: "1.25rem",
-    paddingBottom: "1.25rem",
-    display: "flex",
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: "0%",
-    flexDirection: "column",
+    gap: "1rem",
   },
   empty: {
-    margin: "auto",
     maxWidth: "65ch",
-    textAlign: "center",
     color: colors.mutedForeground,
   },
   list: {
@@ -127,11 +99,7 @@ const styles = stylex.create({
   },
 });
 
-export const summaryCardHeader = styles.header;
-export const summaryCardContent = styles.content;
-export const summaryCard = styles.card;
-
-export function MatchHighlightsCard({
+export function MatchHighlightsSection({
   highlights,
   numberFormat,
   percentFormat,
@@ -143,30 +111,26 @@ export function MatchHighlightsCard({
   readonly t: Translator;
 }) {
   return (
-    <Card className={styles.card} data-match-highlights="">
-      <CardHeader className={styles.header}>
-        <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.highlights")}</h2>
-      </CardHeader>
-      <CardContent className={styles.content}>
-        {highlights.length === 0 ? (
-          <p {...applyStyles(typography.caption, styles.empty)}>
-            {t("player.matchDetail.highlights.empty")}
-          </p>
-        ) : (
-          <ul {...applyStyles(styles.list)}>
-            {highlights.map((item) => (
-              <HighlightItem
-                item={item}
-                key={`${item.kind}:${item.player.externalPlayerId}`}
-                numberFormat={numberFormat}
-                percentFormat={percentFormat}
-                t={t}
-              />
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+    <section data-match-highlights="" {...applyStyles(styles.section)}>
+      <h2 {...applyStyles(typography.label)}>{t("player.matchDetail.highlights")}</h2>
+      {highlights.length === 0 ? (
+        <p {...applyStyles(typography.caption, styles.empty)}>
+          {t("player.matchDetail.highlights.empty")}
+        </p>
+      ) : (
+        <ul {...applyStyles(styles.list)}>
+          {highlights.map((item) => (
+            <HighlightItem
+              item={item}
+              key={`${item.kind}:${item.player.externalPlayerId}`}
+              numberFormat={numberFormat}
+              percentFormat={percentFormat}
+              t={t}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
