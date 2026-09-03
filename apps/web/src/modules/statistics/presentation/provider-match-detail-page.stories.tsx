@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -40,9 +40,14 @@ const detail = recentProviderMatchDetailFixture({
   away: { externalClubId: "99", name: "Night Owls", goals: 2, imageUrl: null },
   players: [
     player("davos282", "10754", 8.4, { goals: 3, isMvp: true }),
-    player("Central Fera", "10754", 7.6, { position: "CB", tacklesMade: 5, assists: 2 }),
+    player("Central Fera", "10754", 7.6, {
+      position: "CB",
+      tacklesMade: 5,
+      tackleAttempts: 6,
+      assists: 2,
+    }),
     player("Portero Fera", "10754", null, { position: "GK", saves: 4 }),
-    player("Night Ten", "99", 8.1, { goals: 2 }),
+    player("Night Ten", "99", 8.1, { goals: 2, passesMade: 11, passAttempts: 12 }),
     player("Night Keeper", "99", 6.7, { position: "GK", saves: 6 }),
   ],
   appearance: {
@@ -218,6 +223,25 @@ export const NotFound: Story = {
 export const ErrorState: Story = {
   args: { scenario: "error" },
   render: (args) => <DetailStory {...args} />,
+};
+
+export const Rosters: Story = {
+  args: { scenario: "ready" },
+  name: "Plantillas del partido",
+  parameters: { a11y: { test: "error" } },
+  render: (args) => <DetailStory {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("tab", { name: "Jugadores" }));
+    await expect(canvas.getByRole("heading", { name: "Plantillas del partido" })).toBeVisible();
+    await expect(canvas.getByText("5 jugadores registrados")).toBeVisible();
+    await expect(canvas.getByText("Ganador")).toBeVisible();
+    await expect(canvas.getByText("Tú")).toBeVisible();
+    await expect(canvas.getByText("Playmaker")).toBeVisible();
+    await expect(canvas.getByText("Asistente")).toBeVisible();
+    await expect(canvas.getByText("Defensor")).toBeVisible();
+    await expect(canvas.getAllByRole("columnheader", { name: "Jugador" })).toHaveLength(2);
+  },
 };
 
 export const Mobile: Story = {

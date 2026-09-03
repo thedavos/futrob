@@ -1,14 +1,14 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
 type TableProps = React.ComponentProps<"table"> & {
   /** Reduces row height to 36px on desktop. Touch layouts remain comfortable. */
   dense?: boolean;
-  containerClassName?: string;
+  containerClassName?: HostClassName;
 };
 
 const styles = stylex.create({

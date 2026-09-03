@@ -14,7 +14,7 @@ import {
 export type { MatchHighlight, MatchHighlightsModel };
 
 export type ProviderPlayer = ProviderMatchDto["players"][number];
-type ProviderTeam = ProviderMatchDto["home"];
+export type ProviderTeam = ProviderMatchDto["home"];
 
 export type TeamStatValue =
   | { readonly kind: "ready"; readonly value: number }
@@ -111,18 +111,53 @@ export const PROVIDER_PLAYER_METRICS = [
 ] as const satisfies readonly ProviderPlayerMetric[];
 
 export function providerPositionLabelKey(value: string): ParameterlessMessageKey | null {
+  return providerPositionCopy(value)?.full ?? null;
+}
+
+export function providerPositionShortLabelKey(value: string): ParameterlessMessageKey | null {
+  return providerPositionCopy(value)?.short ?? null;
+}
+
+export function providerPositionCopy(
+  value: string,
+): { readonly full: ParameterlessMessageKey; readonly short: ParameterlessMessageKey } | null {
   switch (value) {
     case "goalkeeper":
-      return "player.matchDetail.position.goalkeeper";
+      return {
+        full: "player.matchDetail.position.goalkeeper",
+        short: "player.matchDetail.position.short.goalkeeper",
+      };
     case "defender":
-      return "player.matchDetail.position.defender";
+      return {
+        full: "player.matchDetail.position.defender",
+        short: "player.matchDetail.position.short.defender",
+      };
     case "midfielder":
-      return "player.matchDetail.position.midfielder";
+      return {
+        full: "player.matchDetail.position.midfielder",
+        short: "player.matchDetail.position.short.midfielder",
+      };
     case "forward":
-      return "player.matchDetail.position.forward";
+      return {
+        full: "player.matchDetail.position.forward",
+        short: "player.matchDetail.position.short.forward",
+      };
     default:
       return null;
   }
+}
+
+export function isSameProviderPlayer(left: ProviderPlayer, right: ProviderPlayer): boolean {
+  return (
+    left.externalClubId === right.externalClubId && left.externalPlayerId === right.externalPlayerId
+  );
+}
+
+export function listedProviderPlayers(sides: ProviderMatchRosterModel): readonly ProviderPlayer[] {
+  return [
+    ...sides.selected.players.map((entry) => entry.player),
+    ...sides.opponent.players.map((entry) => entry.player),
+  ];
 }
 
 export interface ProviderRosterPlayer {
@@ -334,4 +369,30 @@ export function compareRatings(left: number | null, right: number | null): numbe
   if (left === null) return 1;
   if (right === null) return -1;
   return right - left;
+}
+
+export function matchMvpPlayer(players: readonly ProviderPlayer[]): ProviderPlayer | null {
+  const flagged = players.filter((player) => player.isMvp === true);
+  return flagged.length === 0 ? null : (sortProviderPlayers(flagged)[0] ?? null);
+}
+
+export function matchLeader(
+  players: readonly ProviderPlayer[],
+  value: (player: ProviderPlayer) => number | null,
+): ProviderPlayer | null {
+  const contenders = players
+    .map((player, index) => ({ player, index, stat: value(player) }))
+    .filter(
+      (entry): entry is { player: ProviderPlayer; index: number; stat: number } =>
+        entry.stat !== null && entry.stat > 0,
+    );
+  if (contenders.length === 0) return null;
+  const [best] = contenders.sort((left, right) => {
+    const statOrder = right.stat - left.stat;
+    if (statOrder !== 0) return statOrder;
+    const ratingOrder = compareRatings(left.player.rating, right.player.rating);
+    if (ratingOrder !== 0) return ratingOrder;
+    return left.index - right.index;
+  });
+  return best?.player ?? null;
 }

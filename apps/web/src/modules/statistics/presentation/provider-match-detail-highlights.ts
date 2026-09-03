@@ -1,5 +1,7 @@
 import {
-  compareRatings,
+  listedProviderPlayers,
+  matchLeader,
+  matchMvpPlayer,
   sortProviderPlayers,
   type ProviderMatchRosterModel,
   type ProviderPlayer,
@@ -43,10 +45,9 @@ export interface MatchHighlightsModel {
 }
 
 export function matchHighlights(sides: ProviderMatchRosterModel): MatchHighlightsModel {
-  const selectedPlayers = sides.selected.players.map((entry) => entry.player);
   const opponentPlayers = sides.opponent.players.map((entry) => entry.player);
   const items: MatchHighlight[] = [];
-  const allPlayers = [...selectedPlayers, ...opponentPlayers];
+  const allPlayers = listedProviderPlayers(sides);
   const mvp = matchMvpPlayer(allPlayers);
   if (mvp) {
     items.push({
@@ -58,7 +59,7 @@ export function matchHighlights(sides: ProviderMatchRosterModel): MatchHighlight
       passAttempts: mvp.passAttempts,
     });
   }
-  const scorer = matchTopScorer(allPlayers);
+  const scorer = matchLeader(allPlayers, (player) => player.goals);
   if (scorer) {
     items.push({
       kind: "scorer",
@@ -91,45 +92,6 @@ export function matchHighlights(sides: ProviderMatchRosterModel): MatchHighlight
     });
   }
   return { items };
-}
-
-export function matchMvpPlayer(players: readonly ProviderPlayer[]): ProviderPlayer | null {
-  const flagged = players.filter((player) => player.isMvp === true);
-  return flagged.length === 0 ? null : (sortProviderPlayers(flagged)[0] ?? null);
-}
-
-function matchLeader(
-  players: readonly ProviderPlayer[],
-  value: (player: ProviderPlayer) => number | null,
-): ProviderPlayer | null {
-  const contenders = players
-    .map((player, index) => ({ player, index, stat: value(player) }))
-    .filter((entry) => entry.stat !== null && entry.stat > 0);
-  if (contenders.length === 0) return null;
-  const [best] = contenders.sort((left, right) => {
-    const statOrder = (right.stat ?? 0) - (left.stat ?? 0);
-    if (statOrder !== 0) return statOrder;
-    const ratingOrder = compareRatings(left.player.rating, right.player.rating);
-    if (ratingOrder !== 0) return ratingOrder;
-    return left.index - right.index;
-  });
-  return best?.player ?? null;
-}
-
-function matchTopScorer(players: readonly ProviderPlayer[]): ProviderPlayer | null {
-  const scorers = players.filter((player) => player.goals !== null && player.goals > 0);
-  if (scorers.length === 0) return null;
-  return (
-    [...scorers]
-      .map((player, index) => ({ player, index }))
-      .sort((left, right) => {
-        const goalsOrder = (right.player.goals ?? 0) - (left.player.goals ?? 0);
-        if (goalsOrder !== 0) return goalsOrder;
-        const ratingOrder = compareRatings(left.player.rating, right.player.rating);
-        if (ratingOrder !== 0) return ratingOrder;
-        return left.index - right.index;
-      })[0]?.player ?? null
-  );
 }
 
 function matchBestOpponent(players: readonly ProviderPlayer[]): ProviderPlayer | null {

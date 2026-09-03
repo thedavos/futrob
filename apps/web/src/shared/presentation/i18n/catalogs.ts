@@ -333,11 +333,26 @@ const es = {
   "player.matchDetail.needsGameAccount.title": "Añade una cuenta de juego",
   "player.matchDetail.needsGameAccount.description":
     "Añade tu identificador de juego para reconocer si participaste en el partido.",
-  "player.matchDetail.selectedClub": "Club seleccionado",
-  "player.matchDetail.opponent": "Rival",
   "player.matchDetail.yourMatch": "Tu partido",
   "player.matchDetail.you": "Tú",
   "player.matchDetail.roster": "Plantilla",
+  "player.matchDetail.rosters": "Plantillas del partido",
+  "player.matchDetail.rosters.registered": ({ count }) =>
+    count === 1 ? "1 jugador registrado" : `${count} jugadores registrados`,
+  "player.matchDetail.rosters.playerCount": ({ count }) =>
+    count === 1 ? "1 jugador" : `${count} jugadores`,
+  "player.matchDetail.rosters.winner": "Ganador",
+  "player.matchDetail.rosters.badge.playmaker": "Playmaker",
+  "player.matchDetail.rosters.badge.assister": "Asistente",
+  "player.matchDetail.rosters.badge.defender": "Defensor",
+  "player.matchDetail.rosters.column.player": "Jugador",
+  "player.matchDetail.rosters.column.position": "Pos.",
+  "player.matchDetail.rosters.column.rating": "Rating",
+  "player.matchDetail.rosters.column.goals": "G",
+  "player.matchDetail.rosters.column.assists": "A",
+  "player.matchDetail.rosters.column.shots": "Tiros",
+  "player.matchDetail.rosters.column.passes": "Pases",
+  "player.matchDetail.rosters.column.tackles": "Entradas",
   "player.matchDetail.roster.empty": "No hay datos de jugadores para esta plantilla.",
   "player.matchDetail.tab.summary": "Resumen",
   "player.matchDetail.tab.players": "Jugadores",
@@ -382,6 +397,10 @@ const es = {
   "player.matchDetail.position.defender": "Defensa",
   "player.matchDetail.position.midfielder": "Centrocampista",
   "player.matchDetail.position.forward": "Delantero",
+  "player.matchDetail.position.short.goalkeeper": "POR",
+  "player.matchDetail.position.short.defender": "DF",
+  "player.matchDetail.position.short.midfielder": "MC",
+  "player.matchDetail.position.short.forward": "DC",
   "player.matches.outcome.win": "Victoria",
   "player.matches.outcome.draw": "Empate",
   "player.matches.outcome.loss": "Derrota",
@@ -688,6 +707,8 @@ export interface MessageParamsByKey {
     readonly minutes: number;
     readonly seconds: number;
   };
+  readonly "player.matchDetail.rosters.registered": { readonly count: number };
+  readonly "player.matchDetail.rosters.playerCount": { readonly count: number };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -1016,11 +1037,26 @@ const en: Catalog = {
   "player.matchDetail.needsGameAccount.title": "Add a game account",
   "player.matchDetail.needsGameAccount.description":
     "Add your game identifier so we can recognize whether you played in the match.",
-  "player.matchDetail.selectedClub": "Selected club",
-  "player.matchDetail.opponent": "Opponent",
   "player.matchDetail.yourMatch": "Your match",
   "player.matchDetail.you": "You",
   "player.matchDetail.roster": "Roster",
+  "player.matchDetail.rosters": "Match rosters",
+  "player.matchDetail.rosters.registered": ({ count }) =>
+    count === 1 ? "1 registered player" : `${count} registered players`,
+  "player.matchDetail.rosters.playerCount": ({ count }) =>
+    count === 1 ? "1 player" : `${count} players`,
+  "player.matchDetail.rosters.winner": "Winner",
+  "player.matchDetail.rosters.badge.playmaker": "Playmaker",
+  "player.matchDetail.rosters.badge.assister": "Assister",
+  "player.matchDetail.rosters.badge.defender": "Defender",
+  "player.matchDetail.rosters.column.player": "Player",
+  "player.matchDetail.rosters.column.position": "Pos.",
+  "player.matchDetail.rosters.column.rating": "Rating",
+  "player.matchDetail.rosters.column.goals": "G",
+  "player.matchDetail.rosters.column.assists": "A",
+  "player.matchDetail.rosters.column.shots": "Shots",
+  "player.matchDetail.rosters.column.passes": "Passes",
+  "player.matchDetail.rosters.column.tackles": "Tackles",
   "player.matchDetail.roster.empty": "No player data is available for this roster.",
   "player.matchDetail.tab.summary": "Summary",
   "player.matchDetail.tab.players": "Players",
@@ -1065,6 +1101,10 @@ const en: Catalog = {
   "player.matchDetail.position.defender": "Defender",
   "player.matchDetail.position.midfielder": "Midfielder",
   "player.matchDetail.position.forward": "Forward",
+  "player.matchDetail.position.short.goalkeeper": "GK",
+  "player.matchDetail.position.short.defender": "DF",
+  "player.matchDetail.position.short.midfielder": "CM",
+  "player.matchDetail.position.short.forward": "ST",
   "player.matches.outcome.win": "Win",
   "player.matches.outcome.draw": "Draw",
   "player.matches.outcome.loss": "Lose",

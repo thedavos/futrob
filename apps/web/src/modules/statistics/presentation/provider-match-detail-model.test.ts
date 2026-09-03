@@ -7,7 +7,13 @@ import {
   providerMatchDetailModel,
   providerMatchRosterModel,
   providerPositionLabelKey,
+  providerPositionShortLabelKey,
 } from "./provider-match-detail-model.ts";
+import {
+  MIN_PLAYMAKER_PASS_ATTEMPTS,
+  matchRatioLeader,
+  matchVolumeRatioLeader,
+} from "./provider-match-detail-ranking.ts";
 
 describe("provider match detail model", () => {
   it("puts the selected away club first and sorts rating descending with null last", () => {
@@ -83,7 +89,11 @@ describe("provider match detail model", () => {
 
   it("maps known positions and leaves abbreviations unchanged", () => {
     expect(providerPositionLabelKey("goalkeeper")).toBe("player.matchDetail.position.goalkeeper");
+    expect(providerPositionShortLabelKey("goalkeeper")).toBe(
+      "player.matchDetail.position.short.goalkeeper",
+    );
     expect(providerPositionLabelKey("ST")).toBeNull();
+    expect(providerPositionShortLabelKey("ST")).toBeNull();
   });
 
   it("strips roster players and names the listed-club MVP for the scoreboard row", () => {
@@ -306,6 +316,134 @@ describe("provider match detail model", () => {
     expect(providerMatchDetailModel(detail).highlights.items.map((item) => item.kind)).toEqual([
       "rival",
     ]);
+  });
+});
+
+describe("matchRatioLeader", () => {
+  it("picks the higher completed-to-attempted ratio", () => {
+    expect(
+      matchRatioLeader(
+        [
+          { ...player("Spray", "10754", 8), tacklesMade: 6, tackleAttempts: 12 },
+          { ...player("Precise", "99", 7), tacklesMade: 4, tackleAttempts: 5 },
+        ],
+        (entry) => entry.tacklesMade,
+        (entry) => entry.tackleAttempts,
+      )?.displayName,
+    ).toBe("Precise");
+  });
+
+  it("breaks equal ratios with more attempts, then rating, then original index", () => {
+    expect(
+      matchRatioLeader(
+        [
+          { ...player("Small Sample", "10754", 9), passesMade: 3, passAttempts: 3 },
+          { ...player("Large Sample", "99", 7), passesMade: 10, passAttempts: 10 },
+        ],
+        (entry) => entry.passesMade,
+        (entry) => entry.passAttempts,
+      )?.displayName,
+    ).toBe("Large Sample");
+
+    expect(
+      matchRatioLeader(
+        [
+          { ...player("Earlier", "10754", 8), passesMade: 8, passAttempts: 10 },
+          { ...player("Later Higher Rated", "99", 9), passesMade: 8, passAttempts: 10 },
+        ],
+        (entry) => entry.passesMade,
+        (entry) => entry.passAttempts,
+      )?.displayName,
+    ).toBe("Later Higher Rated");
+
+    expect(
+      matchRatioLeader(
+        [
+          { ...player("Earlier Equal", "10754", 8), passesMade: 8, passAttempts: 10 },
+          { ...player("Later Equal", "99", 8), passesMade: 8, passAttempts: 10 },
+        ],
+        (entry) => entry.passesMade,
+        (entry) => entry.passAttempts,
+      )?.displayName,
+    ).toBe("Earlier Equal");
+  });
+
+  it("skips unknown, zero attempts, and zero completed actions", () => {
+    expect(
+      matchRatioLeader(
+        [
+          { ...player("Unknown", "10754", 9), tacklesMade: null, tackleAttempts: 4 },
+          { ...player("No Tries", "10754", 9), tacklesMade: 2, tackleAttempts: 0 },
+          { ...player("Missed All", "99", 9), tacklesMade: 0, tackleAttempts: 8 },
+        ],
+        (entry) => entry.tacklesMade,
+        (entry) => entry.tackleAttempts,
+      ),
+    ).toBeNull();
+  });
+
+  it("ignores samples below the minimum attempt floor", () => {
+    expect(
+      matchRatioLeader(
+        [
+          { ...player("Perfect Few", "10754", 9), passesMade: 4, passAttempts: 4 },
+          { ...player("Good Enough", "99", 7), passesMade: 9, passAttempts: 10 },
+        ],
+        (entry) => entry.passesMade,
+        (entry) => entry.passAttempts,
+        MIN_PLAYMAKER_PASS_ATTEMPTS,
+      )?.displayName,
+    ).toBe("Good Enough");
+  });
+});
+
+describe("matchVolumeRatioLeader", () => {
+  it("picks more completed actions over a better ratio", () => {
+    expect(
+      matchVolumeRatioLeader(
+        [
+          { ...player("Spray", "10754", 7), tacklesMade: 6, tackleAttempts: 12 },
+          { ...player("Precise", "99", 9), tacklesMade: 4, tackleAttempts: 5 },
+        ],
+        (entry) => entry.tacklesMade,
+        (entry) => entry.tackleAttempts,
+      )?.displayName,
+    ).toBe("Spray");
+  });
+
+  it("breaks equal volume with ratio, then rating, then original index", () => {
+    expect(
+      matchVolumeRatioLeader(
+        [
+          { ...player("Messy", "10754", 9), tacklesMade: 6, tackleAttempts: 12 },
+          { ...player("Clean", "99", 7), tacklesMade: 6, tackleAttempts: 8 },
+        ],
+        (entry) => entry.tacklesMade,
+        (entry) => entry.tackleAttempts,
+      )?.displayName,
+    ).toBe("Clean");
+
+    expect(
+      matchVolumeRatioLeader(
+        [
+          { ...player("Unknown Attempts", "10754", 9), tacklesMade: 6, tackleAttempts: null },
+          { ...player("Known Attempts", "99", 7), tacklesMade: 6, tackleAttempts: 10 },
+        ],
+        (entry) => entry.tacklesMade,
+        (entry) => entry.tackleAttempts,
+      )?.displayName,
+    ).toBe("Known Attempts");
+
+    expect(
+      matchVolumeRatioLeader(
+        [
+          { ...player("Earlier", "10754", 8), tacklesMade: 4, tackleAttempts: 8 },
+          { ...player("Later Higher Rated", "99", 9), tacklesMade: 4, tackleAttempts: 8 },
+        ],
+        (entry) => entry.tacklesMade,
+        (entry) => entry.tackleAttempts,
+      )?.displayName,
+    ).toBe("Later Higher Rated");
   });
 });
 

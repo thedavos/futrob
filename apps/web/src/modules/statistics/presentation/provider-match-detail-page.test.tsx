@@ -89,6 +89,8 @@ describe("ProviderMatchDetailView", () => {
 
     await user.click(screen.getByRole("tab", { name: "Jugadores" }));
 
+    expect(screen.getByRole("heading", { level: 2, name: "Plantillas del partido" })).toBeTruthy();
+    expect(screen.getByText("3 jugadores registrados")).toBeTruthy();
     expect(screen.getByText("Tú").getAttribute("data-variant")).toBe("outline");
     const mvpBadge = screen
       .getAllByText("MVP")
@@ -96,8 +98,10 @@ describe("ProviderMatchDetailView", () => {
     expect(mvpBadge?.getAttribute("data-variant")).toBe("outline");
     const selected = document.querySelector("[data-roster='selected']");
     const opponent = document.querySelector("[data-roster='opponent']");
-    expect(selected?.querySelector("h2")?.textContent).toContain("Selected away");
-    expect(opponent?.querySelector("h2")?.textContent).toContain("Home");
+    expect(selected?.querySelector("h3")?.textContent).toContain("Selected away");
+    expect(opponent?.querySelector("h3")?.textContent).toContain("Home");
+    expect(selected?.querySelector("[data-team-winner]")).toBeTruthy();
+    expect(opponent?.querySelector("[data-team-winner]")).toBeNull();
     expect(
       [...(selected?.querySelectorAll("[data-roster-player]") ?? [])].map((row) =>
         row.getAttribute("data-player-name"),
@@ -108,12 +112,19 @@ describe("ProviderMatchDetailView", () => {
         ?.textContent,
     ).toBe("0");
     expect(
-      selected?.querySelector("[data-player-name='Alpha'] [data-player-metric='saves']")
+      selected?.querySelector("[data-player-name='Alpha'] [data-player-metric='position']")
         ?.textContent,
-    ).toBe("—");
+    ).toBe("MC");
+    expect(
+      selected?.querySelector("[data-player-name='Alpha'] [data-player-metric='passes']")
+        ?.textContent,
+    ).toBe("0/0");
+    expect(
+      selected?.querySelector("[data-player-name='Alpha'] [data-player-metric='saves']"),
+    ).toBeNull();
     expect(
       selected?.querySelectorAll("[data-player-name='Alpha'] [data-player-metric]"),
-    ).toHaveLength(13);
+    ).toHaveLength(7);
   });
 
   it("shows No jugaste without a personal summary or highlighted roster row", async () => {
@@ -216,7 +227,8 @@ describe("ProviderMatchDetailView", () => {
     await user.click(screen.getByRole("tab", { name: "Jugadores" }));
 
     expect(screen.getAllByText("No hay datos de jugadores para esta plantilla.")).toHaveLength(2);
-    expect(document.querySelectorAll("[data-roster] ol")).toHaveLength(0);
+    expect(document.querySelectorAll("[data-roster] table")).toHaveLength(2);
+    expect(screen.getByText("0 jugadores registrados")).toBeTruthy();
   });
 
   it("localizes known positions and leaves abbreviations unchanged", async () => {
@@ -234,6 +246,11 @@ describe("ProviderMatchDetailView", () => {
     expect(
       document.querySelector("[data-player-name='Keeper'] [data-player-metric='position']")
         ?.textContent,
+    ).toBe("POR");
+    expect(
+      document
+        .querySelector("[data-player-name='Keeper'] [data-player-metric='position'] abbr")
+        ?.getAttribute("title"),
     ).toBe("Portero");
     expect(
       document.querySelector("[data-player-name='Striker'] [data-player-metric='position']")
@@ -274,8 +291,10 @@ describe("ProviderMatchDetailView", () => {
     expect(personal?.textContent).not.toContain("Passes completed");
     expect(personal?.textContent).not.toContain("Tackles completed");
     await user.click(screen.getByRole("tab", { name: "Players" }));
-    expect(screen.getByText("Selected club")).toBeTruthy();
-    expect(screen.getByText("Opponent")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Match rosters" })).toBeTruthy();
+    expect(screen.getByText("0 registered players")).toBeTruthy();
+    expect(screen.queryByText("Selected club")).toBeNull();
+    expect(screen.queryByText("Opponent")).toBeNull();
   });
 
   it.each([
