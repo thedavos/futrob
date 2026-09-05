@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { useContext, useMemo, useState, type ReactNode } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { ONBOARDING_PATH } from "@futrob/identity";
@@ -38,10 +38,9 @@ import {
 } from "./workspace-selection-storage.ts";
 import { buildWorkspaceSelectorModel } from "./workspace-selector-model.ts";
 import { commandBarIdentity } from "./command-bar-identity.ts";
+import { WorkspaceSelectionContext } from "./workspace-selection-context.ts";
 
-type WorkspaceSelectionState = ReturnType<typeof useWorkspaceSelectionState>;
-
-const WorkspaceSelectionContext = createContext<WorkspaceSelectionState | null>(null);
+export type WorkspaceSelectionState = ReturnType<typeof useWorkspaceSelectionState>;
 
 export function WorkspaceSelectionProvider({ children }: { readonly children: ReactNode }) {
   const value = useWorkspaceSelectionState();
