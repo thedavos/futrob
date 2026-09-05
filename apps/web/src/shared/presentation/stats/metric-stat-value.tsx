@@ -1,11 +1,13 @@
-import { StatValue } from "@futrob/ui";
+import { StatValue, type HostClassName } from "@futrob/ui";
 
 export function MetricStatValue({
+  className,
   emptyLabel,
   metric,
   size = "compact",
   value,
 }: {
+  readonly className?: HostClassName;
   readonly emptyLabel: string;
   readonly metric?: string;
   readonly size?: "compact" | "default";
@@ -13,6 +15,7 @@ export function MetricStatValue({
 }) {
   return (
     <StatValue
+      className={className}
       data-metric={metric}
       size={value === null ? "empty" : size}
       tone={value === null ? "muted" : "default"}
