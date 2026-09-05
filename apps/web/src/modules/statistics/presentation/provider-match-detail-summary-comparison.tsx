@@ -18,11 +18,16 @@ const styles = stylex.create({
   section: {
     display: "flex",
     minWidth: 0,
+    height: "100%",
     flexDirection: "column",
     gap: "1rem",
   },
   card: {
+    display: "flex",
     minWidth: 0,
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
   },
   header: {
     display: "flex",
@@ -38,6 +43,10 @@ const styles = stylex.create({
     gap: "0.75rem",
   },
   content: {
+    display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
     paddingInline: "1.25rem",
     paddingBottom: "1.25rem",
   },

@@ -70,20 +70,32 @@ describe("ProviderMatchDetailView", () => {
     expect(screen.getByRole("tab", { name: "Datos del partido" })).toBeTruthy();
     expect(screen.getByText("Comparación de equipos")).toBeTruthy();
     expect(screen.getByText("Tu rendimiento")).toBeTruthy();
+    expect(screen.getByText("Destacados del partido")).toBeTruthy();
+    expect(summaryHeadingOrder()).toEqual([
+      "Tu rendimiento",
+      "Comparación de equipos",
+      "Destacados del partido",
+    ]);
+    expect(document.querySelector("[data-summary-stats]")).toBeTruthy();
+    expect(document.querySelector("[data-personal-summary] [data-slot='card']")).toBeTruthy();
     expect(document.querySelector("[data-comparison-metric='goals']")?.textContent).toContain("2");
     expect(document.querySelector("[data-highlight='mvp']")?.textContent).toContain("Alpha");
     const personal = document.querySelector("[data-personal-summary]");
     expect(personal?.querySelector("[data-metric='goals']")?.textContent).toBe("0");
-    expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe(
+    expect(personal?.querySelector("[data-metric='passAccuracy']")?.textContent).toBe(
       passAccuracyPercent("es", 6, 8),
     );
-    expect(personal?.querySelector("[data-metric='tacklesMade']")?.textContent).toBe(
+    expect(personal?.querySelector("[data-metric='tackleAccuracy']")?.textContent).toBe(
       passAccuracyPercent("es", 1, 1),
     );
+    expect(personal?.querySelector("[data-metric='yellowCards']")?.textContent).toBe("0");
+    expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe("6/8");
+    expect(personal?.querySelector("[data-metric='tacklesMade']")?.textContent).toBe("1/1");
     expect(personal?.textContent).toContain("Precisión de pase");
     expect(personal?.textContent).toContain("Precisión de entradas");
-    expect(personal?.textContent).not.toContain("Pases completados");
-    expect(personal?.textContent).not.toContain("Entradas completadas");
+    expect(personal?.textContent).toContain("Pases completados");
+    expect(personal?.textContent).toContain("Entradas completadas");
+    expect(personal?.textContent).toContain("Tarjetas amarillas");
     expect(personal?.textContent).toContain("Alpha");
     expect(screen.queryByText("Club seleccionado")).toBeNull();
 
@@ -141,7 +153,9 @@ describe("ProviderMatchDetailView", () => {
     expect(screen.getByText("No jugaste")).toBeTruthy();
     expect(screen.queryByText("Tu rendimiento")).toBeNull();
     expect(document.querySelector("[data-personal-summary]")).toBeNull();
+    expect(document.querySelector("[data-summary-stats]")).toBeNull();
     expect(screen.getByText("Destacados del partido")).toBeTruthy();
+    expect(summaryHeadingOrder()).toEqual(["Comparación de equipos", "Destacados del partido"]);
     expect(document.querySelector("[data-personal-player]")).toBeNull();
 
     await user.click(screen.getByRole("tab", { name: "Jugadores" }));
@@ -283,13 +297,16 @@ describe("ProviderMatchDetailView", () => {
     expect(screen.getByRole("tab", { name: "Summary" })).toBeTruthy();
     expect(screen.getByText("Your performance")).toBeTruthy();
     const personal = document.querySelector("[data-personal-summary]");
-    expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe(
+    expect(personal?.querySelector("[data-metric='passAccuracy']")?.textContent).toBe(
       passAccuracyPercent("en", 6, 8),
     );
+    expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe("6/8");
+    expect(personal?.querySelector("[data-metric='tacklesMade']")?.textContent).toBe("1/1");
     expect(personal?.textContent).toContain("Pass accuracy");
     expect(personal?.textContent).toContain("Tackle accuracy");
-    expect(personal?.textContent).not.toContain("Passes completed");
-    expect(personal?.textContent).not.toContain("Tackles completed");
+    expect(personal?.textContent).toContain("Passes completed");
+    expect(personal?.textContent).toContain("Tackles completed");
+    expect(personal?.textContent).toContain("Yellow cards");
     await user.click(screen.getByRole("tab", { name: "Players" }));
     expect(screen.getByRole("heading", { name: "Match rosters" })).toBeTruthy();
     expect(screen.getByText("0 registered players")).toBeTruthy();
@@ -338,18 +355,35 @@ describe("ProviderMatchDetailView", () => {
       renderDetail({ kind: "ready", detail }, locale);
       const personal = document.querySelector("[data-personal-summary]");
 
-      expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe(
+      expect(personal?.querySelector("[data-metric='passAccuracy']")?.textContent).toBe(
         passAccuracyPercent(locale, 24, 34),
       );
-      expect(personal?.querySelector("[data-metric='tacklesMade']")?.textContent).toBe(
+      expect(personal?.querySelector("[data-metric='tackleAccuracy']")?.textContent).toBe(
         passAccuracyPercent(locale, 2, 9),
       );
+      expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe("24/34");
+      expect(personal?.querySelector("[data-metric='tacklesMade']")?.textContent).toBe("2/9");
       expect(personal?.textContent).toContain(passLabel);
       expect(personal?.textContent).toContain(tackleLabel);
-      expect(personal?.textContent).not.toContain("24/34");
-      expect(personal?.textContent).not.toContain("2/9");
     },
   );
+
+  it.each([
+    [6.9, "normal"] as const,
+    [7, "good"] as const,
+    [8.8, "good"] as const,
+    [9, "excellent"] as const,
+  ])("colors personal rating %s as %s", (rating, tone) => {
+    const detail = recentProviderMatchDetailFixture({ appearance: { rating } });
+
+    renderDetail({ kind: "ready", detail });
+
+    expect(
+      document
+        .querySelector("[data-personal-summary] [data-performance-item='rating']")
+        ?.getAttribute("data-rating-tone"),
+    ).toBe(tone);
+  });
 
   it("omits personal pass and tackle percents when attempts are zero or unknown", () => {
     const detail = recentProviderMatchDetailFixture({
@@ -364,10 +398,28 @@ describe("ProviderMatchDetailView", () => {
     renderDetail({ kind: "ready", detail });
     const personal = document.querySelector("[data-personal-summary]");
 
-    expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe("Sin datos");
+    expect(personal?.querySelector("[data-metric='passAccuracy']")?.textContent).toBe("Sin datos");
+    expect(personal?.querySelector("[data-metric='tackleAccuracy']")?.textContent).toBe(
+      "Sin datos",
+    );
+    expect(personal?.querySelector("[data-metric='passesMade']")?.textContent).toBe("0/0");
     expect(personal?.querySelector("[data-metric='tacklesMade']")?.textContent).toBe("Sin datos");
     expect(personal?.textContent).not.toContain("0 %");
     expect(personal?.textContent).not.toContain("0%");
+
+    const metricItems = [
+      ...document.querySelectorAll(
+        "[data-personal-summary] [data-performance-item]:not([data-performance-item='rating'])",
+      ),
+    ];
+    expect(metricItems).toHaveLength(9);
+    for (const item of metricItems) {
+      expect(item.querySelector("[data-slot='badge']")).toBeNull();
+      const stat = item.querySelector("[data-slot='stat']");
+      expect(stat?.children).toHaveLength(2);
+      expect(stat?.children[0]?.getAttribute("data-slot")).toBe("stat-label");
+      expect(stat?.children[1]?.getAttribute("data-slot")).toBe("stat-value");
+    }
   });
 
   it("omits highlight pass accuracy when attempts are zero or unknown", () => {
@@ -394,6 +446,14 @@ describe("ProviderMatchDetailView", () => {
     );
   });
 });
+
+function summaryHeadingOrder(): string[] {
+  return [
+    ...document.querySelectorAll(
+      "[data-personal-summary] h2, [data-team-comparison] h2, [data-match-highlights] h2",
+    ),
+  ].map((node) => node.textContent ?? "");
+}
 
 function renderDetail(
   state: ProviderMatchDetailViewState,

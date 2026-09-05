@@ -177,8 +177,8 @@ export const Ready: Story = {
     await expect(canvasElement.querySelector("[data-match-status='finalized']")).toHaveTextContent(
       "Finalizado",
     );
-    await expect(canvas.getByText("Comparación de equipos")).toBeVisible();
     await expect(canvas.getByText("Tu rendimiento")).toBeVisible();
+    await expect(canvas.getByText("Comparación de equipos")).toBeVisible();
     await expect(canvas.getByText("Destacados del partido")).toBeVisible();
     await expect(canvas.getAllByText("davos282")[0]).toBeVisible();
   },
