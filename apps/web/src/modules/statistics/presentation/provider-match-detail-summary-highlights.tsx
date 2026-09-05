@@ -3,7 +3,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Badge, Stat, StatLabel, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
 import { StarIcon } from "@phosphor-icons/react";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
@@ -23,6 +22,7 @@ const styles = stylex.create({
     minWidth: 0,
     flexDirection: "column",
     gap: "1rem",
+    containerType: "inline-size",
   },
   empty: {
     maxWidth: "65ch",
@@ -33,7 +33,8 @@ const styles = stylex.create({
     flexGrow: 1,
     gridTemplateColumns: {
       default: "minmax(0, 1fr)",
-      [media.sm]: "repeat(2, minmax(0, 1fr))",
+      "@container (min-width: 40rem)": "repeat(2, minmax(0, 1fr))",
+      "@container (min-width: 64rem)": "repeat(4, minmax(0, 1fr))",
     },
     alignContent: "stretch",
     gap: "1rem",
@@ -54,7 +55,14 @@ const styles = stylex.create({
     paddingBlock: "1rem",
     gridColumn: {
       default: null,
-      ":nth-child(odd):last-child": "span 2",
+      "@container (min-width: 40rem)": {
+        default: null,
+        ":nth-child(odd):last-child": "span 2",
+      },
+      "@container (min-width: 64rem)": {
+        default: null,
+        ":nth-child(odd):last-child": "auto",
+      },
     },
   },
   itemHeader: {
