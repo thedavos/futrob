@@ -16,10 +16,10 @@
   "dependencies": {
     "@futrob/shared-kernel": "0.1.0",
     "yaml": "^2.8.0",
-    "zod": "4.4.3"
+    "zod": "4.5.4"
   },
   "devDependencies": {
-    "tsx": "4.23.12",
+    "tsx": "4.23.13",
     "typescript": "6.0.2"
   }
 }
