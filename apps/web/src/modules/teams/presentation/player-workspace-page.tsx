@@ -19,13 +19,15 @@ import {
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
-import type { PlayerGameAccountDto, PlayerTeamMembershipDto } from "@futrob/api-contracts";
+import type { PlayerTeamMembershipDto } from "@futrob/api-contracts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   useMyPlayerProfileQuery,
   useMyTeamsQuery,
   useSetActiveTeamMutation,
 } from "./player-queries.ts";
+
+import { platformLabel } from "./platform-label.ts";
 
 const styles = stylex.create({
   main: {
@@ -307,16 +309,6 @@ export function PlayerWorkspacePage() {
       </section>
     </main>
   );
-}
-
-function platformLabel(platform: PlayerGameAccountDto["platform"]): string {
-  return {
-    playstation: "PlayStation",
-    xbox: "Xbox",
-    pc: "PC",
-    "nintendo-switch-1": "Nintendo Switch 1",
-    "nintendo-switch-2": "Nintendo Switch 2",
-  }[platform];
 }
 
 function rosterRoleLabel(role: PlayerTeamMembershipDto["membership"]["role"]): string {

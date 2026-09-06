@@ -37,6 +37,8 @@ import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { useAddMyGameAccountMutation, useMyPlayerProfileQuery } from "./player-queries.ts";
 
+import { platformLabel } from "./platform-label.ts";
+
 const styles = stylex.create({
   main: {
     width: "100%",
@@ -288,14 +290,4 @@ export function PlayerGameAccountsPage() {
       </section>
     </main>
   );
-}
-
-function platformLabel(platform: GamePlatformDto): string {
-  return {
-    playstation: "PlayStation",
-    xbox: "Xbox",
-    pc: "PC",
-    "nintendo-switch-1": "Nintendo Switch 1",
-    "nintendo-switch-2": "Nintendo Switch 2",
-  }[platform];
 }
