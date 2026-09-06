@@ -9,6 +9,8 @@ type TableProps = React.ComponentProps<"table"> & {
   /** Reduces row height to 36px on desktop. Touch layouts remain comfortable. */
   dense?: boolean;
   containerClassName?: HostClassName;
+  /** Accessible name for the horizontally scrollable container. */
+  containerLabelledBy?: string;
 };
 
 const styles = stylex.create({
@@ -85,10 +87,19 @@ const styles = stylex.create({
   },
 });
 
-function Table({ className, style, containerClassName, dense = false, ...props }: TableProps) {
+function Table({
+  className,
+  style,
+  containerClassName,
+  containerLabelledBy,
+  dense = false,
+  ...props
+}: TableProps) {
   return (
     <div
       data-slot="table-container"
+      tabIndex={0}
+      aria-labelledby={containerLabelledBy}
       {...applyProps(containerClassName, undefined, styles.container)}
     >
       <table

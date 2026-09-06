@@ -129,7 +129,7 @@ function RosterTable({
           {t("player.matchDetail.rosters.playerCount", { count: section.players.length })}
         </p>
       </header>
-      <Table containerClassName={styles.tableContainer} dense>
+      <Table containerClassName={styles.tableContainer} containerLabelledBy={headingId} dense>
         <TableHeader>
           <TableRow>
             {ROSTER_COLUMNS.map((column) => (
