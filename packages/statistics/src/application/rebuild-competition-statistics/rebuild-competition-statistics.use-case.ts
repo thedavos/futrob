@@ -27,6 +27,7 @@ import {
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
 import type { ProjectOfficialResultUseCase } from "../project-official-result/project-official-result.use-case.ts";
+import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 
 export interface RebuildCompetitionStatisticsInput {
@@ -236,30 +237,8 @@ function matchedPlayerProfiles(contributions: readonly PlayerMatchContribution[]
   return profiles;
 }
 
-function addMatchedPlayerProfiles(
-  profiles: Set<string>,
-  contributions: readonly PlayerMatchContribution[],
-): void {
-  for (const contribution of contributions) {
-    if (contribution.correlationStatus === "matched" && contribution.playerProfileId !== null) {
-      profiles.add(contribution.playerProfileId);
-    }
-  }
-}
-
 function matchedTeams(contributions: readonly TeamMatchContribution[]): Set<TeamId> {
   const teams = new Set<TeamId>();
   addMatchedTeams(teams, contributions);
   return teams;
-}
-
-function addMatchedTeams(
-  teams: Set<TeamId>,
-  contributions: readonly TeamMatchContribution[],
-): void {
-  for (const contribution of contributions) {
-    if (contribution.correlationStatus === "matched" && contribution.teamId !== null) {
-      teams.add(contribution.teamId);
-    }
-  }
 }

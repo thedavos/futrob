@@ -32,10 +32,9 @@ import {
   buildCompetitionStandings,
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
+import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 import {
-  addMatchedProfiles,
-  addMatchedTeams,
   buildPlayerContributions as projectPlayerContributions,
   buildTeamContributions as projectTeamContributions,
   type PlayerProjectionDependencies,
@@ -113,8 +112,8 @@ export class ProjectOfficialResultUseCase {
     const nextPlayers = await this.playerContributionsForStatus(officialResult);
     const nextTeams = await this.teamContributionsForStatus(officialResult);
     const affectedPlayerProfiles = new Set<string>();
-    addMatchedProfiles(affectedPlayerProfiles, previousPlayers);
-    addMatchedProfiles(affectedPlayerProfiles, nextPlayers);
+    addMatchedPlayerProfiles(affectedPlayerProfiles, previousPlayers);
+    addMatchedPlayerProfiles(affectedPlayerProfiles, nextPlayers);
     const affectedTeams = new Set<TeamId>();
     addMatchedTeams(affectedTeams, previousTeams);
     addMatchedTeams(affectedTeams, nextTeams);

@@ -28,28 +28,6 @@ export function mapExternalClubToTeam(input: {
   return null;
 }
 
-export function addMatchedProfiles(
-  profiles: Set<string>,
-  contributions: readonly PlayerMatchContribution[],
-): void {
-  for (const contribution of contributions) {
-    if (contribution.correlationStatus === "matched" && contribution.playerProfileId !== null) {
-      profiles.add(contribution.playerProfileId);
-    }
-  }
-}
-
-export function addMatchedTeams(
-  teams: Set<TeamId>,
-  contributions: readonly TeamMatchContribution[],
-): void {
-  for (const contribution of contributions) {
-    if (contribution.correlationStatus === "matched" && contribution.teamId !== null) {
-      teams.add(contribution.teamId);
-    }
-  }
-}
-
 export function playerContributionId(input: {
   readonly officialResultId: string;
   readonly revision: number;
