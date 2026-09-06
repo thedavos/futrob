@@ -28,7 +28,7 @@ const styles = stylex.create({
   primary: {
     borderColor: "color-mix(in oklab, var(--primary) 20%, transparent)",
     backgroundColor: "color-mix(in oklab, var(--primary) 10%, transparent)",
-    color: colors.primary,
+    color: colors.accentForeground,
   },
   approved: {
     borderColor: "color-mix(in oklab, var(--approved) 25%, transparent)",
