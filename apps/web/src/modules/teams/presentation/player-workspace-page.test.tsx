@@ -26,11 +26,23 @@ vi.mock("./teams-browser-client.ts", () => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
-  ),
+  Link: ({
+    to,
+    search,
+    children,
+    ...props
+  }: {
+    to: string;
+    search?: Record<string, string>;
+    children?: ReactNode;
+  }) => {
+    const href = search == null ? to : `${to}?${new URLSearchParams(search).toString()}`;
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    );
+  },
 }));
 
 describe("PlayerWorkspacePage", () => {
@@ -104,7 +116,7 @@ describe("PlayerWorkspacePage", () => {
     expect(await screen.findByText("Alpha FC")).toBeTruthy();
     expect(screen.getByText("Beta FC")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Abrir Mis partidos" }).getAttribute("href")).toBe(
-      "/player/matches",
+      "/player/matches?view=all",
     );
     expect(screen.getByRole("button", { name: "Abrir tu perfil" }).getAttribute("href")).toBe(
       "/player/statistics",
@@ -134,7 +146,7 @@ describe("PlayerWorkspacePage", () => {
       ),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Open My matches" }).getAttribute("href")).toBe(
-      "/player/matches",
+      "/player/matches?view=all",
     );
     expect(screen.getByRole("button", { name: "Open your profile" }).getAttribute("href")).toBe(
       "/player/statistics",

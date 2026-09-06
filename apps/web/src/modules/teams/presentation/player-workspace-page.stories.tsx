@@ -114,7 +114,7 @@ export const Ready: Story = {
     await expect(canvas.getByRole("heading", { name: "Mis estadísticas" })).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Abrir Mis partidos" })).toHaveAttribute(
       "href",
-      "/player/matches",
+      "/player/matches?view=all",
     );
     await expect(canvas.getByRole("button", { name: "Abrir tu perfil" })).toHaveAttribute(
       "href",
