@@ -207,10 +207,23 @@ export const setActiveTeamResponseSchema = z.object({
 });
 export type SetActiveTeamResponse = z.infer<typeof setActiveTeamResponseSchema>;
 
+export const rosterInvitationStatusSchema = z.enum([
+  "pending",
+  "accepted",
+  "declined",
+  "revoked",
+  "expired",
+]);
+export type RosterInvitationStatusDto = z.infer<typeof rosterInvitationStatusSchema>;
+
 export const createRosterInvitationRequestSchema = z.object({
   role: rosterMembershipRoleSchema.default("player"),
   expiresInMs: z.number().int().positive().optional(),
   redeemPolicy: z.enum(["single", "multi"]).default("single"),
+  inviteeIdentifier: z.string().trim().min(1).max(80).nullable().optional(),
+  message: z.string().trim().min(1).max(500).nullable().optional(),
+  /** Snapshot injected server-side by the web BFF from the inviter session. */
+  invitedByDisplayName: z.string().trim().min(1).max(120).nullable().optional(),
 });
 export type CreateRosterInvitationRequest = z.infer<typeof createRosterInvitationRequestSchema>;
 export type CreateRosterInvitationRequestInput = z.input<
@@ -223,11 +236,54 @@ export const rosterInvitationMetaSchema = z.object({
   competitionId: z.string().min(1),
   teamId: z.string().min(1),
   role: rosterMembershipRoleSchema,
-  status: z.enum(["pending", "accepted", "revoked", "expired"]),
+  status: rosterInvitationStatusSchema,
   expiresAt: z.string().datetime(),
   createdAt: z.string().datetime(),
 });
 export type RosterInvitationMetaDto = z.infer<typeof rosterInvitationMetaSchema>;
+
+export const rosterInvitationInboxItemSchema = z.object({
+  invitationId: z.string().min(1),
+  organizationId: z.string().min(1),
+  competitionId: z.string().min(1),
+  teamId: z.string().min(1),
+  teamName: z.string().min(1),
+  clubName: z.string().min(1),
+  crestUrl: z.string().url().nullable(),
+  role: rosterMembershipRoleSchema,
+  status: rosterInvitationStatusSchema,
+  invitedBy: z.object({
+    displayName: z.string().min(1),
+    gamertag: z.string().min(1).nullable(),
+    role: rosterMembershipRoleSchema.nullable(),
+  }),
+  recipientIdentifier: z.string().min(1).nullable(),
+  message: z.string().min(1).nullable(),
+  createdAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+  respondedAt: z.string().datetime().nullable(),
+});
+export type RosterInvitationInboxItemDto = z.infer<typeof rosterInvitationInboxItemSchema>;
+
+export const listMyRosterInvitationsResponseSchema = z.object({
+  invitations: z.array(rosterInvitationInboxItemSchema),
+});
+export type ListMyRosterInvitationsResponse = z.infer<typeof listMyRosterInvitationsResponseSchema>;
+
+export const respondToRosterInvitationRequestSchema = z.object({
+  action: z.enum(["accept", "decline"]),
+});
+export type RespondToRosterInvitationRequest = z.infer<
+  typeof respondToRosterInvitationRequestSchema
+>;
+
+export const respondToRosterInvitationResponseSchema = z.object({
+  status: rosterInvitationStatusSchema,
+  membership: competitionRosterMembershipSchema.nullable(),
+});
+export type RespondToRosterInvitationResponse = z.infer<
+  typeof respondToRosterInvitationResponseSchema
+>;
 
 export const createRosterInvitationResponseSchema = rosterInvitationMetaSchema.extend({
   token: z.string().min(1),

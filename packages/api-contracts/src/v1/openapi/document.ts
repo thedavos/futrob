@@ -1030,6 +1030,113 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/players/me/roster-invitations": {
+      get: {
+        operationId: "listMyRosterInvitations",
+        tags: ["players"],
+        summary: "List roster invitations directed at the authenticated player",
+        responses: {
+          "200": {
+            description: "Directed roster invitations, newest first",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["invitations"],
+                  properties: {
+                    invitations: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/RosterInvitationInboxItem" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/roster-invitations/{invitationId}/respond": {
+      post: {
+        operationId: "respondToRosterInvitation",
+        tags: ["players"],
+        summary: "Accept or decline a roster invitation directed at the authenticated player",
+        parameters: [
+          { name: "invitationId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["action"],
+                properties: {
+                  action: { type: "string", enum: ["accept", "decline"] },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Invitation response applied",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["status", "membership"],
+                  properties: {
+                    status: {
+                      type: "string",
+                      enum: ["pending", "accepted", "declined", "revoked", "expired"],
+                    },
+                    membership: {
+                      anyOf: [
+                        {
+                          type: "object",
+                          required: [
+                            "id",
+                            "organizationId",
+                            "competitionId",
+                            "teamId",
+                            "playerProfileId",
+                            "gameAccountId",
+                            "role",
+                            "createdAt",
+                          ],
+                          properties: {
+                            id: { type: "string" },
+                            organizationId: { type: "string" },
+                            competitionId: { type: "string" },
+                            teamId: { type: "string" },
+                            playerProfileId: { type: "string" },
+                            gameAccountId: { type: ["string", "null"] },
+                            role: {
+                              type: "string",
+                              enum: ["player", "captain", "vice_captain"],
+                            },
+                            createdAt: { type: "string", format: "date-time" },
+                          },
+                        },
+                        { type: "null" },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+          "429": { $ref: "#/components/responses/RateLimited" },
+        },
+      },
+    },
     "/organizations/{organizationId}/competitions": {
       get: {
         operationId: "listOrganizationCompetitions",
@@ -2501,6 +2608,59 @@ export const futrobOpenApiV1 = {
               { type: "null" },
             ],
           },
+        },
+      },
+      RosterInvitationInboxItem: {
+        type: "object",
+        required: [
+          "invitationId",
+          "organizationId",
+          "competitionId",
+          "teamId",
+          "teamName",
+          "clubName",
+          "crestUrl",
+          "role",
+          "status",
+          "invitedBy",
+          "recipientIdentifier",
+          "message",
+          "createdAt",
+          "expiresAt",
+          "respondedAt",
+        ],
+        properties: {
+          invitationId: { type: "string" },
+          organizationId: { type: "string" },
+          competitionId: { type: "string" },
+          teamId: { type: "string" },
+          teamName: { type: "string" },
+          clubName: { type: "string" },
+          crestUrl: { type: ["string", "null"], format: "uri" },
+          role: { type: "string", enum: ["player", "captain", "vice_captain"] },
+          status: {
+            type: "string",
+            enum: ["pending", "accepted", "declined", "revoked", "expired"],
+          },
+          invitedBy: {
+            type: "object",
+            required: ["displayName", "gamertag", "role"],
+            properties: {
+              displayName: { type: "string" },
+              gamertag: { type: ["string", "null"] },
+              role: {
+                anyOf: [
+                  { type: "string", enum: ["player", "captain", "vice_captain"] },
+                  { type: "null" },
+                ],
+              },
+            },
+          },
+          recipientIdentifier: { type: ["string", "null"] },
+          message: { type: ["string", "null"] },
+          createdAt: { type: "string", format: "date-time" },
+          expiresAt: { type: "string", format: "date-time" },
+          respondedAt: { type: ["string", "null"], format: "date-time" },
         },
       },
       CompetitionTeamManagementDetail: {

@@ -14,11 +14,13 @@ import {
   GetPlayerProfileUseCase,
   GetTeamExternalClubUseCase,
   GetTeamUseCase,
+  ListMyRosterInvitationsUseCase,
   ListRosterForTeamUseCase,
   ListOrganizationTeamsUseCase,
   ListRostersForPlayerUseCase,
   LinkProviderExternalPlayerIdUseCase,
   OpenRosterUseCase,
+  RespondToRosterInvitationUseCase,
   SetActiveTeamUseCase,
   type ActiveTeamPreferenceRepository,
   type CompetitionRosterMembershipRepository,
@@ -56,10 +58,8 @@ import {
   PostgresPlayerGameAccountRepository,
   PostgresPlayerProfileRepository,
 } from "@/adapters/teams/postgres.repository.ts";
-import {
-  InMemoryRosterInvitationRepository,
-  PostgresRosterInvitationRepository,
-} from "@/adapters/teams/roster-invitation.repository.ts";
+import { InMemoryRosterInvitationRepository } from "@/adapters/teams/roster-invitation.in-memory.repository.ts";
+import { PostgresRosterInvitationRepository } from "@/adapters/teams/roster-invitation.repository.ts";
 import { Sha256RosterInvitationTokenPort } from "@/adapters/teams/roster-invitation-token.port.ts";
 import {
   InMemoryRosterMutationPort,
@@ -186,9 +186,26 @@ export function createTeamsModule(input: {
     createRosterInvitation: new CreateRosterInvitationUseCase({
       teams,
       invitations: rosterInvitations,
+      profiles,
+      accounts,
       tokens: rosterInvitationTokens,
       authorization: input.authorization,
       entryGate: input.entryGate,
+      ...shared,
+    }),
+    listMyRosterInvitations: new ListMyRosterInvitationsUseCase({
+      invitations: rosterInvitations,
+    }),
+    respondToRosterInvitation: new RespondToRosterInvitationUseCase({
+      teams,
+      rosters,
+      rosterStates,
+      capacity,
+      entryGate: input.entryGate,
+      invitations: rosterInvitations,
+      accounts,
+      ensurePlayerProfile,
+      mutations: rosterMutations,
       ...shared,
     }),
     acceptRosterInvitation: new AcceptRosterInvitationUseCase({

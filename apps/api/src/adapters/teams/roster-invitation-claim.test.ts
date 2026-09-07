@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { ROSTER_INVITATION_STATUS, type RosterInvitation } from "@futrob/teams";
-import { InMemoryRosterInvitationRepository } from "./roster-invitation.repository.ts";
+import { InMemoryRosterInvitationRepository } from "./roster-invitation.in-memory.repository.ts";
 
 function pendingInvite(overrides?: Partial<RosterInvitation>): RosterInvitation {
   return {
@@ -13,8 +13,14 @@ function pendingInvite(overrides?: Partial<RosterInvitation>): RosterInvitation 
     tokenHash: "hash:token-1",
     status: ROSTER_INVITATION_STATUS.pending,
     invitedByActorId: asActorId("inviter"),
+    invitedByDisplayName: null,
+    invitedByGamertag: null,
+    inviteeActorId: null,
+    inviteeIdentifier: null,
+    message: null,
     expiresAt: new Date("2026-12-01T00:00:00.000Z"),
     acceptedByActorId: null,
+    respondedAt: null,
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     redeemPolicy: "single",
     ...overrides,

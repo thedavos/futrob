@@ -20,7 +20,17 @@ import {
   type PgExecutor,
 } from "@/adapters/persistence/pg-transaction.ts";
 
-const rosterInvitationStatusSchema = z.enum(["pending", "accepted", "revoked", "expired"]);
+const rosterInvitationStatusSchema = z.enum([
+  "pending",
+  "accepted",
+  "declined",
+  "revoked",
+  "expired",
+]);
+
+const pgNullableTimestampSchema = z
+  .union([z.null(), z.undefined(), pgTimestampSchema])
+  .transform((value) => (value === null || value === undefined ? null : value));
 
 export const rosterInvitationRowSchema = z.object({
   id: pgTextSchema,
@@ -31,13 +41,24 @@ export const rosterInvitationRowSchema = z.object({
   token_hash: pgTextSchema,
   status: rosterInvitationStatusSchema,
   invited_by_actor_id: pgTextSchema,
+  invited_by_display_name: pgNullableTextSchema,
+  invited_by_gamertag: pgNullableTextSchema,
+  invitee_actor_id: pgNullableTextSchema,
+  invitee_identifier: pgNullableTextSchema,
+  message: pgNullableTextSchema,
   expires_at: pgTimestampSchema,
   accepted_by_actor_id: pgNullableTextSchema,
+  responded_at: pgNullableTimestampSchema,
   created_at: pgTimestampSchema,
   redeem_policy: redeemPolicySchema,
 });
 
 export type RosterInvitationRow = z.infer<typeof rosterInvitationRowSchema>;
+
+const ROSTER_INVITATION_COLUMNS = `id, organization_id, competition_id, team_id, role, token_hash, status,
+       invited_by_actor_id, invited_by_display_name, invited_by_gamertag,
+       invitee_actor_id, invitee_identifier, message,
+       expires_at, accepted_by_actor_id, responded_at, created_at, redeem_policy`;
 
 const redemptionAtRowSchema = z.object({
   redeemed_at: pgTimestampSchema,
@@ -61,78 +82,17 @@ export function rehydrateRosterInvitation(row: RosterInvitationRow): RosterInvit
     tokenHash: row.token_hash,
     status: row.status,
     invitedByActorId: asActorId(row.invited_by_actor_id),
+    invitedByDisplayName: row.invited_by_display_name,
+    invitedByGamertag: row.invited_by_gamertag,
+    inviteeActorId: row.invitee_actor_id ? asActorId(row.invitee_actor_id) : null,
+    inviteeIdentifier: row.invitee_identifier,
+    message: row.message,
     expiresAt: row.expires_at,
     acceptedByActorId: row.accepted_by_actor_id ? asActorId(row.accepted_by_actor_id) : null,
+    respondedAt: row.responded_at,
     createdAt: row.created_at,
     redeemPolicy: row.redeem_policy,
   };
-}
-
-type RedemptionKey = `${string}:${string}`;
-
-function redemptionKey(invitationId: string, actorId: ActorId): RedemptionKey {
-  return `${invitationId}:${actorId}`;
-}
-
-export class InMemoryRosterInvitationRepository implements RosterInvitationRepository {
-  readonly byHash = new Map<string, RosterInvitation>();
-  readonly redemptions = new Map<RedemptionKey, Date>();
-  rosterMemberCount: ((invitation: RosterInvitation) => number) | null = null;
-
-  async create(invitation: RosterInvitation): Promise<void> {
-    this.byHash.set(invitation.tokenHash, invitation);
-  }
-
-  async findByTokenHash(tokenHash: string): Promise<RosterInvitation | null> {
-    return this.byHash.get(tokenHash) ?? null;
-  }
-
-  async findRedemption(invitationId: string, actorId: ActorId): Promise<Date | null> {
-    return this.redemptions.get(redemptionKey(invitationId, actorId)) ?? null;
-  }
-
-  async deleteRedemption(invitationId: string, actorId: ActorId): Promise<void> {
-    this.redemptions.delete(redemptionKey(invitationId, actorId));
-  }
-
-  async claimPending(
-    tokenHash: string,
-    actorId: ActorId,
-    now: Date,
-    options: ClaimPendingOptions,
-  ): Promise<RosterInvitation | null> {
-    const current = this.byHash.get(tokenHash);
-    if (!current) return null;
-    if (current.status !== ROSTER_INVITATION_STATUS.pending) return null;
-    if (current.expiresAt.getTime() <= now.getTime()) return null;
-
-    if (current.redeemPolicy === "multi") {
-      const key = redemptionKey(current.id, actorId);
-      if (this.redemptions.has(key)) {
-        return current;
-      }
-
-      const memberCount = this.rosterMemberCount?.(current) ?? 0;
-      const redemptionCount = [...this.redemptions.keys()].filter((entry) =>
-        entry.startsWith(`${current.id}:`),
-      ).length;
-      const freeSlots = options.maxRosterSize - memberCount;
-      if (freeSlots <= 0 || redemptionCount >= freeSlots || !options.hasFreeSlot) {
-        return null;
-      }
-
-      this.redemptions.set(key, now);
-      return current;
-    }
-
-    const accepted: RosterInvitation = {
-      ...current,
-      status: ROSTER_INVITATION_STATUS.accepted,
-      acceptedByActorId: actorId,
-    };
-    this.byHash.set(tokenHash, accepted);
-    return accepted;
-  }
 }
 
 export class PostgresRosterInvitationRepository implements RosterInvitationRepository {
@@ -142,8 +102,10 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
     await getPgExecutor(this.pool).query(
       `INSERT INTO roster_invitations (
          id, organization_id, competition_id, team_id, role, token_hash, status,
-         invited_by_actor_id, expires_at, accepted_by_actor_id, created_at, redeem_policy
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+         invited_by_actor_id, invited_by_display_name, invited_by_gamertag,
+         invitee_actor_id, invitee_identifier, message,
+         expires_at, accepted_by_actor_id, responded_at, created_at, redeem_policy
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
       [
         invitation.id,
         invitation.organizationId,
@@ -153,8 +115,14 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
         invitation.tokenHash,
         invitation.status,
         invitation.invitedByActorId,
+        invitation.invitedByDisplayName,
+        invitation.invitedByGamertag,
+        invitation.inviteeActorId,
+        invitation.inviteeIdentifier,
+        invitation.message,
         invitation.expiresAt.toISOString(),
         invitation.acceptedByActorId,
+        invitation.respondedAt?.toISOString() ?? null,
         invitation.createdAt.toISOString(),
         invitation.redeemPolicy,
       ],
@@ -163,13 +131,35 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
 
   async findByTokenHash(tokenHash: string): Promise<RosterInvitation | null> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT id, organization_id, competition_id, team_id, role, token_hash, status,
-              invited_by_actor_id, expires_at, accepted_by_actor_id, created_at, redeem_policy
+      `SELECT ${ROSTER_INVITATION_COLUMNS}
        FROM roster_invitations WHERE token_hash = $1`,
       [tokenHash],
     );
     const row = result.rows[0];
     return row ? rehydrateRosterInvitation(rosterInvitationRowSchema.parse(row)) : null;
+  }
+
+  async findById(invitationId: string): Promise<RosterInvitation | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT ${ROSTER_INVITATION_COLUMNS}
+       FROM roster_invitations WHERE id = $1`,
+      [invitationId],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateRosterInvitation(rosterInvitationRowSchema.parse(row)) : null;
+  }
+
+  async listByInvitee(inviteeActorId: ActorId): Promise<RosterInvitation[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT ${ROSTER_INVITATION_COLUMNS}
+       FROM roster_invitations
+       WHERE invitee_actor_id = $1
+       ORDER BY created_at DESC`,
+      [inviteeActorId],
+    );
+    return result.rows.map((row) =>
+      rehydrateRosterInvitation(rosterInvitationRowSchema.parse(row)),
+    );
   }
 
   async findRedemption(invitationId: string, actorId: ActorId): Promise<Date | null> {
@@ -225,6 +215,58 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
     }
   }
 
+  async declinePending(
+    invitationId: string,
+    inviteeActorId: ActorId,
+    now: Date,
+  ): Promise<RosterInvitation | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE roster_invitations
+       SET status = $4,
+           responded_at = $3
+       WHERE id = $1
+         AND invitee_actor_id = $2
+         AND status = $5
+         AND expires_at > $3
+       RETURNING ${ROSTER_INVITATION_COLUMNS}`,
+      [
+        invitationId,
+        inviteeActorId,
+        now.toISOString(),
+        ROSTER_INVITATION_STATUS.declined,
+        ROSTER_INVITATION_STATUS.pending,
+      ],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateRosterInvitation(rosterInvitationRowSchema.parse(row)) : null;
+  }
+
+  async acceptPendingById(
+    invitationId: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<RosterInvitation | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE roster_invitations
+       SET status = $4,
+           accepted_by_actor_id = $2,
+           responded_at = $3
+       WHERE id = $1
+         AND status = $5
+         AND expires_at > $3
+       RETURNING ${ROSTER_INVITATION_COLUMNS}`,
+      [
+        invitationId,
+        actorId,
+        now.toISOString(),
+        ROSTER_INVITATION_STATUS.accepted,
+        ROSTER_INVITATION_STATUS.pending,
+      ],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateRosterInvitation(rosterInvitationRowSchema.parse(row)) : null;
+  }
+
   private async claimPendingWithExecutor(
     executor: PgExecutor,
     tokenHash: string,
@@ -233,8 +275,7 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
     options: ClaimPendingOptions,
   ): Promise<RosterInvitation | null> {
     const locked = await executor.query(
-      `SELECT id, organization_id, competition_id, team_id, role, token_hash, status,
-              invited_by_actor_id, expires_at, accepted_by_actor_id, created_at, redeem_policy
+      `SELECT ${ROSTER_INVITATION_COLUMNS}
        FROM roster_invitations
        WHERE token_hash = $1
        FOR UPDATE`,
@@ -286,12 +327,12 @@ export class PostgresRosterInvitationRepository implements RosterInvitationRepos
     const accepted = await executor.query(
       `UPDATE roster_invitations
        SET status = $4,
-           accepted_by_actor_id = $2
+           accepted_by_actor_id = $2,
+           responded_at = $3
        WHERE token_hash = $1
          AND status = $5
          AND expires_at > $3
-       RETURNING id, organization_id, competition_id, team_id, role, token_hash, status,
-                 invited_by_actor_id, expires_at, accepted_by_actor_id, created_at, redeem_policy`,
+       RETURNING ${ROSTER_INVITATION_COLUMNS}`,
       [
         tokenHash,
         actorId,

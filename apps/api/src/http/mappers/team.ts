@@ -1,6 +1,7 @@
 import type {
   CompetitionRosterMembershipDto,
   PlayerTeamMembershipDto,
+  RosterInvitationInboxItemDto,
   RosterInvitationMetaDto,
   RosterStateDto,
   TeamDto,
@@ -11,6 +12,8 @@ import type {
   CompetitionRosterState,
   CreateRosterInvitationResult,
   ExternalClubConnection,
+  RosterInvitation,
+  RosterMembershipRole,
   Team,
 } from "@futrob/teams";
 
@@ -50,6 +53,42 @@ export function rosterInvitationMetaDto(
     status: invitation.status,
     expiresAt: invitation.expiresAt.toISOString(),
     createdAt: invitation.createdAt.toISOString(),
+  };
+}
+
+const UNKNOWN_INVITER_DISPLAY_NAME = "Sin nombre público";
+
+export function rosterInvitationInboxItemDto(input: {
+  readonly invitation: RosterInvitation;
+  readonly team: Team | null;
+  readonly externalClub: ExternalClubConnection | null;
+  readonly inviterRole: RosterMembershipRole | null;
+}): RosterInvitationInboxItemDto {
+  const { invitation, team, externalClub } = input;
+  const teamName = team?.name ?? "Equipo";
+  return {
+    invitationId: invitation.id,
+    organizationId: invitation.organizationId,
+    competitionId: invitation.competitionId,
+    teamId: invitation.teamId,
+    teamName,
+    clubName: externalClub?.externalClubName ?? teamName,
+    crestUrl: null,
+    role: invitation.role,
+    status: invitation.status,
+    invitedBy: {
+      displayName:
+        invitation.invitedByDisplayName ??
+        invitation.invitedByGamertag ??
+        UNKNOWN_INVITER_DISPLAY_NAME,
+      gamertag: invitation.invitedByGamertag,
+      role: input.inviterRole,
+    },
+    recipientIdentifier: invitation.inviteeIdentifier,
+    message: invitation.message,
+    createdAt: invitation.createdAt.toISOString(),
+    expiresAt: invitation.expiresAt.toISOString(),
+    respondedAt: invitation.respondedAt?.toISOString() ?? null,
   };
 }
 

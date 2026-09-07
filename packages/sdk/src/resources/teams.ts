@@ -18,6 +18,7 @@ import {
   type CreateTeamRequest,
   type CreateTeamResponse,
   type ListOrganizationTeamsResponse,
+  type RespondToRosterInvitationRequest,
   type SetActiveTeamRequest,
 } from "@futrob/api-contracts";
 import type { HttpClient, RequestOptions } from "../http.ts";
@@ -183,6 +184,14 @@ export function createTeamsResource(http: HttpClient) {
 
     acceptRosterInvitation: (input: AcceptRosterInvitationRequest, options: RequestOptions = {}) =>
       rosterInvitations.accept(input, options),
+
+    listMyRosterInvitations: (options: RequestOptions = {}) => rosterInvitations.listMine(options),
+
+    respondToRosterInvitation: (
+      invitationId: string,
+      input: RespondToRosterInvitationRequest,
+      options: RequestOptions = {},
+    ) => rosterInvitations.respond(invitationId, input, options),
   };
 }
 

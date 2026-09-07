@@ -17,8 +17,11 @@ import {
   competitionTeamManagementListQuerySchema,
   competitionTeamManagementListResponseSchema,
   getTeamExternalClubResponseSchema,
+  listMyRosterInvitationsResponseSchema,
   listRosterResponseSchema,
   openRosterResponseSchema,
+  respondToRosterInvitationRequestSchema,
+  respondToRosterInvitationResponseSchema,
 } from "@futrob/api-contracts";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
@@ -26,6 +29,7 @@ import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/
 import type { AppDeps } from "@/app.ts";
 import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
 import {
+  rosterInvitationInboxItemDto,
   rosterInvitationMetaDto,
   rosterMembershipDto,
   rosterStateDto,
@@ -317,6 +321,9 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
         role: parsed.data.role,
         expiresInMs: parsed.data.expiresInMs,
         redeemPolicy: parsed.data.redeemPolicy,
+        inviteeIdentifier: parsed.data.inviteeIdentifier,
+        message: parsed.data.message,
+        invitedByDisplayName: parsed.data.invitedByDisplayName,
       });
       if (!result.isOk()) return failureToHttp(result.error);
 
@@ -345,6 +352,60 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(
       acceptRosterInvitationResponseSchema.parse(rosterMembershipDto(result.value)),
       201,
+    );
+  });
+
+  secured.get("/players/me/roster-invitations", async (c) => {
+    const actorId = asActorId(c.get("actorId"));
+    const invitations = await deps.modules.teams.listMyRosterInvitations.execute({ actorId });
+    const { teams, rosters, profiles } = deps.modules.teams.repositories;
+
+    const items = await Promise.all(
+      invitations.map(async (invitation) => {
+        const [team, externalClub, inviterProfile] = await Promise.all([
+          teams.findById(invitation.organizationId, invitation.teamId),
+          deps.modules.teams.getTeamExternalClub.execute({ teamId: invitation.teamId }),
+          profiles.findByActor(invitation.invitedByActorId),
+        ]);
+        const inviterMembership = inviterProfile
+          ? await rosters.findByTeamPlayerCompetition(
+              invitation.teamId,
+              inviterProfile.id,
+              invitation.competitionId,
+            )
+          : null;
+        return rosterInvitationInboxItemDto({
+          invitation,
+          team,
+          externalClub,
+          inviterRole: inviterMembership?.role ?? null,
+        });
+      }),
+    );
+
+    return jsonResponse(listMyRosterInvitationsResponseSchema.parse({ invitations: items }));
+  });
+
+  secured.post("/roster-invitations/:invitationId/respond", async (c) => {
+    const parsed = respondToRosterInvitationRequestSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+
+    const result = await deps.modules.teams.respondToRosterInvitation.execute({
+      invitationId: c.req.param("invitationId"),
+      actorId: asActorId(c.get("actorId")),
+      action: parsed.data.action,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+
+    const outcome = result.value;
+    return jsonResponse(
+      respondToRosterInvitationResponseSchema.parse(
+        outcome.kind === "accepted"
+          ? { status: "accepted", membership: rosterMembershipDto(outcome.membership) }
+          : { status: "declined", membership: null },
+      ),
     );
   });
 

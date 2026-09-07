@@ -116,6 +116,18 @@ export class PostgresPlayerGameAccountRepository implements PlayerGameAccountRep
     return result.rows.map(rehydrateAccount);
   }
 
+  async findByNormalizedIdentifier(normalizedIdentifier: string): Promise<PlayerGameAccount[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, player_profile_id, identifier, normalized_identifier,
+              provider_external_player_id, platform, game_edition, created_at
+       FROM player_game_accounts
+       WHERE normalized_identifier = $1
+       ORDER BY created_at ASC`,
+      [normalizedIdentifier],
+    );
+    return result.rows.map(rehydrateAccount);
+  }
+
   async saveIfAbsent(account: PlayerGameAccount): Promise<PlayerGameAccount> {
     const result = await getPgExecutor(this.pool).query(
       `INSERT INTO player_game_accounts (

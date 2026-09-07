@@ -6,7 +6,7 @@ import type {
   PlayerProfile,
   PlayerProfileRepository,
 } from "@futrob/teams";
-import type { ActorId } from "@futrob/shared-kernel";
+import { compareByTime, TIME_SORT_DIRECTION, type ActorId } from "@futrob/shared-kernel";
 
 export class InMemoryPlayerProfileRepository implements PlayerProfileRepository {
   readonly rows = new Map<string, PlayerProfile>();
@@ -39,7 +39,7 @@ export class InMemoryPlayerExternalClubAssociationRepository implements PlayerEx
   ): Promise<readonly PlayerExternalClubAssociation[]> {
     return [...this.rows.values()]
       .filter((row) => row.playerProfileId === playerProfileId)
-      .sort((a, b) => b.associatedAt.getTime() - a.associatedAt.getTime());
+      .sort(compareByTime((item) => item.associatedAt, TIME_SORT_DIRECTION.desc));
   }
 
   async upsertForPlayerProfile(
@@ -64,6 +64,12 @@ export class InMemoryPlayerGameAccountRepository implements PlayerGameAccountRep
 
   async listByProfile(playerProfileId: string): Promise<PlayerGameAccount[]> {
     return [...this.rows.values()].filter((row) => row.playerProfileId === playerProfileId);
+  }
+
+  async findByNormalizedIdentifier(normalizedIdentifier: string): Promise<PlayerGameAccount[]> {
+    return [...this.rows.values()].filter(
+      (row) => row.normalizedIdentifier === normalizedIdentifier,
+    );
   }
 
   async saveIfAbsent(account: PlayerGameAccount): Promise<PlayerGameAccount> {
