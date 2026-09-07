@@ -23,8 +23,8 @@ export const Route = createRootRoute({
         { title: t("app.title") },
         { name: "description", content: t("app.description") },
         { name: "application-name", content: "Futrob" },
-        { name: "color-scheme", content: "light" },
-        { name: "theme-color", content: "#f7faf8" },
+        { name: "color-scheme", content: "dark" },
+        { name: "theme-color", content: "#101214" },
         { property: "og:type", content: "website" },
         { property: "og:locale", content: localeOpenGraphCode(locale) },
         { property: "og:site_name", content: "Futrob" },
@@ -54,7 +54,7 @@ export const Route = createRootRoute({
         { rel: "icon", href: "/icons/favicon-32.png", type: "image/png", sizes: "32x32" },
         { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png", sizes: "180x180" },
         { rel: "manifest", href: "/site.webmanifest" },
-        { rel: "mask-icon", href: "/safari-pinned-tab.svg", color: "#22c55e" },
+        { rel: "mask-icon", href: "/safari-pinned-tab.svg", color: "#caff35" },
       ],
     };
   },
@@ -88,7 +88,7 @@ async function persistUiLocale(locale: Locale): Promise<void> {
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   const { locale } = useI18n();
   return (
-    <html data-theme="light" lang={locale}>
+    <html data-theme="dark" lang={locale}>
       <head>
         <HeadContent />
       </head>

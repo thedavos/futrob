@@ -14,12 +14,12 @@ const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const workspaceRoot = path.resolve(projectRoot, "../..");
 const assetsDir = path.join(projectRoot, "assets");
 
-const { BRAND_SCALE, NEUTRAL_SCALE, oklchToHex } = await import(
+const { FUTROB_BRAND_HEX, themeToHexColors } = await import(
   path.join(workspaceRoot, "packages/ui-tokens/src/index.ts")
 );
 
-const BRAND = oklchToHex(BRAND_SCALE[500]);
-const BACKGROUND = oklchToHex(NEUTRAL_SCALE[50]);
+const BRAND = FUTROB_BRAND_HEX;
+const BACKGROUND = themeToHexColors().background;
 
 // Single source of truth for the mark: packages/ui/src/logo.tsx.
 const logoSource = readFileSync(path.join(workspaceRoot, "packages/ui/src/logo.tsx"), "utf8");

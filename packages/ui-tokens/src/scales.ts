@@ -1,76 +1,23 @@
-import { oklch, type Oklch } from "./oklch.ts";
+import { oklch } from "./oklch.ts";
 
-/**
- * Raw brand and accent scales. Single source of truth for web (rendered into
- * `packages/ui/src/tokens.css`) and mobile (resolved to sRGB at runtime).
- * Values are mirrored 1:1; `tokens-sync.test.ts` enforces parity.
- */
+/** Grafito + Lima. Exact sRGB brief converted to OKLCH; see /design.md. */
+export const PALETTE = {
+  "graphite-deep": oklch(0.1808615922, 0.0052102948, 248.1161683559), // #101214
+  graphite: oklch(0.2022635772, 0.006135752, 236.887294627), // #141719
+  charcoal: oklch(0.24068262, 0.0082589277, 240.2250432143), // #1C2023
+  "gray-dark": oklch(0.288904863, 0.0111908931, 237.0230399473), // #262C30
+  slate: oklch(0.3477173428, 0.0128682431, 238.9073288083), // #343B40
+  "white-cool": oklch(0.9749023816, 0.0025219025, 228.7838079178), // #F5F7F8
+  "gray-light": oklch(0.769244249, 0.014517727, 248.0166053926), // #ADB5BD
+  lime: oklch(0.9306628389, 0.2176079018, 124.1228204854), // #CAFF35
+  "lime-soft": oklch(0.9443739457, 0.1741754061, 122.5439670665), // #D8FF70
+  olive: oklch(0.3090471232, 0.0554689547, 126.0369202613), // #293514
+  green: oklch(0.8003487737, 0.182060385, 151.7110310001), // #4ADE80
+  amber: oklch(0.8368605694, 0.1644215948, 84.4286279995), // #FBBF24
+  red: oklch(0.7106273469, 0.1661479174, 22.2162240654), // #F87171
+  blue: oklch(0.7137400465, 0.1433805094, 254.6240213654), // #60A5FA
+  gold: oklch(0.8803031344, 0.1347780269, 86.0615940749), // #FFD166
+} as const;
 
-export const BRAND_SCALE = {
-  50: oklch(0.973, 0.032, 149.579),
-  100: oklch(0.944, 0.065, 149.579),
-  200: oklch(0.891, 0.112, 149.579),
-  300: oklch(0.82, 0.165, 149.579),
-  400: oklch(0.752, 0.197, 149.579),
-  500: oklch(0.723, 0.192, 149.579),
-  600: oklch(0.625, 0.175, 149.579),
-  700: oklch(0.527, 0.142, 149.579),
-  800: oklch(0.441, 0.111, 149.579),
-  900: oklch(0.385, 0.088, 149.579),
-  950: oklch(0.238, 0.05, 149.579),
-} satisfies Record<string, Oklch>;
-
-export const NEUTRAL_SCALE = {
-  0: oklch(1, 0, 0),
-  50: oklch(0.985, 0.004, 149.579),
-  100: oklch(0.965, 0.006, 149.579),
-  200: oklch(0.925, 0.009, 149.579),
-  300: oklch(0.86, 0.011, 149.579),
-  400: oklch(0.71, 0.012, 149.579),
-  450: oklch(0.64, 0.012, 149.579),
-  500: oklch(0.56, 0.012, 149.579),
-  600: oklch(0.45, 0.012, 149.579),
-  700: oklch(0.36, 0.012, 149.579),
-  800: oklch(0.275, 0.012, 149.579),
-  850: oklch(0.24, 0.012, 149.579),
-  900: oklch(0.205, 0.012, 149.579),
-  950: oklch(0.135, 0.012, 149.579),
-  1000: oklch(0, 0, 0),
-} satisfies Record<string, Oklch>;
-
-export const RED_SCALE = {
-  50: oklch(0.971, 0.013, 17.38),
-  100: oklch(0.936, 0.032, 17.717),
-  300: oklch(0.808, 0.114, 19.571),
-  500: oklch(0.637, 0.237, 25.331),
-  700: oklch(0.505, 0.213, 27.518),
-  900: oklch(0.396, 0.141, 25.723),
-} satisfies Record<string, Oklch>;
-
-export const AMBER_SCALE = {
-  50: oklch(0.987, 0.022, 95.277),
-  100: oklch(0.962, 0.059, 95.617),
-  300: oklch(0.879, 0.169, 91.605),
-  500: oklch(0.769, 0.188, 70.08),
-  700: oklch(0.555, 0.163, 48.998),
-  900: oklch(0.414, 0.112, 45.904),
-} satisfies Record<string, Oklch>;
-
-export const BLUE_SCALE = {
-  50: oklch(0.97, 0.014, 254.604),
-  100: oklch(0.932, 0.032, 255.585),
-  300: oklch(0.809, 0.105, 251.813),
-  500: oklch(0.623, 0.214, 259.815),
-  700: oklch(0.488, 0.243, 264.376),
-  900: oklch(0.379, 0.146, 265.522),
-} satisfies Record<string, Oklch>;
-
-/** Categorical highlight scale. Consume via the `emphasis` semantic token. */
-export const VIOLET_SCALE = {
-  50: oklch(0.97, 0.014, 300),
-  100: oklch(0.932, 0.032, 300),
-  300: oklch(0.809, 0.105, 300),
-  500: oklch(0.623, 0.18, 300),
-  700: oklch(0.488, 0.2, 300),
-  900: oklch(0.379, 0.146, 300),
-} satisfies Record<string, Oklch>;
+/** Compatibility stops used by the logo and overlays. Prefer semantic tokens. */
+export const BRAND_SCALE = { 300: PALETTE["lime-soft"], 500: PALETTE.lime, 700: PALETTE.lime };

@@ -37,20 +37,9 @@ See `.cursor/rules/agent-skills.mdc` for the full table and Cloud Agent availabi
 
 ## UI system contract
 
-- Read `product/design-system-spec.md` and `packages/ui/README.md` before UI work.
-- Light is the default across marketing, product and public portal. Dark is explicit opt-in.
-- Controls are 44 px. `dense` is the only compact mode: 36 px on desktop and 44 px on touch.
-- Use flat/line hierarchy; ambient elevation uses StyleX `elevation.sm|md|lg` on overlays and
-  opt-in `Card`/`EmptyState` `variant="elevated"` / `Alert elevation="elevated"`.
-  Never pair `border`/`ring` with `shadow`.
-- Green means brand/primary action. Use the separate `approved` semantic token only for
-  officially approved results.
-- Use `typography.label` for labels and navigation; use `typography.caption` for metadata, hints and secondary sentence-case copy; use `typography.subtitle` for support lines under headings.
-- `ButtonIcon` is marketing CTA language, not an operator/table embellishment.
-- Variants are closed. Do not invent new primitive colors or sizes; colocate StyleX styles.
-- Icons: Phosphor (`@phosphor-icons/react`, exports `*Icon`, weight `regular`). Type icon props with `Icon` from `@futrob/ui`.
-- Build forms, navigation, tables/rows and overlays from `@futrob/ui`.
-- Update Storybook whenever a primitive contract or state changes.
+Read [design.md](/design.md) before designing, changing or reviewing UI, tokens, typography,
+components, navigation, states, brand assets or web/mobile appearance. It is the sole design
+contract, including Grafito + Lima for both theme selectors and the canonical stats pattern.
 
 ## Code shape
 

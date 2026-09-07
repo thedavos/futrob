@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-08-22
-- Relacionado: [ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md) · [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [`product/design-system-spec.md`](/product/design-system-spec.md) · [`packages/ui-tokens`](/packages/ui-tokens/README.md)
+- Relacionado: [ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md) · [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [`design.md`](/design.md) · [`packages/ui-tokens`](/design.md)
 
 ## Contexto
 

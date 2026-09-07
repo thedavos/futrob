@@ -1,14 +1,18 @@
+/// <reference path="./styles.d.ts" />
+import { themeToHexColors } from "@futrob/ui-tokens";
 import type { Preview } from "@storybook/react-vite";
 
 import "../packages/ui/src/storybook.css";
 
+const palette = themeToHexColors();
+
 const preview: Preview = {
   parameters: {
     backgrounds: {
-      default: "Futrob light",
+      default: "Grafito + Lima",
       values: [
-        { name: "Futrob light", value: "#f7faf8" },
-        { name: "Surface", value: "#ffffff" },
+        { name: "Grafito + Lima", value: palette.background },
+        { name: "Surface", value: palette.surface },
       ],
     },
     controls: {

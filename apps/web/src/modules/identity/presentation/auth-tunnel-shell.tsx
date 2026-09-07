@@ -1,6 +1,6 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyProps, applyStyles, Logo, typography } from "@futrob/ui";
+import { applyStyles, Logo, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 const styles = stylex.create({
@@ -21,8 +21,8 @@ const styles = stylex.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "var(--neutral-0)",
-    color: "var(--neutral-950)",
+    backgroundColor: colors.background,
+    color: colors.foreground,
   },
   brand: {
     position: "absolute",
@@ -105,7 +105,7 @@ const styles = stylex.create({
     color: "white",
   },
   highlight: {
-    color: "var(--brand-300)",
+    color: colors.primary,
   },
   support: {
     fontSize: "1.125rem",
@@ -118,26 +118,7 @@ export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>)
   const logo = applyStyles(styles.logo);
   return (
     <main {...applyStyles(styles.main)}>
-      <section
-        {...applyProps(
-          undefined,
-          // SAFETY: custom properties are valid host styles; CSSProperties
-          // does not list arbitrary `--*` names.
-          {
-            "--background": "var(--neutral-0)",
-            "--border": "var(--neutral-300)",
-            "--border-subtle": "var(--neutral-200)",
-            "--destructive": "var(--red-700)",
-            "--foreground": "var(--neutral-950)",
-            "--input": "var(--neutral-450)",
-            "--muted-foreground": "var(--neutral-600)",
-            "--primary": "var(--brand-700)",
-            "--primary-foreground": "var(--neutral-0)",
-            "--ring": "var(--brand-600)",
-          } as CSSProperties,
-          styles.formPanel,
-        )}
-      >
+      <section {...applyStyles(styles.formPanel)}>
         <header {...applyStyles(styles.brand)}>
           <Logo className={logo.className} style={logo.style} title="Futrob" />
         </header>

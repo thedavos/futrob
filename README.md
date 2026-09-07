@@ -135,8 +135,8 @@ and attempt overrides are optional Wrangler vars; the defaults are listed in
 ## Docs
 
 - [PRD](/product/prd.md)
-- [Design system](/product/design-system-spec.md)
-- [UI primitives](/packages/ui/README.md)
+- [Design system](/design.md)
+- [UI primitives](/design.md)
 - [Architecture overview](/docs/architecture/overview.md)
 - [Module boundaries](/docs/architecture/module-boundaries.md)
 - [Packages and SDK](/docs/architecture/packages-and-sdk.md)

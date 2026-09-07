@@ -189,7 +189,7 @@ Un módulo no escribe tablas ajenas; publica eventos / usa ports de lectura.
 - [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)
 - [ADR-0014](/docs/adr/0014-shared-ui-tokens-and-mobile-ui.md)
 - [ADR-0015](/docs/adr/0015-auth-extraction.md)
-- [stylex.md](/docs/architecture/stylex.md)
+- [stylex.md](/design.md)
 - [module-boundaries.md](/docs/architecture/module-boundaries.md)
 - [dependency-graph.md](/docs/architecture/dependency-graph.md)
 

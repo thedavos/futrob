@@ -45,8 +45,8 @@ BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`,
   duplicarse con elementos estilizados dentro de un módulo.
 - Storybook es el catálogo ejecutable (root): `npm run storybook`.
 
-Especificación: [`/product/design-system-spec.md`](/product/design-system-spec.md) · guía del
-package: [`/packages/ui/README.md`](/packages/ui/README.md).
+Especificación: [`/design.md`](/design.md) · guía del
+package: [`/design.md`](/design.md).
 
 ## Quién depende de quién
 

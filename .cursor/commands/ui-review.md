@@ -1,6 +1,6 @@
 # Review Futrob UI
 
-Review against `product/design-system-spec.md`, `product/information-architecture.md`, and `product/ux-acceptance.md`.
+Review against `design.md`, `design.md`, and `design.md`.
 
 Apply skills: **better-ui**, **shadcn** (Base UI), **gsap** (motion only if present), **web-perf**, **seo** (public routes).
 

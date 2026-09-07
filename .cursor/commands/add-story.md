@@ -18,7 +18,7 @@ Ship a focused CSF story that documents the **real contract** of the component: 
 3. Read before writing:
    - The component source and its public exports
    - An existing sibling story in the same package (mirror structure)
-   - `product/design-system-spec.md`, `packages/ui/README.md`, and AGENTS UI contract
+   - `design.md`, `design.md`, and AGENTS UI contract
    - If the component is in `@futrob/ui`, prefer composing only `@futrob/ui` primitives (no BC packages, no Better Auth, no Wrangler)
 
 ## Decide story location and title

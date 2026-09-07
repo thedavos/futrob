@@ -15,16 +15,10 @@ Mobile (`apps/mobile`) stays on React Native `StyleSheet` + `@futrob/ui-tokens`.
 
 `stylex.create` / `defineVars` / `defineConsts` are compile-time. Values inside `create` must be literals or StyleX variables — no runtime strings.
 
-## Tokens
+## Design contract
 
-- Semantic CSS variables in `packages/ui/src/tokens.css` remain the source of truth (generated from `@futrob/ui-tokens`).
-- Dark theme still flips those variables via `.dark` / `[data-theme="dark"]`. Do not use `prefers-color-scheme` to enable dark.
-- Consume colors through `colors` from `@futrob/ui/styles/tokens.stylex` (StyleX cannot follow a barrel for `defineVars`).
-- Breakpoints: `media` from `@futrob/ui/styles/media.stylex` (`sm` 40rem, `md` 48rem, `lg` 64rem, `maxSm` for touch density).
-- Type roles: `typography.display|heading|subtitle|label|body|caption|score`.
-- Elevation: `elevation.sm|md|lg` (former `smooth-shadow-ring-*`). Never pair with `border` / `ring` on the same element.
-
-`.stylex.ts` files may only export `defineVars` / `defineConsts` named exports.
+Read `/design.md` for tokens, typography, themes, density, elevation and component contracts.
+`packages/ui-tokens/src` owns token values; CSS is generated. Both mode aliases use Grafito + Lima.
 
 ## Authoring rules
 

@@ -5,7 +5,7 @@
 
 :root {
   --smooth-shadow-color: black;
-  --smooth-ring-color: rgba(0, 0, 0, 0.05);
+  --smooth-ring-color: rgba(255, 255, 255, 0.18);
   --elevation-shadow-sm:
     0 18px 47px 0 color-mix(in srgb, var(--smooth-shadow-color) 3%, transparent),
     0 7.5px 19px 0 color-mix(in srgb, var(--smooth-shadow-color) 2%, transparent),
@@ -28,20 +28,4 @@
     0 3px 6px 0 color-mix(in srgb, var(--smooth-shadow-color) 2%, transparent),
     0 1.5px 3px 0 color-mix(in srgb, var(--smooth-shadow-color) 2%, transparent),
     0 0 0 1px var(--smooth-ring-color);
-}
-
-@supports (color: light-dark(black, white)) {
-  :root {
-    --smooth-ring-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.18));
-  }
-}
-
-.light,
-[data-theme="light"] {
-  --smooth-ring-color: rgba(0, 0, 0, 0.05);
-}
-
-.dark,
-[data-theme="dark"] {
-  --smooth-ring-color: rgba(255, 255, 255, 0.18);
 }

@@ -22,7 +22,7 @@ La implementación actual es fundacional: auth, SecureStore, cliente SDK, tokens
   (`src/modules/identity/`). `/api/v1` acepta Bearer: el cliente tipado vive en
   `src/modules/api/futrob-client.ts` (`getFutrobClient()`), que adjunta el token.
 - **UI:** primitivas RN propias en `src/ui/` que respetan
-  [`product/design-system-spec.md`](../../product/design-system-spec.md);
+  [`design.md`](/design.md);
   colores/tipo/geometría provienen de `@futrob/ui-tokens`.
 - **Rutas:** Expo Router (`app/`): gate de sesión en `app/index.tsx`,
   grupo `(auth)` con login/signup y grupo `(home)`.

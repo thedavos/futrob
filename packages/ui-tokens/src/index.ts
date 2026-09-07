@@ -1,14 +1,7 @@
 import { GEOMETRY_TOKENS } from "./geometry.ts";
 import { oklchToHex, type Oklch } from "./oklch.ts";
 import { LAYERING_TOKENS, MOTION_TOKENS } from "./motion.ts";
-import {
-  BRAND_SCALE,
-  AMBER_SCALE,
-  BLUE_SCALE,
-  NEUTRAL_SCALE,
-  RED_SCALE,
-  VIOLET_SCALE,
-} from "./scales.ts";
+import { BRAND_SCALE, PALETTE } from "./scales.ts";
 import { LIGHT_THEME } from "./theme-light.ts";
 import { oklchToken, type TokenMap, type TokenValue } from "./token.ts";
 import { TYPOGRAPHY_TOKENS } from "./typography.ts";
@@ -24,14 +17,8 @@ export {
   type TokenMap,
   type TokenValue,
 } from "./token.ts";
-export {
-  AMBER_SCALE,
-  BLUE_SCALE,
-  BRAND_SCALE,
-  NEUTRAL_SCALE,
-  RED_SCALE,
-  VIOLET_SCALE,
-} from "./scales.ts";
+export { BRAND_SCALE, PALETTE } from "./scales.ts";
+export { GRAPHITE_LIME_THEME } from "./theme.ts";
 export { TYPOGRAPHY_TOKENS, type TypoRole } from "./typography.ts";
 export { CORNER_TOKENS, CONTROL_TOKENS, GEOMETRY_TOKENS, SPACING_TOKENS } from "./geometry.ts";
 export { LAYERING_TOKENS, MOTION_TOKENS } from "./motion.ts";
@@ -41,23 +28,12 @@ export { DARK_THEME } from "./theme-dark.ts";
 /** Raw palette flattened as `brand-500`-style names, mirroring the `:root` declarations. */
 export const RAW_COLOR_TOKENS: TokenMap = {
   ...Object.fromEntries(
+    Object.entries(PALETTE).map(([name, color]) => [`palette-${name}`, oklchToken(color)]),
+  ),
+  ...Object.fromEntries(
     Object.entries(BRAND_SCALE).map(([stop, color]) => [`brand-${stop}`, oklchToken(color)]),
   ),
-  ...Object.fromEntries(
-    Object.entries(NEUTRAL_SCALE).map(([stop, color]) => [`neutral-${stop}`, oklchToken(color)]),
-  ),
-  ...Object.fromEntries(
-    Object.entries(RED_SCALE).map(([stop, color]) => [`red-${stop}`, oklchToken(color)]),
-  ),
-  ...Object.fromEntries(
-    Object.entries(AMBER_SCALE).map(([stop, color]) => [`amber-${stop}`, oklchToken(color)]),
-  ),
-  ...Object.fromEntries(
-    Object.entries(BLUE_SCALE).map(([stop, color]) => [`blue-${stop}`, oklchToken(color)]),
-  ),
-  ...Object.fromEntries(
-    Object.entries(VIOLET_SCALE).map(([stop, color]) => [`violet-${stop}`, oklchToken(color)]),
-  ),
+  "neutral-950": oklchToken(PALETTE["graphite-deep"]),
 };
 
 /** All `:root` declarations (raw scales + groups), order-insensitive parity is tested. */

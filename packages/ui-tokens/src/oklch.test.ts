@@ -16,11 +16,7 @@ describe("oklchToHex", () => {
 
 describe("resolveThemeColor", () => {
   it("walks var() references to a raw color", () => {
-    expect(resolveThemeColor("primary", LIGHT_THEME)).toEqual({
-      l: 0.527,
-      c: 0.142,
-      h: 149.579,
-    });
+    expect(oklchToHex(resolveThemeColor("primary", LIGHT_THEME)!)).toBe("#caff35");
   });
 
   it("resolves alias chains like destructive → danger", () => {

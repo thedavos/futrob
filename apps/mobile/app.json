@@ -6,11 +6,11 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#f8fbf9"
+      "backgroundColor": "#101214"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,7 +20,7 @@
       "package": "com.futrob.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#f8fbf9"
+        "backgroundColor": "#101214"
       }
     },
     "plugins": [
@@ -32,7 +32,7 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 160,
           "resizeMode": "contain",
-          "backgroundColor": "#f8fbf9"
+          "backgroundColor": "#101214"
         }
       ],
       [

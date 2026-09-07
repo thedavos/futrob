@@ -64,7 +64,7 @@ const styles = stylex.create({
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-    fontWeight: 500,
+    fontWeight: 600,
     lineHeight: 1,
     color: colors.mutedForeground,
   },

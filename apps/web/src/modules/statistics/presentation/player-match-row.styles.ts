@@ -126,7 +126,7 @@ export const styles = stylex.create({
   },
   scoreLead: {
     color: {
-      default: "var(--brand-300)",
+      default: colors.primary,
       ":is(.dark *)": colors.primary,
       ':is([data-theme="dark"] *)': colors.primary,
     },
