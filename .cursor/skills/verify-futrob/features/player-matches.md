@@ -7,14 +7,14 @@ The personal matches surface lists `ProviderMatch` rows for the ExternalClub sel
 - `matches-entry` opens Mis partidos from `/player` or from `/player/matches`.
 - `matches-needs-club` shows `Asocia un club para ver partidos recientes` when the profile has no club association.
 - `matches-views` exposes radios `Todos`, `Liga`, `Playoff`, `Amistosos` once matches can load.
-- `matches-detail` opens `/player/matches/:providerKey/:externalMatchId` from `Ver partido` and keeps `view` / `sort` in the URL.
+- `matches-detail` opens `/player/matches/:providerKey/:externalMatchId` from the row link named `Ver {home} {homeGoals} – {awayGoals} {away}` and keeps `view` / `sort` in the URL.
 - `matches-vs-official` keeps official standings off Mis partidos. `/player/statistics` is `Mis estadísticas`, the personal EA recent-profile.
 
 ## How to get to it (user POV)
 
 - Complete player onboarding, then open `/player` and choose `Abrir Mis partidos`.
 - Open `/player/matches` directly (default search `view=all`).
-- From a match row, choose `Ver partido`.
+- From a match row, choose the link named like `Ver Inter 2 – 1 Milan` (score-based accessible name).
 - Open `/player/statistics` for the personal EA recent profile (`Mis estadísticas`).
 
 ## Driving it with verify-futrob
@@ -29,7 +29,7 @@ Preconditions:
 - **Needs club.** With no club association, an empty state title `Asocia un club para ver partidos recientes` is visible. The run must not show a provider error that implies a failed EA fetch for this empty case.
 - **Direct route.** Open `/player/matches`. Same heading and empty or populated region. If populated, the radiogroup includes `Todos`, `Liga`, `Playoff`, `Amistosos`. Choosing `Todos` keeps `aria-checked=true` on that radio. The region name for all-matches is `Todos los partidos`.
 - **Official split.** Open `/player` and choose `Abrir tu perfil`, or open `/player/statistics`. The heading is `Mis estadísticas`. A ready profile may also show the player display name. This page is the EA recent game-profile, not official competition standings. Mis partidos must not present official standings or dispute admin.
-- **Detail (only if a row exists).** Choose `Ver partido` on a row. The URL matches `/player/matches/<providerKey>/<externalMatchId>` and preserves `view` and `sort`. Invalid `providerKey` shows the feature `not_found` state without a backend fetch.
+- **Detail (only if a row exists).** Choose the row link whose accessible name is `Ver {home} {homeGoals} – {awayGoals} {away}` (catalog key `player.matches.openMatchLabel`). The unused string `Ver partido` is not the control name. The URL matches `/player/matches/<providerKey>/<externalMatchId>` and preserves `view` and `sort`. Invalid `providerKey` shows the feature `not_found` state (`Partido no encontrado`) without a backend fetch.
 - **Proof.** Screenshot + ARIA of the needs-club empty state (seed) or of a populated `Todos` list plus the statistics page heading. Record whether a club was linked.
 
 ## Gotchas
@@ -38,4 +38,5 @@ Preconditions:
 - KPI on Mis partidos follow the active **view**, not official standings.
 - `No jugaste` on a row is valid when the identifier did not appear for the selected club. Do not treat it as a load error.
 - Linking a club during this recipe is a different feature (EA search). If you link one, say so; do not silently switch the empty-state proof.
+- Radios `Todos` / `Liga` / `Playoff` / `Amistosos` stay hidden on the needs-club empty state. That is expected, not a missing-control bug.
 - Official standings and disputes stay off this list. `/player/statistics` (`Mis estadísticas`) is the personal EA recent-profile, not a separate official-history list.

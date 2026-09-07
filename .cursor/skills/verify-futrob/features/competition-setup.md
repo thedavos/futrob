@@ -26,9 +26,9 @@ Preconditions:
 - Prefer Postgres `DATABASE_URL`. In-memory API loses orgs on API restart.
 - CLI twin needs `FUTROB_INTERNAL_JOB_SECRET` equal to `apps/api/.env` and `--actor` set.
 
-- **Create org (UI).** Open `/orgs/new`. Heading `Crear organización`. Fill `Nombre de la organización` with `Verify Org <run-id>`. Choose `Crear organización`. The URL becomes `/orgs/<organizationId>`.
-- **Create draft (UI).** Open `/orgs/<organizationId>/competitions/new`. Heading `Nueva competición`. Fill `Nombre de la competición` (placeholder `ej. Liga Futrob Apertura`), choose a platform under `Plataforma de la competición`, a `Región deportiva`, and a `Formato`. Choose `Crear competición`. The URL becomes `/orgs/<organizationId>/competitions/<competitionId>/setup`.
-- **Setup.** The setup view is reachable. Search `step=information` shows heading `Información` and field `Nombre`. Do not claim publish, fixture, or Match Center unless you actually drive those controls in the UI.
+- **Create org (UI).** Open `/orgs/new`. Heading `Crear organización`. Fill `Nombre de la organización` with `Verify Org <run-id>`. Choose `Crear organización`. The URL becomes `/orgs/<organizationId>`. Copy that id from the address bar; do not retype it from memory or OCR.
+- **Create draft (UI).** From org home, choose the shell button `Nueva competición`, or open `/orgs/<organizationId>/competitions/new` with the address-bar id. Heading `Nueva competición`. Fill `Nombre de la competición` (placeholder `ej. Liga Futrob Apertura`), choose a platform under `Plataforma de la competición`, a `Región deportiva`, and a `Formato`. Choose `Crear competición`. The URL becomes `/orgs/<organizationId>/competitions/<competitionId>/setup`.
+- **Setup.** The setup view is reachable. The page title is `Configurar <name>` with a `Borrador` badge. Stepper + step heading `Información` and field `Nombre` are visible (default when `?step=` is absent). Do not claim publish, fixture, or Match Center unless you actually drive those controls in the UI.
 - **CLI twin.** From the repo root:
 
   ```bash
@@ -46,6 +46,7 @@ Preconditions:
 - `e2e-golden-path` stops at fixture. It does not sync EA, select official matches, or publish a portal.
 - Fixture-managed encounters reject manual `snapshot-set` with 409 `fixture_managed_conflict`.
 - Unique org names: reuse of `Verify Org <run-id>` can fail. Always include the run id.
-- After `Crear competición`, the URL is `/orgs/$orgId/competitions/$competitionId/setup` without `?step=`. The wizard defaults to `information`. Assert heading `Información` and field `Nombre`.
-- Org home and the competitions empty state use `Nueva competición` to open the draft form. The form submit label remains `Crear competición`.
+- After `Crear competición`, the URL is `/orgs/$orgId/competitions/$competitionId/setup` without `?step=`. The wizard defaults to `information`. The document title area reads `Configurar <name>`; assert the step heading `Información` and field `Nombre`.
+- Org home (even the provisional stub) exposes the shell button `Nueva competición` when the actor has `competitions.update`. The form submit label remains `Crear competición`.
+- A mistyped organization id on `/orgs/<id>/competitions/new` yields `scope-not-found` and the same forbidden copy as a real permission miss. Always paste the id from the address bar after `Crear organización`.
 - Never treat the CLI twin as a substitute for the UI entry points listed above.
