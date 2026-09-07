@@ -6,8 +6,6 @@ import {
   Alert,
   AlertDescription,
   Button,
-  Card,
-  CardContent,
   ChoiceGroup,
   ChoiceGroupItem,
   EmptyState,
@@ -197,8 +195,8 @@ export function MatchesToolbar({
   const separator = applyStyles(styles.separator);
   const sortTrigger = applyStyles(styles.sortTrigger);
   return (
-    <Card className={styles.toolbar}>
-      <CardContent className={styles.toolbarContent}>
+    <div {...applyStyles(styles.toolbar)}>
+      <div {...applyStyles(styles.toolbarContent)}>
         <ChoiceGroup<PlayerMatchesView>
           aria-label={t("player.matches.view.label")}
           className={views.className}
@@ -257,8 +255,8 @@ export function MatchesToolbar({
             </p>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
