@@ -1,4 +1,4 @@
-import { asActorId } from "@futrob/shared-kernel";
+import { asActorId, compareByTime, TIME_SORT_DIRECTION } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import type { PlayerExternalClubAssociation } from "../domain/entities/player-external-club-association.ts";
 import type { PlayerGameAccount } from "../domain/entities/player-game-account.ts";
@@ -42,7 +42,7 @@ class Associations implements PlayerExternalClubAssociationRepository {
   async listByPlayerProfile(playerProfileId: string) {
     return [...this.rows.values()]
       .filter((row) => row.playerProfileId === playerProfileId)
-      .sort((a, b) => b.associatedAt.getTime() - a.associatedAt.getTime());
+      .sort(compareByTime((item) => item.associatedAt, TIME_SORT_DIRECTION.desc));
   }
 
   async upsertForPlayerProfile(association: PlayerExternalClubAssociation) {
@@ -61,6 +61,9 @@ class Accounts implements PlayerGameAccountRepository {
   }
   async listByProfile(playerProfileId: string) {
     return this.rows.filter((row) => row.playerProfileId === playerProfileId);
+  }
+  async findByNormalizedIdentifier(normalizedIdentifier: string) {
+    return this.rows.filter((row) => row.normalizedIdentifier === normalizedIdentifier);
   }
   async saveIfAbsent(account: PlayerGameAccount) {
     const existing = this.rows.find(

@@ -11,6 +11,7 @@ import {
   type ActorId,
 } from "@futrob/shared-kernel";
 import type { RosterMembershipRole } from "../../domain/entities/competition-roster-membership.ts";
+import { normalizeGameAccountIdentifier } from "../../domain/entities/player-game-account.ts";
 import {
   isRosterMembershipRole,
   ROSTER_INVITATION_STATUS,
@@ -19,9 +20,12 @@ import {
 } from "../../domain/entities/roster-invitation.ts";
 import {
   InvalidRosterInvitationRole,
+  RosterInviteeNotFound,
   type CreateRosterInvitationError,
 } from "../../domain/errors/roster-invitation.errors.ts";
 import { TeamNotFound, RosterEntryInactive } from "../../domain/errors/team.errors.ts";
+import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
+import type { PlayerProfileRepository } from "../../domain/ports/player-profile.repository.ts";
 import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.port.ts";
 import type { RosterInvitationRepository } from "../../domain/ports/roster-invitation.repository.ts";
 import type { RosterInvitationTokenPort } from "../../domain/ports/roster-invitation-token.port.ts";
@@ -37,6 +41,9 @@ export interface CreateRosterInvitationInput {
   readonly teamId: TeamId;
   readonly role?: RosterMembershipRole;
   readonly invitedByActorId: ActorId;
+  readonly invitedByDisplayName?: string | null;
+  readonly inviteeIdentifier?: string | null;
+  readonly message?: string | null;
   readonly expiresInMs?: number;
   readonly redeemPolicy?: RosterInvitationRedeemPolicy;
 }
@@ -48,9 +55,15 @@ export interface CreateRosterInvitationResult {
   readonly teamId: TeamId;
   readonly role: RosterMembershipRole;
   readonly status: RosterInvitationStatus;
+  readonly inviteeIdentifier: string | null;
   readonly expiresAt: Date;
   readonly createdAt: Date;
   readonly token: string;
+}
+
+function normalizeOptionalText(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }
 
 export class CreateRosterInvitationUseCase {
@@ -58,6 +71,8 @@ export class CreateRosterInvitationUseCase {
     private readonly deps: {
       readonly teams: TeamRepository;
       readonly invitations: RosterInvitationRepository;
+      readonly profiles: PlayerProfileRepository;
+      readonly accounts: PlayerGameAccountRepository;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
       readonly tokens: RosterInvitationTokenPort;
@@ -114,6 +129,22 @@ export class CreateRosterInvitationUseCase {
       );
     }
 
+    const inviteeIdentifier = normalizeOptionalText(input.inviteeIdentifier);
+    let inviteeActorId: ActorId | null = null;
+    if (inviteeIdentifier) {
+      inviteeActorId = await this.resolveInviteeActorId(inviteeIdentifier);
+      if (!inviteeActorId) {
+        return err(
+          new RosterInviteeNotFound({
+            code: "teams.invitee_not_found",
+            message: "No player is registered with that game identifier",
+            identifier: inviteeIdentifier,
+          }),
+        );
+      }
+    }
+    const invitedByGamertag = await this.resolveInviterGamertag(input.invitedByActorId);
+
     const now = this.deps.clock.now();
     const expiresInMs = input.expiresInMs ?? DEFAULT_EXPIRES_IN_MS;
     const expiresAt = new Date(now.getTime() + expiresInMs);
@@ -121,7 +152,8 @@ export class CreateRosterInvitationUseCase {
     const token = this.deps.tokens.generateToken();
     const tokenHash = this.deps.tokens.hashToken(token);
 
-    const redeemPolicy = input.redeemPolicy ?? "single";
+    // A directed invitation targets one recipient; multi redemption never applies.
+    const redeemPolicy = inviteeActorId ? "single" : (input.redeemPolicy ?? "single");
 
     await this.deps.invitations.create({
       id: invitationId,
@@ -132,8 +164,14 @@ export class CreateRosterInvitationUseCase {
       tokenHash,
       status: ROSTER_INVITATION_STATUS.pending,
       invitedByActorId: input.invitedByActorId,
+      invitedByDisplayName: normalizeOptionalText(input.invitedByDisplayName),
+      invitedByGamertag,
+      inviteeActorId,
+      inviteeIdentifier,
+      message: normalizeOptionalText(input.message),
       expiresAt,
       acceptedByActorId: null,
+      respondedAt: null,
       createdAt: now,
       redeemPolicy,
     });
@@ -145,9 +183,27 @@ export class CreateRosterInvitationUseCase {
       teamId: input.teamId,
       role,
       status: ROSTER_INVITATION_STATUS.pending,
+      inviteeIdentifier,
       expiresAt,
       createdAt: now,
       token,
     });
+  }
+
+  private async resolveInviteeActorId(identifier: string): Promise<ActorId | null> {
+    const normalized = normalizeGameAccountIdentifier(identifier);
+    const accounts = await this.deps.accounts.findByNormalizedIdentifier(normalized);
+    for (const account of accounts) {
+      const profile = await this.deps.profiles.findById(account.playerProfileId);
+      if (profile) return profile.actorId;
+    }
+    return null;
+  }
+
+  private async resolveInviterGamertag(invitedByActorId: ActorId): Promise<string | null> {
+    const profile = await this.deps.profiles.findByActor(invitedByActorId);
+    if (!profile) return null;
+    const accounts = await this.deps.accounts.listByProfile(profile.id);
+    return accounts[0]?.identifier ?? null;
   }
 }

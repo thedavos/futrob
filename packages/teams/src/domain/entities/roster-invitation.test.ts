@@ -6,6 +6,7 @@ describe("roster invitation domain", () => {
     expect(Object.values(ROSTER_INVITATION_STATUS)).toEqual([
       "pending",
       "accepted",
+      "declined",
       "revoked",
       "expired",
     ]);

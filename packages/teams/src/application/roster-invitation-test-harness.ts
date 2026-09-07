@@ -67,6 +67,54 @@ export class FakeRosterInvitationRepository implements RosterInvitationRepositor
     return this.byHash.get(tokenHash) ?? null;
   }
 
+  async findById(invitationId: string): Promise<RosterInvitation | null> {
+    return [...this.byHash.values()].find((invitation) => invitation.id === invitationId) ?? null;
+  }
+
+  async listByInvitee(inviteeActorId: ActorId): Promise<RosterInvitation[]> {
+    return [...this.byHash.values()].filter(
+      (invitation) => invitation.inviteeActorId === inviteeActorId,
+    );
+  }
+
+  async declinePending(
+    invitationId: string,
+    inviteeActorId: ActorId,
+    now: Date,
+  ): Promise<RosterInvitation | null> {
+    const current = await this.findById(invitationId);
+    if (!current) return null;
+    if (current.status !== ROSTER_INVITATION_STATUS.pending) return null;
+    if (current.inviteeActorId !== inviteeActorId) return null;
+    if (current.expiresAt.getTime() <= now.getTime()) return null;
+    const declined: RosterInvitation = {
+      ...current,
+      status: ROSTER_INVITATION_STATUS.declined,
+      respondedAt: now,
+    };
+    this.byHash.set(current.tokenHash, declined);
+    return declined;
+  }
+
+  async acceptPendingById(
+    invitationId: string,
+    actorId: ActorId,
+    now: Date,
+  ): Promise<RosterInvitation | null> {
+    const current = await this.findById(invitationId);
+    if (!current) return null;
+    if (current.status !== ROSTER_INVITATION_STATUS.pending) return null;
+    if (current.expiresAt.getTime() <= now.getTime()) return null;
+    const accepted: RosterInvitation = {
+      ...current,
+      status: ROSTER_INVITATION_STATUS.accepted,
+      acceptedByActorId: actorId,
+      respondedAt: now,
+    };
+    this.byHash.set(current.tokenHash, accepted);
+    return accepted;
+  }
+
   async findRedemption(invitationId: string, actorId: ActorId): Promise<Date | null> {
     return this.redemptions.get(`${invitationId}:${actorId}`) ?? null;
   }

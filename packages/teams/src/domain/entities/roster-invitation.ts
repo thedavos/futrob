@@ -4,6 +4,7 @@ import type { RosterMembershipRole } from "./competition-roster-membership.ts";
 export const ROSTER_INVITATION_STATUS = {
   pending: "pending",
   accepted: "accepted",
+  declined: "declined",
   revoked: "revoked",
   expired: "expired",
 } as const;
@@ -22,8 +23,18 @@ export interface RosterInvitation {
   readonly tokenHash: string;
   readonly status: RosterInvitationStatus;
   readonly invitedByActorId: ActorId;
+  /** Snapshot of the inviter's visible name at invite time; not updated retroactively. */
+  readonly invitedByDisplayName: string | null;
+  /** Snapshot of the inviter's game identifier at invite time. */
+  readonly invitedByGamertag: string | null;
+  /** Directed recipient; null for shareable link invitations. */
+  readonly inviteeActorId: ActorId | null;
+  /** Recipient identifier as typed by the inviter (for display). */
+  readonly inviteeIdentifier: string | null;
+  readonly message: string | null;
   readonly expiresAt: Date;
   readonly acceptedByActorId: ActorId | null;
+  readonly respondedAt: Date | null;
   readonly createdAt: Date;
   readonly redeemPolicy: RosterInvitationRedeemPolicy;
 }

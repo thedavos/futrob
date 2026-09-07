@@ -3,6 +3,8 @@ import type { GamePlatform, PlayerGameAccount } from "../entities/player-game-ac
 export interface PlayerGameAccountRepository {
   findById(id: string): Promise<PlayerGameAccount | null>;
   listByProfile(playerProfileId: string): Promise<PlayerGameAccount[]>;
+  /** Accounts whose normalized identifier matches; used to resolve invitation recipients. */
+  findByNormalizedIdentifier(normalizedIdentifier: string): Promise<PlayerGameAccount[]>;
   saveIfAbsent(account: PlayerGameAccount): Promise<PlayerGameAccount>;
   /** Updates providerExternalPlayerId; returns null if the account does not exist. */
   setProviderExternalPlayerId(input: {

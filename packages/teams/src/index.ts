@@ -81,9 +81,12 @@ export {
   RosterInvitationInvalid,
   RosterInvitationExpired,
   RosterInvitationRevoked,
+  RosterInvitationForbidden,
+  RosterInviteeNotFound,
   InvalidRosterInvitationRole,
   type CreateRosterInvitationError,
   type AcceptRosterInvitationError,
+  type RespondToRosterInvitationError,
 } from "./domain/errors/roster-invitation.errors.ts";
 
 export { EnsurePlayerProfileUseCase } from "./application/ensure-player-profile/ensure-player-profile.use-case.ts";
@@ -150,3 +153,13 @@ export {
   AcceptRosterInvitationUseCase,
   type AcceptRosterInvitationInput,
 } from "./application/accept-roster-invitation/accept-roster-invitation.use-case.ts";
+export {
+  ListMyRosterInvitationsUseCase,
+  type ListMyRosterInvitationsInput,
+} from "./application/list-my-roster-invitations/list-my-roster-invitations.use-case.ts";
+export {
+  RespondToRosterInvitationUseCase,
+  type RespondToRosterInvitationInput,
+  type RespondToRosterInvitationOutcome,
+  type RosterInvitationResponseAction,
+} from "./application/respond-to-roster-invitation/respond-to-roster-invitation.use-case.ts";

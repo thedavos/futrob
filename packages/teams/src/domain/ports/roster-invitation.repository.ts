@@ -16,6 +16,9 @@ export interface ClaimPendingOptions {
 export interface RosterInvitationRepository {
   create(invitation: RosterInvitation): Promise<void>;
   findByTokenHash(tokenHash: string): Promise<RosterInvitation | null>;
+  findById(invitationId: string): Promise<RosterInvitation | null>;
+  /** Invitations directed at `inviteeActorId`, newest first. */
+  listByInvitee(inviteeActorId: ActorId): Promise<RosterInvitation[]>;
   findRedemption(invitationId: string, actorId: ActorId): Promise<Date | null>;
   deleteRedemption(invitationId: string, actorId: ActorId): Promise<void>;
   /**
@@ -28,5 +31,23 @@ export interface RosterInvitationRepository {
     actorId: ActorId,
     now: Date,
     options: ClaimPendingOptions,
+  ): Promise<RosterInvitation | null>;
+  /**
+   * CAS pending → declined for the directed invitee.
+   * Returns the declined invitation, or `null` when it was not pending for that invitee.
+   */
+  declinePending(
+    invitationId: string,
+    inviteeActorId: ActorId,
+    now: Date,
+  ): Promise<RosterInvitation | null>;
+  /**
+   * CAS pending → accepted by invitation id (directed accept path).
+   * Returns the accepted invitation, or `null` when it was no longer pending.
+   */
+  acceptPendingById(
+    invitationId: string,
+    actorId: ActorId,
+    now: Date,
   ): Promise<RosterInvitation | null>;
 }

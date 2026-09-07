@@ -204,6 +204,7 @@ function buildHarness(options?: { maxSize?: number }) {
   const accounts: PlayerGameAccountRepository = {
     findById: async () => null,
     listByProfile: async () => [],
+    findByNormalizedIdentifier: async () => [],
     saveIfAbsent: async (account: PlayerGameAccount) => account,
     setProviderExternalPlayerId: async () => null,
     findByCorrelation: async () => [],
@@ -211,6 +212,8 @@ function buildHarness(options?: { maxSize?: number }) {
   const createInvitation = new CreateRosterInvitationUseCase({
     teams,
     invitations: harness.invitations,
+    profiles,
+    accounts,
     tokens: harness.tokens,
     authorization,
     entryGate: { canMutateRoster: async () => true },

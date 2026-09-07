@@ -37,14 +37,34 @@ export class InvalidRosterInvitationRole extends TaggedError("InvalidRosterInvit
   role: string;
 }> {}
 
+export class RosterInvitationForbidden extends TaggedError("RosterInvitationForbidden")<{
+  code: "teams.roster_invitation_forbidden";
+  message: string;
+}> {}
+
+export class RosterInviteeNotFound extends TaggedError("RosterInviteeNotFound")<{
+  code: "teams.invitee_not_found";
+  message: string;
+  identifier: string;
+}> {}
+
 export type CreateRosterInvitationError =
   | InvalidRosterInvitationRole
   | TeamNotFound
   | TeamAuthorizationForbidden
-  | RosterEntryInactive;
+  | RosterEntryInactive
+  | RosterInviteeNotFound;
 
 export type AcceptRosterInvitationError =
   | RosterInvitationNotFound
+  | RosterInvitationInvalid
+  | RosterInvitationExpired
+  | RosterInvitationRevoked
+  | AddToRosterUncheckedError;
+
+export type RespondToRosterInvitationError =
+  | RosterInvitationNotFound
+  | RosterInvitationForbidden
   | RosterInvitationInvalid
   | RosterInvitationExpired
   | RosterInvitationRevoked

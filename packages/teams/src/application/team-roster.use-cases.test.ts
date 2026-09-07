@@ -197,6 +197,9 @@ class Accounts implements PlayerGameAccountRepository {
   async listByProfile(playerProfileId: string) {
     return this.rows.filter((row) => row.playerProfileId === playerProfileId);
   }
+  async findByNormalizedIdentifier(normalizedIdentifier: string) {
+    return this.rows.filter((row) => row.normalizedIdentifier === normalizedIdentifier);
+  }
   async saveIfAbsent(account: PlayerGameAccount) {
     this.rows.push(account);
     return account;
