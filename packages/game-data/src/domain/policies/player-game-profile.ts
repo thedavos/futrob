@@ -1,3 +1,4 @@
+import { compareByTime } from "@futrob/shared-kernel";
 import {
   computePlayerAttributeOverview,
   type AttributeCategoryScore,
@@ -92,9 +93,7 @@ export function buildPlayerGameProfile(
   samples: readonly PlayerGameAppearanceSample[],
   declaredDisplayName: string | null = null,
 ): PlayerGameProfile {
-  const chronological = [...samples].sort(
-    (left, right) => left.occurredAt.getTime() - right.occurredAt.getTime(),
-  );
+  const chronological = [...samples].sort(compareByTime((item) => item.occurredAt));
   const byPosition = groupByPosition(samples);
 
   return {

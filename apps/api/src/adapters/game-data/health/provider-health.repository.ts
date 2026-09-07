@@ -1,4 +1,5 @@
 import { gameDataProviderKeyQuerySchema } from "@futrob/api-contracts";
+import { compareByTime } from "@futrob/shared-kernel";
 import type {
   ProviderHealthEvent,
   ProviderHealthOutcome,
@@ -160,7 +161,7 @@ export function snapshotFromEvents(
   const events = windowEvents
     .filter((event) => !nonSampleOutcomes.has(event.outcome))
     .slice()
-    .sort((left, right) => left.occurredAt.getTime() - right.occurredAt.getTime());
+    .sort(compareByTime((item) => item.occurredAt));
   const observedAt = now;
   const successes = events.filter((event) => event.outcome === "success");
   const failures = events.filter((event) => failureOutcomes.has(event.outcome));

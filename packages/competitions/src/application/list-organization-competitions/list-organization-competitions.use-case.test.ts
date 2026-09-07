@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
-import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
+import {
+  asActorId,
+  asCompetitionId,
+  asOrganizationId,
+  compareByTime,
+  TIME_SORT_DIRECTION,
+} from "@futrob/shared-kernel";
 import type { Competition } from "../../domain/entities/competition.ts";
 import type {
   CompetitionDraft,
@@ -37,7 +43,7 @@ class FakeCompetitionRepository implements CompetitionRepository {
     return [...this.rows.values()]
       .map((row) => row.competition)
       .filter((competition) => competition.organizationId === organizationId)
-      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      .sort(compareByTime((item) => item.updatedAt, TIME_SORT_DIRECTION.desc));
   }
 }
 

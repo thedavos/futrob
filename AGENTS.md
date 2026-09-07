@@ -66,6 +66,12 @@ MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**
   `@futrob/shared-kernel` (por ejemplo `ClockPort`, `IdGeneratorPort`,
   `TransactionPort`, `EventPublisherPort`) y se reutilizan desde los BCs y apps.
   No centralizar ports que expresen vocabulario o reglas propias de un bounded context.
+- Tiempo compartido: reutilizar `addDays`, `daysFromNow`, `daysFromNowIso`,
+  `calendarDaysBetween`, `compareTime` y `compareByTime` de `@futrob/shared-kernel`
+  (ver `packages/shared-kernel/src/time.ts`). No redefinir offsets de días ni
+  `(a, b) => b.createdAt.getTime() - a.createdAt.getTime()`. El copy de UI
+  (p. ej. «Recibida hoy») se queda en presentación. Inyectar `ClockPort` cuando
+  el «ahora» deba ser determinista.
 - Cross-module via package public API, ports/bridges, or outbox events — never foreign adapters/tables.
 - EA egress lives only in `apps/api/.../game-data/adapters/ea-clubs/` (see
   [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)); web reaches EA data through the product API.

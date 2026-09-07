@@ -6,12 +6,14 @@ import type {
   PlatformRoleAssignment,
   PlatformRoleRepository,
 } from "@futrob/organizations";
-import type {
-  ActorId,
-  AuthorizationScopeType,
-  OrganizationId,
-  Permission,
-  AuthorizationMutationLockPort,
+import {
+  compareByTime,
+  TIME_SORT_DIRECTION,
+  type ActorId,
+  type AuthorizationScopeType,
+  type OrganizationId,
+  type Permission,
+  type AuthorizationMutationLockPort,
 } from "@futrob/shared-kernel";
 
 export class InMemoryAccessGrantRepository implements AccessGrantRepository {
@@ -173,7 +175,7 @@ export class InMemoryAuthorizationAuditRepository implements AuthorizationAuditR
   ): Promise<readonly AuthorizationAuditEntry[]> {
     return this.rows
       .filter((row) => row.organizationId === organizationId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .sort(compareByTime((item) => item.createdAt, TIME_SORT_DIRECTION.desc))
       .slice(0, limit);
   }
 }

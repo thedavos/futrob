@@ -1,4 +1,5 @@
 import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
+import { compareTime } from "@futrob/shared-kernel";
 import type {
   CompetitionFixtureSourcePort,
   CompetitionFixtureSourceSnapshot,
@@ -25,7 +26,7 @@ export class CompetitionFixtureSourceAdapter implements CompetitionFixtureSource
       .filter((entry) => entry.status === "approved")
       .sort(
         (left, right) =>
-          left.createdAt.getTime() - right.createdAt.getTime() || left.id.localeCompare(right.id),
+          compareTime(left.createdAt, right.createdAt) || left.id.localeCompare(right.id),
       )
       .map((entry) => entry.teamId);
     const regular =

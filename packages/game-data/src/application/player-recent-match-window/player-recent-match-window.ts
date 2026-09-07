@@ -1,4 +1,4 @@
-import { err, ok, type Result } from "@futrob/shared-kernel";
+import { compareByTime, err, ok, TIME_SORT_DIRECTION, type Result } from "@futrob/shared-kernel";
 import type {
   ProviderMatch,
   ProviderPlayerMatchStats,
@@ -101,7 +101,7 @@ export class PlayerRecentMatchWindowLoader {
     if (fetchedCount === 0 && lastError) return err(lastError);
 
     const matches = [...listed.values()]
-      .sort((left, right) => right.match.occurredAt.getTime() - left.match.occurredAt.getTime())
+      .sort(compareByTime((item) => item.match.occurredAt, TIME_SORT_DIRECTION.desc))
       .slice(0, MAX_RECENT_MATCHES);
 
     if (lastError) {

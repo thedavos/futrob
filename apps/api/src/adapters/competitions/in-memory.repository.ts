@@ -4,7 +4,13 @@ import type {
   CompetitionMembershipRepository,
   CompetitionRepository,
 } from "@futrob/competitions";
-import type { ActorId, CompetitionId, OrganizationId } from "@futrob/shared-kernel";
+import {
+  compareByTime,
+  TIME_SORT_DIRECTION,
+  type ActorId,
+  type CompetitionId,
+  type OrganizationId,
+} from "@futrob/shared-kernel";
 
 export class InMemoryCompetitionRepository implements CompetitionRepository {
   private readonly byId = new Map<CompetitionId, CompetitionDraft>();
@@ -41,7 +47,7 @@ export class InMemoryCompetitionRepository implements CompetitionRepository {
     return [...this.byId.values()]
       .map((draft) => draft.competition)
       .filter((competition) => competition.organizationId === organizationId)
-      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      .sort(compareByTime((item) => item.updatedAt, TIME_SORT_DIRECTION.desc));
   }
 }
 

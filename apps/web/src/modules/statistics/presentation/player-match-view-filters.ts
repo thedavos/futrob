@@ -1,4 +1,5 @@
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
+import { compareTime } from "@futrob/shared-kernel";
 
 export const PLAYER_MATCHES_VIEWS = ["all", "league", "playoff", "friendly"] as const;
 export type PlayerMatchesView = (typeof PLAYER_MATCHES_VIEWS)[number];
@@ -65,8 +66,7 @@ export function sortMatchesByOccurredAt(
   order: MatchSortOrder,
 ): readonly PlayerRecentProviderMatchDto[] {
   return [...matches].sort((left, right) => {
-    const delta =
-      new Date(left.match.occurredAt).getTime() - new Date(right.match.occurredAt).getTime();
+    const delta = compareTime(new Date(left.match.occurredAt), new Date(right.match.occurredAt));
     if (delta !== 0) return order === "oldest" ? delta : -delta;
     return left.match.id.localeCompare(right.match.id);
   });

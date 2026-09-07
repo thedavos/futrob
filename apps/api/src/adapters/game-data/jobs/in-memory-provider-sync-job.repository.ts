@@ -4,6 +4,7 @@ import type {
   QueuedProviderSyncJob,
   RunningProviderSyncJob,
 } from "@futrob/game-data";
+import { compareByTime } from "@futrob/shared-kernel";
 
 const activeStatuses = new Set<ProviderSyncJob["status"]>(["queued", "running", "retry_scheduled"]);
 
@@ -31,7 +32,7 @@ export class InMemoryProviderSyncJobRepository implements ProviderSyncJobReposit
             job.availableAt <= input.now) ||
           (job.status === "running" && job.leaseExpiresAt <= input.now),
       )
-      .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())[0];
+      .sort(compareByTime((item) => item.createdAt))[0];
     if (!claimable) return Promise.resolve(null);
     const running: RunningProviderSyncJob = {
       ...claimable,
