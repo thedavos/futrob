@@ -9,7 +9,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -31,6 +31,18 @@ import { gameProfileQueryFromRange } from "./player-statistics-period.ts";
 import { PlayerStatisticsPage } from "./player-statistics-page.tsx";
 
 function ignorePeriodChange(): void {}
+
+const CHARTS_TIMEOUT_MS = 10_000;
+
+async function waitForLazyChartHeadings(canvas: ReturnType<typeof within>): Promise<void> {
+  await waitFor(
+    () => {
+      expect(canvas.getByRole("heading", { name: "Récord" })).toBeVisible();
+      expect(canvas.getByRole("heading", { name: "Atributos" })).toBeVisible();
+    },
+    { timeout: CHARTS_TIMEOUT_MS },
+  );
+}
 
 const styles = stylex.create({
   stub: {
@@ -221,10 +233,9 @@ export const Ready: Story = {
     await expect(canvas.getByText(/de victorias/)).toBeVisible();
     await expect(canvas.getByText("11")).toBeVisible();
     await expect(canvas.getByText("0,39 por partido")).toBeVisible();
-    await expect(await canvas.findByRole("heading", { name: "Récord" })).toBeVisible();
+    await waitForLazyChartHeadings(canvas);
     await expect(canvas.getByText("1 sin resultado")).toBeVisible();
     await expect(canvas.getAllByText("Sin resultado")[0]).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Atributos" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Rating por partido" })).toBeVisible();
     await expect(canvas.queryByRole("tab")).toBeNull();
     await expect(canvas.getByText("16 victorias")).toBeVisible();
@@ -243,7 +254,7 @@ export const CategoryDetail: Story = {
   render: (args) => <PlayerStatisticsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByRole("heading", { name: "Atributos" })).toBeVisible();
+    await waitForLazyChartHeadings(canvas);
     await expect(canvas.getByRole("heading", { name: "Disciplina · 88" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Pase 68" }));
     await expect(canvas.getByRole("heading", { name: "Pase · 68" })).toBeVisible();

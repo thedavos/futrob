@@ -18,6 +18,8 @@ function storybookVitestProject() {
     ],
     test: {
       name: "storybook",
+      // Lazy chart chunks and Base UI enter frames need more than the 5s default.
+      testTimeout: 20_000,
       browser: {
         enabled: true,
         headless: true,

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import {
   OnboardingStoryRouter,
@@ -53,8 +53,11 @@ export const ValidationError: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("button", { name: "Vincular y continuar" }));
     const identifier = canvas.getByRole("textbox", { name: "Identificador de EA" });
-    const error = canvas.getByText("Escribe tu identificador de EA.");
-    await expect(error).toBeVisible();
+    const error = await waitFor(() => {
+      const message = canvas.getByText("Escribe tu identificador de EA.");
+      expect(message).toBeVisible();
+      return message;
+    });
     await expect(identifier).toHaveAttribute("aria-describedby", error.parentElement?.id);
     await expect(identifier).toHaveFocus();
   },

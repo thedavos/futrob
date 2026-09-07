@@ -140,7 +140,9 @@ export const FieldValidation: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("button", { name: "Unirme a la competición" }));
-    await expect(canvas.getByText("Escribe el código de invitación.")).toBeVisible();
+    await waitFor(() => {
+      expect(canvas.getByText("Escribe el código de invitación.")).toBeVisible();
+    });
   },
 };
 
