@@ -42,44 +42,7 @@ const styles = stylex.create({
   cards3: {
     gridTemplateColumns: {
       default: "minmax(0, 1fr)",
-      "@container (min-width: 48rem)": "repeat(2, minmax(0, 1fr))",
-      "@container (min-width: 64rem)": "repeat(3, minmax(0, 1fr))",
-    },
-  },
-  placePerformance: {
-    gridColumnStart: {
-      default: null,
-      "@container (min-width: 48rem)": 1,
-      "@container (min-width: 64rem)": "auto",
-    },
-    gridRowStart: {
-      default: null,
-      "@container (min-width: 48rem)": 1,
-      "@container (min-width: 64rem)": "auto",
-    },
-  },
-  placeRecord: {
-    gridColumn: {
-      default: null,
-      "@container (min-width: 48rem)": "span 2",
-      "@container (min-width: 64rem)": "span 1",
-    },
-    gridRowStart: {
-      default: null,
-      "@container (min-width: 48rem)": 2,
-      "@container (min-width: 64rem)": "auto",
-    },
-  },
-  placeContributions: {
-    gridColumnStart: {
-      default: null,
-      "@container (min-width: 48rem)": 2,
-      "@container (min-width: 64rem)": "auto",
-    },
-    gridRowStart: {
-      default: null,
-      "@container (min-width: 48rem)": 1,
-      "@container (min-width: 64rem)": "auto",
+      "@container (min-width: 48rem)": "minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr)",
     },
   },
 });
@@ -114,7 +77,6 @@ export function ViewRecord({
   const showPerformance = showsPerformanceStats(record);
   const showContributions = showsContributionStats(record);
   const visibleCards = visibleRecordCardCount(showPerformance, showContributions);
-  const threeCard = visibleCards === 3;
 
   return (
     <div {...applyStyles(styles.container)}>
@@ -126,7 +88,6 @@ export function ViewRecord({
       >
         {showPerformance ? (
           <SummaryCard
-            className={threeCard ? styles.placePerformance : undefined}
             data-record-slot="performance"
             headingId="player-matches-stats-performance"
             title={t("player.matches.stats.performance")}
@@ -135,7 +96,6 @@ export function ViewRecord({
           </SummaryCard>
         ) : null}
         <SummaryCard
-          className={threeCard ? styles.placeRecord : undefined}
           data-record-slot="record"
           footer={showsRecentForm(matches) ? <RecentForm matches={matches} /> : null}
           headingId="player-matches-stats-record"
@@ -173,7 +133,6 @@ export function ViewRecord({
         </SummaryCard>
         {showContributions ? (
           <SummaryCard
-            className={threeCard ? styles.placeContributions : undefined}
             data-record-slot="contributions"
             footer={
               record.contributions.playedAppearances > 0 ? (
@@ -202,12 +161,9 @@ export function RecordLoading() {
         role="status"
         {...applyStyles(styles.grid, styles.cards3)}
       >
-        <SummaryCardLoading className={styles.placePerformance} data-record-slot="performance" />
-        <SummaryCardLoading className={styles.placeRecord} data-record-slot="record" />
-        <SummaryCardLoading
-          className={styles.placeContributions}
-          data-record-slot="contributions"
-        />
+        <SummaryCardLoading data-record-slot="performance" />
+        <SummaryCardLoading data-record-slot="record" />
+        <SummaryCardLoading data-record-slot="contributions" />
       </div>
     </div>
   );
