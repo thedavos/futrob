@@ -5,6 +5,7 @@ import type {
   AssociateMyPlayerExternalClubRequest,
   AssociateMyPlayerExternalClubResponse,
   GetMyPlayerProfileResponse,
+  RespondToRosterInvitationRequest,
   SetActiveTeamRequest,
 } from "@futrob/api-contracts";
 import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
@@ -75,6 +76,32 @@ export function useAcceptRosterInvitationMutation() {
       await queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() });
       await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
       await invalidateEffectiveAccessQueries(queryClient);
+    },
+  });
+}
+
+export function useMyRosterInvitationsQuery() {
+  return useQuery({
+    queryKey: queryKeys.players.meRosterInvitations(),
+    queryFn: () => teamsBrowserClient.listMyRosterInvitations(),
+  });
+}
+
+export function useRespondToRosterInvitationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: RespondToRosterInvitationRequest & { readonly invitationId: string }) =>
+      teamsBrowserClient.respondToRosterInvitation(input.invitationId, { action: input.action }),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.players.meRosterInvitations(),
+      });
+      if (data.status === "accepted") {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
+        await invalidateEffectiveAccessQueries(queryClient);
+      }
     },
   });
 }

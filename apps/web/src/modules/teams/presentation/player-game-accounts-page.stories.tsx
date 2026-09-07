@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import type { PlayerStoryState } from "./player-story-client.ts";
 import {
   playerProfileFixture,
@@ -23,6 +23,8 @@ function scenarioState(id: ScenarioId): PlayerStoryState {
     teams: playerTeamsFixture({ teams: [], activeRosterMembershipId: null }),
     setActiveTeam: "success" as const,
     acceptRosterInvitation: "success" as const,
+    rosterInvitations: { invitations: [] },
+    respondToRosterInvitation: "success" as const,
   };
   switch (id) {
     case "empty":
@@ -141,9 +143,11 @@ export const FieldValidation: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("button", { name: "Añadir cuenta" }));
-    await expect(canvas.getByText("Escribe el identificador de EA.")).toBeVisible();
-    await expect(canvas.getByText("Selecciona una plataforma.")).toBeVisible();
-    await expect(canvas.getByText("Escribe la edición.")).toBeVisible();
+    await waitFor(() => {
+      expect(canvas.getByText("Escribe el identificador de EA.")).toBeVisible();
+      expect(canvas.getByText("Selecciona una plataforma.")).toBeVisible();
+      expect(canvas.getByText("Escribe la edición.")).toBeVisible();
+    });
   },
 };
 

@@ -1,9 +1,12 @@
 import type {
   GetMyPlayerProfileResponse,
   GetMyTeamsResponse,
+  ListMyRosterInvitationsResponse,
   PlayerGameAccountDto,
   PlayerTeamMembershipDto,
+  RosterInvitationInboxItemDto,
 } from "@futrob/api-contracts";
+import { daysFromNowIso } from "@futrob/shared-kernel";
 
 const CREATED_AT = "2026-08-01T00:00:00.000Z";
 const PROFILE_ID = "profile-story";
@@ -85,6 +88,43 @@ export function playerTeamsFixture(
       overrides.activeRosterMembershipId === undefined
         ? (teams.find((item) => item.active)?.membership.id ?? null)
         : overrides.activeRosterMembershipId,
+  };
+}
+
+export function rosterInvitationInboxItemFixture(
+  overrides: Partial<RosterInvitationInboxItemDto> = {},
+): RosterInvitationInboxItemDto {
+  return {
+    invitationId: overrides.invitationId ?? "invitation-sirius",
+    organizationId: overrides.organizationId ?? "org-liga-nocturna",
+    competitionId: overrides.competitionId ?? "copa-invierno",
+    teamId: overrides.teamId ?? "team-sirius",
+    teamName: overrides.teamName ?? "Sirius FC",
+    clubName: overrides.clubName ?? "Sirius FC",
+    crestUrl: overrides.crestUrl ?? null,
+    role: overrides.role ?? "player",
+    status: overrides.status ?? "pending",
+    invitedBy: overrides.invitedBy ?? {
+      displayName: "Alex Rojas",
+      gamertag: "alexrojas09",
+      role: "captain",
+    },
+    recipientIdentifier: overrides.recipientIdentifier ?? "davos282",
+    message:
+      overrides.message === undefined
+        ? "Nos gustaría contar contigo en el equipo para la próxima temporada."
+        : overrides.message,
+    createdAt: overrides.createdAt ?? daysFromNowIso(0),
+    expiresAt: overrides.expiresAt ?? daysFromNowIso(6),
+    respondedAt: overrides.respondedAt ?? null,
+  };
+}
+
+export function playerRosterInvitationsFixture(
+  invitations?: readonly RosterInvitationInboxItemDto[],
+): ListMyRosterInvitationsResponse {
+  return {
+    invitations: [...(invitations ?? [rosterInvitationInboxItemFixture()])],
   };
 }
 

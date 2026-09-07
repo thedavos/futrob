@@ -20,6 +20,8 @@ function scenarioState(id: ScenarioId): PlayerStoryState {
     addGameAccount: "success" as const,
     setActiveTeam: "success" as const,
     acceptRosterInvitation: "success" as const,
+    rosterInvitations: { invitations: [] },
+    respondToRosterInvitation: "success" as const,
   };
   switch (id) {
     case "ready":

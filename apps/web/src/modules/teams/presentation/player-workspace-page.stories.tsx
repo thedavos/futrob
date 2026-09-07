@@ -27,6 +27,8 @@ function scenarioState(id: ScenarioId): PlayerStoryState {
         addGameAccount: "success",
         setActiveTeam: "success",
         acceptRosterInvitation: "success",
+        rosterInvitations: { invitations: [] },
+        respondToRosterInvitation: "success",
       };
     case "empty":
       return {
@@ -35,6 +37,8 @@ function scenarioState(id: ScenarioId): PlayerStoryState {
         addGameAccount: "success",
         setActiveTeam: "success",
         acceptRosterInvitation: "success",
+        rosterInvitations: { invitations: [] },
+        respondToRosterInvitation: "success",
       };
     case "noAccounts":
       return {
@@ -43,6 +47,8 @@ function scenarioState(id: ScenarioId): PlayerStoryState {
         addGameAccount: "success",
         setActiveTeam: "success",
         acceptRosterInvitation: "success",
+        rosterInvitations: { invitations: [] },
+        respondToRosterInvitation: "success",
       };
     default: {
       const _exhaustive: never = id;

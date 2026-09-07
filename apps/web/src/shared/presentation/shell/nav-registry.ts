@@ -62,7 +62,7 @@ function personalGeneralNav(t: Translator): readonly ShellNavItem[] {
       href: "/player/statistics",
       icon: "statistics",
     },
-    { id: "invitations", label: "Invitaciones", href: "/invitations/accept", icon: "invitations" },
+    { id: "invitations", label: "Invitaciones", href: "/invitations", icon: "invitations" },
   ];
 }
 

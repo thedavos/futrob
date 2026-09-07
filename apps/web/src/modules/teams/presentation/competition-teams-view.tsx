@@ -118,6 +118,8 @@ export type CompetitionTeamsViewProps = {
   readonly onCreateInvitation: (input: {
     readonly role: RosterMembershipRoleDto;
     readonly redeemPolicy: "single" | "multi";
+    readonly inviteeIdentifier: string | null;
+    readonly message: string | null;
   }) => Promise<void>;
   readonly onSearchClubs: (query: string) => Promise<readonly ExternalClubDto[]>;
   readonly onConnectClub: (club: ExternalClubDto) => Promise<void>;

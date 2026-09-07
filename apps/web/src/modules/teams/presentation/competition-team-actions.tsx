@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Field,
+  FieldDescription,
   FieldLabel,
   Input,
   Select,
@@ -35,6 +36,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Textarea,
   useCopyToClipboard,
 } from "@futrob/ui";
 import {
@@ -67,10 +69,14 @@ export function InvitationDialog({
   onCreateInvitation: (input: {
     readonly role: RosterMembershipRoleDto;
     readonly redeemPolicy: "single" | "multi";
+    readonly inviteeIdentifier: string | null;
+    readonly message: string | null;
   }) => Promise<void>;
 }>) {
   const [role, setRole] = useState<RosterMembershipRoleDto>("player");
   const [policy, setPolicy] = useState<"single" | "multi">("single");
+  const [inviteeIdentifier, setInviteeIdentifier] = useState("");
+  const [message, setMessage] = useState("");
   const { copyToClipboard, isCopied } = useCopyToClipboard();
   return (
     <Dialog>
@@ -123,6 +129,27 @@ export function InvitationDialog({
               </SelectContent>
             </Select>
           </Field>
+          <Field name="invitation-invitee">
+            <FieldLabel>Destinatario (ID de juego)</FieldLabel>
+            <Input
+              autoComplete="off"
+              onChange={(event) => setInviteeIdentifier(event.target.value)}
+              placeholder="Ej. davos282"
+              value={inviteeIdentifier}
+            />
+            <FieldDescription>
+              Opcional. La invitación aparecerá en el inbox del jugador con ese ID vinculado.
+            </FieldDescription>
+          </Field>
+          <Field name="invitation-message">
+            <FieldLabel>Mensaje</FieldLabel>
+            <Textarea
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder="Opcional. Un mensaje breve para el jugador invitado."
+              rows={3}
+              value={message}
+            />
+          </Field>
           {invitationUrl ? (
             <div {...applyStyles(styles.created)}>
               <p {...applyStyles(typography.label, styles.createdLabel)}>Enlace creado</p>
@@ -146,7 +173,16 @@ export function InvitationDialog({
           <DialogClose render={<Button variant="ghost" />}>Cancelar</DialogClose>
           <Button
             disabled={busy}
-            onClick={() => runAction(() => onCreateInvitation({ role, redeemPolicy: policy }))}
+            onClick={() =>
+              runAction(() =>
+                onCreateInvitation({
+                  role,
+                  redeemPolicy: policy,
+                  inviteeIdentifier: inviteeIdentifier.trim() || null,
+                  message: message.trim() || null,
+                }),
+              )
+            }
           >
             Crear invitación
           </Button>

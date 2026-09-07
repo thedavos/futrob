@@ -44,6 +44,9 @@ function hydratePlayerStoryQueries(client: QueryClient, state: PlayerStoryState)
   if (state.teams !== "pending" && state.teams !== "error") {
     client.setQueryData(queryKeys.players.meTeams(), state.teams);
   }
+  if (state.rosterInvitations !== "pending" && state.rosterInvitations !== "error") {
+    client.setQueryData(queryKeys.players.meRosterInvitations(), state.rosterInvitations);
+  }
 }
 
 export function PlayerStoryShell({

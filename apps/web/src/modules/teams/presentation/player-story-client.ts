@@ -7,7 +7,10 @@ import type {
   AssociateMyPlayerExternalClubResponse,
   GetMyPlayerProfileResponse,
   GetMyTeamsResponse,
+  ListMyRosterInvitationsResponse,
   RequestId,
+  RespondToRosterInvitationRequest,
+  RespondToRosterInvitationResponse,
   SetActiveTeamRequest,
   SetActiveTeamResponse,
 } from "@futrob/api-contracts";
@@ -37,9 +40,11 @@ export type PlayerStoryMutationState = "success" | "pending" | "error";
 export type PlayerStoryState = {
   readonly profile: PlayerStoryQueryState<GetMyPlayerProfileResponse>;
   readonly teams: PlayerStoryQueryState<GetMyTeamsResponse>;
+  readonly rosterInvitations: PlayerStoryQueryState<ListMyRosterInvitationsResponse>;
   readonly addGameAccount: PlayerStoryMutationState;
   readonly setActiveTeam: PlayerStoryMutationState;
   readonly acceptRosterInvitation: PlayerStoryMutationState;
+  readonly respondToRosterInvitation: PlayerStoryMutationState;
 };
 
 const hang = <T>(): Promise<T> => new Promise(() => undefined);
@@ -47,9 +52,11 @@ const hang = <T>(): Promise<T> => new Promise(() => undefined);
 const defaultState = (): PlayerStoryState => ({
   profile: playerProfileFixture(),
   teams: playerTeamsFixture({ teams: [], activeRosterMembershipId: null }),
+  rosterInvitations: { invitations: [] },
   addGameAccount: "success",
   setActiveTeam: "success",
   acceptRosterInvitation: "success",
+  respondToRosterInvitation: "success",
 });
 
 let state: PlayerStoryState = defaultState();
@@ -196,5 +203,54 @@ export const teamsBrowserClient = {
       role: "player" as const,
       createdAt: "2026-08-14T22:00:00.000Z",
     }));
+  },
+
+  listMyRosterInvitations(): Promise<ListMyRosterInvitationsResponse> {
+    return resolveQuery(state.rosterInvitations);
+  },
+
+  respondToRosterInvitation(
+    invitationId: string,
+    input: RespondToRosterInvitationRequest,
+  ): Promise<RespondToRosterInvitationResponse> {
+    return resolveMutation(state.respondToRosterInvitation, () => {
+      const nextStatus = input.action === "accept" ? ("accepted" as const) : ("declined" as const);
+      const inbox =
+        state.rosterInvitations === "pending" || state.rosterInvitations === "error"
+          ? null
+          : state.rosterInvitations;
+      const invitation = inbox?.invitations.find((item) => item.invitationId === invitationId);
+      if (inbox && invitation) {
+        state = {
+          ...state,
+          rosterInvitations: {
+            invitations: inbox.invitations.map((item) =>
+              item.invitationId === invitationId
+                ? { ...item, status: nextStatus, respondedAt: new Date().toISOString() }
+                : item,
+            ),
+          },
+        };
+      }
+      if (!invitation) {
+        throw new TeamsClientError(404, "teams.roster_invitation_not_found");
+      }
+      return {
+        status: nextStatus,
+        membership:
+          nextStatus === "accepted"
+            ? {
+                id: `membership-${invitationId}`,
+                organizationId: invitation.organizationId,
+                competitionId: invitation.competitionId,
+                teamId: invitation.teamId,
+                playerProfileId: "profile-story",
+                gameAccountId: null,
+                role: invitation.role,
+                createdAt: new Date().toISOString(),
+              }
+            : null,
+      };
+    });
   },
 };

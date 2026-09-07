@@ -140,6 +140,42 @@ const authSessionUserSchema = z.object({
   user: z.object({ id: z.string().min(1) }),
 });
 
+const authSessionUserNameSchema = z.object({
+  user: z.object({ name: z.string().nullish() }),
+});
+
+/**
+ * Best-effort display name from the Better Auth session (for server-side
+ * snapshots). Returns null instead of throwing: the caller's flow must not
+ * fail because a cosmetic name lookup did.
+ */
+export async function fetchAuthSessionUserName(
+  request: Request,
+  authService: AuthServiceBinding | undefined,
+  timeoutMs: number = AUTH_PROXY_TIMEOUT_MS,
+): Promise<string | null> {
+  if (!authService) return null;
+  const incoming = new URL(request.url);
+  try {
+    const upstream = await authService.fetch(
+      new Request(`${AUTH_SERVICE_ORIGIN}${AUTH_SESSION_PATH}`, {
+        method: "GET",
+        headers: buildAuthSessionHeaders(request, incoming),
+        redirect: "manual",
+        signal: AbortSignal.timeout(timeoutMs),
+      }),
+    );
+    if (!upstream.ok) return null;
+    const raw: unknown = await upstream.json().catch(() => null);
+    const parsed = authSessionUserNameSchema.safeParse(raw);
+    if (!parsed.success) return null;
+    const name = parsed.data.user.name?.trim();
+    return name ? name : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Resolve the Better Auth user id via AUTH_SERVICE. Web does not read
  * session/user tables from D1 — that stays on apps/auth.
