@@ -54,4 +54,14 @@ describe("ClubCrestAvatar", () => {
     const framedImage = framed.container.querySelector('[data-slot="club-crest-image"]');
     expect(framedImage?.getAttribute("data-outline")).toBeNull();
   });
+
+  it("does not paint the muted chip behind a loaded crest", () => {
+    const withImage = render(
+      <ClubCrestAvatar imageUrl="https://example.com/crest.png" name="Night Owls" />,
+    );
+    const initials = render(<ClubCrestAvatar imageUrl={null} name="Night Owls" />);
+    const imageRoot = withImage.container.querySelector('[data-slot="club-crest-avatar"]');
+    const initialsRoot = initials.container.querySelector('[data-slot="club-crest-avatar"]');
+    expect(imageRoot?.className).not.toEqual(initialsRoot?.className);
+  });
 });

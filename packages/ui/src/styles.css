@@ -114,6 +114,15 @@
     max-width: 100%;
   }
 
+  /*
+   * Document `color-scheme: dark` paints a black canvas behind transparent
+   * PNGs (EA crests, decorative art). Keep the page dark; composite images
+   * against their parent surface.
+   */
+  img {
+    color-scheme: light;
+  }
+
   img:not([data-outline="none"]) {
     outline: 1px solid oklch(1 0 0 / 0.1);
     outline-offset: -1px;

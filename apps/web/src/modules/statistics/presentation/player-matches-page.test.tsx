@@ -159,7 +159,7 @@ describe("PlayerMatchesPage", () => {
     expect(await screen.findByRole("listitem", { name: /Inter 2 – 1 Milan/ })).toBeTruthy();
     expect(screen.getByText("Hoy")).toBeTruthy();
     expect(screen.getByText("davos282 MVP")).toBeTruthy();
-    expect(document.querySelectorAll("[data-slot='club-crest-avatar']").length).toBe(2);
+    expect(document.querySelectorAll("[data-slot='club-crest-avatar']").length).toBe(4);
     expect(document.querySelector("[data-slot='club-crest-image']")?.getAttribute("src")).toBe(
       "https://example.com/inter.png",
     );
@@ -204,15 +204,11 @@ describe("PlayerMatchesPage", () => {
       "2",
     );
     const homeWinItem = screen.getByRole("listitem", { name: /Inter 2 – 1 Milan/ });
+    expect(homeWinItem.querySelector("[data-match-backdrop]")).toBeTruthy();
     expect(
-      homeWinItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill"),
-    ).toBe("win");
-    expect(
-      homeWinItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill"),
-    ).toBe("loss");
-    const homeWatermark = homeWinItem.querySelector("[data-pitch-watermark='home']");
-    expect(homeWatermark?.getAttribute("src")).toBe("https://example.com/inter.png");
-    expect(homeWinItem.querySelector("[data-pitch-watermark='away']")).toBeNull();
+      homeWinItem.querySelector("[data-crest-watermark='home'] img")?.getAttribute("src"),
+    ).toBe("https://example.com/inter.png");
+    expect(homeWinItem.querySelector("[data-crest-watermark='away'] img")).toBeNull();
     expect(screen.queryByText("Hat-trick")).toBeNull();
     expect(screen.getByRole("heading", { name: "Rendimiento" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Record" })).toBeTruthy();
@@ -325,14 +321,9 @@ describe("PlayerMatchesPage", () => {
     );
     expect(document.querySelector("[data-match-outcome='draw']")).toBeTruthy();
     const drawItem = screen.getByRole("listitem", { name: /Atlético Norte 1 – 1 Fera Enjaulada/ });
-    expect(
-      drawItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill"),
-    ).toBe("drawHome");
-    expect(
-      drawItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill"),
-    ).toBe("drawAway");
-    expect(drawItem.querySelector("[data-pitch-fill='win']")).toBeNull();
-    expect(drawItem.querySelector("[data-pitch-fill='loss']")).toBeNull();
+    expect(drawItem.querySelector("[data-match-backdrop]")).toBeTruthy();
+    expect(drawItem.querySelector("[data-pitch-fill]")).toBeNull();
+    expect(drawItem.querySelector("[data-pitch-half]")).toBeNull();
     expect(document.querySelector("[data-form-segment='draw']")).toBeTruthy();
     expect(document.querySelector("[data-last-game-outcome='draw']")).toBeTruthy();
     expect(document.querySelector("[data-last-game-outcome='draw']")?.textContent).toBe("E");
@@ -471,12 +462,9 @@ describe("PlayerMatchesPage", () => {
     expect(document.querySelector("[data-match-outcome='win']")).toBeTruthy();
     expect(document.querySelector("[data-match-outcome='loss']")).toBeTruthy();
     const awayWinItem = screen.getByRole("listitem", { name: /Cuervos FC 0 – 3 Fera Barranco/ });
-    expect(
-      awayWinItem.querySelector("[data-pitch-half='away']")?.getAttribute("data-pitch-fill"),
-    ).toBe("win");
-    expect(
-      awayWinItem.querySelector("[data-pitch-half='home']")?.getAttribute("data-pitch-fill"),
-    ).toBe("loss");
+    expect(awayWinItem.querySelector("[data-match-backdrop]")).toBeTruthy();
+    expect(awayWinItem.querySelector("[data-crest-watermark='home']")).toBeTruthy();
+    expect(awayWinItem.querySelector("[data-crest-watermark='away']")).toBeTruthy();
     expect(document.querySelector("[data-match-outcome='loss']")).toBeTruthy();
     expect(document.querySelector("[data-scoring-feat='hatTrick']")?.textContent).toContain(
       "Hat-trick",

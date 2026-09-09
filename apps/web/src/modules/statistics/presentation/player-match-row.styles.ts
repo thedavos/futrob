@@ -73,7 +73,11 @@ export const styles = stylex.create({
   },
   status: {
     fontWeight: 600,
-    color: colors.mutedForeground,
+    color: colors.foreground,
+    backgroundColor: colors.muted,
+    borderRadius: "var(--corner-full)",
+    paddingInline: "0.5rem",
+    paddingBlock: "0.125rem",
   },
   when: {
     fontVariantNumeric: "tabular-nums",
@@ -116,10 +120,10 @@ export const styles = stylex.create({
     justifyContent: "center",
     gap: "0.625rem",
     borderRadius: "var(--corner-lg)",
-    backgroundColor: colors.foreground,
+    backgroundColor: colors.muted,
     paddingInline: "0.875rem",
     paddingBlock: "0.625rem",
-    color: colors.background,
+    color: colors.foreground,
   },
   scoreDigit: {
     fontVariantNumeric: "tabular-nums",
@@ -132,7 +136,7 @@ export const styles = stylex.create({
     },
   },
   scoreTrail: {
-    color: colors.background,
+    color: colors.foreground,
   },
   vs: {
     paddingInline: "0.125rem",

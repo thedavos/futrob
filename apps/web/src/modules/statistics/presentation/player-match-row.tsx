@@ -1,6 +1,5 @@
 "use client";
 
-import { Fragment, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import type { PlayerRecentProviderMatchDto } from "@futrob/api-contracts";
 import { applyStyles, Badge, Button } from "@futrob/ui";
@@ -11,14 +10,13 @@ import { MATCH_OUTCOME_KEYS, MATCH_TYPE_KEYS, SCORING_FEAT_KEYS } from "./player
 import {
   appearanceRedCardsAria,
   listedClubRedCards,
-  MatchClubSide,
   MatchOutcomeCaption,
   matchTypeBadgeVariant,
   notPlayedMessage,
-  scoreDigitStyle,
   ScoringFeatBadge,
 } from "./player-match-row-parts.tsx";
-import { rowElevation, rowTypography, styles } from "./player-match-row.styles.ts";
+import { rowTypography, styles } from "./player-match-row.styles.ts";
+import { MatchHeaderMeta, ProviderMatchScore } from "./provider-match-scoreboard.tsx";
 import {
   appearanceScoringFeat,
   isDnfMatch,
@@ -30,8 +28,8 @@ import {
   type MatchSortOrder,
   type PlayerMatchesView,
 } from "./player-match-view.ts";
+import { MatchPitchSurface } from "@/shared/presentation/match-pitch-surface.tsx";
 import { MatchAppearanceStrip } from "./player-match-appearance.tsx";
-import { MatchPitchWash } from "./player-match-pitch.tsx";
 
 export function ProviderMatchRow({
   dateTimeFormat,
@@ -98,13 +96,11 @@ export function ProviderMatchRow({
 
   return (
     <li aria-label={accessibleName} {...applyStyles(styles.item)}>
-      <div {...applyStyles(styles.card)}>
-        <MatchPitchWash
-          awayGoals={match.away.goals}
-          awayImageUrl={match.away.imageUrl}
-          homeGoals={match.home.goals}
-          homeImageUrl={match.home.imageUrl}
-        />
+      <MatchPitchSurface
+        away={{ imageUrl: match.away.imageUrl, name: match.away.name }}
+        className={styles.card}
+        home={{ imageUrl: match.home.imageUrl, name: match.home.name }}
+      >
         <div {...applyStyles(styles.body)}>
           <div {...applyStyles(styles.header, showOpenMatch && styles.headerOpen)}>
             <MatchHeaderMeta
@@ -183,59 +179,14 @@ export function ProviderMatchRow({
           </div>
 
           <div {...applyStyles(styles.center)}>
-            <div {...applyStyles(styles.scoreRow)}>
-              <MatchClubSide
-                imageUrl={match.home.imageUrl}
-                name={match.home.name}
-                redCards={listedClubRedCards(item, side, "home")}
-                redCardsLabel={t("player.matches.metric.redCards")}
-              />
-              <div {...applyStyles(styles.scoreStack)}>
-                <span
-                  data-match-status="finalized"
-                  {...applyStyles(rowTypography.caption, styles.status)}
-                >
-                  {t("player.matches.finalized")}
-                </span>
-                <div
-                  data-match-outcome={outcome === "unknown" ? undefined : outcome}
-                  data-match-score=""
-                  {...applyStyles(styles.score, rowElevation.score)}
-                >
-                  <span
-                    data-score-digit="home"
-                    data-score-lead={match.home.goals > match.away.goals ? "home" : undefined}
-                    {...applyStyles(
-                      rowTypography.score,
-                      styles.scoreDigit,
-                      scoreDigitStyle(match.home.goals, match.away.goals, "home"),
-                    )}
-                  >
-                    {match.home.goals}
-                  </span>
-                  <span {...applyStyles(rowTypography.score, styles.vs)}>
-                    {t("player.matches.vs")}
-                  </span>
-                  <span
-                    data-score-digit="away"
-                    data-score-lead={match.away.goals > match.home.goals ? "away" : undefined}
-                    {...applyStyles(
-                      rowTypography.score,
-                      styles.scoreDigit,
-                      scoreDigitStyle(match.home.goals, match.away.goals, "away"),
-                    )}
-                  >
-                    {match.away.goals}
-                  </span>
-                </div>
-              </div>
-              <MatchClubSide
-                imageUrl={match.away.imageUrl}
-                name={match.away.name}
-                redCards={listedClubRedCards(item, side, "away")}
-                redCardsLabel={t("player.matches.metric.redCards")}
-              />
-            </div>
+            <ProviderMatchScore
+              finalizedLabel={t("player.matches.finalized")}
+              item={item}
+              redCardsAway={listedClubRedCards(item, side, "away")}
+              redCardsHome={listedClubRedCards(item, side, "home")}
+              redCardsLabel={t("player.matches.metric.redCards")}
+              vsLabel={t("player.matches.vs")}
+            />
 
             {featLabel && feat ? (
               <div {...applyStyles(styles.featRow)}>
@@ -252,25 +203,7 @@ export function ProviderMatchRow({
         {showAppearanceStrip ? (
           <MatchAppearanceStrip item={item} mvpLabel={mvpLabel} numberFormat={numberFormat} t={t} />
         ) : null}
-      </div>
+      </MatchPitchSurface>
     </li>
-  );
-}
-
-function MatchHeaderMeta({ items }: { readonly items: readonly ReactNode[] }) {
-  const parts = items.filter((item) => item !== null && item !== false && item !== undefined);
-  return (
-    <div {...applyStyles(styles.meta)}>
-      {parts.map((part, index) => (
-        <Fragment key={index}>
-          {index > 0 ? (
-            <span aria-hidden="true" {...applyStyles(rowTypography.caption, styles.muted)}>
-              ·
-            </span>
-          ) : null}
-          {part}
-        </Fragment>
-      ))}
-    </div>
   );
 }

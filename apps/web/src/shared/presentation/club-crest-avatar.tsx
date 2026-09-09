@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyProps, applyStyles } from "@futrob/ui";
+import { applyProps, applyStyles, type HostClassName } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 
@@ -18,6 +18,8 @@ const styles = stylex.create({
   framed: {
     overflow: "hidden",
     borderRadius: "var(--corner-full)",
+  },
+  framedChip: {
     backgroundColor: colors.muted,
   },
   unframed: {
@@ -27,6 +29,7 @@ const styles = stylex.create({
     width: "100%",
     height: "100%",
     objectFit: "contain",
+    colorScheme: "light",
   },
   imageUnframed: {
     outlineWidth: 0,
@@ -54,18 +57,25 @@ export function ClubCrestAvatar({
 }: {
   readonly name: string;
   readonly imageUrl: string | null;
-  readonly className?: string;
+  readonly className?: HostClassName;
   readonly style?: CSSProperties;
   readonly fallbackClassName?: string;
   readonly framed?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
+  const showImage = Boolean(imageUrl) && !failed;
 
   return (
     <span
       aria-hidden="true"
       data-slot="club-crest-avatar"
-      {...applyProps(className, style, styles.root, framed ? styles.framed : styles.unframed)}
+      {...applyProps(
+        className,
+        style,
+        styles.root,
+        framed ? styles.framed : styles.unframed,
+        framed && !showImage && styles.framedChip,
+      )}
     >
       {imageUrl && !failed ? (
         <img
