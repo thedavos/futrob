@@ -8,6 +8,7 @@ import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
   createCompetitionDraft,
   getCompetitionDraft,
+  listMyAccessibleCompetitions,
   listOrganizationCompetitions,
   updateCompetitionDraft,
   listCompetitionParticipants,
@@ -16,6 +17,14 @@ import {
   removeCompetitionParticipant,
   publishCompetition,
 } from "./competitions-browser-client.ts";
+
+export function useMyAccessibleCompetitionsQuery(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.competitions.mine(),
+    queryFn: listMyAccessibleCompetitions,
+    enabled,
+  });
+}
 
 export function useOrganizationCompetitionsQuery(organizationId: string) {
   return useQuery({

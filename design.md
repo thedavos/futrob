@@ -1,6 +1,6 @@
 # Futrob — Design
 
-**Estado:** contrato único de diseño. **Actualizado:** 2026-09-06.
+**Estado:** contrato único de diseño. **Actualizado:** 2026-09-08.
 **Alcance:** marketing, producto web, portal público y aplicación nativa.
 
 Este documento reúne identidad, arquitectura de información, composición, componentes,
@@ -15,7 +15,8 @@ Si código y documento difieren, resolver la discrepancia explícitamente sin cr
 1. Identificar actor, contexto activo, datos disponibles y tarea principal. Distinguir consulta
    personal de operación competitiva y publicación pública.
 2. Elegir jerarquía y estructura: cabecera, filtros, secciones y representación de datos.
-   Consultar los patrones de Mis estadísticas, Mis partidos y detalle antes de componer.
+   Consultar los patrones de Inicio, stats, Mis estadísticas, Mis partidos y detalle antes
+   de componer.
 3. Implementar con primitivas existentes y tokens semánticos; conservar permisos, estados,
    navegación de regreso y contratos de datos. Las composiciones de negocio viven en la app.
 4. Verificar estados pertinentes en Storybook, anchuras estrechas, teclado, ES/EN y ambos
@@ -32,7 +33,8 @@ el espectador sigue contenido publicado. Cada superficie jerarquiza esas tareas.
 La identidad visual vigente es **Grafito + Lima**. La profundidad procede de superficies
 sobrias, separación, tipografía y alineación. Las filas y tablas organizan partidos, plantillas,
 auditoría y rankings. Las tarjetas contienen entidades autónomas, herramientas o stats
-resumidas como las de Mis estadísticas. Una acción primaria por contexto; las acciones
+resumidas. Un `Stat` se compone de dos formas vigentes: tesela de Inicio (icono lima +
+cifra) o panel de Mis estadísticas (icono muted + hint). Una acción primaria por contexto; las acciones
 destructivas se separan y confirman. El estado siempre tiene texto más icono o forma.
 
 Evitar tarjetas anidadas, grids de tarjetas para toda clase de contenido, degradados
@@ -77,7 +79,9 @@ Las tarjetas permanecen en grafito y los números en blanco. Los estados pueden 
 su texto, icono o indicador, con una etiqueta explícita; no teñir todos los valores de una stat.
 `approved` conserva semántica propia aunque comparta verde con éxito: una victoria EA
 no demuestra aprobación oficial. `emphasis` expresa reconocimiento, nunca aprobación.
-Los escudos de clubes mantienen sus colores originales, sin filtros ni recoloración.
+Los escudos de clubes mantienen sus colores originales, sin filtros ni recoloración,
+salvo las marcas de agua de la [superficie de partido](#superficie-de-partido)
+(gris, opacidad 0.11).
 
 Los fondos sólidos de estado usan texto grafito (`*-foreground`); las variantes sutiles
 mantienen fondo grafito y texto de estado. Los gráficos usan `chart-*` con etiquetas,
@@ -202,10 +206,19 @@ La navegación de producto usa `typography.label`. El estado activo no depende �
   - `variant="elevated"`: `elevation.md` para paneles vacíos aislados.
 - `Skeleton`
 - `Stat` (KPI): `StatLabel` + `StatValue` + `StatHint` opcional; `StatGroup` para strips.
-  - `StatValue` size: `default` (`typography.score`) | `compact` (strip denso) | `empty` (`typography.caption` para ausencia textual).
-  - `tone`: `default` | `muted` | `success` | `warning` | `error` (`error` → token danger).
+  El primitivo no impone layout de tesela: la presentación envuelve icono, padding y
+  grid. Dos composiciones de producto vigentes: [Inicio](#composicion-stat-inicio) y
+  [Mis estadísticas](#composicion-stat-perfil). Reutilizar una de las dos; no inventar
+  una tercera isla de icono ni un `StatValue` fuera de `typography.score` / `compact` / `empty`.
+  - `StatLabel`: `typography.label` (12 px, peso 500), `muted-foreground`.
+  - `StatValue` size: `default` (`typography.score`, 30→36 px, peso 600, tabular) |
+    `compact` (20 px, peso 600, tabular) | `empty` (`typography.caption` para ausencia textual).
+  - `tone`: `default` (`foreground`) | `muted` | `success` | `warning` | `error` (`error` → danger).
     `muted` para valores no disponibles (`—`). El color no comunica solo; acompaña label/hint.
     El formateo (locale, `%`, miles) es de la presentación; el primitivo no conoce dominio.
+  - `StatHint`: `typography.caption` (12 px, 400), `muted-foreground`.
+  - `StatGroup` `wrap`: flex, gap 32×20 px. `triple`: grid 3 columnas, gap 12 px.
+    Las teselas de Inicio y perfil sustituyen ese group por un grid de producto.
 - `ScrollArea` para listas densas y overflow controlado
 - `Progress` para sync/jobs con estado explícito (texto + barra; `value={null}` = indeterminado)
 
@@ -287,6 +300,8 @@ Una primitiva nueva o una variante modificada requiere:
 | Apoyo al título                             | `PageHeaderDescription` / `Subtitle`   | Orientación útil, no repetición de datos ya presentes.                                                 |
 | Sección deportiva                           | `SectionTitle` h2 / `typography.label` | «Rendimiento», «Comparación», «Destacados», «Atributos».                                               |
 | Panel de lectura                            | `Heading`                              | h2–h6 según estructura; evitar saltos de nivel por apariencia.                                         |
+| Título de card de sección                   | `Heading` 18 px / peso 600             | «Último partido», «Mis competiciones». No usar `typography.heading` (20 px / 700) en este cromo.       |
+| Acción de card de sección                   | `TextLink` `caption` / peso 500        | «Ver todos», «Ver todas»; lima; chevron 16 px. No es un `Button variant="link"`.                       |
 | Filtros, pestañas, columnas, nombre de stat | `typography.label` / `StatLabel`       | Identificación compacta y consistente.                                                                 |
 | Cifra principal                             | `Score` / `StatValue`                  | Blanco, cifras tabulares y formato local; iguales escalas para métricas pares.                         |
 | Celdas numéricas                            | `Score` con escala de tabla            | Alineación compartida con el encabezado; nunca tamaño de KPI dentro de una fila.                       |
@@ -299,34 +314,156 @@ label/valor/hint, 12 px entre icono y bloque textual, 16 px dentro de paneles y 
 24 px entre paneles relacionados y 32 px entre grandes grupos. Consumir la rampa de tokens,
 no acumular margins para compensar una estructura incorrecta. `min-width: 0` en celdas flex/grid.
 
-### Stats: referencia canónica de Mis estadísticas
+### Stats: composiciones de producto
 
-La composición de `PlayerProfileKpis` en
-`apps/web/src/modules/statistics/presentation/player-profile/player-profile-kpis.tsx`
-es la referencia para nuevas stats resumidas. `Stat` es la primitiva; la composición de
-icono, valor y contexto permanece en presentación de producto.
+`Stat` / `StatLabel` / `StatValue` / `StatHint` / `StatGroup` son la primitiva. El icono,
+el panel y el grid viven en presentación. Hay **dos composiciones vigentes**. Elegir una;
+no mezclar isla lima con hint, ni icono muted desnudo sin hint en un dashboard de teselas.
 
-- Cuatro resúmenes pares: balance V–E–D con porcentaje de victorias, rating promedio,
+Reglas comunes a ambas: el icono es decorativo (el label nombra el dato); el valor no es
+un enlace; ausencia = «—» o copy de no disponible en `muted`, nunca un cero inventado;
+formateo local en la presentación; cuatro teselas pares usan la misma escala de `StatValue`.
+
+#### Composición Stat Inicio {#composicion-stat-inicio}
+
+Referencia: `home-performance.tsx` (fila de rendimiento de `/player`). Es la tesela de
+dashboard: cifra grande, sin hint, icono lima como ancla. Reutilizarla en otras homes o
+resúmenes de una sola cifra (organización, portal autenticado, bloques equivalentes).
+
+- `StatGroup` sustituido por grid de producto: 2 columnas por defecto, 4 desde `lg`;
+  gap 16 px (`1rem`) en ambos ejes. En Inicio la fila ocupa todo el ancho bajo el héroe.
+- Panel: `surface` (`#1C2023`), borde `border` 1 px (`#343B40`), `corner-lg`, padding 16 px,
+  sin sombra. `Stat` aporta solo el gap interno de 4 px; el layout visible es un grid de
+  dos columnas (`auto` + `minmax(0, 1fr)`), `align-items: center`, gap 12 px.
+- Isla de icono a la izquierda: círculo `corner-full`, padding 12 px, glifo Phosphor
+  regular 32 px. Fondo `color-mix(in oklab, var(--primary) 20%, transparent)` (`#CAFF35`
+  al 20 %); icono `primary`. No usar `accent` sólido (`#293514`) aquí: la isla es lima
+  diluida, no un chip de selección.
+- Columna textual: `StatLabel` (12 px, 500, `muted-foreground`) + `StatValue` `default`
+  (30→36 px, 600, tabular, `foreground`). Gap 4 px. Sin `StatHint`.
+- Métricas de Inicio: partidos, victorias, rating, goles+asistencias. Rating `muted` solo
+  cuando el promedio no existe.
+
+#### Composición Stat perfil {#composicion-stat-perfil}
+
+Referencia: `player-profile-kpis.tsx`. Es el panel de lectura con contexto: misma tesela
+de superficie, icono secundario y hint bajo la cifra. Usarla cuando el valor necesita
+unidad, periodo o desglose (promedio, %, muestra).
+
+- Grid: 1 columna, 2 desde `sm`, 4 desde `lg`; gap 16 px.
+- Panel idéntico al de Inicio (surface, borde 1 px, `corner-lg`, padding 16 px).
+- Icono Phosphor regular 32 px a la izquierda, `muted-foreground`, **sin isla**. Fondo
+  oliva solo si una selección o énfasis lo justifica.
+- Stack: `StatLabel` + `StatValue` `default` + `StatHint` (`caption` 12 px, 400). Gap 4 px
+  entre líneas; 12 px entre icono y texto.
+- Cuatro resúmenes de Mis estadísticas: balance V–E–D con % de victorias, rating promedio,
   goles totales con promedio, asistencias totales con promedio.
-- Grid de 1 columna estrecha, 2 desde `sm`, 4 desde `lg`; gap de 16 px.
-- Panel gris carbón, borde pizarra de 1 px, `corner-lg`, padding de 16 px, sin sombra.
-- Icono Phosphor regular de 32 px a la izquierda; stack textual a la derecha, gap de 12 px.
-  Icono secundario por defecto; fondo oliva solo cuando una selección o énfasis lo justifica.
-- `StatLabel` arriba, `StatValue` blanco como dato dominante y `StatHint` secundario debajo.
-  El icono es decorativo: el label comunica el significado accesible.
-- Ausencia = «—» o copy de no disponible en tono muted; un cero solo representa un cero real.
-  Mantener unidades, periodo, tamaño de muestra, precisión y datos parciales explícitos.
-- El valor no es un enlace. Si existe una acción, ofrecer un control separado con nombre claro.
 
 Los KPI de Mis partidos (`SummaryCard`, balance y otras composiciones actuales) son
-**legado pendiente de sustitución**. No extraer de ellos el patrón de nuevas stats ni
-rediseñarlos durante esta migración. Sus colores sí heredan la paleta global.
-Las stats compactas del detalle son datos de un partido; conservan esa densidad contextual.
+**legado pendiente de sustitución**. Sustituirlos por Inicio (tesela) o perfil (con hint),
+no extraer un tercer patrón de ellos. Las stats compactas del detalle de partido conservan
+su densidad contextual y no son teselas de `StatGroup`.
+
+### Inicio del jugador
+
+Referencia: `player-home-page.tsx`, `home-card.tsx`, `home-hero.tsx`,
+`home-last-match-card.tsx`, `home-competitions-card.tsx` y stories `Product/Player/Home`.
+Destino `/player` tras onboarding. La matriz de 12 combinaciones (EA, partidos,
+competiciones, invitaciones) decide cada bloque; ver [espacio personal](#espacio-personal-del-jugador).
+
+#### Cuadrícula
+
+Tres filas, gap 16 px, `align-items: stretch`. Desde `lg`: héroe `2fr` + columna lateral
+`1fr` (invitaciones y EA, gap 16 px, se estiran a la altura del héroe); stats a todo el
+ancho; abajo dos columnas iguales (último partido | competiciones). En estrecho, una
+columna. El `PageHeader` («Inicio» + descripción del club + CTA) lleva margen inferior
+16 px. CTA del encabezado: botón `default` lima; prioriza partidos, actualizar partidos
+y competiciones.
+
+#### Card de sección (cromo)
+
+`Card` `flat` a toda la altura del slot. Encabezado y escena no se mezclan.
+
+- **Cromo:** `CardHeader` padding 20 px, fila, `space-between`, gap 12 px, `z-index` 1,
+  fondo de card (sin foto). Título: 18 px (`text-lg`), peso 600, `foreground`. Acción:
+  `TextLink` `text="caption"` (12 px) peso **500**, lima (`primary`), sin subrayado,
+  gap 4 px al chevron de 16 px. Copy: «Ver todos» (partidos), «Ver todas» (competiciones).
+- **Cuerpo con encabezado:** padding horizontal y inferior 20 px; sin padding-top extra
+  (el header ya lo da).
+- **Cuerpo sin encabezado** (vacíos centrados, teselas sueltas): padding 24 px.
+- **Escena en el cuerpo:** la foto y las marcas de agua viven solo en `CardContent`
+  (último partido). El cromo permanece sólido. El héroe de próximo enfrentamiento puede
+  llevar la escena en toda la card porque no usa este cromo de título+enlace.
+
+#### Superficie de partido {#superficie-de-partido}
+
+Tratamiento compartido de “escena”: no expresa W/D/L ni tiñe la fila. Misma receta en
+el héroe de próximo enfrentamiento (card entera), el **contenido** de Último partido y
+cada fila de Mis partidos.
+
+- Foto: `apps/web/src/assets/background-match.png`, `object-fit: cover`, `pointer-events: none`,
+  bajo el contenido (`z-index` 0). Es un fondo geométrico grafito con franjas y una
+  línea lima; no inventar otro wash diagonal.
+- Marcas de agua: `ClubCrestAvatar` sin marco, 256 px (`16rem`), opacidad **0.11**,
+  `filter: grayscale(1)`. Local: `left: -5rem`, `bottom: 0`. Visitante: `right: -5rem`,
+  `top: 0`. El contenedor recorta el overflow. El contenido de lectura va a `z-index` 1.
+- Escudos de identidad (los chicos del marcador) conservan color y tamaño de lectura:
+  56 px en el héroe de fixture (120 px el grande del VS); 64→96 px en filas y último
+  partido según contenedor (`4rem` / `6rem`). No aplicar grayscale al crest de lectura.
+
+#### Marcador y actuación
+
+Último partido reutiliza las piezas de la fila de Mis partidos. Stack del cuerpo: columna,
+gap **32 px** (`2rem`), ancho 100 %.
+
+1. **Meta:** `caption` 12 px. Badge de tipo (Liga / Copa / …) + «·» + desenlace
+   (Victoria / Empate / Derrota, peso 600, icono 14 px) + «·» + `<time>` tabular
+   `muted-foreground`, peso 500.
+2. **Marcador:** fila centrada, gap **32 px** en Último partido (en Mis partidos: 16 px,
+   64 px desde contenedor 32 rem). Club: columna
+   centrada, gap 4 px; nombre `caption` 12 px, peso 600, `muted-foreground`, ellipsis.
+   Centro: chip «Finalizado» (`caption` 12 px, peso 600, `foreground` sobre `muted`,
+   pill, padding 8×2 px) + pill del score (`muted`, `corner-lg`, padding 14×10 px,
+   `elevation.md`). Cifras `typography.score`; dígito líder `primary` (`#CAFF35`);
+   resto y «–» `foreground`. No pintar el 6–0 todo lima ni todo blanco.
+3. **Actuación:** `MatchAppearanceStrip` a ancho completo (`container-type: inline-size`
+   solo en este wrapper, no en el stack). Desde 32 rem: pill `surface`, `corner-full`,
+   padding 16×10 px, `elevation.sm`. Gap interno 10–12 px. MVP: `Badge` `warning` /
+   `emphasis` (estrella + nombre, peso 500). Goles y asistencias: `caption` muted +
+   cifra `foreground` tabular. Rating: badge lima/estado con estrella y cifra peso 500.
+   Sin aparición: caption «No jugaste», sin franja.
+
+El héroe de próximo enfrentamiento no usa este marcador: crests 120 px, «VS» 24 px / 700 /
+`muted-foreground`, fecha peso 500 `foreground`, badge de jornada lima diluida
+(`primary` sobre mix 20 %). CTA del héroe anclado abajo (`margin-top: auto`).
+
+#### Lista de competiciones
+
+Columna, gap **12 px** (`0.75rem`) entre filas — el padre es dueño del hueco. Cada fila:
+min-height 44 px, gap 12 px, enlace sin subrayado. Marca 20 px `muted-foreground`
+(liga = balón, copa = trofeo; supercopa = trofeo + corona lima 11 px a `-0.50rem` del
+tope, no mover). Nombre peso 600, ellipsis; caption de formato · estado, gap 2 px bajo
+el nombre. Badge de estado a la derecha + chevron 16 px muted.
+
+#### Vacío centrado de Inicio {#vacio-centrado-de-inicio}
+
+Misma composición para último partido sin datos y competiciones sin lista: **sin**
+`CardHeader`. Cuerpo padding 24 px. Columna centrada, `flex-grow: 1`, gap 12 px,
+texto centrado.
+
+- Isla de icono: círculo muted (`muted-foreground` 20 %), padding 12 px, glifo 32 px
+  `muted-foreground` (calendario / trofeo). No usar la isla lima de Stat.
+- Copy: max 24 rem. Título 18 px / 600. Subtítulo `Subtitle` (14 px, 400, muted).
+  Gap 4 px entre título y apoyo.
+- **Con CTAs** solo si hay un siguiente paso (último partido: outline lima «Actualizar
+  partidos» + secondary «Revisar vinculación»; gap 12 px). **Sin botones** cuando el
+  vacío solo anticipa contenido (competiciones: «Sin competiciones por ahora»).
 
 ### Mis estadísticas
 
 Referencia: `player-profile/player-statistics-page.tsx` y sus stories.
 Orden de lectura: PageHeader → identidad del jugador/club y filtro de periodo → cuatro stats
+([composición perfil](#composicion-stat-perfil), no la isla lima de Inicio)
 → aviso de datos parciales cuando aplique → evolución y forma → atributos.
 Evolución tiene más ancho que forma (1.9:1 en escritorio); en estrecho se apilan. Atributos
 forman otra sección, no un grid de KPIs duplicados. La consulta conserva el periodo elegido.
@@ -346,16 +483,24 @@ por foco además de puntero. Desconocido no equivale a cero ni a una posición e
 
 Referencia: `player-matches-page.tsx`, `player-matches-list.tsx` y `player-match-row.tsx`.
 PageHeader → contexto/filtros → resumen existente (legado) → listado agrupado y ordenado.
-La fila, no una tarjeta KPI, es la unidad de navegación. Mostrar ambos escudos y nombres,
-marcador centrado, fecha, tipo, resultado desde el club seleccionado y participación personal.
-El marcador y las métricas permanecen blancos; W/D/L se reconocen por texto/forma y color
-verde/ámbar/rojo. Un reconocimiento usa `emphasis`; el acento lima identifica interacción.
+La fila, no una tesela `Stat`, es la unidad de navegación. Cada fila es una card `flat`
+(`corner-xl`, borde 1 px, `surface`) con [superficie de partido](#superficie-de-partido)
+(foto + watermarks) y cuerpo min-height 208 px, padding 16 px (24 px desde contenedor
+32 rem). Mostrar ambos escudos de **identidad** (color) y nombres, marcador centrado,
+fecha, tipo, resultado desde el club seleccionado y participación personal.
 
-Recientes y Todos son vistas de datos EA, no filtros de oficialidad. «No jugaste» conserva
-la fila del club y oculta métricas personales que no existen. Los escudos mantienen identidad
-y colores. La versión estrecha conserva ambos equipos, score y acción sin scroll de página.
-Al volver del detalle, preservar vista, orden, filtros y posición. No colorear una fila entera
-para expresar victoria ni llamar aprobado a un partido solo porque proviene de EA.
+El score vive en pill `muted` + `elevation.md`; el dígito líder es lima, el resto
+`foreground`. «Finalizado» es chip `muted`, no texto suelto blanco. W/D/L se reconocen
+por texto/forma e icono (verde/ámbar/rojo), no tiñendo la fila ni el fondo. Un
+reconocimiento (MVP) usa `warning` / `emphasis`; el acento lima identifica interacción
+y el dígito líder, no la fila entera.
+
+Recientes y Todos son vistas de datos EA, no filtros de oficialidad. «No jugaste»
+conserva la fila del club y oculta la franja de actuación. La versión estrecha conserva
+ambos equipos, score y acción sin scroll de página. Al volver del detalle, preservar
+vista, orden, filtros y posición. No llamar aprobado a un partido solo porque proviene
+de EA. Último partido en Inicio reutiliza este marcador y esta franja; no duplicar una
+tercera receta.
 
 ### Detalle del partido personal
 
@@ -548,7 +693,7 @@ crear una organización ni aceptar una invitación.
 
 **General (personal):** Inicio · Competiciones · Clubes EA · Invitaciones.
 
-- **Inicio personal:** resumen de partidos recientes, estadísticas destacadas y estado de vinculación de la cuenta de juego.
+- **Inicio del jugador:** tres filas (próximo enfrentamiento + invitaciones/EA; rendimiento; último partido + competiciones). Vacío = sin club y sin cuenta EA; con club se usa la cuadrícula de datos. La matriz de 12 combinaciones (EA, partidos, competiciones, invitaciones) decide cada bloque; el CTA del encabezado prioriza partidos, actualizar partidos y competiciones. Cada bloque tiene carga, error recuperable y datos. Composición visual: [Inicio del jugador](#inicio-del-jugador).
 - **Mis partidos:** una lista de `ProviderMatch` del `ExternalClub` seleccionado en el selector de contexto (requiere `PlayerExternalClubAssociation`; si hay varios, el primero hasta que el jugador elija otro). Recientes = últimos 7 días de calendario; Todos = el conjunto que trae el proveedor. Recientes y Todos marcan el tipo de partido (liga, playoff, amistoso) y las tarjetas de la aparición cuando el jugador alineó con ese club. Si no alineó con ese club (identificador en el rival o ausente del partido), la fila permanece con el badge «No jugaste» y sin estadísticas personales; el marcador y el W/D/L siguen el club seleccionado. Un badge de hat-trick, póker o repóker aparece cuando la aparición del club seleccionado tiene 3, 4 o 5+ goles. El historial competitivo oficial se consulta mediante `GET /players/me/matches`; no confundirlo con el perfil EA de Mis estadísticas.
 - **Detalle de partido personal:** `/player/matches/:providerKey/:externalMatchId` abre desde una fila de Mis partidos y conserva `view` y `sort` al volver. Busca solo en la misma ventana final de 50 `ProviderMatch`: no es un registro persistido ni un acceso directo del proveedor. Un breadcrumb (Mis partidos → clubes) sustituye el enlace de volver; debajo reutiliza la misma fila de marcador de Mis partidos, sin el enlace de abrir el partido ni la franja de aparición. La fila puede aparecer desde la caché de la lista, pero el detalle consulta su recurso para obtener las plantillas completas. Debajo, pestañas tipo pills cubren Resumen (comparación de equipos, rendimiento personal y destacados), Jugadores (plantillas) y Datos del partido. Presenta primero el club seleccionado y después el rival; dentro de cada plantilla ordena por rating descendente, deja ratings desconocidos al final y muestra todas las estadísticas persistidas sin convertir `null` en cero. Si el jugador participó, el resumen muestra su rendimiento; si no participó, la fila indica «No jugaste» y no se muestra un panel personal ficticio. Una identidad inválida o ausente usa un estado `not_found`; una ventana parcial incompleta conserva el error recuperable del proveedor.
 - **Mis estadísticas:** perfil de rendimiento personal EA, según el patrón de pantalla de este documento; las proyecciones oficiales son una fuente separada.
@@ -640,7 +785,10 @@ Sin sidebar administrativo. Header de competición + tabs horizontales sticky. S
 ### Estados vacíos y permisos
 
 - Ruta no aplicable al formato: omitir.
-- Ruta aplicable sin datos: empty state con siguiente acción.
+- Ruta aplicable sin datos: empty state con siguiente acción, salvo el vacío de
+  competiciones en Inicio (solo anticipa contenido; ver [vacío centrado](#vacio-centrado-de-inicio)).
+- Inicio, último partido sin muestra: vacío centrado con CTAs (actualizar / revisar vinculación).
+- Inicio, sin competiciones: mismo vacío centrado **sin** botones.
 - Jugador sin club asociado en Mis partidos: empty state para asociar un club; el identificador de juego no alcanza.
 - Jugador sin partidos recientes y con partidos más antiguos: empty de Recientes con acción hacia Todos.
 - Jugador sin muestra en Mis estadísticas: empty state que explica la ausencia de apariciones para el contexto/periodo. En una vista de estadísticas oficiales, explicar que los datos aparecen tras aprobar resultados; no exigir invitación como condición universal.
@@ -981,6 +1129,13 @@ const logo = stylex.create({ mark: { height: "2rem", width: "auto" } });
 | `/og/futrob-default.png`                      | Open Graph y X/Twitter, `1200 × 630`    |
 | `/site.webmanifest`                           | Nombre, tema e iconos instalables       |
 
+Fondos de producto (no son marca; viven en `apps/web/src/assets/`):
+
+| Activo                   | Uso                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| `background-match.png`   | [Superficie de partido](#superficie-de-partido): héroe, contenido de Último partido, filas. |
+| `background-default.png` | Cards de onboarding / vacío con foto, sin escena de partido.                                |
+
 La metadata global está conectada en
 [`apps/web/src/routes/__root.tsx`](/apps/web/src/routes/__root.tsx). Cuando exista dominio de
 producción, las rutas públicas deben emitir una URL absoluta para `og:image` y una URL canónica.
@@ -999,10 +1154,12 @@ certificación de funcionalidad: listado/detalle de competiciones; auditoría de
 tabla densa y diálogos; bracket responsive con lista equivalente; regresión visual representativa.
 Verificar cobertura real en el código antes de declarar cualquiera de esos flujos completo.
 
-Pendientes de diseño explícitos: reemplazar los KPI de Mis partidos por el patrón de Mis
-estadísticas y diseñar un tema claro futuro. Ninguno forma parte de la migración de composición
-actual. Las capturas del MVP anterior están obsoletas; regenerar referencias desde stories o
-pantallas actuales, incluyendo escritorio y 360 px. Una captura histórica no manda sobre este contrato.
+Pendientes de diseño explícitos: reemplazar los KPI de Mis partidos por la
+[composición Stat Inicio](#composicion-stat-inicio) o la
+[de perfil](#composicion-stat-perfil), y diseñar un tema claro futuro. Ninguno forma
+parte de la migración de composición actual. Las capturas del MVP anterior están
+obsoletas; regenerar referencias desde stories o pantallas actuales, incluyendo
+escritorio y 360 px. Una captura histórica no manda sobre este contrato.
 
 ## Mantenimiento y comprobaciones
 

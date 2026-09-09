@@ -4,7 +4,8 @@ import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
-import { PlayerWorkspacePage } from "@/modules/teams/presentation/player-workspace-page.tsx";
+import { PlayerHomePage } from "@/modules/player-home/presentation/player-home-page.tsx";
+import { useWorkspaceSelectedClubId } from "@/shared/presentation/shell/use-workspace-selection.tsx";
 
 const styles = stylex.create({
   pending: {
@@ -56,5 +57,10 @@ function PlayerRoute() {
     return <main {...applyStyles(styles.pending)}>Comprobando tu onboarding…</main>;
   }
 
-  return <PlayerWorkspacePage />;
+  return <PlayerHomeRoutePage />;
+}
+
+function PlayerHomeRoutePage() {
+  const { externalClubId, profileReady } = useWorkspaceSelectedClubId();
+  return <PlayerHomePage externalClubId={externalClubId} profileReady={profileReady} />;
 }

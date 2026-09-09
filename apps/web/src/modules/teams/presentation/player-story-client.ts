@@ -5,6 +5,7 @@ import type {
   AddMyPlayerGameAccountResponse,
   AssociateMyPlayerExternalClubRequest,
   AssociateMyPlayerExternalClubResponse,
+  GetMyNextEncounterResponse,
   GetMyPlayerProfileResponse,
   GetMyTeamsResponse,
   ListMyRosterInvitationsResponse,
@@ -41,6 +42,7 @@ export type PlayerStoryState = {
   readonly profile: PlayerStoryQueryState<GetMyPlayerProfileResponse>;
   readonly teams: PlayerStoryQueryState<GetMyTeamsResponse>;
   readonly rosterInvitations: PlayerStoryQueryState<ListMyRosterInvitationsResponse>;
+  readonly nextEncounter?: PlayerStoryQueryState<GetMyNextEncounterResponse>;
   readonly addGameAccount: PlayerStoryMutationState;
   readonly setActiveTeam: PlayerStoryMutationState;
   readonly acceptRosterInvitation: PlayerStoryMutationState;
@@ -53,6 +55,7 @@ const defaultState = (): PlayerStoryState => ({
   profile: playerProfileFixture(),
   teams: playerTeamsFixture({ teams: [], activeRosterMembershipId: null }),
   rosterInvitations: { invitations: [] },
+  nextEncounter: { encounter: null },
   addGameAccount: "success",
   setActiveTeam: "success",
   acceptRosterInvitation: "success",
@@ -207,6 +210,10 @@ export const teamsBrowserClient = {
 
   listMyRosterInvitations(): Promise<ListMyRosterInvitationsResponse> {
     return resolveQuery(state.rosterInvitations);
+  },
+
+  getMyNextEncounter(): Promise<GetMyNextEncounterResponse> {
+    return resolveQuery(state.nextEncounter ?? { encounter: null });
   },
 
   respondToRosterInvitation(

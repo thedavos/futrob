@@ -51,7 +51,7 @@ const meta = {
     gamertag: "davos282",
     clubName: "Fera Enjaulada",
     imageUrl: null,
-    emptyLabel: "Espacio personal",
+    emptyLabel: "Tu espacio en Futrob",
     ready: true,
   },
   argTypes: {
@@ -102,7 +102,7 @@ export const States: Story = {
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Cuenta y club</p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Espacio personal"
+            emptyLabel="Tu espacio en Futrob"
             identity={{
               gamertag: "davos282",
               clubName: "Fera Enjaulada",
@@ -117,7 +117,7 @@ export const States: Story = {
         </p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Espacio personal"
+            emptyLabel="Tu espacio en Futrob"
             identity={{ gamertag: "davos282", clubName: null, imageUrl: null }}
           />
         </Chrome>
@@ -126,16 +126,18 @@ export const States: Story = {
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Solo club</p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Espacio personal"
+            emptyLabel="Tu espacio en Futrob"
             identity={{ gamertag: null, clubName: "Fera Enjaulada", imageUrl: null }}
           />
         </Chrome>
       </div>
       <div {...applyProps(undefined, undefined, styles.group)}>
-        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Sin datos</p>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
+          Tu espacio en Futrob
+        </p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Espacio personal"
+            emptyLabel="Tu espacio en Futrob"
             identity={{ gamertag: null, clubName: null, imageUrl: null }}
           />
         </Chrome>
@@ -144,8 +146,9 @@ export const States: Story = {
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Cargando</p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Espacio personal"
+            emptyLabel="Tu espacio en Futrob"
             identity={{ gamertag: null, clubName: null, imageUrl: null }}
+            loadingLabel="Cargando tu espacio…"
             ready={false}
           />
         </Chrome>

@@ -79,14 +79,22 @@ const styles = stylex.create({
 export function CommandBarIdentityMark({
   emptyLabel,
   identity,
+  loadingLabel,
   ready = true,
 }: {
   readonly emptyLabel: string;
   readonly identity: CommandBarIdentity;
+  readonly loadingLabel?: string;
   readonly ready?: boolean;
 }) {
   const label = commandBarIdentityLabel(identity, emptyLabel);
-  if (!ready) return null;
+  if (!ready) {
+    return (
+      <p title={loadingLabel ?? emptyLabel} {...applyStyles(styles.root)}>
+        <span {...applyStyles(typography.caption, styles.empty)}>{loadingLabel ?? emptyLabel}</span>
+      </p>
+    );
+  }
 
   const hasGamertag = Boolean(identity.gamertag);
   const hasClub = Boolean(identity.clubName);
@@ -110,6 +118,7 @@ export function CommandBarIdentityMark({
         <span {...applyStyles(styles.club)}>
           <ClubCrestAvatar
             className={crest.className}
+            framed={false}
             imageUrl={identity.imageUrl}
             name={identity.clubName ?? emptyLabel}
             style={crest.style}

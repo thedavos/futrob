@@ -32,7 +32,7 @@ describe("commandBarIdentityLabel", () => {
     expect(
       commandBarIdentityLabel(
         { gamertag: "davos282", clubName: "Fera Enjaulada", imageUrl: null },
-        "Espacio personal",
+        "Tu espacio en Futrob",
       ),
     ).toBe("davos282 / Fera Enjaulada");
   });
@@ -41,20 +41,20 @@ describe("commandBarIdentityLabel", () => {
     expect(
       commandBarIdentityLabel(
         { gamertag: "davos282", clubName: null, imageUrl: null },
-        "Espacio personal",
+        "Tu espacio en Futrob",
       ),
     ).toBe("davos282");
     expect(
       commandBarIdentityLabel(
         { gamertag: null, clubName: "Fera Enjaulada", imageUrl: null },
-        "Espacio personal",
+        "Tu espacio en Futrob",
       ),
     ).toBe("Fera Enjaulada");
     expect(
       commandBarIdentityLabel(
         { gamertag: null, clubName: null, imageUrl: null },
-        "Espacio personal",
+        "Tu espacio en Futrob",
       ),
-    ).toBe("Espacio personal");
+    ).toBe("Tu espacio en Futrob");
   });
 });

@@ -115,8 +115,8 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const identityLabel = selectionState.playerIdentityReady
-    ? commandBarIdentityLabel(selectionState.playerIdentity, t("player.workspace.eyebrow"))
-    : "";
+    ? commandBarIdentityLabel(selectionState.playerIdentity, t("shell.identity.empty"))
+    : t("shell.identity.loading");
   const commands = commandsFor(
     pathname,
     selectionState.selection,
@@ -205,12 +205,17 @@ function CommandBar({
 }) {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const emptyLabel = t("player.workspace.eyebrow");
+  const emptyLabel = t("shell.identity.empty");
 
   return (
     <header {...applyStyles(styles.commandBar)}>
       <div {...applyStyles(styles.identity)}>
-        <CommandBarIdentityMark emptyLabel={emptyLabel} identity={identity} ready={identityReady} />
+        <CommandBarIdentityMark
+          emptyLabel={emptyLabel}
+          identity={identity}
+          loadingLabel={t("shell.identity.loading")}
+          ready={identityReady}
+        />
       </div>
       {commands.length > 0 ? (
         <div {...applyStyles(styles.commands)}>
