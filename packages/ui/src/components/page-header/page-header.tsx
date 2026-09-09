@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import * as stylex from "@stylexjs/stylex";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { media } from "#styles/media.stylex";
 import { typography } from "#styles/typography";
 
@@ -48,7 +48,11 @@ const styles = stylex.create({
   },
 });
 
-function PageHeader({ className, style, ...props }: ComponentProps<"header">) {
+function PageHeader({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"header">, "className"> & { className?: HostClassName }) {
   return (
     <header data-slot="page-header" {...applyProps(className, style, styles.root)} {...props} />
   );

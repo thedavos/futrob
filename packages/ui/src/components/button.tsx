@@ -1,7 +1,7 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -175,7 +175,8 @@ export type ButtonSize = "default" | "icon";
 /** Stops browsers from restoring dynamic `disabled` across reloads (SSR hydration mismatch). */
 const disableFormStateRestore = { autoComplete: "off" } as const;
 
-type ButtonProps = ButtonPrimitive.Props & {
+type ButtonProps = Omit<ButtonPrimitive.Props, "className"> & {
+  className?: HostClassName | ButtonPrimitive.Props["className"];
   variant?: ButtonVariant;
   size?: ButtonSize;
   /** Compact desktop/operator mode. Touch layouts stay at the accessible 44px target. */

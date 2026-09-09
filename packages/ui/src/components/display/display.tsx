@@ -1,13 +1,14 @@
 import type { ComponentProps } from "react";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { typography } from "#styles/typography";
 
 export type DisplayLevel = "h1" | "h2" | "h3";
 
-export type DisplayProps = ComponentProps<"h1"> & {
+export type DisplayProps = Omit<ComponentProps<"h1">, "className"> & {
   as?: DisplayLevel;
+  className?: HostClassName;
   truncate?: boolean;
 };
 

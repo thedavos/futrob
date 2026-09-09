@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { textAlign, type TextAlign } from "#styles/text-align";
 import { textTone } from "#styles/text-tone";
 import { textWeight, type TextWeight } from "#styles/text-weight";
@@ -17,7 +17,8 @@ const lookStyles = {
 export type TextLook = keyof typeof lookStyles;
 export type TextElement = "span" | "p" | "strong" | "em" | "div";
 
-export type TextProps = HTMLAttributes<HTMLElement> & {
+export type TextProps = Omit<HTMLAttributes<HTMLElement>, "className"> & {
+  className?: HostClassName;
   as?: TextElement;
   /** Type role. Do not confuse with the ARIA `role` attribute. */
   look?: TextLook;

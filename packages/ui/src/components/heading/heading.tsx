@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { typography } from "#styles/typography";
 
 export type HeadingLevel = "h2" | "h3" | "h4" | "h5" | "h6";
@@ -14,8 +14,9 @@ const lookStyles = {
   h6: typography.subtitle,
 } as const;
 
-export type HeadingProps = ComponentProps<"h2"> & {
+export type HeadingProps = Omit<ComponentProps<"h2">, "className"> & {
   as?: HeadingLevel;
+  className?: HostClassName;
   truncate?: boolean;
 };
 

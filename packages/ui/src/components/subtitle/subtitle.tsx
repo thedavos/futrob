@@ -1,14 +1,15 @@
 import type { ComponentProps } from "react";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { textTone } from "#styles/text-tone";
 import { typography, type TextTone } from "#styles/typography";
 
 export type SubtitleElement = "p" | "span";
 
-export type SubtitleProps = ComponentProps<"p"> & {
+export type SubtitleProps = Omit<ComponentProps<"p">, "className"> & {
   as?: SubtitleElement;
+  className?: HostClassName;
   tone?: TextTone;
   truncate?: boolean;
 };

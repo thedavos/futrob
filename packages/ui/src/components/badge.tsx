@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -80,7 +80,10 @@ function Badge({
   style,
   variant = "neutral",
   ...props
-}: React.ComponentProps<"span"> & { variant?: BadgeVariant }) {
+}: Omit<React.ComponentProps<"span">, "className"> & {
+  className?: HostClassName;
+  variant?: BadgeVariant;
+}) {
   return (
     <span
       data-slot="badge"

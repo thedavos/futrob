@@ -1,7 +1,7 @@
 import { useRender } from "@base-ui/react/use-render";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -37,7 +37,8 @@ const textStyles = {
 
 export type TextLinkText = keyof typeof textStyles;
 
-export type TextLinkProps = useRender.ComponentProps<"a"> & {
+export type TextLinkProps = Omit<useRender.ComponentProps<"a">, "className"> & {
+  className?: HostClassName;
   /** Type role. Do not confuse with the ARIA `role` attribute. */
   text?: TextLinkText;
 };
