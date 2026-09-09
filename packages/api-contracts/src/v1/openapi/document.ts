@@ -37,7 +37,10 @@ import {
   getCompetitionDraftResponseSchema,
   listAccessibleCompetitionsResponseSchema,
 } from "../competitions/schemas.ts";
-import { encounterScheduleSnapshotSchema } from "../encounters/schemas.ts";
+import {
+  encounterScheduleSnapshotSchema,
+  getMyNextEncounterResponseSchema,
+} from "../encounters/schemas.ts";
 import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
   associateMyPlayerExternalClubRequestSchema,
@@ -581,6 +584,25 @@ export const futrobOpenApiV1 = {
           "401": { $ref: "#/components/responses/ApiError" },
           "403": { $ref: "#/components/responses/ApiError" },
           "502": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/players/me/next-encounter": {
+      get: {
+        operationId: "getMyNextEncounter",
+        tags: ["players"],
+        summary: "Get the next scheduled encounter for a team the authenticated player belongs to",
+        responses: {
+          "200": {
+            description:
+              "The next upcoming encounter, or a null encounter when the player has no scheduled fixture",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GetMyNextEncounterResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -2999,6 +3021,68 @@ export const futrobOpenApiV1 = {
         ],
         discriminator: { propertyName: "kind" },
       },
+      NextEncounterSide: {
+        type: "object",
+        required: ["teamId", "name", "externalClub"],
+        properties: {
+          teamId: { type: "string", minLength: 1 },
+          name: { type: "string", minLength: 1 },
+          externalClub: {
+            oneOf: [{ $ref: "#/components/schemas/ExternalClub" }, { type: "null" }],
+          },
+        },
+      },
+      NextEncounter: {
+        type: "object",
+        required: [
+          "encounterId",
+          "competition",
+          "round",
+          "scheduledStartAt",
+          "officialMatchCount",
+          "home",
+          "away",
+        ],
+        properties: {
+          encounterId: { type: "string", minLength: 1 },
+          competition: {
+            type: "object",
+            required: ["id", "organizationId", "name", "timeZone"],
+            properties: {
+              id: { type: "string", minLength: 1 },
+              organizationId: { type: "string", minLength: 1 },
+              name: { type: "string", minLength: 1 },
+              timeZone: { type: "string", minLength: 1 },
+            },
+          },
+          round: {
+            oneOf: [
+              {
+                type: "object",
+                required: ["number", "total"],
+                properties: {
+                  number: { type: "integer", minimum: 1 },
+                  total: { type: ["integer", "null"], minimum: 1 },
+                },
+              },
+              { type: "null" },
+            ],
+          },
+          scheduledStartAt: { type: "string", format: "date-time" },
+          officialMatchCount: { type: "integer", enum: [1, 2] },
+          home: { $ref: "#/components/schemas/NextEncounterSide" },
+          away: { $ref: "#/components/schemas/NextEncounterSide" },
+        },
+      },
+      GetMyNextEncounterResponse: {
+        type: "object",
+        required: ["encounter"],
+        properties: {
+          encounter: {
+            oneOf: [{ $ref: "#/components/schemas/NextEncounter" }, { type: "null" }],
+          },
+        },
+      },
       GetMyRecentMatchesResponse: {
         oneOf: [
           {
@@ -3554,6 +3638,7 @@ void changeCompetitionRoleRequestSchema;
 void competitionRoleAssignmentSchema;
 void listAccessibleCompetitionsResponseSchema;
 void encounterScheduleSnapshotSchema;
+void getMyNextEncounterResponseSchema;
 void competitionTeamManagementListResponseSchema;
 void competitionTeamManagementDetailResponseSchema;
 void associateMyPlayerExternalClubRequestSchema;

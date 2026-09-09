@@ -80,6 +80,14 @@ export function useAcceptRosterInvitationMutation() {
   });
 }
 
+export function useMyNextEncounterQuery(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.players.meNextEncounter(),
+    queryFn: () => teamsBrowserClient.getMyNextEncounter(),
+    enabled,
+  });
+}
+
 export function useMyRosterInvitationsQuery() {
   return useQuery({
     queryKey: queryKeys.players.meRosterInvitations(),

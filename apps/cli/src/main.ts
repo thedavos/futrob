@@ -40,7 +40,7 @@ import {
   syncJobRun,
   syncJobRunNext,
 } from "./commands/game-data.ts";
-import { myMatches, myStats, playerMe } from "./commands/players.ts";
+import { myMatches, myNextEncounter, myStats, playerMe } from "./commands/players.ts";
 import { run as e2eGoldenPath } from "./commands/e2e-golden-path.ts";
 import type { CliError } from "./lib/errors.ts";
 import { printError } from "./lib/print.ts";
@@ -99,6 +99,7 @@ const commands = {
   "player-me": (args) => playerMe(args),
   "my-stats": (args) => myStats(args),
   "my-matches": (args) => myMatches(args),
+  "my-next-encounter": (args) => myNextEncounter(args),
 
   "e2e-golden-path": (args) => e2eGoldenPath(args),
 } satisfies Record<string, Handler>;

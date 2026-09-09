@@ -126,6 +126,7 @@ describe("OfficialResultFixtureEditGuard", () => {
         findById: async () => null,
         upsert: async (snapshot) => snapshot,
         deleteByEncounterIds: async () => {},
+        findNextUpcomingByTeamIds: async () => null,
       },
       fixtures: {
         findById: async () => plan,

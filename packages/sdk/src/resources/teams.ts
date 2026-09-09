@@ -118,6 +118,8 @@ export function createTeamsResource(http: HttpClient) {
 
     getMyTeams: (options: RequestOptions = {}) => players.listTeams(options),
 
+    getMyNextEncounter: (options: RequestOptions = {}) => players.getNextEncounter(options),
+
     setActiveTeam: (input: SetActiveTeamRequest, options: RequestOptions = {}) =>
       players.setActiveTeam(input, options),
 

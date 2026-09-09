@@ -15,6 +15,7 @@ export const queryKeys = {
     me: () => [...queryKeys.players.all, "me"] as const,
     meTeams: () => [...queryKeys.players.all, "me", "teams"] as const,
     meRosterInvitations: () => [...queryKeys.players.all, "me", "roster-invitations"] as const,
+    meNextEncounter: () => [...queryKeys.players.all, "me", "next-encounter"] as const,
   },
   organizations: {
     all: ["organizations"] as const,

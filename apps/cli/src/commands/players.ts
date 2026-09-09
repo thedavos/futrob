@@ -46,6 +46,24 @@ export function myStats(raw: string[]): Effect.Effect<number, CliError> {
   });
 }
 
+export function myNextEncounter(raw: string[]): Effect.Effect<number, CliError> {
+  return Effect.gen(function* () {
+    const common = parseCommon(raw);
+    const config = { baseUrl: common.baseUrl, actorId: common.actorId };
+    const result = yield* apiCall(config, (client) => client.teams.getMyNextEncounter());
+    if (common.json) {
+      printJson(result);
+      return 0;
+    }
+    if (result.encounter === null) {
+      print("Sin enfrentamiento programado.");
+      return 0;
+    }
+    print(JSON.stringify(result.encounter, null, 2));
+    return 0;
+  });
+}
+
 export function myMatches(raw: string[]): Effect.Effect<number, CliError> {
   return Effect.gen(function* () {
     const common = parseCommon(raw);

@@ -23,6 +23,9 @@ class Encounters implements EncounterScheduleRepository {
   }
 
   async deleteByEncounterIds() {}
+  async findNextUpcomingByTeamIds() {
+    return null;
+  }
 }
 
 const snapshot: EncounterScheduleSnapshot = {

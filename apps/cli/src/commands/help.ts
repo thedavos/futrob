@@ -58,6 +58,7 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   player-me
   my-stats
   my-matches
+  my-next-encounter
   e2e-golden-path         Org → comp → team → entry → publish → fixture (smoke completo)
 
 Flags comunes: --json, --base-url URL, --actor ID

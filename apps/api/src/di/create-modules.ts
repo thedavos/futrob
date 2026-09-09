@@ -57,6 +57,7 @@ import {
 import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
 import { createResultsModule, type ResultsModule } from "./results.module.ts";
 import { createStatisticsModule, type StatisticsModule } from "./statistics.module.ts";
+import { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
 import {
   GetTeamRosterManagementUseCase,
   ListTeamRosterManagementUseCase,
@@ -274,6 +275,18 @@ export function createModules(input: CreateModulesInput): AppModules {
     },
   };
 
+  const getMyNextEncounter = new GetMyNextEncounterUseCase({
+    clock,
+    profiles: teams.repositories.profiles,
+    rosters: teams.repositories.rosters,
+    encounters: scheduling.encounters,
+    competitions: competitions.repository,
+    teams: { findById: teams.repositories.teams.findById.bind(teams.repositories.teams) },
+    connections: teams.repositories.connections,
+    getExternalClub: (providerKey, input) => gameData.getExternalClub.execute(providerKey, input),
+    fixturePlans: scheduling.fixturePlans,
+  });
+
   const voidOfficialResultAndUnproject = {
     async execute(input: VoidOfficialResultInput) {
       const existing =
@@ -301,6 +314,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     competitions,
     confirmOfficialSelectionAndProject,
     gameData,
+    getMyNextEncounter,
     identity,
     organizations,
     results,
@@ -326,6 +340,7 @@ export interface AppModules {
       input: VoidOfficialResultInput,
     ): ReturnType<ResultsModule["voidOfficialResult"]["execute"]>;
   };
+  readonly getMyNextEncounter: GetMyNextEncounterUseCase;
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
   readonly organizations: OrganizationsModule;

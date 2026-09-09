@@ -1,5 +1,6 @@
 import {
   getMyGameProfileResponseSchema,
+  getMyNextEncounterResponseSchema,
   getMyRecentMatchResponseSchema,
   getMyRecentMatchesResponseSchema,
 } from "@futrob/api-contracts";
@@ -412,6 +413,29 @@ describe("apps/api personal statistics routes", () => {
 
     expect(upstreamFailure.status).toBe(502);
     expect(openCircuit.status).toBe(503);
+  });
+});
+
+describe("GET /players/me/next-encounter", () => {
+  it("rejects requests without service auth", async () => {
+    const app = buildApp(stubFetch);
+    const response = await app.request("/api/v1/players/me/next-encounter");
+    expect(response.status).toBe(401);
+  });
+
+  it("returns a null encounter when the actor has no roster", async () => {
+    const app = buildApp(stubFetch);
+    const actor = "actor-next-encounter-empty";
+    await onboardPlayerWithAccount(app, actor);
+
+    const response = await app.request("/api/v1/players/me/next-encounter", {
+      headers: serviceHeaders(actor),
+    });
+
+    expect(response.status).toBe(200);
+    expect(getMyNextEncounterResponseSchema.parse(await response.json())).toEqual({
+      encounter: null,
+    });
   });
 });
 

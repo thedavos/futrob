@@ -14,6 +14,7 @@ import {
   getMyRecentMatchResponseSchema,
   getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
+  getMyNextEncounterResponseSchema,
   getMyPlayerProfileResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
@@ -35,6 +36,7 @@ import {
   toPlayerRecentMatchDetailDto,
   toPlayerRecentMatchesDto,
 } from "@/http/mappers/game-data.ts";
+import { getMyNextEncounterResponse } from "@/http/mappers/next-encounter.ts";
 import { playerTeamMembershipDto } from "@/http/mappers/team.ts";
 import {
   createServiceAuthMiddleware,
@@ -307,6 +309,15 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     if (!found.isOk()) return failureToHttp(found.error);
     return jsonResponse(
       getMyRecentMatchResponseSchema.parse(toPlayerRecentMatchDetailDto(found.value)),
+    );
+  });
+
+  secured.get("/players/me/next-encounter", async (c) => {
+    const encounter = await deps.modules.getMyNextEncounter.execute({
+      actorId: c.get("actorId"),
+    });
+    return jsonResponse(
+      getMyNextEncounterResponseSchema.parse(getMyNextEncounterResponse(encounter)),
     );
   });
 

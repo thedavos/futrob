@@ -1,4 +1,4 @@
-import type { EncounterId } from "@futrob/shared-kernel";
+import type { EncounterId, TeamId } from "@futrob/shared-kernel";
 import type { EncounterScheduleSnapshot } from "../entities/encounter-schedule-snapshot.ts";
 
 export interface EncounterScheduleRepository {
@@ -6,6 +6,10 @@ export interface EncounterScheduleRepository {
   /** Returns null when an existing ID belongs to a different tenant/competition. */
   upsert(snapshot: EncounterScheduleSnapshot): Promise<EncounterScheduleSnapshot | null>;
   deleteByEncounterIds(encounterIds: readonly EncounterId[]): Promise<void>;
+  findNextUpcomingByTeamIds(
+    teamIds: readonly TeamId[],
+    now: Date,
+  ): Promise<EncounterScheduleSnapshot | null>;
 }
 
 export interface EncounterParticipantValidationPort {

@@ -77,30 +77,30 @@ npm run cli -- e2e-golden-path --actor actor_demo
 
 ### Integración (requieren `npm run dev`)
 
-| Comando                                                   | Descripción                                                                 |
-| --------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `api-health`                                              | `GET /meta/ping`                                                            |
-| `org-name-check <name>`                                   | Disponibilidad de nombre de organización                                    |
-| `org-create <name>`                                       | Crea organización                                                           |
-| `org-mine`                                                | Membresías del actor                                                        |
-| `org-invite <orgId> <email> [--role role]`                | Invitación staff de organización                                            |
-| `onboarding-status`                                       | Estado de onboarding del actor                                              |
-| `comp-create <orgId> <name>`                              | Draft de competición (`--edition --platform --region --tz --format`)        |
-| `comp-list <orgId>` / `comp-show <orgId> <compId>`        | Listar / ver draft                                                          |
-| `comp-publish <orgId> <compId>`                           | Publica la competición                                                      |
-| `participant-add/list`                                    | Participantes de competición                                                |
-| `entry-register/approve/reject`                           | Ciclo de entries de equipos                                                 |
-| `standings <orgId> <compId>`                              | Tabla de posiciones                                                         |
-| `team-create/team-list`                                   | Equipos de la organización                                                  |
-| `roster-list/add/close/open`                              | Roster por competición                                                      |
-| `club-link <orgId> <compId> <teamId> <clubId> <clubName>` | Vincula club EA al equipo                                                   |
-| `fixture-generate/show`                                   | Genera y consulta el fixture                                                |
-| `snapshot-set <encounterId ...>`                          | Upsert de schedule snapshot                                                 |
-| `club-search/get/matches`                                 | Clubes EA vía game-data                                                     |
-| `sync-job-enqueue/run/run-next`                           | Jobs de sincronización EA (endpoints internos)                              |
-| `provider-health [providerKey]`                           | Salud del proveedor (circuit breaker)                                       |
-| `player-me`, `my-stats`, `my-matches`                     | Perfil y estadísticas personales                                            |
-| `e2e-golden-path`                                         | Flujo completo: ping → org → draft → team ×2 → entry ×2 → publish → fixture |
+| Comando                                                    | Descripción                                                                 |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `api-health`                                               | `GET /meta/ping`                                                            |
+| `org-name-check <name>`                                    | Disponibilidad de nombre de organización                                    |
+| `org-create <name>`                                        | Crea organización                                                           |
+| `org-mine`                                                 | Membresías del actor                                                        |
+| `org-invite <orgId> <email> [--role role]`                 | Invitación staff de organización                                            |
+| `onboarding-status`                                        | Estado de onboarding del actor                                              |
+| `comp-create <orgId> <name>`                               | Draft de competición (`--edition --platform --region --tz --format`)        |
+| `comp-list <orgId>` / `comp-show <orgId> <compId>`         | Listar / ver draft                                                          |
+| `comp-publish <orgId> <compId>`                            | Publica la competición                                                      |
+| `participant-add/list`                                     | Participantes de competición                                                |
+| `entry-register/approve/reject`                            | Ciclo de entries de equipos                                                 |
+| `standings <orgId> <compId>`                               | Tabla de posiciones                                                         |
+| `team-create/team-list`                                    | Equipos de la organización                                                  |
+| `roster-list/add/close/open`                               | Roster por competición                                                      |
+| `club-link <orgId> <compId> <teamId> <clubId> <clubName>`  | Vincula club EA al equipo                                                   |
+| `fixture-generate/show`                                    | Genera y consulta el fixture                                                |
+| `snapshot-set <encounterId ...>`                           | Upsert de schedule snapshot                                                 |
+| `club-search/get/matches`                                  | Clubes EA vía game-data                                                     |
+| `sync-job-enqueue/run/run-next`                            | Jobs de sincronización EA (endpoints internos)                              |
+| `provider-health [providerKey]`                            | Salud del proveedor (circuit breaker)                                       |
+| `player-me`, `my-stats`, `my-matches`, `my-next-encounter` | Perfil, estadísticas personales y próximo enfrentamiento                    |
+| `e2e-golden-path`                                          | Flujo completo: ping → org → draft → team ×2 → entry ×2 → publish → fixture |
 
 Flags comunes en integración: `--json`, `--base-url URL`, `--actor ID`.
 

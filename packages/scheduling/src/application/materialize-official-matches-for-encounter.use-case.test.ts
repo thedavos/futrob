@@ -26,6 +26,9 @@ class EncounterSchedules implements EncounterScheduleRepository {
   }
 
   async deleteByEncounterIds() {}
+  async findNextUpcomingByTeamIds() {
+    return null;
+  }
 }
 
 class OfficialMatches implements OfficialMatchRepository {

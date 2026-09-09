@@ -23,6 +23,7 @@ const team = {
 } as const;
 
 function respondForUrl(url: string): unknown {
+  if (url.endsWith("/players/me/next-encounter")) return { encounter: null };
   if (url.endsWith("/players/me/teams")) return { teams: [], activeRosterMembershipId: null };
   if (url.endsWith("/teams")) return team;
   if (url.endsWith("/roster")) return { memberships: [] };

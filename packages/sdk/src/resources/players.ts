@@ -1,4 +1,5 @@
 import {
+  getMyNextEncounterResponseSchema,
   getMyPlayerProfileResponseSchema,
   getMyTeamsResponseSchema,
   addMyPlayerGameAccountRequestSchema,
@@ -7,6 +8,7 @@ import {
   associateMyPlayerExternalClubResponseSchema,
   setActiveTeamRequestSchema,
   setActiveTeamResponseSchema,
+  type GetMyNextEncounterResponse,
   type GetMyPlayerProfileResponse,
   type GetMyTeamsResponse,
   type AddMyPlayerGameAccountRequest,
@@ -55,6 +57,15 @@ export function createPlayersResource(http: HttpClient) {
         body,
         options,
         parse: (data) => associateMyPlayerExternalClubResponseSchema.parse(data),
+      });
+    },
+
+    async getNextEncounter(options: RequestOptions = {}): Promise<GetMyNextEncounterResponse> {
+      return http.request({
+        path: "/players/me/next-encounter",
+        method: "GET",
+        options,
+        parse: (data) => getMyNextEncounterResponseSchema.parse(data),
       });
     },
 

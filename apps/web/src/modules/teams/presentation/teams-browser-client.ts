@@ -5,6 +5,7 @@ import {
   addMyPlayerGameAccountResponseSchema,
   associateMyPlayerExternalClubRequestSchema,
   associateMyPlayerExternalClubResponseSchema,
+  getMyNextEncounterResponseSchema,
   getMyPlayerProfileResponseSchema,
   getMyTeamsResponseSchema,
   listMyRosterInvitationsResponseSchema,
@@ -21,6 +22,7 @@ import {
   type AddMyPlayerGameAccountResponse,
   type AssociateMyPlayerExternalClubRequest,
   type AssociateMyPlayerExternalClubResponse,
+  type GetMyNextEncounterResponse,
   type GetMyPlayerProfileResponse,
   type GetMyTeamsResponse,
   type SetActiveTeamRequest,
@@ -211,6 +213,13 @@ export const teamsBrowserClient = {
       method: "POST",
       body,
       schema: associateMyPlayerExternalClubResponseSchema,
+    });
+  },
+  getMyNextEncounter(): Promise<GetMyNextEncounterResponse> {
+    return requestTeamsJson({
+      path: "/api/v1/players/me/next-encounter",
+      method: "GET",
+      schema: getMyNextEncounterResponseSchema,
     });
   },
   getMyTeams(): Promise<GetMyTeamsResponse> {

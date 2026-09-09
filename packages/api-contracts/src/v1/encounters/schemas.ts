@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { externalClubSchema } from "../game-data/schemas.ts";
 import { requestIdSchema } from "../request-correlation.ts";
 
 export const encounterScheduleSnapshotSchema = z.object({
@@ -149,3 +150,37 @@ export const editFixtureEncounterRequestSchema = z
   });
 
 export type EditFixtureEncounterRequest = z.infer<typeof editFixtureEncounterRequestSchema>;
+
+export const nextEncounterSideSchema = z.object({
+  teamId: z.string().min(1),
+  name: z.string().min(1),
+  externalClub: externalClubSchema.nullable(),
+});
+
+export const nextEncounterSchema = z.object({
+  encounterId: z.string().min(1),
+  competition: z.object({
+    id: z.string().min(1),
+    organizationId: z.string().min(1),
+    name: z.string().min(1),
+    timeZone: z.string().min(1),
+  }),
+  round: z
+    .object({
+      number: z.number().int().positive(),
+      total: z.number().int().positive().nullable(),
+    })
+    .nullable(),
+  scheduledStartAt: z.string().datetime(),
+  officialMatchCount: z.union([z.literal(1), z.literal(2)]),
+  home: nextEncounterSideSchema,
+  away: nextEncounterSideSchema,
+});
+
+export type NextEncounterDto = z.infer<typeof nextEncounterSchema>;
+
+export const getMyNextEncounterResponseSchema = z.object({
+  encounter: nextEncounterSchema.nullable(),
+});
+
+export type GetMyNextEncounterResponse = z.infer<typeof getMyNextEncounterResponseSchema>;

@@ -5,6 +5,7 @@ import {
   asOrganizationId,
   asTeamId,
   type EncounterId,
+  type TeamId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { z } from "zod";
@@ -43,6 +44,26 @@ export class InMemoryEncounterScheduleRepository implements EncounterScheduleRep
 
   async deleteByEncounterIds(encounterIds: readonly EncounterId[]): Promise<void> {
     for (const encounterId of encounterIds) this.rows.delete(encounterId);
+  }
+
+  async findNextUpcomingByTeamIds(
+    teamIds: readonly TeamId[],
+    now: Date,
+  ): Promise<EncounterScheduleSnapshot | null> {
+    if (teamIds.length === 0) return null;
+    const wanted = new Set(teamIds);
+    return (
+      [...this.rows.values()]
+        .filter(
+          (row) =>
+            row.scheduledStartAt.getTime() >= now.getTime() &&
+            (wanted.has(row.homeTeamId) || wanted.has(row.awayTeamId)),
+        )
+        .sort((left, right) => {
+          const byTime = left.scheduledStartAt.getTime() - right.scheduledStartAt.getTime();
+          return byTime !== 0 ? byTime : left.encounterId.localeCompare(right.encounterId);
+        })[0] ?? null
+    );
   }
 }
 
@@ -94,6 +115,25 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
       `DELETE FROM encounter_schedule_snapshots WHERE encounter_id = ANY($1::text[])`,
       [encounterIds],
     );
+  }
+
+  async findNextUpcomingByTeamIds(
+    teamIds: readonly TeamId[],
+    now: Date,
+  ): Promise<EncounterScheduleSnapshot | null> {
+    if (teamIds.length === 0) return null;
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT encounter_id, organization_id, competition_id, home_team_id, away_team_id,
+              scheduled_start_at, official_match_count
+       FROM encounter_schedule_snapshots
+       WHERE (home_team_id = ANY($1::text[]) OR away_team_id = ANY($1::text[]))
+         AND scheduled_start_at >= $2
+       ORDER BY scheduled_start_at ASC, encounter_id ASC
+       LIMIT 1`,
+      [teamIds, now.toISOString()],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateEncounterScheduleSnapshot(encounterScheduleRowSchema.parse(row)) : null;
   }
 }
 

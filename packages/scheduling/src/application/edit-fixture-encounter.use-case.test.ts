@@ -54,6 +54,9 @@ class Snapshots implements EncounterScheduleRepository {
   async deleteByEncounterIds(encounterIds: readonly EncounterId[]) {
     for (const encounterId of encounterIds) this.rows.delete(encounterId);
   }
+  async findNextUpcomingByTeamIds() {
+    return null;
+  }
 }
 
 class Matches implements OfficialMatchRepository {
