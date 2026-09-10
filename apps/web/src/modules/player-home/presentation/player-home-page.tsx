@@ -19,13 +19,7 @@ import { HomeHero } from "./home-hero.tsx";
 import { HomeInvitationsCard } from "./home-invitations-card.tsx";
 import { HomeLastMatchCard } from "./home-last-match-card.tsx";
 import { HomePerformance } from "./home-performance.tsx";
-import {
-  HomeCompetitionsSkeleton,
-  HomeHeroSkeleton,
-  HomeLastMatchSkeleton,
-  HomePerformanceSkeleton,
-  HomeSideSkeleton,
-} from "./home-skeletons.tsx";
+import { homeSlotSkeletons } from "./home-skeletons.tsx";
 import type { PlayerHomeHeaderCta } from "./player-home-model.ts";
 import {
   usePlayerHome,
@@ -151,29 +145,35 @@ export function PlayerHomeViewPage({ home }: { readonly home: PlayerHomeView }) 
           />
         </PageHeaderActions>
       </PageHeader>
-      {home.phase === "loading" ? <LoadingGrid /> : <ReadyGrid home={home} />}
+      {home.phase === "loading" ? (
+        <LoadingGrid variant={home.loadingGrid} />
+      ) : (
+        <ReadyGrid home={home} />
+      )}
     </main>
   );
 }
 
-function LoadingGrid() {
+function LoadingGrid({ variant }: { readonly variant: "dashboard" | "onboarding" }) {
+  const skeletons = homeSlotSkeletons(variant);
   return (
     <HomeGrid
-      bottomLeft={<HomeLastMatchSkeleton />}
-      bottomRight={<HomeCompetitionsSkeleton />}
-      ea={<HomeSideSkeleton />}
-      hero={<HomeHeroSkeleton />}
-      invitations={<HomeSideSkeleton />}
-      performance={<HomePerformanceSkeleton />}
+      bottomLeft={skeletons.lastMatch}
+      bottomRight={skeletons.competitions}
+      ea={skeletons.ea}
+      hero={skeletons.hero}
+      invitations={skeletons.invitations}
+      performance={skeletons.performance}
     />
   );
 }
 
 function ReadyGrid({ home }: { readonly home: Extract<PlayerHomeView, { phase: "ready" }> }) {
+  const skeletons = homeSlotSkeletons(home.layout.kind);
   return (
     <HomeGrid
       bottomLeft={
-        <SlotFrame skeleton={<HomeLastMatchSkeleton />} status={home.slots.bottomLeft}>
+        <SlotFrame skeleton={skeletons.lastMatch} status={home.slots.bottomLeft}>
           <HomeLastMatchCard
             onRefreshMatches={() => {
               void home.refreshMatches();
@@ -184,27 +184,27 @@ function ReadyGrid({ home }: { readonly home: Extract<PlayerHomeView, { phase: "
         </SlotFrame>
       }
       bottomRight={
-        <SlotFrame skeleton={<HomeCompetitionsSkeleton />} status={home.slots.bottomRight}>
+        <SlotFrame skeleton={skeletons.competitions} status={home.slots.bottomRight}>
           <HomeCompetitionsCard slot={home.layout.bottomRight} />
         </SlotFrame>
       }
       ea={
-        <SlotFrame skeleton={<HomeSideSkeleton />} status={home.slots.eaCard}>
+        <SlotFrame skeleton={skeletons.ea} status={home.slots.eaCard}>
           <HomeEaCard slot={home.layout.eaCard} />
         </SlotFrame>
       }
       hero={
-        <SlotFrame skeleton={<HomeHeroSkeleton />} status={home.slots.hero}>
+        <SlotFrame skeleton={skeletons.hero} status={home.slots.hero}>
           <HomeHero slot={home.layout.hero} />
         </SlotFrame>
       }
       invitations={
-        <SlotFrame skeleton={<HomeSideSkeleton />} status={home.slots.invitations}>
+        <SlotFrame skeleton={skeletons.invitations} status={home.slots.invitations}>
           <HomeInvitationsCard slot={home.layout.invitations} />
         </SlotFrame>
       }
       performance={
-        <SlotFrame skeleton={<HomePerformanceSkeleton />} status={home.slots.performance}>
+        <SlotFrame skeleton={skeletons.performance} status={home.slots.performance}>
           <HomePerformance slot={home.layout.performance} />
         </SlotFrame>
       }

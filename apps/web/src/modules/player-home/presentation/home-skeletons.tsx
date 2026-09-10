@@ -1,174 +1,189 @@
-import * as stylex from "@stylexjs/stylex";
+import type { ReactNode } from "react";
 import { applyStyles, Skeleton } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { HomeCard } from "./home-card.tsx";
+import { NextEncounterFixture } from "./home-next-encounter-fixture.tsx";
+import { nextEncounterFixture } from "./home-next-encounter.styles.ts";
+import { styles } from "./home-skeletons.styles.ts";
+import type { PlayerHomeLayout } from "./player-home-model.ts";
 
-const styles = stylex.create({
-  hero: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  crests: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-  },
-  crest: {
-    width: "3.5rem",
-    height: "3.5rem",
-    borderRadius: "var(--corner-full)",
-  },
-  axis: {
-    width: "2.5rem",
-    height: "1rem",
-  },
-  bar: {
-    width: "100%",
-    height: "0.75rem",
-  },
-  trophy: {
-    width: "40%",
-    height: "0.75rem",
-  },
-  row: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-  },
-  avatar: {
-    width: "2.5rem",
-    height: "2.5rem",
-    borderRadius: "var(--corner-full)",
-    flexShrink: 0,
-  },
-  grow: {
-    flex: 1,
-    height: "0.75rem",
-  },
-  chevron: {
-    width: "1rem",
-    height: "1rem",
-    flexShrink: 0,
-  },
-  stats: {
-    display: "grid",
-    width: "100%",
-    gap: "0.5rem",
-    gridTemplateColumns: {
-      default: "repeat(2, minmax(0, 1fr))",
-      [media.lg]: "repeat(4, minmax(0, 1fr))",
-    },
-  },
-  stat: {
-    display: "flex",
-    alignItems: "center",
-    minWidth: 0,
-    gap: "0.75rem",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    borderRadius: "var(--corner-lg)",
-    backgroundColor: colors.surface,
-    padding: "1rem",
-  },
-  icon: {
-    width: "3rem",
-    height: "3rem",
-    flexShrink: 0,
-    borderRadius: "var(--corner-full)",
-  },
-  list: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
-  },
-});
-
-export function HomeHeroSkeleton() {
+function SlotCard({
+  children,
+  flush = false,
+  min,
+}: {
+  readonly children: ReactNode;
+  readonly flush?: boolean;
+  readonly min: "hero" | "side" | "bottom";
+}) {
+  const minStyle =
+    min === "hero" ? styles.heroSlot : min === "side" ? styles.sideSlot : styles.bottomSlot;
   return (
-    <HomeCard>
-      <div {...applyStyles(styles.hero)}>
-        <Skeleton {...applyStyles(styles.bar)} />
-        <div {...applyStyles(styles.crests)}>
-          <Skeleton {...applyStyles(styles.crest)} />
-          <Skeleton {...applyStyles(styles.axis)} />
-          <Skeleton {...applyStyles(styles.crest)} />
+    <div {...applyStyles(styles.slot, minStyle)}>
+      <HomeCard flush={flush}>{children}</HomeCard>
+    </div>
+  );
+}
+
+function EncounterClubSkeleton() {
+  return (
+    <div {...applyStyles(nextEncounterFixture.club)}>
+      <Skeleton {...applyStyles(nextEncounterFixture.crest, styles.fixtureCrest)} />
+      <Skeleton {...applyStyles(styles.fixtureName)} />
+    </div>
+  );
+}
+
+export function HomeHeroSkeleton({ kind }: { readonly kind: PlayerHomeLayout["kind"] }) {
+  if (kind === "dashboard") {
+    return (
+      <SlotCard flush min="hero">
+        <div {...applyStyles(styles.heroFill)}>
+          <div {...applyStyles(styles.heroHeader)}>
+            <Skeleton {...applyStyles(styles.heroTitle)} />
+            <Skeleton {...applyStyles(styles.roundBadge)} />
+          </div>
+          <div {...applyStyles(styles.matchup)}>
+            <NextEncounterFixture
+              away={<EncounterClubSkeleton />}
+              home={<EncounterClubSkeleton />}
+              meta={
+                <>
+                  <Skeleton {...applyStyles(styles.when)} />
+                  <Skeleton {...applyStyles(styles.pending)} />
+                </>
+              }
+              vs={<Skeleton {...applyStyles(styles.vs)} />}
+            />
+          </div>
+          <Skeleton {...applyStyles(styles.heroCta)} />
         </div>
-        <Skeleton {...applyStyles(styles.trophy)} />
+      </SlotCard>
+    );
+  }
+
+  return (
+    <SlotCard min="hero">
+      <div {...applyStyles(styles.artStack)}>
+        <div {...applyStyles(styles.heroHeader)}>
+          <Skeleton {...applyStyles(styles.heroTitle)} />
+          <Skeleton {...applyStyles(styles.subtitle)} />
+        </div>
+        <div {...applyStyles(styles.artFocus)}>
+          <Skeleton {...applyStyles(styles.artWide)} />
+          <Skeleton {...applyStyles(styles.artCta)} />
+        </div>
       </div>
-    </HomeCard>
+    </SlotCard>
   );
 }
 
 export function HomeSideSkeleton() {
   return (
-    <HomeCard>
-      <div {...applyStyles(styles.row)}>
-        <Skeleton {...applyStyles(styles.avatar)} />
-        <Skeleton {...applyStyles(styles.grow)} />
-        <Skeleton {...applyStyles(styles.chevron)} />
+    <SlotCard min="side">
+      <div {...applyStyles(styles.sideBody)}>
+        <div {...applyStyles(styles.row)}>
+          <Skeleton {...applyStyles(styles.avatar)} />
+          <div {...applyStyles(styles.sideCopy)}>
+            <Skeleton {...applyStyles(styles.title)} />
+            <Skeleton {...applyStyles(styles.subtitle)} />
+          </div>
+        </div>
       </div>
-    </HomeCard>
+    </SlotCard>
   );
 }
 
-export function HomePerformanceSkeleton() {
+export function HomePerformanceSkeleton({ kind }: { readonly kind: PlayerHomeLayout["kind"] }) {
   const { t } = useI18n();
+  if (kind !== "dashboard") {
+    return (
+      <HomeCard>
+        <div {...applyStyles(styles.banner)}>
+          <Skeleton {...applyStyles(styles.icon)} />
+          <div {...applyStyles(styles.sideCopy)}>
+            <Skeleton {...applyStyles(styles.title)} />
+            <Skeleton {...applyStyles(styles.subtitle)} />
+          </div>
+        </div>
+      </HomeCard>
+    );
+  }
+
   return (
     <section aria-label={t("player.statistics.summary")}>
       <div {...applyStyles(styles.stats)}>
-        <div {...applyStyles(styles.stat)}>
-          <Skeleton {...applyStyles(styles.icon)} />
-          <Skeleton {...applyStyles(styles.grow)} />
-        </div>
-        <div {...applyStyles(styles.stat)}>
-          <Skeleton {...applyStyles(styles.icon)} />
-          <Skeleton {...applyStyles(styles.grow)} />
-        </div>
-        <div {...applyStyles(styles.stat)}>
-          <Skeleton {...applyStyles(styles.icon)} />
-          <Skeleton {...applyStyles(styles.grow)} />
-        </div>
-        <div {...applyStyles(styles.stat)}>
-          <Skeleton {...applyStyles(styles.icon)} />
-          <Skeleton {...applyStyles(styles.grow)} />
-        </div>
+        {Array.from({ length: 4 }, (_, index) => (
+          <div key={index} {...applyStyles(styles.stat)}>
+            <Skeleton {...applyStyles(styles.icon)} />
+            <Skeleton {...applyStyles(styles.grow)} />
+          </div>
+        ))}
       </div>
     </section>
   );
 }
 
-export function HomeLastMatchSkeleton() {
+export function HomeLastMatchSkeleton({ kind }: { readonly kind: PlayerHomeLayout["kind"] }) {
+  if (kind !== "dashboard") {
+    return (
+      <SlotCard min="side">
+        <div {...applyStyles(styles.emptyCentered)}>
+          <Skeleton {...applyStyles(styles.icon)} />
+          <div {...applyStyles(styles.emptyCopy)}>
+            <Skeleton {...applyStyles(styles.title)} />
+            <Skeleton {...applyStyles(styles.subtitle)} />
+          </div>
+        </div>
+      </SlotCard>
+    );
+  }
+
   return (
-    <HomeCard>
-      <div {...applyStyles(styles.hero)}>
+    <SlotCard min="bottom">
+      <div {...applyStyles(styles.bottomBody)}>
+        <div {...applyStyles(styles.header)}>
+          <Skeleton {...applyStyles(styles.title)} />
+          <Skeleton {...applyStyles(styles.headerAction)} />
+        </div>
         <div {...applyStyles(styles.crests)}>
           <Skeleton {...applyStyles(styles.crest)} />
           <Skeleton {...applyStyles(styles.axis)} />
           <Skeleton {...applyStyles(styles.crest)} />
         </div>
-        <Skeleton {...applyStyles(styles.bar)} />
+        <Skeleton {...applyStyles(styles.appearance)} />
       </div>
-    </HomeCard>
+    </SlotCard>
   );
 }
 
 export function HomeCompetitionsSkeleton() {
   return (
-    <HomeCard>
+    <SlotCard min="bottom">
       <div {...applyStyles(styles.list)}>
-        <div {...applyStyles(styles.row)}>
-          <Skeleton {...applyStyles(styles.avatar)} />
-          <Skeleton {...applyStyles(styles.grow)} />
+        <div {...applyStyles(styles.header)}>
+          <Skeleton {...applyStyles(styles.title)} />
+          <Skeleton {...applyStyles(styles.headerAction)} />
         </div>
-        <div {...applyStyles(styles.row)}>
-          <Skeleton {...applyStyles(styles.avatar)} />
-          <Skeleton {...applyStyles(styles.grow)} />
-        </div>
+        {Array.from({ length: 3 }, (_, index) => (
+          <div key={index} {...applyStyles(styles.listRow)}>
+            <Skeleton {...applyStyles(styles.avatar)} />
+            <Skeleton {...applyStyles(styles.grow)} />
+            <Skeleton {...applyStyles(styles.chevron)} />
+          </div>
+        ))}
       </div>
-    </HomeCard>
+    </SlotCard>
   );
+}
+
+export function homeSlotSkeletons(kind: PlayerHomeLayout["kind"]) {
+  return {
+    competitions: <HomeCompetitionsSkeleton />,
+    ea: <HomeSideSkeleton />,
+    hero: <HomeHeroSkeleton kind={kind} />,
+    invitations: <HomeSideSkeleton />,
+    lastMatch: <HomeLastMatchSkeleton kind={kind} />,
+    performance: <HomePerformanceSkeleton kind={kind} />,
+  };
 }

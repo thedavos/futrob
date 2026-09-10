@@ -431,7 +431,7 @@ export const ActividadPendiente = story(
   async ({ canvasElement }) => {
     await expectText(canvasElement, "Registrar identificador");
     await expectText(canvasElement, "Rendimiento personal no disponible");
-    await expectText(canvasElement, "Ver competiciones");
+    await expectText(canvasElement, "Ver mis competiciones");
   },
 );
 
@@ -502,6 +502,7 @@ export const NextEncounterMissing = story(
   "nextEncounterMissing",
   async ({ canvasElement }) => {
     await expectText(canvasElement, "Sin enfrentamientos programados");
+    await expectText(canvasElement, "Ver mis competiciones");
   },
 );
 

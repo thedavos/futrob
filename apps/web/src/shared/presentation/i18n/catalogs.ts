@@ -243,7 +243,7 @@ const es = {
   "player.home.subtitle.activity": ({ club }) => `Tu actividad con ${club}`,
   "player.home.cta.matches": "Ver mis partidos",
   "player.home.cta.refreshMatches": "Actualizar partidos",
-  "player.home.cta.competitions": "Ver competiciones",
+  "player.home.cta.competitions": "Ver mis competiciones",
   "player.home.cta.exploreCompetitions": "Explorar competiciones",
   "player.home.cta.linkEa": "Registrar identificador",
   "player.home.cta.selectClub": "Seleccionar club",
@@ -263,7 +263,8 @@ const es = {
     "Elige tu club para ver actividad, partidos y competiciones.",
   "player.home.hero.next.title": "Tu próximo enfrentamiento",
   "player.home.hero.next.emptyTitle": "Sin enfrentamientos programados",
-  "player.home.hero.next.emptySubtitle": "Cuando haya una fecha, la verás aquí.",
+  "player.home.hero.next.emptySubtitle":
+    "Tu club ya está en competiciones. Todavía no hay fecha para el próximo enfrentamiento.",
   "player.home.hero.next.round": ({ competition, matchday }) =>
     `${competition} · Jornada ${matchday}`,
   "player.home.hero.next.vs": "VS",
@@ -1034,7 +1035,7 @@ const en: Catalog = {
   "player.home.subtitle.activity": ({ club }) => `Your activity with ${club}`,
   "player.home.cta.matches": "View my matches",
   "player.home.cta.refreshMatches": "Refresh matches",
-  "player.home.cta.competitions": "View competitions",
+  "player.home.cta.competitions": "View my competitions",
   "player.home.cta.exploreCompetitions": "Browse competitions",
   "player.home.cta.linkEa": "Register identifier",
   "player.home.cta.selectClub": "Select club",
@@ -1053,7 +1054,8 @@ const en: Catalog = {
     "Choose your club to see activity, matches, and competitions.",
   "player.home.hero.next.title": "Your next fixture",
   "player.home.hero.next.emptyTitle": "No fixtures scheduled",
-  "player.home.hero.next.emptySubtitle": "When a date is set, it will show up here.",
+  "player.home.hero.next.emptySubtitle":
+    "Your club is already in competitions. A date for the next fixture is not set yet.",
   "player.home.hero.next.round": ({ competition, matchday }) =>
     `${competition} · Matchday ${matchday}`,
   "player.home.hero.next.vs": "VS",

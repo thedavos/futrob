@@ -1,17 +1,21 @@
 import { Link } from "@tanstack/react-router";
-import { CheckCircleIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Badge, Button, Heading, Text } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import gamepadUrl from "@/assets/gamepad.svg";
+import clubFinderUrl from "@/assets/club-finder.svg";
+import calendarClockUrl from "@/assets/calendar-clock.svg";
 import backgroundMatchUrl from "@/assets/background-match.png";
+import backgroundStripesUrl from "@/assets/background-stripes.png";
 import trophyUrl from "@/assets/trophy.png";
 import backgroundDefaultUrl from "@/assets/background-default.png";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { MatchPitchSurface } from "@/shared/presentation/match-pitch-surface.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { HomeBanner, HomeCard, type HomeCardLink } from "./home-card.tsx";
+import { NextEncounterFixture } from "./home-next-encounter-fixture.tsx";
+import { nextEncounterFixture } from "./home-next-encounter.styles.ts";
 import { formatEncounterWhen } from "./player-home-copy.ts";
 import type { PlayerHomeHeroSlot } from "./player-home-model.ts";
 
@@ -85,11 +89,19 @@ const styles = stylex.create({
     position: "relative",
     zIndex: 1,
   },
-  stack: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: "1rem",
+  artMark: {
+    display: "block",
+    width: {
+      default: "6.5rem",
+      [media.md]: "8rem",
+      [media.lg]: "9.5rem",
+    },
+    height: "auto",
+    aspectRatio: "670 / 823",
+    objectFit: "contain",
+    flexShrink: 0,
+    position: "relative",
+    zIndex: 1,
   },
   fillStack: {
     display: "flex",
@@ -121,37 +133,6 @@ const styles = stylex.create({
     alignItems: "center",
     gap: "0.75rem",
     textAlign: "center",
-  },
-  fixture: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "center",
-    gap: "1.5rem",
-  },
-  axis: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "1rem",
-    paddingTop: "3rem",
-  },
-  meta: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "0.25rem",
-  },
-  club: {
-    display: "flex",
-    width: "8rem",
-    minWidth: 0,
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "0.5rem",
-  },
-  fixtureCrest: {
-    width: "7.5rem",
-    height: "7.5rem",
   },
   name: {
     textAlign: "center",
@@ -190,17 +171,15 @@ export function HomeHero({ slot }: { readonly slot: PlayerHomeHeroSlot }) {
       );
     case "select-club":
       return (
-        <HomeCard>
-          <div {...applyStyles(styles.stack)}>
-            <HomeBanner
-              subtitle={t("player.home.hero.selectClub.subtitle")}
-              title={t("player.home.hero.selectClub.title")}
-            />
-            <Button render={<Link to="/player/ea-clubs" />}>
-              {t("player.home.cta.selectClub")}
-            </Button>
-          </div>
-        </HomeCard>
+        <HeroArtCard
+          artSrc={clubFinderUrl}
+          backgroundUrl={backgroundStripesUrl}
+          ctaLabel={t("player.home.cta.selectClub")}
+          ctaTo="/player/ea-clubs"
+          look="empty-mark"
+          subtitle={t("player.home.hero.selectClub.subtitle")}
+          title={t("player.home.hero.selectClub.title")}
+        />
       );
     case "next-encounter": {
       const { encounter } = slot;
@@ -229,14 +208,21 @@ export function HomeHero({ slot }: { readonly slot: PlayerHomeHeroSlot }) {
                 </Badge>
               </div>
               <div {...applyStyles(styles.matchup)}>
-                <div {...applyStyles(styles.fixture)}>
-                  <EncounterClub
-                    imageUrl={encounter.home.externalClub?.imageUrl ?? null}
-                    name={encounter.home.name}
-                  />
-                  <div {...applyStyles(styles.axis)}>
-                    <span {...applyStyles(styles.vs)}>{t("player.home.hero.next.vs")}</span>
-                    <div {...applyStyles(styles.meta)}>
+                <NextEncounterFixture
+                  away={
+                    <EncounterClub
+                      imageUrl={encounter.away.externalClub?.imageUrl ?? null}
+                      name={encounter.away.name}
+                    />
+                  }
+                  home={
+                    <EncounterClub
+                      imageUrl={encounter.home.externalClub?.imageUrl ?? null}
+                      name={encounter.home.name}
+                    />
+                  }
+                  meta={
+                    <>
                       <Text align="center" className={styles.when} tone="default" weight="medium">
                         {formatEncounterWhen(
                           encounter.scheduledStartAt,
@@ -245,13 +231,10 @@ export function HomeHero({ slot }: { readonly slot: PlayerHomeHeroSlot }) {
                         )}
                       </Text>
                       <Badge variant="info">{t("player.home.hero.next.pending")}</Badge>
-                    </div>
-                  </div>
-                  <EncounterClub
-                    imageUrl={encounter.away.externalClub?.imageUrl ?? null}
-                    name={encounter.away.name}
-                  />
-                </div>
+                    </>
+                  }
+                  vs={<span {...applyStyles(styles.vs)}>{t("player.home.hero.next.vs")}</span>}
+                />
               </div>
               <Button className={styles.cta} render={<Link to="/player/competitions" />}>
                 {t("player.home.cta.viewCompetition")}
@@ -263,15 +246,15 @@ export function HomeHero({ slot }: { readonly slot: PlayerHomeHeroSlot }) {
     }
     case "no-upcoming":
       return (
-        <HomeCard>
-          <div {...applyStyles(styles.stack)}>
-            <HomeBanner
-              icon={<CheckCircleIcon aria-hidden size={32} />}
-              subtitle={t("player.home.hero.next.emptySubtitle")}
-              title={t("player.home.hero.next.emptyTitle")}
-            />
-          </div>
-        </HomeCard>
+        <HeroArtCard
+          artSrc={calendarClockUrl}
+          backgroundUrl={backgroundStripesUrl}
+          ctaLabel={t("player.home.cta.competitions")}
+          ctaTo="/player/competitions"
+          look="empty-mark"
+          subtitle={t("player.home.hero.next.emptySubtitle")}
+          title={t("player.home.hero.next.emptyTitle")}
+        />
       );
     case "no-competitions":
       return (
@@ -304,23 +287,17 @@ function HeroArtCard({
   readonly backgroundUrl: string;
   readonly ctaLabel: string;
   readonly ctaTo: HomeCardLink;
-  readonly look?: "empty" | "split";
+  readonly look?: "empty" | "empty-mark" | "split";
   readonly subtitle: string;
   readonly title: string;
 }) {
   const banner = <HomeBanner look="hero" subtitle={subtitle} title={title} />;
   const cta = <Button render={<Link to={ctaTo} />}>{ctaLabel}</Button>;
-  const art = (
-    <img
-      alt=""
-      data-outline="none"
-      src={artSrc}
-      {...applyStyles(look === "empty" ? styles.artEmpty : styles.art)}
-    />
-  );
+  const art = <img alt="" data-outline="none" src={artSrc} {...applyStyles(heroArtStyle(look))} />;
 
   switch (look) {
     case "empty":
+    case "empty-mark":
       return (
         <HomeCard backgroundUrl={backgroundUrl}>
           <div {...applyStyles(styles.emptyStack)}>
@@ -351,6 +328,21 @@ function HeroArtCard({
   }
 }
 
+function heroArtStyle(look: "empty" | "empty-mark" | "split") {
+  switch (look) {
+    case "split":
+      return styles.art;
+    case "empty-mark":
+      return styles.artMark;
+    case "empty":
+      return styles.artEmpty;
+    default: {
+      const _exhaustive: never = look;
+      return _exhaustive;
+    }
+  }
+}
+
 function EncounterClub({
   imageUrl,
   name,
@@ -359,12 +351,12 @@ function EncounterClub({
   readonly name: string;
 }) {
   return (
-    <div {...applyStyles(styles.club)}>
+    <div {...applyStyles(nextEncounterFixture.club)}>
       <ClubCrestAvatar
         framed={false}
         imageUrl={imageUrl}
         name={name}
-        {...applyStyles(styles.fixtureCrest)}
+        {...applyStyles(nextEncounterFixture.crest)}
       />
       <span {...applyStyles(styles.name)}>{name}</span>
     </div>
