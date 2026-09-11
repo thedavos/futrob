@@ -79,7 +79,7 @@ npm run cli -- e2e-golden-path --actor actor_demo
 
 | Comando                                                    | Descripción                                                                 |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `api-health`                                               | `GET /meta/health` (estado API + DB: `ok` / `skipped` / `error`)             |
+| `api-health`                                               | `GET /meta/health` (estado API + DB: `ok` / `skipped` / `error`)            |
 | `org-name-check <name>`                                    | Disponibilidad de nombre de organización                                    |
 | `org-create <name>`                                        | Crea organización                                                           |
 | `org-mine`                                                 | Membresías del actor                                                        |
