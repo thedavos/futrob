@@ -8,13 +8,13 @@ export function run(raw: string[]): Effect.Effect<number, CliError> {
   return Effect.gen(function* () {
     const common = parseCommon(raw);
     const config = { baseUrl: common.baseUrl, actorId: common.actorId };
-    const ping = yield* apiCall(config, (client) => client.meta.ping());
+    const health = yield* apiCall(config, (client) => client.meta.health());
 
     if (common.json) {
-      printJson(ping);
+      printJson(health);
     } else {
-      print("API ok");
+      print(`API ${health.ok ? "ok" : "error"} · DB ${health.db}`);
     }
-    return 0;
+    return health.ok ? 0 : 1;
   });
 }

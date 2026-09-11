@@ -11,6 +11,7 @@ export {
   type RequestCorrelation,
   type RequestId,
 } from "./request-correlation.ts";
+export { healthResponseSchema, type HealthResponse } from "./meta/health.response.ts";
 export { pingResponseSchema, type PingResponse } from "./meta/ping.response.ts";
 export * from "./game-data/index.ts";
 export * from "./competitions/index.ts";

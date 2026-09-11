@@ -22,7 +22,7 @@ Comandos base:
   results-smoke           Select → Confirm con fakes en memoria (@futrob/results)
 
 Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor):
-  api-health              GET /meta/ping
+  api-health              GET /meta/health (estado API + DB)
   org-name-check <name>   Disponibilidad de nombre de organización
   org-create <name>       Crea organización
   org-mine                Lista membresías del actor
