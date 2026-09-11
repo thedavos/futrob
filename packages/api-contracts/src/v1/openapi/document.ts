@@ -1,4 +1,5 @@
 import { apiErrorSchema } from "../errors.ts";
+import { healthResponseSchema } from "../meta/health.response.ts";
 import { pingResponseSchema } from "../meta/ping.response.ts";
 import {
   externalClubSchema,
@@ -131,6 +132,24 @@ export const futrobOpenApiV1 = {
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/PingResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/meta/health": {
+      get: {
+        operationId: "metaHealth",
+        tags: ["meta"],
+        summary: "Service and database health",
+        security: [],
+        responses: {
+          "200": {
+            description: "Current service and database health",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/HealthResponse" },
               },
             },
           },
@@ -2057,6 +2076,16 @@ export const futrobOpenApiV1 = {
           apiVersion: { type: "string", const: "v1" },
         },
       },
+      HealthResponse: {
+        type: "object",
+        required: ["ok", "service", "apiVersion", "db"],
+        properties: {
+          ok: { type: "boolean" },
+          service: { type: "string", const: "futrob" },
+          apiVersion: { type: "string", const: "v1" },
+          db: { type: "string", enum: ["ok", "skipped", "error"] },
+        },
+      },
       ApiError: {
         type: "object",
         required: ["code", "messageKey"],
@@ -3600,6 +3629,7 @@ augmentOpenApiRequestCorrelation({ paths: futrobOpenApiV1.paths });
 
 /** Keep Zod schemas referenced so drift is harder during refactors. */
 void apiErrorSchema;
+void healthResponseSchema;
 void pingResponseSchema;
 void externalClubSchema;
 void providerMatchSchema;
