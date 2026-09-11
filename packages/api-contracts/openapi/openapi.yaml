@@ -49,6 +49,24 @@ paths:
       parameters:
         - &a2
           $ref: "#/components/parameters/RequestId"
+  /meta/health:
+    get:
+      operationId: metaHealth
+      tags:
+        - meta
+      summary: Service and database health
+      security: []
+      responses:
+        "200":
+          description: Current service and database health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+          headers:
+            X-Request-ID: *a1
+      parameters:
+        - *a2
   /openapi.json:
     get:
       operationId: getOpenApiJson
@@ -600,6 +618,27 @@ paths:
           $ref: "#/components/responses/ApiError"
         "502":
           $ref: "#/components/responses/ApiError"
+  /players/me/next-encounter:
+    get:
+      operationId: getMyNextEncounter
+      tags:
+        - players
+      summary: Get the next scheduled encounter for a team the authenticated player
+        belongs to
+      responses:
+        "200":
+          description: The next upcoming encounter, or a null encounter when the player
+            has no scheduled fixture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetMyNextEncounterResponse"
+          headers:
+            X-Request-ID: *a1
+        "401":
+          $ref: "#/components/responses/ApiError"
+      parameters:
+        - *a2
   /players/me/recent-matches/{providerKey}/{externalMatchId}:
     get:
       operationId: getMyRecentMatch
@@ -2603,6 +2642,28 @@ components:
         apiVersion:
           type: string
           const: v1
+    HealthResponse:
+      type: object
+      required:
+        - ok
+        - service
+        - apiVersion
+        - db
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+          const: futrob
+        apiVersion:
+          type: string
+          const: v1
+        db:
+          type: string
+          enum:
+            - ok
+            - skipped
+            - error
     ApiError:
       type: object
       required:
@@ -4341,6 +4402,94 @@ components:
                 - "null"
       discriminator:
         propertyName: kind
+    NextEncounterSide:
+      type: object
+      required:
+        - teamId
+        - name
+        - externalClub
+      properties:
+        teamId:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        externalClub:
+          oneOf:
+            - $ref: "#/components/schemas/ExternalClub"
+            - type: "null"
+    NextEncounter:
+      type: object
+      required:
+        - encounterId
+        - competition
+        - round
+        - scheduledStartAt
+        - officialMatchCount
+        - home
+        - away
+      properties:
+        encounterId:
+          type: string
+          minLength: 1
+        competition:
+          type: object
+          required:
+            - id
+            - organizationId
+            - name
+            - timeZone
+          properties:
+            id:
+              type: string
+              minLength: 1
+            organizationId:
+              type: string
+              minLength: 1
+            name:
+              type: string
+              minLength: 1
+            timeZone:
+              type: string
+              minLength: 1
+        round:
+          oneOf:
+            - type: object
+              required:
+                - number
+                - total
+              properties:
+                number:
+                  type: integer
+                  minimum: 1
+                total:
+                  type:
+                    - integer
+                    - "null"
+                  minimum: 1
+            - type: "null"
+        scheduledStartAt:
+          type: string
+          format: date-time
+        officialMatchCount:
+          type: integer
+          enum:
+            - 1
+            - 2
+        home:
+          $ref: "#/components/schemas/NextEncounterSide"
+        away:
+          $ref: "#/components/schemas/NextEncounterSide"
+    GetMyNextEncounterResponse:
+      type: object
+      required:
+        - encounter
+      properties:
+        encounter:
+          oneOf:
+            - $ref: "#/components/schemas/NextEncounter"
+            - type: "null"
     GetMyRecentMatchesResponse:
       oneOf:
         - type: object
