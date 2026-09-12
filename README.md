@@ -93,8 +93,10 @@ Package guide: [`/packages/README.md`](/packages/README.md). API details: [`/app
 
 ## Local setup
 
+Requires Node.js 24 or newer (`package.json` enforces `node >=24`).
+
 ```bash
-vp install                 # or npm ci
+npm ci                     # or vp install when vp is available globally
 
 # Web secrets (Wrangler / Vite Cloudflare plugin)
 cp apps/web/.dev.vars.example apps/web/.dev.vars
@@ -106,7 +108,8 @@ cp apps/auth/.dev.vars.example apps/auth/.dev.vars
 
 # API env
 cp apps/api/.env.example apps/api/.env
-# set DATABASE_URL + INTERNAL_JOB_SECRET (must match web)
+# set INTERNAL_JOB_SECRET (must match web)
+# DATABASE_URL is optional locally; without it, the API uses in-memory stores
 
 # One shared D1 migration history, owned by apps/auth
 cd apps/auth && npx wrangler d1 migrations apply futrob-app --local --persist-to ../web/.wrangler/state && cd ../..
@@ -114,6 +117,9 @@ cd apps/auth && npx wrangler d1 migrations apply futrob-app --local --persist-to
 # Postgres (organizations) — apply apps/api/migrations/*.sql to DATABASE_URL
 
 npm run dev                # web (:3000) + api (:8787) + auth (:8788)
+npm run web                # web only (:3000)
+npm run api                # api only (:8787)
+npm run dev -w @futrob/auth # auth only (:8788)
 ```
 
 Align `INTERNAL_JOB_SECRET` between `apps/web/.dev.vars` and `apps/api/.env` or org BFF calls fail with 401.
@@ -147,14 +153,17 @@ and attempt overrides are optional Wrangler vars; the defaults are listed in
 ## Commands
 
 ```bash
-vp install                 # or npm ci
+npm ci                     # or vp install when vp is available globally
 npm run check              # vp check
 npm run test               # vp test
+npm run test:coverage      # vp test run --coverage
 npm run typecheck
 npm run dev                # web + api + auth in parallel
 npm run web                # apps/web only
 npm run api                # apps/api only
+npm run dev -w @futrob/auth # apps/auth only
 npm run build              # vp build apps/web
+npm run preview            # vp preview apps/web
 npm run storybook          # catálogo UI + web en :6006
 npm run storybook:build    # build estático de Storybook
 npm run start -w @futrob/mobile
@@ -166,4 +175,8 @@ npm run cli -- help
 npm run cli -- domain-smoke
 ```
 
-Vite+ lives at the repo root (`vite.config.ts`) and in `apps/web` — oxfmt, oxlint, and Vitest (`import … from "vite-plus/test"`). `apps/cli` stays on `tsx` and is only covered by root fmt/lint.
+Root `npm run` scripts use the repository-local Vite+ binary; use `./node_modules/.bin/vp` for
+direct commands when `vp` is not on `PATH` (never `npx vp`). Vite+ lives at the repo root
+(`vite.config.ts`) and in `apps/web` — oxfmt, oxlint, and Vitest
+(`import … from "vite-plus/test"`). `apps/cli` stays on `tsx` and is only covered by root
+fmt/lint.
