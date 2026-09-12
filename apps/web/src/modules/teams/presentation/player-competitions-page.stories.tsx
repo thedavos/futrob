@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import type { PlayerStoryState } from "./player-story-client.ts";
 import { playerProfileFixture, playerTeamsFixture } from "./player-story-fixtures.ts";
+import { PlayerCompetitionsExplorePage } from "./player-competitions-explore-page.tsx";
 import { PlayerCompetitionsPage } from "./player-competitions-page.tsx";
 import { PlayerStoryShell, PlayerStoryStub, type PlayerStoryRoute } from "./player-story-shell.tsx";
 
@@ -41,21 +42,22 @@ function scenarioState(id: ScenarioId): PlayerStoryState {
 
 const COMPETITION_ROUTES: readonly PlayerStoryRoute[] = [
   { path: "/player/competitions", component: PlayerCompetitionsPage },
+  { path: "/player/competitions/explore", component: PlayerCompetitionsExplorePage },
   {
     path: "/invitations/accept",
     component: () => <PlayerStoryStub label="Invitaciones (stub de Storybook)" />,
   },
 ];
 
-function CompetitionsStoryShell({ scenario }: { readonly scenario: ScenarioId }) {
+function CompetitionsStoryShell({
+  initialPath = "/player/competitions",
+  scenario,
+}: {
+  readonly initialPath?: string;
+  readonly scenario: ScenarioId;
+}) {
   const state = useMemo(() => scenarioState(scenario), [scenario]);
-  return (
-    <PlayerStoryShell
-      initialPath="/player/competitions"
-      routes={COMPETITION_ROUTES}
-      state={state}
-    />
-  );
+  return <PlayerStoryShell initialPath={initialPath} routes={COMPETITION_ROUTES} state={state} />;
 }
 
 const meta = {
@@ -85,7 +87,11 @@ export const Ready: Story = {
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByRole("heading", { name: "Competiciones" })).toBeVisible();
+    await expect(await canvas.findByRole("heading", { name: "Mis competiciones" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
+      "href",
+      "/player/competitions/explore",
+    );
     await expect(canvas.getByText("Competición copa-invierno")).toBeVisible();
     await expect(canvas.getByText("Equipo Fera Enjaulada")).toBeVisible();
     await expect(canvas.getByText("Competición liga-nocturna")).toBeVisible();
@@ -114,7 +120,7 @@ export const Loading: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Cargando competiciones…")).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Competiciones" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Mis competiciones" })).toBeVisible();
   },
 };
 
@@ -138,4 +144,27 @@ export const Mobile: Story = {
   args: { scenario: "ready" },
   parameters: { viewport: { defaultViewport: "mobile1" } },
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
+};
+
+export const Explore: Story = {
+  name: "Explore header",
+  args: { scenario: "ready" },
+  render: (args) => (
+    <CompetitionsStoryShell
+      initialPath="/player/competitions/explore"
+      key={args.scenario}
+      {...args}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "Explorar competiciones" }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText("Descubre torneos para seguir y compartir con tu club."),
+    ).toBeVisible();
+    await expect(canvas.getByText("Competiciones")).toBeVisible();
+    await expect(canvas.getByText("Explorar")).toBeVisible();
+  },
 };
