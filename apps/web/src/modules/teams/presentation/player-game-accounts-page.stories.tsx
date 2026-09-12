@@ -92,10 +92,7 @@ export const Empty: Story = {
     await expect(canvas.getByLabelText("Plataforma")).toBeVisible();
     await expect(canvas.getByLabelText("Edición")).toBeVisible();
     await expect(canvas.getByText("Todavía no vinculaste ninguna cuenta.")).toBeVisible();
-    await expect(canvas.getByRole("link", { name: "Volver al espacio personal" })).toHaveAttribute(
-      "href",
-      "/player",
-    );
+    await expect(canvas.queryByRole("link", { name: "Volver al espacio personal" })).toBeNull();
   },
 };
 

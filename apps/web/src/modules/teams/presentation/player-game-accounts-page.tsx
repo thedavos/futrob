@@ -17,7 +17,6 @@ import {
   Form,
   Input,
   PageHeader,
-  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderTitle,
   Select,
@@ -25,13 +24,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  TextLink,
   readFormString,
   typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { Link } from "@tanstack/react-router";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
@@ -166,11 +163,6 @@ export function PlayerGameAccountsPage() {
           Registra tus identificadores de EA sin compartir credenciales. Futrob los usará para
           localizar tus partidos y estadísticas.
         </PageHeaderDescription>
-        <PageHeaderActions>
-          <TextLink render={<Link to="/player" />} text="label">
-            Volver al espacio personal
-          </TextLink>
-        </PageHeaderActions>
       </PageHeader>
 
       {error || profileQuery.isError ? (
