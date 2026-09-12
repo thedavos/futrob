@@ -42,9 +42,13 @@ describe("PlayerCompetitionsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Competiciones" })).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Mis competiciones" })).toBeTruthy();
       expect(screen.getByText("Sin competiciones todavía")).toBeTruthy();
     });
+    expect(screen.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
+      "href",
+      "/player/competitions/explore",
+    );
     expect(screen.getByRole("button", { name: "Aceptar invitación" })).toBeTruthy();
   });
 

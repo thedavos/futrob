@@ -14,6 +14,7 @@ import {
   EmptyStateIcon,
   EmptyStateTitle,
   PageHeader,
+  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderTitle,
   typography,
@@ -86,10 +87,15 @@ export function PlayerCompetitionsPage() {
   return (
     <main {...applyStyles(styles.main)}>
       <PageHeader>
-        <PageHeaderTitle>Competiciones</PageHeaderTitle>
+        <PageHeaderTitle>Mis competiciones</PageHeaderTitle>
         <PageHeaderDescription>
           Competiciones en las que participas con un equipo.
         </PageHeaderDescription>
+        <PageHeaderActions>
+          <Button render={<Link to="/player/competitions/explore" />}>
+            Explorar competiciones
+          </Button>
+        </PageHeaderActions>
       </PageHeader>
 
       <div {...applyStyles(styles.body)}>
