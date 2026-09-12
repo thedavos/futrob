@@ -19,13 +19,13 @@ import {
   PageHeader,
   PageHeaderActions,
   PageHeaderDescription,
-  PageHeaderEyebrow,
   PageHeaderTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  TextLink,
   readFormString,
   typography,
 } from "@futrob/ui";
@@ -161,16 +161,15 @@ export function PlayerGameAccountsPage() {
   return (
     <main {...applyStyles(styles.main)}>
       <PageHeader>
-        <PageHeaderEyebrow>Espacio personal</PageHeaderEyebrow>
         <PageHeaderTitle>Datos de juego</PageHeaderTitle>
         <PageHeaderDescription>
           Registra tus identificadores de EA sin compartir credenciales. Futrob los usará para
           localizar tus partidos y estadísticas.
         </PageHeaderDescription>
         <PageHeaderActions>
-          <Button render={<Link to="/player" />} variant="link">
+          <TextLink render={<Link to="/player" />} text="label">
             Volver al espacio personal
-          </Button>
+          </TextLink>
         </PageHeaderActions>
       </PageHeader>
 
