@@ -6,15 +6,15 @@ The public landing at `/` tells a visitor that Futrob operates EA SPORTS FC Club
 
 - `landing-load` renders the public page for an anonymous visitor on the default locale.
 - `landing-identity` shows the Futrob brand and the hero promise about the official result.
-- `landing-cta-signup` opens account creation from the header and from the hero.
-- `landing-cta-login` opens sign-in from the header nav named `Acceso`.
+- `landing-cta-signup` opens account creation from the header, the hero, and the below-fold final CTA.
+- `landing-cta-login` opens sign-in from the header nav named `Acceso` and from the final CTA.
 - `landing-mechanism` jumps to `#mecanismo` and shows the EA → selection → approval → publication steps.
 
 ## How to get to it (user POV)
 
 - Open `http://localhost:3000/` with no session cookie.
-- Choose `Crear cuenta` in the header or in the hero.
-- Choose `Iniciar sesión` in the header.
+- Choose `Crear cuenta` in the header, the hero, or the below-fold final CTA.
+- Choose `Iniciar sesión` in the header or in the final CTA.
 - Choose `Ver cómo funciona` in the hero, or open `/#mecanismo`.
 
 ## Driving it with verify-futrob
@@ -31,12 +31,13 @@ Preconditions:
 - **Hero signup.** Choose the hero button `Crear cuenta`. The URL becomes `/signup` again. Return home the same way (back or `/`).
 - **Header login.** Choose `Iniciar sesión`. The URL becomes `/login`. A heading `Inicia sesión` is visible. Return home.
 - **Mechanism.** Choose `Ver cómo funciona`. The URL hash is `#mecanismo`. A heading `Cómo un partido se vuelve oficial` is visible, with steps titled `Sync EA`, `Selección`, `Aprobación`, and `Publicación`.
-- **Proof.** Capture an ARIA snapshot and a screenshot of `/` showing the brand, hero, and both CTAs, plus a second pair after scrolling or jumping to `#mecanismo`. Write `landing` and the entry point into `NOTES.md`.
+- **Final CTA.** Scroll past `#mecanismo` to `¿Listo para poner tu competición bajo control?`. Choose that block’s `Crear cuenta` → `/signup`. Return home. Its `Iniciar sesión` → `/login`.
+- **Proof.** Capture an ARIA snapshot and a screenshot of `/` showing the brand, hero, and header CTAs, plus a second pair after scrolling or jumping to `#mecanismo` (include the final CTA if it is in frame). Write `landing` and the entry point into `NOTES.md`.
 
 ## Gotchas
 
 - Locale defaults to Spanish. English copy (`Log in`, `Create account`, `From the EA match to the`) is a different locale, not a failure of the Spanish recipe.
-- There are two `Crear cuenta` controls (header and hero). Drive both; proving only one is an incomplete entry-point pass.
+- There are three `Crear cuenta` controls (header, hero, and the below-fold final CTA). Drive all three; proving only header + hero is an incomplete entry-point pass. The final block also has a second `Iniciar sesión`.
 - The landing header `Futrob` link is the only brand home control. `/login` and `/signup` render `AuthTunnelShell` with a non-interactive logo (`role=img`). Do not look for a `Futrob` link there.
 - `Ver cómo funciona` is an in-page `#mecanismo` jump, not a new route. Assert the heading, not only the hash.
 - Landing is public. A leftover session must not reveal org admin chrome on `/`.

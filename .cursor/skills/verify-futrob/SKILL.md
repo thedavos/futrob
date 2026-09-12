@@ -78,7 +78,9 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Player finish | button `Entrar a mi espacio` |
 | Player home title | `Tu espacio de jugador` |
 | Open matches | `Abrir Mis partidos` |
-| Match view radios | `Todos`, `Liga`, `Playoff`, `Amistosos` |
+| Match view radios | `Todos`, `Liga`, `Playoff`, `Amistosos` (hidden until matches can load) |
+| Open match row | link `Ver {home} {homeGoals} – {awayGoals} {away}` — not the unused string `Ver partido` |
+| Landing final CTA | below-fold `Crear cuenta` / `Iniciar sesión` under `¿Listo para poner tu competición bajo control?` |
 | Open profile | `Abrir tu perfil` |
 | Org name | textbox `Nombre de la organización` |
 | Create org | button `Crear organización` |
