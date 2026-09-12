@@ -57,9 +57,7 @@ function CompetitionsStoryShell({
   readonly scenario: ScenarioId;
 }) {
   const state = useMemo(() => scenarioState(scenario), [scenario]);
-  return (
-    <PlayerStoryShell initialPath={initialPath} routes={COMPETITION_ROUTES} state={state} />
-  );
+  return <PlayerStoryShell initialPath={initialPath} routes={COMPETITION_ROUTES} state={state} />;
 }
 
 const meta = {
