@@ -1,9 +1,4 @@
-import type {
-  CompetitionId,
-  EncounterId,
-  OrganizationId,
-  TeamId,
-} from "@futrob/shared-kernel";
+import type { CompetitionId, EncounterId, OrganizationId, TeamId } from "@futrob/shared-kernel";
 
 export interface CompetitionRescheduleRules {
   readonly allowRescheduling: boolean;
