@@ -1,5 +1,7 @@
 import type { ExternalReference, ProviderMatch, ProviderMatchRepository } from "@futrob/game-data";
 import type {
+  CandidateMatchReadResult,
+  CandidateMatchQuery,
   EncounterReaderPort,
   EncounterScheduleSnapshot as ResultsEncounterSnapshot,
   ProviderMatchReaderPort,
@@ -7,8 +9,6 @@ import type {
 import type { EncounterScheduleRepository } from "@futrob/scheduling";
 import type { EncounterId } from "@futrob/shared-kernel";
 import type { ExternalClubConnectionRepository } from "@futrob/teams";
-
-const CANDIDATE_WINDOW_MS = 36 * 60 * 60 * 1000;
 
 export class SchedulingEncounterReader implements EncounterReaderPort {
   constructor(
@@ -43,7 +43,6 @@ export class SchedulingEncounterReader implements EncounterReaderPort {
 export class RepositoryProviderMatchReader implements ProviderMatchReaderPort {
   constructor(
     private readonly matches: ProviderMatchRepository,
-    private readonly schedules: EncounterScheduleRepository,
     private readonly connections: ExternalClubConnectionRepository,
   ) {}
 
@@ -54,26 +53,31 @@ export class RepositoryProviderMatchReader implements ProviderMatchReaderPort {
     });
   }
 
-  async listCandidatesForEncounter(encounterId: EncounterId): Promise<ProviderMatch[]> {
-    const snapshot = await this.schedules.findById(encounterId);
-    if (!snapshot) return [];
-
+  async listCandidatesForEncounter(input: CandidateMatchQuery): Promise<CandidateMatchReadResult> {
     const [home, away] = await Promise.all([
-      this.connections.findByTeam(snapshot.homeTeamId),
-      this.connections.findByTeam(snapshot.awayTeamId),
+      this.connections.findByTeam(input.homeTeamId),
+      this.connections.findByTeam(input.awayTeamId),
     ]);
-    if (!home || !away) return [];
+    if (!home || !away) {
+      const sides: Array<"home" | "away"> = [];
+      if (!home) sides.push("home");
+      if (!away) sides.push("away");
+      return {
+        status: "clubs_not_connected",
+        sides,
+      };
+    }
+    if (home.providerKey !== away.providerKey) {
+      return { status: "provider_mismatch" };
+    }
 
-    const halfWindow = CANDIDATE_WINDOW_MS / 2;
-    const from = new Date(snapshot.scheduledStartAt.getTime() - halfWindow);
-    const to = new Date(snapshot.scheduledStartAt.getTime() + halfWindow);
-
-    return this.matches.listBetweenClubs({
-      providerKey: home.providerKey || "ea-clubs",
+    const matches = await this.matches.listBetweenClubs({
+      providerKey: home.providerKey,
       homeExternalClubId: home.externalClubId,
       awayExternalClubId: away.externalClubId,
-      from,
-      to,
+      from: input.window.from,
+      to: input.window.to,
     });
+    return { status: "ready", matches };
   }
 }

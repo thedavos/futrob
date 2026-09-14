@@ -57,12 +57,13 @@ export class InMemoryProviderMatchRepository implements ProviderMatchRepository 
     readonly from: Date;
     readonly to: Date;
   }): Promise<ProviderMatch[]> {
-    const clubs = new Set([input.homeExternalClubId, input.awayExternalClubId]);
     const matches = [...this.byKey.values()].filter(
       (match) =>
         match.provider.key === input.providerKey &&
-        clubs.has(match.home.externalClubId) &&
-        clubs.has(match.away.externalClubId) &&
+        ((match.home.externalClubId === input.homeExternalClubId &&
+          match.away.externalClubId === input.awayExternalClubId) ||
+          (match.home.externalClubId === input.awayExternalClubId &&
+            match.away.externalClubId === input.homeExternalClubId)) &&
         match.occurredAt >= input.from &&
         match.occurredAt <= input.to,
     );

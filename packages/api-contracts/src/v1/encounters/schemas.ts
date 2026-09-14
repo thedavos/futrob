@@ -184,3 +184,56 @@ export const getMyNextEncounterResponseSchema = z.object({
 });
 
 export type GetMyNextEncounterResponse = z.infer<typeof getMyNextEncounterResponseSchema>;
+
+const encounterCandidateTeamSchema = z.object({
+  externalClubId: z.string().min(1),
+  name: z.string().min(1),
+  goals: z.number().int().nonnegative(),
+  imageUrl: z.string().nullable(),
+});
+
+export const encounterCandidateSchema = z.object({
+  reference: z.object({
+    providerKey: z.string().min(1),
+    externalId: z.string().min(1),
+  }),
+  occurredAt: z.string().datetime(),
+  home: encounterCandidateTeamSchema,
+  away: encounterCandidateTeamSchema,
+  game: z.object({
+    edition: z.string().min(1),
+    platform: z.string().min(1),
+    mode: z.string().min(1),
+  }),
+  metadata: z.object({
+    durationSeconds: z.number().int().nonnegative().nullable(),
+    wasDisconnected: z.boolean(),
+    winnerByForfeit: z.boolean(),
+    completeness: z.enum(["complete", "partial", "unknown"]),
+  }),
+  playerObservationCount: z.number().int().nonnegative(),
+});
+
+export const listEncounterCandidatesResponseSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("ready"),
+    window: z.object({
+      from: z.string().datetime(),
+      to: z.string().datetime(),
+    }),
+    candidates: z.array(encounterCandidateSchema),
+  }),
+  z.object({
+    status: z.literal("clubs_not_connected"),
+    sides: z
+      .array(z.enum(["home", "away"]))
+      .min(1)
+      .max(2),
+  }),
+  z.object({
+    status: z.literal("provider_mismatch"),
+  }),
+]);
+
+export type EncounterCandidateDto = z.infer<typeof encounterCandidateSchema>;
+export type ListEncounterCandidatesResponse = z.infer<typeof listEncounterCandidatesResponseSchema>;

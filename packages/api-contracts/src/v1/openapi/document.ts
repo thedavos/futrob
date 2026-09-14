@@ -41,6 +41,7 @@ import {
 import {
   encounterScheduleSnapshotSchema,
   getMyNextEncounterResponseSchema,
+  listEncounterCandidatesResponseSchema,
 } from "../encounters/schemas.ts";
 import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
@@ -1255,6 +1256,29 @@ export const futrobOpenApiV1 = {
       },
     },
     ...fixtureOpenApiPaths,
+    "/encounters/{encounterId}/candidates": {
+      get: {
+        operationId: "listEncounterCandidates",
+        tags: ["encounters"],
+        summary: "List authorized persisted provider-match candidates for an encounter",
+        parameters: [
+          { name: "encounterId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Candidate list or a safe connection state",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ListEncounterCandidatesResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "503": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     "/encounters/{encounterId}/schedule-snapshot": {
       get: {
         operationId: "getEncounterScheduleSnapshot",
@@ -2532,6 +2556,105 @@ export const futrobOpenApiV1 = {
           providerKey: { type: ["string", "null"] },
         },
       },
+      EncounterCandidateTeam: {
+        type: "object",
+        required: ["externalClubId", "name", "goals", "imageUrl"],
+        properties: {
+          externalClubId: { type: "string", minLength: 1 },
+          name: { type: "string", minLength: 1 },
+          goals: { type: "integer", minimum: 0 },
+          imageUrl: { type: ["string", "null"] },
+        },
+      },
+      EncounterCandidate: {
+        type: "object",
+        required: [
+          "reference",
+          "occurredAt",
+          "home",
+          "away",
+          "game",
+          "metadata",
+          "playerObservationCount",
+        ],
+        properties: {
+          reference: {
+            type: "object",
+            required: ["providerKey", "externalId"],
+            properties: {
+              providerKey: { type: "string", minLength: 1 },
+              externalId: { type: "string", minLength: 1 },
+            },
+          },
+          occurredAt: { type: "string", format: "date-time" },
+          home: { $ref: "#/components/schemas/EncounterCandidateTeam" },
+          away: { $ref: "#/components/schemas/EncounterCandidateTeam" },
+          game: {
+            type: "object",
+            required: ["edition", "platform", "mode"],
+            properties: {
+              edition: { type: "string", minLength: 1 },
+              platform: { type: "string", minLength: 1 },
+              mode: { type: "string", minLength: 1 },
+            },
+          },
+          metadata: {
+            type: "object",
+            required: ["durationSeconds", "wasDisconnected", "winnerByForfeit", "completeness"],
+            properties: {
+              durationSeconds: { type: ["integer", "null"], minimum: 0 },
+              wasDisconnected: { type: "boolean" },
+              winnerByForfeit: { type: "boolean" },
+              completeness: {
+                type: "string",
+                enum: ["complete", "partial", "unknown"],
+              },
+            },
+          },
+          playerObservationCount: { type: "integer", minimum: 0 },
+        },
+      },
+      ListEncounterCandidatesResponse: {
+        oneOf: [
+          {
+            type: "object",
+            required: ["status", "window", "candidates"],
+            properties: {
+              status: { const: "ready" },
+              window: {
+                type: "object",
+                required: ["from", "to"],
+                properties: {
+                  from: { type: "string", format: "date-time" },
+                  to: { type: "string", format: "date-time" },
+                },
+              },
+              candidates: {
+                type: "array",
+                items: { $ref: "#/components/schemas/EncounterCandidate" },
+              },
+            },
+          },
+          {
+            type: "object",
+            required: ["status", "sides"],
+            properties: {
+              status: { const: "clubs_not_connected" },
+              sides: {
+                type: "array",
+                minItems: 1,
+                maxItems: 2,
+                items: { type: "string", enum: ["home", "away"] },
+              },
+            },
+          },
+          {
+            type: "object",
+            required: ["status"],
+            properties: { status: { const: "provider_mismatch" } },
+          },
+        ],
+      },
       ...fixtureOpenApiSchemas,
       CompetitionRules: {
         type: "object",
@@ -3668,6 +3791,7 @@ void changeCompetitionRoleRequestSchema;
 void competitionRoleAssignmentSchema;
 void listAccessibleCompetitionsResponseSchema;
 void encounterScheduleSnapshotSchema;
+void listEncounterCandidatesResponseSchema;
 void getMyNextEncounterResponseSchema;
 void competitionTeamManagementListResponseSchema;
 void competitionTeamManagementDetailResponseSchema;

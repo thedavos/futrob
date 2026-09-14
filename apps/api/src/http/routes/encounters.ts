@@ -1,7 +1,9 @@
 import {
   encounterScheduleSnapshotSchema,
+  listEncounterCandidatesResponseSchema,
   upsertEncounterScheduleSnapshotRequestSchema,
 } from "@futrob/api-contracts";
+import { OfficialSelectionForbidden } from "@futrob/results";
 import { ENCOUNTER_PERMISSION } from "@futrob/scheduling";
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { Hono } from "hono";
@@ -16,6 +18,56 @@ import { jsonResponse } from "@/utils/http-response.ts";
 export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
   secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+
+  secured.get("/encounters/:encounterId/candidates", async (c) => {
+    const encounterId = asEncounterId(c.req.param("encounterId"));
+    const encounter = await deps.modules.scheduling.encounters.findById(encounterId);
+    if (!encounter) {
+      return apiErrorResponse(404, {
+        code: "results.encounter_not_found",
+        messageKey: "errors.results.encounter_not_found",
+      });
+    }
+
+    const result = await deps.modules.results.listEncounterCandidates.execute({
+      actorId: c.get("actorId"),
+      organizationId: encounter.organizationId,
+      encounterId,
+    });
+    if (result.isErr()) {
+      if (OfficialSelectionForbidden.is(result.error)) {
+        return apiErrorResponse(404, {
+          code: "results.encounter_not_found",
+          messageKey: "errors.results.encounter_not_found",
+        });
+      }
+      return failureToHttp(result.error);
+    }
+
+    switch (result.value.status) {
+      case "ready":
+        return jsonResponse(
+          listEncounterCandidatesResponseSchema.parse({
+            ...result.value,
+            window: {
+              from: result.value.window.from.toISOString(),
+              to: result.value.window.to.toISOString(),
+            },
+            candidates: result.value.candidates.map((candidate) => ({
+              ...candidate,
+              occurredAt: candidate.occurredAt.toISOString(),
+            })),
+          }),
+        );
+      case "clubs_not_connected":
+      case "provider_mismatch":
+        return jsonResponse(listEncounterCandidatesResponseSchema.parse(result.value));
+      default: {
+        const exhaustive: never = result.value;
+        return exhaustive;
+      }
+    }
+  });
 
   secured.get("/encounters/:encounterId/schedule-snapshot", async (c) => {
     const encounter = await deps.modules.scheduling.encounters.findById(

@@ -239,7 +239,6 @@ export function createModules(input: CreateModulesInput): AppModules {
     encounterReader,
     providerMatches: new RepositoryProviderMatchReader(
       providerMatches,
-      scheduling.encounters,
       teams.externalClubConnections,
     ),
     results: officialResults,

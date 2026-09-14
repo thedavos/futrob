@@ -12,7 +12,11 @@ export type {
   EncounterReaderPort,
   EncounterScheduleSnapshot,
 } from "./domain/ports/encounter-reader.port.ts";
-export type { ProviderMatchReaderPort } from "./domain/ports/provider-match-reader.port.ts";
+export type {
+  CandidateMatchQuery,
+  CandidateMatchReadResult,
+  ProviderMatchReaderPort,
+} from "./domain/ports/provider-match-reader.port.ts";
 export type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -22,12 +26,21 @@ export type { OfficialResultApprovedEvent } from "./domain/events/official-resul
 export type { OfficialResultVoidedEvent } from "./domain/events/official-result-voided.event.ts";
 export { RESULT_PERMISSION, RESULT_PERMISSIONS } from "./domain/policies/result-permissions.ts";
 export {
+  CANDIDATE_WINDOW_HALF_HOURS,
+  candidateWindowFor,
+  type CandidateWindow,
+} from "./domain/policies/candidate-window.ts";
+export {
   EncounterNotFound,
   InvalidSelection,
   OfficialSelectionForbidden,
   DuplicateProviderMatch,
   type SelectOfficialMatchesError,
 } from "./domain/errors/select-official-matches.errors.ts";
+export {
+  CandidateDataUnavailable,
+  type ListEncounterCandidatesError,
+} from "./domain/errors/encounter-candidates.errors.ts";
 export {
   SelectionNotFound,
   SelectionNotConfirmable,
@@ -38,6 +51,13 @@ export {
   type ApproveOfficialResultError,
   type VoidOfficialResultError,
 } from "./domain/errors/official-result.errors.ts";
+export {
+  ListEncounterCandidatesUseCase,
+  type EncounterCandidateSummary,
+  type EncounterCandidateTeam,
+  type ListEncounterCandidatesInput,
+  type ListEncounterCandidatesOutput,
+} from "./application/list-encounter-candidates/list-encounter-candidates.use-case.ts";
 export {
   SelectOfficialMatchesUseCase,
   type SelectOfficialMatchesInput,
