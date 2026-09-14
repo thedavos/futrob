@@ -36,6 +36,7 @@ const now = new Date("2026-09-14T20:00:00.000Z");
 const organizationId = asOrganizationId("org-1");
 const competitionId = asCompetitionId("competition-1");
 const encounterId = asEncounterId("encounter-1");
+const secondEncounterId = asEncounterId("encounter-2");
 const homeTeamId = asTeamId("team-home");
 const awayTeamId = asTeamId("team-away");
 const actorId = asActorId("captain-1");
@@ -98,14 +99,12 @@ class FakeScheduleChangeRequests implements ScheduleChangeRequestRepository {
     );
   }
 
-  async findActiveByEncounter(orgId: OrganizationId, targetEncounterId: EncounterId) {
-    return (
-      this.rows.find(
-        (request) =>
-          request.organizationId === orgId &&
-          request.encounterId === targetEncounterId &&
-          request.status === "open",
-      ) ?? null
+  async listActiveByEncounter(orgId: OrganizationId, targetEncounterId: EncounterId) {
+    return this.rows.filter(
+      (request) =>
+        request.organizationId === orgId &&
+        request.encounterId === targetEncounterId &&
+        request.status === "open",
     );
   }
 
@@ -118,6 +117,8 @@ class FakeScheduleChangeRequests implements ScheduleChangeRequestRepository {
 class SerialEncounterMutationLock {
   private readonly tails = new Map<EncounterId, Promise<void>>();
 
+  constructor(private readonly onAcquired: () => void = () => undefined) {}
+
   async runExclusive<T>(targetEncounterId: EncounterId, operation: () => Promise<T>): Promise<T> {
     const predecessor = this.tails.get(targetEncounterId) ?? Promise.resolve();
     let release: () => void = () => undefined;
@@ -129,6 +130,7 @@ class SerialEncounterMutationLock {
 
     await predecessor;
     try {
+      this.onAcquired();
       return await operation();
     } finally {
       release();
@@ -158,6 +160,10 @@ function createHarness(
     readonly allowRescheduling?: boolean;
     readonly maxReschedulesPerTeam?: number;
     readonly appliedReschedules?: number;
+    readonly appliedReschedulesByEncounter?: ReadonlyMap<EncounterId, number>;
+    readonly encounterWhenLocked?: EncounterScheduleSnapshot | null;
+    readonly failPublishingOnce?: boolean;
+    readonly protectedOfficialSlots?: readonly (1 | 2)[];
   } = {},
 ) {
   const requests = new FakeScheduleChangeRequests();
@@ -165,12 +171,17 @@ function createHarness(
     options.encounter === undefined ? encounter : options.encounter,
   );
   const events: DomainEvent[] = [];
+  const protectedOfficialSlots = options.protectedOfficialSlots ?? [];
+  let failPublishing = options.failPublishingOnce ?? false;
   const rules: CompetitionRescheduleRulesPort = {
     getRules: async () => ({
       allowRescheduling: options.allowRescheduling ?? true,
       maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
     }),
-    countAppliedReschedules: async () => options.appliedReschedules ?? 0,
+    countAppliedReschedules: async (input) =>
+      options.appliedReschedulesByEncounter?.get(input.encounterId) ??
+      options.appliedReschedules ??
+      0,
   };
   const generatedIds = ["request-1", "proposal-1", "request-2", "proposal-2"];
 
@@ -181,16 +192,48 @@ function createHarness(
     useCase: new CreateScheduleChangeRequestUseCase({
       authorization: authorization(options.allowed),
       clock: { now: () => new Date(now) },
-      editGuard: { canEdit: async () => options.canEdit ?? true },
+      editGuard: {
+        canRequestScheduleChange: async ({ scope }) => {
+          if (!(options.canEdit ?? true)) return false;
+          if (scope.type === "entire_encounter") return protectedOfficialSlots.length === 0;
+          return !protectedOfficialSlots.includes(scope.officialSlot);
+        },
+      },
       encounters,
       eventPublisher: {
-        publish: async (event) => void events.push(event),
+        publish: async (event) => {
+          if (failPublishing) {
+            failPublishing = false;
+            throw new Error("publisher unavailable");
+          }
+          events.push(event);
+        },
         publishMany: async (batch) => void events.push(...batch),
       },
       ids: { generate: () => generatedIds.shift() ?? "unexpected-id" },
-      mutationLock: new SerialEncounterMutationLock(),
+      mutationLock: new SerialEncounterMutationLock(() => {
+        if (options.encounterWhenLocked === undefined) return;
+        if (options.encounterWhenLocked === null) {
+          encounters.rows.delete(encounterId);
+          return;
+        }
+        encounters.rows.set(options.encounterWhenLocked.encounterId, options.encounterWhenLocked);
+      }),
       requests,
       rules,
+      transaction: {
+        runInTransaction: async (operation) => {
+          const requestSnapshot = [...requests.rows];
+          const eventSnapshot = [...events];
+          try {
+            return await operation();
+          } catch (error) {
+            requests.rows.splice(0, requests.rows.length, ...requestSnapshot);
+            events.splice(0, events.length, ...eventSnapshot);
+            throw error;
+          }
+        },
+      },
     }),
   };
 }
@@ -290,6 +333,17 @@ describe("CreateScheduleChangeRequestUseCase", () => {
       expect(harness.requests.rows).toHaveLength(0);
       expect(harness.events).toHaveLength(0);
     }
+  });
+
+  it("revalidates the Encounter after acquiring the mutation lock", async () => {
+    const harness = createHarness({ encounterWhenLocked: null });
+
+    const result = await harness.useCase.execute(validInput);
+
+    const error = expectErrorCode(result, "scheduling.schedule_change_encounter_not_found");
+    expect(error).toBeInstanceOf(ScheduleChangeRequestNotFound);
+    expect(harness.requests.rows).toHaveLength(0);
+    expect(harness.events).toHaveLength(0);
   });
 
   it("rejects a requesting Team that is not part of the Encounter", async () => {
@@ -398,8 +452,77 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     expect(harness.requests.rows).toHaveLength(0);
   });
 
+  it("counts applied reschedules for the requested Encounter instead of the Team globally", async () => {
+    const appliedReschedulesByEncounter = new Map<EncounterId, number>([
+      [encounterId, 2],
+      [secondEncounterId, 0],
+    ]);
+    const harness = createHarness({
+      maxReschedulesPerTeam: 2,
+      appliedReschedulesByEncounter,
+    });
+    const secondEncounter: EncounterScheduleSnapshot = {
+      ...encounter,
+      encounterId: secondEncounterId,
+      scheduledStartAt: new Date("2026-09-22T20:00:00.000Z"),
+    };
+    harness.encounters.rows.set(secondEncounterId, secondEncounter);
+
+    const result = await harness.useCase.execute({
+      ...validInput,
+      encounterId: secondEncounterId,
+      proposedStartAt: new Date("2026-09-23T20:00:00.000Z"),
+      idempotencyKey: "idem-second-encounter",
+    });
+
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) throw result.error;
+    expect(result.value.encounterId).toBe(secondEncounterId);
+    expect(harness.requests.rows).toEqual([result.value]);
+  });
+
   it("blocks an Encounter protected by official-result and selection guards", async () => {
     const harness = createHarness({ canEdit: false });
+
+    const result = await harness.useCase.execute(validInput);
+
+    const error = expectErrorCode(result, "scheduling.encounter_not_editable_for_schedule_change");
+    expect(error).toBeInstanceOf(EncounterNotEditableForScheduleChange);
+    expect(harness.requests.rows).toHaveLength(0);
+    expect(harness.events).toHaveLength(0);
+  });
+
+  it("allows an unprotected OfficialMatch slot when the other slot is protected", async () => {
+    const harness = createHarness({ protectedOfficialSlots: [2] });
+
+    const unprotected = await harness.useCase.execute({
+      ...validInput,
+      scope: { type: "official_match", officialSlot: 1 },
+    });
+
+    expect(unprotected.isOk()).toBe(true);
+    if (unprotected.isErr()) throw unprotected.error;
+    expect(unprotected.value.scope).toEqual({ type: "official_match", officialSlot: 1 });
+    expect(harness.requests.rows).toEqual([unprotected.value]);
+    expect(harness.events).toHaveLength(1);
+  });
+
+  it("blocks the protected OfficialMatch slot itself", async () => {
+    const harness = createHarness({ protectedOfficialSlots: [2] });
+
+    const result = await harness.useCase.execute({
+      ...validInput,
+      scope: { type: "official_match", officialSlot: 2 },
+    });
+
+    const error = expectErrorCode(result, "scheduling.encounter_not_editable_for_schedule_change");
+    expect(error).toBeInstanceOf(EncounterNotEditableForScheduleChange);
+    expect(harness.requests.rows).toHaveLength(0);
+    expect(harness.events).toHaveLength(0);
+  });
+
+  it("blocks an entire-Encounter request when either OfficialMatch slot is protected", async () => {
+    const harness = createHarness({ protectedOfficialSlots: [2] });
 
     const result = await harness.useCase.execute(validInput);
 
@@ -448,6 +571,65 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     expect(harness.events).toHaveLength(1);
   });
 
+  it("allows active requests for two different OfficialMatch slots", async () => {
+    const harness = createHarness();
+    const first = await harness.useCase.execute({
+      ...validInput,
+      scope: { type: "official_match", officialSlot: 1 },
+    });
+    const second = await harness.useCase.execute({
+      ...validInput,
+      scope: { type: "official_match", officialSlot: 2 },
+      idempotencyKey: "idem-slot-2",
+    });
+
+    expect(first.isOk()).toBe(true);
+    expect(second.isOk()).toBe(true);
+    if (first.isErr() || second.isErr()) throw new Error("Expected compatible slot requests");
+    expect(harness.requests.rows).toEqual([first.value, second.value]);
+    expect(harness.events).toHaveLength(2);
+  });
+
+  it("rejects another active request for the same OfficialMatch slot", async () => {
+    const harness = createHarness();
+    const first = await harness.useCase.execute({
+      ...validInput,
+      scope: { type: "official_match", officialSlot: 1 },
+    });
+    expect(first.isOk()).toBe(true);
+
+    const second = await harness.useCase.execute({
+      ...validInput,
+      scope: { type: "official_match", officialSlot: 1 },
+      idempotencyKey: "idem-same-slot",
+    });
+
+    const error = expectErrorCode(second, "scheduling.active_schedule_change_request_exists");
+    expect(error).toBeInstanceOf(ActiveScheduleChangeRequestExists);
+    expect(harness.requests.rows).toHaveLength(1);
+    expect(harness.events).toHaveLength(1);
+  });
+
+  it("rejects an entire-Encounter request when an OfficialMatch slot request is active", async () => {
+    const harness = createHarness();
+    const first = await harness.useCase.execute({
+      ...validInput,
+      scope: { type: "official_match", officialSlot: 1 },
+    });
+    expect(first.isOk()).toBe(true);
+
+    const second = await harness.useCase.execute({
+      ...validInput,
+      scope: { type: "entire_encounter" },
+      idempotencyKey: "idem-entire",
+    });
+
+    const error = expectErrorCode(second, "scheduling.active_schedule_change_request_exists");
+    expect(error).toBeInstanceOf(ActiveScheduleChangeRequestExists);
+    expect(harness.requests.rows).toHaveLength(1);
+    expect(harness.events).toHaveLength(1);
+  });
+
   it("returns the original request for an identical idempotent replay without another event", async () => {
     const harness = createHarness();
     const first = await harness.useCase.execute(validInput);
@@ -479,5 +661,25 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     expect(error).toBeInstanceOf(ScheduleChangeRequestIdempotencyConflict);
     expect(harness.requests.rows).toHaveLength(1);
     expect(harness.events).toHaveLength(1);
+  });
+
+  it("rolls back persistence when publishing fails so an idempotent retry emits the event", async () => {
+    const harness = createHarness({ failPublishingOnce: true });
+
+    await expect(harness.useCase.execute(validInput)).rejects.toThrow("publisher unavailable");
+    expect(harness.requests.rows).toHaveLength(0);
+    expect(harness.events).toHaveLength(0);
+
+    const retry = await harness.useCase.execute(validInput);
+
+    expect(retry.isOk()).toBe(true);
+    if (retry.isErr()) throw retry.error;
+    expect(harness.requests.rows).toEqual([retry.value]);
+    expect(harness.events).toEqual([
+      expect.objectContaining({
+        eventName: "scheduling.reschedule-requested",
+        payload: expect.objectContaining({ requestId: retry.value.id }),
+      }),
+    ]);
   });
 });

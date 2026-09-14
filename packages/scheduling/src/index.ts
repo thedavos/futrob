@@ -50,6 +50,7 @@ export type {
   FixtureAuditPort,
   FixtureEncounterEditGuardPort,
   FixtureOccupancyGuardPort,
+  ScheduleChangeRequestEditGuardPort,
 } from "./domain/ports/fixture-editing.ports.ts";
 export { UpsertEncounterScheduleSnapshotUseCase } from "./application/upsert-encounter-schedule-snapshot.use-case.ts";
 export {

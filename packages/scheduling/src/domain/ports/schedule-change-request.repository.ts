@@ -6,9 +6,9 @@ export interface ScheduleChangeRequestRepository {
     organizationId: OrganizationId,
     idempotencyKey: string,
   ): Promise<ScheduleChangeRequest | null>;
-  findActiveByEncounter(
+  listActiveByEncounter(
     organizationId: OrganizationId,
     encounterId: EncounterId,
-  ): Promise<ScheduleChangeRequest | null>;
+  ): Promise<readonly ScheduleChangeRequest[]>;
   save(request: ScheduleChangeRequest): Promise<ScheduleChangeRequest>;
 }
