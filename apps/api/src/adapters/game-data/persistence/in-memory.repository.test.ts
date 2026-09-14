@@ -76,4 +76,35 @@ describe("InMemoryProviderMatchRepository", () => {
       }),
     ).resolves.toEqual([updated]);
   });
+
+  it("lists matches chronologically with a stable external-reference tie-breaker", async () => {
+    const repository = new InMemoryProviderMatchRepository();
+    const at = (externalMatchId: string, occurredAt: string): ProviderMatch => ({
+      ...match,
+      id: `ea-clubs:${externalMatchId}`,
+      provider: { key: "ea-clubs", externalMatchId },
+      occurredAt: new Date(occurredAt),
+    });
+    await repository.upsertMany([
+      at("late", "2026-08-10T12:02:00.000Z"),
+      at("same-b", "2026-08-10T12:01:00.000Z"),
+      at("early", "2026-08-10T12:00:00.000Z"),
+      at("same-a", "2026-08-10T12:01:00.000Z"),
+    ]);
+
+    const listed = await repository.listBetweenClubs({
+      providerKey: "ea-clubs",
+      homeExternalClubId: "home",
+      awayExternalClubId: "away",
+      from: new Date("2026-08-10T11:59:00.000Z"),
+      to: new Date("2026-08-10T12:03:00.000Z"),
+    });
+
+    expect(listed.map((candidate) => candidate.provider.externalMatchId)).toEqual([
+      "early",
+      "same-a",
+      "same-b",
+      "late",
+    ]);
+  });
 });

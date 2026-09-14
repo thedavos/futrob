@@ -6,6 +6,11 @@ import type {
   RawProviderObservation,
 } from "@futrob/game-data";
 import { externalReferenceKey } from "@futrob/game-data";
+import { compareByTime } from "@futrob/shared-kernel";
+
+const compareProviderMatchesByOccurredAt = compareByTime<ProviderMatch>(
+  (candidate) => candidate.occurredAt,
+);
 
 export class InMemoryRawObservationRepository implements RawObservationRepository {
   readonly rows: RawProviderObservation[] = [];
@@ -57,16 +62,30 @@ export class InMemoryProviderMatchRepository implements ProviderMatchRepository 
     readonly from: Date;
     readonly to: Date;
   }): Promise<ProviderMatch[]> {
-    const matches = [...this.byKey.values()].filter(
-      (match) =>
-        match.provider.key === input.providerKey &&
-        ((match.home.externalClubId === input.homeExternalClubId &&
-          match.away.externalClubId === input.awayExternalClubId) ||
-          (match.home.externalClubId === input.awayExternalClubId &&
-            match.away.externalClubId === input.homeExternalClubId)) &&
-        match.occurredAt >= input.from &&
-        match.occurredAt <= input.to,
-    );
+    const matches = [...this.byKey.values()]
+      .filter(
+        (match) =>
+          match.provider.key === input.providerKey &&
+          ((match.home.externalClubId === input.homeExternalClubId &&
+            match.away.externalClubId === input.awayExternalClubId) ||
+            (match.home.externalClubId === input.awayExternalClubId &&
+              match.away.externalClubId === input.homeExternalClubId)) &&
+          match.occurredAt >= input.from &&
+          match.occurredAt <= input.to,
+      )
+      .sort(
+        (left, right) =>
+          compareProviderMatchesByOccurredAt(left, right) ||
+          externalReferenceKey({
+            providerKey: left.provider.key,
+            externalId: left.provider.externalMatchId,
+          }).localeCompare(
+            externalReferenceKey({
+              providerKey: right.provider.key,
+              externalId: right.provider.externalMatchId,
+            }),
+          ),
+      );
     return Promise.resolve(matches);
   }
 }
