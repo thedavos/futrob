@@ -93,8 +93,7 @@ class FakeScheduleChangeRequests implements ScheduleChangeRequestRepository {
   async findByIdempotencyKey(orgId: OrganizationId, idempotencyKey: string) {
     return (
       this.rows.find(
-        (request) =>
-          request.organizationId === orgId && request.idempotencyKey === idempotencyKey,
+        (request) => request.organizationId === orgId && request.idempotencyKey === idempotencyKey,
       ) ?? null
     );
   }

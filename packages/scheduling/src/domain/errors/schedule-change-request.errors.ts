@@ -1,9 +1,4 @@
-import {
-  TaggedError,
-  type EncounterId,
-  type Permission,
-  type TeamId,
-} from "@futrob/shared-kernel";
+import { TaggedError, type EncounterId, type Permission, type TeamId } from "@futrob/shared-kernel";
 
 export class ScheduleChangeRequestNotFound extends TaggedError("ScheduleChangeRequestNotFound")<{
   code: "scheduling.schedule_change_encounter_not_found";

@@ -76,8 +76,7 @@ export function createInitialScheduleChangeRequest(
     !input.requestId.trim() ||
     !input.proposalId.trim() ||
     !idempotencyKey ||
-    (input.requestingTeamId !== input.homeTeamId &&
-      input.requestingTeamId !== input.awayTeamId)
+    (input.requestingTeamId !== input.homeTeamId && input.requestingTeamId !== input.awayTeamId)
   ) {
     return err(
       new InvalidScheduleChangeRequest({
@@ -144,10 +143,7 @@ function isValidScope(scope: RescheduleScope, officialMatchCount: 1 | 2): boolea
     case "entire_encounter":
       return true;
     case "official_match":
-      return (
-        scope.officialSlot === 1 ||
-        (scope.officialSlot === 2 && officialMatchCount === 2)
-      );
+      return scope.officialSlot === 1 || (scope.officialSlot === 2 && officialMatchCount === 2);
     default: {
       const exhaustiveScope: never = scope;
       void exhaustiveScope;

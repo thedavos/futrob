@@ -1,10 +1,4 @@
-import {
-  err,
-  ok,
-  type ActorId,
-  type Result,
-  type TeamId,
-} from "@futrob/shared-kernel";
+import { err, ok, type ActorId, type Result, type TeamId } from "@futrob/shared-kernel";
 import {
   InvalidScheduleChangeDate,
   InvalidScheduleChangeReason,
