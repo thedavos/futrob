@@ -73,8 +73,8 @@ export class CreateScheduleChangeRequestUseCase {
       return err(invalidRequest("An idempotency key is required"));
     }
 
-    return this.deps.mutationLock.runExclusive(input.encounterId, () =>
-      this.deps.transaction.runInTransaction(async () => {
+    return this.deps.transaction.runInTransaction(() =>
+      this.deps.mutationLock.runExclusive(input.encounterId, async () => {
         const encounter = await this.deps.encounters.findById(input.encounterId);
         if (
           !encounter ||

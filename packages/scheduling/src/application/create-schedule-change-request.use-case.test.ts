@@ -8,6 +8,7 @@ import {
   type DomainEvent,
   type EncounterId,
   type OrganizationId,
+  type TransactionPort,
 } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-schedule-snapshot.ts";
@@ -26,6 +27,7 @@ import {
   ScheduleChangeRequestNotFound,
 } from "../domain/errors/schedule-change-request.errors.ts";
 import type { CompetitionRescheduleRulesPort } from "../domain/ports/competition-reschedule-rules.port.ts";
+import type { EncounterMutationLockPort } from "../domain/ports/encounter-mutation-lock.port.ts";
 import type { ScheduleChangeRequestRepository } from "../domain/ports/schedule-change-request.repository.ts";
 import {
   CreateScheduleChangeRequestUseCase,
@@ -141,6 +143,29 @@ class SerialEncounterMutationLock {
   }
 }
 
+class TransactionBoundEncounterMutationLock {
+  private enteringTransaction = false;
+  private readonly serial = new SerialEncounterMutationLock();
+
+  readonly transaction: TransactionPort = {
+    runInTransaction: (operation) => {
+      this.enteringTransaction = true;
+      try {
+        return operation();
+      } finally {
+        this.enteringTransaction = false;
+      }
+    },
+  };
+
+  readonly mutationLock: EncounterMutationLockPort = {
+    runExclusive: (targetEncounterId, operation) => {
+      if (!this.enteringTransaction) return operation();
+      return this.serial.runExclusive(targetEncounterId, operation);
+    },
+  };
+}
+
 function authorization(allowed = true): AuthorizationPort {
   return {
     decide: async (request) => ({
@@ -163,7 +188,9 @@ function createHarness(
     readonly appliedReschedulesByEncounter?: ReadonlyMap<EncounterId, number>;
     readonly encounterWhenLocked?: EncounterScheduleSnapshot | null;
     readonly failPublishingOnce?: boolean;
+    readonly mutationLock?: EncounterMutationLockPort;
     readonly protectedOfficialSlots?: readonly (1 | 2)[];
+    readonly transaction?: TransactionPort;
   } = {},
 ) {
   const requests = new FakeScheduleChangeRequests();
@@ -211,29 +238,33 @@ function createHarness(
         publishMany: async (batch) => void events.push(...batch),
       },
       ids: { generate: () => generatedIds.shift() ?? "unexpected-id" },
-      mutationLock: new SerialEncounterMutationLock(() => {
-        if (options.encounterWhenLocked === undefined) return;
-        if (options.encounterWhenLocked === null) {
-          encounters.rows.delete(encounterId);
-          return;
-        }
-        encounters.rows.set(options.encounterWhenLocked.encounterId, options.encounterWhenLocked);
-      }),
+      mutationLock:
+        options.mutationLock ??
+        new SerialEncounterMutationLock(() => {
+          if (options.encounterWhenLocked === undefined) return;
+          if (options.encounterWhenLocked === null) {
+            encounters.rows.delete(encounterId);
+            return;
+          }
+          encounters.rows.set(options.encounterWhenLocked.encounterId, options.encounterWhenLocked);
+        }),
       requests,
       rules,
-      transaction: {
-        runInTransaction: async (operation) => {
-          const requestSnapshot = [...requests.rows];
-          const eventSnapshot = [...events];
-          try {
-            return await operation();
-          } catch (error) {
-            requests.rows.splice(0, requests.rows.length, ...requestSnapshot);
-            events.splice(0, events.length, ...eventSnapshot);
-            throw error;
-          }
-        },
-      },
+      transaction:
+        options.transaction ??
+        ({
+          runInTransaction: async (operation) => {
+            const requestSnapshot = [...requests.rows];
+            const eventSnapshot = [...events];
+            try {
+              return await operation();
+            } catch (error) {
+              requests.rows.splice(0, requests.rows.length, ...requestSnapshot);
+              events.splice(0, events.length, ...eventSnapshot);
+              throw error;
+            }
+          },
+        } satisfies TransactionPort),
     }),
   };
 }
@@ -558,6 +589,31 @@ describe("CreateScheduleChangeRequestUseCase", () => {
         ...validInput,
         scope: { type: "official_match", officialSlot: 1 },
         idempotencyKey: "idem-concurrent",
+      }),
+    ]);
+
+    expect(results.filter((result) => result.isOk())).toHaveLength(1);
+    const failure = results.find((result) => result.isErr());
+    expect(failure?.isErr()).toBe(true);
+    if (!failure || failure.isOk()) throw new Error("Expected one active-request conflict");
+    expect(failure.error).toBeInstanceOf(ActiveScheduleChangeRequestExists);
+    expect(failure.error.code).toBe("scheduling.active_schedule_change_request_exists");
+    expect(harness.requests.rows).toHaveLength(1);
+    expect(harness.events).toHaveLength(1);
+  });
+
+  it("holds a transaction-bound Encounter lock across concurrent read-check-save operations", async () => {
+    const transactionBoundLock = new TransactionBoundEncounterMutationLock();
+    const harness = createHarness({
+      mutationLock: transactionBoundLock.mutationLock,
+      transaction: transactionBoundLock.transaction,
+    });
+
+    const results = await Promise.all([
+      harness.useCase.execute(validInput),
+      harness.useCase.execute({
+        ...validInput,
+        idempotencyKey: "idem-transaction-bound-concurrent",
       }),
     ]);
 
