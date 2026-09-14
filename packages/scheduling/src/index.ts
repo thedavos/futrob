@@ -1,5 +1,17 @@
 export type { Encounter, OfficialMatchSlot } from "./domain/entities/encounter.ts";
 export {
+  createInitialScheduleChangeRequest,
+  type CreateInitialScheduleChangeRequestError,
+  type CreateInitialScheduleChangeRequestInput,
+  type ScheduleChangeRequest,
+  type ScheduleChangeRequestStatus,
+} from "./domain/entities/schedule-change-request.ts";
+export {
+  createScheduleChangeProposal,
+  type CreateScheduleChangeProposalInput,
+  type ScheduleChangeProposal,
+} from "./domain/entities/schedule-change-proposal.ts";
+export {
   asFixtureRoundId,
   asFixtureStageId,
   type FixtureEncounter,
@@ -21,6 +33,11 @@ export type {
   EncounterParticipantValidationPort,
   EncounterScheduleRepository,
 } from "./domain/ports/encounter-schedule.repository.ts";
+export type {
+  CompetitionRescheduleRules,
+  CompetitionRescheduleRulesPort,
+} from "./domain/ports/competition-reschedule-rules.port.ts";
+export type { ScheduleChangeRequestRepository } from "./domain/ports/schedule-change-request.repository.ts";
 export type { OfficialMatchRepository } from "./domain/ports/official-match.repository.ts";
 export type { EncounterMutationLockPort } from "./domain/ports/encounter-mutation-lock.port.ts";
 export type {
@@ -47,6 +64,10 @@ export {
   EditFixtureEncounterUseCase,
   type EditFixtureEncounterInput,
 } from "./application/edit-fixture-encounter.use-case.ts";
+export {
+  CreateScheduleChangeRequestUseCase,
+  type CreateScheduleChangeRequestInput,
+} from "./application/create-schedule-change-request.use-case.ts";
 export { GetCompetitionFixtureUseCase } from "./application/get-competition-fixture.use-case.ts";
 export {
   EncounterScheduleAuthorizationForbidden,
@@ -70,6 +91,20 @@ export {
   type EditFixtureEncounterError,
   type GenerateCompetitionFixtureError,
 } from "./domain/errors/fixture.errors.ts";
+export {
+  ActiveScheduleChangeRequestExists,
+  EncounterNotEditableForScheduleChange,
+  InvalidScheduleChangeDate,
+  InvalidScheduleChangeReason,
+  InvalidScheduleChangeRequest,
+  InvalidScheduleChangeScope,
+  RescheduleLimitReached,
+  ReschedulingDisabled,
+  ScheduleChangeRequestForbidden,
+  ScheduleChangeRequestIdempotencyConflict,
+  ScheduleChangeRequestNotFound,
+  type CreateScheduleChangeRequestError,
+} from "./domain/errors/schedule-change-request.errors.ts";
 export type { EncounterCreatedEvent } from "./domain/events/encounter-created.event.ts";
 export {
   fixtureGenerationFingerprint,
@@ -79,6 +114,7 @@ export {
 export { replaceEncounter } from "./domain/policies/edit-fixture-encounter.ts";
 export type { RescheduleScope } from "./domain/value-objects/reschedule-scope.ts";
 export type { EncounterRescheduledEvent } from "./domain/events/encounter-rescheduled.event.ts";
+export type { RescheduleRequestedEvent } from "./domain/events/reschedule-requested.event.ts";
 export {
   ENCOUNTER_PERMISSION,
   ENCOUNTER_PERMISSIONS,
