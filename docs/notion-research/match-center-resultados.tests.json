@@ -16,7 +16,7 @@
           "layer": "http",
           "given": "an Encounter with officialMatchCount 1, two distinct window candidates, and a captain actor with propose",
           "when": "the client POSTs /api/v1/encounters/{id}/official-selection with one valid ExternalReference and service-auth headers",
-          "then": "status is 201, body status is awaiting_opponent_confirmation, and the outbox contains results.official-matches-selected"
+          "then": "status is 201 and body status is awaiting_opponent_confirmation"
         },
         {
           "id": "api-select-foreign-actor-404",
@@ -56,7 +56,7 @@
           "layer": "http",
           "given": "a selection in awaiting_opponent_confirmation and the rival captain",
           "when": "the rival POSTs /api/v1/encounters/{id}/official-selection/confirm",
-          "then": "status is 200, OfficialResult.status is approved, revision is 1, and the outbox contains exactly one results.official-result-approved"
+          "then": "status is 200, OfficialResult.status is approved, and revision is 1. Do not assert a durable outbox until NoopEventPublisher is replaced"
         },
         {
           "id": "api-confirm-replay",
@@ -64,7 +64,7 @@
           "layer": "http",
           "given": "that approved result",
           "when": "the rival confirms again with the same idempotency key",
-          "then": "status is 200, revision stays 1, and no second results.official-result-approved is published"
+          "then": "status is 200, revision stays 1, and player_match_contributions still has one row"
         },
         {
           "id": "api-select-ignores-client-role",
@@ -89,6 +89,22 @@
           "given": "OpenAPI generated from futrobOpenApiV1",
           "when": "the test reads paths",
           "then": "POST /encounters/{encounterId}/official-selection, confirm POST, and disputes POST exist with ApiError 401 and 404"
+        },
+        {
+          "id": "api-confirm-not-confirmable-not-500",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "a selection whose status is approved",
+          "when": "the rival posts confirm",
+          "then": "status is 409 or 400, body code is results.selection_not_confirmable, and the status is not 500"
+        },
+        {
+          "id": "api-confirm-missing-snapshot-not-500",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "a selected ExternalReference with no ProviderMatch row",
+          "when": "the rival posts confirm",
+          "then": "status is 409 or 404, body code is results.provider_match_snapshot_missing, and the status is not 500"
         }
       ]
     },
@@ -199,6 +215,14 @@
           "given": "no permission to read the Encounter",
           "when": "the route loads",
           "then": "the user sees the 403 pattern, not an empty Match Center"
+        },
+        {
+          "id": "ui-route-is-encounter-resource",
+          "file": "apps/web/src/routes/_app/orgs/$orgId/competitions/$competitionId/encounters/$encounterId.test.tsx",
+          "layer": "presentation",
+          "given": "design.md Match Center route and queue-task-item story href /encounters/enc_1/selection",
+          "when": "the Match Center page is registered",
+          "then": "the route is /orgs/:orgId/competitions/:competitionId/encounters/:encounterId with tabs, not a nested /selection path"
         }
       ]
     },
@@ -433,7 +457,7 @@
           "layer": "http-integration",
           "given": "org A, two connected clubs, one in-window ProviderMatch, captain A and captain B on opposite Teams",
           "when": "A posts selection and B posts confirm through createApp",
-          "then": "HTTP 200, official_results.status is approved, revision is 1, player_match_contributions has one row for that match externalPlayerId, and events are results.official-matches-selected then results.official-result-approved"
+          "then": "HTTP 200, official_results.status is approved, revision is 1, and player_match_contributions has one row for that match externalPlayerId"
         },
         {
           "id": "qa-confirm-replay",
@@ -441,7 +465,7 @@
           "layer": "http-integration",
           "given": "that approved Encounter",
           "when": "B posts confirm again",
-          "then": "HTTP 200, still revision 1, still one contribution row, still one approved event"
+          "then": "HTTP 200, still revision 1, still one contribution row"
         },
         {
           "id": "qa-two-org-isolation",

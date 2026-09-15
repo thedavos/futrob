@@ -2,13 +2,14 @@
 
 Research for the Notion epic Resultados. Source pages are blank except properties. Criteria below come from those properties plus the current tree. This note does not change product code.
 
-**Overview.** `@futrob/results` already owns official selection, opponent confirmation, void, and a read of EA candidates for an Encounter. HTTP exposes the candidate read only. Captains cannot propose, confirm, reject, or dispute over `/api/v1`. There is no Match Center route. Official confirmation already snapshots `ProviderMatch` into `OfficialResult` and, inside `apps/api` composition, projects statistics. Bracket winner slots stay as generation placeholders. Catalog events `results.official-selection-confirmed` and `results.match-dispute-opened` have no producer.
+**Overview.** `@futrob/results` already owns official selection, opponent confirmation, void, and a read of EA candidates for an Encounter. HTTP exposes the candidate read only. Captains cannot propose, confirm, reject, or dispute over `/api/v1`. There is no Match Center route. Official confirmation already snapshots `ProviderMatch` into `OfficialResult` and, inside `apps/api` composition, projects statistics. Bracket winner slots stay as generation placeholders. Catalog events `results.official-selection-confirmed` and `results.match-dispute-opened` have no producer. `apps/api` wires `NoopEventPublisher`, so published names do not leave the process.
 
 **Key concepts.**
 
 - `Encounter` is the scheduled pairing. `scheduling` owns when and how many official slots.
 - `ProviderMatch` is a provider observation. `game-data` owns it. `UNIQUE (provider_key, external_match_id)` lives on `provider_matches`.
 - `MatchCandidate` in the glossary is a `ProviderMatch` shown for an Encounter window. The code does not persist an Encounter-to-candidate row. `ListEncounterCandidatesUseCase` computes the list at read time.
+- `official_matches` (`apps/api/migrations/0021_official_matches.sql`) are scheduling slot shells for an Encounter. They are not EA candidates.
 - `OfficialMatchSelection` assigns `ExternalReference` values to slots 1 or 2.
 - `OfficialResult` is the approved snapshot that statistics may project. Status is `approved` or `voided`.
 - `MatchDispute` exists only in `product/domain-glossary.md`. There is no type, table, or use case.
@@ -26,7 +27,7 @@ Research for the Notion epic Resultados. Source pages are blank except propertie
 
 **Where things live.** Domain and use cases in `packages/results/src/`. Postgres adapters in `apps/api/src/adapters/results/`. HTTP in `apps/api/src/http/routes/encounters.ts`. SDK in `packages/sdk/src/resources/results.ts` (candidates only) and `packages/sdk/src/resources/encounters.ts` (schedule and fixture, not results commands). Web module `apps/web/src/modules/results/index.ts` re-exports the package and has no presentation. Design contract in `design.md` under Match Center. Conceptual web route `/orgs/:orgId/competitions/:competitionId/encounters/:encounterId`.
 
-**Gotchas.** Candidate HTTP maps `OfficialSelectionForbidden` to 404 `results.encounter_not_found`. `failureToHttp` would map the same code to 403 because the string contains `forbidden`. New mutation routes must copy the 404 hide, not the generic mapper. `official_match_selections` has no `organization_id` column. `results-smoke` is in-memory fakes, not HTTP. `apps/web/src/workers/statistics-projection.worker.ts` still throws `not implemented`. API composition already projects inside the confirm transaction.
+**Gotchas.** Candidate HTTP maps `OfficialSelectionForbidden` to 404 `results.encounter_not_found`. `failureToHttp` would map the same code to 403 because the string contains `forbidden`. `results.selection_not_confirmable` and `results.provider_match_snapshot_missing` hit the default 500 in `statusForFailureCode`. New mutation routes must copy the 404 hide and add explicit mappings for those confirm codes. `official_match_selections` has no `organization_id` column. `results-smoke` is in-memory fakes, not HTTP. `apps/web/src/workers/statistics-projection.worker.ts` still throws `not implemented`. API composition already projects inside the confirm transaction. `VoidOfficialResultUseCase` converges on a second void. Confirm does not.
 
 Suggested delivery order follows Notion deps. Persist candidate association, then HTTP mutations, then SDK, then reject and dispute domain, then Match Center UI, then bracket advance, then append-only audit, then HTTP integration.
 
@@ -43,7 +44,8 @@ Use cases for select and confirm already exist. Dispute does not. Routes, OpenAP
 - `apps/api/src/http/routes/encounters.ts` `registerEncounterRoutes`. Implemented `GET /encounters/:encounterId/candidates` and schedule-snapshot GET or PUT.
 - `apps/api/src/http/middleware/service-auth.ts` `createServiceAuthMiddleware`. Bearer `INTERNAL_JOB_SECRET` plus `X-Futrob-Actor-Id`.
 - `apps/api/src/di/results.module.ts` `selectOfficialMatches`, `confirmOfficialSelection`, `voidOfficialResult`, `listEncounterCandidates`.
-- `apps/api/src/di/create-modules.ts` `confirmOfficialSelectionAndProject`, `voidOfficialResultAndUnproject`.
+- `apps/api/src/di/create-modules.ts` `confirmOfficialSelectionAndProject`, `voidOfficialResultAndUnproject`, `NoopEventPublisher`.
+- `apps/api/src/adapters/events/noop-event-publisher.ts`.
 - `packages/results/src/application/select-official-matches/select-official-matches.use-case.ts` `SelectOfficialMatchesUseCase`.
 - `packages/results/src/application/confirm-official-selection/confirm-official-selection.use-case.ts` `ConfirmOfficialSelectionUseCase`.
 - `packages/results/src/domain/policies/result-permissions.ts` `RESULT_PERMISSION`.
@@ -68,25 +70,30 @@ Confirm must call `confirmOfficialSelectionAndProject`, not the raw use case, so
 - No reject, alternative, or dispute use case to expose.
 - No OpenAPI operationIds for those commands.
 - `failureToHttp` maps `results.official_selection_forbidden` to 403. Candidate GET already hides that as 404. Mutations must do the same.
+- `results.selection_not_confirmable` and `results.provider_match_snapshot_missing` currently map to 500. Confirm HTTP must map them to 400, 404, or 409 before those routes ship.
 - Confirm does not check that the actor is the rival. Both participating captains hold `encounters.official-selection.resolve`.
 - Replay of confirm currently allocates a new `OfficialResult` revision when status is forced back to `awaiting_opponent_confirmation`. HTTP must not duplicate stats effects. See NFR-02.
+- `voidOfficialResultAndUnproject` is also unwired. Void is adjacent, not in this Notion Tarea.
+- OpenAPI `bearerAuth` is labeled JWT and does not document `X-Futrob-Actor-Id` or `INTERNAL_JOB_SECRET`.
 
 ### Behavior tests
 
-1. Given an Encounter with `officialMatchCount` 1, two distinct window candidates, and a captain actor with propose. When the client `POST`s `/api/v1/encounters/{id}/official-selection` with one valid `ExternalReference` and service-auth headers. Then the status is 201, body `status` is `awaiting_opponent_confirmation`, and the outbox contains `results.official-matches-selected`. File `apps/api/src/http/routes/encounters-selection.test.ts`.
+1. Given an Encounter with `officialMatchCount` 1, two distinct window candidates, and a captain actor with propose. When the client `POST`s `/api/v1/encounters/{id}/official-selection` with one valid `ExternalReference` and service-auth headers. Then the status is 201 and body `status` is `awaiting_opponent_confirmation`. File `apps/api/src/http/routes/encounters-selection.test.ts`.
 2. Given the same Encounter and an actor from another organization. When that actor `POST`s the same path. Then the status is 404 and body `code` is `results.encounter_not_found`. File `apps/api/src/http/routes/encounters-selection.test.ts`.
 3. Given a valid body and no `Authorization` header. When the client `POST`s the selection path. Then the status is 401 and body `code` is `api.unauthorized`. File `apps/api/src/http/routes/encounters-selection.test.ts`.
 4. Given `officialMatchCount` 2 and a body with one slot. When the captain proposes. Then the status is 400 and body `code` is `results.invalid_selection`. File `apps/api/src/http/routes/encounters-selection.test.ts`.
 5. Given two slots that repeat the same `providerKey` and `externalId`. When the captain proposes. Then the status is 400 and body `code` is `results.duplicate_provider_match`. File `apps/api/src/http/routes/encounters-selection.test.ts`.
-6. Given a selection in `awaiting_opponent_confirmation` and the rival captain. When the rival `POST`s `/api/v1/encounters/{id}/official-selection/confirm`. Then the status is 200, `OfficialResult.status` is `approved`, `revision` is 1, and the outbox contains exactly one `results.official-result-approved`. File `apps/api/src/http/routes/encounters-selection.test.ts`.
-7. Given that approved result. When the rival confirms again with the same idempotency key. Then the status is 200, `revision` stays 1, and no second `results.official-result-approved` is published. File `apps/api/src/http/routes/encounters-selection.test.ts`.
+6. Given a selection in `awaiting_opponent_confirmation` and the rival captain. When the rival `POST`s `/api/v1/encounters/{id}/official-selection/confirm`. Then the status is 200, `OfficialResult.status` is `approved`, and `revision` is 1. File `apps/api/src/http/routes/encounters-selection.test.ts`. Do not assert a durable outbox until `NoopEventPublisher` is replaced.
+7. Given that approved result. When the rival confirms again with the same idempotency key. Then the status is 200, `revision` stays 1, and `player_match_contributions` still has one row. File `apps/api/src/http/routes/encounters-selection.test.ts`.
 8. Given a JSON body that sets `role` to `organizer`. When an actor without propose posts selection. Then the status is still 404 `results.encounter_not_found`. File `apps/api/src/http/routes/encounters-selection.test.ts`.
 9. Given no selection. When anyone posts confirm. Then the status is 404 and body `code` is `results.selection_not_found`. File `apps/api/src/http/routes/encounters-selection.test.ts`.
 10. Given OpenAPI generated from `futrobOpenApiV1`. When the test reads `paths`. Then `/encounters/{encounterId}/official-selection` POST, confirm POST, and disputes POST exist with `ApiError` 401 and 404. File `packages/api-contracts/src/v1/openapi/encounter-selection.test.ts`.
+11. Given a selection whose status is `approved`. When the rival posts confirm. Then the status is 409 or 400, body `code` is `results.selection_not_confirmable`, and the status is not 500. File `apps/api/src/http/routes/encounters-selection.test.ts`.
+12. Given a selected `ExternalReference` with no `ProviderMatch` row. When the rival posts confirm. Then the status is 409 or 404, body `code` is `results.provider_match_snapshot_missing`, and the status is not 500. File `apps/api/src/http/routes/encounters-selection.test.ts`.
 
 ### Notas
 
-Wire HTTP after the existing use cases. Hide forbidden as 404. Call `confirmOfficialSelectionAndProject`. Ship reject and dispute routes only after those use cases exist.
+Wire HTTP after the existing use cases. Hide forbidden as 404. Map confirm tagged codes before they hit 500. Call `confirmOfficialSelectionAndProject`. Ship reject and dispute routes only after those use cases exist.
 
 ## [SDK] Métodos results/encounters en SDK
 
@@ -141,7 +148,10 @@ P0, Fase 2, Frontend. Criteria. Screens show schedule, rivals, slots, candidates
 
 - `design.md` Match Center (recurso central). Route `/orgs/:orgId/competitions/:competitionId/encounters/:encounterId`.
 - `design.md` UX-MAT-001 to UX-MAT-008, UX-NAV-006, UX-SCP-004, UX-SCP-005.
-- `apps/web/src/routes/_app/orgs/$orgId/competitions/$competitionId/index.tsx` and `teams.tsx`. No `encounters` child.
+- `apps/web/src/shared/presentation/shell/nav-registry.ts` competition `encounters` and `fixture` items with `stub: true`.
+- `apps/web/src/shared/presentation/shell/queue-task-item.stories.tsx` href `/orgs/org_1/competitions/cmp_1/encounters/enc_1/selection`. That nested `/selection` path is not a route.
+- `apps/web/src/context/product-api-encounter-reader.ts` `encounters.getScheduleSnapshot`. Not a UI screen.
+- `apps/web/src/modules/player-home/presentation/home-hero.tsx`. Next Encounter CTA goes to `/player/competitions`.
 - `apps/web/src/modules/results/index.ts` re-export only.
 - `apps/web/src/modules/statistics/presentation/` player matches. That is personal `ProviderMatch` UI, not Match Center.
 - `apps/web/src/routes/api/v1/players/me/next-encounter.ts`. Next Encounter card, not the center.
@@ -154,6 +164,9 @@ Gate actions with EffectiveAccess `can` and `RESULT_PERMISSION` constants. Do no
 ### Gaps
 
 - No web route file for the conceptual Match Center URL.
+- Shell labels Enfrentamientos and Calendario as disabled stubs. They are not Match Center.
+- `queue-task-item` stories use `/encounters/enc_1/selection`. `design.md` uses the Encounter id as the resource, with tabs, not a nested `/selection` route. Pick one before UI lands.
+- Competition home is a coming-soon page. Teams under the same competition is a real console. Participant verification exists there, not on Match Center.
 - No presentation components under `apps/web/src/modules/results/presentation/`.
 - No Storybook for Match Center.
 - No BFF proxy for candidates or selection, so the UI cannot call `apps/api` even after the SDK grows.
@@ -169,6 +182,7 @@ Gate actions with EffectiveAccess `can` and `RESULT_PERMISSION` constants. Do no
 4. Given five candidate rows with hour, score, duration, sides, and `completeness` `partial`. When the list renders. Then all five stay unofficial and the partial flag is visible. File `apps/web/src/modules/results/presentation/match-center-candidates.test.tsx`. This covers AC-EA-001.
 5. Given a selection `awaiting_opponent_confirmation` proposed by the other captain. When the rival captain views Official matches and Selection. Then confirm and reject controls are present and propose is not the primary action. File `apps/web/src/modules/results/presentation/match-center-selection.test.tsx`. This covers UX-MAT-007.
 6. Given no permission to read the Encounter. When the route loads. Then the user sees the 403 pattern, not an empty Match Center. File `apps/web/src/routes/_app/orgs/$orgId/competitions/$competitionId/encounters/$encounterId.test.tsx`. This covers UX-NAV-007.
+7. Given `design.md` and the `queue-task-item` story href. When the Match Center page is registered. Then the route is `/orgs/:orgId/competitions/:competitionId/encounters/:encounterId` with tabs, not a nested `/selection` path. File `apps/web/src/routes/_app/orgs/$orgId/competitions/$competitionId/encounters/$encounterId.test.tsx`.
 
 ### Notas
 
@@ -194,7 +208,9 @@ DEC-024. Keep prior candidates. Recalculate eligibility and window with the new 
 - `apps/api/src/http/routes/encounters.test.ts` window boundary HTTP test.
 - `apps/api/migrations/0019_provider_observations_and_matches.sql` `UNIQUE (provider_key, external_match_id)`.
 - `packages/scheduling/src/domain/events/encounter-rescheduled.event.ts` `scheduling.encounter-rescheduled`.
-- `packages/scheduling/src/application/edit-fixture-encounter.use-case.ts` publisher of that event.
+- `packages/scheduling/src/application/edit-fixture-encounter.use-case.ts` publisher of that event. It rematerializes `official_matches` as `scheduled`.
+- `packages/scheduling/src/application/create-schedule-change-request.use-case.ts` exists. No accept or apply-reschedule consumer was found.
+- `apps/api/migrations/0021_official_matches.sql` slot shells. Not candidate rows.
 - `apps/api/src/adapters/scheduling/fixture-editing.adapters.ts` `OfficialResultFixtureEditGuard`.
 - `docs/architecture/dependency-graph.md` sequence reschedule to candidates. Describes outbox invalidation and a new sync. No consumer implements it.
 - `product/open-decisions.md` DEC-023, DEC-024, DEC-025.
@@ -203,7 +219,7 @@ DEC-024. Keep prior candidates. Recalculate eligibility and window with the new 
 
 - No `encounter_candidates` (or equivalent) table keyed by `encounter_id` plus `provider_key` plus `external_match_id`.
 - No use case that upserts associations. `ListEncounterCandidatesUseCase` only reads.
-- No consumer of `scheduling.encounter-rescheduled` in results.
+- No consumer of `scheduling.encounter-rescheduled` in results. Captain schedule-change requests also have no apply step, so kickoff may never move through that path yet.
 - `SelectOfficialMatchesUseCase` does not require the ref to be an associated candidate.
 - `OfficialResultFixtureEditGuard` returns false when a non-voided selection exists, so captain reschedule after a proposal is blocked. Recalc after reschedule is then only reachable before selection, unless the guard is narrowed.
 - Window half-width 18 hours disagrees with DEC-023 default 6 hours.
@@ -252,7 +268,8 @@ Hexagonal shape. New use cases under `packages/results/src/application/` such as
 
 - No reject use case. No alternative-selection use case. No dispute entity or repository.
 - Confirm does not require a different team than `proposedByActorId`. DEC-022 two-captain agreement is not modeled. One resolve permission approves immediately.
-- Confirm skips status `confirmed` and does not emit `results.official-selection-confirmed`.
+- Confirm skips status `confirmed` and does not emit `results.official-selection-confirmed`. Confirm currently allows input status `organizer_review`. No use case writes `organizer_review` or `disputed`.
+- Preview before save (FTR-SEL-002) has no domain use case. UI can preview from candidate DTOs.
 - `SelectOfficialMatchesUseCase` always starts a new id. Alternative propose has no rule for incompatible slots versus an open proposal.
 - No expiry for DEC-021 (24 hours or until kickoff).
 - No integrity flags that block auto-approve.
@@ -391,11 +408,13 @@ Today `results-smoke` runs select then confirm against in-memory fakes and check
 - `results-smoke` never calls the API or Postgres.
 - CLI has no `select` or `confirm` live command beside the smoke.
 - Current confirm unit test encodes non-idempotent revision bumps. QA should treat that as a defect to flip, not a fixture to copy.
+- `NoopEventPublisher` swallows events in `create-modules`. HTTP integration should assert response body plus Postgres rows, not a durable outbox, until the publisher is real.
+- `VoidOfficialResultUseCase` already converges on replay. Confirm should match that shape.
 
 ### Behavior tests
 
-1. Given org A, two connected clubs, one in-window `ProviderMatch`, captain A and captain B on opposite Teams. When A posts selection and B posts confirm through `createApp`. Then HTTP 200, `official_results.status` is `approved`, `revision` is 1, `player_match_contributions` has one row for `externalPlayerId` of that match, and events are `results.official-matches-selected` then `results.official-result-approved`. File `apps/api/src/http/routes/encounters-official-result.integration.test.ts`.
-2. Given that approved Encounter. When B posts confirm again. Then HTTP 200, still `revision` 1, still one contribution row, still one approved event. File `apps/api/src/http/routes/encounters-official-result.integration.test.ts`.
+1. Given org A, two connected clubs, one in-window `ProviderMatch`, captain A and captain B on opposite Teams. When A posts selection and B posts confirm through `createApp`. Then HTTP 200, `official_results.status` is `approved`, `revision` is 1, and `player_match_contributions` has one row for `externalPlayerId` of that match. File `apps/api/src/http/routes/encounters-official-result.integration.test.ts`.
+2. Given that approved Encounter. When B posts confirm again. Then HTTP 200, still `revision` 1, still one contribution row. File `apps/api/src/http/routes/encounters-official-result.integration.test.ts`.
 3. Given the same headers against org B's Encounter id. When A posts selection. Then 404 `results.encounter_not_found` and org B tables are empty of A's selection. File `apps/api/src/http/routes/encounters-official-result.integration.test.ts`.
 4. Given awaiting confirmation. When B posts reject. Then HTTP 200 or 409 per the domain contract, `official_results` has no approved row, and body `code` is absent or a stable `results.*` code, never a stack string. File `apps/api/src/http/routes/encounters-official-result.integration.test.ts`.
 5. Given slot count mismatch. When A posts selection. Then 400 `results.invalid_selection`. File `apps/api/src/http/routes/encounters-official-result.integration.test.ts`.
