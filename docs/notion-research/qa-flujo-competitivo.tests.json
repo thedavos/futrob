@@ -1,0 +1,495 @@
+{
+  "epic": "QA del flujo competitivo",
+  "epicBoard": "Infraestructura",
+  "phase": 5,
+  "researchDoc": "docs/notion-research/qa-flujo-competitivo.md",
+  "productSource": "product/acceptance-criteria.md",
+  "generatedAt": "2026-09-15",
+  "note": "Research catalog. status missing means the behavior is not asserted today. partial means a related test exists but not the full observable. exists means a literal assertion already matches. Do not treat mocked SDK tests as e2e or http.",
+  "tasks": [
+    {
+      "id": "qa-e2e-matrix",
+      "title": "[QA] Matriz E2E Must del flujo competitivo",
+      "priority": "P0",
+      "type": "QA",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a81f8b900cfcb6136b122",
+      "acceptance": "Matriz E2E Must: creación, reprogramación, sync EA, selección, confirmación, agregado, tabla y rankings.",
+      "deps": [
+        "Crear pruebas end-to-end del flujo competitivo",
+        "flujo Must de Resultados y Reprogramaciones"
+      ],
+      "tests": [
+        {
+          "id": "e2e-create-through-fixture",
+          "status": "partial",
+          "layer": "e2e",
+          "covers": ["AC-E2E-001", "AC-FIX-001"],
+          "subject": "apps/cli/src/commands/e2e-golden-path.ts run",
+          "given": "Live apps/api, INTERNAL_JOB_SECRET, actor with org create permission, two-team league draft that publishes.",
+          "when": "npm run cli -- e2e-golden-path --actor actor_demo",
+          "expect": "Exit 0. Stdout contains Golden path OK. JSON encounterCount is 1 for a two-team single round-robin. A second GET of the same fixturePlanId returns the same encounter ids.",
+          "existing": "e2e-golden-path stops after generateFixture. CI does not run it. Replay of GET fixture is not in the CLI command."
+        },
+        {
+          "id": "e2e-reschedule-slot-2-only",
+          "status": "missing",
+          "layer": "e2e",
+          "covers": ["AC-SCH-001"],
+          "subject": "CreateScheduleChangeRequestUseCase.execute then GET encounter schedule snapshot",
+          "given": "Encounter with two pending OfficialMatch slots. Captain of home team. HTTP schedule-change route exists.",
+          "when": "Captain proposes slot 2 only. Rival accepts.",
+          "expect": "Slot 1 scheduledStartAt equals the original ISO string. Slot 2 scheduledStartAt equals the proposed ISO string. Candidate window for slot 2 uses the new time.",
+          "blockedOn": "https://app.notion.com/p/3dc7b204009a818c95a0e756f935c4f8"
+        },
+        {
+          "id": "e2e-sync-does-not-officialize",
+          "status": "missing",
+          "layer": "e2e",
+          "covers": ["AC-EA-001", "FTR-EA-001"],
+          "subject": "POST /api/v1/internal/game-data/sync-jobs then GET /api/v1/encounters/{id}/candidates",
+          "given": "Both teams linked to EA clubs. Five ProviderMatch rows in the encounter window.",
+          "when": "Enqueue and run recent-matches sync. GET candidates.",
+          "expect": "Response status 200, status ready, candidates length 5. OfficialResult count for the encounter is 0. GET standings rows do not include that score."
+        },
+        {
+          "id": "e2e-propose-then-confirm",
+          "status": "partial",
+          "layer": "e2e",
+          "covers": ["AC-SEL-001", "AC-E2E-001"],
+          "subject": "SelectOfficialMatchesUseCase then ConfirmOfficialSelectionUseCase via HTTP once routes exist",
+          "given": "Candidates ready. Captain A has encounters.official-selection.propose. Captain B has resolve.",
+          "when": "A posts selection slot 1 providerKey ea-clubs externalId m-1. B confirms.",
+          "expect": "OfficialResult.status is approved. Event results.official-result-approved emitted once. GET standings home goals 2 from that snapshot.",
+          "existing": "apps/cli results-smoke and package tests with in-memory fakes. No HTTP.",
+          "blockedOn": "https://app.notion.com/p/3dc7b204009a812d8f2ec66662d3a161"
+        },
+        {
+          "id": "e2e-aggregate-series",
+          "status": "missing",
+          "layer": "e2e",
+          "covers": ["AC-FIX-002"],
+          "subject": "GetCompetitionStandingsUseCase after two OfficialMatch snapshots",
+          "given": "Encounter officialMatchCount 2, resolutionMode aggregate. Results A 2-0 B and B 3-1 A.",
+          "when": "Both slots confirmed approved.",
+          "expect": "Series winner is team B. Aggregate score 3-4 toward B."
+        },
+        {
+          "id": "e2e-standings-versus-rankings",
+          "status": "missing",
+          "layer": "http",
+          "covers": ["AC-RNK-001"],
+          "subject": "GET /api/v1/organizations/{orgId}/competitions/{compId}/standings and .../rankings",
+          "given": "One approved OfficialResult in a league.",
+          "when": "GET both endpoints as an authorized member.",
+          "expect": "Both HTTP 200. standings.formulaVersion is not equal to rankings formula. Payloads are not deep-equal."
+        },
+        {
+          "id": "e2e-cross-org-candidates-404",
+          "status": "exists",
+          "layer": "http",
+          "covers": ["AC-SEC-001"],
+          "subject": "apps/api/src/http/routes/encounters.test.ts GET /encounters/:id/candidates",
+          "given": "Encounter in organization-candidates-1. Actor from another organization.",
+          "when": "GET /api/v1/encounters/{id}/candidates with that actor.",
+          "expect": "status 404. body.code results.encounter_not_found."
+        },
+        {
+          "id": "e2e-replay-sync-and-confirm",
+          "status": "partial",
+          "layer": "e2e",
+          "covers": ["AC-E2E-001", "AC-SEC-002", "NFR-02"],
+          "subject": "Same sync job id and same confirm delivered twice",
+          "given": "Successful sync and confirm already processed.",
+          "when": "POST run on the same jobId. Confirm the same encounter again.",
+          "expect": "Provider ingest calls stay 1. OfficialResult count 1. Standings sourceRevisionMax unchanged. Notification and audit rows do not duplicate.",
+          "existing": "HTTP provider-sync-jobs.test.ts keeps providerCalls at 1. Confirm use case test currently expects revision 2."
+        }
+      ]
+    },
+    {
+      "id": "qa-provider-failure",
+      "title": "[QA] Casos proveedor caído / duplicados / race",
+      "priority": "P0",
+      "type": "QA",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a81e8b9c3c5de89afa1d4",
+      "acceptance": "Casos E2E/integración para proveedor caído, duplicados y races; errores tipados esperados.",
+      "deps": ["[QA] Matriz E2E Must del flujo competitivo"],
+      "tests": [
+        {
+          "id": "prov-candidates-503",
+          "status": "partial",
+          "layer": "http",
+          "covers": ["AC-EA-001"],
+          "subject": "GET /api/v1/encounters/{id}/candidates when provider is down",
+          "given": "Clubs linked. ProviderMatch reader throws or provider returns HTTP 503.",
+          "when": "GET candidates.",
+          "expect": "HTTP 503. code results.candidate_data_unavailable. Body message Candidate data is temporarily unavailable. No private provider failure details.",
+          "existing": "ListEncounterCandidatesUseCase maps thrown errors to that code. HTTP 503 for this route is not asserted. OpenAPI advertises 503."
+        },
+        {
+          "id": "prov-job-dead-at-max-attempts",
+          "status": "exists",
+          "layer": "application",
+          "covers": ["NFR-02"],
+          "subject": "ExecuteProviderSyncJobUseCase.execute",
+          "given": "Job maxAttempts 2. Sync returns ProviderHttpFailed status 503.",
+          "when": "execute job-1 twice.",
+          "expect": "First status retry_scheduled. Second status dead. OfficialResult count 0."
+        },
+        {
+          "id": "prov-unique-provider-match",
+          "status": "missing",
+          "layer": "adapter",
+          "covers": ["FTR-EA-002", "NFR-02"],
+          "subject": "apps/api/migrations/0019_provider_observations_and_matches.sql UNIQUE (provider_key, external_match_id)",
+          "given": "Migrated Postgres. TEST_DATABASE_URL set in CI.",
+          "when": "INSERT two provider_matches rows with provider_key ea-clubs and external_match_id m-1.",
+          "expect": "Second insert rejects with SQLSTATE 23505.",
+          "existing": "Constraint is in SQL. No CI test. In-memory upsert overwrites instead of throwing."
+        },
+        {
+          "id": "prov-approved-id-not-reused",
+          "status": "missing",
+          "layer": "application",
+          "covers": ["AC-SEL-003"],
+          "subject": "SelectOfficialMatchesUseCase.execute",
+          "given": "Encounter A has approved OfficialResult with providerKey ea-clubs externalId m-1.",
+          "when": "Propose the same providerMatchRef on encounter B.",
+          "expect": "Result is Err. TaggedError code for uniqueness (pin the stable code when implemented). Encounter B OfficialResult count 0."
+        },
+        {
+          "id": "prov-confirm-replay-noop",
+          "status": "missing",
+          "layer": "application",
+          "covers": ["AC-SEC-002", "NFR-02"],
+          "subject": "ConfirmOfficialSelectionUseCase.execute",
+          "given": "Selection already approved. OfficialResult id result-1 revision 1. One results.official-result-approved event.",
+          "when": "execute the same confirm input again.",
+          "expect": "Ok value id result-1 and revision 1. events.length 1. Saved OfficialResult rows length 1.",
+          "existing": "Current test expects second execute revision 2 and events.length 2 while selection status is forced back to awaiting_opponent_confirmation."
+        },
+        {
+          "id": "prov-concurrent-confirm",
+          "status": "missing",
+          "layer": "application",
+          "covers": ["AC-SEC-002"],
+          "subject": "ConfirmOfficialSelectionUseCase.execute",
+          "given": "One awaiting_opponent_confirmation selection.",
+          "when": "Promise.all of two execute calls with the same encounterId.",
+          "expect": "Approved OfficialResult count 1. events named results.official-result-approved length 1. The other result is Err with code results.selection_not_confirmable or a tagged conflict."
+        },
+        {
+          "id": "prov-sync-http-dedupe",
+          "status": "exists",
+          "layer": "http",
+          "covers": ["AC-EA-002", "NFR-02"],
+          "subject": "apps/api/src/http/routes/provider-sync-jobs.test.ts",
+          "given": "Identical POST body for recent-matches.",
+          "when": "POST /api/v1/internal/game-data/sync-jobs twice, then POST .../run twice.",
+          "expect": "Both enqueue responses share the same job id. First enqueue HTTP 202. providerCalls 1. Both run bodies status succeeded."
+        },
+        {
+          "id": "prov-outbox-redelivery",
+          "status": "partial",
+          "layer": "application",
+          "covers": ["AC-SEC-002", "AC-NTF-001"],
+          "subject": "ProjectOfficialResultUseCase.execute",
+          "given": "Approved OfficialResult already projected.",
+          "when": "execute with the same officialResultId twice.",
+          "expect": "contributions.listByOfficialResult length 1. competitionStats.matchesPlayed 1.",
+          "existing": "project-official-result.use-case.test.ts does not duplicate contributions. No queue consumer redelivery test."
+        },
+        {
+          "id": "prov-schedule-change-idempotent-replay",
+          "status": "exists",
+          "layer": "application",
+          "covers": ["AC-SCH-001", "NFR-02"],
+          "subject": "CreateScheduleChangeRequestUseCase.execute",
+          "given": "Valid reschedule input with idempotencyKey idem-1.",
+          "when": "execute twice with the same payload.",
+          "expect": "replay.value is the same object as first.value. requests.rows length 1. events length 1 named scheduling.reschedule-requested."
+        },
+        {
+          "id": "prov-schedule-change-idempotency-conflict",
+          "status": "exists",
+          "layer": "application",
+          "covers": ["NFR-02"],
+          "subject": "CreateScheduleChangeRequestUseCase.execute",
+          "given": "First request stored with idempotencyKey idem-1.",
+          "when": "execute with the same key and a different proposedStartAt.",
+          "expect": "Err code scheduling.schedule_change_idempotency_conflict. requests.rows length 1."
+        },
+        {
+          "id": "prov-claim-next-race",
+          "status": "partial",
+          "layer": "adapter",
+          "covers": ["NFR-02"],
+          "subject": "PostgresProviderSyncJobRepository.claimNext",
+          "given": "TEST_DATABASE_URL. One queued job.",
+          "when": "Two claimNext calls with distinct lease tokens in Promise.all.",
+          "expect": "claims.filter(Boolean) length 1.",
+          "existing": "provider-reliability.integration.test.ts. Skipped in CI without TEST_DATABASE_URL."
+        }
+      ]
+    },
+    {
+      "id": "qa-openapi-contract",
+      "title": "[QA] Contract tests OpenAPI críticos",
+      "priority": "P1",
+      "type": "QA",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a81838e16ff21be1d883f",
+      "acceptance": "Contract tests OpenAPI de endpoints críticos de encounters/results/scheduling; rompen CI ante drift.",
+      "deps": [
+        "[API] Endpoints selección / confirmación / disputa",
+        "[API] Crear/listar solicitudes de reprogramación"
+      ],
+      "tests": [
+        {
+          "id": "contract-openapi-drift",
+          "status": "missing",
+          "layer": "ci",
+          "covers": ["ADR-0005"],
+          "subject": "packages/api-contracts/scripts/generate-openapi.ts",
+          "given": "Clean checkout.",
+          "when": "npm run generate:openapi && git diff --exit-code packages/api-contracts/openapi",
+          "expect": "Exit 0. No diff. CI job fails when document.ts changed without regenerating yaml and json."
+        },
+        {
+          "id": "contract-candidates-200-ready",
+          "status": "partial",
+          "layer": "http",
+          "covers": ["AC-EA-001"],
+          "subject": "GET /api/v1/encounters/{encounterId}/candidates",
+          "given": "Linked clubs and matches inside the window.",
+          "when": "Authenticated GET.",
+          "expect": "HTTP 200. Body equals listEncounterCandidatesResponseSchema.parse(body). First candidate has no players key. playerObservationCount is 22 when 22 observations exist.",
+          "existing": "HTTP window test and schema test exist separately. Combine on the live handler."
+        },
+        {
+          "id": "contract-candidates-404",
+          "status": "exists",
+          "layer": "http",
+          "covers": ["AC-SEC-001"],
+          "subject": "GET /api/v1/encounters/{encounterId}/candidates",
+          "given": "Actor without official-selection access or foreign organization.",
+          "when": "GET candidates.",
+          "expect": "HTTP 404. code results.encounter_not_found."
+        },
+        {
+          "id": "contract-candidates-503",
+          "status": "missing",
+          "layer": "http",
+          "covers": ["AC-EA-001"],
+          "subject": "futrobOpenApiV1.paths[/encounters/{encounterId}/candidates].get.responses[503]",
+          "given": "Provider reader unavailable.",
+          "when": "GET candidates.",
+          "expect": "HTTP 503. code results.candidate_data_unavailable. OpenAPI response remains $ref ApiError."
+        },
+        {
+          "id": "contract-fixture-replay",
+          "status": "partial",
+          "layer": "http",
+          "covers": ["AC-FIX-001"],
+          "subject": "POST /api/v1/organizations/{orgId}/competitions/{compId}/fixture",
+          "given": "Published competition with enough approved entries.",
+          "when": "POST generation body twice.",
+          "expect": "Second response plan id equals first plan id. Pin the HTTP status the handler returns on both calls.",
+          "existing": "fixtures.test.ts generates, replays, reads, and audits. Pin status codes as named contract cases."
+        },
+        {
+          "id": "contract-snapshot-fixture-managed",
+          "status": "missing",
+          "layer": "http",
+          "covers": ["FTR-SCH-002"],
+          "subject": "PUT /api/v1/encounters/{encounterId}/schedule-snapshot",
+          "given": "Encounter owned by a generated fixture plan.",
+          "when": "PUT a manual snapshot.",
+          "expect": "HTTP 409. code scheduling.fixture_managed_conflict."
+        },
+        {
+          "id": "contract-standings-empty",
+          "status": "missing",
+          "layer": "http",
+          "covers": ["AC-RNK-001"],
+          "subject": "GET /api/v1/organizations/{orgId}/competitions/{compId}/standings",
+          "given": "Published league with fixture and zero approved OfficialResult.",
+          "when": "GET standings.",
+          "expect": "HTTP 200. rows is [] or a pinned zeroed table from GetCompetitionStandingsUseCase. Parse with the OpenAPI standings schema."
+        },
+        {
+          "id": "contract-select-confirm-after-api",
+          "status": "missing",
+          "layer": "contract",
+          "covers": ["AC-SEL-001"],
+          "subject": "futrobOpenApiV1.paths for select, confirm, dispute",
+          "given": "API card Endpoints selección / confirmación / disputa landed.",
+          "when": "Load futrobOpenApiV1.",
+          "expect": "Each path is defined. Live POST 200 or 202 parses with the Zod schema. Unauthorized POST is 403 or 404 with a stable code, never a raw stack.",
+          "blockedOn": "https://app.notion.com/p/3dc7b204009a812d8f2ec66662d3a161"
+        },
+        {
+          "id": "contract-schedule-change-after-api",
+          "status": "missing",
+          "layer": "contract",
+          "covers": ["AC-SCH-001"],
+          "subject": "OpenAPI create and list schedule-change requests",
+          "given": "API card Crear/listar solicitudes de reprogramación landed.",
+          "when": "POST create with encounters.reschedule.request. GET list by encounter.",
+          "expect": "Create HTTP 201 or 200. List includes the request id. Missing permission returns 403 or 404 with code from scheduling tagged errors.",
+          "blockedOn": "https://app.notion.com/p/3dc7b204009a818c95a0e756f935c4f8"
+        },
+        {
+          "id": "contract-sdk-not-enough",
+          "status": "exists",
+          "layer": "contract",
+          "covers": [],
+          "subject": "packages/sdk/src/resources/results.test.ts",
+          "given": "mockFetch returns a ready payload.",
+          "when": "client.results.listEncounterCandidates(encounter-1)",
+          "expect": "Resolves to status ready and candidates []. Treat as client parser only. Do not count toward OpenAPI CI drift."
+        }
+      ]
+    },
+    {
+      "id": "qa-mobile-subset",
+      "title": "[QA] Subset móvil del happy path competitivo",
+      "priority": "P2",
+      "type": "QA",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a8133abd5de14a0a8ed5a",
+      "acceptance": "Subset móvil del happy path competitivo cuando exista UI Match Center/reprogramación; skip documentado si no hay UI.",
+      "deps": [
+        "[UI] Pantallas Match Center del enfrentamiento",
+        "[QA] Smoke E2E móvil"
+      ],
+      "tests": [
+        {
+          "id": "mobile-skip-documented",
+          "status": "exists",
+          "layer": "docs",
+          "covers": ["AC-MOB-002"],
+          "subject": ".cursor/skills/verify-futrob/features/README.md and SKILL.md Out of scope",
+          "given": "No Match Center UI in apps/mobile or apps/web.",
+          "when": "A verification run is reported.",
+          "expect": "The run records verified-unreachable or skip for native competitive flows. It does not claim AC-MOB-002 captain paths via Expo web."
+        },
+        {
+          "id": "mobile-no-bc-imports",
+          "status": "missing",
+          "layer": "mobile",
+          "covers": ["AC-MOB-003", "FTR-MOB-003"],
+          "subject": "apps/mobile/src",
+          "given": "apps/mobile source (not node_modules).",
+          "when": "Grep for from \"@futrob/results\" or @futrob/game-data or @futrob/scheduling.",
+          "expect": "Zero matches. Client uses @futrob/sdk only."
+        },
+        {
+          "id": "mobile-auth-validation-in-ci",
+          "status": "partial",
+          "layer": "mobile",
+          "covers": ["AC-MOB-001"],
+          "subject": "apps/mobile/src/modules/identity/auth-validation.test.ts",
+          "given": "validateEmail and validatePassword.",
+          "when": "npm test from repo root.",
+          "expect": "validateEmail(\"capitan@club.mx\") is null. validateEmail(\"sin-arroba\") is AUTH_VALIDATION_EMAIL. The file must be part of a Vite+ project so CI runs it.",
+          "existing": "Assertions exist. apps/mobile is not in root vite.config.ts test.projects."
+        },
+        {
+          "id": "mobile-captain-encounter",
+          "status": "missing",
+          "layer": "mobile",
+          "covers": ["AC-MOB-002", "AC-E2E-001"],
+          "subject": "Native iOS or Android Match Center",
+          "given": "Smoke móvil passed. Seeded encounter with two official slots.",
+          "when": "Captain opens the encounter in a native build.",
+          "expect": "Screen shows both team names and officialMatchCount 2. Accessible name includes both names.",
+          "blockedOn": [
+            "https://app.notion.com/p/3dc7b204009a8162b0eae6434b132fff",
+            "https://app.notion.com/p/3dc7b204009a8158b265e350d224755c"
+          ]
+        },
+        {
+          "id": "mobile-candidates-not-official",
+          "status": "missing",
+          "layer": "mobile",
+          "covers": ["AC-EA-001"],
+          "subject": "Native Match Center candidate list",
+          "given": "Five ProviderMatch candidates synced.",
+          "when": "Captain views candidates.",
+          "expect": "Five rows. No approved-official badge. Confirming is a later action."
+        },
+        {
+          "id": "mobile-propose-confirm-parity",
+          "status": "missing",
+          "layer": "mobile",
+          "covers": ["AC-SEL-001", "AC-MOB-002"],
+          "subject": "Native propose and confirm using @futrob/sdk",
+          "given": "Same seeded encounter as web.",
+          "when": "Captain A proposes. Captain B confirms on native.",
+          "expect": "GET standings from API matches the web outcome. One OfficialResult. Player without resolve permission does not see confirm."
+        }
+      ]
+    },
+    {
+      "id": "infra-nightly-e2e",
+      "title": "[Infra] Job CI nightly E2E",
+      "priority": "P1",
+      "type": "Feature",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a8190af37d25726e4c8cd",
+      "acceptance": "Job CI nightly ejecuta E2E Must y reporta fallos; no bloquea PRs salvo acuerdo.",
+      "deps": ["[QA] Matriz E2E Must del flujo competitivo"],
+      "tests": [
+        {
+          "id": "nightly-not-on-pull-request",
+          "status": "missing",
+          "layer": "ci",
+          "covers": [],
+          "subject": ".github/workflows/* nightly E2E workflow",
+          "given": "A pull request is opened.",
+          "when": "GitHub loads workflow triggers.",
+          "expect": "The nightly workflow on.pull_request is absent. ci.yml remains the PR gate."
+        },
+        {
+          "id": "nightly-has-cron-and-dispatch",
+          "status": "missing",
+          "layer": "ci",
+          "covers": [],
+          "subject": "new workflow file next to ci.yml",
+          "given": "Workflow exists.",
+          "when": "Read on:",
+          "expect": "schedule.cron is set. workflow_dispatch is present. Comment states the job does not gate merges."
+        },
+        {
+          "id": "nightly-runs-must-script",
+          "status": "missing",
+          "layer": "ci",
+          "covers": ["AC-E2E-001"],
+          "subject": "Nightly job step",
+          "given": "Migrated Postgres and INTERNAL_JOB_SECRET in job env. API up.",
+          "when": "The job runs the matrix command documented with the E2E task.",
+          "expect": "Exit 0 on a green API. Failure uploads CLI stdout and API logs. Required check list for PRs does not include this job."
+        },
+        {
+          "id": "nightly-unique-org-names",
+          "status": "partial",
+          "layer": "e2e",
+          "covers": [],
+          "subject": "e2e-golden-path suffix Date.now()",
+          "given": "Reusable Postgres.",
+          "when": "Nightly runs twice in one day without --keep-names.",
+          "expect": "Both exit 0. Organization names differ because of the timestamp suffix.",
+          "existing": "CLI already appends Date.now() unless --keep-names."
+        },
+        {
+          "id": "nightly-not-health-check",
+          "status": "exists",
+          "layer": "ci",
+          "covers": [],
+          "subject": ".github/workflows/health-check.yml",
+          "given": "Current workflows.",
+          "when": "Read health-check.yml.",
+          "expect": "That file stays a production curl of meta/health and the web origin. It is not the competitive matrix. Its cron stays commented until production is live."
+        }
+      ]
+    }
+  ]
+}
