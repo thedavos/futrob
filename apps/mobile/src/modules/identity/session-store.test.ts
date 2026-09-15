@@ -59,4 +59,28 @@ describe("session-store", () => {
     expect(store.records.has(SESSION_STORE_KEYS.user)).toBe(false);
     await expect(getSession()).resolves.toBeNull();
   });
+
+  it("saveSession clears both keys when the user write fails", async () => {
+    const failing = {
+      ...store,
+      setItemAsync: async (key: string, value: string) => {
+        if (key === SESSION_STORE_KEYS.user) {
+          throw new Error("secure store full");
+        }
+        store.records.set(key, value);
+      },
+    };
+    setSessionCredentialStore(failing);
+
+    await expect(
+      saveSession({
+        token: "bearer-token-1",
+        user: { id: "user-1", name: "Ana Captain", email: "ana@club.mx" },
+      }),
+    ).rejects.toThrow("secure store full");
+
+    expect(store.records.has(SESSION_STORE_KEYS.token)).toBe(false);
+    expect(store.records.has(SESSION_STORE_KEYS.user)).toBe(false);
+    await expect(getSession()).resolves.toBeNull();
+  });
 });

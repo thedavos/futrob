@@ -39,8 +39,13 @@ export function resetSessionCredentialStore(): void {
 }
 
 export async function saveSession(session: Session): Promise<void> {
-  await credentials.setItemAsync(TOKEN_KEY, session.token);
-  await credentials.setItemAsync(USER_KEY, JSON.stringify(session.user));
+  try {
+    await credentials.setItemAsync(TOKEN_KEY, session.token);
+    await credentials.setItemAsync(USER_KEY, JSON.stringify(session.user));
+  } catch (cause) {
+    await clearSession();
+    throw cause;
+  }
 }
 
 export async function getSession(): Promise<Session | null> {

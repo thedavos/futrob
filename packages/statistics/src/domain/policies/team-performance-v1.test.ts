@@ -34,4 +34,20 @@ describe("team-performance-v1", () => {
       missing: ["offensiveEfficiency", "defensiveEfficiency"],
     });
   });
+
+  it("clamps-components-and-score-to-0-100", () => {
+    expect(
+      scoreTeamPerformance({
+        results: 150,
+        goalDifference: -10,
+        recentForm: 60,
+        offensiveEfficiency: 80,
+        defensiveEfficiency: 60,
+      }),
+    ).toEqual({
+      status: "scored",
+      formulaVersion: TEAM_PERFORMANCE_FORMULA_VERSION,
+      score: 66,
+    });
+  });
 });

@@ -9,7 +9,10 @@ import {
 } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import { CandidateDataUnavailable } from "../../domain/errors/encounter-candidates.errors.ts";
-import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import {
+  asEncounterStageId,
+  type EncounterReaderPort,
+} from "../../domain/ports/encounter-reader.port.ts";
 import type {
   CandidateMatchReadResult,
   ProviderMatchReaderPort,
@@ -20,7 +23,7 @@ const encounter = {
   encounterId: asEncounterId("encounter-1"),
   organizationId: asOrganizationId("organization-1"),
   competitionId: asCompetitionId("competition-1"),
-  stageId: "stage-1",
+  stageId: asEncounterStageId("stage-1"),
   homeTeamId: asTeamId("team-home"),
   awayTeamId: asTeamId("team-away"),
   scheduledStartAt: new Date("2026-09-14T20:00:00.000Z"),

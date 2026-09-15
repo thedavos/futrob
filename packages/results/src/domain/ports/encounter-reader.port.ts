@@ -1,10 +1,27 @@
-import type { CompetitionId, EncounterId, OrganizationId, TeamId } from "@futrob/shared-kernel";
+import type {
+  Brand,
+  CompetitionId,
+  EncounterId,
+  OrganizationId,
+  TeamId,
+} from "@futrob/shared-kernel";
+
+/**
+ * Same brand as scheduling `FixtureStageId` (`${planId}:stage:${stageOrder}`).
+ * Results does not import `@futrob/scheduling`; do not invent encounter-local ids.
+ */
+export type EncounterStageId = Brand<string, "FixtureStageId">;
+
+export function asEncounterStageId(value: string): EncounterStageId {
+  // SAFETY: Compile-time brand marker; adapters copy scheduling fixture stage ids.
+  return value as EncounterStageId;
+}
 
 export interface EncounterScheduleSnapshot {
   readonly encounterId: EncounterId;
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
-  readonly stageId: string;
+  readonly stageId: EncounterStageId;
   readonly homeTeamId: TeamId;
   readonly awayTeamId: TeamId;
   readonly scheduledStartAt: Date;

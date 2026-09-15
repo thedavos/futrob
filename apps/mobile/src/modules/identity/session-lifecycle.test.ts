@@ -69,12 +69,39 @@ describe("session lifecycle", () => {
       return new Response(null, { status: 200 });
     });
 
-    await logout(() => {
+    const remote = await logout(() => {
       destinations.push("/(auth)/login");
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     await expect(getSession()).resolves.toBeNull();
     expect(destinations).toEqual(["/(auth)/login"]);
+    expect(remote).toEqual({ ok: true });
+  });
+
+  it("logout still clears SecureStore when remote sign-out fails", async () => {
+    await saveSession({
+      token: "bearer-token-1",
+      user: { id: "user-1", name: "Ana", email: "ana@club.mx" },
+    });
+    fetchMock.mockResolvedValue(new Response(null, { status: 503 }));
+
+    const remote = await logout(() => undefined);
+
+    expect(remote).toEqual({ ok: false, network: false, status: 503 });
+    await expect(getSession()).resolves.toBeNull();
+  });
+
+  it("logout still clears SecureStore when remote sign-out cannot connect", async () => {
+    await saveSession({
+      token: "bearer-token-1",
+      user: { id: "user-1", name: "Ana", email: "ana@club.mx" },
+    });
+    fetchMock.mockRejectedValue(new TypeError("network down"));
+
+    const remote = await logout(() => undefined);
+
+    expect(remote).toEqual({ ok: false, network: true });
+    await expect(getSession()).resolves.toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import type { FutrobApiError } from "@futrob/sdk";
-import { signOutRemote } from "./auth-api.ts";
+import { signOutRemote, type RemoteSignOutResult } from "./auth-api.ts";
 import { clearSession, getSession } from "./session-store.ts";
 
 /**
@@ -26,11 +26,10 @@ export async function handleProductError(
 }
 
 /** Remote sign-out first, then wipe SecureStore, then show login. */
-export async function logout(showLogin: () => void): Promise<void> {
+export async function logout(showLogin: () => void): Promise<RemoteSignOutResult> {
   const session = await getSession();
-  if (session) {
-    await signOutRemote(session.token);
-  }
+  const remote: RemoteSignOutResult = session ? await signOutRemote(session.token) : { ok: true };
   await clearSession();
   showLogin();
+  return remote;
 }

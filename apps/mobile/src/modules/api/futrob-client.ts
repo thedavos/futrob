@@ -1,6 +1,6 @@
 import { createFutrobClient, type FutrobClient } from "@futrob/sdk";
 import { API_BASE_URL } from "@/config/env";
-import { getSession } from "@/modules/identity/session-store";
+import { clearSession, getSession } from "@/modules/identity/session-store";
 
 export { FutrobApiError } from "@futrob/sdk";
 
@@ -11,10 +11,23 @@ export { FutrobApiError } from "@futrob/sdk";
  *
  * Token source is SecureStore only. Do not call Better Auth `get-session`
  * to mint a bearer; silent refresh is blocked until a refresh contract exists.
+ * Product 401s drop the local session at this boundary for every resource.
  */
 export function getFutrobClient(): FutrobClient {
   return createFutrobClient({
     baseUrl: `${API_BASE_URL}/api/v1`,
     getAccessToken: async () => (await getSession())?.token,
+    fetchImpl: fetchAndClearSessionOnUnauthorized,
   });
+}
+
+async function fetchAndClearSessionOnUnauthorized(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  const response = await fetch(input, init);
+  if (response.status === 401) {
+    await clearSession();
+  }
+  return response;
 }

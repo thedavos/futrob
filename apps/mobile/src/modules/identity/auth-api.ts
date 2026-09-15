@@ -121,11 +121,17 @@ export async function signUpEmail(input: SignUpInput): Promise<AuthSuccess> {
 
 /**
  * Remote Better Auth sign-out. Local SecureStore is cleared by the caller
- * after this returns (or after it fails). Does not mint a new bearer.
+ * after this returns. Does not mint a new bearer. Failures are returned,
+ * never swallowed, so logout can still wipe local credentials.
  */
-export async function signOutRemote(token: string): Promise<void> {
+export type RemoteSignOutResult =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly network: boolean; readonly status?: number };
+
+export async function signOutRemote(token: string): Promise<RemoteSignOutResult> {
+  let response: Response;
   try {
-    await fetch(`${AUTH_BASE_URL}/sign-out`, {
+    response = await fetch(`${AUTH_BASE_URL}/sign-out`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -133,6 +139,10 @@ export async function signOutRemote(token: string): Promise<void> {
       },
     });
   } catch {
-    // Local credentials are still cleared by logout even if the network fails.
+    return { ok: false, network: true };
   }
+  if (!response.ok) {
+    return { ok: false, network: false, status: response.status };
+  }
+  return { ok: true };
 }

@@ -8,9 +8,11 @@ export type {
   OfficialResultStatus,
 } from "./domain/entities/official-result.ts";
 export type { SelectionStatus } from "./domain/value-objects/selection-status.ts";
-export type {
-  EncounterReaderPort,
-  EncounterScheduleSnapshot,
+export {
+  asEncounterStageId,
+  type EncounterReaderPort,
+  type EncounterScheduleSnapshot,
+  type EncounterStageId,
 } from "./domain/ports/encounter-reader.port.ts";
 export type {
   CandidateMatchQuery,

@@ -35,6 +35,10 @@ import type { EncounterScheduleRepository } from "../domain/ports/encounter-sche
 import type { ScheduleChangeRequestEditGuardPort } from "../domain/ports/fixture-editing.ports.ts";
 import type { ScheduleChangeRequestRepository } from "../domain/ports/schedule-change-request.repository.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
+import {
+  interpretCompetitionWallTime,
+  type CompetitionWallTime,
+} from "../domain/policies/interpret-competition-wall-time.ts";
 import type { RescheduleScope } from "../domain/value-objects/reschedule-scope.ts";
 
 export interface CreateScheduleChangeRequestInput {
@@ -44,7 +48,9 @@ export interface CreateScheduleChangeRequestInput {
   readonly encounterId: EncounterId;
   readonly requestingTeamId: TeamId;
   readonly scope: RescheduleScope;
-  readonly proposedStartAt: Date;
+  /** IANA id of the competition; persist UTC instants only after interpretation. */
+  readonly timeZone: string;
+  readonly proposedWallTime: CompetitionWallTime;
   readonly reason: string;
   readonly idempotencyKey: string;
 }
@@ -72,6 +78,13 @@ export class CreateScheduleChangeRequestUseCase {
     if (!idempotencyKey) {
       return err(invalidRequest("An idempotency key is required"));
     }
+
+    const interpreted = interpretCompetitionWallTime({
+      wallTime: input.proposedWallTime,
+      timeZone: input.timeZone,
+    });
+    if (interpreted.isErr()) return err(interpreted.error);
+    const proposedStartAt = interpreted.value;
 
     return this.deps.transaction.runInTransaction(() =>
       this.deps.mutationLock.runExclusive(input.encounterId, async () => {
@@ -121,7 +134,7 @@ export class CreateScheduleChangeRequestUseCase {
           idempotencyKey,
         );
         if (replay) {
-          if (matchesReplay(replay, input)) return ok(replay);
+          if (matchesReplay(replay, input, proposedStartAt)) return ok(replay);
           return err(
             new ScheduleChangeRequestIdempotencyConflict({
               code: "scheduling.schedule_change_idempotency_conflict",
@@ -210,7 +223,7 @@ export class CreateScheduleChangeRequestUseCase {
           requestingTeamId: input.requestingTeamId,
           initiatedByActorId: input.actorId,
           scope: input.scope,
-          proposedStartAt: input.proposedStartAt,
+          proposedStartAt,
           reason: input.reason,
           idempotencyKey,
           now,
@@ -252,6 +265,7 @@ function invalidRequest(message: string): InvalidScheduleChangeRequest {
 function matchesReplay(
   request: ScheduleChangeRequest,
   input: CreateScheduleChangeRequestInput,
+  proposedStartAt: Date,
 ): boolean {
   const proposal = request.proposals[0];
   return (
@@ -261,7 +275,7 @@ function matchesReplay(
     request.requestingTeamId === input.requestingTeamId &&
     request.initiatedByActorId === input.actorId &&
     scopesEqual(request.scope, input.scope) &&
-    proposal.proposedStartAt.getTime() === input.proposedStartAt.getTime() &&
+    proposal.proposedStartAt.getTime() === proposedStartAt.getTime() &&
     proposal.reason === input.reason.trim()
   );
 }

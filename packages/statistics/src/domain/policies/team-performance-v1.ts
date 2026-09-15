@@ -63,16 +63,20 @@ export function scoreTeamPerformance(metrics: TeamPerformanceMetrics): TeamPerfo
         missing: [metric],
       };
     }
-    weighted += value * (TEAM_PERFORMANCE_WEIGHTS[metric] / 100);
+    weighted += clampedScore(value) * (TEAM_PERFORMANCE_WEIGHTS[metric] / 100);
   }
 
   return {
     status: "scored",
     formulaVersion: TEAM_PERFORMANCE_FORMULA_VERSION,
-    score: Math.round(weighted),
+    score: clampedScore(Math.round(weighted)),
   };
 }
 
 function isPresentScore(value: number | null): value is number {
   return value !== null && Number.isFinite(value);
+}
+
+function clampedScore(value: number): number {
+  return Math.min(100, Math.max(0, value));
 }

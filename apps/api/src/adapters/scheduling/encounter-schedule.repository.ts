@@ -20,7 +20,7 @@ const encounterScheduleRowSchema = z.object({
   encounter_id: pgTextSchema,
   organization_id: pgTextSchema,
   competition_id: pgTextSchema,
-  stage_id: pgTextSchema,
+  stage_id: pgTextSchema.nullable(),
   home_team_id: pgTextSchema,
   away_team_id: pgTextSchema,
   scheduled_start_at: pgTimestampSchema,
@@ -135,6 +135,7 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
        FROM encounter_schedule_snapshots
        WHERE (home_team_id = ANY($1::text[]) OR away_team_id = ANY($1::text[]))
          AND scheduled_start_at >= $2
+         AND stage_id IS NOT NULL
        ORDER BY scheduled_start_at ASC, encounter_id ASC
        LIMIT 1`,
       [teamIds, now.toISOString()],
@@ -146,7 +147,8 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
 
 function rehydrateEncounterScheduleSnapshot(
   row: z.infer<typeof encounterScheduleRowSchema>,
-): EncounterScheduleSnapshot {
+): EncounterScheduleSnapshot | null {
+  if (row.stage_id === null) return null;
   return {
     encounterId: asEncounterId(row.encounter_id),
     organizationId: asOrganizationId(row.organization_id),
