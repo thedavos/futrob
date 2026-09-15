@@ -1,0 +1,358 @@
+{
+  "epic": "Portal público",
+  "source": "uploads/portal-publico.json",
+  "packageNote": "Notion task pages are blank except for database properties. Tests describe spectator-observable behavior for later implementation. This file is not executed by vp test.",
+  "relatedOutsidePackage": [
+    {
+      "id": "3d77b204009a8143b7f6e3ea2f668a88",
+      "title": "Mostrar rankings y premios por posición en portal público",
+      "reason": "QA in this package depends on rankings portal UI. Statistics backend already exists on main."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "3dc7b204009a8185934ad9915b43db01",
+      "title": "[API] Lecturas públicas sanitizadas",
+      "priority": "P1",
+      "type": "Backend",
+      "tests": [
+        {
+          "id": "api-01",
+          "layer": "http",
+          "subject": "GET public competition home",
+          "given": "A competition with status published, two approved teams, and no session cookie",
+          "when": "An anonymous client GET the public portada resource by publicId",
+          "then": "Status is 200. Body.name equals the competition name. Body has no organizationId, createdByActorId, or creationKey."
+        },
+        {
+          "id": "api-02",
+          "layer": "http",
+          "subject": "GET public competition home unpublished",
+          "given": "A competition with status draft that contains internal rules and an invitation token in the operator record",
+          "when": "An anonymous client GET the public portada resource for that id",
+          "then": "Status is 404. Body is the standard api error shape. Body does not include the draft name, token, or rules blob."
+        },
+        {
+          "id": "api-03",
+          "layer": "application",
+          "subject": "GetPublicStandingsUseCase",
+          "given": "An official standing snapshot after results.official-result-approved with teamIds Barranco and Surquillo",
+          "when": "The public standings use case runs with no actorId",
+          "then": "Rows are [{position:1, teamPublicName:\"Barranco FC\", points:3, ...}, ...] in that order. Each row has no organizationId."
+        },
+        {
+          "id": "api-04",
+          "layer": "application",
+          "subject": "GetPublicStandingsUseCase empty",
+          "given": "A published competition with zero approved official results",
+          "when": "The public standings use case runs",
+          "then": "The result is an empty row list or a typed empty snapshot, not an error, and not a private statistics DTO."
+        },
+        {
+          "id": "api-05",
+          "layer": "http",
+          "subject": "GET public calendar",
+          "given": "A published fixture with one scheduled encounter and a stored EA candidate list on that encounter",
+          "when": "An anonymous client GET the public calendario resource",
+          "then": "The encounter appears with public team names and scheduledStartAt. The body has no candidates array, no provider payload, and no fixturePlanId requirement in the spectator URL."
+        },
+        {
+          "id": "api-06",
+          "layer": "http",
+          "subject": "GET public bracket omitted for league",
+          "given": "A published competition with format league and no knockout stage",
+          "when": "An anonymous client GET the public bracket resource",
+          "then": "Status is 404. The body does not invent bye scores."
+        },
+        {
+          "id": "api-07",
+          "layer": "http",
+          "subject": "GET public teams and players",
+          "given": "A published competition whose roster rows include gameAccountId, playerProfileId, and displayName null",
+          "when": "An anonymous client GET public equipos and jugadores",
+          "then": "Players render a public display name fallback. Body has no gameAccountId, no invitation token, no email."
+        },
+        {
+          "id": "api-08",
+          "layer": "http",
+          "subject": "Public routes skip service auth",
+          "given": "No Authorization header and no X-Futrob-Actor-Id",
+          "when": "An anonymous client GET a public portal path",
+          "then": "Status is not 401 with code api.unauthorized. Meta-style service auth is not required."
+        },
+        {
+          "id": "api-09",
+          "layer": "http",
+          "subject": "Private statistics path stays closed",
+          "given": "No service auth",
+          "when": "A client GET /api/v1/organizations/org-1/competitions/comp-1/rankings",
+          "then": "Status is 401. The public suite does not weaken this gate."
+        },
+        {
+          "id": "api-10",
+          "layer": "application",
+          "subject": "Public projection allowlist",
+          "given": "A statistics RankingSnapshot row {playerProfileId:\"profile-1\", teamId:\"team-1\", value:7, matchesPlayed:3, minutes:270} plus a raw EA observation {payload:{secret:1}} in game-data",
+          "when": "The public rankings mapper (once the rankings portal API exists) builds the spectator DTO",
+          "then": "The DTO contains position, public player name, public team name, value, matchesPlayed, minutes, kind, eligibility. It does not contain playerProfileId, payload, or secret."
+        }
+      ]
+    },
+    {
+      "id": "3dc7b204009a81028ef1d117bd836a70",
+      "title": "[UI] Portada, calendario, tabla, bracket, equipos, jugadores",
+      "priority": "P1",
+      "type": "Frontend",
+      "tests": [
+        {
+          "id": "ui-01",
+          "layer": "route",
+          "subject": "Anonymous portal portada",
+          "given": "Public API returns a published competition named Copa Barranco",
+          "when": "A guest opens the public portada route without a session",
+          "then": "The document shows Copa Barranco in the competition header. The page is not redirected to /login."
+        },
+        {
+          "id": "ui-02",
+          "layer": "route",
+          "subject": "No admin chrome",
+          "given": "The same published competition",
+          "when": "A guest views portada, calendario, tabla, equipos, and jugadores",
+          "then": "There is no authenticated sidebar, no Publicar competición, no Disputas, no Analíticas, no captain selection CTA."
+        },
+        {
+          "id": "ui-03",
+          "layer": "component",
+          "subject": "Tabs match format",
+          "given": "Public home says format league",
+          "when": "The portal header renders tabs",
+          "then": "Bracket is omitted. Calendario, tabla, equipos, and jugadores are present."
+        },
+        {
+          "id": "ui-04",
+          "layer": "component",
+          "subject": "Empty standings",
+          "given": "Public standings rows are []",
+          "when": "The guest opens tabla",
+          "then": "An empty state is visible. It is not a 403 and not a spinner that never ends."
+        },
+        {
+          "id": "ui-05",
+          "layer": "component",
+          "subject": "Accessible bracket list",
+          "given": "A knockout public bracket with one bye",
+          "when": "The guest opens bracket",
+          "then": "A visual bracket and an equivalent list exist. The bye row has no fake score."
+        },
+        {
+          "id": "ui-06",
+          "layer": "route",
+          "subject": "Unpublished 404",
+          "given": "Public API returns 404 for a draft id",
+          "when": "A guest opens that public URL",
+          "then": "A recoverable not-found panel is shown. Draft setup copy is not shown."
+        },
+        {
+          "id": "ui-07",
+          "layer": "i18n",
+          "subject": "es and en chrome",
+          "given": "Locale es then locale en",
+          "when": "The portal header renders",
+          "then": "Tab labels come from message keys, not hardcoded mixed language. Both catalogs define the keys."
+        },
+        {
+          "id": "ui-08",
+          "layer": "route",
+          "subject": "Deep link tab",
+          "given": "A typed public URL for the tabla tab",
+          "when": "The guest opens that URL",
+          "then": "Tabla is the current tab (aria-current=page) and standings content is shown."
+        }
+      ]
+    },
+    {
+      "id": "3dc7b204009a815ca567df9b80d931a1",
+      "title": "[Feature] Share / OG meta / deep links públicos",
+      "priority": "P1",
+      "type": "Feature",
+      "tests": [
+        {
+          "id": "share-01",
+          "layer": "ssr",
+          "subject": "Competition OG title",
+          "given": "Public home name is Copa Barranco",
+          "when": "SSR renders the public portada head",
+          "then": "A meta tag property=og:title has content Copa Barranco or a string that starts with that name. It is not the site-wide app.title alone."
+        },
+        {
+          "id": "share-02",
+          "layer": "ssr",
+          "subject": "OG image stays public",
+          "given": "The competition has only the default public image",
+          "when": "SSR renders head",
+          "then": "og:image is a public URL. The HTML has no session cookie instructions and no signed private R2 query string that authorizes other objects."
+        },
+        {
+          "id": "share-03",
+          "layer": "ssr",
+          "subject": "Draft is not indexable",
+          "given": "Public API 404 for a draft",
+          "when": "SSR renders that URL",
+          "then": "Status is 404. No og:title equals the draft internal name."
+        },
+        {
+          "id": "share-04",
+          "layer": "ssr",
+          "subject": "Encounter deep link is public",
+          "given": "A published encounter with stored EA candidates",
+          "when": "A guest opens the public encounter URL",
+          "then": "The page shows the official or scheduled public projection. It does not show candidate rows or captain actions."
+        },
+        {
+          "id": "share-05",
+          "layer": "html",
+          "subject": "Share URL has no token",
+          "given": "An invitation token tok_secret exists for the competition",
+          "when": "The portal copy-link or canonical URL is built",
+          "then": "The URL does not contain tok_secret or a raw invitation path segment."
+        },
+        {
+          "id": "share-06",
+          "layer": "ssr",
+          "subject": "Crawler HTML has no EA payload",
+          "given": "Game-data has a raw observation payload {clubsInfo:[{clubId:\"ea-1\"}]} for a club in the competition",
+          "when": "A crawler fetches the public portada HTML without executing client JS beyond SSR",
+          "then": "The HTML does not contain clubsInfo or ea-1 as a raw payload dump."
+        }
+      ]
+    },
+    {
+      "id": "3dc7b204009a8188bcfff57592ce987b",
+      "title": "[QA] No filtrar datos privados ni payloads EA",
+      "priority": "P1",
+      "type": "QA",
+      "tests": [
+        {
+          "id": "qa-01",
+          "layer": "http",
+          "subject": "Organizer versus spectator bodies",
+          "given": "The same published competition. Organizer session can read participants, disputes, and rankings with playerProfileId. Anonymous public GET exists",
+          "when": "Both responses are fetched",
+          "then": "Public JSON is not equal to the private DTO. Public JSON has no disputes, no playerProfileId, no gameAccountId. Public JSON does include the official table points for Barranco FC."
+        },
+        {
+          "id": "qa-02",
+          "layer": "http",
+          "subject": "Candidates never public",
+          "given": "GET /encounters/enc-1/candidates returns a provider candidate for an authenticated captain",
+          "when": "Anonymous GET any public encounter resource for enc-1",
+          "then": "The public body has no candidates key and no raw match payload. Status is 200 with public projection or 404, never the candidates document."
+        },
+        {
+          "id": "qa-03",
+          "layer": "http",
+          "subject": "Raw observation payload absent",
+          "given": "A RawProviderObservation {payload:{secretMatch: true}, endpointKey:\"clubs-matches\"} is stored",
+          "when": "Anonymous GET every public portal JSON resource for that competition",
+          "then": "No resource body contains secretMatch, endpointKey, or payload as an object field."
+        },
+        {
+          "id": "qa-04",
+          "layer": "http",
+          "subject": "Rankings eligibility on portal",
+          "given": "A player with 2 matches and 50 percent team minutes, and a player with 3 matches and 7 goals",
+          "when": "Anonymous GET public rankings kind=scorer (after rankings portal API exists)",
+          "then": "The ineligible player is absent. The eligible player is position 1 with value 7 and a public name."
+        },
+        {
+          "id": "qa-05",
+          "layer": "http",
+          "subject": "All ranking kinds",
+          "given": "Rebuilt snapshots for scorer, assister, rating, mvp, and goalkeeper",
+          "when": "Anonymous GET public rankings without kind filter",
+          "then": "The five kinds are present. Premium analytics fields such as percentiles are absent."
+        },
+        {
+          "id": "qa-06",
+          "layer": "html",
+          "subject": "Portal HTML anti-leak",
+          "given": "SSR of portada, tabla, and rankings tabs with the same fixtures as qa-01",
+          "when": "The HTML is searched",
+          "then": "It contains Copa Barranco. It does not contain INTERNAL_JOB_SECRET, dispute text \"protesta privada\", or payload JSON."
+        },
+        {
+          "id": "qa-07",
+          "layer": "http",
+          "subject": "Two-organization isolation",
+          "given": "Org A published competition A1 and org B published competition B1",
+          "when": "Anonymous GET public resources for A1",
+          "then": "Bodies never include B1 names or ids."
+        },
+        {
+          "id": "qa-08",
+          "layer": "http",
+          "subject": "Tokens absent",
+          "given": "An active competition invitation token and a roster invitation token",
+          "when": "Anonymous GET public resources",
+          "then": "Neither token string appears in JSON or Set-Cookie."
+        }
+      ]
+    },
+    {
+      "id": "3dc7b204009a81618902f37b83914e45",
+      "title": "[Infra] Caching / CDN de lecturas públicas",
+      "priority": "P2",
+      "type": "Feature",
+      "tests": [
+        {
+          "id": "cache-01",
+          "layer": "http",
+          "subject": "Public GET is cacheable",
+          "given": "Anonymous GET of a public portada JSON or HTML resource",
+          "when": "The response is inspected",
+          "then": "cache-control contains public and an s-maxage or max-age integer greater than 0. It is not no-store."
+        },
+        {
+          "id": "cache-02",
+          "layer": "http",
+          "subject": "Private JSON stays no-store",
+          "given": "Authenticated GET /api/v1/organizations/org-1/competitions/comp-1/rankings",
+          "when": "The response is inspected",
+          "then": "cache-control is no-store."
+        },
+        {
+          "id": "cache-03",
+          "layer": "http",
+          "subject": "Session cookie does not poison public cache",
+          "given": "A guest cache entry for publicId C1. An organizer then GET the same public URL with a session cookie",
+          "when": "A later anonymous GET publicId C1 is served",
+          "then": "The body is still the sanitized spectator projection. It does not contain organizer-only keys from the cookie request."
+        },
+        {
+          "id": "cache-04",
+          "layer": "http",
+          "subject": "Public response has no Set-Cookie",
+          "given": "Anonymous GET public portada",
+          "when": "Headers are inspected",
+          "then": "Set-Cookie is absent. Authorization is not required."
+        },
+        {
+          "id": "cache-05",
+          "layer": "http",
+          "subject": "Auth routes remain uncached",
+          "given": "GET /api/auth/get-session or the auth proxy",
+          "when": "Headers are inspected",
+          "then": "cache-control is no-store. Public cache config did not change this."
+        },
+        {
+          "id": "cache-06",
+          "layer": "integration",
+          "subject": "Rebuild invalidates or expires official reads",
+          "given": "Public standings cached as Barranco FC 3 points. Then an approved official result rebuilds standings to 6 points and emits statistics.competition-stats-rebuilt",
+          "when": "A guest GET public tabla after TTL or after explicit purge",
+          "then": "The body shows 6 points, not 3."
+        }
+      ]
+    }
+  ]
+}
