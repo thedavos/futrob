@@ -1,0 +1,382 @@
+{
+  "epic": "Analíticas Premium",
+  "sourceDoc": "docs/notion-research/analiticas-premium.md",
+  "generatedAt": "2026-09-15",
+  "note": "Proposed behavior tests for later implementation. None of these exist in the repo yet. Do not treat this file as a Vitest config.",
+  "tasks": [
+    {
+      "id": "3dc7b204009a810281f6fa0b2ae0f828",
+      "url": "https://app.notion.com/p/3dc7b204009a810281f6fa0b2ae0f828",
+      "tarea": "[Data] Agregados tendencias / percentiles / forma",
+      "tipo": "Data",
+      "tests": [
+        {
+          "id": "ANA-DATA-001",
+          "layer": "domain",
+          "behavior": "Team form windows use only approved official contributions",
+          "given": "A team with 12 official matched contributions and 3 unmatched ProviderMatch rows",
+          "when": "Analytics builds form for last 5, 10, and 20",
+          "then": "Windows contain only official matched W/D/L in scheduled order. Length is min(window, official count). Unmatched rows are absent.",
+          "symbols": [
+            "TeamMatchContribution",
+            "TeamMatchSide"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-DATA-002",
+          "layer": "domain",
+          "behavior": "Player percentiles are cohort ranks, not forecasts",
+          "given": "Official PlayerCompetitionStats for one position in a competition",
+          "when": "Analytics ranks rating and goals per 90",
+          "then": "Each player gets a percentile in [0, 100] against that position cohort. Unmatched and ineligible rows are excluded. Output has no predicted future value.",
+          "symbols": [
+            "PlayerCompetitionStats",
+            "PlayerMatchContribution.position"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-DATA-003",
+          "layer": "application",
+          "behavior": "Trends follow jornada or scheduledStartAt from scheduling, not contribution insert order",
+          "given": "Official contributions whose encounter ids map to rounds 1 then 3 then 2",
+          "when": "RebuildAnalyticsSnapshot runs",
+          "then": "Trend series is ordered by Encounter.scheduledStartAt then roundId. Missing kickoff on the contribution itself is filled through a reader port.",
+          "symbols": [
+            "Encounter.scheduledStartAt",
+            "StatisticsReaderPort"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-DATA-004",
+          "layer": "application",
+          "behavior": "Replay of the same official revision does not duplicate snapshots",
+          "given": "An AnalyticsSnapshot already built for officialResultId+revision",
+          "when": "The same official-result-approved or rebuild runs again",
+          "then": "One snapshot remains. Aggregates are identical.",
+          "symbols": [
+            "RebuildAnalyticsSnapshot",
+            "analytics.snapshot-generated"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-DATA-005",
+          "layer": "application",
+          "behavior": "Voided official results drop out of premium aggregates",
+          "given": "A snapshot that included revision N",
+          "when": "The official result is voided and statistics reproject",
+          "then": "The next analytics rebuild omits that revision. Form and percentiles recompute from remaining approved rows.",
+          "symbols": [
+            "ProjectOfficialResultUseCase",
+            "voidOfficialResultAndUnproject"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-DATA-006",
+          "layer": "domain",
+          "behavior": "Home and away splits use TeamMatchContribution.side",
+          "given": "Matched home and away official rows for one team",
+          "when": "Team analytics computes local vs visitante",
+          "then": "Each split only includes its side. Totals of both splits equal the official matched count.",
+          "symbols": ["TeamMatchContribution.side"],
+          "exists": false
+        }
+      ]
+    },
+    {
+      "id": "3dc7b204009a81de8375d43de9ca0bca",
+      "url": "https://app.notion.com/p/3dc7b204009a81de8375d43de9ca0bca",
+      "tarea": "[Auth] Gate de plan / entitlement premium",
+      "tipo": "Backend",
+      "tests": [
+        {
+          "id": "ANA-AUTH-001",
+          "layer": "application",
+          "behavior": "Premium entitlement is decided on the server",
+          "given": "An organization with premiumAnalytics false and a member actor",
+          "when": "GetTeamAnalytics (or require entitlement) runs with a client-supplied plan=premium",
+          "then": "The use case ignores the client plan and returns analytics.entitlement_required.",
+          "symbols": [
+            "EntitlementPort",
+            "GetEffectiveAccessUseCase"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-AUTH-002",
+          "layer": "application",
+          "behavior": "Missing RBAC is forbidden, not a payment miss",
+          "given": "An actor with no competition membership in org B, which has premium on",
+          "when": "The actor requests org B team analytics",
+          "then": "Result is analytics.read_forbidden. No snapshot fields leak.",
+          "symbols": [
+            "ANALYTICS_PERMISSION.read",
+            "AuthorizationPort.decide"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-AUTH-003",
+          "layer": "http",
+          "behavior": "EffectiveAccess exposes analytics.read as allowed false on free plan without granting data",
+          "given": "A member of a free organization",
+          "when": "GET /authorization/effective-access asks for analytics.read",
+          "then": "permissions includes analytics.read allowed false or omits it as not allowed. No analytics payload is returned on this route.",
+          "symbols": [
+            "EffectiveAccessDto",
+            "ALL_PERMISSIONS"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-AUTH-004",
+          "layer": "application",
+          "behavior": "Grant allow without org entitlement still lacks the plan",
+          "given": "A staff grant allow analytics.read on a free organization",
+          "when": "Require premium analytics",
+          "then": "Entitlement fails (402 path). RBAC may be allowed. Both axes are recorded in the error code.",
+          "symbols": ["AccessGrant", "Organization"],
+          "exists": false
+        },
+        {
+          "id": "ANA-AUTH-005",
+          "layer": "adapter",
+          "behavior": "Flag flip is visible on the next EffectiveAccess read",
+          "given": "An organizer who just enabled the premium analytics flag",
+          "when": "getEffectiveAccess runs again in the same scope",
+          "then": "analytics.read is allowed true if role bundles include it. No client cache is treated as source of truth.",
+          "symbols": ["contextual-authorization.adapter.ts"],
+          "exists": false
+        }
+      ]
+    },
+    {
+      "id": "3dc7b204009a81c0a4adf8c1b53e9c55",
+      "url": "https://app.notion.com/p/3dc7b204009a81c0a4adf8c1b53e9c55",
+      "tarea": "[API] Endpoints gated premium (equipo, jugador, org)",
+      "tipo": "Backend",
+      "tests": [
+        {
+          "id": "ANA-API-001",
+          "layer": "http",
+          "behavior": "Unauthenticated premium reads are 401",
+          "given": "No session and no service auth",
+          "when": "GET a premium analytics path",
+          "then": "401 with the existing api unauthorized code. No snapshot body.",
+          "symbols": ["createServiceAuthMiddleware"],
+          "exists": false
+        },
+        {
+          "id": "ANA-API-002",
+          "layer": "http",
+          "behavior": "Free-plan member receives typed 402",
+          "given": "Service-auth actor who is a member of org A with premium off",
+          "when": "GET team, player, or organizer analytics for org A",
+          "then": "HTTP 402, code analytics.entitlement_required, messageKey errors.analytics.entitlement_required. statusForFailureCode maps that code to 402.",
+          "symbols": [
+            "failureToHttp",
+            "statusForFailureCode"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-API-003",
+          "layer": "http",
+          "behavior": "Cross-tenant read is 403 without confirming the resource",
+          "given": "Two organizations. Actor belongs only to org A. Org B has premium snapshots.",
+          "when": "GET org B analytics with a guessed competition id",
+          "then": "403 analytics.read_forbidden or equivalent not-found-without-leak per AC-SEC-001. No row counts from org B.",
+          "symbols": ["AC-SEC-001"],
+          "exists": false
+        },
+        {
+          "id": "ANA-API-004",
+          "layer": "http",
+          "behavior": "Premium 200 returns official-derived fields only",
+          "given": "Entitled actor and a rebuilt snapshot",
+          "when": "GET team, player, and organizer analytics",
+          "then": "Bodies parse with api-contracts. No EA payload, candidate ids, dispute text, or provider secrets. The player me analytics route is self-only.",
+          "symbols": [
+            "@futrob/api-contracts",
+            "@futrob/sdk"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-API-005",
+          "layer": "http",
+          "behavior": "GET is idempotent and does not rebuild as a side effect of a second call",
+          "given": "A snapshot at revision N",
+          "when": "Two GETs in a row",
+          "then": "Identical bodies. No duplicate analytics.snapshot-generated events.",
+          "symbols": ["GetTeamAnalytics"],
+          "exists": false
+        },
+        {
+          "id": "ANA-API-006",
+          "layer": "http",
+          "behavior": "Invalid query is 400 validation, not 402",
+          "given": "An entitled actor",
+          "when": "GET with an empty competitionId or an unknown window",
+          "then": "400 api.validation_error. Zod issues only.",
+          "symbols": ["validationErrorResponse"],
+          "exists": false
+        }
+      ]
+    },
+    {
+      "id": "3dc7b204009a81f89f4bcbd8b624595c",
+      "url": "https://app.notion.com/p/3dc7b204009a81f89f4bcbd8b624595c",
+      "tarea": "[UI] Dashboards premium equipo/jugador",
+      "tipo": "Frontend",
+      "tests": [
+        {
+          "id": "ANA-UI-PLAYER-001",
+          "layer": "ui",
+          "behavior": "Locked empty state when entitlement is missing",
+          "given": "A signed-in player whose EffectiveAccess denies analytics.read",
+          "when": "They open the premium team or player dashboard",
+          "then": "EmptyState explains the lock. No trend numbers from a prior cache. Nav Analíticas is hidden or disabled. Direct URL still hits the API gate.",
+          "symbols": [
+            "EmptyState",
+            "useCan",
+            "nav-registry analytics"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-UI-PLAYER-002",
+          "layer": "ui",
+          "behavior": "Ready dashboard shows official trends, percentiles, form, comparisons",
+          "given": "200 from the premium team and player endpoints",
+          "when": "The dashboard renders",
+          "then": "Stat uses the perfil composition from design.md. Form windows 5, 10, 20 are official. No PlayerGameProfileDto series. No prediction copy.",
+          "symbols": [
+            "Stat",
+            "PlayerProfileFormChart"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-UI-PLAYER-003",
+          "layer": "ui",
+          "behavior": "Partial official data is not shown as zero",
+          "given": "A snapshot with partial flags on shots",
+          "when": "The dashboard renders percentiles for shots",
+          "then": "Muted StatValue uses the unknown placeholder from design.md. Not 0.",
+          "symbols": ["StatValue tone=muted"],
+          "exists": false
+        },
+        {
+          "id": "ANA-UI-PLAYER-004",
+          "layer": "ui",
+          "behavior": "Locales and deep links",
+          "given": "es default and en toggle",
+          "when": "The user changes locale and the competition or team search params",
+          "then": "Copy comes from message keys. URL keeps the selection after reload.",
+          "symbols": ["Paraglide", "queryKeys"],
+          "exists": false
+        }
+      ]
+    },
+    {
+      "id": "3dc7b204009a816993a1d7eee296932c",
+      "url": "https://app.notion.com/p/3dc7b204009a816993a1d7eee296932c",
+      "tarea": "[UI] Panel KPIs premium del organizador",
+      "tipo": "Frontend",
+      "tests": [
+        {
+          "id": "ANA-UI-ORG-001",
+          "layer": "ui",
+          "behavior": "Organizer KPIs match the gated organizer analytics DTO",
+          "given": "Entitled organizer and a 200 organizer analytics body",
+          "when": "The org or competition panel renders",
+          "then": "Calendar compliance, dispute count, reschedule count, data-quality, and provider status equal the DTO. No second client-side aggregation from foreign endpoints.",
+          "symbols": [
+            "Stat",
+            "GetOrganizerAnalytics"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-UI-ORG-002",
+          "layer": "ui",
+          "behavior": "Staff without entitlement sees 402, not superuser health",
+          "given": "Staff actor, premium off",
+          "when": "They open the organizer analytics panel",
+          "then": "EmptyState for entitlement. GET /internal/game-data/providers/:key/health is not called.",
+          "symbols": [
+            "registerProviderHealthRoutes",
+            "ORGANIZATION_PERMISSION.superusersManage"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-UI-ORG-003",
+          "layer": "application",
+          "behavior": "KPI counts are organization scoped",
+          "given": "Open schedule-change requests in org A and org B",
+          "when": "Organizer analytics for org A runs",
+          "then": "Reschedule count equals org A only. Dispute count uses SelectionStatus in org A only.",
+          "symbols": [
+            "ScheduleChangeRequest",
+            "SelectionStatus"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-UI-ORG-004",
+          "layer": "ui",
+          "behavior": "Provider status is coarse and sanitized",
+          "given": "A degraded ProviderHealthSnapshot",
+          "when": "The organizer panel shows salud del proveedor",
+          "then": "Status is healthy, degraded, or unavailable. No requestId, jobId, or upstream body.",
+          "symbols": ["ProviderHealthSnapshot.status"],
+          "exists": false
+        }
+      ]
+    },
+    {
+      "id": "3dc7b204009a814b84edfd831adc1004",
+      "url": "https://app.notion.com/p/3dc7b204009a814b84edfd831adc1004",
+      "tarea": "[UX] IA de la primera capa premium (sin predicciones)",
+      "tipo": "UX",
+      "tests": [
+        {
+          "id": "ANA-UX-001",
+          "layer": "doc",
+          "behavior": "IA names three first-layer surfaces and their states",
+          "given": "The UX deliverable",
+          "when": "A UI implementer reads it",
+          "then": "Team, player, and organizer surfaces list routes, Stat composition, and states loading, empty official data, partial, forbidden, entitlement missing, ready.",
+          "symbols": ["design.md"],
+          "exists": false
+        },
+        {
+          "id": "ANA-UX-002",
+          "layer": "doc",
+          "behavior": "Metric inventory excludes predictions",
+          "given": "PRD section 14 and WONT-06",
+          "when": "The IA lists metrics",
+          "then": "Trends, percentiles, form, comparisons, and organizer ops are in. Predicted winners, expected goals, and AI advice are out.",
+          "symbols": ["WONT-06", "DEC-044"],
+          "exists": false
+        },
+        {
+          "id": "ANA-UX-003",
+          "layer": "doc",
+          "behavior": "Locked premium copy is specified in es and en",
+          "given": "Entitlement missing and permission missing as two states",
+          "when": "Copy is listed",
+          "then": "402 and 403 have distinct sentence-case captions. No raw error codes in the heading.",
+          "symbols": ["EmptyStateTitle", "messages/"],
+          "exists": false
+        }
+      ]
+    }
+  ]
+}
