@@ -28,7 +28,7 @@
           "given": "Live apps/api, INTERNAL_JOB_SECRET, actor with org create permission, two-team league draft that publishes.",
           "when": "npm run cli -- e2e-golden-path --actor actor_demo",
           "expect": "Exit 0. Stdout contains Golden path OK. JSON encounterCount is 1 for a two-team single round-robin. A second GET of the same fixturePlanId returns the same encounter ids.",
-          "existing": "e2e-golden-path stops after generateFixture. CI does not run it. Replay of GET fixture is not in the CLI command."
+          "existing": "e2e-golden-path stops after generateFixture. CI does not run it. fixtures.test.ts already replays POST fixture and GET. competitions.test.ts publishes then 409 on structural delete."
         },
         {
           "id": "e2e-reschedule-slot-2-only",
@@ -39,7 +39,8 @@
           "given": "Encounter with two pending OfficialMatch slots. Captain of home team. HTTP schedule-change route exists.",
           "when": "Captain proposes slot 2 only. Rival accepts.",
           "expect": "Slot 1 scheduledStartAt equals the original ISO string. Slot 2 scheduledStartAt equals the proposed ISO string. Candidate window for slot 2 uses the new time.",
-          "blockedOn": "https://app.notion.com/p/3dc7b204009a818c95a0e756f935c4f8"
+          "blockedOn": "https://app.notion.com/p/3dc7b204009a818c95a0e756f935c4f8",
+          "existing": "CreateScheduleChangeRequestUseCase is not registered in createSchedulingModule."
         },
         {
           "id": "e2e-sync-does-not-officialize",
@@ -60,7 +61,7 @@
           "given": "Candidates ready. Captain A has encounters.official-selection.propose. Captain B has resolve.",
           "when": "A posts selection slot 1 providerKey ea-clubs externalId m-1. B confirms.",
           "expect": "OfficialResult.status is approved. Event results.official-result-approved emitted once. GET standings home goals 2 from that snapshot.",
-          "existing": "apps/cli results-smoke and package tests with in-memory fakes. No HTTP.",
+          "existing": "apps/cli results-smoke and package tests with in-memory fakes. No HTTP. confirmOfficialSelectionAndProject is unused. handleStatisticsProjectionJob throws not implemented.",
           "blockedOn": "https://app.notion.com/p/3dc7b204009a812d8f2ec66662d3a161"
         },
         {
@@ -177,6 +178,26 @@
           "given": "One awaiting_opponent_confirmation selection.",
           "when": "Promise.all of two execute calls with the same encounterId.",
           "expect": "Approved OfficialResult count 1. events named results.official-result-approved length 1. The other result is Err with code results.selection_not_confirmable or a tagged conflict."
+        },
+        {
+          "id": "prov-dead-job-replay-acks",
+          "status": "missing",
+          "layer": "http",
+          "covers": ["NFR-02"],
+          "subject": "ExecuteProviderSyncJobUseCase.execute and handleGameDataSyncJob",
+          "given": "Job already status dead.",
+          "when": "POST .../run or queue redelivery.",
+          "expect": "Response status succeeded-or-dead as-is. Ingest call count 0. Worker action ack, not retry into futrob-job-dlq."
+        },
+        {
+          "id": "prov-select-replay-new-event",
+          "status": "missing",
+          "layer": "application",
+          "covers": ["AC-SEC-002", "NFR-02"],
+          "subject": "SelectOfficialMatchesUseCase.execute",
+          "given": "A valid awaiting selection already saved for the encounter.",
+          "when": "execute the same payload again.",
+          "expect": "Pin the product rule. Either one selection id and events.length 1, or a tagged conflict. Today a second execute saves a new id and a second results.official-matches-selected."
         },
         {
           "id": "prov-sync-http-dedupe",
@@ -298,13 +319,14 @@
         },
         {
           "id": "contract-snapshot-fixture-managed",
-          "status": "missing",
+          "status": "partial",
           "layer": "http",
           "covers": ["FTR-SCH-002"],
           "subject": "PUT /api/v1/encounters/{encounterId}/schedule-snapshot",
           "given": "Encounter owned by a generated fixture plan.",
           "when": "PUT a manual snapshot.",
-          "expect": "HTTP 409. code scheduling.fixture_managed_conflict."
+          "expect": "HTTP 409. code scheduling.fixture_managed_conflict. OpenAPI PUT responses include 409.",
+          "existing": "fixtures.test.ts already asserts the 409 code. futrobOpenApiV1 PUT lists 200, 400, 401, 403 only."
         },
         {
           "id": "contract-standings-empty",
@@ -347,6 +369,50 @@
           "given": "mockFetch returns a ready payload.",
           "when": "client.results.listEncounterCandidates(encounter-1)",
           "expect": "Resolves to status ready and candidates []. Treat as client parser only. Do not count toward OpenAPI CI drift."
+        },
+        {
+          "id": "contract-sync-run-409-messagekey",
+          "status": "missing",
+          "layer": "http",
+          "covers": ["NFR-02", "ADR-0011"],
+          "subject": "POST /api/v1/internal/game-data/sync-jobs/{jobId}/run",
+          "given": "Job is not claimable (already running or terminal).",
+          "when": "POST run.",
+          "expect": "HTTP 409. Body parses with apiErrorSchema: code game_data.sync_job_not_claimable and messageKey errors.game_data.sync_job_not_claimable. Today the handler can omit messageKey.",
+          "existing": "provider-sync-jobs.test.ts has 202, 200, 204, and 401 without tagged code. No 409 case."
+        },
+        {
+          "id": "contract-get-schedule-snapshot",
+          "status": "missing",
+          "layer": "http",
+          "covers": ["FTR-SCH-002"],
+          "subject": "GET /api/v1/encounters/{encounterId}/schedule-snapshot",
+          "given": "Fixture-owned encounter that already has a snapshot.",
+          "when": "Authenticated GET.",
+          "expect": "HTTP 200. Body equals the snapshot Zod schema. Foreign org is 401 or 404 with a stable code. OpenAPI currently lists 200, 401, 404.",
+          "existing": "OpenAPI path exists. apps/api route exists. No HTTP test for GET."
+        },
+        {
+          "id": "contract-standings-403",
+          "status": "missing",
+          "layer": "http",
+          "covers": ["AC-SEC-001"],
+          "subject": "GET /api/v1/organizations/{orgId}/competitions/{compId}/standings",
+          "given": "Actor without statistics.read on that organization.",
+          "when": "GET standings.",
+          "expect": "HTTP 403. code statistics.read_forbidden. OpenAPI documents 401 and 403 and has no 404 for this path.",
+          "existing": "Route throws statistics.read_forbidden. No apps/api HTTP test. SDK statistics.test.ts only asserts mockFetch URLs."
+        },
+        {
+          "id": "contract-candidates-401-not-emitted",
+          "status": "partial",
+          "layer": "contract",
+          "covers": ["AC-SEC-001"],
+          "subject": "GET /encounters/{encounterId}/candidates OpenAPI vs failureToHttp",
+          "given": "Missing bearer, or actor forbidden for official-selection.",
+          "when": "Compare futrobOpenApiV1 responses to the Hono handler.",
+          "expect": "Document matches the wire. Today OpenAPI lists 401 and 404. Unauthorized and forbidden both become 404 results.encounter_not_found so existence is hidden. Pin that mapping or add a 401 that the handler actually returns.",
+          "existing": "encounter-candidates.test.ts pins 200, 503, and bearerAuth. encounters.test.ts asserts 404 only."
         }
       ]
     },
@@ -370,7 +436,7 @@
           "subject": ".cursor/skills/verify-futrob/features/README.md and SKILL.md Out of scope",
           "given": "No Match Center UI in apps/mobile or apps/web.",
           "when": "A verification run is reported.",
-          "expect": "The run records verified-unreachable or skip for native competitive flows. It does not claim AC-MOB-002 captain paths via Expo web."
+          "expect": "The run records verified-unreachable or skip for native competitive flows. It does not claim AC-MOB-002 captain paths via Expo web. It does not treat the skip as a product Won't for MVP exit."
         },
         {
           "id": "mobile-no-bc-imports",
@@ -394,7 +460,17 @@
           "existing": "Assertions exist. apps/mobile is not in root vite.config.ts test.projects."
         },
         {
-          "id": "mobile-captain-encounter",
+          "id": "mobile-default-origin-misses-api",
+          "status": "missing",
+          "layer": "mobile",
+          "covers": ["AC-MOB-003"],
+          "subject": "apps/mobile/src/config/env.ts and getFutrobClient",
+          "given": "Default EXPO_PUBLIC_FUTROB_API_BASE_URL http://localhost:3000.",
+          "when": "Call results.listEncounterCandidates.",
+          "expect": "Until a BFF proxy or API origin change exists, document that this call 404s. Competitive subset cannot use the default origin."
+        },
+        {
+          "id": "mobile-captain-opens-encounter",
           "status": "missing",
           "layer": "mobile",
           "covers": ["AC-MOB-002", "AC-E2E-001"],

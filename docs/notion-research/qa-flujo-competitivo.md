@@ -16,7 +16,7 @@ The repo already has a strong pyramid **below** that chain. Domain and applicati
 
 **Provider down, duplicates, race.** `NFR-02` and `AC-SEC-002` say a replayed sync job, confirmation, or outbox event must not duplicate business effects. `AC-SEL-003` says an already approved provider match id cannot fill another OfficialMatch.
 
-**OpenAPI contract tests.** Zod in `@futrob/api-contracts` is the source. `npm run generate:openapi` writes `packages/api-contracts/openapi/openapi.yaml`. ADR-0005 says CI should fail on drift when that check exists. It does not exist yet.
+**OpenAPI contract tests.** `futrobOpenApiV1` in `packages/api-contracts/src/v1/openapi/document.ts` is a hand-written OpenAPI 3.1 object. Zod request/response schemas are imported and `void`ed so refactors keep them referenced; they are **not** compiled (`zod-to-openapi` is not a dependency). `npm run generate:openapi` dumps that object to committed yaml/json. Runtime `GET /api/v1/openapi.json` serializes the in-memory TS document, not those files. ADR-0005 says CI should fail on dump drift when that check exists. It does not exist yet.
 
 **Nightly E2E.** A scheduled job that runs the Must matrix and reports failures. It must not block pull requests unless the team agrees otherwise.
 
@@ -90,15 +90,16 @@ CI never runs `e2e-golden-path` or `verify-futrob`. Those are operator recipes.
 
 Closest automated chain today:
 
-1. HTTP `apps/api/src/http/routes/fixtures.test.ts` generates a fixture, replays generation, reads the plan, and audits a schedule edit.
-2. HTTP `GET /api/v1/encounters/:encounterId/candidates` returns windowed candidates and hides another organization's encounter as `404 results.encounter_not_found`.
-3. Application `SelectOfficialMatchesUseCase` persists `awaiting_opponent_confirmation`.
-4. Application `ConfirmOfficialSelectionUseCase` writes an approved `OfficialResult` and emits `results.official-result-approved`.
-5. Application `ProjectOfficialResultUseCase` updates contributions from approved results.
+1. HTTP `apps/api/src/http/routes/competitions.test.ts` onboards an organizer, publishes, and asserts a later structural delete is `409 competitions.not_editable`.
+2. HTTP `apps/api/src/http/routes/fixtures.test.ts` generates a fixture, replays generation with the same body, reads the plan, asserts `PUT` schedule-snapshot is `409 scheduling.fixture_managed_conflict` on a fixture-owned encounter, and audits a schedule edit.
+3. HTTP `GET /api/v1/encounters/:encounterId/candidates` returns windowed candidates and hides an unauthorized actor as `404 results.encounter_not_found`.
+4. Application `SelectOfficialMatchesUseCase` persists `awaiting_opponent_confirmation`.
+5. Application `ConfirmOfficialSelectionUseCase` writes an approved `OfficialResult` and emits `results.official-result-approved`.
+6. Application `ProjectOfficialResultUseCase` updates contributions from approved results.
 
-Those tests do not share one fixture. They do not open a browser. They do not call missing HTTP for selection, confirmation, or captain reschedule requests.
+Those tests do not share one fixture. They do not open a browser. They do not call HTTP for selection, confirmation, or captain reschedule requests. Those routes do not exist. `confirmOfficialSelectionAndProject` in `apps/api/src/di/create-modules.ts` composes confirm then project under an encounter lock. No route, CLI command, or worker calls it. `handleStatisticsProjectionJob` throws `"statistics-projection.worker: not implemented"`.
 
-Web shell already registers a standings nav href (`apps/web/src/shared/presentation/shell/nav-registry.ts`). There is no Match Center route or results presentation under `apps/web/src/modules`.
+Web shell registers fixture, encounters, standings, bracket, and rankings hrefs with `stub: true` in `apps/web/src/shared/presentation/shell/nav-registry.ts`. There is no Match Center route. The web BFF under `apps/web/src/routes/api/v1` has no encounters, fixture, or standings proxies. Clients that hit `:3000` cannot reach those product-API paths.
 
 ### Paths and symbols
 
@@ -108,18 +109,19 @@ Web shell already registers a standings nav href (`apps/web/src/shared/presentat
 - `CreateScheduleChangeRequestUseCase.execute`
 - `ListEncounterCandidatesUseCase.execute`
 - `GetCompetitionStandingsUseCase` / `GetCompetitionRankingsUseCase` (wired in `apps/api/src/di/statistics.module.ts`)
+- `confirmOfficialSelectionAndProject` in `apps/api/src/di/create-modules.ts` (unused by HTTP)
 - Event names in `apps/web/src/shared/contracts/events/catalog.ts`: `results.official-result-approved`, `scheduling.reschedule-requested`
 
 ### Gaps
 
 - No single test implements `AC-E2E-001` as one journey.
-- No E2E for captain reschedule of slot 2 only (`AC-SCH-001`). HTTP can edit a fixture encounter as organizer. Captain `CreateScheduleChangeRequestUseCase` has no HTTP route.
+- No E2E for captain reschedule of slot 2 only (`AC-SCH-001`). HTTP can edit a fixture encounter as organizer (`PATCH .../fixtures/{planId}/encounters/{encounterId}`). `CreateScheduleChangeRequestUseCase` is not registered in `createSchedulingModule` and has no HTTP route.
 - No E2E that syncs EA, lists five candidates, and asserts they are not official (`AC-EA-001`).
-- No HTTP or UI for propose and confirm (`SelectOfficialMatchesUseCase` / `ConfirmOfficialSelectionUseCase` are package-only). Notion card [API Endpoints selección / confirmación / disputa](https://app.notion.com/p/3dc7b204009a812d8f2ec66662d3a161) is Not started.
+- No HTTP or UI for propose and confirm. Use cases live in the package and in `results.module.ts`. Notion card [API Endpoints selección / confirmación / disputa](https://app.notion.com/p/3dc7b204009a812d8f2ec66662d3a161) is Not started.
 - No E2E for independent vs aggregate series (`AC-FIX-002`).
 - No HTTP test for `GET .../standings` or `GET .../rankings`. Grep finds no `apps/api/src/http` test for those paths.
 - Public portal BC exports nothing. `AC-WEB-003` cannot be driven.
-- Two-org isolation exists as RBAC cases and one candidates 404, not as a full competitive E2E (`AC-SEC-001`).
+- Two-org isolation exists as RBAC foreign-scope denials and outsider 403 or 404 on the same competition. There is no HTTP test that creates org A and org B, then has actor A mutate B's fixture or result (`AC-SEC-001`). The Postgres fixture FK test is skipped without `TEST_DATABASE_URL`.
 
 ### Behavior tests
 
@@ -154,7 +156,9 @@ This is the strongest existing slice. Failures are `TaggedError` with stable `co
 
 **Duplicates.** Migration `0019` has `UNIQUE (provider_key, external_match_id)` on `provider_matches` and `UNIQUE (provider_key, resource_type, external_resource_id, payload_hash)` on raw observations. `InMemoryRawObservationRepository` keeps the first observation for an idempotency key. `InMemoryProviderMatchRepository.upsertMany` upserts by provider identity. `SelectOfficialMatchesUseCase` fails with `DuplicateProviderMatch` when the same `externalId` fills two slots. Enqueue of the same sync body returns the same job `id`. HTTP `POST /internal/game-data/sync-jobs` then two `POST .../run` keeps provider calls at `1`.
 
-**Race and replay.** `CreateScheduleChangeRequestUseCase` returns the same request on identical idempotency replay and emits one `scheduling.reschedule-requested`. A different payload with the same key yields `scheduling.schedule_change_idempotency_conflict`. Postgres `provider-reliability.integration.test.ts` claims one of two concurrent `claimNext` calls. `ProjectOfficialResultUseCase` keeps one contribution when projecting the same revision twice.
+**Race and replay.** `CreateScheduleChangeRequestUseCase` returns the same request on identical idempotency replay and emits one `scheduling.reschedule-requested`. A different payload with the same key yields `scheduling.schedule_change_idempotency_conflict`. Postgres `provider-reliability.integration.test.ts` claims one of two concurrent `claimNext` calls. `ProjectOfficialResultUseCase` keeps one contribution when projecting the same revision twice. `VoidOfficialResultUseCase` converges on repeat (one `results.official-result-voided`). `SelectOfficialMatchesUseCase` always inserts a new selection id and publishes another `results.official-matches-selected`. It has no idempotency key.
+
+API composition uses `NoopEventPublisher` (`apps/api/src/adapters/events/noop-event-publisher.ts`). `handleStatisticsProjectionJob` and `handleNotificationJob` throw `not implemented`. There is no outbox table. Cloudflare `futrob-job-dlq` in `apps/web/wrangler.jsonc` has no consumer test.
 
 `TEST_DATABASE_URL` suites use `describe.skipIf(!databaseUrl)`. CI does not set that variable, so UNIQUE `23505` and claim races do not run on GitHub Actions.
 
@@ -167,6 +171,8 @@ This is the strongest existing slice. Failures are `TaggedError` with stable `co
 - `ScheduleChangeRequestIdempotencyConflict` code `scheduling.schedule_change_idempotency_conflict`
 - `handleGameDataSyncJob` in `apps/web/src/workers/game-data-sync.worker.ts`
 - `PostgresProviderSyncJobRepository.claimNext`
+- `NoopEventPublisher`
+- `InMemoryEncounterMutationLock` / `pg_advisory_xact_lock` (used only by the unused confirm wrapper)
 
 ### Gaps
 
@@ -174,9 +180,12 @@ This is the strongest existing slice. Failures are `TaggedError` with stable `co
 - `AC-SEL-003` (reuse of an approved provider match on another OfficialMatch) is not tested. `DuplicateProviderMatch` only covers two slots in one propose call.
 - `ConfirmOfficialSelectionUseCase` computes `revision = (existing?.revision ?? 0) + 1` and the test expects a second confirm to produce revision `2` and a second `results.official-result-approved`. That contradicts `AC-SEC-002` replay-without-duplicate-effects. The use case also requires selection status `awaiting_opponent_confirmation`, so a true HTTP retry after approval should hit `SelectionNotConfirmable`. There is no test that a second confirm after status `approved` is a no-op with one result and one event.
 - No HTTP test that `GET /encounters/:id/candidates` returns `503` and `results.candidate_data_unavailable` when the provider is down. OpenAPI already advertises `503` for that operation.
-- No two-captain concurrent confirm race at application or HTTP layer.
-- Outbox replay is not an HTTP E2E. Fixture generation fails closed if publish throws (`generate-competition-fixture.use-case.test.ts`). Reschedule request rolls back if publish fails. There is no queue consumer test that redelivery of `results.official-result-approved` does not double standings.
+- No two-captain concurrent confirm race at application or HTTP layer. Without the unused lock wrapper, two confirms can both read `awaiting_*` and both compute `revision = 1`.
+- Select replay is not idempotent. Each `execute` saves a new id and emits another event.
+- Dead-job replay is not asserted. Only the succeeded early-return is tested. Worker tests never use `jobResponse("dead")`.
+- Outbox replay cannot pass today. There is no outbox. Fixture generation fails closed if publish throws. Reschedule request rolls back if publish fails. The statistics worker stub throws instead of projecting.
 - Sync never auto-officializes is implied by missing selection HTTP, not asserted in one test that standings stay empty after sync.
+- `failureToHttp` would map several schedule-change codes (`scheduling.reschedule_limit_reached`, `scheduling.rescheduling_disabled`, `scheduling.active_schedule_change_request_exists`) to HTTP 500. They do not match the current heuristics.
 
 ### Behavior tests
 
@@ -203,35 +212,50 @@ Keep these as integration and HTTP tests even after the E2E matrix exists. Do no
 
 ### Context
 
-`packages/api-contracts/src/v1/openapi/document.ts` is the OpenAPI 3.1 document. `scripts/generate-openapi.ts` writes committed `openapi.json` and `openapi.yaml`. `apps/api` serves them at `/api/v1/openapi.json`. `apps/web` has matching TanStack routes. `GET /api/v1/meta/ping` is asserted as `{ ok: true, service: "futrob", apiVersion: "v1" }`.
+`packages/api-contracts/src/v1/openapi/document.ts` is the OpenAPI 3.1 document (`title` Futrob Private API, `version` `0.1.0`). `scripts/generate-openapi.ts` writes committed `openapi.json` and `openapi.yaml`. `getOpenApiJsonText` in `serve.ts` serializes the same TS object. `apps/api` serves it at `GET /api/v1/openapi.json` and `/openapi.yaml`. `apps/web` has matching TanStack routes. `GET /api/v1/meta/ping` is asserted as `{ ok: true, service: "futrob", apiVersion: "v1" }`.
 
-What exists today is **schema and document pinning**, not a live contract suite (no Spectral, Dredd, or Schemathesis).
+What exists today is **schema and document pinning**, not a live contract suite (no Spectral, Dredd, Schemathesis, Pact, or `openapi-diff`). `@futrob/sdk` is hand-written over the same Zod schemas, not OpenAPI codegen.
 
 Pinned OpenAPI tests:
 
 - `encounter-candidates.test.ts` expects `operationId` `listEncounterCandidates`, `200` schema `ListEncounterCandidatesResponse`, and `503` `$ref` `ApiError`.
 - `provider-sync-jobs.test.ts` expects `/game-data/sync-jobs` absent and `/internal/game-data/sync-jobs` present.
+- `request-correlation.test.ts` injects `X-Request-ID` on every operation (`operationCount > 30`).
+- `rate-limit.test.ts` pins `429` on five invitation/search ops, not on competitive paths.
 
-HTTP tests parse responses with the same Zod schemas (`listEncounterCandidatesResponseSchema`, `fixturePlanSchema`, `providerSyncJobResponseSchema`). SDK `results.test.ts` mocks fetch and asserts `listEncounterCandidates("encounter-1")` equals the ready payload with empty `candidates`. That would still pass if the real Hono handler disappeared. It is a client parser test, not a contract against the server.
+HTTP tests parse some responses with Zod (`listEncounterCandidatesResponseSchema`, `fixturePlanSchema`, `providerSyncJobResponseSchema`). SDK `results.test.ts` mocks fetch and asserts `listEncounterCandidates("encounter-1")` equals the ready payload with empty `candidates`. That would still pass if the real Hono handler disappeared. It is a client parser test, not a contract against the server.
 
-Critical competitive paths **missing from OpenAPI** (grep of `packages/api-contracts` finds none):
+Auth on the product API is `Authorization: Bearer <INTERNAL_JOB_SECRET>` plus `X-Futrob-Actor-Id`. OpenAPI `security: [{ bearerAuth: [] }]` does not document the actor header. `servers[0].description` still says the API is the same Worker as `apps/web`; product HTTP is `apps/api` on Railway. `failureToHttp` infers status from `code` substrings (`not_found` → 404, `forbidden`/`unauthorized` → 403, some `conflict` → 409, `validation`/`invalid` → 400). `ApiError.code` is an unconstrained string. `ApiError.details` allowlist omits `encounterId`, `teamId`, `permission`, `expected`/`received` used by results/scheduling `TaggedError`s.
 
-- select official matches
-- confirm official selection
+Critical competitive paths **missing from OpenAPI and from HTTP** (grep of `packages/api-contracts` finds none):
+
+- select official matches (DI `selectOfficialMatches` unused by routes)
+- confirm official selection (`confirmOfficialSelectionAndProject` unused by routes)
+- void official result
 - dispute
-- create or list schedule-change requests
+- create or list schedule-change requests (`CreateScheduleChangeRequestUseCase` is not in `createSchedulingModule`)
 
 Present but weakly tested at HTTP:
 
-- `GET /organizations/{organizationId}/competitions/{competitionId}/standings`
-- `GET .../rankings`
-- `PUT /encounters/{encounterId}/schedule-snapshot` (organizer snapshot, not captain reschedule)
+- `GET /organizations/{organizationId}/competitions/{competitionId}/standings` (OpenAPI 200/401/403, no 404; no HTTP test; `statistics.read_forbidden` → 403)
+- `GET .../team-statistics` and `GET .../rankings` (same; SDK only asserts mock URLs)
+- `GET /encounters/{encounterId}/schedule-snapshot` (OpenAPI 200/401/404; no HTTP test)
+- `PUT /encounters/{encounterId}/schedule-snapshot` (organizer snapshot, not captain reschedule). HTTP already asserts `409 scheduling.fixture_managed_conflict`. OpenAPI for that PUT lists 200, 400, 401, 403. It does not list 409. Bad bodies use `api.validation_failed`; most other routes use `api.validation_error`.
+- `PATCH .../fixtures/{fixturePlanId}/encounters/{encounterId}` is organizer edit (`scheduling.encounter-rescheduled`). It is not FR-08 captain negotiate/approve. HTTP tests do not pin `scheduling.fixture_encounter_not_editable`.
+- Candidates OpenAPI lists 401; the handler remaps missing access and `results.official_selection_forbidden` to `404 results.encounter_not_found`. There is no HTTP 401 or 503 case.
+- Internal `POST .../sync-jobs/{jobId}/run` 409 can return `{ code: "game_data.sync_job_not_claimable" }` without `messageKey`, which fails `apiErrorSchema`.
 
-CI does not run `generate:openapi` or fail if yaml drifts from `document.ts`. ADR-0005 called for that check.
+The OpenAPI tags list has no `results` or `scheduling` entries (statistics is used as a path tag anyway). Reschedule appears only as competition-rules fields (`allowRescheduling`, `maxReschedulesPerTeam`, …), not as operations.
+
+CI does not run `generate:openapi` or fail if yaml drifts from `document.ts`. Contrast `generate:css:check` for tokens. ADR-0005 called for the OpenAPI check. There is also no Zod ↔ OpenAPI equivalence test; the `void` imports are not a check.
+
+Web BFF is not a full `/api/v1` mirror. Contract tests must treat `apps/api` (`:8787`) as the host of record for encounters, fixtures, standings, and official selection. The browser SDK default base is that origin, not the web BFF.
 
 ### Paths and symbols
 
 - `futrobOpenApiV1` in `packages/api-contracts/src/v1/openapi/document.ts`
+- `getOpenApiJsonText` / `getOpenApiYamlText` in `packages/api-contracts/src/v1/openapi/serve.ts`
+- `failureToHttp` in `apps/api/src/http/errors.ts`
 - `listEncounterCandidatesResponseSchema` in `packages/api-contracts/src/v1/encounters/schemas.ts`
 - `registerEncounterRoutes` in `apps/api/src/http/routes/encounters.ts`
 - `createFutrobClient().results.listEncounterCandidates`
@@ -240,10 +264,14 @@ CI does not run `generate:openapi` or fail if yaml drifts from `document.ts`. AD
 ### Gaps
 
 - No CI step `npm run generate:openapi && git diff --exit-code packages/api-contracts/openapi`.
-- No test that a live `app.request` body matches the generated OpenAPI response schema for standings, rankings, snapshot, or (once built) select, confirm, and schedule-change.
-- No test that tagged error `code` values in OpenAPI `ApiError` examples include `results.encounter_not_found`, `results.selection_not_confirmable`, `scheduling.schedule_change_idempotency_conflict`, `scheduling.fixture_managed_conflict`.
-- Snapshot 409 `fixture_managed_conflict` is documented in the CLI skill. Pin it as an HTTP contract when the matrix runs `snapshot-set` on a fixture-owned encounter.
-- Do not start contract tests for select, confirm, or reschedule-request until those routes exist. The QA card depends on those API cards on purpose.
+- No Zod ↔ OpenAPI equivalence (hand-written drift; `void` is not a check).
+- No test that a live `app.request` body matches the OpenAPI operation response schema for standings, rankings, snapshot, or (once built) select, confirm, and schedule-change.
+- No operation×status×`code` table. `ApiError.code` is free-form, so document tests cannot fail on a wrong tagged code.
+- Snapshot 409 `scheduling.fixture_managed_conflict` is already asserted in `fixtures.test.ts`. Add that status to the OpenAPI PUT operation so the document matches the handler.
+- POST `/internal/game-data/sync-jobs/{jobId}/run` can return `{ code: "game_data.sync_job_not_claimable" }` without `messageKey`. That body fails `apiErrorSchema`. There is no 409 HTTP test.
+- Candidates OpenAPI 401 is unused on the wire; forbidden is hidden as 404. Document that hide-existence mapping or change the handler.
+- GET standings / rankings / team-statistics have routes and SDK clients but zero `apps/api` HTTP tests for 200 `standings: null` or 403 `statistics.read_forbidden`.
+- Do not start contract tests for select, confirm, or reschedule-request until those routes exist. The QA card depends on those API cards on purpose. `CreateScheduleChangeRequestUseCase` is also missing from `createSchedulingModule`. Several schedule-change codes would 500 under `failureToHttp` today.
 
 ### Behavior tests
 
@@ -252,13 +280,16 @@ CI does not run `generate:openapi` or fail if yaml drifts from `document.ts`. AD
 3. **Candidates 404 foreign org.** Status `404`, `code` `"results.encounter_not_found"`. Already true in `encounters.test.ts`. Keep it as a named contract case.
 4. **Candidates 503 provider down.** Status `503`, `code` `"results.candidate_data_unavailable"`.
 5. **Fixture replay.** Second `POST .../fixture` with the same generation input returns the same plan `id` and HTTP 200 family used today. Pin the status code the handler actually returns.
-6. **Snapshot on fixture-owned encounter.** `PUT .../schedule-snapshot` status `409`, `code` `"scheduling.fixture_managed_conflict"`.
+6. **Snapshot on fixture-owned encounter.** `PUT .../schedule-snapshot` status `409`, `code` `"scheduling.fixture_managed_conflict"`. HTTP test already exists. Add `409` to `futrobOpenApiV1` for that PUT so the document cannot drift.
 7. **Standings after zero official results.** `GET .../standings` status `200`, `rows` equal `[]` (or only zeroed teams, pin whichever the use case returns).
-8. **Select / confirm / schedule-change (after API cards).** For each new path, one test of 200 or 202 with a parsed schema, and one test of 403 or 404 with a stable `code`. Fail CI if `futrobOpenApiV1.paths[path]` is undefined.
+8. **Standings forbidden.** `GET .../standings` as an outsider is `403` and `code` is `"statistics.read_forbidden"`.
+9. **GET schedule-snapshot.** Status `200` parses with the snapshot schema. Foreign org is a tagged 401 or 404, matching OpenAPI.
+10. **Sync-job run not claimable.** `POST .../run` when the job is not claimable is `409`, `code` `"game_data.sync_job_not_claimable"`, and `messageKey` `"errors.game_data.sync_job_not_claimable"`.
+11. **Select / confirm / schedule-change (after API cards).** For each new path, one test of 200 or 202 with a parsed schema, and one test of 403 or 404 with a stable `code`. Fail CI if `futrobOpenApiV1.paths[path]` is undefined. Confirm HTTP should call `confirmOfficialSelectionAndProject` so contract tests can assert standings change only after confirm.
 
 ### Notas
 
-Put the drift check in `ci.yml` `check` or `test`, not nightly. Contract tests are cheap. Do not use mocked SDK tests as the only proof. Call `createApp().request` or `e2e-golden-path` plus follow-up GETs.
+Put the drift check in `ci.yml` `check` or `test`, not nightly. Contract tests are cheap. Do not use mocked SDK tests as the only proof. Call in-process Hono `createApp().request` (current `http-app.harness.ts` style) against `apps/api`. That is the host of record; the web BFF does not mirror encounters, fixtures, or standings. A live `:8787` + Schemathesis pass is optional later, not a substitute for status+`code` cases.
 
 ---
 
@@ -270,13 +301,15 @@ Put the drift check in `ci.yml` `check` or `test`, not nightly. Contract tests a
 
 ### Context
 
-`apps/mobile` is Expo SDK 57, Expo Router. README states the current app is foundational: auth, SecureStore, SDK client, tokens, empty home. Target MVP includes Match Center. It is not implemented.
+`apps/mobile` is Expo SDK 57, Expo Router. README states the current app is foundational: auth, SecureStore, SDK client, tokens, empty home. Target MVP includes Match Center. It is not implemented. Login always opens `/(home)` and does not consult `actor_onboarding` first. Logout deletes SecureStore only. It does not call Better Auth `/sign-out`.
 
-Tests: `apps/mobile/src/modules/identity/auth-validation.test.ts` asserts `validateEmail("capitan@club.mx")` is `null` and `validateEmail("sin-arroba")` is `AUTH_VALIDATION_EMAIL`. Root `vite.config.ts` `test.projects` does not include `apps/mobile`, so `npm test` in CI never runs that file.
+`EXPO_PUBLIC_FUTROB_API_BASE_URL` defaults to `http://localhost:3000`. Competitive encounter and fixture HTTP lives on `apps/api` (`:8787`). The web BFF does not proxy those paths. Even `results.listEncounterCandidates` would 404 against the default mobile origin.
 
-`verify-futrob` SKILL.md **Out of scope**: native iOS and Android (`AC-MOB-*`). Expo web is not that proof. Feature README repeats the skip.
+Tests: `apps/mobile/src/modules/identity/auth-validation.test.ts` asserts `validateEmail("capitan@club.mx")` is `null` and `validateEmail("sin-arroba")` is `AUTH_VALIDATION_EMAIL`. Root `vite.config.ts` `test.projects` does not include `apps/mobile`, so `npm test` in CI never runs that file. `apps/mobile/vite.config.ts` exists. It is not in the workspace list.
 
-There is no Detox, Maestro, or Playwright mobile project.
+`verify-futrob` SKILL.md **Out of scope**: native iOS and Android (`AC-MOB-*`). Expo web is not that proof. Feature README repeats the skip. That skip is for agent driving. It does not waive `AC-MOB-*` or the mobile half of `AC-E2E-001` for declaring MVP complete.
+
+There is no Detox, Maestro, or Playwright mobile project. Web Match Center is also a stub. A mobile-only subset would still need select and confirm HTTP that neither client has.
 
 Smoke E2E móvil is a different card (Fundamentos, P1) and is also Not started. This P2 subset should not start before that smoke and Match Center UI exist.
 
@@ -290,9 +323,10 @@ Smoke E2E móvil is a different card (Fundamentos, P1) and is also Not started. 
 
 ### Gaps
 
-- No Match Center screens in mobile or web.
+- No Match Center screens in mobile or web (`stub: true` nav, competition home is a placeholder).
 - SDK `results` resource has only `listEncounterCandidates`. No select, confirm, or schedule-change client.
-- No native CI job.
+- Default mobile origin cannot reach candidates or fixture on `apps/api`.
+- No native CI job. `expo-linking` is a dependency. No app code imports it.
 
 ### Behavior tests
 
@@ -309,7 +343,7 @@ Until then, one CI-safe check: `apps/mobile` has no import of `@futrob/results` 
 
 ### Notas
 
-Recommend **skip with pointer**. Close the QA card only when the skip is in the verification map and this research note. Reopen when Match Center UI and smoke móvil land. Do not invent Detox in this epic before those deps.
+Recommend **skip with pointer** for this P2 QA card. Record it in the verification map (already listed) and this note. Do not mark `AC-MOB-002` passed. Do not treat Expo web as native proof. Reopen when Match Center UI, select/confirm HTTP, and smoke móvil land. Do not invent Detox in this epic before those deps.
 
 ---
 
@@ -364,9 +398,10 @@ Add the workflow only after the matrix command exists and is green locally. Unti
 - **Hexagonal split.** E2E may use CLI and HTTP. Domain tests stay on fake ports. Do not import EA adapters from results or statistics tests.
 - **Sync never officializes.** Any matrix step that syncs must assert standings unchanged until confirm.
 - **Confirm revision bump.** `ConfirmOfficialSelectionUseCase` currently increments revision on a second pass. E2E that asserts `AC-SEC-002` will fail until that use case is a no-op after approval.
-- **HTTP holes.** Selection, confirmation, dispute, and captain reschedule requests are Not started API cards. Contract tests and E2E for those steps wait on them.
+- **HTTP holes.** Selection, confirmation, dispute, and captain reschedule requests are Not started API cards. `confirmOfficialSelectionAndProject` is unused. Schedule-change is not in DI. Contract tests and E2E for those steps wait on them.
+- **No outbox.** `NoopEventPublisher` plus stub statistics and notification workers. `AC-SEC-002` outbox replay cannot pass until a consumer exists.
 - **Postgres skip.** UNIQUE and claim-race tests are real but invisible in GitHub Actions without `TEST_DATABASE_URL`.
-- **Mobile skip is already written** in `verify-futrob`. The P2 card is satisfied by keeping that skip until deps land, not by pretending Expo web is native.
+- **Mobile skip is already written** in `verify-futrob` as a driving skip. It does not waive MVP `AC-MOB-*`. Default mobile `:3000` cannot reach competitive API routes.
 - **Vocabulary.** Tests say Encounter, OfficialMatch, ProviderMatch, OfficialResult. Not `EaMatch`.
 
 ## Recommended sequence
