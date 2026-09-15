@@ -1,4 +1,4 @@
-import { FutrobApiError } from "@futrob/sdk";
+import type { FutrobApiError } from "@futrob/sdk";
 import { signOutRemote } from "./auth-api.ts";
 import { clearSession, getSession } from "./session-store.ts";
 
@@ -12,11 +12,14 @@ export async function onProductUnauthorized(showLogin: () => void): Promise<void
   showLogin();
 }
 
-export function isProductUnauthorized(error: unknown): boolean {
-  return error instanceof FutrobApiError && error.status === 401;
+export function isProductUnauthorized(error: FutrobApiError): boolean {
+  return error.status === 401;
 }
 
-export async function handleProductError(error: unknown, showLogin: () => void): Promise<boolean> {
+export async function handleProductError(
+  error: FutrobApiError,
+  showLogin: () => void,
+): Promise<boolean> {
   if (!isProductUnauthorized(error)) return false;
   await onProductUnauthorized(showLogin);
   return true;

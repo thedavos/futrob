@@ -7,9 +7,10 @@ const SENSITIVE_KEY = /token|authorization|bearer|secret|password|invitation/i;
 export type AuthLogFields = Readonly<Record<string, string | number | boolean | null>>;
 
 export function redactSensitiveAuthFields(fields: AuthLogFields): AuthLogFields {
-  const redacted: Record<string, string | number | boolean | null> = {};
-  for (const [key, value] of Object.entries(fields)) {
-    redacted[key] = SENSITIVE_KEY.test(key) ? "[redacted]" : value;
-  }
-  return redacted;
+  return Object.fromEntries(
+    Object.entries(fields).map(([key, value]) => [
+      key,
+      SENSITIVE_KEY.test(key) ? "[redacted]" : value,
+    ]),
+  );
 }

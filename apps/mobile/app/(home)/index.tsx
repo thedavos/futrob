@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
+import { FutrobApiError } from "@futrob/sdk";
 import { Button, EmptyState, Logo, Screen, Text } from "@/ui";
 import { theme } from "@/theme/theme";
 import { getSession, type Session } from "@/modules/identity/session-store";
@@ -63,7 +64,7 @@ export default function HomeScreen() {
         }
       })
       .catch((error) => {
-        if (cancelled) {
+        if (cancelled || !(error instanceof FutrobApiError)) {
           return;
         }
         void handleProductError(error, () => {
