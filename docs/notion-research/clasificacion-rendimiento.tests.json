@@ -1,0 +1,390 @@
+{
+  "epic": "Clasificación y rendimiento",
+  "epicBoard": "Estadísticas",
+  "researchDoc": "docs/notion-research/clasificacion-rendimiento.md",
+  "gitAtResearch": "de3c657",
+  "pr36": "https://github.com/thedavos/futrob/pull/36",
+  "assertionRule": "Call the subject the way its users do. Assert a literal expected value. A test that still passes if every import returns undefined is invalid.",
+  "tasks": [
+    {
+      "id": "stage-snapshot",
+      "title": "[Domain] Stage en snapshot del encounter",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a81d28a04e1f885f91c50",
+      "layer": "domain",
+      "dependsOn": ["official-team-stats"],
+      "subjects": [
+        "EncounterScheduleSnapshot",
+        "projectFixtureEncounter",
+        "SchedulingEncounterReader.getById"
+      ],
+      "fileHints": [
+        "packages/scheduling/src/domain/entities/encounter-schedule-snapshot.ts",
+        "packages/scheduling/src/application/project-fixture-encounters.ts",
+        "packages/results/src/domain/ports/encounter-reader.port.ts",
+        "packages/scheduling/src/application/project-fixture-encounters.ts",
+        "apps/api/src/adapters/results/bridges.ts"
+      ],
+      "tests": [
+        {
+          "id": "stage-regular-playoffs-league-leg",
+          "subject": "projectFixtureEncounter",
+          "given": "A generated league-playoffs FixturePlan with a concrete regular encounter",
+          "when": "projectFixtureEncounter runs for that encounter",
+          "then": "EncounterScheduleSnapshot.stageKind is regular, or stageId equals the league FixtureStage.id from the same plan",
+          "expect": {
+            "stageKind": "regular"
+          }
+        },
+        {
+          "id": "stage-playoff-encounter",
+          "subject": "projectFixtureEncounter",
+          "given": "The same plan after both playoff sides are concrete teams",
+          "when": "projectFixtureEncounter runs for a playoff encounter",
+          "then": "Snapshot stage matches the playoffs stage, not the league stage",
+          "expect": {
+            "stageKind": "knockout"
+          }
+        },
+        {
+          "id": "stage-reader-parity",
+          "subject": "SchedulingEncounterReader.getById",
+          "given": "A persisted snapshot with stage",
+          "when": "results EncounterReaderPort.getById is called",
+          "then": "The results snapshot carries the same stage field the schedule row has",
+          "expect": {
+            "stageKindEqualsSchedule": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "resolve-rules-per-encounter",
+      "title": "[Domain] Resolver reglas de marcador por encounter",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a812ea3b0f0a4cdfbb398",
+      "layer": "domain",
+      "dependsOn": ["stage-snapshot"],
+      "subjects": [
+        "buildCompetitionStandings",
+        "CompetitionsMatchRulesReader",
+        "CompetitionMatchRulesReaderPort"
+      ],
+      "fileHints": [
+        "packages/statistics/src/domain/policies/build-competition-standings.ts",
+        "packages/statistics/src/domain/policies/build-competition-standings.test.ts",
+        "apps/api/src/adapters/statistics/competition-match-rules-reader.ts",
+        "packages/statistics/src/application/project-official-result/project-official-result.use-case.ts"
+      ],
+      "tests": [
+        {
+          "id": "league-independent-two-slots",
+          "subject": "buildCompetitionStandings",
+          "given": "One encounter, two official slots 1-0 then 0-2, resolutionMode independent_matches",
+          "when": "buildCompetitionStandings runs",
+          "then": "Home played is 2, wins 1, losses 1, points 3, goalsFor 1, goalsAgainst 2",
+          "expect": {
+            "home": {
+              "played": 2,
+              "wins": 1,
+              "losses": 1,
+              "points": 3,
+              "goalsFor": 1,
+              "goalsAgainst": 2
+            }
+          }
+        },
+        {
+          "id": "cup-aggregate-two-legs-one-played",
+          "subject": "buildCompetitionStandings",
+          "given": "One encounter, two official slots 1-0 then 0-2, resolutionMode aggregate_score",
+          "when": "buildCompetitionStandings runs",
+          "then": "Away played is 1, wins 1, goalsFor 2, goalsAgainst 1, points 3. Home played is 1, points 0",
+          "expect": {
+            "rows": [
+              {
+                "position": 1,
+                "teamId": "away-team",
+                "played": 1,
+                "wins": 1,
+                "draws": 0,
+                "losses": 0,
+                "goalsFor": 2,
+                "goalsAgainst": 1,
+                "goalDifference": 1,
+                "points": 3
+              },
+              {
+                "position": 2,
+                "teamId": "home-team",
+                "played": 1,
+                "wins": 0,
+                "draws": 0,
+                "losses": 1,
+                "goalsFor": 1,
+                "goalsAgainst": 2,
+                "goalDifference": -1,
+                "points": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "mixed-league-playoffs-pj",
+          "subject": "buildCompetitionStandings",
+          "given": "Regular encounter A independent 1-0 home, knockout encounter B aggregate slots 1-0 and 0-2 (home loses 1-2)",
+          "when": "buildCompetitionStandings mixes modes in one table",
+          "then": "Home played is 2, wins 1, losses 1, points 3, goalsFor 2, goalsAgainst 2. Not played 3",
+          "expect": {
+            "home": {
+              "played": 2,
+              "wins": 1,
+              "losses": 1,
+              "points": 3,
+              "goalsFor": 2,
+              "goalsAgainst": 2
+            }
+          }
+        },
+        {
+          "id": "mixed-void-drops-encounter-not-slot",
+          "subject": "ProjectOfficialResultUseCase",
+          "given": "The mixed table from mixed-league-playoffs-pj, then the knockout official result is voided as the latest revision",
+          "when": "projection rebuilds standings",
+          "then": "Home played is 1, points 3, from the regular encounter only",
+          "expect": {
+            "home": {
+              "played": 1,
+              "points": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-mixed-standings-team-ranking",
+      "title": "[API] Standings mixtos + ranking de equipos",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a8142a751f21cb9af867c",
+      "layer": "application",
+      "dependsOn": ["resolve-rules-per-encounter", "team-ranking-weights"],
+      "subjects": [
+        "GetCompetitionStandingsUseCase",
+        "GET /organizations/{organizationId}/competitions/{competitionId}/standings",
+        "team performance ranking resource (missing)"
+      ],
+      "fileHints": [
+        "apps/api/src/http/routes/competitions.ts",
+        "packages/api-contracts/src/v1/statistics/schemas.ts",
+        "packages/sdk/src/resources/statistics.ts",
+        "packages/statistics/src/application/get-competition-standings/get-competition-standings.use-case.ts"
+      ],
+      "tests": [
+        {
+          "id": "http-standings-mixed-literals",
+          "subject": "GET standings",
+          "given": "Approved official results for the mixed league-playoffs fixture and an actor with STATISTICS_PERMISSION.read",
+          "when": "GET /organizations/{organizationId}/competitions/{competitionId}/standings",
+          "then": "standings.rows home played is 2, points 3. formulaVersion remains points-gd-gf-v1",
+          "expect": {
+            "standings": {
+              "formulaVersion": "points-gd-gf-v1",
+              "home": { "played": 2, "points": 3 }
+            }
+          }
+        },
+        {
+          "id": "http-standings-forbidden",
+          "subject": "GET standings",
+          "given": "The same snapshot and an actor without STATISTICS_PERMISSION.read",
+          "when": "GET standings",
+          "then": "403 with statistics.read_forbidden, no rows",
+          "expect": {
+            "status": 403
+          }
+        },
+        {
+          "id": "http-team-performance-ranking-not-player-kind",
+          "subject": "team performance ranking HTTP",
+          "given": "Official results only and documented team-performance-v1 weights",
+          "when": "the new ranking endpoint is read",
+          "then": "Each row has teamId and a score in 0 to 100. formulaVersion is not player-ranking-v1. kind is not scorer, assister, rating, mvp, or goalkeeper",
+          "expect": {
+            "formulaVersion": "team-performance-v1",
+            "scoreMin": 0,
+            "scoreMax": 100
+          }
+        },
+        {
+          "id": "provider-match-does-not-rank",
+          "subject": "projectOfficialResult",
+          "given": "A ProviderMatch synced but not approved as OfficialResult",
+          "when": "standings and team ranking are read",
+          "then": "Both remain empty or unchanged from before the sync",
+          "expect": {
+            "standings": null,
+            "teamRankingRows": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "ui-mixed-table",
+      "title": "[UI] Tabla mixta independent_matches / aggregate_score",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a8171b147fbe80daf2942",
+      "layer": "presentation",
+      "dependsOn": ["api-mixed-standings-team-ranking"],
+      "subjects": [
+        "nav-registry standings stub",
+        "competition standings screen (missing)"
+      ],
+      "fileHints": [
+        "apps/web/src/shared/presentation/shell/nav-registry.ts",
+        "apps/web/src/routes/_app/orgs/$orgId/competitions/"
+      ],
+      "tests": [
+        {
+          "id": "ui-mixed-pj-not-three",
+          "subject": "competition standings table",
+          "given": "The mixed snapshot from mixed-league-playoffs-pj",
+          "when": "the Clasificación screen renders",
+          "then": "The home row shows PJ 2. There is no extra body row for the return leg",
+          "expect": {
+            "homePlayedText": "2",
+            "bodyRowCountForHome": 1
+          }
+        },
+        {
+          "id": "ui-cup-one-row",
+          "subject": "competition standings table",
+          "given": "Pure cup aggregate 1-0 then 0-2",
+          "when": "the table renders",
+          "then": "One row per team, PJ 1 for each",
+          "expect": {
+            "homePlayedText": "1",
+            "awayPlayedText": "1"
+          }
+        },
+        {
+          "id": "ui-empty-null-snapshot",
+          "subject": "competition standings table",
+          "given": "GET standings returns standings: null",
+          "when": "the screen renders",
+          "then": "Empty copy, not a table of zeroed participants",
+          "expect": {
+            "numericCells": 0
+          }
+        },
+        {
+          "id": "ui-table-not-performance-ranking",
+          "subject": "Clasificación vs Rankings",
+          "given": "Both a standings snapshot and a team performance snapshot",
+          "when": "the user opens Clasificación",
+          "then": "Cells are PJ, W, D, L, GF, GA, Pts. No 0-100 score column on this screen",
+          "expect": {
+            "hasPerformanceScoreColumn": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "team-ranking-weights",
+      "title": "[Data] Pesos iniciales del ranking de equipos",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a814880f5ee01d26fd1f0",
+      "layer": "domain",
+      "dependsOn": ["Crear ranking de equipos por rendimiento"],
+      "subjects": [
+        "DEC-041",
+        "team-performance-v1 (missing)"
+      ],
+      "fileHints": [
+        "product/open-decisions.md",
+        "packages/statistics/src/domain/entities/ranking-snapshot.ts",
+        "packages/statistics/src/domain/policies/ranking-eligibility.ts"
+      ],
+      "tests": [
+        {
+          "id": "score-reproducible",
+          "subject": "team performance scoring function",
+          "given": "One documented fixture of official table matches and the v1 weight table",
+          "when": "the function runs twice",
+          "then": "Both scores equal the same literal, for example 72, not a range",
+          "expect": {
+            "score": "literal from documented fixture once weights exist"
+          }
+        },
+        {
+          "id": "absent-metrics-not-zero-filled",
+          "subject": "team performance scoring function",
+          "given": "Official results with null defensive rates",
+          "when": "the function runs",
+          "then": "Score is still in 0 to 100 and does not treat null as 0 invented stats",
+          "expect": {
+            "scoreMin": 0,
+            "scoreMax": 100,
+            "usedInventedZeros": false
+          }
+        }
+      ],
+      "notes": "Weights are not numbered in product docs. Do not pin invented coefficients. Once product lands a table, replace the placeholder expect.score with the literal."
+    },
+    {
+      "id": "qa-format-fixtures",
+      "title": "[QA] Fixtures liga / copa / league-playoffs",
+      "notionUrl": "https://app.notion.com/p/3dc7b204009a814e84c9d965edfc2de8",
+      "layer": "domain",
+      "dependsOn": ["resolve-rules-per-encounter"],
+      "subjects": [
+        "generateFixturePlan",
+        "rulesPreset",
+        "buildCompetitionStandings"
+      ],
+      "fileHints": [
+        "packages/scheduling/src/domain/policies/generate-fixture-plan.test.ts",
+        "packages/statistics/src/domain/policies/build-competition-standings.test.ts",
+        "packages/competitions/src/application/create-competition-draft/create-competition-draft.use-case.ts"
+      ],
+      "tests": [
+        {
+          "id": "fixture-league-pj-from-encounters",
+          "subject": "league standings fixture",
+          "given": "Four-team league, one slot per encounter, every result 1-0 to home",
+          "when": "standings are built from those official contributions",
+          "then": "Each team played equals its league encounter count. Points are 3 times wins",
+          "expect": {
+            "resolutionMode": "independent_matches",
+            "pointsPerWin": 3
+          }
+        },
+        {
+          "id": "fixture-cup-aggregate-pj-one",
+          "subject": "knockout standings fixture",
+          "given": "Two-leg final 1-0 and 0-2",
+          "when": "standings are built",
+          "then": "Each finalist played is 1. Winner goalsFor 2, goalsAgainst 1, points 3",
+          "expect": {
+            "played": 1,
+            "winner": { "goalsFor": 2, "goalsAgainst": 1, "points": 3 }
+          }
+        },
+        {
+          "id": "fixture-league-playoffs-mixed-pj",
+          "subject": "league-playoffs standings fixture",
+          "given": "Regular 1-0 home win plus playoff two-leg 1-0 and 0-2",
+          "when": "standings are built",
+          "then": "Home played is 2, points 3, not played 3",
+          "expect": {
+            "home": { "played": 2, "points": 3 }
+          }
+        },
+        {
+          "id": "fixture-replay-idempotent",
+          "subject": "ProjectOfficialResultUseCase",
+          "given": "The cup fixture already projected",
+          "when": "the same approved result is projected again",
+          "then": "Standings rows equal the first snapshot. sourceRevisionMax does not double",
+          "expect": {
+            "rowsEqualFirstProjection": true
+          }
+        }
+      ]
+    }
+  ]
+}
