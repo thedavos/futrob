@@ -107,11 +107,11 @@ export {
   type CreateScheduleChangeRequestError,
 } from "./domain/errors/schedule-change-request.errors.ts";
 export type { EncounterCreatedEvent } from "./domain/events/encounter-created.event.ts";
+export { fixtureGenerationFingerprint, fixtureGenerationKey, generateFixturePlan } from "./domain/policies/generate-fixture-plan.ts";
 export {
-  fixtureGenerationFingerprint,
-  fixtureGenerationKey,
-  generateFixturePlan,
-} from "./domain/policies/generate-fixture-plan.ts";
+  interpretCompetitionWallTime,
+  type CompetitionWallTime,
+} from "./domain/policies/interpret-competition-wall-time.ts";
 export { replaceEncounter } from "./domain/policies/edit-fixture-encounter.ts";
 export type { RescheduleScope } from "./domain/value-objects/reschedule-scope.ts";
 export type { EncounterRescheduledEvent } from "./domain/events/encounter-rescheduled.event.ts";
