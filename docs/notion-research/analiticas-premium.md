@@ -33,15 +33,21 @@ The six tasks split the first premium layer into data, entitlement, gated HTTP, 
 ```text
 confirmOfficialSelection
   → OfficialResultApproved
-  → ProjectOfficialResultUseCase (same Postgres transaction in apps/api)
+  → ProjectOfficialResultUseCase (composed as confirmOfficialSelectionAndProject)
   → PlayerMatchContribution / TeamMatchContribution
   → PlayerCompetitionStats / TeamCompetitionStats / standings / rankings
   → (analytics snapshot worker is a stub and is not registered)
 ```
 
-Reads of official numbers go through `apps/api` use cases, Zod contracts, `@futrob/sdk`, and the web BFF. Personal official stats exist at `GET /players/me/statistics`. The player UI at `/player/statistics` does not call that endpoint. It charts `PlayerGameProfileDto` from EA observations. `design.md` already warns not to label that screen as official.
+That chain is composed in `apps/api/src/di/create-modules.ts`. HTTP does not call it. Encounter routes list candidates and write schedule. Confirm is CLI and tests. `EventPublisherPort` is `NoopEventPublisher`. Official stats projection is not a live product path until confirm HTTP is wired.
 
-HTTP failures map in `failureToHttp` / `statusForFailureCode`. Codes that contain `forbidden` become 403. There is no 402 branch.
+Reads of official numbers go through `apps/api` use cases, Zod contracts, and `@futrob/sdk`. The web BFF proxies `GET /players/me/statistics`. It does not proxy `standings`, `rankings`, or `team-statistics`. Browser clients stay same-origin `/api/v1` with cookies. `getFutrobBrowserClient()` is unused.
+
+Personal official stats exist at `GET /players/me/statistics`. The player UI at `/player/statistics` does not call that endpoint. It charts `PlayerGameProfileDto` from EA observations. `design.md` already warns not to label that screen as official. EA `attributeScores` are clamped 0–100 ratios, not cohort percentiles.
+
+HTTP failures map in `failureToHttp` / `statusForFailureCode`. Codes that contain `forbidden` become 403. `not_found` is checked first, so `authorization.scope_not_found` is 404. There is no 402 branch. Unknown codes become 500. If the API ever returned 402, the BFF and SDK would pass it through. They never emit it today.
+
+`statistics.read-own` is a platform baseline for every authenticated actor. Captains and players do not hold `statistics.read` (standings). They hold `competitions.read` and `participants.read`. A premium `/players/me/analytics` that reused `statistics.read-own` would not be gated.
 
 ## Where things live
 
@@ -68,10 +74,22 @@ Composition for product use cases is `apps/api/src/di/`. ADR-0002 still mentions
 
 1. **Form exists twice.** PRD §12 lists forma reciente on public team stats. Premium §14 lists form of the last 5, 10, or 20 official matches. `CompetitionStandingRow` has no form string. The player UI already draws last-five EA outcomes in `PlayerProfileFormChart`. Premium form must be official, windowed, and not that EA chart.
 2. **`FTR-ANA-001` is Should.** The Notion epic and children are MVP yes. The included-MVP list in `prd.md` also names the first premium layer. Treat the Notion children as in-scope. Do not grow into predictions or paid checkout.
-3. **Organizer health vs superuser health.** `GetProviderHealthUseCase` exists. `GET /internal/game-data/providers/:providerKey/health` requires `authorization.superusers.manage`. Organizer KPIs cannot reuse that route as-is.
-4. **Disputes are a status, not a BC.** `SelectionStatus` includes `disputed`. There is no `MatchDispute` entity or list use case. Organizer dispute KPIs have no query to read.
-5. **Reschedule create exists. Org counts do not.** `CreateScheduleChangeRequestUseCase` persists requests. There is no competition-level count of open reschedules for an organizer panel.
-6. **Contributions have no kickoff.** `PlayerMatchContribution` and `TeamMatchContribution` omit `scheduledStartAt`. Form and jornada trends need `Encounter.scheduledStartAt` and `roundId` through a reader port. Do not copy scheduling tables into analytics adapters.
+3. **Confirm then project is unused by HTTP.** `confirmOfficialSelectionAndProject` is composed and unused by routes. `EventPublisherPort` is `NoopEventPublisher`. Queue workers for statistics and analytics throw and are not in `registerWorkers` (only game-data sync is). Do not assume a live confirm-to-project path.
+4. **`statistics.read-own` is not a premium gate.** Every authenticated actor has it at platform. Captains cannot call standings (`statistics.read` is organizer and staff). Adding `analytics.read` to `ALL_PERMISSIONS` would auto-grant organizers and staff unless the role matrix excludes it. Superuser still receives every catalog permission at platform.
+5. **Feature-flag infrastructure was removed (ADR-0013).** DEC-050's premium flag has no module. `Organization` has no plan. `EffectiveAccessDto` has no plan.
+6. **No HTTP 402 anywhere.** Mapper, OpenAPI, contracts, and tests omit it. Notion asks typed 402 and 403. AC-ANA-001 only says safe denial. Product AC does not specify 402. Adding it needs `statusForFailureCode`, OpenAPI, and i18n.
+7. **`apiErrorDetailsSchema` is closed.** Extra `plan` or `feature` fields need a contract change before they can appear on the wire.
+8. **Path convention is nested resources.** Examples are `/players/me/statistics` and `/competitions/:id/standings`. Zero `/premium/` routes. `/internal/` is platform-admin only.
+9. **Web BFF does not proxy standings, rankings, or team-statistics.** API, SDK, and CLI `standings` exist. Browser clients need BFF files, not only API routes. `GET` org teams is registered in `competitions.ts`, not `teams.ts`.
+10. **OpenAPI is hand-written and stale.** JWT description, no `X-Futrob-Actor-Id`, no 402, no analytics tag. Generate with `npm run generate:openapi -w @futrob/api-contracts`.
+11. **Organizer health vs superuser health.** `GetProviderHealthUseCase` exists. `GET /internal/game-data/providers/:providerKey/health` requires `authorization.superusers.manage`. Organizer KPIs cannot reuse that route as-is.
+12. **Disputes are a status, not a BC.** `SelectionStatus` includes `disputed`. There is no `MatchDispute` entity or list use case. Organizer dispute KPIs have no query to read.
+13. **Reschedule create exists. Org counts do not.** `CreateScheduleChangeRequestUseCase` persists requests. There is no competition-level count of open reschedules for an organizer panel.
+14. **Contributions have no kickoff.** `PlayerMatchContribution` and `TeamMatchContribution` omit `scheduledStartAt`. Form and jornada trends need `Encounter.scheduledStartAt` and `roundId` through a reader port. Do not copy scheduling tables into analytics adapters.
+15. **Nav Analíticas is a stub.** `onClick` is disabled. Un-stubbing needs a real route and `stub: true` flipped. Design IA puts Analíticas in competition context, not personal General. Competition context nav uses `COMPETITION_PERMISSION.update`, not a player versus organizer role name. Forbidden is not empty (`design.md` "403 con salida segura").
+16. **Live i18n is `apps/web/src/shared/presentation/i18n/catalogs.ts`** (`es` and `en`). `messages/*.json` is leftover. No 402, 403, or premium keys.
+17. **`apps/api` does not depend on `@futrob/analytics`.** `apps/web` imports it only as an empty re-export. Composition of analytics belongs in `apps/api/src/di/` (ADR-0013). Do not put it in `apps/web/src/app/`.
+18. **SDK `statistics` mixes official GETs with `getMyGameProfile` and recent matches (game-data).** Do not copy that mix into an analytics resource.
 
 ## Recommended shape (not implemented here)
 
@@ -90,7 +108,7 @@ packages/analytics/src/
   application/get-organizer-analytics/
 ```
 
-Entitlement is not an analytics table. Keep a flag or plan on the organization (or a platform grant), resolve it on the server, and map `analytics.entitlement_required` to HTTP 402. Keep missing RBAC as 403. Do not put Stripe, Better Auth, or React in `@futrob/analytics`.
+Entitlement is not an analytics table. Keep a flag or plan on the organization (or a platform grant), resolve it on the server, and map `analytics.entitlement_required` to HTTP 402 if product keeps two axes. Keep missing RBAC as 403. AC-ANA-001 does not require 402. Until payments exist, a 403-only `analytics.read` gate also matches FR-17 "subscription or permissions". Do not put Stripe, Better Auth, or React in `@futrob/analytics`. Do not reuse `statistics.read-own`.
 
 ---
 
@@ -123,7 +141,10 @@ Measured. `ProjectOfficialResultUseCase` writes contributions and rollups after 
 - Empty `@futrob/analytics` (`export {}`).
 - No domain types for trend series, percentile rank, or form window (5, 10, 20).
 - No snapshot table. Conceptual name `analytics_snapshots` in `product/mvp-requirements.md`.
-- Worker not wired in `registerWorkers` (only game-data sync is).
+- Worker not wired in `registerWorkers` (only game-data sync is). Statistics worker also throws.
+- Confirm HTTP does not call `projectOfficialResult`. Official stats projection is composed and unused by the live API.
+- `EventPublisherPort` is `NoopEventPublisher`. Snapshot events would not fan out even if a worker existed.
+- `apps/api` does not depend on `@futrob/analytics`.
 - No formula version for analytics distinct from `COMPETITION_STANDING_FORMULA_VERSION` and `RANKING_FORMULA_VERSION`.
 - Unattributed contributions (`correlationStatus !== "matched"`) must not enter percentiles. Statistics already leaves them unmatched. Analytics must keep that rule.
 
@@ -133,7 +154,7 @@ See `ANA-DATA-*` in the sibling JSON. Domain tests with fake contribution lists.
 
 ### Notas
 
-Official stats are the input. Analytics must not write `team_competition_stats` or standings. Rebuild from stored official contributions. Do not call EA.
+Official stats are the input. Analytics must not write `team_competition_stats` or standings. Rebuild from stored official contributions. Do not call EA. Do not treat `confirmOfficialSelectionAndProject` as a live product path until HTTP calls it.
 
 ---
 
@@ -160,13 +181,17 @@ Permission catalogs are per BC. `ALL_PERMISSIONS` unions organization, competiti
 - `can`, `useCan`, `useEffectivePermissions`
 - `SHELL_PERMISSIONS` in `apps/web/src/context/permissions.ts` (no analytics constant)
 - `RequirePermissionUseCase` / `requireApiPermission`
+- Platform baseline `statistics.read-own` in `contextual-authorization.adapter.ts`
 
 ### Gaps
 
 - No `ANALYTICS_PERMISSION.read` (suggested `analytics.read`).
-- No entitlement type (`plan: "free" | "premium"` or `premiumAnalyticsEnabled`).
+- No entitlement type (`plan: "free" | "premium"` or `premiumAnalyticsEnabled`). Feature-flag module was deleted (ADR-0013).
 - `EffectiveAccessDto` has no `plan` field. Criterion asks the UI to reflect plan. Either extend the DTO or add a sibling org-plan read. Do not let the client send plan as authority.
 - Hiding a nav item is not the gate. `competitionNav` already stubs Analíticas behind `COMPETITION_PERMISSION.read`. That is the wrong permission and would show the link to any competition reader.
+- Do not reuse `statistics.read-own` as the premium gate. Every authenticated actor has it at platform.
+- Adding `analytics.read` to `ALL_PERMISSIONS` would auto-grant organizers and staff unless the role matrix excludes it. Superuser still receives every catalog permission.
+- `RequirePermissionUseCase` has no colocated unit test. Coverage is HTTP plus RBAC plus other use cases.
 
 ### Behavior tests
 
@@ -174,7 +199,7 @@ See `ANA-AUTH-*`. Server denies without entitlement even if the client forges a 
 
 ### Notas
 
-Keep entitlement out of the `@futrob/analytics` domain if it is an organization or platform fact. Inject an `EntitlementPort` or read it from organizations. The UI may show a locked `EmptyState`. The API remains the barrier.
+Keep entitlement out of the `@futrob/analytics` domain if it is an organization or platform fact. Inject an `EntitlementPort` or read it from organizations. The UI may show a locked `EmptyState`. The API remains the barrier. Tension to resolve in product, not in this research. Notion asks typed 402 and 403. DEC-050 plus AC-ANA-001 may be 403-only until payments exist.
 
 ---
 
@@ -190,13 +215,13 @@ Measured. Product HTTP lives in `apps/api/src/http/routes/*`. Web BFF proxies wi
 
 Pattern to copy: `registerCompetitionRoutes` standings and rankings, `registerPlayerRoutes` `/players/me/statistics`, `failureToHttp`. Use cases decide. Routes parse Zod and translate `TaggedError`.
 
-Suggested paths (inferred, not in code):
+Suggested paths (inferred, not in code). Nest under existing resources. Do not invent `/premium/`.
 
-- `GET /organizations/:organizationId/competitions/:competitionId/analytics/teams/:teamId`
 - `GET /players/me/analytics` (own official premium only)
-- `GET /organizations/:organizationId/competitions/:competitionId/analytics/organizer`
+- `GET /organizations/:organizationId/competitions/:competitionId/teams/:teamId/analytics`
+- `GET /organizations/:organizationId/competitions/:competitionId/analytics` (organizer)
 
-Do not overload `GET /players/me/statistics`. The Done stats API task already says premium must consume `@futrob/analytics`.
+Do not overload `GET /players/me/statistics`. The Done stats API task already says premium must consume `@futrob/analytics`. A me-analytics route that called `statistics.read-own` would not be premium. Captains cannot call standings today (`statistics.read` is organizer and staff).
 
 ### Paths and symbols
 
@@ -205,14 +230,21 @@ Do not overload `GET /players/me/statistics`. The Done stats API task already sa
 - `packages/api-contracts/src/v1/statistics/schemas.ts` as the non-premium contract
 - `packages/sdk/src/resources/statistics.ts`
 - `apps/web/src/routes/api/v1/players/me/statistics.ts` BFF
+- Missing BFF for `standings`, `rankings`, `team-statistics`
 - `npm run cli -- statistics-smoke`, `standings`
+- `apiErrorDetailsSchema` (closed `.strict()`)
+- OpenAPI `packages/api-contracts/src/v1/openapi/document.ts` (hand-written, stale)
 
 ### Gaps
 
 - `statusForFailureCode` never returns 402. A code such as `analytics.entitlement_required` would be 500 today.
+- `apiErrorDetailsSchema` cannot carry `plan` or `feature` without a contract change.
 - Two-org isolation tests exist for authorization grants. None for analytics.
 - No SDK method. Mobile cannot call a missing resource. FTR-MOB-003 will require the same SDK later. Out of this epic's UI tasks, still design the contract once.
+- No web BFF for competition standings, rankings, or team-statistics. Browser premium GETs need new BFF files, not only API routes.
+- OpenAPI has no 402, no analytics tag, and still describes JWT rather than `X-Futrob-Actor-Id`. Generate it.
 - Organizer endpoint must not return other-org competition ids, provider payloads, or dispute free text.
+- Statistics use cases throw `TaggedError`. Most other BCs return `Result`. HTTP stats use try/catch. Match one style and document it.
 
 ### Behavior tests
 
@@ -220,7 +252,7 @@ See `ANA-API-*`. HTTP 401 without service or session auth. 403 other-org and spe
 
 ### Notas
 
-Use `TaggedError` codes `analytics.read_forbidden` (403) and `analytics.entitlement_required` (402). Do not leak existence of another tenant's snapshot in 404 vs 403. Follow AC-SEC-001.
+Use `TaggedError` codes `analytics.read_forbidden` (403) and, if product keeps a payment axis, `analytics.entitlement_required` (402). Do not leak existence of another tenant's snapshot in 404 vs 403. Follow AC-SEC-001. Nest paths under resources. Do not add `/premium/`.
 
 ---
 
@@ -232,11 +264,11 @@ Use `TaggedError` codes `analytics.read_forbidden` (403) and `analytics.entitlem
 
 ### Context
 
-Measured. Competition shell lists Analíticas as `stub: true` at `{org}/competitions/{id}/analytics`. No route file. Competition home is a placeholder. Player `/player/statistics` is EA KPIs plus evolution and form charts (`PlayerProfileKpis`, `PlayerProfileEvolutionChart`, `PlayerProfileFormChart`).
+Measured. Competition shell lists Analíticas as `stub: true` at `{org}/competitions/{id}/analytics`. `onClick` is disabled. No route file. Un-stubbing needs a real route and `stub: true` flipped. Competition home is a placeholder. Player `/player/statistics` is EA KPIs plus evolution and form charts (`PlayerProfileKpis`, `PlayerProfileEvolutionChart`, `PlayerProfileFormChart`).
 
 `useMyStatisticsQuery` is defined and unused. Official personal stats are wired in BFF and SDK, not in that page.
 
-Design contract: reuse Stat compositions in `design.md` (Inicio lima island vs perfil icon stack). Do not invent a third Stat island. Grafito + Lima. Spanish default copy via Paraglide. 44 px targets.
+Design contract: reuse Stat compositions in `design.md` (Inicio lima island vs perfil icon stack). Do not invent a third Stat island. Grafito + Lima. Spanish default copy via Paraglide. 44 px targets. Design IA lists Analíticas under competition context, not personal General. Competition context nav uses `COMPETITION_PERMISSION.update`, not a role name. Forbidden is not empty (`design.md` "403 con salida segura"). Live i18n is `catalogs.ts`. `messages/*.json` is leftover.
 
 ### Paths and symbols
 
@@ -252,7 +284,9 @@ Design contract: reuse Stat compositions in `design.md` (Inicio lima island vs p
 - Design task for team and player premium is Not started. Visual layout is not specified beyond PRD §14 and Stat rules.
 - Risk of extending `/player/statistics` with EA charts and calling it premium. That would violate official-only and the statistics vs analytics split.
 - Nav uses `COMPETITION_PERMISSION.read`. Must switch to `analytics.read` and fail closed without entitlement.
-- No i18n keys for 402.
+- No i18n keys for 402 or 403 premium copy in live catalogs.
+- Design IA is competition context. Do not put the first team premium layer only in personal General.
+- Browser clients need BFF files for any new `/api/v1` analytics GET. Standings BFF does not exist as a template for team analytics.
 
 ### Behavior tests
 
@@ -318,16 +352,18 @@ PRD §14 is the content inventory. DEC-044 draws the public vs premium line. WON
 
 ### Paths and symbols
 
-- `design.md` sections Stat, Mis estadísticas, empty states
+- `design.md` sections Stat, Mis estadísticas, empty states, competition context Analíticas, "403 con salida segura"
 - `packages/ui/src/components/stat.tsx`, `empty-state.tsx`
+- `apps/web/src/shared/presentation/i18n/catalogs.ts` (live `es` and `en`)
 - `features/` map (no analytics feature file)
-- Nav stub vs missing routes
+- Nav stub vs missing routes (`stub: true`, disabled `onClick`)
 
 ### Gaps
 
 - Design dependencies are Not started. This UX task cannot close from code alone.
 - No sitemap for `/orgs/:id/analytics`, `/orgs/:id/competitions/:id/analytics`, `/player/analytics`.
-- No copy for locked premium (`EmptyState` + CTA) in `es` and `en`.
+- Design IA already slots Analíticas in competition context. Personal General is EA Mis estadísticas. Do not collapse those.
+- No copy for locked premium (`EmptyState` + CTA) in `es` and `en` live catalogs. Forbidden is not empty.
 - Mobile IA is unspecified. FTR-MOB-004 will need the same EffectiveAccess later. Do not block web on native screens. Do name shared routes and DTOs.
 
 ### Behavior tests
@@ -336,7 +372,7 @@ See `ANA-UX-*`. These are document checks, not Vitest, until UI lands. Inventory
 
 ### Notas
 
-Ship the IA as product notes or `design.md` sections before the two UI tasks. Do not treat the current EA form chart as the premium wireframe.
+Ship the IA as product notes or `design.md` sections before the two UI tasks. Do not treat the current EA form chart as the premium wireframe. Keep forbidden distinct from empty official data.
 
 ---
 
@@ -357,3 +393,4 @@ Stats oficiales Done is a real code dependency. Roles Done is a real code depend
 - `/product/prd.md`, `mvp-requirements.md`, `acceptance-criteria.md` AC-ANA-001, `open-decisions.md` DEC-044 and DEC-050, `domain-glossary.md` AnalyticsSnapshot.
 - `/docs/architecture/overview.md`, `module-boundaries.md`, `dependency-graph.md`, ADR-0011, ADR-0013.
 - Code paths listed per task. Measured unless marked inferred.
+- Follow-up pass 2026-09-15 re-checked confirm HTTP, RBAC baseline, BFF, OpenAPI, and design IA.

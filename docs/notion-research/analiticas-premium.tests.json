@@ -84,6 +84,20 @@
           "then": "Each split only includes its side. Totals of both splits equal the official matched count.",
           "symbols": ["TeamMatchContribution.side"],
           "exists": false
+        },
+        {
+          "id": "ANA-DATA-007",
+          "layer": "http",
+          "behavior": "Confirm HTTP does not project official stats yet",
+          "given": "Encounter HTTP routes in apps/api",
+          "when": "A client confirms an official selection through product HTTP",
+          "then": "No route calls confirmOfficialSelectionAndProject. EventPublisherPort remains NoopEventPublisher. Analytics rebuild must not assume a live confirm-to-project path until HTTP is wired.",
+          "symbols": [
+            "confirmOfficialSelectionAndProject",
+            "NoopEventPublisher",
+            "registerWorkers"
+          ],
+          "exists": false
         }
       ]
     },
@@ -150,6 +164,32 @@
           "when": "getEffectiveAccess runs again in the same scope",
           "then": "analytics.read is allowed true if role bundles include it. No client cache is treated as source of truth.",
           "symbols": ["contextual-authorization.adapter.ts"],
+          "exists": false
+        },
+        {
+          "id": "ANA-AUTH-006",
+          "layer": "application",
+          "behavior": "Premium must not reuse statistics.read-own",
+          "given": "An authenticated outsider with no org membership",
+          "when": "The actor requests GET /players/me/analytics gated only by statistics.read-own",
+          "then": "The gate would allow them. Premium instead requires analytics.read (and entitlement if product keeps that axis). Outsiders stay denied.",
+          "symbols": [
+            "STATISTICS_PERMISSION.readOwn",
+            "ANALYTICS_PERMISSION.read"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-AUTH-007",
+          "layer": "adapter",
+          "behavior": "Role bundles do not auto-grant analytics.read to every organizer",
+          "given": "analytics.read is added to the analytics catalog",
+          "when": "ALL_PERMISSIONS is rebuilt and organizer and staff bundles are applied",
+          "then": "Organizer and staff are not granted analytics.read unless the matrix explicitly includes it. Superuser still receives every catalog permission at platform.",
+          "symbols": [
+            "ALL_PERMISSIONS",
+            "contextualOrganizationRolePermissions"
+          ],
           "exists": false
         }
       ]
@@ -225,6 +265,45 @@
           "then": "400 api.validation_error. Zod issues only.",
           "symbols": ["validationErrorResponse"],
           "exists": false
+        },
+        {
+          "id": "ANA-API-007",
+          "layer": "http",
+          "behavior": "Premium paths nest under existing resources",
+          "given": "Current API path convention",
+          "when": "Contracts register team, player, and organizer analytics",
+          "then": "Paths are nested under players, organizations, competitions, or teams. No /premium/ prefix. /internal/ stays platform-admin.",
+          "symbols": [
+            "registerPlayerRoutes",
+            "registerCompetitionRoutes"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-API-008",
+          "layer": "http",
+          "behavior": "Browser GETs go through web BFF, not a public SDK client",
+          "given": "A signed-in browser session",
+          "when": "The dashboard fetches premium analytics",
+          "then": "Same-origin /api/v1 with cookies. A BFF file exists for the new path. getFutrobBrowserClient is not the product path. Do not assume standings BFF exists as a template. It does not.",
+          "symbols": [
+            "apps/web/src/routes/api/v1",
+            "getFutrobBrowserClient"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-API-009",
+          "layer": "http",
+          "behavior": "402 details stay inside apiErrorDetailsSchema",
+          "given": "A free-plan member hitting a premium GET",
+          "when": "The API returns analytics.entitlement_required",
+          "then": "HTTP 402. Extra plan or feature fields are either absent or added to apiErrorDetailsSchema first. Closed .strict() must not silently drop them. OpenAPI lists 402 after generate:openapi.",
+          "symbols": [
+            "apiErrorDetailsSchema",
+            "statusForFailureCode"
+          ],
+          "exists": false
         }
       ]
     },
@@ -277,8 +356,24 @@
           "behavior": "Locales and deep links",
           "given": "es default and en toggle",
           "when": "The user changes locale and the competition or team search params",
-          "then": "Copy comes from message keys. URL keeps the selection after reload.",
-          "symbols": ["Paraglide", "queryKeys"],
+          "then": "Copy comes from live catalogs.ts keys, not leftover messages/*.json. URL keeps the selection after reload.",
+          "symbols": [
+            "catalogs.ts",
+            "queryKeys"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-UI-PLAYER-005",
+          "layer": "ui",
+          "behavior": "Un-stubbing Analíticas requires a real route",
+          "given": "competitionNav analytics item with stub true",
+          "when": "The premium dashboard ships",
+          "then": "A route file exists at the competition analytics path. stub is false. onClick is not a no-op. Permission is analytics.read, not competitions.read.",
+          "symbols": [
+            "nav-registry",
+            "COMPETITION_PERMISSION.read"
+          ],
           "exists": false
         }
       ]
@@ -372,8 +467,31 @@
           "behavior": "Locked premium copy is specified in es and en",
           "given": "Entitlement missing and permission missing as two states",
           "when": "Copy is listed",
-          "then": "402 and 403 have distinct sentence-case captions. No raw error codes in the heading.",
-          "symbols": ["EmptyStateTitle", "messages/"],
+          "then": "402 and 403 have distinct sentence-case captions in catalogs.ts. No raw error codes in the heading. Leftover `messages/*.json` is not the source.",
+          "symbols": [
+            "EmptyStateTitle",
+            "catalogs.ts"
+          ],
+          "exists": false
+        },
+        {
+          "id": "ANA-UX-004",
+          "layer": "doc",
+          "behavior": "First premium layer sits in competition context",
+          "given": "design.md navigation IA",
+          "when": "The UX names where Analíticas lives",
+          "then": "Team and organizer premium are competition-context (or org) surfaces. They are not folded into personal General. Mis estadísticas stays the EA personal page unless a separate official or premium player route is named.",
+          "symbols": ["design.md", "competitionNav"],
+          "exists": false
+        },
+        {
+          "id": "ANA-UX-005",
+          "layer": "doc",
+          "behavior": "Forbidden is not an empty-data state",
+          "given": "design.md 403 con salida segura",
+          "when": "The IA lists dashboard states",
+          "then": "Forbidden, entitlement missing, and empty official data are three distinct EmptyState recipes. Forbidden includes a safe exit. Empty data does not look like a lock.",
+          "symbols": ["EmptyState", "design.md"],
           "exists": false
         }
       ]
