@@ -6,7 +6,9 @@ import {
   allowedFromCapabilityState,
   allowedPermissionSet,
   capabilityStateFromQuery,
+  filterByPermission,
   orgTabsForAccess,
+  ORG_TABS,
 } from "./permissions.ts";
 
 const withHome = {
@@ -49,6 +51,15 @@ describe("mobile EffectiveAccess helpers", () => {
     expect(unavailable.status).toBe("unavailable");
     expect(allowedFromCapabilityState(unavailable).size).toBe(0);
     expect(orgTabsForAccess(allowedFromCapabilityState(unavailable))).toEqual([]);
+  });
+
+  it("missing allowed set hides gated items", () => {
+    const catalog = [
+      { id: "public" },
+      { id: "home", requiredPermission: MOBILE_PERMISSION.organizationsRead },
+    ];
+    expect(filterByPermission(catalog, undefined).map((item) => item.id)).toEqual(["public"]);
+    expect(filterByPermission(ORG_TABS, undefined)).toEqual([]);
   });
 
   it("effective-access 403 is recoverable and fail-closed", () => {

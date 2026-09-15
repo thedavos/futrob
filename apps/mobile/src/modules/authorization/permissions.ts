@@ -52,9 +52,8 @@ export function filterByPermission<T extends PermissionGatedItem>(
   items: readonly T[],
   allowedPermissions: ReadonlySet<string> | undefined,
 ): readonly T[] {
-  if (!allowedPermissions) return items;
   return items.filter(
-    (item) => !item.requiredPermission || allowedPermissions.has(item.requiredPermission),
+    (item) => !item.requiredPermission || allowedPermissions?.has(item.requiredPermission) === true,
   );
 }
 
