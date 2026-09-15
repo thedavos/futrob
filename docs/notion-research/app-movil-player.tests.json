@@ -2,7 +2,7 @@
   {
     "tarea": "[Auth] Secure storage + refresh de sesión móvil",
     "url": "https://app.notion.com/3dc7b204009a8182bb0bcf38533c94f5",
-    "notas": "SecureStore ya guarda el bearer. Falta refresh silencioso ante 401, sign-out remoto y pruebas de que el token no sale en logs.",
+    "notas": "SecureStore ya guarda el bearer. No hay ruta de refresh. Falta sign-out remoto, política ante 401 y pruebas de que el token no sale en logs.",
     "tests": [
       {
         "layer": "unit",
@@ -21,8 +21,8 @@
       },
       {
         "layer": "integration",
-        "name": "silent refresh on 401 retries original request with new bearer",
-        "behavior": "Dado un GET /players/me 401 y un get-session que entrega un token nuevo, cuando el cliente reintenta, entonces el segundo request usa Bearer nuevo y el caller ve el body 200."
+        "name": "get-session on 401 retries with same token or clears session",
+        "behavior": "Dado un GET de producto 401, cuando el cliente llama GET /api/auth/get-session con el Bearer guardado, entonces una sesión aún válida reintenta el GET original con el mismo token y una sesión ausente limpia SecureStore y muestra login. No hay POST /api/auth/refresh ni bearer nuevo."
       },
       {
         "layer": "integration",
@@ -66,7 +66,7 @@
   {
     "tarea": "[SDK] Adaptadores móviles de onboarding + player",
     "url": "https://app.notion.com/3dc7b204009a81bbb946cd3c1b9b5dfb",
-    "notas": "getFutrobClient() ya envuelve el SDK. Falta una capa fina de onboarding y player (como el gateway web) sin copiar reglas de dominio.",
+    "notas": "getFutrobClient() ya envuelve el SDK. OpenAPI va por detrás del SDK. Falta una capa fina de onboarding y player sin copiar reglas de dominio.",
     "tests": [
       {
         "layer": "integration",
@@ -186,7 +186,7 @@
   {
     "tarea": "[UX] Auditoría 44 dp + estados vacíos Must en móvil",
     "url": "https://app.notion.com/3dc7b204009a81cf9021defc189452e8",
-    "notas": "Button e Input ya usan 44 dp. Falta la checklist de pantallas Must y los vacíos de producto, no solo el placeholder.",
+    "notas": "Button e Input ya usan 44 dp. Los links de auth no. Falta checklist Must, vacíos de producto y alinear tema claro u oscuro.",
     "tests": [
       {
         "layer": "unit",
@@ -200,6 +200,11 @@
       },
       {
         "layer": "unit",
+        "name": "login signup text link hit area is at least 44 dp",
+        "behavior": "Dado el link Crear una cuenta en login, cuando se mide el área táctil, entonces la altura es al menos theme.controlHeight (44 dp)."
+      },
+      {
+        "layer": "unit",
         "name": "inbox empty slot has Must title and CTA",
         "behavior": "Dado cero invitaciones pendientes, cuando el slot de inbox se pinta, entonces el título Must y el CTA están presentes."
       }
@@ -208,7 +213,7 @@
   {
     "tarea": "[Lógica] Onboarding móvil 3 caminos vía @futrob/sdk",
     "url": "https://app.notion.com/3dc7b204009a81f0b708d6c4eacd2e9e",
-    "notas": "El SDK y la API ya orquestan los 3 caminos. Móvil no guarda progreso, no hace skip/review/finish ni reanuda el paso.",
+    "notas": "SDK y API ya orquestan los 3 caminos. Móvil no guarda progreso ni finish. Skip de invitación en web cambia a path player. Resume vs intention sigue abierto.",
     "tests": [
       {
         "layer": "unit",
@@ -221,9 +226,14 @@
         "behavior": "Dado skip del club, cuando se avanza, entonces el paso actual es review y externalClub en finish es null."
       },
       {
+        "layer": "unit",
+        "name": "invitation skip switches path to player at game-account",
+        "behavior": "Dado path invitation, cuando elige Continuar como jugador, entonces el path pasa a player y el siguiente paso es game-account. No es un skip HTTP."
+      },
+      {
         "layer": "integration",
         "name": "login resumes persisted player club step instead of home",
-        "behavior": "Dado status incompleto path player currentStep club, cuando login resume, entonces se muestra el paso club, no home."
+        "behavior": "Dado status incompleto { path: player, currentStep: club } y la regla AC-MOB-001 de resume, cuando login resume, entonces se muestra el paso club, no home. El bootstrap web de producción (resolveOnboardingStep) siempre parte de intention."
       }
     ]
   },
@@ -252,7 +262,7 @@
   {
     "tarea": "[Lógica] Finish atómico y errores tipados de onboarding en móvil",
     "url": "https://app.notion.com/3dc7b204009a813d9025f671f98159b1",
-    "notas": "Finish atómico y códigos tipados viven en API y SDK. Móvil no mapea FutrobApiError ni reintenta el finish.",
+    "notas": "Finish atómico y códigos tipados viven en API y SDK. Móvil no mapea FutrobApiError. Falta key para identity.onboarding_path_conflict.",
     "tests": [
       {
         "layer": "unit",
@@ -263,6 +273,11 @@
         "layer": "unit",
         "name": "player path hides provider secret messages",
         "behavior": "Dado code provider.secret_message en path player, cuando se mapea, entonces el key es errors.onboarding.completePlayer y el code crudo no se muestra."
+      },
+      {
+        "layer": "unit",
+        "name": "maps identity.onboarding_path_conflict to i18n key",
+        "behavior": "Dado 409 identity.onboarding_path_conflict, cuando se mapea, entonces el key es errors.identity.onboarding_path_conflict, no un finish genérico. Hoy no está en catalogs.ts ni en finalizationError."
       },
       {
         "layer": "integration",
@@ -418,12 +433,12 @@
   {
     "tarea": "[Lógica] Mis partidos y Mis estadísticas en móvil vía SDK",
     "url": "https://app.notion.com/3dc7b204009a8164881debc59efe93d2",
-    "notas": "SDK ya apunta a /players/me/statistics y /players/me/matches. Móvil no los consume.",
+    "notas": "SDK tiene statistics, matches oficiales y recent-matches. Web pinta ProviderMatch recientes. Móvil no consume ninguno.",
     "tests": [
       {
         "layer": "integration",
-        "name": "matches loader uses /players/me/matches not encounters",
-        "behavior": "Dado el adaptador, cuando lista partidos, entonces la URL es /players/me/matches, no /encounters."
+        "name": "matches loader uses /players/me/recent-matches not official matches",
+        "behavior": "Dado el adaptador de Mis partidos (paridad web), cuando lista, entonces la URL es /players/me/recent-matches, no /encounters ni /players/me/matches. GET /players/me/matches es historial oficial distinto. AC-PLAYER-001 Recientes/Todos no está en la UI web (vistas all|league|playoff|friendly)."
       },
       {
         "layer": "integration",
@@ -435,12 +450,12 @@
   {
     "tarea": "[UI] Pantallas Mis partidos y Mis estadísticas",
     "url": "https://app.notion.com/3dc7b204009a810da7a8e67940ca5fc2",
-    "notas": "Pantallas web con vacío y CTA son la paridad. En móvil no existen.",
+    "notas": "Paridad web: vacíos needs_club / needs_game_account y filtros all|league|playoff|friendly. En móvil no existen.",
     "tests": [
       {
         "layer": "integration",
         "name": "matches empty state shows title and CTA",
-        "behavior": "Dado matches vacío, cuando la pantalla se pinta, entonces el título vacío y un CTA están presentes."
+        "behavior": "Dado recent-matches { kind: needs_club } o una lista vacía, cuando la pantalla se pinta, entonces el título vacío y un CTA están presentes."
       },
       {
         "layer": "integration",
@@ -474,7 +489,7 @@
   {
     "tarea": "[UI] Inbox de invitaciones + deep links claim/resume",
     "url": "https://app.notion.com/3dc7b204009a81caa597e4690d46e969",
-    "notas": "Web tiene inbox, claim por token y cupo teams.roster_full. Móvil no tiene UI ni resume del deep link.",
+    "notas": "Web tiene inbox, claim por token y cupo teams.roster_full. Copy del inbox web está hardcodeado en ES; el contrato bilingüe es catalogs.ts. Móvil no tiene UI ni resume.",
     "tests": [
       {
         "layer": "integration",
