@@ -28,6 +28,7 @@ export async function projectFixtureEncounter(
     awayTeamId: encounter.away.teamId,
     scheduledStartAt: encounter.scheduledStartAt,
     officialMatchCount: encounter.officialMatchCount,
+    stageId: encounter.stageId,
   });
   if (!encounter.series) return;
   const createdAt = deps.clock.now();

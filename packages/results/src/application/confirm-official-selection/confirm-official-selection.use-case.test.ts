@@ -141,6 +141,7 @@ describe("ConfirmOfficialSelectionUseCase", () => {
           encounterId: asEncounterId("enc-1"),
           organizationId: asOrganizationId("org-1"),
           competitionId: asCompetitionId("competition-1"),
+          stageId: "stage-1",
           homeTeamId: asTeamId("home"),
           awayTeamId: asTeamId("away"),
           scheduledStartAt: new Date("2026-07-01T20:00:00.000Z"),

@@ -4,6 +4,7 @@ export interface EncounterScheduleSnapshot {
   readonly encounterId: EncounterId;
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
+  readonly stageId: string;
   readonly homeTeamId: TeamId;
   readonly awayTeamId: TeamId;
   readonly scheduledStartAt: Date;

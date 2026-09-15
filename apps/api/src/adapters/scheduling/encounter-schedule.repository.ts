@@ -1,4 +1,8 @@
-import type { EncounterScheduleRepository, EncounterScheduleSnapshot } from "@futrob/scheduling";
+import {
+  asFixtureStageId,
+  type EncounterScheduleRepository,
+  type EncounterScheduleSnapshot,
+} from "@futrob/scheduling";
 import {
   asCompetitionId,
   asEncounterId,
@@ -16,6 +20,7 @@ const encounterScheduleRowSchema = z.object({
   encounter_id: pgTextSchema,
   organization_id: pgTextSchema,
   competition_id: pgTextSchema,
+  stage_id: pgTextSchema,
   home_team_id: pgTextSchema,
   away_team_id: pgTextSchema,
   scheduled_start_at: pgTimestampSchema,
@@ -72,7 +77,7 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
 
   async findById(encounterId: EncounterId): Promise<EncounterScheduleSnapshot | null> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT encounter_id, organization_id, competition_id, home_team_id, away_team_id,
+      `SELECT encounter_id, organization_id, competition_id, stage_id, home_team_id, away_team_id,
               scheduled_start_at, official_match_count
        FROM encounter_schedule_snapshots
        WHERE encounter_id = $1`,
@@ -85,10 +90,11 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
   async upsert(snapshot: EncounterScheduleSnapshot): Promise<EncounterScheduleSnapshot | null> {
     const result = await getPgExecutor(this.pool).query(
       `INSERT INTO encounter_schedule_snapshots (
-         encounter_id, organization_id, competition_id, home_team_id, away_team_id,
+         encounter_id, organization_id, competition_id, stage_id, home_team_id, away_team_id,
          scheduled_start_at, official_match_count
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (encounter_id) DO UPDATE SET
+         stage_id = EXCLUDED.stage_id,
          home_team_id = EXCLUDED.home_team_id,
          away_team_id = EXCLUDED.away_team_id,
          scheduled_start_at = EXCLUDED.scheduled_start_at,
@@ -100,6 +106,7 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
         snapshot.encounterId,
         snapshot.organizationId,
         snapshot.competitionId,
+        snapshot.stageId,
         snapshot.homeTeamId,
         snapshot.awayTeamId,
         snapshot.scheduledStartAt.toISOString(),
@@ -123,7 +130,7 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
   ): Promise<EncounterScheduleSnapshot | null> {
     if (teamIds.length === 0) return null;
     const result = await getPgExecutor(this.pool).query(
-      `SELECT encounter_id, organization_id, competition_id, home_team_id, away_team_id,
+      `SELECT encounter_id, organization_id, competition_id, stage_id, home_team_id, away_team_id,
               scheduled_start_at, official_match_count
        FROM encounter_schedule_snapshots
        WHERE (home_team_id = ANY($1::text[]) OR away_team_id = ANY($1::text[]))
@@ -144,6 +151,7 @@ function rehydrateEncounterScheduleSnapshot(
     encounterId: asEncounterId(row.encounter_id),
     organizationId: asOrganizationId(row.organization_id),
     competitionId: asCompetitionId(row.competition_id),
+    stageId: asFixtureStageId(row.stage_id),
     homeTeamId: asTeamId(row.home_team_id),
     awayTeamId: asTeamId(row.away_team_id),
     scheduledStartAt: row.scheduled_start_at,

@@ -12,6 +12,7 @@ import {
 } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-schedule-snapshot.ts";
+import { asFixtureStageId } from "../domain/entities/fixture-plan.ts";
 import type { ScheduleChangeRequest } from "../domain/entities/schedule-change-request.ts";
 import {
   ActiveScheduleChangeRequestExists,
@@ -47,6 +48,7 @@ const encounter: EncounterScheduleSnapshot = {
   encounterId,
   organizationId,
   competitionId,
+  stageId: asFixtureStageId("stage-1"),
   homeTeamId,
   awayTeamId,
   scheduledStartAt: new Date("2026-09-20T20:00:00.000Z"),

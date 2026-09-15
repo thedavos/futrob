@@ -84,6 +84,7 @@ const encounterReader: EncounterReaderPort = {
             encounterId,
             organizationId: ORG,
             competitionId: COMP,
+            stageId: "stage-1",
             homeTeamId: asTeamId("team_home"),
             awayTeamId: asTeamId("team_away"),
             scheduledStartAt: new Date("2026-08-01T18:00:00.000Z"),

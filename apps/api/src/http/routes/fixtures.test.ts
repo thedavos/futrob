@@ -121,6 +121,7 @@ describe("apps/api http fixtures", () => {
         body: JSON.stringify({
           organizationId,
           competitionId,
+          stageId: readableEncounter.stageId,
           homeTeamId: readableEncounter.home.kind === "team" ? readableEncounter.home.teamId : "",
           awayTeamId: readableEncounter.away.kind === "team" ? readableEncounter.away.teamId : "",
           scheduledStartAt: "2026-09-04T01:00:00.000Z",

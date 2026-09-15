@@ -20,6 +20,7 @@ const encounter = {
   encounterId: asEncounterId("encounter-1"),
   organizationId: asOrganizationId("organization-1"),
   competitionId: asCompetitionId("competition-1"),
+  stageId: "stage-1",
   homeTeamId: asTeamId("team-home"),
   awayTeamId: asTeamId("team-away"),
   scheduledStartAt: new Date("2026-09-14T20:00:00.000Z"),

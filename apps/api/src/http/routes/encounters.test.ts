@@ -1,6 +1,7 @@
 import { listEncounterCandidatesResponseSchema } from "@futrob/api-contracts";
 import type { ProviderMatch } from "@futrob/game-data";
 import { ListEncounterCandidatesUseCase } from "@futrob/results";
+import { asFixtureStageId } from "@futrob/scheduling";
 import {
   asCompetitionId,
   asEncounterId,
@@ -86,6 +87,7 @@ describe("GET /api/v1/encounters/:encounterId/candidates", () => {
       awayTeamId,
       scheduledStartAt: new Date("2026-09-14T20:00:00.000Z"),
       officialMatchCount: 1,
+      stageId: asFixtureStageId("stage-1"),
     });
     await modules.teams.externalClubConnections.upsert({
       teamId: homeTeamId,
