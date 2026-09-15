@@ -1,0 +1,497 @@
+{
+  "epic": "Match Center y resultados",
+  "source": {
+    "input": "uploads/match-center-resultados.json",
+    "notionDatabase": "Futrob — Breakdown de tareas del MVP"
+  },
+  "tasks": [
+    {
+      "tarea": "[API] Endpoints selección / confirmación / disputa",
+      "url": "https://app.notion.com/3dc7b204009a812d8f2ec66662d3a161",
+      "prioridad": "P0",
+      "tests": [
+        {
+          "id": "api-select-happy",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "an Encounter with officialMatchCount 1, two distinct window candidates, and a captain actor with propose",
+          "when": "the client POSTs /api/v1/encounters/{id}/official-selection with one valid ExternalReference and service-auth headers",
+          "then": "status is 201, body status is awaiting_opponent_confirmation, and the outbox contains results.official-matches-selected"
+        },
+        {
+          "id": "api-select-foreign-actor-404",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "the same Encounter and an actor from another organization",
+          "when": "that actor POSTs the same path",
+          "then": "status is 404 and body code is results.encounter_not_found"
+        },
+        {
+          "id": "api-select-missing-bearer",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "a valid body and no Authorization header",
+          "when": "the client POSTs the selection path",
+          "then": "status is 401 and body code is api.unauthorized"
+        },
+        {
+          "id": "api-select-slot-count",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "officialMatchCount 2 and a body with one slot",
+          "when": "the captain proposes",
+          "then": "status is 400 and body code is results.invalid_selection"
+        },
+        {
+          "id": "api-select-duplicate-ref",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "two slots that repeat the same providerKey and externalId",
+          "when": "the captain proposes",
+          "then": "status is 400 and body code is results.duplicate_provider_match"
+        },
+        {
+          "id": "api-confirm-happy",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "a selection in awaiting_opponent_confirmation and the rival captain",
+          "when": "the rival POSTs /api/v1/encounters/{id}/official-selection/confirm",
+          "then": "status is 200, OfficialResult.status is approved, revision is 1, and the outbox contains exactly one results.official-result-approved"
+        },
+        {
+          "id": "api-confirm-replay",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "that approved result",
+          "when": "the rival confirms again with the same idempotency key",
+          "then": "status is 200, revision stays 1, and no second results.official-result-approved is published"
+        },
+        {
+          "id": "api-select-ignores-client-role",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "a JSON body that sets role to organizer",
+          "when": "an actor without propose posts selection",
+          "then": "status is 404 and body code is results.encounter_not_found"
+        },
+        {
+          "id": "api-confirm-without-selection",
+          "file": "apps/api/src/http/routes/encounters-selection.test.ts",
+          "layer": "http",
+          "given": "no selection",
+          "when": "anyone posts confirm",
+          "then": "status is 404 and body code is results.selection_not_found"
+        },
+        {
+          "id": "api-openapi-operations",
+          "file": "packages/api-contracts/src/v1/openapi/encounter-selection.test.ts",
+          "layer": "contract",
+          "given": "OpenAPI generated from futrobOpenApiV1",
+          "when": "the test reads paths",
+          "then": "POST /encounters/{encounterId}/official-selection, confirm POST, and disputes POST exist with ApiError 401 and 404"
+        }
+      ]
+    },
+    {
+      "tarea": "[SDK] Métodos results/encounters en SDK",
+      "url": "https://app.notion.com/3dc7b204009a812b981bf4b5bb4158f9",
+      "prioridad": "P0",
+      "tests": [
+        {
+          "id": "sdk-select-parse",
+          "file": "packages/sdk/src/resources/results.test.ts",
+          "layer": "sdk",
+          "given": "mockFetch that expects POST .../encounters/encounter-1/official-selection and returns id sel-1 with status awaiting_opponent_confirmation",
+          "when": "client.results.selectOfficialMatches(\"encounter-1\", { selections: [...] }) runs",
+          "then": "the resolved value status is awaiting_opponent_confirmation and id is sel-1"
+        },
+        {
+          "id": "sdk-confirm-parse",
+          "file": "packages/sdk/src/resources/results.test.ts",
+          "layer": "sdk",
+          "given": "a confirm response with id result-1, status approved, revision 1",
+          "when": "client.results.confirmOfficialSelection(\"encounter-1\") runs",
+          "then": "revision is 1 and status is approved"
+        },
+        {
+          "id": "sdk-select-not-found",
+          "file": "packages/sdk/src/resources/results.test.ts",
+          "layer": "sdk",
+          "given": "a 404 body { \"code\": \"results.encounter_not_found\" }",
+          "when": "selectOfficialMatches runs",
+          "then": "the SDK throws FutrobApiError whose code is results.encounter_not_found"
+        },
+        {
+          "id": "sdk-reject-and-dispute-paths",
+          "file": "packages/sdk/src/resources/results.test.ts",
+          "layer": "sdk",
+          "given": "rejectOfficialSelection and openMatchDispute on the resource",
+          "when": "each is called with a valid body",
+          "then": "fetch uses POST on /encounters/encounter-1/official-selection/reject and /encounters/encounter-1/disputes"
+        },
+        {
+          "id": "sdk-confirm-rejects-unknown-status",
+          "file": "packages/sdk/src/resources/results.test.ts",
+          "layer": "sdk",
+          "given": "a confirm payload with status \"done\"",
+          "when": "the parse function runs",
+          "then": "Zod throws"
+        },
+        {
+          "id": "sdk-candidates-unchanged",
+          "file": "packages/sdk/src/resources/results.test.ts",
+          "layer": "sdk",
+          "given": "the existing candidates tests",
+          "when": "this change lands",
+          "then": "listEncounterCandidates still requests GET /encounters/encounter-1/candidates"
+        }
+      ]
+    },
+    {
+      "tarea": "[UI] Pantallas Match Center del enfrentamiento",
+      "url": "https://app.notion.com/3dc7b204009a8162b0eae6434b132fff",
+      "prioridad": "P0",
+      "tests": [
+        {
+          "id": "ui-captain-sees-propose",
+          "file": "apps/web/src/modules/results/presentation/match-center-page.test.tsx",
+          "layer": "presentation",
+          "given": "a captain session and a loader that returns two candidates and allowed containing encounters.official-selection.propose",
+          "when": "the page at /orgs/org-1/competitions/comp-1/encounters/enc-1 renders",
+          "then": "both team names, kickoff, two official slots, and a propose control with accessible name are in the document"
+        },
+        {
+          "id": "ui-player-no-captain-actions",
+          "file": "apps/web/src/modules/results/presentation/match-center-page.test.tsx",
+          "layer": "presentation",
+          "given": "a player roster role on a participating Team, allowed with encounters.read only",
+          "when": "the same page renders",
+          "then": "candidates may be hidden or read-only and no propose, confirm, or dispute button is present"
+        },
+        {
+          "id": "ui-clubs-not-connected-empty",
+          "file": "apps/web/src/modules/results/presentation/match-center-candidates.test.tsx",
+          "layer": "presentation",
+          "given": "status clubs_not_connected and sides [\"away\"]",
+          "when": "the EA candidates section renders",
+          "then": "the empty copy names the away club connection, not a generic void"
+        },
+        {
+          "id": "ui-candidates-unofficial",
+          "file": "apps/web/src/modules/results/presentation/match-center-candidates.test.tsx",
+          "layer": "presentation",
+          "given": "five candidate rows with hour, score, duration, sides, and completeness partial",
+          "when": "the list renders",
+          "then": "all five stay unofficial and the partial flag is visible"
+        },
+        {
+          "id": "ui-rival-confirm-reject",
+          "file": "apps/web/src/modules/results/presentation/match-center-selection.test.tsx",
+          "layer": "presentation",
+          "given": "a selection awaiting_opponent_confirmation proposed by the other captain",
+          "when": "the rival captain views Official matches and Selection",
+          "then": "confirm and reject controls are present and propose is not the primary action"
+        },
+        {
+          "id": "ui-forbidden-is-403",
+          "file": "apps/web/src/routes/_app/orgs/$orgId/competitions/$competitionId/encounters/$encounterId.test.tsx",
+          "layer": "presentation",
+          "given": "no permission to read the Encounter",
+          "when": "the route loads",
+          "then": "the user sees the 403 pattern, not an empty Match Center"
+        }
+      ]
+    },
+    {
+      "tarea": "[Domain] Asociación persistida de candidatos + recálculo tras reprogramación",
+      "url": "https://app.notion.com/3dc7b204009a81a192f2ce7cc405165f",
+      "prioridad": "P0",
+      "tests": [
+        {
+          "id": "assoc-persist-window",
+          "file": "packages/results/src/application/associate-encounter-candidates/associate-encounter-candidates.use-case.test.ts",
+          "layer": "application",
+          "given": "both clubs connected and three ProviderMatch rows, two inside the window and one outside",
+          "when": "ListEncounterCandidatesUseCase runs after a persist-association step",
+          "then": "the stored association count is 2 and the ready payload candidates length is 2 with those externalId values"
+        },
+        {
+          "id": "assoc-idempotent-upsert",
+          "file": "packages/results/src/application/associate-encounter-candidates/associate-encounter-candidates.use-case.test.ts",
+          "layer": "application",
+          "given": "those two association rows",
+          "when": "the same associate command runs again with the same matches",
+          "then": "row count stays 2 and primary keys do not change"
+        },
+        {
+          "id": "recalc-after-reschedule",
+          "file": "packages/results/src/application/recalculate-encounter-candidates/recalculate-encounter-candidates.use-case.test.ts",
+          "layer": "application",
+          "given": "associations for kickoff T and a later scheduling.encounter-rescheduled to T+24h",
+          "when": "recalc runs",
+          "then": "rows that leave the new window stay stored with eligibility false, new in-window matches insert, and selected ExternalReference values are unchanged"
+        },
+        {
+          "id": "recalc-replay",
+          "file": "packages/results/src/application/recalculate-encounter-candidates/recalculate-encounter-candidates.use-case.test.ts",
+          "layer": "application",
+          "given": "a second identical reschedule event",
+          "when": "recalc runs again",
+          "then": "no extra rows and eligibility flags match the first recalc"
+        },
+        {
+          "id": "select-requires-associated-candidate",
+          "file": "packages/results/src/application/select-official-matches/select-official-matches.use-case.test.ts",
+          "layer": "application",
+          "given": "a selected ref that is no longer eligible after recalc",
+          "when": "SelectOfficialMatchesUseCase is asked to propose a different ineligible ref",
+          "then": "the error code is results.invalid_selection or results.candidate_not_associated, and the original selection row still has the old ref"
+        },
+        {
+          "id": "candidate-window-product-default",
+          "file": "packages/results/src/domain/policies/candidate-window.test.ts",
+          "layer": "domain",
+          "given": "candidateWindowFor(new Date(\"2026-09-14T20:00:00.000Z\"))",
+          "when": "the product default is implemented",
+          "then": "from is 2026-09-14T14:00:00.000Z and to is 2026-09-15T02:00:00.000Z if DEC-023 6 hours wins, or keep 18 hours only after an explicit product decision"
+        }
+      ]
+    },
+    {
+      "tarea": "[Domain] Rechazo, selección alternativa y disputa completa",
+      "url": "https://app.notion.com/3dc7b204009a81a2b0bbe594a3b477b1",
+      "prioridad": "P0",
+      "tests": [
+        {
+          "id": "reject-rival",
+          "file": "packages/results/src/application/reject-official-selection/reject-official-selection.use-case.test.ts",
+          "layer": "application",
+          "given": "selection awaiting_opponent_confirmation proposed by captain A",
+          "when": "captain B rejects",
+          "then": "latest selection status is selection_in_progress or disputed per the chosen machine, OfficialResult is absent, and results.official-result-approved is not published"
+        },
+        {
+          "id": "alternative-incompatible",
+          "file": "packages/results/src/application/propose-alternative-official-selection/propose-alternative-official-selection.use-case.test.ts",
+          "layer": "application",
+          "given": "that proposal",
+          "when": "captain B proposes a different slot set",
+          "then": "status becomes organizer_review or disputed, no OfficialResult is saved, and statistics are not projected"
+        },
+        {
+          "id": "same-selection-auto-approve",
+          "file": "packages/results/src/application/confirm-official-selection/confirm-official-selection.use-case.test.ts",
+          "layer": "application",
+          "given": "two captains who post the same slot set",
+          "when": "the second confirm runs and completeness is complete",
+          "then": "one OfficialResult with revision 1 and status approved exists, and results.official-result-approved is published once"
+        },
+        {
+          "id": "proposer-cannot-self-confirm",
+          "file": "packages/results/src/application/confirm-official-selection/confirm-official-selection.use-case.test.ts",
+          "layer": "application",
+          "given": "captain A as proposer",
+          "when": "captain A confirms their own proposal without organizer permission",
+          "then": "the error is results.selection_not_confirmable or results.official_result_forbidden"
+        },
+        {
+          "id": "organizer-resolves-dispute",
+          "file": "packages/results/src/application/resolve-match-dispute/resolve-match-dispute.use-case.test.ts",
+          "layer": "application",
+          "given": "disputed",
+          "when": "an organizer with encounters.results.approve resolves for A's slots",
+          "then": "OfficialResult.status is approved and results.match-dispute-opened had already been published on open"
+        },
+        {
+          "id": "reject-after-approved",
+          "file": "packages/results/src/application/reject-official-selection/reject-official-selection.use-case.test.ts",
+          "layer": "application",
+          "given": "approved",
+          "when": "anyone rejects",
+          "then": "SelectionNotConfirmable or a new tagged code and the approved snapshot is unchanged"
+        },
+        {
+          "id": "selection-status-exhaustive",
+          "file": "packages/results/src/domain/value-objects/selection-status.test-d.ts",
+          "layer": "domain",
+          "given": "a switch over SelectionStatus",
+          "when": "a new variant is added",
+          "then": "the default never check fails to compile"
+        }
+      ]
+    },
+    {
+      "tarea": "[Domain] Avance ganador / clasificado / bracket",
+      "url": "https://app.notion.com/3dc7b204009a815ab937c60cd28edf19",
+      "prioridad": "P0",
+      "tests": [
+        {
+          "id": "advance-knockout-winner-slot",
+          "file": "packages/scheduling/src/application/advance-fixture-from-official-result/advance-fixture-from-official-result.use-case.test.ts",
+          "layer": "application",
+          "given": "a knockout Encounter whose next round away slot is { kind: \"winner\", encounterId: \"enc-1\" } and an approved OfficialResult where home scored more aggregate goals",
+          "when": "advance runs",
+          "then": "that away slot is { kind: \"team\", teamId: homeTeamId } and the league standings table is unchanged"
+        },
+        {
+          "id": "advance-league-no-bracket-write",
+          "file": "packages/scheduling/src/application/advance-fixture-from-official-result/advance-fixture-from-official-result.use-case.test.ts",
+          "layer": "application",
+          "given": "format league and the same approved result",
+          "when": "advance runs",
+          "then": "no FixtureParticipantSlot mutates and standings still come only from ProjectOfficialResultUseCase"
+        },
+        {
+          "id": "advance-bye-untouched",
+          "file": "packages/scheduling/src/application/advance-fixture-from-official-result/advance-fixture-from-official-result.use-case.test.ts",
+          "layer": "application",
+          "given": "a bye slot",
+          "when": "the adjacent Encounter is approved",
+          "then": "the bye remains { kind: \"bye\" } with no fabricated score"
+        },
+        {
+          "id": "advance-aggregate-not-match-wins",
+          "file": "packages/scheduling/src/application/advance-fixture-from-official-result/advance-fixture-from-official-result.use-case.test.ts",
+          "layer": "application",
+          "given": "aggregate_score series 1-1 on slots then 2-0",
+          "when": "advance runs",
+          "then": "the winner is the team with aggregate 3-1, not the team that won more official matches"
+        },
+        {
+          "id": "unadvance-after-void",
+          "file": "packages/scheduling/src/application/advance-fixture-from-official-result/advance-fixture-from-official-result.use-case.test.ts",
+          "layer": "application",
+          "given": "an approved result later voided",
+          "when": "unadvance runs",
+          "then": "the downstream slot returns to { kind: \"winner\", encounterId: \"enc-1\" } and occupancy hasApprovedOfficialResult is false"
+        },
+        {
+          "id": "advance-tie-organizer-review",
+          "file": "packages/scheduling/src/application/advance-fixture-from-official-result/advance-fixture-from-official-result.use-case.test.ts",
+          "layer": "application",
+          "given": "an elimination draw with no configured tie-break data",
+          "when": "advance runs",
+          "then": "a tagged error such as scheduling.tie_requires_organizer_review and no slot write"
+        }
+      ]
+    },
+    {
+      "tarea": "[Data] Auditoría de cambios de selección/confirmación",
+      "url": "https://app.notion.com/3dc7b204009a8166bd04e99e939acc4b",
+      "prioridad": "P1",
+      "tests": [
+        {
+          "id": "audit-propose-before-null",
+          "file": "packages/results/src/application/select-official-matches/select-official-matches.use-case.test.ts",
+          "layer": "application",
+          "given": "no prior selection",
+          "when": "captain A proposes slots [m-1]",
+          "then": "one audit row has actorId A, action propose, before null, after.slots[0].providerMatchRef.externalId m-1, and occurredAt the clock instant"
+        },
+        {
+          "id": "audit-confirm-status-transition",
+          "file": "packages/results/src/application/confirm-official-selection/confirm-official-selection.use-case.test.ts",
+          "layer": "application",
+          "given": "that proposal",
+          "when": "rival confirms",
+          "then": "a second row has action confirm, before.status awaiting_opponent_confirmation, after.status approved, and no provider payload blob"
+        },
+        {
+          "id": "audit-dispute-redacts-pii",
+          "file": "apps/api/src/adapters/results/official-selection-audit.repository.test.ts",
+          "layer": "adapter",
+          "given": "a dispute reason \"call me at +1-555-0100\"",
+          "when": "the dispute opens",
+          "then": "stored after-image reason is a safe token or redacted string, not the phone number"
+        },
+        {
+          "id": "audit-confirm-idempotent",
+          "file": "apps/api/src/adapters/results/official-selection-audit.repository.test.ts",
+          "layer": "adapter",
+          "given": "the same confirm replay with the same request id",
+          "when": "confirm runs twice",
+          "then": "audit row count for that request id stays 1"
+        },
+        {
+          "id": "audit-unique-provider-match",
+          "file": "packages/results/src/application/select-official-matches/select-official-matches.use-case.test.ts",
+          "layer": "application",
+          "given": "an ea-clubs id already approved on Encounter 1",
+          "when": "Encounter 2 tries to select it",
+          "then": "the command fails with a tagged uniqueness error and an audit row records the attempt"
+        }
+      ]
+    },
+    {
+      "tarea": "[QA] Integración selección→confirmación→OfficialResult",
+      "url": "https://app.notion.com/3dc7b204009a81539231f7c7c5197073",
+      "prioridad": "P1",
+      "tests": [
+        {
+          "id": "qa-http-golden-path",
+          "file": "apps/api/src/http/routes/encounters-official-result.integration.test.ts",
+          "layer": "http-integration",
+          "given": "org A, two connected clubs, one in-window ProviderMatch, captain A and captain B on opposite Teams",
+          "when": "A posts selection and B posts confirm through createApp",
+          "then": "HTTP 200, official_results.status is approved, revision is 1, player_match_contributions has one row for that match externalPlayerId, and events are results.official-matches-selected then results.official-result-approved"
+        },
+        {
+          "id": "qa-confirm-replay",
+          "file": "apps/api/src/http/routes/encounters-official-result.integration.test.ts",
+          "layer": "http-integration",
+          "given": "that approved Encounter",
+          "when": "B posts confirm again",
+          "then": "HTTP 200, still revision 1, still one contribution row, still one approved event"
+        },
+        {
+          "id": "qa-two-org-isolation",
+          "file": "apps/api/src/http/routes/encounters-official-result.integration.test.ts",
+          "layer": "http-integration",
+          "given": "the same headers against org B Encounter id",
+          "when": "A posts selection",
+          "then": "404 results.encounter_not_found and org B tables are empty of A's selection"
+        },
+        {
+          "id": "qa-typed-reject",
+          "file": "apps/api/src/http/routes/encounters-official-result.integration.test.ts",
+          "layer": "http-integration",
+          "given": "awaiting confirmation",
+          "when": "B posts reject",
+          "then": "HTTP 200 or 409 per the domain contract, official_results has no approved row, and body code is a stable results.* code"
+        },
+        {
+          "id": "qa-typed-invalid-selection",
+          "file": "apps/api/src/http/routes/encounters-official-result.integration.test.ts",
+          "layer": "http-integration",
+          "given": "slot count mismatch",
+          "when": "A posts selection",
+          "then": "400 results.invalid_selection"
+        },
+        {
+          "id": "qa-typed-duplicate-ref",
+          "file": "apps/api/src/http/routes/encounters-official-result.integration.test.ts",
+          "layer": "http-integration",
+          "given": "duplicate provider ref across slots",
+          "when": "A posts selection",
+          "then": "400 results.duplicate_provider_match"
+        },
+        {
+          "id": "qa-missing-snapshot",
+          "file": "apps/api/src/http/routes/encounters-official-result.integration.test.ts",
+          "layer": "http-integration",
+          "given": "missing provider snapshot at confirm",
+          "when": "B confirms",
+          "then": "409 or 404 results.provider_match_snapshot_missing and no official row"
+        },
+        {
+          "id": "qa-cli-smoke-stays-domain",
+          "file": "apps/cli/src/commands/results-smoke.ts",
+          "layer": "cli",
+          "given": "npm run cli -- results-smoke",
+          "when": "it still uses fakes",
+          "then": "keep it as a domain smoke, and add a live CLI path only after HTTP exists"
+        }
+      ]
+    }
+  ]
+}
