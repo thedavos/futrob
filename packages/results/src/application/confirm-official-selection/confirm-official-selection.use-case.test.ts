@@ -129,7 +129,7 @@ describe("ConfirmOfficialSelectionUseCase", () => {
     };
     const providerMatches: ProviderMatchReaderPort = {
       async listCandidatesForEncounter() {
-        return [providerMatch];
+        return { status: "ready", matches: [providerMatch] };
       },
       async getByExternalRef() {
         return providerMatch;

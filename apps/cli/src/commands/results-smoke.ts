@@ -98,7 +98,10 @@ const encounterReader: EncounterReaderPort = {
 
 const providerMatches: ProviderMatchReaderPort = {
   listCandidatesForEncounter: () =>
-    Promise.resolve([fakeProviderMatch("m1"), fakeProviderMatch("m2")]),
+    Promise.resolve({
+      status: "ready",
+      matches: [fakeProviderMatch("m1"), fakeProviderMatch("m2")],
+    }),
   getByExternalRef: (candidate) =>
     Promise.resolve(
       candidate.externalId === "m1" || candidate.externalId === "m2"

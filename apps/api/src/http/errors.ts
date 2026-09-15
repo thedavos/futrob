@@ -70,7 +70,8 @@ export function isHttpMappableFailure(
 function statusForFailureCode(code: string): number {
   if (
     code === "game_data.provider_unavailable" ||
-    code === "game_data.provider_refresh_in_progress"
+    code === "game_data.provider_refresh_in_progress" ||
+    code === "results.candidate_data_unavailable"
   ) {
     return 503;
   }

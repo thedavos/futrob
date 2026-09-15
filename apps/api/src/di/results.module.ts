@@ -1,5 +1,6 @@
 import {
   ConfirmOfficialSelectionUseCase,
+  ListEncounterCandidatesUseCase,
   SelectOfficialMatchesUseCase,
   VoidOfficialResultUseCase,
   type EncounterReaderPort,
@@ -58,6 +59,11 @@ export function createResultsModule(input: {
     selections,
     results,
     officialResultReader,
+    listEncounterCandidates: new ListEncounterCandidatesUseCase({
+      encounterReader: input.encounterReader,
+      providerMatches: input.providerMatches,
+      authorization: input.authorization,
+    }),
     selectOfficialMatches: new SelectOfficialMatchesUseCase({
       encounterReader: input.encounterReader,
       selections,

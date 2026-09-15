@@ -174,7 +174,7 @@ export class PostgresProviderMatchRepository implements ProviderMatchRepository 
            (home_external_club_id = $4 AND away_external_club_id = $5)
            OR (home_external_club_id = $5 AND away_external_club_id = $4)
          )
-       ORDER BY occurred_at ASC`,
+       ORDER BY occurred_at ASC, provider_key ASC, external_match_id ASC`,
       [
         input.providerKey,
         input.from.toISOString(),
