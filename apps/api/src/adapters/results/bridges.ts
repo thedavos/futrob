@@ -29,6 +29,7 @@ export class SchedulingEncounterReader implements EncounterReaderPort {
       encounterId: snapshot.encounterId,
       organizationId: snapshot.organizationId,
       competitionId: snapshot.competitionId,
+      stageId: snapshot.stageId,
       homeTeamId: snapshot.homeTeamId,
       awayTeamId: snapshot.awayTeamId,
       scheduledStartAt: snapshot.scheduledStartAt,

@@ -1,4 +1,4 @@
-import type { EncounterReaderPort } from "@/modules/results";
+import { asEncounterStageId, type EncounterReaderPort } from "@/modules/results";
 import {
   asCompetitionId,
   asEncounterId,
@@ -18,6 +18,7 @@ export class ProductApiEncounterReader implements EncounterReaderPort {
         encounterId: asEncounterId(snapshot.encounterId),
         organizationId: asOrganizationId(snapshot.organizationId),
         competitionId: asCompetitionId(snapshot.competitionId),
+        stageId: asEncounterStageId(snapshot.stageId),
         homeTeamId: asTeamId(snapshot.homeTeamId),
         awayTeamId: asTeamId(snapshot.awayTeamId),
         scheduledStartAt: new Date(snapshot.scheduledStartAt),

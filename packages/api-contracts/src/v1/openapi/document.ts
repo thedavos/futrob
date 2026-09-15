@@ -1316,6 +1316,7 @@ export const futrobOpenApiV1 = {
                 required: [
                   "organizationId",
                   "competitionId",
+                  "stageId",
                   "homeTeamId",
                   "awayTeamId",
                   "scheduledStartAt",
@@ -1324,6 +1325,7 @@ export const futrobOpenApiV1 = {
                 properties: {
                   organizationId: { type: "string" },
                   competitionId: { type: "string" },
+                  stageId: { type: "string" },
                   homeTeamId: { type: "string" },
                   awayTeamId: { type: "string" },
                   scheduledStartAt: { type: "string", format: "date-time" },
@@ -2535,6 +2537,7 @@ export const futrobOpenApiV1 = {
           "encounterId",
           "organizationId",
           "competitionId",
+          "stageId",
           "homeTeamId",
           "awayTeamId",
           "scheduledStartAt",
@@ -2547,6 +2550,7 @@ export const futrobOpenApiV1 = {
           encounterId: { type: "string" },
           organizationId: { type: "string" },
           competitionId: { type: "string" },
+          stageId: { type: "string" },
           homeTeamId: { type: "string" },
           awayTeamId: { type: "string" },
           scheduledStartAt: { type: "string", format: "date-time" },

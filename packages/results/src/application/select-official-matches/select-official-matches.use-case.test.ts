@@ -9,7 +9,10 @@ import {
   type DomainEvent,
   type EventPublisherPort,
 } from "@futrob/shared-kernel";
-import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import {
+  asEncounterStageId,
+  type EncounterReaderPort,
+} from "../../domain/ports/encounter-reader.port.ts";
 import type { OfficialMatchSelectionRepository } from "../../domain/ports/official-result.repository.ts";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
 import {
@@ -104,6 +107,7 @@ describe("SelectOfficialMatchesUseCase", () => {
         encounterId: asEncounterId("enc-1"),
         organizationId: asOrganizationId("org-1"),
         competitionId: asCompetitionId("competition-1"),
+        stageId: asEncounterStageId("stage-1"),
         homeTeamId: asTeamId("home"),
         awayTeamId: asTeamId("away"),
         scheduledStartAt: new Date("2026-07-01T20:00:00.000Z"),
@@ -136,6 +140,7 @@ describe("SelectOfficialMatchesUseCase", () => {
         encounterId: asEncounterId("enc-1"),
         organizationId: asOrganizationId("org-1"),
         competitionId: asCompetitionId("competition-1"),
+        stageId: asEncounterStageId("stage-1"),
         homeTeamId: asTeamId("home"),
         awayTeamId: asTeamId("away"),
         scheduledStartAt: new Date("2026-07-01T20:00:00.000Z"),
@@ -174,6 +179,7 @@ describe("SelectOfficialMatchesUseCase", () => {
         encounterId: asEncounterId("enc-1"),
         organizationId: asOrganizationId("org-1"),
         competitionId: asCompetitionId("competition-1"),
+        stageId: asEncounterStageId("stage-1"),
         homeTeamId: asTeamId("home"),
         awayTeamId: asTeamId("away"),
         scheduledStartAt: new Date("2026-07-01T20:00:00.000Z"),

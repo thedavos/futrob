@@ -48,6 +48,7 @@ export class UpsertEncounterScheduleSnapshotUseCase {
     }
     if (
       snapshot.homeTeamId === snapshot.awayTeamId ||
+      snapshot.stageId.trim() === "" ||
       !Number.isFinite(snapshot.scheduledStartAt.getTime()) ||
       (snapshot.officialMatchCount !== 1 && snapshot.officialMatchCount !== 2)
     ) {

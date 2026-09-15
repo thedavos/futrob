@@ -1,4 +1,5 @@
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
+import { asFixtureStageId } from "@futrob/scheduling";
 import { describe, expect, it } from "vite-plus/test";
 import { InMemoryEncounterScheduleRepository } from "./encounter-schedule.repository.ts";
 
@@ -9,6 +10,7 @@ describe("InMemoryEncounterScheduleRepository", () => {
       encounterId: asEncounterId("encounter-1"),
       organizationId: asOrganizationId("org-1"),
       competitionId: asCompetitionId("competition-1"),
+      stageId: asFixtureStageId("stage-1"),
       homeTeamId: asTeamId("home-1"),
       awayTeamId: asTeamId("away-1"),
       scheduledStartAt: new Date("2026-08-10T20:00:00.000Z"),
@@ -32,6 +34,7 @@ describe("InMemoryEncounterScheduleRepository", () => {
       encounterId: asEncounterId("encounter-later"),
       organizationId: asOrganizationId("org-1"),
       competitionId: asCompetitionId("competition-1"),
+      stageId: asFixtureStageId("stage-1"),
       homeTeamId: asTeamId("home-1"),
       awayTeamId: asTeamId("away-2"),
       scheduledStartAt: new Date("2026-09-08T21:00:00.000Z"),
@@ -41,6 +44,7 @@ describe("InMemoryEncounterScheduleRepository", () => {
       encounterId: asEncounterId("encounter-next"),
       organizationId: asOrganizationId("org-1"),
       competitionId: asCompetitionId("competition-1"),
+      stageId: asFixtureStageId("stage-1"),
       homeTeamId: asTeamId("away-2"),
       awayTeamId: asTeamId("home-1"),
       scheduledStartAt: new Date("2026-09-07T21:00:00.000Z"),

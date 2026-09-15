@@ -180,6 +180,7 @@ function dependencies(
         encounterId,
         organizationId,
         competitionId,
+        stageId: asFixtureStageId("stage-1"),
         homeTeamId,
         awayTeamId,
         scheduledStartAt: new Date("2026-09-07T21:00:00.000Z"),

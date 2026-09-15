@@ -112,6 +112,7 @@ export {
   fixtureGenerationKey,
   generateFixturePlan,
 } from "./domain/policies/generate-fixture-plan.ts";
+export type { CompetitionWallTime } from "./domain/policies/interpret-competition-wall-time.ts";
 export { replaceEncounter } from "./domain/policies/edit-fixture-encounter.ts";
 export type { RescheduleScope } from "./domain/value-objects/reschedule-scope.ts";
 export type { EncounterRescheduledEvent } from "./domain/events/encounter-rescheduled.event.ts";

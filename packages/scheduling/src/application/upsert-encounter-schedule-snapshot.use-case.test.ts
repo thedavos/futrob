@@ -8,6 +8,7 @@ import {
 } from "@futrob/shared-kernel";
 import { unwrapErr } from "@futrob/test-support";
 import { describe, expect, it } from "vite-plus/test";
+import { asFixtureStageId } from "../domain/entities/fixture-plan.ts";
 import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-schedule-snapshot.ts";
 import type { EncounterScheduleRepository } from "../domain/ports/encounter-schedule.repository.ts";
 import { UpsertEncounterScheduleSnapshotUseCase } from "./upsert-encounter-schedule-snapshot.use-case.ts";
@@ -32,6 +33,7 @@ const snapshot: EncounterScheduleSnapshot = {
   encounterId: asEncounterId("encounter-1"),
   organizationId: asOrganizationId("org-1"),
   competitionId: asCompetitionId("competition-1"),
+  stageId: asFixtureStageId("stage-1"),
   homeTeamId: asTeamId("home-1"),
   awayTeamId: asTeamId("away-1"),
   scheduledStartAt: new Date("2026-08-10T20:00:00.000Z"),

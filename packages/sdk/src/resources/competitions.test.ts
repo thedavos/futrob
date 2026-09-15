@@ -49,6 +49,7 @@ describe("context discovery SDK resources", () => {
           encounterId: "encounter-1",
           organizationId: "org-1",
           competitionId: "competition-1",
+          stageId: "stage-1",
           homeTeamId: "team-a",
           awayTeamId: "team-b",
           scheduledStartAt: "2026-08-07T12:00:00.000Z",
@@ -80,6 +81,7 @@ describe("context discovery SDK resources", () => {
           encounterId: "encounter-1",
           organizationId: "org-1",
           competitionId: "competition-1",
+          stageId: "stage-1",
           homeTeamId: "team-a",
           awayTeamId: "team-b",
           scheduledStartAt: "2026-08-07T12:00:00.000Z",
@@ -94,6 +96,7 @@ describe("context discovery SDK resources", () => {
     await client.encounters.upsertScheduleSnapshot("encounter-1", {
       organizationId: "org-1",
       competitionId: "competition-1",
+      stageId: "stage-1",
       homeTeamId: "team-a",
       awayTeamId: "team-b",
       scheduledStartAt: "2026-08-07T12:00:00.000Z",

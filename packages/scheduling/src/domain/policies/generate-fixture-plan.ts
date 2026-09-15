@@ -13,6 +13,7 @@ import {
 } from "../entities/fixture-plan.ts";
 import { arrangeOpeningKnockoutSlots } from "./arrange-opening-knockout-slots.ts";
 import { fixtureGenerationKey, fixtureSpecFingerprint } from "./fixture-generation-key.ts";
+import { instantForZonedParts, zonedParts } from "./zoned-instant.ts";
 
 export {
   fixtureGenerationKey,
@@ -347,52 +348,4 @@ function roundStart(spec: FixtureGenerationSpec, roundOffset: number): Date {
     },
     spec.timeZone,
   );
-}
-
-interface ZonedParts {
-  readonly year: number;
-  readonly month: number;
-  readonly day: number;
-  readonly hour: number;
-  readonly minute: number;
-  readonly second: number;
-}
-
-function zonedParts(date: Date, timeZone: string): ZonedParts {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(date);
-  const value = (type: Intl.DateTimeFormatPartTypes) =>
-    Number(parts.find((part) => part.type === type)?.value);
-  return {
-    year: value("year"),
-    month: value("month"),
-    day: value("day"),
-    hour: value("hour"),
-    minute: value("minute"),
-    second: value("second"),
-  };
-}
-
-function instantForZonedParts(desired: ZonedParts, timeZone: string): Date {
-  const desiredAsUtc = partsAsUtc(desired);
-  let candidate = desiredAsUtc;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const observed = zonedParts(new Date(candidate), timeZone);
-    const difference = desiredAsUtc - partsAsUtc(observed);
-    if (difference === 0) break;
-    candidate += difference;
-  }
-  return new Date(candidate);
-}
-
-function partsAsUtc(parts: ZonedParts): number {
-  return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
 }

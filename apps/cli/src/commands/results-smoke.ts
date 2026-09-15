@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import {
   ConfirmOfficialSelectionUseCase,
   SelectOfficialMatchesUseCase,
+  asEncounterStageId,
   type OfficialMatchSelection,
   type OfficialResult,
   type OfficialResultRepository,
@@ -84,6 +85,7 @@ const encounterReader: EncounterReaderPort = {
             encounterId,
             organizationId: ORG,
             competitionId: COMP,
+            stageId: asEncounterStageId("stage-1"),
             homeTeamId: asTeamId("team_home"),
             awayTeamId: asTeamId("team_away"),
             scheduledStartAt: new Date("2026-08-01T18:00:00.000Z"),

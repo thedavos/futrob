@@ -4,7 +4,7 @@ import {
   upsertEncounterScheduleSnapshotRequestSchema,
 } from "@futrob/api-contracts";
 import { OfficialSelectionForbidden } from "@futrob/results";
-import { ENCOUNTER_PERMISSION } from "@futrob/scheduling";
+import { asFixtureStageId, ENCOUNTER_PERMISSION } from "@futrob/scheduling";
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
@@ -119,6 +119,7 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
         encounterId: asEncounterId(c.req.param("encounterId")),
         organizationId: asOrganizationId(parsed.data.organizationId),
         competitionId: asCompetitionId(parsed.data.competitionId),
+        stageId: asFixtureStageId(parsed.data.stageId),
         homeTeamId: asTeamId(parsed.data.homeTeamId),
         awayTeamId: asTeamId(parsed.data.awayTeamId),
         scheduledStartAt: new Date(parsed.data.scheduledStartAt),

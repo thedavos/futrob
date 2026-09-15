@@ -6,6 +6,7 @@ export const encounterScheduleSnapshotSchema = z.object({
   encounterId: z.string().min(1),
   organizationId: z.string().min(1),
   competitionId: z.string().min(1),
+  stageId: z.string().min(1),
   homeTeamId: z.string().min(1),
   awayTeamId: z.string().min(1),
   scheduledStartAt: z.string().datetime(),
@@ -20,6 +21,7 @@ export type EncounterScheduleSnapshotDto = z.infer<typeof encounterScheduleSnaps
 export const upsertEncounterScheduleSnapshotRequestSchema = z.object({
   organizationId: z.string().min(1),
   competitionId: z.string().min(1),
+  stageId: z.string().min(1),
   homeTeamId: z.string().min(1),
   awayTeamId: z.string().min(1),
   scheduledStartAt: z.string().datetime(),

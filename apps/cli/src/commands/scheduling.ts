@@ -10,7 +10,7 @@ import { print, printJson } from "../lib/print.ts";
 const USAGE = `Uso:
   npm run cli -- fixture-generate <orgId> <compId> [--starts-at ISO] [--interval-days 7] [--home-and-away]
   npm run cli -- fixture-show <orgId> <compId> <fixturePlanId>
-  npm run cli -- snapshot-set <encounterId> <orgId> <compId> <homeTeamId> <awayTeamId> <startISO> [--slots 1|2]`;
+  npm run cli -- snapshot-set <encounterId> <orgId> <compId> <homeTeamId> <awayTeamId> <startISO> [--slots 1|2] [--stage-id STAGE]`;
 
 function configOf(common: ReturnType<typeof parseCommon>): ClientConfig {
   return { baseUrl: common.baseUrl, actorId: common.actorId };
@@ -88,9 +88,18 @@ export function snapshotSet(raw: string[]): Effect.Effect<number, CliError> {
       client.encounters.getScheduleSnapshot(encounterId),
     ).pipe(Effect.orElseSucceed(() => null));
 
+    const stageId = flagString(common.flags, "stage-id") ?? existing?.stageId;
+    if (!stageId) {
+      return yield* new UsageError({
+        message: "Se requiere --stage-id al crear un snapshot sin proyección previa",
+        usage: USAGE,
+      });
+    }
+
     const input = {
       organizationId,
       competitionId,
+      stageId,
       homeTeamId,
       awayTeamId,
       scheduledStartAt: scheduledStartAt || existing?.scheduledStartAt || new Date().toISOString(),

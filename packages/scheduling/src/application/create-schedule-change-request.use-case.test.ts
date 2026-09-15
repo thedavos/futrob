@@ -12,6 +12,7 @@ import {
 } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-schedule-snapshot.ts";
+import { asFixtureStageId } from "../domain/entities/fixture-plan.ts";
 import type { ScheduleChangeRequest } from "../domain/entities/schedule-change-request.ts";
 import {
   ActiveScheduleChangeRequestExists,
@@ -43,10 +44,18 @@ const homeTeamId = asTeamId("team-home");
 const awayTeamId = asTeamId("team-away");
 const actorId = asActorId("captain-1");
 
+function limaWall(day: number, hour: number, minute: number, second = 0) {
+  return {
+    timeZone: "America/Lima",
+    proposedWallTime: { year: 2026, month: 9, day, hour, minute, second },
+  };
+}
+
 const encounter: EncounterScheduleSnapshot = {
   encounterId,
   organizationId,
   competitionId,
+  stageId: asFixtureStageId("stage-1"),
   homeTeamId,
   awayTeamId,
   scheduledStartAt: new Date("2026-09-20T20:00:00.000Z"),
@@ -60,7 +69,7 @@ const validInput: CreateScheduleChangeRequestInput = {
   encounterId,
   requestingTeamId: homeTeamId,
   scope: { type: "entire_encounter" },
-  proposedStartAt: new Date("2026-09-21T21:30:00.000Z"),
+  ...limaWall(21, 16, 30),
   reason: "  Team travel conflict  ",
   idempotencyKey: "idem-1",
 };
@@ -413,19 +422,19 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     },
     {
       name: "an invalid date",
-      patch: { proposedStartAt: new Date("invalid") },
+      patch: { timeZone: "Not/AZone" },
       expectedCode: "scheduling.invalid_schedule_change_date",
       expectedError: InvalidScheduleChangeDate,
     },
     {
       name: "a past date",
-      patch: { proposedStartAt: new Date("2026-09-14T19:59:59.999Z") },
+      patch: limaWall(14, 14, 59, 59),
       expectedCode: "scheduling.invalid_schedule_change_date",
       expectedError: InvalidScheduleChangeDate,
     },
     {
       name: "the current Encounter date",
-      patch: { proposedStartAt: new Date("2026-09-20T20:00:00.000Z") },
+      patch: limaWall(20, 15, 0),
       expectedCode: "scheduling.invalid_schedule_change_date",
       expectedError: InvalidScheduleChangeDate,
     },
@@ -457,6 +466,21 @@ describe("CreateScheduleChangeRequestUseCase", () => {
       expect(harness.events).toHaveLength(0);
     },
   );
+
+  it("rejects a local wall time that does not exist (spring-forward) without persisting", async () => {
+    const harness = createHarness();
+
+    const result = await harness.useCase.execute({
+      ...validInput,
+      timeZone: "America/New_York",
+      proposedWallTime: { year: 2026, month: 3, day: 8, hour: 2, minute: 30, second: 0 },
+    });
+
+    const error = expectErrorCode(result, "scheduling.invalid_schedule_change_date");
+    expect(error).toBeInstanceOf(InvalidScheduleChangeDate);
+    expect(harness.requests.rows).toHaveLength(0);
+    expect(harness.events).toHaveLength(0);
+  });
 
   it("blocks requests when competition rescheduling is disabled", async () => {
     const harness = createHarness({ allowRescheduling: false });
@@ -502,7 +526,7 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     const result = await harness.useCase.execute({
       ...validInput,
       encounterId: secondEncounterId,
-      proposedStartAt: new Date("2026-09-23T20:00:00.000Z"),
+      ...limaWall(23, 15, 0),
       idempotencyKey: "idem-second-encounter",
     });
 
@@ -692,7 +716,6 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     const replay = await harness.useCase.execute({
       ...validInput,
       reason: "Team travel conflict",
-      proposedStartAt: new Date(validInput.proposedStartAt),
     });
 
     expect(first.isOk()).toBe(true);
@@ -710,7 +733,7 @@ describe("CreateScheduleChangeRequestUseCase", () => {
 
     const replay = await harness.useCase.execute({
       ...validInput,
-      proposedStartAt: new Date("2026-09-22T21:30:00.000Z"),
+      ...limaWall(22, 16, 30),
     });
 
     const error = expectErrorCode(replay, "scheduling.schedule_change_idempotency_conflict");

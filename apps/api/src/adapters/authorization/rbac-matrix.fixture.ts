@@ -11,6 +11,7 @@ import {
   type OrganizationId,
   type TeamId,
 } from "@futrob/shared-kernel";
+import { asFixtureStageId } from "@futrob/scheduling";
 import {
   InMemoryOrganizationRepository,
   InMemoryMembershipRepository,
@@ -303,6 +304,7 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
             encounterId: ids.encounterId,
             organizationId: ids.orgA,
             competitionId: ids.compA,
+            stageId: asFixtureStageId("stage-1"),
             homeTeamId: ids.teamA,
             awayTeamId: ids.teamRival,
             scheduledStartAt: RBAC_MATRIX_NOW,
@@ -314,6 +316,7 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
             encounterId: ids.siblingEncounterId,
             organizationId: ids.orgA,
             competitionId: ids.compSibling,
+            stageId: asFixtureStageId("stage-1"),
             homeTeamId: ids.teamA,
             awayTeamId: ids.teamRival,
             scheduledStartAt: RBAC_MATRIX_NOW,

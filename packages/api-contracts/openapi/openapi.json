@@ -2371,6 +2371,7 @@
                 "required": [
                   "organizationId",
                   "competitionId",
+                  "stageId",
                   "homeTeamId",
                   "awayTeamId",
                   "scheduledStartAt",
@@ -2381,6 +2382,9 @@
                     "type": "string"
                   },
                   "competitionId": {
+                    "type": "string"
+                  },
+                  "stageId": {
                     "type": "string"
                   },
                   "homeTeamId": {
@@ -4743,6 +4747,7 @@
           "encounterId",
           "organizationId",
           "competitionId",
+          "stageId",
           "homeTeamId",
           "awayTeamId",
           "scheduledStartAt",
@@ -4759,6 +4764,9 @@
             "type": "string"
           },
           "competitionId": {
+            "type": "string"
+          },
+          "stageId": {
             "type": "string"
           },
           "homeTeamId": {

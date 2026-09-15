@@ -21,15 +21,37 @@ export interface Session {
   user: SessionUser;
 }
 
+/** SecureStore-compatible credential backend. Tests swap this for an in-memory map. */
+export interface SessionCredentialStore {
+  setItemAsync(key: string, value: string): Promise<void>;
+  getItemAsync(key: string): Promise<string | null>;
+  deleteItemAsync(key: string): Promise<void>;
+}
+
+let credentials: SessionCredentialStore = SecureStore;
+
+export function setSessionCredentialStore(store: SessionCredentialStore): void {
+  credentials = store;
+}
+
+export function resetSessionCredentialStore(): void {
+  credentials = SecureStore;
+}
+
 export async function saveSession(session: Session): Promise<void> {
-  await SecureStore.setItemAsync(TOKEN_KEY, session.token);
-  await SecureStore.setItemAsync(USER_KEY, JSON.stringify(session.user));
+  try {
+    await credentials.setItemAsync(TOKEN_KEY, session.token);
+    await credentials.setItemAsync(USER_KEY, JSON.stringify(session.user));
+  } catch (cause) {
+    await clearSession();
+    throw cause;
+  }
 }
 
 export async function getSession(): Promise<Session | null> {
   const [token, userJson] = await Promise.all([
-    SecureStore.getItemAsync(TOKEN_KEY),
-    SecureStore.getItemAsync(USER_KEY),
+    credentials.getItemAsync(TOKEN_KEY),
+    credentials.getItemAsync(USER_KEY),
   ]);
   if (!token || !userJson) {
     return null;
@@ -50,6 +72,11 @@ export async function getSession(): Promise<Session | null> {
 }
 
 export async function clearSession(): Promise<void> {
-  await SecureStore.deleteItemAsync(TOKEN_KEY);
-  await SecureStore.deleteItemAsync(USER_KEY);
+  await credentials.deleteItemAsync(TOKEN_KEY);
+  await credentials.deleteItemAsync(USER_KEY);
 }
+
+export const SESSION_STORE_KEYS = {
+  token: TOKEN_KEY,
+  user: USER_KEY,
+} as const;
