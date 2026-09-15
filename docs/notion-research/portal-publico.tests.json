@@ -95,6 +95,22 @@
           "given": "A statistics RankingSnapshot row {playerProfileId:\"profile-1\", teamId:\"team-1\", value:7, matchesPlayed:3, minutes:270} plus a raw EA observation {payload:{secret:1}} in game-data",
           "when": "The public rankings mapper (once the rankings portal API exists) builds the spectator DTO",
           "then": "The DTO contains position, public player name, public team name, value, matchesPlayed, minutes, kind, eligibility. It does not contain playerProfileId, payload, or secret."
+        },
+        {
+          "id": "api-11",
+          "layer": "http",
+          "subject": "Public resultados omit OfficialResult.slots",
+          "given": "An approved OfficialResult whose slots include providerMatchRef, external club ids, approvedBy, and player provider stats",
+          "when": "An anonymous client GET the public resultados or encounter resource",
+          "then": "Status is 200 with public scores and team names, or 404 if resultados is not in this task. Body has no slots array, no providerMatchRef, no approvedBy."
+        },
+        {
+          "id": "api-12",
+          "layer": "http",
+          "subject": "Captain session cannot use private standings as portal",
+          "given": "A competition captain session without statistics.read",
+          "when": "That actor GET /api/v1/organizations/org-1/competitions/comp-1/standings",
+          "then": "Status is 403 with statistics.read_forbidden. Public tabla still returns the sanitized snapshot for anonymous GET."
         }
       ]
     },
@@ -351,6 +367,14 @@
           "given": "Public standings cached as Barranco FC 3 points. Then an approved official result rebuilds standings to 6 points and emits statistics.competition-stats-rebuilt",
           "when": "A guest GET public tabla after TTL or after explicit purge",
           "then": "The body shows 6 points, not 3."
+        },
+        {
+          "id": "cache-07",
+          "layer": "http",
+          "subject": "Public HTML is not personalized under a shared cache key",
+          "given": "A guest cached the public portada HTML. An organizer then GET the same URL with a session cookie",
+          "when": "A later guest GET that URL",
+          "then": "HTML has no organizer-only copy. Either Cache-Control on HTML lists a public TTL and omits Set-Cookie, or the HTML is Cache-Control private or no-store while JSON is the cacheable public resource."
         }
       ]
     }

@@ -16,32 +16,34 @@ throughput checkpoint: n/a, read-only investigation
 
 `@futrob/public-portal` is a named MVP bounded context with no use cases. The web module reexports that empty public API. Spectators have no competition URL.
 
-Operator and player HTTP already expose standings and rankings, but every product route except `/meta/ping` and `/meta/health` sits behind `createServiceAuthMiddleware`. Those DTOs still carry `organizationId` and `playerProfileId`. `jsonResponse` always sends `cache-control: no-store`.
+Standings and rankings HTTP exist on `apps/api` only. They sit behind `createServiceAuthMiddleware` and `STATISTICS_PERMISSION.read`. That permission is for organizer, org staff, competition staff, and superuser. Captains and players do not get it from role bundles. The web BFF has no standings, rankings, or fixture routes, so the authenticated web app cannot load those resources through `:3000`. DTOs still carry `organizationId` and `playerProfileId`. `jsonResponse` always sends `cache-control: no-store`.
 
-The landing at `/` is the only public HTML surface. Root OG tags describe Futrob, not a competition. Design requires a portal with competition header and sticky tabs, and no admin sidebar.
+The landing at `/` is the only public HTML surface besides `/login` and `/signup`. Root OG tags describe Futrob, not a competition. Design requires a portal with competition header and sticky tabs, and no admin sidebar.
 
 ## Key concepts
 
-- Spectator. Glossary actor for the public portal. No admin actions. No private disputes.
-- Public portal. Surface of a published Competition. Sanitized projections only. FR-16, FTR-PUB-001, AC-WEB-003, UX-PUB-001 through UX-PUB-003.
-- Official projections. Table, bracket, rankings, and public results update only after `results.official-result-approved`.
-- RankingSnapshot. Statistics read model. Kinds `scorer`, `assister`, `rating`, `mvp`, `goalkeeper`. Eligibility is DEC-043. Default is 3 matches or 60 percent of team minutes.
-- Private `/api/v1`. ADR-0005. Typed API for Futrob clients. Not a third-party public API. OpenAPI description repeats that limit.
+- Spectator. Glossary actor for the public portal. Not an RBAC role. `CompetitionMembershipRole` is `staff`, `captain`, or `player`.
+- Public portal. Surface of a published Competition. Sanitized projections only. FR-16, FTR-PUB-001, FTR-RBAC-002, AC-WEB-003, UX-PUB-001 through UX-PUB-003.
+- Official projections. Table, bracket, rankings, and public results update only after `results.official-result-approved`. AC-SEL-002. Disagreement does not update public projections until resolved.
+- RankingSnapshot. Statistics read model. Kinds `scorer`, `assister`, `rating`, `mvp`, `goalkeeper`. Eligibility is DEC-043. Default is 3 matches or 60 percent of team minutes. Ineligible players are omitted from rows. They are not flagged.
+- Private `/api/v1`. ADR-0005 and WONT-09. No third-party public API. A first-party anonymous portal is still allowed. OpenAPI title is "Futrob Private API."
+- Premios. FR-14 and module-boundaries assign prizes to statistics. There is no `Prize` type, table, or HTTP. `RankingRow.position` is rank order.
 - Sanitization. An allowlisted public DTO. Not the private statistics DTO with a few keys deleted in the route.
 
 ## How it works today
 
 A spectator has nowhere to go. `/` is marketing. `/_app` redirects anonymous users to `/login`.
 
-An authenticated client can read official snapshots through org-scoped paths.
+An authenticated organizer can read official snapshots through org-scoped `apps/api` paths. CLI `standings` uses that path. The web Worker BFF does not proxy it.
 
-1. Web BFF calls `createAuthenticatedProductApiClient`.
-2. `apps/api` checks `Authorization: Bearer INTERNAL_JOB_SECRET` and `X-Futrob-Actor-Id`.
-3. `GetCompetitionStandingsUseCase` and `GetCompetitionRankingsUseCase` require `STATISTICS_PERMISSION.read`.
-4. HTTP maps the domain snapshot 1:1. Rankings rows keep `playerProfileId`. Snapshots keep `organizationId`.
-5. `jsonResponse` sets `cache-control: no-store`.
+1. CLI or a future BFF sends `Authorization: Bearer INTERNAL_JOB_SECRET` and `X-Futrob-Actor-Id`.
+2. `GetCompetitionStandingsUseCase` and `GetCompetitionRankingsUseCase` require `STATISTICS_PERMISSION.read`.
+3. HTTP maps the domain snapshot 1:1. Rankings rows keep `playerProfileId`. Snapshots keep `organizationId`.
+4. `jsonResponse` sets `cache-control: no-store`.
 
-`PublishCompetitionUseCase` moves a draft to `published`. There is no separate portal-publish flag. The Storybook switch labeled "Publicar portal" is a primitive demo, not a product control.
+`PublishCompetitionUseCase` moves a draft to `published` when rules are valid and at least two entries are approved. That lock enables fixture generation. It does not create a slug, cover, or public read model.
+
+Projection after confirm runs in-process in `confirmOfficialSelectionAndProject`. `apps/web/src/workers/statistics-projection.worker.ts` is a stub. Portal freshness is "after confirm returns", not "after a queue consumer".
 
 `statistics.rankings-updated` exists for cache invalidation later. Nothing in public-portal consumes it.
 
@@ -66,13 +68,20 @@ An authenticated client can read official snapshots through org-scoped paths.
 
 ## Gotchas
 
-- Reusing `GetCompetitionRankingsUseCase` for anonymous reads fails the auth gate. It also leaks internal ids if the private DTO is returned as-is.
+- Reusing `GetCompetitionRankingsUseCase` for anonymous reads fails the auth gate. Captains and players also fail it. The DTO leaks internal ids if returned as-is.
 - Putting `organizationId` in a public URL repeats an identifier FTR-PUB-001 treats as internal.
 - `provider-match-detail-ranking.ts` ranks players inside one ProviderMatch. That path is EA-derived and authenticated. It must not back the public rankings tab.
-- Operator competition tabs for fixture, standings, bracket, and rankings are stubs. Building the portal is not a restyle of those screens.
-- `e2e-golden-path` stops at fixture. It does not prove a public portal.
+- Operator competition tabs for fixture, standings, bracket, and rankings are stubs. Nav shows them only when the actor has `COMPETITION_PERMISSION.update`, not `statistics.read`. Building the portal is not a restyle of those screens.
+- There is no HTTP list or get for `OfficialResult`. Resultados cannot reuse a private list because none exists. The entity stores provider refs, external club ids, and player stat lines in `slots`.
+- `PlayerProfile` is `{ id, actorId, createdAt }`. Ranking `displayName` on contributions is provider-sourced. Public names need an explicit join, not the private snapshot.
+- `CompetitionRules` is structured match rules. There is no free-text reglamento field.
+- `PlayerCompetitionStatsRepository` has no `listByCompetition`. Jugadores cannot be built from that port today.
+- Landing club search calls the authenticated BFF. Anonymous visitors get 401. That is not a portal read.
+- `__root.tsx` points `og:image` at `/og/futrob-default.png`. The repo has `apps/web/public/og/futrob-default.svg` only.
+- `e2e-golden-path` stops at fixture. Verify-futrob says the public competition portal has no public routes.
 - Sentry inits with `sendDefaultPii: false` and has no `beforeSend` allowlist for EA payloads. That is an observability gap. It is not a portal sanitizer.
 - ADR-0009 rejects Vercel CDN. Cache work belongs on Cloudflare Workers Cache, Cache Rules, or Cache API.
+- Team performance ranking 0 to 100 (FTR-RNK-001, AC-RNK-001) is Should and absent. Do not invent it on the portal.
 
 ## Hexagonal placement for later implementation
 
@@ -110,6 +119,7 @@ Private reads that look similar and must not be reused as the public contract:
 - `GET .../fixtures/:fixturePlanId` requires actor, organization, competition, and a plan id the spectator does not have.
 - `GET /encounters/:encounterId/candidates` is the EA candidate list. It must never become a public encounter payload.
 - `GET /game-data/clubs/...` and `GET /players/me/recent-matches/...` carry provider observations.
+- There is no `GET` for official results. `OfficialResultReaderPort.listByCompetition` is used by rebuild, not by a query HTTP.
 
 `jsonResponse` is the wrong helper for cacheable public GET. It is the right default for private API.
 
@@ -124,6 +134,10 @@ Private reads that look similar and must not be reused as the public contract:
 - `competitionDto`, `teamDto`, `rankingSnapshotSchema`, `rankingRowSchema`
 - `RawProviderObservation.payload` in `packages/game-data/src/domain/entities/raw-provider-observation.ts`
 - Event `results.official-result-approved` in `apps/web/src/shared/contracts/events/catalog.ts`
+- `OfficialResult.slots` in `packages/results/src/domain/entities/official-result.ts`
+- `GetCompetitionDraftUseCase` (no auth inside; HTTP wraps it)
+- `PlayerCompetitionStatsRepository`
+- `apps/web/src/workers/statistics-projection.worker.ts` (stub)
 
 ### Gaps
 
@@ -131,14 +145,17 @@ Private reads that look similar and must not be reused as the public contract:
 - No unauthenticated product routes besides meta.
 - No public DTO in `packages/api-contracts` and no SDK resource for spectators.
 - No public display-name join. Rankings and standings key rows by `playerProfileId` and `teamId` only.
-- No list-encounters-by-competition for a calendar without a `fixturePlanId`.
+- No list-encounters-by-competition for a calendar without a `fixturePlanId`. Fixture GET has no scores and keeps generation, seed, and series internals.
+- No HTTP for official results. Resultados and scored brackets have no private list to wrap.
 - No public bracket read model. Knockout layout lives in scheduling fixture generation. Operator `/bracket` is a stub.
+- `CompetitionRules` has no prose reglamento. Portada has no cover, description, or slug fields.
+- `PlayerProfile` has no public display name. `PlayerCompetitionStatsRepository` cannot list a competition.
 - Draft, archived, and unpublished competitions have no defined anonymous 404.
 - Internal ids (`organizationId`, `playerProfileId`, `gameAccountId`, `createdByActorId`, invitation tokens) have no public allowlist test.
 
 ### Behavior tests
 
-See `portal-publico.tests.json` ids `api-01` through `api-10`.
+See `portal-publico.tests.json` ids `api-01` through `api-12`.
 
 Call the future public use case or HTTP the way a spectator would. Assert the literal JSON. A test that only checks `toHaveBeenCalled` on a strip helper does not count.
 
@@ -146,7 +163,7 @@ Call the future public use case or HTTP the way a spectator would. Assert the li
 
 Notion. `[API] Portal público. packages/public-portal vacío hoy.`
 
-Measured. The package is still empty on this `main`. Private standings and rankings HTTP exist and are authenticated. Do not treat them as the public contract.
+Measured. The package is still empty on this `main`. Private standings and rankings HTTP exist on `apps/api` for staff with `statistics.read`. They are not a public contract. Captains and players cannot call them. The web BFF does not proxy them.
 
 ---
 
@@ -169,7 +186,7 @@ Operator competition home at `/orgs/$orgId/competitions/$competitionId/` is an a
 
 i18n. Spanish default, English pair. No locale prefix in URLs unless a routing ADR adds one. Catalog already has landing copy about a public portal. It has no portal screen keys.
 
-Mobile. DEC-007 and FTR-MOB-001. Landing and portal stay web. Native apps open those URLs. Do not duplicate the portal in Expo.
+Mobile. DEC-007 and FTR-MOB-001. Landing and portal stay web. Native apps should open those URLs. `apps/mobile` declares scheme `futrob` and depends on `expo-linking`. No import uses it. No associatedDomains or intent filters.
 
 ### Paths and symbols
 
@@ -186,7 +203,9 @@ Mobile. DEC-007 and FTR-MOB-001. Landing and portal stay web. Native apps open t
 - No portal header or tab component in `apps/web/src/modules/public-portal/presentation/`.
 - Operator stubs must not be reused with the authenticated shell.
 - No empty or error or 404 for unpublished competitions.
-- No `es` and `en` message keys for portal chrome.
+- No `es` and `en` message keys for portal chrome. Landing portal strings are marketing only.
+- `/player/competitions/explore` is an authenticated stub. It is not a public directory.
+- Landing club search is not a public read. It uses `createAuthenticatedProductApiClient`.
 - Shareable URLs need typed search or path state for the active tab. TanStack Start already prefers typed URLs for that.
 
 ### Behavior tests
@@ -210,7 +229,7 @@ The existing portal card is [Construir portal público de competición](https://
 
 ### Context
 
-Root `head` in `__root.tsx` sets `og:title`, `og:description`, and `og:image` to Futrob defaults (`/og/futrob-default.png`, 1200×630). Landing overrides `title` and `description` only. Crawlers that read `og:title` still see the site-wide string.
+Root `head` in `__root.tsx` sets `og:title`, `og:description`, and `og:image` to Futrob defaults (`/og/futrob-default.png`, 1200×630). The tracked asset is `apps/web/public/og/futrob-default.svg`. Landing overrides `title` and `description` only. Crawlers that read `og:title` still see the site-wide string. `design.md` asks production public routes for an absolute `og:image` and a canonical URL.
 
 `tanstack-start.mdc` says public landing and portal content that benefits from SEO should not be client-only. `AGENTS.md` SEO line. Crawlable published content only.
 
@@ -236,6 +255,8 @@ No `robots.txt` or sitemap in `apps/web`.
 - No `og:url`.
 - No robots or sitemap limited to published portal paths.
 - No share sheet or copy-link control on portal chrome.
+- `og:image` PNG is missing from `apps/web/public/og/`.
+- Mobile has no universal-link or `futrob://` mapping for landing or portal.
 - Unpublished or draft URLs must not emit indexable OG that reveals the draft name if product later treats drafts as secret. Today drafts are only reachable when authenticated, so the failure mode is a future public route that forgets the publish gate.
 
 ### Behavior tests
@@ -269,6 +290,8 @@ Current tests that say "sanitized" are not a portal anti-leak suite.
 - Auth proxy asserts `cache-control: no-store`.
 - Game-data tests append `RawProviderObservation`. They do not assert that public HTTP omits `payload`.
 - Statistics ranking tests assert `playerProfileId` in the private snapshot. That is the opposite of a public allowlist.
+- Encounter candidate tests strip `players` to `playerObservationCount`. That is operator HTTP, not a portal suite.
+- EA HTTP error tests drop `game_data.ea_clubs_*` details. They do not cover public JSON.
 
 Forbidden classes to encode as literal absences in JSON or HTML:
 
@@ -320,9 +343,13 @@ Do not call this done by grepping the repo for the word sanitized. The suite has
 
 ### Context
 
-Every JSON helper in the product API and the web BFF sets `cache-control: no-store`. Auth proxy tests lock that in for `/api/auth`. That is correct for sessions. It is the opposite of a public CDN cache.
+Every JSON helper in the product API and the web BFF sets `cache-control: no-store`. Auth proxy tests lock that for the 503 binding-missing path. Successful `/api/auth/*` responses pass Better Auth headers through. The proxy strips `cf-*` and forwards `Set-Cookie`. Auth worker `Response.json` health and error paths set no Cache-Control.
 
-`apps/web/wrangler.jsonc` has no Cache Rules, no KV, and no Cache API binding. ADR-0009 hosts web on Cloudflare Workers. It allows KV or Durable Objects as freshness aids, never as competitive truth. Standings and rankings stay in Postgres via `apps/api`.
+SSR HTML sets no Cache-Control and no `Vary`. Landing still runs with cookies present. A later Cloudflare HTML cache without `Vary: Cookie` could mix sessions.
+
+`apps/web/wrangler.jsonc` has no Cache Rules, no KV, and no Cache API binding. There is no `caches.default` usage. ADR-0009 hosts web on Cloudflare Workers. It allows KV or Durable Objects as freshness aids, never as competitive truth. Standings and rankings stay in Postgres via `apps/api`.
+
+`provider_response_cache` is EA club search and club info in Postgres. It is not a public CDN. Recent matches bypass it.
 
 `statistics.rankings-updated` and `statistics.competition-stats-rebuilt` are the natural purge signals. `results.official-result-approved` is the source event. Caching stale official data is allowed for a short TTL. Caching a private session response under a public key is not.
 
@@ -336,6 +363,8 @@ Do not use Vercel CDN, ISR, or `x-vercel-cache`. Those are out of platform.
 - `jsonResponse` in `apps/web/src/shared/infrastructure/http/api-response.ts`
 - `apps/web/src/modules/identity/server/auth-proxy.test.ts` (`cache-control` `no-store`)
 - `apps/web/wrangler.jsonc`
+- Locale cookie `futrob_locale` in `apps/web/src/shared/presentation/i18n/locale.functions.ts`
+- `CachedGameDataProviderAdapter` (EA club cache, not portal)
 - Events `statistics.rankings-updated`, `statistics.competition-stats-rebuilt`, `results.official-result-approved`
 
 ### Gaps
@@ -343,13 +372,14 @@ Do not use Vercel CDN, ISR, or `x-vercel-cache`. Those are out of platform.
 - No `Cache-Control: public` path.
 - No `s-maxage` or `stale-while-revalidate` policy.
 - No guarantee that public routes omit `Set-Cookie`.
-- No `Vary` policy for authorization. Public GET must ignore `Cookie` and `Authorization` as cache keys, and must not be stored if those headers were used to produce the body.
+- No `Vary` policy for authorization or locale. Public GET must ignore `Cookie` and `Authorization` as cache keys, and must not be stored if those headers were used to produce the body.
+- SSR HTML has no cache header at all.
 - No purge on rankings or standings rebuild.
 - No split between private `no-store` helpers and a new public response helper. Reusing `jsonResponse` as-is cannot meet the acceptance text.
 
 ### Behavior tests
 
-See `cache-01` through `cache-06`. Assert literal header strings. Assert that a request with a session cookie still either bypasses the public cache or returns the same sanitized anonymous body, never the organizer projection.
+See `cache-01` through `cache-07`. Assert literal header strings. Assert that a request with a session cookie still either bypasses the public cache or returns the same sanitized anonymous body, never the organizer projection.
 
 ### Notas
 
@@ -373,10 +403,12 @@ Backend facts to consume, not rewrite:
 - `RANKING_FORMULA_VERSION` is `player-ranking-v1`
 - `DEFAULT_RANKING_ELIGIBILITY` is 3 matches or 0.6 team minutes
 - `isEligibleForRanking` and `buildCompetitionRankings` already drop ineligible rows
-- Private HTTP `GET .../rankings?kind=`
+- Private HTTP `GET .../rankings?kind=` on `apps/api` only. No web BFF. `statistics.read` is staff, not captain or player.
 - Operator nav item Rankings is a stub under `/orgs/:orgId/competitions/:competitionId/rankings`
 
-Premios por posición in the card maps to the `goalkeeper` kind plus the four other kinds. There is no separate prize table in statistics. Eligibility is the prize gate.
+Premios por posición in the card maps to the five player kinds. There is no `Prize` type. Eligibility is the gate. Team 0 to 100 performance ranking (FTR-RNK-001) is Should and not implemented. AC-RNK-001 forbids mixing it with the official table.
+
+Unmatched or ambiguous identity correlation omits players from ranking aggregates. A published score can still yield an empty public ranking.
 
 ## Open product decisions
 
@@ -384,6 +416,10 @@ These are not settled in `product/open-decisions.md`.
 
 1. Public URL key. Opaque `competitionId` versus a new slug on `Competition`.
 2. Whether `paused` and `finished` remain publicly readable. Glossary says published Competition.
-3. Whether `organizationId` may appear in public JSON. FTR-PUB-001 says no internal platform ids.
+3. Whether `organizationId` and `teamId` may appear in public JSON. FTR-PUB-001 says no internal platform ids.
 4. Whether this UI task includes a Rankings tab shell or waits for the rankings card.
 5. Cache TTL and whether HTML is cached at the Worker versus JSON only at `apps/api`.
+6. Whether FR-14 premios is ranking-kind leaders or a prize config that does not exist.
+7. Whether ineligible players stay hidden (current snapshot) or appear as ineligible (DEC-043 wording).
+8. Public display-name source. `PlayerProfile` has none. Contribution `displayName` is provider-sourced.
+9. Whether every `published` competition is crawlable, or an extra organizer publication flag is required.
