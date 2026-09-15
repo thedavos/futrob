@@ -21,8 +21,9 @@
         "packages/scheduling/src/domain/entities/encounter-schedule-snapshot.ts",
         "packages/scheduling/src/application/project-fixture-encounters.ts",
         "packages/results/src/domain/ports/encounter-reader.port.ts",
-        "packages/scheduling/src/application/project-fixture-encounters.ts",
-        "apps/api/src/adapters/results/bridges.ts"
+        "packages/scheduling/src/domain/events/encounter-created.event.ts",
+        "apps/api/src/adapters/results/bridges.ts",
+        "packages/scheduling/src/domain/entities/encounter.ts"
       ],
       "tests": [
         {
@@ -54,6 +55,16 @@
           "expect": {
             "stageKindEqualsSchedule": true
           }
+        },
+        {
+          "id": "stage-not-only-on-event",
+          "subject": "EncounterScheduleSnapshot",
+          "given": "A generated fixture that emitted scheduling.encounter-created with stageId",
+          "when": "buildTeamContributions reads EncounterReaderPort.getById",
+          "then": "Stage is on the snapshot row, not only on the event payload",
+          "expect": {
+            "snapshotHasStage": true
+          }
         }
       ]
     },
@@ -72,7 +83,8 @@
         "packages/statistics/src/domain/policies/build-competition-standings.ts",
         "packages/statistics/src/domain/policies/build-competition-standings.test.ts",
         "apps/api/src/adapters/statistics/competition-match-rules-reader.ts",
-        "packages/statistics/src/application/project-official-result/project-official-result.use-case.ts"
+        "packages/statistics/src/application/project-official-result/project-official-result.use-case.ts",
+        "apps/api/migrations/0025_competition_fixtures.sql"
       ],
       "tests": [
         {
@@ -156,6 +168,16 @@
               "points": 3
             }
           }
+        },
+        {
+          "id": "reader-regular-wins-today",
+          "subject": "CompetitionsMatchRulesReader.getPointsRules",
+          "given": "league-playoffs rules with regular independent_matches and knockout aggregate_score",
+          "when": "getPointsRules(competitionId) runs on current main",
+          "then": "resolutionMode is independent_matches. After task 2 this test must move to per-encounter",
+          "expect": {
+            "resolutionMode": "independent_matches"
+          }
         }
       ]
     },
@@ -174,7 +196,8 @@
         "apps/api/src/http/routes/competitions.ts",
         "packages/api-contracts/src/v1/statistics/schemas.ts",
         "packages/sdk/src/resources/statistics.ts",
-        "packages/statistics/src/application/get-competition-standings/get-competition-standings.use-case.ts"
+        "packages/statistics/src/application/get-competition-standings/get-competition-standings.use-case.ts",
+        "apps/api/src/http/routes/competitions.test.ts"
       ],
       "tests": [
         {
@@ -237,7 +260,9 @@
       ],
       "fileHints": [
         "apps/web/src/shared/presentation/shell/nav-registry.ts",
-        "apps/web/src/routes/_app/orgs/$orgId/competitions/"
+        "apps/web/src/routes/_app/orgs/$orgId/competitions/",
+        "apps/web/src/modules/player-home/presentation/player-home-copy.ts",
+        "design.md"
       ],
       "tests": [
         {
@@ -281,6 +306,16 @@
           "expect": {
             "hasPerformanceScoreColumn": false
           }
+        },
+        {
+          "id": "ui-operator-nav-still-403-without-statistics-read",
+          "subject": "competition standings table",
+          "given": "Operator nav visible via competitions.update, actor lacks STATISTICS_PERMISSION.read",
+          "when": "the screen loads GET standings",
+          "then": "Permission empty, no numeric cells, not a zeroed table",
+          "expect": {
+            "numericCells": 0
+          }
         }
       ]
     },
@@ -297,7 +332,8 @@
       "fileHints": [
         "product/open-decisions.md",
         "packages/statistics/src/domain/entities/ranking-snapshot.ts",
-        "packages/statistics/src/domain/policies/ranking-eligibility.ts"
+        "packages/statistics/src/domain/policies/ranking-eligibility.ts",
+        "packages/game-data/src/domain/policies/player-attribute-overview.ts"
       ],
       "tests": [
         {
@@ -323,7 +359,7 @@
           }
         }
       ],
-      "notes": "Weights are not numbered in product docs. Do not pin invented coefficients. Once product lands a table, replace the placeholder expect.score with the literal."
+      "notes": "Weights are not numbered in product docs. Do not pin invented coefficients. Once product lands a table, replace the placeholder expect.score with the literal. Do not copy WEIGHTS from player-attribute-overview.ts."
     },
     {
       "id": "qa-format-fixtures",
@@ -339,7 +375,10 @@
       "fileHints": [
         "packages/scheduling/src/domain/policies/generate-fixture-plan.test.ts",
         "packages/statistics/src/domain/policies/build-competition-standings.test.ts",
-        "packages/competitions/src/application/create-competition-draft/create-competition-draft.use-case.ts"
+        "packages/competitions/src/application/create-competition-draft/create-competition-draft.use-case.ts",
+        "packages/competitions/src/application/create-competition-draft/create-competition-draft.use-case.test.ts",
+        "apps/cli/src/commands/e2e-golden-path.ts",
+        "apps/api/src/http/routes/competitions.test.ts"
       ],
       "tests": [
         {

@@ -14,7 +14,7 @@ Claims below are **measured** from those files unless marked **inferred** or **g
 
 Standings already exist as one official table per competition. Projection applies a single `resolutionMode` to every `TeamMatchContribution`. Mixed formats already store two rule sets on `CompetitionRules` and two modes on `FixturePlan`. The encounter read model that statistics actually uses does not carry stage, so the table cannot tell a regular slot from a knockout aggregate.
 
-Player rankings exist (`scorer`, `assister`, `rating`, `mvp`, `goalkeeper`). Team performance ranking (0 to 100, FTR-RNK-001) does not. The web Clasificación and Rankings nav items are stubs.
+Player rankings exist (`scorer`, `assister`, `rating`, `mvp`, `goalkeeper`). Team performance ranking (0 to 100, FTR-RNK-001) does not. The web Clasificación and Rankings nav items are stubs on the operator competition shell. Players never see those stubs. GET standings still requires `STATISTICS_PERMISSION.read`.
 
 ## Key concepts
 
@@ -86,6 +86,11 @@ GET .../rankings    (player kinds only)
 | HTTP standings | `apps/api/src/http/routes/competitions.ts` |
 | Player rankings | `packages/statistics/src/domain/policies/build-competition-rankings.ts` |
 | Web nav stubs | `apps/web/src/shared/presentation/shell/nav-registry.ts` |
+| Per-encounter series row | `encounter_series.resolution_mode` in `apps/api/migrations/0025_competition_fixtures.sql` |
+| Created event (stage present) | `packages/scheduling/src/domain/events/encounter-created.event.ts` |
+| Setup per-stage editor | `MatchRulesEditor` in `apps/web/src/modules/competitions/presentation/competition-setup-steps.tsx` |
+| Design | `design.md` UX-RNK-002, UX-SCP-003 |
+| Unrelated 0-100 weights | `packages/game-data/src/domain/policies/player-attribute-overview.ts` (`WEIGHTS`) |
 
 ## Gotchas
 
@@ -96,6 +101,13 @@ GET .../rankings    (player kinds only)
 5. **Player `/rankings` is not team performance ranking.** Wire `formulaVersion` is `player-ranking-v1`. Do not add a team score as another `RankingKind`.
 6. **FTR-RNK-001 is Should in `product/mvp-requirements.md`.** Notion marks the ranking tasks MVP YES. Product precedence is user request, then PRD. Treat ranking as in-scope for this epic unless product drops it.
 7. **DEC-014 tie-breakers are richer than the table.** Current sort is points, then goal difference, then goals for, then `teamId`. Head-to-head and sanctions are not in `compareStandings`. Out of this epic unless mixed-table work touches the sort.
+8. **Two `EncounterScheduleSnapshot` types.** Scheduling and results each declare the type. Adding stage means changing both. They are not a shared import.
+9. **`scheduling.encounter-created` already has `stageId` and `roundId`.** No consumer copies those onto the schedule snapshot.
+10. **`encounter_series` already stores per-encounter `resolution_mode`.** Statistics must not query that table. Copy the mode onto `TeamMatchContribution` at projection time.
+11. **There is no `competition_stages` table.** Stage instances live on `fixture_stages`. Architecture text that competitions owns stages is ahead of the schema.
+12. **Nav versus API permission.** Operator competition nav (including Clasificación) is selected when `competitions.update` is allowed. The item itself lists `competitions.read`. GET standings authorizes `statistics.read` inside the use case and does not use `requireApiPermission`. A captain with `competitions.read` never sees the stub and may still get 403 on the GET.
+13. **`competitionMark` treats `league-playoffs` as a league mark.** `groups-knockout` is a cup mark. That is a badge, not a table, but a mixed UI must not inherit it as "this is a pure league."
+14. **Do not reuse game-data `WEIGHTS`.** Those numbers score EA game-profile attributes, not DEC-041 team ranking.
 
 ## Hexagonal placement
 
@@ -139,7 +151,14 @@ Keep this split when the tasks are implemented later.
 - No column on `encounter_schedule_snapshots`.
 - `TeamMatchContribution` has `encounterId` and `officialSlot` only.
 - `OfficialResult` has no stage field. That is acceptable if the schedule snapshot carries stage at projection time.
+- No `stageId` or `stageKind` on `EncounterScheduleSnapshot`.
+- No column on `encounter_schedule_snapshots`.
+- `TeamMatchContribution` has `encounterId` and `officialSlot` only.
+- `OfficialResult` has no stage field. That is acceptable if the schedule snapshot carries stage at projection time.
 - Manual upsert via HTTP can create encounters outside a fixture. Those rows need an explicit stage or a documented default.
+- `scheduling.encounter-created` already carries `stageId`. Wiring that event is not a substitute for the snapshot field. Projection reads the snapshot, not the outbox.
+- The leftover `Encounter` entity in `packages/scheduling/src/domain/entities/encounter.ts` is unused in production. Only CLI `domain-smoke` builds it. Do not add stage there and call the task done.
+- `EditFixtureEncounterUseCase` can assign concrete teams to a placeholder without creating `series`. Official slots may then come from `officialMatchCount` alone. Stage must still land on the snapshot in that path.
 
 #### Behavior tests
 
@@ -150,7 +169,7 @@ Keep this split when the tasks are implemented later.
 
 #### Notas
 
-Depends on official team stats (PR 36, done). Do not put `FixtureStageId` into `@futrob/statistics`. Copy a scheduling-owned field, then map to `regular` or `knockout` at the statistics boundary.
+Depends on official team stats (PR 36, done). Do not put `FixtureStageId` into `@futrob/statistics`. Copy a scheduling-owned field, then map to `regular` or `knockout` at the statistics boundary. Widen both snapshot types in the same change. The results port is a duplicate, not a re-export.
 
 ---
 
@@ -181,7 +200,11 @@ The parent story (Notion, 2026-08-13) says to apply `independent_matches` to reg
 - Policy takes one `pointsRules` for the whole contribution list.
 - Contributions do not store `resolutionMode`.
 - No test feeds regular independent slots and knockout aggregate slots into one `buildCompetitionStandings` call.
-- Points (`winPoints` and so on) can differ per stage in the VO. Mixed table must pick per encounter, not average them.
+- Points (`winPoints` and so on) can differ per stage in the VO. Mixed table must pick per encounter, not average them. Today the reader also collapses points, not only mode.
+- `officialMatchesPerEncounter` is unused by standings. Mode decides grouping, not slot count.
+- `ProjectOfficialResultUseCase` tests never pass `aggregate_score` into `getPointsRules`. The policy test is the only aggregate coverage, and it is not mixed.
+- No unit test for `CompetitionsMatchRulesReader`.
+- Standings read live `findRulesByCompetitionId`, not `rulesVersion` on the fixture plan. A later rule edit would retag history unless the mode is frozen on the contribution.
 
 #### Behavior tests
 
@@ -195,7 +218,7 @@ Subject is `buildCompetitionStandings` with fake contributions. No mocks of the 
 
 #### Notas
 
-Sale del review de PR 36. Store `resolutionMode` on `TeamMatchContribution` when projecting, then `buildCompetitionStandings` groups by that field. Re-querying competitions on every rebuild would couple statistics to live rule edits. **Inferred.** A rules version change should rebuild via the existing rebuild use case, not mutate old contribution modes in place.
+Sale del review de PR 36. Store `resolutionMode` on `TeamMatchContribution` when projecting, then `buildCompetitionStandings` groups by that field. Do not join `encounter_series` from statistics. Re-querying competitions on every rebuild would couple statistics to live rule edits. **Inferred.** A rules version change should rebuild via the existing rebuild use case, not mutate old contribution modes in place. `TeamCompetitionStats.matchesPlayed` stays slot-counted. Keep that split or cups will look like two matches in team stats and one in the table.
 
 ---
 
@@ -226,6 +249,9 @@ Sale del review de PR 36. Store `resolutionMode` on `TeamMatchContribution` when
 - No team performance DTO, repository, or formula version.
 - `packages/analytics` public API is empty (`export {}`).
 - Public portal package is empty. FR-16 still wants a public table later. Out of this task unless the contract is reused.
+- No HTTP test for GET `/standings`. SDK test only checks the URL and `{ standings: null }`.
+- Snapshot rows carry `teamId` only. A UI or CLI that wants names must join the teams list.
+- `GET .../rankings` OpenAPI title is player ranking snapshots. It cannot grow a team 0-100 row without a new schema.
 
 #### Behavior tests
 
@@ -237,7 +263,7 @@ Sale del review de PR 36. Store `resolutionMode` on `TeamMatchContribution` when
 
 #### Notas
 
-Do not extend `rankingKindSchema` with a team kind that reuses `RankingRow.playerProfileId`. That makes illegal states representable. Use a new resource or a distinct snapshot type. AC-RNK-001 is the product check. The official table and the performance ranking coexist without mixing in UI or API.
+Do not extend `rankingKindSchema` with a team kind that reuses `RankingRow.playerProfileId`. That makes illegal states representable. Use a new resource or a distinct snapshot type. AC-RNK-001 is the product check. The official table and the performance ranking coexist without mixing in UI or API. `GET .../team-statistics` is not this ranking.
 
 ---
 
@@ -251,12 +277,16 @@ Do not extend `rankingKindSchema` with a team kind that reuses `RankingRow.playe
 
 Nav item `standings` is `stub: true` (`href` `{base}/standings`). There is no `apps/web` route under `orgs/$orgId/competitions/$competitionId/standings`. Web does not call `getCompetitionStandings`. CLI prints `Pos PJ G E P GF GC Pts` from the snapshot as if every row used one mode.
 
+Operator competition nav is used only when `competitions.update` is allowed (`nav-registry.ts`). Players get Resumen, Partidos, Estadísticas, and Mi equipo. `design.md` UX-RNK-002 already requires the performance ranking to stay visually separate from the official table. UX-SCP-003 hides destinations that do not apply (bracket on a pure league). It does not tell you to hide Clasificación on `league-playoffs`.
+
 #### Paths and symbols
 
 - `apps/web/src/shared/presentation/shell/nav-registry.ts` (`id: "standings"`, `id: "rankings"`)
 - Competition shell routes under `apps/web/src/routes/_app/orgs/$orgId/competitions/`
 - `@futrob/sdk` statistics resource
-- `design.md` for table density and Grafito plus Lima stats pattern (read it before UI work)
+- `design.md` UX-RNK-002, UX-SCP-003, table density, Grafito plus Lima
+- `MatchRulesEditor` (per-stage Independiente versus Marcador agregado)
+- `competitionMark` in `apps/web/src/modules/player-home/presentation/player-home-copy.ts`
 - CLI printer as a stopgap operator view, not the product UI
 
 #### Gaps
@@ -264,6 +294,8 @@ Nav item `standings` is `stub: true` (`href` `{base}/standings`). There is no `a
 - No competition standings screen, empty state, or permission empty state.
 - No mobile screen. `apps/mobile` README lists tabla as a target. No implementation found.
 - Nothing to hide "two legs as two PJ" in the UI because the UI does not render PJ yet. The bug to prevent is rendering slot-level rows from `team-statistics` or encounter lists as if they were table rows.
+- Standings rows have no team name. The screen must load teams separately.
+- `MatchRulesEditor` already edits mixed rules. The table does not consume them.
 
 #### Behavior tests
 
@@ -277,7 +309,7 @@ UI tests call the screen with a fixture snapshot. Assert rendered cells, not CSS
 
 #### Notas
 
-Wait for the API task. Do not invent a second table that re-aggregates `TeamCompetitionStats.matchesPlayed`. That aggregate counts slots (`aggregateTeamContributions`), not table matches. Using it as PJ would undo PR 36 for cups.
+Wait for the API task. Do not invent a second table that re-aggregates `TeamCompetitionStats.matchesPlayed`. That aggregate counts slots (`aggregateTeamContributions`), not table matches. Using it as PJ would undo PR 36 for cups. Gate the screen on `statistics.read` even if the nav was shown via `competitions.update`. A 403 must not look like an empty table.
 
 ---
 
@@ -301,6 +333,7 @@ Player ranking already has `RANKING_FORMULA_VERSION = "player-ranking-v1"` and `
 - `product/mvp-requirements.md` FTR-RNK-001 (Should)
 - `packages/statistics/src/domain/entities/ranking-snapshot.ts`
 - `packages/statistics/src/domain/policies/ranking-eligibility.ts`
+- `packages/game-data/src/domain/policies/player-attribute-overview.ts` (do not copy)
 
 #### Gaps
 
@@ -308,6 +341,8 @@ Player ranking already has `RANKING_FORMULA_VERSION = "player-ranking-v1"` and `
 - No weight table in `docs/` or `product/`.
 - No version id such as `team-performance-v1`.
 - Inputs named by DEC-041 are not specified as functions of official table matches versus slot stats. **Guess.** Use table-level results and GD from mixed standings, not raw slot counts, or cups will double-count legs.
+- Eligibility override exists only on `RebuildCompetitionRankingsInput`. Projection always uses 3 matches or 60 percent. That is player eligibility, not team ranking.
+- `FTR-RNK-001` is Should. `AC-RNK-001` is written as Must. Notion ranking tasks are MVP YES.
 
 #### Behavior tests
 
@@ -329,7 +364,7 @@ Product has not numbered the weights. Do not ship invented coefficients in domai
 | Last N official table matches | recent form |
 | GF and GA rates from official contributions | efficiency |
 
-**Guess.** Equal weights of 0.25 each would be a placeholder, not a sports model. Leave numbers to product.
+**Guess.** Equal weights of 0.25 each would be a placeholder, not a sports model. Leave numbers to product. Do not import `WEIGHTS` from `player-attribute-overview.ts`.
 
 ---
 
@@ -357,6 +392,10 @@ Scheduling already generates the three formats. Those tests assert structure (ro
 - No shared fixture module that yields official results plus expected table rows for the three formats.
 - `groups-knockout` is in scheduling tests and in the parent story, but not in this QA task title. Include it as a fourth case if mixed rules share the same path. **Inferred.** Same reader bug as league-playoffs.
 - `statistics-smoke` covers personal stats, not standings.
+- `create-competition-draft.use-case.test.ts` and `generate-competition-fixture.use-case.test.ts` cover league only. Format structure for cup and playoffs lives in `generate-fixture-plan.test.ts`, which does not assert `resolutionMode` on playoff placeholders (`series` is null).
+- `apps/api/src/http/routes/competitions.test.ts` has no GET `/standings`.
+- `e2e-golden-path` always creates `format: "league"` and never calls standings.
+- `ProjectOfficialResult` harness defaults `getPointsRules` to `independent_matches`. There is no aggregate_score projection test.
 
 #### Behavior tests
 
@@ -390,4 +429,6 @@ These cannot be settled from code.
 2. Whether standings rows expose how `played` was counted.
 3. Numeric weights for `team-performance-v1`.
 4. Whether FTR-RNK-001 stays MVP despite the Should tag.
+5. Who may GET standings. Today `statistics.read`. Nav uses operator `competitions.update` then `competitions.read`.
+6. Whether knockout or playoff points belong on the same table as the league, or only on the bracket. Notion says one mixed table. UX-SCP-003 only hides destinations that do not apply.
 )
