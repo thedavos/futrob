@@ -34,6 +34,14 @@ export {
   type RankingRow,
   type RankingSnapshot,
 } from "./domain/entities/ranking-snapshot.ts";
+export {
+  TEAM_PERFORMANCE_FORMULA_VERSION,
+  TEAM_PERFORMANCE_WEIGHTS,
+  scoreTeamPerformance,
+  type TeamPerformanceMetric,
+  type TeamPerformanceMetrics,
+  type TeamPerformanceScore,
+} from "./domain/policies/team-performance-v1.ts";
 export type {
   MatchedPlayerContributionPageQuery,
   MatchedPlayerContributionQuery,
