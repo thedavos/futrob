@@ -11,13 +11,13 @@ This table is the product contract. Domain code must import these weights rather
 
 ## Weight table
 
-| Component | Key | Weight | Declared input (0–100, already normalized) |
-| --- | --- | ---: | --- |
-| Results | `results` | 40 | Points or win rate for official results in the ranking window |
-| Goal difference | `goalDifference` | 20 | Goal difference scaled to the competition window |
-| Recent form | `recentForm` | 20 | Form over the most recent official encounters |
-| Offensive efficiency | `offensiveEfficiency` | 10 | Attacking conversion when the payload provides it |
-| Defensive efficiency | `defensiveEfficiency` | 10 | Defensive prevention when the payload provides it |
+| Component            | Key                   | Weight | Declared input (0–100, already normalized)                    |
+| -------------------- | --------------------- | -----: | ------------------------------------------------------------- |
+| Results              | `results`             |     40 | Points or win rate for official results in the ranking window |
+| Goal difference      | `goalDifference`      |     20 | Goal difference scaled to the competition window              |
+| Recent form          | `recentForm`          |     20 | Form over the most recent official encounters                 |
+| Offensive efficiency | `offensiveEfficiency` |     10 | Attacking conversion when the payload provides it             |
+| Defensive efficiency | `defensiveEfficiency` |     10 | Defensive prevention when the payload provides it             |
 
 Weights sum to 100. Each component is a 0–100 score supplied by statistics from official results only.
 

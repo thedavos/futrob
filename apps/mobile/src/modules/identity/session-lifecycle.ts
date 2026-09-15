@@ -16,10 +16,7 @@ export function isProductUnauthorized(error: unknown): boolean {
   return error instanceof FutrobApiError && error.status === 401;
 }
 
-export async function handleProductError(
-  error: unknown,
-  showLogin: () => void,
-): Promise<boolean> {
+export async function handleProductError(error: unknown, showLogin: () => void): Promise<boolean> {
   if (!isProductUnauthorized(error)) return false;
   await onProductUnauthorized(showLogin);
   return true;

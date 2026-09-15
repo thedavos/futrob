@@ -52,13 +52,13 @@
 
 ## 5. Datos EA y estadísticas
 
-| ID      | Decisión pendiente                | Default recomendado                                                                                                                                          | Motivo                               |
-| ------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
-| DEC-040 | Estadísticas confiables iniciales | Marcador, duración, goles, asistencias, rating, MVP, tiros, pases y entradas cuando el payload las traiga; campos ausentes = null tipado, no cero inventado. | Evita falsos ceros.                  |
+| ID      | Decisión pendiente                | Default recomendado                                                                                                                                                                 | Motivo                               |
+| ------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| DEC-040 | Estadísticas confiables iniciales | Marcador, duración, goles, asistencias, rating, MVP, tiros, pases y entradas cuando el payload las traiga; campos ausentes = null tipado, no cero inventado.                        | Evita falsos ceros.                  |
 | DEC-041 | Ranking de rendimiento de equipos | Fórmula v1 versionada 0–100 basada en resultados, DG, forma reciente y eficiencia ofensiva/defensiva disponibles. Pesos: [team-performance-v1.md](/product/team-performance-v1.md). | Transparente y estable en temporada. |
-| DEC-042 | Premios individuales              | Rankings de goles, asistencias, rating, MVP y portero; mínimos de elegibilidad configurables.                                                                | Cobertura esencial.                  |
-| DEC-043 | Elegibilidad default              | Mínimo 3 partidos o 60 % de minutos del Team en la etapa, lo que el organizador configure.                                                                   | Reduce rankings engañosos.           |
-| DEC-044 | Analíticas públicas vs premium    | Públicos: tabla, resultados, rankings esenciales. Premium: percentiles, evolución, comparativas y analítica de organizador.                                  | Soporta FR-17.                       |
+| DEC-042 | Premios individuales              | Rankings de goles, asistencias, rating, MVP y portero; mínimos de elegibilidad configurables.                                                                                       | Cobertura esencial.                  |
+| DEC-043 | Elegibilidad default              | Mínimo 3 partidos o 60 % de minutos del Team en la etapa, lo que el organizador configure.                                                                                          | Reduce rankings engañosos.           |
+| DEC-044 | Analíticas públicas vs premium    | Públicos: tabla, resultados, rankings esenciales. Premium: percentiles, evolución, comparativas y analítica de organizador.                                                         | Soporta FR-17.                       |
 
 ## 6. Comercial e integraciones
 

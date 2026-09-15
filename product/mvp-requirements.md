@@ -121,12 +121,12 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 ## 4. Requisitos Should
 
-| ID             | Requisito                                                                                                       |
-| -------------- | --------------------------------------------------------------------------------------------------------------- |
-| FTR-ANA-001    | Primera capa de analíticas premium para equipo, jugador y organizador.                                          |
+| ID             | Requisito                                                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FTR-ANA-001    | Primera capa de analíticas premium para equipo, jugador y organizador.                                                                                                                      |
 | FTR-RNK-001    | Ranking de equipos por rendimiento (0–100) con fórmula transparente y versionada, distinto de la tabla oficial. Pesos iniciales: [team-performance-v1.md](/product/team-performance-v1.md). |
-| FTR-ELIG-001   | Mínimos de elegibilidad para premios/rankings (partidos, minutos, % participación).                             |
-| FTR-HEALTH-001 | Panel o eventos de salud/latencia del proveedor EA.                                                             |
+| FTR-ELIG-001   | Mínimos de elegibilidad para premios/rankings (partidos, minutos, % participación).                                                                                                         |
+| FTR-HEALTH-001 | Panel o eventos de salud/latencia del proveedor EA.                                                                                                                                         |
 
 ## 5. Requisitos Won't (MVP)
 

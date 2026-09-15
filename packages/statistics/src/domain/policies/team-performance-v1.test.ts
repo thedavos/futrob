@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import {
-  TEAM_PERFORMANCE_FORMULA_VERSION,
-  scoreTeamPerformance,
-} from "./team-performance-v1.ts";
+import { TEAM_PERFORMANCE_FORMULA_VERSION, scoreTeamPerformance } from "./team-performance-v1.ts";
 
 const complete = {
   results: 80,
