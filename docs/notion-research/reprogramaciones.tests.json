@@ -1,0 +1,629 @@
+{
+  "epic": "Reprogramaciones",
+  "source": "uploads/reprogramaciones.json",
+  "asOfCommit": "de3c657",
+  "package": "@futrob/scheduling",
+  "conventions": {
+    "import": "vite-plus/test",
+    "run": "npm test",
+    "useCaseLayout": "packages/scheduling uses flat application/*.use-case.ts next to *.use-case.test.ts",
+    "httpHarness": "apps/api/src/http/routes/encounters.test.ts (createApp, serviceHeaders)",
+    "sdkHarness": "packages/sdk/src/resources/results.test.ts pattern (mockFetch, literal URL and body)",
+    "assert": "Call the subject the way its users do. Assert literal status, code, ISO instants, and row counts. Do not assert mock call counts alone."
+  },
+  "httpStatusGaps": {
+    "note": "apps/api/src/http/errors.ts statusForFailureCode. These create codes would currently map to 500 if exposed over HTTP.",
+    "wouldBe500": [
+      "scheduling.active_schedule_change_request_exists",
+      "scheduling.rescheduling_disabled",
+      "scheduling.reschedule_limit_reached"
+    ],
+    "alreadyMapped": {
+      "scheduling.schedule_change_encounter_not_found": 404,
+      "authorization.forbidden": 403,
+      "scheduling.invalid_schedule_change_date": 400,
+      "scheduling.schedule_change_idempotency_conflict": 409,
+      "scheduling.encounter_not_editable_for_schedule_change": 409
+    }
+  },
+  "tasks": [
+    {
+      "url": "https://app.notion.com/3dc7b204009a818c95a0e756f935c4f8",
+      "title": "[API] Crear/listar solicitudes de reprogramación",
+      "tipo": "Backend",
+      "prioridad": "P0",
+      "criterios": "HTTP+OpenAPI create/list; permiso request.",
+      "deps": "Solicitudes WIP",
+      "codeStatus": "partial",
+      "tests": [
+        {
+          "id": "create-uc-persist-open",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "persists an open request with its normalized initial proposal and emits one event",
+          "layer": "application",
+          "given": "A pending Encounter snapshot and reschedule.request allowed",
+          "when": "CreateScheduleChangeRequestUseCase.execute with a future proposedStartAt and reason",
+          "then": "status is open, one proposal, one scheduling.reschedule-requested, snapshot scheduledStartAt unchanged"
+        },
+        {
+          "id": "create-uc-slot-no-clock-move",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "accepts an existing OfficialMatch slot without changing the Encounter schedule",
+          "layer": "application",
+          "given": "officialMatchCount 2",
+          "when": "create with scope official_match slot 1",
+          "then": "request saved, encounter scheduledStartAt unchanged"
+        },
+        {
+          "id": "create-uc-permission",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "requires the contextual reschedule-request permission",
+          "layer": "application",
+          "given": "authorization.decide allowed false",
+          "when": "execute",
+          "then": "error code authorization.forbidden, permission encounters.reschedule.request, zero rows"
+        },
+        {
+          "id": "create-uc-limit",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "blocks a Team that reached the applied-reschedule limit",
+          "layer": "application",
+          "given": "maxReschedulesPerTeam 2, appliedReschedules 2",
+          "when": "execute",
+          "then": "code scheduling.reschedule_limit_reached, instance RescheduleLimitReached"
+        },
+        {
+          "id": "create-uc-limit-per-encounter",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "counts applied reschedules for the requested Encounter instead of the Team globally",
+          "layer": "application",
+          "given": "another encounter at the limit, this encounter at 0",
+          "when": "execute for this encounter",
+          "then": "create succeeds"
+        },
+        {
+          "id": "create-uc-idempotent-replay",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "returns the original request for an identical idempotent replay without another event",
+          "layer": "application",
+          "given": "one successful create",
+          "when": "execute the same payload again",
+          "then": "same request object, rows length 1, events length 1"
+        },
+        {
+          "id": "http-create-201",
+          "status": "missing",
+          "path": "apps/api/src/http/routes/encounters.test.ts",
+          "name": "POST schedule-change-requests returns the open request and does not move the snapshot clock",
+          "layer": "http",
+          "given": "service auth, actor with encounters.reschedule.request, a fixture-backed encounter",
+          "when": "POST /api/v1/encounters/:encounterId/schedule-change-requests with scope, proposedStartAt ISO, reason, idempotencyKey",
+          "then": "201, body.status === \"open\", GET schedule-snapshot scheduledStartAt equals the pre-create instant"
+        },
+        {
+          "id": "http-create-forbidden",
+          "status": "missing",
+          "path": "apps/api/src/http/routes/encounters.test.ts",
+          "name": "POST without reschedule.request returns 403 authorization.forbidden",
+          "layer": "http",
+          "given": "actor without encounters.reschedule.request",
+          "when": "POST create",
+          "then": "status 403, body.code === \"authorization.forbidden\""
+        },
+        {
+          "id": "http-create-active-conflict-409",
+          "status": "missing",
+          "path": "apps/api/src/http/routes/encounters.test.ts",
+          "name": "second incompatible POST returns 409 scheduling.active_schedule_change_request_exists",
+          "layer": "http",
+          "given": "one open entire_encounter request",
+          "when": "POST another request on the same encounter",
+          "then": "409 and code scheduling.active_schedule_change_request_exists (requires statusForFailureCode update or the test fails with 500)"
+        },
+        {
+          "id": "http-list-by-encounter",
+          "status": "missing",
+          "path": "apps/api/src/http/routes/encounters.test.ts",
+          "name": "GET schedule-change-requests lists the open request for that encounter only",
+          "layer": "http",
+          "given": "open request on encounter A and encounter B",
+          "when": "GET /api/v1/encounters/A/schedule-change-requests",
+          "then": "200, array length 1, id equals A's request id"
+        },
+        {
+          "id": "http-create-unauthenticated",
+          "status": "missing",
+          "path": "apps/api/src/http/routes/encounters.test.ts",
+          "name": "POST without INTERNAL_JOB_SECRET returns 401",
+          "layer": "http",
+          "given": "no Authorization header",
+          "when": "POST create",
+          "then": "401 api.unauthorized"
+        },
+        {
+          "id": "adapter-idempotency-unique",
+          "status": "missing",
+          "path": "apps/api/src/adapters/scheduling/schedule-change-request.repository.test.ts",
+          "name": "saving two requests with the same organizationId and idempotencyKey does not insert a second row",
+          "layer": "adapter",
+          "given": "Postgres or in-memory adapter with UNIQUE (organization_id, idempotency_key)",
+          "when": "save then save with same key",
+          "then": "findByIdempotencyKey returns the first id"
+        }
+      ]
+    },
+    {
+      "url": "https://app.notion.com/3dc7b204009a81668f55c748d001f333",
+      "title": "[SDK] Cliente de solicitudes de reprogramación",
+      "tipo": "Backend",
+      "prioridad": "P0",
+      "criterios": "SDK create/list/respond.",
+      "deps": "[API]",
+      "codeStatus": "missing",
+      "tests": [
+        {
+          "id": "sdk-create-posts-literal-url",
+          "status": "missing",
+          "path": "packages/sdk/src/resources/encounters.test.ts",
+          "name": "createScheduleChangeRequest posts the contract body to the encounter collection",
+          "layer": "sdk",
+          "given": "createFutrobClient with mockFetch",
+          "when": "client.encounters.createScheduleChangeRequest(\"enc-1\", { scope, proposedStartAt, reason, idempotencyKey })",
+          "then": "method POST, URL ends with /encounters/enc-1/schedule-change-requests, parsed status \"open\""
+        },
+        {
+          "id": "sdk-list",
+          "status": "missing",
+          "path": "packages/sdk/src/resources/encounters.test.ts",
+          "name": "listScheduleChangeRequests GETs the encounter collection",
+          "layer": "sdk",
+          "given": "mockFetch returns [{ id: \"req-1\", status: \"open\" }]",
+          "when": "listScheduleChangeRequests(\"enc-1\")",
+          "then": "GET that path, result [ { id: \"req-1\", status: \"open\" } ]"
+        },
+        {
+          "id": "sdk-accept",
+          "status": "missing",
+          "path": "packages/sdk/src/resources/encounters.test.ts",
+          "name": "acceptScheduleChangeRequest posts to the accept sub-resource",
+          "layer": "sdk",
+          "given": "API accept exists",
+          "when": "acceptScheduleChangeRequest(\"enc-1\", \"req-1\")",
+          "then": "POST .../schedule-change-requests/req-1/accept, parsed status \"accepted\""
+        },
+        {
+          "id": "sdk-does-not-call-edit-fixture",
+          "status": "missing",
+          "path": "packages/sdk/src/resources/encounters.test.ts",
+          "name": "createScheduleChangeRequest does not PATCH fixture encounters",
+          "layer": "sdk",
+          "given": "mockFetch records paths",
+          "when": "createScheduleChangeRequest",
+          "then": "recorded path does not contain /fixtures/"
+        }
+      ]
+    },
+    {
+      "url": "https://app.notion.com/3dc7b204009a81f5babdf6580ce445dd",
+      "title": "[UI] Flujo capitán: solicitar reprogramación",
+      "tipo": "Frontend",
+      "prioridad": "P0",
+      "criterios": "UI capitán solicita fecha; TZ; loading/error.",
+      "deps": "SDK",
+      "codeStatus": "missing",
+      "tests": [
+        {
+          "id": "ui-captain-submit",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/request-schedule-change.test.tsx",
+          "name": "captain submit posts entire_encounter with the chosen instant and reason",
+          "layer": "ui",
+          "given": "useCan reschedule.request true, competition timeZone America/Lima",
+          "when": "choose date, type reason, submit",
+          "then": "mutation body.proposedStartAt is the UTC ISO for that Lima wall time, body.reason is the typed string, loading then success"
+        },
+        {
+          "id": "ui-captain-invalid-date",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/request-schedule-change.test.tsx",
+          "name": "shows the typed invalid date error from scheduling.invalid_schedule_change_date",
+          "layer": "ui",
+          "given": "mutation returns that code",
+          "when": "submit",
+          "then": "accessible alert text is the es/en message for that code, not a raw stack"
+        },
+        {
+          "id": "ui-captain-cta-hidden-without-permission",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/request-schedule-change.test.tsx",
+          "name": "does not offer Reprogramar when useCan is false",
+          "layer": "ui",
+          "given": "useCan encounters.reschedule.request false",
+          "when": "render Match Center header",
+          "then": "no button named Reprogramar"
+        },
+        {
+          "id": "ui-captain-cta-disabled-approved",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/request-schedule-change.test.tsx",
+          "name": "approved OfficialMatch shows a disabled control with a reason (UX-SCH-004)",
+          "layer": "ui",
+          "given": "official match status approved",
+          "when": "render",
+          "then": "control disabled, reason text present"
+        },
+        {
+          "id": "ui-captain-shows-competition-zone",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/request-schedule-change.test.tsx",
+          "name": "datetime field labels America/Lima",
+          "layer": "ui",
+          "given": "competition.timeZone America/Lima",
+          "when": "open the form",
+          "then": "visible text includes America/Lima"
+        }
+      ]
+    },
+    {
+      "url": "https://app.notion.com/3dc7b204009a819d9376d0cd82224218",
+      "title": "[UI] Flujo rival: aceptar / rechazar / contraproponer",
+      "tipo": "Frontend",
+      "prioridad": "P0",
+      "criterios": "UI rival accept/reject/counter; historial.",
+      "deps": "Aceptación Feature; SDK",
+      "codeStatus": "missing",
+      "tests": [
+        {
+          "id": "ui-rival-accept",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/respond-schedule-change.test.tsx",
+          "name": "rival accept shows accepted and the new clock in the competition zone",
+          "layer": "ui",
+          "given": "open request, actor on the opposite team, permission allowed",
+          "when": "click Aceptar",
+          "then": "status text accepted, displayed time matches proposal instant in competition TZ"
+        },
+        {
+          "id": "ui-rival-reject",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/respond-schedule-change.test.tsx",
+          "name": "rival reject leaves the snapshot clock unchanged",
+          "layer": "ui",
+          "given": "open request",
+          "when": "click Rechazar",
+          "then": "status rejected, fixture time still the original ISO rendered"
+        },
+        {
+          "id": "ui-rival-counter",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/respond-schedule-change.test.tsx",
+          "name": "counter appends a proposal that appears in history",
+          "layer": "ui",
+          "given": "open request with one proposal",
+          "when": "submit a later instant and reason",
+          "then": "history shows two rows, latest reason equals the typed string"
+        },
+        {
+          "id": "ui-rival-stale-open",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/respond-schedule-change.test.tsx",
+          "name": "accept on a no-longer-open request shows the tagged error code",
+          "layer": "ui",
+          "given": "mutation returns a not-open code",
+          "when": "click Aceptar",
+          "then": "alert uses that code's message, actions disabled"
+        },
+        {
+          "id": "ui-history-empty",
+          "status": "missing",
+          "path": "apps/web/src/modules/scheduling/presentation/schedule-change-history.test.tsx",
+          "name": "Schedule tab empty state when the encounter has no requests",
+          "layer": "ui",
+          "given": "list returns []",
+          "when": "open Schedule tab",
+          "then": "empty copy visible, no crash"
+        }
+      ]
+    },
+    {
+      "url": "https://app.notion.com/3dc7b204009a8106bf64ebfb4a51802c",
+      "title": "[Domain] Apply fecha al fixture + historial",
+      "tipo": "Backend",
+      "prioridad": "P0",
+      "criterios": "Apply al fixture; historial; sin doble apply.",
+      "deps": "Aceptación; Solicitudes",
+      "codeStatus": "partial",
+      "tests": [
+        {
+          "id": "staff-edit-apply-once",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/edit-fixture-encounter.use-case.test.ts",
+          "name": "reschedules a pending encounter, bumps revision, and records one audit entry",
+          "layer": "application",
+          "given": "staff schedule.manage, pending team-vs-team encounter",
+          "when": "edit then replay same requestId with a different date",
+          "then": "clock stays on the first instant, one audit row, one encounter-rescheduled"
+        },
+        {
+          "id": "accept-moves-snapshot",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/accept-schedule-change-request.use-case.test.ts",
+          "name": "accept moves EncounterScheduleSnapshot.scheduledStartAt to the latest proposal instant",
+          "layer": "application",
+          "given": "open entire_encounter request, proposal 2026-09-22T21:00:00.000Z, current 2026-09-20T20:00:00.000Z",
+          "when": "accept",
+          "then": "snapshot scheduledStartAt getTime() === Date.parse(\"2026-09-22T21:00:00.000Z\"), request.status === \"accepted\""
+        },
+        {
+          "id": "accept-no-double-apply",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/accept-schedule-change-request.use-case.test.ts",
+          "name": "second accept of the same request does not emit a second encounter-rescheduled",
+          "layer": "application",
+          "given": "already accepted request",
+          "when": "accept again with the same actor",
+          "then": "events filter eventName scheduling.encounter-rescheduled has length 1, snapshot still the accepted instant"
+        },
+        {
+          "id": "accept-slot-2-only",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/accept-schedule-change-request.use-case.test.ts",
+          "name": "accept of official_match slot 2 does not change slot 1 start (AC-SCH-001)",
+          "layer": "application",
+          "given": "per-slot starts exist, slot 1 20:00Z, slot 2 request to 22:00Z",
+          "when": "accept",
+          "then": "slot 1 start 20:00Z, slot 2 start 22:00Z. Blocked until official_matches.scheduled_start_at or equivalent exists."
+        },
+        {
+          "id": "accept-increments-applied-count",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/accept-schedule-change-request.use-case.test.ts",
+          "name": "accept increments countAppliedReschedules for the requesting team on that encounter",
+          "layer": "application",
+          "given": "applied count 0, max 2",
+          "when": "accept",
+          "then": "countAppliedReschedules returns 1. A third create after two accepts returns scheduling.reschedule_limit_reached"
+        },
+        {
+          "id": "accept-event-scope",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/accept-schedule-change-request.use-case.test.ts",
+          "name": "encounter-rescheduled payload.scope matches the request scope",
+          "layer": "application",
+          "given": "accepted official_match slot 2",
+          "when": "read published events",
+          "then": "payload.scope equals { type: \"official_match\", officialSlot: 2 }, previousStartAt and newStartAt are ISO strings"
+        }
+      ]
+    },
+    {
+      "url": "https://app.notion.com/3dc7b204009a81b7b2aeca50ffce5a40",
+      "title": "[Domain] Reglas de zona horaria en reprogramaciones",
+      "tipo": "Backend",
+      "prioridad": "P0",
+      "criterios": "TZ de competición; sin ambigüedad UTC.",
+      "deps": "Solicitudes",
+      "codeStatus": "partial",
+      "tests": [
+        {
+          "id": "gen-dst-spring-forward",
+          "status": "exists",
+          "path": "packages/scheduling/src/domain/policies/generate-fixture-plan.test.ts",
+          "name": "preserves the competition wall-clock time across daylight-saving changes",
+          "layer": "domain",
+          "given": "America/New_York generation spec",
+          "when": "generateFixturePlan",
+          "then": "round starts keep the same local wall time across the spring-forward"
+        },
+        {
+          "id": "create-stores-utc-epoch",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "proposal proposedStartAt equals the UTC epoch for the competition wall time",
+          "layer": "application",
+          "given": "competition zone America/Lima, client wants 2026-09-20 20:00 local",
+          "when": "create with Date.UTC equivalent 2026-09-21T01:00:00.000Z",
+          "then": "saved.proposals[0].proposedStartAt.toISOString() === \"2026-09-21T01:00:00.000Z\" and event payload.proposedStartAt is that same string"
+        },
+        {
+          "id": "create-rejects-same-instant",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "a past date / the current Encounter date / an invalid date",
+          "layer": "application",
+          "given": "clock 2026-09-14, encounter start 2026-09-20T20:00:00.000Z",
+          "when": "proposedStartAt invalid, past, or equal to current start",
+          "then": "code scheduling.invalid_schedule_change_date"
+        },
+        {
+          "id": "create-rejects-spring-forward-gap",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "a local wall time that does not exist in the competition zone is invalid",
+          "layer": "application",
+          "given": "America/New_York spring-forward day, naive 02:30",
+          "when": "create after interpreting in that zone",
+          "then": "code scheduling.invalid_schedule_change_date. Requires a zoned input or interpreter that does not currently exist."
+        },
+        {
+          "id": "http-rejects-offsetless-datetime",
+          "status": "missing",
+          "path": "apps/api/src/http/routes/encounters.test.ts",
+          "name": "POST with proposedStartAt lacking an offset returns api.validation_error",
+          "layer": "http",
+          "given": "body proposedStartAt \"2026-09-20T20:00:00\"",
+          "when": "POST create",
+          "then": "400 api.validation_error, use case not invoked"
+        },
+        {
+          "id": "notice-hours-in-competition-zone",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "proposal inside minimumRescheduleNoticeHours of kickoff is rejected",
+          "layer": "application",
+          "given": "notice 12, kickoff in 6 hours in America/Lima",
+          "when": "create",
+          "then": "typed date or notice error. Rules port does not expose notice hours today."
+        }
+      ]
+    },
+    {
+      "url": "https://app.notion.com/3dc7b204009a81e59976e4124d29ae66",
+      "title": "[Domain] Expiración y escalamiento al organizador",
+      "tipo": "Backend",
+      "prioridad": "P1",
+      "criterios": "Expiran y escalan con resolve.",
+      "deps": "Apply fecha",
+      "codeStatus": "missing",
+      "tests": [
+        {
+          "id": "expire-after-ttl",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/expire-schedule-change-request.use-case.test.ts",
+          "name": "open request past proposal TTL becomes expired",
+          "layer": "application",
+          "given": "createdAt T, TTL 12h, clock T+12h1s",
+          "when": "expire job or use case",
+          "then": "status === \"expired\". Inject ClockPort. Do not sleep."
+        },
+        {
+          "id": "expire-before-ttl-stays-open",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/expire-schedule-change-request.use-case.test.ts",
+          "name": "open request 11h59m after create stays open",
+          "layer": "application",
+          "given": "TTL 12h, clock T+11h59m",
+          "when": "expire",
+          "then": "status === \"open\""
+        },
+        {
+          "id": "escalate-from-expired",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/escalate-schedule-change-request.use-case.test.ts",
+          "name": "expired request becomes escalated",
+          "layer": "application",
+          "given": "status expired",
+          "when": "escalate",
+          "then": "status === \"escalated\""
+        },
+        {
+          "id": "escalate-requires-resolve-permission",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/escalate-schedule-change-request.use-case.test.ts",
+          "name": "actor without encounters.reschedule.resolve cannot organizer-resolve",
+          "layer": "application",
+          "given": "escalated request, captain actor",
+          "when": "organizer resolve or apply-from-escalated",
+          "then": "authorization.forbidden, permission encounters.reschedule.resolve, snapshot unchanged"
+        },
+        {
+          "id": "escalated-still-blocks-create",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "escalated request still conflicts with a new create on the same scope",
+          "layer": "application",
+          "given": "listActiveByEncounter returns the escalated row",
+          "when": "create",
+          "then": "scheduling.active_schedule_change_request_exists. Today the fake treats only open as active."
+        },
+        {
+          "id": "deadline-captain-blocked",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "after DEC-034 deadline a captain create is rejected and staff create is allowed",
+          "layer": "application",
+          "given": "deadline field exists and clock is past it",
+          "when": "captain create then staff create",
+          "then": "captain typed reject, staff succeeds. Field does not exist yet."
+        }
+      ]
+    },
+    {
+      "url": "https://app.notion.com/3dc7b204009a81c7b276c422df5accb1",
+      "title": "[QA] Carreras de aceptación concurrente de reprogramación",
+      "tipo": "QA",
+      "prioridad": "P1",
+      "criterios": "Un winner; segundo tipado; idempotente.",
+      "deps": "Apply fecha",
+      "codeStatus": "partial",
+      "tests": [
+        {
+          "id": "create-race-one-winner",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "serializes concurrent requests so only one active request is created",
+          "layer": "application",
+          "given": "in-memory lock",
+          "when": "Promise.all two creates on overlapping scopes",
+          "then": "exactly one ok, one ActiveScheduleChangeRequestExists, rows length 1, events length 1"
+        },
+        {
+          "id": "create-race-transaction-bound-lock",
+          "status": "exists",
+          "path": "packages/scheduling/src/application/create-schedule-change-request.use-case.test.ts",
+          "name": "holds a transaction-bound Encounter lock across concurrent read-check-save operations",
+          "layer": "application",
+          "given": "TransactionBoundEncounterMutationLock",
+          "when": "Promise.all two identical creates",
+          "then": "one ok, one conflict, one row"
+        },
+        {
+          "id": "accept-race-one-winner",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/accept-schedule-change-request.use-case.test.ts",
+          "name": "two concurrent accepts yield one accepted clock and one typed error",
+          "layer": "qa-race",
+          "given": "one open request, two rival actors, shared lock and transaction",
+          "when": "Promise.all accept A and accept B",
+          "then": "one status accepted, snapshot equals the proposal instant, one scheduling.encounter-rescheduled, loser code is a 409-mapped tagged error"
+        },
+        {
+          "id": "accept-idempotent-same-actor",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/accept-schedule-change-request.use-case.test.ts",
+          "name": "same actor accept twice is idempotent",
+          "layer": "qa-race",
+          "given": "accepted request",
+          "when": "accept again with the same actor and payload",
+          "then": "ok, same request id, events length 1, snapshot unchanged on the second call"
+        },
+        {
+          "id": "accept-versus-counter-race",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/accept-schedule-change-request.use-case.test.ts",
+          "name": "accept concurrent with counter has one winner",
+          "layer": "qa-race",
+          "given": "open request",
+          "when": "Promise.all accept and counter",
+          "then": "exactly one mutation of proposals or status, the other a typed not-open or conflict error, fixture clock matches the winner"
+        },
+        {
+          "id": "accept-versus-staff-edit-race",
+          "status": "missing",
+          "path": "packages/scheduling/src/application/accept-schedule-change-request.use-case.test.ts",
+          "name": "accept concurrent with EditFixtureEncounterUseCase on the same encounter",
+          "layer": "qa-race",
+          "given": "open request and staff PATCH payload",
+          "when": "Promise.all both under EncounterMutationLockPort",
+          "then": "one clock, loser FixtureUpdateConflict or request not-open, one encounter-rescheduled"
+        },
+        {
+          "id": "pg-lock-two-transactions",
+          "status": "missing",
+          "path": "apps/api/src/adapters/scheduling/encounter-mutation-lock.test.ts",
+          "name": "two Postgres transactions on one encounterId do not both apply a schedule change",
+          "layer": "adapter",
+          "given": "DATABASE_URL, PostgresEncounterMutationLock, two pools or connections",
+          "when": "overlapping apply transactions",
+          "then": "one commit with the new instant, the other conflict. Skip when DATABASE_URL is unset."
+        }
+      ]
+    }
+  ]
+}
