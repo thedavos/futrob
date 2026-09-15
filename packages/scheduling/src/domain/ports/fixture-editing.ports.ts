@@ -1,11 +1,21 @@
 import type { ActorId, CompetitionId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
 import type { FixtureEncounter } from "../entities/fixture-plan.ts";
+import type { RescheduleScope } from "../value-objects/reschedule-scope.ts";
 
 export interface FixtureEncounterEditGuardPort {
   canEdit(input: {
     readonly organizationId: OrganizationId;
     readonly competitionId: CompetitionId;
     readonly encounterId: EncounterId;
+  }): Promise<boolean>;
+}
+
+export interface ScheduleChangeRequestEditGuardPort {
+  canRequestScheduleChange(input: {
+    readonly organizationId: OrganizationId;
+    readonly competitionId: CompetitionId;
+    readonly encounterId: EncounterId;
+    readonly scope: RescheduleScope;
   }): Promise<boolean>;
 }
 
