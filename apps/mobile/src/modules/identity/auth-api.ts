@@ -118,3 +118,21 @@ export interface SignUpInput extends SignInInput {
 export async function signUpEmail(input: SignUpInput): Promise<AuthSuccess> {
   return requestAuth("/sign-up/email", input);
 }
+
+/**
+ * Remote Better Auth sign-out. Local SecureStore is cleared by the caller
+ * after this returns (or after it fails). Does not mint a new bearer.
+ */
+export async function signOutRemote(token: string): Promise<void> {
+  try {
+    await fetch(`${AUTH_BASE_URL}/sign-out`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch {
+    // Local credentials are still cleared by logout even if the network fails.
+  }
+}

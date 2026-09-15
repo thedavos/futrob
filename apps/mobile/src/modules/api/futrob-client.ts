@@ -8,6 +8,9 @@ export { FutrobApiError } from "@futrob/sdk";
  * Typed product-API client for /api/v1. The session token stored by
  * `auth-api` (Better Auth) is presented as Bearer — supported since the
  * server enabled the `bearer()` plugin (ADR-0014 follow-up).
+ *
+ * Token source is SecureStore only. Do not call Better Auth `get-session`
+ * to mint a bearer; silent refresh is blocked until a refresh contract exists.
  */
 export function getFutrobClient(): FutrobClient {
   return createFutrobClient({

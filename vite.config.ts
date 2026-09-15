@@ -291,6 +291,7 @@ export default defineConfig({
       "packages/scheduling",
       "packages/statistics",
       "packages/teams",
+      "apps/mobile",
       // Storybook component tests (stories as tests) in a real browser.
       storybookVitestProject(),
       "tools/oxlint/futrob",

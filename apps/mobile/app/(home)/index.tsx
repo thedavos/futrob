@@ -3,8 +3,9 @@ import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { Button, EmptyState, Logo, Screen, Text } from "@/ui";
 import { theme } from "@/theme/theme";
-import { clearSession, getSession, type Session } from "@/modules/identity/session-store";
-import { FutrobApiError, getFutrobClient } from "@/modules/api/futrob-client";
+import { getSession, type Session } from "@/modules/identity/session-store";
+import { handleProductError, logout } from "@/modules/identity/session-lifecycle";
+import { getFutrobClient } from "@/modules/api/futrob-client";
 
 interface OnboardingStatus {
   completed: boolean;
@@ -65,10 +66,9 @@ export default function HomeScreen() {
         if (cancelled) {
           return;
         }
-        // Expired/revoked session → force re-authentication.
-        if (error instanceof FutrobApiError && error.status === 401) {
-          void clearSession().then(() => router.replace("/(auth)/login"));
-        }
+        void handleProductError(error, () => {
+          router.replace("/(auth)/login");
+        });
       });
     return () => {
       cancelled = true;
@@ -76,8 +76,9 @@ export default function HomeScreen() {
   }, [session, router]);
 
   async function handleLogout() {
-    await clearSession();
-    router.replace("/(auth)/login");
+    await logout(() => {
+      router.replace("/(auth)/login");
+    });
   }
 
   if (!session) {
