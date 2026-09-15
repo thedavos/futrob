@@ -1,0 +1,496 @@
+[
+  {
+    "tarea": "[Auth] Secure storage + refresh de sesión móvil",
+    "url": "https://app.notion.com/3dc7b204009a8182bb0bcf38533c94f5",
+    "notas": "SecureStore ya guarda el bearer. Falta refresh silencioso ante 401, sign-out remoto y pruebas de que el token no sale en logs.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "session-store persists token and user then round-trips getSession",
+        "behavior": "Dado saveSession con token sess_1, cuando getSession corre, entonces el token es sess_1 y el user.id coincide."
+      },
+      {
+        "layer": "unit",
+        "name": "clearSession removes both SecureStore keys",
+        "behavior": "Dado una sesión guardada, cuando clearSession corre, entonces getSession devuelve null."
+      },
+      {
+        "layer": "unit",
+        "name": "redacts invitation tokens from pathnames before logs",
+        "behavior": "Dado /invitations/accept/secret-token, cuando se redacta, entonces la cadena no contiene secret-token."
+      },
+      {
+        "layer": "integration",
+        "name": "silent refresh on 401 retries original request with new bearer",
+        "behavior": "Dado un GET /players/me 401 y un get-session que entrega un token nuevo, cuando el cliente reintenta, entonces el segundo request usa Bearer nuevo y el caller ve el body 200."
+      },
+      {
+        "layer": "integration",
+        "name": "logout calls remote sign-out then clears SecureStore",
+        "behavior": "Dado un token guardado, cuando el usuario cierra sesión, entonces POST /api/auth/sign-out usa ese Bearer y SecureStore queda vacío."
+      },
+      {
+        "layer": "integration",
+        "name": "auth success does not log the session token",
+        "behavior": "Dado un spy de logger, cuando sign-in tiene éxito, entonces ningún argumento de log contiene el token."
+      }
+    ]
+  },
+  {
+    "tarea": "[DeepLink] Links de onboarding/acceso y resume post-auth",
+    "url": "https://app.notion.com/3dc7b204009a8110aa09dd0224d8f2bf",
+    "notas": "Hay scheme futrob y URLs canónicas en web. Faltan associated domains, cola de destino post-auth y redaction del token en móvil.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "parses custom scheme and https access invitation URLs",
+        "behavior": "Dado futrob://invitations/accept/tok_abc o https://app.example/invitations/accept/tok_abc, cuando se parsea, entonces el kind es access-invitation y el token es tok_abc."
+      },
+      {
+        "layer": "unit",
+        "name": "stores post-auth destination and redacts token in telemetry",
+        "behavior": "Dado la app cerrada y ese URL, cuando el usuario se autentica, entonces el destino guardado es /invitations/accept/tok_abc y los logs muestran :token, no tok_abc."
+      },
+      {
+        "layer": "unit",
+        "name": "manual paste still sends inspectCompetitionInvitation",
+        "behavior": "Dado que el usuario pega tok_abc en el paso invitación, cuando continúa, entonces inspectCompetitionInvitation se llama con token tok_abc."
+      },
+      {
+        "layer": "integration",
+        "name": "web redactInvitationTokenFromPath still allows paste of raw token",
+        "behavior": "Dado el helper web existente, cuando se redacta el pathname, entonces la ruta de paste web sigue aceptando el token crudo (regresión)."
+      }
+    ]
+  },
+  {
+    "tarea": "[SDK] Adaptadores móviles de onboarding + player",
+    "url": "https://app.notion.com/3dc7b204009a81bbb946cd3c1b9b5dfb",
+    "notas": "getFutrobClient() ya envuelve el SDK. Falta una capa fina de onboarding y player (como el gateway web) sin copiar reglas de dominio.",
+    "tests": [
+      {
+        "layer": "integration",
+        "name": "onboarding gateway completePlayer posts identity onboarding player",
+        "behavior": "Dado un SDK mock, cuando completePlayer({ gameAccount: null }) corre, entonces el cliente hace POST /identity/onboarding/player y devuelve destination personal."
+      },
+      {
+        "layer": "integration",
+        "name": "gateway surfaces organizations.name_conflict without local name rules",
+        "behavior": "Dado completeOrganizationOnboarding 409 organizations.name_conflict, cuando el gateway expone el error, entonces code es esa cadena y el adaptador no reimplementa el validador de nombre."
+      },
+      {
+        "layer": "integration",
+        "name": "player gateway maps getNextEncounter null encounter",
+        "behavior": "Dado JSON { encounter: null }, cuando el adaptador carga hechos de home, entonces nextEncounter es null."
+      },
+      {
+        "layer": "unit",
+        "name": "sdk identity resource still covers three complete paths",
+        "behavior": "Dado createFutrobClient, cuando se llaman los tres complete, entonces las URLs son /identity/onboarding/organization, /invitation y /player. Cobertura SDK existente: mantenerla, no duplicar dominio en móvil."
+      }
+    ]
+  },
+  {
+    "tarea": "[UI] Path organizar/unirme (mínimo org) en móvil",
+    "url": "https://app.notion.com/3dc7b204009a8128bc3cd1e4f10c915d",
+    "notas": "Welcome es un placeholder de organizador. No hay caminos organizar ni unirme ni paridad de destinos.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "organization finish destination maps to competition setup route",
+        "behavior": "Dado path organization, cuando se mapea destination competition-setup, entonces la ruta es la pantalla de setup con esos ids."
+      },
+      {
+        "layer": "unit",
+        "name": "invitation finish destination maps to competition not home",
+        "behavior": "Dado path invitation y destination kind competition, entonces la ruta es esa competición, no /(home)."
+      },
+      {
+        "layer": "integration",
+        "name": "organize finish sends a single completeOrganizationOnboarding POST",
+        "behavior": "Dado nombre Liga Única y un body 200, cuando organize finish corre, entonces ocurre un POST a /identity/onboarding/organization."
+      },
+      {
+        "layer": "e2e",
+        "name": "organize and join land on web-equivalent destination kinds",
+        "behavior": "Dado un usuario nuevo, cuando elige Organizar o Unirme y termina, entonces llega a los mismos kind de destino que web."
+      }
+    ]
+  },
+  {
+    "tarea": "[UI] Switcher Personal ↔ Organización en shell móvil",
+    "url": "https://app.notion.com/3dc7b204009a814c8694fea18a237bdc",
+    "notas": "El switcher web ya evita org ficticia en player. En móvil no hay shell ni deep links de workspace.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "player path defaults to personal without inventing an organization",
+        "behavior": "Dado path player y sin membresías, cuando se resuelve la selección por defecto, entonces kind es personal y no hay organizationId."
+      },
+      {
+        "layer": "unit",
+        "name": "selecting a real membership routes to /orgs/:id and keeps personal",
+        "behavior": "Dado membresías con org-1, cuando el usuario elige esa org, entonces la ruta es /orgs/org-1 y personal sigue seleccionable."
+      },
+      {
+        "layer": "unit",
+        "name": "pathname /player stays personal despite stale org memory",
+        "behavior": "Dado pathname /player, cuando se parsea, entonces kind es personal aunque haya un org id viejo en memoria."
+      }
+    ]
+  },
+  {
+    "tarea": "[Auth] Filtrar tabs/acciones por EffectiveAccess en móvil",
+    "url": "https://app.notion.com/3dc7b204009a81d0ba67f248565e3499",
+    "notas": "SDK y política fail-closed ya existen en web. Móvil no consulta EffectiveAccess ni oculta tabs.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "org tabs omit home without organizations.read",
+        "behavior": "Dado allowed sin organizations.read, cuando se construyen tabs de org, entonces el tab de inicio de org no aparece."
+      },
+      {
+        "layer": "unit",
+        "name": "loading and unavailable hide privileged actions",
+        "behavior": "Dado capability loading o unavailable, cuando se pintan acciones, entonces las privilegiadas están ocultas."
+      },
+      {
+        "layer": "integration",
+        "name": "effective-access 403 is recoverable and fail-closed",
+        "behavior": "Dado getEffectiveAccess HTTP 403, cuando el shell carga, entonces hay retry y no se conserva un allowed set viejo de un 200 anterior."
+      }
+    ]
+  },
+  {
+    "tarea": "[QA] Smoke E2E móvil: signup → onboarding → home → inbox",
+    "url": "https://app.notion.com/3dc7b204009a8158b265e350d224755c",
+    "notas": "No hay harness nativo ni job CI móvil. apps/mobile ni siquiera entra en vp test del root.",
+    "tests": [
+      {
+        "layer": "e2e",
+        "name": "native smoke signup onboarding home inbox",
+        "behavior": "Dado un install nativo limpio, cuando el usuario se registra, termina onboarding player, abre home y luego inbox, entonces ve esas cuatro pantallas en ese orden."
+      },
+      {
+        "layer": "integration",
+        "name": "mocked SDK sequence signup completePlayer nextEncounter listMine",
+        "behavior": "Dado SDK mock 200, cuando corre persistir token → completePlayerOnboarding → getNextEncounter → listMine, entonces cada llamada ocurre una vez en ese orden."
+      },
+      {
+        "layer": "unit",
+        "name": "root vp test includes the mobile vitest project",
+        "behavior": "Dado npm test en CI, cuando corre, entonces el project mobile está incluido y un test móvil en rojo falla el job."
+      }
+    ]
+  },
+  {
+    "tarea": "[UX] Auditoría 44 dp + estados vacíos Must en móvil",
+    "url": "https://app.notion.com/3dc7b204009a81cf9021defc189452e8",
+    "notas": "Button e Input ya usan 44 dp. Falta la checklist de pantallas Must y los vacíos de producto, no solo el placeholder.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "theme.controlHeight equals 44 dp",
+        "behavior": "Dado GEOMETRY_TOKENS control-height, cuando se convierte, entonces theme.controlHeight es 44."
+      },
+      {
+        "layer": "unit",
+        "name": "Button minHeight uses theme.controlHeight",
+        "behavior": "Dado un Button, cuando se lee el estilo, entonces minHeight es theme.controlHeight."
+      },
+      {
+        "layer": "unit",
+        "name": "inbox empty slot has Must title and CTA",
+        "behavior": "Dado cero invitaciones pendientes, cuando el slot de inbox se pinta, entonces el título Must y el CTA están presentes."
+      }
+    ]
+  },
+  {
+    "tarea": "[Lógica] Onboarding móvil 3 caminos vía @futrob/sdk",
+    "url": "https://app.notion.com/3dc7b204009a81f0b708d6c4eacd2e9e",
+    "notas": "El SDK y la API ya orquestan los 3 caminos. Móvil no guarda progreso, no hace skip/review/finish ni reanuda el paso.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "player path allowed steps are intention game-account club review",
+        "behavior": "Dado path player, cuando se listan pasos permitidos, entonces son intention, game-account, club, review."
+      },
+      {
+        "layer": "unit",
+        "name": "skipping club sends null externalClub on finish",
+        "behavior": "Dado skip del club, cuando se avanza, entonces el paso actual es review y externalClub en finish es null."
+      },
+      {
+        "layer": "integration",
+        "name": "login resumes persisted player club step instead of home",
+        "behavior": "Dado status incompleto path player currentStep club, cuando login resume, entonces se muestra el paso club, no home."
+      }
+    ]
+  },
+  {
+    "tarea": "[UI] Pantallas y steps de onboarding móvil (paridad web)",
+    "url": "https://app.notion.com/3dc7b204009a81e5860fd4163a69dfe5",
+    "notas": "Paridad web son 7 pasos más review. Móvil solo tiene un welcome estático.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "player stepsForPath includes account club review",
+        "behavior": "Dado path player, cuando stepsForPath corre, entonces las etiquetas incluyen cuenta, club y review."
+      },
+      {
+        "layer": "integration",
+        "name": "review screen shows filled player draft and enables finish",
+        "behavior": "Dado un draft player completo, cuando review se pinta, entonces se ven cuenta de juego y nombre de club y finish está habilitado."
+      },
+      {
+        "layer": "integration",
+        "name": "intention Organizar routes to organization not welcome",
+        "behavior": "Dado la pantalla de intención, cuando el usuario elige Organizar, entonces la siguiente ruta es organization, no welcome."
+      }
+    ]
+  },
+  {
+    "tarea": "[Lógica] Finish atómico y errores tipados de onboarding en móvil",
+    "url": "https://app.notion.com/3dc7b204009a813d9025f671f98159b1",
+    "notas": "Finish atómico y códigos tipados viven en API y SDK. Móvil no mapea FutrobApiError ni reintenta el finish.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "maps organizations.invitation_not_found to i18n key",
+        "behavior": "Dado FutrobApiError code organizations.invitation_not_found, cuando se mapea, entonces el message key es errors.organizations.invitation_not_found."
+      },
+      {
+        "layer": "unit",
+        "name": "player path hides provider secret messages",
+        "behavior": "Dado code provider.secret_message en path player, cuando se mapea, entonces el key es errors.onboarding.completePlayer y el code crudo no se muestra."
+      },
+      {
+        "layer": "integration",
+        "name": "recoverable name_conflict retry sends a second finish POST",
+        "behavior": "Dado finish 409 organizations.name_conflict, cuando el usuario reintenta tras renombrar, entonces el error se limpia y se envía un segundo POST."
+      }
+    ]
+  },
+  {
+    "tarea": "[UI] Estados e i18n es/en en onboarding móvil",
+    "url": "https://app.notion.com/3dc7b204009a819887f6c60d571cf2ef",
+    "notas": "Web ya tiene catálogo es/en y estados. Móvil hardcodea español y no distingue loading, vacío, error y éxito en onboarding.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "en locale returns English onboarding.club.title not the key",
+        "behavior": "Dado locale en, cuando se lee onboarding.club.title, entonces sale el valor inglés del catálogo, no la key."
+      },
+      {
+        "layer": "unit",
+        "name": "saving review shows busy not success",
+        "behavior": "Dado saving true, cuando review se pinta, entonces el control primario está busy y no es estado de éxito."
+      },
+      {
+        "layer": "unit",
+        "name": "finish success navigates away from review error",
+        "behavior": "Dado finish success destination personal, cuando navega, entonces el usuario no se queda en review con un error viejo."
+      }
+    ]
+  },
+  {
+    "tarea": "[Lógica] Asociación club EA en onboarding jugador móvil",
+    "url": "https://app.notion.com/3dc7b204009a81c79c34c0cfcf6221b9",
+    "notas": "Finish de jugador ya asocia ExternalClub en API sin que el cliente envíe el crest. Móvil no busca ni envía el locator.",
+    "tests": [
+      {
+        "layer": "integration",
+        "name": "club search hits game-data clubs search not teams",
+        "behavior": "Dado query Fera, cuando search corre, entonces se usa GET /game-data/clubs/search y los resultados tienen externalClubId, no un team id."
+      },
+      {
+        "layer": "unit",
+        "name": "externalClubLocatorFromDraft omits name and imageUrl",
+        "behavior": "Dado un club seleccionado con imageUrl, cuando se construye el locator, entonces el payload no tiene imageUrl ni name."
+      }
+    ]
+  },
+  {
+    "tarea": "[UI] Paso Club con crest CDN / Avatar fallback",
+    "url": "https://app.notion.com/3dc7b204009a81beb2fbd93fccbdd2b8",
+    "notas": "Web ya distingue crest CDN y fallback. En móvil no hay paso Club ni primitiva de crest.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "ClubCrestAvatar falls back to initials when imageUrl is null",
+        "behavior": "Dado imageUrl null, cuando se pinta, entonces se muestran las iniciales del nombre del club."
+      },
+      {
+        "layer": "unit",
+        "name": "ClubCrestAvatar falls back to initials when CDN image errors",
+        "behavior": "Dado una URL CDN que falla, cuando onError dispara, entonces se muestran las iniciales."
+      },
+      {
+        "layer": "integration",
+        "name": "club step copy uses club name never Team",
+        "behavior": "Dado resultados de búsqueda, cuando se selecciona un club, entonces el label es el nombre del club y no aparece la cadena Team."
+      }
+    ]
+  },
+  {
+    "tarea": "[Lógica] Shell autenticado móvil: sesión y permisos efectivos",
+    "url": "https://app.notion.com/3dc7b204009a81d5a935da6e0b065f53",
+    "notas": "Hay gate de sesión local. No hay logout remoto ni EffectiveAccess ni gates por grant.",
+    "tests": [
+      {
+        "layer": "integration",
+        "name": "missing session routes to login not home",
+        "behavior": "Dado SecureStore vacío, cuando el gate corre, entonces la ruta es /(auth)/login, no home."
+      },
+      {
+        "layer": "integration",
+        "name": "onboarding status 401 clears session and shows login",
+        "behavior": "Dado un token y getOnboardingStatus 401, cuando home carga, entonces la sesión se limpia y se muestra login."
+      },
+      {
+        "layer": "integration",
+        "name": "effective-access 403 hides grants and offers retry",
+        "behavior": "Dado 403 en effective-access, cuando el shell se pinta, entonces las acciones con grant están ocultas y hay retry."
+      }
+    ]
+  },
+  {
+    "tarea": "[UI] Shell y navegación Player (home, partidos, stats, invitaciones)",
+    "url": "https://app.notion.com/3dc7b204009a811d8880c3298248d811",
+    "notas": "Nav player web es la referencia. Móvil no tiene tabs ni pantallas destino.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "personal nav items are home matches statistics invitations",
+        "behavior": "Dado workspace personal, cuando se construye nav, entonces los href son home, partidos, estadísticas, invitaciones."
+      },
+      {
+        "layer": "unit",
+        "name": "org nav omits items without organizations.read",
+        "behavior": "Dado workspace org sin organizations.read, cuando se construye nav, entonces los items solo de org no aparecen."
+      },
+      {
+        "layer": "integration",
+        "name": "tapping Partidos mounts the matches screen",
+        "behavior": "Dado tap en Partidos, cuando navega, entonces monta la pantalla de partidos."
+      }
+    ]
+  },
+  {
+    "tarea": "[Lógica] Player home móvil: datos vía SDK",
+    "url": "https://app.notion.com/3dc7b204009a81458eeffbc873fbeae7",
+    "notas": "Web ya compone home desde next-encounter e inbox vía API. Móvil no llama esos métodos.",
+    "tests": [
+      {
+        "layer": "unit",
+        "name": "resolvePlayerHome uses next-encounter hero when encounter exists",
+        "behavior": "Dado nextEncounter con dos nombres de equipo, cuando resolvePlayerHome corre, entonces hero.kind es next-encounter."
+      },
+      {
+        "layer": "unit",
+        "name": "resolvePlayerHome empty encounter follows web slot table",
+        "behavior": "Dado encounter null y sin competiciones, cuando se resuelve, entonces el hero es no-competitions o no-upcoming según la tabla web."
+      },
+      {
+        "layer": "integration",
+        "name": "home loader calls getNextEncounter and listMine once",
+        "behavior": "Dado SDK 200, cuando home carga, entonces llama getNextEncounter y listMine una vez cada uno."
+      }
+    ]
+  },
+  {
+    "tarea": "[UI] Player home móvil (reemplaza placeholder)",
+    "url": "https://app.notion.com/3dc7b204009a81668b21c3c9ff14755a",
+    "notas": "Home sigue siendo el EmptyState de fundación. Hay que reemplazarlo con los slots Must de web.",
+    "tests": [
+      {
+        "layer": "integration",
+        "name": "ready home hides placeholder and shows encounter names",
+        "behavior": "Dado hechos listos con próximo encuentro, cuando home se pinta, entonces no está el string del placeholder y se ven los nombres del encuentro."
+      },
+      {
+        "layer": "integration",
+        "name": "slot error retry recalls the loader",
+        "behavior": "Dado error en un slot, cuando se pulsa reintentar, entonces el loader se llama otra vez."
+      }
+    ]
+  },
+  {
+    "tarea": "[Lógica] Mis partidos y Mis estadísticas en móvil vía SDK",
+    "url": "https://app.notion.com/3dc7b204009a8164881debc59efe93d2",
+    "notas": "SDK ya apunta a /players/me/statistics y /players/me/matches. Móvil no los consume.",
+    "tests": [
+      {
+        "layer": "integration",
+        "name": "matches loader uses /players/me/matches not encounters",
+        "behavior": "Dado el adaptador, cuando lista partidos, entonces la URL es /players/me/matches, no /encounters."
+      },
+      {
+        "layer": "integration",
+        "name": "statistics loader forwards platform filter",
+        "behavior": "Dado filters platform playstation, cuando carga stats, entonces el query incluye platform=playstation y se parsea el campo statistics."
+      }
+    ]
+  },
+  {
+    "tarea": "[UI] Pantallas Mis partidos y Mis estadísticas",
+    "url": "https://app.notion.com/3dc7b204009a810da7a8e67940ca5fc2",
+    "notas": "Pantallas web con vacío y CTA son la paridad. En móvil no existen.",
+    "tests": [
+      {
+        "layer": "integration",
+        "name": "matches empty state shows title and CTA",
+        "behavior": "Dado matches vacío, cuando la pantalla se pinta, entonces el título vacío y un CTA están presentes."
+      },
+      {
+        "layer": "integration",
+        "name": "statistics empty state shows title and CTA",
+        "behavior": "Dado statistics null, cuando la pantalla se pinta, entonces el vacío de estadísticas y un CTA están presentes."
+      },
+      {
+        "layer": "unit",
+        "name": "matches route stays in personal space not /orgs",
+        "behavior": "Dado selección personal, cuando se abre partidos, entonces la ruta es espacio player, no /orgs."
+      }
+    ]
+  },
+  {
+    "tarea": "[Lógica] Inbox de invitaciones de plantilla del jugador móvil",
+    "url": "https://app.notion.com/3dc7b204009a81b0bcdbd367d924d5ea",
+    "notas": "El inbox Must es GET /players/me/roster-invitations. Móvil no lo consulta.",
+    "tests": [
+      {
+        "layer": "integration",
+        "name": "inbox loader GETs /players/me/roster-invitations",
+        "behavior": "Dado el adaptador, cuando carga inbox, entonces llama GET /players/me/roster-invitations y devuelve los DTO pendientes parseados."
+      },
+      {
+        "layer": "unit",
+        "name": "pending invitation past expiresAt displays as expired",
+        "behavior": "Dado status pending y expiresAt en el pasado, cuando se mapea, entonces display status es expired."
+      }
+    ]
+  },
+  {
+    "tarea": "[UI] Inbox de invitaciones + deep links claim/resume",
+    "url": "https://app.notion.com/3dc7b204009a81caa597e4690d46e969",
+    "notas": "Web tiene inbox, claim por token y cupo teams.roster_full. Móvil no tiene UI ni resume del deep link.",
+    "tests": [
+      {
+        "layer": "integration",
+        "name": "inbox renders pending club name and respond controls",
+        "behavior": "Dado un item pending, cuando inbox se pinta, entonces se ven el nombre del club y controles de aceptar o rechazar."
+      },
+      {
+        "layer": "integration",
+        "name": "cold start roster accept link resumes after login",
+        "behavior": "Dado futrob://roster-invitations/accept/tok con la app cerrada, cuando el usuario inicia sesión, entonces accept se llama con token tok."
+      },
+      {
+        "layer": "unit",
+        "name": "teams.roster_full maps to typed cupo copy",
+        "behavior": "Dado FutrobApiError code teams.roster_full, cuando se mapea, entonces la key visible es el error de cupo, no un finish genérico."
+      }
+    ]
+  }
+]
