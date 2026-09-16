@@ -1,5 +1,7 @@
 import type { CompetitionId, EncounterId, OrganizationId, TeamId } from "@futrob/shared-kernel";
 
+export type StandingResolutionMode = "independent_matches" | "aggregate_score";
+
 export type TeamCorrelationStatus = "matched" | "unmatched";
 
 export type TeamMatchSide = "home" | "away";
@@ -12,6 +14,7 @@ export interface TeamMatchContribution {
   readonly competitionId: CompetitionId;
   readonly organizationId: OrganizationId;
   readonly officialSlot: 1 | 2;
+  readonly resolutionMode: StandingResolutionMode;
   readonly teamId: TeamId | null;
   readonly correlationStatus: TeamCorrelationStatus;
   readonly side: TeamMatchSide;

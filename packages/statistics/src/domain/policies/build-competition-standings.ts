@@ -5,10 +5,7 @@ import {
   type CompetitionStandingSnapshot,
 } from "../entities/competition-standing-snapshot.ts";
 import type { TeamMatchContribution } from "../entities/team-match-contribution.ts";
-import type {
-  CompetitionMatchPointsRules,
-  StandingResolutionMode,
-} from "../ports/competition-match-rules-reader.port.ts";
+import type { CompetitionMatchPointsRules } from "../ports/competition-match-rules-reader.port.ts";
 
 export const DEFAULT_COMPETITION_MATCH_POINTS: CompetitionMatchPointsRules = {
   winPoints: 3,
@@ -32,9 +29,8 @@ export function buildCompetitionStandings(input: {
   readonly updatedAt: Date;
 }): CompetitionStandingSnapshot {
   const byTeam = new Map<TeamId, MutableStanding>();
-  const resolutionMode = input.pointsRules.resolutionMode;
 
-  for (const match of matchesForStandings(input.contributions, resolutionMode)) {
+  for (const match of matchesForStandings(input.contributions)) {
     const standing =
       byTeam.get(match.teamId) ??
       ({
@@ -97,24 +93,31 @@ function isMatchedTeamContribution(
   return contribution.correlationStatus === "matched" && contribution.teamId !== null;
 }
 
-function matchesForStandings(
-  contributions: readonly TeamMatchContribution[],
-  resolutionMode: StandingResolutionMode,
-): StandingMatch[] {
+function matchesForStandings(contributions: readonly TeamMatchContribution[]): StandingMatch[] {
   const matched = contributions.filter(isMatchedTeamContribution);
-  switch (resolutionMode) {
-    case "independent_matches":
-      return matched.map((contribution) => ({
-        teamId: contribution.teamId,
-        goalsFor: contribution.goalsFor,
-        goalsAgainst: contribution.goalsAgainst,
-        revision: contribution.revision,
-      }));
-    case "aggregate_score":
-      return aggregateEncounterMatches(matched);
-    default:
-      return assertNever(resolutionMode, "Unsupported standing resolution mode");
+  const independent: typeof matched = [];
+  const aggregate: typeof matched = [];
+  for (const contribution of matched) {
+    switch (contribution.resolutionMode) {
+      case "independent_matches":
+        independent.push(contribution);
+        break;
+      case "aggregate_score":
+        aggregate.push(contribution);
+        break;
+      default:
+        assertNever(contribution.resolutionMode, "Unsupported standing resolution mode");
+    }
   }
+  return [
+    ...independent.map((contribution) => ({
+      teamId: contribution.teamId,
+      goalsFor: contribution.goalsFor,
+      goalsAgainst: contribution.goalsAgainst,
+      revision: contribution.revision,
+    })),
+    ...aggregateEncounterMatches(aggregate),
+  ];
 }
 
 function aggregateEncounterMatches(

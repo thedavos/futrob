@@ -301,7 +301,9 @@ function makeHarness(input: {
   readonly results: readonly OfficialResult[];
   readonly resolutions: Readonly<Record<string, PlayerIdentityResolution>>;
   readonly encounter?: EncounterScheduleSnapshot;
+  readonly encounters?: readonly EncounterScheduleSnapshot[];
   readonly pointsRules?: CompetitionMatchPointsRules | null;
+  readonly getPointsRules?: CompetitionMatchRulesReaderPort["getPointsRules"];
 }) {
   const byId = new Map(input.results.map((result) => [result.id, result]));
   const officialResults: OfficialResultReaderPort = {
@@ -340,17 +342,24 @@ function makeHarness(input: {
   const teamCompetitionStats = new TeamCompetitionStatsRepo();
   const standings = new StandingSnapshotRepository();
   const matchRules: CompetitionMatchRulesReaderPort = {
-    async getPointsRules() {
-      return input.pointsRules === undefined
-        ? {
-            winPoints: 3,
-            drawPoints: 1,
-            lossPoints: 0,
-            resolutionMode: "independent_matches",
-          }
-        : input.pointsRules;
-    },
+    getPointsRules:
+      input.getPointsRules ??
+      (async () =>
+        input.pointsRules === undefined
+          ? {
+              winPoints: 3,
+              drawPoints: 1,
+              lossPoints: 0,
+              resolutionMode: "independent_matches",
+            }
+          : input.pointsRules),
   };
+  const encountersById = new Map(
+    (input.encounters ?? (input.encounter ? [input.encounter] : [])).map((snapshot) => [
+      snapshot.encounterId,
+      snapshot,
+    ]),
+  );
   const project = new ProjectOfficialResultUseCase({
     officialResults,
     identities,
@@ -363,11 +372,12 @@ function makeHarness(input: {
     matchRules,
     transaction: { runInTransaction: async (operation) => operation() },
     clock: { now: () => new Date("2026-08-11T07:00:00.000Z") },
-    encounterReader: input.encounter
-      ? {
-          getById: async () => input.encounter ?? null,
-        }
-      : undefined,
+    encounterReader:
+      encountersById.size > 0
+        ? {
+            getById: async (encounterId) => encountersById.get(encounterId) ?? null,
+          }
+        : undefined,
   });
   return {
     byId,
@@ -1155,6 +1165,91 @@ describe("ProjectOfficialResultUseCase", () => {
       ],
     });
   });
+
+  it("drops a voided knockout encounter from mixed standings without splitting its slots", async () => {
+    const regular = officialResult({
+      id: "result-regular",
+      encounterId: "encounter-regular",
+      homeGoals: 1,
+      awayGoals: 0,
+      players: [
+        player({ externalPlayerId: "home-1", externalClubId: "club-1" }),
+        player({ externalPlayerId: "away-1", externalClubId: "club-2" }),
+      ],
+    });
+    const knockout = twoLegResult({
+      id: "result-knockout",
+      encounterId: "encounter-knockout",
+      homeGoalsFirst: 1,
+      awayGoalsFirst: 0,
+      homeGoalsSecond: 0,
+      awayGoalsSecond: 2,
+    });
+    const regularStageId = asEncounterStageId("plan:fixture:stage:1");
+    const knockoutStageId = asEncounterStageId("plan:fixture:stage:2");
+    const harness = makeHarness({
+      results: [regular, knockout],
+      resolutions: {},
+      encounters: [
+        {
+          ...defaultEncounter(regular),
+          stageId: regularStageId,
+          officialMatchCount: 1,
+        },
+        {
+          ...defaultEncounter(knockout),
+          stageId: knockoutStageId,
+          officialMatchCount: 2,
+        },
+      ],
+      getPointsRules: async (query) => ({
+        winPoints: 3,
+        drawPoints: 1,
+        lossPoints: 0,
+        resolutionMode:
+          query.stageId === knockoutStageId ? "aggregate_score" : "independent_matches",
+      }),
+    });
+
+    expect((await harness.project.execute({ officialResultId: regular.id })).isOk()).toBe(true);
+    expect((await harness.project.execute({ officialResultId: knockout.id })).isOk()).toBe(true);
+    expect(await harness.standings.findByCompetition(regular.competitionId)).toMatchObject({
+      rows: expect.arrayContaining([
+        expect.objectContaining({
+          teamId: asTeamId("home-team"),
+          played: 2,
+          wins: 1,
+          losses: 1,
+          points: 3,
+          goalsFor: 2,
+          goalsAgainst: 2,
+        }),
+      ]),
+    });
+    expect(
+      (await harness.teamContributions.listByEncounter(knockout.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(["aggregate_score", "aggregate_score", "aggregate_score", "aggregate_score"]);
+
+    harness.byId.set(knockout.id, { ...knockout, status: "voided" });
+    expect((await harness.project.execute({ officialResultId: knockout.id })).isOk()).toBe(true);
+
+    expect(await harness.standings.findByCompetition(regular.competitionId)).toMatchObject({
+      rows: [
+        expect.objectContaining({
+          teamId: asTeamId("home-team"),
+          played: 1,
+          points: 3,
+        }),
+        expect.objectContaining({
+          teamId: asTeamId("away-team"),
+          played: 1,
+          points: 0,
+        }),
+      ],
+    });
+  });
 });
 
 function defaultEncounter(result: OfficialResult): EncounterScheduleSnapshot {
@@ -1209,6 +1304,36 @@ function officialResult(
     ],
     approvedAt: new Date("2026-08-10T20:00:00.000Z"),
     approvedBy: asActorId("actor-1"),
+  };
+}
+
+function twoLegResult(input: {
+  readonly id: string;
+  readonly encounterId: string;
+  readonly homeGoalsFirst: number;
+  readonly awayGoalsFirst: number;
+  readonly homeGoalsSecond: number;
+  readonly awayGoalsSecond: number;
+}): OfficialResult {
+  const first = officialResult({
+    id: input.id,
+    encounterId: input.encounterId,
+    homeGoals: input.homeGoalsFirst,
+    awayGoals: input.awayGoalsFirst,
+  });
+  const firstSlot = first.slots[0]!;
+  return {
+    ...first,
+    slots: [
+      firstSlot,
+      {
+        ...firstSlot,
+        officialSlot: 2,
+        homeGoals: input.homeGoalsSecond,
+        awayGoals: input.awayGoalsSecond,
+        providerMatchRef: { providerKey: "ea-clubs", externalId: `${input.id}-leg-2` },
+      },
+    ],
   };
 }
 

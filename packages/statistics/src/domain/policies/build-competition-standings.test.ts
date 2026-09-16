@@ -57,8 +57,18 @@ describe("buildCompetitionStandings", () => {
       competitionId: asCompetitionId("competition-1"),
       organizationId: asOrganizationId("organization-1"),
       contributions: [
-        team({ officialSlot: 1, goalsFor: 1, goalsAgainst: 0 }),
-        team({ officialSlot: 2, goalsFor: 0, goalsAgainst: 2 }),
+        team({
+          officialSlot: 1,
+          goalsFor: 1,
+          goalsAgainst: 0,
+          resolutionMode: "aggregate_score",
+        }),
+        team({
+          officialSlot: 2,
+          goalsFor: 0,
+          goalsAgainst: 2,
+          resolutionMode: "aggregate_score",
+        }),
         team({
           officialSlot: 1,
           side: "away",
@@ -66,6 +76,7 @@ describe("buildCompetitionStandings", () => {
           externalClubId: "club-2",
           goalsFor: 0,
           goalsAgainst: 1,
+          resolutionMode: "aggregate_score",
         }),
         team({
           officialSlot: 2,
@@ -74,13 +85,14 @@ describe("buildCompetitionStandings", () => {
           externalClubId: "club-2",
           goalsFor: 2,
           goalsAgainst: 0,
+          resolutionMode: "aggregate_score",
         }),
       ],
       pointsRules: {
         winPoints: 3,
         drawPoints: 1,
         lossPoints: 0,
-        resolutionMode: "aggregate_score",
+        resolutionMode: "independent_matches",
       },
       updatedAt: new Date("2026-08-13T12:00:00.000Z"),
     });
@@ -112,24 +124,103 @@ describe("buildCompetitionStandings", () => {
       }),
     ]);
   });
+
+  it("mixes independent league and aggregate playoff encounters in one table", () => {
+    const snapshot = buildCompetitionStandings({
+      competitionId: asCompetitionId("competition-1"),
+      organizationId: asOrganizationId("organization-1"),
+      contributions: [
+        team({
+          encounterId: asEncounterId("encounter-regular"),
+          officialSlot: 1,
+          goalsFor: 1,
+          goalsAgainst: 0,
+          resolutionMode: "independent_matches",
+        }),
+        team({
+          encounterId: asEncounterId("encounter-regular"),
+          officialSlot: 1,
+          side: "away",
+          teamId: asTeamId("away-team"),
+          externalClubId: "club-2",
+          goalsFor: 0,
+          goalsAgainst: 1,
+          resolutionMode: "independent_matches",
+        }),
+        team({
+          encounterId: asEncounterId("encounter-knockout"),
+          officialSlot: 1,
+          goalsFor: 1,
+          goalsAgainst: 0,
+          resolutionMode: "aggregate_score",
+        }),
+        team({
+          encounterId: asEncounterId("encounter-knockout"),
+          officialSlot: 2,
+          goalsFor: 0,
+          goalsAgainst: 2,
+          resolutionMode: "aggregate_score",
+        }),
+        team({
+          encounterId: asEncounterId("encounter-knockout"),
+          officialSlot: 1,
+          side: "away",
+          teamId: asTeamId("away-team"),
+          externalClubId: "club-2",
+          goalsFor: 0,
+          goalsAgainst: 1,
+          resolutionMode: "aggregate_score",
+        }),
+        team({
+          encounterId: asEncounterId("encounter-knockout"),
+          officialSlot: 2,
+          side: "away",
+          teamId: asTeamId("away-team"),
+          externalClubId: "club-2",
+          goalsFor: 2,
+          goalsAgainst: 0,
+          resolutionMode: "aggregate_score",
+        }),
+      ],
+      pointsRules: {
+        winPoints: 3,
+        drawPoints: 1,
+        lossPoints: 0,
+        resolutionMode: "independent_matches",
+      },
+      updatedAt: new Date("2026-08-13T12:00:00.000Z"),
+    });
+
+    expect(snapshot.rows.find((row) => row.teamId === asTeamId("home-team"))).toMatchObject({
+      played: 2,
+      wins: 1,
+      losses: 1,
+      points: 3,
+      goalsFor: 2,
+      goalsAgainst: 2,
+    });
+  });
 });
 
 function team(input: {
+  readonly encounterId?: ReturnType<typeof asEncounterId>;
   readonly officialSlot: 1 | 2;
   readonly side?: TeamMatchContribution["side"];
   readonly teamId?: ReturnType<typeof asTeamId>;
   readonly externalClubId?: string;
   readonly goalsFor: number;
   readonly goalsAgainst: number;
+  readonly resolutionMode?: TeamMatchContribution["resolutionMode"];
 }): TeamMatchContribution {
   return {
-    id: `home-${input.officialSlot}-${input.side ?? "home"}`,
+    id: `home-${input.officialSlot}-${input.side ?? "home"}-${input.encounterId ?? "encounter-1"}`,
     officialResultId: "result-1",
     revision: 1,
-    encounterId: asEncounterId("encounter-1"),
+    encounterId: input.encounterId ?? asEncounterId("encounter-1"),
     competitionId: asCompetitionId("competition-1"),
     organizationId: asOrganizationId("organization-1"),
     officialSlot: input.officialSlot,
+    resolutionMode: input.resolutionMode ?? "independent_matches",
     teamId: input.teamId ?? asTeamId("home-team"),
     correlationStatus: "matched",
     side: input.side ?? "home",
