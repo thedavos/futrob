@@ -8,6 +8,7 @@ import type {
   RankingKind,
   RankingRow,
   RankingSnapshot,
+  StandingResolutionMode,
   TeamCompetitionStats,
   TeamCorrelationStatus,
   TeamMatchContribution,
@@ -62,6 +63,7 @@ export interface TeamContributionRow {
   readonly red_cards: number | string | null;
   readonly is_mvp: boolean | null;
   readonly rating: number | string | null;
+  readonly resolution_mode?: string | null;
 }
 
 export interface TeamCompetitionStatsRow {
@@ -98,7 +100,25 @@ export interface RankingSnapshotRow {
   readonly updated_at: string | Date;
 }
 
-export function rehydrateTeamContribution(row: TeamContributionRow): TeamMatchContribution {
+export function rehydrateTeamContributions(
+  rows: readonly TeamContributionRow[],
+  historicalModeByEncounter: ReadonlyMap<string, StandingResolutionMode> = new Map(),
+): TeamMatchContribution[] {
+  return rows.map((row) =>
+    rehydrateTeamContribution(row, historicalModeByEncounter.get(row.encounter_id)),
+  );
+}
+
+export function rehydrateTeamContribution(
+  row: TeamContributionRow,
+  historicalResolutionMode?: StandingResolutionMode,
+): TeamMatchContribution {
+  const resolutionMode = encodedStandingResolutionMode(row) ?? historicalResolutionMode;
+  if (resolutionMode === undefined) {
+    throw new RangeError(
+      `Cannot rehydrate team contribution ${row.id}: missing frozen resolutionMode and encounter stage rules`,
+    );
+  }
   return {
     id: row.id,
     officialResultId: row.official_result_id,
@@ -107,6 +127,7 @@ export function rehydrateTeamContribution(row: TeamContributionRow): TeamMatchCo
     competitionId: asCompetitionId(row.competition_id),
     organizationId: asOrganizationId(row.organization_id),
     officialSlot: parseOfficialSlot(row.official_slot),
+    resolutionMode,
     teamId: row.team_id === null ? null : asTeamId(row.team_id),
     correlationStatus: parseTeamCorrelationStatus(row.correlation_status),
     side: parseTeamSide(row.side),
@@ -199,4 +220,15 @@ function parseTeamCorrelationStatus(value: string): TeamCorrelationStatus {
 function parseTeamSide(value: string): TeamMatchSide {
   if (value === "home" || value === "away") return value;
   throw new RangeError(`Invalid team match side: ${value}`);
+}
+
+export function encodedStandingResolutionMode(
+  row: TeamContributionRow,
+): StandingResolutionMode | null {
+  if (row.resolution_mode === "independent_matches" || row.resolution_mode === "aggregate_score") {
+    return row.resolution_mode;
+  }
+  const suffix = row.id.split(":").at(-1);
+  if (suffix === "independent_matches" || suffix === "aggregate_score") return suffix;
+  return null;
 }

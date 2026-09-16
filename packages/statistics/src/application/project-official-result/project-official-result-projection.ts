@@ -2,6 +2,7 @@ import type { EncounterReaderPort, OfficialResult } from "@futrob/results";
 import type { TeamId } from "@futrob/shared-kernel";
 import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
 import type {
+  StandingResolutionMode,
   TeamMatchContribution,
   TeamMatchSide,
 } from "../../domain/entities/team-match-contribution.ts";
@@ -47,8 +48,15 @@ export function teamContributionId(input: {
   readonly revision: number;
   readonly officialSlot: 1 | 2;
   readonly side: TeamMatchSide;
+  readonly resolutionMode: TeamMatchContribution["resolutionMode"];
 }): string {
-  return [input.officialResultId, input.revision, input.officialSlot, input.side].join(":");
+  return [
+    input.officialResultId,
+    input.revision,
+    input.officialSlot,
+    input.side,
+    input.resolutionMode,
+  ].join(":");
 }
 
 export function rollUpSlotPlayers(
@@ -214,6 +222,7 @@ export async function buildPlayerContributions(
 export async function buildTeamContributions(
   deps: TeamProjectionDependencies,
   officialResult: OfficialResult,
+  resolutionMode: StandingResolutionMode,
 ): Promise<TeamMatchContribution[]> {
   const encounter = (await deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
   const contributions: TeamMatchContribution[] = [];
@@ -241,6 +250,7 @@ export async function buildTeamContributions(
           revision: officialResult.revision,
           officialSlot: slot.officialSlot,
           side,
+          resolutionMode,
         }),
         officialResultId: officialResult.id,
         revision: officialResult.revision,
@@ -248,6 +258,7 @@ export async function buildTeamContributions(
         competitionId: officialResult.competitionId,
         organizationId: officialResult.organizationId,
         officialSlot: slot.officialSlot,
+        resolutionMode,
         teamId,
         correlationStatus,
         side,

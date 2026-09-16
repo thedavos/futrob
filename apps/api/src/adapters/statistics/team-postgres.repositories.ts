@@ -1,4 +1,5 @@
 import type {
+  CompetitionMatchRulesReaderPort,
   CompetitionStandingSnapshot,
   CompetitionStandingSnapshotRepository,
   RankingKind,
@@ -10,13 +11,15 @@ import type {
   TeamMatchContributionRepository,
 } from "@futrob/statistics";
 import { RANKING_KINDS } from "@futrob/statistics";
+import type { EncounterReaderPort } from "@futrob/results";
 import type { CompetitionId, EncounterId, TeamId } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { historicalResolutionModeByEncounter } from "@/adapters/statistics/historical-resolution-mode.ts";
 import {
   rehydrateRankingSnapshot,
   rehydrateStandingSnapshot,
   rehydrateTeamCompetitionStats,
-  rehydrateTeamContribution,
+  rehydrateTeamContributions,
   type RankingSnapshotRow,
   type StandingSnapshotRow,
   type TeamCompetitionStatsRow,
@@ -27,7 +30,13 @@ import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 const TEAM_CONTRIBUTION_COLUMNS = 28;
 
 export class PostgresTeamMatchContributionRepository implements TeamMatchContributionRepository {
-  constructor(private readonly pool: Pool) {}
+  constructor(
+    private readonly pool: Pool,
+    private readonly historicalResolution: {
+      readonly encounterReader?: EncounterReaderPort;
+      readonly matchRules: CompetitionMatchRulesReaderPort;
+    },
+  ) {}
 
   async saveMany(contributions: readonly TeamMatchContribution[]): Promise<void> {
     if (contributions.length === 0) return;
@@ -139,7 +148,7 @@ export class PostgresTeamMatchContributionRepository implements TeamMatchContrib
       `SELECT * FROM team_match_contributions WHERE team_id = $1`,
       [teamId],
     );
-    return result.rows.map(rehydrateTeamContribution);
+    return this.rehydrateRows(result.rows);
   }
 
   async listByEncounter(encounterId: EncounterId): Promise<TeamMatchContribution[]> {
@@ -147,7 +156,7 @@ export class PostgresTeamMatchContributionRepository implements TeamMatchContrib
       `SELECT * FROM team_match_contributions WHERE encounter_id = $1`,
       [encounterId],
     );
-    return result.rows.map(rehydrateTeamContribution);
+    return this.rehydrateRows(result.rows);
   }
 
   async listByCompetition(competitionId: CompetitionId): Promise<TeamMatchContribution[]> {
@@ -155,7 +164,20 @@ export class PostgresTeamMatchContributionRepository implements TeamMatchContrib
       `SELECT * FROM team_match_contributions WHERE competition_id = $1`,
       [competitionId],
     );
-    return result.rows.map(rehydrateTeamContribution);
+    return this.rehydrateRows(result.rows);
+  }
+
+  private async rehydrateRows(
+    rows: readonly TeamContributionRow[],
+  ): Promise<TeamMatchContribution[]> {
+    return rehydrateTeamContributions(
+      rows,
+      await historicalResolutionModeByEncounter({
+        rows,
+        encounterReader: this.historicalResolution.encounterReader,
+        matchRules: this.historicalResolution.matchRules,
+      }),
+    );
   }
 }
 

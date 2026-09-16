@@ -27,6 +27,7 @@ import type {
   PlayerMatchContributionRepository,
   PlayerPersonalStats,
   PlayerPersonalStatsRepository,
+  StandingResolutionMode,
   TeamCompetitionStats,
   TeamCompetitionStatsRepository,
   TeamMatchContribution,
@@ -301,7 +302,9 @@ function makeHarness(input: {
   readonly results: readonly OfficialResult[];
   readonly resolutions: Readonly<Record<string, PlayerIdentityResolution>>;
   readonly encounter?: EncounterScheduleSnapshot;
+  readonly encounters?: readonly EncounterScheduleSnapshot[];
   readonly pointsRules?: CompetitionMatchPointsRules | null;
+  readonly getPointsRules?: CompetitionMatchRulesReaderPort["getPointsRules"];
 }) {
   const byId = new Map(input.results.map((result) => [result.id, result]));
   const officialResults: OfficialResultReaderPort = {
@@ -340,17 +343,31 @@ function makeHarness(input: {
   const teamCompetitionStats = new TeamCompetitionStatsRepo();
   const standings = new StandingSnapshotRepository();
   const matchRules: CompetitionMatchRulesReaderPort = {
-    async getPointsRules() {
-      return input.pointsRules === undefined
-        ? {
-            winPoints: 3,
-            drawPoints: 1,
-            lossPoints: 0,
-            resolutionMode: "independent_matches",
-          }
-        : input.pointsRules;
-    },
+    getPointsRules:
+      input.getPointsRules ??
+      (async () =>
+        input.pointsRules === undefined
+          ? {
+              winPoints: 3,
+              drawPoints: 1,
+              lossPoints: 0,
+              resolutionMode: "independent_matches",
+            }
+          : input.pointsRules),
   };
+  const encountersById = new Map(
+    (input.encounters ?? (input.encounter ? [input.encounter] : [])).map((snapshot) => [
+      snapshot.encounterId,
+      snapshot,
+    ]),
+  );
+  const encounterReader =
+    encountersById.size > 0
+      ? {
+          getById: async (encounterId: EncounterScheduleSnapshot["encounterId"]) =>
+            encountersById.get(encounterId) ?? null,
+        }
+      : undefined;
   const project = new ProjectOfficialResultUseCase({
     officialResults,
     identities,
@@ -363,11 +380,7 @@ function makeHarness(input: {
     matchRules,
     transaction: { runInTransaction: async (operation) => operation() },
     clock: { now: () => new Date("2026-08-11T07:00:00.000Z") },
-    encounterReader: input.encounter
-      ? {
-          getById: async () => input.encounter ?? null,
-        }
-      : undefined,
+    encounterReader,
   });
   return {
     byId,
@@ -380,6 +393,7 @@ function makeHarness(input: {
     teamCompetitionStats,
     standings,
     identityInputs,
+    encounterReader,
   };
 }
 
@@ -1155,6 +1169,338 @@ describe("ProjectOfficialResultUseCase", () => {
       ],
     });
   });
+
+  it("mixed-void-drops-encounter-not-slot removes the knockout encounter as one PJ", async () => {
+    const regular = officialResult({
+      id: "result-regular",
+      encounterId: "encounter-regular",
+      homeGoals: 1,
+      awayGoals: 0,
+      players: [
+        player({ externalPlayerId: "home-1", externalClubId: "club-1" }),
+        player({ externalPlayerId: "away-1", externalClubId: "club-2" }),
+      ],
+    });
+    const knockout = twoLegResult({
+      id: "result-knockout",
+      encounterId: "encounter-knockout",
+      homeGoalsFirst: 1,
+      awayGoalsFirst: 0,
+      homeGoalsSecond: 0,
+      awayGoalsSecond: 2,
+    });
+    const regularStageId = asEncounterStageId("plan:fixture:stage:1");
+    const knockoutStageId = asEncounterStageId("plan:fixture:stage:2");
+    const harness = makeHarness({
+      results: [regular, knockout],
+      resolutions: {},
+      encounters: [
+        {
+          ...defaultEncounter(regular),
+          stageId: regularStageId,
+          officialMatchCount: 1,
+        },
+        {
+          ...defaultEncounter(knockout),
+          stageId: knockoutStageId,
+          officialMatchCount: 2,
+        },
+      ],
+      getPointsRules: async (query) => ({
+        winPoints: 3,
+        drawPoints: 1,
+        lossPoints: 0,
+        resolutionMode:
+          query.stageId === knockoutStageId ? "aggregate_score" : "independent_matches",
+      }),
+    });
+
+    expect((await harness.project.execute({ officialResultId: regular.id })).isOk()).toBe(true);
+    expect((await harness.project.execute({ officialResultId: knockout.id })).isOk()).toBe(true);
+    expect(await harness.standings.findByCompetition(regular.competitionId)).toMatchObject({
+      rows: expect.arrayContaining([
+        expect.objectContaining({
+          teamId: asTeamId("home-team"),
+          played: 2,
+          wins: 1,
+          losses: 1,
+          points: 3,
+          goalsFor: 2,
+          goalsAgainst: 2,
+        }),
+      ]),
+    });
+    expect(
+      (await harness.teamContributions.listByEncounter(knockout.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(["aggregate_score", "aggregate_score", "aggregate_score", "aggregate_score"]);
+
+    harness.byId.set(knockout.id, { ...knockout, status: "voided" });
+    expect((await harness.project.execute({ officialResultId: knockout.id })).isOk()).toBe(true);
+
+    expect(await harness.standings.findByCompetition(regular.competitionId)).toMatchObject({
+      rows: [
+        expect.objectContaining({
+          teamId: asTeamId("home-team"),
+          played: 1,
+          points: 3,
+        }),
+        expect.objectContaining({
+          teamId: asTeamId("away-team"),
+          played: 1,
+          points: 0,
+        }),
+      ],
+    });
+  });
+
+  it("keeps frozen resolutionMode on earlier encounters when live rules change", async () => {
+    let liveMode: StandingResolutionMode = "independent_matches";
+    const first = officialResult({
+      id: "result-a",
+      encounterId: "encounter-a",
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const second = twoLegResult({
+      id: "result-b",
+      encounterId: "encounter-b",
+      homeGoalsFirst: 1,
+      awayGoalsFirst: 0,
+      homeGoalsSecond: 0,
+      awayGoalsSecond: 2,
+    });
+    const harness = makeHarness({
+      results: [first, second],
+      resolutions: {},
+      encounters: [
+        defaultEncounter(first),
+        {
+          ...defaultEncounter(second),
+          officialMatchCount: 2,
+        },
+      ],
+      getPointsRules: async () => ({
+        winPoints: 3,
+        drawPoints: 1,
+        lossPoints: 0,
+        resolutionMode: liveMode,
+      }),
+    });
+
+    expect((await harness.project.execute({ officialResultId: first.id })).isOk()).toBe(true);
+    liveMode = "aggregate_score";
+    expect((await harness.project.execute({ officialResultId: second.id })).isOk()).toBe(true);
+
+    expect(
+      (await harness.teamContributions.listByEncounter(first.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(["independent_matches", "independent_matches"]);
+    expect(
+      (await harness.teamContributions.listByEncounter(second.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(["aggregate_score", "aggregate_score", "aggregate_score", "aggregate_score"]);
+    expect(await harness.standings.findByCompetition(first.competitionId)).toMatchObject({
+      rows: expect.arrayContaining([
+        expect.objectContaining({
+          teamId: asTeamId("home-team"),
+          played: 2,
+          wins: 1,
+          losses: 1,
+          points: 3,
+        }),
+      ]),
+    });
+  });
+
+  it("rebuild keeps frozen resolutionMode after live rules change", async () => {
+    let liveMode: StandingResolutionMode = "independent_matches";
+    const points = () => ({
+      winPoints: 3,
+      drawPoints: 1,
+      lossPoints: 0,
+      resolutionMode: liveMode,
+    });
+    const first = officialResult({
+      id: "result-a",
+      encounterId: "encounter-a",
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const second = twoLegResult({
+      id: "result-b",
+      encounterId: "encounter-b",
+      homeGoalsFirst: 1,
+      awayGoalsFirst: 0,
+      homeGoalsSecond: 0,
+      awayGoalsSecond: 2,
+    });
+    const harness = makeHarness({
+      results: [first, second],
+      resolutions: {},
+      encounters: [
+        defaultEncounter(first),
+        {
+          ...defaultEncounter(second),
+          officialMatchCount: 2,
+        },
+      ],
+      getPointsRules: async () => points(),
+    });
+
+    expect((await harness.project.execute({ officialResultId: first.id })).isOk()).toBe(true);
+    liveMode = "aggregate_score";
+    expect((await harness.project.execute({ officialResultId: second.id })).isOk()).toBe(true);
+    const standingsAfterProject = await harness.standings.findByCompetition(first.competitionId);
+    const modesAfterProject = {
+      a: (await harness.teamContributions.listByEncounter(first.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+      b: (await harness.teamContributions.listByEncounter(second.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    };
+
+    liveMode = "independent_matches";
+    const eventPublisher = {
+      async publish() {},
+      async publishMany() {},
+    };
+    const rankings = new RankingSnapshotRepository();
+    const rebuild = new RebuildCompetitionStatisticsUseCase({
+      officialResults: harness.officialResults,
+      projectOfficialResult: harness.project,
+      contributions: harness.contributions,
+      competitionStats: harness.competitionStats,
+      personalStats: harness.personalStats,
+      teamContributions: harness.teamContributions,
+      teamCompetitionStats: harness.teamCompetitionStats,
+      standings: harness.standings,
+      matchRules: { getPointsRules: async () => points() },
+      rebuildRankings: new RebuildCompetitionRankingsUseCase({
+        contributions: harness.contributions,
+        teamContributions: harness.teamContributions,
+        rankings,
+        eventPublisher,
+        transaction: { runInTransaction: async (operation) => operation() },
+        clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+      }),
+      transaction: { runInTransaction: async (operation) => operation() },
+      clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+      eventPublisher,
+    });
+
+    expect((await rebuild.execute({ competitionId: first.competitionId })).isOk()).toBe(true);
+    expect(
+      (await harness.teamContributions.listByEncounter(first.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(modesAfterProject.a);
+    expect(
+      (await harness.teamContributions.listByEncounter(second.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(modesAfterProject.b);
+    expect(await harness.standings.findByCompetition(first.competitionId)).toMatchObject({
+      rows: standingsAfterProject?.rows,
+    });
+  });
+
+  it("keeps league win 3 and playoff win 5 after incremental project and rebuild", async () => {
+    const regularStageId = asEncounterStageId("plan:fixture:stage:1");
+    const knockoutStageId = asEncounterStageId("plan:fixture:stage:2");
+    const league = officialResult({
+      id: "result-league",
+      encounterId: "encounter-league",
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const playoff = officialResult({
+      id: "result-playoff",
+      encounterId: "encounter-playoff",
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const getPointsRules = async (
+      query: Parameters<CompetitionMatchRulesReaderPort["getPointsRules"]>[0],
+    ) => ({
+      winPoints: query.stageId === knockoutStageId ? 5 : 3,
+      drawPoints: 1,
+      lossPoints: 0,
+      resolutionMode: "independent_matches" as const,
+    });
+    const harness = makeHarness({
+      results: [league, playoff],
+      resolutions: {},
+      encounters: [
+        {
+          ...defaultEncounter(league),
+          stageId: regularStageId,
+        },
+        {
+          ...defaultEncounter(playoff),
+          stageId: knockoutStageId,
+        },
+      ],
+      getPointsRules,
+    });
+
+    expect((await harness.project.execute({ officialResultId: league.id })).isOk()).toBe(true);
+    expect((await harness.project.execute({ officialResultId: playoff.id })).isOk()).toBe(true);
+    const homeAfterProject = (
+      await harness.standings.findByCompetition(league.competitionId)
+    )?.rows.find((row) => row.teamId === asTeamId("home-team"));
+    expect(homeAfterProject).toMatchObject({
+      played: 2,
+      wins: 2,
+      losses: 0,
+      points: 8,
+    });
+
+    const eventPublisher = {
+      async publish() {},
+      async publishMany() {},
+    };
+    const rankings = new RankingSnapshotRepository();
+    const rebuild = new RebuildCompetitionStatisticsUseCase({
+      officialResults: harness.officialResults,
+      projectOfficialResult: harness.project,
+      contributions: harness.contributions,
+      competitionStats: harness.competitionStats,
+      personalStats: harness.personalStats,
+      teamContributions: harness.teamContributions,
+      teamCompetitionStats: harness.teamCompetitionStats,
+      standings: harness.standings,
+      matchRules: { getPointsRules },
+      encounterReader: harness.encounterReader,
+      rebuildRankings: new RebuildCompetitionRankingsUseCase({
+        contributions: harness.contributions,
+        teamContributions: harness.teamContributions,
+        rankings,
+        eventPublisher,
+        transaction: { runInTransaction: async (operation) => operation() },
+        clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+      }),
+      transaction: { runInTransaction: async (operation) => operation() },
+      clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+      eventPublisher,
+    });
+
+    expect((await rebuild.execute({ competitionId: league.competitionId })).isOk()).toBe(true);
+    expect(await harness.standings.findByCompetition(league.competitionId)).toMatchObject({
+      rows: expect.arrayContaining([
+        expect.objectContaining({
+          teamId: asTeamId("home-team"),
+          played: 2,
+          wins: 2,
+          points: 8,
+        }),
+      ]),
+    });
+  });
 });
 
 function defaultEncounter(result: OfficialResult): EncounterScheduleSnapshot {
@@ -1209,6 +1555,36 @@ function officialResult(
     ],
     approvedAt: new Date("2026-08-10T20:00:00.000Z"),
     approvedBy: asActorId("actor-1"),
+  };
+}
+
+function twoLegResult(input: {
+  readonly id: string;
+  readonly encounterId: string;
+  readonly homeGoalsFirst: number;
+  readonly awayGoalsFirst: number;
+  readonly homeGoalsSecond: number;
+  readonly awayGoalsSecond: number;
+}): OfficialResult {
+  const first = officialResult({
+    id: input.id,
+    encounterId: input.encounterId,
+    homeGoals: input.homeGoalsFirst,
+    awayGoals: input.awayGoalsFirst,
+  });
+  const firstSlot = first.slots[0]!;
+  return {
+    ...first,
+    slots: [
+      firstSlot,
+      {
+        ...firstSlot,
+        officialSlot: 2,
+        homeGoals: input.homeGoalsSecond,
+        awayGoals: input.awayGoalsSecond,
+        providerMatchRef: { providerKey: "ea-clubs", externalId: `${input.id}-leg-2` },
+      },
+    ],
   };
 }
 

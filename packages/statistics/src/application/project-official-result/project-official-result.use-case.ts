@@ -13,7 +13,10 @@ import {
   type TransactionPort,
 } from "@futrob/shared-kernel";
 import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
-import type { TeamMatchContribution } from "../../domain/entities/team-match-contribution.ts";
+import type {
+  StandingResolutionMode,
+  TeamMatchContribution,
+} from "../../domain/entities/team-match-contribution.ts";
 import {
   OfficialResultNotFound,
   type ProjectOfficialResultError,
@@ -32,6 +35,7 @@ import {
   buildCompetitionStandings,
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
+import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 import {
@@ -41,8 +45,16 @@ import {
 } from "./project-official-result-projection.ts";
 
 export type ProjectOfficialResultInput =
-  | { readonly officialResultId: string; readonly rebuildRankings?: boolean }
-  | { readonly encounterId: OfficialResult["encounterId"]; readonly rebuildRankings?: boolean };
+  | {
+      readonly officialResultId: string;
+      readonly rebuildRankings?: boolean;
+      readonly resolutionMode?: StandingResolutionMode;
+    }
+  | {
+      readonly encounterId: OfficialResult["encounterId"];
+      readonly rebuildRankings?: boolean;
+      readonly resolutionMode?: StandingResolutionMode;
+    };
 
 export interface ProjectOfficialResultOutput {
   readonly officialResultId: string;
@@ -110,7 +122,10 @@ export class ProjectOfficialResultUseCase {
     }
 
     const nextPlayers = await this.playerContributionsForStatus(officialResult);
-    const nextTeams = await this.teamContributionsForStatus(officialResult);
+    const nextTeams = await this.teamContributionsForStatus(
+      officialResult,
+      input.resolutionMode ?? previousTeams[0]?.resolutionMode,
+    );
     const affectedPlayerProfiles = new Set<string>();
     addMatchedPlayerProfiles(affectedPlayerProfiles, previousPlayers);
     addMatchedPlayerProfiles(affectedPlayerProfiles, nextPlayers);
@@ -163,13 +178,26 @@ export class ProjectOfficialResultUseCase {
 
   private async teamContributionsForStatus(
     officialResult: OfficialResult,
+    frozenResolutionMode: StandingResolutionMode | undefined,
   ): Promise<TeamMatchContribution[]> {
     switch (officialResult.status) {
-      case "approved":
+      case "approved": {
+        const encounter =
+          (await this.deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
+        const resolutionMode =
+          frozenResolutionMode ??
+          (
+            (await this.deps.matchRules.getPointsRules({
+              competitionId: officialResult.competitionId,
+              stageId: encounter?.stageId,
+            })) ?? DEFAULT_COMPETITION_MATCH_POINTS
+          ).resolutionMode;
         return projectTeamContributions(
           { encounterReader: this.deps.encounterReader },
           officialResult,
+          resolutionMode,
         );
+      }
       case "voided":
         return [];
       default:
@@ -247,15 +275,19 @@ export class ProjectOfficialResultUseCase {
     const contributions = await this.deps.teamContributions.listByCompetition(
       officialResult.competitionId,
     );
-    const pointsRules =
-      (await this.deps.matchRules.getPointsRules(officialResult.competitionId)) ??
-      DEFAULT_COMPETITION_MATCH_POINTS;
+    const pointsByEncounter = await loadPointsRulesByEncounter({
+      competitionId: officialResult.competitionId,
+      contributions,
+      matchRules: this.deps.matchRules,
+      encounterReader: this.deps.encounterReader,
+    });
     await this.deps.standings.upsert(
       buildCompetitionStandings({
         competitionId: officialResult.competitionId,
         organizationId: officialResult.organizationId,
         contributions,
-        pointsRules,
+        pointsRules: DEFAULT_COMPETITION_MATCH_POINTS,
+        pointsByEncounter,
         updatedAt: this.deps.clock.now(),
       }),
     );

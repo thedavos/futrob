@@ -1,6 +1,7 @@
 import type { CompetitionId } from "@futrob/shared-kernel";
+import type { StandingResolutionMode } from "../entities/team-match-contribution.ts";
 
-export type StandingResolutionMode = "independent_matches" | "aggregate_score";
+export type { StandingResolutionMode };
 
 export interface CompetitionMatchPointsRules {
   readonly winPoints: number;
@@ -9,6 +10,11 @@ export interface CompetitionMatchPointsRules {
   readonly resolutionMode: StandingResolutionMode;
 }
 
+export interface CompetitionMatchRulesQuery {
+  readonly competitionId: CompetitionId;
+  readonly stageId?: string;
+}
+
 export interface CompetitionMatchRulesReaderPort {
-  getPointsRules(competitionId: CompetitionId): Promise<CompetitionMatchPointsRules | null>;
+  getPointsRules(query: CompetitionMatchRulesQuery): Promise<CompetitionMatchPointsRules | null>;
 }

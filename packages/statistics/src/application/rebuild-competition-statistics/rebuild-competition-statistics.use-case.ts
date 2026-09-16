@@ -1,4 +1,8 @@
-import type { OfficialResult, OfficialResultReaderPort } from "@futrob/results";
+import type {
+  EncounterReaderPort,
+  OfficialResult,
+  OfficialResultReaderPort,
+} from "@futrob/results";
 import {
   assertNever,
   err,
@@ -11,7 +15,10 @@ import {
   type TransactionPort,
 } from "@futrob/shared-kernel";
 import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
-import type { TeamMatchContribution } from "../../domain/entities/team-match-contribution.ts";
+import type {
+  StandingResolutionMode,
+  TeamMatchContribution,
+} from "../../domain/entities/team-match-contribution.ts";
 import type { ProjectOfficialResultError } from "../../domain/errors/project-official-result.errors.ts";
 import type { CompetitionMatchRulesReaderPort } from "../../domain/ports/competition-match-rules-reader.port.ts";
 import type { CompetitionStandingSnapshotRepository } from "../../domain/ports/competition-standing-snapshot.repository.ts";
@@ -27,6 +34,7 @@ import {
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
 import type { ProjectOfficialResultUseCase } from "../project-official-result/project-official-result.use-case.ts";
+import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 
@@ -50,6 +58,7 @@ export interface RebuildCompetitionStatisticsDependencies {
   readonly teamCompetitionStats: TeamCompetitionStatsRepository;
   readonly standings: CompetitionStandingSnapshotRepository;
   readonly matchRules: CompetitionMatchRulesReaderPort;
+  readonly encounterReader?: EncounterReaderPort;
   readonly rebuildRankings: Pick<RebuildCompetitionRankingsUseCase, "execute">;
   readonly eventPublisher: EventPublisherPort;
   readonly transaction: TransactionPort;
@@ -69,6 +78,7 @@ export class RebuildCompetitionStatisticsUseCase {
     const affectedPlayerProfiles = matchedPlayerProfiles(previousPlayers);
     const affectedTeams = matchedTeams(previousTeams);
 
+    const frozenByEncounter = frozenResolutionModeByEncounter(previousTeams);
     const rebuilt = await this.deps.transaction.runInTransaction(async () => {
       await this.deps.contributions.deleteByCompetition(input.competitionId);
       await this.deps.teamContributions.deleteByCompetition(input.competitionId);
@@ -83,6 +93,7 @@ export class RebuildCompetitionStatisticsUseCase {
             const projected = await this.deps.projectOfficialResult.execute({
               officialResultId: officialResult.id,
               rebuildRankings: false,
+              resolutionMode: frozenByEncounter.get(officialResult.encounterId),
             });
             if (!projected.isOk()) return err(projected.error);
             officialResultsProjected += 1;
@@ -205,15 +216,19 @@ export class RebuildCompetitionStatisticsUseCase {
       await this.deps.standings.deleteByCompetition(competitionId);
       return;
     }
-    const pointsRules =
-      (await this.deps.matchRules.getPointsRules(competitionId)) ??
-      DEFAULT_COMPETITION_MATCH_POINTS;
+    const pointsByEncounter = await loadPointsRulesByEncounter({
+      competitionId,
+      contributions: current,
+      matchRules: this.deps.matchRules,
+      encounterReader: this.deps.encounterReader,
+    });
     await this.deps.standings.upsert(
       buildCompetitionStandings({
         competitionId,
         organizationId,
         contributions: current,
-        pointsRules,
+        pointsRules: DEFAULT_COMPETITION_MATCH_POINTS,
+        pointsByEncounter,
         updatedAt: this.deps.clock.now(),
       }),
     );
@@ -241,4 +256,16 @@ function matchedTeams(contributions: readonly TeamMatchContribution[]): Set<Team
   const teams = new Set<TeamId>();
   addMatchedTeams(teams, contributions);
   return teams;
+}
+
+function frozenResolutionModeByEncounter(
+  contributions: readonly TeamMatchContribution[],
+): ReadonlyMap<string, StandingResolutionMode> {
+  const modes = new Map<string, StandingResolutionMode>();
+  for (const contribution of contributions) {
+    if (!modes.has(contribution.encounterId)) {
+      modes.set(contribution.encounterId, contribution.resolutionMode);
+    }
+  }
+  return modes;
 }
