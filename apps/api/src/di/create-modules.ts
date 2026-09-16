@@ -174,6 +174,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     officialResults,
     officialSelections,
     encounterMutationLock,
+    competitions: competitionRepository,
     fixtureSource: new CompetitionFixtureSourceAdapter({
       competitions: competitionRepository,
       entries: competitions.entryRepository,

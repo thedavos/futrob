@@ -39,7 +39,10 @@ import {
   interpretCompetitionWallTime,
   type CompetitionWallTime,
 } from "../domain/policies/interpret-competition-wall-time.ts";
-import type { RescheduleScope } from "../domain/value-objects/reschedule-scope.ts";
+import {
+  rescheduleScopesConflict,
+  type RescheduleScope,
+} from "../domain/value-objects/reschedule-scope.ts";
 
 export interface CreateScheduleChangeRequestInput {
   readonly actorId: ActorId;
@@ -287,23 +290,6 @@ function scopesEqual(left: RescheduleScope, right: RescheduleScope): boolean {
       return true;
     case "official_match":
       return right.type === "official_match" && left.officialSlot === right.officialSlot;
-    default: {
-      const exhaustiveScope: never = left;
-      void exhaustiveScope;
-      return false;
-    }
-  }
-}
-
-function rescheduleScopesConflict(left: RescheduleScope, right: RescheduleScope): boolean {
-  switch (left.type) {
-    case "entire_encounter":
-      return true;
-    case "official_match":
-      return (
-        right.type === "entire_encounter" ||
-        (right.type === "official_match" && left.officialSlot === right.officialSlot)
-      );
     default: {
       const exhaustiveScope: never = left;
       void exhaustiveScope;
