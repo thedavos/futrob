@@ -1,92 +1,58 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
-import { FutrobApiError } from "@futrob/sdk";
 import { Button, EmptyState, Logo, Screen, Text } from "@/ui";
 import { theme } from "@/theme/theme";
-import { getSession, type Session } from "@/modules/identity/session-store";
-import { handleProductError, logout } from "@/modules/identity/session-lifecycle";
-import { getFutrobClient } from "@/modules/api/futrob-client";
+import { logout } from "@/modules/identity/session-lifecycle";
+import {
+  LOGIN_ROUTE,
+  loadAuthenticatedShell,
+  type HomeShellSnapshot,
+} from "@/modules/authorization/load-authenticated-shell";
 
-interface OnboardingStatus {
-  completed: boolean;
-  currentStep: string | null;
-}
-
-/**
- * Home inicial (MVP móvil): saluda, refleja el estado de onboarding vía
- * /api/v1 (Bearer) y permite cerrar sesión. El contenido de producto llega
- * con los módulos de organizaciones y competiciones.
- */
 export default function HomeScreen() {
   const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
-  const [checked, setChecked] = useState(false);
-  const [onboarding, setOnboarding] = useState<OnboardingStatus | null>(null);
+  const [snapshot, setSnapshot] = useState<HomeShellSnapshot | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  useEffect(() => {
-    let cancelled = false;
-    getSession()
-      .then((value) => {
-        if (!cancelled) {
-          setSession(value);
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) {
-          setChecked(true);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
+  const reloadAccess = useCallback(() => {
+    setReloadKey((key) => key + 1);
   }, []);
 
   useEffect(() => {
-    if (checked && !session) {
-      // Guard: stored session missing or unreadable → back to login.
-      router.replace("/(auth)/login");
-    }
-  }, [checked, session, router]);
-
-  useEffect(() => {
-    if (!session) {
-      return;
-    }
-
     let cancelled = false;
-    getFutrobClient()
-      .identity.getOnboardingStatus()
-      .then((status) => {
-        if (!cancelled) {
-          setOnboarding({ completed: status.completed, currentStep: status.currentStep });
-        }
-      })
-      .catch((error) => {
-        if (cancelled || !(error instanceof FutrobApiError)) {
+    void loadAuthenticatedShell()
+      .then((next) => {
+        if (cancelled) {
           return;
         }
-        void handleProductError(error, () => {
-          router.replace("/(auth)/login");
-        });
+        if (next.kind === "login") {
+          router.replace(next.destination);
+          return;
+        }
+        setSnapshot(next);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          router.replace(LOGIN_ROUTE);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [session, router]);
+  }, [reloadKey, router]);
 
   async function handleLogout() {
     await logout(() => {
-      router.replace("/(auth)/login");
+      router.replace(LOGIN_ROUTE);
     });
   }
 
-  if (!session) {
+  if (!snapshot) {
     return <View style={{ flex: 1 }} />;
   }
 
-  const firstName = session.user.name.trim().split(/\s+/)[0];
+  const firstName = snapshot.session.user.name.trim().split(/\s+/)[0];
 
   return (
     <Screen>
@@ -98,22 +64,41 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <View style={{ flex: 1, justifyContent: "center" }}>
+        <View style={{ flex: 1, justifyContent: "center", gap: theme.spacing[4] }}>
           <EmptyState
             title={firstName ? `Hola, ${firstName}` : "Hola"}
-            description="Aún no hay nada por aquí. Cuando te unas a una organización verás tus competiciones, partidos y estadísticas."
+            description={
+              snapshot.accessRetryable
+                ? "No se pudieron cargar tus permisos. Las acciones que requieren permiso están ocultas."
+                : "Aún no hay nada por aquí. Cuando te unas a una organización verás tus competiciones, partidos y estadísticas."
+            }
+            action={
+              snapshot.accessRetryable ? (
+                <Button label="Reintentar" onPress={reloadAccess} />
+              ) : undefined
+            }
           />
-          {onboarding !== null ? (
+          {snapshot.onboarding !== null ? (
             <Text
               role="caption"
               color="muted-foreground"
               style={{ textAlign: "center", marginTop: theme.spacing[4] }}
             >
-              {onboarding.completed
+              {snapshot.onboarding.completed
                 ? "Onboarding completado."
-                : `Onboarding pendiente: ${onboarding.currentStep ?? "sin iniciar"}.`}
+                : `Onboarding pendiente: ${snapshot.onboarding.currentStep ?? "sin iniciar"}.`}
             </Text>
           ) : null}
+          {snapshot.nav.map((item) => (
+            <Text key={item.id} role="label" style={{ textAlign: "center" }}>
+              {item.label}
+            </Text>
+          ))}
+          {snapshot.commands.map((command) => (
+            <Text key={command.id} role="label" style={{ textAlign: "center" }}>
+              {command.label}
+            </Text>
+          ))}
         </View>
 
         <Button variant="ghost" label="Cerrar sesión" onPress={handleLogout} />

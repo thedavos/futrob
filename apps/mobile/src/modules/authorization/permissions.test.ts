@@ -3,12 +3,14 @@ import type { EffectiveAccessDto } from "@futrob/api-contracts";
 import {
   EffectiveAccessHttpError,
   MOBILE_PERMISSION,
+  ORG_COMMANDS,
+  ORG_TABS,
   allowedFromCapabilityState,
   allowedPermissionSet,
   capabilityStateFromQuery,
   filterByPermission,
   orgTabsForAccess,
-  ORG_TABS,
+  presentShellAccess,
 } from "./permissions.ts";
 
 const withHome = {
@@ -55,11 +57,12 @@ describe("mobile EffectiveAccess helpers", () => {
 
   it("missing allowed set hides gated items", () => {
     const catalog = [
-      { id: "public" },
-      { id: "home", requiredPermission: MOBILE_PERMISSION.organizationsRead },
+      { id: "public", label: "Public" },
+      { id: "home", label: "Inicio", requiredPermission: MOBILE_PERMISSION.organizationsRead },
     ];
     expect(filterByPermission(catalog, undefined).map((item) => item.id)).toEqual(["public"]);
     expect(filterByPermission(ORG_TABS, undefined)).toEqual([]);
+    expect(filterByPermission(ORG_COMMANDS, undefined)).toEqual([]);
   });
 
   it("effective-access 403 is recoverable and fail-closed", () => {
@@ -70,5 +73,12 @@ describe("mobile EffectiveAccess helpers", () => {
     expect(state.status).toBe("unavailable");
     expect(allowedFromCapabilityState(state).has(MOBILE_PERMISSION.organizationsRead)).toBe(false);
     expect(orgTabsForAccess(allowedFromCapabilityState(state))).toEqual([]);
+    const presented = presentShellAccess({
+      organizationId: "org-1",
+      capability: state,
+    });
+    expect(presented.nav).toEqual([]);
+    expect(presented.commands).toEqual([]);
+    expect(presented.accessRetryable).toBe(true);
   });
 });
