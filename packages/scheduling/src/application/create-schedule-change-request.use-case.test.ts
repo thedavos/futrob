@@ -102,7 +102,10 @@ class FakeEncounterSchedules {
 class FakeScheduleChangeRequests implements ScheduleChangeRequestRepository {
   readonly rows: ScheduleChangeRequest[] = [];
 
+  constructor(private readonly missIdempotencyLookups = false) {}
+
   async findByIdempotencyKey(orgId: OrganizationId, idempotencyKey: string) {
+    if (this.missIdempotencyLookups) return null;
     return (
       this.rows.find(
         (request) => request.organizationId === orgId && request.idempotencyKey === idempotencyKey,
@@ -120,6 +123,18 @@ class FakeScheduleChangeRequests implements ScheduleChangeRequestRepository {
   }
 
   async save(request: ScheduleChangeRequest) {
+    const duplicateKey = this.rows.find(
+      (row) =>
+        row.organizationId === request.organizationId &&
+        row.idempotencyKey === request.idempotencyKey &&
+        row.id !== request.id,
+    );
+    if (duplicateKey) {
+      throw new ScheduleChangeRequestIdempotencyConflict({
+        code: "scheduling.schedule_change_idempotency_conflict",
+        message: "The idempotency key was already used with a different request",
+      });
+    }
     this.rows.push(request);
     return request;
   }
@@ -197,12 +212,14 @@ function createHarness(
     readonly appliedReschedulesByEncounter?: ReadonlyMap<EncounterId, number>;
     readonly encounterWhenLocked?: EncounterScheduleSnapshot | null;
     readonly failPublishingOnce?: boolean;
+    readonly missIdempotencyLookups?: boolean;
+    readonly getRules?: CompetitionRescheduleRulesPort["getRules"];
     readonly mutationLock?: EncounterMutationLockPort;
     readonly protectedOfficialSlots?: readonly (1 | 2)[];
     readonly transaction?: TransactionPort;
   } = {},
 ) {
-  const requests = new FakeScheduleChangeRequests();
+  const requests = new FakeScheduleChangeRequests(options.missIdempotencyLookups ?? false);
   const encounters = new FakeEncounterSchedules(
     options.encounter === undefined ? encounter : options.encounter,
   );
@@ -210,10 +227,12 @@ function createHarness(
   const protectedOfficialSlots = options.protectedOfficialSlots ?? [];
   let failPublishing = options.failPublishingOnce ?? false;
   const rules: CompetitionRescheduleRulesPort = {
-    getRules: async () => ({
-      allowRescheduling: options.allowRescheduling ?? true,
-      maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
-    }),
+    getRules:
+      options.getRules ??
+      (async () => ({
+        allowRescheduling: options.allowRescheduling ?? true,
+        maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
+      })),
     countAppliedReschedules: async (input) =>
       options.appliedReschedulesByEncounter?.get(input.encounterId) ??
       options.appliedReschedules ??
@@ -492,6 +511,38 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     expect(harness.requests.rows).toHaveLength(0);
   });
 
+  it("passes the Encounter stageId when reading reschedule rules", async () => {
+    const seen: string[] = [];
+    const harness = createHarness({
+      getRules: async (input) => {
+        seen.push(input.stageId);
+        return { allowRescheduling: true, maxReschedulesPerTeam: 2 };
+      },
+    });
+
+    const result = await harness.useCase.execute(validInput);
+
+    expect(result.isOk()).toBe(true);
+    expect(seen).toEqual([encounter.stageId]);
+  });
+
+  it("allows a knockout Encounter when only the knockout stage permits rescheduling", async () => {
+    const knockoutStageId = asFixtureStageId("knockout-stage");
+    const harness = createHarness({
+      encounter: { ...encounter, stageId: knockoutStageId },
+      getRules: async ({ stageId }) =>
+        stageId === knockoutStageId
+          ? { allowRescheduling: true, maxReschedulesPerTeam: 4 }
+          : { allowRescheduling: false, maxReschedulesPerTeam: 1 },
+    });
+
+    const result = await harness.useCase.execute(validInput);
+
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) throw result.error;
+    expect(harness.requests.rows).toHaveLength(1);
+  });
+
   it("blocks a Team that reached the applied-reschedule limit", async () => {
     const harness = createHarness({
       maxReschedulesPerTeam: 2,
@@ -737,6 +788,46 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     });
 
     const error = expectErrorCode(replay, "scheduling.schedule_change_idempotency_conflict");
+    expect(error).toBeInstanceOf(ScheduleChangeRequestIdempotencyConflict);
+    expect(harness.requests.rows).toHaveLength(1);
+    expect(harness.events).toHaveLength(1);
+  });
+
+  it("rejects the same organization idempotency key on a different Encounter", async () => {
+    const harness = createHarness();
+    harness.encounters.rows.set(secondEncounterId, {
+      ...encounter,
+      encounterId: secondEncounterId,
+    });
+    const first = await harness.useCase.execute(validInput);
+    expect(first.isOk()).toBe(true);
+
+    const second = await harness.useCase.execute({
+      ...validInput,
+      encounterId: secondEncounterId,
+    });
+
+    const error = expectErrorCode(second, "scheduling.schedule_change_idempotency_conflict");
+    expect(error).toBeInstanceOf(ScheduleChangeRequestIdempotencyConflict);
+    expect(harness.requests.rows).toHaveLength(1);
+    expect(harness.events).toHaveLength(1);
+  });
+
+  it("maps a unique save hit on a reused org key to an idempotency conflict instead of throwing", async () => {
+    const harness = createHarness({ missIdempotencyLookups: true });
+    harness.encounters.rows.set(secondEncounterId, {
+      ...encounter,
+      encounterId: secondEncounterId,
+    });
+    const first = await harness.useCase.execute(validInput);
+    expect(first.isOk()).toBe(true);
+
+    const second = await harness.useCase.execute({
+      ...validInput,
+      encounterId: secondEncounterId,
+    });
+
+    const error = expectErrorCode(second, "scheduling.schedule_change_idempotency_conflict");
     expect(error).toBeInstanceOf(ScheduleChangeRequestIdempotencyConflict);
     expect(harness.requests.rows).toHaveLength(1);
     expect(harness.events).toHaveLength(1);

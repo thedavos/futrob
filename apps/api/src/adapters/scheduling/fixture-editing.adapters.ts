@@ -8,7 +8,9 @@ import {
   type FixtureOccupancyGuardPort,
   type FixtureParticipantSlot,
   type FixtureSeries,
+  type OfficialMatch,
   type OfficialMatchRepository,
+  type ScheduleChangeRequestEditGuardPort,
 } from "@futrob/scheduling";
 import type { OfficialMatchSelectionRepository, OfficialResultRepository } from "@futrob/results";
 import { fixtureEncounterSchema, type FixtureEncounterDto } from "@futrob/api-contracts";
@@ -183,7 +185,9 @@ function fixtureEncounter(value: PgJsonInput): FixtureEncounter {
   return encounter;
 }
 
-export class OfficialResultFixtureEditGuard implements FixtureEncounterEditGuardPort {
+export class OfficialResultFixtureEditGuard
+  implements FixtureEncounterEditGuardPort, ScheduleChangeRequestEditGuardPort
+{
   constructor(
     private readonly matches: OfficialMatchRepository,
     private readonly results: Pick<OfficialResultRepository, "findApprovedByEncounter">,
@@ -191,6 +195,12 @@ export class OfficialResultFixtureEditGuard implements FixtureEncounterEditGuard
   ) {}
 
   async canEdit(input: Parameters<FixtureEncounterEditGuardPort["canEdit"]>[0]): Promise<boolean> {
+    return this.canRequestScheduleChange({ ...input, scope: { type: "entire_encounter" } });
+  }
+
+  async canRequestScheduleChange(
+    input: Parameters<ScheduleChangeRequestEditGuardPort["canRequestScheduleChange"]>[0],
+  ): Promise<boolean> {
     const [matches, approvedResult, selection] = await Promise.all([
       this.matches.listByEncounter(input.encounterId),
       this.results.findApprovedByEncounter(input.encounterId),
@@ -198,14 +208,30 @@ export class OfficialResultFixtureEditGuard implements FixtureEncounterEditGuard
     ]);
     if (approvedResult) return false;
     if (selection && selection.status !== "voided") return false;
-    return matches.every(
-      (match) =>
-        match.status !== "completed" &&
-        match.status !== "voided" &&
-        match.status !== "selected" &&
-        match.status !== "awaiting_selection",
-    );
+    const scope = input.scope;
+    switch (scope.type) {
+      case "entire_encounter":
+        return matches.every(isEditableOfficialMatch);
+      case "official_match": {
+        const match = matches.find((row) => row.slot === scope.officialSlot);
+        return match == null || isEditableOfficialMatch(match);
+      }
+      default: {
+        const exhaustiveScope: never = scope;
+        void exhaustiveScope;
+        return false;
+      }
+    }
   }
+}
+
+function isEditableOfficialMatch(match: OfficialMatch): boolean {
+  return (
+    match.status !== "completed" &&
+    match.status !== "voided" &&
+    match.status !== "selected" &&
+    match.status !== "awaiting_selection"
+  );
 }
 
 export class OfficialResultOccupancyGuard implements FixtureOccupancyGuardPort {

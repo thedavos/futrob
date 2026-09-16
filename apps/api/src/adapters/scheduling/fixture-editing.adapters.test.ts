@@ -8,6 +8,7 @@ import {
   asActorId,
   asCompetitionId,
   asEncounterId,
+  asOfficialMatchSlotId,
   asOrganizationId,
   asTeamId,
 } from "@futrob/shared-kernel";
@@ -194,6 +195,63 @@ describe("OfficialResultFixtureEditGuard", () => {
         encounterId,
         organizationId: asOrganizationId("org-1"),
         competitionId: asCompetitionId("competition-1"),
+      }),
+    ).resolves.toBe(false);
+  });
+});
+
+describe("OfficialResultFixtureEditGuard.canRequestScheduleChange", () => {
+  const organizationId = asOrganizationId("org-1");
+  const competitionId = asCompetitionId("competition-1");
+  const scheduled: OfficialMatch = {
+    id: asOfficialMatchSlotId("official-match-1"),
+    encounterId,
+    organizationId,
+    competitionId,
+    slot: 1,
+    status: "scheduled",
+    createdAt: new Date("2026-08-11T07:00:00.000Z"),
+  };
+  const completedSlotTwo: OfficialMatch = {
+    ...scheduled,
+    id: asOfficialMatchSlotId("official-match-2"),
+    slot: 2,
+    status: "completed",
+  };
+
+  it("allows an unprotected OfficialMatch slot while blocking the entire Encounter", async () => {
+    const guard = new OfficialResultFixtureEditGuard(
+      {
+        listByEncounter: async () => [scheduled, completedSlotTwo],
+        upsertMany: async () => {},
+        voidByEncounterIds: async () => {},
+      },
+      { findApprovedByEncounter: async () => null },
+      { findLatestByEncounter: async () => null },
+    );
+
+    await expect(
+      guard.canRequestScheduleChange({
+        encounterId,
+        organizationId,
+        competitionId,
+        scope: { type: "entire_encounter" },
+      }),
+    ).resolves.toBe(false);
+    await expect(
+      guard.canRequestScheduleChange({
+        encounterId,
+        organizationId,
+        competitionId,
+        scope: { type: "official_match", officialSlot: 1 },
+      }),
+    ).resolves.toBe(true);
+    await expect(
+      guard.canRequestScheduleChange({
+        encounterId,
+        organizationId,
+        competitionId,
+        scope: { type: "official_match", officialSlot: 2 },
       }),
     ).resolves.toBe(false);
   });

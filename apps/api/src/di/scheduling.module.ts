@@ -1,4 +1,5 @@
 import {
+  CreateScheduleChangeRequestUseCase,
   EditFixtureEncounterUseCase,
   GenerateCompetitionFixtureUseCase,
   GetCompetitionFixtureUseCase,
@@ -12,6 +13,7 @@ import {
   type FixturePlanRepository,
   type OfficialMatchRepository,
 } from "@futrob/scheduling";
+import type { CompetitionRepository } from "@futrob/competitions";
 import type { AuthorizationPort, EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
 import type { OfficialMatchSelectionRepository, OfficialResultRepository } from "@futrob/results";
 import type { Pool } from "pg";
@@ -34,6 +36,11 @@ import {
   OfficialResultOccupancyGuard,
   PostgresFixtureAuditPort,
 } from "@/adapters/scheduling/fixture-editing.adapters.ts";
+import { CompetitionRescheduleRulesAdapter } from "@/adapters/scheduling/competition-reschedule-rules.adapter.ts";
+import {
+  InMemoryScheduleChangeRequestRepository,
+  PostgresScheduleChangeRequestRepository,
+} from "@/adapters/scheduling/schedule-change-request.repository.ts";
 
 export function createSchedulingModule(input: {
   readonly pool: Pool | undefined;
@@ -45,6 +52,7 @@ export function createSchedulingModule(input: {
   readonly officialResults: Pick<OfficialResultRepository, "findApprovedByEncounter">;
   readonly officialSelections: Pick<OfficialMatchSelectionRepository, "findLatestByEncounter">;
   readonly encounterMutationLock: EncounterMutationLockPort;
+  readonly competitions: Pick<CompetitionRepository, "findById">;
 }) {
   const encounters: EncounterScheduleRepository = input.pool
     ? new PostgresEncounterScheduleRepository(input.pool)
@@ -58,12 +66,21 @@ export function createSchedulingModule(input: {
   const fixtureAudit: FixtureAuditPort = input.pool
     ? new PostgresFixtureAuditPort(input.pool)
     : new InMemoryFixtureAuditPort();
+  const scheduleChangeRequests = input.pool
+    ? new PostgresScheduleChangeRequestRepository(input.pool)
+    : new InMemoryScheduleChangeRequestRepository();
   const clock = new SystemClock();
   const ids = new CryptoIdGenerator();
+  const editGuard = new OfficialResultFixtureEditGuard(
+    officialMatches,
+    input.officialResults,
+    input.officialSelections,
+  );
   return {
     encounters,
     officialMatches,
     fixturePlans,
+    scheduleChangeRequests,
     generateFixture: new GenerateCompetitionFixtureUseCase({
       authorization: input.authorization,
       clock,
@@ -79,17 +96,29 @@ export function createSchedulingModule(input: {
       authorization: input.authorization,
       audit: fixtureAudit,
       clock,
-      editGuard: new OfficialResultFixtureEditGuard(
-        officialMatches,
-        input.officialResults,
-        input.officialSelections,
-      ),
+      editGuard,
       encounters,
       eventPublisher: input.eventPublisher,
       fixtures: fixturePlans,
       matches: officialMatches,
       mutationLock: input.encounterMutationLock,
       source: input.fixtureSource,
+      transaction: input.transaction,
+    }),
+    createScheduleChangeRequest: new CreateScheduleChangeRequestUseCase({
+      authorization: input.authorization,
+      clock,
+      editGuard,
+      encounters,
+      eventPublisher: input.eventPublisher,
+      ids,
+      mutationLock: input.encounterMutationLock,
+      requests: scheduleChangeRequests,
+      rules: new CompetitionRescheduleRulesAdapter({
+        competitions: input.competitions,
+        fixtures: fixturePlans,
+        requests: scheduleChangeRequests,
+      }),
       transaction: input.transaction,
     }),
     getFixture: new GetCompetitionFixtureUseCase({
