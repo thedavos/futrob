@@ -41,11 +41,11 @@ describe("rehydrateTeamContribution", () => {
 });
 
 describe("rehydrateTeamContributions", () => {
-  it("infers aggregate_score for pre-PR two-leg ids so a series is one PJ", () => {
+  it("keeps independent_matches for pre-PR two-slot encounters", () => {
     const contributions = rehydrateTeamContributions([
       contributionRow({
-        id: "result-ko:1:1:home",
-        encounter_id: "encounter-knockout",
+        id: "result-league:1:1:home",
+        encounter_id: "encounter-two-slot",
         official_slot: 1,
         side: "home",
         team_id: "home-team",
@@ -54,8 +54,8 @@ describe("rehydrateTeamContributions", () => {
         resolution_mode: null,
       }),
       contributionRow({
-        id: "result-ko:1:2:home",
-        encounter_id: "encounter-knockout",
+        id: "result-league:1:2:home",
+        encounter_id: "encounter-two-slot",
         official_slot: 2,
         side: "home",
         team_id: "home-team",
@@ -64,8 +64,8 @@ describe("rehydrateTeamContributions", () => {
         resolution_mode: null,
       }),
       contributionRow({
-        id: "result-ko:1:1:away",
-        encounter_id: "encounter-knockout",
+        id: "result-league:1:1:away",
+        encounter_id: "encounter-two-slot",
         official_slot: 1,
         side: "away",
         team_id: "away-team",
@@ -75,8 +75,8 @@ describe("rehydrateTeamContributions", () => {
         resolution_mode: null,
       }),
       contributionRow({
-        id: "result-ko:1:2:away",
-        encounter_id: "encounter-knockout",
+        id: "result-league:1:2:away",
+        encounter_id: "encounter-two-slot",
         official_slot: 2,
         side: "away",
         team_id: "away-team",
@@ -88,10 +88,10 @@ describe("rehydrateTeamContributions", () => {
     ]);
 
     expect(contributions.map((row) => row.resolutionMode)).toEqual([
-      "aggregate_score",
-      "aggregate_score",
-      "aggregate_score",
-      "aggregate_score",
+      "independent_matches",
+      "independent_matches",
+      "independent_matches",
+      "independent_matches",
     ]);
   });
 });

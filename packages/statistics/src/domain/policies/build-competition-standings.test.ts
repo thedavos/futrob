@@ -200,6 +200,78 @@ describe("buildCompetitionStandings", () => {
       goalsAgainst: 2,
     });
   });
+
+  it("scores a league win at 3 and a playoff win at 5 in the same table", () => {
+    const snapshot = buildCompetitionStandings({
+      competitionId: asCompetitionId("competition-1"),
+      organizationId: asOrganizationId("organization-1"),
+      contributions: [
+        team({
+          encounterId: asEncounterId("encounter-regular"),
+          officialSlot: 1,
+          goalsFor: 1,
+          goalsAgainst: 0,
+        }),
+        team({
+          encounterId: asEncounterId("encounter-regular"),
+          officialSlot: 1,
+          side: "away",
+          teamId: asTeamId("away-team"),
+          externalClubId: "club-2",
+          goalsFor: 0,
+          goalsAgainst: 1,
+        }),
+        team({
+          encounterId: asEncounterId("encounter-knockout"),
+          officialSlot: 1,
+          goalsFor: 1,
+          goalsAgainst: 0,
+        }),
+        team({
+          encounterId: asEncounterId("encounter-knockout"),
+          officialSlot: 1,
+          side: "away",
+          teamId: asTeamId("away-team"),
+          externalClubId: "club-2",
+          goalsFor: 0,
+          goalsAgainst: 1,
+        }),
+      ],
+      pointsRules: {
+        winPoints: 3,
+        drawPoints: 1,
+        lossPoints: 0,
+        resolutionMode: "independent_matches",
+      },
+      pointsByEncounter: new Map([
+        [
+          "encounter-regular",
+          {
+            winPoints: 3,
+            drawPoints: 1,
+            lossPoints: 0,
+            resolutionMode: "independent_matches",
+          },
+        ],
+        [
+          "encounter-knockout",
+          {
+            winPoints: 5,
+            drawPoints: 1,
+            lossPoints: 0,
+            resolutionMode: "independent_matches",
+          },
+        ],
+      ]),
+      updatedAt: new Date("2026-08-13T12:00:00.000Z"),
+    });
+
+    expect(snapshot.rows.find((row) => row.teamId === asTeamId("home-team"))).toMatchObject({
+      played: 2,
+      wins: 2,
+      points: 8,
+    });
+  });
 });
 
 function team(input: {

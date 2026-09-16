@@ -16,6 +16,7 @@ export const DEFAULT_COMPETITION_MATCH_POINTS: CompetitionMatchPointsRules = {
 
 interface StandingMatch {
   readonly teamId: TeamId;
+  readonly encounterId: TeamMatchContribution["encounterId"];
   readonly goalsFor: number;
   readonly goalsAgainst: number;
   readonly revision: number;
@@ -26,6 +27,7 @@ export function buildCompetitionStandings(input: {
   readonly organizationId: CompetitionStandingSnapshot["organizationId"];
   readonly contributions: readonly TeamMatchContribution[];
   readonly pointsRules: CompetitionMatchPointsRules;
+  readonly pointsByEncounter?: ReadonlyMap<string, CompetitionMatchPointsRules>;
   readonly updatedAt: Date;
 }): CompetitionStandingSnapshot {
   const byTeam = new Map<TeamId, MutableStanding>();
@@ -51,13 +53,13 @@ export function buildCompetitionStandings(input: {
 
     if (match.goalsFor > match.goalsAgainst) {
       standing.wins += 1;
-      standing.points += input.pointsRules.winPoints;
+      standing.points += pointsFor(match, input).winPoints;
     } else if (match.goalsFor === match.goalsAgainst) {
       standing.draws += 1;
-      standing.points += input.pointsRules.drawPoints;
+      standing.points += pointsFor(match, input).drawPoints;
     } else {
       standing.losses += 1;
-      standing.points += input.pointsRules.lossPoints;
+      standing.points += pointsFor(match, input).lossPoints;
     }
     byTeam.set(match.teamId, standing);
   }
@@ -112,6 +114,7 @@ function matchesForStandings(contributions: readonly TeamMatchContribution[]): S
   return [
     ...independent.map((contribution) => ({
       teamId: contribution.teamId,
+      encounterId: contribution.encounterId,
       goalsFor: contribution.goalsFor,
       goalsAgainst: contribution.goalsAgainst,
       revision: contribution.revision,
@@ -130,6 +133,7 @@ function aggregateEncounterMatches(
     if (current === undefined) {
       byEncounterTeam.set(key, {
         teamId: contribution.teamId,
+        encounterId: contribution.encounterId,
         goalsFor: contribution.goalsFor,
         goalsAgainst: contribution.goalsAgainst,
         revision: contribution.revision,
@@ -138,6 +142,7 @@ function aggregateEncounterMatches(
     }
     byEncounterTeam.set(key, {
       teamId: contribution.teamId,
+      encounterId: contribution.encounterId,
       goalsFor: current.goalsFor + contribution.goalsFor,
       goalsAgainst: current.goalsAgainst + contribution.goalsAgainst,
       revision: Math.max(current.revision, contribution.revision),
@@ -156,6 +161,16 @@ interface MutableStanding {
   goalsAgainst: number;
   points: number;
   sourceRevisionMax: number;
+}
+
+function pointsFor(
+  match: StandingMatch,
+  input: {
+    readonly pointsRules: CompetitionMatchPointsRules;
+    readonly pointsByEncounter?: ReadonlyMap<string, CompetitionMatchPointsRules>;
+  },
+): CompetitionMatchPointsRules {
+  return input.pointsByEncounter?.get(match.encounterId) ?? input.pointsRules;
 }
 
 function compareStandings(left: MutableStanding, right: MutableStanding): number {

@@ -361,6 +361,13 @@ function makeHarness(input: {
       snapshot,
     ]),
   );
+  const encounterReader =
+    encountersById.size > 0
+      ? {
+          getById: async (encounterId: EncounterScheduleSnapshot["encounterId"]) =>
+            encountersById.get(encounterId) ?? null,
+        }
+      : undefined;
   const project = new ProjectOfficialResultUseCase({
     officialResults,
     identities,
@@ -373,12 +380,7 @@ function makeHarness(input: {
     matchRules,
     transaction: { runInTransaction: async (operation) => operation() },
     clock: { now: () => new Date("2026-08-11T07:00:00.000Z") },
-    encounterReader:
-      encountersById.size > 0
-        ? {
-            getById: async (encounterId) => encountersById.get(encounterId) ?? null,
-          }
-        : undefined,
+    encounterReader,
   });
   return {
     byId,
@@ -391,6 +393,7 @@ function makeHarness(input: {
     teamCompetitionStats,
     standings,
     identityInputs,
+    encounterReader,
   };
 }
 
@@ -1403,6 +1406,99 @@ describe("ProjectOfficialResultUseCase", () => {
     ).toEqual(modesAfterProject.b);
     expect(await harness.standings.findByCompetition(first.competitionId)).toMatchObject({
       rows: standingsAfterProject?.rows,
+    });
+  });
+
+  it("keeps league win 3 and playoff win 5 after incremental project and rebuild", async () => {
+    const regularStageId = asEncounterStageId("plan:fixture:stage:1");
+    const knockoutStageId = asEncounterStageId("plan:fixture:stage:2");
+    const league = officialResult({
+      id: "result-league",
+      encounterId: "encounter-league",
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const playoff = officialResult({
+      id: "result-playoff",
+      encounterId: "encounter-playoff",
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const getPointsRules = async (
+      query: Parameters<CompetitionMatchRulesReaderPort["getPointsRules"]>[0],
+    ) => ({
+      winPoints: query.stageId === knockoutStageId ? 5 : 3,
+      drawPoints: 1,
+      lossPoints: 0,
+      resolutionMode: "independent_matches" as const,
+    });
+    const harness = makeHarness({
+      results: [league, playoff],
+      resolutions: {},
+      encounters: [
+        {
+          ...defaultEncounter(league),
+          stageId: regularStageId,
+        },
+        {
+          ...defaultEncounter(playoff),
+          stageId: knockoutStageId,
+        },
+      ],
+      getPointsRules,
+    });
+
+    expect((await harness.project.execute({ officialResultId: league.id })).isOk()).toBe(true);
+    expect((await harness.project.execute({ officialResultId: playoff.id })).isOk()).toBe(true);
+    const homeAfterProject = (
+      await harness.standings.findByCompetition(league.competitionId)
+    )?.rows.find((row) => row.teamId === asTeamId("home-team"));
+    expect(homeAfterProject).toMatchObject({
+      played: 2,
+      wins: 2,
+      losses: 0,
+      points: 8,
+    });
+
+    const eventPublisher = {
+      async publish() {},
+      async publishMany() {},
+    };
+    const rankings = new RankingSnapshotRepository();
+    const rebuild = new RebuildCompetitionStatisticsUseCase({
+      officialResults: harness.officialResults,
+      projectOfficialResult: harness.project,
+      contributions: harness.contributions,
+      competitionStats: harness.competitionStats,
+      personalStats: harness.personalStats,
+      teamContributions: harness.teamContributions,
+      teamCompetitionStats: harness.teamCompetitionStats,
+      standings: harness.standings,
+      matchRules: { getPointsRules },
+      encounterReader: harness.encounterReader,
+      rebuildRankings: new RebuildCompetitionRankingsUseCase({
+        contributions: harness.contributions,
+        teamContributions: harness.teamContributions,
+        rankings,
+        eventPublisher,
+        transaction: { runInTransaction: async (operation) => operation() },
+        clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+      }),
+      transaction: { runInTransaction: async (operation) => operation() },
+      clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+      eventPublisher,
+    });
+
+    expect((await rebuild.execute({ competitionId: league.competitionId })).isOk()).toBe(true);
+    expect(await harness.standings.findByCompetition(league.competitionId)).toMatchObject({
+      rows: expect.arrayContaining([
+        expect.objectContaining({
+          teamId: asTeamId("home-team"),
+          played: 2,
+          wins: 2,
+          points: 8,
+        }),
+      ]),
     });
   });
 });

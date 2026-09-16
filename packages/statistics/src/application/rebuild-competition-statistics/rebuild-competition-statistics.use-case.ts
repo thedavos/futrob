@@ -1,4 +1,8 @@
-import type { OfficialResult, OfficialResultReaderPort } from "@futrob/results";
+import type {
+  EncounterReaderPort,
+  OfficialResult,
+  OfficialResultReaderPort,
+} from "@futrob/results";
 import {
   assertNever,
   err,
@@ -30,6 +34,7 @@ import {
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
 import type { ProjectOfficialResultUseCase } from "../project-official-result/project-official-result.use-case.ts";
+import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 
@@ -53,6 +58,7 @@ export interface RebuildCompetitionStatisticsDependencies {
   readonly teamCompetitionStats: TeamCompetitionStatsRepository;
   readonly standings: CompetitionStandingSnapshotRepository;
   readonly matchRules: CompetitionMatchRulesReaderPort;
+  readonly encounterReader?: EncounterReaderPort;
   readonly rebuildRankings: Pick<RebuildCompetitionRankingsUseCase, "execute">;
   readonly eventPublisher: EventPublisherPort;
   readonly transaction: TransactionPort;
@@ -210,15 +216,19 @@ export class RebuildCompetitionStatisticsUseCase {
       await this.deps.standings.deleteByCompetition(competitionId);
       return;
     }
-    const pointsRules =
-      (await this.deps.matchRules.getPointsRules({ competitionId })) ??
-      DEFAULT_COMPETITION_MATCH_POINTS;
+    const pointsByEncounter = await loadPointsRulesByEncounter({
+      competitionId,
+      contributions: current,
+      matchRules: this.deps.matchRules,
+      encounterReader: this.deps.encounterReader,
+    });
     await this.deps.standings.upsert(
       buildCompetitionStandings({
         competitionId,
         organizationId,
         contributions: current,
-        pointsRules,
+        pointsRules: DEFAULT_COMPETITION_MATCH_POINTS,
+        pointsByEncounter,
         updatedAt: this.deps.clock.now(),
       }),
     );

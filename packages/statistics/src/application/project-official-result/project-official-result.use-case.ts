@@ -35,6 +35,7 @@ import {
   buildCompetitionStandings,
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
+import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 import {
@@ -274,16 +275,19 @@ export class ProjectOfficialResultUseCase {
     const contributions = await this.deps.teamContributions.listByCompetition(
       officialResult.competitionId,
     );
-    const pointsRules =
-      (await this.deps.matchRules.getPointsRules({
-        competitionId: officialResult.competitionId,
-      })) ?? DEFAULT_COMPETITION_MATCH_POINTS;
+    const pointsByEncounter = await loadPointsRulesByEncounter({
+      competitionId: officialResult.competitionId,
+      contributions,
+      matchRules: this.deps.matchRules,
+      encounterReader: this.deps.encounterReader,
+    });
     await this.deps.standings.upsert(
       buildCompetitionStandings({
         competitionId: officialResult.competitionId,
         organizationId: officialResult.organizationId,
         contributions,
-        pointsRules,
+        pointsRules: DEFAULT_COMPETITION_MATCH_POINTS,
+        pointsByEncounter,
         updatedAt: this.deps.clock.now(),
       }),
     );

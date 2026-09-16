@@ -143,6 +143,7 @@ export function createStatisticsModule(deps: {
         standings,
         matchRules,
         rebuildRankings,
+        encounterReader: deps.encounterReader,
         eventPublisher: deps.eventPublisher,
         transaction: deps.transaction,
         clock,
