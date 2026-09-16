@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { rehydrateTeamContribution, type TeamContributionRow } from "./team-postgres-rows.ts";
+import {
+  rehydrateTeamContribution,
+  rehydrateTeamContributions,
+  type TeamContributionRow,
+} from "./team-postgres-rows.ts";
 
 describe("rehydrateTeamContribution", () => {
   it("prefers a resolution_mode column over the id suffix", () => {
@@ -24,7 +28,7 @@ describe("rehydrateTeamContribution", () => {
     ).toBe("aggregate_score");
   });
 
-  it("defaults legacy rows without a frozen mode to independent_matches", () => {
+  it("defaults a single-slot pre-PR row to independent_matches", () => {
     expect(
       rehydrateTeamContribution(
         contributionRow({
@@ -36,11 +40,66 @@ describe("rehydrateTeamContribution", () => {
   });
 });
 
+describe("rehydrateTeamContributions", () => {
+  it("infers aggregate_score for pre-PR two-leg ids so a series is one PJ", () => {
+    const contributions = rehydrateTeamContributions([
+      contributionRow({
+        id: "result-ko:1:1:home",
+        encounter_id: "encounter-knockout",
+        official_slot: 1,
+        side: "home",
+        team_id: "home-team",
+        goals_for: 1,
+        goals_against: 0,
+        resolution_mode: null,
+      }),
+      contributionRow({
+        id: "result-ko:1:2:home",
+        encounter_id: "encounter-knockout",
+        official_slot: 2,
+        side: "home",
+        team_id: "home-team",
+        goals_for: 0,
+        goals_against: 2,
+        resolution_mode: null,
+      }),
+      contributionRow({
+        id: "result-ko:1:1:away",
+        encounter_id: "encounter-knockout",
+        official_slot: 1,
+        side: "away",
+        team_id: "away-team",
+        external_club_id: "club-2",
+        goals_for: 0,
+        goals_against: 1,
+        resolution_mode: null,
+      }),
+      contributionRow({
+        id: "result-ko:1:2:away",
+        encounter_id: "encounter-knockout",
+        official_slot: 2,
+        side: "away",
+        team_id: "away-team",
+        external_club_id: "club-2",
+        goals_for: 2,
+        goals_against: 0,
+        resolution_mode: null,
+      }),
+    ]);
+
+    expect(contributions.map((row) => row.resolutionMode)).toEqual([
+      "aggregate_score",
+      "aggregate_score",
+      "aggregate_score",
+      "aggregate_score",
+    ]);
+  });
+});
+
 function contributionRow(
-  input: Pick<TeamContributionRow, "id" | "resolution_mode">,
+  input: Partial<TeamContributionRow> & Pick<TeamContributionRow, "id">,
 ): TeamContributionRow {
   return {
-    id: input.id,
     official_result_id: "result-1",
     revision: 1,
     encounter_id: "encounter-1",
@@ -68,6 +127,7 @@ function contributionRow(
     red_cards: null,
     is_mvp: null,
     rating: null,
-    resolution_mode: input.resolution_mode,
+    resolution_mode: null,
+    ...input,
   };
 }

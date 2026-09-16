@@ -11,7 +11,10 @@ import {
   type TransactionPort,
 } from "@futrob/shared-kernel";
 import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
-import type { TeamMatchContribution } from "../../domain/entities/team-match-contribution.ts";
+import type {
+  StandingResolutionMode,
+  TeamMatchContribution,
+} from "../../domain/entities/team-match-contribution.ts";
 import type { ProjectOfficialResultError } from "../../domain/errors/project-official-result.errors.ts";
 import type { CompetitionMatchRulesReaderPort } from "../../domain/ports/competition-match-rules-reader.port.ts";
 import type { CompetitionStandingSnapshotRepository } from "../../domain/ports/competition-standing-snapshot.repository.ts";
@@ -69,6 +72,7 @@ export class RebuildCompetitionStatisticsUseCase {
     const affectedPlayerProfiles = matchedPlayerProfiles(previousPlayers);
     const affectedTeams = matchedTeams(previousTeams);
 
+    const frozenByEncounter = frozenResolutionModeByEncounter(previousTeams);
     const rebuilt = await this.deps.transaction.runInTransaction(async () => {
       await this.deps.contributions.deleteByCompetition(input.competitionId);
       await this.deps.teamContributions.deleteByCompetition(input.competitionId);
@@ -83,6 +87,7 @@ export class RebuildCompetitionStatisticsUseCase {
             const projected = await this.deps.projectOfficialResult.execute({
               officialResultId: officialResult.id,
               rebuildRankings: false,
+              resolutionMode: frozenByEncounter.get(officialResult.encounterId),
             });
             if (!projected.isOk()) return err(projected.error);
             officialResultsProjected += 1;
@@ -241,4 +246,16 @@ function matchedTeams(contributions: readonly TeamMatchContribution[]): Set<Team
   const teams = new Set<TeamId>();
   addMatchedTeams(teams, contributions);
   return teams;
+}
+
+function frozenResolutionModeByEncounter(
+  contributions: readonly TeamMatchContribution[],
+): ReadonlyMap<string, StandingResolutionMode> {
+  const modes = new Map<string, StandingResolutionMode>();
+  for (const contribution of contributions) {
+    if (!modes.has(contribution.encounterId)) {
+      modes.set(contribution.encounterId, contribution.resolutionMode);
+    }
+  }
+  return modes;
 }

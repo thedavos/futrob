@@ -1312,6 +1312,99 @@ describe("ProjectOfficialResultUseCase", () => {
       ]),
     });
   });
+
+  it("rebuild keeps frozen resolutionMode after live rules change", async () => {
+    let liveMode: StandingResolutionMode = "independent_matches";
+    const points = () => ({
+      winPoints: 3,
+      drawPoints: 1,
+      lossPoints: 0,
+      resolutionMode: liveMode,
+    });
+    const first = officialResult({
+      id: "result-a",
+      encounterId: "encounter-a",
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const second = twoLegResult({
+      id: "result-b",
+      encounterId: "encounter-b",
+      homeGoalsFirst: 1,
+      awayGoalsFirst: 0,
+      homeGoalsSecond: 0,
+      awayGoalsSecond: 2,
+    });
+    const harness = makeHarness({
+      results: [first, second],
+      resolutions: {},
+      encounters: [
+        defaultEncounter(first),
+        {
+          ...defaultEncounter(second),
+          officialMatchCount: 2,
+        },
+      ],
+      getPointsRules: async () => points(),
+    });
+
+    expect((await harness.project.execute({ officialResultId: first.id })).isOk()).toBe(true);
+    liveMode = "aggregate_score";
+    expect((await harness.project.execute({ officialResultId: second.id })).isOk()).toBe(true);
+    const standingsAfterProject = await harness.standings.findByCompetition(first.competitionId);
+    const modesAfterProject = {
+      a: (await harness.teamContributions.listByEncounter(first.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+      b: (await harness.teamContributions.listByEncounter(second.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    };
+
+    liveMode = "independent_matches";
+    const eventPublisher = {
+      async publish() {},
+      async publishMany() {},
+    };
+    const rankings = new RankingSnapshotRepository();
+    const rebuild = new RebuildCompetitionStatisticsUseCase({
+      officialResults: harness.officialResults,
+      projectOfficialResult: harness.project,
+      contributions: harness.contributions,
+      competitionStats: harness.competitionStats,
+      personalStats: harness.personalStats,
+      teamContributions: harness.teamContributions,
+      teamCompetitionStats: harness.teamCompetitionStats,
+      standings: harness.standings,
+      matchRules: { getPointsRules: async () => points() },
+      rebuildRankings: new RebuildCompetitionRankingsUseCase({
+        contributions: harness.contributions,
+        teamContributions: harness.teamContributions,
+        rankings,
+        eventPublisher,
+        transaction: { runInTransaction: async (operation) => operation() },
+        clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+      }),
+      transaction: { runInTransaction: async (operation) => operation() },
+      clock: { now: () => new Date("2026-08-12T12:00:00.000Z") },
+      eventPublisher,
+    });
+
+    expect((await rebuild.execute({ competitionId: first.competitionId })).isOk()).toBe(true);
+    expect(
+      (await harness.teamContributions.listByEncounter(first.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(modesAfterProject.a);
+    expect(
+      (await harness.teamContributions.listByEncounter(second.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(modesAfterProject.b);
+    expect(await harness.standings.findByCompetition(first.competitionId)).toMatchObject({
+      rows: standingsAfterProject?.rows,
+    });
+  });
 });
 
 function defaultEncounter(result: OfficialResult): EncounterScheduleSnapshot {

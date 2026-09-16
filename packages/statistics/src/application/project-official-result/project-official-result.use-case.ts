@@ -13,7 +13,10 @@ import {
   type TransactionPort,
 } from "@futrob/shared-kernel";
 import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
-import type { TeamMatchContribution } from "../../domain/entities/team-match-contribution.ts";
+import type {
+  StandingResolutionMode,
+  TeamMatchContribution,
+} from "../../domain/entities/team-match-contribution.ts";
 import {
   OfficialResultNotFound,
   type ProjectOfficialResultError,
@@ -41,8 +44,16 @@ import {
 } from "./project-official-result-projection.ts";
 
 export type ProjectOfficialResultInput =
-  | { readonly officialResultId: string; readonly rebuildRankings?: boolean }
-  | { readonly encounterId: OfficialResult["encounterId"]; readonly rebuildRankings?: boolean };
+  | {
+      readonly officialResultId: string;
+      readonly rebuildRankings?: boolean;
+      readonly resolutionMode?: StandingResolutionMode;
+    }
+  | {
+      readonly encounterId: OfficialResult["encounterId"];
+      readonly rebuildRankings?: boolean;
+      readonly resolutionMode?: StandingResolutionMode;
+    };
 
 export interface ProjectOfficialResultOutput {
   readonly officialResultId: string;
@@ -110,7 +121,10 @@ export class ProjectOfficialResultUseCase {
     }
 
     const nextPlayers = await this.playerContributionsForStatus(officialResult);
-    const nextTeams = await this.teamContributionsForStatus(officialResult);
+    const nextTeams = await this.teamContributionsForStatus(
+      officialResult,
+      input.resolutionMode ?? previousTeams[0]?.resolutionMode,
+    );
     const affectedPlayerProfiles = new Set<string>();
     addMatchedPlayerProfiles(affectedPlayerProfiles, previousPlayers);
     addMatchedPlayerProfiles(affectedPlayerProfiles, nextPlayers);
@@ -163,20 +177,24 @@ export class ProjectOfficialResultUseCase {
 
   private async teamContributionsForStatus(
     officialResult: OfficialResult,
+    frozenResolutionMode: StandingResolutionMode | undefined,
   ): Promise<TeamMatchContribution[]> {
     switch (officialResult.status) {
       case "approved": {
         const encounter =
           (await this.deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
-        const pointsRules =
-          (await this.deps.matchRules.getPointsRules({
-            competitionId: officialResult.competitionId,
-            stageId: encounter?.stageId,
-          })) ?? DEFAULT_COMPETITION_MATCH_POINTS;
+        const resolutionMode =
+          frozenResolutionMode ??
+          (
+            (await this.deps.matchRules.getPointsRules({
+              competitionId: officialResult.competitionId,
+              stageId: encounter?.stageId,
+            })) ?? DEFAULT_COMPETITION_MATCH_POINTS
+          ).resolutionMode;
         return projectTeamContributions(
           { encounterReader: this.deps.encounterReader },
           officialResult,
-          pointsRules.resolutionMode,
+          resolutionMode,
         );
       }
       case "voided":

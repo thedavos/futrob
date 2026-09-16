@@ -100,7 +100,23 @@ export interface RankingSnapshotRow {
   readonly updated_at: string | Date;
 }
 
-export function rehydrateTeamContribution(row: TeamContributionRow): TeamMatchContribution {
+export function rehydrateTeamContributions(
+  rows: readonly TeamContributionRow[],
+): TeamMatchContribution[] {
+  const inferred = inferredLegacyResolutionModes(rows);
+  return rows.map((row) =>
+    rehydrateTeamContribution(
+      row,
+      encodedStandingResolutionMode(row) ?? inferred.get(row.encounter_id) ?? "independent_matches",
+    ),
+  );
+}
+
+export function rehydrateTeamContribution(
+  row: TeamContributionRow,
+  resolutionMode: StandingResolutionMode = encodedStandingResolutionMode(row) ??
+    "independent_matches",
+): TeamMatchContribution {
   return {
     id: row.id,
     officialResultId: row.official_result_id,
@@ -109,7 +125,7 @@ export function rehydrateTeamContribution(row: TeamContributionRow): TeamMatchCo
     competitionId: asCompetitionId(row.competition_id),
     organizationId: asOrganizationId(row.organization_id),
     officialSlot: parseOfficialSlot(row.official_slot),
-    resolutionMode: parseStandingResolutionMode(row),
+    resolutionMode,
     teamId: row.team_id === null ? null : asTeamId(row.team_id),
     correlationStatus: parseTeamCorrelationStatus(row.correlation_status),
     side: parseTeamSide(row.side),
@@ -204,11 +220,30 @@ function parseTeamSide(value: string): TeamMatchSide {
   throw new RangeError(`Invalid team match side: ${value}`);
 }
 
-function parseStandingResolutionMode(row: TeamContributionRow): StandingResolutionMode {
+function encodedStandingResolutionMode(row: TeamContributionRow): StandingResolutionMode | null {
   if (row.resolution_mode === "independent_matches" || row.resolution_mode === "aggregate_score") {
     return row.resolution_mode;
   }
   const suffix = row.id.split(":").at(-1);
   if (suffix === "independent_matches" || suffix === "aggregate_score") return suffix;
-  return "independent_matches";
+  return null;
+}
+
+function inferredLegacyResolutionModes(
+  rows: readonly TeamContributionRow[],
+): ReadonlyMap<string, StandingResolutionMode> {
+  const slotsByEncounter = new Map<string, Set<number>>();
+  const legacyEncounters = new Set<string>();
+  for (const row of rows) {
+    if (encodedStandingResolutionMode(row) === null) legacyEncounters.add(row.encounter_id);
+    const slots = slotsByEncounter.get(row.encounter_id) ?? new Set<number>();
+    slots.add(Number(row.official_slot));
+    slotsByEncounter.set(row.encounter_id, slots);
+  }
+  const modes = new Map<string, StandingResolutionMode>();
+  for (const encounterId of legacyEncounters) {
+    const slots = slotsByEncounter.get(encounterId) ?? new Set<number>();
+    modes.set(encounterId, slots.has(2) ? "aggregate_score" : "independent_matches");
+  }
+  return modes;
 }

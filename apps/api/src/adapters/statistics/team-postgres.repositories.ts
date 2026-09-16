@@ -16,7 +16,7 @@ import {
   rehydrateRankingSnapshot,
   rehydrateStandingSnapshot,
   rehydrateTeamCompetitionStats,
-  rehydrateTeamContribution,
+  rehydrateTeamContributions,
   type RankingSnapshotRow,
   type StandingSnapshotRow,
   type TeamCompetitionStatsRow,
@@ -139,7 +139,7 @@ export class PostgresTeamMatchContributionRepository implements TeamMatchContrib
       `SELECT * FROM team_match_contributions WHERE team_id = $1`,
       [teamId],
     );
-    return result.rows.map(rehydrateTeamContribution);
+    return rehydrateTeamContributions(result.rows);
   }
 
   async listByEncounter(encounterId: EncounterId): Promise<TeamMatchContribution[]> {
@@ -147,7 +147,7 @@ export class PostgresTeamMatchContributionRepository implements TeamMatchContrib
       `SELECT * FROM team_match_contributions WHERE encounter_id = $1`,
       [encounterId],
     );
-    return result.rows.map(rehydrateTeamContribution);
+    return rehydrateTeamContributions(result.rows);
   }
 
   async listByCompetition(competitionId: CompetitionId): Promise<TeamMatchContribution[]> {
@@ -155,7 +155,7 @@ export class PostgresTeamMatchContributionRepository implements TeamMatchContrib
       `SELECT * FROM team_match_contributions WHERE competition_id = $1`,
       [competitionId],
     );
-    return result.rows.map(rehydrateTeamContribution);
+    return rehydrateTeamContributions(result.rows);
   }
 }
 
