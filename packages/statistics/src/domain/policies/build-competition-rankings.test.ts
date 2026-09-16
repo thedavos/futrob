@@ -509,6 +509,7 @@ function team(input: {
     teamId: input.teamId ?? asTeamId("home-team"),
     correlationStatus: input.correlationStatus ?? "matched",
     side: input.side ?? "home",
+    resolutionMode: "independent_matches",
     externalClubId: input.externalClubId ?? "club-1",
     goalsFor: input.goalsFor ?? 1,
     goalsAgainst: input.goalsAgainst ?? 0,

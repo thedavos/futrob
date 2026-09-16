@@ -206,7 +206,7 @@ export class RebuildCompetitionStatisticsUseCase {
       return;
     }
     const pointsRules =
-      (await this.deps.matchRules.getPointsRules(competitionId)) ??
+      (await this.deps.matchRules.getPointsRules({ competitionId })) ??
       DEFAULT_COMPETITION_MATCH_POINTS;
     await this.deps.standings.upsert(
       buildCompetitionStandings({

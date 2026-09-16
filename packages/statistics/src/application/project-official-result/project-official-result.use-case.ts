@@ -165,11 +165,20 @@ export class ProjectOfficialResultUseCase {
     officialResult: OfficialResult,
   ): Promise<TeamMatchContribution[]> {
     switch (officialResult.status) {
-      case "approved":
+      case "approved": {
+        const encounter =
+          (await this.deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
+        const pointsRules =
+          (await this.deps.matchRules.getPointsRules({
+            competitionId: officialResult.competitionId,
+            stageId: encounter?.stageId,
+          })) ?? DEFAULT_COMPETITION_MATCH_POINTS;
         return projectTeamContributions(
           { encounterReader: this.deps.encounterReader },
           officialResult,
+          pointsRules.resolutionMode,
         );
+      }
       case "voided":
         return [];
       default:
@@ -248,8 +257,9 @@ export class ProjectOfficialResultUseCase {
       officialResult.competitionId,
     );
     const pointsRules =
-      (await this.deps.matchRules.getPointsRules(officialResult.competitionId)) ??
-      DEFAULT_COMPETITION_MATCH_POINTS;
+      (await this.deps.matchRules.getPointsRules({
+        competitionId: officialResult.competitionId,
+      })) ?? DEFAULT_COMPETITION_MATCH_POINTS;
     await this.deps.standings.upsert(
       buildCompetitionStandings({
         competitionId: officialResult.competitionId,

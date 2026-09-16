@@ -3,6 +3,7 @@ export type {
   PlayerMatchContribution,
 } from "./domain/entities/player-match-contribution.ts";
 export type {
+  StandingResolutionMode,
   TeamCorrelationStatus,
   TeamMatchContribution,
   TeamMatchSide,
@@ -55,8 +56,8 @@ export type { CompetitionStandingSnapshotRepository } from "./domain/ports/compe
 export type { RankingSnapshotRepository } from "./domain/ports/ranking-snapshot.repository.ts";
 export type {
   CompetitionMatchPointsRules,
+  CompetitionMatchRulesQuery,
   CompetitionMatchRulesReaderPort,
-  StandingResolutionMode,
 } from "./domain/ports/competition-match-rules-reader.port.ts";
 export type { PlayerProfileLookupPort } from "./domain/ports/player-profile-lookup.port.ts";
 export type {
