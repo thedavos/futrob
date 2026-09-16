@@ -1,5 +1,8 @@
 import {
+  ActiveScheduleChangeRequestExists,
   rescheduleScopesConflict,
+  ScheduleChangeRequestIdempotencyConflict,
+  ScheduleChangeRequestNotFound,
   type RescheduleScope,
   type ScheduleChangeProposal,
   type ScheduleChangeRequest,
@@ -83,7 +86,7 @@ export class InMemoryScheduleChangeRequestRepository implements ScheduleChangeRe
         row.id !== request.id,
     );
     if (duplicateKey) {
-      throw uniqueConstraintError();
+      throw idempotencyConflict();
     }
 
     if (request.status === "open") {
@@ -96,7 +99,7 @@ export class InMemoryScheduleChangeRequestRepository implements ScheduleChangeRe
           rescheduleScopesConflict(row.scope, request.scope),
       );
       if (conflicting) {
-        throw uniqueConstraintError();
+        throw activeScopeConflict(request.encounterId, conflicting.id);
       }
     }
 
@@ -156,8 +159,12 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
 
   async save(request: ScheduleChangeRequest): Promise<ScheduleChangeRequest> {
     if (isInPgTransaction()) {
-      await this.write(getPgExecutor(this.pool), request);
-      return request;
+      try {
+        await this.write(getPgExecutor(this.pool), request);
+        return request;
+      } catch (error) {
+        throw mapScheduleChangeRequestWriteError(error, request);
+      }
     }
 
     const client = await this.pool.connect();
@@ -167,8 +174,12 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
       await client.query("COMMIT");
       return request;
     } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        // Prefer the unique/FK mapping over a secondary rollback error.
+      }
+      throw mapScheduleChangeRequestWriteError(error, request);
     } finally {
       client.release();
     }
@@ -294,10 +305,79 @@ const proposalRowSchema = z.object({
   proposal_order: z.coerce.number().int().positive(),
 });
 
-function uniqueConstraintError(): Error {
-  const error = new Error("schedule_change_request unique constraint violated");
-  error.name = "UniqueScheduleChangeRequestError";
-  return error;
+const IDEMPOTENCY_CONSTRAINT = "schedule_change_requests_idempotency_uidx";
+const ENCOUNTER_SNAPSHOT_FK = "schedule_change_requests_encounter_snapshot_fkey";
+const ACTIVE_SLOT_CONSTRAINTS = new Set([
+  "schedule_change_requests_active_slot_1_uidx",
+  "schedule_change_requests_active_slot_2_uidx",
+]);
+
+function idempotencyConflict(): ScheduleChangeRequestIdempotencyConflict {
+  return new ScheduleChangeRequestIdempotencyConflict({
+    code: "scheduling.schedule_change_idempotency_conflict",
+    message: "The idempotency key was already used with a different request",
+  });
+}
+
+function activeScopeConflict(
+  encounterId: EncounterId,
+  activeRequestId: string,
+): ActiveScheduleChangeRequestExists {
+  return new ActiveScheduleChangeRequestExists({
+    code: "scheduling.active_schedule_change_request_exists",
+    message: "This schedule scope already has an active change request",
+    encounterId,
+    activeRequestId,
+  });
+}
+
+function mapScheduleChangeRequestWriteError(error: unknown, request: ScheduleChangeRequest): never {
+  if (
+    error instanceof ScheduleChangeRequestIdempotencyConflict ||
+    error instanceof ActiveScheduleChangeRequestExists ||
+    error instanceof ScheduleChangeRequestNotFound
+  ) {
+    throw error;
+  }
+
+  const pg = pgErrorFields(error);
+  const constraintHaystack = `${pg.constraint ?? ""} ${pg.message}`;
+  if (pg.code === "23505") {
+    if (
+      pg.constraint === IDEMPOTENCY_CONSTRAINT ||
+      constraintHaystack.includes("schedule_change_requests_idempotency_uidx")
+    ) {
+      throw idempotencyConflict();
+    }
+    if (
+      (pg.constraint && ACTIVE_SLOT_CONSTRAINTS.has(pg.constraint)) ||
+      constraintHaystack.includes("schedule_change_requests_active_slot_")
+    ) {
+      throw activeScopeConflict(request.encounterId, "unknown");
+    }
+  }
+  if (
+    pg.code === "23503" &&
+    (pg.constraint === ENCOUNTER_SNAPSHOT_FK ||
+      constraintHaystack.includes("schedule_change_requests_encounter_snapshot_fkey"))
+  ) {
+    throw new ScheduleChangeRequestNotFound({
+      code: "scheduling.schedule_change_encounter_not_found",
+      message: "Encounter not found",
+      encounterId: request.encounterId,
+    });
+  }
+  throw error;
+}
+
+function pgErrorFields(error: unknown): { code?: string; constraint?: string; message: string } {
+  if (!(error instanceof Error)) return { message: "" };
+  return {
+    code: "code" in error && typeof error.code === "string" ? error.code : undefined,
+    constraint:
+      "constraint" in error && typeof error.constraint === "string" ? error.constraint : undefined,
+    message: error.message,
+  };
 }
 
 function scopeColumns(scope: RescheduleScope) {

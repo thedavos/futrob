@@ -1,4 +1,9 @@
-import type { ScheduleChangeProposal, ScheduleChangeRequest } from "@futrob/scheduling";
+import {
+  ActiveScheduleChangeRequestExists,
+  ScheduleChangeRequestIdempotencyConflict,
+  type ScheduleChangeProposal,
+  type ScheduleChangeRequest,
+} from "@futrob/scheduling";
 import {
   asActorId,
   asCompetitionId,
@@ -104,10 +109,28 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
 
     await expect(
       repository.save(request({ id: "req-2", idempotencyKey: "idem-1" })),
-    ).rejects.toThrow(/unique/);
+    ).rejects.toBeInstanceOf(ScheduleChangeRequestIdempotencyConflict);
     await expect(repository.findByIdempotencyKey(organizationId, "idem-1")).resolves.toMatchObject({
       id: "req-1",
     });
+  });
+
+  it("rejects the same organization idempotency key on a different Encounter as a domain conflict", async () => {
+    const repository = new InMemoryScheduleChangeRequestRepository();
+    await repository.save(request({ id: "req-1", idempotencyKey: "idem-shared" }));
+
+    await expect(
+      repository.save(
+        request({
+          id: "req-2",
+          idempotencyKey: "idem-shared",
+          encounterId: asEncounterId("encounter-2"),
+        }),
+      ),
+    ).rejects.toBeInstanceOf(ScheduleChangeRequestIdempotencyConflict);
+    await expect(
+      repository.findByIdempotencyKey(organizationId, "idem-shared"),
+    ).resolves.toMatchObject({ id: "req-1", encounterId });
   });
 
   it("allows compatible OfficialMatch slots and rejects entire-Encounter overlap", async () => {
@@ -137,7 +160,7 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
           scope: { type: "entire_encounter" },
         }),
       ),
-    ).rejects.toThrow(/unique/);
+    ).rejects.toBeInstanceOf(ActiveScheduleChangeRequestExists);
     await expect(
       repository.save(
         request({
@@ -146,7 +169,7 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
           scope: { type: "official_match", officialSlot: 1 },
         }),
       ),
-    ).rejects.toThrow(/unique/);
+    ).rejects.toBeInstanceOf(ActiveScheduleChangeRequestExists);
   });
 
   it("releases the active mutex when the request is no longer open", async () => {

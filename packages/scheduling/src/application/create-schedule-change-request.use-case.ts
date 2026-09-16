@@ -89,173 +89,191 @@ export class CreateScheduleChangeRequestUseCase {
     if (interpreted.isErr()) return err(interpreted.error);
     const proposedStartAt = interpreted.value;
 
-    return this.deps.transaction.runInTransaction(() =>
-      this.deps.mutationLock.runExclusive(input.encounterId, async () => {
-        const encounter = await this.deps.encounters.findById(input.encounterId);
-        if (
-          !encounter ||
-          encounter.organizationId !== input.organizationId ||
-          encounter.competitionId !== input.competitionId
-        ) {
-          return err(
-            new ScheduleChangeRequestNotFound({
-              code: "scheduling.schedule_change_encounter_not_found",
-              message: "Encounter not found",
-              encounterId: input.encounterId,
-            }),
+    try {
+      return await this.deps.transaction.runInTransaction(() =>
+        this.deps.mutationLock.runExclusive(input.encounterId, async () => {
+          const encounter = await this.deps.encounters.findById(input.encounterId);
+          if (
+            !encounter ||
+            encounter.organizationId !== input.organizationId ||
+            encounter.competitionId !== input.competitionId
+          ) {
+            return err(
+              new ScheduleChangeRequestNotFound({
+                code: "scheduling.schedule_change_encounter_not_found",
+                message: "Encounter not found",
+                encounterId: input.encounterId,
+              }),
+            );
+          }
+
+          const authorization = await this.deps.authorization.decide({
+            actorId: input.actorId,
+            permission: ENCOUNTER_PERMISSION.rescheduleRequest,
+            scope: {
+              organizationId: encounter.organizationId,
+              competitionId: encounter.competitionId,
+              encounterId: encounter.encounterId,
+            },
+          });
+          if (!authorization.allowed) {
+            return err(
+              new ScheduleChangeRequestForbidden({
+                code: "authorization.forbidden",
+                message: "The actor cannot request a schedule change for this Encounter",
+                permission: ENCOUNTER_PERMISSION.rescheduleRequest,
+              }),
+            );
+          }
+
+          if (
+            input.requestingTeamId !== encounter.homeTeamId &&
+            input.requestingTeamId !== encounter.awayTeamId
+          ) {
+            return err(invalidRequest("The requesting Team is not part of this Encounter"));
+          }
+
+          const replay = await this.deps.requests.findByIdempotencyKey(
+            input.organizationId,
+            idempotencyKey,
           );
-        }
+          if (replay) {
+            if (matchesReplay(replay, input, proposedStartAt)) return ok(replay);
+            return err(
+              new ScheduleChangeRequestIdempotencyConflict({
+                code: "scheduling.schedule_change_idempotency_conflict",
+                message: "The idempotency key was already used with a different request",
+              }),
+            );
+          }
 
-        const authorization = await this.deps.authorization.decide({
-          actorId: input.actorId,
-          permission: ENCOUNTER_PERMISSION.rescheduleRequest,
-          scope: {
-            organizationId: encounter.organizationId,
-            competitionId: encounter.competitionId,
-            encounterId: encounter.encounterId,
-          },
-        });
-        if (!authorization.allowed) {
-          return err(
-            new ScheduleChangeRequestForbidden({
-              code: "authorization.forbidden",
-              message: "The actor cannot request a schedule change for this Encounter",
-              permission: ENCOUNTER_PERMISSION.rescheduleRequest,
-            }),
+          const activeRequests = await this.deps.requests.listActiveByEncounter(
+            input.organizationId,
+            input.encounterId,
           );
-        }
-
-        if (
-          input.requestingTeamId !== encounter.homeTeamId &&
-          input.requestingTeamId !== encounter.awayTeamId
-        ) {
-          return err(invalidRequest("The requesting Team is not part of this Encounter"));
-        }
-
-        const replay = await this.deps.requests.findByIdempotencyKey(
-          input.organizationId,
-          idempotencyKey,
-        );
-        if (replay) {
-          if (matchesReplay(replay, input, proposedStartAt)) return ok(replay);
-          return err(
-            new ScheduleChangeRequestIdempotencyConflict({
-              code: "scheduling.schedule_change_idempotency_conflict",
-              message: "The idempotency key was already used with a different request",
-            }),
+          const conflictingRequest = activeRequests.find((request) =>
+            rescheduleScopesConflict(request.scope, input.scope),
           );
-        }
+          if (conflictingRequest) {
+            return err(
+              new ActiveScheduleChangeRequestExists({
+                code: "scheduling.active_schedule_change_request_exists",
+                message: "This schedule scope already has an active change request",
+                encounterId: input.encounterId,
+                activeRequestId: conflictingRequest.id,
+              }),
+            );
+          }
 
-        const activeRequests = await this.deps.requests.listActiveByEncounter(
-          input.organizationId,
-          input.encounterId,
-        );
-        const conflictingRequest = activeRequests.find((request) =>
-          rescheduleScopesConflict(request.scope, input.scope),
-        );
-        if (conflictingRequest) {
-          return err(
-            new ActiveScheduleChangeRequestExists({
-              code: "scheduling.active_schedule_change_request_exists",
-              message: "This schedule scope already has an active change request",
-              encounterId: input.encounterId,
-              activeRequestId: conflictingRequest.id,
-            }),
-          );
-        }
+          const competitionRules = await this.deps.rules.getRules({
+            organizationId: input.organizationId,
+            competitionId: input.competitionId,
+          });
+          if (!competitionRules.allowRescheduling) {
+            return err(
+              new ReschedulingDisabled({
+                code: "scheduling.rescheduling_disabled",
+                message: "Rescheduling is disabled for this competition",
+              }),
+            );
+          }
 
-        const competitionRules = await this.deps.rules.getRules({
-          organizationId: input.organizationId,
-          competitionId: input.competitionId,
-        });
-        if (!competitionRules.allowRescheduling) {
-          return err(
-            new ReschedulingDisabled({
-              code: "scheduling.rescheduling_disabled",
-              message: "Rescheduling is disabled for this competition",
-            }),
-          );
-        }
-
-        const appliedReschedules = await this.deps.rules.countAppliedReschedules({
-          organizationId: input.organizationId,
-          competitionId: input.competitionId,
-          encounterId: input.encounterId,
-          teamId: input.requestingTeamId,
-        });
-        if (appliedReschedules >= competitionRules.maxReschedulesPerTeam) {
-          return err(
-            new RescheduleLimitReached({
-              code: "scheduling.reschedule_limit_reached",
-              message: "The requesting Team has reached its reschedule limit for this Encounter",
-              teamId: input.requestingTeamId,
-              limit: competitionRules.maxReschedulesPerTeam,
-            }),
-          );
-        }
-
-        if (
-          !(await this.deps.editGuard.canRequestScheduleChange({
+          const appliedReschedules = await this.deps.rules.countAppliedReschedules({
             organizationId: input.organizationId,
             competitionId: input.competitionId,
             encounterId: input.encounterId,
-            scope: input.scope,
-          }))
-        ) {
-          return err(
-            new EncounterNotEditableForScheduleChange({
-              code: "scheduling.encounter_not_editable_for_schedule_change",
-              message:
-                "The requested scope has a protected slot, selection, or approved result and cannot be rescheduled",
+            teamId: input.requestingTeamId,
+          });
+          if (appliedReschedules >= competitionRules.maxReschedulesPerTeam) {
+            return err(
+              new RescheduleLimitReached({
+                code: "scheduling.reschedule_limit_reached",
+                message: "The requesting Team has reached its reschedule limit for this Encounter",
+                teamId: input.requestingTeamId,
+                limit: competitionRules.maxReschedulesPerTeam,
+              }),
+            );
+          }
+
+          if (
+            !(await this.deps.editGuard.canRequestScheduleChange({
+              organizationId: input.organizationId,
+              competitionId: input.competitionId,
               encounterId: input.encounterId,
-            }),
-          );
-        }
+              scope: input.scope,
+            }))
+          ) {
+            return err(
+              new EncounterNotEditableForScheduleChange({
+                code: "scheduling.encounter_not_editable_for_schedule_change",
+                message:
+                  "The requested scope has a protected slot, selection, or approved result and cannot be rescheduled",
+                encounterId: input.encounterId,
+              }),
+            );
+          }
 
-        const now = this.deps.clock.now();
-        const created = createInitialScheduleChangeRequest({
-          requestId: this.deps.ids.generate(),
-          proposalId: this.deps.ids.generate(),
-          organizationId: input.organizationId,
-          competitionId: input.competitionId,
-          encounterId: input.encounterId,
-          homeTeamId: encounter.homeTeamId,
-          awayTeamId: encounter.awayTeamId,
-          officialMatchCount: encounter.officialMatchCount,
-          currentStartAt: encounter.scheduledStartAt,
-          requestingTeamId: input.requestingTeamId,
-          initiatedByActorId: input.actorId,
-          scope: input.scope,
-          proposedStartAt,
-          reason: input.reason,
-          idempotencyKey,
-          now,
-        });
-        if (created.isErr()) return err(created.error);
+          const now = this.deps.clock.now();
+          const created = createInitialScheduleChangeRequest({
+            requestId: this.deps.ids.generate(),
+            proposalId: this.deps.ids.generate(),
+            organizationId: input.organizationId,
+            competitionId: input.competitionId,
+            encounterId: input.encounterId,
+            homeTeamId: encounter.homeTeamId,
+            awayTeamId: encounter.awayTeamId,
+            officialMatchCount: encounter.officialMatchCount,
+            currentStartAt: encounter.scheduledStartAt,
+            requestingTeamId: input.requestingTeamId,
+            initiatedByActorId: input.actorId,
+            scope: input.scope,
+            proposedStartAt,
+            reason: input.reason,
+            idempotencyKey,
+            now,
+          });
+          if (created.isErr()) return err(created.error);
 
-        const saved = await this.deps.requests.save(created.value);
-        const initialProposal = saved.proposals[0];
-        const event: RescheduleRequestedEvent = {
-          eventName: "scheduling.reschedule-requested",
-          occurredAt: saved.createdAt.toISOString(),
-          correlationId: saved.id,
-          payload: {
-            requestId: saved.id,
-            proposalId: initialProposal.id,
-            organizationId: saved.organizationId,
-            competitionId: saved.competitionId,
-            encounterId: saved.encounterId,
-            requestingTeamId: saved.requestingTeamId,
-            scope: saved.scope,
-            proposedStartAt: initialProposal.proposedStartAt.toISOString(),
-            initiatedByActorId: saved.initiatedByActorId,
-          },
-        };
-        await this.deps.eventPublisher.publish(event);
-        return ok(saved);
-      }),
-    );
+          const saved = await this.deps.requests.save(created.value);
+          const initialProposal = saved.proposals[0];
+          const event: RescheduleRequestedEvent = {
+            eventName: "scheduling.reschedule-requested",
+            occurredAt: saved.createdAt.toISOString(),
+            correlationId: saved.id,
+            payload: {
+              requestId: saved.id,
+              proposalId: initialProposal.id,
+              organizationId: saved.organizationId,
+              competitionId: saved.competitionId,
+              encounterId: saved.encounterId,
+              requestingTeamId: saved.requestingTeamId,
+              scope: saved.scope,
+              proposedStartAt: initialProposal.proposedStartAt.toISOString(),
+              initiatedByActorId: saved.initiatedByActorId,
+            },
+          };
+          await this.deps.eventPublisher.publish(event);
+          return ok(saved);
+        }),
+      );
+    } catch (error) {
+      if (isScheduleChangeRequestSaveConflict(error)) return err(error);
+      throw error;
+    }
   }
+}
+
+function isScheduleChangeRequestSaveConflict(
+  error: unknown,
+): error is
+  | ScheduleChangeRequestIdempotencyConflict
+  | ActiveScheduleChangeRequestExists
+  | ScheduleChangeRequestNotFound {
+  return (
+    error instanceof ScheduleChangeRequestIdempotencyConflict ||
+    error instanceof ActiveScheduleChangeRequestExists ||
+    error instanceof ScheduleChangeRequestNotFound
+  );
 }
 
 function invalidRequest(message: string): InvalidScheduleChangeRequest {

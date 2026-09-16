@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import type { ScheduleChangeRequest } from "@futrob/scheduling";
+import {
+  ScheduleChangeRequestIdempotencyConflict,
+  ScheduleChangeRequestNotFound,
+  type ScheduleChangeRequest,
+} from "@futrob/scheduling";
 import {
   asActorId,
   asCompetitionId,
@@ -11,6 +15,7 @@ import {
 } from "@futrob/shared-kernel";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { Pool, type PoolClient } from "pg";
+import { PostgresEncounterScheduleRepository } from "./encounter-schedule.repository.ts";
 import { PostgresScheduleChangeRequestRepository } from "./schedule-change-request.repository.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -22,6 +27,8 @@ const otherOrganizationId = asOrganizationId("org-b");
 const competitionId = asCompetitionId("comp-a");
 const otherCompetitionId = asCompetitionId("comp-b");
 const encounterId = asEncounterId("encounter-1");
+const secondEncounterId = asEncounterId("encounter-2");
+const otherOrgEncounterId = asEncounterId("encounter-org-b-1");
 const homeTeamId = asTeamId("team-home-a");
 const awayTeamId = asTeamId("team-away-a");
 const otherHomeTeamId = asTeamId("team-home-b");
@@ -54,6 +61,16 @@ suite("0037 schedule change requests migration", () => {
         "schedule_change_proposals",
         "schedule_change_requests",
       ]);
+      const foreignKeys = await client.query(
+        `SELECT constraint_name FROM information_schema.table_constraints
+         WHERE table_schema = current_schema()
+           AND table_name = 'schedule_change_requests'
+           AND constraint_type = 'FOREIGN KEY'
+         ORDER BY constraint_name`,
+      );
+      expect(foreignKeys.rows.map((row) => row.constraint_name)).toEqual(
+        expect.arrayContaining(["schedule_change_requests_encounter_snapshot_fkey"]),
+      );
     });
   });
 
@@ -77,7 +94,7 @@ suite("0037 schedule change requests migration", () => {
           id: "req-a-duplicate-key",
           organizationId,
           competitionId,
-          encounterId: asEncounterId("encounter-2"),
+          encounterId: secondEncounterId,
           teamId: awayTeamId,
           scopeType: "entire_encounter",
           officialSlot: null,
@@ -90,7 +107,7 @@ suite("0037 schedule change requests migration", () => {
           id: "req-b",
           organizationId: otherOrganizationId,
           competitionId: otherCompetitionId,
-          encounterId,
+          encounterId: otherOrgEncounterId,
           teamId: otherHomeTeamId,
           scopeType: "entire_encounter",
           officialSlot: null,
@@ -168,6 +185,7 @@ suite("0037 schedule change requests migration", () => {
         id: "req-b",
         organizationId: otherOrganizationId,
         competitionId: otherCompetitionId,
+        encounterId: otherOrgEncounterId,
         idempotencyKey: "idem-a",
         teamId: otherHomeTeamId,
       });
@@ -184,7 +202,7 @@ suite("0037 schedule change requests migration", () => {
         home,
       ]);
       await expect(
-        repository.listActiveByEncounter(otherOrganizationId, encounterId),
+        repository.listActiveByEncounter(otherOrganizationId, otherOrgEncounterId),
       ).resolves.toEqual([away]);
 
       const [homeProposal] = home.proposals;
@@ -206,12 +224,93 @@ suite("0037 schedule change requests migration", () => {
       ).resolves.toBe(1);
     });
   });
+
+  it("maps a reused organization idempotency key on a different Encounter to a domain conflict", async () => {
+    await withPool(async (pool) => {
+      const repository = new PostgresScheduleChangeRequestRepository(pool);
+      await repository.save(
+        adapterRequest({
+          id: "req-first",
+          organizationId,
+          competitionId,
+          encounterId,
+          idempotencyKey: "idem-shared",
+          teamId: homeTeamId,
+        }),
+      );
+
+      await expect(
+        repository.save(
+          adapterRequest({
+            id: "req-second-encounter",
+            organizationId,
+            competitionId,
+            encounterId: secondEncounterId,
+            idempotencyKey: "idem-shared",
+            teamId: awayTeamId,
+          }),
+        ),
+      ).rejects.toBeInstanceOf(ScheduleChangeRequestIdempotencyConflict);
+      await expect(
+        repository.findByIdempotencyKey(organizationId, "idem-shared"),
+      ).resolves.toMatchObject({ id: "req-first", encounterId });
+    });
+  });
+
+  it("refuses to save an open request without an encounter snapshot", async () => {
+    await withPool(async (pool) => {
+      const repository = new PostgresScheduleChangeRequestRepository(pool);
+      const missingEncounterId = asEncounterId("missing-encounter");
+      await expect(
+        repository.save(
+          adapterRequest({
+            id: "req-orphan",
+            organizationId,
+            competitionId,
+            encounterId: missingEncounterId,
+            idempotencyKey: "idem-orphan",
+            teamId: homeTeamId,
+          }),
+        ),
+      ).rejects.toBeInstanceOf(ScheduleChangeRequestNotFound);
+      await expect(
+        repository.findByIdempotencyKey(organizationId, "idem-orphan"),
+      ).resolves.toBeNull();
+    });
+  });
+
+  it("cascades open requests when the encounter snapshot is deleted", async () => {
+    await withPool(async (pool) => {
+      const repository = new PostgresScheduleChangeRequestRepository(pool);
+      const encounters = new PostgresEncounterScheduleRepository(pool);
+      await repository.save(
+        adapterRequest({
+          id: "req-open",
+          organizationId,
+          competitionId,
+          encounterId,
+          idempotencyKey: "idem-open",
+          teamId: homeTeamId,
+        }),
+      );
+
+      await encounters.deleteByEncounterIds([encounterId]);
+
+      await expect(
+        repository.findByIdempotencyKey(organizationId, "idem-open"),
+      ).resolves.toBeNull();
+      await expect(repository.listActiveByEncounter(organizationId, encounterId)).resolves.toEqual(
+        [],
+      );
+    });
+  });
 });
 
 function adapterRequest(input: {
   readonly id: string;
   readonly organizationId: ReturnType<typeof asOrganizationId>;
   readonly competitionId: ReturnType<typeof asCompetitionId>;
+  readonly encounterId?: ReturnType<typeof asEncounterId>;
   readonly idempotencyKey: string;
   readonly teamId: ReturnType<typeof asTeamId>;
 }): ScheduleChangeRequest {
@@ -219,7 +318,7 @@ function adapterRequest(input: {
     id: input.id,
     organizationId: input.organizationId,
     competitionId: input.competitionId,
-    encounterId,
+    encounterId: input.encounterId ?? encounterId,
     requestingTeamId: input.teamId,
     initiatedByActorId: actorId,
     scope: { type: "entire_encounter" },
@@ -283,6 +382,53 @@ async function seedTenants(client: PoolClient): Promise<void> {
   await insertTeam(client, awayTeamId, organizationId, "Away A");
   await insertTeam(client, otherHomeTeamId, otherOrganizationId, "Home B");
   await insertTeam(client, otherAwayTeamId, otherOrganizationId, "Away B");
+  await insertSnapshot(client, {
+    encounterId,
+    organizationId,
+    competitionId,
+    homeTeamId,
+    awayTeamId,
+  });
+  await insertSnapshot(client, {
+    encounterId: secondEncounterId,
+    organizationId,
+    competitionId,
+    homeTeamId,
+    awayTeamId,
+  });
+  await insertSnapshot(client, {
+    encounterId: otherOrgEncounterId,
+    organizationId: otherOrganizationId,
+    competitionId: otherCompetitionId,
+    homeTeamId: otherHomeTeamId,
+    awayTeamId: otherAwayTeamId,
+  });
+}
+
+async function insertSnapshot(
+  client: PoolClient,
+  input: {
+    readonly encounterId: string;
+    readonly organizationId: string;
+    readonly competitionId: string;
+    readonly homeTeamId: string;
+    readonly awayTeamId: string;
+  },
+): Promise<void> {
+  await client.query(
+    `INSERT INTO encounter_schedule_snapshots (
+       encounter_id, organization_id, competition_id, home_team_id, away_team_id,
+       scheduled_start_at, official_match_count
+     ) VALUES ($1, $2, $3, $4, $5, $6, 2)`,
+    [
+      input.encounterId,
+      input.organizationId,
+      input.competitionId,
+      input.homeTeamId,
+      input.awayTeamId,
+      now.toISOString(),
+    ],
+  );
 }
 
 async function insertOrganization(client: PoolClient, id: string, name: string): Promise<void> {

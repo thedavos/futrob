@@ -16,7 +16,11 @@ CREATE TABLE IF NOT EXISTS schedule_change_requests (
   idempotency_key TEXT NOT NULL CHECK (char_length(btrim(idempotency_key)) > 0),
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
-  UNIQUE (id, organization_id)
+  UNIQUE (id, organization_id),
+  CONSTRAINT schedule_change_requests_encounter_snapshot_fkey
+    FOREIGN KEY (encounter_id, organization_id, competition_id)
+    REFERENCES encounter_schedule_snapshots (encounter_id, organization_id, competition_id)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS schedule_change_proposals (
@@ -53,6 +57,6 @@ CREATE INDEX IF NOT EXISTS schedule_change_proposals_request_index
   ON schedule_change_proposals (organization_id, request_id, proposal_order);
 
 COMMENT ON TABLE schedule_change_requests IS
-  'ScheduleChangeRequest aggregate root. Active uniqueness is per Encounter with entire vs OfficialMatch slot compatibility.';
+  'ScheduleChangeRequest aggregate root. Active uniqueness is per Encounter with entire vs OfficialMatch slot compatibility. encounter_id is bound to encounter_schedule_snapshots so unproject cannot leave an open mutex.';
 COMMENT ON TABLE schedule_change_proposals IS
   'Ordered ScheduleChangeProposal history. The last row by proposal_order is the current proposal.';
