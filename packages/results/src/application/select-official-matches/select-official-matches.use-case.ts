@@ -13,8 +13,10 @@ import {
 import type { ExternalReference } from "@futrob/game-data";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
 import type { OfficialMatchSelectionRepository } from "../../domain/ports/official-result.repository.ts";
 import {
+  CandidateNotAssociated,
   DuplicateProviderMatch,
   EncounterNotFound,
   InvalidSelection,
@@ -37,6 +39,7 @@ export class SelectOfficialMatchesUseCase {
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
       readonly selections: OfficialMatchSelectionRepository;
+      readonly associations: EncounterCandidateAssociationRepository;
       readonly eventPublisher: EventPublisherPort;
       readonly authorization: AuthorizationPort;
       readonly ids: IdGeneratorPort;
@@ -107,17 +110,39 @@ export class SelectOfficialMatchesUseCase {
       proposedAt: this.deps.clock.now(),
     };
 
-    const saved = await this.deps.selections.save(selection);
-    await this.deps.eventPublisher.publish({
-      eventName: "results.official-matches-selected",
-      occurredAt: this.deps.clock.now().toISOString(),
-      payload: {
-        encounterId: input.encounterId,
-        organizationId: encounter.organizationId,
-        competitionId: encounter.competitionId,
-        selectionId: saved.id,
-      },
-    });
-    return ok(saved);
+    const persisted = await this.deps.associations.writeIfEligible(
+      encounter.organizationId,
+      encounter.encounterId,
+      refs,
+      () => this.deps.selections.save(selection),
+    );
+    switch (persisted.status) {
+      case "ineligible":
+        return err(
+          new CandidateNotAssociated({
+            code: "results.candidate_not_associated",
+            message: "Official selection requires an eligible associated candidate",
+            providerKey: persisted.providerMatchRef.providerKey,
+            externalId: persisted.providerMatchRef.externalId,
+          }),
+        );
+      case "wrote": {
+        await this.deps.eventPublisher.publish({
+          eventName: "results.official-matches-selected",
+          occurredAt: this.deps.clock.now().toISOString(),
+          payload: {
+            encounterId: input.encounterId,
+            organizationId: encounter.organizationId,
+            competitionId: encounter.competitionId,
+            selectionId: persisted.value.id,
+          },
+        });
+        return ok(persisted.value);
+      }
+      default: {
+        const _exhaustive: never = persisted;
+        return _exhaustive;
+      }
+    }
   }
 }

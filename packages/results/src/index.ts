@@ -19,6 +19,13 @@ export type {
   CandidateMatchReadResult,
   ProviderMatchReaderPort,
 } from "./domain/ports/provider-match-reader.port.ts";
+export type { EncounterCandidateAssociation } from "./domain/entities/encounter-candidate-association.ts";
+export type {
+  EncounterCandidateAssociationRepository,
+  EncounterCandidateSetSnapshot,
+  ReplaceEncounterCandidatesResult,
+  WriteIfEligibleResult,
+} from "./domain/ports/encounter-candidate-association.repository.ts";
 export type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -37,6 +44,7 @@ export {
   InvalidSelection,
   OfficialSelectionForbidden,
   DuplicateProviderMatch,
+  CandidateNotAssociated,
   type SelectOfficialMatchesError,
 } from "./domain/errors/select-official-matches.errors.ts";
 export {
@@ -53,6 +61,16 @@ export {
   type ApproveOfficialResultError,
   type VoidOfficialResultError,
 } from "./domain/errors/official-result.errors.ts";
+export {
+  AssociateEncounterCandidatesUseCase,
+  type AssociateEncounterCandidatesError,
+  type AssociateEncounterCandidatesInput,
+  type AssociateEncounterCandidatesOutput,
+} from "./application/associate-encounter-candidates/associate-encounter-candidates.use-case.ts";
+export {
+  RecalculateEncounterCandidatesUseCase,
+  type RecalculateEncounterCandidatesInput,
+} from "./application/recalculate-encounter-candidates/recalculate-encounter-candidates.use-case.ts";
 export {
   ListEncounterCandidatesUseCase,
   type EncounterCandidateSummary,

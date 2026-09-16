@@ -1,8 +1,11 @@
 import { Effect } from "effect";
 import {
+  AssociateEncounterCandidatesUseCase,
   ConfirmOfficialSelectionUseCase,
   SelectOfficialMatchesUseCase,
   asEncounterStageId,
+  type EncounterCandidateAssociation,
+  type EncounterCandidateAssociationRepository,
   type OfficialMatchSelection,
   type OfficialResult,
   type OfficialResultRepository,
@@ -26,6 +29,7 @@ import type {
   IdGeneratorPort,
 } from "@futrob/shared-kernel";
 import type { ExternalReference, ProviderMatch } from "@futrob/game-data";
+import { externalReferenceKey } from "@futrob/game-data";
 import { print, printJson } from "../lib/print.ts";
 
 const ORG = asOrganizationId("org_smoke");
@@ -155,6 +159,105 @@ async function smoke(): Promise<number> {
     findLatestByEncounter: () => Promise.resolve(savedSelection),
   };
 
+  const associations = new (class implements EncounterCandidateAssociationRepository {
+    rows: EncounterCandidateAssociation[] = [];
+    private generation = 0;
+
+    async loadForEncounter(
+      organizationId: EncounterCandidateAssociation["organizationId"],
+      encounterId: EncounterCandidateAssociation["encounterId"],
+    ) {
+      return {
+        associations: await this.listByEncounter(organizationId, encounterId),
+        generation: this.generation,
+      };
+    }
+
+    async replaceForEncounter(
+      organizationId: EncounterCandidateAssociation["organizationId"],
+      encounterId: EncounterCandidateAssociation["encounterId"],
+      rows: readonly EncounterCandidateAssociation[],
+      expectedGeneration: number,
+    ) {
+      if (expectedGeneration !== this.generation) {
+        return { status: "conflict" as const, generation: this.generation };
+      }
+      this.rows = this.rows.filter(
+        (row) => row.organizationId !== organizationId || row.encounterId !== encounterId,
+      );
+      this.rows.push(...rows);
+      this.generation += 1;
+      return { status: "replaced" as const, associations: rows, generation: this.generation };
+    }
+
+    async listByEncounter(
+      organizationId: EncounterCandidateAssociation["organizationId"],
+      encounterId: EncounterCandidateAssociation["encounterId"],
+    ) {
+      return this.rows.filter(
+        (row) => row.organizationId === organizationId && row.encounterId === encounterId,
+      );
+    }
+
+    async findByRef(
+      organizationId: EncounterCandidateAssociation["organizationId"],
+      encounterId: EncounterCandidateAssociation["encounterId"],
+      providerMatchRef: ExternalReference,
+    ) {
+      const key = externalReferenceKey(providerMatchRef);
+      return (
+        this.rows.find(
+          (row) =>
+            row.organizationId === organizationId &&
+            row.encounterId === encounterId &&
+            externalReferenceKey(row.providerMatchRef) === key,
+        ) ?? null
+      );
+    }
+
+    async writeIfEligible<T>(
+      organizationId: EncounterCandidateAssociation["organizationId"],
+      encounterId: EncounterCandidateAssociation["encounterId"],
+      requiredRefs: readonly ExternalReference[],
+      write: () => Promise<T>,
+    ) {
+      for (const providerMatchRef of requiredRefs) {
+        const association = await this.findByRef(organizationId, encounterId, providerMatchRef);
+        if (!association || !association.eligible) {
+          return { status: "ineligible" as const, providerMatchRef };
+        }
+      }
+      return { status: "wrote" as const, value: await write() };
+    }
+  })();
+
+  const associate = new AssociateEncounterCandidatesUseCase({
+    encounterReader,
+    providerMatches,
+    associations,
+    clock,
+  });
+  const associated = await associate.execute({
+    organizationId: ORG,
+    encounterId: ENCOUNTER,
+  });
+  if (!associated.isOk() || associated.value.status !== "associated") {
+    print(
+      `associate falló: ${JSON.stringify(associated.isOk() ? associated.value : associated.error)}`,
+    );
+    return 1;
+  }
+
+  const select = new SelectOfficialMatchesUseCase({
+    encounterReader,
+    selections,
+    associations,
+    eventPublisher,
+    authorization,
+    ids,
+    clock,
+  });
+
   const resultsById = new Map<string, OfficialResult>();
   const results: OfficialResultRepository = {
     save: (result) => {
@@ -176,15 +279,6 @@ async function smoke(): Promise<number> {
     listByCompetition: () => Promise.resolve([...resultsById.values()]),
     listByEncounter: () => Promise.resolve([...resultsById.values()]),
   };
-
-  const select = new SelectOfficialMatchesUseCase({
-    encounterReader,
-    selections,
-    eventPublisher,
-    authorization,
-    ids,
-    clock,
-  });
 
   const selected = await select.execute({
     actorId: OPPONENT,
