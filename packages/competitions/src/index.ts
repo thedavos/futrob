@@ -20,6 +20,11 @@ export {
   COMPETITION_PERMISSIONS,
   COMPETITION_ROLE_PERMISSIONS,
 } from "./domain/policies/competition-permissions.ts";
+export {
+  selectStageMatchRules,
+  type CompetitionStageBand,
+} from "./domain/policies/select-stage-match-rules.ts";
+
 export type {
   CompetitionDraft,
   CompetitionRepository,
