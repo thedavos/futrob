@@ -13,8 +13,10 @@ import {
 import type { ExternalReference } from "@futrob/game-data";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
 import type { OfficialMatchSelectionRepository } from "../../domain/ports/official-result.repository.ts";
 import {
+  CandidateNotAssociated,
   DuplicateProviderMatch,
   EncounterNotFound,
   InvalidSelection,
@@ -37,6 +39,7 @@ export class SelectOfficialMatchesUseCase {
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
       readonly selections: OfficialMatchSelectionRepository;
+      readonly associations: EncounterCandidateAssociationRepository;
       readonly eventPublisher: EventPublisherPort;
       readonly authorization: AuthorizationPort;
       readonly ids: IdGeneratorPort;
@@ -96,6 +99,24 @@ export class SelectOfficialMatchesUseCase {
           message: "The same provider match cannot fill two official slots",
         }),
       );
+    }
+
+    for (const providerMatchRef of refs) {
+      const association = await this.deps.associations.findByRef(
+        encounter.organizationId,
+        encounter.encounterId,
+        providerMatchRef,
+      );
+      if (!association || !association.eligible) {
+        return err(
+          new CandidateNotAssociated({
+            code: "results.candidate_not_associated",
+            message: "Official selection requires an eligible associated candidate",
+            providerKey: providerMatchRef.providerKey,
+            externalId: providerMatchRef.externalId,
+          }),
+        );
+      }
     }
 
     const selection: OfficialMatchSelection = {
