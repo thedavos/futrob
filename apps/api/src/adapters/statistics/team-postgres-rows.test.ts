@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import {
-  rehydrateTeamContribution,
-  rehydrateTeamContributions,
-  type TeamContributionRow,
-} from "./team-postgres-rows.ts";
+import { contributionRow, twoSlotSeriesRows } from "./team-contribution-row.fixture.ts";
+import { rehydrateTeamContribution, rehydrateTeamContributions } from "./team-postgres-rows.ts";
 
 describe("rehydrateTeamContribution", () => {
   it("prefers a resolution_mode column over the id suffix", () => {
@@ -28,64 +25,48 @@ describe("rehydrateTeamContribution", () => {
     ).toBe("aggregate_score");
   });
 
-  it("defaults a single-slot pre-PR row to independent_matches", () => {
+  it("uses frozen id suffix over a historical stage fallback", () => {
+    expect(
+      rehydrateTeamContribution(
+        contributionRow({
+          id: "result-1:1:1:home:independent_matches",
+          resolution_mode: null,
+        }),
+        "aggregate_score",
+      ).resolutionMode,
+    ).toBe("independent_matches");
+  });
+
+  it("uses encounter stage rules when a pre-PR row has no frozen mode", () => {
     expect(
       rehydrateTeamContribution(
         contributionRow({
           id: "result-1:1:1:home",
           resolution_mode: null,
         }),
+        "independent_matches",
       ).resolutionMode,
     ).toBe("independent_matches");
+  });
+
+  it("fails when a pre-PR row has no frozen mode and no encounter stage rules", () => {
+    expect(() =>
+      rehydrateTeamContribution(
+        contributionRow({
+          id: "result-1:1:1:home",
+          resolution_mode: null,
+        }),
+      ),
+    ).toThrow(/missing frozen resolutionMode and encounter stage rules/);
   });
 });
 
 describe("rehydrateTeamContributions", () => {
-  it("keeps independent_matches for pre-PR two-slot encounters", () => {
-    const contributions = rehydrateTeamContributions([
-      contributionRow({
-        id: "result-league:1:1:home",
-        encounter_id: "encounter-two-slot",
-        official_slot: 1,
-        side: "home",
-        team_id: "home-team",
-        goals_for: 1,
-        goals_against: 0,
-        resolution_mode: null,
-      }),
-      contributionRow({
-        id: "result-league:1:2:home",
-        encounter_id: "encounter-two-slot",
-        official_slot: 2,
-        side: "home",
-        team_id: "home-team",
-        goals_for: 0,
-        goals_against: 2,
-        resolution_mode: null,
-      }),
-      contributionRow({
-        id: "result-league:1:1:away",
-        encounter_id: "encounter-two-slot",
-        official_slot: 1,
-        side: "away",
-        team_id: "away-team",
-        external_club_id: "club-2",
-        goals_for: 0,
-        goals_against: 1,
-        resolution_mode: null,
-      }),
-      contributionRow({
-        id: "result-league:1:2:away",
-        encounter_id: "encounter-two-slot",
-        official_slot: 2,
-        side: "away",
-        team_id: "away-team",
-        external_club_id: "club-2",
-        goals_for: 2,
-        goals_against: 0,
-        resolution_mode: null,
-      }),
-    ]);
+  it("does not infer aggregate_score from slot 2 when stage rules are independent", () => {
+    const contributions = rehydrateTeamContributions(
+      twoSlotSeriesRows(),
+      new Map([["encounter-two-slot", "independent_matches"]]),
+    );
 
     expect(contributions.map((row) => row.resolutionMode)).toEqual([
       "independent_matches",
@@ -95,39 +76,3 @@ describe("rehydrateTeamContributions", () => {
     ]);
   });
 });
-
-function contributionRow(
-  input: Partial<TeamContributionRow> & Pick<TeamContributionRow, "id">,
-): TeamContributionRow {
-  return {
-    official_result_id: "result-1",
-    revision: 1,
-    encounter_id: "encounter-1",
-    competition_id: "competition-1",
-    organization_id: "organization-1",
-    official_slot: 1,
-    team_id: "home-team",
-    correlation_status: "matched",
-    side: "home",
-    external_club_id: "club-1",
-    goals_for: 1,
-    goals_against: 0,
-    platform: "playstation",
-    game_edition: "fc26",
-    minutes_played: 90,
-    goals: null,
-    assists: null,
-    shots: null,
-    pass_attempts: null,
-    passes_made: null,
-    tackle_attempts: null,
-    tackles_made: null,
-    saves: null,
-    yellow_cards: null,
-    red_cards: null,
-    is_mvp: null,
-    rating: null,
-    resolution_mode: null,
-    ...input,
-  };
-}

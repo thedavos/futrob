@@ -102,15 +102,23 @@ export interface RankingSnapshotRow {
 
 export function rehydrateTeamContributions(
   rows: readonly TeamContributionRow[],
+  historicalModeByEncounter: ReadonlyMap<string, StandingResolutionMode> = new Map(),
 ): TeamMatchContribution[] {
-  return rows.map((row) => rehydrateTeamContribution(row));
+  return rows.map((row) =>
+    rehydrateTeamContribution(row, historicalModeByEncounter.get(row.encounter_id)),
+  );
 }
 
 export function rehydrateTeamContribution(
   row: TeamContributionRow,
-  resolutionMode: StandingResolutionMode = encodedStandingResolutionMode(row) ??
-    "independent_matches",
+  historicalResolutionMode?: StandingResolutionMode,
 ): TeamMatchContribution {
+  const resolutionMode = encodedStandingResolutionMode(row) ?? historicalResolutionMode;
+  if (resolutionMode === undefined) {
+    throw new RangeError(
+      `Cannot rehydrate team contribution ${row.id}: missing frozen resolutionMode and encounter stage rules`,
+    );
+  }
   return {
     id: row.id,
     officialResultId: row.official_result_id,
@@ -214,7 +222,9 @@ function parseTeamSide(value: string): TeamMatchSide {
   throw new RangeError(`Invalid team match side: ${value}`);
 }
 
-function encodedStandingResolutionMode(row: TeamContributionRow): StandingResolutionMode | null {
+export function encodedStandingResolutionMode(
+  row: TeamContributionRow,
+): StandingResolutionMode | null {
   if (row.resolution_mode === "independent_matches" || row.resolution_mode === "aggregate_score") {
     return row.resolution_mode;
   }

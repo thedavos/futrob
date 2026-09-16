@@ -73,6 +73,7 @@ export {
   STATISTICS_PERMISSION,
   STATISTICS_PERMISSIONS,
 } from "./domain/policies/statistics-permissions.ts";
+export { buildCompetitionStandings } from "./domain/policies/build-competition-standings.ts";
 export {
   ProjectOfficialResultUseCase,
   type ProjectOfficialResultDependencies,

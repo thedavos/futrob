@@ -73,6 +73,7 @@ export function createStatisticsModule(deps: {
   transaction: TransactionPort;
   eventPublisher: EventPublisherPort;
 }): StatisticsModule {
+  const matchRules = new CompetitionsMatchRulesReader(deps.competitions);
   const contributions =
     deps.pool === null
       ? new InMemoryPlayerMatchContributionRepository()
@@ -88,7 +89,10 @@ export function createStatisticsModule(deps: {
   const teamContributions =
     deps.pool === null
       ? new InMemoryTeamMatchContributionRepository()
-      : new PostgresTeamMatchContributionRepository(deps.pool);
+      : new PostgresTeamMatchContributionRepository(deps.pool, {
+          encounterReader: deps.encounterReader,
+          matchRules,
+        });
   const teamCompetitionStats =
     deps.pool === null
       ? new InMemoryTeamCompetitionStatsRepository()
@@ -101,7 +105,6 @@ export function createStatisticsModule(deps: {
     deps.pool === null
       ? new InMemoryRankingSnapshotRepository()
       : new PostgresRankingSnapshotRepository(deps.pool);
-  const matchRules = new CompetitionsMatchRulesReader(deps.competitions);
   const identities = new TeamsPlayerIdentityResolver(deps.rosters, deps.accounts);
   const profiles = new TeamsPlayerProfileLookup(deps.profiles);
   const clock = new SystemClock();
