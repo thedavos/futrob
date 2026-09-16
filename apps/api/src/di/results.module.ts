@@ -1,8 +1,11 @@
 import {
+  AssociateEncounterCandidatesUseCase,
   ConfirmOfficialSelectionUseCase,
   ListEncounterCandidatesUseCase,
+  RecalculateEncounterCandidatesUseCase,
   SelectOfficialMatchesUseCase,
   VoidOfficialResultUseCase,
+  type EncounterCandidateAssociationRepository,
   type EncounterReaderPort,
   type OfficialMatchSelectionRepository,
   type OfficialResultReaderPort,
@@ -22,6 +25,7 @@ import {
   PostgresOfficialMatchSelectionRepository,
   PostgresOfficialResultRepository,
 } from "@/adapters/results/official-result.repository.ts";
+import { InMemoryEncounterCandidateAssociationRepository } from "@/adapters/results/encounter-candidate-association.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 
 export function createResultsModule(input: {
@@ -32,6 +36,7 @@ export function createResultsModule(input: {
   readonly providerMatches: ProviderMatchReaderPort;
   readonly results?: OfficialResultRepository;
   readonly selections?: OfficialMatchSelectionRepository;
+  readonly associations?: EncounterCandidateAssociationRepository;
   readonly clock?: ClockPort;
   readonly ids?: IdGeneratorPort;
 }) {
@@ -47,6 +52,8 @@ export function createResultsModule(input: {
     (input.pool
       ? new PostgresOfficialResultRepository(input.pool)
       : new InMemoryOfficialResultRepository());
+  const associations: EncounterCandidateAssociationRepository =
+    input.associations ?? new InMemoryEncounterCandidateAssociationRepository();
 
   const officialResultReader: OfficialResultReaderPort = {
     getApprovedByEncounter: (encounterId) => results.findApprovedByEncounter(encounterId),
@@ -58,15 +65,29 @@ export function createResultsModule(input: {
   return {
     selections,
     results,
+    associations,
     officialResultReader,
     listEncounterCandidates: new ListEncounterCandidatesUseCase({
       encounterReader: input.encounterReader,
       providerMatches: input.providerMatches,
       authorization: input.authorization,
     }),
+    associateEncounterCandidates: new AssociateEncounterCandidatesUseCase({
+      encounterReader: input.encounterReader,
+      providerMatches: input.providerMatches,
+      associations,
+      clock,
+    }),
+    recalculateEncounterCandidates: new RecalculateEncounterCandidatesUseCase({
+      encounterReader: input.encounterReader,
+      providerMatches: input.providerMatches,
+      associations,
+      clock,
+    }),
     selectOfficialMatches: new SelectOfficialMatchesUseCase({
       encounterReader: input.encounterReader,
       selections,
+      associations,
       eventPublisher: input.eventPublisher,
       authorization: input.authorization,
       ids,
