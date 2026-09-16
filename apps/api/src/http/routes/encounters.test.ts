@@ -108,10 +108,10 @@ describe("GET /api/v1/encounters/:encounterId/candidates", () => {
 
     const matches = new InMemoryProviderMatchRepository();
     await matches.upsertMany([
-      match("at-from", "2026-09-14T02:00:00.000Z"),
-      match("at-to-reversed", "2026-09-15T14:00:00.000Z", "club-away", "club-home"),
-      match("before", "2026-09-14T01:59:59.999Z"),
-      match("after", "2026-09-15T14:00:00.001Z"),
+      match("at-from", "2026-09-14T14:00:00.000Z"),
+      match("at-to-reversed", "2026-09-15T02:00:00.000Z", "club-away", "club-home"),
+      match("before", "2026-09-14T13:59:59.999Z"),
+      match("after", "2026-09-15T02:00:00.001Z"),
       match("other-club", "2026-09-14T20:00:00.000Z", "club-home", "club-other"),
       match("same-club", "2026-09-14T20:00:00.000Z", "club-home", "club-home"),
     ]);
@@ -161,8 +161,8 @@ describe("GET /api/v1/encounters/:encounterId/candidates", () => {
     expect(body.status).toBe("ready");
     if (body.status !== "ready") return;
     expect(body.window).toEqual({
-      from: "2026-09-14T02:00:00.000Z",
-      to: "2026-09-15T14:00:00.000Z",
+      from: "2026-09-14T14:00:00.000Z",
+      to: "2026-09-15T02:00:00.000Z",
     });
     expect(body.candidates.map((candidate) => candidate.reference.externalId).sort()).toEqual([
       "at-from",

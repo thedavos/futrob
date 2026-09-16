@@ -138,8 +138,8 @@ describe("ListEncounterCandidatesUseCase", () => {
     expect(result.isOk() && result.value).toEqual({
       status: "ready",
       window: {
-        from: new Date("2026-09-14T02:00:00.000Z"),
-        to: new Date("2026-09-15T14:00:00.000Z"),
+        from: new Date("2026-09-14T14:00:00.000Z"),
+        to: new Date("2026-09-15T02:00:00.000Z"),
       },
       candidates: [
         {
@@ -181,8 +181,8 @@ describe("ListEncounterCandidatesUseCase", () => {
     expect(empty.isOk() && empty.value).toEqual({
       status: "ready",
       window: {
-        from: new Date("2026-09-14T02:00:00.000Z"),
-        to: new Date("2026-09-15T14:00:00.000Z"),
+        from: new Date("2026-09-14T14:00:00.000Z"),
+        to: new Date("2026-09-15T02:00:00.000Z"),
       },
       candidates: [],
     });
