@@ -112,6 +112,10 @@ export {
   fixtureGenerationKey,
   generateFixturePlan,
 } from "./domain/policies/generate-fixture-plan.ts";
+export {
+  isKnockoutFixtureStageKind,
+  selectRescheduleStageRules,
+} from "./domain/policies/select-reschedule-stage-rules.ts";
 export type { CompetitionWallTime } from "./domain/policies/interpret-competition-wall-time.ts";
 export { replaceEncounter } from "./domain/policies/edit-fixture-encounter.ts";
 export {

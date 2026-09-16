@@ -116,6 +116,7 @@ export function createSchedulingModule(input: {
       requests: scheduleChangeRequests,
       rules: new CompetitionRescheduleRulesAdapter({
         competitions: input.competitions,
+        fixtures: fixturePlans,
         requests: scheduleChangeRequests,
       }),
       transaction: input.transaction,

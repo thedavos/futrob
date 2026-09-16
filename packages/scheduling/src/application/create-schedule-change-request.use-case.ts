@@ -168,6 +168,7 @@ export class CreateScheduleChangeRequestUseCase {
           const competitionRules = await this.deps.rules.getRules({
             organizationId: input.organizationId,
             competitionId: input.competitionId,
+            stageId: encounter.stageId,
           });
           if (!competitionRules.allowRescheduling) {
             return err(

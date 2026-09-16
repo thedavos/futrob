@@ -213,6 +213,7 @@ function createHarness(
     readonly encounterWhenLocked?: EncounterScheduleSnapshot | null;
     readonly failPublishingOnce?: boolean;
     readonly missIdempotencyLookups?: boolean;
+    readonly getRules?: CompetitionRescheduleRulesPort["getRules"];
     readonly mutationLock?: EncounterMutationLockPort;
     readonly protectedOfficialSlots?: readonly (1 | 2)[];
     readonly transaction?: TransactionPort;
@@ -226,10 +227,12 @@ function createHarness(
   const protectedOfficialSlots = options.protectedOfficialSlots ?? [];
   let failPublishing = options.failPublishingOnce ?? false;
   const rules: CompetitionRescheduleRulesPort = {
-    getRules: async () => ({
-      allowRescheduling: options.allowRescheduling ?? true,
-      maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
-    }),
+    getRules:
+      options.getRules ??
+      (async () => ({
+        allowRescheduling: options.allowRescheduling ?? true,
+        maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
+      })),
     countAppliedReschedules: async (input) =>
       options.appliedReschedulesByEncounter?.get(input.encounterId) ??
       options.appliedReschedules ??
@@ -506,6 +509,38 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     const error = expectErrorCode(result, "scheduling.rescheduling_disabled");
     expect(error).toBeInstanceOf(ReschedulingDisabled);
     expect(harness.requests.rows).toHaveLength(0);
+  });
+
+  it("passes the Encounter stageId when reading reschedule rules", async () => {
+    const seen: string[] = [];
+    const harness = createHarness({
+      getRules: async (input) => {
+        seen.push(input.stageId);
+        return { allowRescheduling: true, maxReschedulesPerTeam: 2 };
+      },
+    });
+
+    const result = await harness.useCase.execute(validInput);
+
+    expect(result.isOk()).toBe(true);
+    expect(seen).toEqual([encounter.stageId]);
+  });
+
+  it("allows a knockout Encounter when only the knockout stage permits rescheduling", async () => {
+    const knockoutStageId = asFixtureStageId("knockout-stage");
+    const harness = createHarness({
+      encounter: { ...encounter, stageId: knockoutStageId },
+      getRules: async ({ stageId }) =>
+        stageId === knockoutStageId
+          ? { allowRescheduling: true, maxReschedulesPerTeam: 4 }
+          : { allowRescheduling: false, maxReschedulesPerTeam: 1 },
+    });
+
+    const result = await harness.useCase.execute(validInput);
+
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) throw result.error;
+    expect(harness.requests.rows).toHaveLength(1);
   });
 
   it("blocks a Team that reached the applied-reschedule limit", async () => {
