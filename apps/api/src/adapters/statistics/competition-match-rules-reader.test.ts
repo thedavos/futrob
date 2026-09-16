@@ -25,6 +25,32 @@ describe("CompetitionsMatchRulesReader", () => {
       }),
     ).toMatchObject({ resolutionMode: "aggregate_score" });
   });
+
+  it("defaults omitted stageId to regular independent_matches in league-playoffs", async () => {
+    const reader = new CompetitionsMatchRulesReader(repoWith(leaguePlayoffsRules()));
+
+    expect(
+      await reader.getPointsRules({
+        competitionId: asCompetitionId("competition-1"),
+      }),
+    ).toMatchObject({ resolutionMode: "independent_matches" });
+  });
+
+  it("returns knockout rules for a cup even when the stage id looks regular", async () => {
+    const reader = new CompetitionsMatchRulesReader(
+      repoWith({
+        ...leaguePlayoffsRules(),
+        regularStage: null,
+      }),
+    );
+
+    expect(
+      await reader.getPointsRules({
+        competitionId: asCompetitionId("competition-1"),
+        stageId: "plan:fixture:stage:1",
+      }),
+    ).toMatchObject({ resolutionMode: "aggregate_score" });
+  });
 });
 
 function repoWith(rules: CompetitionRules): CompetitionRepository {

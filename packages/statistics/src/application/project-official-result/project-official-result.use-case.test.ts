@@ -27,6 +27,7 @@ import type {
   PlayerMatchContributionRepository,
   PlayerPersonalStats,
   PlayerPersonalStatsRepository,
+  StandingResolutionMode,
   TeamCompetitionStats,
   TeamCompetitionStatsRepository,
   TeamMatchContribution,
@@ -1166,7 +1167,7 @@ describe("ProjectOfficialResultUseCase", () => {
     });
   });
 
-  it("drops a voided knockout encounter from mixed standings without splitting its slots", async () => {
+  it("mixed-void-drops-encounter-not-slot removes the knockout encounter as one PJ", async () => {
     const regular = officialResult({
       id: "result-regular",
       encounterId: "encounter-regular",
@@ -1248,6 +1249,67 @@ describe("ProjectOfficialResultUseCase", () => {
           points: 0,
         }),
       ],
+    });
+  });
+
+  it("keeps frozen resolutionMode on earlier encounters when live rules change", async () => {
+    let liveMode: StandingResolutionMode = "independent_matches";
+    const first = officialResult({
+      id: "result-a",
+      encounterId: "encounter-a",
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const second = twoLegResult({
+      id: "result-b",
+      encounterId: "encounter-b",
+      homeGoalsFirst: 1,
+      awayGoalsFirst: 0,
+      homeGoalsSecond: 0,
+      awayGoalsSecond: 2,
+    });
+    const harness = makeHarness({
+      results: [first, second],
+      resolutions: {},
+      encounters: [
+        defaultEncounter(first),
+        {
+          ...defaultEncounter(second),
+          officialMatchCount: 2,
+        },
+      ],
+      getPointsRules: async () => ({
+        winPoints: 3,
+        drawPoints: 1,
+        lossPoints: 0,
+        resolutionMode: liveMode,
+      }),
+    });
+
+    expect((await harness.project.execute({ officialResultId: first.id })).isOk()).toBe(true);
+    liveMode = "aggregate_score";
+    expect((await harness.project.execute({ officialResultId: second.id })).isOk()).toBe(true);
+
+    expect(
+      (await harness.teamContributions.listByEncounter(first.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(["independent_matches", "independent_matches"]);
+    expect(
+      (await harness.teamContributions.listByEncounter(second.encounterId)).map(
+        (row) => row.resolutionMode,
+      ),
+    ).toEqual(["aggregate_score", "aggregate_score", "aggregate_score", "aggregate_score"]);
+    expect(await harness.standings.findByCompetition(first.competitionId)).toMatchObject({
+      rows: expect.arrayContaining([
+        expect.objectContaining({
+          teamId: asTeamId("home-team"),
+          played: 2,
+          wins: 1,
+          losses: 1,
+          points: 3,
+        }),
+      ]),
     });
   });
 });

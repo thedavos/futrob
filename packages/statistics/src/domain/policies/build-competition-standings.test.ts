@@ -125,7 +125,7 @@ describe("buildCompetitionStandings", () => {
     ]);
   });
 
-  it("mixes independent league and aggregate playoff encounters in one table", () => {
+  it("mixed-league-playoffs-pj counts one league match plus one aggregate playoff as PJ 2", () => {
     const snapshot = buildCompetitionStandings({
       competitionId: asCompetitionId("competition-1"),
       organizationId: asOrganizationId("organization-1"),
