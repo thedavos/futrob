@@ -257,23 +257,16 @@ export class CreateScheduleChangeRequestUseCase {
         }),
       );
     } catch (error) {
-      if (isScheduleChangeRequestSaveConflict(error)) return err(error);
+      if (
+        error instanceof ScheduleChangeRequestIdempotencyConflict ||
+        error instanceof ActiveScheduleChangeRequestExists ||
+        error instanceof ScheduleChangeRequestNotFound
+      ) {
+        return err(error);
+      }
       throw error;
     }
   }
-}
-
-function isScheduleChangeRequestSaveConflict(
-  error: unknown,
-): error is
-  | ScheduleChangeRequestIdempotencyConflict
-  | ActiveScheduleChangeRequestExists
-  | ScheduleChangeRequestNotFound {
-  return (
-    error instanceof ScheduleChangeRequestIdempotencyConflict ||
-    error instanceof ActiveScheduleChangeRequestExists ||
-    error instanceof ScheduleChangeRequestNotFound
-  );
 }
 
 function invalidRequest(message: string): InvalidScheduleChangeRequest {
