@@ -85,6 +85,45 @@ describe("authenticated mobile shell", () => {
     await expect(getSession()).resolves.toBeNull();
   });
 
+  it("memberships 401 clears session and shows login", async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const path = pathnameOf(input);
+      if (path.endsWith("/identity/onboarding")) {
+        return jsonResponse(200, ONBOARDING_OK);
+      }
+      if (path.endsWith("/organizations/mine")) {
+        return jsonResponse(401, UNAUTHORIZED);
+      }
+      throw new Error(`unexpected ${path}`);
+    });
+
+    const snapshot = await loadAuthenticatedShell(getFutrobClient());
+
+    expect(snapshot).toEqual({ kind: "login", destination: LOGIN_ROUTE });
+    await expect(getSession()).resolves.toBeNull();
+  });
+
+  it("effective-access 401 clears session and shows login", async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const path = pathnameOf(input);
+      if (path.endsWith("/identity/onboarding")) {
+        return jsonResponse(200, ONBOARDING_OK);
+      }
+      if (path.endsWith("/organizations/mine")) {
+        return jsonResponse(200, MINE_OK);
+      }
+      if (path.includes("/authorization/effective-access")) {
+        return jsonResponse(401, UNAUTHORIZED);
+      }
+      throw new Error(`unexpected ${path}`);
+    });
+
+    const snapshot = await loadAuthenticatedShell(getFutrobClient());
+
+    expect(snapshot).toEqual({ kind: "login", destination: LOGIN_ROUTE });
+    await expect(getSession()).resolves.toBeNull();
+  });
+
   it("effective-access 403 hides grants and offers retry", async () => {
     fetchMock.mockImplementation(async (input) => {
       const path = pathnameOf(input);

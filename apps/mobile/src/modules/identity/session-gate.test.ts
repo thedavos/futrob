@@ -40,6 +40,19 @@ describe("session gate", () => {
     expect(sessionGateDestination(null)).toBe(LOGIN_ROUTE);
   });
 
+  it("unreadable session store routes to login not home", async () => {
+    setSessionCredentialStore({
+      setItemAsync: async () => undefined,
+      getItemAsync: async () => {
+        throw new Error("secure store locked");
+      },
+      deleteItemAsync: async () => undefined,
+    });
+    const destination = await resolveSessionGate();
+    expect(destination).toBe(LOGIN_ROUTE);
+    expect(destination).not.toBe(HOME_ROUTE);
+  });
+
   it("stored session routes to home", async () => {
     await saveSession({
       token: "bearer-token-1",
