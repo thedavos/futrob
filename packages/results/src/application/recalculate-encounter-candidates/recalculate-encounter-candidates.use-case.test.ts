@@ -1,5 +1,6 @@
 import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
+import { EncounterNotFound } from "../../domain/errors/select-official-matches.errors.ts";
 import { SelectOfficialMatchesUseCase } from "../select-official-matches/select-official-matches.use-case.ts";
 import {
   KICKOFF_PLUS_24H,
@@ -133,5 +134,16 @@ describe("RecalculateEncounterCandidatesUseCase", () => {
         eligible: row.eligible,
       })),
     ).toEqual(eligibility);
+  });
+
+  it("fails when the encounter is missing", async () => {
+    const recalc = new RecalculateEncounterCandidatesUseCase({
+      encounterReader: new MutableEncounterReader(null),
+      providerMatches: new WindowedProviderMatchReader([]),
+      associations: new MemoryEncounterCandidateAssociations(),
+      clock: fixedClock,
+    });
+    const result = await recalc.execute({ encounterId: encounterSnapshot().encounterId });
+    expect(result.isErr() && EncounterNotFound.is(result.error)).toBe(true);
   });
 });

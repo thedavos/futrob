@@ -1,5 +1,8 @@
 import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
+import { CandidateDataUnavailable } from "../../domain/errors/encounter-candidates.errors.ts";
+import { EncounterNotFound } from "../../domain/errors/select-official-matches.errors.ts";
+import type { ProviderMatchReaderPort } from "../../domain/ports/provider-match-reader.port.ts";
 import { ListEncounterCandidatesUseCase } from "../list-encounter-candidates/list-encounter-candidates.use-case.ts";
 import {
   MemoryEncounterCandidateAssociations,
@@ -91,5 +94,63 @@ describe("AssociateEncounterCandidatesUseCase", () => {
     expect(associations.rows.every((row) => row.associatedAt.getTime() === NOW.getTime())).toBe(
       true,
     );
+  });
+
+  it("hides an encounter from another organization", async () => {
+    const { associate, associations } = createHarness();
+    const result = await associate.execute({
+      organizationId: asOrganizationId("org-other"),
+      encounterId: encounterSnapshot().encounterId,
+    });
+    expect(result.isErr() && EncounterNotFound.is(result.error)).toBe(true);
+    expect(associations.rows).toHaveLength(0);
+  });
+
+  it("does not replace rows when clubs are not connected", async () => {
+    const associations = new MemoryEncounterCandidateAssociations();
+    const providerMatches: ProviderMatchReaderPort = {
+      listCandidatesForEncounter: async () => ({
+        status: "clubs_not_connected",
+        sides: ["away"],
+      }),
+      getByExternalRef: async () => null,
+    };
+    const associate = new AssociateEncounterCandidatesUseCase({
+      encounterReader: new MutableEncounterReader(encounterSnapshot()),
+      providerMatches,
+      associations,
+      clock: fixedClock,
+    });
+    const result = await associate.execute({
+      organizationId: asOrganizationId("org-1"),
+      encounterId: encounterSnapshot().encounterId,
+    });
+    expect(result.isOk() && result.value).toEqual({
+      status: "clubs_not_connected",
+      sides: ["away"],
+    });
+    expect(associations.rows).toHaveLength(0);
+  });
+
+  it("maps provider failures to candidate data unavailable", async () => {
+    const associations = new MemoryEncounterCandidateAssociations();
+    const providerMatches: ProviderMatchReaderPort = {
+      listCandidatesForEncounter: async () => {
+        throw new Error("private provider failure");
+      },
+      getByExternalRef: async () => null,
+    };
+    const associate = new AssociateEncounterCandidatesUseCase({
+      encounterReader: new MutableEncounterReader(encounterSnapshot()),
+      providerMatches,
+      associations,
+      clock: fixedClock,
+    });
+    const result = await associate.execute({
+      organizationId: asOrganizationId("org-1"),
+      encounterId: encounterSnapshot().encounterId,
+    });
+    expect(result.isErr() && CandidateDataUnavailable.is(result.error)).toBe(true);
+    expect(associations.rows).toHaveLength(0);
   });
 });
