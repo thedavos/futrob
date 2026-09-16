@@ -43,6 +43,13 @@ function loginSnapshot(): AuthenticatedShellSnapshot {
   return { kind: "login", destination: LOGIN_ROUTE };
 }
 
+export function soleOrganizationId(
+  memberships: readonly { readonly organizationId: string }[],
+): string | undefined {
+  if (memberships.length !== 1) return undefined;
+  return memberships[0]?.organizationId;
+}
+
 async function loadEffectiveAccess(
   client: FutrobClient,
   scope: AuthorizationScopeDto,
@@ -103,7 +110,7 @@ export async function loadAuthenticatedShell(
   let organizationId: string | undefined;
   try {
     const mine = await client.organizations.listMine();
-    organizationId = mine.memberships[0]?.organizationId;
+    organizationId = soleOrganizationId(mine.memberships);
   } catch (error) {
     if (error instanceof FutrobApiError && error.status === 401) return loginSnapshot();
   }
