@@ -161,17 +161,33 @@ async function smoke(): Promise<number> {
 
   const associations = new (class implements EncounterCandidateAssociationRepository {
     rows: EncounterCandidateAssociation[] = [];
+    private generation = 0;
+
+    async loadForEncounter(
+      organizationId: EncounterCandidateAssociation["organizationId"],
+      encounterId: EncounterCandidateAssociation["encounterId"],
+    ) {
+      return {
+        associations: await this.listByEncounter(organizationId, encounterId),
+        generation: this.generation,
+      };
+    }
 
     async replaceForEncounter(
       organizationId: EncounterCandidateAssociation["organizationId"],
       encounterId: EncounterCandidateAssociation["encounterId"],
       rows: readonly EncounterCandidateAssociation[],
+      expectedGeneration: number,
     ) {
+      if (expectedGeneration !== this.generation) {
+        return { status: "conflict" as const, generation: this.generation };
+      }
       this.rows = this.rows.filter(
         (row) => row.organizationId !== organizationId || row.encounterId !== encounterId,
       );
       this.rows.push(...rows);
-      return rows;
+      this.generation += 1;
+      return { status: "replaced" as const, associations: rows, generation: this.generation };
     }
 
     async listByEncounter(
@@ -197,6 +213,21 @@ async function smoke(): Promise<number> {
             externalReferenceKey(row.providerMatchRef) === key,
         ) ?? null
       );
+    }
+
+    async writeIfEligible<T>(
+      organizationId: EncounterCandidateAssociation["organizationId"],
+      encounterId: EncounterCandidateAssociation["encounterId"],
+      requiredRefs: readonly ExternalReference[],
+      write: () => Promise<T>,
+    ) {
+      for (const providerMatchRef of requiredRefs) {
+        const association = await this.findByRef(organizationId, encounterId, providerMatchRef);
+        if (!association || !association.eligible) {
+          return { status: "ineligible" as const, providerMatchRef };
+        }
+      }
+      return { status: "wrote" as const, value: await write() };
     }
   })();
 

@@ -26,6 +26,7 @@ import {
   MutableEncounterReader,
   WindowedProviderMatchReader,
   allowAll,
+  delegatingAssociations,
   encounterSnapshot,
   fixedClock,
   providerMatch,
@@ -58,21 +59,26 @@ async function associationsWith(
 ) {
   const associations = new MemoryEncounterCandidateAssociations();
   const providerMatchRef = { providerKey: "ea-clubs" as const, externalId };
-  await associations.replaceForEncounter(encounter.organizationId, encounter.encounterId, [
-    {
-      id: encounterCandidateAssociationId(
-        encounter.organizationId,
-        encounter.encounterId,
+  await associations.replaceForEncounter(
+    encounter.organizationId,
+    encounter.encounterId,
+    [
+      {
+        id: encounterCandidateAssociationId(
+          encounter.organizationId,
+          encounter.encounterId,
+          providerMatchRef,
+        ),
+        organizationId: encounter.organizationId,
+        encounterId: encounter.encounterId,
         providerMatchRef,
-      ),
-      organizationId: encounter.organizationId,
-      encounterId: encounter.encounterId,
-      providerMatchRef,
-      eligible: true,
-      associatedAt: new Date("2026-07-01T20:00:00.000Z"),
-      lastEvaluatedAt: new Date("2026-07-01T20:00:00.000Z"),
-    },
-  ]);
+        eligible: true,
+        associatedAt: new Date("2026-07-01T20:00:00.000Z"),
+        lastEvaluatedAt: new Date("2026-07-01T20:00:00.000Z"),
+      },
+    ],
+    0,
+  );
   return associations;
 }
 
@@ -302,5 +308,70 @@ describe("SelectOfficialMatchesUseCase", () => {
     expect(await selections.findLatestByEncounter(snapshot.encounterId)).toEqual(
       original.isOk() ? original.value : null,
     );
+  });
+
+  it("fails select when recalc marks the candidate ineligible before save", async () => {
+    const snapshot = encounterSnapshot();
+    const inner = new MemoryEncounterCandidateAssociations();
+    const selections = new MemorySelections();
+    const encounterReader = new MutableEncounterReader(snapshot);
+    const persistDeps = {
+      encounterReader,
+      providerMatches: new WindowedProviderMatchReader([
+        providerMatch("match-t", "2026-09-14T20:00:00.000Z"),
+        providerMatch("match-t24", "2026-09-15T20:00:00.000Z"),
+        providerMatch("match-out", "2026-09-14T10:00:00.000Z"),
+      ]),
+      associations: inner,
+      clock: fixedClock,
+    };
+    const associate = new AssociateEncounterCandidatesUseCase(persistDeps);
+    const recalc = new RecalculateEncounterCandidatesUseCase(persistDeps);
+    let recalcRan = false;
+    const runRecalc = async () => {
+      if (recalcRan) return;
+      recalcRan = true;
+      encounterReader.snapshot = { ...snapshot, scheduledStartAt: KICKOFF_PLUS_24H };
+      await recalc.execute({ encounterId: snapshot.encounterId });
+    };
+    const select = new SelectOfficialMatchesUseCase({
+      encounterReader,
+      selections,
+      associations: delegatingAssociations(inner, {
+        findByRef: async (organizationId, encounterId, providerMatchRef) => {
+          const found = await inner.findByRef(organizationId, encounterId, providerMatchRef);
+          if (found?.eligible) await runRecalc();
+          return found;
+        },
+        writeIfEligible: async (organizationId, encounterId, requiredRefs, write) => {
+          await runRecalc();
+          return inner.writeIfEligible(organizationId, encounterId, requiredRefs, write);
+        },
+      }),
+      eventPublisher: publisher,
+      authorization: allowAll,
+      ids: { generate: () => "sel-race" },
+      clock: fixedClock,
+    });
+
+    await associate.execute({
+      organizationId: snapshot.organizationId,
+      encounterId: snapshot.encounterId,
+    });
+    const result = await select.execute({
+      actorId: asActorId("actor-1"),
+      organizationId: snapshot.organizationId,
+      encounterId: snapshot.encounterId,
+      selections: [
+        {
+          officialSlot: 1,
+          providerMatchRef: { providerKey: "ea-clubs", externalId: "match-t" },
+        },
+      ],
+    });
+
+    expect(result.isOk()).toBe(false);
+    expect(!result.isOk() && CandidateNotAssociated.is(result.error)).toBe(true);
+    expect(selections.rows).toHaveLength(0);
   });
 });

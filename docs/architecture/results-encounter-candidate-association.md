@@ -23,6 +23,13 @@ CREATE TABLE IF NOT EXISTS encounter_candidates (
   UNIQUE (organization_id, encounter_id, provider_key, external_match_id)
 );
 
+CREATE TABLE IF NOT EXISTS encounter_candidate_sets (
+  organization_id TEXT NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+  encounter_id TEXT NOT NULL,
+  generation INTEGER NOT NULL,
+  PRIMARY KEY (organization_id, encounter_id)
+);
+
 CREATE INDEX IF NOT EXISTS encounter_candidates_encounter_eligible_index
   ON encounter_candidates (organization_id, encounter_id, eligible);
 ```
@@ -30,6 +37,10 @@ CREATE INDEX IF NOT EXISTS encounter_candidates_encounter_eligible_index
 Do not copy score, clubs, players, or raw payload into this table. Join `provider_matches` by `(provider_key, external_match_id)` when a projection needs observation fields. Adapters must filter every query by `organization_id`.
 
 `id` is deterministic: `{organizationId}:{encounterId}:{providerKey}:{externalId}`. Upsert keeps that primary key.
+
+`encounter_candidate_sets.generation` is the compare-and-swap token for a full-set reconcile. `replaceForEncounter` must no-op and return `conflict` when `expectedGeneration` does not match. Associate and recalc re-read the Encounter and retry, so a stale window cannot overwrite a newer recalc.
+
+`writeIfEligible` is the select conditional write. Adapters must re-read eligibility and persist the selection in one Encounter-scoped critical section (in-memory mutex today; a later Postgres adapter uses one transaction). Recalc that marks a row ineligible before that write makes select fail with `results.candidate_not_associated`.
 
 ## Application API
 

@@ -38,47 +38,87 @@ export type AssociateEncounterCandidatesOutput =
 
 export type AssociateEncounterCandidatesError = ListEncounterCandidatesError;
 
-export async function persistEncounterCandidateAssociations(
-  deps: {
-    readonly providerMatches: ProviderMatchReaderPort;
-    readonly associations: EncounterCandidateAssociationRepository;
-    readonly clock: ClockPort;
-  },
-  encounter: EncounterScheduleSnapshot,
-): Promise<Result<AssociateEncounterCandidatesOutput, AssociateEncounterCandidatesError>> {
-  const window = candidateWindowFor(encounter.scheduledStartAt);
-  try {
-    const read = await deps.providerMatches.listCandidatesForEncounter({
-      encounterId: encounter.encounterId,
-      homeTeamId: encounter.homeTeamId,
-      awayTeamId: encounter.awayTeamId,
-      window,
-    });
-    if (read.status !== "ready") return ok(read);
+export const CANDIDATE_SET_WRITE_ATTEMPTS = 8;
 
-    const existing = await deps.associations.listByEncounter(
-      encounter.organizationId,
-      encounter.encounterId,
-    );
-    const associations = await deps.associations.replaceForEncounter(
-      encounter.organizationId,
-      encounter.encounterId,
-      reconcileCandidateAssociations({
-        existing,
-        inWindowRefs: read.matches.map((match) => ({
-          providerKey: match.provider.key,
-          externalId: match.provider.externalMatchId,
-        })),
-        organizationId: encounter.organizationId,
+export interface PersistEncounterCandidateAssociationsDeps {
+  readonly encounterReader: EncounterReaderPort;
+  readonly providerMatches: ProviderMatchReaderPort;
+  readonly associations: EncounterCandidateAssociationRepository;
+  readonly clock: ClockPort;
+}
+
+export async function persistEncounterCandidateAssociations(
+  deps: PersistEncounterCandidateAssociationsDeps,
+  input: {
+    readonly encounterId: EncounterScheduleSnapshot["encounterId"];
+    readonly organizationId?: OrganizationId;
+  },
+): Promise<Result<AssociateEncounterCandidatesOutput, AssociateEncounterCandidatesError>> {
+  try {
+    for (let attempt = 0; attempt < CANDIDATE_SET_WRITE_ATTEMPTS; attempt++) {
+      const encounter = await deps.encounterReader.getById(input.encounterId);
+      if (
+        !encounter ||
+        (input.organizationId && encounter.organizationId !== input.organizationId)
+      ) {
+        return err(
+          new EncounterNotFound({
+            code: "results.encounter_not_found",
+            message: "Encounter not found",
+            encounterId: input.encounterId,
+          }),
+        );
+      }
+
+      const window = candidateWindowFor(encounter.scheduledStartAt);
+      const read = await deps.providerMatches.listCandidatesForEncounter({
         encounterId: encounter.encounterId,
-        now: deps.clock.now(),
+        homeTeamId: encounter.homeTeamId,
+        awayTeamId: encounter.awayTeamId,
+        window,
+      });
+      if (read.status !== "ready") return ok(read);
+
+      const loaded = await deps.associations.loadForEncounter(
+        encounter.organizationId,
+        encounter.encounterId,
+      );
+      const replaced = await deps.associations.replaceForEncounter(
+        encounter.organizationId,
+        encounter.encounterId,
+        reconcileCandidateAssociations({
+          existing: loaded.associations,
+          inWindowRefs: read.matches.map((match) => ({
+            providerKey: match.provider.key,
+            externalId: match.provider.externalMatchId,
+          })),
+          organizationId: encounter.organizationId,
+          encounterId: encounter.encounterId,
+          now: deps.clock.now(),
+        }),
+        loaded.generation,
+      );
+      switch (replaced.status) {
+        case "replaced":
+          return ok({
+            status: "associated",
+            window,
+            associations: replaced.associations,
+          });
+        case "conflict":
+          continue;
+        default: {
+          const _exhaustive: never = replaced;
+          return _exhaustive;
+        }
+      }
+    }
+    return err(
+      new CandidateDataUnavailable({
+        code: "results.candidate_data_unavailable",
+        message: "Candidate data is temporarily unavailable",
       }),
     );
-    return ok({
-      status: "associated",
-      window,
-      associations,
-    });
   } catch {
     return err(
       new CandidateDataUnavailable({
@@ -90,28 +130,11 @@ export async function persistEncounterCandidateAssociations(
 }
 
 export class AssociateEncounterCandidatesUseCase {
-  constructor(
-    private readonly deps: {
-      readonly encounterReader: EncounterReaderPort;
-      readonly providerMatches: ProviderMatchReaderPort;
-      readonly associations: EncounterCandidateAssociationRepository;
-      readonly clock: ClockPort;
-    },
-  ) {}
+  constructor(private readonly deps: PersistEncounterCandidateAssociationsDeps) {}
 
   async execute(
     input: AssociateEncounterCandidatesInput,
   ): Promise<Result<AssociateEncounterCandidatesOutput, AssociateEncounterCandidatesError>> {
-    const encounter = await this.deps.encounterReader.getById(input.encounterId);
-    if (!encounter || encounter.organizationId !== input.organizationId) {
-      return err(
-        new EncounterNotFound({
-          code: "results.encounter_not_found",
-          message: "Encounter not found",
-          encounterId: input.encounterId,
-        }),
-      );
-    }
-    return persistEncounterCandidateAssociations(this.deps, encounter);
+    return persistEncounterCandidateAssociations(this.deps, input);
   }
 }

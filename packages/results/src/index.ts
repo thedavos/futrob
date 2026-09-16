@@ -20,7 +20,12 @@ export type {
   ProviderMatchReaderPort,
 } from "./domain/ports/provider-match-reader.port.ts";
 export type { EncounterCandidateAssociation } from "./domain/entities/encounter-candidate-association.ts";
-export type { EncounterCandidateAssociationRepository } from "./domain/ports/encounter-candidate-association.repository.ts";
+export type {
+  EncounterCandidateAssociationRepository,
+  EncounterCandidateSetSnapshot,
+  ReplaceEncounterCandidatesResult,
+  WriteIfEligibleResult,
+} from "./domain/ports/encounter-candidate-association.repository.ts";
 export type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,

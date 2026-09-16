@@ -10,6 +10,7 @@ import {
   WindowedProviderMatchReader,
   allowAll,
   associationIds,
+  delegatingAssociations,
   eligibleExternalIds,
   encounterSnapshot,
   fixedClock,
@@ -41,6 +42,7 @@ function createHarness() {
     associations,
     selections,
     encounterReader,
+    persistDeps,
     associate: new AssociateEncounterCandidatesUseCase(persistDeps),
     recalc: new RecalculateEncounterCandidatesUseCase(persistDeps),
     select: new SelectOfficialMatchesUseCase({
@@ -134,6 +136,45 @@ describe("RecalculateEncounterCandidatesUseCase", () => {
         eligible: row.eligible,
       })),
     ).toEqual(eligibility);
+  });
+
+  it("does not let an older full-set reconcile overwrite a newer recalc", async () => {
+    const harness = createHarness();
+    await harness.associate.execute({
+      organizationId: asOrganizationId("org-1"),
+      encounterId: harness.snapshot.encounterId,
+    });
+
+    const inner = harness.associations;
+    let newerRecalcRan = false;
+    const stale = new RecalculateEncounterCandidatesUseCase({
+      ...harness.persistDeps,
+      associations: delegatingAssociations(inner, {
+        loadForEncounter: async (organizationId, encounterId) => {
+          const loaded = await inner.loadForEncounter(organizationId, encounterId);
+          if (!newerRecalcRan) {
+            newerRecalcRan = true;
+            harness.encounterReader.snapshot = {
+              ...harness.snapshot,
+              scheduledStartAt: KICKOFF_PLUS_24H,
+            };
+            await harness.recalc.execute({ encounterId: harness.snapshot.encounterId });
+          }
+          return loaded;
+        },
+      }),
+    });
+
+    const result = await stale.execute({ encounterId: harness.snapshot.encounterId });
+
+    expect(result.isOk() && result.value.status === "associated").toBe(true);
+    expect(inner.rows.find((row) => row.providerMatchRef.externalId === "match-t")).toMatchObject({
+      eligible: false,
+    });
+    expect(inner.rows.find((row) => row.providerMatchRef.externalId === "match-t24")).toMatchObject(
+      { eligible: true },
+    );
+    expect(eligibleExternalIds(inner.rows)).toEqual(["match-t24"]);
   });
 
   it("fails when the encounter is missing", async () => {

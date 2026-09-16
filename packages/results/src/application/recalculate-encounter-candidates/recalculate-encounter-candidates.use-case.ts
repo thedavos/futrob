@@ -1,5 +1,4 @@
-import { err, type ClockPort, type EncounterId, type Result } from "@futrob/shared-kernel";
-import { EncounterNotFound } from "../../domain/errors/select-official-matches.errors.ts";
+import type { ClockPort, EncounterId, Result } from "@futrob/shared-kernel";
 import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
 import type { ProviderMatchReaderPort } from "../../domain/ports/provider-match-reader.port.ts";
@@ -26,16 +25,6 @@ export class RecalculateEncounterCandidatesUseCase {
   async execute(
     input: RecalculateEncounterCandidatesInput,
   ): Promise<Result<AssociateEncounterCandidatesOutput, AssociateEncounterCandidatesError>> {
-    const encounter = await this.deps.encounterReader.getById(input.encounterId);
-    if (!encounter) {
-      return err(
-        new EncounterNotFound({
-          code: "results.encounter_not_found",
-          message: "Encounter not found",
-          encounterId: input.encounterId,
-        }),
-      );
-    }
-    return persistEncounterCandidateAssociations(this.deps, encounter);
+    return persistEncounterCandidateAssociations(this.deps, input);
   }
 }

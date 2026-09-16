@@ -7,10 +7,16 @@ import {
   asTeamId,
   type AuthorizationPort,
   type ClockPort,
+  type EncounterId,
+  type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { EncounterCandidateAssociation } from "../domain/entities/encounter-candidate-association.ts";
 import type { OfficialMatchSelection } from "../domain/entities/official-match-selection.ts";
-import type { EncounterCandidateAssociationRepository } from "../domain/ports/encounter-candidate-association.repository.ts";
+import type {
+  EncounterCandidateAssociationRepository,
+  ReplaceEncounterCandidatesResult,
+  WriteIfEligibleResult,
+} from "../domain/ports/encounter-candidate-association.repository.ts";
 import {
   asEncounterStageId,
   type EncounterReaderPort,
@@ -73,19 +79,44 @@ export function encounterSnapshot(
   };
 }
 
+function encounterSetKey(organizationId: OrganizationId, encounterId: EncounterId): string {
+  return `${organizationId}:${encounterId}`;
+}
+
 export class MemoryEncounterCandidateAssociations implements EncounterCandidateAssociationRepository {
   rows: EncounterCandidateAssociation[] = [];
+  private readonly generations = new Map<string, number>();
+  private readonly tails = new Map<string, Promise<void>>();
+
+  async loadForEncounter(
+    organizationId: EncounterCandidateAssociation["organizationId"],
+    encounterId: EncounterCandidateAssociation["encounterId"],
+  ) {
+    return {
+      associations: await this.listByEncounter(organizationId, encounterId),
+      generation: this.generations.get(encounterSetKey(organizationId, encounterId)) ?? 0,
+    };
+  }
 
   async replaceForEncounter(
     organizationId: EncounterCandidateAssociation["organizationId"],
     encounterId: EncounterCandidateAssociation["encounterId"],
     rows: readonly EncounterCandidateAssociation[],
-  ) {
-    this.rows = this.rows.filter(
-      (row) => row.organizationId !== organizationId || row.encounterId !== encounterId,
-    );
-    this.rows.push(...rows);
-    return rows;
+    expectedGeneration: number,
+  ): Promise<ReplaceEncounterCandidatesResult> {
+    return this.runExclusive(encounterSetKey(organizationId, encounterId), async () => {
+      const current = this.generations.get(encounterSetKey(organizationId, encounterId)) ?? 0;
+      if (current !== expectedGeneration) {
+        return { status: "conflict", generation: current };
+      }
+      this.rows = this.rows.filter(
+        (row) => row.organizationId !== organizationId || row.encounterId !== encounterId,
+      );
+      this.rows.push(...rows);
+      const generation = current + 1;
+      this.generations.set(encounterSetKey(organizationId, encounterId), generation);
+      return { status: "replaced", associations: rows, generation };
+    });
   }
 
   async listByEncounter(
@@ -102,6 +133,31 @@ export class MemoryEncounterCandidateAssociations implements EncounterCandidateA
     encounterId: EncounterCandidateAssociation["encounterId"],
     providerMatchRef: ExternalReference,
   ) {
+    return this.findSync(organizationId, encounterId, providerMatchRef);
+  }
+
+  async writeIfEligible<T>(
+    organizationId: EncounterCandidateAssociation["organizationId"],
+    encounterId: EncounterCandidateAssociation["encounterId"],
+    requiredRefs: readonly ExternalReference[],
+    write: () => Promise<T>,
+  ): Promise<WriteIfEligibleResult<T>> {
+    return this.runExclusive(encounterSetKey(organizationId, encounterId), async () => {
+      for (const providerMatchRef of requiredRefs) {
+        const association = this.findSync(organizationId, encounterId, providerMatchRef);
+        if (!association || !association.eligible) {
+          return { status: "ineligible", providerMatchRef };
+        }
+      }
+      return { status: "wrote", value: await write() };
+    });
+  }
+
+  private findSync(
+    organizationId: EncounterCandidateAssociation["organizationId"],
+    encounterId: EncounterCandidateAssociation["encounterId"],
+    providerMatchRef: ExternalReference,
+  ) {
     const key = externalReferenceKey(providerMatchRef);
     return (
       this.rows.find(
@@ -112,6 +168,37 @@ export class MemoryEncounterCandidateAssociations implements EncounterCandidateA
       ) ?? null
     );
   }
+
+  private async runExclusive<T>(key: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.tails.get(key) ?? Promise.resolve();
+    let release: () => void = () => undefined;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tail = previous.then(() => hold);
+    this.tails.set(key, tail);
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release();
+      if (this.tails.get(key) === tail) this.tails.delete(key);
+    }
+  }
+}
+
+export function delegatingAssociations(
+  inner: MemoryEncounterCandidateAssociations,
+  overrides: Partial<EncounterCandidateAssociationRepository>,
+): EncounterCandidateAssociationRepository {
+  return {
+    loadForEncounter: inner.loadForEncounter.bind(inner),
+    replaceForEncounter: inner.replaceForEncounter.bind(inner),
+    listByEncounter: inner.listByEncounter.bind(inner),
+    findByRef: inner.findByRef.bind(inner),
+    writeIfEligible: inner.writeIfEligible.bind(inner),
+    ...overrides,
+  };
 }
 
 export class WindowedProviderMatchReader implements ProviderMatchReaderPort {

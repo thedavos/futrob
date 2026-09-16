@@ -101,24 +101,6 @@ export class SelectOfficialMatchesUseCase {
       );
     }
 
-    for (const providerMatchRef of refs) {
-      const association = await this.deps.associations.findByRef(
-        encounter.organizationId,
-        encounter.encounterId,
-        providerMatchRef,
-      );
-      if (!association || !association.eligible) {
-        return err(
-          new CandidateNotAssociated({
-            code: "results.candidate_not_associated",
-            message: "Official selection requires an eligible associated candidate",
-            providerKey: providerMatchRef.providerKey,
-            externalId: providerMatchRef.externalId,
-          }),
-        );
-      }
-    }
-
     const selection: OfficialMatchSelection = {
       id: this.deps.ids.generate(),
       encounterId: input.encounterId,
@@ -128,17 +110,39 @@ export class SelectOfficialMatchesUseCase {
       proposedAt: this.deps.clock.now(),
     };
 
-    const saved = await this.deps.selections.save(selection);
-    await this.deps.eventPublisher.publish({
-      eventName: "results.official-matches-selected",
-      occurredAt: this.deps.clock.now().toISOString(),
-      payload: {
-        encounterId: input.encounterId,
-        organizationId: encounter.organizationId,
-        competitionId: encounter.competitionId,
-        selectionId: saved.id,
-      },
-    });
-    return ok(saved);
+    const persisted = await this.deps.associations.writeIfEligible(
+      encounter.organizationId,
+      encounter.encounterId,
+      refs,
+      () => this.deps.selections.save(selection),
+    );
+    switch (persisted.status) {
+      case "ineligible":
+        return err(
+          new CandidateNotAssociated({
+            code: "results.candidate_not_associated",
+            message: "Official selection requires an eligible associated candidate",
+            providerKey: persisted.providerMatchRef.providerKey,
+            externalId: persisted.providerMatchRef.externalId,
+          }),
+        );
+      case "wrote": {
+        await this.deps.eventPublisher.publish({
+          eventName: "results.official-matches-selected",
+          occurredAt: this.deps.clock.now().toISOString(),
+          payload: {
+            encounterId: input.encounterId,
+            organizationId: encounter.organizationId,
+            competitionId: encounter.competitionId,
+            selectionId: persisted.value.id,
+          },
+        });
+        return ok(persisted.value);
+      }
+      default: {
+        const _exhaustive: never = persisted;
+        return _exhaustive;
+      }
+    }
   }
 }
