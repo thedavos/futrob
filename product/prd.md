@@ -1,11 +1,13 @@
 # Futrob — Documento maestro de producto y PRD del MVP
 
 **Estado:** canónico  
-**Fecha:** 2026-08-23
+**Fecha de revisión documental:** 2026-09-16
 
 **Precedencia:** la solicitud vigente del usuario prevalece sobre este documento cuando exista conflicto.
 
 Futrob es una plataforma especializada en crear, operar y seguir ligas, copas y torneos de EA SPORTS FC. Su primer enfoque es **FC Clubs**, utilizando los datos de `proclubs.ea.com/api` para identificar partidos, registrar resultados oficiales, almacenar estadísticas y generar rankings y analíticas.
+
+Este PRD define el alcance objetivo. La existencia de un requisito no indica que esté implementado o aceptado; el [README](/README.md#status) resume el estado del repositorio y [acceptance-criteria.md](/product/acceptance-criteria.md) define su verificación.
 
 ## 1. Resumen ejecutivo
 
@@ -13,12 +15,12 @@ Futrob resuelve la operación completa de una competición de EA SPORTS FC desde
 
 La plataforma debe distinguir claramente entre:
 
-| Concepto                              | Definición                                                                                                             |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Enfrentamiento** (`Encounter`)      | Cita competitiva programada entre dos participantes.                                                                   |
-| **Partido oficial** (`OfficialMatch`) | Uno de los partidos que cuenta para el enfrentamiento.                                                                 |
-| **Partido EA** (`EaMatch`)            | Registro obtenido desde el API de EA, sea oficial o amistoso.                                                          |
-| **Serie** (`Series`)                  | Conjunto de uno o más partidos oficiales cuyo resultado puede resolverse individualmente o mediante marcador agregado. |
+| Concepto                                   | Definición                                                                                                             |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **Enfrentamiento** (`Encounter`)           | Cita competitiva programada entre dos participantes.                                                                   |
+| **Partido oficial** (`OfficialMatch`)      | Uno de los partidos que cuenta para el enfrentamiento.                                                                 |
+| **Partido de proveedor** (`ProviderMatch`) | Registro obtenido desde el API de EA, sea oficial o amistoso.                                                          |
+| **Serie** (`Series`)                       | Conjunto de uno o más partidos oficiales cuyo resultado puede resolverse individualmente o mediante marcador agregado. |
 
 Una jornada puede programar un enfrentamiento con uno o dos partidos oficiales. Los mismos rivales podrían jugar cinco veces durante ese día; Futrob mostrará los cinco partidos obtenidos desde EA y permitirá que los capitanes seleccionen cuáles cuentan para la competición.
 
@@ -119,7 +121,7 @@ Cada competición puede publicar portada, reglamento, equipos, calendario, resul
 
 ## 17–18. Requisitos funcionales y no funcionales
 
-Lista canónica en [mvp-requirements.md](/product/mvp-requirements.md) (`FR-01`…`FR-17` y NFR).
+Lista canónica en [mvp-requirements.md](/product/mvp-requirements.md) (`FR-01`…`FR-18`, requisitos `FTR-*` y NFR).
 
 ## 19. Modelo de datos conceptual
 

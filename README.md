@@ -13,15 +13,17 @@ Four product deployables are part of the MVP and wired locally:
 | [`apps/api`](apps/api)       | Hono on Node (Railway) — product `/api/v1`, Postgres, EA Clubs egress |
 | [`apps/mobile`](apps/mobile) | React Native + Expo — native authenticated client via `@futrob/sdk`   |
 
-What works today:
+Implemented surfaces in the repository (deployment and end-to-end acceptance require separate verification):
 
 - Email/password auth (Better Auth on D1) with Tunnel Split `/login` and `/signup`
-- Post-auth gate → `/onboarding`, `/orgs`, or `/orgs/:id` by membership count
+- Post-auth gate checks onboarding first, then resolves `/player`, `/orgs`, or `/orgs/:id` by membership count
 - Organizations, memberships, and invitations on **Postgres** via `apps/api` (web BFF resolves `ActorId` and calls the API with `INTERNAL_JOB_SECRET`)
 - Game-data club search against EA Clubs through `apps/api`
-- Hexagonal BCs in `packages/@futrob/*` (domain/application); adapters only in apps
+- Hexagonal BCs in `packages/<bc>` (domain/application); adapters only in apps
+- Competition drafts/setup, participants, teams/rosters and fixture generation have API implementations
+- Official selection/confirmation and statistics projection are wired in the API; standings and player-ranking endpoints exist
 
-Still ahead for MVP: full competition/scheduling/results flows, standings, rankings, the public portal, and authenticated feature parity in the native mobile app.
+Still ahead for MVP: completion and acceptance of all competition/scheduling/results flows, durable cross-module event delivery, premium analytics and team-performance ranking integration, the public portal, and authenticated feature parity in the native mobile app. Product documents describe the target scope, not a completion checklist.
 
 ## Deployable split
 
@@ -70,12 +72,11 @@ analytics    → premium interpretation
 ```text
 apps/
 ├── web/                 # Must deployable (Workers) — UI, BFF, AUTH_SERVICE proxy
-│   ├── migrations/      # D1 (BFF rate limit)
-│   └── src/{di,modules,routes,shared,workers}/
+│   └── src/{bootstrap,config,context,modules,routes,shared,workers}/
 ├── api/                 # Product API (Railway) — Postgres + EA egress
 │   ├── migrations/      # Postgres (organizations, …)
 │   └── src/{adapters,di,http}/
-├── auth/                # Better Auth Worker — D1 schema owner (user/session/actors)
+├── auth/                # Better Auth Worker; migrations/ owns shared D1 history (auth + BFF)
 ├── mobile/              # React Native + Expo (Expo Router) — see apps/mobile/README.md
 └── cli/                 # Domain playground — see apps/cli/README.md
 
@@ -85,6 +86,8 @@ packages/
 ├── sdk/                 # Typed HTTP client (web + React Native / Expo)
 ├── ui-tokens/           # Shared design tokens (web CSS + mobile) — generated tokens.css
 ├── ui/                  # Tokens + shadcn primitives
+├── ea-clubs/            # Pure EA schemas/mappers; HTTP adapter stays in apps/api
+├── logger/              # Shared structured logging
 ├── shared-kernel/       # Result, IDs, domain errors
 └── test-support/
 ```

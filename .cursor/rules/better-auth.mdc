@@ -1,6 +1,6 @@
 ---
-description: Better Auth ownership, TanStack Start boundary, and Futrob authorization on D1
-globs: apps/web/**/*.ts,apps/web/**/*.tsx,packages/identity-access/**/*.ts,packages/identity-access/**/*.tsx
+description: Better Auth ownership, TanStack Start boundary, and Futrob product authorization
+globs: apps/auth/**/*.ts,apps/web/**/*.ts,apps/web/**/*.tsx,apps/api/**/*.ts,packages/identity/**/*.ts
 alwaysApply: false
 ---
 
@@ -19,9 +19,9 @@ Better Auth is Futrob's only authority for credentials and sessions. It is not t
 ## Application boundary
 
 - `SessionIdentityPort` is the only interface application code uses to resolve a session.
-- Configure the Better Auth adapter and its TanStack Start handler inside server-only adapter/composition code.
+- Configure Better Auth in `apps/auth`. Web proxies `/api/auth/*` and resolves sessions via `AUTH_SERVICE`, then looks up `identity_subjects` in shared D1 (ADR-0015).
 - Resolve and validate session cookies on the server. Client UI may display session state but never authorizes an operation.
-- Protected use cases receive a trusted `ActorId`, verify membership and permission, then execute with organization-scoped D1 access.
+- Protected use cases receive a trusted `ActorId`, verify membership and permission, then execute with organization-scoped product access in apps/api (Postgres).
 
 ## Database and security
 
@@ -32,6 +32,6 @@ Better Auth is Futrob's only authority for credentials and sessions. It is not t
 
 ## Configuration
 
-Validate secrets via Wrangler/`env` at composition time. Expected names are documented in `.env.example`; never add real secrets to tracked files. Use separate values for local, preview, and production.
+Validate secrets via Wrangler/`env` at composition time. Expected names are documented in `apps/auth/.dev.vars.example` and `apps/web/.dev.vars.example`; never add real secrets to tracked files. Use separate values for local, preview, and production.
 
-When changing Better Auth schema, generate provider SQL with the installed CLI (`--help`), review it, add a Wrangler D1 migration, and verify from a clean local database.
+When changing Better Auth schema, generate provider SQL with the installed CLI (`--help`), review it, add a Wrangler D1 migration under `apps/auth/migrations`, and verify from a clean local database.

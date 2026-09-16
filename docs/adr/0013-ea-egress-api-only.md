@@ -26,7 +26,7 @@ Una auditoría de consumo demostró que el adaptador de web era **código muerto
 
 - Una sola implementación que evolucionar (resiliencia, versiones de esquema EA, observabilidad).
 - `packages/ea-clubs` es testeable sin adapters ni red; `vp test` lo incluye como proyecto.
-- El web Worker ya no necesita `EA_CLUBS_BASE_URL` para egress propio (la variable permanece solo como configuración del cliente SDK hacia la API).
+- El web Worker ya no necesita `EA_CLUBS_BASE_URL` para egress propio (permanece como configuración heredada en `apps/web/src/config/env.ts`; el SDK usa `FUTROB_API_BASE_URL` para llegar a la API).
 - Si en el futuro un flujo de web necesitara egress directo (p. ej. latencia), se reintroduciría vía puerto en `@futrob/game-data`, no copiando adapters.
 
 ## Alternativas rechazadas

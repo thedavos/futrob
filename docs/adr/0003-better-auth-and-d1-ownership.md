@@ -4,6 +4,10 @@
 - Fecha: 2026-07-17
 - Reemplaza: ADR-0003 Better Auth + Supabase (retirado con el pivot de plataforma)
 
+## Vigencia de la topología
+
+La ubicación de adapters y persistencia descrita abajo refleja la decisión original. Para implementar cambios, rige la [arquitectura actual](/docs/architecture/overview.md): dominio/application en `packages/<bc>`, composición y Postgres de producto en `apps/api`, egress EA exclusivo de esa API ([ADR-0013](/docs/adr/0013-ea-egress-api-only.md)), auth/actores y migraciones D1 en `apps/auth` ([ADR-0015](/docs/adr/0015-auth-extraction.md)). Se mantienen las reglas de separación de dominio y autorización con scoping de organización.
+
 ## Contexto
 
 Se necesita autenticación web moderna y autorización multi-tenant por organización/competición/equipo. Cloudflare D1 es el SQL primario. No se usa Supabase Auth.

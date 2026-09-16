@@ -9,7 +9,7 @@ Relacionado: [overview](/docs/architecture/overview.md) · [ADR-0001](/docs/adr/
 
 `packages/` concentra:
 
-1. **Lógica de negocio por BC** (`@futrob/<bc>`: domain + application + ports) compartida por `apps/web` y `apps/api`.
+1. **Lógica de negocio por BC** (`@futrob/<bc>`: domain + application + ports) compuesta por `apps/api` y el CLI; web/mobile consumen la API de producto.
 2. **Contratos y clientes HTTP** (`api-contracts`, `sdk`). `@futrob/sdk` cubre los clientes web y mobile del MVP (`apps/mobile`, React Native + Expo).
 3. **Kernel / UI / test-support**.
 
@@ -22,6 +22,7 @@ futrob/
 ├── apps/
 │   ├── web/                    # TanStack Start + Workers (UI, BFF, /api/v1 hoy, queues)
 │   ├── api/                    # API de producto (Node); consume @futrob/<bc>
+│   ├── auth/                   # Better Auth Worker; migraciones D1 compartidas
 │   ├── mobile/                 # cliente nativo MVP; consume @futrob/sdk
 │   └── cli/                    # playground
 │
@@ -30,6 +31,9 @@ futrob/
 │   │   game-data|results|statistics|analytics|notifications|public-portal/
 │   ├── api-contracts/
 │   ├── sdk/
+│   ├── ui-tokens/
+│   ├── ea-clubs/                # schemas/mappers puros; sin egress
+│   ├── logger/
 │   ├── ui/
 │   ├── shared-kernel/
 │   └── test-support/
@@ -70,4 +74,4 @@ flowchart LR
 - **`apps/web`** = deployable Must Cloudflare hoy.
 - **`apps/api`** = deployable API de producto; misma lógica vía packages.
 - **Móvil Must** = `apps/mobile` (React Native + Expo); HTTP con `@futrob/sdk`, UI con tokens de `@futrob/ui-tokens`, sin SDK Dart.
-- **EA** solo en adapters de app.
+- **EA**: egress solo en `apps/api`, schemas/mappers puros en `@futrob/ea-clubs` (ADR-0013).

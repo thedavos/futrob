@@ -14,6 +14,10 @@ Business logic stays in `@futrob/<bc>` packages (`game-data`, `organizations`,
 
 ## Endpoints (`/api/v1`)
 
+The list below highlights selected routes. The complete HTTP contract is maintained in
+[`packages/api-contracts/openapi`](/packages/api-contracts/openapi); fixture, roster, official-result,
+standings and ranking resources also have implementations under `src/http/routes/`.
+
 Meta / contract:
 
 - `GET /meta/ping` — service ping (`pingResponseSchema`).
@@ -114,7 +118,7 @@ default to EA Clubs.
 ```bash
 npm run api            # api only (tsx watch), from repo root
 npm run api:start      # run once (tsx)
-npm run dev            # web + api together
+npm run dev            # web + api + auth together
 npm run api:typecheck
 npm run api:test       # vitest smoke via Vite+ (mocks EA fetch)
 ```
@@ -146,10 +150,9 @@ npm run api
 
 ## Railway notes
 
-- Apply all migrations in filename order through `0028_provider_health.sql`.
+- Apply every SQL migration in `apps/api/migrations/` in filename order before relying on product persistence; do not stop at an older documented migration number.
 - Set `TEST_DATABASE_URL` to run the clean/legacy migration integration suite; it creates and
   removes a uniquely named schema without touching existing schemas.
-  to Postgres before relying on organization, onboarding, or player-profile persistence.
 - Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.
 - Start command: `npm run start -w @futrob/api`. Railway injects `PORT`; the app reads it.
 - Health check path: `/api/v1/meta/health`.

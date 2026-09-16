@@ -1,7 +1,7 @@
 # `@futrob/shared-kernel`
 
-Tipos y utilidades técnicas compartibles entre `apps/web` y un futuro `apps/worker`.
+Tipos, ports y utilidades técnicas compartidos por los bounded contexts y las apps del monorepo.
 
-Hoy es scaffold: `Result` y `DomainEvent`. El código de negocio sigue en `apps/web/src/shared` hasta migrar al crear el segundo deployable.
+Incluye `Result`, `TaggedError`, IDs, eventos, ports transversales y utilidades de tiempo. La lógica de negocio vive en cada `packages/<bc>`; la infraestructura web permanece en `apps/web/src/shared`.
 
 Guía: [`/packages/README.md`](/packages/README.md).

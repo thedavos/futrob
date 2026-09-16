@@ -8,8 +8,9 @@ Relacionado: [overview](/docs/architecture/overview.md) · [module-boundaries](/
 ```mermaid
 flowchart TD
   WebUI["apps/web UI"] --> BFF["apps/web /api/v1 BFF"]
-  MobileUI["apps/mobile UI"] --> SDK["@futrob/sdk"]
-  BFF --> SDK
+  MobileUI["apps/mobile UI"] --> ClientSDK["@futrob/sdk — Bearer"]
+  ClientSDK --> BFF
+  BFF --> SDK["@futrob/sdk — service auth + ActorId"]
   SDK --> ApiRoutes["apps/api HTTP routes"]
   ApiRoutes --> DI["apps/api di modules"]
   DI --> AppLayer["application use cases"]
@@ -39,6 +40,8 @@ flowchart TD
 ```
 
 Los edges entre módulos son **APIs públicas / ports / eventos**, nunca imports de adapters.
+
+Los siguientes diagramas describen el flujo objetivo de eventos. Actualmente la API usa `NoopEventPublisher` y compone confirmación/anulación con proyección transaccional; ver [overview](/docs/architecture/overview.md#flujo-de-dependencias). La cola de sync de proveedores es un circuito separado.
 
 ## Flujo selection → stats
 
@@ -79,6 +82,6 @@ sequenceDiagram
 - Import lint: `domain` sin adapters; `di/` único lugar de concreciones (hoy solo `apps/api/src/di`, ver [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)).
 - Tests de dominio sin I/O.
 - Application tests con ports fake.
-- Adapter tests D1 + fixtures EA sanitizadas.
+- Adapter tests Postgres/D1 según ownership + fixtures EA sanitizadas.
 - Aislamiento two-org.
 - Replay de queue/outbox/confirmación.

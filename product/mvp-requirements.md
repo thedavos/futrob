@@ -64,7 +64,7 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 | FR-06       | Configurar uno o dos partidos oficiales por enfrentamiento.                                                                                                              |
 | FR-07       | Resolver el enfrentamiento por partidos independientes (puntos/resultado por partido) o por marcador agregado.                                                           |
 | FTR-DOM-001 | Jerarquía obligatoria: `Competition → Stage → Round → Encounter → OfficialMatch`. La `Series` es la regla de resolución del enfrentamiento sobre sus partidos oficiales. |
-| FTR-DOM-002 | Distinguir `Encounter`, `OfficialMatch`, `EaMatch` y `Series`. No son intercambiables.                                                                                   |
+| FTR-DOM-002 | Distinguir `Encounter`, `OfficialMatch`, `ProviderMatch` y `Series`. No son intercambiables.                                                                             |
 | FTR-FIX-002 | Motores de fixture, standings, desempates y bracket son puros, determinísticos e idempotentes.                                                                           |
 
 ### 3.5 Reprogramación
@@ -82,7 +82,7 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | FR-09      | Consultar y persistir datos obtenidos desde `proclubs.ea.com/api` detrás de un puerto desacoplado, con caché, reintentos, observabilidad y revisión manual cuando EA falle. |
 | FR-10      | Mostrar partidos candidatos entre dos rivales dentro de una ventana temporal alrededor del horario programado.                                                              |
-| FR-12      | Detectar duplicados e impedir reutilizar un `eaMatchId` en dos partidos oficiales distintos.                                                                                |
+| FR-12      | Detectar duplicados e impedir reutilizar una referencia externa `(providerKey, externalId)` en dos partidos oficiales distintos.                                            |
 | FTR-EA-001 | Conservar payload JSON original e inmutable, hash, fechas de observación, proveedor, edición, plataforma, marcador, duración, stats de equipo/jugador y estado de sync.     |
 | FTR-EA-002 | Las sincronizaciones y jobs son idempotentes; observaciones posteriores del mismo partido pueden versionarse sin corromper el original.                                     |
 

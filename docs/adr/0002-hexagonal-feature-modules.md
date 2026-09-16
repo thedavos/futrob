@@ -5,6 +5,10 @@
 - Actualizada: 2026-07-23
 - Relacionado: [ADR-0010](/docs/adr/0010-bounded-context-packages.md)
 
+## Vigencia de la topología
+
+La ubicación de adapters y persistencia descrita abajo refleja la decisión original. Para implementar cambios, rige la [arquitectura actual](/docs/architecture/overview.md): dominio/application en `packages/<bc>`, composición y Postgres de producto en `apps/api`, egress EA exclusivo de esa API ([ADR-0013](/docs/adr/0013-ea-egress-api-only.md)), auth/actores y migraciones D1 en `apps/auth` ([ADR-0015](/docs/adr/0015-auth-extraction.md)). Se mantienen las reglas de separación de dominio y autorización con scoping de organización.
+
 ## Contexto
 
 Futrob necesita vertical slices independientes y composition roots por deployable, sin mezclar scheduling, game-data, results y statistics. Web y una futura API deben compartir dominio sin acoplarse a adapters de Cloudflare.

@@ -208,7 +208,7 @@ El recorrido operativo autenticado debe poder completarse tanto desde `apps/web`
 
 **Cubre:** FR-12, FTR-EA-002, NFR-02…04.
 
-- **Dado** un EaMatch ya observado,
+- **Dado** un ProviderMatch ya observado,
 - **cuando** el mismo sync se reejecuta,
 - **entonces** no se duplica el partido canónico; el payload original permanece inmutable y puede existir una nueva observación versionada si el proveedor cambió datos.
 
@@ -231,11 +231,11 @@ El recorrido operativo autenticado debe poder completarse tanto desde `apps/web`
 - **cuando** B propone otra selección incompatible,
 - **entonces** el Encounter queda en disputa o revisión del organizador y no actualiza proyecciones públicas hasta resolución.
 
-### AC-SEL-003 — Unicidad de eaMatchId
+### AC-SEL-003 — Unicidad de la referencia externa
 
 **Cubre:** FR-12, FTR-SEL-003.
 
-- **Dado** un eaMatchId ya aprobado en un OfficialMatch,
+- **Dado** una referencia externa (`providerKey`, `externalId`) ya aprobada en un OfficialMatch,
 - **cuando** se intenta usarlo en otro OfficialMatch,
 - **entonces** la operación falla y queda auditada.
 

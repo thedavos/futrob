@@ -4,6 +4,10 @@
 - Fecha: 2026-07-23
 - Relacionado: [ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md) · [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [packages-and-sdk](/docs/architecture/packages-and-sdk.md)
 
+## Vigencia de la topología
+
+La ubicación de adapters y persistencia descrita abajo refleja la decisión original. Para implementar cambios, rige la [arquitectura actual](/docs/architecture/overview.md): dominio/application en `packages/<bc>`, composición y Postgres de producto en `apps/api`, egress EA exclusivo de esa API ([ADR-0013](/docs/adr/0013-ea-egress-api-only.md)), auth/actores y migraciones D1 en `apps/auth` ([ADR-0015](/docs/adr/0015-auth-extraction.md)). Se mantienen las reglas de separación de dominio y autorización con scoping de organización.
+
 ## Contexto
 
 El CLI ya consumía dominio vía path alias a `apps/web`. Una API de producto (`apps/api`) necesitará los mismos use cases in-process (p. ej. runtime Node para egress a proveedores). Duplicar dominio o acoplar `apps/api` al árbol de web no es aceptable.

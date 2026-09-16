@@ -1,6 +1,6 @@
 ---
 description: Hexagonal feature modules, DI composition, and Cloudflare platform rules for Futrob
-globs: apps/web/**/*.ts,apps/web/**/*.tsx
+globs: apps/**/*.ts,apps/**/*.tsx,packages/**/*.ts
 alwaysApply: true
 ---
 
@@ -11,10 +11,10 @@ Canonical sources: `docs/architecture/overview.md`, `module-boundaries.md`, `dep
 ## Shape
 
 - Deployable Must: `apps/web` on Cloudflare Workers.
-- Deployable previsto: `apps/api` (API de producto) consumiendo los mismos `@futrob/<bc>`.
+- API de producto: `apps/api` (Hono/Node, Railway, Postgres y egress EA). Auth: `apps/auth` (Better Auth Worker). Mobile: `apps/mobile` (Expo).
 - Business logic: `packages/<context>/` (`@futrob/<bc>`) = `domain` / `application` / ports.
 - App slice: `apps/web/src/modules/<context>/` = `adapters` / `server` / `presentation` + facade `index.ts`.
-- Composition **only** in `apps/web/src/di/` (with `bootstrap/`, `config/`, `context/` alongside).
+- Product composition in `apps/api/src/di/`; web BFF/Workers infrastructure in `apps/web/src/{bootstrap,config,context}/`.
 - Shared: `@futrob/shared-kernel` + `apps/web/src/shared/` (infra web; domain reexports kernel).
 - Queue/Cron thin handlers: `apps/web/src/workers/`.
 - Do not nest composition under `src/app/` — that folder is removed.
@@ -24,7 +24,8 @@ MVP BCs: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `ga
 ## Dependency direction
 
 ```text
-routes / UI → module/server → @futrob/<bc> application → domain + ports → adapters → D1/R2/Queues/HTTP
+web/mobile UI → web BFF → SDK → apps/api HTTP → @futrob/<bc> application → domain/ports
+apps/api DI → product adapters (Postgres / EA HTTP)
 ```
 
 - Domain: no React, Zod, D1, fetch, Wrangler env, Sentry.
@@ -42,9 +43,9 @@ statistics → standings / rankings from approved results only
 analytics  → premium interpretation
 ```
 
-## Cloudflare
+## Persistence and runtime
 
-- Persistence: D1. Blobs: R2. Jobs: Queues + Cron.
+- Product persistence: Postgres in apps/api. Auth/actors and BFF rate limits: shared D1, migration history in apps/auth. Blobs: R2. Provider jobs: Queues + Cron in web calling the API.
 - Tenancy: application-scoped `organizationId` in adapters (no Postgres RLS).
 - Better Auth for sessions; Futrob organizations for authorization.
 

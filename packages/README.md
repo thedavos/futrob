@@ -15,6 +15,8 @@ Documento canónico: [`/docs/architecture/packages-and-sdk.md`](/docs/architectu
 | [`shared-kernel`](./shared-kernel/)                             | `@futrob/shared-kernel` | Result, IDs, errores/eventos y ports transversales |
 | [`test-support`](./test-support/)                               | `@futrob/test-support`  | Fakes/builders de test                             |
 
+Packages de soporte adicionales: `@futrob/ui-tokens` (tokens compartidos), `@futrob/ea-clubs` (schemas/mappers puros del proveedor) y `@futrob/logger` (logging).
+
 BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `game-data`, `results`, `statistics`, `analytics`, `notifications`, `public-portal`.
 
 ## Reglas
@@ -22,7 +24,7 @@ BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`,
 1. **Domain/application/ports** de cada BC viven en `@futrob/<bc>`, no solo en `apps/web`.
 2. El **dominio no importa Zod**. Zod vive en `api-contracts` y en adapters/server de las apps.
 3. El **SDK no importa** `@futrob/<bc>` ni adapters. Solo contratos + HTTP a `/api/v1`. Cubre web y el cliente React Native / Expo.
-4. **EA Clubs** vive en adapters de app (hoy `apps/web/.../game-data/adapters/providers/ea-clubs/`).
+4. **EA Clubs**: egress solo en `apps/api/src/adapters/game-data/ea-clubs/`; schemas/mappers puros en `@futrob/ea-clubs` (ADR-0013).
 5. **`ui` no conoce** competiciones, EA ni permisos.
 6. Preferir imports `@futrob/<bc>`, no deep-imports a `src/` internos salvo `exports` públicos.
 7. **`apps/api`** (Hono/Node en Railway) ya existe y consume los mismos `@futrob/<bc>`; es dueño de Postgres (`DATABASE_URL`) y del egress Node a EA. No reimplementar use cases en la app; `apps/web` consume el mismo contrato `/api/v1`.
@@ -67,7 +69,7 @@ apps/web, Expo  ──► @futrob/sdk
 
 1. Implementarlo en `packages/<bc>/src/application/<name>/`.
 2. Exportarlo desde `packages/<bc>/src/index.ts`.
-3. Cablear adapters en `apps/web/src/di/` (y luego en `apps/api`).
+3. Cablear adapters de producto en `apps/api/src/di/`.
 4. Exponer HTTP vía `api-contracts` + route/handler de la app que sirva `/api/v1`.
 
 ## Cómo añadir un endpoint
@@ -75,7 +77,7 @@ apps/web, Expo  ──► @futrob/sdk
 1. Schemas en `@futrob/api-contracts`.
 2. Regenerar OpenAPI.
 3. Método en `@futrob/sdk` (web y cliente React Native / Expo).
-4. Handler en `apps/web` (hoy) / `apps/api` (futuro) → use case del package.
+4. Handler de producto en `apps/api` → use case del package; añadir proxy autenticado en `apps/web` para clientes web/mobile.
 
 ## Anti-patrones
 

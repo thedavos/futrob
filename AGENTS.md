@@ -2,7 +2,7 @@
 
 ## Mission
 
-Build Futrob MVP (FC Clubs) per `product/`. Architecture: hexagonal feature modules on Cloudflare Workers.
+Build Futrob MVP (FC Clubs) per `product/`. Architecture: hexagonal bounded-context packages; web/auth on Cloudflare Workers, product API on Node/Railway, native client on Expo.
 
 ## Read first
 
@@ -27,7 +27,7 @@ See `.cursor/rules/agent-skills.mdc` for the full table and Cloud Agent availabi
 | better-typography / writing       | `typography.*` roles, ES/EN copy                 |
 | better-colors                     | Contrast on existing semantic tokens             |
 | design-empty-states               | Empty, filtered-empty, permission, error         |
-| StyleX elevation                  | Elevated surfaces (`elevation.sm                 | md  | lg`) |
+| StyleX elevation                  | Elevated surfaces (`elevation.sm`, `md`, `lg`)   |
 | gsap                              | Landing / bracket motion (presentation only)     |
 | tanstack-start / query            | Routes, SSR, client `/api/v1` state (ADR-0012)   |
 | web-perf / seo                    | Portal budgets; crawlable published content only |
@@ -50,10 +50,10 @@ contract, including Grafito + Lima for both theme selectors and the canonical st
 - Móvil: `apps/mobile` — React Native + Expo (Expo Router); consume `/api/v1` vía `@futrob/sdk`; primitivas RN en `apps/mobile/src/ui/`; tokens compartidos en `packages/ui-tokens`
 - Business logic: `packages/<bc>/` (`@futrob/game-data`, `@futrob/results`, …) — domain + application + ports
 - App modules (adapters/server/UI): `apps/web/src/modules/<context>/`
-- Composition web: `apps/web/src/{di,bootstrap,config,context}/`
+- Product composition: `apps/api/src/di/`; web BFF/Workers infrastructure: `apps/web/src/{bootstrap,config,context}/`
 - Shared web infra: `apps/web/src/shared/` (reexporta kernel; infra de Workers)
 - Workers: `apps/web/src/workers/`
-- Packages también: `api-contracts`, `sdk`, `ui`, `shared-kernel`, `test-support` — ver `/packages/README.md`
+- Packages también: `api-contracts`, `sdk`, `ui`, `ui-tokens`, `ea-clubs`, `logger`, `shared-kernel`, `test-support` — ver `/packages/README.md`
 
 MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**, results, statistics, analytics, notifications, public-portal. `billing` out of MVP.
 
@@ -73,10 +73,10 @@ MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**
   (p. ej. «Recibida hoy») se queda en presentación. Inyectar `ClockPort` cuando
   el «ahora» deba ser determinista.
 - Cross-module via package public API, ports/bridges, or outbox events — never foreign adapters/tables.
-- EA egress lives only in `apps/api/.../game-data/adapters/ea-clubs/` (see
+- EA egress lives only in `apps/api/src/adapters/game-data/ea-clubs/` (see
   [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)); web reaches EA data through the product API.
 - Official stats only after `results.official-result-approved`.
-- Organization-scoped D1 queries; no Postgres RLS / Supabase / Vercel as Must.
+- Organization-scoped product queries in Postgres adapters; D1 owns auth/actors and BFF rate limits. Tenancy is enforced in application code, without relying on Postgres RLS. No Supabase / Vercel as Must.
 - **Expected failures:** domain/application/adapter errors use `TaggedError` from
   `@futrob/shared-kernel` (stable `code` for wire/i18n; see
   [ADR-0011](/docs/adr/0011-tagged-errors.md)). Zod/`api.*`/auth wire and `Panic`

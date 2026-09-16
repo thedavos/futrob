@@ -1,7 +1,7 @@
 # Arquitectura canónica de Futrob
 
 Estado: canónica para el MVP  
-Fecha: 2026-08-23
+Fecha de revisión documental: 2026-09-16
 
 Superficies Must: web TanStack Start + Workers y mobile React Native + Expo
 
@@ -25,11 +25,11 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 
 - TanStack Start + React en `apps/web`, desplegado en **Cloudflare Workers**.
 - React Native + Expo en `apps/mobile`, deployable Must del MVP para flujos autenticados.
-- Hexagonal por bounded context: domain/application en `packages/@futrob/<bc>`; adapters en la app.
+- Hexagonal por bounded context: domain/application en `packages/<bc>`; adapters en la app.
 - Composition: adapters y use cases se instancian en `apps/api/src/di/`; la web consume vía product API ([ADR-0013](/docs/adr/0013-ea-egress-api-only.md)).
 - Mobile consume el BFF `/api/v1` con `@futrob/sdk` y sesión Bearer; no importa BC, adapters ni secretos internos.
 - Better Auth (identidad) + Futrob (autorización/orgs).
-- D1 / R2 / Queues / Cron en web. Tenancy scoped en aplicación (sin RLS Postgres).
+- API de producto Hono/Node en Railway, con Postgres. Auth/actores y rate limits BFF en D1 compartida; migraciones en `apps/auth/migrations`. R2 / Queues / Cron en web. Tenancy scoped en aplicación, sin depender de RLS.
 - shadcn/Base UI, StyleX, Vite+, Sentry en boundaries.
 - `apps/cli` para ejercitar dominio/use cases en local (no es deployable de producto).
 - `billing` queda fuera del MVP inicial.
@@ -45,7 +45,6 @@ apps/web/
 ├── wrangler.jsonc
 ├── vite.config.ts
 └── src/
-    ├── di/                     # composition root de web
     ├── bootstrap/
     ├── config/
     ├── context/
@@ -79,7 +78,7 @@ Routes / UI
   → @futrob/<bc> application/use-case
   → domain/entities + domain/ports
   → adapters (app)
-  → D1 / R2 / Queues / EA HTTP / email / Sentry
+  → Postgres / EA HTTP / eventos / Sentry
 ```
 
 Clientes:
@@ -91,7 +90,7 @@ apps/mobile UI → BFF /api/v1 ─┘
 apps/mobile    → apps/auth /api/auth (Bearer session)
 ```
 
-Asíncrono:
+Flujo asíncrono objetivo para eventos entre BCs:
 
 ```text
 Use case → Domain event → Outbox → Queue worker → Use case de otro módulo
@@ -109,6 +108,8 @@ ConfirmOfficialSelection
   → RebuildCompetitionStatistics
   → analytics snapshot worker
 ```
+
+Estado actual: `apps/api/src/di/create-modules.ts` usa `NoopEventPublisher` para eventos de dominio y compone confirmación/anulación con proyección de estadísticas dentro de una transacción. El outbox y los consumidores de notificaciones/analytics del diagrama son objetivo; no están conectados por ese publisher. La cola y Cron de sync de proveedores sí tienen handlers en `apps/web/src/workers/`.
 
 ## Composition roots
 
@@ -145,12 +146,12 @@ cases a través del product API (SDK), no instancia adapters propios.
 - Un `Actor` puede tener un perfil personal de jugador y consultar su propia proyección sin pertenecer a una organización.
 - La ruta HTTP de onboarding orquesta APIs públicas de `organizations`, `competitions` y `teams`;
   `identity` solo persiste el estado del recorrido y se completa al final.
-- Toda query tenant-scoped filtra por `organizationId` en adapters D1.
+- Toda query tenant-scoped filtra por `organizationId` en adapters de producto (Postgres o in-memory local).
 - `public-portal` solo lee proyecciones sanitizadas.
 
 ## game-data (proveedores)
 
-`game-data` es el único módulo que conoce adapters de fuentes externas. EA Clubs es un adapter bajo `adapters/providers/ea-clubs/`. El dominio usa modelos neutrales (`ProviderMatch`, `ExternalClub`, `RawProviderObservation`) e identidad `UNIQUE(provider_key, external_id)`.
+`game-data` es el único módulo que conoce adapters de fuentes externas. El egress EA Clubs vive en `apps/api/src/adapters/game-data/ea-clubs/`; sus schemas y mappers puros viven en `@futrob/ea-clubs`. El dominio usa modelos neutrales (`ProviderMatch`, `ExternalClub`, `RawProviderObservation`) e identidad `UNIQUE(provider_key, external_id)`.
 
 Proveedores MVP: `ea-clubs`, `manual`. Extensiones futuras (`screenshot-ocr`, comunitarios) no cambian `results` / `statistics` / `scheduling`.
 
@@ -189,10 +190,10 @@ Un módulo no escribe tablas ajenas; publica eventos / usa ports de lectura.
 - [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)
 - [ADR-0014](/docs/adr/0014-shared-ui-tokens-and-mobile-ui.md)
 - [ADR-0015](/docs/adr/0015-auth-extraction.md)
-- [stylex.md](/design.md)
+- [design.md](/design.md)
 - [module-boundaries.md](/docs/architecture/module-boundaries.md)
 - [dependency-graph.md](/docs/architecture/dependency-graph.md)
 
 Producto: [product/prd.md](/product/prd.md) · [domain-glossary.md](/product/domain-glossary.md)
 
-Monorepo packages/SDK (propuesta): [packages-and-sdk.md](/docs/architecture/packages-and-sdk.md)
+Monorepo packages/SDK: [packages-and-sdk.md](/docs/architecture/packages-and-sdk.md)

@@ -130,10 +130,10 @@ analytics.snapshot-generated
 
 ## Nomenclatura
 
-| Dominio                                                         | Ports                  | Use cases                      | Adapters                               |
-| --------------------------------------------------------------- | ---------------------- | ------------------------------ | -------------------------------------- |
-| `Encounter`, `ProviderMatch`, `OfficialMatchSelection`          | `*Repository`, `*Port` | `SelectOfficialMatchesUseCase` | `D1*Adapter`, `EaClubsGameDataAdapter` |
-| Específicos EA solo en `game-data/adapters/providers/ea-clubs/` |                        |                                |                                        |
+| Dominio                                                                                      | Ports                  | Use cases                      | Adapters                               |
+| -------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------ | -------------------------------------- |
+| `Encounter`, `ProviderMatch`, `OfficialMatchSelection`                                       | `*Repository`, `*Port` | `SelectOfficialMatchesUseCase` | `D1*Adapter`, `EaClubsGameDataAdapter` |
+| EA: egress en `apps/api/src/adapters/game-data/ea-clubs/`; tipos puros en `@futrob/ea-clubs` |                        |                                |                                        |
 
 ## Persistencia
 

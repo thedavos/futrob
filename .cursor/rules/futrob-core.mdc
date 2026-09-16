@@ -10,9 +10,9 @@ Multi-tenant EA SPORTS FC competitions (MVP: FC Clubs) with hexagonal feature mo
 ## Stack
 
 - TanStack Start + React in `apps/web`
-- Cloudflare Workers, D1, R2, Queues, Cron Triggers
+- Cloudflare Workers for web/auth (D1, R2, Queues, Cron); Hono/Node on Railway for product API + Postgres
 - Better Auth (identity) + Futrob organizations (authorization)
-- Hexagonal BCs in `packages/@futrob/<bc>` (domain/application); adapters under `apps/web/src/modules/*`; DI only in `apps/web/src/di/` (and future `apps/api`)
+- Hexagonal BCs in `packages/<bc>` (domain/application); product adapters and DI in `apps/api`; web is UI/BFF, auth is a separate Worker, mobile uses Expo + SDK
 - shadcn/Base UI, StyleX, Vite+, Sentry at boundaries
 - game-data providers: EA Clubs adapter today; manual/others later
 
@@ -28,7 +28,7 @@ Do not use `EaMatch` / `ea-data` as domain names — use ProviderMatch / game-da
 - Sync never auto-officializes
 - `UNIQUE(provider_key, external_id)` for external refs
 - Only approved official results update standings/rankings/public portal
-- Organization-scoped D1 access; no Postgres RLS
+- Organization-scoped product persistence in API adapters; tenancy does not rely on Postgres RLS
 - No Supabase/Vercel as Must platform
 - Expected failures are `TaggedError`. See ADR-0011.
 

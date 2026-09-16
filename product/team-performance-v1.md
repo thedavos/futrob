@@ -7,7 +7,7 @@
 
 DEC-041: a versioned 0–100 team performance score from **results**, **goal difference**, **recent form**, and **offensive/defensive efficiency when those metrics exist**. Missing metrics stay absent; they are never stored or scored as zero.
 
-This table is the product contract. Domain code must import these weights rather than inventing a second coefficient set. Do not reuse game-data player-attribute `WEIGHTS`.
+This table is the product contract. The executable constants are `TEAM_PERFORMANCE_WEIGHTS` in [team-performance-v1.ts](/packages/statistics/src/domain/policies/team-performance-v1.ts); keep them aligned with this table. Consumers import those constants rather than inventing a second coefficient set. Do not reuse game-data player-attribute `WEIGHTS`.
 
 ## Weight table
 

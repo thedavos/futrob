@@ -1,6 +1,6 @@
 ---
 name: futrob-hexagonal-module
-description: Create or extend a Futrob hexagonal bounded context — domain/application in packages/@futrob/<bc>, adapters in the app. Use when adding BCs, use cases, ports, adapters, or server functions.
+description: Create or extend a Futrob hexagonal bounded context — domain/application in packages/<bc>, adapters in the app. Use when adding BCs, use cases, ports, adapters, or server functions.
 ---
 
 # Futrob hexagonal feature module
@@ -17,14 +17,17 @@ packages/<context>/src/          # @futrob/<context>
 ├── application/<use-case-name>/
 └── index.ts                     # public API of the package (no adapters)
 
+apps/api/src/adapters/<context>/  # persistence, bridges, providers
+apps/api/src/di/                 # product composition
+apps/api/src/http/               # HTTP handlers/mappers
+
 apps/web/src/modules/<context>/
-├── adapters/{persistence,bridges,observability,providers?}
 ├── server/
 ├── presentation/
 └── index.ts                     # reexport @futrob/<context> (+ app-only exports)
 
-Composition only in apps/web/src/di/<context>.module.ts
-(and apps/api/src/di/ when that app exists).
+Product composition in apps/api/src/di/<context>.module.ts.
+Web BFF infrastructure in apps/web/src/{bootstrap,config,context}/.
 ```
 
 ## Module map (MVP)
@@ -41,7 +44,7 @@ statistics → competitive projections
 analytics  → premium interpretation
 ```
 
-Never put EA-specific types in `results`/`statistics`/`scheduling`. EA lives under app adapters (`apps/web/.../game-data/adapters/providers/ea-clubs/`).
+Never put EA-specific types in `results`/`statistics`/`scheduling`. EA egress lives in `apps/api/src/adapters/game-data/ea-clubs/`; pure schemas/mappers live in `@futrob/ea-clubs` (ADR-0013).
 
 ## Rules
 
@@ -49,7 +52,7 @@ Never put EA-specific types in `results`/`statistics`/`scheduling`. EA lives und
 2. Application depends on domain ports; never concrete adapters.
 3. Package `index.ts` exports use cases/types/ports — never adapters, DB schemas, mappers, HTTP clients.
 4. Cross-module: other `@futrob/<bc>` public API, reader ports + bridges in consumer adapters, or versioned events via outbox.
-5. Persistence adapters target the app platform (web: D1/R2/Queues).
+5. Product persistence adapters live in apps/api (Postgres; in-memory for local development). Auth/actors and BFF rate limits use D1, with migrations owned by apps/auth.
 6. Tenancy: every tenant write/read scopes by `organizationId` in adapters.
 7. Official stats update only after `results.official-result-approved`.
 
@@ -59,9 +62,9 @@ Never put EA-specific types in `results`/`statistics`/`scheduling`. EA lives und
 2. Add/adjust domain ports and errors in the package. **Expected failures are `TaggedError`
    classes** under `domain/errors/` (stable `code` for HTTP/i18n). See ADR-0011.
 3. Export from `packages/<bc>/src/index.ts`.
-4. Wire concrete adapters in `apps/web/src/di/<module>.module.ts` only.
-5. Add thin `server/*.server.ts` when exposed to UI/API (validate input, call use case, unwrap Result).
-6. If cross-module effect: emit domain event name from `shared/contracts/events/catalog.ts`.
+4. Wire product adapters in `apps/api/src/di/<module>.module.ts`.
+5. Add thin HTTP handlers in `apps/api/src/http/` (validate input, call use case, unwrap Result); expose authenticated BFF routes in web through the SDK.
+6. If cross-module effect: define the typed event beside its producer in the BC package and keep `apps/web/src/shared/contracts/events/catalog.ts` aligned. Packages never import that app-local catalog. Verify actual delivery wiring; the current API publisher is a no-op (see architecture overview).
 7. Update `docs/architecture/module-boundaries.md` if ownership changes.
 8. Add domain/application tests in the package with fake ports.
 

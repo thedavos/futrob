@@ -63,7 +63,7 @@ Competition
 | Término                 | Definición canónica                                        | Invariante                                                     |
 | ----------------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
 | **Encounter**           | Cita programada entre dos Teams.                           | Contiene uno o más espacios de partido oficial.                |
-| **OfficialMatch**       | Unidad competitiva que cuenta para el Encounter.           | Puede asociarse a cero o un `EaMatch` aprobado.                |
+| **OfficialMatch**       | Unidad competitiva que cuenta para el Encounter.           | Puede asociarse a cero o un `ProviderMatch` aprobado.          |
 | **Series**              | Regla de resolución del Encounter sobre sus OfficialMatch. | Modos MVP: partidos independientes o marcador agregado.        |
 | **Independent matches** | Cada OfficialMatch produce su propio resultado/puntos.     | En liga, cada partido puede puntuar por separado.              |
 | **Aggregate score**     | Suma de goles de los OfficialMatch para decidir la serie.  | Desempates según CompetitionRules; no asumir gol de visitante. |

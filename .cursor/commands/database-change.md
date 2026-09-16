@@ -1,10 +1,10 @@
-# Create a Cloudflare D1 database change
+# Create a Futrob database change
 
-1. Read current Cloudflare D1 / Wrangler docs for migration and binding behavior.
-2. Run `npx wrangler --help` and the relevant subgroup `--help`; do not guess flags.
-3. Create the migration with the supported Wrangler D1 migration command.
-4. Use expand/migrate/contract for incompatible changes.
-5. Every tenant table includes `organization_id` (or equivalent) and adapters always scope by it.
-6. Auth schema changes for Better Auth are reviewed SQL checked into D1 migrations.
-7. Add adapter mapping and two-organization isolation tests when code exists.
-8. Apply migrations to a clean local D1, then run relevant tests and `npm run check`.
+1. Determine ownership: product tables use Postgres in `apps/api/migrations`; auth/actors and BFF rate limits share the D1 history in `apps/auth/migrations` (ADR-0015).
+2. Inspect the existing ordered SQL migrations and adapters before adding the next migration.
+3. For D1, check the installed Wrangler migration commands with `--help`; use `--persist-to ../web/.wrangler/state` from `apps/auth` for the shared local database.
+4. Use expand/migrate/contract for incompatible changes. Review Better Auth generated SQL before adding it to the shared D1 history.
+5. Tenant-owned product data must support organization scoping in adapters; personal actor data uses its own ownership boundary.
+6. Add adapter mapping and isolation tests for the changed boundary.
+7. Apply to a clean local/test database and verify upgrades from the previous schema. The Postgres integration suite uses `TEST_DATABASE_URL` and isolated test schemas.
+8. Run relevant tests and `npm run check`. Report which database validations actually ran.
