@@ -14,6 +14,7 @@
     "check": "vp check",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vp test",
+    "generate:assets": "node scripts/generate-brand-assets.mjs",
     "generate:routes": "node scripts/generate-route-tree.mjs"
   },
   "dependencies": {

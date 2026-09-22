@@ -1136,6 +1136,11 @@ Fondos de producto (no son marca; viven en `apps/web/src/assets/`):
 | `background-match.png`   | [Superficie de partido](#superficie-de-partido): héroe, contenido de Último partido, filas. |
 | `background-default.png` | Cards de onboarding / vacío con foto, sin escena de partido.                                |
 
+Regenerar los SVG del logo, favicons e imágenes web con
+`npm run generate:assets -w @futrob/web`. El generador toma el trazado canónico de
+`packages/ui/src/logo.tsx` y los colores semánticos de `@futrob/ui-tokens`;
+la composición Open Graph se mantiene en `/og/futrob-default.svg`.
+
 La metadata global está conectada en
 [`apps/web/src/routes/__root.tsx`](/apps/web/src/routes/__root.tsx). Cuando exista dominio de
 producción, las rutas públicas deben emitir una URL absoluta para `og:image` y una URL canónica.

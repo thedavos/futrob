@@ -152,7 +152,7 @@ export const Playground: Story = {
 };
 
 export const Brand: Story = {
-  name: "Brand green",
+  name: "Brand lime",
   args: {
     monochrome: false,
     title: "Futrob",
