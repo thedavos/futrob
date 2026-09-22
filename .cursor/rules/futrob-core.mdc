@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Futrob core
 
-Multi-tenant EA SPORTS FC competitions (MVP: FC Clubs) with hexagonal feature modules and Cloudflare Workers.
+Multi-tenant EA SPORTS FC competitions (MVP: FC Clubs) with hexagonal bounded-context packages, web/auth Workers, a Node product API and an Expo native client.
 
 ## Stack
 
@@ -34,4 +34,4 @@ Do not use `EaMatch` / `ea-data` as domain names — use ProviderMatch / game-da
 
 ## Sources
 
-`product/prd.md`, requirements, glossary, `docs/architecture/*`, ADRs. User request wins on conflict.
+`product/prd.md`, `product/mvp-requirements.md`, `product/domain-glossary.md`, `product/open-decisions.md`, `docs/architecture/*` and relevant ADRs. [design.md](../../design.md) is the sole design contract. User request wins on conflict; product targets do not establish implementation status.

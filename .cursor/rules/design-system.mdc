@@ -1,8 +1,26 @@
 ---
-description: Futrob visual language for landing, operations, Match Center, and public portal
-globs: apps/web/**/*.ts,apps/web/**/*.tsx,apps/web/**/*.css,packages/ui/**/*.ts,packages/ui/**/*.tsx,packages/ui/**/*.css
+description: Futrob design authority and composition references for web, native UI and shared tokens
+globs: design.md,apps/web/**/*.ts,apps/web/**/*.tsx,apps/web/**/*.css,apps/mobile/**/*.ts,apps/mobile/**/*.tsx,packages/ui/**/*.ts,packages/ui/**/*.tsx,packages/ui/**/*.css,packages/ui-tokens/**/*.ts,.storybook/**/*.ts,.storybook/**/*.tsx
 alwaysApply: false
 ---
 
-Read `/design.md` before UI implementation or review. It owns visual rules, Base UI/StyleX
-contracts, semantic tokens, screen patterns, states and verification. Keep design decisions there.
+# Futrob design contract
+
+Read [design.md](../../design.md) before designing, implementing or reviewing UI.
+It owns visual rules, typography, tokens, navigation, screen patterns, states and
+verification. Keep design decisions there rather than introducing another contract.
+
+- Reuse current text primitives / `typography.*` and semantic tokens. Token values
+  live in `packages/ui-tokens/src`; regenerate CSS through its package scripts when
+  values change. `packages/ui/src/tokens.css` is generated.
+- Both theme aliases use Grafito + Lima. Follow the documented responsive and touch
+  behavior rather than introducing a separate palette or typography scale.
+- For pages, sections, KPIs and empty states, use the matching repo creation skill.
+  Read the [shared composition reference](../skills/references/design-composition.md)
+  for Inicio and the closest current page. Recency alone does not make legacy UI canonical.
+- Keep compositions in their owning app and reusable primitives in the UI package.
+  For existing components needing stories, use [add-story](../skills/add-story/SKILL.md).
+- Web uses [futrob-stylex](../skills/futrob-stylex/SKILL.md). Native uses its own
+  primitives in `apps/mobile/src/ui` and shared tokens; preserve platform boundaries.
+- Verify relevant states in stories and the requested user flow. Report build,
+  interaction and visual evidence separately; a successful build is not visual proof.

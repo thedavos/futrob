@@ -1,8 +1,24 @@
 ---
-description: shadcn with Base UI component rules for Futrob web interfaces
-globs: apps/web/src/**/*.ts,apps/web/src/**/*.tsx,apps/web/src/**/*.css,packages/ui/src/**/*.ts,packages/ui/src/**/*.tsx,packages/ui/src/**/*.css
+description: Base UI primitive behavior and public component contracts for Futrob web UI
+globs: packages/ui/src/**/*.ts,packages/ui/src/**/*.tsx,packages/ui/src/**/*.css,packages/ui/components.json,apps/web/components.json
 alwaysApply: false
 ---
 
-Read `/design.md` before UI implementation or review. It owns visual rules, Base UI/StyleX
-contracts, semantic tokens, screen patterns, states and verification. Keep design decisions there.
+# Web primitives
+
+For new or changed primitives, read [design.md](../../design.md), the component source
+and public exports, and [futrob-stylex](../skills/futrob-stylex/SKILL.md).
+
+- Reuse existing `@futrob/ui` contracts before adding a primitive. Product compositions
+  stay in their owning app module and use the repo creation skills.
+- Use Base UI behavior for interactive primitives where appropriate. Inspect the
+  installed component API before adopting shadcn output; restyle with existing StyleX
+  tokens and typography rather than keeping generated visual defaults.
+- Preserve keyboard behavior, focus management, accessible names and render callbacks
+  when wrapping primitives. Keep variants closed and typed, with public class/style
+  composition following the existing helpers.
+- New primitives use `packages/ui/src/components/<name>/`. Keep existing files in their
+  current locations unless the task calls for migration. Update public exports and
+  relevant stories with [add-story](../skills/add-story/SKILL.md).
+- UI primitives have no competition, permission or provider dependencies. Native
+  primitives have a separate implementation under `apps/mobile/src/ui`.

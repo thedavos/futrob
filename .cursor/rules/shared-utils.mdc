@@ -8,9 +8,9 @@ alwaysApply: false
 
 Prefer ownership and colocation over a generic utility bucket.
 
-- Put universal domain semantics such as branded IDs, `Result`, `TaggedError`, `Clock`, `IdGenerator`, pagination, locale, and time zone in `packages/shared-kernel` only when at least two contexts share identical meaning. BC-specific tagged errors live in `packages/<bc>/src/domain/errors/`.
+- Put universal domain semantics such as branded IDs, `Result`, `TaggedError`, `ClockPort`, `IdGeneratorPort`, pagination, locale, and time zone in `packages/shared-kernel` only when at least two contexts share identical meaning. BC-specific tagged errors live in `packages/<bc>/src/domain/errors/`.
 - Put framework-agnostic technical helpers in the narrow technical package that owns them.
-- Put view-only helpers with the feature in `apps/web/src/features/<context>`.
+- Put view-only helpers with the feature in `apps/web/src/modules/<context>/presentation/` or the owning native module.
 - Keep business calculations in the owning domain or application package, even if another context needs them; expose a small public contract instead of copying the helper.
 - `packages/ui` may own styling composition helpers, but no competition semantics.
 - One concern per file, named for behavior. Colocate focused tests.
@@ -23,4 +23,13 @@ Shared code must not become:
 - an untyped `Record<string, unknown>` transport boundary;
 - a place for Encounter, roster, EA sync, or authorization rules without ownership.
 
-Helpers should be pure by default, preserve input immutability, return typed results for expected failure, and avoid hidden time/randomness. Inject `Clock` and `IdGenerator` where determinism matters.
+Helpers should be pure by default, preserve input immutability, return typed results for expected failure, and avoid hidden time/randomness. Inject `ClockPort` and `IdGeneratorPort` where determinism matters.
+
+Before adding a shared port, search `@futrob/shared-kernel` and existing BC contracts.
+Reuse equivalent `ClockPort`, `IdGeneratorPort`, `TransactionPort` and `EventPublisherPort`;
+keep ports with BC-specific vocabulary in that context.
+
+Reuse `addDays`, `daysFromNow`, `daysFromNowIso`, `calendarDaysBetween`, `compareTime`
+and `compareByTime` from `packages/shared-kernel/src/time.ts` instead of reimplementing
+day offsets or Date sort callbacks. Pass a deterministic clock value where needed;
+relative-time UI copy remains in presentation.

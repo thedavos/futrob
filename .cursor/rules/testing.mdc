@@ -1,26 +1,42 @@
 ---
-description: Vitest strategy for Futrob hexagonal modules on Cloudflare
-globs: apps/web/**/*.test.ts,apps/web/**/*.test.tsx,apps/web/**/*.spec.ts,apps/web/**/*.spec.tsx
-alwaysApply: true
+description: Futrob tests for domain, app adapters, UI stories and user-flow verification
+globs: apps/**/*.test.ts,apps/**/*.test.tsx,apps/**/*.spec.ts,apps/**/*.spec.tsx,packages/**/*.test.ts,packages/**/*.test.tsx,packages/**/*.spec.ts,packages/**/*.spec.tsx,apps/**/*.stories.tsx,packages/**/*.stories.tsx,**/vite.config.ts
+alwaysApply: false
 ---
 
 # Testing
 
-Use Vitest through Vite+: `import { … } from "vite-plus/test"` (never `vitest` directly). Run with `vp test` / `npm test`. Coverage gate: `npm run test:coverage` (min **80%** lines/functions/branches/statements on domain + application + registry adapters; see `apps/web/vite.config.ts`).
+Use Vitest through Vite+: test APIs come from `vite-plus/test`. Story interaction
+assertions use `storybook/test` as in current siblings. Run once with
+`npm run test -- --run`; inspect project names in the Vite configs for focused runs.
+Coverage thresholds and included files are owned by root/workspace Vite configs;
+read those settings when running `npm run test:coverage` instead of assuming one global floor.
 
-Colocate domain/application tests next to use cases. Prefer fake ports over mocking D1 adapters.
+## Choose the boundary
 
-## Pyramid
+1. Domain/policies: pure tests without I/O.
+2. Application: fake ports, deterministic clock/IDs, expected TaggedError outcomes.
+3. Adapters: Postgres product persistence, D1 auth/BFF mappings, sanitized EA fixtures
+   and implemented Queue/lease/idempotency behavior.
+4. Integration: organization isolation, trusted identity and permission boundaries;
+   use the test database/harness documented by the owning app.
+5. UI: component tests and current Storybook scenarios for relevant variants and states.
+   Use [add-story](../skills/add-story/SKILL.md) for focused story coverage.
+6. User flow: [verify-futrob](../skills/verify-futrob/SKILL.md) for live web/API proof.
+   Storybook or offline CLI checks alone do not establish end-to-end behavior.
 
-1. Domain + pure policies (no I/O)
-2. Application use cases with fake ports (`GameDataProviderPort`, `EncounterReaderPort`, …)
-3. Adapter tests: D1 mappings, EA fixtures sanitized, Queue idempotency
-4. Integration: two-organization isolation
-5. E2E when Start/Workers are wired
+Colocate meaningful tests with changed behavior. For a UI composition, its creation
+skill already specifies relevant stories; avoid duplicate coverage of implementation details.
 
-## Required
+## Invariants when affected
 
-- Replays of sync/confirm/outbox do not duplicate effects
-- Only approved official results change statistics/public projections
-- `UNIQUE(provider_key, external_id)` enforced
-- Domain/application never import React, Better Auth, Wrangler bindings, or Sentry
+- Replayed sync/confirmation operations do not duplicate effects. Inspect actual
+  event wiring before asserting outbox/notification delivery.
+- Only approved official results change official statistics/public projections;
+  provider-data previews retain their separate meaning.
+- External references preserve `UNIQUE(provider_key, external_id)`.
+- Domain/application stay independent of React, auth libraries, bindings and Sentry.
+
+The root suite includes Storybook browser tests using Playwright Chromium. A missing
+browser is a blocked browser check, not a passing suite. Report passed, failed,
+skipped and blocked checks separately, with the command actually run.

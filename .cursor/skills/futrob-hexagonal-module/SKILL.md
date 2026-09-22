@@ -1,83 +1,126 @@
 ---
 name: futrob-hexagonal-module
-description: Create or extend a Futrob hexagonal bounded context — domain/application in packages/<bc>, adapters in the app. Use when adding BCs, use cases, ports, adapters, or server functions.
+description: Implement or refactor Futrob bounded contexts, use cases, ports, app adapters and product API boundaries. Use for business behavior, persistence or cross-context integration; pure UI composition uses the design skills.
 ---
 
-# Futrob hexagonal feature module
+# Futrob hexagonal modules
 
-## When to use
+Deliver the smallest complete change in the context that owns the behavior. Extend an
+existing module unless the capability has a distinct vocabulary and responsibility.
+A new use case does not automatically require a new port, endpoint or bounded context.
 
-Adding or changing a bounded context, use case, port, adapter, bridge, server function, or cross-module event in Futrob.
+## Establish ownership
 
-## Canonical layout
+Read the relevant requirement and acceptance criteria in `product/`, then consult
+[architecture overview](../../../docs/architecture/overview.md),
+[module boundaries](../../../docs/architecture/module-boundaries.md) and
+[dependency graph](../../../docs/architecture/dependency-graph.md).
+Inspect the current use case, port, adapter, DI and tests nearest to the request.
+The documents describe both implemented behavior and targets; verify the actual wiring.
 
-```text
-packages/<context>/src/          # @futrob/<context>
-├── domain/{entities,value-objects,errors,events,ports,policies}
-├── application/<use-case-name>/
-└── index.ts                     # public API of the package (no adapters)
+Keep these responsibilities separate:
 
-apps/api/src/adapters/<context>/  # persistence, bridges, providers
-apps/api/src/di/                 # product composition
-apps/api/src/http/               # HTTP handlers/mappers
+| Context | Owns the decision |
+| --- | --- |
+| scheduling | When an Encounter happens and which official slots it needs |
+| game-data | What providers report; normalized observations and sync |
+| results | Which matches count, confirmation, disputes and approval |
+| statistics | Projections of approved results; preserve separately defined personal/provider views |
+| analytics | Interpretation and analytical snapshots |
 
-apps/web/src/modules/<context>/
-├── server/
-├── presentation/
-└── index.ts                     # reexport @futrob/<context> (+ app-only exports)
+Use the module-boundaries document for identity, organizations, competitions, teams,
+notifications and public-portal ownership. Billing remains outside the MVP.
 
-Product composition in apps/api/src/di/<context>.module.ts.
-Web BFF infrastructure in apps/web/src/{bootstrap,config,context}/.
-```
+When adding a use case, a bridge or an official-result effect, read the matching
+[worked example](references/examples.md). The examples link to executable code and
+explain what to reuse; they are not templates to copy wholesale.
 
-## Module map (MVP)
+## Place the change
 
-`identity` · `organizations` · `competitions` · `teams` · `scheduling` · `game-data` · `results` · `statistics` · `analytics` · `notifications` · `public-portal`
+| Concern | Owner / location |
+| --- | --- |
+| Entities, policies, business errors and domain-specific ports | `packages/<bc>/src/domain/` |
+| Use-case orchestration and input/output types | `packages/<bc>/src/application/<use-case>/` |
+| Public package contract | `packages/<bc>/src/index.ts` |
+| Product persistence, provider I/O and bridges | `apps/api/src/adapters/<bc>/` |
+| Product construction and cross-context composition | `apps/api/src/di/` |
+| HTTP parsing and response mapping | `apps/api/src/http/` |
+| Shared wire schemas and client methods | `packages/api-contracts`, `packages/sdk` |
+| Web BFF and presentation | `apps/web/src/modules/<context>/{server,presentation}/` and existing routes |
+| Auth/session authority and D1 migration history | `apps/auth` |
+| Native presentation | `apps/mobile`, consuming the SDK and shared tokens |
 
-Critical separation:
+Domain/application stay independent of React, Zod, persistence clients, fetch, Worker
+bindings and Sentry. Application code uses ports; DI supplies concrete adapters.
+Export the intended use cases/types/ports, not adapters or database schemas.
 
-```text
-scheduling → when/how many
-game-data  → what providers report
-results    → what counts officially
-statistics → competitive projections
-analytics  → premium interpretation
-```
+Use public package imports for declared cross-context dependencies. Reader ports can
+refer to existing public domain contracts where the dependency graph permits it; do
+not deep-import another context's internals or couple domain code to its application
+implementation. Keep web/native presentation on view models and HTTP contracts.
 
-Never put EA-specific types in `results`/`statistics`/`scheduling`. EA egress lives in `apps/api/src/adapters/game-data/ea-clubs/`; pure schemas/mappers live in `@futrob/ea-clubs` (ADR-0013).
+EA network calls belong in `apps/api/src/adapters/game-data/ea-clubs/`; provider schemas
+and pure mappers live in `@futrob/ea-clubs`. Other contexts use neutral vocabulary such
+as `ProviderMatch`, not EA payloads. Web reaches EA data through the product API.
 
-## Rules
+## Implement the behavior
 
-1. Domain imports only TypeScript + `@futrob/shared-kernel` (+ own package types). No Zod, D1, fetch, Sentry, React.
-2. Application depends on domain ports; never concrete adapters.
-3. Package `index.ts` exports use cases/types/ports — never adapters, DB schemas, mappers, HTTP clients.
-4. Cross-module: other `@futrob/<bc>` public API, reader ports + bridges in consumer adapters, or versioned events via outbox.
-5. Product persistence adapters live in apps/api (Postgres; in-memory for local development). Auth/actors and BFF rate limits use D1, with migrations owned by apps/auth.
-6. Tenancy: every tenant write/read scopes by `organizationId` in adapters.
-7. Official stats update only after `results.official-result-approved`.
+1. **Define the observable outcome.** Identify the owner, trusted actor, scope, inputs,
+   expected failures and state changes. For a narrow fix, preserve existing public
+   contracts unless the requested behavior requires changing them.
+2. **Reuse contracts before adding ports.** Search the owning BC and shared-kernel.
+   Reuse `ClockPort`, `IdGeneratorPort`, `TransactionPort`, `EventPublisherPort` and
+   `AuthorizationPort` where semantics match. Domain-specific reader/repository ports
+   stay with their owner. Add operations for a concrete use-case need, not a generic CRUD layer.
+3. **Implement policy and orchestration.** Put business invariants in domain policies
+   and orchestration in the use case. Follow neighboring constructor/input conventions.
+   Inject clock/IDs where deterministic; reuse shared time helpers from
+   `packages/shared-kernel/src/time.ts` for offsets and ordering.
+4. **Enforce access and ownership.** Protected product operations receive a trusted
+   `ActorId` and enforce capabilities via the existing authorization contract and BC
+   permission constants. Validate the organization → competition → team/encounter
+   relationship where applicable. Tenant reads/writes remain organization-scoped;
+   personal actor-owned data follows its own ownership boundary. UI visibility and
+   Postgres RLS are not substitutes for application authorization.
+5. **Represent expected failure explicitly.** Use the owning `TaggedError` classes
+   and the existing `Result` convention. Keep stable typed `code` and structured props;
+   use [ADR-0011](../../../docs/adr/0011-tagged-errors.md). Validation/HTTP/auth errors
+   belong at their boundaries; `Panic` denotes a defect and is not wrapped in `Result.err`.
+6. **Wire only the changed boundaries.** Export the public use case, implement required
+   adapters and compose them in the existing API module factory. When HTTP changes,
+   update wire schemas, mapper, handler, SDK and affected BFF/native consumers. Parse
+   input at the boundary and preserve safe error mapping; routes do not own business rules.
+7. **Handle effects deliberately.** Cross-context reads use public contracts through
+   ports/bridges. Writes remain with the owning context. Reuse transaction/idempotency
+   semantics and verify rollback behavior: returning an error value is not necessarily
+   a rollback signal. For events, inspect the publisher, persistence and consumer before
+   claiming delivery. See the official-result example for the current implementation.
 
-## Checklist for a new use case
+Product persistence belongs to the API (Postgres, or process-local memory without
+`DATABASE_URL`). D1 owns auth/actors and BFF rate limits. For a schema change, use the
+[database-change workflow](../../commands/database-change.md) and the owning migrations.
 
-1. Place folder under `packages/<bc>/src/application/<kebab-name>/` with `*.use-case.ts` (+ input type).
-2. Add/adjust domain ports and errors in the package. **Expected failures are `TaggedError`
-   classes** under `domain/errors/` (stable `code` for HTTP/i18n). See ADR-0011.
-3. Export from `packages/<bc>/src/index.ts`.
-4. Wire product adapters in `apps/api/src/di/<module>.module.ts`.
-5. Add thin HTTP handlers in `apps/api/src/http/` (validate input, call use case, unwrap Result); expose authenticated BFF routes in web through the SDK.
-6. If cross-module effect: define the typed event beside its producer in the BC package and keep `apps/web/src/shared/contracts/events/catalog.ts` aligned. Packages never import that app-local catalog. Verify actual delivery wiring; the current API publisher is a no-op (see architecture overview).
-7. Update `docs/architecture/module-boundaries.md` if ownership changes.
-8. Add domain/application tests in the package with fake ports.
+## Verify the changed contract
 
-## Imports
+Select checks by the boundaries changed:
 
-- In packages: `@futrob/shared-kernel`, `@futrob/<other-bc>`, or relative within the package.
-- In `apps/web`: `@futrob/<bc>` for business logic; `@/` for app-local `src/*`. Do not use `../` parent-relative across packages.
+- Domain/application: success, relevant expected failures, denied capabilities and
+  ownership isolation using fake ports. Check deterministic time/IDs when observable.
+- Persistence/bridges: mapping, tenant scope and the real adapter contract; include
+  rollback and replay/concurrency checks when the change depends on those guarantees.
+- HTTP/SDK: parsing, trusted identity, safe failure mapping and wire compatibility.
+- Official results: approval gating and the existing transactional projection path.
+  Sync alone must never officialize or update official competitive projections.
 
-## Anti-patterns
+Use `vite-plus/test` and current workspace test scripts; consult `.cursor/rules/testing.mdc`.
+Run relevant tests, `npm run check` and affected typechecks. For domain/API smoke tests,
+use [futrob-cli](../futrob-cli/SKILL.md). Live UI proof belongs to
+[verify-futrob](../verify-futrob/SKILL.md), not an in-memory unit test.
 
-- `routes` or `presentation` calling `env.APP_DB` / repositories
-- Importing EA adapter paths from outside `src/di` or game-data adapters
-- Writing `statistics` tables from `results` use cases
-- Naming the provider context `ea-data` or bare `provider`
-- Putting adapters inside `@futrob/<bc>`
-- Path-aliasing another app into `apps/web/src/modules` for domain
+Update module boundaries/dependency graph only when ownership or dependencies change;
+record material architectural decisions in an ADR. Keep the event catalog aligned
+when changing event contracts, without importing app code into BC packages.
+
+Finish with the behavior changed, owning context, boundaries touched and checks run.
+Identify blocked integrations or delivery gaps explicitly. A fake adapter passing is
+not evidence that Postgres, Workers, EA or durable events work end to end.

@@ -1,6 +1,6 @@
 ---
 description: Sentry boundaries, correlation, data minimization, and redaction for Futrob
-globs: apps/web/**/*.ts,apps/web/**/*.tsx,packages/**/*.ts,packages/**/*.tsx
+globs: apps/**/*.ts,apps/**/*.tsx,packages/**/*.ts,packages/**/*.tsx
 alwaysApply: false
 ---
 
@@ -10,7 +10,7 @@ Sentry observes execution boundaries; it is never imported by domain or applicat
 
 ## Instrumentation
 
-- Initialize client and server SDKs in framework entrypoints/composition using validated environment/bindings.
+- Initialize the appropriate SDK at the owning runtime boundary: Workers for web/auth, Node for the product API, and the supported native boundary when configured. Use validated environment/bindings and inspect existing instrumentation before adding it.
 - Instrument route handlers, server functions, queue/cron stages, EA provider calls, and email dispatch with operation-specific spans.
 - Propagate `trace_id`, `request_id`, job ID, event type/version, and a safe opaque tenant correlation value.
 - Expected domain failures are controlled outcomes or low-severity breadcrumbs, not noisy exceptions.

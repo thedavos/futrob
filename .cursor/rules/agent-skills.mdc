@@ -1,70 +1,36 @@
 ---
-description: Preferred local and Cursor skills for Futrob work phases
+description: Route Futrob tasks to repository skills and focused review commands
 alwaysApply: true
 ---
 
-# Preferred agent skills
+# Futrob task routing
 
-Always start domain/module work with the repo skill:
+Use the matching skill; read only the workflows relevant to the request. Repository
+skills are versioned with the checkout. Personal/plugin skills may not be available
+in every environment; use them only when installed, with the repo contracts as authority.
 
-- `.cursor/skills/futrob-hexagonal-module/SKILL.md`
+| Task | Repository skill |
+| --- | --- |
+| BC, use case, port, adapter or server boundary | [futrob-hexagonal-module](../skills/futrob-hexagonal-module/SKILL.md) |
+| Domain/API smoke checks or CLI commands | [futrob-cli](../skills/futrob-cli/SKILL.md) |
+| Complete product screen | [create-page](../skills/create-page/SKILL.md) |
+| Block within a page | [create-section](../skills/create-section/SKILL.md) |
+| KPI/stat summary | [create-kpis](../skills/create-kpis/SKILL.md) |
+| Contextual absence or missing prerequisites | [create-empty-state](../skills/create-empty-state/SKILL.md) |
+| Stories for an existing component or composition | [add-story](../skills/add-story/SKILL.md) |
+| Web styling | [futrob-stylex](../skills/futrob-stylex/SKILL.md) |
+| Live verification of a user-facing web flow | [verify-futrob](../skills/verify-futrob/SKILL.md) |
 
-Cloud Agents only auto-load skills committed under `.cursor/skills/` (and `.agents/skills/`).
-User-level `~/.cursor/skills` / `~/.agents/skills` and personal plugins do not sync to the VM.
-When a listed skill file is missing, follow the matching `.cursor/rules` and `AGENTS.md` instead
-of inventing a parallel stack.
+The creation skills already cover stories. Use `add-story` for focused coverage work;
+avoid running the same workflow twice. All design work follows [design.md](../../design.md).
+The [shared composition reference](../skills/references/design-composition.md) points to
+Inicio and other current pages; inspect their current source before reusing a pattern.
 
-## Domain and product thinking
+When available, specialist skills can support a specific need: domain/interaction
+modeling, accessibility, typography, copy, colors, performance, SEO or platform APIs.
+They complement the current stack and design contract; they do not select a new one.
 
-Read and follow these when the task matches.
-
-| Skill | When |
-|---|---|
-| **futrob-hexagonal-module** | Any BC, use case, port, adapter, or server function |
-| **futrob-cli** | Smoke-testing domain use cases or `apps/api` endpoints via `apps/cli` (incl. `e2e-golden-path`); adding CLI commands |
-| **layers-domain** | Clarify or rename domain concepts before coding (Encounter, OfficialMatch, Team, selection) |
-| **layers-interaction-flow** | Captain selection, reschedule, sync → review → officialize flows before UI/API shape |
-| **layers-user-needs** | Operator vs spectator jobs, pains, and opportunities before solution shape |
-| **layers-surface** | Audit screens against vocabulary, completeness, feedback, and hierarchy |
-
-## UI system
-
-Compose from `@futrob/ui`. Do not invent a second visual language.
-
-| Skill | When |
-|---|---|
-| **shadcn** (Vercel plugin / CLI) | Add or change primitives in `packages/ui`; compose in web presentation. Base UI only — see `ui-shadcn.mdc` |
-| **better-ui** | Visual pass: density, polish, empty/error states, operator vs spectator UI |
-| **better-layout** | Grouping, spacing, reading order, breakpoints, progressive disclosure |
-| **futrob-stylex** | Author or migrate web styles (`packages/ui`, `apps/web` presentation) |
-| **better-typography** | Type roles, wrapping, tabular numbers, measure — keep Manrope + `typography.*` |
-| **better-accessibility** | Focus, keyboard, names, 44 px targets, reduced motion |
-| **better-colors** | Contrast and semantic tokens only; do not invent new primitive colors |
-| **better-writing** | Labels, errors, empty copy; Spanish/English; `typo-caption` is sentence case |
-| **design-empty-states** | First-use, filtered-empty, permission, and recoverable-error panels |
-| **StyleX elevation** | Elevated surfaces via `elevation.sm|md|lg`. Never pair `border`/`ring` with `shadow` |
-| **gsap** (gsap-skills plugin) | Landing / bracket zoom/pan presence, intentional transitions. Never in domain/application. Respect `prefers-reduced-motion` |
-
-## App and platform
-
-| Skill | When |
-|---|---|
-| **tanstack-start** | Routes, SSR loaders, server functions, Workers entry — see `tanstack-start.mdc` |
-| **tanstack-query** | Client `/api/v1` server-state (`useQuery` / `useMutation`). See ADR-0012 |
-| **web-perf** | SSR/Workers budgets, dense lists, bracket, public portal load |
-| **seo** | Public landing and competition portal metadata; crawlable published content only |
-| **wrangler** | D1, R2, Queues, Cron, secrets, `wrangler.jsonc` |
-| **workers-best-practices** | Workers runtime, bindings, streaming, no Node assumptions at module scope |
-| **sentry-instrument** | Sentry at execution boundaries (server functions, queue/cron, API) |
-| **typescript-best-practices** (pstack) | Contracts, discriminated unions, branded IDs, exhaustive switches |
-
-## Local tooling
-
-- `apps/cli` is the domain/use-case playground (fakes in memory) and API smoke tool. See `/apps/cli/README.md` and the `futrob-cli` skill above.
-- Product deployable remains `apps/web` only.
-
-## Do not use for implementation here
-
-Supabase, Railway deploy of `apps/web`, Clerk, Convex, Nuxt, Astro, UnoCSS, Kapso/Chat SDK,
-industrial-brutalist-ui, stitch-design-taste, or Next.js — unless product direction explicitly
-reopens them. `apps/api` already runs on Railway; do not move the Must web deployable there.
+Explicit review/operation commands remain in `.cursor/commands/`:
+[ui-review](../commands/ui-review.md), [security-review](../commands/security-review.md),
+[database-change](../commands/database-change.md) and [release-check](../commands/release-check.md).
+Use `README.md` and `AGENTS.md` for workspace setup and standard commands.

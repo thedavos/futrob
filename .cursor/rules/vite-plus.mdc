@@ -5,29 +5,30 @@ alwaysApply: true
 
 # Vite+ tooling
 
-Use root scripts backed by Vite+ (`vp` global CLI + local `vite-plus`). Do not use `npx vp`. Do not bypass with a globally installed oxlint/oxfmt/vitest outside Vite+.
+Use root scripts backed by Vite+. A global `vp` is optional; npm scripts resolve the local binary. For direct calls use `./node_modules/.bin/vp` when installed. Do not use `npx vp`. Do not bypass with a globally installed oxlint/oxfmt/vitest outside Vite+.
 
 | Task | Command |
 |---|---|
 | Install locked dependencies | `vp install` (or `npm ci`) |
-| Start web + api | `npm run dev` → parallel `@futrob/web` + `@futrob/api` |
+| Start web + API + auth | `npm run dev` → all three services |
 | Start web only | `npm run web` / `npm run dev:web` → `vp dev apps/web` |
 | Start api only | `npm run api` / `npm run dev:api` |
 | Format | `npm run format` → `vp fmt` |
 | Lint | `npm run lint` → `vp lint` |
 | Format, lint, and type-check | `npm run check` → `vp check` |
-| Run Vitest once | `npm test` → `vp test` |
+| Run Vitest once | `npm run test -- --run` |
 | Run coverage | `npm run test:coverage` |
 | Build `apps/web` | `npm run build` / `npm run web:build` → `vp build apps/web` |
 | Preview build | `npm run preview` / `npm run web:preview` |
 | Workspace typecheck | `npm run typecheck` → `vp run -r typecheck` |
 | CLI playground | `npm run cli -- <cmd>` |
+| Storybook dev / build | `npm run storybook` / `npm run storybook:build` |
 | Diagnose Vite+ syntax | `vp help` or `vp <command> --help` |
 
 ## Layout
 
-- Root `vite.config.ts`: fmt, lint, staged, shared test includes, monorepo `overrides`.
-- `apps/web/vite.config.ts`: app resolve aliases + Vitest project; later TanStack Start + Cloudflare plugin.
+- Root `vite.config.ts`: fmt, lint, staged and workspace test projects, including Storybook browser tests. Dependency overrides live in `package.json`.
+- `apps/web/vite.config.ts`: app aliases, StyleX, current app plugin factory and Vitest project.
 - `apps/cli`: **no** `vite-plus` dependency — covered by root fmt/lint only; runtime is `tsx`.
 
 ## Change discipline
@@ -35,7 +36,15 @@ Use root scripts backed by Vite+ (`vp` global CLI + local `vite-plus`). Do not u
 - Pin `vite-plus` and keep root `overrides.vite` → `@voidzero-dev/vite-plus-core` in lockstep.
 - Commit `package-lock.json`.
 - Prefer `vp add` / `vp install` for dependency changes.
-- Import tests from `vite-plus/test`, never directly from `vitest`.
+- Import Vitest APIs from `vite-plus/test`; Storybook play-function assertions use `storybook/test`.
 - Discover unfamiliar flags with local `vp … --help`; do not guess.
 - Do not add a second formatter, linter, test runner, or independent app build pipeline without an ADR.
 - Do not reintroduce a Vercel-only build pipeline as the Must path.
+
+Use Node matching `package.json#engines` (currently >=24). If runtime/setup behavior
+is wrong, run the available `vp env doctor` before diagnosing. Preserve the existing
+`allowScripts` policy during installation; Cloud installs use `--strict-allow-scripts`.
+
+`.cursor/**` is excluded from root formatting/linting. For rule/skill-only changes,
+validate frontmatter, relative references and `git diff --check` directly; a passing
+`npm run check` does not validate those documents.

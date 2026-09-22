@@ -22,8 +22,8 @@ alwaysApply: false
 
 ## Server entrypoints
 
-- Server functions, `/api/v1/*`, queue consumers, and cron handlers call shared application use cases.
-- Auth routes delegate to the Better Auth adapter.
+- Product server functions, `/api/v1/*` BFF routes, queue consumers and cron handlers reach `apps/api` through the existing SDK/service boundary. Product use cases and adapters are composed in `apps/api/src/di`, not in the web Worker.
+- Auth routes proxy to the separate auth Worker via `AUTH_SERVICE`; SSR/BFF session resolution uses that same binding (ADR-0015).
 - Server-only modules, secrets, D1/R2 clients, and provider SDKs must not enter client bundles.
 - Read Worker bindings from `env` / composition — do not assume Node `process.env` at module scope on Workers.
 - Durable EA sync work is persisted and queued before the request returns.
@@ -33,6 +33,6 @@ alwaysApply: false
 
 - Preserve loading, empty, stale, permission, and recoverable-error states across SSR and hydration.
 - Avoid client-only rendering for public landing/portal content that benefits from SEO.
-- Encounter detail uses deep links appropriate to desktop/mobile patterns adopted in the scaffold.
+- Encounter detail uses deep links appropriate to current desktop/mobile patterns in `design.md`.
 
-Build, preview, and deploy through Wrangler-compatible root scripts once scaffolded.
+Use the current root scripts for build and preview; deploy only within the requested scope. For new pages or blocks, apply the matching repo creation skill and its Storybook workflow.

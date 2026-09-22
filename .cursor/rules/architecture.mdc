@@ -1,12 +1,12 @@
 ---
-description: Hexagonal feature modules, DI composition, and Cloudflare platform rules for Futrob
-globs: apps/**/*.ts,apps/**/*.tsx,packages/**/*.ts
-alwaysApply: true
+description: Futrob bounded-context ownership, app boundaries, persistence and runtime
+globs: apps/**/*.ts,apps/**/*.tsx,packages/**/*.ts,packages/**/*.tsx
+alwaysApply: false
 ---
 
 # Futrob architecture
 
-Canonical sources: `docs/architecture/overview.md`, `module-boundaries.md`, `dependency-graph.md`, ADRs (esp. 0001, 0002, 0010), and `.cursor/skills/futrob-hexagonal-module/SKILL.md`.
+Canonical sources: `docs/architecture/overview.md`, `docs/architecture/module-boundaries.md`, `docs/architecture/dependency-graph.md`, relevant ADRs (including 0010, 0013 and 0015), and [futrob-hexagonal-module](../skills/futrob-hexagonal-module/SKILL.md).
 
 ## Shape
 
@@ -17,7 +17,7 @@ Canonical sources: `docs/architecture/overview.md`, `module-boundaries.md`, `dep
 - Product composition in `apps/api/src/di/`; web BFF/Workers infrastructure in `apps/web/src/{bootstrap,config,context}/`.
 - Shared: `@futrob/shared-kernel` + `apps/web/src/shared/` (infra web; domain reexports kernel).
 - Queue/Cron thin handlers: `apps/web/src/workers/`.
-- Do not nest composition under `src/app/` — that folder is removed.
+- Native UI uses `@futrob/sdk` and shared tokens; it does not import BC implementations or web render trees.
 
 MVP BCs: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `game-data`, `results`, `statistics`, `analytics`, `notifications`, `public-portal`.
 
@@ -47,7 +47,8 @@ analytics  → premium interpretation
 
 - Product persistence: Postgres in apps/api. Auth/actors and BFF rate limits: shared D1, migration history in apps/auth. Blobs: R2. Provider jobs: Queues + Cron in web calling the API.
 - Tenancy: application-scoped `organizationId` in adapters (no Postgres RLS).
-- Better Auth for sessions; Futrob organizations for authorization.
+- Better Auth owns sessions; the API resolves Futrob capabilities from the relevant organization, competition and roster context. Presentation uses `EffectiveAccess` and the existing `can` / `useCan` / `useCapabilities` helpers, with BC permission constants. Backend use cases enforce access.
+- The API currently uses a no-op domain event publisher and transactionally composes official-result/statistics updates. Inspect wiring before relying on outbox delivery; provider sync Queues/Cron have a separate implemented path.
 
 ## Imports and doc links
 
