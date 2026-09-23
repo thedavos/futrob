@@ -59,7 +59,18 @@ const SKINS = {
 } satisfies Record<ButtonVariant, ButtonSkin>;
 
 export const Button = forwardRef<View, ButtonProps>(function Button(
-  { variant = "primary", label, onPress, disabled = false, loading = false, style, ...props },
+  {
+    variant = "primary",
+    label,
+    onPress,
+    disabled = false,
+    loading = false,
+    style,
+    accessibilityLabel,
+    accessibilityHint,
+    accessibilityState,
+    ...props
+  },
   ref,
 ) {
   const [pressed, setPressed] = useState(false);
@@ -70,7 +81,9 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
     <View ref={ref} style={style} {...props}>
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ busy: loading, disabled: isInactive }}
+        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ ...accessibilityState, busy: loading, disabled: isInactive }}
         disabled={isInactive}
         onPress={onPress}
         onPressIn={() => setPressed(true)}

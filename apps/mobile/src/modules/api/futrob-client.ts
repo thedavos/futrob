@@ -1,6 +1,7 @@
 import { createFutrobClient, type FutrobClient } from "@futrob/sdk";
 import { API_BASE_URL } from "@/config/env";
 import { clearSession, getSession } from "@/modules/identity/session-store";
+import { clearOnboardingDraft } from "@/modules/identity/onboarding-draft";
 
 export { FutrobApiError } from "@futrob/sdk";
 
@@ -28,6 +29,7 @@ async function fetchAndClearSessionOnUnauthorized(
   const response = await fetch(input, init);
   if (response.status === 401) {
     await clearSession();
+    await clearOnboardingDraft();
   }
   return response;
 }

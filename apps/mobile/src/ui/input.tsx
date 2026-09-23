@@ -29,11 +29,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       <RNText
         accessibilityElementsHidden={false}
         style={{
-          fontFamily: theme.fontFamily.medium,
-          fontSize: theme.textSizes.xs,
-          lineHeight: 16,
-          letterSpacing: 1.1,
-          textTransform: "uppercase",
+          ...theme.typo("label"),
           color: theme.colors.foreground,
           marginBottom: theme.spacing[2],
         }}
@@ -42,6 +38,8 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       </RNText>
       <TextInput
         ref={ref}
+        accessibilityLabel={props.accessibilityLabel ?? label}
+        accessibilityHint={error ?? hint}
         onFocus={(event) => {
           setFocused(true);
           props.onFocus?.(event);

@@ -41,6 +41,25 @@ export const SHELL_PERMISSIONS = [
   MOBILE_PERMISSION.teamsExternalClubManage,
 ] as const satisfies readonly PermissionDto[];
 
+export function scopeForDestination(
+  destination:
+    | { readonly kind: "player" | "picker" }
+    | { readonly kind: "organization"; readonly organizationId: string }
+    | {
+        readonly kind: "competition";
+        readonly organizationId: string;
+        readonly competitionId: string;
+      },
+) {
+  if (destination.kind === "organization") return { organizationId: destination.organizationId };
+  if (destination.kind === "competition")
+    return {
+      organizationId: destination.organizationId,
+      competitionId: destination.competitionId,
+    };
+  return {};
+}
+
 export class EffectiveAccessHttpError extends Error {
   readonly status: number;
 

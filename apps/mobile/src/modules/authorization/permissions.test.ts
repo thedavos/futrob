@@ -11,6 +11,7 @@ import {
   filterByPermission,
   orgTabsForAccess,
   presentShellAccess,
+  scopeForDestination,
 } from "./permissions.ts";
 
 const withHome = {
@@ -38,6 +39,19 @@ const withoutHome = {
 } satisfies EffectiveAccessDto;
 
 describe("mobile EffectiveAccess helpers", () => {
+  it("requests the exact destination scope", () => {
+    expect(scopeForDestination({ kind: "player" })).toEqual({});
+    expect(scopeForDestination({ kind: "organization", organizationId: "org-1" })).toEqual({
+      organizationId: "org-1",
+    });
+    expect(
+      scopeForDestination({
+        kind: "competition",
+        organizationId: "org-1",
+        competitionId: "comp-2",
+      }),
+    ).toEqual({ organizationId: "org-1", competitionId: "comp-2" });
+  });
   it("org tabs omit home without organizations.read", () => {
     expect(orgTabsForAccess(allowedPermissionSet(withHome)).map((tab) => tab.id)).toEqual(["home"]);
     expect(orgTabsForAccess(allowedPermissionSet(withoutHome)).map((tab) => tab.id)).toEqual([]);

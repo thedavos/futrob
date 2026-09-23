@@ -10,7 +10,7 @@ Cliente móvil nativo Must del MVP de Futrob (React Native + Expo SDK 57, Expo R
 - Landing y portal público permanecen web responsive y se abren mediante deep links.
 - Push nativo no es requisito del MVP; las notificaciones Must siguen siendo in-app/web y correo.
 
-La implementación actual es fundacional: auth, SecureStore, cliente SDK, tokens/primitivas y un home inicial. Los módulos funcionales anteriores siguen siendo trabajo del MVP; este README describe el contrato objetivo sin afirmar que ya esté completo.
+La implementación actual incluye auth, gate de `actor_onboarding`, los tres caminos de onboarding por SDK, borrador reanudable en este dispositivo y destinos nativos mínimos. El resto de la operación por rol y el wizard completo de configuración de competición siguen siendo trabajo del MVP.
 
 ## Arquitectura
 
@@ -18,14 +18,18 @@ La implementación actual es fundacional: auth, SecureStore, cliente SDK, tokens
   `packages/<bc>/`; el estado de servidor se consume vía `@futrob/sdk`
   (HTTP a `/api/v1`).
 - **Auth:** Better Auth servido por el worker `apps/auth` (`EXPO_PUBLIC_FUTROB_AUTH_BASE_URL`,
-  default `http://localhost:8788`; fallback al origen de web, que proxea `/api/auth`). Sesión en SecureStore
+  opcional; si falta, usa el origen de web, que proxea `/api/auth`). Sesión en SecureStore
   (`src/modules/identity/`). `/api/v1` acepta Bearer: el cliente tipado vive en
   `src/modules/api/futrob-client.ts` (`getFutrobClient()`), que adjunta el token.
 - **UI:** primitivas RN propias en `src/ui/` que respetan
   [`design.md`](/design.md);
   colores/tipo/geometría provienen de `@futrob/ui-tokens`.
-- **Rutas:** Expo Router (`app/`): gate de sesión en `app/index.tsx`,
-  grupo `(auth)` con login/signup y grupo `(home)`.
+- **Rutas:** Expo Router (`app/`): gate de sesión y onboarding en `app/index.tsx`,
+  login/signup en `(auth)`, pasos en `(onboarding)`, destinos personales en `player` y
+  organización/competición en `orgs`. Las rutas protegidas revalidan el onboarding.
+- **Onboarding:** `src/modules/identity/onboarding-flow.ts` orquesta el SDK. La API mantiene
+  el paso y las consecuencias de negocio; SecureStore conserva el formulario local por usuario.
+  Los enlaces `futrob://invitations/accept/<token>` guardan el token hasta completar auth.
 
 ## Desarrollo
 
@@ -51,11 +55,12 @@ En dispositivo físico usa la IP LAN de tu máquina, no `localhost`.
 apps/mobile/
 ├── app/                       # rutas Expo Router
 │   ├── _layout.tsx            # Stack + fuentes Manrope + splash
-│   ├── index.tsx              # gate de sesión
-│   ├── (auth)/login.tsx       # inicio de sesión
-│   ├── (auth)/signup.tsx      # registro → onboarding
-│   ├── (onboarding)/welcome.tsx  # intro fundacional; flujo completo pendiente
-│   └── (home)/index.tsx       # home vacío con guard de sesión
+│   ├── index.tsx              # gate de sesión, onboarding y destino
+│   ├── (auth)/               # login/signup → gate u onboarding
+│   ├── (onboarding)/         # intención, formularios y revisión
+│   ├── player.tsx            # destino personal mínimo
+│   ├── orgs/                 # selector, organización y competición mínimos
+│   └── invitations/accept/   # enlace de invitación
 ├── assets/                    # generados por scripts/generate-assets.mjs
 └── src/
     ├── config/env.ts          # EXPO_PUBLIC_FUTROB_API_BASE_URL

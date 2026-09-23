@@ -11,6 +11,7 @@ import {
   validateRequired,
   AUTH_PASSWORD_HINT,
 } from "@/modules/identity/auth-validation";
+import { localizeAuthMessage, useMobileCopy } from "@/modules/identity/mobile-copy";
 
 interface FieldErrors {
   name?: string | null;
@@ -20,6 +21,7 @@ interface FieldErrors {
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { language, t, toggleLanguage } = useMobileCopy();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,9 +31,9 @@ export default function SignupScreen() {
 
   async function handleSignup() {
     const errors: FieldErrors = {
-      name: validateRequired(name.trim()),
-      email: validateEmail(email.trim()),
-      password: validatePassword(password),
+      name: localizeAuthMessage(validateRequired(name.trim()), language),
+      email: localizeAuthMessage(validateEmail(email.trim()), language),
+      password: localizeAuthMessage(validatePassword(password), language),
     };
     setFieldErrors(errors);
     if (errors.name || errors.email || errors.password) {
@@ -47,13 +49,18 @@ export default function SignupScreen() {
         password,
       });
       await saveSession(session);
-      // Flow parity with web: signup continues into onboarding.
+      // A new actor starts in onboarding; pending invitation is consumed there.
       router.replace("/(onboarding)/welcome");
     } catch (error) {
       if (error instanceof AuthError && error.code === "USER_ALREADY_EXISTS") {
-        setFieldErrors({ email: error.message });
+        setFieldErrors({ email: localizeAuthMessage(error.message, language) });
       } else {
-        setFormError(error instanceof AuthError ? error.message : AUTH_ERROR_GENERIC);
+        setFormError(
+          localizeAuthMessage(
+            error instanceof AuthError ? error.message : AUTH_ERROR_GENERIC,
+            language,
+          ),
+        );
       }
     } finally {
       setSubmitting(false);
@@ -65,10 +72,11 @@ export default function SignupScreen() {
       <View style={{ gap: theme.spacing[8], maxWidth: 400, width: "100%", alignSelf: "center" }}>
         <View style={{ alignItems: "center", gap: theme.spacing[4] }}>
           <Logo height={72} accessibilityLabel="Futrob" />
-          <Text role="heading">Crear una cuenta</Text>
+          <Text role="heading">{t("signupTitle")}</Text>
           <Text role="subtitle" color="muted-foreground" style={{ textAlign: "center" }}>
-            Únete para organizar competiciones o jugar con tu equipo.
+            {t("signupSubtitle")}
           </Text>
+          <Button variant="ghost" label={t("language")} onPress={toggleLanguage} />
         </View>
 
         {formError ? (
@@ -91,8 +99,8 @@ export default function SignupScreen() {
 
         <View style={{ gap: theme.spacing[4] }}>
           <Input
-            label="Nombre"
-            placeholder="Tu nombre"
+            label={t("name")}
+            placeholder={t("namePlaceholder")}
             autoCapitalize="words"
             autoComplete="name"
             textContentType="name"
@@ -102,8 +110,8 @@ export default function SignupScreen() {
             onChangeText={setName}
           />
           <Input
-            label="Correo electrónico"
-            placeholder="ejemplo@correo.com"
+            label={t("email")}
+            placeholder={t("emailPlaceholder")}
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
@@ -114,24 +122,24 @@ export default function SignupScreen() {
             onChangeText={setEmail}
           />
           <Input
-            label="Contraseña"
-            placeholder="Crea una contraseña"
+            label={t("password")}
+            placeholder={t("newPasswordPlaceholder")}
             secureTextEntry
             autoComplete="new-password"
             textContentType="newPassword"
             editable={!submitting}
             error={fieldErrors.password}
-            hint={AUTH_PASSWORD_HINT}
+            hint={localizeAuthMessage(AUTH_PASSWORD_HINT, language) ?? undefined}
             value={password}
             onChangeText={setPassword}
           />
         </View>
 
         <View style={{ gap: theme.spacing[6] }}>
-          <Button label="Crear cuenta" loading={submitting} onPress={handleSignup} />
+          <Button label={t("signup")} loading={submitting} onPress={handleSignup} />
 
           <Text role="caption" color="muted-foreground" style={{ textAlign: "center" }}>
-            ¿Ya tienes cuenta?{" "}
+            {t("hasAccount")}{" "}
             <RNText
               onPress={() => router.push("/(auth)/login")}
               style={{
@@ -140,7 +148,7 @@ export default function SignupScreen() {
                 textDecorationLine: "underline",
               }}
             >
-              Iniciar sesión
+              {t("login")}
             </RNText>
           </Text>
         </View>

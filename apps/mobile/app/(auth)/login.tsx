@@ -6,6 +6,7 @@ import { theme } from "@/theme/theme";
 import { signInEmail, AuthError, AUTH_ERROR_GENERIC } from "@/modules/identity/auth-api";
 import { saveSession } from "@/modules/identity/session-store";
 import { validateEmail, validatePassword } from "@/modules/identity/auth-validation";
+import { localizeAuthMessage, useMobileCopy } from "@/modules/identity/mobile-copy";
 
 interface FieldErrors {
   email?: string | null;
@@ -14,6 +15,7 @@ interface FieldErrors {
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { language, t, toggleLanguage } = useMobileCopy();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -22,8 +24,8 @@ export default function LoginScreen() {
 
   async function handleLogin() {
     const errors: FieldErrors = {
-      email: validateEmail(email.trim()),
-      password: validatePassword(password),
+      email: localizeAuthMessage(validateEmail(email.trim()), language),
+      password: localizeAuthMessage(validatePassword(password), language),
     };
     setFieldErrors(errors);
     if (errors.email || errors.password) {
@@ -35,9 +37,14 @@ export default function LoginScreen() {
     try {
       const session = await signInEmail({ email: email.trim(), password });
       await saveSession(session);
-      router.replace("/(home)");
+      router.replace("/");
     } catch (error) {
-      setFormError(error instanceof AuthError ? error.message : AUTH_ERROR_GENERIC);
+      setFormError(
+        localizeAuthMessage(
+          error instanceof AuthError ? error.message : AUTH_ERROR_GENERIC,
+          language,
+        ),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -48,10 +55,11 @@ export default function LoginScreen() {
       <View style={{ gap: theme.spacing[8], maxWidth: 400, width: "100%", alignSelf: "center" }}>
         <View style={{ alignItems: "center", gap: theme.spacing[4] }}>
           <Logo height={72} accessibilityLabel="Futrob" />
-          <Text role="heading">Bienvenido de nuevo</Text>
+          <Text role="heading">{t("loginTitle")}</Text>
           <Text role="subtitle" color="muted-foreground" style={{ textAlign: "center" }}>
-            Ingresa a tu cuenta para gestionar tus competiciones.
+            {t("loginSubtitle")}
           </Text>
+          <Button variant="ghost" label={t("language")} onPress={toggleLanguage} />
         </View>
 
         {formError ? (
@@ -74,8 +82,8 @@ export default function LoginScreen() {
 
         <View style={{ gap: theme.spacing[4] }}>
           <Input
-            label="Correo electrónico"
-            placeholder="ejemplo@correo.com"
+            label={t("email")}
+            placeholder={t("emailPlaceholder")}
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
@@ -86,8 +94,8 @@ export default function LoginScreen() {
             onChangeText={setEmail}
           />
           <Input
-            label="Contraseña"
-            placeholder="Ingresa tu contraseña"
+            label={t("password")}
+            placeholder={t("passwordPlaceholder")}
             secureTextEntry
             autoComplete="password"
             textContentType="password"
@@ -99,10 +107,10 @@ export default function LoginScreen() {
         </View>
 
         <View style={{ gap: theme.spacing[6] }}>
-          <Button label="Iniciar sesión" loading={submitting} onPress={handleLogin} />
+          <Button label={t("login")} loading={submitting} onPress={handleLogin} />
 
           <Text role="caption" color="muted-foreground" style={{ textAlign: "center" }}>
-            ¿Aún no tienes cuenta?{" "}
+            {t("noAccount")}{" "}
             <RNText
               onPress={() => router.push("/(auth)/signup")}
               style={{
@@ -111,7 +119,7 @@ export default function LoginScreen() {
                 textDecorationLine: "underline",
               }}
             >
-              Crear una cuenta
+              {t("signupTitle")}
             </RNText>
           </Text>
         </View>
