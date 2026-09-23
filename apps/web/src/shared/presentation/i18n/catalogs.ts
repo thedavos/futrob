@@ -608,6 +608,8 @@ const es = {
   "player.statistics.component.weightedMatches": ({ count }) =>
     count === 1 ? "1 pj ponderado" : `${count} pj ponderados`,
   "player.gameData.review": "Revisar datos de juego",
+  "player.gameData.refresh": "Actualizar datos",
+  "player.gameData.refreshing": "Actualizando…",
   "player.backToWorkspace": "Volver al espacio personal",
   "player.retry": "Reintentar",
   "player.partialData.description":
@@ -1398,6 +1400,8 @@ const en: Catalog = {
   "player.statistics.component.weightedMatches": ({ count }) =>
     count === 1 ? "1 weighted match" : `${count} weighted matches`,
   "player.gameData.review": "Review game data",
+  "player.gameData.refresh": "Update data",
+  "player.gameData.refreshing": "Updating…",
   "player.backToWorkspace": "Back to personal workspace",
   "player.retry": "Try again",
   "player.partialData.description": "Some metrics were unavailable in one or more matches.",

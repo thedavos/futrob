@@ -87,6 +87,7 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("heading", { name: "Datos de juego" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Actualizar datos" })).toBeEnabled();
     await expect(canvas.getByRole("heading", { name: "Añadir cuenta" })).toBeVisible();
     await expect(canvas.getByLabelText("Identificador de EA")).toBeVisible();
     await expect(canvas.getByLabelText("Plataforma")).toBeVisible();
@@ -102,7 +103,11 @@ export const LinkedAccounts: Story = {
   render: (args) => <GameDataStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText("davos282")).toBeVisible();
+    const refresh = await canvas.findByRole("button", { name: "Actualizar datos" });
+    await expect(refresh).toBeEnabled();
+    await userEvent.click(refresh);
+    await expect(await canvas.findByRole("button", { name: "Actualizar datos" })).toBeEnabled();
+    await expect(canvas.getByText("davos282")).toBeVisible();
     await expect(canvas.getByText("PlayStation · FC 26")).toBeVisible();
     await expect(canvas.getByText("davos.pc")).toBeVisible();
     await expect(canvas.getByText("PC · FC 26")).toBeVisible();
@@ -116,6 +121,7 @@ export const Loading: Story = {
   render: (args) => <GameDataStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: "Actualizar datos" })).toBeDisabled();
     await expect(canvas.getByText("Cargando cuentas…")).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Añadir cuenta" })).toBeVisible();
   },
@@ -127,9 +133,8 @@ export const ErrorState: Story = {
   render: (args) => <GameDataStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByText("No se pudieron cargar tus cuentas de juego."),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("button", { name: "Actualizar datos" })).toBeEnabled();
+    await expect(canvas.getByText("No se pudieron cargar tus cuentas de juego.")).toBeVisible();
     await expect(canvas.getByText("Todavía no vinculaste ninguna cuenta.")).toBeVisible();
   },
 };

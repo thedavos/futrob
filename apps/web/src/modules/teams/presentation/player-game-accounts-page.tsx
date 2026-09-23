@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
@@ -17,6 +18,7 @@ import {
   Form,
   Input,
   PageHeader,
+  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderTitle,
   Select,
@@ -32,9 +34,14 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { useAddMyGameAccountMutation, useMyPlayerProfileQuery } from "./player-queries.ts";
 
 import { platformLabel } from "./platform-label.ts";
+
+const spin = stylex.keyframes({
+  to: { transform: "rotate(360deg)" },
+});
 
 const styles = stylex.create({
   main: {
@@ -98,6 +105,12 @@ const styles = stylex.create({
   identifier: {
     fontWeight: 600,
   },
+  spinner: {
+    animationName: spin,
+    animationDuration: "0.8s",
+    animationIterationCount: "infinite",
+    animationTimingFunction: "linear",
+  },
 });
 
 const alert = applyStyles(styles.alert);
@@ -119,6 +132,7 @@ function isGamePlatform(value: string): value is GamePlatformDto {
 }
 
 export function PlayerGameAccountsPage() {
+  const { t } = useI18n();
   const [formKey, setFormKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const validation = useFormValidation<AddGameAccountField>();
@@ -127,6 +141,7 @@ export function PlayerGameAccountsPage() {
 
   const accounts = profileQuery.data?.gameAccounts ?? [];
   const loading = profileQuery.isPending;
+  const refreshing = profileQuery.isFetching && !profileQuery.isPending;
   const submitting = addAccount.isPending;
 
   async function handleSubmit(formValues: AddGameAccountValues) {
@@ -163,6 +178,18 @@ export function PlayerGameAccountsPage() {
           Registra tus identificadores de EA sin compartir credenciales. Futrob los usará para
           localizar tus partidos y estadísticas.
         </PageHeaderDescription>
+        <PageHeaderActions>
+          <Button
+            disabled={loading || refreshing}
+            onClick={() => {
+              void profileQuery.refetch();
+            }}
+            type="button"
+          >
+            {refreshing ? <CircleNotchIcon aria-hidden {...applyStyles(styles.spinner)} /> : null}
+            {refreshing ? t("player.gameData.refreshing") : t("player.gameData.refresh")}
+          </Button>
+        </PageHeaderActions>
       </PageHeader>
 
       {error || profileQuery.isError ? (
