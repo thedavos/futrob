@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-08-03
-- Actualizada: 2026-08-03
+- Actualizada: 2026-09-22
 - Relacionado: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [ADR-0010](/docs/adr/0010-bounded-context-packages.md) · [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md) · better-result
 
 ## Contexto
@@ -29,3 +29,15 @@ Los fallos esperados tipados necesitan discriminación en TypeScript (uniones po
 - Un único `TaggedError("DomainError")` con `code` string (no gana exhaustividad).
 - Big Bang de todos los códigos en una sola PR (se migró por familia).
 - Usar Panic para validación de negocio.
+
+## Estado de implementación y relación con transacciones
+
+[shared-kernel](/packages/shared-kernel/src/result.ts) expone las primitivas y
+[failureToHttp](/apps/api/src/http/errors.ts) mapea códigos y propiedades permitidas
+al contrato seguro. El mapeo de estados HTTP sigue basado en `code`; la aspiración
+de matching exhaustivo por `_tag` no se presenta como migración completada.
+
+Un `Result.err` no equivale a una excepción ni obliga a rollback. La composición de
+resultados lanza una falla esperada de proyección para abortar su transacción; sigue
+siendo TaggedError, no se convierte en Panic. Ver
+[ADR-0016](/docs/adr/0016-official-results-transactional-projection.md).

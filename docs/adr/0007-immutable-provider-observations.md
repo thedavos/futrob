@@ -1,29 +1,53 @@
-# ADR-0007: Observaciones de proveedor inmutables
+# ADR-0007: Observaciones de proveedor inmutables en Postgres
 
 - Estado: Aceptada
 - Fecha: 2026-07-17
-- Reemplaza: ADR de payloads EA con tablas `ea_raw_*` exclusivas
+- Actualizada: 2026-09-22
+- Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
 
-Hay que reprocesar y auditar datos de cualquier proveedor sin mutar el original.
+Futrob necesita auditar y reprocesar observaciones sin reemplazar el contenido original.
+El modelo neutral se conserva; la implementación actual usa Postgres en la API,
+en lugar del almacenamiento D1/R2 descrito en la decisión inicial.
 
 ## Decisión
 
-Tabla conceptual `raw_provider_observations` (D1 + R2 si el blob es grande) con:
+`game-data` posee `raw_provider_observations`. Cada observación conserva identidad de
+proveedor/recurso, endpoint, hash de payload, referencia de almacenamiento, JSON,
+fecha de observación, estado HTTP y versión de esquema.
 
-- `provider_key`, `resource_type`, `external_resource_id`
-- `endpoint_key`, `payload_json` / object key, `payload_hash`
-- `observed_at`, `http_status`, `schema_version`
+El payload raw es inmutable. La clave única actual es
+`(provider_key, resource_type, external_resource_id, payload_hash)`: recibir el mismo
+contenido reutiliza la observación; un hash diferente permite una nueva observación.
+No equivale a registrar cada intento HTTP: la telemetría operativa tiene otro propósito.
 
-El registro raw es inmutable. Nuevas observaciones versionan cambios. Modelos normalizados (`provider_matches`, etc.) se reconstruyen desde raw cuando sea posible.
+`provider_matches` contiene el modelo normalizado y puede actualizarse según nuevas
+observaciones. La inmutabilidad del raw no congela la proyección normalizada. El modelo
+admite reprocesamiento cuando hay datos suficientes, sin afirmar que exista un pipeline
+general de replay completo.
+
+La implementación persiste `payload_json` como JSONB y `storage_ref` en Postgres.
+Mover blobs grandes a R2 es una posible evolución: requiere definir escritura/lectura,
+fallos y retención; el binding R2 por sí solo no demuestra esa integración.
 
 ## Consecuencias
 
-- Reproceso sin reconsultar al proveedor.
-- Retención y redaction obligatorias (no en portal/telemetría).
+- Hay trazabilidad entre adquisición y normalización sin depender de reconsultar EA.
+- Raw y telemetría/portal tienen contratos distintos: no se exponen payloads privados.
+- Deben definirse periodos, borrado y ejecución de retención antes de afirmar que existe
+  una política operativa completa. La inmutabilidad durante la retención no exige guardar para siempre.
 
-## Alternativas rechazadas
+## Alternativas descartadas
 
-- Tablas solo `ea_raw_*`.
-- Sobrescribir el JSON original.
+Tablas exclusivas `ea_raw_*`; sobrescribir el raw al normalizar; presentar la presencia
+de un hash o de R2 como prueba suficiente de replay, retención o control de acceso.
+
+## Estado de implementación y evidencia
+
+La tabla Postgres, deduplicación y adapters existen; offload a R2 y una política completa
+de retención no se dan por implementados en este ADR.
+
+- [Migración](/apps/api/migrations/0019_provider_observations_and_matches.sql).
+- [Adapter Postgres](/apps/api/src/adapters/game-data/persistence/postgres.repository.ts).
+- [Modelo neutral](/docs/adr/0006-game-data-provider-port.md).

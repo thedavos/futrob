@@ -1,6 +1,16 @@
 # ADR-0003: Ownership de Better Auth y D1
 
-- Estado: Aceptada
+- Estado: Reemplazada
+- Reemplazada el: 2026-09-22
+- Reemplazada por: [ADR-0015](/docs/adr/0015-auth-extraction.md)
+- Índice: [Registro de decisiones](/docs/adr/README.md)
+
+Este ADR se conserva para mantener la historia y los enlaces existentes. Su contenido
+original no prescribe la implementación actual; consultar la decisión sucesora.
+
+## Registro histórico
+
+- Estado original: Aceptada
 - Fecha: 2026-07-17
 - Reemplaza: ADR-0003 Better Auth + Supabase (retirado con el pivot de plataforma)
 

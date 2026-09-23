@@ -1,71 +1,68 @@
-# ADR-0015: Extracción de auth a Worker independiente (`apps/auth`)
+# ADR-0015: Autenticación, identidad y ownership de D1
 
 - Estado: Aceptada
 - Fecha: 2026-08-22
-- Relacionado: [ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md) · [ADR-0003](/docs/adr/0003-better-auth-and-d1-ownership.md) · [ADR-0014](/docs/adr/0014-shared-ui-tokens-and-mobile-ui.md) · [`apps/auth/README.md`](/apps/auth/README.md)
+- Actualizada: 2026-09-22
+- Reemplaza: [ADR-0003](/docs/adr/0003-better-auth-and-d1-ownership.md)
+- Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
 
-Better Auth vive embebido en `apps/web` (TanStack Start sobre Workers): la ruta
-catch-all `/api/auth/$` monta `auth.handler` con binding D1 propio. Con la
-llegada del cliente móvil ([ADR-0014](/docs/adr/0014-shared-ui-tokens-and-mobile-ui.md))
-y el soporte Bearer, el contrato `/api/auth/*` se volvió infraestructura de
-plataforma consumida por dos clientes, no un detalle de la web.
+Better Auth estuvo embebido en web. Al compartir autenticación entre web y Expo se
+separó su ciclo de despliegue, conservando sesiones y D1. Esta revisión consolida el
+ownership de ADR-0003 y documenta el resultado de la extracción, no un parallel run vigente.
 
 ## Decisión
 
-1. **Nuevo deployable `apps/auth`** (`@futrob/auth`, nombre Worker `futrob-auth`):
-   Worker Cloudflare vanilla (sin Hono por ahora) que expone `auth.handler`
-   Better Auth en `/api/auth/*` + `GET /meta/health`.
-2. **Plugins: solo `bearer()`.** Sin `tanstackStartCookies()` — es un puente para
-   server functions de TanStack Start que no aplica en fetch plano; el core de
-   Better Auth maneja cookies nativas en Request/Response.
-3. **Estrategia de migración en 3 etapas**, sin big-bang:
-   - **Etapa 1 (hecha): parallel run.** El worker comparte D1 (`futrob-app`) y
-     secret con web; las sesiones son intercambiables entre orígenes. Web sigue
-     sirviendo su auth embebida.
-     - **Etapa 2 (hecha): clientes migran al worker.** Móvil apunta directo vía
-       `EXPO_PUBLIC_FUTROB_AUTH_BASE_URL`; web hace **proxy same-origin** por el
-       service binding `AUTH_SERVICE` (patrón BFF, sin CORS ni cookies
-       cross-origin). El canal interno conserva `CF-Connecting-IP` para que el
-       rate limit separe clientes.
-     - **Etapa 3 (hecha): web deja de servir auth.** El handler es proxy-only
-       (503 si falta la var); el ownership del **schema de auth** se movió a
-       `apps/auth`. La D1 compartida tiene una sola historia en
-       `apps/auth/migrations`, incluso para la tabla web de BFF rate limit.
-       SSR/BFF resuelve la sesión con `AUTH_SERVICE` `GET /api/auth/get-session`
-       y el lookup de `identity_subjects` en D1
-       (`server/authenticated-request-actor.ts`). No instancia Better Auth ni
-       lee tablas `session`/`user`. No provisiona actores ni refresca sesiones.
-4. **El schema se copia, el provisionamiento no.** `drizzle-schema.ts` vive en
-   `apps/auth` y `apps/web`; un test de lockstep falla si divergen. Solo
-   `apps/auth` puede crear `Actor` e `identity_subjects`; web conserva el lookup
-   de solo lectura que resuelve una sesión. Estos adapters no van a
-   `@futrob/identity`.
-5. **Rate limit durable.** Better Auth usa D1 para sus contadores y toma la IP
-   únicamente de `CF-Connecting-IP`. Esto cubre sign-in, sign-up y recuperación
-   de credenciales aunque el Worker cambie de isolate.
-
-## Alternativas rechazadas
-
-- **API Node aparte (estilo `apps/api`)**: auth es I/O ligero ideal para Workers;
-  un runtime Node añade frío, ops y latencia sin beneficio.
-- **Mantener embebido indefinidamente**: el acople de ciclo de despliegue entre
-  auth y features de web crece con cada cliente adicional.
-- **Extraer ya con cambio de cookies cross-origin**: se evita al mantener
-  parallel run con misma D1; el cambio de dominio ocurre en etapa 2, con
-  `Domain=.futrob.com` si aplica.
+1. `apps/auth` es la autoridad de credenciales, sesiones, cuentas y verificaciones.
+   Ejecuta Better Auth en un Worker independiente con `/api/auth/*`, `bearer()` y
+   `/meta/health`. No necesita `tanstackStartCookies()` en su handler fetch.
+2. Futrob posee Actor e IdentitySubject. `(provider, subject)` resuelve un ActorId
+   estable. Solo auth provisiona actores y mappings, de forma idempotente antes de
+   emitir la sesión. La autorización de negocio sigue
+   [ADR-0017](/docs/adr/0017-contextual-capability-authorization.md).
+3. Web hace proxy same-origin vía `AUTH_SERVICE`. SSR/BFF obtiene la sesión mediante
+   `get-session` y resuelve `identity_subjects` en D1; no consulta tablas session/user
+   ni vuelve a provisionar actores. Sin binding válido no hay fallback a auth embebida.
+4. Expo usa auth directamente y guarda el token de sesión en SecureStore. El token de
+   sesión se presenta al BFF; es distinto del secreto interno hacia Node, según
+   [ADR-0005](/docs/adr/0005-typed-private-api.md).
+5. `apps/auth/migrations` es la única historia de la D1 compartida, incluyendo tablas
+   BFF. Auth escribe sus tablas/actores; web consulta mappings y gestiona sus rate limits.
+   Organizaciones, memberships de producto y onboarding de producto viven en la API/Postgres.
+6. El schema Drizzle duplicado en web/auth se mantiene mediante verificación de lockstep;
+   duplicar tipos no otorga a web propiedad sobre credenciales o sesiones.
+7. Rate limits auth persisten en D1 y usan `CF-Connecting-IP`; el proxy conserva la IP
+   según su contrato de confianza. Secretos, cookies y tokens no se registran en logs.
 
 ## Consecuencias
 
-- Dos workers comparten D1: `apps/auth` escribe tablas de auth y actores;
-  `apps/web` lee `identity_subjects` y el rate limit del BFF. Las sesiones se
-  resuelven pidiendo `get-session` a `AUTH_SERVICE`, no consultando `session`/`user`.
-- El `Actor` se provisiona antes de emitir una sesión. Un fallo transitorio se
-  puede reparar en el siguiente sign-in sin dejar una cuenta inutilizable.
-- Local dev comparte estado vía `wrangler dev --persist-to ../web/.wrangler/state`.
-- `APP_BASE_URL` define el mismo contrato de cookie segura en auth y web.
-- La superficie pública de auth (`/api/auth/*` + bearer) queda congelada como
-  contrato de plataforma: cambios requieren considerar ambos clientes.
-- Etapa 2/3 requieren coordinar `BETTER_AUTH_URL`, `trustedOrigins` y CORS de la
-  API de producto si el BFF deja de ser el único front HTTP.
+- La sesión demuestra identidad; no incorpora autoridad de roles editable por el cliente.
+- Las entidades de negocio no referencian tablas Better Auth ni usan su plugin de organizaciones.
+- Ambos Workers requieren configuración coherente de secreto/cookies. Desarrollo comparte
+  D1 en `apps/web/.wrangler/state`; se sigue AGENTS.md para `--persist-to`.
+- Cambios de origen/cookies/Bearer requieren comprobar web, SSR y Expo. El modo de
+  despliegue no prueba por sí solo salud de auth ni la ausencia de fugas.
+
+## Alternativas descartadas
+
+Mantener auth embebida indefinidamente; segundo runtime Node para auth sin necesidad;
+plugin de organizations de Better Auth como negocio; cambio simultáneo de servicio y
+cookies cross-origin durante la extracción; roles cliente como autorización.
+
+## Historia de migración
+
+Se completaron tres etapas: Worker paralelo sobre D1 compartida, migración de clientes
+al Worker y retirada del handler embebido. La etapa paralela explica la compatibilidad
+histórica; hoy web es proxy. [ADR-0003](/docs/adr/0003-better-auth-and-d1-ownership.md)
+conserva el contexto inicial.
+
+## Estado de implementación y evidencia
+
+La separación está implementada. La verificación de un despliegue concreto es independiente.
+
+- [Worker auth](/apps/auth/src/index.ts).
+- [Proxy web](/apps/web/src/modules/identity/server/auth-proxy.ts).
+- [Actor autenticado](/apps/web/src/modules/identity/server/authenticated-request-actor.ts).
+- [Lifecycle nativo](/apps/mobile/src/modules/identity/session-lifecycle.ts).
+- [Operación de auth](/apps/auth/README.md).

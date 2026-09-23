@@ -1,6 +1,16 @@
 # ADR-0010: Packages por bounded context y apps/api futura
 
-- Estado: Aceptada
+- Estado: Reemplazada
+- Reemplazada el: 2026-09-22
+- Reemplazada por: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md)
+- Índice: [Registro de decisiones](/docs/adr/README.md)
+
+Este ADR se conserva para mantener la historia y los enlaces existentes. Su contenido
+original no prescribe la implementación actual; consultar la decisión sucesora.
+
+## Registro histórico
+
+- Estado original: Aceptada
 - Fecha: 2026-07-23
 - Relacionado: [ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md) · [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [packages-and-sdk](/docs/architecture/packages-and-sdk.md)
 

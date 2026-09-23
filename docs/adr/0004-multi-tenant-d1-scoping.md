@@ -1,34 +1,50 @@
-# ADR-0004: Multi-tenancy en D1 con scoping de aplicación
+# ADR-0004: Aislamiento de producto por alcance de aplicación
 
 - Estado: Aceptada
 - Fecha: 2026-07-17
-- Reemplaza: ADR-0004 Multi-tenancy y RLS Postgres (retirado; D1 no ofrece RLS)
-
-## Vigencia de la topología
-
-La ubicación de adapters y persistencia descrita abajo refleja la decisión original. Para implementar cambios, rige la [arquitectura actual](/docs/architecture/overview.md): dominio/application en `packages/<bc>`, composición y Postgres de producto en `apps/api`, egress EA exclusivo de esa API ([ADR-0013](/docs/adr/0013-ea-egress-api-only.md)), auth/actores y migraciones D1 en `apps/auth` ([ADR-0015](/docs/adr/0015-auth-extraction.md)). Se mantienen las reglas de separación de dominio y autorización con scoping de organización.
+- Actualizada: 2026-09-22
+- Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
 
-Los datos privados (plantillas, disputas, payloads EA, selecciones) deben aislarse por organización. Postgres RLS ya no está disponible tras el cambio a D1.
+Los datos privados de organizaciones, competiciones y equipos requieren aislamiento.
+La decisión original aplicaba scoping sobre D1. Producto ahora vive en Postgres: se
+mantiene el aislamiento explícito por aplicación sin depender de Postgres RLS.
+Auth/actores y rate limits BFF permanecen en D1 según
+[ADR-0015](/docs/adr/0015-auth-extraction.md).
 
 ## Decisión
 
-- Composition/`context` resuelve `ActorId` y `organizationId` de confianza.
-- Toda query tenant-scoped en adapters **debe** filtrar por organización (y alcance más estrecho cuando aplique).
-- Use cases autorizan permisos Futrob antes de mutar.
-- Lecturas públicas usan proyecciones `publication` / queries explícitas de solo lectura.
-- Tests de aislamiento con al menos dos organizaciones son Must cuando exista implementación.
-- No se expone D1 al browser; el Worker es el único acceso a datos.
+- La identidad proviene de la sesión validada; los identificadores enviados por el
+  cliente no prueban pertenencia ni permiso.
+- Casos de uso protegidos aplican capacidades y validan relaciones de scope según
+  [ADR-0017](/docs/adr/0017-contextual-capability-authorization.md).
+- Las consultas y escrituras tenant-scoped en adapters de producto filtran por
+  `organizationId` y el alcance más específico necesario. Un ID predecible o único
+  no reemplaza el control de ownership.
+- Los flujos personales se autorizan por actor/perfil propietario; no se inventa una
+  membresía organizacional para consultar datos propios.
+- Registros compartidos de proveedor tienen su propio ownership en game-data. Poder
+  observar un recurso externo no concede acceso a datos privados de una organización.
+- El portal público consume proyecciones sanitizadas y condiciones explícitas de publicación.
+- Los clientes no acceden directamente a bases de datos ni reciben secretos de servicio.
 
 ## Consecuencias
 
-- La correcta implementación de adapters es crítica; lint/tests deben atrapar queries sin scope.
-- No hay red de seguridad tipo RLS a nivel motor SQL.
-- El modelo es portable a otros SQL edge si el puerto de persistencia se mantiene.
+Los adapters y las comprobaciones de alcance son parte de la barrera de seguridad.
+Se requieren pruebas de dos organizaciones y de IDs cruzados para los límites afectados.
+La ausencia de RLS es una elección actual, no una afirmación de que Postgres no lo soporte.
 
-## Alternativas rechazadas
+## Alternativas descartadas
 
-- Confiar solo en ocultar UI.
-- Un database/schema físico por tenant en el MVP.
-- Reintroducir Postgres + RLS solo para tenancy.
+Ocultar controles como autorización; roles declarados por el cliente; base/schema por
+tenant en el MVP; depender exclusivamente de RLS en lugar de permisos de producto.
+
+## Estado de implementación y evidencia
+
+Existen adapters Postgres y resolución contextual. La cobertura se verifica por flujo;
+este ADR no declara que todas las queries hayan sido auditadas.
+
+- [Resolución contextual](/apps/api/src/adapters/authorization/contextual-authorization.adapter.ts).
+- [Matriz de autorización](/apps/api/src/adapters/authorization/rbac-matrix.test.ts).
+- [Límites de módulos](/docs/architecture/module-boundaries.md).

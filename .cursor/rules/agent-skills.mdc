@@ -11,7 +11,9 @@ in every environment; use them only when installed, with the repo contracts as a
 
 | Task | Repository skill |
 | --- | --- |
+| Architectural decisions, ADR maintenance or task impact on architecture | [futrob-adr](../skills/futrob-adr/SKILL.md) |
 | BC, use case, port, adapter or server boundary | [futrob-hexagonal-module](../skills/futrob-hexagonal-module/SKILL.md) |
+| Product API consumption, SDK methods, client authentication or HTTP contracts | [futrob-sdk](../skills/futrob-sdk/SKILL.md) |
 | Domain/API smoke checks or CLI commands | [futrob-cli](../skills/futrob-cli/SKILL.md) |
 | Complete product screen | [create-page](../skills/create-page/SKILL.md) |
 | Block within a page | [create-section](../skills/create-section/SKILL.md) |

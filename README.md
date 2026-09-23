@@ -1,5 +1,7 @@
 # Futrob
 
+[Índice de decisiones de arquitectura](/docs/adr/README.md).
+
 Multi-tenant platform for EA SPORTS FC leagues and cups. MVP focus: **FC Clubs**, with provider-normalized match data, auditable official selection, rescheduling, standings, rankings, and a public portal.
 
 ## Status

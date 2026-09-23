@@ -1,49 +1,71 @@
-# ADR-0002: Hexágonos por feature module y packages de BC
+# ADR-0002: Bounded contexts, packages y dependencias
 
 - Estado: Aceptada
 - Fecha: 2026-07-10
-- Actualizada: 2026-07-23
-- Relacionado: [ADR-0010](/docs/adr/0010-bounded-context-packages.md)
-
-## Vigencia de la topología
-
-La ubicación de adapters y persistencia descrita abajo refleja la decisión original. Para implementar cambios, rige la [arquitectura actual](/docs/architecture/overview.md): dominio/application en `packages/<bc>`, composición y Postgres de producto en `apps/api`, egress EA exclusivo de esa API ([ADR-0013](/docs/adr/0013-ea-egress-api-only.md)), auth/actores y migraciones D1 en `apps/auth` ([ADR-0015](/docs/adr/0015-auth-extraction.md)). Se mantienen las reglas de separación de dominio y autorización con scoping de organización.
+- Actualizada: 2026-09-22
+- Reemplaza: [ADR-0010](/docs/adr/0010-bounded-context-packages.md)
+- Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
 
-Futrob necesita vertical slices independientes y composition roots por deployable, sin mezclar scheduling, game-data, results y statistics. Web y una futura API deben compartir dominio sin acoplarse a adapters de Cloudflare.
+Las capacidades de producto deben evolucionar sin mezclar reglas competitivas,
+observaciones de proveedor, persistencia y presentación. La API y las herramientas
+locales necesitan reutilizar el dominio sin depender del árbol de web.
+Esta revisión incorpora la decisión de packages de ADR-0010.
 
 ## Decisión
 
-Adoptar arquitectura hexagonal **por bounded context**:
+Cada BC vive en `packages/<context>/src/{domain,application}` y publica únicamente su
+contrato por `src/index.ts`. Los ports propios del contexto viven en `domain/ports`.
+El package exporta use cases, entidades, tipos y ports; no exporta adapters, schemas
+SQL, clientes de red ni componentes de UI.
 
-```text
-packages/<context>/          # @futrob/<context>
-├── domain/                  # entities, VOs, errors, events, ports, policies
-├── application/             # use cases
-└── index.ts                 # API pública del package (sin adapters)
+| Capa                           | Ubicación / dependencia                                           |
+| ------------------------------ | ----------------------------------------------------------------- |
+| Dominio                        | BC propietario; políticas y vocabulario sin framework, Zod ni I/O |
+| Aplicación                     | BC propietario; orquesta dominio y ports                          |
+| Adapters de producto y bridges | `apps/api/src/adapters/<context>`                                 |
+| Composición de producto        | `apps/api/src/di`                                                 |
+| HTTP y DTO mapping             | `apps/api/src/http`, contratos en `packages/api-contracts`        |
+| Web BFF/presentación           | `apps/web/src/modules/<context>` y rutas existentes               |
+| Auth e infraestructura Worker  | App propietaria según ADR-0001/0015                               |
+| Presentación nativa            | `apps/mobile`; SDK y tokens, sin implementaciones de BC           |
 
-apps/web/src/modules/<context>/
-├── adapters/                # D1, R2, Queues, EA HTTP, bridges…
-├── server/                  # server functions / mappers HTTP
-├── presentation/            # UI del feature
-└── index.ts                 # reexporta @futrob/<context> (+ APIs de app si aplica)
+La separación `scheduling ≠ game-data ≠ results ≠ statistics ≠ analytics` es obligatoria.
+El [mapa de módulos](/docs/architecture/module-boundaries.md) define el resto de ownership.
 
-apps/web/src/di/             # composition root de web
-# apps/api/src/di/           # composition root de api (cuando exista)
-```
+Cross-context se permite mediante APIs públicas de packages, ports/bridges o eventos
+versionados. Las dependencias declaradas pueden reutilizar tipos públicos; no pueden
+acceder a internals, adapters o tablas ajenas. Un bridge adapta el contrato del
+consumidor y se conecta en la composición de la app.
 
-Kernel compartido: `@futrob/shared-kernel` (Result, TaggedError, IDs, DomainEvent, EventPublisherPort, …). `apps/web/src/shared/` reexporta o añade infra solo de web.
+`@futrob/shared-kernel` contiene semántica transversal: IDs, Result/TaggedError y ports
+como ClockPort, IdGeneratorPort, TransactionPort, EventPublisherPort y AuthorizationPort.
+Antes de agregar otro port, se busca uno equivalente. Vocabulario específico de un BC
+permanece en ese BC. Los helpers de tiempo compartidos se reutilizan desde el kernel.
+
+Las facades web pueden reexportar contratos públicos, pero no restablecen composición
+de producto en Workers. EA egress se rige por [ADR-0013](/docs/adr/0013-ea-egress-api-only.md).
 
 ## Consecuencias
 
-- Separación clara de ownership; tests de dominio/application sin I/O en packages.
-- Cross-module solo por ports, APIs públicas de package y eventos versionados.
-- Más packages y deps workspace; se acepta.
+- Los tests de dominio/aplicación usan ports fake y no requieren infraestructura.
+- Cada nuevo contrato público y dependencia del grafo exige revisión de ownership.
+- Una feature no requiere un nuevo package si pertenece a un contexto existente.
+- Eventos declarados no implican entrega: ver [ADR-0016](/docs/adr/0016-official-results-transactional-projection.md).
 
-## Alternativas rechazadas
+## Alternativas descartadas
 
-- Un único módulo `matches` que mezcle fixture, EA, selección y stats.
-- Packages por capa técnica (`domain/`, `infra/`) sin vertical slice.
-- DI/reflectivo global o importar adapters desde routes.
-- Dejar domain+application solo bajo `apps/web` cuando hay segundo deployable.
+Un módulo único `matches`; packages globales por capa técnica; dominio dentro de web
+consumido por aliases; contenedor DI reflectivo global; adapters exportados por BC.
+
+## Estado de implementación y evidencia
+
+La extracción de BC y la composición API están implementadas. Algunos BC del catálogo
+siguen siendo scaffolds; tener un package no prueba que sus casos de uso existan.
+
+- [Packages y SDK](/docs/architecture/packages-and-sdk.md).
+- [Grafo de dependencias](/docs/architecture/dependency-graph.md).
+- [Composición API](/apps/api/src/di/create-modules.ts).
+- [Ejemplo de port consumidor](/packages/results/src/domain/ports/provider-match-reader.port.ts)
+  y [bridge](/apps/api/src/adapters/results/bridges.ts).

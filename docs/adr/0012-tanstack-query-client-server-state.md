@@ -2,6 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-08-03
+- Actualizada: 2026-09-22
 - Relacionado: [ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md) · [ADR-0005](/docs/adr/0005-typed-private-api.md) · [ADR-0011](/docs/adr/0011-tagged-errors.md)
 
 ## Contexto
@@ -68,7 +69,7 @@ export function useAddMyGameAccountMutation() {
 }
 ```
 
-`/player` y `/player/game-accounts` comparten `queryKeys.players.me()`; al añadir una cuenta, el workspace se actualiza sin refetch manual.
+`/player` y `/player/game-accounts` comparten `queryKeys.players.me()`; al añadir una cuenta, Inicio se actualiza sin refetch manual.
 
 ### `Result` + `TaggedError` en el browser client, unwrap en Query
 
@@ -118,3 +119,15 @@ Usar `useMyMembershipsQuery()` (o equivalente) sobre `organizationsBrowserClient
 - Solo loaders de Start para todo el server state interactivo (no cubre cache/share/invalidación entre pantallas montadas en cliente).
 - Meter QueryClient en composition server / ports de dominio.
 - Devolver `Result` como valor de éxito de `useQuery` (rompe el modelo `isError` / `isPending` de Query).
+
+## Alcance y evidencia vigente
+
+Esta decisión rige el server state interactivo de web; no obliga a copiar sus providers
+React en Expo. El BFF llega a producto por SDK/API según
+[ADR-0005](/docs/adr/0005-typed-private-api.md), sin componer adapters de producto.
+
+[Inicio](/apps/web/src/modules/player-home/presentation/use-player-home.ts) ejemplifica
+consultas independientes, carga parcial y refresh con datos existentes. Los filtros
+que cambian el recurso forman parte de la query key; la UI distingue primer loading,
+refresh, error con caché y ausencia real según el contrato. Las estrategias SSR y el
+ciclo de sesión se validan por flujo, no por la presencia de QueryClientProvider.

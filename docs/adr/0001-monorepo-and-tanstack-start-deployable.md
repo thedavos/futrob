@@ -1,40 +1,73 @@
-# ADR-0001: Monorepo, deployables y packages de bounded context
+# ADR-0001: Topología de despliegue y responsabilidades por runtime
 
 - Estado: Aceptada
 - Fecha: 2026-07-10
-- Actualizada: 2026-08-23
-- Relacionado: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [ADR-0010](/docs/adr/0010-bounded-context-packages.md)
+- Actualizada: 2026-09-22
+- Reemplaza: [ADR-0009](/docs/adr/0009-cloudflare-workers-topology.md)
+- Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
 
-El producto necesita UI web y mobile, BFF, API privada tipada, auth y jobs de sincronización EA. El runtime web Must sigue siendo Cloudflare Workers. `apps/api` sirve la API de producto y el egress Node frente a proveedores compartiendo la misma lógica de negocio.
+Futrob necesita clientes web y nativo, autenticación, API de producto y sincronización
+con EA. Se conserva el monorepo npm, pero se separan los runtimes según su responsabilidad.
+Esta revisión consolida ADR-0009 e incorpora la extracción de auth de ADR-0015.
 
 ## Decisión
 
-Usar workspaces npm con:
+| Unidad        | Runtime y responsabilidad                                                      | Persistencia / dependencia                                                                         |
+| ------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| `apps/web`    | TanStack Start en Cloudflare Workers; UI, BFF, proxy auth, Queues/Cron         | SDK hacia API, binding `AUTH_SERVICE`, D1 para lookup de actor y rate limits; binding R2 de medios |
+| `apps/auth`   | Worker Better Auth; credenciales, sesiones y provisionamiento de actores       | D1; única historia de migraciones compartida                                                       |
+| `apps/api`    | Hono/Node en Railway; composición de casos de uso, API de producto y egress EA | Postgres mediante `DATABASE_URL`                                                                   |
+| `apps/mobile` | React Native + Expo; cliente autenticado                                       | SDK al BFF con token de sesión; auth al Worker; SecureStore                                        |
+| `apps/cli`    | Herramienta local de dominio/API                                               | Fakes o API según el comando; no es deployable de producto                                         |
 
-| App           | Rol                                                                                                                                                                                                                                              |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/web`    | Deployable Must del MVP: TanStack Start + Workers (UI, BFF, `/api/v1` hoy, Queues, Cron)                                                                                                                                                         |
-| `apps/api`    | Deployable de API de producto (Hono/Node en Railway); dueño de Postgres (`DATABASE_URL`) y del egress Node a EA; consume los mismos packages de BC                                                                                               |
-| `apps/cli`    | Tooling local; no se despliega                                                                                                                                                                                                                   |
-| `apps/mobile` | Deployable Must del MVP: cliente móvil React Native + Expo. Consume `/api/v1` con `@futrob/sdk`; auth vía Better Auth (`/api/auth/*`). UI propia en `apps/mobile/src/ui` con tokens compartidos de `@futrob/ui-tokens`. No hay SDK Dart/Flutter. |
+El BFF autentica al cliente y llama a la API de producto; no instancia los adapters de
+producto ni duplica sus casos de uso. Ver [contrato HTTP](/docs/adr/0005-typed-private-api.md),
+[módulos](/docs/adr/0002-hexagonal-feature-modules.md) y
+[auth](/docs/adr/0015-auth-extraction.md).
 
-La lógica de negocio (**domain + application + ports**) vive en `packages/<bounded-context>/` como `@futrob/<bc>`. Cada app cablea adapters y composition en su propio `di/`.
+### Sincronización y recuperación
 
-`/api/v1` se sirve desde `apps/web` (Workers/BFF) y desde `apps/api` (Hono/Node en Railway), siempre sobre los mismos use cases de packages. `apps/api` es dueño de Postgres y del egress Node a EA; `apps/web` consume ese contrato. El SDK (`@futrob/sdk`) habla HTTP al contrato; no importa dominio. El mismo cliente TypeScript sirve a `apps/web` y al cliente móvil MVP (React Native + Expo).
+El ledger de jobs pertenece a la API/Postgres. Web persiste el job mediante la API
+antes de publicar sus identificadores en `JOB_QUEUE`. Persistir y publicar son dos
+operaciones, no una transacción distribuida: Cron llama al runner de recuperación
+para recoger trabajo pendiente si falla o se interrumpe la publicación.
 
-No crear `apps/worker` mientras los stages de sync EA quepan en los límites medidos del Worker/Queue de `apps/web`. La cola permanece durable (Cloudflare Queues) en el lado web.
+La API controla deduplicación, leases, intentos y disponibilidad. El consumer web
+solicita la ejecución por HTTP y decide ack/retry a partir del estado devuelto. La
+configuración contempla una dead-letter queue. El protocolo tolera redelivery; no
+promete exactly-once. La durabilidad requiere Postgres, no los stores locales en memoria.
+
+Este circuito de sincronización no constituye el outbox de eventos de dominio.
+La consistencia de resultados y estadísticas se define en
+[ADR-0016](/docs/adr/0016-official-results-transactional-projection.md).
+
+No se añade `apps/worker` mientras no haya evidencia de límites o necesidades de
+operación que justifiquen otro deployable. La UI obtiene frescura mediante refetch
+autorizado; señales adicionales no sustituyen la API como fuente de verdad.
 
 ## Consecuencias
 
-- Web y API comparten BC sin path-alias a `apps/web/src/modules`; mobile no importa BC y consume sus capacidades por SDK.
-- Adapters de plataforma (D1, R2, Queues vs Node/Postgres/egress) viven por app.
-- Hay que versionar y typecheck más workspaces.
+- Web/auth y API tienen despliegues y configuración separados; preview y producción
+  deben aislar bases, buckets, colas y secretos. Este ADR no certifica ese aislamiento desplegado.
+- Las migraciones se ejecutan fuera del request path: D1 en `apps/auth/migrations`,
+  Postgres en `apps/api/migrations`.
+- El modo API sin `DATABASE_URL` es útil localmente, pero pierde datos al reiniciar.
+- Cambiar de runtime no mueve el dominio fuera de los packages.
 
-## Alternativas rechazadas
+## Alternativas descartadas
 
-- Mantener dominio solo en `apps/web` con alias `@/*` para otros apps (no escala a API de producto).
-- Tres apps desde el día uno sin packages de BC.
-- Vercel + Supabase como plataforma Must.
-- `apps/api` que solo reexporte el SDK HTTP hacia sí mismo (sin use cases).
+Un único runtime Worker para todo el producto; duplicar adapters EA entre web y API;
+Vercel/Supabase como plataforma obligatoria; crear otro worker sin necesidad medida.
+
+## Estado de implementación y evidencia
+
+La topología y el protocolo de jobs están cableados en el repositorio. La salud de
+servicios desplegados requiere comprobación independiente.
+
+- [Bindings web](/apps/web/wrangler.jsonc) y [auth](/apps/auth/wrangler.jsonc).
+- [Productor de jobs](/apps/web/src/workers/provider-sync-job.producer.ts) y
+  [consumer/recuperación](/apps/web/src/workers/game-data-sync.worker.ts).
+- [Ledger Postgres](/apps/api/src/adapters/game-data/jobs/postgres-provider-sync-job.repository.ts).
+- [Operación de la API](/apps/api/README.md).

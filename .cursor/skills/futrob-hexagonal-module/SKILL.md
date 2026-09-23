@@ -15,6 +15,9 @@ Read the relevant requirement and acceptance criteria in `product/`, then consul
 [architecture overview](../../../docs/architecture/overview.md),
 [module boundaries](../../../docs/architecture/module-boundaries.md) and
 [dependency graph](../../../docs/architecture/dependency-graph.md).
+For changes to architectural decisions or discrepancies between code and ADRs, use
+[futrob-adr](../futrob-adr/SKILL.md) to consult the index, follow successors and classify
+the impact. A use case that follows an existing decision does not need another ADR.
 Inspect the current use case, port, adapter, DI and tests nearest to the request.
 The documents describe both implemented behavior and targets; verify the actual wiring.
 

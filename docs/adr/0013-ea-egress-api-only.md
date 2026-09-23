@@ -2,6 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-08-21
+- Actualizada: 2026-09-22
 - Relacionado: [ADR-0006](/docs/adr/0006-game-data-provider-port.md) · [ADR-0009](/docs/adr/0009-cloudflare-workers-topology.md) · [ADR-0010](/docs/adr/0010-bounded-context-packages.md)
 
 ## Contexto
@@ -27,9 +28,16 @@ Una auditoría de consumo demostró que el adaptador de web era **código muerto
 - Una sola implementación que evolucionar (resiliencia, versiones de esquema EA, observabilidad).
 - `packages/ea-clubs` es testeable sin adapters ni red; `vp test` lo incluye como proyecto.
 - El web Worker ya no necesita `EA_CLUBS_BASE_URL` para egress propio (permanece como configuración heredada en `apps/web/src/config/env.ts`; el SDK usa `FUTROB_API_BASE_URL` para llegar a la API).
-- Si en el futuro un flujo de web necesitara egress directo (p. ej. latencia), se reintroduciría vía puerto en `@futrob/game-data`, no copiando adapters.
+- Un futuro egress directo desde web requeriría reemplazar explícitamente esta decisión con evidencia de necesidad; un port existente no autoriza una excepción al ownership actual.
 
 ## Alternativas rechazadas
 
 - Mantener ambos adaptadores sincronizados (drift comprobado; costo doble de mantenimiento).
 - Mover el HTTP client base a `@futrob/ea-clubs`: acoplaría el package a runtime/fetch específico; la resiliencia (circuit breaker, cache) es política del adapter en api.
+
+## Alcance respecto a otros ADR
+
+[ADR-0006](/docs/adr/0006-game-data-provider-port.md) decide el vocabulario neutral;
+este ADR decide el runtime y ownership del egress. Se mantienen separados porque un
+nuevo proveedor no exige cambiar el runtime. La topología consolidada está en
+[ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md).

@@ -1,5 +1,7 @@
 # Arquitectura canónica de Futrob
 
+[Índice de decisiones de arquitectura](/docs/adr/README.md).
+
 Estado: canónica para el MVP  
 Fecha de revisión documental: 2026-09-16
 
@@ -177,19 +179,21 @@ Un módulo no escribe tablas ajenas; publica eventos / usa ports de lectura.
 
 - [ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md)
 - [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md)
-- [ADR-0003](/docs/adr/0003-better-auth-and-d1-ownership.md)
+- [ADR-0003](/docs/adr/0003-better-auth-and-d1-ownership.md) — histórico, reemplazado por ADR-0015
 - [ADR-0004](/docs/adr/0004-multi-tenant-d1-scoping.md)
 - [ADR-0005](/docs/adr/0005-typed-private-api.md)
 - [ADR-0006](/docs/adr/0006-game-data-provider-port.md)
 - [ADR-0007](/docs/adr/0007-immutable-provider-observations.md)
 - [ADR-0008](/docs/adr/0008-notifications-web-and-email.md)
-- [ADR-0009](/docs/adr/0009-cloudflare-workers-topology.md)
-- [ADR-0010](/docs/adr/0010-bounded-context-packages.md)
+- [ADR-0009](/docs/adr/0009-cloudflare-workers-topology.md) — histórico, reemplazado por ADR-0001
+- [ADR-0010](/docs/adr/0010-bounded-context-packages.md) — histórico, reemplazado por ADR-0002
 - [ADR-0011](/docs/adr/0011-tagged-errors.md)
 - [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md)
 - [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)
 - [ADR-0014](/docs/adr/0014-shared-ui-tokens-and-mobile-ui.md)
 - [ADR-0015](/docs/adr/0015-auth-extraction.md)
+- [ADR-0016](/docs/adr/0016-official-results-transactional-projection.md)
+- [ADR-0017](/docs/adr/0017-contextual-capability-authorization.md)
 - [design.md](/design.md)
 - [module-boundaries.md](/docs/architecture/module-boundaries.md)
 - [dependency-graph.md](/docs/architecture/dependency-graph.md)

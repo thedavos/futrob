@@ -1,6 +1,16 @@
 # ADR-0009: Topología Cloudflare Workers
 
-- Estado: Aceptada
+- Estado: Reemplazada
+- Reemplazada el: 2026-09-22
+- Reemplazada por: [ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md)
+- Índice: [Registro de decisiones](/docs/adr/README.md)
+
+Este ADR se conserva para mantener la historia y los enlaces existentes. Su contenido
+original no prescribe la implementación actual; consultar la decisión sucesora.
+
+## Registro histórico
+
+- Estado original: Aceptada
 - Fecha: 2026-07-17
 - Reemplaza: ADR-0009 Vercel + Realtime Supabase (retirado con el pivot de plataforma)
 
