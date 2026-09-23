@@ -27,6 +27,14 @@ function rawValue(token: TokenValue): string {
   return token.value;
 }
 
+function typographyValue(token: TokenValue): string {
+  if (token.kind === "raw") return token.value;
+  if (token.kind === "oklch") throw new Error("Typography token cannot be a color");
+  const referenced = Object.entries(TYPOGRAPHY_TOKENS).find(([name]) => name === token.name)?.[1];
+  if (!referenced) throw new Error(`Missing typography token ${token.name}`);
+  return typographyValue(referenced);
+}
+
 function refName(token: TokenValue): string | null {
   return token.kind === "ref" ? token.name : null;
 }
@@ -86,10 +94,10 @@ export function typoStyle(role: TypoRole): TextStyle {
     return cached;
   }
 
-  const size = remToDp(rawValue(TYPOGRAPHY_TOKENS[`typo-${role}-size`]));
+  const size = remToDp(typographyValue(TYPOGRAPHY_TOKENS[`typo-${role}-size`]));
   const fontKey = fontKeyForWeight(TYPOGRAPHY_TOKENS[`typo-${role}-weight`]);
-  const leading = Number.parseFloat(rawValue(TYPOGRAPHY_TOKENS[`typo-${role}-leading`]));
-  const trackingEm = Number.parseFloat(rawValue(TYPOGRAPHY_TOKENS[`typo-${role}-tracking`]));
+  const leading = Number.parseFloat(typographyValue(TYPOGRAPHY_TOKENS[`typo-${role}-leading`]));
+  const trackingEm = Number.parseFloat(typographyValue(TYPOGRAPHY_TOKENS[`typo-${role}-tracking`]));
 
   const style: TextStyle = {
     fontSize: size,
