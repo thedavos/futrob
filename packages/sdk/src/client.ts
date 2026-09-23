@@ -9,6 +9,7 @@ import { createResultsResource } from "./resources/results.ts";
 import { createTeamsResource } from "./resources/teams.ts";
 import { createAuthorizationResource } from "./resources/authorization.ts";
 import { createStatisticsResource } from "./resources/statistics.ts";
+import { createPlayersResource } from "./resources/players.ts";
 
 export type CreateFutrobClientOptions = HttpClientOptions;
 
@@ -26,6 +27,7 @@ export function createFutrobClient(options: CreateFutrobClientOptions) {
     results: createResultsResource(http),
     authorization: createAuthorizationResource(http),
     statistics: createStatisticsResource(http),
+    players: createPlayersResource(http),
   };
 }
 
