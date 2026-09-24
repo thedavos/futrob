@@ -2,6 +2,7 @@ import type {
   GetMyPlayerProfileResponse,
   GetMyTeamsResponse,
   ListMyRosterInvitationsResponse,
+  PlayerExternalClubAssociationDto,
   PlayerGameAccountDto,
   PlayerTeamMembershipDto,
   RosterInvitationInboxItemDto,
@@ -22,6 +23,21 @@ export function playerGameAccountFixture(
     platform: overrides.platform ?? "playstation",
     gameEdition: overrides.gameEdition ?? "FC 26",
     createdAt: overrides.createdAt ?? CREATED_AT,
+  };
+}
+
+export function playerExternalClubFixture(
+  overrides: Partial<PlayerExternalClubAssociationDto> = {},
+): PlayerExternalClubAssociationDto {
+  return {
+    playerProfileId: overrides.playerProfileId ?? PROFILE_ID,
+    providerKey: overrides.providerKey ?? "ea-clubs",
+    externalClubId: overrides.externalClubId ?? "10754",
+    externalClubName: overrides.externalClubName ?? "Night Owls",
+    platform: overrides.platform ?? "common-gen5",
+    gameEdition: overrides.gameEdition ?? "fc26",
+    imageUrl: overrides.imageUrl === undefined ? null : overrides.imageUrl,
+    associatedAt: overrides.associatedAt ?? CREATED_AT,
   };
 }
 
@@ -137,6 +153,14 @@ export function readyPlayerProfileFixture(): GetMyPlayerProfileResponse {
         identifier: "davos.pc",
         platform: "pc",
         gameEdition: "FC 26",
+      }),
+    ],
+    externalClubs: [
+      playerExternalClubFixture(),
+      playerExternalClubFixture({
+        externalClubId: "22110",
+        externalClubName: "Fera Enjaulada",
+        platform: "ps5",
       }),
     ],
   });

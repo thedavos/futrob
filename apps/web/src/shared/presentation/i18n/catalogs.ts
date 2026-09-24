@@ -610,6 +610,27 @@ const es = {
   "player.gameData.review": "Revisar datos de juego",
   "player.gameData.refresh": "Actualizar datos",
   "player.gameData.refreshing": "Actualizando…",
+  "player.gameData.loading": "Cargando datos de juego…",
+  "player.gameData.error": "No se pudieron cargar tus datos de juego.",
+  "player.gameData.subtitle.empty":
+    "Registra tu identificador para consultar tu actividad de EA Clubs.",
+  "player.gameData.subtitle.ready":
+    "Gestiona tu identificador de EA y los clubes que usas para consultar tus partidos.",
+  "player.gameData.setup.title": "Registra tus datos de juego",
+  "player.gameData.setup.subtitle":
+    "Selecciona tu plataforma, busca tu club de EA Clubs y registra tu identificador.",
+  "player.gameData.setup.cta": "Registra tu identificador",
+  "player.gameData.setup.hint":
+    "Los partidos y las estadísticas aparecen cuando registres tu identificador.",
+  "player.gameData.identifier.title": "Identificador del jugador",
+  "player.gameData.identifier.empty": "Todavía no registraste un identificador de EA.",
+  "player.gameData.platform": "Plataforma",
+  "player.gameData.clubs.title": "Clubes asociados",
+  "player.gameData.clubs.subtitle": "Elige el club desde el que consultar tus partidos.",
+  "player.gameData.clubs.empty":
+    "Todavía no asociaste un club. Añádelo desde el selector de contexto.",
+  "player.gameData.clubs.selected": "Seleccionado",
+  "player.gameData.clubs.change": "Cambiar club",
   "player.backToWorkspace": "Volver al espacio personal",
   "player.retry": "Reintentar",
   "player.partialData.description":
@@ -1402,6 +1423,25 @@ const en: Catalog = {
   "player.gameData.review": "Review game data",
   "player.gameData.refresh": "Update data",
   "player.gameData.refreshing": "Updating…",
+  "player.gameData.loading": "Loading game data…",
+  "player.gameData.error": "Unable to load your game data.",
+  "player.gameData.subtitle.empty": "Register your identifier to look up your EA Clubs activity.",
+  "player.gameData.subtitle.ready":
+    "Manage your EA identifier and the clubs you use to look up your matches.",
+  "player.gameData.setup.title": "Register your game data",
+  "player.gameData.setup.subtitle":
+    "Select your platform, search for your EA Clubs club, and register your identifier.",
+  "player.gameData.setup.cta": "Register your identifier",
+  "player.gameData.setup.hint": "Matches and statistics appear after you register your identifier.",
+  "player.gameData.identifier.title": "Player identifier",
+  "player.gameData.identifier.empty": "You have not registered an EA identifier yet.",
+  "player.gameData.platform": "Platform",
+  "player.gameData.clubs.title": "Associated clubs",
+  "player.gameData.clubs.subtitle": "Choose the club you use to look up your matches.",
+  "player.gameData.clubs.empty":
+    "You have not associated a club yet. Add one from the context selector.",
+  "player.gameData.clubs.selected": "Selected",
+  "player.gameData.clubs.change": "Change club",
   "player.backToWorkspace": "Back to personal workspace",
   "player.retry": "Try again",
   "player.partialData.description": "Some metrics were unavailable in one or more matches.",

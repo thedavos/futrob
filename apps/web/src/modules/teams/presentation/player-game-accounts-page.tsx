@@ -1,182 +1,67 @@
 "use client";
 
-import { useState } from "react";
-import { CircleNotchIcon } from "@phosphor-icons/react";
-import * as stylex from "@stylexjs/stylex";
+import { useContext, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import {
+  ArrowsClockwiseIcon,
+  CircleNotchIcon,
+  GameControllerIcon,
+  InfoIcon,
+} from "@phosphor-icons/react";
 import {
   Alert,
   AlertDescription,
   applyStyles,
+  Badge,
   Button,
+  Caption,
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-  Field,
-  FieldError,
-  FieldLabel,
-  Form,
-  Input,
+  Heading,
   PageHeader,
   PageHeaderActions,
   PageHeaderDescription,
   PageHeaderTitle,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  readFormString,
-  typography,
+  Subtitle,
+  Text,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
-import type { GamePlatformDto } from "@futrob/api-contracts";
-import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
-import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import type { PlayerExternalClubAssociationDto, PlayerGameAccountDto } from "@futrob/api-contracts";
+import gamepadUrl from "@/assets/gamepad.svg";
+import { EaLogo } from "@/shared/presentation/ea-logo.tsx";
+import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
+import { PlatformLogo } from "@/shared/presentation/platform-logo.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { useAddMyGameAccountMutation, useMyPlayerProfileQuery } from "./player-queries.ts";
-
+import { WorkspaceSelectionContext } from "@/shared/presentation/shell/workspace-selection-context.ts";
+import {
+  personalWorkspaceSelection,
+  WORKSPACE_SELECTION_KIND,
+} from "@/shared/presentation/shell/workspace-selection.ts";
+import { styles } from "./player-game-accounts-page.styles.ts";
+import { useMyPlayerProfileQuery } from "./player-queries.ts";
 import { platformLabel } from "./platform-label.ts";
 
-const spin = stylex.keyframes({
-  to: { transform: "rotate(360deg)" },
-});
-
-const styles = stylex.create({
-  main: {
-    width: "100%",
-  },
-  muted: {
-    color: colors.mutedForeground,
-  },
-  alert: {
-    marginBottom: "1.5rem",
-  },
-  form: {
-    display: "grid",
-    gap: "1.25rem",
-  },
-  pair: {
-    display: "grid",
-    gap: "1.25rem",
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.sm]: "repeat(2, minmax(0, 1fr))",
-    },
-  },
-  submit: {
-    width: {
-      default: "100%",
-      [media.sm]: "fit-content",
-    },
-  },
-  linked: {
-    marginTop: "2rem",
-  },
-  linkedTitle: {
-    marginBottom: "1rem",
-    fontSize: "1.125rem",
-    lineHeight: "1.75rem",
-    fontWeight: 600,
-  },
-  linkedEmpty: {
-    fontSize: "0.875rem",
-    lineHeight: "1.25rem",
-    color: colors.mutedForeground,
-  },
-  list: {
-    overflow: "hidden",
-    borderRadius: "var(--corner-lg)",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-  },
-  item: {
-    paddingInline: "1rem",
-    paddingBlock: "0.75rem",
-    borderTopWidth: {
-      default: 1,
-      ":first-child": 0,
-    },
-    borderTopStyle: "solid",
-    borderTopColor: colors.borderSubtle,
-  },
-  identifier: {
-    fontWeight: 600,
-  },
-  spinner: {
-    animationName: spin,
-    animationDuration: "0.8s",
-    animationIterationCount: "infinite",
-    animationTimingFunction: "linear",
-  },
-});
-
 const alert = applyStyles(styles.alert);
-const form = applyStyles(styles.form);
-const submit = applyStyles(styles.submit);
-
-const GAME_PLATFORMS = GAME_PLATFORM_VALUES;
-
-type AddGameAccountValues = {
-  identifier: string;
-  platform: string;
-  gameEdition: string;
-};
-
-type AddGameAccountField = keyof AddGameAccountValues;
-
-function isGamePlatform(value: string): value is GamePlatformDto {
-  return GAME_PLATFORMS.some((platform) => platform === value);
-}
+const platformLogo = applyStyles(styles.platformLogo);
+const primary = applyStyles(styles.primary);
+const eaMark = applyStyles(styles.eaMark);
 
 export function PlayerGameAccountsPage() {
   const { t } = useI18n();
-  const [formKey, setFormKey] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const validation = useFormValidation<AddGameAccountField>();
   const profileQuery = useMyPlayerProfileQuery();
-  const addAccount = useAddMyGameAccountMutation();
-
   const accounts = profileQuery.data?.gameAccounts ?? [];
+  const clubs = profileQuery.data?.externalClubs ?? [];
   const loading = profileQuery.isPending;
   const refreshing = profileQuery.isFetching && !profileQuery.isPending;
-  const submitting = addAccount.isPending;
-
-  async function handleSubmit(formValues: AddGameAccountValues) {
-    const identifier = formValues.identifier.trim();
-    const gameEdition = formValues.gameEdition.trim();
-    const platform = formValues.platform;
-
-    if (!isGamePlatform(platform)) {
-      validation.applyServerErrors({ platform: "Selecciona una plataforma." });
-      return;
-    }
-
-    setError(null);
-    validation.clearServerErrors();
-
-    try {
-      await addAccount.mutateAsync({
-        identifier,
-        platform,
-        gameEdition,
-      });
-      setFormKey((current) => current + 1);
-      validation.clearServerErrors();
-    } catch {
-      setError("No se pudo guardar la cuenta. Inténtalo de nuevo.");
-    }
-  }
+  const account = accounts[0] ?? null;
+  const isEmpty = !loading && !profileQuery.isError && account === null;
 
   return (
     <main {...applyStyles(styles.main)}>
       <PageHeader>
-        <PageHeaderTitle>Datos de juego</PageHeaderTitle>
+        <PageHeaderTitle>{t("player.nav.gameData")}</PageHeaderTitle>
         <PageHeaderDescription>
-          Registra tus identificadores de EA sin compartir credenciales. Futrob los usará para
-          localizar tus partidos y estadísticas.
+          {t(isEmpty ? "player.gameData.subtitle.empty" : "player.gameData.subtitle.ready")}
         </PageHeaderDescription>
         <PageHeaderActions>
           <Button
@@ -186,126 +71,204 @@ export function PlayerGameAccountsPage() {
             }}
             type="button"
           >
-            {refreshing ? <CircleNotchIcon aria-hidden {...applyStyles(styles.spinner)} /> : null}
+            {refreshing ? (
+              <CircleNotchIcon
+                aria-hidden
+                data-icon="inline-start"
+                size={16}
+                {...applyStyles(styles.spinner)}
+              />
+            ) : (
+              <ArrowsClockwiseIcon aria-hidden data-icon="inline-start" size={16} />
+            )}
             {refreshing ? t("player.gameData.refreshing") : t("player.gameData.refresh")}
           </Button>
         </PageHeaderActions>
       </PageHeader>
 
-      {error || profileQuery.isError ? (
+      {profileQuery.isError ? (
         <Alert className={alert.className} style={alert.style} variant="destructive">
-          <AlertDescription>
-            {error ?? "No se pudieron cargar tus cuentas de juego."}
-          </AlertDescription>
+          <AlertDescription>{t("player.gameData.error")}</AlertDescription>
         </Alert>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Añadir cuenta</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form<AddGameAccountValues>
-            aria-busy={submitting}
-            className={form.className}
-            errors={validation.formErrors}
-            key={formKey}
-            onFormSubmit={handleSubmit}
-            style={form.style}
-          >
-            <Field
-              {...validation.getFieldValidationProps("identifier")}
-              disabled={submitting}
-              name="identifier"
-              validate={(value) =>
-                readFormString(value).trim().length === 0 ? "Escribe el identificador de EA." : null
-              }
-            >
-              <FieldLabel htmlFor="player-account-identifier">Identificador de EA</FieldLabel>
-              <Input
-                disabled={submitting}
-                id="player-account-identifier"
-                maxLength={80}
-                name="identifier"
-              />
-              <FieldError />
-            </Field>
-            <div {...applyStyles(styles.pair)}>
-              <Field
-                {...validation.getFieldValidationProps("platform")}
-                disabled={submitting}
-                name="platform"
-                validate={(value) =>
-                  readFormString(value).length === 0 ? "Selecciona una plataforma." : null
-                }
-              >
-                <FieldLabel htmlFor="player-account-platform">Plataforma</FieldLabel>
-                <Select disabled={submitting} name="platform">
-                  <SelectTrigger id="player-account-platform">
-                    <SelectValue placeholder="Selecciona" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="playstation">PlayStation</SelectItem>
-                    <SelectItem value="xbox">Xbox</SelectItem>
-                    <SelectItem value="pc">PC</SelectItem>
-                    <SelectItem value="nintendo-switch-1">Nintendo Switch 1</SelectItem>
-                    <SelectItem value="nintendo-switch-2">Nintendo Switch 2</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FieldError />
-              </Field>
-              <Field
-                {...validation.getFieldValidationProps("gameEdition")}
-                disabled={submitting}
-                name="gameEdition"
-                validate={(value) =>
-                  readFormString(value).trim().length === 0 ? "Escribe la edición." : null
-                }
-              >
-                <FieldLabel htmlFor="player-account-edition">Edición</FieldLabel>
-                <Input
-                  disabled={submitting}
-                  id="player-account-edition"
-                  maxLength={40}
-                  name="gameEdition"
-                  placeholder="ej. FC 26"
-                />
-                <FieldError />
-              </Field>
-            </div>
-            <Button
-              className={submit.className}
-              disabled={submitting}
-              style={submit.style}
-              type="submit"
-            >
-              {submitting ? "Guardando…" : "Añadir cuenta"}
-            </Button>
-          </Form>
-        </CardContent>
-      </Card>
+      {loading ? (
+        <Caption {...applyStyles(styles.loading)}>{t("player.gameData.loading")}</Caption>
+      ) : null}
 
-      <section {...applyStyles(styles.linked)}>
-        <h2 {...applyStyles(styles.linkedTitle)}>Cuentas vinculadas</h2>
-        {loading ? (
-          <p {...applyStyles(styles.linkedEmpty)}>Cargando cuentas…</p>
-        ) : accounts.length === 0 ? (
-          <p {...applyStyles(styles.linkedEmpty)}>Todavía no vinculaste ninguna cuenta.</p>
-        ) : (
-          <div {...applyStyles(styles.list)}>
-            {accounts.map((account) => (
-              <div key={account.id} {...applyStyles(styles.item)}>
-                <div>
-                  <p {...applyStyles(styles.identifier)}>{account.identifier}</p>
-                  <p {...applyStyles(typography.caption, styles.muted)}>
-                    {platformLabel(account.platform)} · {account.gameEdition}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {isEmpty ? (
+        <div {...applyStyles(styles.stack)}>
+          <GameDataSetupSection />
+          <Alert variant="info">
+            <InfoIcon aria-hidden />
+            <AlertDescription>{t("player.gameData.setup.hint")}</AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
+
+      {account && !loading && !profileQuery.isError ? (
+        <div {...applyStyles(styles.board)}>
+          <PlayerIdentifierSection account={account} />
+          <AssociatedClubsSection clubs={clubs} />
+        </div>
+      ) : null}
     </main>
   );
+}
+
+function GameDataSetupSection() {
+  const { t } = useI18n();
+
+  return (
+    <Card className={styles.setup}>
+      <CardContent className={styles.setupContent}>
+        <img alt="" data-outline="none" src={gamepadUrl} {...applyStyles(styles.setupGamepad)} />
+        <div {...applyStyles(styles.setupCopy)}>
+          <Heading className={styles.title}>{t("player.gameData.setup.title")}</Heading>
+          <Subtitle>{t("player.gameData.setup.subtitle")}</Subtitle>
+        </div>
+        <Button type="button">
+          <GameControllerIcon aria-hidden data-icon="inline-start" size={16} />
+          {t("player.gameData.setup.cta")}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PlayerIdentifierSection({ account }: { readonly account: PlayerGameAccountDto }) {
+  const { t } = useI18n();
+
+  return (
+    <Card className={styles.large}>
+      <CardHeader className={styles.header}>
+        <Heading className={styles.title}>{t("player.gameData.identifier.title")}</Heading>
+      </CardHeader>
+      <CardContent className={styles.content}>
+        <div {...applyStyles(styles.identity)}>
+          <div {...applyStyles(styles.identityRow)}>
+            <img alt="" {...applyStyles(styles.gamepad)} src={gamepadUrl} />
+            <Text as="p" look="subtitle" truncate weight="semibold">
+              {account.identifier}
+            </Text>
+          </div>
+          <div {...applyStyles(styles.platformRow)}>
+            <Text look="label" tone="muted">
+              {t("player.gameData.platform")}
+            </Text>
+            <span role="img" aria-label={platformLabel(account.platform)}>
+              <PlatformLogo
+                className={platformLogo.className}
+                height={24}
+                platform={account.platform}
+                style={platformLogo.style}
+                width={24}
+              />
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AssociatedClubsSection({
+  clubs,
+}: {
+  readonly clubs: readonly PlayerExternalClubAssociationDto[];
+}) {
+  const { t } = useI18n();
+  const workspace = useContext(WorkspaceSelectionContext);
+  const [localClubId, setLocalClubId] = useState<string | undefined>(undefined);
+  const preferredId =
+    workspace?.selection.kind === WORKSPACE_SELECTION_KIND.personal
+      ? workspace.selection.externalClubId
+      : localClubId;
+  const selectedId = selectedClubId(clubs, preferredId);
+  const selected = clubs.find((club) => club.externalClubId === selectedId) ?? null;
+
+  function changeClub(externalClubId: string) {
+    if (workspace) {
+      workspace.select(personalWorkspaceSelection(externalClubId));
+      return;
+    }
+    setLocalClubId(externalClubId);
+  }
+
+  return (
+    <Card className={styles.large}>
+      <CardHeader className={styles.header}>
+        <Heading className={styles.title}>{t("player.gameData.clubs.title")}</Heading>
+        <Subtitle>{t("player.gameData.clubs.subtitle")}</Subtitle>
+      </CardHeader>
+      <CardContent className={styles.content}>
+        {clubs.length === 0 ? (
+          <Caption>{t("player.gameData.clubs.empty")}</Caption>
+        ) : (
+          <ul {...applyStyles(styles.list)}>
+            {clubs.map((club) => {
+              const selectedClub = club.externalClubId === selectedId;
+              return (
+                <li key={club.externalClubId} {...applyStyles(styles.row)}>
+                  <ClubCrestAvatar
+                    className={styles.crest}
+                    imageUrl={club.imageUrl}
+                    name={club.externalClubName}
+                  />
+                  <Text className={styles.clubName} look="body" truncate weight="semibold">
+                    {club.externalClubName}
+                  </Text>
+                  <div {...applyStyles(styles.rowAction)}>
+                    {selectedClub ? (
+                      <Badge variant="primary">{t("player.gameData.clubs.selected")}</Badge>
+                    ) : (
+                      <Button
+                        aria-label={`${t("player.gameData.clubs.change")} ${club.externalClubName}`}
+                        onClick={() => {
+                          changeClub(club.externalClubId);
+                        }}
+                        type="button"
+                        variant="outline"
+                      >
+                        {t("player.gameData.clubs.change")}
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {selected ? (
+          <div {...applyStyles(styles.footer)}>
+            <Button
+              className={primary.className}
+              render={<Link to="/player/matches" />}
+              style={primary.style}
+            >
+              <EaLogo
+                className={eaMark.className}
+                data-icon="inline-start"
+                height={16}
+                style={eaMark.style}
+                width={16}
+              />
+              {selected.externalClubName} · {selected.externalClubId}
+            </Button>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function selectedClubId(
+  clubs: readonly PlayerExternalClubAssociationDto[],
+  preferredId: string | undefined,
+): string | undefined {
+  if (clubs.length === 0) return undefined;
+  if (preferredId !== undefined && clubs.some((club) => club.externalClubId === preferredId)) {
+    return preferredId;
+  }
+  return clubs[0]?.externalClubId;
 }
