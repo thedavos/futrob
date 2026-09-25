@@ -491,6 +491,43 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/players/me/game-accounts/{accountId}": {
+      patch: {
+        operationId: "updateMyPlayerGameAccount",
+        tags: ["players"],
+        summary: "Update the declared identity of a personal game account",
+        parameters: [
+          {
+            name: "accountId",
+            in: "path",
+            required: true,
+            schema: { type: "string", minLength: 1 },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateMyPlayerGameAccountRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Updated account, same id",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/UpdateMyPlayerGameAccountResponse" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     "/players/me/external-club": {
       post: {
         operationId: "associateMyPlayerExternalClub",
@@ -3548,6 +3585,34 @@ export const futrobOpenApiV1 = {
         },
       },
       AddMyPlayerGameAccountResponse: {
+        type: "object",
+        required: ["profile", "gameAccount"],
+        properties: {
+          profile: { $ref: "#/components/schemas/PlayerProfile" },
+          gameAccount: { $ref: "#/components/schemas/PlayerGameAccount" },
+        },
+      },
+      UpdateMyPlayerGameAccountRequest: {
+        type: "object",
+        required: ["identifier", "platform", "gameEdition"],
+        properties: {
+          identifier: {
+            type: "string",
+            minLength: 1,
+            maxLength: 80,
+          },
+          platform: {
+            type: "string",
+            enum: ["playstation", "xbox", "pc", "nintendo-switch-1", "nintendo-switch-2"],
+          },
+          gameEdition: {
+            type: "string",
+            minLength: 1,
+            maxLength: 40,
+          },
+        },
+      },
+      UpdateMyPlayerGameAccountResponse: {
         type: "object",
         required: ["profile", "gameAccount"],
         properties: {

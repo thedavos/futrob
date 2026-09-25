@@ -20,6 +20,7 @@ import {
   type ListOrganizationTeamsResponse,
   type RespondToRosterInvitationRequest,
   type SetActiveTeamRequest,
+  type UpdateMyPlayerGameAccountRequest,
 } from "@futrob/api-contracts";
 import type { HttpClient, RequestOptions } from "../http.ts";
 import { apiPath } from "../internal/path.ts";
@@ -110,6 +111,12 @@ export function createTeamsResource(http: HttpClient) {
 
     addMyGameAccount: (input: AddMyPlayerGameAccountRequest, options: RequestOptions = {}) =>
       players.addGameAccount(input, options),
+
+    updateMyGameAccount: (
+      accountId: string,
+      input: UpdateMyPlayerGameAccountRequest,
+      options: RequestOptions = {},
+    ) => players.updateGameAccount(accountId, input, options),
 
     associateMyExternalClub: (
       input: AssociateMyPlayerExternalClubRequest,

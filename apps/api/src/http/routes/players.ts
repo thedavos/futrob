@@ -1,10 +1,6 @@
 import { Hono } from "hono";
 import { asCompetitionId, asTeamId, TaggedError } from "@futrob/shared-kernel";
 import {
-  addMyPlayerGameAccountRequestSchema,
-  addMyPlayerGameAccountResponseSchema,
-  associateMyPlayerExternalClubRequestSchema,
-  associateMyPlayerExternalClubResponseSchema,
   getMyGameProfileQuerySchema,
   getMyGameProfileResponseSchema,
   getMyMatchesQuerySchema,
@@ -42,6 +38,7 @@ import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
 } from "@/http/middleware/service-auth.ts";
+import { registerPersonalGameAccountRoutes } from "@/http/routes/players-personal-accounts.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
@@ -79,54 +76,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.post("/players/me/game-accounts", async (c) => {
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = addMyPlayerGameAccountRequestSchema.safeParse(json);
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
-    const profile = await teams.ensurePlayerProfile.execute({ actorId: c.get("actorId") });
-    const account = await teams.addPlayerGameAccount.execute({
-      playerProfileId: profile.id,
-      ...parsed.data,
-    });
-    if (!account.isOk()) return failureToHttp(account.error);
-
-    return jsonResponse(
-      addMyPlayerGameAccountResponseSchema.parse({
-        profile: playerProfileDto(profile),
-        gameAccount: playerGameAccountDto(account.value),
-      }),
-      201,
-    );
-  });
-
-  secured.post("/players/me/external-club", async (c) => {
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = associateMyPlayerExternalClubRequestSchema.safeParse(json);
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
-    const profile = await teams.ensurePlayerProfile.execute({ actorId: c.get("actorId") });
-    const associated = await teams.associatePlayerExternalClub.execute({
-      playerProfileId: profile.id,
-      club: {
-        providerKey: parsed.data.providerKey,
-        externalClubId: parsed.data.externalClubId,
-        name: parsed.data.name,
-        platform: parsed.data.platform,
-        gameEdition: parsed.data.gameEdition,
-        imageUrl: parsed.data.imageUrl,
-      },
-    });
-    if (!associated.isOk()) return failureToHttp(associated.error);
-
-    return jsonResponse(
-      associateMyPlayerExternalClubResponseSchema.parse({
-        profile: playerProfileDto(profile),
-        externalClub: playerExternalClubAssociationDto(associated.value),
-      }),
-      201,
-    );
-  });
+  registerPersonalGameAccountRoutes(secured, teams);
 
   secured.get("/players/me/statistics", async (c) => {
     const parsed = getMyStatisticsQuerySchema.safeParse({

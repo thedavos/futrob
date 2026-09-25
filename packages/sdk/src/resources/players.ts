@@ -8,6 +8,8 @@ import {
   associateMyPlayerExternalClubResponseSchema,
   setActiveTeamRequestSchema,
   setActiveTeamResponseSchema,
+  updateMyPlayerGameAccountRequestSchema,
+  updateMyPlayerGameAccountResponseSchema,
   type GetMyNextEncounterResponse,
   type GetMyPlayerProfileResponse,
   type GetMyTeamsResponse,
@@ -17,8 +19,11 @@ import {
   type AssociateMyPlayerExternalClubResponse,
   type SetActiveTeamRequest,
   type SetActiveTeamResponse,
+  type UpdateMyPlayerGameAccountRequest,
+  type UpdateMyPlayerGameAccountResponse,
 } from "@futrob/api-contracts";
 import type { HttpClient, RequestOptions } from "../http.ts";
+import { apiPath } from "../internal/path.ts";
 
 /** Player self-service endpoints under `/players/me`. */
 export function createPlayersResource(http: HttpClient) {
@@ -43,6 +48,21 @@ export function createPlayersResource(http: HttpClient) {
         body,
         options,
         parse: (data) => addMyPlayerGameAccountResponseSchema.parse(data),
+      });
+    },
+
+    async updateGameAccount(
+      accountId: string,
+      input: UpdateMyPlayerGameAccountRequest,
+      options: RequestOptions = {},
+    ): Promise<UpdateMyPlayerGameAccountResponse> {
+      const body = updateMyPlayerGameAccountRequestSchema.parse(input);
+      return http.request({
+        path: apiPath("players", "me", "game-accounts", accountId),
+        method: "PATCH",
+        body,
+        options,
+        parse: (data) => updateMyPlayerGameAccountResponseSchema.parse(data),
       });
     },
 

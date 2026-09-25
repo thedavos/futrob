@@ -68,6 +68,21 @@ export const addMyPlayerGameAccountResponseSchema = z.object({
 });
 export type AddMyPlayerGameAccountResponse = z.infer<typeof addMyPlayerGameAccountResponseSchema>;
 
+export const updateMyPlayerGameAccountParamsSchema = z.object({
+  accountId: z.string().trim().min(1),
+});
+export type UpdateMyPlayerGameAccountParams = z.infer<typeof updateMyPlayerGameAccountParamsSchema>;
+
+export const updateMyPlayerGameAccountRequestSchema = playerGameAccountInputSchema.omit({
+  providerExternalPlayerId: true,
+});
+export type UpdateMyPlayerGameAccountRequest = z.infer<
+  typeof updateMyPlayerGameAccountRequestSchema
+>;
+
+export const updateMyPlayerGameAccountResponseSchema = addMyPlayerGameAccountResponseSchema;
+export type UpdateMyPlayerGameAccountResponse = AddMyPlayerGameAccountResponse;
+
 export const associateMyPlayerExternalClubRequestSchema =
   playerExternalClubSelectionInputSchema.extend({
     name: z.string().trim().min(1),
