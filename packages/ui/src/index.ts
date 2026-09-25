@@ -104,6 +104,8 @@ export { Heading } from "./components/heading";
 export type { HeadingLevel, HeadingProps } from "./components/heading";
 export { Label } from "./components/label";
 export type { LabelProps } from "./components/label";
+export { LeadCard } from "./components/lead-card";
+export type { LeadCardProps, LeadCardTone } from "./components/lead-card";
 export { MetaItem, MetaList, MetaTerm, MetaValue } from "./components/meta-list";
 export type { MetaListColumns, MetaListProps, MetaValueProps } from "./components/meta-list";
 export { Score } from "./components/score";
