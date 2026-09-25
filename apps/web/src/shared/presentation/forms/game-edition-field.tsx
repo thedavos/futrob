@@ -44,8 +44,16 @@ const styles = stylex.create({
       [media.sm]: "repeat(3, minmax(0, 1fr))",
     },
   },
+  pill: {
+    justifyContent: "center",
+    textAlign: "center",
+  },
   indicator: {
-    position: "static",
+    position: "absolute",
+    left: "0.75rem",
+    right: "auto",
+    top: "50%",
+    marginTop: "-0.625rem",
     width: "1.25rem",
     height: "1.25rem",
   },
@@ -81,6 +89,7 @@ export function GameEditionField({
   readonly copy?: GameEditionFieldCopy;
 }) {
   const group = applyStyles(styles.group);
+  const pill = applyStyles(styles.pill);
   const indicator = applyStyles(styles.indicator);
   const customField = applyStyles(styles.customField);
   return (
@@ -101,12 +110,25 @@ export function GameEditionField({
         value={custom ? "__other__" : value}
       >
         {knownGameEditions.map((edition) => (
-          <ChoiceGroupItem appearance="pill" disabled={disabled} key={edition} value={edition}>
+          <ChoiceGroupItem
+            appearance="pill"
+            className={pill.className}
+            disabled={disabled}
+            key={edition}
+            style={pill.style}
+            value={edition}
+          >
             <ChoiceGroupIndicator className={indicator.className} style={indicator.style} />
             {edition}
           </ChoiceGroupItem>
         ))}
-        <ChoiceGroupItem appearance="pill" disabled={disabled} value="__other__">
+        <ChoiceGroupItem
+          appearance="pill"
+          className={pill.className}
+          disabled={disabled}
+          style={pill.style}
+          value="__other__"
+        >
           <ChoiceGroupIndicator className={indicator.className} style={indicator.style} />
           {copy.other}
         </ChoiceGroupItem>
