@@ -5,9 +5,6 @@ import { EA_SEARCH_PLATFORM, type ExternalClubDto } from "@futrob/api-contracts"
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
   Button,
   ChoiceGroup,
   ChoiceGroupItem,
@@ -23,14 +20,14 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 import {
   SupportErrorAlert,
   type SupportError,
 } from "@/shared/presentation/support-error-alert.tsx";
 import { GameDataClientError } from "./game-data-browser-client.ts";
-import { eaPlatformLabel, eaSearchPlatforms } from "./ea-club-search-meta.ts";
+import { eaSearchPlatforms } from "./ea-club-search-meta.ts";
+import { ClubSearchResultList } from "./club-search-result-item.tsx";
 import { useSearchClubsMutation } from "./game-data-queries.ts";
 
 type ClubSearchValues = {
@@ -119,57 +116,6 @@ const styles = stylex.create({
     lineHeight: "1.25rem",
     color: colors.mutedForeground,
   },
-  list: {
-    display: "grid",
-    gap: "0.5rem",
-  },
-  item: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.5rem",
-    borderRadius: "var(--corner-lg)",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.background,
-    paddingInline: "0.75rem",
-    paddingBlock: "0.5rem",
-  },
-  identity: {
-    display: "flex",
-    minWidth: 0,
-    alignItems: "center",
-    gap: "0.75rem",
-  },
-  avatar: {
-    width: "2rem",
-    height: "2rem",
-  },
-  nameBlock: {
-    minWidth: 0,
-  },
-  name: {
-    fontSize: {
-      default: "0.875rem",
-      [media.sm]: "1rem",
-    },
-    lineHeight: {
-      default: "1.25rem",
-      [media.sm]: "1.5rem",
-    },
-  },
-  meta: {
-    marginTop: "0.125rem",
-    color: colors.mutedForeground,
-  },
-  clubId: {
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    fontSize: "0.75rem",
-    lineHeight: "1rem",
-    color: colors.mutedForeground,
-  },
   source: {
     color: colors.mutedForeground,
   },
@@ -187,7 +133,6 @@ export function ClubSearchPanel() {
   const loading = searchClubs.isPending;
   const form = applyStyles(styles.form);
   const submit = applyStyles(styles.submit);
-  const avatar = applyStyles(styles.avatar);
 
   async function handleSubmit(formValues: ClubSearchValues) {
     if (loading || retry.blocked) {
@@ -305,27 +250,7 @@ export function ClubSearchPanel() {
           <p {...applyStyles(styles.empty)}>Sin resultados para esa búsqueda.</p>
         ) : null}
 
-        {!error && clubs.length > 0 ? (
-          <ul {...applyStyles(styles.list)}>
-            {clubs.map((club) => (
-              <li key={`${club.providerKey}:${club.externalClubId}`} {...applyStyles(styles.item)}>
-                <div {...applyStyles(styles.identity)}>
-                  <Avatar className={avatar.className} style={avatar.style}>
-                    {club.imageUrl ? <AvatarImage alt="" src={club.imageUrl} /> : null}
-                    <AvatarFallback>{initialsFromName(club.name)}</AvatarFallback>
-                  </Avatar>
-                  <div {...applyStyles(styles.nameBlock)}>
-                    <strong {...applyStyles(styles.name)}>{club.name}</strong>
-                    <p {...applyStyles(typography.label, styles.meta)}>
-                      {eaPlatformLabel(club.platform)} · {club.gameEdition}
-                    </p>
-                  </div>
-                </div>
-                <span {...applyStyles(styles.clubId)}>{club.externalClubId}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        {!error && clubs.length > 0 ? <ClubSearchResultList clubs={clubs} /> : null}
 
         {!searched && !error ? (
           <p {...applyStyles(typography.caption, styles.source)}>

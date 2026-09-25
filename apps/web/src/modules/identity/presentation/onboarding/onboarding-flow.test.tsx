@@ -90,8 +90,8 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.click(screen.getByRole("button", { name: "Search clubs" }));
 
     expect(await screen.findByText("2 clubs found.")).toBeTruthy();
-    expect(screen.getByRole("radio", { name: /Fera Enjaulada/ })).toBeTruthy();
-    expect(screen.getByRole("radio", { name: /Fera Night Owls/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Fera Enjaulada/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Fera Night Owls/ })).toBeTruthy();
   });
 
   it("renders a legacy actor from route data under StrictMode", async () => {
@@ -451,10 +451,10 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.change(query, { target: { value: "Fera" } });
     fireEvent.click(screen.getByRole("button", { name: "Buscar club" }));
 
-    const club = await screen.findByRole("radio", { name: /Fera Enjaulada/ });
+    const club = await screen.findByRole("button", { name: /Fera Enjaulada/ });
     fireEvent.click(club);
     expect(searches.at(-1)?.gameEdition).toBe("fc26");
-    expect(club.getAttribute("aria-checked")).toBe("true");
+    expect(club.getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Revisar club" }));
 
     await screen.findByRole("heading", { name: "Confirma tu configuración" });
@@ -518,7 +518,7 @@ describe("OnboardingFlowProvider initialization", () => {
     await user.type(screen.getByRole("textbox", { name: "Nombre del club" }), "Fera");
     await user.click(screen.getByRole("button", { name: "Buscar club" }));
 
-    const club = await screen.findByRole("radio", { name: /Fera Enjaulada/ });
+    const club = await screen.findByRole("button", { name: /Fera Enjaulada/ });
     await user.click(club);
     expect(searches.at(-1)?.gameEdition).toBe("fc25");
     expect(screen.getByRole("button", { name: "Revisar club" })).not.toBeDisabled();
@@ -527,7 +527,7 @@ describe("OnboardingFlowProvider initialization", () => {
     await user.click(await screen.findByRole("option", { name: /Xbox/ }));
 
     await waitFor(() => {
-      expect(screen.queryByRole("radio", { name: /Fera Enjaulada/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /Fera Enjaulada/ })).toBeNull();
     });
     expect(screen.getByRole("button", { name: "Revisar club" })).toBeDisabled();
   });
@@ -552,7 +552,7 @@ describe("OnboardingFlowProvider initialization", () => {
       resolveSearch?.([...STORY_EXTERNAL_CLUBS]);
     });
 
-    expect(screen.queryByRole("radio", { name: /Fera Enjaulada/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Fera Enjaulada/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Revisar club" })).toBeDisabled();
   });
 

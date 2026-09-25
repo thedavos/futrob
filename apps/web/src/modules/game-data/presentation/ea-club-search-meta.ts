@@ -19,3 +19,15 @@ export function formatProviderGameEdition(edition: string): string {
   if (match) return `FC ${match[1]}`;
   return trimmed;
 }
+
+/** Maps display editions like `FC 26` to EA provider keys like `fc26`. */
+export function toProviderGameEdition(
+  edition: string,
+  fallback = DEFAULT_EA_SEARCH_GAME_EDITION,
+): string {
+  const normalized = edition
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+  return normalized.length > 0 ? normalized : fallback;
+}

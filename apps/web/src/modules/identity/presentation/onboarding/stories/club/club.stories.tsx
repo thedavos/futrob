@@ -43,7 +43,7 @@ export const OneClubFound: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await searchClubs(canvas);
-    const clubs = await canvas.findAllByRole("radio", { name: /Fera/ });
+    const clubs = await canvas.findAllByRole("button", { name: /Fera/ });
     await expect(clubs).toHaveLength(1);
     await expect(await canvas.findByText("1 club encontrado.")).toBeVisible();
   },
@@ -63,7 +63,7 @@ export const TwoClubsFound: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await searchClubs(canvas);
-    const clubs = await canvas.findAllByRole("radio", { name: /Fera/ });
+    const clubs = await canvas.findAllByRole("button", { name: /Fera/ });
     await expect(clubs).toHaveLength(2);
     await expect(await canvas.findByText("2 clubs encontrados.")).toBeVisible();
   },
@@ -83,7 +83,7 @@ export const ThreeClubsFound: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await searchClubs(canvas);
-    const clubs = await canvas.findAllByRole("radio", { name: /Fera/ });
+    const clubs = await canvas.findAllByRole("button", { name: /Fera/ });
     await expect(clubs).toHaveLength(3);
     await expect(await canvas.findByText("3 clubs encontrados.")).toBeVisible();
   },
@@ -103,9 +103,9 @@ export const SelectClub: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await searchClubs(canvas);
-    const club = await canvas.findByRole("radio", { name: /Fera Enjaulada/ });
+    const club = await canvas.findByRole("button", { name: /Fera Enjaulada/ });
     await userEvent.click(club);
-    await expect(club).toHaveAttribute("aria-checked", "true");
+    await expect(club).toHaveAttribute("aria-pressed", "true");
   },
 };
 

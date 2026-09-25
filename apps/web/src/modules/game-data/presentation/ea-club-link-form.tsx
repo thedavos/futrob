@@ -3,11 +3,7 @@
 import { useId, useRef, useState } from "react";
 import {
   applyStyles,
-  Badge,
   Button,
-  ChoiceGroup,
-  ChoiceGroupIndicator,
-  ChoiceGroupItem,
   Field,
   FieldLabel,
   Input,
@@ -33,16 +29,13 @@ import {
 } from "@futrob/api-contracts";
 import { buildSupportFields } from "@/shared/presentation/support-fields.ts";
 import { PlatformLogo } from "@/shared/presentation/platform-logo.tsx";
-import { EaLogo } from "@/shared/presentation/ea-logo.tsx";
 import {
-  eaPlatformLabel,
   eaSearchPlatforms,
-  formatProviderGameEdition,
   MAX_EXTERNAL_CLUB_SEARCH_RESULTS,
 } from "@/modules/game-data/presentation/ea-club-search-meta.ts";
-import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { SupportErrorAlert } from "@/shared/presentation/support-error-alert.tsx";
 import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
+import { EaClubLinkResults } from "@/modules/game-data/presentation/ea-club-link-results.tsx";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { styles } from "./ea-club-link-form.styles.ts";
@@ -52,11 +45,6 @@ const platformTrigger = applyStyles(styles.platformTrigger);
 const logo = applyStyles(styles.logo);
 const platformMenu = applyStyles(styles.platformMenu);
 const searchButton = applyStyles(styles.searchButton);
-const results = applyStyles(styles.results);
-const resultItem = applyStyles(styles.resultItem);
-const crest = applyStyles(styles.crest);
-const fallback = applyStyles(styles.fallback);
-const chipIcon = applyStyles(styles.chipIcon);
 
 type ClubSearchState =
   | { readonly status: "idle" }
@@ -317,85 +305,13 @@ export function EaClubLinkForm({
         />
       ) : null}
 
-      {search.status === "success" ? (
-        <ChoiceGroup
-          aria-describedby={statusId}
-          aria-label={t("onboarding.club.results.aria")}
-          className={results.className}
-          onValueChange={(value: string) => {
-            const club = search.clubs.find((item) => item.externalClubId === value);
-            if (club) selectClub(club);
-          }}
-          style={results.style}
-          value={selected?.externalClubId ?? ""}
-        >
-          {search.clubs.map((club) => (
-            <ChoiceGroupItem
-              className={resultItem.className}
-              key={club.externalClubId}
-              style={resultItem.style}
-              value={club.externalClubId}
-            >
-              <ChoiceGroupIndicator />
-              <ClubCrestAvatar
-                className={crest.className}
-                fallbackClassName={fallback.className}
-                imageUrl={club.imageUrl}
-                name={club.name}
-                style={crest.style}
-              />
-              <span {...applyStyles(styles.resultCopy)}>
-                <span {...applyStyles(styles.resultName)}>{club.name}</span>
-                <ClubMetaChips gameEdition={club.gameEdition} platform={club.platform} />
-              </span>
-            </ChoiceGroupItem>
-          ))}
-        </ChoiceGroup>
-      ) : null}
-
-      {selected && search.status !== "success" ? (
-        <div {...applyStyles(styles.selected)}>
-          <ClubCrestAvatar
-            className={crest.className}
-            fallbackClassName={fallback.className}
-            imageUrl={selected.imageUrl}
-            name={selected.name}
-            style={crest.style}
-          />
-          <div {...applyStyles(styles.resultCopy)}>
-            <p {...applyStyles(styles.resultName)}>{selected.name}</p>
-            <ClubMetaChips gameEdition={selected.gameEdition} platform={selected.platform} />
-          </div>
-        </div>
-      ) : null}
+      <EaClubLinkResults
+        clubs={search.status === "success" ? search.clubs : null}
+        disabled={busy}
+        onSelectClub={selectClub}
+        selected={selected}
+        statusId={statusId}
+      />
     </div>
-  );
-}
-
-function ClubMetaChips({
-  platform,
-  gameEdition,
-}: {
-  readonly platform: string;
-  readonly gameEdition: string;
-}) {
-  const eaPlatform = asEaSearchPlatform(platform);
-  return (
-    <span {...applyStyles(styles.chips)}>
-      <Badge variant="outline">
-        {eaPlatform ? (
-          <PlatformLogo
-            className={chipIcon.className}
-            platform={gamePlatformForEaSearchLogo(eaPlatform)}
-            style={chipIcon.style}
-          />
-        ) : null}
-        {eaPlatformLabel(platform)}
-      </Badge>
-      <Badge variant="outline">
-        <EaLogo className={chipIcon.className} style={chipIcon.style} />
-        {formatProviderGameEdition(gameEdition)}
-      </Badge>
-    </span>
   );
 }

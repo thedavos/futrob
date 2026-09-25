@@ -43,7 +43,7 @@ export const Complete: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
     await userEvent.type(await canvas.findByRole("textbox", { name: "Nombre del club" }), "Fera");
     await userEvent.click(canvas.getByRole("button", { name: "Buscar club" }));
-    await userEvent.click(await canvas.findByRole("radio", { name: /Fera Enjaulada/ }));
+    await userEvent.click(await canvas.findByRole("button", { name: /Fera Enjaulada/ }));
     await userEvent.click(canvas.getByRole("button", { name: "Revisar club" }));
     await expect(
       await canvas.findByRole("heading", { name: "Confirma tu configuración" }),

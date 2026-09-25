@@ -33,6 +33,11 @@ const browserClientMocks: readonly BrowserClientMock[] = [
     names: ["teams-browser-client"],
   },
   {
+    file: webPresentation("modules/game-data/presentation/game-data-story-client.ts"),
+    skip: "game-data-story-client",
+    names: ["game-data-browser-client"],
+  },
+  {
     file: webPresentation("modules/organizations/presentation/organizations-story-client.ts"),
     skip: "organizations-story-client",
     names: ["organizations-browser-client"],
@@ -76,6 +81,7 @@ const config: StorybookConfig = {
   async viteFinal(viteConfig) {
     const statisticsStoryClient = mockFileFor("statistics-browser-client");
     const teamsStoryClient = mockFileFor("teams-browser-client");
+    const gameDataStoryClient = mockFileFor("game-data-browser-client");
     const organizationsStoryClient = mockFileFor("organizations-browser-client");
     const competitionsStoryClient = mockFileFor("competitions-browser-client");
     viteConfig.plugins = [
@@ -109,6 +115,10 @@ const config: StorybookConfig = {
         {
           find: /^@\/modules\/teams\/presentation\/teams-browser-client(?:\.ts)?$/,
           replacement: teamsStoryClient,
+        },
+        {
+          find: /^@\/modules\/game-data\/presentation\/game-data-browser-client(?:\.ts)?$/,
+          replacement: gameDataStoryClient,
         },
         {
           find: /^@\/modules\/statistics\/presentation\/statistics-browser-client(?:\.ts)?$/,

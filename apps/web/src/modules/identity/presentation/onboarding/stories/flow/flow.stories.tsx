@@ -38,8 +38,10 @@ export const EnglishPlayerPath: Story = {
     await expect(
       await canvas.findByRole("heading", { name: "Set up your game details" }),
     ).toBeVisible();
+    await expect(canvas.getByRole("listitem", { current: "step" })).toHaveTextContent("Account");
     await userEvent.click(canvas.getByRole("button", { name: "Skip for now" }));
     await expect(await canvas.findByRole("heading", { name: "Link your EA club" })).toBeVisible();
+    await expect(canvas.getByRole("listitem", { current: "step" })).toHaveTextContent("Club");
   },
 };
 
@@ -57,6 +59,9 @@ export const OrganizationPath: Story = {
     await expect(
       await canvas.findByRole("heading", { name: "Crea tu organización" }),
     ).toBeVisible();
+    await expect(canvas.getByRole("listitem", { current: "step" })).toHaveTextContent(
+      "Organización",
+    );
     await userEvent.type(
       canvas.getByRole("textbox", { name: "Nombre de la organización" }),
       "Liga Norte",
@@ -65,6 +70,9 @@ export const OrganizationPath: Story = {
     await expect(
       await canvas.findByRole("heading", { name: "Configura tu primera competición" }),
     ).toBeVisible();
+    await expect(canvas.getByRole("listitem", { current: "step" })).toHaveTextContent(
+      "Competición",
+    );
     await userEvent.click(canvas.getByRole("button", { name: "Volver" }));
     await expect(
       await canvas.findByRole("heading", { name: "Crea tu organización" }),
