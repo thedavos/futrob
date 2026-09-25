@@ -41,6 +41,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {};
 
+export const Idle: Story = {
+  name: "Idle",
+  render: () => <Stepper className={playground.className} steps={steps} style={playground.style} />,
+};
+
 export const ProgressStates: Story = {
   render: () => (
     <div {...applyProps(undefined, undefined, styles.stack)}>

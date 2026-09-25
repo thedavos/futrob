@@ -14,7 +14,7 @@ export interface StepperStep {
 
 interface StepperProps {
   readonly steps: readonly StepperStep[];
-  readonly currentStepId: string;
+  readonly currentStepId?: string;
   readonly className?: string;
   readonly style?: CSSProperties;
   readonly "aria-label"?: string;
@@ -156,10 +156,7 @@ function Stepper({
   mobileSummary = defaultMobileSummary,
   "aria-label": ariaLabel = "Progreso",
 }: StepperProps) {
-  const currentIndex = Math.max(
-    0,
-    steps.findIndex((step) => step.id === currentStepId),
-  );
+  const currentIndex = currentStepId ? steps.findIndex((step) => step.id === currentStepId) : -1;
 
   return (
     <nav aria-label={ariaLabel} data-slot="stepper" {...applyProps(className, style, styles.root)}>
