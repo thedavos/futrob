@@ -1,7 +1,7 @@
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -12,6 +12,9 @@ const styles = stylex.create({
     width: "100%",
     height: "100%",
     borderRadius: "inherit",
+    boxSizing: "border-box",
+    paddingInlineEnd: "0.75rem",
+    scrollbarWidth: "none",
     outlineWidth: 0,
     outlineStyle: "none",
     boxShadow: {
@@ -20,35 +23,32 @@ const styles = stylex.create({
     },
   },
   scrollbar: {
-    margin: 1,
     display: "flex",
     touchAction: "none",
-    padding: 1,
+    padding: 0,
+    pointerEvents: "auto",
+    userSelect: "none",
     transitionProperty: "opacity",
     transitionDuration: {
       default: "var(--duration-normal)",
       ":is([data-scrolling])": "0s",
     },
-    userSelect: "none",
     opacity: {
-      default: null,
+      default: 0.7,
       ":is([data-hovering])": 1,
       ":is([data-scrolling])": 1,
     },
   },
   scrollbarVertical: {
-    width: "0.625rem",
+    width: "0.25rem",
     flexDirection: "column",
   },
   scrollbarHorizontal: {
-    height: "0.625rem",
+    height: "0.25rem",
     flexDirection: "row",
   },
   thumb: {
-    position: "relative",
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: "0%",
+    flexShrink: 0,
     borderRadius: "var(--corner-full)",
     backgroundColor: colors.borderStrong,
   },
@@ -57,7 +57,11 @@ const styles = stylex.create({
   },
 });
 
-function ScrollArea({ className, style, children, ...props }: ScrollAreaPrimitive.Root.Props) {
+type ScrollAreaProps = Omit<ScrollAreaPrimitive.Root.Props, "className"> & {
+  className?: HostClassName | ScrollAreaPrimitive.Root.Props["className"];
+};
+
+function ScrollArea({ className, style, children, ...props }: ScrollAreaProps) {
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
@@ -66,7 +70,7 @@ function ScrollArea({ className, style, children, ...props }: ScrollAreaPrimitiv
     >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        {...applyProps(undefined, undefined, styles.viewport)}
+        {...applyProps("base-ui-disable-scrollbar", undefined, styles.viewport)}
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
@@ -77,12 +81,11 @@ function ScrollArea({ className, style, children, ...props }: ScrollAreaPrimitiv
   );
 }
 
-function ScrollBar({
-  className,
-  style,
-  orientation = "vertical",
-  ...props
-}: ScrollAreaPrimitive.Scrollbar.Props) {
+type ScrollBarProps = Omit<ScrollAreaPrimitive.Scrollbar.Props, "className"> & {
+  className?: HostClassName | ScrollAreaPrimitive.Scrollbar.Props["className"];
+};
+
+function ScrollBar({ className, style, orientation = "vertical", ...props }: ScrollBarProps) {
   return (
     <ScrollAreaPrimitive.Scrollbar
       data-slot="scroll-area-scrollbar"
@@ -103,7 +106,11 @@ function ScrollBar({
   );
 }
 
-function ScrollAreaContent({ className, style, ...props }: ScrollAreaPrimitive.Content.Props) {
+type ScrollAreaContentProps = Omit<ScrollAreaPrimitive.Content.Props, "className"> & {
+  className?: HostClassName | ScrollAreaPrimitive.Content.Props["className"];
+};
+
+function ScrollAreaContent({ className, style, ...props }: ScrollAreaContentProps) {
   return (
     <ScrollAreaPrimitive.Content
       data-slot="scroll-area-content"
