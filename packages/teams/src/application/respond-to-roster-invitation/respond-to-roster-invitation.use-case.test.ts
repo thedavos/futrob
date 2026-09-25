@@ -180,6 +180,12 @@ class Accounts implements PlayerGameAccountRepository {
     this.rows.push(account);
     return account;
   }
+  async updateDeclaredIdentity(account: PlayerGameAccount) {
+    const index = this.rows.findIndex((row) => row.id === account.id);
+    if (index < 0) return null;
+    this.rows[index] = account;
+    return account;
+  }
   async setProviderExternalPlayerId() {
     return null;
   }

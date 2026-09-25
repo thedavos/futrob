@@ -206,6 +206,7 @@ function buildHarness(options?: { maxSize?: number }) {
     listByProfile: async () => [],
     findByNormalizedIdentifier: async () => [],
     saveIfAbsent: async (account: PlayerGameAccount) => account,
+    updateDeclaredIdentity: async () => null,
     setProviderExternalPlayerId: async () => null,
     findByCorrelation: async () => [],
   };

@@ -40,7 +40,10 @@ describe("teams persistence adapters", () => {
       accountId: account.id,
       providerExternalPlayerId: "provider-player-23",
     });
-    expect(linked?.providerExternalPlayerId).toBe("provider-player-23");
+    expect(linked).toEqual({
+      ...account,
+      providerExternalPlayerId: "provider-player-23",
+    });
     expect(await accounts.findById(account.id)).toEqual(linked);
     expect(
       await accounts.findByCorrelation({
@@ -50,6 +53,16 @@ describe("teams persistence adapters", () => {
         normalizedIdentifier: account.normalizedIdentifier,
       }),
     ).toEqual([linked]);
+
+    const renamed = {
+      ...account,
+      identifier: "Davos282",
+      normalizedIdentifier: "davos282",
+      platform: "xbox" as const,
+      providerExternalPlayerId: null,
+    };
+    expect(await accounts.updateDeclaredIdentity(renamed)).toEqual(renamed);
+    expect(await accounts.findById(account.id)).toEqual(renamed);
 
     const association = {
       playerProfileId: profile.id,
@@ -212,6 +225,54 @@ describe("teams persistence adapters", () => {
       "playstation",
       "FC 26",
       row.provider_external_player_id,
+      null,
+    ]);
+  });
+
+  it("updates declared identity of a postgres game account", async () => {
+    const row = {
+      id: "account-1",
+      player_profile_id: "profile-1",
+      identifier: "Davos282",
+      normalized_identifier: "davos282",
+      provider_external_player_id: null,
+      platform: "xbox",
+      game_edition: "FC 26",
+      created_at: createdAt,
+    };
+    const query = vi.fn().mockResolvedValueOnce({ rows: [row] });
+    const repository = new PostgresPlayerGameAccountRepository(
+      asPgPool({
+        connect: async () => {
+          throw new Error("connect not used");
+        },
+        query,
+      }),
+    );
+
+    const updated = await repository.updateDeclaredIdentity({
+      id: row.id,
+      playerProfileId: row.player_profile_id,
+      identifier: row.identifier,
+      normalizedIdentifier: row.normalized_identifier,
+      providerExternalPlayerId: null,
+      platform: "xbox",
+      gameEdition: row.game_edition,
+      createdAt,
+    });
+
+    expect(updated).toMatchObject({
+      id: "account-1",
+      identifier: "Davos282",
+      platform: "xbox",
+      providerExternalPlayerId: null,
+    });
+    expect(query.mock.calls[0]?.[1]).toEqual([
+      row.id,
+      row.identifier,
+      row.normalized_identifier,
+      "xbox",
+      row.game_edition,
       null,
     ]);
   });

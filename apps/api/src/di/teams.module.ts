@@ -22,6 +22,7 @@ import {
   OpenRosterUseCase,
   RespondToRosterInvitationUseCase,
   SetActiveTeamUseCase,
+  UpdatePlayerGameAccountUseCase,
   type ActiveTeamPreferenceRepository,
   type CompetitionRosterMembershipRepository,
   type CompetitionRosterStateRepository,
@@ -137,6 +138,7 @@ export function createTeamsModule(input: {
   return {
     ensurePlayerProfile,
     addPlayerGameAccount: new AddPlayerGameAccountUseCase({ accounts, ...shared }),
+    updatePlayerGameAccount: new UpdatePlayerGameAccountUseCase({ accounts }),
     linkProviderExternalPlayerId: new LinkProviderExternalPlayerIdUseCase({ accounts }),
     associatePlayerExternalClub: new AssociatePlayerExternalClubUseCase({
       profiles,

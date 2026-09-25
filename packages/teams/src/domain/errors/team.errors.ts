@@ -56,6 +56,11 @@ export class GameAccountNotFound extends TaggedError("GameAccountNotFound")<{
   message: string;
 }> {}
 
+export class GameAccountConflict extends TaggedError("GameAccountConflict")<{
+  code: "teams.game_account_conflict";
+  message: string;
+}> {}
+
 export class PlayerProfileNotFound extends TaggedError("PlayerProfileNotFound")<{
   code: "teams.player_profile_not_found";
   message: string;
@@ -99,5 +104,11 @@ export type ConnectTeamExternalClubError = TeamNotFound | TeamAuthorizationForbi
 export type SetActiveTeamError = PlayerProfileNotFound | ActiveTeamNotOwned;
 
 export type AddPlayerGameAccountError = InvalidGameAccountIdentifier | InvalidGameEdition;
+
+export type UpdatePlayerGameAccountError =
+  | InvalidGameAccountIdentifier
+  | InvalidGameEdition
+  | GameAccountNotFound
+  | GameAccountConflict;
 
 export type AssociatePlayerExternalClubError = PlayerProfileNotFound;

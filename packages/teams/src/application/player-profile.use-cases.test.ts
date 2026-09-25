@@ -3,7 +3,10 @@ import { describe, expect, it } from "vite-plus/test";
 import type { PlayerExternalClubAssociation } from "../domain/entities/player-external-club-association.ts";
 import type { PlayerGameAccount } from "../domain/entities/player-game-account.ts";
 import {
+  GameAccountConflict,
+  GameAccountNotFound,
   InvalidGameAccountIdentifier,
+  InvalidGameEdition,
   PlayerProfileNotFound,
 } from "../domain/errors/team.errors.ts";
 import type { PlayerProfile } from "../domain/entities/player-profile.ts";
@@ -11,6 +14,7 @@ import type { PlayerExternalClubAssociationRepository } from "../domain/ports/pl
 import type { PlayerGameAccountRepository } from "../domain/ports/player-game-account.repository.ts";
 import type { PlayerProfileRepository } from "../domain/ports/player-profile.repository.ts";
 import { AddPlayerGameAccountUseCase } from "./add-player-game-account/add-player-game-account.use-case.ts";
+import { UpdatePlayerGameAccountUseCase } from "./update-player-game-account/update-player-game-account.use-case.ts";
 import { AssociatePlayerExternalClubUseCase } from "./associate-player-external-club/associate-player-external-club.use-case.ts";
 import { EnsurePlayerProfileUseCase } from "./ensure-player-profile/ensure-player-profile.use-case.ts";
 import { GetPlayerProfileUseCase } from "./get-player-profile/get-player-profile.use-case.ts";
@@ -75,6 +79,26 @@ class Accounts implements PlayerGameAccountRepository {
     );
     if (existing) return existing;
     this.rows.push(account);
+    return account;
+  }
+  async updateDeclaredIdentity(account: PlayerGameAccount) {
+    const existing = this.rows.find(
+      (row) =>
+        row.id !== account.id &&
+        row.playerProfileId === account.playerProfileId &&
+        row.normalizedIdentifier === account.normalizedIdentifier &&
+        row.platform === account.platform &&
+        row.gameEdition === account.gameEdition,
+    );
+    if (existing) {
+      throw new GameAccountConflict({
+        code: "teams.game_account_conflict",
+        message: "Game account already exists",
+      });
+    }
+    const index = this.rows.findIndex((row) => row.id === account.id);
+    if (index < 0) return null;
+    this.rows[index] = account;
     return account;
   }
   async setProviderExternalPlayerId(input: {
@@ -191,6 +215,150 @@ describe("player profile use cases", () => {
     });
     expect(result.isOk()).toBe(false);
     expect(!result.isOk() && InvalidGameAccountIdentifier.is(result.error)).toBe(true);
+  });
+
+  it("updates a declared identity in place and keeps the account id", async () => {
+    const accounts = new Accounts();
+    const added = await new AddPlayerGameAccountUseCase({
+      accounts,
+      ...dependencies(),
+    }).execute({
+      playerProfileId: "profile-1",
+      identifier: "Gamer23",
+      platform: "playstation",
+      gameEdition: "FC 26",
+    });
+    expect(added.isOk()).toBe(true);
+    if (!added.isOk()) return;
+    await new LinkProviderExternalPlayerIdUseCase({ accounts }).execute({
+      accountId: added.value.id,
+      providerExternalPlayerId: "provider-player-23",
+    });
+
+    const updated = await new UpdatePlayerGameAccountUseCase({ accounts }).execute({
+      accountId: added.value.id,
+      playerProfileId: "profile-1",
+      identifier: "  Davos282 ",
+      platform: "xbox",
+      gameEdition: " FC 25 ",
+    });
+
+    expect(updated.isOk() && updated.value).toMatchObject({
+      id: added.value.id,
+      identifier: "Davos282",
+      normalizedIdentifier: "davos282",
+      platform: "xbox",
+      gameEdition: "FC 25",
+      providerExternalPlayerId: null,
+    });
+    expect(accounts.rows).toHaveLength(1);
+  });
+
+  it("keeps the provider id when only identifier casing changes", async () => {
+    const accounts = new Accounts();
+    const added = await new AddPlayerGameAccountUseCase({
+      accounts,
+      ...dependencies(),
+    }).execute({
+      playerProfileId: "profile-1",
+      identifier: "Gamer23",
+      platform: "playstation",
+      gameEdition: "FC 26",
+    });
+    expect(added.isOk()).toBe(true);
+    if (!added.isOk()) return;
+    await new LinkProviderExternalPlayerIdUseCase({ accounts }).execute({
+      accountId: added.value.id,
+      providerExternalPlayerId: "provider-player-23",
+    });
+
+    const updated = await new UpdatePlayerGameAccountUseCase({ accounts }).execute({
+      accountId: added.value.id,
+      playerProfileId: "profile-1",
+      identifier: "GAMER23",
+      platform: "playstation",
+      gameEdition: "FC 26",
+    });
+
+    expect(updated.isOk() && updated.value).toMatchObject({
+      id: added.value.id,
+      identifier: "GAMER23",
+      normalizedIdentifier: "gamer23",
+      providerExternalPlayerId: "provider-player-23",
+    });
+  });
+
+  it("rejects an update that collides with another of the player's accounts", async () => {
+    const accounts = new Accounts();
+    const add = new AddPlayerGameAccountUseCase({ accounts, ...dependencies() });
+    const first = await add.execute({
+      playerProfileId: "profile-1",
+      identifier: "Gamer23",
+      platform: "playstation",
+      gameEdition: "FC 26",
+    });
+    const second = await add.execute({
+      playerProfileId: "profile-1",
+      identifier: "Davos282",
+      platform: "xbox",
+      gameEdition: "FC 26",
+    });
+    expect(first.isOk() && second.isOk()).toBe(true);
+    if (!first.isOk() || !second.isOk()) return;
+
+    const updated = await new UpdatePlayerGameAccountUseCase({ accounts }).execute({
+      accountId: first.value.id,
+      playerProfileId: "profile-1",
+      identifier: "davos282",
+      platform: "xbox",
+      gameEdition: "FC 26",
+    });
+
+    expect(updated.isOk()).toBe(false);
+    expect(!updated.isOk() && GameAccountConflict.is(updated.error)).toBe(true);
+    expect(accounts.rows[0]?.identifier).toBe("Gamer23");
+  });
+
+  it("rejects updates for a missing account or a different profile", async () => {
+    const accounts = new Accounts();
+    const added = await new AddPlayerGameAccountUseCase({
+      accounts,
+      ...dependencies(),
+    }).execute({
+      playerProfileId: "profile-1",
+      identifier: "Gamer23",
+      platform: "playstation",
+      gameEdition: "FC 26",
+    });
+    expect(added.isOk()).toBe(true);
+    if (!added.isOk()) return;
+    const useCase = new UpdatePlayerGameAccountUseCase({ accounts });
+
+    const missing = await useCase.execute({
+      accountId: "missing",
+      playerProfileId: "profile-1",
+      identifier: "Davos282",
+      platform: "xbox",
+      gameEdition: "FC 26",
+    });
+    const foreign = await useCase.execute({
+      accountId: added.value.id,
+      playerProfileId: "profile-2",
+      identifier: "Davos282",
+      platform: "xbox",
+      gameEdition: "FC 26",
+    });
+    const invalidEdition = await useCase.execute({
+      accountId: added.value.id,
+      playerProfileId: "profile-1",
+      identifier: "Davos282",
+      platform: "xbox",
+      gameEdition: " ",
+    });
+
+    expect(!missing.isOk() && GameAccountNotFound.is(missing.error)).toBe(true);
+    expect(!foreign.isOk() && GameAccountNotFound.is(foreign.error)).toBe(true);
+    expect(!invalidEdition.isOk() && InvalidGameEdition.is(invalidEdition.error)).toBe(true);
   });
 
   it("associates an external club with a player profile", async () => {

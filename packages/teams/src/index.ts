@@ -62,6 +62,7 @@ export {
   TeamAuthorizationForbidden,
   CaptainAlreadyAssigned,
   GameAccountNotFound,
+  GameAccountConflict,
   PlayerProfileNotFound,
   ActiveTeamNotOwned,
   InvalidGameAccountIdentifier,
@@ -74,6 +75,7 @@ export {
   type ConnectTeamExternalClubError,
   type SetActiveTeamError,
   type AddPlayerGameAccountError,
+  type UpdatePlayerGameAccountError,
   type AssociatePlayerExternalClubError,
 } from "./domain/errors/team.errors.ts";
 export {
@@ -94,6 +96,10 @@ export {
   AddPlayerGameAccountUseCase,
   type AddPlayerGameAccountInput,
 } from "./application/add-player-game-account/add-player-game-account.use-case.ts";
+export {
+  UpdatePlayerGameAccountUseCase,
+  type UpdatePlayerGameAccountInput,
+} from "./application/update-player-game-account/update-player-game-account.use-case.ts";
 export {
   LinkProviderExternalPlayerIdUseCase,
   type LinkProviderExternalPlayerIdInput,

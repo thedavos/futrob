@@ -1,14 +1,16 @@
 import { gameDataProviderKeyQuerySchema, gamePlatformSchema } from "@futrob/api-contracts";
 import { asActorId, type GamePlatform } from "@futrob/shared-kernel";
-import type {
-  PlayerExternalClubAssociation,
-  PlayerExternalClubAssociationRepository,
-  PlayerGameAccount,
-  PlayerGameAccountRepository,
-  PlayerProfile,
-  PlayerProfileRepository,
+import {
+  GameAccountConflict,
+  type PlayerExternalClubAssociation,
+  type PlayerExternalClubAssociationRepository,
+  type PlayerGameAccount,
+  type PlayerGameAccountRepository,
+  type PlayerProfile,
+  type PlayerProfileRepository,
 } from "@futrob/teams";
 import type { Pool } from "pg";
+import { z } from "zod";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class PostgresPlayerProfileRepository implements PlayerProfileRepository {
@@ -157,6 +159,36 @@ export class PostgresPlayerGameAccountRepository implements PlayerGameAccountRep
     return rehydrateAccount(result.rows[0]);
   }
 
+  async updateDeclaredIdentity(account: PlayerGameAccount): Promise<PlayerGameAccount | null> {
+    try {
+      const result = await getPgExecutor(this.pool).query(
+        `UPDATE player_game_accounts
+         SET identifier = $2,
+             normalized_identifier = $3,
+             platform = $4,
+             game_edition = $5,
+             provider_external_player_id = $6
+         WHERE id = $1
+         RETURNING id, player_profile_id, identifier, normalized_identifier,
+                   provider_external_player_id, platform, game_edition, created_at`,
+        [
+          account.id,
+          account.identifier,
+          account.normalizedIdentifier,
+          account.platform,
+          account.gameEdition,
+          account.providerExternalPlayerId,
+        ],
+      );
+      const row = result.rows[0];
+      return row ? rehydrateAccount(row) : null;
+    } catch (error) {
+      throw mapPlayerGameAccountWriteError(
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    }
+  }
+
   async setProviderExternalPlayerId(input: {
     readonly accountId: string;
     readonly providerExternalPlayerId: string;
@@ -198,6 +230,22 @@ export class PostgresPlayerGameAccountRepository implements PlayerGameAccountRep
     );
     return result.rows.map(rehydrateAccount);
   }
+}
+
+const postgresDatabaseErrorSchema = z.object({
+  code: z.string(),
+});
+
+function mapPlayerGameAccountWriteError(error: Error): never {
+  if (error instanceof GameAccountConflict) throw error;
+  const parsed = postgresDatabaseErrorSchema.safeParse(error);
+  if (parsed.success && parsed.data.code === "23505") {
+    throw new GameAccountConflict({
+      code: "teams.game_account_conflict",
+      message: "Game account already exists",
+    });
+  }
+  throw error;
 }
 
 function rehydrateProfile(row: {

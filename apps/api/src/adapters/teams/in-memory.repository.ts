@@ -1,10 +1,11 @@
-import type {
-  PlayerExternalClubAssociation,
-  PlayerExternalClubAssociationRepository,
-  PlayerGameAccount,
-  PlayerGameAccountRepository,
-  PlayerProfile,
-  PlayerProfileRepository,
+import {
+  GameAccountConflict,
+  type PlayerExternalClubAssociation,
+  type PlayerExternalClubAssociationRepository,
+  type PlayerGameAccount,
+  type PlayerGameAccountRepository,
+  type PlayerProfile,
+  type PlayerProfileRepository,
 } from "@futrob/teams";
 import { compareByTime, TIME_SORT_DIRECTION, type ActorId } from "@futrob/shared-kernel";
 
@@ -81,6 +82,26 @@ export class InMemoryPlayerGameAccountRepository implements PlayerGameAccountRep
         row.gameEdition === account.gameEdition,
     );
     if (existing) return existing;
+    this.rows.set(account.id, account);
+    return account;
+  }
+
+  async updateDeclaredIdentity(account: PlayerGameAccount): Promise<PlayerGameAccount | null> {
+    if (!this.rows.has(account.id)) return null;
+    const clash = [...this.rows.values()].find(
+      (row) =>
+        row.id !== account.id &&
+        row.playerProfileId === account.playerProfileId &&
+        row.normalizedIdentifier === account.normalizedIdentifier &&
+        row.platform === account.platform &&
+        row.gameEdition === account.gameEdition,
+    );
+    if (clash) {
+      throw new GameAccountConflict({
+        code: "teams.game_account_conflict",
+        message: "Game account already exists",
+      });
+    }
     this.rows.set(account.id, account);
     return account;
   }
