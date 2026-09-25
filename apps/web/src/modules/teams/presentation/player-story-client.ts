@@ -14,6 +14,8 @@ import type {
   RespondToRosterInvitationResponse,
   SetActiveTeamRequest,
   SetActiveTeamResponse,
+  UpdateMyPlayerGameAccountRequest,
+  UpdateMyPlayerGameAccountResponse,
 } from "@futrob/api-contracts";
 import {
   playerGameAccountFixture,
@@ -44,6 +46,8 @@ export type PlayerStoryState = {
   readonly rosterInvitations: PlayerStoryQueryState<ListMyRosterInvitationsResponse>;
   readonly nextEncounter?: PlayerStoryQueryState<GetMyNextEncounterResponse>;
   readonly addGameAccount: PlayerStoryMutationState;
+  readonly updateGameAccount?: PlayerStoryMutationState;
+  readonly updateGameAccountErrorCode?: string;
   readonly setActiveTeam: PlayerStoryMutationState;
   readonly acceptRosterInvitation: PlayerStoryMutationState;
   readonly respondToRosterInvitation: PlayerStoryMutationState;
@@ -57,6 +61,7 @@ const defaultState = (): PlayerStoryState => ({
   rosterInvitations: { invitations: [] },
   nextEncounter: { encounter: null },
   addGameAccount: "success",
+  updateGameAccount: "success",
   setActiveTeam: "success",
   acceptRosterInvitation: "success",
   respondToRosterInvitation: "success",
@@ -68,8 +73,8 @@ export function configurePlayerStory(next: Partial<PlayerStoryState>): void {
   state = { ...defaultState(), ...next };
 }
 
-function rejectTeams<T>(code = "teams.unavailable"): Promise<T> {
-  return Promise.reject(new TeamsClientError(503, code, "2170e2f6-a47e-4338-83c3-27c054630810"));
+function rejectTeams<T>(code = "teams.unavailable", status = 503): Promise<T> {
+  return Promise.reject(new TeamsClientError(status, code, "2170e2f6-a47e-4338-83c3-27c054630810"));
 }
 
 function resolveQuery<T>(value: PlayerStoryQueryState<T>): Promise<T> {
@@ -78,12 +83,19 @@ function resolveQuery<T>(value: PlayerStoryQueryState<T>): Promise<T> {
   return Promise.resolve(value);
 }
 
-function resolveMutation<T>(kind: PlayerStoryMutationState, success: () => T): Promise<T> {
+function resolveMutation<T>(
+  kind: PlayerStoryMutationState,
+  success: () => T,
+  errorCode?: string,
+): Promise<T> {
   switch (kind) {
     case "pending":
       return hang();
     case "error":
-      return rejectTeams("teams.client_error");
+      return rejectTeams(
+        errorCode ?? "teams.client_error",
+        errorCode?.includes("not_found") ? 404 : errorCode?.includes("conflict") ? 409 : 400,
+      );
     case "success":
       return Promise.resolve(success());
     default: {
@@ -129,6 +141,50 @@ export const teamsBrowserClient = {
         gameAccount,
       };
     });
+  },
+
+  updateMyGameAccount(
+    accountId: string,
+    input: UpdateMyPlayerGameAccountRequest,
+  ): Promise<UpdateMyPlayerGameAccountResponse> {
+    return resolveMutation(
+      state.updateGameAccount ?? "success",
+      () => {
+        const profile =
+          state.profile === "pending" || state.profile === "error" ? null : state.profile;
+        const current = profile ?? playerProfileFixture();
+        const existing = current.gameAccounts.find((item) => item.id === accountId);
+        if (!existing) {
+          throw new TeamsClientError(404, "teams.game_account_not_found");
+        }
+        const gameAccount = playerGameAccountFixture({
+          ...existing,
+          identifier: input.identifier,
+          platform: input.platform,
+          gameEdition: input.gameEdition,
+        });
+        const nextProfile: GetMyPlayerProfileResponse = {
+          ...current,
+          profile: current.profile ?? {
+            id: "profile-story",
+            createdAt: "2026-08-01T00:00:00.000Z",
+          },
+          gameAccounts: current.gameAccounts.map((item) =>
+            item.id === accountId ? gameAccount : item,
+          ),
+        };
+        state = { ...state, profile: nextProfile };
+        const savedProfile = nextProfile.profile;
+        if (!savedProfile) {
+          throw new TeamsClientError(500, "teams.client_error");
+        }
+        return {
+          profile: savedProfile,
+          gameAccount,
+        };
+      },
+      state.updateGameAccountErrorCode,
+    );
   },
 
   associateMyExternalClub(

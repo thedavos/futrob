@@ -13,6 +13,8 @@ import {
   respondToRosterInvitationResponseSchema,
   setActiveTeamRequestSchema,
   setActiveTeamResponseSchema,
+  updateMyPlayerGameAccountRequestSchema,
+  updateMyPlayerGameAccountResponseSchema,
   type AcceptRosterInvitationRequest,
   type AcceptRosterInvitationResponse,
   type ListMyRosterInvitationsResponse,
@@ -27,6 +29,8 @@ import {
   type GetMyTeamsResponse,
   type SetActiveTeamRequest,
   type SetActiveTeamResponse,
+  type UpdateMyPlayerGameAccountRequest,
+  type UpdateMyPlayerGameAccountResponse,
   competitionTeamManagementDetailResponseSchema,
   competitionTeamManagementListQuerySchema,
   competitionTeamManagementListResponseSchema,
@@ -202,6 +206,18 @@ export const teamsBrowserClient = {
       method: "POST",
       body,
       schema: addMyPlayerGameAccountResponseSchema,
+    });
+  },
+  updateMyGameAccount(
+    accountId: string,
+    input: UpdateMyPlayerGameAccountRequest,
+  ): Promise<UpdateMyPlayerGameAccountResponse> {
+    const body = updateMyPlayerGameAccountRequestSchema.parse(input);
+    return requestTeamsJson({
+      path: `/api/v1/players/me/game-accounts/${encodeURIComponent(accountId)}`,
+      method: "PATCH",
+      body,
+      schema: updateMyPlayerGameAccountResponseSchema,
     });
   },
   associateMyExternalClub(

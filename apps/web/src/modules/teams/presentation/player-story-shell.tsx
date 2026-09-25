@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from "react";
+import { useEffect, useMemo, type ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -13,6 +13,8 @@ import { applyProps, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import { searchStoryExternalClubs } from "@/modules/game-data/presentation/game-data-story-client.ts";
+import { configureExternalClubSearch } from "@/modules/game-data/presentation/search-external-clubs.ts";
 import { configurePlayerStory, type PlayerStoryState } from "./player-story-client.ts";
 
 const styles = stylex.create({
@@ -63,6 +65,7 @@ export function PlayerStoryShell({
 }) {
   const client = useMemo(() => {
     configurePlayerStory(state);
+    configureExternalClubSearch(searchStoryExternalClubs);
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false, staleTime: Infinity, gcTime: Infinity },
@@ -72,6 +75,11 @@ export function PlayerStoryShell({
     hydratePlayerStoryQueries(queryClient, state);
     return queryClient;
   }, [state]);
+
+  useEffect(() => {
+    configureExternalClubSearch(searchStoryExternalClubs);
+    return () => configureExternalClubSearch(null);
+  }, []);
 
   const router = useMemo(() => {
     const rootRoute = createRootRoute({

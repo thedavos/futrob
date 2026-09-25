@@ -11,6 +11,8 @@ import { daysFromNowIso } from "@futrob/shared-kernel";
 
 const CREATED_AT = "2026-08-01T00:00:00.000Z";
 const PROFILE_ID = "profile-story";
+const FC26_CREST = (assetId: string) =>
+  `https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/fcweb/crests/256x256/l${assetId}.png`;
 
 export function playerGameAccountFixture(
   overrides: Partial<PlayerGameAccountDto> = {},
@@ -156,11 +158,40 @@ export function readyPlayerProfileFixture(): GetMyPlayerProfileResponse {
       }),
     ],
     externalClubs: [
-      playerExternalClubFixture(),
+      playerExternalClubFixture({
+        imageUrl: FC26_CREST("99160122"),
+      }),
       playerExternalClubFixture({
         externalClubId: "22110",
         externalClubName: "Fera Enjaulada",
         platform: "ps5",
+        imageUrl: FC26_CREST("99160222"),
+      }),
+      playerExternalClubFixture({
+        externalClubId: "725178",
+        externalClubName: "Cuervos FC1",
+        platform: "xbox",
+        imageUrl: FC26_CREST("99160520"),
+      }),
+      playerExternalClubFixture({
+        externalClubId: "44001",
+        externalClubName: "MADERAS FC",
+        platform: "nx",
+        imageUrl: FC26_CREST("99160122"),
+      }),
+      playerExternalClubFixture({
+        externalClubId: "33021",
+        externalClubName: "Fera Barranco",
+        platform: "ps5",
+      }),
+      playerExternalClubFixture({
+        externalClubId: "88012",
+        externalClubName: "Sirius FC",
+        platform: "xbox",
+      }),
+      playerExternalClubFixture({
+        externalClubId: "55003",
+        externalClubName: "Atlas Nocturno",
       }),
     ],
   });

@@ -1,12 +1,12 @@
 "use client";
 
-import { useContext, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useContext, useMemo, useRef, useState } from "react";
 import {
   ArrowsClockwiseIcon,
   CircleNotchIcon,
-  GameControllerIcon,
   InfoIcon,
+  PencilSimpleIcon,
+  PlusIcon,
 } from "@phosphor-icons/react";
 import {
   Alert,
@@ -23,13 +23,24 @@ import {
   PageHeaderActions,
   PageHeaderDescription,
   PageHeaderTitle,
+  ScrollArea,
+  ScrollAreaContent,
+  Separator,
   Subtitle,
   Text,
 } from "@futrob/ui";
-import type { PlayerExternalClubAssociationDto, PlayerGameAccountDto } from "@futrob/api-contracts";
+import {
+  asEaSearchPlatform,
+  gamePlatformForEaSearchLogo,
+  type PlayerExternalClubAssociationDto,
+  type PlayerGameAccountDto,
+} from "@futrob/api-contracts";
 import gamepadUrl from "@/assets/gamepad.svg";
-import { EaLogo } from "@/shared/presentation/ea-logo.tsx";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
+import {
+  eaPlatformLabel,
+  formatProviderGameEdition,
+} from "@/modules/game-data/presentation/ea-club-search-meta.ts";
 import { PlatformLogo } from "@/shared/presentation/platform-logo.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { WorkspaceSelectionContext } from "@/shared/presentation/shell/workspace-selection-context.ts";
@@ -38,30 +49,42 @@ import {
   WORKSPACE_SELECTION_KIND,
 } from "@/shared/presentation/shell/workspace-selection.ts";
 import { styles } from "./player-game-accounts-page.styles.ts";
+import { GameDataSetupSection } from "./player-game-data-setup-section.tsx";
+import { GameDataDestinations } from "./player-game-data-destinations.tsx";
+import { AddClubDialog } from "./add-club-dialog.tsx";
+import { EditGameAccountDialog } from "./edit-game-account-dialog.tsx";
+import { GameDataPageSkeleton } from "./player-game-accounts-skeleton.tsx";
 import { useMyPlayerProfileQuery } from "./player-queries.ts";
 import { platformLabel } from "./platform-label.ts";
 
 const alert = applyStyles(styles.alert);
+const setupHint = applyStyles(styles.setupHint);
 const platformLogo = applyStyles(styles.platformLogo);
-const primary = applyStyles(styles.primary);
-const eaMark = applyStyles(styles.eaMark);
+const clubMetaLogo = applyStyles(styles.clubMetaLogo);
 
 export function PlayerGameAccountsPage() {
   const { t } = useI18n();
   const profileQuery = useMyPlayerProfileQuery();
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const accounts = profileQuery.data?.gameAccounts ?? [];
   const clubs = profileQuery.data?.externalClubs ?? [];
   const loading = profileQuery.isPending;
   const refreshing = profileQuery.isFetching && !profileQuery.isPending;
   const account = accounts[0] ?? null;
   const isEmpty = !loading && !profileQuery.isError && account === null;
+  const showSetup = isEmpty || setupOpen;
 
   return (
     <main {...applyStyles(styles.main)}>
       <PageHeader>
         <PageHeaderTitle>{t("player.nav.gameData")}</PageHeaderTitle>
         <PageHeaderDescription>
-          {t(isEmpty ? "player.gameData.subtitle.empty" : "player.gameData.subtitle.ready")}
+          {t(
+            isEmpty || setupOpen
+              ? "player.gameData.subtitle.empty"
+              : "player.gameData.subtitle.ready",
+          )}
         </PageHeaderDescription>
         <PageHeaderActions>
           <Button
@@ -92,71 +115,58 @@ export function PlayerGameAccountsPage() {
         </Alert>
       ) : null}
 
-      {loading ? (
-        <Caption {...applyStyles(styles.loading)}>{t("player.gameData.loading")}</Caption>
-      ) : null}
+      {loading ? <GameDataPageSkeleton /> : null}
 
-      {isEmpty ? (
+      {showSetup ? (
         <div {...applyStyles(styles.stack)}>
-          <GameDataSetupSection />
+          <GameDataSetupSection onActiveChange={setSetupOpen} />
           <Alert variant="info">
             <InfoIcon aria-hidden />
-            <AlertDescription>{t("player.gameData.setup.hint")}</AlertDescription>
+            <AlertDescription className={setupHint.className} style={setupHint.style}>
+              {t("player.gameData.setup.hint")}
+            </AlertDescription>
           </Alert>
         </div>
       ) : null}
 
-      {account && !loading && !profileQuery.isError ? (
+      {account && !loading && !profileQuery.isError && !setupOpen ? (
         <div {...applyStyles(styles.board)}>
-          <PlayerIdentifierSection account={account} />
-          <AssociatedClubsSection clubs={clubs} />
+          <PlayerIdentifierSection account={account} onEdit={() => setEditOpen(true)} />
+          <div {...applyStyles(styles.clubsRow)}>
+            <AssociatedClubsSection clubs={clubs} />
+            <GameDataDestinations />
+          </div>
+          <EditGameAccountDialog account={account} onOpenChange={setEditOpen} open={editOpen} />
         </div>
       ) : null}
     </main>
   );
 }
 
-function GameDataSetupSection() {
+function PlayerIdentifierSection({
+  account,
+  onEdit,
+}: {
+  readonly account: PlayerGameAccountDto;
+  readonly onEdit: () => void;
+}) {
   const { t } = useI18n();
+  const platform = platformLabel(account.platform);
+  const edition = formatProviderGameEdition(account.gameEdition);
 
   return (
-    <Card className={styles.setup}>
-      <CardContent className={styles.setupContent}>
-        <img alt="" data-outline="none" src={gamepadUrl} {...applyStyles(styles.setupGamepad)} />
-        <div {...applyStyles(styles.setupCopy)}>
-          <Heading className={styles.title}>{t("player.gameData.setup.title")}</Heading>
-          <Subtitle>{t("player.gameData.setup.subtitle")}</Subtitle>
-        </div>
-        <Button type="button">
-          <GameControllerIcon aria-hidden data-icon="inline-start" size={16} />
-          {t("player.gameData.setup.cta")}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-function PlayerIdentifierSection({ account }: { readonly account: PlayerGameAccountDto }) {
-  const { t } = useI18n();
-
-  return (
-    <Card className={styles.large}>
-      <CardHeader className={styles.header}>
-        <Heading className={styles.title}>{t("player.gameData.identifier.title")}</Heading>
-      </CardHeader>
-      <CardContent className={styles.content}>
-        <div {...applyStyles(styles.identity)}>
-          <div {...applyStyles(styles.identityRow)}>
-            <img alt="" {...applyStyles(styles.gamepad)} src={gamepadUrl} />
+    <Card aria-label={t("player.gameData.identifier.title")} className={styles.identifierCard}>
+      <CardContent className={styles.identifierContent}>
+        <div {...applyStyles(styles.identifierBar)}>
+          <div {...applyStyles(styles.identifierCluster)}>
+            <img alt="" data-outline="none" {...applyStyles(styles.gamepad)} src={gamepadUrl} />
             <Text as="p" look="subtitle" truncate weight="semibold">
               {account.identifier}
             </Text>
           </div>
-          <div {...applyStyles(styles.platformRow)}>
-            <Text look="label" tone="muted">
-              {t("player.gameData.platform")}
-            </Text>
-            <span role="img" aria-label={platformLabel(account.platform)}>
+          <div {...applyStyles(styles.metaColumn)}>
+            <Separator orientation="vertical" {...applyStyles(styles.identifierDivider)} />
+            <div {...applyStyles(styles.metaCluster)}>
               <PlatformLogo
                 className={platformLogo.className}
                 height={24}
@@ -164,8 +174,21 @@ function PlayerIdentifierSection({ account }: { readonly account: PlayerGameAcco
                 style={platformLogo.style}
                 width={24}
               />
-            </span>
+              <Text look="body" truncate weight="medium">
+                {platform}
+              </Text>
+            </div>
           </div>
+          <div {...applyStyles(styles.metaColumn)}>
+            <Separator orientation="vertical" {...applyStyles(styles.identifierDivider)} />
+            <Text look="body" truncate weight="medium">
+              {edition}
+            </Text>
+          </div>
+          <Button className={styles.editLink} onClick={onEdit} type="button" variant="link">
+            <PencilSimpleIcon aria-hidden data-icon="inline-start" size={16} />
+            {t("player.gameData.identifier.edit")}
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -179,85 +202,105 @@ function AssociatedClubsSection({
 }) {
   const { t } = useI18n();
   const workspace = useContext(WorkspaceSelectionContext);
+  const [addClubOpen, setAddClubOpen] = useState(false);
   const [localClubId, setLocalClubId] = useState<string | undefined>(undefined);
   const preferredId =
     workspace?.selection.kind === WORKSPACE_SELECTION_KIND.personal
       ? workspace.selection.externalClubId
       : localClubId;
   const selectedId = selectedClubId(clubs, preferredId);
-  const selected = clubs.find((club) => club.externalClubId === selectedId) ?? null;
+  const orderedClubs = useMemo(
+    () => clubsWithSelectedFirst(clubs, selectedId),
+    [clubs, selectedId],
+  );
+  const listRef = useRef<HTMLUListElement>(null);
 
   function changeClub(externalClubId: string) {
     if (workspace) {
       workspace.select(personalWorkspaceSelection(externalClubId));
-      return;
+    } else {
+      setLocalClubId(externalClubId);
     }
-    setLocalClubId(externalClubId);
+    const viewport = listRef.current?.closest("[data-slot='scroll-area-viewport']");
+    if (viewport instanceof HTMLElement) {
+      viewport.scrollTo({ top: 0 });
+    }
   }
 
   return (
     <Card className={styles.large}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.title}>{t("player.gameData.clubs.title")}</Heading>
-        <Subtitle>{t("player.gameData.clubs.subtitle")}</Subtitle>
+        <div {...applyStyles(styles.headerCopy)}>
+          <Heading className={styles.title}>{t("player.gameData.clubs.title")}</Heading>
+          <Subtitle>{t("player.gameData.clubs.subtitle")}</Subtitle>
+        </div>
+        <Button
+          className={styles.headerAction}
+          onClick={() => setAddClubOpen(true)}
+          type="button"
+          variant="ghost"
+        >
+          <PlusIcon aria-hidden data-icon="inline-start" size={16} />
+          {t("player.gameData.clubs.associate")}
+        </Button>
       </CardHeader>
       <CardContent className={styles.content}>
         {clubs.length === 0 ? (
           <Caption>{t("player.gameData.clubs.empty")}</Caption>
         ) : (
-          <ul {...applyStyles(styles.list)}>
-            {clubs.map((club) => {
-              const selectedClub = club.externalClubId === selectedId;
-              return (
-                <li key={club.externalClubId} {...applyStyles(styles.row)}>
-                  <ClubCrestAvatar
-                    className={styles.crest}
-                    imageUrl={club.imageUrl}
-                    name={club.externalClubName}
-                  />
-                  <Text className={styles.clubName} look="body" truncate weight="semibold">
-                    {club.externalClubName}
-                  </Text>
-                  <div {...applyStyles(styles.rowAction)}>
-                    {selectedClub ? (
-                      <Badge variant="primary">{t("player.gameData.clubs.selected")}</Badge>
-                    ) : (
-                      <Button
-                        aria-label={`${t("player.gameData.clubs.change")} ${club.externalClubName}`}
-                        onClick={() => {
-                          changeClub(club.externalClubId);
-                        }}
-                        type="button"
-                        variant="outline"
-                      >
-                        {t("player.gameData.clubs.change")}
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <ScrollArea className={styles.clubScroll}>
+            <ScrollAreaContent>
+              <ul ref={listRef} role="list" {...applyStyles(styles.list)}>
+                {orderedClubs.map((club) => {
+                  const selectedClub = club.externalClubId === selectedId;
+                  return (
+                    <li
+                      key={club.externalClubId}
+                      {...applyStyles(styles.row, selectedClub && styles.rowSelected)}
+                    >
+                      <ClubCrestAvatar
+                        className={styles.crest}
+                        framed={!club.imageUrl}
+                        imageUrl={club.imageUrl}
+                        name={club.externalClubName}
+                      />
+                      <div {...applyStyles(styles.clubIdentity)}>
+                        <Text className={styles.clubName} look="body" truncate weight="semibold">
+                          {club.externalClubName}
+                        </Text>
+                        <div {...applyStyles(styles.clubMeta)}>
+                          <Caption className={styles.clubMetaText} truncate>
+                            {t("player.gameData.clubs.meta", { id: club.externalClubId })}
+                          </Caption>
+                          {clubPlatformMark(club.platform)}
+                        </div>
+                      </div>
+                      <div {...applyStyles(styles.rowAction)}>
+                        {selectedClub ? (
+                          <Badge variant="primary">{t("player.gameData.clubs.selected")}</Badge>
+                        ) : (
+                          <Button
+                            aria-label={`${t("player.gameData.clubs.change")} ${club.externalClubName}`}
+                            className={styles.changeClub}
+                            onClick={() => {
+                              changeClub(club.externalClubId);
+                            }}
+                            type="button"
+                            variant="link"
+                          >
+                            {t("player.gameData.clubs.change")}
+                          </Button>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </ScrollAreaContent>
+          </ScrollArea>
         )}
-        {selected ? (
-          <div {...applyStyles(styles.footer)}>
-            <Button
-              className={primary.className}
-              render={<Link to="/player/matches" />}
-              style={primary.style}
-            >
-              <EaLogo
-                className={eaMark.className}
-                data-icon="inline-start"
-                height={16}
-                style={eaMark.style}
-                width={16}
-              />
-              {selected.externalClubName} · {selected.externalClubId}
-            </Button>
-          </div>
-        ) : null}
       </CardContent>
+      <AddClubDialog onOpenChange={setAddClubOpen} open={addClubOpen} />
     </Card>
   );
 }
@@ -271,4 +314,33 @@ function selectedClubId(
     return preferredId;
   }
   return clubs[0]?.externalClubId;
+}
+
+function clubsWithSelectedFirst(
+  clubs: readonly PlayerExternalClubAssociationDto[],
+  selectedId: string | undefined,
+): readonly PlayerExternalClubAssociationDto[] {
+  if (selectedId === undefined || clubs.length < 2) return clubs;
+  const selected = clubs.find((club) => club.externalClubId === selectedId);
+  if (selected === undefined) return clubs;
+  return [selected, ...clubs.filter((club) => club.externalClubId !== selectedId)];
+}
+
+function clubPlatformMark(platform: string) {
+  const eaPlatform = asEaSearchPlatform(platform);
+  if (eaPlatform === null) return null;
+  return (
+    <>
+      <span aria-hidden {...applyStyles(styles.clubMetaDot)}>
+        ·
+      </span>
+      <span aria-label={eaPlatformLabel(platform)}>
+        <PlatformLogo
+          className={clubMetaLogo.className}
+          platform={gamePlatformForEaSearchLogo(eaPlatform)}
+          style={clubMetaLogo.style}
+        />
+      </span>
+    </>
+  );
 }

@@ -622,15 +622,39 @@ const es = {
   "player.gameData.setup.cta": "Registra tu identificador",
   "player.gameData.setup.hint":
     "Los partidos y las estadísticas aparecen cuando registres tu identificador.",
+  "player.gameData.setup.steps.progress": "Pasos del registro",
+  "player.gameData.setup.steps.platform": "Plataforma",
+  "player.gameData.setup.steps.club": "Club",
+  "player.gameData.setup.steps.identifier": "Identificador",
+  "player.gameData.setup.steps.summary": ({ current, label, total }) =>
+    `Paso ${current} de ${total} · ${label}`,
+  "player.gameData.setup.saveFailed": "No se pudo completar el registro. Inténtalo de nuevo.",
   "player.gameData.identifier.title": "Identificador del jugador",
   "player.gameData.identifier.empty": "Todavía no registraste un identificador de EA.",
+  "player.gameData.identifier.edit": "Editar identificador",
+  "player.gameData.identifier.editTitle": "Editar identificador",
+  "player.gameData.identifier.editDescription":
+    "Actualiza tu identificador, plataforma y edición. Los clubes asociados no cambian.",
+  "player.gameData.identifier.save": "Guardar cambios",
+  "player.gameData.identifier.saveFailed":
+    "No se pudieron guardar los cambios. Inténtalo de nuevo.",
+  "player.gameData.identifier.conflict":
+    "Ya tienes una cuenta con ese identificador, plataforma y edición.",
+  "player.gameData.identifier.missing": "Esa cuenta ya no está disponible. Actualiza la página.",
   "player.gameData.platform": "Plataforma",
-  "player.gameData.clubs.title": "Clubes asociados",
+  "player.gameData.clubs.title": "Clubes añadidos",
   "player.gameData.clubs.subtitle": "Elige el club desde el que consultar tus partidos.",
-  "player.gameData.clubs.empty":
-    "Todavía no asociaste un club. Añádelo desde el selector de contexto.",
+  "player.gameData.clubs.empty": "Todavía no añadiste un club.",
   "player.gameData.clubs.selected": "Seleccionado",
   "player.gameData.clubs.change": "Cambiar club",
+  "player.gameData.clubs.associate": "Añadir otro club",
+  "player.gameData.clubs.meta": "Club EA · ID {id}",
+  "player.gameData.matches.subtitle":
+    "Tus partidos recientes y el historial del club seleccionado.",
+  "player.gameData.matches.cta": "Ver mis partidos",
+  "player.gameData.statistics.subtitle":
+    "Tu rating, atributos y rendimiento en partidos recientes de EA Clubs.",
+  "player.gameData.statistics.cta": "Ver mis estadísticas",
   "player.backToWorkspace": "Volver al espacio personal",
   "player.retry": "Reintentar",
   "player.partialData.description":
@@ -730,6 +754,12 @@ export interface MessageParamsByKey {
     readonly label: string;
     readonly total: number;
   };
+  readonly "player.gameData.setup.steps.summary": {
+    readonly current: number;
+    readonly label: string;
+    readonly total: number;
+  };
+  readonly "player.gameData.clubs.meta": { readonly id: string };
   readonly "onboarding.club.search.retry": { readonly seconds: number };
   readonly "onboarding.club.search.loadingStatus": { readonly query: string };
   readonly "onboarding.club.search.empty": { readonly query: string };
@@ -1433,15 +1463,37 @@ const en: Catalog = {
     "Select your platform, search for your EA Clubs club, and register your identifier.",
   "player.gameData.setup.cta": "Register your identifier",
   "player.gameData.setup.hint": "Matches and statistics appear after you register your identifier.",
+  "player.gameData.setup.steps.progress": "Registration steps",
+  "player.gameData.setup.steps.platform": "Platform",
+  "player.gameData.setup.steps.club": "Club",
+  "player.gameData.setup.steps.identifier": "Identifier",
+  "player.gameData.setup.steps.summary": ({ current, label, total }) =>
+    `Step ${current} of ${total} · ${label}`,
+  "player.gameData.setup.saveFailed": "We could not finish registering your game data. Try again.",
   "player.gameData.identifier.title": "Player identifier",
   "player.gameData.identifier.empty": "You have not registered an EA identifier yet.",
+  "player.gameData.identifier.edit": "Edit identifier",
+  "player.gameData.identifier.editTitle": "Edit identifier",
+  "player.gameData.identifier.editDescription":
+    "Update your identifier, platform and edition. Associated clubs stay the same.",
+  "player.gameData.identifier.save": "Save changes",
+  "player.gameData.identifier.saveFailed": "The changes could not be saved. Try again.",
+  "player.gameData.identifier.conflict":
+    "You already have an account with that identifier, platform and edition.",
+  "player.gameData.identifier.missing": "That account is no longer available. Refresh the page.",
   "player.gameData.platform": "Platform",
-  "player.gameData.clubs.title": "Associated clubs",
+  "player.gameData.clubs.title": "Added clubs",
   "player.gameData.clubs.subtitle": "Choose the club you use to look up your matches.",
-  "player.gameData.clubs.empty":
-    "You have not associated a club yet. Add one from the context selector.",
+  "player.gameData.clubs.empty": "You have not added a club yet.",
   "player.gameData.clubs.selected": "Selected",
   "player.gameData.clubs.change": "Change club",
+  "player.gameData.clubs.associate": "Add another club",
+  "player.gameData.clubs.meta": "EA club · ID {id}",
+  "player.gameData.matches.subtitle": "Your recent matches and the selected club's history.",
+  "player.gameData.matches.cta": "View my matches",
+  "player.gameData.statistics.subtitle":
+    "Your rating, attributes and recent EA Clubs match performance.",
+  "player.gameData.statistics.cta": "View my statistics",
   "player.backToWorkspace": "Back to personal workspace",
   "player.retry": "Try again",
   "player.partialData.description": "Some metrics were unavailable in one or more matches.",

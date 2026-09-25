@@ -7,6 +7,7 @@ import type {
   GetMyPlayerProfileResponse,
   RespondToRosterInvitationRequest,
   SetActiveTeamRequest,
+  UpdateMyPlayerGameAccountRequest,
 } from "@futrob/api-contracts";
 import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
@@ -32,6 +33,23 @@ export function useAddMyGameAccountMutation() {
   return useMutation({
     mutationFn: (input: AddMyPlayerGameAccountRequest) =>
       teamsBrowserClient.addMyGameAccount(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.gameData.meRecentMatches() });
+    },
+  });
+}
+
+export function useUpdateMyGameAccountMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateMyPlayerGameAccountRequest & { readonly accountId: string }) =>
+      teamsBrowserClient.updateMyGameAccount(input.accountId, {
+        identifier: input.identifier,
+        platform: input.platform,
+        gameEdition: input.gameEdition,
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
       await queryClient.invalidateQueries({ queryKey: queryKeys.gameData.meRecentMatches() });
