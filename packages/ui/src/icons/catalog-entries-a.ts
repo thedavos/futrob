@@ -111,8 +111,8 @@ export const FUTROB_ICON_CATALOG_A = [
   },
   {
     name: "CheckSquareOffsetIcon",
-    label: "Tareas",
-    usage: "Placeholder de tareas en sidebar colapsada",
+    label: "Pendientes",
+    usage: "Placeholder de pendientes en sidebar colapsada",
     Icon: CheckSquareOffsetIcon,
   },
   {

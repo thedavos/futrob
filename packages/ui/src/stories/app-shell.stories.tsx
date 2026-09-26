@@ -20,6 +20,12 @@ import { ActionBar, ActionBarEnd, ActionBarStart } from "../components/action-ba
 import { Avatar, AvatarFallback } from "../components/avatar";
 import { Button } from "../components/button";
 import {
+  EmptyState,
+  EmptyStateCopy,
+  EmptyStateDescription,
+  EmptyStateTitle,
+} from "../components/empty-state";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -190,18 +196,11 @@ const styles = stylex.create({
     gap: "0.5rem",
     padding: "0.5rem",
   },
-  emptyQueue: {
-    borderRadius: "var(--corner-lg)",
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.borderStrong,
-    paddingInline: "0.75rem",
-    paddingBlock: "1rem",
-    textAlign: "center",
-  },
-  emptyTitle: {
-    fontSize: "var(--text-sm)",
-    fontWeight: 500,
+  queueGroup: {
+    display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
   },
   muted: { color: colors.mutedForeground },
   pageHeader: {
@@ -417,6 +416,19 @@ function WorkspaceSelectorDemo() {
   );
 }
 
+function QueueEmpty() {
+  return (
+    <EmptyState fill>
+      <EmptyStateCopy>
+        <EmptyStateTitle>Nada por ahora</EmptyStateTitle>
+        <EmptyStateDescription>
+          Confirmaciones, invitaciones y desacuerdos aparecen aquí.
+        </EmptyStateDescription>
+      </EmptyStateCopy>
+    </EmptyState>
+  );
+}
+
 function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean }) {
   return (
     <SidebarProvider
@@ -430,14 +442,9 @@ function ShellDemo({ showActionBar = false }: { readonly showActionBar?: boolean
           <WorkspaceSelectorDemo />
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Tareas</SidebarGroupLabel>
-            <div {...applyProps(undefined, undefined, styles.emptyQueue)}>
-              <p {...applyProps(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
-              <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
-                Las tareas del espacio activo aparecerán aquí.
-              </p>
-            </div>
+          <SidebarGroup {...applyProps(undefined, undefined, styles.queueGroup)}>
+            <SidebarGroupLabel>Pendientes</SidebarGroupLabel>
+            <QueueEmpty />
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
@@ -542,7 +549,7 @@ export const CollapsedRail: Story = {
           </SidebarHeader>
           <SidebarContent {...applyProps(undefined, undefined, styles.contentCompact)}>
             <SidebarMenuButton
-              aria-label="Tareas"
+              aria-label="Pendientes"
               dense
               {...applyProps(undefined, undefined, styles.iconOnly)}
             >

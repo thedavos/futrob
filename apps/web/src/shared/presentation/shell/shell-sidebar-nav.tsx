@@ -3,6 +3,10 @@ import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
+  EmptyState,
+  EmptyStateCopy,
+  EmptyStateDescription,
+  EmptyStateTitle,
   Sheet,
   SheetBody,
   SheetContent,
@@ -19,10 +23,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuLink,
-  typography,
   useSidebar,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
 import {
   CheckSquareOffsetIcon,
   ListIcon,
@@ -95,23 +97,15 @@ const styles = stylex.create({
     alignItems: "center",
     padding: "0.5rem",
   },
+  queueGroup: {
+    display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
+  },
   queueEmpty: {
-    borderRadius: "var(--corner-lg)",
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.borderStrong,
-    paddingInline: "0.75rem",
     paddingBlock: "1rem",
-    textAlign: "center",
-  },
-  queueTitle: {
-    fontSize: "0.875rem",
-    lineHeight: "1.25rem",
-    fontWeight: 500,
-    color: colors.foreground,
-  },
-  queueDescription: {
-    color: colors.mutedForeground,
+    paddingInline: 0,
   },
   navIcon: {
     width: "1rem",
@@ -202,6 +196,7 @@ function ShellSidebarBody({
   const collapse = applyStyles(styles.collapseButton);
   const contentCompact = applyStyles(styles.contentCompact);
   const footerCompact = applyStyles(styles.footerCompact);
+  const queueGroup = applyStyles(styles.queueGroup);
 
   return (
     <>
@@ -250,7 +245,7 @@ function ShellSidebarBody({
         </SidebarContent>
       ) : (
         <SidebarContent>
-          <SidebarGroup>
+          <SidebarGroup className={queueGroup.className} style={queueGroup.style}>
             <SidebarGroupLabel>{t("shell.queue.label")}</SidebarGroupLabel>
             <QueuePlaceholder />
           </SidebarGroup>
@@ -268,14 +263,15 @@ function ShellSidebarBody({
 
 function QueuePlaceholder() {
   const { t } = useI18n();
+  const empty = applyStyles(styles.queueEmpty);
 
   return (
-    <div {...applyStyles(styles.queueEmpty)}>
-      <p {...applyStyles(styles.queueTitle)}>{t("shell.queue.empty.title")}</p>
-      <p {...applyStyles(typography.caption, styles.queueDescription)}>
-        {t("shell.queue.empty.description")}
-      </p>
-    </div>
+    <EmptyState className={empty.className} fill style={empty.style}>
+      <EmptyStateCopy>
+        <EmptyStateTitle>{t("shell.queue.empty.title")}</EmptyStateTitle>
+        <EmptyStateDescription>{t("shell.queue.empty.description")}</EmptyStateDescription>
+      </EmptyStateCopy>
+    </EmptyState>
   );
 }
 

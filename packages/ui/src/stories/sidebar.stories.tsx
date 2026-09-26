@@ -19,6 +19,12 @@ import { media } from "#styles/media.stylex";
 import { Avatar, AvatarFallback } from "../components/avatar";
 import { Button } from "../components/button";
 import {
+  EmptyState,
+  EmptyStateCopy,
+  EmptyStateDescription,
+  EmptyStateTitle,
+} from "../components/empty-state";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -240,23 +246,11 @@ const styles = stylex.create({
     justifyContent: "center",
     paddingInline: 0,
   },
-  emptyQueue: {
-    borderRadius: "var(--corner-lg)",
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.borderStrong,
-    paddingInline: "0.75rem",
-    paddingBlock: "1rem",
-    textAlign: "center",
-  },
-  emptyTitle: {
-    fontSize: "var(--text-sm)",
-    fontWeight: 500,
-    color: colors.foreground,
-  },
-  emptyTitlePlain: {
-    fontSize: "var(--text-sm)",
-    fontWeight: 500,
+  queueGroup: {
+    display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
   },
   muted: { color: colors.mutedForeground },
   footerCompact: {
@@ -576,6 +570,19 @@ function DemoShell({
   );
 }
 
+function QueueEmpty() {
+  return (
+    <EmptyState fill>
+      <EmptyStateCopy>
+        <EmptyStateTitle>Nada por ahora</EmptyStateTitle>
+        <EmptyStateDescription>
+          Confirmaciones, invitaciones y desacuerdos aparecen aquí.
+        </EmptyStateDescription>
+      </EmptyStateCopy>
+    </EmptyState>
+  );
+}
+
 function DemoSidebar({
   dense = true,
   longContent = false,
@@ -606,7 +613,7 @@ function DemoSidebar({
       {compact ? (
         <SidebarContent {...applyProps(undefined, undefined, styles.contentCompact)}>
           <SidebarMenuButton
-            aria-label="Tareas"
+            aria-label="Pendientes"
             dense={dense}
             {...applyProps(undefined, undefined, styles.iconOnly)}
           >
@@ -615,22 +622,18 @@ function DemoSidebar({
         </SidebarContent>
       ) : (
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Tareas</SidebarGroupLabel>
-            <div {...applyProps(undefined, undefined, styles.emptyQueue)}>
-              <p {...applyProps(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
-              <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
-                Las tareas del espacio activo aparecerán aquí.
-              </p>
-            </div>
-            {longContent
-              ? Array.from({ length: 20 }, (_, index) => (
-                  <SidebarMenuButton dense={dense} key={index}>
-                    <CheckSquareOffsetIcon aria-hidden="true" />
-                    Tarea {index + 1}
-                  </SidebarMenuButton>
-                ))
-              : null}
+          <SidebarGroup {...applyProps(undefined, undefined, styles.queueGroup)}>
+            <SidebarGroupLabel>Pendientes</SidebarGroupLabel>
+            {longContent ? (
+              Array.from({ length: 20 }, (_, index) => (
+                <SidebarMenuButton dense={dense} key={index}>
+                  <CheckSquareOffsetIcon aria-hidden="true" />
+                  Pendiente {index + 1}
+                </SidebarMenuButton>
+              ))
+            ) : (
+              <QueueEmpty />
+            )}
           </SidebarGroup>
         </SidebarContent>
       )}
@@ -706,13 +709,9 @@ export const Regions: Story = {
           <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
             Content con scroll
           </p>
-          <SidebarGroup>
-            <SidebarGroupLabel>Tareas</SidebarGroupLabel>
-            <div {...applyProps(undefined, undefined, styles.emptyQueue)}>
-              <p {...applyProps(undefined, undefined, styles.emptyTitlePlain)}>
-                Sin tareas pendientes
-              </p>
-            </div>
+          <SidebarGroup {...applyProps(undefined, undefined, styles.queueGroup)}>
+            <SidebarGroupLabel>Pendientes</SidebarGroupLabel>
+            <QueueEmpty />
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
@@ -916,20 +915,15 @@ export const EmptyQueue: Story = {
   name: "Empty queue content",
   render: () => (
     <SidebarProvider data-density="dense" {...applyProps(undefined, undefined, styles.provider)}>
-      <Sidebar aria-label="Tareas" {...applyProps(undefined, undefined, styles.sidebar)}>
+      <Sidebar aria-label="Pendientes" {...applyProps(undefined, undefined, styles.sidebar)}>
         <SidebarHeader {...applyProps(undefined, undefined, styles.headerExpanded)}>
           <DemoAccountRow dense shortName="David" />
           <DemoWorkspaceSelector dense />
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Tareas</SidebarGroupLabel>
-            <div {...applyProps(undefined, undefined, styles.emptyQueue)}>
-              <p {...applyProps(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
-              <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
-                Las tareas del espacio activo aparecerán aquí.
-              </p>
-            </div>
+          <SidebarGroup {...applyProps(undefined, undefined, styles.queueGroup)}>
+            <SidebarGroupLabel>Pendientes</SidebarGroupLabel>
+            <QueueEmpty />
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>

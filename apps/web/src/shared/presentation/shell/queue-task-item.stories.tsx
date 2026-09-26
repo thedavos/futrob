@@ -21,6 +21,10 @@ import {
   AlertTitle,
   applyProps,
   Button,
+  EmptyState,
+  EmptyStateCopy,
+  EmptyStateDescription,
+  EmptyStateTitle,
   motion,
   typography,
 } from "@futrob/ui";
@@ -55,31 +59,6 @@ const styles = stylex.create({
   heading: {
     paddingInline: "0.625rem",
     fontWeight: 600,
-    textWrap: "pretty",
-    color: colors.mutedForeground,
-  },
-  emptyBox: {
-    borderRadius: "var(--corner-lg)",
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.borderStrong,
-    paddingInline: "0.75rem",
-    paddingBlock: "1rem",
-    textAlign: "center",
-  },
-  emptyCopy: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.25rem",
-  },
-  emptyTitle: {
-    fontSize: "var(--text-sm)",
-    fontWeight: 600,
-    textWrap: "pretty",
-    color: colors.foreground,
-  },
-  emptyHint: {
-    fontWeight: 500,
     textWrap: "pretty",
     color: colors.mutedForeground,
   },
@@ -157,7 +136,7 @@ type Story = StoryObj<typeof meta>;
 export const Playground: Story = {
   decorators: [
     (Story) => (
-      <QueuePanel label="Tareas">
+      <QueuePanel label="Pendientes">
         <Story />
       </QueuePanel>
     ),
@@ -291,7 +270,7 @@ export const AsLink: Story = {
   },
   decorators: [
     (Story) => (
-      <QueuePanel label="Tareas">
+      <QueuePanel label="Pendientes">
         <Story />
       </QueuePanel>
     ),
@@ -486,15 +465,15 @@ export const Empty: Story = {
   name: "Empty queue",
   render: () => (
     <div {...applyProps(undefined, undefined, styles.panel)}>
-      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
-      <div {...applyProps(undefined, undefined, styles.emptyBox)}>
-        <div {...applyProps(undefined, undefined, styles.emptyCopy)}>
-          <p {...applyProps(undefined, undefined, styles.emptyTitle)}>Sin tareas pendientes</p>
-          <p {...applyProps(undefined, undefined, typography.caption, styles.emptyHint)}>
-            Las tareas del espacio activo aparecerán aquí.
-          </p>
-        </div>
-      </div>
+      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>Pendientes</p>
+      <EmptyState>
+        <EmptyStateCopy>
+          <EmptyStateTitle>Nada por ahora</EmptyStateTitle>
+          <EmptyStateDescription>
+            Confirmaciones, invitaciones y desacuerdos aparecen aquí.
+          </EmptyStateDescription>
+        </EmptyStateCopy>
+      </EmptyState>
     </div>
   ),
 };
@@ -503,10 +482,10 @@ export const Loading: Story = {
   name: "Loading",
   render: () => (
     <div {...applyProps(undefined, undefined, styles.panel)}>
-      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
+      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>Pendientes</p>
       <ul
         aria-busy="true"
-        aria-label="Cargando tareas"
+        aria-label="Cargando pendientes"
         role="status"
         {...applyProps(undefined, undefined, styles.list)}
       >
@@ -522,11 +501,11 @@ export const ErrorState: Story = {
   name: "Error",
   render: () => (
     <div {...applyProps(undefined, undefined, styles.panel)}>
-      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>Tareas</p>
+      <p {...applyProps(undefined, undefined, typography.label, styles.heading)}>Pendientes</p>
       <Alert variant="destructive" {...applyProps(undefined, undefined, styles.alert)}>
         <WarningCircleIcon aria-hidden="true" />
         <AlertTitle {...applyProps(undefined, undefined, styles.alertTitle)}>
-          No se pudieron cargar las tareas
+          No se pudieron cargar los pendientes
         </AlertTitle>
         <AlertDescription {...applyProps(undefined, undefined, styles.alertBody)}>
           <span {...applyProps(undefined, undefined, typography.caption, styles.alertHint)}>
