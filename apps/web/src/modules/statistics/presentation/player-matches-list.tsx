@@ -10,6 +10,7 @@ import {
   ChoiceGroupItem,
   EmptyState,
   EmptyStateActions,
+  EmptyStateCopy,
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
@@ -23,7 +24,7 @@ import {
   applyStyles,
 } from "@futrob/ui";
 import { listTypography, styles } from "./player-matches-list.styles.ts";
-import { SoccerBallIcon } from "@phosphor-icons/react";
+import calendarClockUrl from "@/assets/calendar-clock.svg";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
   dayHeading,
@@ -263,19 +264,25 @@ export function MatchesToolbar({
 export function MatchesEmpty({
   actions,
   description,
+  fill = false,
+  illustration,
   title,
 }: {
   readonly actions?: ReactNode;
   readonly description: string;
+  readonly fill?: boolean;
+  readonly illustration?: ReactNode;
   readonly title: string;
 }) {
   return (
-    <EmptyState {...applyStyles(styles.empty)}>
+    <EmptyState fill={fill}>
       <EmptyStateIcon>
-        <SoccerBallIcon aria-hidden="true" />
+        {illustration ?? <img alt="" data-outline="none" src={calendarClockUrl} />}
       </EmptyStateIcon>
-      <EmptyStateTitle>{title}</EmptyStateTitle>
-      <EmptyStateDescription>{description}</EmptyStateDescription>
+      <EmptyStateCopy>
+        <EmptyStateTitle>{title}</EmptyStateTitle>
+        <EmptyStateDescription>{description}</EmptyStateDescription>
+      </EmptyStateCopy>
       {actions ? <EmptyStateActions>{actions}</EmptyStateActions> : null}
     </EmptyState>
   );

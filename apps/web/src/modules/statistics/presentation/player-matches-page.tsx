@@ -7,18 +7,14 @@ import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
-  EmptyState,
-  EmptyStateActions,
-  EmptyStateDescription,
-  EmptyStateIcon,
-  EmptyStateTitle,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
   TooltipProvider,
 } from "@futrob/ui";
-import { GameControllerIcon } from "@phosphor-icons/react";
 import { AddClubDialog } from "@/modules/teams/presentation/add-club-dialog.tsx";
+import clubFinderUrl from "@/assets/club-finder.svg";
+import gamepadUrl from "@/assets/gamepad.svg";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { useWorkspaceSelectedClubId } from "@/shared/presentation/shell/use-workspace-selection.tsx";
@@ -37,7 +33,17 @@ import type { SectionStatus } from "./player-matches-list.tsx";
 
 const styles = stylex.create({
   main: {
+    display: "flex",
     width: "100%",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
+  },
+  body: {
+    display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
   },
   pending: {
     display: "flex",
@@ -48,9 +54,6 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     gap: "1.5rem",
-  },
-  empty: {
-    minHeight: 0,
   },
 });
 
@@ -187,21 +190,23 @@ function PlayerMatchesPageLoaded({
           <PageHeaderDescription>{t("player.matches.description")}</PageHeaderDescription>
         </PageHeader>
 
-        <MatchesBody
-          activeView={activeView}
-          dateTimeFormat={dateTimeFormat}
-          dayDateFormat={dayDateFormat}
-          now={now}
-          numberFormat={numberFormat}
-          onAddClub={() => setAddClubOpen(true)}
-          onRetry={() => void recentQuery.refetch()}
-          onSortChange={setSortOrder}
-          onViewChange={setActiveView}
-          result={result}
-          sortOrder={sortOrder}
-          status={status}
-          t={t}
-        />
+        <div {...applyStyles(styles.body)}>
+          <MatchesBody
+            activeView={activeView}
+            dateTimeFormat={dateTimeFormat}
+            dayDateFormat={dayDateFormat}
+            now={now}
+            numberFormat={numberFormat}
+            onAddClub={() => setAddClubOpen(true)}
+            onRetry={() => void recentQuery.refetch()}
+            onSortChange={setSortOrder}
+            onViewChange={setActiveView}
+            result={result}
+            sortOrder={sortOrder}
+            status={status}
+            t={t}
+          />
+        </div>
 
         <AddClubDialog onOpenChange={setAddClubOpen} open={addClubOpen} />
       </TooltipProvider>
@@ -268,25 +273,24 @@ function MatchesBody({
         <MatchesEmpty
           actions={<Button onClick={onAddClub}>{t("shell.workspace.addClub")}</Button>}
           description={t("player.matches.recent.needsClub.description")}
+          fill
+          illustration={<img alt="" data-outline="none" src={clubFinderUrl} />}
           title={t("player.matches.recent.needsClub.title")}
         />
       );
     case "needs_game_account":
       return (
-        <EmptyState {...applyStyles(styles.empty)}>
-          <EmptyStateIcon>
-            <GameControllerIcon aria-hidden="true" />
-          </EmptyStateIcon>
-          <EmptyStateTitle>{t("player.matches.recent.needsGameAccount.title")}</EmptyStateTitle>
-          <EmptyStateDescription>
-            {t("player.matches.recent.needsGameAccount.description")}
-          </EmptyStateDescription>
-          <EmptyStateActions>
+        <MatchesEmpty
+          actions={
             <Button render={<Link to="/player/game-accounts" />}>
               {t("player.gameData.review")}
             </Button>
-          </EmptyStateActions>
-        </EmptyState>
+          }
+          description={t("player.matches.recent.needsGameAccount.description")}
+          fill
+          illustration={<img alt="" data-outline="none" src={gamepadUrl} />}
+          title={t("player.matches.recent.needsGameAccount.title")}
+        />
       );
     case "ready":
       return (

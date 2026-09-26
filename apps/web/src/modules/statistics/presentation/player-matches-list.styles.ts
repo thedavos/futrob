@@ -120,9 +120,6 @@ export const styles = stylex.create({
     fontVariantNumeric: "tabular-nums",
     color: colors.mutedForeground,
   },
-  empty: {
-    minHeight: 0,
-  },
   loading: {
     display: "flex",
     flexDirection: "column",
