@@ -192,190 +192,184 @@ export function GameDataSetupSection({
   const primaryDisabled = submitting || (step === "club" && !draft.club);
   const primaryLabel =
     step === "identifier" ? t("player.gameData.setup.cta") : t("onboarding.account.continue");
+  const stepper = (
+    <Stepper
+      aria-label={t("player.gameData.setup.steps.progress")}
+      className={setupStepper.className}
+      currentStepId={active ? step : undefined}
+      mobileSummary={(current, total, label) =>
+        active
+          ? t("player.gameData.setup.steps.summary", { current, label, total })
+          : steps.map((item) => item.label).join(" · ")
+      }
+      steps={steps}
+      style={setupStepper.style}
+    />
+  );
+
+  if (!active) {
+    return (
+      <section {...applyStyles(styles.setupIdle)}>
+        <img alt="" data-outline="none" src={gamepadUrl} {...applyStyles(styles.setupGamepad)} />
+        <div {...applyStyles(styles.setupCopy)}>
+          <Heading className={styles.setupTitle}>{t("player.gameData.setup.title")}</Heading>
+          <Subtitle className={styles.setupSubtitle}>
+            {t("player.gameData.setup.subtitle")}
+          </Subtitle>
+        </div>
+        <Button onClick={openFlow} type="button">
+          <GameControllerIcon aria-hidden data-icon="inline-start" size={16} />
+          {t("player.gameData.setup.cta")}
+        </Button>
+        {stepper}
+      </section>
+    );
+  }
 
   return (
-    <Card className={active ? styles.setupActive : styles.setup}>
-      <CardContent className={active ? styles.setupContentActive : styles.setupContent}>
-        {active ? (
-          <div {...applyStyles(styles.setupChrome)}>
-            <img
-              alt=""
-              data-outline="none"
-              src={gamepadUrl}
-              {...applyStyles(styles.setupGamepadCompact)}
-            />
-            <Heading className={styles.setupTitle}>{t("player.gameData.setup.title")}</Heading>
-          </div>
-        ) : (
-          <>
-            <img
-              alt=""
-              data-outline="none"
-              src={gamepadUrl}
-              {...applyStyles(styles.setupGamepad)}
-            />
-            <div {...applyStyles(styles.setupCopy)}>
-              <Heading className={styles.setupTitle}>{t("player.gameData.setup.title")}</Heading>
-              <Subtitle className={styles.setupSubtitle}>
-                {t("player.gameData.setup.subtitle")}
-              </Subtitle>
-            </div>
-            <Button onClick={openFlow} type="button">
-              <GameControllerIcon aria-hidden data-icon="inline-start" size={16} />
-              {t("player.gameData.setup.cta")}
-            </Button>
-          </>
-        )}
-        <Stepper
-          aria-label={t("player.gameData.setup.steps.progress")}
-          className={setupStepper.className}
-          currentStepId={active ? step : undefined}
-          mobileSummary={(current, total, label) =>
-            active
-              ? t("player.gameData.setup.steps.summary", { current, label, total })
-              : steps.map((item) => item.label).join(" · ")
-          }
-          steps={steps}
-          style={setupStepper.style}
-        />
-        {active ? (
-          <>
-            <div {...applyStyles(styles.setupBody)}>
-              {saveFailed ? (
-                <Alert variant="destructive">
-                  <AlertDescription>{t("player.gameData.setup.saveFailed")}</AlertDescription>
-                </Alert>
-              ) : null}
-              {step === "platform" ? (
-                <>
-                  <fieldset {...applyStyles(styles.setupFieldset)} data-platform-group="">
-                    <legend
-                      {...applyStyles(typography.label, styles.setupLegend)}
-                      id={platformLabelId}
-                    >
-                      {t("onboarding.account.platform.label")}
-                    </legend>
-                    <ChoiceGroup<GamePlatformDto | "">
-                      aria-describedby={invalidField === "platform" ? validationErrorId : undefined}
-                      aria-invalid={invalidField === "platform"}
-                      aria-labelledby={platformLabelId}
-                      className={setupPlatformGrid.className}
-                      onValueChange={(value) => {
-                        if (value) patchDraft({ platform: value });
-                      }}
-                      style={setupPlatformGrid.style}
-                      value={draft.platform ?? ""}
-                    >
-                      <PlatformChoice label="PlayStation" value={GAME_PLATFORM.PLAYSTATION} />
-                      <PlatformChoice label="Xbox" value={GAME_PLATFORM.XBOX} />
-                      <PlatformChoice label="PC" value={GAME_PLATFORM.PC} />
-                      <PlatformChoice
-                        label="Nintendo Switch 1"
-                        value={GAME_PLATFORM.NINTENDO_SWITCH_1}
-                      />
-                      <PlatformChoice
-                        label="Nintendo Switch 2"
-                        value={GAME_PLATFORM.NINTENDO_SWITCH_2}
-                      />
-                    </ChoiceGroup>
-                    {invalidField === "platform" ? (
-                      <FieldsetError id={validationErrorId}>{validationError}</FieldsetError>
-                    ) : null}
-                  </fieldset>
-                  <GameEditionField
-                    copy={{
-                      legend: t("onboarding.competition.edition.legend"),
-                      other: t("onboarding.competition.edition.other"),
-                      customName: t("onboarding.competition.edition.name"),
-                      customPlaceholder: t("onboarding.competition.edition.placeholder"),
-                    }}
-                    custom={draft.customGameEdition}
-                    customInputId="game-data-custom-edition"
-                    customInputRef={customEditionRef}
-                    errorId={validationErrorId}
-                    errorMessage={invalidField === "edition" ? validationError : null}
-                    invalid={invalidField === "edition"}
-                    legendId={editionLabelId}
-                    onValueChange={({ value, custom }) => {
-                      patchDraft({ customGameEdition: custom, gameEdition: value });
-                    }}
-                    value={draft.gameEdition}
-                  />
-                </>
-              ) : null}
-              {step === "club" ? (
-                <EaClubLinkForm
-                  busy={submitting}
-                  initialPlatform={draft.platform}
-                  onClear={() => patchDraft({ club: null })}
-                  onSelect={(club) => patchDraft({ club })}
-                  searchExternalClubs={searchExternalClubs}
-                  searchGameEdition={toProviderGameEdition(draft.gameEdition)}
-                  selected={draft.club}
-                />
-              ) : null}
-              {step === "identifier" ? (
-                <Field
-                  className={setupFieldGap.className}
-                  invalid={Boolean(validationError && !draft.identifier.trim())}
-                  style={setupFieldGap.style}
+    <Card className={styles.setupActive}>
+      <CardContent className={styles.setupContentActive}>
+        <div {...applyStyles(styles.setupChrome)}>
+          <img
+            alt=""
+            data-outline="none"
+            src={gamepadUrl}
+            {...applyStyles(styles.setupGamepadCompact)}
+          />
+          <Heading className={styles.setupTitle}>{t("player.gameData.setup.title")}</Heading>
+        </div>
+        {stepper}
+        <div {...applyStyles(styles.setupBody)}>
+          {saveFailed ? (
+            <Alert variant="destructive">
+              <AlertDescription>{t("player.gameData.setup.saveFailed")}</AlertDescription>
+            </Alert>
+          ) : null}
+          {step === "platform" ? (
+            <>
+              <fieldset {...applyStyles(styles.setupFieldset)} data-platform-group="">
+                <legend {...applyStyles(typography.label, styles.setupLegend)} id={platformLabelId}>
+                  {t("onboarding.account.platform.label")}
+                </legend>
+                <ChoiceGroup<GamePlatformDto | "">
+                  aria-describedby={invalidField === "platform" ? validationErrorId : undefined}
+                  aria-invalid={invalidField === "platform"}
+                  aria-labelledby={platformLabelId}
+                  className={setupPlatformGrid.className}
+                  onValueChange={(value) => {
+                    if (value) patchDraft({ platform: value });
+                  }}
+                  style={setupPlatformGrid.style}
+                  value={draft.platform ?? ""}
                 >
-                  <FieldLabel htmlFor="game-data-identifier">
-                    {t("onboarding.account.identifier.label")}
-                  </FieldLabel>
-                  <Input
-                    aria-describedby={invalidField === "identifier" ? validationErrorId : undefined}
-                    aria-invalid={Boolean(validationError && !draft.identifier.trim())}
-                    autoComplete="off"
-                    id="game-data-identifier"
-                    maxLength={80}
-                    onChange={(event) => patchDraft({ identifier: event.target.value })}
-                    placeholder={t("onboarding.account.identifier.placeholder")}
-                    ref={identifierRef}
-                    value={draft.identifier}
+                  <PlatformChoice label="PlayStation" value={GAME_PLATFORM.PLAYSTATION} />
+                  <PlatformChoice label="Xbox" value={GAME_PLATFORM.XBOX} />
+                  <PlatformChoice label="PC" value={GAME_PLATFORM.PC} />
+                  <PlatformChoice
+                    label="Nintendo Switch 1"
+                    value={GAME_PLATFORM.NINTENDO_SWITCH_1}
                   />
-                  {invalidField === "identifier" ? (
-                    <FieldError id={validationErrorId} match>
-                      {validationError}
-                    </FieldError>
-                  ) : null}
-                </Field>
-              ) : null}
-            </div>
-            <div {...applyStyles(styles.setupActions)}>
-              <Button
-                aria-busy={submitting}
-                className={setupPrimary.className}
-                disabled={primaryDisabled}
-                onClick={onPrimary}
-                style={setupPrimary.style}
-                type="button"
-              >
-                {submitting ? (
-                  <CircleNotchIcon
-                    aria-hidden
-                    data-icon="inline-start"
-                    size={16}
-                    {...applyStyles(styles.spinner)}
+                  <PlatformChoice
+                    label="Nintendo Switch 2"
+                    value={GAME_PLATFORM.NINTENDO_SWITCH_2}
                   />
-                ) : step === "identifier" ? (
-                  <GameControllerIcon aria-hidden data-icon="inline-start" size={16} />
+                </ChoiceGroup>
+                {invalidField === "platform" ? (
+                  <FieldsetError id={validationErrorId}>{validationError}</FieldsetError>
                 ) : null}
-                {primaryLabel}
-              </Button>
-              <Button
-                className={setupSecondary.className}
-                disabled={submitting}
-                onClick={onBack}
-                style={setupSecondary.style}
-                type="button"
-                variant="link"
-              >
-                {t("common.back")}
-              </Button>
-            </div>
-          </>
-        ) : null}
+              </fieldset>
+              <GameEditionField
+                copy={{
+                  legend: t("onboarding.competition.edition.legend"),
+                  other: t("onboarding.competition.edition.other"),
+                  customName: t("onboarding.competition.edition.name"),
+                  customPlaceholder: t("onboarding.competition.edition.placeholder"),
+                }}
+                custom={draft.customGameEdition}
+                customInputId="game-data-custom-edition"
+                customInputRef={customEditionRef}
+                errorId={validationErrorId}
+                errorMessage={invalidField === "edition" ? validationError : null}
+                invalid={invalidField === "edition"}
+                legendId={editionLabelId}
+                onValueChange={({ value, custom }) => {
+                  patchDraft({ customGameEdition: custom, gameEdition: value });
+                }}
+                value={draft.gameEdition}
+              />
+            </>
+          ) : null}
+          {step === "club" ? (
+            <EaClubLinkForm
+              busy={submitting}
+              initialPlatform={draft.platform}
+              onClear={() => patchDraft({ club: null })}
+              onSelect={(club) => patchDraft({ club })}
+              searchExternalClubs={searchExternalClubs}
+              searchGameEdition={toProviderGameEdition(draft.gameEdition)}
+              selected={draft.club}
+            />
+          ) : null}
+          {step === "identifier" ? (
+            <Field
+              className={setupFieldGap.className}
+              invalid={Boolean(validationError && !draft.identifier.trim())}
+              style={setupFieldGap.style}
+            >
+              <FieldLabel htmlFor="game-data-identifier">
+                {t("onboarding.account.identifier.label")}
+              </FieldLabel>
+              <Input
+                aria-describedby={invalidField === "identifier" ? validationErrorId : undefined}
+                aria-invalid={Boolean(validationError && !draft.identifier.trim())}
+                autoComplete="off"
+                id="game-data-identifier"
+                maxLength={80}
+                onChange={(event) => patchDraft({ identifier: event.target.value })}
+                placeholder={t("onboarding.account.identifier.placeholder")}
+                ref={identifierRef}
+                value={draft.identifier}
+              />
+              {invalidField === "identifier" ? (
+                <FieldError id={validationErrorId} match>
+                  {validationError}
+                </FieldError>
+              ) : null}
+            </Field>
+          ) : null}
+        </div>
+        <div {...applyStyles(styles.setupActions)}>
+          <Button
+            aria-busy={submitting}
+            className={setupPrimary.className}
+            disabled={primaryDisabled}
+            onClick={onPrimary}
+            style={setupPrimary.style}
+            type="button"
+          >
+            {submitting ? (
+              <CircleNotchIcon
+                aria-hidden
+                data-icon="inline-start"
+                size={16}
+                {...applyStyles(styles.spinner)}
+              />
+            ) : step === "identifier" ? (
+              <GameControllerIcon aria-hidden data-icon="inline-start" size={16} />
+            ) : null}
+            {primaryLabel}
+          </Button>
+          <Button
+            className={setupSecondary.className}
+            disabled={submitting}
+            onClick={onBack}
+            style={setupSecondary.style}
+            type="button"
+            variant="link"
+          >
+            {t("common.back")}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

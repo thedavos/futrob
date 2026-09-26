@@ -8,7 +8,11 @@ const spin = stylex.keyframes({
 
 export const styles = stylex.create({
   main: {
+    display: "flex",
     width: "100%",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
     containerType: "inline-size",
   },
   alert: {
@@ -16,27 +20,21 @@ export const styles = stylex.create({
   },
   stack: {
     display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
     flexDirection: "column",
     gap: "1rem",
   },
-  setup: {
+  setupIdle: {
     display: "flex",
     minWidth: 0,
-    minHeight: {
-      default: "28rem",
-      "@container (min-width: 44rem)": "32rem",
-    },
-    flexDirection: "column",
-  },
-  setupContent: {
-    display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    flexGrow: 1,
     gap: "2rem",
-    minWidth: 0,
-    paddingTop: "1.5rem",
+    paddingBlock: "2rem",
     textAlign: "center",
   },
   setupCopy: {

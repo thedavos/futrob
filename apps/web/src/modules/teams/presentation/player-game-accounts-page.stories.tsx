@@ -96,7 +96,7 @@ export const Empty: Story = {
     await expect(
       canvas.getByText("Registra tu identificador para consultar tu actividad de EA Clubs."),
     ).toBeVisible();
-    await expect(canvas.getByRole("button", { name: "Actualizar datos" })).toBeEnabled();
+    await expect(canvas.queryByRole("button", { name: "Actualizar datos" })).toBeNull();
     await expect(
       canvas.getByRole("heading", { name: "Registra tus datos de juego" }),
     ).toBeVisible();
@@ -187,6 +187,7 @@ export const HappyPath: Story = {
       "/player/statistics",
     );
     await expect(canvas.queryByRole("heading", { name: "Registra tus datos de juego" })).toBeNull();
+    await expect(canvas.getByRole("button", { name: "Actualizar datos" })).toBeEnabled();
   },
 };
 
@@ -255,7 +256,7 @@ export const Loading: Story = {
   render: (args) => <GameDataStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("button", { name: "Actualizar datos" })).toBeDisabled();
+    await expect(canvas.queryByRole("button", { name: "Actualizar datos" })).toBeNull();
     await expect(canvas.getByRole("status", { name: "Cargando datos de juego…" })).toBeVisible();
     await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toBeNull();
     await expect(canvas.queryByRole("heading", { name: "Registra tus datos de juego" })).toBeNull();
@@ -271,8 +272,10 @@ export const ErrorState: Story = {
   render: (args) => <GameDataStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByRole("button", { name: "Actualizar datos" })).toBeEnabled();
-    await expect(canvas.getByText("No se pudieron cargar tus datos de juego.")).toBeVisible();
+    await expect(
+      await canvas.findByText("No se pudieron cargar tus datos de juego."),
+    ).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Actualizar datos" })).toBeNull();
     await expect(canvas.queryByRole("heading", { name: "Registra tus datos de juego" })).toBeNull();
     await expect(canvas.queryByRole("navigation", { name: "Pasos del registro" })).toBeNull();
     await expect(canvas.queryByText("Todavía no registraste un identificador de EA.")).toBeNull();

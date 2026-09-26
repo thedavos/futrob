@@ -74,6 +74,7 @@ export function PlayerGameAccountsPage() {
   const account = accounts[0] ?? null;
   const isEmpty = !loading && !profileQuery.isError && account === null;
   const showSetup = isEmpty || setupOpen;
+  const canRefresh = account !== null && clubs.length > 0;
 
   return (
     <main {...applyStyles(styles.main)}>
@@ -86,27 +87,29 @@ export function PlayerGameAccountsPage() {
               : "player.gameData.subtitle.ready",
           )}
         </PageHeaderDescription>
-        <PageHeaderActions>
-          <Button
-            disabled={loading || refreshing}
-            onClick={() => {
-              void profileQuery.refetch();
-            }}
-            type="button"
-          >
-            {refreshing ? (
-              <CircleNotchIcon
-                aria-hidden
-                data-icon="inline-start"
-                size={16}
-                {...applyStyles(styles.spinner)}
-              />
-            ) : (
-              <ArrowsClockwiseIcon aria-hidden data-icon="inline-start" size={16} />
-            )}
-            {refreshing ? t("player.gameData.refreshing") : t("player.gameData.refresh")}
-          </Button>
-        </PageHeaderActions>
+        {canRefresh ? (
+          <PageHeaderActions>
+            <Button
+              disabled={refreshing}
+              onClick={() => {
+                void profileQuery.refetch();
+              }}
+              type="button"
+            >
+              {refreshing ? (
+                <CircleNotchIcon
+                  aria-hidden
+                  data-icon="inline-start"
+                  size={16}
+                  {...applyStyles(styles.spinner)}
+                />
+              ) : (
+                <ArrowsClockwiseIcon aria-hidden data-icon="inline-start" size={16} />
+              )}
+              {refreshing ? t("player.gameData.refreshing") : t("player.gameData.refresh")}
+            </Button>
+          </PageHeaderActions>
+        ) : null}
       </PageHeader>
 
       {profileQuery.isError ? (
