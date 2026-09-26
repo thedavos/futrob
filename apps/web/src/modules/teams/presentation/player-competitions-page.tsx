@@ -8,11 +8,6 @@ import {
   applyStyles,
   Button,
   Caption,
-  EmptyState,
-  EmptyStateActions,
-  EmptyStateDescription,
-  EmptyStateIcon,
-  EmptyStateTitle,
   PageHeader,
   PageHeaderActions,
   PageHeaderDescription,
@@ -20,16 +15,23 @@ import {
   typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { TrophyIcon } from "@phosphor-icons/react";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { PlayerCompetitionsEmptySection } from "./player-competitions-empty-section.tsx";
 import { useMyTeamsQuery } from "./player-queries.ts";
 
 const styles = stylex.create({
   main: {
+    display: "flex",
     width: "100%",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
   },
   body: {
     marginTop: "1rem",
     display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
     flexDirection: "column",
     gap: "2rem",
   },
@@ -81,48 +83,36 @@ type PlayerCompetitionRow = {
 };
 
 export function PlayerCompetitionsPage() {
+  const { t } = useI18n();
   const teamsQuery = useMyTeamsQuery();
   const competitions = competitionsFromTeams(teamsQuery.data?.teams ?? []);
+  const showEmpty = !teamsQuery.isPending && competitions.length === 0;
 
   return (
     <main {...applyStyles(styles.main)}>
       <PageHeader>
-        <PageHeaderTitle>Mis competiciones</PageHeaderTitle>
-        <PageHeaderDescription>
-          Competiciones en las que participas con un equipo.
-        </PageHeaderDescription>
-        <PageHeaderActions>
-          <Button render={<Link to="/player/competitions/explore" />}>
-            Explorar competiciones
-          </Button>
-        </PageHeaderActions>
+        <PageHeaderTitle>{t("player.competitions.title")}</PageHeaderTitle>
+        <PageHeaderDescription>{t("player.competitions.description")}</PageHeaderDescription>
+        {showEmpty ? null : (
+          <PageHeaderActions>
+            <Button render={<Link to="/player/competitions/explore" />}>
+              {t("player.home.cta.exploreCompetitions")}
+            </Button>
+          </PageHeaderActions>
+        )}
       </PageHeader>
 
       <div {...applyStyles(styles.body)}>
         {teamsQuery.isError ? (
           <Alert variant="destructive">
-            <AlertDescription>
-              No se pudieron cargar las competiciones. Comprueba la conexión e inténtalo de nuevo.
-            </AlertDescription>
+            <AlertDescription>{t("player.competitions.error")}</AlertDescription>
           </Alert>
         ) : null}
 
         {teamsQuery.isPending ? (
-          <Caption {...applyStyles(styles.status)}>Cargando competiciones…</Caption>
-        ) : competitions.length === 0 ? (
-          <EmptyState>
-            <EmptyStateIcon>
-              <TrophyIcon aria-hidden="true" />
-            </EmptyStateIcon>
-            <EmptyStateTitle>Sin competiciones todavía</EmptyStateTitle>
-            <EmptyStateDescription>
-              Cuando un organizador te añada a la plantilla de un equipo, la competición aparecerá
-              aquí. También puedes aceptar una invitación.
-            </EmptyStateDescription>
-            <EmptyStateActions>
-              <Button render={<Link to="/invitations/accept" />}>Aceptar invitación</Button>
-            </EmptyStateActions>
-          </EmptyState>
+          <Caption {...applyStyles(styles.status)}>{t("player.competitions.loading")}</Caption>
+        ) : showEmpty ? (
+          <PlayerCompetitionsEmptySection />
         ) : (
           <ul {...applyStyles(styles.list)}>
             {competitions.map((competition) => (

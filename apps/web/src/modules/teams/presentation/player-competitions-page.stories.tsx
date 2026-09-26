@@ -2,12 +2,16 @@ import { useMemo } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import type { PlayerStoryState } from "./player-story-client.ts";
-import { playerProfileFixture, playerTeamsFixture } from "./player-story-fixtures.ts";
+import {
+  playerProfileFixture,
+  playerTeamsFixture,
+  readyPlayerProfileFixture,
+} from "./player-story-fixtures.ts";
 import { PlayerCompetitionsExplorePage } from "./player-competitions-explore-page.tsx";
 import { PlayerCompetitionsPage } from "./player-competitions-page.tsx";
 import { PlayerStoryShell, PlayerStoryStub, type PlayerStoryRoute } from "./player-story-shell.tsx";
 
-const SCENARIO_IDS = ["ready", "empty", "loading", "error"] as const;
+const SCENARIO_IDS = ["ready", "empty", "emptyMultipleClubs", "loading", "error"] as const;
 
 type ScenarioId = (typeof SCENARIO_IDS)[number];
 
@@ -17,7 +21,6 @@ type StoryArgs = {
 
 function scenarioState(id: ScenarioId): PlayerStoryState {
   const rest = {
-    profile: playerProfileFixture(),
     addGameAccount: "success" as const,
     setActiveTeam: "success" as const,
     acceptRosterInvitation: "success" as const,
@@ -26,13 +29,23 @@ function scenarioState(id: ScenarioId): PlayerStoryState {
   };
   switch (id) {
     case "ready":
-      return { ...rest, teams: playerTeamsFixture() };
+      return { ...rest, profile: playerProfileFixture(), teams: playerTeamsFixture() };
     case "empty":
-      return { ...rest, teams: playerTeamsFixture({ teams: [], activeRosterMembershipId: null }) };
+      return {
+        ...rest,
+        profile: playerProfileFixture(),
+        teams: playerTeamsFixture({ teams: [], activeRosterMembershipId: null }),
+      };
+    case "emptyMultipleClubs":
+      return {
+        ...rest,
+        profile: readyPlayerProfileFixture(),
+        teams: playerTeamsFixture({ teams: [], activeRosterMembershipId: null }),
+      };
     case "loading":
-      return { ...rest, teams: "pending" };
+      return { ...rest, profile: playerProfileFixture(), teams: "pending" };
     case "error":
-      return { ...rest, teams: "error" };
+      return { ...rest, profile: playerProfileFixture(), teams: "error" };
     default: {
       const _exhaustive: never = id;
       return _exhaustive;
@@ -44,8 +57,8 @@ const COMPETITION_ROUTES: readonly PlayerStoryRoute[] = [
   { path: "/player/competitions", component: PlayerCompetitionsPage },
   { path: "/player/competitions/explore", component: PlayerCompetitionsExplorePage },
   {
-    path: "/invitations/accept",
-    component: () => <PlayerStoryStub label="Invitaciones (stub de Storybook)" />,
+    path: "/player/game-accounts",
+    component: () => <PlayerStoryStub label="Datos de juego (stub de Storybook)" />,
   },
 ];
 
@@ -105,11 +118,30 @@ export const Empty: Story = {
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText("Sin competiciones todavía")).toBeVisible();
-    await expect(canvas.getByRole("button", { name: "Aceptar invitación" })).toHaveAttribute(
+    await expect(
+      await canvas.findByRole("heading", { name: "Tu club aún no participa en competiciones" }),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
       "href",
-      "/invitations/accept",
+      "/player/competitions/explore",
     );
+    await expect(canvas.queryByRole("link", { name: "Cambiar club" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Aceptar invitación" })).toBeNull();
+  },
+};
+
+export const EmptyMultipleClubs: Story = {
+  name: "Empty with clubs",
+  args: { scenario: "emptyMultipleClubs" },
+  render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "Tu club aún no participa en competiciones" }),
+    ).toBeVisible();
+    const switchClub = await canvas.findByRole("link", { name: "Cambiar club" });
+    await expect(switchClub).toHaveAttribute("href", "/player/game-accounts");
+    await expect(canvas.getByText("¿Buscas otro club?", { exact: false })).toBeVisible();
   },
 };
 
@@ -135,13 +167,22 @@ export const ErrorState: Story = {
         "No se pudieron cargar las competiciones. Comprueba la conexión e inténtalo de nuevo.",
       ),
     ).toBeVisible();
-    await expect(canvas.getByText("Sin competiciones todavía")).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Tu club aún no participa en competiciones" }),
+    ).toBeVisible();
   },
 };
 
 export const Mobile: Story = {
   name: "Mobile",
   args: { scenario: "ready" },
+  parameters: { viewport: { defaultViewport: "mobile1" } },
+  render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
+};
+
+export const EmptyMobile: Story = {
+  name: "Empty mobile",
+  args: { scenario: "empty" },
   parameters: { viewport: { defaultViewport: "mobile1" } },
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
 };

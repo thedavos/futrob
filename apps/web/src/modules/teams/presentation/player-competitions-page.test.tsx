@@ -3,15 +3,19 @@
 import type { ReactNode } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import type { GetMyTeamsResponse } from "@futrob/api-contracts";
+import type { GetMyPlayerProfileResponse, GetMyTeamsResponse } from "@futrob/api-contracts";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerCompetitionsPage } from "./player-competitions-page.tsx";
+import { playerExternalClubFixture, playerProfileFixture } from "./player-story-fixtures.ts";
 
 const getMyTeams = vi.fn<() => Promise<GetMyTeamsResponse>>();
+const getMyProfile = vi.fn<() => Promise<GetMyPlayerProfileResponse>>();
 
 vi.mock("./teams-browser-client.ts", () => ({
   teamsBrowserClient: {
     getMyTeams: () => getMyTeams(),
+    getMyProfile: () => getMyProfile(),
   },
 }));
 
@@ -23,33 +27,98 @@ vi.mock("@tanstack/react-router", () => ({
   ),
 }));
 
+function renderPage() {
+  return render(
+    <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+      <QueryTestProvider>
+        <PlayerCompetitionsPage />
+      </QueryTestProvider>
+    </I18nProvider>,
+  );
+}
+
 describe("PlayerCompetitionsPage", () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
   });
 
-  it("shows an empty state when the player has no competitions", async () => {
+  it("shows a centered empty section when the player has no competitions", async () => {
     getMyTeams.mockResolvedValue({
       activeRosterMembershipId: null,
       teams: [],
     });
+    getMyProfile.mockResolvedValue(playerProfileFixture());
 
-    render(
-      <QueryTestProvider>
-        <PlayerCompetitionsPage />
-      </QueryTestProvider>,
-    );
+    renderPage();
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Mis competiciones" })).toBeTruthy();
-      expect(screen.getByText("Sin competiciones todavía")).toBeTruthy();
+      expect(
+        screen.getByRole("heading", { name: "Tu club aún no participa en competiciones" }),
+      ).toBeTruthy();
     });
+    expect(screen.getByRole("heading", { name: "Mis competiciones" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
       "href",
       "/player/competitions/explore",
     );
-    expect(screen.getByRole("button", { name: "Aceptar invitación" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Aceptar invitación" })).toBeNull();
+    await waitFor(() => {
+      expect(getMyProfile).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole("link", { name: "Cambiar club" })).toBeNull();
+  });
+
+  it("hides the switch-club line when the player has a single club", async () => {
+    getMyTeams.mockResolvedValue({
+      activeRosterMembershipId: null,
+      teams: [],
+    });
+    getMyProfile.mockResolvedValue(
+      playerProfileFixture({
+        externalClubs: [playerExternalClubFixture()],
+      }),
+    );
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: "Tu club aún no participa en competiciones" }),
+      ).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(getMyProfile).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole("link", { name: "Cambiar club" })).toBeNull();
+  });
+
+  it("links Cambiar club to game data when the player has more than one club", async () => {
+    getMyTeams.mockResolvedValue({
+      activeRosterMembershipId: null,
+      teams: [],
+    });
+    getMyProfile.mockResolvedValue(
+      playerProfileFixture({
+        externalClubs: [
+          playerExternalClubFixture(),
+          playerExternalClubFixture({
+            externalClubId: "22110",
+            externalClubName: "Fera Enjaulada",
+          }),
+        ],
+      }),
+    );
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: "Cambiar club" })).toHaveAttribute(
+        "href",
+        "/player/game-accounts",
+      );
+    });
+    expect(screen.getByText("¿Buscas otro club?", { exact: false })).toBeTruthy();
   });
 
   it("lists competitions derived from team memberships", async () => {
@@ -77,16 +146,14 @@ describe("PlayerCompetitionsPage", () => {
         },
       ],
     });
+    getMyProfile.mockResolvedValue(playerProfileFixture());
 
-    render(
-      <QueryTestProvider>
-        <PlayerCompetitionsPage />
-      </QueryTestProvider>,
-    );
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText("Competición c1")).toBeTruthy();
     });
     expect(screen.getByText("Equipo Alpha FC")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Explorar competiciones" })).toBeTruthy();
   });
 });

@@ -23,7 +23,9 @@ const styles = stylex.create({
     color: colors.mutedForeground,
   },
   frame: {
+    display: "flex",
     minHeight: "100svh",
+    flexDirection: "column",
     backgroundColor: colors.background,
     paddingInline: "1.5rem",
     paddingBlock: "1.5rem",

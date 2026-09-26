@@ -317,6 +317,15 @@ const es = {
   "player.home.competitions.format.knockout": "Eliminatoria",
   "player.home.competitions.format.groups-knockout": "Grupos y eliminatoria",
   "player.home.competitions.format.league-playoffs": "Liga y playoffs",
+  "player.competitions.title": "Mis competiciones",
+  "player.competitions.description": "Competiciones en las que participas con un equipo.",
+  "player.competitions.loading": "Cargando competiciones…",
+  "player.competitions.error":
+    "No se pudieron cargar las competiciones. Comprueba la conexión e inténtalo de nuevo.",
+  "player.competitions.empty.title": "Tu club aún no participa en competiciones",
+  "player.competitions.empty.subtitle":
+    "Explora los torneos disponibles y comparte los que te interesen con el capitán de tu club.",
+  "player.competitions.empty.otherClub": "¿Buscas otro club?",
   "player.matches.title": "Mis partidos",
   "player.matches.description": "Apariciones en el club seleccionado.",
   "player.matches.loading": "Cargando tus partidos…",
@@ -1159,6 +1168,15 @@ const en: Catalog = {
   "player.home.competitions.format.knockout": "Knockout",
   "player.home.competitions.format.groups-knockout": "Groups and knockout",
   "player.home.competitions.format.league-playoffs": "League and playoffs",
+  "player.competitions.title": "My competitions",
+  "player.competitions.description": "Competitions you play in with a team.",
+  "player.competitions.loading": "Loading competitions…",
+  "player.competitions.error":
+    "We could not load competitions. Check your connection and try again.",
+  "player.competitions.empty.title": "Your club is not in any competitions yet",
+  "player.competitions.empty.subtitle":
+    "Browse available tournaments and share the ones you care about with your club captain.",
+  "player.competitions.empty.otherClub": "Looking for another club?",
   "player.matches.title": "My matches",
   "player.matches.description": "Appearances in the selected club.",
   "player.matches.loading": "Loading your matches…",
