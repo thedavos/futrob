@@ -201,9 +201,10 @@ La navegación de producto usa `typography.label`. El estado activo no depende �
   - `variant="flat"` (default): borde estructural, sin elevación.
   - `variant="elevated"`: `elevation.md`. Sin `border`/`ring` en el mismo elemento.
     Solo entidades autónomas sobre fondo plano. No usar en grids densas, forms ni cards anidadas.
-- `EmptyState`
-  - `variant="flat"` (default): borde dashed.
-  - `variant="elevated"`: `elevation.md` para paneles vacíos aislados.
+- `EmptyState`: composición abierta sobre el fondo de página, sin panel dashed ni
+  elevación. Ilustración opcional, heading, subtitle, CTA y pie opcional.
+  `fill` ocupa el espacio restante del host. El vacío embebido de Inicio (isla de
+  icono dentro de Card) no usa este primitivo.
 - `Skeleton`
 - `Stat` (KPI): `StatLabel` + `StatValue` + `StatHint` opcional; `StatGroup` para strips.
   El primitivo no impone layout de tesela: la presentación envuelve icono, padding y

@@ -38,8 +38,28 @@
 }
 
 [data-slot="empty-state-icon"] svg {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 8rem;
+  height: 8rem;
+}
+
+[data-slot="empty-state-icon"] img {
+  display: block;
+  width: 8rem;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+@media (min-width: 48rem) {
+  [data-slot="empty-state-icon"] svg {
+    width: 10rem;
+    height: 10rem;
+  }
+
+  [data-slot="empty-state-icon"] img {
+    width: 10rem;
+  }
 }
 
 [data-slot="table-header"] tr {

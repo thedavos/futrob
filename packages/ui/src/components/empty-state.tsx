@@ -1,87 +1,86 @@
-import * as React from "react";
+import type { ComponentProps } from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps, type HostClassName } from "#styles/apply";
+import { applyProps, applyStyles, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
-import { elevation } from "#styles/elevation";
+import { textTone } from "#styles/text-tone";
+import { typography } from "#styles/typography";
 
 const styles = stylex.create({
   root: {
     display: "flex",
-    minHeight: "14rem",
     width: "100%",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: "1rem",
-    borderRadius: "var(--corner-lg)",
-    backgroundColor: colors.surface,
-    padding: "2rem",
+    paddingBlock: "2rem",
     textAlign: "center",
   },
-  flat: {
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.borderStrong,
+  fill: {
+    flexGrow: 1,
+    minHeight: 0,
+  },
+  stack: {
+    display: "flex",
+    width: "100%",
+    maxWidth: "28rem",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "1.5rem",
   },
   icon: {
-    display: "flex",
-    width: "2.75rem",
-    height: "2.75rem",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "var(--corner-full)",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    backgroundColor: colors.muted,
+    display: "block",
+    flexShrink: 0,
     color: colors.mutedForeground,
   },
-  title: {
-    fontSize: "1rem",
-    lineHeight: "1.5rem",
-    fontWeight: 600,
-    color: colors.foreground,
+  copy: {
+    display: "flex",
+    width: "100%",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "0.75rem",
   },
   description: {
-    maxWidth: "28rem",
-    fontSize: "0.875rem",
-    lineHeight: 1.625,
-    color: colors.mutedForeground,
+    maxWidth: "100%",
   },
   actions: {
     display: "flex",
     flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
-    gap: "0.5rem",
+    gap: "0.75rem",
+  },
+  footer: {
+    marginTop: "0.5rem",
   },
 });
 
-export type EmptyStateVariant = "flat" | "elevated";
-
-type EmptyStateProps = Omit<React.ComponentProps<"div">, "className"> & {
+export type EmptyStateProps = Omit<ComponentProps<"div">, "className"> & {
   className?: HostClassName;
-  variant?: EmptyStateVariant;
+  /** Stretch to fill the parent so the stack sits in the remaining viewport. */
+  fill?: boolean;
 };
 
-function EmptyState({ className, style, variant = "flat", ...props }: EmptyStateProps) {
+function EmptyState({ className, style, fill = false, children, ...props }: EmptyStateProps) {
   return (
     <div
+      data-fill={fill ? "true" : undefined}
       data-slot="empty-state"
-      data-variant={variant}
-      {...applyProps(
-        className,
-        style,
-        styles.root,
-        variant === "elevated" ? elevation.md : styles.flat,
-      )}
+      {...applyProps(className, style, styles.root, fill && styles.fill)}
       {...props}
-    />
+    >
+      <div data-slot="empty-state-stack" {...applyStyles(styles.stack)}>
+        {children}
+      </div>
+    </div>
   );
 }
 
-function EmptyStateIcon({ className, style, ...props }: React.ComponentProps<"div">) {
+function EmptyStateIcon({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div
       aria-hidden="true"
@@ -92,23 +91,56 @@ function EmptyStateIcon({ className, style, ...props }: React.ComponentProps<"di
   );
 }
 
-function EmptyStateTitle({ className, style, ...props }: React.ComponentProps<"h3">) {
+function EmptyStateCopy({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
-    <h3 data-slot="empty-state-title" {...applyProps(className, style, styles.title)} {...props} />
+    <div data-slot="empty-state-copy" {...applyProps(className, style, styles.copy)} {...props} />
   );
 }
 
-function EmptyStateDescription({ className, style, ...props }: React.ComponentProps<"p">) {
+function EmptyStateTitle({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"h2">, "className"> & { className?: HostClassName }) {
   return (
-    <p
-      data-slot="empty-state-description"
-      {...applyProps(className, style, styles.description)}
+    <h2
+      data-slot="empty-state-title"
+      {...applyProps(className, style, typography.host, typography.heading, textTone.default)}
       {...props}
     />
   );
 }
 
-function EmptyStateActions({ className, style, ...props }: React.ComponentProps<"div">) {
+function EmptyStateDescription({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"p">, "className"> & { className?: HostClassName }) {
+  return (
+    <p
+      data-slot="empty-state-description"
+      {...applyProps(
+        className,
+        style,
+        typography.host,
+        typography.subtitle,
+        textTone.muted,
+        styles.description,
+      )}
+      {...props}
+    />
+  );
+}
+
+function EmptyStateActions({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div
       data-slot="empty-state-actions"
@@ -118,4 +150,33 @@ function EmptyStateActions({ className, style, ...props }: React.ComponentProps<
   );
 }
 
-export { EmptyState, EmptyStateActions, EmptyStateDescription, EmptyStateIcon, EmptyStateTitle };
+function EmptyStateFooter({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"p">, "className"> & { className?: HostClassName }) {
+  return (
+    <p
+      data-slot="empty-state-footer"
+      {...applyProps(
+        className,
+        style,
+        typography.host,
+        typography.caption,
+        textTone.muted,
+        styles.footer,
+      )}
+      {...props}
+    />
+  );
+}
+
+export {
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateCopy,
+  EmptyStateDescription,
+  EmptyStateFooter,
+  EmptyStateIcon,
+  EmptyStateTitle,
+};

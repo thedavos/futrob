@@ -1,124 +1,143 @@
+import type { ComponentProps } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { TrayIcon } from "@phosphor-icons/react";
+import { expect, userEvent, within } from "storybook/test";
+import { TrophyIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyProps, applyStyles } from "@futrob/ui";
-import { media } from "#styles/media.stylex";
+import { applyStyles } from "@futrob/ui";
 
 import { Button } from "../components/button";
 import {
   EmptyState,
   EmptyStateActions,
+  EmptyStateCopy,
   EmptyStateDescription,
+  EmptyStateFooter,
   EmptyStateIcon,
   EmptyStateTitle,
 } from "../components/empty-state";
+import { TextLink } from "../components/text-link";
 
 const styles = stylex.create({
-  playground: {
-    marginInline: "auto",
-    maxWidth: "32rem",
-  },
-  compare: {
-    marginInline: "auto",
-    display: "grid",
+  canvas: {
+    display: "flex",
+    minHeight: "32rem",
     width: "100%",
-    maxWidth: "56rem",
-    gap: "2rem",
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.sm]: "repeat(2, minmax(0, 1fr))",
-    },
+    flexDirection: "column",
+  },
+  fillCanvas: {
+    display: "flex",
+    minHeight: "100vh",
+    width: "100%",
+    flexDirection: "column",
   },
 });
 
-const playground = applyStyles(styles.playground);
+const canvas = applyStyles(styles.canvas);
+const fillCanvas = applyStyles(styles.fillCanvas);
 
 const meta = {
   title: "Primitives/EmptyState",
   component: EmptyState,
   parameters: { layout: "padded" },
   args: {
-    className: playground.className,
-    style: playground.style,
-    variant: "flat",
+    fill: true,
   },
   argTypes: {
-    variant: {
-      control: "select",
-      options: ["flat", "elevated"],
-    },
+    fill: { control: "boolean" },
   },
 } satisfies Meta<typeof EmptyState>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+function EmptyComposition({
+  action = true,
+  footer = false,
+  ...args
+}: ComponentProps<typeof EmptyState> & { action?: boolean; footer?: boolean }) {
+  return (
+    <EmptyState {...args}>
+      <EmptyStateIcon>
+        <TrophyIcon />
+      </EmptyStateIcon>
+      <EmptyStateCopy>
+        <EmptyStateTitle>Tu club aún no participa en competiciones</EmptyStateTitle>
+        <EmptyStateDescription>
+          Explora ligas y copas abiertas o espera a que tu organizador te invite.
+        </EmptyStateDescription>
+      </EmptyStateCopy>
+      {action ? (
+        <EmptyStateActions>
+          <Button>Explorar competiciones</Button>
+        </EmptyStateActions>
+      ) : null}
+      {footer ? (
+        <EmptyStateFooter>
+          ¿Buscas otro club?{" "}
+          <TextLink href="#game-accounts" text="caption">
+            Cambiar club
+          </TextLink>
+        </EmptyStateFooter>
+      ) : null}
+    </EmptyState>
+  );
+}
+
 export const Playground: Story = {
   render: (args) => (
-    <EmptyState {...args}>
-      <EmptyStateIcon>
-        <TrayIcon />
-      </EmptyStateIcon>
-      <EmptyStateTitle>Sin partidos sincronizados</EmptyStateTitle>
-      <EmptyStateDescription>
-        Cuando sincronices el club de EA, los candidatos aparecerán aquí para revisión.
-      </EmptyStateDescription>
-      <EmptyStateActions>
-        <Button>Sincronizar ahora</Button>
-        <Button variant="outline">Ver guía</Button>
-      </EmptyStateActions>
-    </EmptyState>
+    <div {...canvas}>
+      <EmptyComposition {...args} />
+    </div>
   ),
 };
 
-export const Flat: Story = {
-  args: { variant: "flat" },
+export const WithAction: Story = {
   render: (args) => (
-    <EmptyState {...args}>
-      <EmptyStateIcon>
-        <TrayIcon />
-      </EmptyStateIcon>
-      <EmptyStateTitle>Sin resultados</EmptyStateTitle>
-      <EmptyStateDescription>Ajusta los filtros o limpia la búsqueda.</EmptyStateDescription>
-    </EmptyState>
+    <div {...canvas}>
+      <EmptyComposition {...args} />
+    </div>
   ),
+  play: async ({ canvasElement }) => {
+    const view = within(canvasElement);
+    const cta = view.getByRole("button", { name: "Explorar competiciones" });
+    await expect(cta).toBeEnabled();
+    await userEvent.click(cta);
+  },
 };
 
-export const Elevated: Story = {
-  args: { variant: "elevated" },
+export const WithoutAction: Story = {
   render: (args) => (
-    <EmptyState {...args}>
-      <EmptyStateIcon>
-        <TrayIcon />
-      </EmptyStateIcon>
-      <EmptyStateTitle>Aún no hay encuentros</EmptyStateTitle>
-      <EmptyStateDescription>
-        Crea la primera jornada para empezar a programar partidos.
-      </EmptyStateDescription>
-      <EmptyStateActions>
-        <Button>Crear jornada</Button>
-      </EmptyStateActions>
-    </EmptyState>
+    <div {...canvas}>
+      <EmptyComposition {...args} action={false} />
+    </div>
   ),
+  play: async ({ canvasElement }) => {
+    const view = within(canvasElement);
+    await expect(
+      view.getByRole("heading", { name: "Tu club aún no participa en competiciones" }),
+    ).toBeTruthy();
+    await expect(view.queryByRole("button", { name: "Explorar competiciones" })).toBeNull();
+  },
 };
 
-export const Compare: Story = {
-  render: () => (
-    <div {...applyProps(undefined, undefined, styles.compare)}>
-      <EmptyState variant="flat">
-        <EmptyStateIcon>
-          <TrayIcon />
-        </EmptyStateIcon>
-        <EmptyStateTitle>flat</EmptyStateTitle>
-        <EmptyStateDescription>Borde dashed · paneles embebidos.</EmptyStateDescription>
-      </EmptyState>
-      <EmptyState variant="elevated">
-        <EmptyStateIcon>
-          <TrayIcon />
-        </EmptyStateIcon>
-        <EmptyStateTitle>elevated</EmptyStateTitle>
-        <EmptyStateDescription>elevation.md · panel aislado.</EmptyStateDescription>
-      </EmptyState>
+export const WithFooter: Story = {
+  render: (args) => (
+    <div {...canvas}>
+      <EmptyComposition {...args} footer />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const view = within(canvasElement);
+    const changeClub = view.getByRole("link", { name: "Cambiar club" });
+    await expect(changeClub).toHaveAttribute("href", "#game-accounts");
+  },
+};
+
+export const Fill: Story = {
+  parameters: { layout: "fullscreen" },
+  render: (args) => (
+    <div {...fillCanvas}>
+      <EmptyComposition {...args} fill footer />
     </div>
   ),
 };

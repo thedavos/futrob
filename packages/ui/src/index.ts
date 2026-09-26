@@ -77,11 +77,13 @@ export type { DialogContentProps } from "./components/dialog";
 export {
   EmptyState,
   EmptyStateActions,
+  EmptyStateCopy,
   EmptyStateDescription,
+  EmptyStateFooter,
   EmptyStateIcon,
   EmptyStateTitle,
 } from "./components/empty-state";
-export type { EmptyStateVariant } from "./components/empty-state";
+export type { EmptyStateProps } from "./components/empty-state";
 export { Field, FieldDescription, FieldError, FieldLabel, FieldValidity } from "./components/field";
 export type { FieldActions } from "./components/field";
 export { Form } from "./components/form";
