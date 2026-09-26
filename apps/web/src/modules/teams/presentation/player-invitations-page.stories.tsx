@@ -9,6 +9,7 @@ import {
   playerTeamsFixture,
   rosterInvitationInboxItemFixture,
 } from "./player-story-fixtures.ts";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { HistoryPanel, PlayerInvitationsPage } from "./player-invitations-page.tsx";
 import { PlayerStoryShell, PlayerStoryStub, type PlayerStoryRoute } from "./player-story-shell.tsx";
 
@@ -142,9 +143,22 @@ const INVITATIONS_ROUTES: readonly PlayerStoryRoute[] = [
   },
 ];
 
-function InvitationsStoryShell({ scenario }: { readonly scenario: ScenarioId }) {
+function InvitationsStoryShell({
+  locale = "es",
+  scenario,
+}: {
+  readonly locale?: "es" | "en";
+  readonly scenario: ScenarioId;
+}) {
   const state = useMemo(() => scenarioState(scenario), [scenario]);
-  return <PlayerStoryShell initialPath="/invitations" routes={INVITATIONS_ROUTES} state={state} />;
+  return (
+    <PlayerStoryShell
+      initialPath="/invitations"
+      locale={locale}
+      routes={INVITATIONS_ROUTES}
+      state={state}
+    />
+  );
 }
 
 const meta = {
@@ -174,14 +188,38 @@ export const EmptySinHistorial: Story = {
   render: (args) => <InvitationsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText("No tienes invitaciones pendientes")).toBeVisible();
+    await expect(
+      await canvas.findByRole("heading", { name: "No tienes invitaciones pendientes" }),
+    ).toBeVisible();
     await expect(
       canvas.getByText(
         "¿Esperabas una invitación? Confirma con el capitán que la haya enviado a tu cuenta.",
       ),
     ).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Canjear un código de invitación" }),
+    ).toHaveAttribute("href", "/invitations/accept");
     await expect(canvas.queryByRole("tab", { name: "Historial" })).not.toBeInTheDocument();
     await expect(canvas.queryByRole("button", { name: "Ver historial" })).not.toBeInTheDocument();
+  },
+};
+
+export const EmptyEnglish: Story = {
+  name: "Empty / English",
+  args: { scenario: "emptySinHistorial" },
+  render: (args) => (
+    <InvitationsStoryShell key={`${args.scenario}-en`} locale="en" scenario={args.scenario} />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "You have no pending invitations" }),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Redeem an invitation code" })).toHaveAttribute(
+      "href",
+      "/invitations/accept",
+    );
+    await expect(canvas.getByRole("heading", { name: "Invitations" })).toBeVisible();
   },
 };
 
@@ -205,7 +243,11 @@ export const EmptyConHistorial: Story = {
 export const HistorialVacio: Story = {
   name: "Historial vacío",
   args: { scenario: "emptySinHistorial" },
-  render: () => <HistoryPanel items={[]} />,
+  render: () => (
+    <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+      <HistoryPanel items={[]} />
+    </I18nProvider>
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Sin invitaciones anteriores")).toBeVisible();

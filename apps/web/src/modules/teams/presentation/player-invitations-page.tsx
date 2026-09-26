@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import {
@@ -8,11 +8,12 @@ import {
   AlertDescription,
   applyStyles,
   Button,
-  Caption,
   Card,
   EmptyState,
   EmptyStateActions,
+  EmptyStateCopy,
   EmptyStateDescription,
+  EmptyStateFooter,
   EmptyStateIcon,
   EmptyStateTitle,
   PageHeader,
@@ -27,9 +28,9 @@ import {
   TabsTrigger,
   TextLink,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { ClockCounterClockwiseIcon, EnvelopeOpenIcon } from "@phosphor-icons/react";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { InvitationDetailCard } from "./invitation-detail-card.tsx";
 import {
   filterInvitations,
@@ -51,11 +52,17 @@ type InvitationsTab = (typeof INVITATIONS_TAB)[keyof typeof INVITATIONS_TAB];
 
 const styles = stylex.create({
   main: {
+    display: "flex",
     width: "100%",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
   },
   body: {
     marginTop: "1rem",
     display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
     flexDirection: "column",
     gap: "1.5rem",
   },
@@ -68,19 +75,17 @@ const styles = stylex.create({
     gap: "1.5rem",
     alignItems: "stretch",
   },
-  emptyBlock: {
+  tabs: {
     display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
     flexDirection: "column",
-    gap: "0.75rem",
   },
-  emptyInner: {
-    borderWidth: 0,
-    backgroundColor: "transparent",
-    minHeight: "18rem",
-  },
-  emptyCaption: {
-    textAlign: "center",
-    color: colors.mutedForeground,
+  tabPanel: {
+    display: "flex",
+    minHeight: 0,
+    flexGrow: 1,
+    flexDirection: "column",
   },
   skeletonCard: {
     display: "flex",
@@ -136,6 +141,7 @@ const styles = stylex.create({
 });
 
 export function PlayerInvitationsPage() {
+  const { t } = useI18n();
   const invitationsQuery = useMyRosterInvitationsQuery();
   const [tab, setTab] = useState<InvitationsTab>(INVITATIONS_TAB.pending);
 
@@ -147,53 +153,65 @@ export function PlayerInvitationsPage() {
   const pending = items.filter((item) => item.displayStatus === "pending");
   const history = items.filter((item) => item.displayStatus !== "pending");
   const showTabs = history.length > 0;
+  const hideHeaderRedeem =
+    invitationsQuery.isSuccess && pending.length === 0 && tab === INVITATIONS_TAB.pending;
+  const tabs = applyStyles(styles.tabs);
+  const tabPanel = applyStyles(styles.tabPanel);
 
   return (
     <main {...applyStyles(styles.main)}>
       <PageHeader>
-        <PageHeaderTitle>Invitaciones</PageHeaderTitle>
-        <PageHeaderDescription>
-          Revisa las invitaciones que has recibido y elige dónde participar.
-        </PageHeaderDescription>
-        <PageHeaderActions>
-          <TextLink render={<Link to="/invitations/accept" />} text="label">
-            Canjear un código de invitación
-          </TextLink>
-        </PageHeaderActions>
+        <PageHeaderTitle>{t("player.invitations.title")}</PageHeaderTitle>
+        <PageHeaderDescription>{t("player.invitations.description")}</PageHeaderDescription>
+        {hideHeaderRedeem ? null : (
+          <PageHeaderActions>
+            <TextLink render={<Link to="/invitations/accept" />} text="label">
+              {t("player.invitations.redeem")}
+            </TextLink>
+          </PageHeaderActions>
+        )}
       </PageHeader>
 
       <div {...applyStyles(styles.body)}>
         {invitationsQuery.isError ? (
           <Alert variant="destructive">
-            <AlertDescription>
-              No se pudieron cargar las invitaciones. Comprueba la conexión e inténtalo de nuevo.
-            </AlertDescription>
+            <AlertDescription>{t("player.invitations.error")}</AlertDescription>
           </Alert>
         ) : invitationsQuery.isPending ? (
           <InvitationsSkeleton />
         ) : showTabs ? (
           <Tabs
+            className={tabs.className}
             onValueChange={(value) => {
               if (value === INVITATIONS_TAB.pending || value === INVITATIONS_TAB.history) {
                 setTab(value);
               }
             }}
+            style={tabs.style}
             value={tab}
           >
             <TabsList>
-              <TabsTrigger value={INVITATIONS_TAB.pending}>Pendientes</TabsTrigger>
-              <TabsTrigger value={INVITATIONS_TAB.history}>Historial</TabsTrigger>
+              <TabsTrigger value={INVITATIONS_TAB.pending}>
+                {t("player.home.invitations.pendingTitle")}
+              </TabsTrigger>
+              <TabsTrigger value={INVITATIONS_TAB.history}>
+                {t("player.invitations.tab.history")}
+              </TabsTrigger>
               <TabsIndicator />
             </TabsList>
             <TabsContent value={INVITATIONS_TAB.pending}>
-              <PendingPanel
-                items={pending}
-                onSeeHistory={() => setTab(INVITATIONS_TAB.history)}
-                showHistoryCta
-              />
+              <div {...tabPanel}>
+                <PendingPanel
+                  items={pending}
+                  onSeeHistory={() => setTab(INVITATIONS_TAB.history)}
+                  showHistoryCta
+                />
+              </div>
             </TabsContent>
             <TabsContent value={INVITATIONS_TAB.history}>
-              <HistoryPanel items={history} />
+              <div {...tabPanel}>
+                <HistoryPanel items={history} />
+              </div>
             </TabsContent>
           </Tabs>
         ) : (
@@ -213,32 +231,30 @@ function PendingPanel({
   showHistoryCta: boolean;
   onSeeHistory: (() => void) | null;
 }>) {
+  const { t } = useI18n();
+  const titleId = useId();
   if (items.length === 0) {
     return (
-      <div {...applyStyles(styles.emptyBlock)}>
-        <Card>
-          <EmptyState className={styles.emptyInner}>
-            <EmptyStateIcon>
-              <EnvelopeOpenIcon aria-hidden="true" />
-            </EmptyStateIcon>
-            <EmptyStateTitle>No tienes invitaciones pendientes</EmptyStateTitle>
-            <EmptyStateDescription>
-              Cuando un capitán te invite a su equipo, podrás revisar la invitación y responder
-              desde aquí.
-            </EmptyStateDescription>
-            {showHistoryCta && onSeeHistory ? (
-              <EmptyStateActions>
-                <Button onClick={onSeeHistory} variant="outline">
-                  Ver historial
-                </Button>
-              </EmptyStateActions>
-            ) : null}
-          </EmptyState>
-        </Card>
-        <Caption {...applyStyles(styles.emptyCaption)}>
-          ¿Esperabas una invitación? Confirma con el capitán que la haya enviado a tu cuenta.
-        </Caption>
-      </div>
+      <EmptyState aria-labelledby={titleId} fill>
+        <EmptyStateIcon>
+          <EnvelopeOpenIcon />
+        </EmptyStateIcon>
+        <EmptyStateCopy>
+          <EmptyStateTitle id={titleId}>{t("player.invitations.empty.title")}</EmptyStateTitle>
+          <EmptyStateDescription>{t("player.invitations.empty.subtitle")}</EmptyStateDescription>
+        </EmptyStateCopy>
+        <EmptyStateActions>
+          <Button render={<Link to="/invitations/accept" />}>
+            {t("player.invitations.redeem")}
+          </Button>
+          {showHistoryCta && onSeeHistory ? (
+            <Button onClick={onSeeHistory} variant="outline">
+              {t("player.home.cta.viewHistory")}
+            </Button>
+          ) : null}
+        </EmptyStateActions>
+        <EmptyStateFooter>{t("player.invitations.empty.footer")}</EmptyStateFooter>
+      </EmptyState>
     );
   }
   return <InvitationInboxPanel items={items} showActions />;
@@ -246,19 +262,23 @@ function PendingPanel({
 
 /** Exported for Storybook: with tabs hidden sin historial, el vacío no es alcanzable en producto. */
 export function HistoryPanel({ items }: Readonly<{ items: readonly InvitationInboxViewItem[] }>) {
+  const { t } = useI18n();
+  const titleId = useId();
   if (items.length === 0) {
     return (
-      <Card>
-        <EmptyState className={styles.emptyInner}>
-          <EmptyStateIcon>
-            <ClockCounterClockwiseIcon aria-hidden="true" />
-          </EmptyStateIcon>
-          <EmptyStateTitle>Sin invitaciones anteriores</EmptyStateTitle>
+      <EmptyState aria-labelledby={titleId} fill>
+        <EmptyStateIcon>
+          <ClockCounterClockwiseIcon />
+        </EmptyStateIcon>
+        <EmptyStateCopy>
+          <EmptyStateTitle id={titleId}>
+            {t("player.invitations.history.empty.title")}
+          </EmptyStateTitle>
           <EmptyStateDescription>
-            Cuando respondas una invitación, quedará registrada aquí con su resultado.
+            {t("player.invitations.history.empty.subtitle")}
           </EmptyStateDescription>
-        </EmptyState>
-      </Card>
+        </EmptyStateCopy>
+      </EmptyState>
     );
   }
   return <InvitationInboxPanel items={items} showActions={false} />;

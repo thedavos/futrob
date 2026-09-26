@@ -326,6 +326,21 @@ const es = {
   "player.competitions.empty.subtitle":
     "Explora los torneos disponibles y comparte los que te interesen con el capitán de tu club.",
   "player.competitions.empty.otherClub": "¿Buscas otro club?",
+  "player.invitations.title": "Invitaciones",
+  "player.invitations.description":
+    "Revisa las invitaciones que has recibido y elige dónde participar.",
+  "player.invitations.redeem": "Canjear un código de invitación",
+  "player.invitations.error":
+    "No se pudieron cargar las invitaciones. Comprueba la conexión e inténtalo de nuevo.",
+  "player.invitations.tab.history": "Historial",
+  "player.invitations.empty.title": "No tienes invitaciones pendientes",
+  "player.invitations.empty.subtitle":
+    "Cuando un capitán te invite a su equipo, podrás revisar la invitación y responder desde aquí.",
+  "player.invitations.empty.footer":
+    "¿Esperabas una invitación? Confirma con el capitán que la haya enviado a tu cuenta.",
+  "player.invitations.history.empty.title": "Sin invitaciones anteriores",
+  "player.invitations.history.empty.subtitle":
+    "Cuando respondas una invitación, quedará registrada aquí con su resultado.",
   "player.matches.title": "Mis partidos",
   "player.matches.description": "Apariciones en el club seleccionado.",
   "player.matches.loading": "Cargando tus partidos…",
@@ -1177,6 +1192,20 @@ const en: Catalog = {
   "player.competitions.empty.subtitle":
     "Browse available tournaments and share the ones you care about with your club captain.",
   "player.competitions.empty.otherClub": "Looking for another club?",
+  "player.invitations.title": "Invitations",
+  "player.invitations.description":
+    "Review the invitations you have received and choose where to take part.",
+  "player.invitations.redeem": "Redeem an invitation code",
+  "player.invitations.error": "We could not load invitations. Check your connection and try again.",
+  "player.invitations.tab.history": "History",
+  "player.invitations.empty.title": "You have no pending invitations",
+  "player.invitations.empty.subtitle":
+    "When a captain invites you to their team, you can review the invitation and respond here.",
+  "player.invitations.empty.footer":
+    "Expecting an invitation? Confirm with the captain that they sent it to your account.",
+  "player.invitations.history.empty.title": "No previous invitations",
+  "player.invitations.history.empty.subtitle":
+    "When you respond to an invitation, it will be recorded here with its outcome.",
   "player.matches.title": "My matches",
   "player.matches.description": "Appearances in the selected club.",
   "player.matches.loading": "Loading your matches…",

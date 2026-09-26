@@ -11,6 +11,7 @@ import {
 import * as stylex from "@stylexjs/stylex";
 import { applyProps, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
+import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { searchStoryExternalClubs } from "@/modules/game-data/presentation/game-data-story-client.ts";
@@ -60,10 +61,12 @@ export function PlayerStoryShell({
   state,
   initialPath,
   routes,
+  locale = "es",
 }: {
   readonly state: PlayerStoryState;
   readonly initialPath: string;
   readonly routes: readonly PlayerStoryRoute[];
+  readonly locale?: Locale;
 }) {
   const client = useMemo(() => {
     configurePlayerStory(state);
@@ -102,7 +105,7 @@ export function PlayerStoryShell({
 
   return (
     <QueryClientProvider client={client}>
-      <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+      <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
         <div {...applyProps(undefined, undefined, styles.frame)}>
           <RouterProvider router={router} />
         </div>
