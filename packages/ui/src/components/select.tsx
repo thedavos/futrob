@@ -2,7 +2,7 @@ import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { CheckIcon, CaretDownIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
@@ -161,7 +161,8 @@ const Select = SelectPrimitive.Root;
 const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
-type SelectTriggerProps = SelectPrimitive.Trigger.Props & {
+type SelectTriggerProps = Omit<SelectPrimitive.Trigger.Props, "className"> & {
+  className?: HostClassName | SelectPrimitive.Trigger.Props["className"];
   /** Compact desktop/operator mode. Touch layouts stay at the accessible 44px target. */
   dense?: boolean;
 };

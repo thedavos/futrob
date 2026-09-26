@@ -1,6 +1,7 @@
 import { z } from "zod";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Select, SelectContent, SelectItem, SelectTrigger } from "@futrob/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "./i18n-provider.tsx";
 import { SUPPORTED_LOCALES } from "./catalogs.ts";
 
@@ -8,14 +9,24 @@ const localeSchema = z.enum(SUPPORTED_LOCALES);
 
 const styles = stylex.create({
   trigger: {
-    width: "auto",
-    minWidth: "8rem",
+    width: "max-content",
+    minWidth: 0,
+    justifyContent: "flex-start",
+    whiteSpace: "nowrap",
+    borderColor: {
+      default: "transparent",
+      ":focus-visible": colors.ring,
+    },
+    backgroundColor: {
+      default: "transparent",
+      ":hover": colors.muted,
+      ':is([aria-expanded="true"])': colors.muted,
+    },
   },
 });
 
 export function LocaleSelect() {
   const { locale, setLocale, t } = useI18n();
-  const trigger = applyStyles(styles.trigger);
   return (
     <Select
       items={[
@@ -28,11 +39,7 @@ export function LocaleSelect() {
       }}
       value={locale}
     >
-      <SelectTrigger
-        aria-label={t("locale.label")}
-        className={trigger.className}
-        style={trigger.style}
-      >
+      <SelectTrigger aria-label={t("locale.label")} className={styles.trigger} dense>
         {locale === "es" ? t("locale.es") : t("locale.en")}
       </SelectTrigger>
       <SelectContent align="end">

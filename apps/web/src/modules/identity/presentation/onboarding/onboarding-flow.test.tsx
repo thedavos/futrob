@@ -59,7 +59,9 @@ describe("OnboardingFlowProvider initialization", () => {
     const identifier = await screen.findByRole("textbox", { name: "Identificador de EA" });
     await user.type(identifier, "gamer23");
     await user.click(screen.getByRole("radio", { name: "PlayStation" }));
-    await user.click(screen.getByRole("combobox", { name: "Idioma" }));
+    const localeSelect = screen.getByRole("combobox", { name: "Idioma" });
+    expect(localeSelect.getAttribute("data-density")).toBe("dense");
+    await user.click(localeSelect);
     await user.click(await screen.findByRole("option", { name: "Inglés" }));
 
     expect(await screen.findByRole("heading", { name: "Set up your game details" })).toBeTruthy();
