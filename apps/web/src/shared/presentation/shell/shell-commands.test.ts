@@ -89,6 +89,14 @@ describe("commandsFor", () => {
     expect(commands).toEqual([{ id: "associate-club", label: "Añadir club", disabled: false }]);
   });
 
+  it("returns a link-styled accept-invite command for player competitions", () => {
+    expect(
+      commandsFor("/player/competitions", { kind: WORKSPACE_SELECTION_KIND.personal }),
+    ).toEqual([
+      { id: "accept-invite", label: "Aceptar invitación", disabled: false, variant: "link" },
+    ]);
+  });
+
   it("returns empty for plain personal home", () => {
     expect(commandsFor("/player", { kind: WORKSPACE_SELECTION_KIND.personal })).toEqual([]);
   });

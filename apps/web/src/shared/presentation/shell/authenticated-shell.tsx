@@ -242,7 +242,7 @@ function CommandBar({
                   onAddClub();
                 }
               }}
-              variant={command.id === commands[0]?.id ? "default" : "outline"}
+              variant={command.variant ?? (command.id === commands[0]?.id ? "default" : "outline")}
             >
               {command.id === "associate-club" ? t("shell.workspace.addClub") : command.label}
             </Button>

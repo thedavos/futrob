@@ -8,6 +8,7 @@ export type ShellCommand = {
   readonly label: string;
   readonly disabled?: boolean;
   readonly href?: string;
+  readonly variant?: "default" | "outline" | "link";
   readonly requiredPermission?: Permission;
 };
 
@@ -43,7 +44,9 @@ export function commandsFor(
       },
     ];
   } else if (pathname.startsWith("/player/competitions")) {
-    commands = [{ id: "accept-invite", label: "Aceptar invitación", disabled: false }];
+    commands = [
+      { id: "accept-invite", label: "Aceptar invitación", disabled: false, variant: "link" },
+    ];
   } else if (pathname.startsWith("/player/ea-clubs")) {
     commands = [{ id: "associate-club", label: "Añadir club", disabled: false }];
   } else {
