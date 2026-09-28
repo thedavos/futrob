@@ -59,7 +59,7 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Landing login | button/link `Iniciar sesión` |
 | Landing signup | button/link `Crear cuenta` |
 | Hero primary CTA | `Crear cuenta` → `/signup` |
-| Hero secondary CTA | `Ver cómo funciona` → `#mecanismo` |
+| Hero secondary CTA | button `Ver cómo funciona` → `#mecanismo` |
 | Landing nav landmark | `Acceso` |
 | Login heading | `Inicia sesión` |
 | Login email | textbox `Correo electrónico` (placeholder `ejemplo@correo.com`) |
@@ -76,12 +76,13 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Intention continue | button `Continuar` |
 | Skip optional onboarding | button `Omitir por ahora` |
 | Player finish | button `Entrar a mi espacio` |
-| Player home title | `Tu espacio de jugador` |
-| Open matches | `Abrir Mis partidos` |
+| Player home title | heading `Inicio` (not `Tu espacio de jugador`) |
+| Player shell identity | `Tu espacio en Futrob` when no club is selected (`Espacio personal` is unused) |
+| Open matches | sidebar link `Mis partidos`; header button `Ver mis partidos` when that CTA is shown. Unused catalog `Abrir Mis partidos` is not a control |
 | Match view radios | `Todos`, `Liga`, `Playoff`, `Amistosos` (hidden until matches can load) |
 | Open match row | link `Ver {home} {homeGoals} – {awayGoals} {away}` — not the unused string `Ver partido` |
 | Landing final CTA | below-fold `Crear cuenta` / `Iniciar sesión` under `¿Listo para poner tu competición bajo control?` |
-| Open profile | `Abrir tu perfil` |
+| Open statistics | sidebar link `Mis estadísticas` (not the unused catalog `Abrir tu perfil`) |
 | Org name | textbox `Nombre de la organización` |
 | Create org | button `Crear organización` |
 | Competition name | textbox `Nombre de la competición` |

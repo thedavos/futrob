@@ -26,7 +26,7 @@ Preconditions:
 - Use a disposable email `verify-<run-id>@example.test` that does not already exist for signup proofs.
 - Do not reuse the operator's personal account.
 
-- **Gate.** Open `/player` with no session. The URL becomes `/login` (optional `redirectTo`). The page shows `Comprobando sesión…` only briefly, then `Inicia sesión`.
+- **Gate.** Open `/player` with no session. The URL becomes `/login` (optional `redirectTo`). The page shows `Comprobando sesión…` only briefly, then `Inicia sesión`. Do not require a particular `redirectTo` value; `/login` in that query is unsafe and ignored by resume.
 - **Cross-link.** On `/login`, choose `Crear una cuenta`. The URL is `/signup` and the heading is `Crea tu cuenta`. Choose `Iniciar sesión` in the footer. The URL is `/login`.
 - **Reject login.** On `/login`, fill the textbox named `Correo electrónico` (placeholder `ejemplo@correo.com`) with `nobody-verify@example.test` and the textbox named `Contraseña` (placeholder `Ingresa tu contraseña`) with `wrong-password-verify`. Choose `Iniciar sesión`. A `role=alert` reads `El correo o la contraseña no son correctos.` The URL stays `/login`.
 - **Signup.** On `/signup`, fill the textbox named `Nombre completo` with `Verify Player`, `Correo electrónico` with the disposable address, and `Contraseña` with a value that meets the visible hint (`Mínimo 8 caracteres, incluyendo letras y números.`). Choose `Crear cuenta`. After success the URL is `/onboarding` (or `/onboarding/intention`). The heading `¿Qué quieres hacer primero?` appears. The actor must not land on `/orgs` or `/player` yet.
