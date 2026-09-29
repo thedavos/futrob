@@ -5,19 +5,19 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 ## Bounded contexts (MVP)
 
-| Módulo          | Responsabilidad                                                                                        |
-| --------------- | ------------------------------------------------------------------------------------------------------ |
-| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                                     |
-| `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación                          |
-| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC y membresías contextuales de competición             |
-| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes y asociaciones a clubes externos |
-| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                                   |
-| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                                |
-| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales                          |
-| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                                    |
-| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                      |
-| `notifications` | Web, email (WhatsApp/push como ampliación)                                                             |
-| `public-portal` | Lecturas públicas sanitizadas                                                                          |
+| Módulo          | Responsabilidad                                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                                                                  |
+| `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación                                                       |
+| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC, membresías contextuales y descubrimiento autenticado de competiciones publicadas |
+| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes y asociaciones a clubes externos                              |
+| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                                                                |
+| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                                                             |
+| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales                                                       |
+| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                                                                 |
+| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                                                   |
+| `notifications` | Web, email (WhatsApp/push como ampliación)                                                                                          |
+| `public-portal` | Lecturas públicas sanitizadas                                                                                                       |
 
 `billing` está fuera del MVP.
 
@@ -58,6 +58,11 @@ statistics worker
 scheduling
   → CompetitionScheduleRulesReaderPort
   → competitions public API
+
+competition discovery (apps/api)
+  → CompetitionDiscoveryReader
+  → OrganizationRepository.getByIds (nombres de organizador por lote)
+  → no abre public-portal ni lectura anónima
 
 onboarding HTTP orchestration
   → organizations / competitions / teams public application APIs

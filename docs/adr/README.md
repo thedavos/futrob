@@ -1,6 +1,6 @@
 # Registro de decisiones de arquitectura
 
-Actualizado: 2026-09-22.
+Actualizado: 2026-09-27.
 
 Este índice distingue la **vigencia de una decisión** del **estado de su implementación**.
 Aceptada no significa desplegada ni verificada de extremo a extremo. Las referencias
@@ -39,6 +39,9 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0015: Autenticación, identidad y ownership de D1](/docs/adr/0015-auth-extraction.md)                                     | Aceptada    | Auth extraída; web proxy por service binding                                |
 | [ADR-0016: Proyección transaccional de resultados oficiales](/docs/adr/0016-official-results-transactional-projection.md)     | Aceptada    | Resultado + estadísticas transaccionales; bracket y outbox pendientes       |
 | [ADR-0017: Autorización contextual por capacidades](/docs/adr/0017-contextual-capability-authorization.md)                    | Aceptada    | Resolver contextual y matriz de pruebas existentes                          |
+| [ADR-0018: Descubrimiento autenticado de competiciones publicadas](/docs/adr/0018-authenticated-competition-discovery.md)     | Aceptada    | Explore autenticado; portal público anónimo sigue fuera                     |
+| [ADR-0019: Inscripciones abiertas y postulación de equipos](/docs/adr/0019-competition-registration-and-applications.md)      | Aceptada    | Estado `registration` y postulación; notificación al organizador pendiente  |
+| [ADR-0020: Perfil de competición y portadas en R2](/docs/adr/0020-competition-profile-and-media.md)                           | Aceptada    | Cupo, fechas y portada; limpieza de huérfanos en R2 pendiente               |
 
 ## Consolidación de septiembre de 2026
 
@@ -47,7 +50,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 - ADR-0015 absorbe ADR-0003: auth, actores y ownership de D1.
 - ADR-0016 y ADR-0017 formalizan consistencia transaccional y autorización contextual.
 
-Quedan **14 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
+Quedan **15 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
 archivo antiguos se conservan para no romper referencias. Para implementación nueva,
 seguir el sucesor indicado, aunque un enlace histórico aún apunte al documento anterior.
 
