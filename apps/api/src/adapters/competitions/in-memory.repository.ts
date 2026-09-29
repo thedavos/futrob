@@ -3,8 +3,10 @@ import type {
   CompetitionMembership,
   CompetitionMembershipRepository,
   CompetitionRepository,
+  CompetitionStatus,
 } from "@futrob/competitions";
 import {
+  Panic,
   compareByTime,
   TIME_SORT_DIRECTION,
   type ActorId,
@@ -23,6 +25,46 @@ export class InMemoryCompetitionRepository implements CompetitionRepository {
   async publish(draft: CompetitionDraft): Promise<CompetitionDraft> {
     this.byId.set(draft.competition.id, draft);
     return draft;
+  }
+
+  async saveCover(draft: CompetitionDraft): Promise<CompetitionDraft> {
+    const current = this.byId.get(draft.competition.id);
+    if (!current || current.competition.organizationId !== draft.competition.organizationId) {
+      throw new Panic("Cannot update cover for a missing competition");
+    }
+    const saved = {
+      ...current,
+      competition: {
+        ...current.competition,
+        cover: draft.competition.cover,
+        updatedAt: draft.competition.updatedAt,
+      },
+    };
+    this.byId.set(saved.competition.id, saved);
+    return saved;
+  }
+
+  async changeStatus(
+    draft: CompetitionDraft,
+    expected: CompetitionStatus,
+  ): Promise<CompetitionDraft | null> {
+    const current = this.byId.get(draft.competition.id);
+    if (
+      !current ||
+      current.competition.organizationId !== draft.competition.organizationId ||
+      current.competition.status !== expected
+    )
+      return null;
+    const saved = {
+      ...current,
+      competition: {
+        ...current.competition,
+        status: draft.competition.status,
+        updatedAt: draft.competition.updatedAt,
+      },
+    };
+    this.byId.set(saved.competition.id, saved);
+    return saved;
   }
 
   async findById(
@@ -48,6 +90,10 @@ export class InMemoryCompetitionRepository implements CompetitionRepository {
       .map((draft) => draft.competition)
       .filter((competition) => competition.organizationId === organizationId)
       .sort(compareByTime((item) => item.updatedAt, TIME_SORT_DIRECTION.desc));
+  }
+
+  all(): readonly CompetitionDraft[] {
+    return [...this.byId.values()];
   }
 }
 

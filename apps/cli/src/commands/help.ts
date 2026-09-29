@@ -32,6 +32,12 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   comp-list <orgId>
   comp-show <orgId> <compId>
   comp-publish <orgId> <compId>
+  comp-registration-open <orgId> <compId>
+  comp-registration-close <orgId> <compId>
+  comp-explore [--q name] [--format league] [--status published]
+  comp-explore-show <competitionId>
+  comp-apply <competitionId> <teamName> [--key creationKey]
+  comp-application <competitionId>
   participant-add <orgId> <compId> <teamId>
   participant-list <orgId> <compId>
   entry-register <orgId> <compId> <teamId>

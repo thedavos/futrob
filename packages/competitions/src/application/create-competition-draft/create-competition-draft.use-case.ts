@@ -29,9 +29,23 @@ import type {
 } from "../../domain/ports/competition.repository.ts";
 import type { CompetitionMatchRules } from "../../domain/value-objects/resolution-mode.ts";
 import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
+import { DEFAULT_COMPETITION_COVER } from "../../domain/value-objects/competition-cover.ts";
+import { EMPTY_SCHEDULE } from "../../domain/value-objects/competition-schedule.ts";
+import { DEFAULT_TEAM_RANGE } from "../../domain/value-objects/team-range.ts";
+import {
+  resolveCompetitionProfile,
+  type CompetitionProfile,
+  type CompetitionProfileInput,
+} from "../competition-profile.ts";
 import { competitionPermissionError } from "../require-competition-permission.ts";
 
-export interface CreateCompetitionDraftInput {
+const DEFAULT_PROFILE: CompetitionProfile = {
+  teams: DEFAULT_TEAM_RANGE,
+  schedule: EMPTY_SCHEDULE,
+  cover: DEFAULT_COMPETITION_COVER,
+};
+
+export interface CreateCompetitionDraftInput extends CompetitionProfileInput {
   readonly organizationId: OrganizationId;
   readonly actorId: ActorId;
   readonly name: string;
@@ -106,6 +120,13 @@ export class CreateCompetitionDraftUseCase {
       return ok(existing);
     }
 
+    const profile = resolveCompetitionProfile(
+      existing?.competition ?? DEFAULT_PROFILE,
+      input,
+      input.organizationId,
+    );
+    if (!profile.isOk()) return err(profile.error);
+
     const now = this.deps.clock.now();
     const competition: Competition = {
       id: existing?.competition.id ?? asCompetitionId(this.deps.ids.generate()),
@@ -118,6 +139,7 @@ export class CreateCompetitionDraftUseCase {
       region: input.region,
       timeZone,
       format: input.format,
+      ...profile.value,
       createdByActorId: existing?.competition.createdByActorId ?? input.actorId,
       creationKey: input.creationKey,
       createdAt: existing?.competition.createdAt ?? now,

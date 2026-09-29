@@ -10,7 +10,9 @@ import {
 } from "@futrob/competitions";
 
 export class CompetitionsMatchRulesReader implements CompetitionMatchRulesReaderPort {
-  constructor(private readonly competitions: CompetitionRepository) {}
+  constructor(
+    private readonly competitions: Pick<CompetitionRepository, "findRulesByCompetitionId">,
+  ) {}
 
   async getPointsRules(
     query: CompetitionMatchRulesQuery,

@@ -72,6 +72,16 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
     return organization.creationKey ? await this.getByCreationKey(organization.creationKey) : null;
   }
 
+  async getByIds(ids: readonly OrganizationId[]): Promise<readonly Organization[]> {
+    if (ids.length === 0) return [];
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
+       FROM organizations WHERE id = ANY($1::text[])`,
+      [[...new Set(ids)]],
+    );
+    return z.array(organizationRowSchema).parse(result.rows).map(rehydrateOrganization);
+  }
+
   async getById(id: OrganizationId): Promise<Organization | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key

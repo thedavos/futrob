@@ -3,6 +3,7 @@ import type { Organization } from "../entities/organization.ts";
 
 export interface OrganizationRepository {
   create(organization: Organization): Promise<Organization | null>;
+  getByIds(ids: readonly OrganizationId[]): Promise<readonly Organization[]>;
   getById(id: OrganizationId): Promise<Organization | null>;
   getByCreationKey(creationKey: string): Promise<Organization | null>;
   getByNormalizedName(normalizedName: string): Promise<Organization | null>;

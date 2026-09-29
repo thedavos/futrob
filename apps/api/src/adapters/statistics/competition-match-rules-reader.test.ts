@@ -53,22 +53,12 @@ describe("CompetitionsMatchRulesReader", () => {
   });
 });
 
-function repoWith(rules: CompetitionRules): CompetitionRepository {
+function repoWith(
+  rules: CompetitionRules,
+): Pick<CompetitionRepository, "findRulesByCompetitionId"> {
   return {
-    async saveDraft(draft) {
-      return draft;
-    },
-    async findById() {
-      return null;
-    },
-    async findByCreationKey() {
-      return null;
-    },
     async findRulesByCompetitionId(competitionId) {
       return competitionId === rules.competitionId ? rules : null;
-    },
-    async listByOrganization() {
-      return [];
     },
   };
 }

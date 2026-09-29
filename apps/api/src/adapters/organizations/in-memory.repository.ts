@@ -1,5 +1,5 @@
 import {
-  competitionInviteRoleSchema,
+  inviteRoleSchema,
   orgMembershipRoleSchema,
   redeemPolicySchema,
 } from "@futrob/api-contracts";
@@ -32,6 +32,13 @@ export class InMemoryOrganizationRepository implements OrganizationRepository {
     if (await this.getByNormalizedName(organization.normalizedName)) return null;
     this.byId.set(organization.id, organization);
     return organization;
+  }
+
+  async getByIds(ids: readonly OrganizationId[]): Promise<readonly Organization[]> {
+    return [...new Set(ids)].flatMap((id) => {
+      const organization = this.byId.get(id);
+      return organization ? [organization] : [];
+    });
   }
 
   async getById(id: OrganizationId): Promise<Organization | null> {
@@ -266,7 +273,7 @@ export const invitationRowSchema = z.object({
   id: pgTextSchema,
   organization_id: pgTextSchema,
   competition_id: pgTextSchema.nullable().optional(),
-  role: competitionInviteRoleSchema,
+  role: inviteRoleSchema,
   token_hash: pgTextSchema,
   email: pgTextSchema.nullable(),
   status: invitationStatusSchema,

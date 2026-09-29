@@ -6,7 +6,14 @@ import type {
   CompetitionMatchRules,
   CompetitionRepository,
   CompetitionRules,
+  CompetitionStatus,
 } from "@futrob/competitions";
+import { DEFAULT_TEAM_RANGE } from "@futrob/competitions";
+import {
+  calendarDate,
+  coverColumns,
+  rehydrateCover,
+} from "@/adapters/competitions/competition-profile-columns.ts";
 import {
   competitionFormatSchema,
   competitionPlatformSchema,
@@ -59,8 +66,10 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     const competitionResult = await executor.query(
       `INSERT INTO competitions (
          id, organization_id, name, status, modality, game_edition, platform, region,
-         time_zone, format, created_by_actor_id, creation_key, created_at, updated_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         time_zone, format, created_by_actor_id, creation_key, created_at, updated_at,
+         min_teams, max_teams, starts_on, ends_on, cover_kind, cover_value
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+         $19, $20)
        ON CONFLICT (id) DO UPDATE SET
          name = EXCLUDED.name,
          game_edition = EXCLUDED.game_edition,
@@ -68,6 +77,12 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
          region = EXCLUDED.region,
          time_zone = EXCLUDED.time_zone,
          format = EXCLUDED.format,
+         min_teams = EXCLUDED.min_teams,
+         max_teams = EXCLUDED.max_teams,
+         starts_on = EXCLUDED.starts_on,
+         ends_on = EXCLUDED.ends_on,
+         cover_kind = EXCLUDED.cover_kind,
+         cover_value = EXCLUDED.cover_value,
          updated_at = EXCLUDED.updated_at
        WHERE competitions.status = 'draft' AND competitions.organization_id = EXCLUDED.organization_id
        RETURNING *`,
@@ -86,6 +101,11 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         draft.competition.creationKey ?? null,
         draft.competition.createdAt.toISOString(),
         draft.competition.updatedAt.toISOString(),
+        draft.competition.teams.min,
+        draft.competition.teams.max,
+        draft.competition.schedule.startsOn,
+        draft.competition.schedule.endsOn,
+        ...coverColumns(draft.competition.cover),
       ],
     );
     const competition = rehydrateCompetition(competitionResult.rows[0]);
@@ -117,7 +137,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     const result = await getPgExecutor(this.pool).query(
       `UPDATE competitions
        SET status = 'published', updated_at = $3
-       WHERE id = $1 AND organization_id = $2 AND status = 'draft'
+       WHERE id = $1 AND organization_id = $2 AND status IN ('draft', 'registration')
        RETURNING *`,
       [
         draft.competition.id,
@@ -126,6 +146,46 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       ],
     );
     if (!result.rows[0]) return draft;
+    return { ...draft, competition: rehydrateCompetition(result.rows[0]) };
+  }
+
+  async saveCover(draft: CompetitionDraft): Promise<CompetitionDraft> {
+    const [coverKind, coverValue] = coverColumns(draft.competition.cover);
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE competitions
+       SET cover_kind = $3, cover_value = $4, updated_at = $5
+       WHERE id = $1 AND organization_id = $2
+       RETURNING *`,
+      [
+        draft.competition.id,
+        draft.competition.organizationId,
+        coverKind,
+        coverValue,
+        draft.competition.updatedAt.toISOString(),
+      ],
+    );
+    if (!result.rows[0]) return draft;
+    return { ...draft, competition: rehydrateCompetition(result.rows[0]) };
+  }
+
+  async changeStatus(
+    draft: CompetitionDraft,
+    expected: CompetitionStatus,
+  ): Promise<CompetitionDraft | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE competitions
+       SET status = $3, updated_at = $4
+       WHERE id = $1 AND organization_id = $2 AND status = $5
+       RETURNING *`,
+      [
+        draft.competition.id,
+        draft.competition.organizationId,
+        draft.competition.status,
+        draft.competition.updatedAt.toISOString(),
+        expected,
+      ],
+    );
+    if (!result.rows[0]) return null;
     return { ...draft, competition: rehydrateCompetition(result.rows[0]) };
   }
 
@@ -157,7 +217,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
   async listByOrganization(organizationId: OrganizationId): Promise<Competition[]> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, name, status, modality, game_edition, platform, region,
-              time_zone, format, created_by_actor_id, creation_key, created_at, updated_at
+              time_zone, format, created_by_actor_id, creation_key, created_at, updated_at,
+              min_teams, max_teams, starts_on, ends_on, cover_kind, cover_value
        FROM competitions
        WHERE organization_id = $1
        ORDER BY updated_at DESC`,
@@ -280,6 +341,12 @@ export interface CompetitionRow {
   creation_key: string | null;
   created_at: Date | string;
   updated_at: Date | string;
+  min_teams?: number;
+  max_teams?: number | null;
+  starts_on?: Date | string | null;
+  ends_on?: Date | string | null;
+  cover_kind?: string;
+  cover_value?: string;
 }
 
 export interface CompetitionRulesRow {
@@ -304,7 +371,7 @@ function rehydrateCompetitionMembership(row: CompetitionMembershipRow): Competit
   };
 }
 
-function rehydrateCompetition(row: CompetitionRow): Competition {
+export function rehydrateCompetition(row: CompetitionRow): Competition {
   return {
     id: asCompetitionId(row.id),
     organizationId: asOrganizationId(row.organization_id),
@@ -318,6 +385,9 @@ function rehydrateCompetition(row: CompetitionRow): Competition {
     format: competitionFormatSchema.parse(row.format),
     createdByActorId: asActorId(row.created_by_actor_id),
     creationKey: row.creation_key ?? undefined,
+    teams: { min: row.min_teams ?? DEFAULT_TEAM_RANGE.min, max: row.max_teams ?? null },
+    schedule: { startsOn: calendarDate(row.starts_on), endsOn: calendarDate(row.ends_on) },
+    cover: rehydrateCover(row.organization_id, row.cover_kind, row.cover_value),
     createdAt: pgTimestampSchema.parse(row.created_at),
     updatedAt: pgTimestampSchema.parse(row.updated_at),
   };

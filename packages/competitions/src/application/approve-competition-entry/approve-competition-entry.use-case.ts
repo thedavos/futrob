@@ -11,12 +11,14 @@ import type { CompetitionEntry } from "../../domain/entities/competition-entry.t
 import {
   CompetitionNotFound,
   CompetitionAuthorizationForbidden,
+  CompetitionCapacityReached,
   EntryAlreadyDecided,
   EntryNotFound,
   type ApproveCompetitionEntryError,
 } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
+import { hasCapacityFor } from "../../domain/value-objects/team-range.ts";
 import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
 
 export interface ApproveCompetitionEntryInput {
@@ -77,6 +79,19 @@ export class ApproveCompetitionEntryUseCase {
         new CompetitionNotFound({
           code: "competitions.not_found",
           message: "Competition not found",
+        }),
+      );
+    }
+
+    const approved = await this.deps.entries.countApprovedByCompetition(
+      input.organizationId,
+      input.competitionId,
+    );
+    if (!hasCapacityFor(draft.competition.teams, approved)) {
+      return err(
+        new CompetitionCapacityReached({
+          code: "competitions.capacity_reached",
+          message: "Competition has reached its team capacity",
         }),
       );
     }

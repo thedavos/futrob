@@ -18,7 +18,7 @@ describe.skipIf(!databaseUrl)("provider reliability Postgres", () => {
     pool = new Pool({ connectionString: databaseUrl, options: `-c search_path=${schema}` });
     for (const migration of ["0026_provider_sync_jobs.sql", "0027_provider_resilience.sql"]) {
       const sql = await readFile(
-        new URL(`../../../../migrations/${migration}`, import.meta.url),
+        new URL(`../../../migrations/${migration}`, import.meta.url),
         "utf8",
       );
       await pool.query(sql);

@@ -9,7 +9,7 @@ import type {
 export interface CompetitionFixtureSourceSnapshot {
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
-  readonly status: "draft" | "published" | "paused" | "finished" | "archived";
+  readonly status: "draft" | "registration" | "published" | "paused" | "finished" | "archived";
   readonly format: FixtureFormat;
   readonly timeZone: string;
   readonly rulesVersion: number;

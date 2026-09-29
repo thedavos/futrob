@@ -1,5 +1,6 @@
 import { competitionEntryStatusSchema } from "@futrob/api-contracts";
 import {
+  Panic,
   asCompetitionId,
   asOrganizationId,
   asTeamId,
@@ -44,6 +45,22 @@ export class InMemoryCompetitionEntryRepository implements CompetitionEntryRepos
   async save(entry: CompetitionEntry): Promise<CompetitionEntry> {
     this.rows.set(entry.id, entry);
     return entry;
+  }
+
+  async countApprovedByCompetition(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+  ): Promise<number> {
+    let count = 0;
+    for (const entry of this.rows.values()) {
+      if (
+        entry.organizationId === organizationId &&
+        entry.competitionId === competitionId &&
+        entry.status === "approved"
+      )
+        count += 1;
+    }
+    return count;
   }
 
   async listByCompetition(organizationId: OrganizationId, competitionId: CompetitionId) {
@@ -119,6 +136,20 @@ export class PostgresCompetitionEntryRepository implements CompetitionEntryRepos
       ],
     );
     return rehydrateEntry(result.rows[0]);
+  }
+
+  async countApprovedByCompetition(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+  ): Promise<number> {
+    const result = await getPgExecutor(this.pool).query<{ approved_count: number }>(
+      `SELECT COUNT(*)::int AS approved_count FROM competition_entries
+       WHERE organization_id = $1 AND competition_id = $2 AND status = 'approved'`,
+      [organizationId, competitionId],
+    );
+    const row = result.rows[0];
+    if (!row) throw new Panic("Missing competition entry count");
+    return row.approved_count;
   }
 
   async listByCompetition(organizationId: OrganizationId, competitionId: CompetitionId) {

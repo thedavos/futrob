@@ -8,6 +8,7 @@ import {
   listCompetitionParticipantsResponseSchema,
   addCompetitionParticipantResponseSchema,
   publishCompetitionResponseSchema,
+  competitionRegistrationResponseSchema,
   registerTeamEntryRequestSchema,
   registerTeamEntryResponseSchema,
 } from "@futrob/api-contracts";
@@ -139,6 +140,30 @@ export function registerCompetitionParticipantRoutes(app: Hono, deps: AppDeps): 
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(publishCompetitionResponseSchema.parse(competitionDraftDto(result.value)));
   });
+
+  for (const [action, useCase] of [
+    ["open", "openRegistration"],
+    ["close", "closeRegistration"],
+  ] as const) {
+    secured.post(
+      `/organizations/:organizationId/competitions/:competitionId/registration/${action}`,
+      async (c) => {
+        const organizationId = asOrganizationId(c.req.param("organizationId"));
+        const competitionId = asCompetitionId(c.req.param("competitionId"));
+        const result = await deps.modules.transaction.runInTransaction(() =>
+          deps.modules.competitions[useCase].execute({
+            actorId: c.get("actorId"),
+            organizationId,
+            competitionId,
+          }),
+        );
+        if (!result.isOk()) return failureToHttp(result.error);
+        return jsonResponse(
+          competitionRegistrationResponseSchema.parse(competitionDraftDto(result.value)),
+        );
+      },
+    );
+  }
 
   secured.post(
     "/organizations/:organizationId/competitions/:competitionId/invitations",

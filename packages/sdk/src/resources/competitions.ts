@@ -3,7 +3,10 @@ import {
   acceptInvitationRequestSchema,
   createCompetitionDraftRequestSchema,
   createCompetitionDraftResponseSchema,
+  exploreCompetitionsQuerySchema,
+  exploreCompetitionsResponseSchema,
   getCompetitionDraftResponseSchema,
+  getExploreCompetitionResponseSchema,
   listOrganizationCompetitionsResponseSchema,
   listAccessibleCompetitionsResponseSchema,
   registerTeamEntryRequestSchema,
@@ -12,7 +15,10 @@ import {
   type AcceptInvitationRequest,
   type CreateCompetitionDraftRequest,
   type CreateCompetitionDraftResponse,
+  type ExploreCompetitionsQueryInput,
+  type ExploreCompetitionsResponse,
   type GetCompetitionDraftResponse,
+  type GetExploreCompetitionResponse,
   type ListOrganizationCompetitionsResponse,
   type ListAccessibleCompetitionsResponse,
   type RegisterTeamEntryRequest,
@@ -23,6 +29,18 @@ import {
   listCompetitionParticipantsResponseSchema,
   addCompetitionParticipantResponseSchema,
   publishCompetitionResponseSchema,
+  competitionRegistrationResponseSchema,
+  updateCompetitionCoverRequestSchema,
+  updateCompetitionCoverResponseSchema,
+  type UpdateCompetitionCoverRequest,
+  type UpdateCompetitionCoverResponse,
+  applyToCompetitionRequestSchema,
+  applyToCompetitionResponseSchema,
+  getMyCompetitionApplicationResponseSchema,
+  type ApplyToCompetitionRequest,
+  type ApplyToCompetitionResponse,
+  type GetMyCompetitionApplicationResponse,
+  type CompetitionRegistrationResponse,
   decideTeamEntryResponseSchema,
   type UpdateCompetitionDraftRequest,
   type UpdateCompetitionDraftResponse,
@@ -37,6 +55,40 @@ import { apiPath } from "../internal/path.ts";
 
 export function createCompetitionsResource(http: HttpClient) {
   return {
+    async explore(
+      query: ExploreCompetitionsQueryInput = {},
+      options: RequestOptions = {},
+    ): Promise<ExploreCompetitionsResponse> {
+      const parsed = exploreCompetitionsQuerySchema.parse(query);
+      const search = new URLSearchParams();
+      if (parsed.q) search.set("q", parsed.q);
+      if (parsed.format) search.set("format", parsed.format);
+      if (parsed.status) search.set("status", parsed.status);
+      if (parsed.region) search.set("region", parsed.region);
+      if (parsed.platform) search.set("platform", parsed.platform);
+      search.set("sort", parsed.sort);
+      search.set("limit", String(parsed.limit));
+      if (parsed.cursor) search.set("cursor", parsed.cursor);
+      return http.request({
+        path: `/competitions/explore?${search.toString()}`,
+        method: "GET",
+        options,
+        parse: (data) => exploreCompetitionsResponseSchema.parse(data),
+      });
+    },
+
+    async getExplore(
+      competitionId: string,
+      options: RequestOptions = {},
+    ): Promise<GetExploreCompetitionResponse> {
+      return http.request({
+        path: apiPath("competitions", "explore", competitionId),
+        method: "GET",
+        options,
+        parse: (data) => getExploreCompetitionResponseSchema.parse(data),
+      });
+    },
+
     async listMine(options: RequestOptions = {}): Promise<ListAccessibleCompetitionsResponse> {
       return http.request({
         path: "/competitions/mine",
@@ -174,6 +226,89 @@ export function createCompetitionsResource(http: HttpClient) {
         method: "POST",
         options,
         parse: (data) => publishCompetitionResponseSchema.parse(data),
+      });
+    },
+
+    async updateCover(
+      organizationId: string,
+      competitionId: string,
+      input: UpdateCompetitionCoverRequest,
+      options: RequestOptions = {},
+    ): Promise<UpdateCompetitionCoverResponse> {
+      const body = updateCompetitionCoverRequestSchema.parse(input);
+      return http.request({
+        path: apiPath("organizations", organizationId, "competitions", competitionId, "cover"),
+        method: "PUT",
+        body,
+        options,
+        parse: (data) => updateCompetitionCoverResponseSchema.parse(data),
+      });
+    },
+
+    async getMyApplication(
+      competitionId: string,
+      options: RequestOptions = {},
+    ): Promise<GetMyCompetitionApplicationResponse> {
+      return http.request({
+        path: apiPath("competitions", "explore", competitionId, "application"),
+        method: "GET",
+        options,
+        parse: (data) => getMyCompetitionApplicationResponseSchema.parse(data),
+      });
+    },
+
+    async apply(
+      competitionId: string,
+      input: ApplyToCompetitionRequest,
+      options: RequestOptions = {},
+    ): Promise<ApplyToCompetitionResponse> {
+      const body = applyToCompetitionRequestSchema.parse(input);
+      return http.request({
+        path: apiPath("competitions", "explore", competitionId, "application"),
+        method: "POST",
+        body,
+        options,
+        parse: (data) => applyToCompetitionResponseSchema.parse(data),
+      });
+    },
+
+    async openRegistration(
+      organizationId: string,
+      competitionId: string,
+      options: RequestOptions = {},
+    ): Promise<CompetitionRegistrationResponse> {
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "registration",
+          "open",
+        ),
+        method: "POST",
+        options,
+        parse: (data) => competitionRegistrationResponseSchema.parse(data),
+      });
+    },
+
+    async closeRegistration(
+      organizationId: string,
+      competitionId: string,
+      options: RequestOptions = {},
+    ): Promise<CompetitionRegistrationResponse> {
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "registration",
+          "close",
+        ),
+        method: "POST",
+        options,
+        parse: (data) => competitionRegistrationResponseSchema.parse(data),
       });
     },
 

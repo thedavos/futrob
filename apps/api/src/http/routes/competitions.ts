@@ -1,8 +1,16 @@
 import { Hono } from "hono";
 import {
+  applyToCompetitionRequestSchema,
+  updateCompetitionCoverRequestSchema,
+  updateCompetitionCoverResponseSchema,
+  applyToCompetitionResponseSchema,
+  getMyCompetitionApplicationResponseSchema,
   createCompetitionDraftRequestSchema,
   createCompetitionDraftResponseSchema,
+  exploreCompetitionsQuerySchema,
+  exploreCompetitionsResponseSchema,
   getCompetitionDraftResponseSchema,
+  getExploreCompetitionResponseSchema,
   getCompetitionRankingsQuerySchema,
   getCompetitionRankingsResponseSchema,
   getCompetitionStandingsResponseSchema,
@@ -27,14 +35,70 @@ import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
 } from "@/http/middleware/service-auth.ts";
-import { competitionDraftDto, competitionDto } from "@/http/mappers/competition.ts";
+import {
+  competitionDraftDto,
+  competitionDto,
+  exploreCompetitionDto,
+} from "@/http/mappers/competition.ts";
 import { teamDto } from "@/http/mappers/team.ts";
+import { competitionApplicationDto } from "@/http/mappers/competition-entry.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 import { requireApiPermission } from "@/http/require-api-permission.ts";
 
 export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
   secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+
+  secured.get("/competitions/explore", async (c) => {
+    const parsed = exploreCompetitionsQuerySchema.safeParse(c.req.query());
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    const page = await deps.modules.competitions.explore.list(parsed.data);
+    return jsonResponse(
+      exploreCompetitionsResponseSchema.parse({
+        items: page.items.map(exploreCompetitionDto),
+        total: page.total,
+        nextCursor: page.nextCursor,
+      }),
+    );
+  });
+
+  secured.get("/competitions/explore/:competitionId", async (c) => {
+    const result = await deps.modules.competitions.explore.get(
+      asCompetitionId(c.req.param("competitionId")),
+    );
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      getExploreCompetitionResponseSchema.parse(exploreCompetitionDto(result.value)),
+    );
+  });
+
+  secured.get("/competitions/explore/:competitionId/application", async (c) => {
+    const application = await deps.modules.competitionApplications.mine({
+      actorId: c.get("actorId"),
+      competitionId: asCompetitionId(c.req.param("competitionId")),
+    });
+    return jsonResponse(
+      getMyCompetitionApplicationResponseSchema.parse({
+        application: application ? competitionApplicationDto(application) : null,
+      }),
+    );
+  });
+
+  secured.post("/competitions/explore/:competitionId/application", async (c) => {
+    const parsed = applyToCompetitionRequestSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    const result = await deps.modules.competitionApplications.apply({
+      actorId: c.get("actorId"),
+      competitionId: asCompetitionId(c.req.param("competitionId")),
+      teamName: parsed.data.teamName,
+      creationKey: parsed.data.creationKey,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      applyToCompetitionResponseSchema.parse(competitionApplicationDto(result.value)),
+      201,
+    );
+  });
 
   secured.get("/competitions/mine", async (c) => {
     const competitions = await deps.modules.authorization.listAccessibleCompetitions.execute({
@@ -85,6 +149,23 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(
       createCompetitionDraftResponseSchema.parse(competitionDraftDto(result.value)),
       201,
+    );
+  });
+
+  secured.put("/organizations/:organizationId/competitions/:competitionId/cover", async (c) => {
+    const parsed = updateCompetitionCoverRequestSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    const result = await deps.modules.competitions.updateCover.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(c.req.param("organizationId")),
+      competitionId: asCompetitionId(c.req.param("competitionId")),
+      cover: parsed.data.cover,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      updateCompetitionCoverResponseSchema.parse(competitionDraftDto(result.value)),
     );
   });
 

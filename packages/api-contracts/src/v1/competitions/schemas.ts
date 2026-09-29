@@ -4,6 +4,7 @@ import { acceptInvitationResponseSchema } from "../organizations/schemas.ts";
 
 export const competitionStatusSchema = z.enum([
   "draft",
+  "registration",
   "published",
   "paused",
   "finished",
@@ -34,6 +35,39 @@ export type CompetitionRegionDto = z.infer<typeof competitionRegionSchema>;
 export const competitionPlatformSchema = gamePlatformSchema;
 export type CompetitionPlatformDto = z.infer<typeof competitionPlatformSchema>;
 
+export const calendarDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+export const competitionTeamRangeSchema = z.object({
+  min: z.number().int().min(2).max(256),
+  max: z.number().int().min(2).max(256).nullable(),
+});
+export type CompetitionTeamRangeDto = z.infer<typeof competitionTeamRangeSchema>;
+
+export const competitionScheduleSchema = z.object({
+  startsOn: calendarDateSchema.nullable(),
+  endsOn: calendarDateSchema.nullable(),
+});
+export type CompetitionScheduleDto = z.infer<typeof competitionScheduleSchema>;
+
+export const competitionCoverPresetSchema = z.enum([
+  "cup",
+  "classic",
+  "friendlies",
+  "groups",
+  "league",
+  "lightning",
+  "playoffs",
+  "pre-season",
+  "supercup",
+]);
+export type CompetitionCoverPresetDto = z.infer<typeof competitionCoverPresetSchema>;
+
+export const competitionCoverSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("preset"), preset: competitionCoverPresetSchema }),
+  z.object({ kind: z.literal("upload"), key: z.string().min(1).max(300) }),
+]);
+export type CompetitionCoverDto = z.infer<typeof competitionCoverSchema>;
+
 export const competitionDraftInputSchema = z.object({
   name: z.string().trim().min(1).max(120),
   gameEdition: z.string().trim().min(1).max(40),
@@ -41,6 +75,10 @@ export const competitionDraftInputSchema = z.object({
   region: competitionRegionSchema,
   timeZone: z.string().trim().min(1).max(100),
   format: competitionFormatSchema,
+  /** Omit to keep the stored value (create: defaults). */
+  teams: competitionTeamRangeSchema.optional(),
+  schedule: competitionScheduleSchema.optional(),
+  cover: competitionCoverSchema.optional(),
 });
 export type CompetitionDraftInputDto = z.infer<typeof competitionDraftInputSchema>;
 
@@ -88,6 +126,9 @@ export const competitionSchema = z.object({
   region: competitionRegionSchema,
   timeZone: z.string().min(1),
   format: competitionFormatSchema,
+  teams: competitionTeamRangeSchema,
+  schedule: competitionScheduleSchema,
+  cover: competitionCoverSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -105,7 +146,13 @@ export type UpdateCompetitionDraftResponse = z.infer<typeof updateCompetitionDra
 export const getCompetitionDraftResponseSchema = competitionDraftSchema;
 export type GetCompetitionDraftResponse = z.infer<typeof getCompetitionDraftResponseSchema>;
 
-export const createCompetitionDraftRequestSchema = competitionDraftInputSchema;
+export const createCompetitionDraftRequestSchema = competitionDraftInputSchema.extend({
+  /** Client-generated; a retry returns the same draft and reuses the uploaded cover key. */
+  creationKey: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{8,120}$/)
+    .optional(),
+});
 export type CreateCompetitionDraftRequest = z.infer<typeof createCompetitionDraftRequestSchema>;
 
 export const createCompetitionDraftResponseSchema = competitionDraftSchema;
@@ -129,6 +176,57 @@ export type AccessibleCompetitionDto = z.infer<typeof accessibleCompetitionSchem
 export type ListAccessibleCompetitionsResponse = z.infer<
   typeof listAccessibleCompetitionsResponseSchema
 >;
+
+export const discoverableCompetitionStatusSchema = z.enum([
+  "registration",
+  "published",
+  "paused",
+  "finished",
+]);
+export type DiscoverableCompetitionStatusDto = z.infer<typeof discoverableCompetitionStatusSchema>;
+
+export const exploreCompetitionsSortSchema = z.enum(["updated-desc", "name-asc"]);
+export type ExploreCompetitionsSortDto = z.infer<typeof exploreCompetitionsSortSchema>;
+
+function optionalQuery<T extends z.ZodType>(schema: T) {
+  return z
+    .union([schema, z.literal("")])
+    .optional()
+    .transform((value) => (value === "" || value === undefined ? undefined : value));
+}
+
+export const exploreCompetitionsQuerySchema = z.object({
+  q: optionalQuery(z.string().trim().min(1).max(120)),
+  format: optionalQuery(competitionFormatSchema),
+  status: optionalQuery(discoverableCompetitionStatusSchema),
+  region: optionalQuery(competitionRegionSchema),
+  platform: optionalQuery(competitionPlatformSchema),
+  sort: optionalQuery(exploreCompetitionsSortSchema).transform((value) => value ?? "updated-desc"),
+  cursor: optionalQuery(z.string().min(1)),
+  limit: z.coerce.number().int().min(1).max(48).default(24),
+});
+export type ExploreCompetitionsQuery = z.infer<typeof exploreCompetitionsQuerySchema>;
+export type ExploreCompetitionsQueryInput = z.input<typeof exploreCompetitionsQuerySchema>;
+
+export const exploreCompetitionSchema = z.object({
+  competition: competitionSchema,
+  organization: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+  }),
+  approvedTeamCount: z.number().int().nonnegative(),
+});
+export type ExploreCompetitionDto = z.infer<typeof exploreCompetitionSchema>;
+
+export const exploreCompetitionsResponseSchema = z.object({
+  items: z.array(exploreCompetitionSchema),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.string().min(1).nullable(),
+});
+export type ExploreCompetitionsResponse = z.infer<typeof exploreCompetitionsResponseSchema>;
+
+export const getExploreCompetitionResponseSchema = exploreCompetitionSchema;
+export type GetExploreCompetitionResponse = z.infer<typeof getExploreCompetitionResponseSchema>;
 
 export const acceptCompetitionInvitationResponseSchema = acceptInvitationResponseSchema.extend({
   competitionId: z.string().min(1),
@@ -180,6 +278,8 @@ export type AddCompetitionParticipantResponse = z.infer<
 
 export const publishCompetitionResponseSchema = competitionDraftSchema;
 export type PublishCompetitionResponse = z.infer<typeof publishCompetitionResponseSchema>;
+export const competitionRegistrationResponseSchema = competitionDraftSchema;
+export type CompetitionRegistrationResponse = z.infer<typeof competitionRegistrationResponseSchema>;
 
 export const registerTeamEntryRequestSchema = z.object({
   teamId: z.string().trim().min(1),
@@ -192,3 +292,33 @@ export type RegisterTeamEntryResponse = z.infer<typeof registerTeamEntryResponse
 
 export const decideTeamEntryResponseSchema = competitionEntrySchema;
 export type DecideTeamEntryResponse = z.infer<typeof decideTeamEntryResponseSchema>;
+
+export const applyToCompetitionRequestSchema = z.object({
+  teamName: z.string().trim().min(1).max(120),
+  creationKey: z.string().min(8).max(200),
+});
+export type ApplyToCompetitionRequest = z.infer<typeof applyToCompetitionRequestSchema>;
+
+export const competitionApplicationSchema = z.object({
+  entryId: z.string(),
+  status: competitionEntryStatusSchema,
+  teamId: z.string(),
+  teamName: z.string(),
+  createdAt: z.string(),
+});
+export type CompetitionApplicationDto = z.infer<typeof competitionApplicationSchema>;
+
+export const applyToCompetitionResponseSchema = competitionApplicationSchema;
+export type ApplyToCompetitionResponse = z.infer<typeof applyToCompetitionResponseSchema>;
+
+export const getMyCompetitionApplicationResponseSchema = z.object({
+  application: competitionApplicationSchema.nullable(),
+});
+export type GetMyCompetitionApplicationResponse = z.infer<
+  typeof getMyCompetitionApplicationResponseSchema
+>;
+
+export const updateCompetitionCoverRequestSchema = z.object({ cover: competitionCoverSchema });
+export type UpdateCompetitionCoverRequest = z.infer<typeof updateCompetitionCoverRequestSchema>;
+export const updateCompetitionCoverResponseSchema = competitionDraftSchema;
+export type UpdateCompetitionCoverResponse = z.infer<typeof updateCompetitionCoverResponseSchema>;

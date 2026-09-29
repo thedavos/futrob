@@ -71,6 +71,13 @@ export class FakeOrganizationRepository implements OrganizationRepository {
     return organization;
   }
 
+  async getByIds(ids: readonly OrganizationId[]): Promise<readonly Organization[]> {
+    return [...new Set(ids)].flatMap((id) => {
+      const organization = this.byId.get(id);
+      return organization ? [organization] : [];
+    });
+  }
+
   async getById(id: OrganizationId): Promise<Organization | null> {
     return this.byId.get(id) ?? null;
   }

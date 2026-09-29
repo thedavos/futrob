@@ -88,6 +88,11 @@ npm run cli -- e2e-golden-path --actor actor_demo
 | `comp-create <orgId> <name>`                               | Draft de competición (`--edition --platform --region --tz --format`)        |
 | `comp-list <orgId>` / `comp-show <orgId> <compId>`         | Listar / ver draft                                                          |
 | `comp-publish <orgId> <compId>`                            | Publica la competición                                                      |
+| `comp-registration-open <orgId> <compId>`                  | Abre inscripciones (`draft → registration`; formato y reglas se congelan)   |
+| `comp-registration-close <orgId> <compId>`                 | Cierra inscripciones y vuelve a borrador; conserva las inscripciones        |
+| `comp-apply <competitionId> <teamName> [--key k]`          | Postula un equipo nuevo (queda `pending`; el actor es capitán)              |
+| `comp-application <competitionId>`                         | Muestra la solicitud del actor en esa competición                           |
+| `comp-explore` / `comp-explore-show <id>`                  | Catálogo autenticado de competiciones publicadas                            |
 | `participant-add/list`                                     | Participantes de competición                                                |
 | `entry-register/approve/reject`                            | Ciclo de entries de equipos                                                 |
 | `standings <orgId> <compId>`                               | Tabla de posiciones                                                         |

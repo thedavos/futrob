@@ -67,7 +67,7 @@ export function createStatisticsModule(deps: {
   accounts: PlayerGameAccountRepository;
   rosters: CompetitionRosterMembershipRepository;
   profiles: PlayerProfileRepository;
-  competitions: CompetitionRepository;
+  competitions: Pick<CompetitionRepository, "findRulesByCompetitionId">;
   authorization: AuthorizationPort;
   encounterReader?: EncounterReaderPort;
   transaction: TransactionPort;

@@ -1,3 +1,4 @@
+import { escapeLike } from "@/adapters/persistence/pg-like.ts";
 import type { Pool } from "pg";
 import { z } from "zod";
 import { pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
@@ -145,7 +146,7 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
          $1,
          CASE WHEN $3 <= 1 THEN 'open' ELSE 'closed' END,
          1,
-         CASE WHEN $3 <= 1 THEN $4 ELSE NULL END,
+         CASE WHEN $3 <= 1 THEN $4::timestamptz ELSE NULL END,
          $2
        )
        ON CONFLICT (circuit_key) DO UPDATE SET
@@ -157,7 +158,7 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
          opened_until = CASE
            WHEN provider_circuit_state.state = 'half_open'
              OR provider_circuit_state.consecutive_failures + 1 >= $3
-           THEN $4 ELSE NULL END,
+           THEN $4::timestamptz ELSE NULL END,
          probe_lease_token = NULL,
          probe_lease_expires_at = NULL,
          updated_at = $2
@@ -170,8 +171,4 @@ export class PostgresProviderCircuitBreaker implements ProviderCircuitBreaker {
       ],
     );
   }
-}
-
-function escapeLike(value: string): string {
-  return value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
 }

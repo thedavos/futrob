@@ -20,6 +20,7 @@ import {
   CompetitionNotFound,
   InvalidCompetitionGameEdition,
   InvalidCompetitionName,
+  InvalidCompetitionTeamRange,
   InvalidCompetitionRules,
   InvalidCompetitionTimeZone,
   type UpdateCompetitionDraftError,
@@ -28,11 +29,13 @@ import type {
   CompetitionDraft,
   CompetitionRepository,
 } from "../../domain/ports/competition.repository.ts";
+import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
+import { resolveCompetitionProfile, type CompetitionProfileInput } from "../competition-profile.ts";
 import { isValidCompetitionRules } from "../competition-draft-validation.ts";
 import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
 import { competitionPermissionError } from "../require-competition-permission.ts";
 
-export interface UpdateCompetitionDraftInput {
+export interface UpdateCompetitionDraftInput extends CompetitionProfileInput {
   readonly actorId: ActorId;
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
@@ -49,6 +52,7 @@ export class UpdateCompetitionDraftUseCase {
   constructor(
     private readonly deps: {
       readonly competitions: CompetitionRepository;
+      readonly entries: CompetitionEntryRepository;
       readonly clock: ClockPort;
       readonly authorization: AuthorizationPort;
     },
@@ -106,8 +110,24 @@ export class UpdateCompetitionDraftUseCase {
           message: "Invalid IANA time zone",
         }),
       );
+    const profile = resolveCompetitionProfile(current.competition, input, input.organizationId);
+    if (!profile.isOk()) return err(profile.error);
+    if (profile.value.teams.max !== null) {
+      const approved = await this.deps.entries.countApprovedByCompetition(
+        input.organizationId,
+        input.competitionId,
+      );
+      if (approved > profile.value.teams.max)
+        return err(
+          new InvalidCompetitionTeamRange({
+            code: "competitions.invalid_team_range",
+            message: "Maximum teams is below the approved team count",
+          }),
+        );
+    }
     const competition: Competition = {
       ...current.competition,
+      ...profile.value,
       name,
       gameEdition,
       platform: input.platform,

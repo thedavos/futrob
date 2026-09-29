@@ -47,6 +47,7 @@ import { createIdentityModule, type IdentityModule } from "./identity.module.ts"
 import { createOrganizationsModule, type OrganizationsModule } from "./organizations.module.ts";
 import { createCompetitionsModule, type CompetitionsModule } from "./competitions.module.ts";
 import { createTeamsModule, type TeamsModule } from "./teams.module.ts";
+import { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
 import { createAuthorizationModule, type AuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
 import { CompetitionFixtureSourceAdapter } from "@/adapters/scheduling/competition-fixture-source.ts";
@@ -165,6 +166,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     audit: organizations.repositories.audit,
     transaction,
     mutationLock: organizations.repositories.mutationLock,
+    organizations: organizations.repositories.organizations,
   });
   const scheduling = createSchedulingModule({
     pool: input.pool,
@@ -309,8 +311,21 @@ export function createModules(input: CreateModulesInput): AppModules {
     },
   };
 
+  const competitionApplications = new CompetitionApplicationFlow({
+    transaction,
+    getDiscoverable: competitions.getDiscoverable,
+    apply: competitions.applyToCompetition,
+    createApplicantTeam: teams.createApplicantTeam,
+    claimCaptaincy: teams.claimApplicantCaptaincy,
+    entries: competitions.entryRepository,
+    teams: teams.repositories.teams,
+    profiles: teams.repositories.profiles,
+    rosters: teams.repositories.rosters,
+  });
+
   return {
     authorization,
+    competitionApplications,
     competitions,
     confirmOfficialSelectionAndProject,
     gameData,
@@ -329,6 +344,7 @@ export function createModules(input: CreateModulesInput): AppModules {
 
 export interface AppModules {
   readonly authorization: AuthorizationModule;
+  readonly competitionApplications: CompetitionApplicationFlow;
   readonly competitions: CompetitionsModule;
   readonly confirmOfficialSelectionAndProject: {
     execute(

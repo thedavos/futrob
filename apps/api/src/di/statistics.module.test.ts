@@ -47,20 +47,8 @@ describe("statistics module projection", () => {
       rosters,
       profiles,
       competitions: {
-        async saveDraft(draft) {
-          return draft;
-        },
-        async findById() {
-          return null;
-        },
-        async findByCreationKey() {
-          return null;
-        },
         async findRulesByCompetitionId() {
           return null;
-        },
-        async listByOrganization() {
-          return [];
         },
       },
       authorization: {

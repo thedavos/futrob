@@ -44,39 +44,57 @@ export class CreateTeamUseCase {
       scope: { organizationId: input.organizationId },
     });
     if (forbidden) return err(forbidden);
-    const name = input.name.trim();
-    if (name.length === 0 || name.length > 120) {
-      return err(
-        new InvalidTeamName({
-          code: "teams.invalid_name",
-          message: "Invalid team name",
-        }),
-      );
-    }
-
-    if (input.creationKey) {
-      const existing = await this.deps.teams.findByCreationKey(input.creationKey);
-      if (existing) {
-        if (existing.organizationId !== input.organizationId) {
-          return err(
-            new CreationKeyConflict({
-              code: "teams.creation_key_conflict",
-              message: "Creation key belongs to another organization",
-            }),
-          );
-        }
-        return ok(existing);
-      }
-    }
-
-    const team: Team = {
-      id: asTeamId(this.deps.ids.generate()),
-      organizationId: input.organizationId,
-      name,
-      createdAt: this.deps.clock.now(),
-      createdByActorId: input.actorId,
-      creationKey: input.creationKey ?? null,
-    };
-    return ok(await this.deps.teams.save(team));
+    return createTeamUnchecked(this.deps, input);
   }
+}
+
+/**
+ * Package-internal core: validation plus idempotent persistence, without authorization.
+ * Callers must have authorized the actor (CreateTeam) or run a trusted flow.
+ */
+export async function createTeamUnchecked(
+  deps: {
+    readonly teams: TeamRepository;
+    readonly clock: ClockPort;
+    readonly ids: IdGeneratorPort;
+  },
+  input: CreateTeamInput,
+): Promise<Result<Team, InvalidTeamName | CreationKeyConflict>> {
+  const name = input.name.trim();
+  if (name.length === 0 || name.length > 120) {
+    return err(
+      new InvalidTeamName({
+        code: "teams.invalid_name",
+        message: "Invalid team name",
+      }),
+    );
+  }
+
+  if (input.creationKey) {
+    const existing = await deps.teams.findByCreationKey(input.creationKey);
+    if (existing) {
+      if (
+        existing.organizationId !== input.organizationId ||
+        existing.createdByActorId !== input.actorId
+      ) {
+        return err(
+          new CreationKeyConflict({
+            code: "teams.creation_key_conflict",
+            message: "Creation key belongs to another organization or actor",
+          }),
+        );
+      }
+      return ok(existing);
+    }
+  }
+
+  const team: Team = {
+    id: asTeamId(deps.ids.generate()),
+    organizationId: input.organizationId,
+    name,
+    createdAt: deps.clock.now(),
+    createdByActorId: input.actorId,
+    creationKey: input.creationKey ?? null,
+  };
+  return ok(await deps.teams.save(team));
 }

@@ -69,6 +69,7 @@ export {
   InvalidGameEdition,
   type CreateTeamError,
   type AddToRosterError,
+  type AddToRosterUncheckedError,
   type ChangeRosterRoleError,
   type CloseRosterError,
   type OpenRosterError,
@@ -117,6 +118,14 @@ export {
   CreateTeamUseCase,
   type CreateTeamInput,
 } from "./application/create-team/create-team.use-case.ts";
+export {
+  CreateApplicantTeamUseCase,
+  type CreateApplicantTeamError,
+} from "./application/applicant-team/create-applicant-team.use-case.ts";
+export {
+  ClaimApplicantCaptaincyUseCase,
+  type ClaimApplicantCaptaincyInput,
+} from "./application/applicant-team/claim-applicant-captaincy.use-case.ts";
 export { GetTeamUseCase } from "./application/get-team/get-team.use-case.ts";
 export { ListOrganizationTeamsUseCase } from "./application/list-organization-teams/list-organization-teams.use-case.ts";
 export {

@@ -15,6 +15,7 @@ import {
 } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
+import { canEditParticipants } from "../../domain/policies/competition-lifecycle.ts";
 import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
 import { competitionPermissionError } from "../require-competition-permission.ts";
 
@@ -47,7 +48,7 @@ export class RemoveCompetitionParticipantUseCase {
           message: "Competition not found",
         }),
       );
-    if (draft.competition.status !== "draft")
+    if (!canEditParticipants(draft.competition.status))
       return err(
         new CompetitionNotEditable({
           code: "competitions.not_editable",
