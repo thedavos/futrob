@@ -16,7 +16,7 @@ Spanish (`es`) is the default product locale. Use the Spanish accessible names i
 From the repo root. Env files must already exist (they are gitignored): `apps/web/.dev.vars`, `apps/auth/.dev.vars`, `apps/api/.env`. `INTERNAL_JOB_SECRET` must match web ↔ API. `BETTER_AUTH_SECRET` must match web ↔ auth. `FUTROB_API_BASE_URL` in web must be `http://localhost:8787/api/v1`.
 
 ```bash
-.cursor/skills/verify-futrob/helpers/verify-futrob launch
+.agents/skills/verify-futrob/helpers/verify-futrob launch
 ```
 
 Ready when **all three** answer:
@@ -27,7 +27,7 @@ Ready when **all three** answer:
 | API | `GET http://localhost:8787/api/v1/meta/ping` → `{"ok":true,"service":"futrob","apiVersion":"v1"}` |
 | Auth | `GET http://localhost:8788/meta/health` → `{"ok":true,"service":"futrob-auth"}` |
 
-The helper writes a lock under `.cursor/skills/verify-futrob/.run/` (pid, pgid, log). Teardown is `cleanup`, never `pkill` by process name.
+The helper writes a lock under `.agents/skills/verify-futrob/.run/` (pid, pgid, log). Teardown is `cleanup`, never `pkill` by process name.
 
 **Do not launch** if `:3000`, `:8787`, or `:8788` is already listening. Those ports are shared with a normal `npm run dev`. Double-driving a shared instance corrupts the user's session and D1 persist-to at `apps/web/.wrangler/state`. If doctor says the ports belong to a foreign process, stop and tell the operator.
 
@@ -40,7 +40,7 @@ Without `DATABASE_URL`, `apps/api` uses in-memory stores and **wipes orgs on eve
 Run first whenever anything looks off, before the first drive, after any failed drive, and on each fresh CLI session:
 
 ```bash
-.cursor/skills/verify-futrob/helpers/verify-futrob doctor
+.agents/skills/verify-futrob/helpers/verify-futrob doctor
 ```
 
 Exit 0 only when: the three probes above succeed, and either (a) the lock file's pid/pgid still owns the listeners, or (b) attach mode is in effect and the operator owned the stack. A 200 login with a later unauthenticated BFF usually means `BETTER_AUTH_SECRET` mismatch — doctor does not catch that; the auth feature map does.
@@ -111,13 +111,13 @@ Expected domain failures (not harness bugs): `snapshot-set` → 409 `fixture_man
 Directory (created by launch, **never deleted by cleanup**):
 
 ```text
-.cursor/skills/verify-futrob/evidence/<run-id>/
+.agents/skills/verify-futrob/evidence/<run-id>/
 ```
 
 Print the path:
 
 ```bash
-.cursor/skills/verify-futrob/helpers/verify-futrob evidence-dir
+.agents/skills/verify-futrob/helpers/verify-futrob evidence-dir
 ```
 
 Proof standards:
@@ -134,7 +134,7 @@ Suggested filenames: `landing/hero.png`, `landing/hero.aria.yml`, `landing/cta-s
 ## Cleanup
 
 ```bash
-.cursor/skills/verify-futrob/helpers/verify-futrob cleanup
+.agents/skills/verify-futrob/helpers/verify-futrob cleanup
 ```
 
 Kills **only** the process group started by `launch` (and listeners that still share that group). Removes `.run/` lock and scratch. Leaves `evidence/` intact. After cleanup, confirm the evidence directory still exists **and** that `:3000` / `:8787` / `:8788` are free. If a listener remains with a different process group, stop and report it — do not `pkill` by name.

@@ -6,9 +6,9 @@ alwaysApply: false
 
 # Futrob architecture
 
-Canonical sources: `docs/architecture/overview.md`, `docs/architecture/module-boundaries.md`, `docs/architecture/dependency-graph.md`, the [ADR index](../../docs/adr/README.md), and [futrob-hexagonal-module](../skills/futrob-hexagonal-module/SKILL.md).
+Canonical sources: `docs/architecture/overview.md`, `docs/architecture/module-boundaries.md`, `docs/architecture/dependency-graph.md`, the [ADR index](../../docs/adr/README.md), and [futrob-hexagonal-module](../../.agents/skills/futrob-hexagonal-module/SKILL.md).
 
-Use [futrob-adr](../skills/futrob-adr/SKILL.md) when evaluating or changing architectural decisions. Follow successors of replaced ADRs and distinguish accepted decisions from implementation evidence. Routine changes that follow existing decisions do not require a new ADR.
+Use [futrob-adr](../../.agents/skills/futrob-adr/SKILL.md) when evaluating or changing architectural decisions. Follow successors of replaced ADRs and distinguish accepted decisions from implementation evidence. Routine changes that follow existing decisions do not require a new ADR.
 
 ## Shape
 

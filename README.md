@@ -152,8 +152,8 @@ and attempt overrides are optional Wrangler vars; the defaults are listed in
 - [Module boundaries](/docs/architecture/module-boundaries.md)
 - [Packages and SDK](/docs/architecture/packages-and-sdk.md)
 - [AGENTS.md](/AGENTS.md)
-- Skill: [`.cursor/skills/futrob-hexagonal-module/SKILL.md`](/.cursor/skills/futrob-hexagonal-module/SKILL.md)
-- Skill: [`.cursor/skills/futrob-cli/SKILL.md`](/.cursor/skills/futrob-cli/SKILL.md)
+- Skill: [`.agents/skills/futrob-hexagonal-module/SKILL.md`](/.agents/skills/futrob-hexagonal-module/SKILL.md)
+- Skill: [`.agents/skills/futrob-cli/SKILL.md`](/.agents/skills/futrob-cli/SKILL.md)
 
 ## Commands
 

@@ -7,7 +7,7 @@ alwaysApply: false
 # Web primitives
 
 For new or changed primitives, read [design.md](../../design.md), the component source
-and public exports, and [futrob-stylex](../skills/futrob-stylex/SKILL.md).
+and public exports, and [futrob-stylex](../../.agents/skills/futrob-stylex/SKILL.md).
 
 - Reuse existing `@futrob/ui` contracts before adding a primitive. Product compositions
   stay in their owning app module and use the repo creation skills.
@@ -19,6 +19,6 @@ and public exports, and [futrob-stylex](../skills/futrob-stylex/SKILL.md).
   composition following the existing helpers.
 - New primitives use `packages/ui/src/components/<name>/`. Keep existing files in their
   current locations unless the task calls for migration. Update public exports and
-  relevant stories with [add-story](../skills/add-story/SKILL.md).
+  relevant stories with [add-story](../../.agents/skills/add-story/SKILL.md).
 - UI primitives have no competition, permission or provider dependencies. Native
   primitives have a separate implementation under `apps/mobile/src/ui`.

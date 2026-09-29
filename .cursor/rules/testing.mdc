@@ -21,8 +21,8 @@ read those settings when running `npm run test:coverage` instead of assuming one
 4. Integration: organization isolation, trusted identity and permission boundaries;
    use the test database/harness documented by the owning app.
 5. UI: component tests and current Storybook scenarios for relevant variants and states.
-   Use [add-story](../skills/add-story/SKILL.md) for focused story coverage.
-6. User flow: [verify-futrob](../skills/verify-futrob/SKILL.md) for live web/API proof.
+   Use [add-story](../../.agents/skills/add-story/SKILL.md) for focused story coverage.
+6. User flow: [verify-futrob](../../.agents/skills/verify-futrob/SKILL.md) for live web/API proof.
    Storybook or offline CLI checks alone do not establish end-to-end behavior.
 
 Colocate meaningful tests with changed behavior. For a UI composition, its creation

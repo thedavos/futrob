@@ -8,7 +8,7 @@ Build Futrob MVP (FC Clubs) per `product/`. Architecture: hexagonal bounded-cont
 
 1. `product/prd.md`, requirements, glossary, open-decisions
 2. `docs/architecture/overview.md`, module-boundaries, dependency-graph, ADRs
-3. `.cursor/skills/futrob-hexagonal-module/SKILL.md`
+3. `.agents/skills/futrob-hexagonal-module/SKILL.md`
 
 ## Preferred skills (by phase)
 
@@ -118,7 +118,7 @@ Standard commands live in the `## Commands` section above and in `README.md` / `
 - **Postgres is optional locally.** Without `DATABASE_URL`, `apps/api` uses process-local in-memory stores (`/api/v1/meta/health` reports `db: "skipped"`). Consequence: organizations/onboarding data is lost whenever the API restarts — and `apps/api` runs under `tsx watch`, so editing API files hot-restarts it and wipes those in-memory orgs. Set `DATABASE_URL` + apply `apps/api/migrations/*.sql` for durable data.
 - **Native install scripts**: only `esbuild`, `sharp`, and `workerd` are allowlisted (by name) in `package.json` `allowScripts` so they can fetch platform binaries. Cloud `npm ci` uses `--strict-allow-scripts` so any other lifecycle script fails the install instead of being skipped. Do not use `dangerously-allow-all-scripts`.
 - **Ports**: web `http://localhost:3000`, api `http://localhost:8787` (`/api/v1`), auth `http://localhost:8788` (`/api/auth/*`). `npm run dev` runs all three.
-- **Skills**: only `.cursor/skills/` in this repo is guaranteed on Cloud Agents. Preferred user/plugin skills are listed in `.cursor/rules/agent-skills.mdc`; follow the matching rules when those skill files are not in the checkout.
+- **Skills**: canonical skills live in `.agents/skills/` (read natively by Codex and Cursor); `.claude/skills` is a symlink to it for Claude Code. If Cloud Agents do not pick them up, add a `.cursor/skills` symlink too. Preferred user/plugin skills are listed in `.cursor/rules/agent-skills.mdc`; follow the matching rules when those skill files are not in the checkout.
 
 <!--VITE PLUS START-->
 

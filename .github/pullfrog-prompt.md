@@ -1,6 +1,6 @@
 # Pullfrog — Futrob repository context
 
-Use this context alongside the specific task or PR review request. Read `AGENTS.md`, the relevant requirements and acceptance criteria in `product/`, and `docs/architecture/overview.md` before making architectural judgments. For UI work, read `design.md`; for bounded-context work, read `.cursor/skills/futrob-hexagonal-module/SKILL.md`.
+Use this context alongside the specific task or PR review request. Read `AGENTS.md`, the relevant requirements and acceptance criteria in `product/`, and `docs/architecture/overview.md` before making architectural judgments. For UI work, read `design.md`; for bounded-context work, read `.agents/skills/futrob-hexagonal-module/SKILL.md`.
 
 The PRD describes target scope, not completed functionality. Verify claims against the checked-out code, scripts and tests. Earlier ADRs preserve historical topology; follow their current-topology notes and ADR-0013/0015. Report concrete defects with an affected path, trigger and consequence; distinguish verified failures from untested risks. Do not claim live Workers, Postgres, mobile-device or EA behavior from mocked tests alone.
 

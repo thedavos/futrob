@@ -11,21 +11,21 @@ in every environment; use them only when installed, with the repo contracts as a
 
 | Task | Repository skill |
 | --- | --- |
-| Architectural decisions, ADR maintenance or task impact on architecture | [futrob-adr](../skills/futrob-adr/SKILL.md) |
-| BC, use case, port, adapter or server boundary | [futrob-hexagonal-module](../skills/futrob-hexagonal-module/SKILL.md) |
-| Product API consumption, SDK methods, client authentication or HTTP contracts | [futrob-sdk](../skills/futrob-sdk/SKILL.md) |
-| Domain/API smoke checks or CLI commands | [futrob-cli](../skills/futrob-cli/SKILL.md) |
-| Complete product screen | [create-page](../skills/create-page/SKILL.md) |
-| Block within a page | [create-section](../skills/create-section/SKILL.md) |
-| KPI/stat summary | [create-kpis](../skills/create-kpis/SKILL.md) |
-| Contextual absence or missing prerequisites | [create-empty-state](../skills/create-empty-state/SKILL.md) |
-| Stories for an existing component or composition | [add-story](../skills/add-story/SKILL.md) |
-| Web styling | [futrob-stylex](../skills/futrob-stylex/SKILL.md) |
-| Live verification of a user-facing web flow | [verify-futrob](../skills/verify-futrob/SKILL.md) |
+| Architectural decisions, ADR maintenance or task impact on architecture | [futrob-adr](../../.agents/skills/futrob-adr/SKILL.md) |
+| BC, use case, port, adapter or server boundary | [futrob-hexagonal-module](../../.agents/skills/futrob-hexagonal-module/SKILL.md) |
+| Product API consumption, SDK methods, client authentication or HTTP contracts | [futrob-sdk](../../.agents/skills/futrob-sdk/SKILL.md) |
+| Domain/API smoke checks or CLI commands | [futrob-cli](../../.agents/skills/futrob-cli/SKILL.md) |
+| Complete product screen | [create-page](../../.agents/skills/create-page/SKILL.md) |
+| Block within a page | [create-section](../../.agents/skills/create-section/SKILL.md) |
+| KPI/stat summary | [create-kpis](../../.agents/skills/create-kpis/SKILL.md) |
+| Contextual absence or missing prerequisites | [create-empty-state](../../.agents/skills/create-empty-state/SKILL.md) |
+| Stories for an existing component or composition | [add-story](../../.agents/skills/add-story/SKILL.md) |
+| Web styling | [futrob-stylex](../../.agents/skills/futrob-stylex/SKILL.md) |
+| Live verification of a user-facing web flow | [verify-futrob](../../.agents/skills/verify-futrob/SKILL.md) |
 
 The creation skills already cover stories. Use `add-story` for focused coverage work;
 avoid running the same workflow twice. All design work follows [design.md](../../design.md).
-The [shared composition reference](../skills/references/design-composition.md) points to
+The [shared composition reference](../../.agents/skills/references/design-composition.md) points to
 Inicio and other current pages; inspect their current source before reusing a pattern.
 
 When available, specialist skills can support a specific need: domain/interaction

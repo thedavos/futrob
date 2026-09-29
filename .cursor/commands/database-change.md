@@ -1,6 +1,6 @@
 # Create a Futrob database change
 
-Read [futrob-hexagonal-module](../skills/futrob-hexagonal-module/SKILL.md) and the current architecture before changing persistence.
+Read [futrob-hexagonal-module](../../.agents/skills/futrob-hexagonal-module/SKILL.md) and the current architecture before changing persistence.
 
 1. Determine ownership: product tables use Postgres in `apps/api/migrations`; auth/actors and BFF rate limits share the D1 history in `apps/auth/migrations` (ADR-0015).
 2. Inspect the existing ordered SQL migrations and adapters before adding the next migration.

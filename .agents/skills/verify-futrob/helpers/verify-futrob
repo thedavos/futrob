@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # verify-futrob — launch / doctor / cleanup / evidence-dir for the Futrob web stack.
-# Invocation (repo root): .cursor/skills/verify-futrob/helpers/verify-futrob <command>
+# Invocation (repo root): .agents/skills/verify-futrob/helpers/verify-futrob <command>
 set -euo pipefail
 
 WEB_PORT=3000
@@ -23,7 +23,7 @@ PGID_FILE="${RUN_DIR}/dev.pgid"
 RUN_ID_FILE="${RUN_DIR}/run-id"
 
 usage() {
-  echo "Usage: .cursor/skills/verify-futrob/helpers/verify-futrob launch|doctor|cleanup|evidence-dir" >&2
+  echo "Usage: .agents/skills/verify-futrob/helpers/verify-futrob launch|doctor|cleanup|evidence-dir" >&2
   exit 2
 }
 
