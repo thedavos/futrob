@@ -2,6 +2,7 @@ import {
   err,
   ok,
   type ActorId,
+  type AuthorizationPort,
   type ClockPort,
   type Result,
   type IdGeneratorPort,
@@ -32,6 +33,7 @@ import type { RosterInvitationTokenPort } from "../../domain/ports/roster-invita
 import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { addToRosterUnchecked } from "../add-to-roster/add-to-roster.use-case.ts";
+import { inviterMayGrantRole } from "../inviter-may-grant-role.ts";
 import type { EnsurePlayerProfileUseCase } from "../ensure-player-profile/ensure-player-profile.use-case.ts";
 
 export interface AcceptRosterInvitationInput {
@@ -63,6 +65,7 @@ export class AcceptRosterInvitationUseCase {
       readonly accounts: PlayerGameAccountRepository;
       readonly ids: IdGeneratorPort;
       readonly mutations: RosterMutationPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
@@ -136,6 +139,15 @@ export class AcceptRosterInvitationUseCase {
     }
 
     if (invitation.status !== ROSTER_INVITATION_STATUS.pending) {
+      return err(
+        new RosterInvitationInvalid({
+          code: "teams.roster_invitation_invalid",
+          message: "Roster invitation is no longer valid",
+        }),
+      );
+    }
+
+    if (!(await inviterMayGrantRole(this.deps.authorization, invitation))) {
       return err(
         new RosterInvitationInvalid({
           code: "teams.roster_invitation_invalid",
@@ -289,6 +301,14 @@ export class AcceptRosterInvitationUseCase {
       );
       if (existing) {
         return ok(existing);
+      }
+      if (!(await inviterMayGrantRole(this.deps.authorization, invitation))) {
+        return err(
+          new RosterInvitationInvalid({
+            code: "teams.roster_invitation_invalid",
+            message: "Roster invitation is no longer valid",
+          }),
+        );
       }
       const added = await addToRosterUnchecked(this.deps, {
         organizationId: invitation.organizationId,

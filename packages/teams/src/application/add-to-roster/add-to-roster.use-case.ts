@@ -31,7 +31,10 @@ import type { RosterCapacityPort } from "../../domain/ports/roster-capacity.port
 import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.port.ts";
 import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
-import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import {
+  permissionToGrantRosterRole,
+  TEAM_PERMISSION,
+} from "../../domain/policies/team-permissions.ts";
 import { teamPermissionError } from "../require-team-permission.ts";
 
 export interface AddToRosterInput {
@@ -196,6 +199,20 @@ export class AddToRosterUseCase {
       },
     });
     if (forbidden) return err(forbidden);
+    // Adding someone as captain or vice-captain is a role change, not just a roster edit.
+    if (input.role !== "player") {
+      const cannotGrant = await teamPermissionError({
+        authorization: this.deps.authorization,
+        actorId: input.actorId,
+        permission: permissionToGrantRosterRole(input.role),
+        scope: {
+          organizationId: input.organizationId,
+          competitionId: input.competitionId,
+          teamId: input.teamId,
+        },
+      });
+      if (cannotGrant) return err(cannotGrant);
+    }
     return this.deps.mutations.runExclusive(
       {
         organizationId: input.organizationId,

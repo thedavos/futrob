@@ -222,6 +222,7 @@ export function createTeamsModule(input: {
       accounts,
       ensurePlayerProfile,
       mutations: rosterMutations,
+      authorization: input.authorization,
       ...shared,
     }),
     acceptRosterInvitation: new AcceptRosterInvitationUseCase({
@@ -238,6 +239,7 @@ export function createTeamsModule(input: {
       ids: shared.ids,
       clock: shared.clock,
       mutations: rosterMutations,
+      authorization: input.authorization,
     }),
     externalClubConnections: connections,
     repositories: { profiles, teams, rosters, rosterStates, connections, accounts, capacity },

@@ -1,5 +1,6 @@
 import {
   assertNever,
+  type AuthorizationPort,
   err,
   ok,
   type ActorId,
@@ -29,6 +30,7 @@ import type { RosterInvitationRepository } from "../../domain/ports/roster-invit
 import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { addToRosterUnchecked } from "../add-to-roster/add-to-roster.use-case.ts";
+import { inviterMayGrantRole } from "../inviter-may-grant-role.ts";
 import type { EnsurePlayerProfileUseCase } from "../ensure-player-profile/ensure-player-profile.use-case.ts";
 
 export type RosterInvitationResponseAction = "accept" | "decline";
@@ -59,6 +61,7 @@ export class RespondToRosterInvitationUseCase {
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
       readonly mutations: RosterMutationPort;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
@@ -124,6 +127,7 @@ export class RespondToRosterInvitationUseCase {
     actorId: ActorId,
     now: Date,
   ): Promise<RespondResult> {
+    if (!(await inviterMayGrantRole(this.deps.authorization, invitation))) return err(invalid());
     const profile = await this.deps.ensurePlayerProfile.execute({ actorId });
     const added = await addToRosterUnchecked(this.deps, {
       organizationId: invitation.organizationId,
@@ -149,6 +153,7 @@ export class RespondToRosterInvitationUseCase {
       invitation.competitionId,
     );
     if (existing) return ok({ kind: "accepted", membership: existing });
+    if (!(await inviterMayGrantRole(this.deps.authorization, invitation))) return err(invalid());
     const added = await addToRosterUnchecked(this.deps, {
       organizationId: invitation.organizationId,
       competitionId: invitation.competitionId,

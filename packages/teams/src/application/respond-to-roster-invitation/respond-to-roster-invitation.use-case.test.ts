@@ -6,6 +6,7 @@ import type { CompetitionRosterState } from "../../domain/entities/competition-r
 import type { PlayerGameAccount } from "../../domain/entities/player-game-account.ts";
 import type { PlayerProfile } from "../../domain/entities/player-profile.ts";
 import type { Team } from "../../domain/entities/team.ts";
+import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
 import { ROSTER_INVITATION_STATUS } from "../../domain/entities/roster-invitation.ts";
 import {
   RosterInvitationExpired,
@@ -222,8 +223,13 @@ function buildHarness(options?: { maxSize?: number }) {
   const accounts = new Accounts();
   const mutations = new SerialRosterMutations();
   const shared = { clock: harness.clock, ids: harness.ids };
+  /** `${actorId}:${permission}` pairs the fake authorization refuses; everything else is allowed. */
+  const denied = new Set<string>();
   const authorization: import("@futrob/shared-kernel").AuthorizationPort = {
-    decide: async (request) => ({ ...request, allowed: true, reason: "allowed" }),
+    decide: async (request) => {
+      const allowed = !denied.has(`${request.actorId}:${request.permission}`);
+      return { ...request, allowed, reason: allowed ? "allowed" : "denied" };
+    },
     getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
   };
   const ensurePlayerProfile = new EnsurePlayerProfileUseCase({ profiles, ...shared });
@@ -247,6 +253,7 @@ function buildHarness(options?: { maxSize?: number }) {
     accounts,
     ensurePlayerProfile,
     mutations,
+    authorization,
     ...shared,
   });
 
@@ -257,6 +264,7 @@ function buildHarness(options?: { maxSize?: number }) {
     rosterStates,
     profiles,
     accounts,
+    denied,
     createInvitation,
     respond,
   };
@@ -299,7 +307,10 @@ function seedPlayerAccount(ctx: Harness, actor: string, identifier: string) {
   return actorId;
 }
 
-async function seedDirectedInvitation(ctx: Harness, options?: { expiresInMs?: number }) {
+async function seedDirectedInvitation(
+  ctx: Harness,
+  options?: { expiresInMs?: number; role?: "player" | "captain" | "vice_captain" },
+) {
   const { orgId, teamId, competitionId } = seedTeam(ctx);
   const captain = seedPlayerAccount(ctx, "captain-1", "CapiAlex");
   const invitee = seedPlayerAccount(ctx, "player-1", "davos282");
@@ -312,6 +323,7 @@ async function seedDirectedInvitation(ctx: Harness, options?: { expiresInMs?: nu
     inviteeIdentifier: "Davos282",
     message: "Nos gustaría contar contigo en el equipo",
     expiresInMs: options?.expiresInMs,
+    role: options?.role,
   });
   if (!created.isOk()) throw created.error;
   return {
@@ -504,5 +516,45 @@ describe("RespondToRosterInvitationUseCase", () => {
     });
 
     expect(RosterInvitationNotFound.is(unwrapErr(result))).toBe(true);
+  });
+});
+
+describe("RespondToRosterInvitationUseCase with roles above player", () => {
+  it("makes the invitee captain when the issuer can still grant the role", async () => {
+    const ctx = buildHarness();
+    const { invitationId, invitee } = await seedDirectedInvitation(ctx, { role: "captain" });
+
+    const result = await ctx.respond.execute({ invitationId, actorId: invitee, action: "accept" });
+
+    expect(result.isOk()).toBe(true);
+    expect(ctx.rosters.rows.map((row) => row.role)).toEqual(["captain"]);
+  });
+
+  it("refuses to promote when the issuer lost the right to grant the role", async () => {
+    const ctx = buildHarness();
+    const { invitationId, invitee, captain } = await seedDirectedInvitation(ctx, {
+      role: "captain",
+    });
+    ctx.denied.add(`${captain}:${TEAM_PERMISSION.rosterRolesManage}`);
+
+    const result = await ctx.respond.execute({ invitationId, actorId: invitee, action: "accept" });
+
+    expect(result.isOk()).toBe(false);
+    if (result.isOk()) return;
+    expect(unwrapErr(result)).toBeInstanceOf(RosterInvitationInvalid);
+    expect(ctx.rosters.rows).toHaveLength(0);
+    expect((await ctx.invitations.findById(invitationId))?.status).toBe(
+      ROSTER_INVITATION_STATUS.pending,
+    );
+  });
+
+  it("still lets a player invitation through when the issuer cannot manage roles", async () => {
+    const ctx = buildHarness();
+    const { invitationId, invitee, captain } = await seedDirectedInvitation(ctx);
+    ctx.denied.add(`${captain}:${TEAM_PERMISSION.rosterRolesManage}`);
+
+    const result = await ctx.respond.execute({ invitationId, actorId: invitee, action: "accept" });
+
+    expect(result.isOk()).toBe(true);
   });
 });

@@ -28,3 +28,12 @@ export const ROSTER_ROLE_PERMISSIONS = {
   ],
   player: [TEAM_PERMISSION.read, TEAM_PERMISSION.rosterRead, TEAM_PERMISSION.externalClubRead],
 } as const satisfies Record<RosterMembershipRole, readonly Permission[]>;
+
+/**
+ * Permission needed to hand a roster role to someone else (invitation or role change).
+ * Making a captain or vice-captain is a role change, so it needs the same permission as
+ * changing roles; only plain players can be invited with invitation rights alone.
+ */
+export function permissionToGrantRosterRole(role: RosterMembershipRole): Permission {
+  return role === "player" ? TEAM_PERMISSION.invitationsManage : TEAM_PERMISSION.rosterRolesManage;
+}

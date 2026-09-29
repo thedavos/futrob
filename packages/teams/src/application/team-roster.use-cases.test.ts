@@ -9,6 +9,7 @@ import {
   RosterLocked,
   RosterEntryInactive,
 } from "../domain/errors/team.errors.ts";
+import { TEAM_PERMISSION } from "../domain/policies/team-permissions.ts";
 import type { ActiveTeamPreference } from "../domain/entities/active-team-preference.ts";
 import type { CompetitionRosterMembership } from "../domain/entities/competition-roster-membership.ts";
 import type { CompetitionRosterState } from "../domain/entities/competition-roster-state.ts";
@@ -618,6 +619,48 @@ describe("team and roster use cases", () => {
     expect(members.find((m) => m.id === captain.value.id)?.role).toBe("player");
     expect(members.find((m) => m.id === player.value.id)?.role).toBe("captain");
   });
+
+  it.each(["captain", "vice_captain"] as const)(
+    "does not let a manager without role management add a %s",
+    async (role) => {
+      const ctx = rosterDeps();
+      // Can manage the roster, but not roles: the vice-captain's permissions.
+      const withoutRoleManagement: import("@futrob/shared-kernel").AuthorizationPort = {
+        decide: async (request) => {
+          const allowed = request.permission !== TEAM_PERMISSION.rosterRolesManage;
+          return { ...request, allowed, reason: allowed ? "allowed" : "denied" };
+        },
+        getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
+      };
+      const restricted = new AddToRosterUseCase({ ...ctx, authorization: withoutRoleManagement });
+      const team = await new CreateTeamUseCase({ teams: ctx.teams, ...shared() }).execute({
+        organizationId: asOrganizationId("org-1"),
+        actorId: asActorId("actor-1"),
+        name: "Vice FC",
+      });
+      if (!team.isOk()) throw team.error;
+      const scope = {
+        actorId: asActorId("vice-captain"),
+        organizationId: asOrganizationId("org-1"),
+        competitionId: asCompetitionId("comp-1"),
+        teamId: team.value.id,
+      };
+
+      const denied = await restricted.execute({ ...scope, playerProfileId: "profile-9", role });
+      const allowed = await restricted.execute({
+        ...scope,
+        playerProfileId: "profile-9",
+        role: "player",
+      });
+
+      expect(denied.isOk()).toBe(false);
+      if (!denied.isOk()) expect(denied.error.code).toBe("authorization.forbidden");
+      expect(allowed.isOk()).toBe(true);
+      expect(
+        await ctx.rosters.listByTeam(scope.organizationId, scope.competitionId, scope.teamId),
+      ).toHaveLength(1);
+    },
+  );
 
   it("demotes the previous captain when a captain joins the roster", async () => {
     const { teams, rosters, addToRoster } = rosterDeps();
