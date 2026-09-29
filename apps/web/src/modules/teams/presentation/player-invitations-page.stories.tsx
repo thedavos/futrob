@@ -233,9 +233,10 @@ export const EmptyConHistorial: Story = {
     await expect(canvas.getByRole("tab", { name: "Pendientes" })).toBeVisible();
     const cta = await canvas.findByRole("button", { name: "Ver historial" });
     await userEvent.click(cta);
-    await expect(
-      await canvas.findByRole("region", { name: "Listado de invitaciones" }),
-    ).toBeVisible();
+    // The list fades in after the tab switch; wait for it instead of asserting mid-transition.
+    await waitFor(async () =>
+      expect(await canvas.findByRole("region", { name: "Listado de invitaciones" })).toBeVisible(),
+    );
     await expect((await canvas.findAllByText("Aceptada")).length).toBeGreaterThan(0);
   },
 };

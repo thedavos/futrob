@@ -33,9 +33,16 @@ import { AddClubDialog } from "@/modules/teams/presentation/add-club-dialog.tsx"
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   commandBarIdentityLabel,
+  commandBarWorkspace,
+  commandBarWorkspaceLabel,
   type CommandBarIdentity,
+  type CommandBarWorkspace,
 } from "@/shared/presentation/shell/command-bar-identity.ts";
-import { CommandBarIdentityMark } from "@/shared/presentation/shell/command-bar-identity-mark.tsx";
+import {
+  CommandBarIdentityMark,
+  CommandBarWorkspaceMark,
+} from "@/shared/presentation/shell/command-bar-identity-mark.tsx";
+import { workspaceRoleMessageKey } from "@/shared/presentation/shell/workspace-role-icons.ts";
 import { DesktopSidebar, MobileNav } from "@/shared/presentation/shell/shell-sidebar-nav.tsx";
 
 const styles = stylex.create({
@@ -114,9 +121,13 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
   const selectionState = useWorkspaceSelection();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const identityLabel = selectionState.playerIdentityReady
-    ? commandBarIdentityLabel(selectionState.playerIdentity, t("shell.identity.empty"))
-    : t("shell.identity.loading");
+  const workspace = commandBarWorkspace(selectionState.selection, selectionState.selectorModel);
+  const workspaceRoleLabel = workspace?.role ? t(workspaceRoleMessageKey(workspace.role)) : null;
+  const identityLabel = workspace
+    ? commandBarWorkspaceLabel(workspace, workspaceRoleLabel, t("shell.identity.empty"))
+    : selectionState.playerIdentityReady
+      ? commandBarIdentityLabel(selectionState.playerIdentity, t("shell.identity.empty"))
+      : t("shell.identity.loading");
   const commands = commandsFor(
     pathname,
     selectionState.selection,
@@ -148,8 +159,10 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
         <DesktopSidebar
           allowedPermissions={selectionState.allowedPermissions}
           model={selectionState.selectorModel}
+          navPending={selectionState.navPending}
           onRequestAddClub={() => setAddClubOpen(true)}
           onSelect={selectionState.select}
+          onSelectorOpen={selectionState.prefetchSelectableAccess}
           pathname={pathname}
           selection={selectionState.selection}
         />
@@ -158,8 +171,10 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
             <MobileNav
               allowedPermissions={selectionState.allowedPermissions}
               model={selectionState.selectorModel}
+              navPending={selectionState.navPending}
               onRequestAddClub={() => setAddClubOpen(true)}
               onSelect={selectionState.select}
+              onSelectorOpen={selectionState.prefetchSelectableAccess}
               pathname={pathname}
               selection={selectionState.selection}
               title={identityLabel}
@@ -171,6 +186,8 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
             identityReady={selectionState.playerIdentityReady}
             onAddClub={() => setAddClubOpen(true)}
             selection={selectionState.selection}
+            workspace={workspace}
+            workspaceRoleLabel={workspaceRoleLabel}
           />
           <div id="app-main" {...applyStyles(styles.main)}>
             {children}
@@ -195,12 +212,16 @@ function CommandBar({
   identity,
   identityReady,
   selection,
+  workspace,
+  workspaceRoleLabel,
   onAddClub,
 }: {
   readonly commands: ReturnType<typeof commandsFor>;
   readonly identity: CommandBarIdentity;
   readonly identityReady: boolean;
   readonly selection: WorkspaceSelection;
+  readonly workspace: CommandBarWorkspace | null;
+  readonly workspaceRoleLabel: string | null;
   readonly onAddClub: () => void;
 }) {
   const navigate = useNavigate();
@@ -210,12 +231,20 @@ function CommandBar({
   return (
     <header {...applyStyles(styles.commandBar)}>
       <div {...applyStyles(styles.identity)}>
-        <CommandBarIdentityMark
-          emptyLabel={emptyLabel}
-          identity={identity}
-          loadingLabel={t("shell.identity.loading")}
-          ready={identityReady}
-        />
+        {workspace ? (
+          <CommandBarWorkspaceMark
+            emptyLabel={emptyLabel}
+            roleLabel={workspaceRoleLabel}
+            workspace={workspace}
+          />
+        ) : (
+          <CommandBarIdentityMark
+            emptyLabel={emptyLabel}
+            identity={identity}
+            loadingLabel={t("shell.identity.loading")}
+            ready={identityReady}
+          />
+        )}
       </div>
       {commands.length > 0 ? (
         <div {...applyStyles(styles.commands)}>

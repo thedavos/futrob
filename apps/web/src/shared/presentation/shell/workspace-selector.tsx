@@ -118,11 +118,14 @@ export function WorkspaceSelector({
   model,
   onSelect,
   onRequestAddClub,
+  onOpen,
 }: {
   readonly selection: WorkspaceSelection;
   readonly model: WorkspaceSelectorModel;
   readonly onSelect: (selection: WorkspaceSelection) => void;
   readonly onRequestAddClub: () => void;
+  /** Fired when the menu opens, so the shell can warm the next workspace's access. */
+  readonly onOpen?: () => void;
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -180,7 +183,11 @@ export function WorkspaceSelector({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu
+        onOpenChange={(open) => {
+          if (open) onOpen?.();
+        }}
+      >
         <DropdownMenuTrigger
           render={
             <Button className={trigger.className} dense style={trigger.style} variant="outline" />

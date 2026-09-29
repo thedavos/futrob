@@ -88,7 +88,6 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       label: "Equipos",
       href: `${base}/teams`,
       icon: "teams",
-      stub: true,
       requiredPermission: TEAM_PERMISSION.read,
     },
     {
@@ -96,15 +95,14 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       label: "Jugadores",
       href: `${base}/players`,
       icon: "players",
-      stub: true,
-      requiredPermission: ORGANIZATION_PERMISSION.membershipsRead,
+      // The page lists who plays on each roster, so it follows roster access.
+      requiredPermission: TEAM_PERMISSION.rosterRead,
     },
     {
       id: "invitations",
       label: "Invitaciones",
       href: `${base}/invitations`,
       icon: "invitations",
-      stub: true,
       requiredPermission: ORGANIZATION_PERMISSION.invitationsManage,
     },
     {
@@ -112,7 +110,6 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       label: "Organización",
       href: `${base}/settings/members`,
       icon: "organization",
-      stub: true,
       requiredPermission: ORGANIZATION_PERMISSION.rolesManage,
     },
     {
@@ -120,7 +117,6 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
       label: "Ajustes",
       href: `${base}/settings`,
       icon: "settings",
-      stub: true,
       requiredPermission: ORGANIZATION_PERMISSION.update,
     },
   ];
@@ -134,15 +130,26 @@ function personalCompetitionContext(
     ? `/orgs/${organizationId}/competitions/${competitionId}`
     : `/player/competitions/${competitionId}`;
   return [
-    { id: "overview", label: "Resumen", href: base, stub: true },
-    { id: "matches", label: "Partidos", href: `${base}/matches`, stub: true },
-    { id: "stats", label: "Estadísticas", href: `${base}/stats`, stub: true },
+    { id: "overview", label: "Resumen", href: base },
+    { id: "matches", label: "Partidos", href: `${base}/matches` },
+    { id: "stats", label: "Estadísticas", href: `${base}/stats` },
     {
       id: "team",
       label: "Mi equipo",
       href: `${base}/team`,
-      stub: true,
       requiredPermission: TEAM_PERMISSION.read,
+    },
+    {
+      id: "roster",
+      label: "Plantilla",
+      href: `${base}/team/roster`,
+      requiredPermission: TEAM_PERMISSION.rosterManage,
+    },
+    {
+      id: "team-invitations",
+      label: "Invitaciones del equipo",
+      href: `${base}/team/invitations`,
+      requiredPermission: TEAM_PERMISSION.invitationsManage,
     },
   ];
 }
@@ -163,35 +170,30 @@ function organizationCompetitionContext(
       id: "fixture",
       label: "Calendario",
       href: `${base}/fixture`,
-      stub: true,
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "encounters",
       label: "Enfrentamientos",
       href: `${base}/encounters`,
-      stub: true,
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "standings",
       label: "Clasificación",
       href: `${base}/standings`,
-      stub: true,
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "bracket",
       label: "Bracket",
       href: `${base}/bracket`,
-      stub: true,
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "rankings",
       label: "Rankings",
       href: `${base}/rankings`,
-      stub: true,
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
@@ -204,21 +206,18 @@ function organizationCompetitionContext(
       id: "disputes",
       label: "Disputas",
       href: `${base}/disputes`,
-      stub: true,
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "analytics",
       label: "Analíticas",
       href: `${base}/analytics`,
-      stub: true,
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "rules",
       label: "Reglamento",
       href: `${base}/rules`,
-      stub: true,
       requiredPermission: COMPETITION_PERMISSION.read,
     },
   ];

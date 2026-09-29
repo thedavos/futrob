@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { ONBOARDING_PATH } from "@futrob/identity";
@@ -12,15 +12,9 @@ import {
   useMyPlayerProfileQuery,
   useMyTeamsQuery,
 } from "@/modules/teams/presentation/player-queries.ts";
-import {
-  SHELL_PERMISSIONS,
-  allowedFromCapabilityState,
-  capabilityStateFromQuery,
-  getEffectiveAccess,
-} from "@/context/permissions.ts";
+import { allowedFromCapabilityState, capabilityStateFromQuery } from "@/context/permissions.ts";
 import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
-import { teamIdForCompetition } from "./team-scope.ts";
 import {
   WORKSPACE_SELECTION_KIND,
   type CompetitionSelectorOption,
@@ -39,6 +33,11 @@ import {
 import { buildWorkspaceSelectorModel } from "./workspace-selector-model.ts";
 import { commandBarIdentity } from "./command-bar-identity.ts";
 import { WorkspaceSelectionContext } from "./workspace-selection-context.ts";
+import {
+  prefetchableWorkspaceSelections,
+  workspaceAccessQueryOptions,
+  workspaceAuthorizationScope,
+} from "./workspace-access.ts";
 
 export type WorkspaceSelectionState = ReturnType<typeof useWorkspaceSelectionState>;
 
@@ -256,31 +255,13 @@ function useWorkspaceSelectionState() {
     [associatedClubs, profileQuery.data?.gameAccounts, selectedPersonalClub],
   );
 
-  const authorizationScope = useMemo(() => {
-    if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
-      return { organizationId: selection.organizationId };
-    }
-    if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
-      const teamId = teamIdForCompetition(selection.competitionId, teamsQuery.data);
-      if (teamId) {
-        return {
-          organizationId: selection.organizationId ?? undefined,
-          competitionId: selection.competitionId,
-          teamId,
-        };
-      }
-      return {
-        organizationId: selection.organizationId ?? undefined,
-        competitionId: selection.competitionId,
-      };
-    }
-    return {};
-  }, [selection, teamsQuery.data]);
+  const authorizationScope = useMemo(
+    () => workspaceAuthorizationScope(selection, teamsQuery.data),
+    [selection, teamsQuery.data],
+  );
   const effectiveAccessQuery = useQuery({
-    queryKey: queryKeys.authorization.effectiveAccess(authorizationScope, SHELL_PERMISSIONS),
-    queryFn: () => getEffectiveAccess(authorizationScope),
+    ...workspaceAccessQueryOptions(authorizationScope),
     enabled: selection.kind !== WORKSPACE_SELECTION_KIND.personal,
-    staleTime: 30_000,
   });
   const capability = useMemo(
     () =>
@@ -295,6 +276,17 @@ function useWorkspaceSelectionState() {
     [effectiveAccessQuery.data, effectiveAccessQuery.isError, effectiveAccessQuery.isPending],
   );
   const allowedPermissions = useMemo(() => allowedFromCapabilityState(capability), [capability]);
+  // Personal nav is not permission-gated; other workspaces wait for server-resolved access.
+  const navPending =
+    selection.kind !== WORKSPACE_SELECTION_KIND.personal && capability.status === "loading";
+
+  const prefetchSelectableAccess = useCallback(() => {
+    for (const option of prefetchableWorkspaceSelections(selectorModel)) {
+      void queryClient.prefetchQuery(
+        workspaceAccessQueryOptions(workspaceAuthorizationScope(option, teamsQuery.data)),
+      );
+    }
+  }, [queryClient, selectorModel, teamsQuery.data]);
 
   function select(next: WorkspaceSelection) {
     writeStoredWorkspaceSelection(next);
@@ -314,6 +306,8 @@ function useWorkspaceSelectionState() {
     allowedPermissions,
     capability,
     effectiveAccessQuery,
+    navPending,
+    prefetchSelectableAccess,
     select,
     isSame: (other: WorkspaceSelection) => isSameWorkspaceSelection(selection, other),
   };

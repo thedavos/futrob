@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import { ChartBarIcon, SoccerBallIcon } from "@phosphor-icons/react";
+import { ChartBarIcon, EnvelopeSimpleIcon, SoccerBallIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, LeadCard, TextLink } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -50,6 +50,16 @@ export function GameDataDestinations() {
         icon={<ChartBarIcon aria-hidden size={ICON_SIZE} {...icon} />}
         subtitle={t("player.gameData.statistics.subtitle")}
         title={t("player.nav.statistics")}
+      />
+      <LeadCard
+        action={
+          <TextLink render={<Link to="/invitations" />} text="caption">
+            {t("player.gameData.invitations.cta")}
+          </TextLink>
+        }
+        icon={<EnvelopeSimpleIcon aria-hidden size={ICON_SIZE} {...icon} />}
+        subtitle={t("player.gameData.invitations.subtitle")}
+        title={t("player.gameData.invitations.title")}
       />
     </div>
   );

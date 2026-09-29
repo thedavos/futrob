@@ -1,5 +1,6 @@
 import { createLink } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import {
   applyStyles,
   Button,
@@ -23,6 +24,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuLink,
+  Skeleton,
   useSidebar,
 } from "@futrob/ui";
 import {
@@ -121,6 +123,29 @@ const styles = stylex.create({
     justifyContent: "center",
     paddingInline: 0,
   },
+  navSkeletonRow: {
+    display: "flex",
+    minHeight: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+    },
+    alignItems: "center",
+    gap: "0.5rem",
+    paddingInline: "0.625rem",
+  },
+  navSkeletonRowCompact: {
+    justifyContent: "center",
+    paddingInline: 0,
+  },
+  navSkeletonIcon: {
+    width: "1rem",
+    height: "1rem",
+    flexShrink: 0,
+  },
+  navSkeletonLabel: {
+    width: "60%",
+    height: "0.75rem",
+  },
 });
 
 export type ShellSidebarProps = {
@@ -128,8 +153,11 @@ export type ShellSidebarProps = {
   readonly pathname: string;
   readonly model: WorkspaceSelectorModel;
   readonly allowedPermissions: ReadonlySet<string>;
+  /** Access for the selected workspace is still resolving; nav items are not known yet. */
+  readonly navPending?: boolean;
   readonly onSelect: (selection: WorkspaceSelection) => void;
   readonly onRequestAddClub: () => void;
+  readonly onSelectorOpen?: () => void;
 };
 
 export function DesktopSidebar(props: ShellSidebarProps) {
@@ -181,8 +209,10 @@ function ShellSidebarBody({
   pathname,
   model,
   allowedPermissions,
+  navPending = false,
   onSelect,
   onRequestAddClub,
+  onSelectorOpen,
   forceExpanded = false,
 }: ShellSidebarProps & { readonly forceExpanded?: boolean }) {
   const { collapsed, toggleCollapsed } = useSidebar();
@@ -224,6 +254,7 @@ function ShellSidebarBody({
         {compact ? null : (
           <WorkspaceSelector
             model={model}
+            onOpen={onSelectorOpen}
             onRequestAddClub={onRequestAddClub}
             onSelect={onSelect}
             selection={selection}
@@ -255,7 +286,11 @@ function ShellSidebarBody({
         className={compact ? footerCompact.className : undefined}
         style={compact ? footerCompact.style : undefined}
       >
-        <NavItemList compact={compact} items={footerItems} pathname={pathname} />
+        {navPending ? (
+          <NavItemListSkeleton compact={compact} />
+        ) : (
+          <NavItemList compact={compact} items={footerItems} pathname={pathname} />
+        )}
       </SidebarFooter>
     </>
   );
@@ -272,6 +307,25 @@ function QueuePlaceholder() {
         <EmptyStateDescription>{t("shell.queue.empty.description")}</EmptyStateDescription>
       </EmptyStateCopy>
     </EmptyState>
+  );
+}
+
+const NAV_SKELETON_ROWS = 4;
+
+function NavItemListSkeleton({ compact }: { readonly compact: boolean }) {
+  const { t } = useI18n();
+
+  return (
+    <SidebarMenu aria-busy="true" aria-label={t("shell.nav.loading")}>
+      {Array.from({ length: NAV_SKELETON_ROWS }, (_, index) => (
+        <SidebarMenuItem key={index}>
+          <div {...applyStyles(styles.navSkeletonRow, compact && styles.navSkeletonRowCompact)}>
+            <Skeleton {...applyStyles(styles.navSkeletonIcon)} />
+            {compact ? null : <Skeleton {...applyStyles(styles.navSkeletonLabel)} />}
+          </div>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
   );
 }
 

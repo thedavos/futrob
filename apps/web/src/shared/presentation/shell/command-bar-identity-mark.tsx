@@ -5,7 +5,13 @@ import { applyStyles, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { EaLogo } from "@/shared/presentation/ea-logo.tsx";
-import { commandBarIdentityLabel, type CommandBarIdentity } from "./command-bar-identity.ts";
+import {
+  commandBarIdentityLabel,
+  commandBarWorkspaceLabel,
+  type CommandBarIdentity,
+  type CommandBarWorkspace,
+} from "./command-bar-identity.ts";
+import { WORKSPACE_ROLE_ICONS } from "./workspace-role-icons.ts";
 
 /** Ink bounds of `EaLogo` (24×24 viewBox), cropped so the wordmark can size to cap-height. */
 const EA_WORDMARK_VIEW_BOX = "0 6 24 12";
@@ -54,6 +60,32 @@ const styles = stylex.create({
     minWidth: 0,
     alignItems: "center",
     gap: "0.375rem",
+    lineHeight: 1,
+  },
+  workspaceName: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontSize: "0.875rem",
+    lineHeight: 1,
+    fontWeight: 600,
+  },
+  role: {
+    display: "flex",
+    flexShrink: 0,
+    alignItems: "center",
+    gap: "0.375rem",
+    lineHeight: 1,
+    color: colors.mutedForeground,
+  },
+  roleIcon: {
+    width: "1rem",
+    height: "1rem",
+    flexShrink: 0,
+  },
+  roleLabel: {
+    whiteSpace: "nowrap",
+    fontWeight: 600,
     lineHeight: 1,
   },
   crest: {
@@ -128,6 +160,48 @@ export function CommandBarIdentityMark({
       ) : null}
       {!hasGamertag && !hasClub ? (
         <span {...applyStyles(typography.caption, styles.empty)}>{emptyLabel}</span>
+      ) : null}
+    </p>
+  );
+}
+
+/** Organization or competition context: `{name} / {role}`. */
+export function CommandBarWorkspaceMark({
+  emptyLabel,
+  roleLabel,
+  workspace,
+}: {
+  readonly emptyLabel: string;
+  readonly roleLabel: string | null;
+  readonly workspace: CommandBarWorkspace;
+}) {
+  const label = commandBarWorkspaceLabel(workspace, roleLabel, emptyLabel);
+  const RoleIcon = workspace.role ? WORKSPACE_ROLE_ICONS[workspace.role] : null;
+  const roleIcon = applyStyles(styles.roleIcon);
+
+  if (!workspace.name && !roleLabel) {
+    return (
+      <p title={label} {...applyStyles(styles.root)}>
+        <span {...applyStyles(typography.caption, styles.empty)}>{emptyLabel}</span>
+      </p>
+    );
+  }
+
+  return (
+    <p title={label} {...applyStyles(styles.root)}>
+      {workspace.name ? <span {...applyStyles(styles.workspaceName)}>{workspace.name}</span> : null}
+      {workspace.name && roleLabel ? (
+        <span aria-hidden="true" {...applyStyles(styles.slash)}>
+          /
+        </span>
+      ) : null}
+      {roleLabel ? (
+        <span {...applyStyles(styles.role)}>
+          {RoleIcon ? (
+            <RoleIcon aria-hidden="true" className={roleIcon.className} style={roleIcon.style} />
+          ) : null}
+          <span {...applyStyles(typography.caption, styles.roleLabel)}>{roleLabel}</span>
+        </span>
       ) : null}
     </p>
   );

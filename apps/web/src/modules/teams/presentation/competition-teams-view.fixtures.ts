@@ -39,7 +39,11 @@ export function teamManagementFixture(
           role: "captain",
           createdAt,
         },
-        presentation: { displayName: "Dani Capitán", avatarUrl: null },
+        presentation: {
+          displayName: "Dani Capitán",
+          avatarUrl: null,
+          gameAccount: { platform: "playstation", gameEdition: "FC 26" },
+        },
       },
       {
         membership: {
@@ -52,7 +56,7 @@ export function teamManagementFixture(
           role: "player",
           createdAt,
         },
-        presentation: { displayName: "Vale Nueve", avatarUrl: null },
+        presentation: { displayName: "Vale Nueve", avatarUrl: null, gameAccount: null },
       },
     ],
   };

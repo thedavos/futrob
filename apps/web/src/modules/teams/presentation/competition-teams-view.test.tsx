@@ -3,6 +3,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vite-plus/test";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { CompetitionTeamsView, type CompetitionTeamsViewProps } from "./competition-teams-view.tsx";
 import { teamManagementFixture, teamSummaryFixture } from "./competition-teams-view.fixtures.ts";
 
@@ -31,7 +32,11 @@ function renderView(overrides: Partial<CompetitionTeamsViewProps> = {}) {
     onDecideEntry: async () => undefined,
     ...overrides,
   };
-  render(<CompetitionTeamsView {...props} />);
+  render(
+    <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+      <CompetitionTeamsView {...props} />
+    </I18nProvider>,
+  );
 }
 
 describe("CompetitionTeamsView", () => {
@@ -68,7 +73,7 @@ describe("CompetitionTeamsView", () => {
     });
 
     expect(screen.getByRole("button", { name: "Invitar" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Vincular club" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Asociar club" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Cerrar plantilla" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Aprobar" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Rechazar" })).toBeTruthy();
@@ -102,7 +107,7 @@ describe("CompetitionTeamsView", () => {
         throw new Error("network");
       },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Vincular club" }));
+    fireEvent.click(screen.getByRole("button", { name: "Asociar club" }));
     const input = await screen.findByRole("textbox", { name: "Nombre del club EA" });
     fireEvent.change(input, { target: { value: "Cuervos" } });
 
@@ -110,7 +115,7 @@ describe("CompetitionTeamsView", () => {
 
     expect(
       await screen.findByText(
-        "No pudimos buscar clubes. Conservamos tu selección para que puedas reintentar.",
+        "No se pudieron buscar clubes. Revisa tu conexión e inténtalo de nuevo.",
       ),
     ).toBeTruthy();
     expect(input).toHaveProperty("value", "Cuervos");

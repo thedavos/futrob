@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { CommandBarIdentityMark } from "./command-bar-identity-mark.tsx";
+import { CommandBarIdentityMark, CommandBarWorkspaceMark } from "./command-bar-identity-mark.tsx";
 import type { CommandBarIdentity } from "./command-bar-identity.ts";
 
 const styles = stylex.create({
@@ -119,6 +119,26 @@ export const States: Story = {
           <CommandBarIdentityMark
             emptyLabel="Tu espacio en Futrob"
             identity={{ gamertag: "davos282", clubName: null, imageUrl: null }}
+          />
+        </Chrome>
+      </div>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Organización</p>
+        <Chrome>
+          <CommandBarWorkspaceMark
+            emptyLabel="Tu espacio en Futrob"
+            roleLabel="Miembro"
+            workspace={{ name: "Orga interclubes", role: "member" }}
+          />
+        </Chrome>
+      </div>
+      <div {...applyProps(undefined, undefined, styles.group)}>
+        <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Competición</p>
+        <Chrome>
+          <CommandBarWorkspaceMark
+            emptyLabel="Tu espacio en Futrob"
+            roleLabel="Capitán"
+            workspace={{ name: "Liga Futrob", role: "captain" }}
           />
         </Chrome>
       </div>

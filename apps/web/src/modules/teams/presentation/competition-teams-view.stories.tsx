@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { CompetitionTeamsView, type CompetitionTeamsViewProps } from "./competition-teams-view.tsx";
 import { teamManagementFixture, teamSummaryFixture } from "./competition-teams-view.fixtures.ts";
 
@@ -43,9 +44,11 @@ const meta = {
   args: defaultArgs,
   decorators: [
     (Story) => (
-      <div {...applyStyles(styles.frame)}>
-        <Story />
-      </div>
+      <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+        <div {...applyStyles(styles.frame)}>
+          <Story />
+        </div>
+      </I18nProvider>
     ),
   ],
 } satisfies Meta<typeof CompetitionTeamsView>;
