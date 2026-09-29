@@ -30,7 +30,7 @@ Reference map, verified against the September 2026 checkout:
 | Inicio | Page hierarchy, independent sections, partial loading and cached-data errors | `apps/web/src/modules/player-home/presentation/player-home-page.tsx` and `player-home-page.stories.tsx` in the same folder |
 | Inicio performance | Dashboard KPI composition | `apps/web/src/modules/player-home/presentation/home-performance.tsx`; states in the Inicio story |
 | Mis estadísticas | KPIs with context, period selection and partial metric availability | `apps/web/src/modules/statistics/presentation/player-profile/player-profile-kpis.tsx`, `player-statistics-page.tsx` and `player-statistics-page.stories.tsx` in the same folder |
-| Explorar competiciones | Recent breadcrumb and page header only; this page is currently a shell | `apps/web/src/modules/teams/presentation/player-competitions-explore-page.tsx`; `Explore` in `player-competitions-page.stories.tsx` in the same folder |
+| Explorar competiciones | Discovery list with URL filters, empty/loading/error states and a published-competition card | `apps/web/src/modules/competitions/presentation/explore/explore-competitions-page.tsx` and `explore-competitions-page.stories.tsx` in the same folder |
 | Datos de juego | Recent header, account setup, form and submission states | `apps/web/src/modules/teams/presentation/player-game-accounts-page.tsx` and its `.stories.tsx` sibling |
 | Inicio sections | Contextual list/empty compositions and local recovery | `apps/web/src/modules/player-home/presentation/home-competitions-card.tsx`, `home-invitations-card.tsx`, `home-block-error.tsx` and `home-skeletons.tsx` |
 

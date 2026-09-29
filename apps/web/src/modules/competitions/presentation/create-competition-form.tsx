@@ -10,6 +10,14 @@ import { CompetitionsClientError } from "@/modules/competitions/presentation/com
 import { useCreateCompetitionDraftMutation } from "@/modules/competitions/presentation/competition-queries.ts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
+import { CompetitionProfileFields } from "@/modules/competitions/presentation/competition-profile-fields.tsx";
+import {
+  DEFAULT_PROFILE_FIELDS,
+  toTeamsAndSchedule,
+  validateCompetitionProfileFields,
+  type CompetitionProfileFieldError,
+  type CompetitionProfileFieldsValue,
+} from "@/modules/competitions/presentation/competition-profile-fields-value.ts";
 import {
   type CompetitionDraftFieldError,
   type CompetitionDraftFieldsValue,
@@ -37,7 +45,42 @@ const styles = stylex.create({
   forbidden: {
     color: colors.mutedForeground,
   },
+  section: {
+    display: "grid",
+    gap: "1.5rem",
+  },
 });
+
+const COVER_FILE_ERROR: CompetitionProfileFieldError = {
+  field: "cover",
+  message: "Sube una imagen PNG, JPG o WebP de hasta 2 MB.",
+};
+
+function profileErrorFor(code: string): CompetitionProfileFieldError | null {
+  switch (code) {
+    case "competitions.invalid_team_range":
+      return {
+        field: "max-teams",
+        message:
+          "Revisa el rango: entre 2 y 256 equipos, con el máximo igual o mayor que el mínimo.",
+      };
+    case "competitions.invalid_schedule":
+      return {
+        field: "end-date",
+        message: "Elige una fecha de fin igual o posterior a la de inicio.",
+      };
+    case "competitions.invalid_cover":
+      return {
+        field: "cover",
+        message: "No se pudo usar esa imagen. Elige una ilustración o sube otra.",
+      };
+    case "media.unsupported_type":
+    case "media.too_large":
+      return COVER_FILE_ERROR;
+    default:
+      return null;
+  }
+}
 
 const form = applyStyles(styles.form);
 
@@ -65,6 +108,9 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<CompetitionDraftFieldError | null>(null);
   const [fields, setFields] = useState<CompetitionDraftFieldsValue>(emptyDraftFields);
+  const [profile, setProfile] = useState<CompetitionProfileFieldsValue>(DEFAULT_PROFILE_FIELDS);
+  const [profileError, setProfileError] = useState<CompetitionProfileFieldError | null>(null);
+  const [creationKey] = useState(() => crypto.randomUUID());
   const submitting = createDraft.isPending;
   const canCreate = create.allowed;
 
@@ -75,15 +121,25 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
       setFieldError(validation);
       return;
     }
+    const profileValidation = validateCompetitionProfileFields(profile);
+    if (profileValidation) {
+      setProfileError(profileValidation);
+      return;
+    }
 
     try {
       const created = await createDraft.mutateAsync({
-        name: fields.name.trim(),
-        gameEdition: fields.gameEdition.trim(),
-        platform: fields.platform!,
-        region: fields.region!,
-        timeZone: fields.timeZone.trim(),
-        format: fields.format!,
+        request: {
+          name: fields.name.trim(),
+          gameEdition: fields.gameEdition.trim(),
+          platform: fields.platform!,
+          region: fields.region!,
+          timeZone: fields.timeZone.trim(),
+          format: fields.format!,
+          ...toTeamsAndSchedule(profile),
+          creationKey,
+        },
+        cover: profile.cover,
       });
       await navigate({
         to: "/orgs/$orgId/competitions/$competitionId/setup",
@@ -104,6 +160,11 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
         }
         if (caught.code.includes("invalid_time_zone")) {
           setFieldError({ field: "time-zone", message: "La zona horaria no es válida." });
+          return;
+        }
+        const profileFailure = profileErrorFor(caught.code);
+        if (profileFailure) {
+          setProfileError(profileFailure);
           return;
         }
         if (caught.code === "competitions.forbidden") {
@@ -135,6 +196,19 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
         onClearFieldError={() => setFieldError(null)}
         value={fields}
       />
+
+      <section aria-labelledby="competition-profile-heading" {...applyStyles(styles.section)}>
+        <h2 id="competition-profile-heading" {...applyStyles(typography.subtitle)}>
+          Equipos, fechas y portada
+        </h2>
+        <CompetitionProfileFields
+          disabled={submitting || !canCreate}
+          fieldError={profileError}
+          onChange={(patch) => setProfile((current) => ({ ...current, ...patch }))}
+          onClearFieldError={() => setProfileError(null)}
+          value={profile}
+        />
+      </section>
 
       {canCreate ? (
         <Button disabled={submitting} type="submit">

@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -233,7 +233,9 @@ export const Rosters: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("tab", { name: "Jugadores" }));
-    await expect(canvas.getByRole("heading", { name: "Plantillas del partido" })).toBeVisible();
+    await waitFor(async () => {
+      await expect(canvas.getByRole("heading", { name: "Plantillas del partido" })).toBeVisible();
+    });
     await expect(canvas.getByText("5 jugadores registrados")).toBeVisible();
     await expect(canvas.getByText("Ganador")).toBeVisible();
     await expect(canvas.getByText("Tú")).toBeVisible();

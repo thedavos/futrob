@@ -40,12 +40,13 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 - [Onboarding (player)](./onboarding-player.md) covers intention → optional account/club → `/player`.
 - [Player matches](./player-matches.md) covers personal matches, empty club state, and official stats separation.
 - [Competition setup](./competition-setup.md) covers org + draft + setup in the UI, with the CLI golden path as the API twin.
+- [Explore competitions](./explore-competitions.md) covers the authenticated catalog, URL filters, detail and share.
 
 ## Not mapped yet (do not fake-drive)
 
-- Public competition portal — no public routes.
+- Public competition portal — no public routes. Authenticated explore is not that portal.
 - Match Center / official selection / confirmation — no scheduling or results UI.
 - Native mobile — auth foundation only; `AC-MOB-*` requires iOS/Android builds.
 - Onboarding invitation and organizer paths — real, but not in this seed; do not claim them via the player path.
-- Player club / game-account / competitions / invitations — live routes (`/player/ea-clubs`, `/player/game-accounts`, `/player/competitions`, `/invitations/accept/*`, `/roster-invitations/accept/*`). Visible from `/player` (`Añadir club`, `Vincular cuenta`, sidebar). Not in this seed.
+- Player club / game-account / invitations — live routes (`/player/ea-clubs`, `/player/game-accounts`, `/invitations/accept/*`, `/roster-invitations/accept/*`). Visible from `/player` (`Añadir club`, `Vincular cuenta`, sidebar). Not in this seed. `/player/competitions/explore` is mapped.
 - Org picker `/orgs` (`Tus organizaciones`), org competitions index `/orgs/$orgId/competitions`, and teams console `/orgs/$orgId/competitions/$competitionId/teams` — shipped operator screens. `competition-setup` covers create + wizard only; do not treat those three as proven through setup.

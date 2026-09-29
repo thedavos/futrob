@@ -1,6 +1,7 @@
 "use client";
 
 import { z } from "zod";
+import type { ReactNode } from "react";
 import { applyStyles, Field, FieldLabel, Input, typography } from "@futrob/ui";
 import { styles } from "./competition-setup-steps.styles.ts";
 import type {
@@ -34,10 +35,12 @@ export function InformationStep({
   form,
   onChange,
   disabled,
+  children,
 }: {
   form: UpdateCompetitionDraftRequest;
   onChange: (patch: Partial<UpdateCompetitionDraftRequest>) => void;
   disabled: boolean;
+  children?: ReactNode;
 }) {
   return (
     <section {...applyStyles(styles.section)}>
@@ -88,6 +91,7 @@ export function InformationStep({
         onChange={(value) => onChange({ timeZone: value })}
         value={form.timeZone}
       />
+      {children}
     </section>
   );
 }

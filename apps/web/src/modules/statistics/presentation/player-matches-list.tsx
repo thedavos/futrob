@@ -24,7 +24,7 @@ import {
   applyStyles,
 } from "@futrob/ui";
 import { listTypography, styles } from "./player-matches-list.styles.ts";
-import calendarClockUrl from "@/assets/calendar-clock.svg";
+import emptyMatchesUrl from "@/assets/illustration-empty-matches.png";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
   dayHeading,
@@ -277,7 +277,7 @@ export function MatchesEmpty({
   return (
     <EmptyState fill={fill}>
       <EmptyStateIcon>
-        {illustration ?? <img alt="" data-outline="none" src={calendarClockUrl} />}
+        {illustration ?? <img alt="" data-outline="none" src={emptyMatchesUrl} />}
       </EmptyStateIcon>
       <EmptyStateCopy>
         <EmptyStateTitle>{title}</EmptyStateTitle>

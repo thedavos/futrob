@@ -1,12 +1,18 @@
 import {
   createCompetitionDraftRequestSchema,
   createCompetitionDraftResponseSchema,
+  exploreCompetitionsQuerySchema,
+  exploreCompetitionsResponseSchema,
   getCompetitionDraftResponseSchema,
+  getExploreCompetitionResponseSchema,
   listOrganizationCompetitionsResponseSchema,
   listAccessibleCompetitionsResponseSchema,
   type CreateCompetitionDraftRequest,
   type CreateCompetitionDraftResponse,
+  type ExploreCompetitionsQueryInput,
+  type ExploreCompetitionsResponse,
   type GetCompetitionDraftResponse,
+  type GetExploreCompetitionResponse,
   type ListOrganizationCompetitionsResponse,
   type ListAccessibleCompetitionsResponse,
   updateCompetitionDraftRequestSchema,
@@ -15,6 +21,17 @@ import {
   listCompetitionParticipantsResponseSchema,
   addCompetitionParticipantResponseSchema,
   publishCompetitionResponseSchema,
+  competitionRegistrationResponseSchema,
+  updateCompetitionCoverRequestSchema,
+  updateCompetitionCoverResponseSchema,
+  type UpdateCompetitionCoverRequest,
+  type UpdateCompetitionCoverResponse,
+  applyToCompetitionResponseSchema,
+  getMyCompetitionApplicationResponseSchema,
+  type ApplyToCompetitionRequest,
+  type ApplyToCompetitionResponse,
+  type GetMyCompetitionApplicationResponse,
+  type CompetitionRegistrationResponse,
   listOrganizationTeamsResponseSchema,
   type UpdateCompetitionDraftRequest,
   type UpdateCompetitionDraftResponse,
@@ -69,7 +86,10 @@ function competitionJsonHeaders(hasBody: boolean): HeadersInit {
 
 async function competitionRequest<T>(
   path: string,
-  options: { readonly method: "GET" | "PATCH" | "POST" | "DELETE"; readonly body?: unknown },
+  options: {
+    readonly method: "GET" | "PATCH" | "POST" | "PUT" | "DELETE";
+    readonly body?: unknown;
+  },
   schema: z.ZodType<T>,
 ): Promise<T> {
   const response = await fetch(path, {
@@ -83,6 +103,62 @@ async function competitionRequest<T>(
     throw createCompetitionsError(response.status, errorCode(raw, "competitions.request_failed"));
   }
   return schema.parse(raw);
+}
+
+export async function exploreCompetitions(
+  query: ExploreCompetitionsQueryInput = {},
+): Promise<ExploreCompetitionsResponse> {
+  const parsed = exploreCompetitionsQuerySchema.parse(query);
+  const search = new URLSearchParams();
+  if (parsed.q) search.set("q", parsed.q);
+  if (parsed.format) search.set("format", parsed.format);
+  if (parsed.status) search.set("status", parsed.status);
+  if (parsed.region) search.set("region", parsed.region);
+  if (parsed.platform) search.set("platform", parsed.platform);
+  search.set("sort", parsed.sort);
+  search.set("limit", String(parsed.limit));
+  if (parsed.cursor) search.set("cursor", parsed.cursor);
+  return requestCompetitionsJson({
+    path: `/api/v1/competitions/explore?${search.toString()}`,
+    method: "GET",
+    schema: exploreCompetitionsResponseSchema,
+    fallbackCode: "competitions.explore_failed",
+  });
+}
+
+export async function getExploreCompetition(
+  competitionId: string,
+): Promise<GetExploreCompetitionResponse> {
+  return requestCompetitionsJson({
+    path: `/api/v1/competitions/explore/${encodeURIComponent(competitionId)}`,
+    method: "GET",
+    schema: getExploreCompetitionResponseSchema,
+    fallbackCode: "competitions.explore_detail_failed",
+  });
+}
+
+export async function getMyCompetitionApplication(
+  competitionId: string,
+): Promise<GetMyCompetitionApplicationResponse> {
+  return requestCompetitionsJson({
+    path: `/api/v1/competitions/explore/${encodeURIComponent(competitionId)}/application`,
+    method: "GET",
+    schema: getMyCompetitionApplicationResponseSchema,
+    fallbackCode: "competitions.application_failed",
+  });
+}
+
+export async function applyToCompetition(
+  competitionId: string,
+  input: ApplyToCompetitionRequest,
+): Promise<ApplyToCompetitionResponse> {
+  return requestCompetitionsJson({
+    path: `/api/v1/competitions/explore/${encodeURIComponent(competitionId)}/application`,
+    method: "POST",
+    body: input,
+    schema: applyToCompetitionResponseSchema,
+    fallbackCode: "competitions.apply_failed",
+  });
 }
 
 export async function listMyAccessibleCompetitions(): Promise<ListAccessibleCompetitionsResponse> {
@@ -115,6 +191,42 @@ export async function getCompetitionDraft(
     schema: getCompetitionDraftResponseSchema,
     fallbackCode: "competitions.load_failed",
   });
+}
+
+const uploadedCoverSchema = z.object({ key: z.string().min(1) });
+
+/** PUT raw bytes; the Worker sniffs the type and stores under the organization prefix. */
+export async function uploadCompetitionCover(
+  organizationId: string,
+  creationKey: string,
+  file: File,
+): Promise<{ readonly key: string }> {
+  const response = await fetch(
+    `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/covers/${encodeURIComponent(creationKey)}`,
+    {
+      method: "PUT",
+      credentials: "include",
+      headers: { Accept: "application/json", "Content-Type": file.type },
+      body: file,
+    },
+  );
+  const raw: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw createCompetitionsError(response.status, errorCode(raw, "media.upload_failed"));
+  }
+  return uploadedCoverSchema.parse(raw);
+}
+
+export function updateCompetitionCover(
+  organizationId: string,
+  competitionId: string,
+  input: UpdateCompetitionCoverRequest,
+): Promise<UpdateCompetitionCoverResponse> {
+  return competitionRequest(
+    `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/cover`,
+    { method: "PUT", body: updateCompetitionCoverRequestSchema.parse(input) },
+    updateCompetitionCoverResponseSchema,
+  );
 }
 
 export async function createCompetitionDraft(
@@ -198,6 +310,18 @@ export function publishCompetition(
     `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/publish`,
     { method: "POST" },
     publishCompetitionResponseSchema,
+  );
+}
+
+export function setCompetitionRegistration(
+  organizationId: string,
+  competitionId: string,
+  action: "open" | "close",
+): Promise<CompetitionRegistrationResponse> {
+  return competitionRequest(
+    `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/registration/${action}`,
+    { method: "POST" },
+    competitionRegistrationResponseSchema,
   );
 }
 

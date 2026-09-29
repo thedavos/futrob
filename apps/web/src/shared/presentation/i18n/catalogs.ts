@@ -308,6 +308,7 @@ const es = {
     "Aquí verás los torneos en los que participe tu equipo.",
   "player.home.competitions.onboardingTitle": "Tu equipo aún no participa en competiciones",
   "player.home.competitions.onboardingSubtitle": "Explora torneos y da el salto a la competición.",
+  "player.home.competitions.status.registration": "Inscripciones abiertas",
   "player.home.competitions.status.published": "En curso",
   "player.home.competitions.status.draft": "Inscrito",
   "player.home.competitions.status.paused": "Pausada",
@@ -326,6 +327,91 @@ const es = {
   "player.competitions.empty.subtitle":
     "Explora los torneos disponibles y comparte los que te interesen con el capitán de tu club.",
   "player.competitions.empty.otherClub": "¿Buscas otro club?",
+  "player.competitions.explore.title": "Explorar competiciones",
+  "player.competitions.explore.description":
+    "Descubre torneos para seguir y compartir con tu club.",
+  "player.competitions.explore.breadcrumb.competitions": "Competiciones",
+  "player.competitions.explore.breadcrumb.explore": "Explorar",
+  "player.competitions.explore.search.label": "Buscar por nombre",
+  "player.competitions.explore.search.placeholder": "Nombre de la competición",
+  "player.competitions.explore.status.label": "Estado",
+  "player.competitions.explore.status.all": "Todos los estados",
+  "player.competitions.explore.status.registration": "Inscripciones abiertas",
+  "player.competitions.explore.status.published": "En curso",
+  "player.competitions.explore.status.paused": "Pausadas",
+  "player.competitions.explore.status.finished": "Finalizadas",
+  "player.competitions.explore.format.label": "Formato",
+  "player.competitions.explore.format.all": "Todos los formatos",
+  "player.competitions.explore.region.label": "Región",
+  "player.competitions.explore.region.all": "Todas las regiones",
+  "player.competitions.explore.platform.label": "Plataforma",
+  "player.competitions.explore.platform.all": "Todas las plataformas",
+  "player.competitions.explore.sort.label": "Orden",
+  "player.competitions.explore.sort.updated-desc": "Más recientes",
+  "player.competitions.explore.sort.name-asc": "Nombre A-Z",
+  "player.competitions.explore.count": ({ count }) =>
+    count === 1 ? "1 competición" : `${count} competiciones`,
+  "player.competitions.explore.loading": "Cargando competiciones…",
+  "player.competitions.explore.error":
+    "No se pudieron cargar las competiciones. Comprueba la conexión e inténtalo de nuevo.",
+  "player.competitions.explore.retry": "Reintentar",
+  "player.competitions.explore.empty.filtered.title": "No encontramos competiciones",
+  "player.competitions.explore.empty.filtered.subtitle":
+    "Prueba con otro nombre o amplía los filtros de búsqueda",
+  "player.competitions.explore.empty.filtered.cta": "Limpiar búsqueda y filtros",
+  "player.competitions.explore.empty.none.title": "Aún no hay competiciones publicadas",
+  "player.competitions.explore.empty.none.subtitle":
+    "Cuando un organizador publique un torneo, aparecerá aquí para que puedas verlo y compartirlo.",
+  "player.competitions.explore.card.view": "Ver competición",
+  "player.competitions.explore.card.share": "Compartir competición",
+  "player.competitions.explore.card.shareCopied": "Enlace copiado",
+  "player.competitions.explore.card.manage": "Gestionar",
+  "player.competitions.explore.card.participating": "Tu equipo participa",
+  "player.competitions.explore.card.organizer": ({ name }) => `Organiza ${name}`,
+  "player.competitions.explore.card.startsOn": ({ date }) => `Inicio: ${date}`,
+  "player.competitions.explore.card.endsOn": ({ date }) => `Fin: ${date}`,
+  "player.competitions.explore.card.teamsOf": ({ count, max }) => `${count} de ${max} equipos`,
+  "player.competitions.explore.card.teamsFull": ({ count }) => `Cupo completo (${count} equipos)`,
+  "player.competitions.explore.card.teams": ({ count }) =>
+    count === 1 ? "1 equipo" : `${count} equipos`,
+  "player.competitions.explore.more": "Mostrar más",
+  "player.competitions.detail.loading": "Cargando competición…",
+  "player.competitions.detail.error":
+    "No se pudo cargar la competición. Comprueba la conexión e inténtalo de nuevo.",
+  "player.competitions.detail.notFound.title": "Competición no disponible",
+  "player.competitions.detail.notFound.subtitle":
+    "Esta competición no está publicada o ya no se puede consultar.",
+  "player.competitions.detail.notFound.cta": "Volver a explorar",
+  "player.competitions.detail.meta.format": "Formato",
+  "player.competitions.detail.meta.region": "Región",
+  "player.competitions.detail.meta.platform": "Plataforma",
+  "player.competitions.detail.meta.edition": "Edición",
+  "player.competitions.detail.meta.timeZone": "Zona horaria",
+  "player.competitions.detail.meta.organizer": "Organizador",
+  "player.competitions.detail.meta.teams": "Equipos inscritos",
+  "player.competitions.detail.meta.startsOn": "Fechas",
+  "player.competitions.detail.share": "Compartir",
+  "player.competitions.detail.shareCopied": "Enlace copiado",
+  "player.competitions.detail.manage": "Gestionar",
+  "player.competitions.apply.title": "Inscribe a tu equipo",
+  "player.competitions.apply.description":
+    "Crea tu equipo para esta competición. Serás su capitán y el organizador revisará la solicitud.",
+  "player.competitions.apply.teamName": "Nombre del equipo",
+  "player.competitions.apply.submit": "Enviar solicitud",
+  "player.competitions.apply.submitting": "Enviando…",
+  "player.competitions.apply.error": "No se pudo enviar la solicitud. Inténtalo de nuevo.",
+  "player.competitions.apply.error.closed": "Las inscripciones de esta competición se cerraron.",
+  "player.competitions.apply.error.conflict": "Ya formas parte de un equipo en esta competición.",
+  "player.competitions.apply.status.pending.title": "Solicitud enviada",
+  "player.competitions.apply.status.pending.description": ({ team }) =>
+    `${team} espera la revisión del organizador.`,
+  "player.competitions.apply.status.approved.title": "Equipo inscrito",
+  "player.competitions.apply.status.approved.description": ({ team }) =>
+    `${team} ya participa en esta competición.`,
+  "player.competitions.apply.status.approved.cta": "Ir a la competición",
+  "player.competitions.apply.status.rejected.title": "Solicitud rechazada",
+  "player.competitions.apply.status.rejected.description": ({ team }) =>
+    `El organizador no aprobó a ${team}.`,
   "player.invitations.title": "Invitaciones",
   "player.invitations.description":
     "Revisa las invitaciones que has recibido y elige dónde participar.",
@@ -813,6 +899,19 @@ export interface MessageParamsByKey {
   readonly "player.statistics.component.confidence": { readonly percent: number };
   readonly "player.statistics.component.weightedMatches": { readonly count: number };
   readonly "player.matches.results.count": { readonly count: number };
+  readonly "player.competitions.explore.count": { readonly count: number };
+  readonly "player.competitions.explore.card.teams": { readonly count: number };
+  readonly "player.competitions.explore.card.teamsOf": {
+    readonly count: number;
+    readonly max: number;
+  };
+  readonly "player.competitions.explore.card.organizer": { readonly name: string };
+  readonly "player.competitions.explore.card.teamsFull": { readonly count: number };
+  readonly "player.competitions.explore.card.startsOn": { readonly date: string };
+  readonly "player.competitions.explore.card.endsOn": { readonly date: string };
+  readonly "player.competitions.apply.status.pending.description": { readonly team: string };
+  readonly "player.competitions.apply.status.approved.description": { readonly team: string };
+  readonly "player.competitions.apply.status.rejected.description": { readonly team: string };
   readonly "player.matches.openMatchLabel": {
     readonly home: string;
     readonly homeGoals: number;
@@ -1174,6 +1273,7 @@ const en: Catalog = {
   "player.home.competitions.emptySubtitle": "You will see the tournaments your team joins here.",
   "player.home.competitions.onboardingTitle": "Your team is not in a competition yet",
   "player.home.competitions.onboardingSubtitle": "Browse tournaments and step into competition.",
+  "player.home.competitions.status.registration": "Registration open",
   "player.home.competitions.status.published": "In progress",
   "player.home.competitions.status.draft": "Registered",
   "player.home.competitions.status.paused": "Paused",
@@ -1192,6 +1292,91 @@ const en: Catalog = {
   "player.competitions.empty.subtitle":
     "Browse available tournaments and share the ones you care about with your club captain.",
   "player.competitions.empty.otherClub": "Looking for another club?",
+  "player.competitions.explore.title": "Explore competitions",
+  "player.competitions.explore.description":
+    "Discover tournaments to follow and share with your club.",
+  "player.competitions.explore.breadcrumb.competitions": "Competitions",
+  "player.competitions.explore.breadcrumb.explore": "Explore",
+  "player.competitions.explore.search.label": "Search by name",
+  "player.competitions.explore.search.placeholder": "Competition name",
+  "player.competitions.explore.status.label": "Status",
+  "player.competitions.explore.status.all": "All statuses",
+  "player.competitions.explore.status.registration": "Registration open",
+  "player.competitions.explore.status.published": "In progress",
+  "player.competitions.explore.status.paused": "Paused",
+  "player.competitions.explore.status.finished": "Finished",
+  "player.competitions.explore.format.label": "Format",
+  "player.competitions.explore.format.all": "All formats",
+  "player.competitions.explore.region.label": "Region",
+  "player.competitions.explore.region.all": "All regions",
+  "player.competitions.explore.platform.label": "Platform",
+  "player.competitions.explore.platform.all": "All platforms",
+  "player.competitions.explore.sort.label": "Sort",
+  "player.competitions.explore.sort.updated-desc": "Most recent",
+  "player.competitions.explore.sort.name-asc": "Name A-Z",
+  "player.competitions.explore.count": ({ count }) =>
+    count === 1 ? "1 competition" : `${count} competitions`,
+  "player.competitions.explore.loading": "Loading competitions…",
+  "player.competitions.explore.error":
+    "We could not load competitions. Check your connection and try again.",
+  "player.competitions.explore.retry": "Try again",
+  "player.competitions.explore.empty.filtered.title": "We could not find competitions",
+  "player.competitions.explore.empty.filtered.subtitle":
+    "Try a different name or widen the search filters",
+  "player.competitions.explore.empty.filtered.cta": "Clear search and filters",
+  "player.competitions.explore.empty.none.title": "There are no published competitions yet",
+  "player.competitions.explore.empty.none.subtitle":
+    "When an organizer publishes a tournament, it will appear here so you can view and share it.",
+  "player.competitions.explore.card.view": "View competition",
+  "player.competitions.explore.card.share": "Share competition",
+  "player.competitions.explore.card.shareCopied": "Link copied",
+  "player.competitions.explore.card.manage": "Manage",
+  "player.competitions.explore.card.participating": "Your team is in",
+  "player.competitions.explore.card.organizer": ({ name }) => `Organized by ${name}`,
+  "player.competitions.explore.card.startsOn": ({ date }) => `Start: ${date}`,
+  "player.competitions.explore.card.endsOn": ({ date }) => `End: ${date}`,
+  "player.competitions.explore.card.teamsOf": ({ count, max }) => `${count} of ${max} teams`,
+  "player.competitions.explore.card.teamsFull": ({ count }) => `Full (${count} teams)`,
+  "player.competitions.explore.card.teams": ({ count }) =>
+    count === 1 ? "1 team" : `${count} teams`,
+  "player.competitions.explore.more": "Show more",
+  "player.competitions.detail.loading": "Loading competition…",
+  "player.competitions.detail.error":
+    "We could not load this competition. Check your connection and try again.",
+  "player.competitions.detail.notFound.title": "Competition unavailable",
+  "player.competitions.detail.notFound.subtitle":
+    "This competition is not published or can no longer be viewed.",
+  "player.competitions.detail.notFound.cta": "Back to explore",
+  "player.competitions.detail.meta.format": "Format",
+  "player.competitions.detail.meta.region": "Region",
+  "player.competitions.detail.meta.platform": "Platform",
+  "player.competitions.detail.meta.edition": "Edition",
+  "player.competitions.detail.meta.timeZone": "Time zone",
+  "player.competitions.detail.meta.organizer": "Organizer",
+  "player.competitions.detail.meta.teams": "Registered teams",
+  "player.competitions.detail.meta.startsOn": "Dates",
+  "player.competitions.detail.share": "Share",
+  "player.competitions.detail.shareCopied": "Link copied",
+  "player.competitions.detail.manage": "Manage",
+  "player.competitions.apply.title": "Register your team",
+  "player.competitions.apply.description":
+    "Create your team for this competition. You'll be its captain, and the organizer will review the request.",
+  "player.competitions.apply.teamName": "Team name",
+  "player.competitions.apply.submit": "Send request",
+  "player.competitions.apply.submitting": "Sending…",
+  "player.competitions.apply.error": "The request couldn't be sent. Try again.",
+  "player.competitions.apply.error.closed": "Registration for this competition has closed.",
+  "player.competitions.apply.error.conflict": "You're already on a team in this competition.",
+  "player.competitions.apply.status.pending.title": "Request sent",
+  "player.competitions.apply.status.pending.description": ({ team }) =>
+    `${team} is waiting for the organizer's review.`,
+  "player.competitions.apply.status.approved.title": "Team registered",
+  "player.competitions.apply.status.approved.description": ({ team }) =>
+    `${team} is taking part in this competition.`,
+  "player.competitions.apply.status.approved.cta": "Go to competition",
+  "player.competitions.apply.status.rejected.title": "Request declined",
+  "player.competitions.apply.status.rejected.description": ({ team }) =>
+    `The organizer didn't approve ${team}.`,
   "player.invitations.title": "Invitations",
   "player.invitations.description":
     "Review the invitations you have received and choose where to take part.",

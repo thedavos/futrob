@@ -44,6 +44,7 @@ export type OrganizationsInvitationStoryState =
 
 export type OrganizationsStoryState = {
   readonly acceptInvitation: OrganizationsInvitationStoryState;
+  readonly memberships: ListMyMembershipsResponse;
 };
 
 const hang = <T>(): Promise<T> => new Promise(() => undefined);
@@ -61,10 +62,17 @@ const ACCEPTED_INVITATION: AcceptCompetitionInvitationResponse = {
   },
 };
 
-let state: OrganizationsStoryState = { acceptInvitation: "success" };
+let state: OrganizationsStoryState = {
+  acceptInvitation: "success",
+  memberships: { memberships: [] },
+};
 
 export function configureOrganizationsStory(next: Partial<OrganizationsStoryState>): void {
-  state = { acceptInvitation: "success", ...next };
+  state = {
+    acceptInvitation: "success",
+    memberships: { memberships: [] },
+    ...next,
+  };
 }
 
 function invitationError(
@@ -83,7 +91,7 @@ function invitationError(
 
 export const organizationsBrowserClient = {
   listMine(): Promise<ListMyMembershipsResponse> {
-    return Promise.resolve({ memberships: [] });
+    return Promise.resolve(state.memberships);
   },
 
   resolvePostAuthDestination(): Promise<ResolvePostAuthDestinationResponse> {

@@ -1,4 +1,3 @@
-/// <reference path="./styles.d.ts" />
 import { themeToHexColors } from "@futrob/ui-tokens";
 import type { Preview } from "@storybook/react-vite";
 

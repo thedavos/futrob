@@ -1,15 +1,21 @@
-import type {
-  AccessibleCompetitionDto,
-  CompetitionFormatDto,
-  CompetitionStatusDto,
-} from "@futrob/api-contracts";
-import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
+import type { AccessibleCompetitionDto } from "@futrob/api-contracts";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { calendarDayKind } from "@/modules/statistics/presentation/player-match-view.ts";
+import {
+  competitionFormatLabel,
+  competitionListBadgeVariant as competitionStatusBadgeVariant,
+  competitionMark as competitionFormatMark,
+  competitionStatusLabel,
+  type CompetitionBadgeTone,
+  type CompetitionMark,
+} from "@/modules/competitions/presentation/competition-labels.ts";
 
-export function competitionStatusLabel(status: CompetitionStatusDto, t: Translator): string {
-  return t(competitionStatusKey(status));
-}
+export {
+  competitionFormatLabel,
+  competitionStatusLabel,
+  type CompetitionBadgeTone,
+  type CompetitionMark,
+};
 
 export function competitionListStatus(
   competition: AccessibleCompetitionDto["competition"],
@@ -25,48 +31,16 @@ export function competitionListBadge(
   return competitionStatusLabel(competition.status, t);
 }
 
-export type CompetitionMark = "league" | "cup";
-export type CompetitionBadgeTone = "primary" | "info" | "neutral" | "warning" | "outline";
-
 export function competitionMark(
   competition: AccessibleCompetitionDto["competition"],
 ): CompetitionMark {
-  switch (competition.format) {
-    case "league":
-    case "league-playoffs":
-      return "league";
-    case "knockout":
-    case "groups-knockout":
-      return "cup";
-    default: {
-      const _exhaustive: never = competition.format;
-      return _exhaustive;
-    }
-  }
+  return competitionFormatMark(competition.format);
 }
 
 export function competitionListBadgeVariant(
   competition: AccessibleCompetitionDto["competition"],
 ): CompetitionBadgeTone {
-  switch (competition.status) {
-    case "published":
-      return "primary";
-    case "finished":
-      return "neutral";
-    case "paused":
-      return "warning";
-    case "archived":
-    case "draft":
-      return "outline";
-    default: {
-      const _exhaustive: never = competition.status;
-      return _exhaustive;
-    }
-  }
-}
-
-export function competitionFormatLabel(format: CompetitionFormatDto, t: Translator): string {
-  return t(competitionFormatKey(format));
+  return competitionStatusBadgeVariant(competition.status);
 }
 
 export function formatEncounterWhen(iso: string, timeZone: string, locale: string): string {
@@ -116,40 +90,4 @@ export function formatUpdatedAgo(updatedAt: Date, locale: string, now = new Date
   const hours = Math.round(minutes / 60);
   if (Math.abs(hours) < 24) return rtf.format(hours, "hour");
   return rtf.format(Math.round(hours / 24), "day");
-}
-
-function competitionStatusKey(status: CompetitionStatusDto): ParameterlessMessageKey {
-  switch (status) {
-    case "published":
-      return "player.home.competitions.status.published";
-    case "draft":
-      return "player.home.competitions.status.draft";
-    case "paused":
-      return "player.home.competitions.status.paused";
-    case "finished":
-      return "player.home.competitions.status.finished";
-    case "archived":
-      return "player.home.competitions.status.archived";
-    default: {
-      const _exhaustive: never = status;
-      return _exhaustive;
-    }
-  }
-}
-
-function competitionFormatKey(format: CompetitionFormatDto): ParameterlessMessageKey {
-  switch (format) {
-    case "league":
-      return "player.home.competitions.format.league";
-    case "knockout":
-      return "player.home.competitions.format.knockout";
-    case "groups-knockout":
-      return "player.home.competitions.format.groups-knockout";
-    case "league-playoffs":
-      return "player.home.competitions.format.league-playoffs";
-    default: {
-      const _exhaustive: never = format;
-      return _exhaustive;
-    }
-  }
 }

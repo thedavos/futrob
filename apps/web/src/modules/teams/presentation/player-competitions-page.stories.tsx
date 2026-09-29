@@ -1,15 +1,21 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
+import { PlayerCompetitionsExplorePage } from "@/modules/competitions/presentation/explore/explore-competitions-page.tsx";
+import type { ExploreCompetitionsSearch } from "@/modules/competitions/presentation/explore/explore-search.ts";
 import type { PlayerStoryState } from "./player-story-client.ts";
 import {
   playerProfileFixture,
   playerTeamsFixture,
   readyPlayerProfileFixture,
 } from "./player-story-fixtures.ts";
-import { PlayerCompetitionsExplorePage } from "./player-competitions-explore-page.tsx";
 import { PlayerCompetitionsPage } from "./player-competitions-page.tsx";
 import { PlayerStoryShell, PlayerStoryStub, type PlayerStoryRoute } from "./player-story-shell.tsx";
+
+function ExploreStoryRoute() {
+  const [search, setSearch] = useState<ExploreCompetitionsSearch>({});
+  return <PlayerCompetitionsExplorePage onSearchChange={setSearch} search={search} />;
+}
 
 const SCENARIO_IDS = ["ready", "empty", "emptyMultipleClubs", "loading", "error"] as const;
 
@@ -55,7 +61,7 @@ function scenarioState(id: ScenarioId): PlayerStoryState {
 
 const COMPETITION_ROUTES: readonly PlayerStoryRoute[] = [
   { path: "/player/competitions", component: PlayerCompetitionsPage },
-  { path: "/player/competitions/explore", component: PlayerCompetitionsExplorePage },
+  { path: "/player/competitions/explore", component: ExploreStoryRoute },
   {
     path: "/player/game-accounts",
     component: () => <PlayerStoryStub label="Datos de juego (stub de Storybook)" />,
