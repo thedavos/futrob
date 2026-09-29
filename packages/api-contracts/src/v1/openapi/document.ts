@@ -1,3 +1,4 @@
+import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import { apiErrorSchema } from "../errors.ts";
 import { healthResponseSchema } from "../meta/health.response.ts";
 import { pingResponseSchema } from "../meta/ping.response.ts";
@@ -3291,10 +3292,23 @@ export const futrobOpenApiV1 = {
                     },
                     presentation: {
                       type: "object",
-                      required: ["displayName", "avatarUrl"],
+                      required: ["displayName", "avatarUrl", "gameAccount"],
                       properties: {
                         displayName: { type: "string" },
                         avatarUrl: { type: ["string", "null"], format: "uri" },
+                        gameAccount: {
+                          oneOf: [
+                            { type: "null" },
+                            {
+                              type: "object",
+                              required: ["platform", "gameEdition"],
+                              properties: {
+                                platform: { type: "string", enum: [...GAME_PLATFORM_VALUES] },
+                                gameEdition: { type: "string" },
+                              },
+                            },
+                          ],
+                        },
                       },
                     },
                   },

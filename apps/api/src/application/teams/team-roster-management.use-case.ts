@@ -15,6 +15,7 @@ import {
   type ActorId,
   type AuthorizationPort,
   type CompetitionId,
+  type GamePlatform,
   type OrganizationId,
   type Page,
   type PageRequest,
@@ -78,6 +79,7 @@ export type TeamRosterManagementSummary = {
 export type TeamRosterMemberPresentation = {
   readonly displayName: string | null;
   readonly avatarUrl: string | null;
+  readonly gameAccount: { readonly platform: GamePlatform; readonly gameEdition: string } | null;
 };
 
 export type TeamRosterManagementDetail = TeamRosterManagementSummary & {
@@ -201,6 +203,9 @@ export class GetTeamRosterManagementUseCase {
           presentation: {
             displayName: account?.identifier ?? null,
             avatarUrl: null,
+            gameAccount: account
+              ? { platform: account.platform, gameEdition: account.gameEdition }
+              : null,
           },
         };
       }),
