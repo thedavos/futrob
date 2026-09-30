@@ -9,6 +9,7 @@ import {
   type DomainEvent,
   type EncounterId,
   type OrganizationId,
+  type TeamId,
   type TransactionPort,
 } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
@@ -204,9 +205,15 @@ class TransactionBoundEncounterMutationLock {
   };
 }
 
-function authorization(
-  allowed: boolean | { readonly read?: boolean; readonly rescheduleRequest?: boolean } = true,
-): AuthorizationPort {
+type AuthorizationAllowance =
+  | boolean
+  | {
+      readonly read?: boolean;
+      readonly rescheduleRequest?: boolean;
+      readonly rescheduleRequestTeamId?: TeamId;
+    };
+
+function authorization(allowed: AuthorizationAllowance = true): AuthorizationPort {
   return {
     decide: async (request) => {
       const permitted =
@@ -215,7 +222,9 @@ function authorization(
           : request.permission === ENCOUNTER_PERMISSION.read
             ? (allowed.read ?? true)
             : request.permission === ENCOUNTER_PERMISSION.rescheduleRequest
-              ? (allowed.rescheduleRequest ?? true)
+              ? (allowed.rescheduleRequest ?? true) &&
+                (allowed.rescheduleRequestTeamId === undefined ||
+                  request.scope.teamId === allowed.rescheduleRequestTeamId)
               : true;
       return {
         ...request,
@@ -229,7 +238,7 @@ function authorization(
 
 function createHarness(
   options: {
-    readonly allowed?: boolean | { readonly read?: boolean; readonly rescheduleRequest?: boolean };
+    readonly allowed?: AuthorizationAllowance;
     readonly canEdit?: boolean;
     readonly competitionTimeZone?: string | null;
     readonly encounter?: EncounterScheduleSnapshot | null;
@@ -462,6 +471,26 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     expect(error.permission).toBe("encounters.reschedule.request");
     expect(harness.requests.rows).toHaveLength(0);
     expect(harness.events).toHaveLength(0);
+  });
+
+  it("forbids attributing the request to the opponent Team", async () => {
+    const harness = createHarness({
+      allowed: { read: true, rescheduleRequest: true, rescheduleRequestTeamId: homeTeamId },
+    });
+
+    const asOpponent = await harness.useCase.execute({
+      ...validInput,
+      requestingTeamId: awayTeamId,
+      idempotencyKey: "idem-opponent",
+    });
+    const error = expectErrorCode(asOpponent, "authorization.forbidden");
+    expect(error).toBeInstanceOf(ScheduleChangeRequestForbidden);
+    expect(harness.requests.rows).toHaveLength(0);
+
+    const asOwnTeam = await harness.useCase.execute(validInput);
+    expect(asOwnTeam.isOk()).toBe(true);
+    if (asOwnTeam.isErr()) throw asOwnTeam.error;
+    expect(asOwnTeam.value.requestingTeamId).toBe(homeTeamId);
   });
 
   it("hides the Encounter when the actor cannot read it", async () => {

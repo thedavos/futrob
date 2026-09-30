@@ -110,10 +110,17 @@ export class CreateScheduleChangeRequestUseCase {
             return err(encounterNotFound(input.encounterId));
           }
 
+          if (
+            input.requestingTeamId !== encounter.homeTeamId &&
+            input.requestingTeamId !== encounter.awayTeamId
+          ) {
+            return err(invalidRequest("The requesting Team is not part of this Encounter"));
+          }
+
           const authorization = await this.deps.authorization.decide({
             actorId: input.actorId,
             permission: ENCOUNTER_PERMISSION.rescheduleRequest,
-            scope,
+            scope: { ...scope, teamId: input.requestingTeamId },
           });
           if (!authorization.allowed) {
             return err(
@@ -128,13 +135,6 @@ export class CreateScheduleChangeRequestUseCase {
           const proposedStartAtResult = await this.resolveProposedStart(input);
           if (proposedStartAtResult.isErr()) return err(proposedStartAtResult.error);
           const proposedStartAt = proposedStartAtResult.value;
-
-          if (
-            input.requestingTeamId !== encounter.homeTeamId &&
-            input.requestingTeamId !== encounter.awayTeamId
-          ) {
-            return err(invalidRequest("The requesting Team is not part of this Encounter"));
-          }
 
           const replay = await this.deps.requests.findByIdempotencyKey(
             input.organizationId,
