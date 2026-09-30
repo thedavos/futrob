@@ -3,6 +3,7 @@ import pg from "pg";
 import { runMigrations } from "@/adapters/persistence/migration-runner.ts";
 import { loadEnv } from "@/config/env.ts";
 import { apiConsoleLogger } from "@/context/styled-console-logger.ts";
+import { parseBaseline } from "@/migrate-args.ts";
 import { loadDotEnvFile } from "@/utils/load-dotenv.ts";
 
 /**
@@ -21,12 +22,14 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-function parseBaseline(argv: readonly string[]): number | undefined {
-  const index = argv.findIndex((arg) => arg === "--baseline" || arg.startsWith("--baseline="));
-  if (index === -1) return undefined;
-  const arg = argv[index] ?? "";
-  const raw = arg.includes("=") ? arg.slice(arg.indexOf("=") + 1) : argv[index + 1];
-  return Number.parseInt(raw ?? "", 10);
+let baseline: number | undefined;
+try {
+  baseline = parseBaseline(process.argv.slice(2));
+} catch (error) {
+  apiConsoleLogger.error("migrate.failed", {
+    message: error instanceof Error ? error.message : "unknown error",
+  });
+  process.exit(1);
 }
 
 const client = new pg.Client({ connectionString: databaseUrl });
@@ -35,7 +38,7 @@ await client.connect();
 try {
   const result = await runMigrations(client, {
     directory: resolve(import.meta.dirname, "../migrations"),
-    baseline: parseBaseline(process.argv.slice(2)),
+    baseline,
     onApplied: (file) => apiConsoleLogger.info("migrate.applied", { file }),
   });
   if (result.baselined.length > 0) {
