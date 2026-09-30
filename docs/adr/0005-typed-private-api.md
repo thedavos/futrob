@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-10
-- Actualizada: 2026-09-22
+- Actualizada: 2026-09-29
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
@@ -20,7 +20,7 @@ significados distintos, aunque ambos viajen como Bearer.
 Web (cookie de sesión) → web BFF /api/v1 ─┐
 Expo SDK (Bearer de sesión) → web BFF ────┤
                                         └→ SDK → API Node /api/v1 → casos de uso
-BFF → AUTH_SERVICE para validar sesión; D1 para resolver ActorId
+BFF → AUTH_SERVICE (`get-session` devuelve el ActorId) para validar sesión
 BFF → API con INTERNAL_JOB_SECRET + X-Futrob-Actor-Id
 ```
 

@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-10
-- Actualizada: 2026-09-22
+- Actualizada: 2026-09-29
 - Reemplaza: [ADR-0009](/docs/adr/0009-cloudflare-workers-topology.md)
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
@@ -14,13 +14,13 @@ Esta revisión consolida ADR-0009 e incorpora la extracción de auth de ADR-0015
 
 ## Decisión
 
-| Unidad        | Runtime y responsabilidad                                                      | Persistencia / dependencia                                                                         |
-| ------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `apps/web`    | TanStack Start en Cloudflare Workers; UI, BFF, proxy auth, Queues/Cron         | SDK hacia API, binding `AUTH_SERVICE`, D1 para lookup de actor y rate limits; binding R2 de medios |
-| `apps/auth`   | Worker Better Auth; credenciales, sesiones y provisionamiento de actores       | D1; única historia de migraciones compartida                                                       |
-| `apps/api`    | Hono/Node en Railway; composición de casos de uso, API de producto y egress EA | Postgres mediante `DATABASE_URL`                                                                   |
-| `apps/mobile` | React Native + Expo; cliente autenticado                                       | SDK al BFF con token de sesión; auth al Worker; SecureStore                                        |
-| `apps/cli`    | Herramienta local de dominio/API                                               | Fakes o API según el comando; no es deployable de producto                                         |
+| Unidad        | Runtime y responsabilidad                                                      | Persistencia / dependencia                                                                                 |
+| ------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `apps/web`    | TanStack Start en Cloudflare Workers; UI, BFF, proxy auth, Queues/Cron         | SDK hacia API, binding `AUTH_SERVICE`, Hyperdrive→Postgres solo para rate limits BFF; binding R2 de medios |
+| `apps/auth`   | Worker Better Auth; credenciales, sesiones y provisionamiento de actores       | Hyperdrive→Postgres de producto (ADR-0021); sin carpeta de migraciones propia                              |
+| `apps/api`    | Hono/Node en Railway; composición de casos de uso, API de producto y egress EA | Postgres mediante `DATABASE_URL`                                                                           |
+| `apps/mobile` | React Native + Expo; cliente autenticado                                       | SDK al BFF con token de sesión; auth al Worker; SecureStore                                                |
+| `apps/cli`    | Herramienta local de dominio/API                                               | Fakes o API según el comando; no es deployable de producto                                                 |
 
 El BFF autentica al cliente y llama a la API de producto; no instancia los adapters de
 producto ni duplica sus casos de uso. Ver [contrato HTTP](/docs/adr/0005-typed-private-api.md),
@@ -51,8 +51,8 @@ autorizado; señales adicionales no sustituyen la API como fuente de verdad.
 
 - Web/auth y API tienen despliegues y configuración separados; preview y producción
   deben aislar bases, buckets, colas y secretos. Este ADR no certifica ese aislamiento desplegado.
-- Las migraciones se ejecutan fuera del request path: D1 en `apps/auth/migrations`,
-  Postgres en `apps/api/migrations`.
+- Las migraciones se ejecutan fuera del request path: una sola historia en
+  `apps/api/migrations` (producto, auth y actores; [ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)).
 - El modo API sin `DATABASE_URL` es útil localmente, pero pierde datos al reiniciar.
 - Cambiar de runtime no mueve el dominio fuera de los packages.
 

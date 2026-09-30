@@ -25,7 +25,7 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 | Capa               | Dónde                        | Puede                                        | No puede                                |
 | ------------------ | ---------------------------- | -------------------------------------------- | --------------------------------------- |
-| `domain`           | `packages/<bc>`              | TS, `@futrob/shared-kernel`, tipos propios   | React, Zod, D1, fetch, Wrangler, Sentry |
+| `domain`           | `packages/<bc>`              | TS, `@futrob/shared-kernel`, tipos propios   | React, Zod, pg, fetch, Wrangler, Sentry |
 | `application`      | `packages/<bc>`              | domain + ports                               | adapters concretos, routes, UI          |
 | `adapters`         | `apps/api` o app propietaria | application/domain vía package, infra de app | UI de otro módulo; internals ajenos     |
 | `server`           | app                          | use cases vía DI; Zod input                  | reglas de dominio                       |
@@ -102,7 +102,7 @@ autorización definitiva a `apps/api`.
 results → game-data/adapters/providers/ea-clubs/*
 statistics → results/adapters/persistence/schemas
 teams → identity DB tables
-routes → getDb() / env.APP_DB
+routes → getDb() / conexiones Postgres crudas (env.HYPERDRIVE)
 routes → role string comparisons
 presentation → repository concrete
 presentation → role string comparisons / permission string literals
@@ -135,11 +135,11 @@ analytics.snapshot-generated
 
 ## Nomenclatura
 
-| Dominio                                                                                      | Ports                  | Use cases                      | Adapters                               |
-| -------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------ | -------------------------------------- |
-| `Encounter`, `ProviderMatch`, `OfficialMatchSelection`                                       | `*Repository`, `*Port` | `SelectOfficialMatchesUseCase` | `D1*Adapter`, `EaClubsGameDataAdapter` |
-| EA: egress en `apps/api/src/adapters/game-data/ea-clubs/`; tipos puros en `@futrob/ea-clubs` |                        |                                |                                        |
+| Dominio                                                                                      | Ports                  | Use cases                      | Adapters                                     |
+| -------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------ | -------------------------------------------- |
+| `Encounter`, `ProviderMatch`, `OfficialMatchSelection`                                       | `*Repository`, `*Port` | `SelectOfficialMatchesUseCase` | `Postgres*Adapter`, `EaClubsGameDataAdapter` |
+| EA: egress en `apps/api/src/adapters/game-data/ea-clubs/`; tipos puros en `@futrob/ea-clubs` |                        |                                |                                              |
 
 ## Persistencia
 
-Los adapters de persistencia de producto viven en `apps/api` y usan Postgres o stores in-memory de desarrollo. `apps/auth` es dueño de D1 para identidad; `apps/web` conserva infraestructura BFF/Workers y `apps/mobile` no accede directamente a ninguna persistencia. Cambiar de plataforma no mueve el dominio fuera de packages.
+Los adapters de persistencia de producto viven en `apps/api` y usan Postgres o stores in-memory de desarrollo. `apps/auth` es el único escritor de las tablas de identidad (`auth_*`, `actors`, `identity_subjects`), que viven en el mismo Postgres y su historia de migraciones en `apps/api/migrations` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); `apps/web` conserva infraestructura BFF/Workers (solo escribe `app_rate_limit_windows`) y `apps/mobile` no accede directamente a ninguna persistencia. Cambiar de plataforma no mueve el dominio fuera de packages.
