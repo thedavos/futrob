@@ -13,7 +13,7 @@ Spanish (`es`) is the default product locale. Use the Spanish accessible names i
 
 ## Launch
 
-From the repo root. Env files must already exist (they are gitignored): `apps/web/.dev.vars`, `apps/auth/.dev.vars`, `apps/api/.env`. `INTERNAL_JOB_SECRET` must match web ↔ API. `BETTER_AUTH_SECRET` must match web ↔ auth. `FUTROB_API_BASE_URL` in web must be `http://localhost:8787/api/v1`.
+From the repo root. Env files must already exist (they are gitignored): `apps/web/.dev.vars`, `apps/auth/.dev.vars`, `apps/api/.env`, plus `apps/auth/.env` and `apps/web/.env` (local Hyperdrive target, see the `.env.example` files). `INTERNAL_JOB_SECRET` must match web ↔ API. `BETTER_AUTH_SECRET` must match web ↔ auth. `FUTROB_API_BASE_URL` in web must be `http://localhost:8787/api/v1`.
 
 ```bash
 .agents/skills/verify-futrob/helpers/verify-futrob launch
@@ -29,11 +29,11 @@ Ready when **all three** answer:
 
 The helper writes a lock under `.agents/skills/verify-futrob/.run/` (pid, pgid, log). Teardown is `cleanup`, never `pkill` by process name.
 
-**Do not launch** if `:3000`, `:8787`, or `:8788` is already listening. Those ports are shared with a normal `npm run dev`. Double-driving a shared instance corrupts the user's session and D1 persist-to at `apps/web/.wrangler/state`. If doctor says the ports belong to a foreign process, stop and tell the operator.
+**Do not launch** if `:3000`, `:8787`, or `:8788` is already listening. Those ports are shared with a normal `npm run dev`. Double-driving a shared instance corrupts the user's session and shares one Postgres. If doctor says the ports belong to a foreign process, stop and tell the operator.
 
 Optional attach (read-only doctor + drive, no launch/cleanup of the stack) only when the operator explicitly said to reuse their already-running `npm run dev` **and** `doctor` exits 0. Still do not start a second stack.
 
-Without `DATABASE_URL`, `apps/api` uses in-memory stores and **wipes orgs on every API hot-reload**. Prefer a migrated Postgres `DATABASE_URL` for any mutating org/competition proof.
+Without `DATABASE_URL`, `apps/api` uses in-memory stores and **wipes orgs on every API hot-reload**. Prefer a migrated Postgres `DATABASE_URL` for any mutating org/competition proof. Sign-in itself needs it: auth and actors live in that Postgres (ADR-0021), so apply `npm run migrate -w @futrob/api` first.
 
 ## Doctor
 

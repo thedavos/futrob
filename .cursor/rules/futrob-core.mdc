@@ -10,7 +10,7 @@ Multi-tenant EA SPORTS FC competitions (MVP: FC Clubs) with hexagonal bounded-co
 ## Stack
 
 - TanStack Start + React in `apps/web`
-- Cloudflare Workers for web/auth (D1, R2, Queues, Cron); Hono/Node on Railway for product API + Postgres
+- Cloudflare Workers for web/auth (Hyperdrive→Postgres, R2, Queues, Cron); Hono/Node on Railway for product API + Postgres
 - Better Auth (identity) + Futrob organizations (authorization)
 - Hexagonal BCs in `packages/<bc>` (domain/application); product adapters and DI in `apps/api`; web is UI/BFF, auth is a separate Worker, mobile uses Expo + SDK
 - shadcn/Base UI, StyleX, Vite+, Sentry at boundaries

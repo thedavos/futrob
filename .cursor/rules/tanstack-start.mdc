@@ -13,7 +13,7 @@ alwaysApply: false
 - Route files coordinate URL parsing, loaders, pending/error states, metadata, and feature composition. They do not contain competitive rules or persistence queries.
 - Prefer SSR loaders and server functions for initial authorized data (first paint, redirects, permission-gated bootstrap).
 - **Client calls to `/api/v1` use TanStack Query** (`useQuery` / `useMutation` or module hooks). Do not add new `useEffect` + fetch for product endpoints. See [ADR-0012](/docs/adr/0012-tanstack-query-client-server-state.md).
-- `queryFn` / `mutationFn` call same-origin `*BrowserClient` helpers (or equivalent). Never import use cases, D1, or provider adapters from presentation.
+- `queryFn` / `mutationFn` call same-origin `*BrowserClient` helpers (or equivalent). Never import use cases, database clients, or provider adapters from presentation.
 - Keys live under `apps/web/src/shared/presentation/query/query-keys.ts`. Invalidate related keys after mutations.
 - Validate all route params, search params, form data, and HTTP bodies at the inbound boundary.
 - Keep filters, selected encounter, tab, and shareable view state in typed URLs when users expect deep links.
@@ -24,7 +24,7 @@ alwaysApply: false
 
 - Product server functions, `/api/v1/*` BFF routes, queue consumers and cron handlers reach `apps/api` through the existing SDK/service boundary. Product use cases and adapters are composed in `apps/api/src/di`, not in the web Worker.
 - Auth routes proxy to the separate auth Worker via `AUTH_SERVICE`; SSR/BFF session resolution uses that same binding (ADR-0015).
-- Server-only modules, secrets, D1/R2 clients, and provider SDKs must not enter client bundles.
+- Server-only modules, secrets, Postgres/R2 clients, and provider SDKs must not enter client bundles.
 - Read Worker bindings from `env` / composition — do not assume Node `process.env` at module scope on Workers.
 - Durable EA sync work is persisted and queued before the request returns.
 - Map expected failures to typed safe responses with `code`, `messageKey`, and `requestId`.

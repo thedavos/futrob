@@ -5,7 +5,7 @@ CLI local para **probar dominio, use cases y la API** mientras construyes Futrob
 ## Para qué sirve
 
 - Ejercitar entidades, value objects y reglas puras sin UI ni Workers.
-- Correr use cases con **fakes en memoria** (ports) antes de tener D1/R2.
+- Correr use cases con **fakes en memoria** (ports) antes de tener Postgres/R2.
 - Smoke rápido de flujos (encuentro → candidatos EA → selección oficial) desde la terminal.
 - Ejercitar **toda la superficie HTTP de `apps/api`** vía `@futrob/sdk` con service auth.
 - `e2e-golden-path`: flujo completo org → competición → entry → publish → fixture en un solo comando.
@@ -14,7 +14,7 @@ CLI local para **probar dominio, use cases y la API** mientras construyes Futrob
 
 - No sustituye Vitest (los tests siguen en el módulo / `packages/test-support`).
 - No es API pública ni herramienta de ops en producción.
-- No importa adapters de Cloudflare (D1, Queues, EA HTTP real) salvo comandos explícitos de integración vía `@futrob/sdk`.
+- No importa adapters de Cloudflare (Hyperdrive, Queues, EA HTTP real) salvo comandos explícitos de integración vía `@futrob/sdk`.
 - No mueve el dominio: ya vive en `@futrob/<bc>`; el CLI solo lo consume.
 
 ## Effect TS
@@ -40,6 +40,12 @@ Todos los endpoints de `apps/api` (salvo meta/openapi) exigen service auth:
 
 Sin `--actor` los endpoints protegidos responderán 401.
 
+Con la API sobre Postgres, el actor **debe existir** en `actors` (ADR-0021): cada `ActorId`
+guardado tiene una FK. Regístrate en la web y usa su id (lo devuelve
+`GET localhost:8788/api/auth/get-session` como `actorId`); un id inventado como
+`actor_demo` falla en cualquier escritura por la FK. Los smokes offline
+usan fakes en memoria y no lo necesitan.
+
 ## Uso
 
 Desde la raíz del monorepo:
@@ -57,9 +63,9 @@ npm run cli -- results-smoke
 
 # Integración (apps/api en marcha):
 npm run dev
-npm run cli -- api-health --actor actor_demo
-npm run cli -- club-search Fera --actor actor_demo --json
-npm run cli -- e2e-golden-path --actor actor_demo
+npm run cli -- api-health --actor <actorId>
+npm run cli -- club-search Fera --actor <actorId> --json
+npm run cli -- e2e-golden-path --actor <actorId>
 ```
 
 ## Comandos

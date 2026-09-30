@@ -16,7 +16,7 @@ read those settings when running `npm run test:coverage` instead of assuming one
 
 1. Domain/policies: pure tests without I/O.
 2. Application: fake ports, deterministic clock/IDs, expected TaggedError outcomes.
-3. Adapters: Postgres product persistence, D1 auth/BFF mappings, sanitized EA fixtures
+3. Adapters: Postgres persistence (product, auth/actors, BFF rate limits; integration tests use `TEST_DATABASE_URL` and seed actors), sanitized EA fixtures
    and implemented Queue/lease/idempotency behavior.
 4. Integration: organization isolation, trusted identity and permission boundaries;
    use the test database/harness documented by the owning app.
