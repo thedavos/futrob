@@ -15,6 +15,7 @@ import {
 } from "@futrob/shared-kernel";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { Pool, type PoolClient } from "pg";
+import { seedActors } from "@/testing/seed-actors.ts";
 import { PostgresEncounterScheduleRepository } from "./encounter-schedule.repository.ts";
 import { PostgresScheduleChangeRequestRepository } from "./schedule-change-request.repository.ts";
 
@@ -374,6 +375,7 @@ async function insertRequest(
 }
 
 async function seedTenants(client: PoolClient): Promise<void> {
+  await seedActors(client, "organizer", actorId);
   await insertOrganization(client, organizationId, "Org A");
   await insertOrganization(client, otherOrganizationId, "Org B");
   await insertCompetition(client, organizationId, competitionId);

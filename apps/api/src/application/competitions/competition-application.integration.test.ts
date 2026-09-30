@@ -14,8 +14,11 @@ import {
   stubFetch,
 } from "@/http/http-app.harness.ts";
 import { parseResponse } from "@/http/parse-response.ts";
+import { seedActors } from "@/testing/seed-actors.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
+// Applies every migration to a possibly remote database (one round trip per statement).
+const MIGRATION_HOOK_TIMEOUT_MS = 120_000;
 const schema = `competition_application_${randomUUID().replaceAll("-", "")}`;
 let admin: Pool;
 let pool: Pool;
@@ -31,7 +34,8 @@ describe.skipIf(!databaseUrl)("competition application Postgres atomicity", () =
       .sort()) {
       await pool.query(await readFile(new URL(filename, migrations), "utf8"));
     }
-  });
+    await seedActors(pool, "application-rollback-organizer", "rollback-applicant");
+  }, MIGRATION_HOOK_TIMEOUT_MS);
 
   afterAll(async () => {
     await pool?.end();

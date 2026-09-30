@@ -5,10 +5,13 @@ import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import { asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
 import { PostgresOrganizationRepository } from "@/adapters/organizations/postgres.repository.ts";
+import { seedActors } from "@/testing/seed-actors.ts";
 import { PostgresCompetitionDiscoveryReader } from "./postgres-discovery.reader.ts";
 import { encodeDiscoveryCursor } from "./discovery-cursor.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
+// Applies every migration to a possibly remote database (one round trip per statement).
+const MIGRATION_HOOK_TIMEOUT_MS = 120_000;
 const schema = `discovery_${randomUUID().replaceAll("-", "")}`;
 const admin = new Pool({ connectionString: databaseUrl });
 const pool = new Pool({ connectionString: databaseUrl, options: `-c search_path=${schema}` });
@@ -20,6 +23,7 @@ describe.skipIf(!databaseUrl)("competition discovery Postgres", () => {
     const directory = resolve(import.meta.dirname, "../../../migrations");
     const files = (await readdir(directory)).filter((file) => file.endsWith(".sql")).sort();
     for (const file of files) await pool.query(await readFile(resolve(directory, file), "utf8"));
+    await seedActors(pool, "actor");
     await pool.query(`
       INSERT INTO organizations (id, name, normalized_name, created_at, created_by_actor_id)
       VALUES ('org-1', 'First', 'first', NOW(), 'actor'), ('org-2', 'Second', 'second', NOW(), 'actor');
@@ -42,7 +46,7 @@ describe.skipIf(!databaseUrl)("competition discovery Postgres", () => {
              ('e-2', 'org-1', 'c-3', 't-2', 'pending', NOW()),
              ('foreign', 'org-2', 'c-3', 'foreign', 'approved', NOW());
     `);
-  });
+  }, MIGRATION_HOOK_TIMEOUT_MS);
 
   afterAll(async () => {
     await pool.end();
