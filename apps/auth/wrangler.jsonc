@@ -8,13 +8,13 @@
     "APP_BASE_URL": "https://futrob.app",
     "BETTER_AUTH_TRUSTED_ORIGINS": "https://futrob.app",
   },
-  "d1_databases": [
+  "hyperdrive": [
     {
-      // Schema owner since ADR-0015 stage 3 (web binds the same DB for session reads).
-      "binding": "APP_DB",
-      "database_name": "futrob-app",
-      "database_id": "00000000-0000-0000-0000-000000000000",
-      "migrations_dir": "migrations",
+      // Product Postgres (ADR-0021); apps/api/migrations is the only schema history.
+      // Replace `id` with the real Hyperdrive config id before the first deploy.
+      // Local dev: set CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE in .dev.vars.
+      "binding": "HYPERDRIVE",
+      "id": "00000000000000000000000000000000",
     },
   ],
 }

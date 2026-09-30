@@ -1,81 +1,95 @@
-import { integer, sqliteTable, text, primaryKey, index } from "drizzle-orm/sqlite-core";
+import {
+  bigint,
+  boolean,
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
-/** Better Auth `user` table (camelCase columns match BA fieldName defaults). */
-export const user = sqliteTable("user", {
+/**
+ * Drizzle mirror of migration `apps/api/migrations/0043_auth_and_actors.sql`.
+ * Property names are Better Auth's field names; SQL columns are snake_case.
+ */
+const timestamptz = (column: string) => timestamp(column, { withTimezone: true, mode: "date" });
+
+export const authUsers = pgTable("auth_users", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  emailVerified: integer("emailVerified", { mode: "boolean" }).notNull().default(false),
+  emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
-  createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamptz("created_at").notNull(),
+  updatedAt: timestamptz("updated_at").notNull(),
 });
 
-export const session = sqliteTable(
-  "session",
+export const authSessions = pgTable(
+  "auth_sessions",
   {
     id: text("id").primaryKey(),
-    expiresAt: integer("expiresAt", { mode: "timestamp_ms" }).notNull(),
+    expiresAt: timestamptz("expires_at").notNull(),
     token: text("token").notNull().unique(),
-    createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
-    ipAddress: text("ipAddress"),
-    userAgent: text("userAgent"),
-    userId: text("userId")
+    createdAt: timestamptz("created_at").notNull(),
+    updatedAt: timestamptz("updated_at").notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
       .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => authUsers.id, { onDelete: "cascade" }),
   },
-  (t) => [index("session_userId_idx").on(t.userId)],
+  (t) => [index("auth_sessions_user_id_index").on(t.userId)],
 );
 
-export const account = sqliteTable(
-  "account",
+export const authAccounts = pgTable(
+  "auth_accounts",
   {
     id: text("id").primaryKey(),
-    accountId: text("accountId").notNull(),
-    providerId: text("providerId").notNull(),
-    userId: text("userId")
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
       .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    accessToken: text("accessToken"),
-    refreshToken: text("refreshToken"),
-    idToken: text("idToken"),
-    accessTokenExpiresAt: integer("accessTokenExpiresAt", { mode: "timestamp_ms" }),
-    refreshTokenExpiresAt: integer("refreshTokenExpiresAt", { mode: "timestamp_ms" }),
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamptz("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamptz("refresh_token_expires_at"),
     scope: text("scope"),
     password: text("password"),
-    createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamptz("created_at").notNull(),
+    updatedAt: timestamptz("updated_at").notNull(),
   },
-  (t) => [index("account_userId_idx").on(t.userId)],
+  (t) => [index("auth_accounts_user_id_index").on(t.userId)],
 );
 
-export const verification = sqliteTable(
-  "verification",
+export const authVerifications = pgTable(
+  "auth_verifications",
   {
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: integer("expiresAt", { mode: "timestamp_ms" }).notNull(),
-    createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
+    expiresAt: timestamptz("expires_at").notNull(),
+    createdAt: timestamptz("created_at").notNull(),
+    updatedAt: timestamptz("updated_at").notNull(),
   },
-  (t) => [index("verification_identifier_idx").on(t.identifier)],
+  (t) => [index("auth_verifications_identifier_index").on(t.identifier)],
 );
 
-export const rateLimit = sqliteTable("rateLimit", {
+export const authRateLimits = pgTable("auth_rate_limits", {
   id: text("id").primaryKey(),
   key: text("key").notNull().unique(),
   count: integer("count").notNull(),
-  lastRequest: integer("lastRequest").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
 
-export const actors = sqliteTable("actors", {
+export const actors = pgTable("actors", {
   id: text("id").primaryKey(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamptz("created_at").notNull(),
 });
 
-export const identitySubjects = sqliteTable(
+export const identitySubjects = pgTable(
   "identity_subjects",
   {
     provider: text("provider").notNull(),
@@ -83,20 +97,24 @@ export const identitySubjects = sqliteTable(
     actorId: text("actor_id")
       .notNull()
       .references(() => actors.id, { onDelete: "cascade" }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamptz("created_at").notNull(),
   },
   (t) => [
     primaryKey({ columns: [t.provider, t.subject] }),
-    index("identity_subjects_actor_id_idx").on(t.actorId),
+    index("identity_subjects_actor_id_index").on(t.actorId),
   ],
 );
 
+/**
+ * Keys are Better Auth model names (`user`, `session`, `account`, `verification`,
+ * `rateLimit`); the Drizzle adapter resolves tables through them.
+ */
 export const authSchema = {
-  user,
-  session,
-  account,
-  verification,
-  rateLimit,
+  user: authUsers,
+  session: authSessions,
+  account: authAccounts,
+  verification: authVerifications,
+  rateLimit: authRateLimits,
   actors,
   identitySubjects,
 };

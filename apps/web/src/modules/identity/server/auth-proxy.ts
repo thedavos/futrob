@@ -136,8 +136,8 @@ export async function forwardAuthRequest(
   }
 }
 
-const authSessionUserSchema = z.object({
-  user: z.object({ id: z.string().min(1) }),
+const authSessionActorSchema = z.object({
+  actorId: z.string().min(1).nullish(),
 });
 
 const authSessionUserNameSchema = z.object({
@@ -177,10 +177,11 @@ export async function fetchAuthSessionUserName(
 }
 
 /**
- * Resolve the Better Auth user id via AUTH_SERVICE. Web does not read
- * session/user tables from D1 — that stays on apps/auth.
+ * Resolve the authenticated ActorId via AUTH_SERVICE. `get-session` carries the
+ * actor provisioned by apps/auth (ADR-0021); web reads no session, user or
+ * identity tables. `null` means no session or no provisioned actor.
  */
-export async function fetchAuthSessionUserId(
+export async function fetchAuthSessionActorId(
   request: Request,
   authService: AuthServiceBinding,
   timeoutMs: number = AUTH_PROXY_TIMEOUT_MS,
@@ -210,8 +211,8 @@ export async function fetchAuthSessionUserId(
     if (raw == null) {
       return null;
     }
-    const parsed = authSessionUserSchema.safeParse(raw);
-    return parsed.success ? parsed.data.user.id : null;
+    const parsed = authSessionActorSchema.safeParse(raw);
+    return parsed.success ? (parsed.data.actorId ?? null) : null;
   } catch (error) {
     if (error instanceof AuthServiceUnavailableError) {
       throw error;

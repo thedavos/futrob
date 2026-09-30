@@ -10,13 +10,13 @@
     "FUTROB_API_BASE_URL": "https://api.futrob.app/api/v1",
   },
   "services": [{ "binding": "AUTH_SERVICE", "service": "futrob-auth" }],
-  "d1_databases": [
+  "hyperdrive": [
     {
-      "binding": "APP_DB",
-      "database_name": "futrob-app",
-      // One global migration history for the shared D1 (ADR-0015).
-      "database_id": "00000000-0000-0000-0000-000000000000",
-      "migrations_dir": "../auth/migrations",
+      // Product Postgres (ADR-0021): only for BFF rate limits. apps/api/migrations is
+      // the single schema history. Replace `id` with the real Hyperdrive config id.
+      // Local dev: set CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE.
+      "binding": "HYPERDRIVE",
+      "id": "00000000000000000000000000000000",
     },
   ],
   "r2_buckets": [
