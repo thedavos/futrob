@@ -78,7 +78,7 @@ describe("providerGameEditionFromDraft", () => {
   });
 
   it("falls back when the edition is blank", () => {
-    expect(providerGameEditionFromDraft("")).toBe("fc26");
+    expect(providerGameEditionFromDraft("")).toBe("fc27");
     expect(providerGameEditionFromDraft("   ", "fc25")).toBe("fc25");
   });
 });

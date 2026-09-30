@@ -225,7 +225,7 @@ export const futrobOpenApiV1 = {
             name: "gameEdition",
             in: "query",
             required: false,
-            schema: { type: "string", default: "fc26" },
+            schema: { type: "string", default: "fc27" },
           },
         ],
         responses: {
@@ -276,7 +276,7 @@ export const futrobOpenApiV1 = {
             name: "gameEdition",
             in: "query",
             required: false,
-            schema: { type: "string", default: "fc26" },
+            schema: { type: "string", default: "fc27" },
           },
         ],
         responses: {
@@ -327,7 +327,7 @@ export const futrobOpenApiV1 = {
             name: "gameEdition",
             in: "query",
             required: false,
-            schema: { type: "string", default: "fc26" },
+            schema: { type: "string", default: "fc27" },
           },
           {
             name: "matchType",

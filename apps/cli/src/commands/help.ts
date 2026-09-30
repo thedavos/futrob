@@ -57,7 +57,7 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   club-search <query>
   club-get <externalClubId>
   club-matches <externalClubId>
-  sync-job-enqueue <orgId> <clubId> [--platform playstation] [--edition fc26] [--match-type club_match] [--max 10]
+  sync-job-enqueue <orgId> <clubId> [--platform playstation] [--edition fc27] [--match-type club_match] [--max 10]
   sync-job-run <jobId>
   sync-job-run-next
   provider-health [providerKey]

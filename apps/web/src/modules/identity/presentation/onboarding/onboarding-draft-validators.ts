@@ -16,8 +16,8 @@ export function validOptionalAccount(draft: OnboardingDraft): boolean {
   return empty || validCompleteAccount(draft);
 }
 
-/** Maps onboarding display editions ("FC 26") to EA provider keys ("fc26"). */
-export function providerGameEditionFromDraft(gameEdition: string, fallback = "fc26"): string {
+/** Maps onboarding display editions ("FC 27") to EA provider keys ("fc27"). */
+export function providerGameEditionFromDraft(gameEdition: string, fallback = "fc27"): string {
   const normalized = gameEdition
     .trim()
     .toLowerCase()

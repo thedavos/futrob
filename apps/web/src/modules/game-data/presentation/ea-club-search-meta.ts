@@ -1,7 +1,7 @@
 import { EA_SEARCH_PLATFORM_OPTIONS } from "@futrob/api-contracts";
 
 /** Default EA Clubs search edition when the caller has no draft value. */
-export const DEFAULT_EA_SEARCH_GAME_EDITION = "fc26";
+export const DEFAULT_EA_SEARCH_GAME_EDITION = "fc27";
 
 /** Hard cap on clubs shown after an EA Clubs search. */
 export const MAX_EXTERNAL_CLUB_SEARCH_RESULTS = 3;

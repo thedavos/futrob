@@ -183,7 +183,7 @@ export class NativeOnboardingFlow {
         this.draft.gameAccount.gameEdition
           ?.trim()
           .toLowerCase()
-          .replace(/[\s_-]+/g, "") || "fc26",
+          .replace(/[\s_-]+/g, "") || "fc27",
     });
     return result.clubs;
   }

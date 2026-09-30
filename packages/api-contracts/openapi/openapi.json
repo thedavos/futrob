@@ -218,7 +218,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "default": "fc26"
+              "default": "fc27"
             }
           }
         ],
@@ -295,7 +295,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "default": "fc26"
+              "default": "fc27"
             }
           }
         ],
@@ -372,7 +372,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "default": "fc26"
+              "default": "fc27"
             }
           },
           {
@@ -6400,7 +6400,7 @@
                     },
                     "presentation": {
                       "type": "object",
-                      "required": ["displayName", "avatarUrl"],
+                      "required": ["displayName", "avatarUrl", "gameAccount"],
                       "properties": {
                         "displayName": {
                           "type": "string"
@@ -6408,6 +6408,32 @@
                         "avatarUrl": {
                           "type": ["string", "null"],
                           "format": "uri"
+                        },
+                        "gameAccount": {
+                          "oneOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": ["platform", "gameEdition"],
+                              "properties": {
+                                "platform": {
+                                  "type": "string",
+                                  "enum": [
+                                    "playstation",
+                                    "xbox",
+                                    "pc",
+                                    "nintendo-switch-1",
+                                    "nintendo-switch-2"
+                                  ]
+                                },
+                                "gameEdition": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          ]
                         }
                       }
                     }
