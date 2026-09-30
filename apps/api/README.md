@@ -150,7 +150,7 @@ npm run api
 
 ## Railway notes
 
-- Apply every SQL migration in `apps/api/migrations/` in filename order before relying on persistence: `npm run migrate -w @futrob/api` runs the pending files (one transaction each, recorded in `schema_migrations`) against `DATABASE_URL`. This is the single history for product, auth (`auth_*`), `actors`/`identity_subjects` and `app_rate_limit_windows` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); do not stop at an older documented migration number.
+- Apply every SQL migration in `apps/api/migrations/` in filename order before relying on persistence: `npm run migrate -w @futrob/api` runs the pending files (one transaction each, recorded in `schema_migrations`) against `DATABASE_URL`. This is the single history for product, auth (`auth_*`), `actors`/`identity_subjects` and `app_rate_limit_windows` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); do not stop at an older documented migration number. A database whose schema predates the ledger (it has tables but no `schema_migrations`) is never replayed from `0001`: the runner refuses until you record where it stands with `npm run migrate -w @futrob/api -- --baseline <N>` (`N` = number of the last migration already applied); those files are recorded, not executed.
 - Set `TEST_DATABASE_URL` to run the clean/legacy migration integration suite; it creates and
   removes a uniquely named schema without touching existing schemas.
 - Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.

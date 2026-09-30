@@ -35,7 +35,7 @@ decisión la tomó el responsable del proyecto el 2026-09-29.
    ownership: `apps/auth` es el único escritor de las tablas `auth_*`, `actors` e
    `identity_subjects`; `apps/web` solo escribe `app_rate_limit_windows`; la API no lee
    tablas Better Auth. Las migraciones se aplican con `npm run migrate -w @futrob/api`,
-   fuera del request path.
+   fuera del request path. Una base que ya tenía el esquema pero no el ledger `schema_migrations` no se reejecuta desde `0001`: el runner exige `--baseline <N>` para registrar hasta dónde llegaba.
 3. Toda columna de producto que guarda un `ActorId` referencia `actors (id)` con
    `ON DELETE RESTRICT`; `identity_subjects.actor_id` usa `ON DELETE CASCADE`. Un actor
    con historial de producto no se borra implícitamente.
