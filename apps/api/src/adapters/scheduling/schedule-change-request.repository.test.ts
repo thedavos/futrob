@@ -183,6 +183,10 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
     await expect(repository.listActiveByEncounter(organizationId, encounterId)).resolves.toEqual([
       next,
     ]);
+    await expect(repository.listByEncounter(organizationId, encounterId)).resolves.toEqual([
+      next,
+      { ...open, status: "rejected", updatedAt: new Date(now.getTime() + 1) },
+    ]);
   });
 
   it("counts only accepted requests for the requesting Team on that Encounter", async () => {

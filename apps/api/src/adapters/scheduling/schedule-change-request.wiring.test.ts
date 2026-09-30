@@ -97,6 +97,10 @@ describe("createSchedulingModule schedule change requests", () => {
       scheduling.scheduleChangeRequests.findByIdempotencyKey(otherOrganizationId, "idem-1"),
     ).resolves.toBeNull();
     await expect(scheduling.encounters.findById(encounterId)).resolves.toEqual(snapshot);
+    const listed = await scheduling.listScheduleChangeRequests.execute({ actorId, encounterId });
+    expect(listed.isOk()).toBe(true);
+    if (listed.isErr()) throw listed.error;
+    expect(listed.value).toEqual([created.value]);
     expect(events).toHaveLength(1);
     expect(events[0]?.eventName).toBe("scheduling.reschedule-requested");
 
