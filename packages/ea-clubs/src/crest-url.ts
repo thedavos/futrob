@@ -1,13 +1,17 @@
-const EA_CLUB_CREST_CDN_BY_EDITION = {
-  fc26: {
-    baseUrl:
-      "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026",
-  },
-  fc25: {
-    baseUrl:
-      "https://eafc25.content.easports.com/fc/fltOnlineAssets/25E4CDAE-799B-45BE-B257-667FDCDE8044/2025",
-  },
-} as const;
+const EA_CLUB_CREST_CDN_BY_EDITION: ReadonlyMap<string, string> = new Map([
+  [
+    "fc27",
+    "https://eafc27.content.easports.com/fc/fltOnlineAssets/27A3C9F1-6B2E-4D7A-8C1F-2E9B5A4D6C7E/2027",
+  ],
+  [
+    "fc26",
+    "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026",
+  ],
+  [
+    "fc25",
+    "https://eafc25.content.easports.com/fc/fltOnlineAssets/25E4CDAE-799B-45BE-B257-667FDCDE8044/2025",
+  ],
+]);
 
 export function buildEaClubCrestUrl(
   gameEdition: string,
@@ -15,15 +19,9 @@ export function buildEaClubCrestUrl(
 ): string | null {
   const id = crestAssetId?.trim();
   if (!id) return null;
-  const edition = gameEdition.trim().toLowerCase();
-  const cdn =
-    edition === "fc26"
-      ? EA_CLUB_CREST_CDN_BY_EDITION.fc26
-      : edition === "fc25"
-        ? EA_CLUB_CREST_CDN_BY_EDITION.fc25
-        : null;
-  if (!cdn) return null;
-  return `${cdn.baseUrl}/fcweb/crests/256x256/l${id}.png`;
+  const baseUrl = EA_CLUB_CREST_CDN_BY_EDITION.get(gameEdition.trim().toLowerCase());
+  if (!baseUrl) return null;
+  return `${baseUrl}/fcweb/crests/256x256/l${id}.png`;
 }
 
 export function crestAssetIdFromCustomKit(

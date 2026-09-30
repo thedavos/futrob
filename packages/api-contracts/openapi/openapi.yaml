@@ -139,7 +139,7 @@ paths:
           required: false
           schema:
             type: string
-            default: fc26
+            default: fc27
       responses:
         "200":
           description: Matching clubs
@@ -191,7 +191,7 @@ paths:
           required: false
           schema:
             type: string
-            default: fc26
+            default: fc27
       responses:
         "200":
           description: Club
@@ -243,7 +243,7 @@ paths:
           required: false
           schema:
             type: string
-            default: fc26
+            default: fc27
         - name: matchType
           in: query
           required: false
@@ -4691,6 +4691,7 @@ components:
                     required:
                       - displayName
                       - avatarUrl
+                      - gameAccount
                     properties:
                       displayName:
                         type: string
@@ -4699,6 +4700,24 @@ components:
                           - string
                           - "null"
                         format: uri
+                      gameAccount:
+                        oneOf:
+                          - type: "null"
+                          - type: object
+                            required:
+                              - platform
+                              - gameEdition
+                            properties:
+                              platform:
+                                type: string
+                                enum:
+                                  - playstation
+                                  - xbox
+                                  - pc
+                                  - nintendo-switch-1
+                                  - nintendo-switch-2
+                              gameEdition:
+                                type: string
     CompetitionParticipantInput:
       oneOf:
         - type: object

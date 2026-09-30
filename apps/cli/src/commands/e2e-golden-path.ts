@@ -19,7 +19,7 @@ export function run(raw: string[]): Effect.Effect<number, CliError> {
     const common = parseCommon(raw);
     const config: ClientConfig = { baseUrl: common.baseUrl, actorId: common.actorId };
     const suffix = flagBoolean(common.flags, "keep-names") ? "" : `-${Date.now()}`;
-    const gameEdition = flagString(common.flags, "edition") ?? "fc26";
+    const gameEdition = flagString(common.flags, "edition") ?? "fc27";
     const platform = competitionPlatformSchema.parse(
       flagString(common.flags, "platform") ?? "playstation",
     );

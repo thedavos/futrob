@@ -92,7 +92,7 @@ function browserTimeZone(): string {
 function emptyDraftFields(): CompetitionDraftFieldsValue {
   return {
     name: "",
-    gameEdition: "FC 26",
+    gameEdition: "FC 27",
     customEdition: false,
     platform: null,
     region: null,

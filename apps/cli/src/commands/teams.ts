@@ -15,7 +15,7 @@ const USAGE = `Uso:
   npm run cli -- roster-add <orgId> <compId> <teamId> <playerProfileId> [--role captain|player]
   npm run cli -- roster-close <orgId> <compId> <teamId>
   npm run cli -- roster-open <orgId> <compId> <teamId>
-  npm run cli -- club-link <orgId> <compId> <teamId> <externalClubId> <externalClubName> [--provider ea-clubs] [--platform playstation] [--edition fc26]`;
+  npm run cli -- club-link <orgId> <compId> <teamId> <externalClubId> <externalClubName> [--provider ea-clubs] [--platform playstation] [--edition fc27]`;
 
 function configOf(common: ReturnType<typeof parseCommon>): ClientConfig {
   return { baseUrl: common.baseUrl, actorId: common.actorId };
@@ -163,7 +163,7 @@ export function clubLink(raw: string[]): Effect.Effect<number, CliError> {
       externalClubId,
       externalClubName,
       platform: flagString(common.flags, "platform") ?? "playstation",
-      gameEdition: flagString(common.flags, "edition") ?? "fc26",
+      gameEdition: flagString(common.flags, "edition") ?? "fc27",
     };
     const result = yield* apiCall(configOf(common), (client) =>
       client.teams.connectExternalClub(organizationId, competitionId, teamId, input),

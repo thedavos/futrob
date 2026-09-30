@@ -23,7 +23,7 @@ export function useClubQuery(
   const id = externalClubId?.trim() ?? "";
   const providerKey = input.providerKey ?? "ea-clubs";
   const platform = input.platform ?? "common-gen5";
-  const gameEdition = input.gameEdition ?? "fc26";
+  const gameEdition = input.gameEdition ?? "fc27";
 
   return useQuery({
     queryKey: queryKeys.gameData.club({

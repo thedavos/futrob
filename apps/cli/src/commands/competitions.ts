@@ -14,7 +14,7 @@ import { flagString, parseCommon } from "../lib/parse-flags.ts";
 import { print, printJson } from "../lib/print.ts";
 
 const USAGE = `Uso:
-  npm run cli -- comp-create <orgId> <name> [--edition fc26] [--platform playstation] [--region america] [--tz UTC] [--format league]
+  npm run cli -- comp-create <orgId> <name> [--edition fc27] [--platform playstation] [--region america] [--tz UTC] [--format league]
   npm run cli -- comp-list <orgId>
   npm run cli -- comp-show <orgId> <compId>
   npm run cli -- comp-publish <orgId> <compId>
@@ -41,7 +41,7 @@ export function compCreate(raw: string[]): Effect.Effect<number, CliError> {
     const [organizationId, name] = yield* requirePositionals(common.positionals, 2, USAGE);
     const input = {
       name,
-      gameEdition: flagString(common.flags, "edition") ?? "fc26",
+      gameEdition: flagString(common.flags, "edition") ?? "fc27",
       platform: competitionPlatformSchema.parse(
         flagString(common.flags, "platform") ?? "playstation",
       ),
