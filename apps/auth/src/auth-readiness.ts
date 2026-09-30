@@ -1,11 +1,11 @@
 export const REQUIRED_AUTH_TABLES = [
-  "user",
-  "session",
-  "account",
-  "verification",
+  "auth_users",
+  "auth_sessions",
+  "auth_accounts",
+  "auth_verifications",
+  "auth_rate_limits",
   "actors",
   "identity_subjects",
-  "rateLimit",
 ] as const;
 
 export function hasRequiredAuthTables(tableNames: readonly string[]): boolean {
@@ -13,9 +13,13 @@ export function hasRequiredAuthTables(tableNames: readonly string[]): boolean {
   return REQUIRED_AUTH_TABLES.every((tableName) => existing.has(tableName));
 }
 
-export async function isAuthSchemaReady(database: D1Database): Promise<boolean> {
-  const result = await database
-    .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
-    .all<{ name: string }>();
-  return hasRequiredAuthTables(result.results.map(({ name }) => name));
+export interface AuthSchemaProbe {
+  query(text: string): Promise<{ rows: { table_name: string }[] }>;
+}
+
+export async function isAuthSchemaReady(probe: AuthSchemaProbe): Promise<boolean> {
+  const result = await probe.query(
+    "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema()",
+  );
+  return hasRequiredAuthTables(result.rows.map(({ table_name }) => table_name));
 }

@@ -1,5 +1,6 @@
 export interface AuthWorkerEnv {
-  readonly APP_DB?: D1Database;
+  /** Hyperdrive binding to the product Postgres (ADR-0021). */
+  readonly HYPERDRIVE?: Hyperdrive;
   readonly APP_BASE_URL?: string;
   readonly BETTER_AUTH_SECRET?: string;
   readonly BETTER_AUTH_URL?: string;

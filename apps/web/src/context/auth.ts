@@ -1,6 +1,3 @@
-import {
-  AuthUnauthenticatedError,
-  requireAuthenticatedActor,
-} from "@/modules/identity/server/session-auth.ts";
+import { AuthUnauthenticatedError } from "@/modules/identity/server/auth-errors.ts";
 
-export { AuthUnauthenticatedError, requireAuthenticatedActor };
+export { AuthUnauthenticatedError };

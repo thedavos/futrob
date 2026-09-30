@@ -1,6 +1,6 @@
 # Registro de decisiones de arquitectura
 
-Actualizado: 2026-09-27.
+Actualizado: 2026-09-29.
 
 Este índice distingue la **vigencia de una decisión** del **estado de su implementación**.
 Aceptada no significa desplegada ni verificada de extremo a extremo. Las referencias
@@ -36,12 +36,13 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0012: TanStack Query para server state de UI sobre `/api/v1`](/docs/adr/0012-tanstack-query-client-server-state.md)      | Aceptada    | Query en web; validación por flujo                                          |
 | [ADR-0013: Egress a EA solo desde la API de producto](/docs/adr/0013-ea-egress-api-only.md)                                   | Aceptada    | Egress EA concentrado en API                                                |
 | [ADR-0014: Tokens de diseño compartidos y UI nativa en móvil](/docs/adr/0014-shared-ui-tokens-and-mobile-ui.md)               | Aceptada    | Tokens compartidos y CSS generado; UI por plataforma                        |
-| [ADR-0015: Autenticación, identidad y ownership de D1](/docs/adr/0015-auth-extraction.md)                                     | Aceptada    | Auth extraída; web proxy por service binding                                |
+| [ADR-0015: Autenticación, identidad y ownership de D1](/docs/adr/0015-auth-extraction.md)                                     | Aceptada    | Auth extraída; almacenamiento reemplazado por ADR-0021                      |
 | [ADR-0016: Proyección transaccional de resultados oficiales](/docs/adr/0016-official-results-transactional-projection.md)     | Aceptada    | Resultado + estadísticas transaccionales; bracket y outbox pendientes       |
 | [ADR-0017: Autorización contextual por capacidades](/docs/adr/0017-contextual-capability-authorization.md)                    | Aceptada    | Resolver contextual y matriz de pruebas existentes                          |
 | [ADR-0018: Descubrimiento autenticado de competiciones publicadas](/docs/adr/0018-authenticated-competition-discovery.md)     | Aceptada    | Explore autenticado; portal público anónimo sigue fuera                     |
 | [ADR-0019: Inscripciones abiertas y postulación de equipos](/docs/adr/0019-competition-registration-and-applications.md)      | Aceptada    | Estado `registration` y postulación; notificación al organizador pendiente  |
 | [ADR-0020: Perfil de competición y portadas en R2](/docs/adr/0020-competition-profile-and-media.md)                           | Aceptada    | Cupo, fechas y portada; limpieza de huérfanos en R2 pendiente               |
+| [ADR-0021: Auth, actores y rate limits en el Postgres de producto](/docs/adr/0021-auth-and-actors-in-product-postgres.md)     | Aceptada    | Implementado en el checkout; Hyperdrive→Railway sin desplegar               |
 
 ## Consolidación de septiembre de 2026
 
@@ -49,8 +50,9 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 - ADR-0002 absorbe ADR-0010: hexágonos, packages y dependencias públicas.
 - ADR-0015 absorbe ADR-0003: auth, actores y ownership de D1.
 - ADR-0016 y ADR-0017 formalizan consistencia transaccional y autorización contextual.
+- ADR-0021 reemplaza el almacenamiento D1 de ADR-0015: auth, actores y rate limits pasan al Postgres de producto.
 
-Quedan **15 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
+Quedan **16 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
 archivo antiguos se conservan para no romper referencias. Para implementación nueva,
 seguir el sucesor indicado, aunque un enlace histórico aún apunte al documento anterior.
 

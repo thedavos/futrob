@@ -12,7 +12,7 @@ La UI autenticada de `apps/web` consume `/api/v1` vía `*BrowserClient` same-ori
 ## Decisión
 
 1. **TanStack Query** es la capa de server state en **presentation** para llamadas cliente a endpoints `/api/v1` (listas, detalle, búsquedas disparadas, mutaciones + invalidación).
-2. Los `queryFn` / `mutationFn` delegan en `*BrowserClient` (o helpers equivalentes). No llaman use cases, D1 ni adapters de proveedor.
+2. Los `queryFn` / `mutationFn` delegan en `*BrowserClient` (o helpers equivalentes). No llaman use cases, bases de datos ni adapters de proveedor.
 3. Las **query keys** viven en `apps/web/src/shared/presentation/query/query-keys.ts` y espejan recursos del contrato (`players`, `organizations`, `competitions`, `game-data`, …).
 4. El **`QueryClientProvider`** monta en el root de la app (`AppProviders`). No entra en `di/`, bootstrap server ni `packages/<bc>`.
 5. **Loaders / server functions de Start** siguen siendo el camino preferido para el primer paint autorizado, redirects y datos SSR (p. ej. onboarding). Query no los sustituye.

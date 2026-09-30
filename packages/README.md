@@ -81,7 +81,7 @@ apps/web, Expo  ──► @futrob/sdk
 
 ## Anti-patrones
 
-- Meter adapters D1/EA/Wrangler dentro de `@futrob/<bc>`.
+- Meter adapters Postgres/EA/Wrangler dentro de `@futrob/<bc>`.
 - Hacer que el SDK importe dominio de packages.
 - Reintroducir un SDK Dart/Flutter; el cliente móvil es React Native + Expo.
 - Duplicar use cases en `apps/web` y `apps/api`.

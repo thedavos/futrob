@@ -82,6 +82,6 @@ sequenceDiagram
 - Import lint: `domain` sin adapters; `di/` único lugar de concreciones (hoy solo `apps/api/src/di`, ver [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)).
 - Tests de dominio sin I/O.
 - Application tests con ports fake.
-- Adapter tests Postgres/D1 según ownership + fixtures EA sanitizadas.
+- Adapter tests Postgres según ownership + fixtures EA sanitizadas.
 - Aislamiento two-org.
 - Replay de queue/outbox/confirmación.

@@ -113,7 +113,7 @@ If the story imports `apps/web` modules that touch auth, router, SDK, or Workers
 
 - [ ] Inspect `.storybook/main.ts`; reuse current module story clients and fixtures before adding mocks or aliases
 - [ ] Use an isolated QueryClient, i18n provider and memory router as needed; mirror Inicio or the nearest current page story
-- [ ] Never call real Better Auth, D1, EA, or Railway from a story
+- [ ] Never call real Better Auth, Postgres, EA, or Railway from a story
 - [ ] Stub post-success navigation targets so submit flows do not explode
 
 ## Implementation steps

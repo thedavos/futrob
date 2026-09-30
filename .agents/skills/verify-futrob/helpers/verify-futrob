@@ -43,7 +43,7 @@ http_body() {
 
 require_env_files() {
   local missing=0
-  for rel in apps/web/.dev.vars apps/auth/.dev.vars apps/api/.env; do
+  for rel in apps/web/.dev.vars apps/auth/.dev.vars apps/api/.env apps/auth/.env apps/web/.env; do
     if [[ ! -f "${REPO_ROOT}/${rel}" ]]; then
       echo "doctor: missing ${rel} (copy the matching .example and align secrets)" >&2
       missing=1

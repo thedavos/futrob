@@ -1,4 +1,3 @@
-export type { SessionIdentityPort, RequestHeaders } from "./domain/ports/session-identity.port.ts";
 export type { ActorProvisionerPort } from "./domain/ports/actor-provisioner.port.ts";
 export type { ActorOnboardingPort } from "./domain/ports/actor-onboarding.port.ts";
 export { InvalidOnboardingProgress } from "./domain/errors/onboarding.errors.ts";

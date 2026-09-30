@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
-import type { AppD1Database } from "../d1.ts";
 import { BFF_RATE_LIMIT_POLICY } from "./bff-rate-limiter.ts";
 import {
   BffRateLimitUnavailableError,
@@ -143,13 +142,7 @@ describe("enforceBffRateLimit", () => {
           fingerprintSecret: "",
           environment: "test",
           bindings: {
-            APP_DB: {
-              prepare: () => {
-                throw new Error("unavailable");
-              },
-              batch: async () => [],
-              exec: async () => ({ success: false }),
-            } satisfies AppD1Database,
+            HYPERDRIVE: { connectionString: "postgres://unavailable.invalid/futrob" },
           },
         },
       ),

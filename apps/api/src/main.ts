@@ -12,6 +12,10 @@ import { createModules } from "@/di/create-modules.ts";
 import { initSentry, registerGlobalSentryHandlers } from "@/observability/sentry.ts";
 import { loadDotEnvFile } from "@/utils/load-dotenv.ts";
 import { asActorId } from "@futrob/shared-kernel";
+import { z } from "zod";
+
+const postgresErrorCodeSchema = z.object({ code: z.string() });
+const FOREIGN_KEY_VIOLATION = "23503";
 
 loadDotEnvFile();
 
@@ -27,7 +31,17 @@ const modules = createModules({
   pool,
 });
 if (env.initialSuperuserActorId) {
-  await modules.authorization.bootstrapInitialSuperuser(asActorId(env.initialSuperuserActorId));
+  try {
+    await modules.authorization.bootstrapInitialSuperuser(asActorId(env.initialSuperuserActorId));
+  } catch (error) {
+    // Actors are provisioned by apps/auth on first sign-in (ADR-0021), so the
+    // configured id may not exist yet. Start anyway; the bootstrap retries on the next boot.
+    const postgresError = postgresErrorCodeSchema.safeParse(error);
+    if (!postgresError.success || postgresError.data.code !== FOREIGN_KEY_VIOLATION) throw error;
+    apiConsoleLogger.warn("authorization.initial_superuser.actor_missing", {
+      actorId: env.initialSuperuserActorId,
+    });
+  }
 }
 
 const app = createApp({

@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-17
-- Actualizada: 2026-09-22
+- Actualizada: 2026-09-29
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
@@ -10,8 +10,8 @@
 Los datos privados de organizaciones, competiciones y equipos requieren aislamiento.
 La decisión original aplicaba scoping sobre D1. Producto ahora vive en Postgres: se
 mantiene el aislamiento explícito por aplicación sin depender de Postgres RLS.
-Auth/actores y rate limits BFF permanecen en D1 según
-[ADR-0015](/docs/adr/0015-auth-extraction.md).
+Auth, actores y rate limits BFF viven en ese mismo Postgres según
+[ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md).
 
 ## Decisión
 

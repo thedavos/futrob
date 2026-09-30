@@ -11,13 +11,13 @@ Four product deployables are part of the MVP and wired locally:
 | App                          | Role                                                                  |
 | ---------------------------- | --------------------------------------------------------------------- |
 | [`apps/web`](apps/web)       | TanStack Start on Workers — UI, auth proxy, BFF                       |
-| [`apps/auth`](apps/auth)     | Better Auth Worker — credentials, sessions, actors, D1 migrations     |
+| [`apps/auth`](apps/auth)     | Better Auth Worker — credentials, sessions, actors (product Postgres) |
 | [`apps/api`](apps/api)       | Hono on Node (Railway) — product `/api/v1`, Postgres, EA Clubs egress |
 | [`apps/mobile`](apps/mobile) | React Native + Expo — native authenticated client via `@futrob/sdk`   |
 
 Implemented surfaces in the repository (deployment and end-to-end acceptance require separate verification):
 
-- Email/password auth (Better Auth on D1) with Tunnel Split `/login` and `/signup`
+- Email/password auth (Better Auth on Postgres) with Tunnel Split `/login` and `/signup`
 - Post-auth gate checks onboarding first, then resolves `/player`, `/orgs`, or `/orgs/:id` by membership count
 - Organizations, memberships, and invitations on **Postgres** via `apps/api` (web BFF resolves `ActorId` and calls the API with `INTERNAL_JOB_SECRET`)
 - Game-data club search against EA Clubs through `apps/api`
@@ -30,8 +30,8 @@ Still ahead for MVP: completion and acceptance of all competition/scheduling/res
 ## Deployable split
 
 ```text
-Browser ──cookie──► apps/web ──AUTH_SERVICE──► apps/auth ──► D1
-Mobile  ──Bearer──► apps/auth ──────────────────► D1
+Browser ──cookie──► apps/web ──AUTH_SERVICE──► apps/auth ──Hyperdrive──► Postgres
+Mobile  ──Bearer──► apps/auth ─────────────────────────Hyperdrive──► Postgres
 Mobile  ──Bearer──► apps/web /api/v1 BFF
                        │
                        └── service auth + ActorId ──► apps/api
@@ -39,10 +39,10 @@ Mobile  ──Bearer──► apps/web /api/v1 BFF
                                                        └── EA Clubs
 ```
 
-- `apps/auth` writes credentials, sessions, actors, and auth rate limits in D1.
-- `apps/web` asks `AUTH_SERVICE` for `get-session` and only looks up `identity_subjects` (and BFF rate limits) in D1.
-- **Organizations / memberships / invitations** on `apps/api` + Postgres.
-- UI never talks org persistence to D1.
+- `apps/auth` writes credentials, sessions, actors, and auth rate limits in the product Postgres.
+- `apps/web` asks `AUTH_SERVICE` for `get-session`, which already carries the `actorId`; it only writes its own BFF rate-limit windows.
+- **Organizations / memberships / invitations** on `apps/api` + Postgres. Every stored `ActorId` references `actors`.
+- UI never talks persistence directly; browsers and Expo only use `apps/web`/`apps/auth` over HTTP.
 
 ## Critical separation
 
@@ -62,8 +62,8 @@ analytics    → premium interpretation
 | API           | Hono + Node (`apps/api`) → Railway                       |
 | Mobile        | React Native + Expo MVP, vía `@futrob/sdk`               |
 | Architecture  | Hexagonal BCs in `packages/<bc>`; DI in each app         |
-| Auth          | Better Auth (D1) + Futrob organizations (Postgres)       |
-| Data (web)    | D1 (auth/actors), R2, Queues, Cron                       |
+| Auth          | Better Auth + Futrob organizations (both in Postgres)    |
+| Data (web)    | Hyperdrive → Postgres (rate limits), R2, Queues, Cron    |
 | Data (api)    | Postgres (`DATABASE_URL`)                                |
 | UI            | Sistema light-first Futrob, shadcn / Base UI + Storybook |
 | Tooling       | Vite+ (oxfmt, oxlint, Vitest)                            |
@@ -78,7 +78,7 @@ apps/
 ├── api/                 # Product API (Railway) — Postgres + EA egress
 │   ├── migrations/      # Postgres (organizations, …)
 │   └── src/{adapters,di,http}/
-├── auth/                # Better Auth Worker; migrations/ owns shared D1 history (auth + BFF)
+├── auth/                # Better Auth Worker (tables live in apps/api/migrations)
 ├── mobile/              # React Native + Expo (Expo Router) — see apps/mobile/README.md
 └── cli/                 # Domain playground — see apps/cli/README.md
 
@@ -114,12 +114,13 @@ cp apps/auth/.dev.vars.example apps/auth/.dev.vars
 # API env
 cp apps/api/.env.example apps/api/.env
 # set INTERNAL_JOB_SECRET (must match web)
-# DATABASE_URL is optional locally; without it, the API uses in-memory stores
+# DATABASE_URL is required to sign in (auth lives in Postgres); without it the API alone uses in-memory stores
 
-# One shared D1 migration history, owned by apps/auth
-cd apps/auth && npx wrangler d1 migrations apply futrob-app --local --persist-to ../web/.wrangler/state && cd ../..
+# Hyperdrive target for the Workers (same Postgres as DATABASE_URL); gitignored files
+cp apps/auth/.env.example apps/auth/.env && cp apps/web/.env.example apps/web/.env   # then set the connection string
 
-# Postgres (organizations) — apply apps/api/migrations/*.sql to DATABASE_URL
+# One schema history (product + auth + actors) — apply to DATABASE_URL
+npm run migrate -w @futrob/api
 
 npm run dev                # web (:3000) + api (:8787) + auth (:8788)
 npm run web                # web only (:3000)

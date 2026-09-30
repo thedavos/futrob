@@ -4,7 +4,7 @@ Schemas Zod y OpenAPI del transporte HTTP privado `/api/v1`.
 
 - Sin dominio hexagonal.
 - Sin clientes HTTP de producto (los SDKs viven aparte).
-- Sin D1 / Wrangler.
+- Sin Postgres / Wrangler.
 - Sin shapes de EA Clubs (esas viven en el adapter).
 
 ```bash

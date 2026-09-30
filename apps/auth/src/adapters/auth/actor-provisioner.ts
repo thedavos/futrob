@@ -1,5 +1,4 @@
-import { and, eq } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { and, eq, sql } from "drizzle-orm";
 import {
   CREDENTIAL_IDENTITY_PROVIDER,
   type ActorProvisionerPort,
@@ -11,11 +10,15 @@ import {
   type ClockPort,
   type IdGeneratorPort,
 } from "@futrob/shared-kernel";
-import { actors, identitySubjects, type authSchema } from "./drizzle-schema.ts";
+import type { AuthDb } from "./database.ts";
+import { actors, identitySubjects } from "./drizzle-schema.ts";
 
-export type AuthDb = DrizzleD1Database<typeof authSchema>;
+interface SubjectRef {
+  readonly provider: IdentityProviderKey;
+  readonly subject: string;
+}
 
-export function createD1ActorProvisioner(input: {
+export function createPostgresActorProvisioner(input: {
   readonly db: AuthDb;
   readonly clock: ClockPort;
   readonly ids: IdGeneratorPort;
@@ -28,11 +31,8 @@ export function createD1ActorProvisioner(input: {
 }
 
 export async function findActorIdForSubject(
-  db: AuthDb,
-  input: {
-    readonly provider: IdentityProviderKey;
-    readonly subject: string;
-  },
+  db: Pick<AuthDb, "select">,
+  input: SubjectRef,
 ): Promise<ActorId | null> {
   const existing = await db
     .select({ actorId: identitySubjects.actorId })
@@ -48,41 +48,42 @@ export async function findActorIdForSubject(
   return existing[0] ? asActorId(existing[0].actorId) : null;
 }
 
+/**
+ * Idempotent and race-safe: the actor and its mapping are created in one
+ * transaction, serialized per subject by a transaction-scoped advisory lock so
+ * concurrent sign-ins cannot mint two actors for the same subject.
+ */
 export async function ensureActorForSubject(
   db: AuthDb,
   clock: ClockPort,
   ids: IdGeneratorPort,
-  input: {
-    readonly provider: IdentityProviderKey;
-    readonly subject: string;
-  },
+  input: SubjectRef,
 ): Promise<ActorId> {
   const existing = await findActorIdForSubject(db, input);
   if (existing) {
     return existing;
   }
 
-  const actorId = ids.generate();
-  const now = clock.now();
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.provider}:${input.subject}`}, 0))`,
+    );
+    const raced = await findActorIdForSubject(tx, input);
+    if (raced) {
+      return raced;
+    }
 
-  await db.insert(actors).values({ id: actorId, createdAt: now });
-  try {
-    await db.insert(identitySubjects).values({
+    const actorId = ids.generate();
+    const now = clock.now();
+    await tx.insert(actors).values({ id: actorId, createdAt: now });
+    await tx.insert(identitySubjects).values({
       provider: input.provider,
       subject: input.subject,
       actorId,
       createdAt: now,
     });
-  } catch {
-    await db.delete(actors).where(eq(actors.id, actorId));
-    const raced = await findActorIdForSubject(db, input);
-    if (raced) {
-      return raced;
-    }
-    throw new Error("identity: failed to provision actor for subject");
-  }
-
-  return asActorId(actorId);
+    return asActorId(actorId);
+  });
 }
 
 export function credentialSubject(userId: string) {

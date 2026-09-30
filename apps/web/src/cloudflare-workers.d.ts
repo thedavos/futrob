@@ -4,7 +4,7 @@
 
 declare module "cloudflare:workers" {
   export const env: {
-    APP_DB: import("./shared/infrastructure/d1.ts").AppD1Database;
+    HYPERDRIVE: import("./shared/infrastructure/postgres.ts").HyperdriveBinding;
     MEDIA_BUCKET?: import("./shared/infrastructure/media/competition-cover-storage.ts").MediaBucket;
     JOB_QUEUE?: import("./workers/provider-sync-job.producer.ts").ProviderSyncJobQueue;
     BETTER_AUTH_SECRET?: string;

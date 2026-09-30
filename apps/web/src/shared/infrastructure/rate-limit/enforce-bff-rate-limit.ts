@@ -1,7 +1,6 @@
 import type { RequestId } from "@futrob/api-contracts";
 import type { ActorId } from "@futrob/shared-kernel";
 import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
-import type { AppD1Database } from "../d1.ts";
 import { apiErrorResponse } from "../http/api-response.ts";
 import {
   parseBffRateLimitPolicies,
@@ -9,7 +8,8 @@ import {
   type BffRateLimitPolicy,
   type RateLimitDecision,
 } from "./bff-rate-limiter.ts";
-import { D1BffRateLimiter } from "./d1-bff-rate-limiter.ts";
+import { createHyperdriveConnector, type HyperdriveBinding } from "../postgres.ts";
+import { PostgresBffRateLimiter } from "./postgres-bff-rate-limiter.ts";
 import { fingerprintRateLimitSubject } from "./rate-limit-fingerprint.ts";
 
 export type RateLimitLogEntry = Readonly<{
@@ -27,7 +27,7 @@ interface RateLimitLogger {
 }
 
 type RateLimitBindings = Readonly<{
-  APP_DB: AppD1Database;
+  HYPERDRIVE: HyperdriveBinding;
   RATE_LIMIT_FINGERPRINT_SECRET?: string;
   RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS?: string;
   RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX?: string;
@@ -100,8 +100,8 @@ export async function enforceBffRateLimit(
   if (!limiter) {
     if (!bindings) throw new BffRateLimitUnavailableError();
     try {
-      limiter = new D1BffRateLimiter({
-        database: bindings.APP_DB,
+      limiter = new PostgresBffRateLimiter({
+        withPostgres: createHyperdriveConnector(bindings.HYPERDRIVE),
         fingerprintSecret,
         policies: parseBffRateLimitPolicies({
           RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS:

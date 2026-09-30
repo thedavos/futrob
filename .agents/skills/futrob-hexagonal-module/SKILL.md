@@ -50,7 +50,7 @@ explain what to reuse; they are not templates to copy wholesale.
 | HTTP parsing and response mapping | `apps/api/src/http/` |
 | Shared wire schemas and client methods | `packages/api-contracts`, `packages/sdk` |
 | Web BFF and presentation | `apps/web/src/modules/<context>/{server,presentation}/` and existing routes |
-| Auth/session authority and D1 migration history | `apps/auth` |
+| Auth/session authority (tables live in `apps/api/migrations`) | `apps/auth` |
 | Native presentation | `apps/mobile`, consuming the SDK and shared tokens |
 
 Domain/application stay independent of React, Zod, persistence clients, fetch, Worker
@@ -100,7 +100,9 @@ as `ProviderMatch`, not EA payloads. Web reaches EA data through the product API
    claiming delivery. See the official-result example for the current implementation.
 
 Product persistence belongs to the API (Postgres, or process-local memory without
-`DATABASE_URL`). D1 owns auth/actors and BFF rate limits. For a schema change, use the
+`DATABASE_URL`). Auth, actors and BFF rate limits live in the same Postgres
+([ADR-0021](../../../docs/adr/0021-auth-and-actors-in-product-postgres.md)); every stored
+`ActorId` references `actors`. For a schema change, use the
 [database-change workflow](../../commands/database-change.md) and the owning migrations.
 
 ## Verify the changed contract

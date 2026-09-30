@@ -6,7 +6,7 @@ import { forwardAuthRequest } from "./auth-proxy.ts";
  *
  * Serving lives in `futrob-auth`. Web forwards same-origin `/api/auth/*`
  * through AUTH_SERVICE. SSR/BFF session reads also go through AUTH_SERVICE
- * (`GET /api/auth/get-session`); web only looks up `identity_subjects` in D1.
+ * (`GET /api/auth/get-session`); the response already carries the `actorId` (ADR-0021).
  */
 export async function handleAuthRequest(request: Request): Promise<Response> {
   const bindings = getWorkerEnv();

@@ -23,10 +23,6 @@ export class ProductApiBffMisconfiguredError extends Error {
 export async function createAuthenticatedProductApiClient(request: Request, requestId?: RequestId) {
   const resolvedRequestId = requestId ?? createBffRequestCorrelation(request).requestId;
   const bindings = await getWorkerBindings();
-  if (!bindings.APP_DB) {
-    throw new ProductApiBffMisconfiguredError("APP_DB binding is required");
-  }
-
   const appEnv = parseAppEnv({
     APP_BASE_URL: bindings.APP_BASE_URL ?? process.env.APP_BASE_URL,
     BETTER_AUTH_SECRET: bindings.BETTER_AUTH_SECRET ?? process.env.BETTER_AUTH_SECRET,
@@ -42,7 +38,6 @@ export async function createAuthenticatedProductApiClient(request: Request, requ
   }
 
   const actorId = await resolveAuthenticatedRequestActor({
-    d1: bindings.APP_DB,
     authService: bindings.AUTH_SERVICE,
     request,
   });
