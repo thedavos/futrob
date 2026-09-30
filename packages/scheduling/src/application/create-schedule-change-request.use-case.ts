@@ -20,6 +20,7 @@ import {
 import {
   ActiveScheduleChangeRequestExists,
   EncounterNotEditableForScheduleChange,
+  InvalidScheduleChangeDate,
   InvalidScheduleChangeRequest,
   RescheduleLimitReached,
   ReschedulingDisabled,
@@ -30,6 +31,7 @@ import {
 } from "../domain/errors/schedule-change-request.errors.ts";
 import type { RescheduleRequestedEvent } from "../domain/events/reschedule-requested.event.ts";
 import type { CompetitionRescheduleRulesPort } from "../domain/ports/competition-reschedule-rules.port.ts";
+import type { CompetitionTimeZonePort } from "../domain/ports/competition-time-zone.port.ts";
 import type { EncounterMutationLockPort } from "../domain/ports/encounter-mutation-lock.port.ts";
 import type { EncounterScheduleRepository } from "../domain/ports/encounter-schedule.repository.ts";
 import type { ScheduleChangeRequestEditGuardPort } from "../domain/ports/fixture-editing.ports.ts";
@@ -51,8 +53,7 @@ export interface CreateScheduleChangeRequestInput {
   readonly encounterId: EncounterId;
   readonly requestingTeamId: TeamId;
   readonly scope: RescheduleScope;
-  /** IANA id of the competition; persist UTC instants only after interpretation. */
-  readonly timeZone: string;
+  readonly timeZone?: string;
   readonly proposedWallTime: CompetitionWallTime;
   readonly reason: string;
   readonly idempotencyKey: string;
@@ -70,6 +71,7 @@ export class CreateScheduleChangeRequestUseCase {
       readonly mutationLock: EncounterMutationLockPort;
       readonly requests: ScheduleChangeRequestRepository;
       readonly rules: CompetitionRescheduleRulesPort;
+      readonly timeZones: CompetitionTimeZonePort;
       readonly transaction: TransactionPort;
     },
   ) {}
@@ -82,13 +84,6 @@ export class CreateScheduleChangeRequestUseCase {
       return err(invalidRequest("An idempotency key is required"));
     }
 
-    const interpreted = interpretCompetitionWallTime({
-      wallTime: input.proposedWallTime,
-      timeZone: input.timeZone,
-    });
-    if (interpreted.isErr()) return err(interpreted.error);
-    const proposedStartAt = interpreted.value;
-
     try {
       return await this.deps.transaction.runInTransaction(() =>
         this.deps.mutationLock.runExclusive(input.encounterId, async () => {
@@ -98,23 +93,27 @@ export class CreateScheduleChangeRequestUseCase {
             encounter.organizationId !== input.organizationId ||
             encounter.competitionId !== input.competitionId
           ) {
-            return err(
-              new ScheduleChangeRequestNotFound({
-                code: "scheduling.schedule_change_encounter_not_found",
-                message: "Encounter not found",
-                encounterId: input.encounterId,
-              }),
-            );
+            return err(encounterNotFound(input.encounterId));
+          }
+
+          const scope = {
+            organizationId: encounter.organizationId,
+            competitionId: encounter.competitionId,
+            encounterId: encounter.encounterId,
+          };
+          const canRead = await this.deps.authorization.decide({
+            actorId: input.actorId,
+            permission: ENCOUNTER_PERMISSION.read,
+            scope,
+          });
+          if (!canRead.allowed) {
+            return err(encounterNotFound(input.encounterId));
           }
 
           const authorization = await this.deps.authorization.decide({
             actorId: input.actorId,
             permission: ENCOUNTER_PERMISSION.rescheduleRequest,
-            scope: {
-              organizationId: encounter.organizationId,
-              competitionId: encounter.competitionId,
-              encounterId: encounter.encounterId,
-            },
+            scope,
           });
           if (!authorization.allowed) {
             return err(
@@ -125,6 +124,10 @@ export class CreateScheduleChangeRequestUseCase {
               }),
             );
           }
+
+          const proposedStartAtResult = await this.resolveProposedStart(input);
+          if (proposedStartAtResult.isErr()) return err(proposedStartAtResult.error);
+          const proposedStartAt = proposedStartAtResult.value;
 
           if (
             input.requestingTeamId !== encounter.homeTeamId &&
@@ -268,6 +271,41 @@ export class CreateScheduleChangeRequestUseCase {
       throw error;
     }
   }
+
+  private async resolveProposedStart(
+    input: CreateScheduleChangeRequestInput,
+  ): Promise<Result<Date, CreateScheduleChangeRequestError>> {
+    const competitionTimeZone = await this.deps.timeZones.getTimeZone({
+      organizationId: input.organizationId,
+      competitionId: input.competitionId,
+    });
+    if (!competitionTimeZone) {
+      return err(encounterNotFound(input.encounterId));
+    }
+
+    const clientTimeZone = input.timeZone?.trim();
+    if (clientTimeZone && clientTimeZone !== competitionTimeZone) {
+      return err(
+        new InvalidScheduleChangeDate({
+          code: "scheduling.invalid_schedule_change_date",
+          message: "The proposed time zone must match the competition time zone",
+        }),
+      );
+    }
+
+    return interpretCompetitionWallTime({
+      wallTime: input.proposedWallTime,
+      timeZone: competitionTimeZone,
+    });
+  }
+}
+
+function encounterNotFound(encounterId: EncounterId): ScheduleChangeRequestNotFound {
+  return new ScheduleChangeRequestNotFound({
+    code: "scheduling.schedule_change_encounter_not_found",
+    message: "Encounter not found",
+    encounterId,
+  });
 }
 
 function invalidRequest(message: string): InvalidScheduleChangeRequest {

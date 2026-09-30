@@ -4,6 +4,7 @@ import {
   asEncounterId,
   asOrganizationId,
   asTeamId,
+  compareTime,
   type AuthorizationPort,
   type DomainEvent,
   type EncounterId,
@@ -27,6 +28,7 @@ import {
   ScheduleChangeRequestIdempotencyConflict,
   ScheduleChangeRequestNotFound,
 } from "../domain/errors/schedule-change-request.errors.ts";
+import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
 import type { CompetitionRescheduleRulesPort } from "../domain/ports/competition-reschedule-rules.port.ts";
 import type { EncounterMutationLockPort } from "../domain/ports/encounter-mutation-lock.port.ts";
 import type { ScheduleChangeRequestRepository } from "../domain/ports/schedule-change-request.repository.ts";
@@ -122,6 +124,18 @@ class FakeScheduleChangeRequests implements ScheduleChangeRequestRepository {
     );
   }
 
+  async listByEncounter(orgId: OrganizationId, targetEncounterId: EncounterId) {
+    return this.rows
+      .filter(
+        (request) => request.organizationId === orgId && request.encounterId === targetEncounterId,
+      )
+      .sort((left, right) => {
+        const time = compareTime(left.createdAt, right.createdAt);
+        if (time !== 0) return time;
+        return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+      });
+  }
+
   async save(request: ScheduleChangeRequest) {
     const duplicateKey = this.rows.find(
       (row) =>
@@ -190,21 +204,34 @@ class TransactionBoundEncounterMutationLock {
   };
 }
 
-function authorization(allowed = true): AuthorizationPort {
+function authorization(
+  allowed: boolean | { readonly read?: boolean; readonly rescheduleRequest?: boolean } = true,
+): AuthorizationPort {
   return {
-    decide: async (request) => ({
-      ...request,
-      allowed,
-      reason: allowed ? "allowed" : "denied",
-    }),
+    decide: async (request) => {
+      const permitted =
+        typeof allowed === "boolean"
+          ? allowed
+          : request.permission === ENCOUNTER_PERMISSION.read
+            ? (allowed.read ?? true)
+            : request.permission === ENCOUNTER_PERMISSION.rescheduleRequest
+              ? (allowed.rescheduleRequest ?? true)
+              : true;
+      return {
+        ...request,
+        allowed: permitted,
+        reason: permitted ? "allowed" : "denied",
+      };
+    },
     getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
   };
 }
 
 function createHarness(
   options: {
-    readonly allowed?: boolean;
+    readonly allowed?: boolean | { readonly read?: boolean; readonly rescheduleRequest?: boolean };
     readonly canEdit?: boolean;
+    readonly competitionTimeZone?: string | null;
     readonly encounter?: EncounterScheduleSnapshot | null;
     readonly allowRescheduling?: boolean;
     readonly maxReschedulesPerTeam?: number;
@@ -278,6 +305,10 @@ function createHarness(
         }),
       requests,
       rules,
+      timeZones: {
+        getTimeZone: async () =>
+          options.competitionTimeZone === undefined ? "America/Lima" : options.competitionTimeZone,
+      },
       transaction:
         options.transaction ??
         ({
@@ -419,7 +450,9 @@ describe("CreateScheduleChangeRequestUseCase", () => {
   });
 
   it("requires the contextual reschedule-request permission", async () => {
-    const harness = createHarness({ allowed: false });
+    const harness = createHarness({
+      allowed: { read: true, rescheduleRequest: false },
+    });
 
     const result = await harness.useCase.execute(validInput);
 
@@ -427,6 +460,17 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     expect(error).toBeInstanceOf(ScheduleChangeRequestForbidden);
     if (!(error instanceof ScheduleChangeRequestForbidden)) throw error;
     expect(error.permission).toBe("encounters.reschedule.request");
+    expect(harness.requests.rows).toHaveLength(0);
+    expect(harness.events).toHaveLength(0);
+  });
+
+  it("hides the Encounter when the actor cannot read it", async () => {
+    const harness = createHarness({ allowed: false });
+
+    const result = await harness.useCase.execute(validInput);
+
+    const error = expectErrorCode(result, "scheduling.schedule_change_encounter_not_found");
+    expect(error).toBeInstanceOf(ScheduleChangeRequestNotFound);
     expect(harness.requests.rows).toHaveLength(0);
     expect(harness.events).toHaveLength(0);
   });
@@ -487,7 +531,7 @@ describe("CreateScheduleChangeRequestUseCase", () => {
   );
 
   it("rejects a local wall time that does not exist (spring-forward) without persisting", async () => {
-    const harness = createHarness();
+    const harness = createHarness({ competitionTimeZone: "America/New_York" });
 
     const result = await harness.useCase.execute({
       ...validInput,
@@ -499,6 +543,42 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     expect(error).toBeInstanceOf(InvalidScheduleChangeDate);
     expect(harness.requests.rows).toHaveLength(0);
     expect(harness.events).toHaveLength(0);
+  });
+
+  it("interprets wall time with the competition zone when the client omits timeZone", async () => {
+    const harness = createHarness();
+    const { timeZone: _ignored, ...withoutClientZone } = validInput;
+
+    const result = await harness.useCase.execute(withoutClientZone);
+
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) throw result.error;
+    expect(result.value.proposals[0]?.proposedStartAt.toISOString()).toBe(
+      "2026-09-21T21:30:00.000Z",
+    );
+  });
+
+  it("rejects a client time zone that does not match the competition", async () => {
+    const harness = createHarness();
+
+    const result = await harness.useCase.execute({
+      ...validInput,
+      timeZone: "America/New_York",
+    });
+
+    const error = expectErrorCode(result, "scheduling.invalid_schedule_change_date");
+    expect(error).toBeInstanceOf(InvalidScheduleChangeDate);
+    expect(harness.requests.rows).toHaveLength(0);
+  });
+
+  it("treats a missing competition time zone as not found", async () => {
+    const harness = createHarness({ competitionTimeZone: null });
+
+    const result = await harness.useCase.execute(validInput);
+
+    const error = expectErrorCode(result, "scheduling.schedule_change_encounter_not_found");
+    expect(error).toBeInstanceOf(ScheduleChangeRequestNotFound);
+    expect(harness.requests.rows).toHaveLength(0);
   });
 
   it("blocks requests when competition rescheduling is disabled", async () => {
