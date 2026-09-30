@@ -182,10 +182,14 @@ describe("OfficialResultFixtureEditGuard", () => {
         findLatestByEncounter: async () => ({
           id: "selection-1",
           encounterId,
+          organizationId: asOrganizationId("org-1"),
+          competitionId: asCompetitionId("competition-1"),
           status: "awaiting_opponent_confirmation",
-          slots: [],
-          proposedByActorId: "captain-1",
-          proposedAt: new Date("2026-09-01T01:30:00.000Z"),
+          version: 1,
+          round: 1,
+          currentProposalId: "proposal-1",
+          createdAt: new Date("2026-09-01T01:30:00.000Z"),
+          updatedAt: new Date("2026-09-01T01:30:00.000Z"),
         }),
       },
     );

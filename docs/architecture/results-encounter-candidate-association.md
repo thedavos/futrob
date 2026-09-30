@@ -1,6 +1,6 @@
-# Encounter candidate association (pending Postgres)
+# Encounter candidate association
 
-Results owns eligibility of a `ProviderMatch` for an `Encounter`. Game-data keeps the observation. This wave does not add a numbered migration because Agent A owns `apps/api/migrations/0037_*.sql`. Ship `0038_encounter_candidates.sql` after that lands.
+Results owns eligibility of a `ProviderMatch` for an `Encounter`. Game-data keeps the observation. Persistence is `apps/api/migrations/0046_encounter_candidates.sql` with `PostgresEncounterCandidateAssociationRepository` (in-memory twin for DB-less runs).
 
 ## Product defaults
 
@@ -8,7 +8,7 @@ Results owns eligibility of a `ProviderMatch` for an `Encounter`. Game-data keep
 - Per-competition 1–24h configuration is not in this wave.
 - DEC-024. Recalc after `scheduling.encounter-rescheduled` keeps prior rows and sets `eligible = false` when they leave the new window. It inserts newly in-window refs. It does not mutate `OfficialMatchSelection` slots.
 
-## Proposed Postgres schema
+## Postgres schema
 
 ```sql
 CREATE TABLE IF NOT EXISTS encounter_candidates (
@@ -36,11 +36,11 @@ CREATE INDEX IF NOT EXISTS encounter_candidates_encounter_eligible_index
 
 Do not copy score, clubs, players, or raw payload into this table. Join `provider_matches` by `(provider_key, external_match_id)` when a projection needs observation fields. Adapters must filter every query by `organization_id`.
 
-`id` is deterministic: `{organizationId}:{encounterId}:{providerKey}:{externalId}`. Upsert keeps that primary key.
+`id` is deterministic: `{organizationId}:{encounterId}:{providerKey}:{externalId}`. Upsert keeps that primary key. `replaceForEncounter` upserts the new set and deletes only the rows that left it, so a concurrent `writeIfEligible` never sees a row vanish and reappear.
 
 `encounter_candidate_sets.generation` is the compare-and-swap token for a full-set reconcile. `replaceForEncounter` must no-op and return `conflict` when `expectedGeneration` does not match. Associate and recalc re-read the Encounter and retry, so a stale window cannot overwrite a newer recalc.
 
-`writeIfEligible` is the select conditional write. Adapters must re-read eligibility and persist the selection in one Encounter-scoped critical section (in-memory mutex today; a later Postgres adapter uses one transaction). Recalc that marks a row ineligible before that write makes select fail with `results.candidate_not_associated`.
+`writeIfEligible` is the select conditional write. Adapters must re-read eligibility and persist the selection in one Encounter-scoped critical section (in-memory mutex; Postgres runs one transaction that takes `SELECT ... FOR SHARE` on the required rows, so a concurrent replace waits until it ends). Recalc that marks a row ineligible before that write makes select fail with `results.candidate_not_associated`.
 
 ## Application API
 
@@ -50,16 +50,15 @@ Do not copy score, clubs, players, or raw payload into this table. Join `provide
 
 `ListEncounterCandidatesUseCase` stays a live window read. Persist is for history and select integrity.
 
-## Pending DI and consumers
+## DI and consumers
 
 Wired in `apps/api/src/di/results.module.ts`:
 
-- In-memory `EncounterCandidateAssociationRepository` even when `DATABASE_URL` is set.
+- `EncounterCandidateAssociationRepository`: the Postgres adapter exists; the module picks it when a pool is available (see `results.module.ts`).
 - `associateEncounterCandidates` and `recalculateEncounterCandidates` on the results module.
 
-Not in this wave (avoid parallel edits with Agent A):
+Not covered here:
 
-- Numbered migration `0038_*.sql` and a Postgres adapter.
 - `apps/api/src/app.ts` queue or outbox consumer for `scheduling.encounter-rescheduled`.
 - `apps/api/src/di/scheduling.module.ts` (`OfficialResultFixtureEditGuard` still blocks reschedule after a proposal).
 - OpenAPI, SDK, HTTP associate/recalc routes.

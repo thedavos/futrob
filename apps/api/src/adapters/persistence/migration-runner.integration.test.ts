@@ -62,7 +62,9 @@ suite("migration runner", () => {
 
         const upgraded = await runMigrations(client, { directory, baseline: 42 });
         expect(upgraded.baselined).toHaveLength(42);
-        expect(upgraded.applied).toEqual([
+        // Everything after the baseline runs, starting with the auth move.
+        expect(upgraded.applied).toEqual((await migrationFiles(Infinity)).slice(42));
+        expect(upgraded.applied.slice(0, 2)).toEqual([
           "0043_auth_and_actors.sql",
           "0044_actor_foreign_keys.sql",
         ]);

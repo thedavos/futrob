@@ -14,6 +14,7 @@ import {
   isInPgTransaction,
   NoopTransactionPort,
   PostgresTransactionPort,
+  runInPgAtomicScope,
 } from "./pg-transaction.ts";
 
 afterEach(() => {
@@ -87,6 +88,69 @@ describe("PostgresTransactionPort", () => {
 
     expect(connect).toHaveBeenCalledOnce();
     expect(client.queries).toEqual(["BEGIN", "SELECT nested", "COMMIT"]);
+  });
+});
+
+describe("runInPgAtomicScope", () => {
+  it("opens its own transaction outside one and commits an accepted result", async () => {
+    const { client, pool, release } = createTestSetup();
+
+    const value = await runInPgAtomicScope(pool, async () => {
+      expect(isInPgTransaction()).toBe(true);
+      await getPgExecutor(pool).query("SELECT 1");
+      return "ok";
+    });
+
+    expect(value).toBe("ok");
+    expect(client.queries).toEqual(["BEGIN", "SELECT 1", "COMMIT"]);
+    expect(release).toHaveBeenCalledOnce();
+  });
+
+  it("rolls its own transaction back for a rejected result and for a throw", async () => {
+    const { client, pool } = createTestSetup();
+
+    await runInPgAtomicScope(pool, async () => "rejected", {
+      rollbackWhen: (result) => result === "rejected",
+    });
+    await expect(
+      runInPgAtomicScope(pool, async () => {
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
+
+    expect(client.queries).toEqual(["BEGIN", "ROLLBACK", "BEGIN", "ROLLBACK"]);
+  });
+
+  it("uses a savepoint inside an outer transaction and keeps the outer one open", async () => {
+    const { client, pool, connect } = createTestSetup();
+    const port = new PostgresTransactionPort(pool);
+
+    await port.runInTransaction(async () => {
+      await runInPgAtomicScope(pool, async () => getPgExecutor(pool).query("SELECT kept"));
+      await runInPgAtomicScope(pool, async () => "rejected", {
+        rollbackWhen: () => true,
+      });
+      await expect(
+        runInPgAtomicScope(pool, async () => {
+          throw new Error("boom");
+        }),
+      ).rejects.toThrow("boom");
+    });
+
+    expect(connect).toHaveBeenCalledOnce();
+    expect(client.queries.map((query) => query.replace(/\d+/g, "n"))).toEqual([
+      "BEGIN",
+      "SAVEPOINT futrob_scope_n",
+      "SELECT kept",
+      "RELEASE SAVEPOINT futrob_scope_n",
+      "SAVEPOINT futrob_scope_n",
+      "ROLLBACK TO SAVEPOINT futrob_scope_n",
+      "RELEASE SAVEPOINT futrob_scope_n",
+      "SAVEPOINT futrob_scope_n",
+      "ROLLBACK TO SAVEPOINT futrob_scope_n",
+      "RELEASE SAVEPOINT futrob_scope_n",
+      "COMMIT",
+    ]);
   });
 });
 

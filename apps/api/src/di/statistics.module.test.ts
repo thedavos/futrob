@@ -33,7 +33,7 @@ describe("statistics module projection", () => {
       createdAt: new Date("2026-08-01T00:00:00.000Z"),
     });
     const result = approvedResult();
-    await officialResults.save(result);
+    await officialResults.append(result);
     const statistics = createStatisticsModule({
       pool: null,
       resultReader: {

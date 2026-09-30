@@ -111,7 +111,7 @@ ConfirmOfficialSelection
   → analytics snapshot worker
 ```
 
-Estado actual: `apps/api/src/di/create-modules.ts` usa `NoopEventPublisher` para eventos de dominio y compone confirmación/anulación con proyección de estadísticas dentro de una transacción. El outbox y los consumidores de notificaciones/analytics del diagrama son objetivo; no están conectados por ese publisher. La cola y Cron de sync de proveedores sí tienen handlers en `apps/web/src/workers/`.
+Estado actual: `apps/api/src/di/create-modules.ts` usa `NoopEventPublisher` para eventos de dominio y compone los comandos de selección (propuesta, confirmación rival, rechazo, alternativa, disputa, resolución) y la anulación con proyección de estadísticas dentro de una transacción. El outbox y los consumidores de notificaciones/analytics del diagrama son objetivo; no están conectados por ese publisher. La cola y Cron de sync de proveedores sí tienen handlers en `apps/web/src/workers/`.
 
 ## Composition roots
 

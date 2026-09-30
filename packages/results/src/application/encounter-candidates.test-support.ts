@@ -11,7 +11,6 @@ import {
   type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { EncounterCandidateAssociation } from "../domain/entities/encounter-candidate-association.ts";
-import type { OfficialMatchSelection } from "../domain/entities/official-match-selection.ts";
 import type {
   EncounterCandidateAssociationRepository,
   ReplaceEncounterCandidatesResult,
@@ -22,7 +21,6 @@ import {
   type EncounterReaderPort,
   type EncounterScheduleSnapshot,
 } from "../domain/ports/encounter-reader.port.ts";
-import type { OfficialMatchSelectionRepository } from "../domain/ports/official-result.repository.ts";
 import type {
   CandidateMatchReadResult,
   ProviderMatchReaderPort,
@@ -232,20 +230,6 @@ export class MutableEncounterReader implements EncounterReaderPort {
   async getById(encounterId: EncounterScheduleSnapshot["encounterId"]) {
     if (!this.snapshot || this.snapshot.encounterId !== encounterId) return null;
     return this.snapshot;
-  }
-}
-
-export class MemorySelections implements OfficialMatchSelectionRepository {
-  rows: OfficialMatchSelection[] = [];
-
-  async save(selection: OfficialMatchSelection) {
-    this.rows = this.rows.filter((row) => row.id !== selection.id);
-    this.rows.push(selection);
-    return selection;
-  }
-
-  async findLatestByEncounter(encounterId: OfficialMatchSelection["encounterId"]) {
-    return [...this.rows].reverse().find((row) => row.encounterId === encounterId) ?? null;
   }
 }
 
