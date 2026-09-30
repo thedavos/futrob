@@ -2614,6 +2614,57 @@
         }
       }
     },
+    "/organizations/{organizationId}/competitions/{competitionId}/team-performance-ranking": {
+      "get": {
+        "operationId": "getTeamPerformanceRanking",
+        "tags": ["statistics"],
+        "summary": "Read the versioned official team performance ranking, separate from standings",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ranking with component coverage, or null before the first rebuild. Incomplete rows have no score or position.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetTeamPerformanceRankingResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
     "/encounters/{encounterId}/candidates": {
       "get": {
         "operationId": "listEncounterCandidates",
@@ -5913,6 +5964,426 @@
           "requestId": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "TeamPerformanceRankingSnapshot": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "competitionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "formulaVersion": {
+            "type": "string",
+            "const": "team-performance-v1"
+          },
+          "normalizationVersion": {
+            "type": "string",
+            "const": "team-performance-normalization-v1"
+          },
+          "windowVersion": {
+            "type": "string",
+            "const": "competition-all-form-5-min-3-v1"
+          },
+          "window": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "competition_all"
+              },
+              "recentEncounterLimit": {
+                "type": "number",
+                "const": 5
+              },
+              "minimumEncounters": {
+                "type": "number",
+                "const": 3
+              },
+              "from": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "through": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["kind", "recentEncounterLimit", "minimumEncounters", "from", "through"],
+            "additionalProperties": false
+          },
+          "revisionFingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "officialResultId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "encounterId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "revision": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["approved", "voided"]
+                }
+              },
+              "required": ["officialResultId", "encounterId", "revision", "status"],
+              "additionalProperties": false
+            }
+          },
+          "projectionComplete": {
+            "type": "boolean"
+          },
+          "unmatchedContributions": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "position": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["scored", "incomplete"]
+                },
+                "score": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "components": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "goalDifference": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "recentForm": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "offensiveEfficiency": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "defensiveEfficiency": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "results",
+                    "goalDifference",
+                    "recentForm",
+                    "offensiveEfficiency",
+                    "defensiveEfficiency"
+                  ],
+                  "additionalProperties": false
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "results",
+                      "goalDifference",
+                      "recentForm",
+                      "offensiveEfficiency",
+                      "defensiveEfficiency"
+                    ]
+                  }
+                },
+                "coverage": {
+                  "type": "object",
+                  "properties": {
+                    "encounters": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "competitiveUnits": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "officialMatches": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "recentEncounters": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5
+                    },
+                    "attackingMatches": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "defendingMatches": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "reason": {
+                      "type": "string",
+                      "enum": [
+                        "complete",
+                        "no_data",
+                        "insufficient_sample",
+                        "missing_components",
+                        "projection_incomplete"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "encounters",
+                    "competitiveUnits",
+                    "officialMatches",
+                    "recentEncounters",
+                    "attackingMatches",
+                    "defendingMatches",
+                    "reason"
+                  ],
+                  "additionalProperties": false
+                },
+                "evidence": {
+                  "type": "object",
+                  "properties": {
+                    "resultPoints": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "resultMaximum": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "goalDifferencePerUnit": {
+                      "type": ["number", "null"]
+                    },
+                    "comparableMinimum": {
+                      "type": ["number", "null"]
+                    },
+                    "comparableMaximum": {
+                      "type": ["number", "null"]
+                    },
+                    "recentPoints": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "recentMaximum": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "goalsFor": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "goalsAgainst": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "shotsFor": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "shotsAgainst": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "resultPoints",
+                    "resultMaximum",
+                    "goalDifferencePerUnit",
+                    "comparableMinimum",
+                    "comparableMaximum",
+                    "recentPoints",
+                    "recentMaximum",
+                    "goalsFor",
+                    "goalsAgainst",
+                    "shotsFor",
+                    "shotsAgainst"
+                  ],
+                  "additionalProperties": false
+                },
+                "sourceContributionIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "teamId",
+                "position",
+                "status",
+                "score",
+                "components",
+                "missing",
+                "coverage",
+                "evidence",
+                "sourceContributionIds"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "organizationId",
+          "competitionId",
+          "formulaVersion",
+          "normalizationVersion",
+          "windowVersion",
+          "window",
+          "revisionFingerprint",
+          "sources",
+          "projectionComplete",
+          "unmatchedContributions",
+          "rows",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "GetTeamPerformanceRankingResponse": {
+        "type": "object",
+        "required": ["ranking"],
+        "properties": {
+          "ranking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamPerformanceRankingSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },

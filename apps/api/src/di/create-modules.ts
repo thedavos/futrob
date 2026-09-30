@@ -255,6 +255,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     rosters: teams.repositories.rosters,
     profiles: teams.repositories.profiles,
     competitions: competitions.repository,
+    entries: competitions.entryRepository,
     authorization: authorization.port,
     encounterReader,
     transaction,
@@ -263,17 +264,21 @@ export function createModules(input: CreateModulesInput): AppModules {
 
   const confirmOfficialSelectionAndProject = {
     async execute(input: ConfirmOfficialSelectionInput) {
-      return transaction.runInTransaction(async () => {
-        return encounterMutationLock.runExclusive(input.encounterId, async () => {
-          const confirmed = await results.confirmOfficialSelection.execute(input);
-          if (!confirmed.isOk()) return confirmed;
-          const projected = await statistics.useCases.projectOfficialResult.execute({
-            officialResultId: confirmed.value.id,
+      const encounter = await encounterReader.getById(input.encounterId);
+      if (!encounter) return results.confirmOfficialSelection.execute(input);
+      return transaction.runInTransaction(() =>
+        statistics.ports.teamPerformanceLock.runExclusive(encounter.competitionId, async () => {
+          return encounterMutationLock.runExclusive(input.encounterId, async () => {
+            const confirmed = await results.confirmOfficialSelection.execute(input);
+            if (!confirmed.isOk()) return confirmed;
+            const projected = await statistics.useCases.projectOfficialResult.execute({
+              officialResultId: confirmed.value.id,
+            });
+            if (!projected.isOk()) throw projected.error;
+            return confirmed;
           });
-          if (!projected.isOk()) throw projected.error;
-          return confirmed;
-        });
-      });
+        }),
+      );
     },
   };
 
@@ -297,17 +302,19 @@ export function createModules(input: CreateModulesInput): AppModules {
           : await results.results.findById(input.officialResultId);
       if (!existing) return results.voidOfficialResult.execute(input);
 
-      return transaction.runInTransaction(async () => {
-        return encounterMutationLock.runExclusive(existing.encounterId, async () => {
-          const voided = await results.voidOfficialResult.execute(input);
-          if (!voided.isOk()) return voided;
-          const projected = await statistics.useCases.projectOfficialResult.execute({
-            officialResultId: voided.value.id,
+      return transaction.runInTransaction(() =>
+        statistics.ports.teamPerformanceLock.runExclusive(existing.competitionId, async () => {
+          return encounterMutationLock.runExclusive(existing.encounterId, async () => {
+            const voided = await results.voidOfficialResult.execute(input);
+            if (!voided.isOk()) return voided;
+            const projected = await statistics.useCases.projectOfficialResult.execute({
+              officialResultId: voided.value.id,
+            });
+            if (!projected.isOk()) throw projected.error;
+            return voided;
           });
-          if (!projected.isOk()) throw projected.error;
-          return voided;
-        });
-      });
+        }),
+      );
     },
   };
 

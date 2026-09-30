@@ -121,3 +121,12 @@ export {
   type GetCompetitionRankingsInput,
 } from "./application/get-competition-rankings/get-competition-rankings.use-case.ts";
 export type { OfficialResultReaderPort } from "@futrob/results";
+export * from "./domain/entities/team-performance-ranking-snapshot.ts";
+export * from "./domain/ports/team-performance-ranking.repository.ts";
+export * from "./domain/errors/team-performance.errors.ts";
+export { buildTeamPerformanceRanking } from "./domain/policies/build-team-performance-ranking.ts";
+export {
+  RebuildTeamPerformanceRankingUseCase,
+  type RebuildTeamPerformanceRankingDependencies,
+} from "./application/rebuild-team-performance-ranking/rebuild-team-performance-ranking.use-case.ts";
+export { GetTeamPerformanceRankingUseCase } from "./application/get-team-performance-ranking/get-team-performance-ranking.use-case.ts";

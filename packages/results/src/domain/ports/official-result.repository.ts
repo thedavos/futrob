@@ -1,4 +1,4 @@
-import type { CompetitionId, EncounterId } from "@futrob/shared-kernel";
+import type { CompetitionId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
 import type { OfficialMatchSelection } from "../entities/official-match-selection.ts";
 import type { OfficialResult } from "../entities/official-result.ts";
 
@@ -12,6 +12,9 @@ export interface OfficialResultRepository {
   findApprovedByEncounter(encounterId: EncounterId): Promise<OfficialResult | null>;
   findLatestByEncounter(encounterId: EncounterId): Promise<OfficialResult | null>;
   findById(officialResultId: string): Promise<OfficialResult | null>;
-  listByCompetition(competitionId: CompetitionId): Promise<OfficialResult[]>;
+  listByCompetition(
+    competitionId: CompetitionId,
+    organizationId?: OrganizationId,
+  ): Promise<OfficialResult[]>;
   listByEncounter(encounterId: EncounterId): Promise<OfficialResult[]>;
 }

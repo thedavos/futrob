@@ -9,6 +9,8 @@ import {
 import { InMemoryCompetitionRosterMembershipRepository } from "@/adapters/teams/team-roster.repositories";
 import { NoopTransactionPort } from "@/adapters/persistence/pg-transaction";
 import { NoopEventPublisher } from "@/adapters/events/noop-event-publisher";
+import { performanceCompetition } from "@/testing/team-performance.fixture.ts";
+import { InMemoryCompetitionEntryRepository } from "@/adapters/competitions/competition-entry.repositories.ts";
 import { createStatisticsModule } from "./statistics.module";
 
 describe("statistics module projection", () => {
@@ -46,7 +48,11 @@ describe("statistics module projection", () => {
       accounts,
       rosters,
       profiles,
+      entries: new InMemoryCompetitionEntryRepository(),
       competitions: {
+        async findById() {
+          return performanceCompetition();
+        },
         async findRulesByCompetitionId() {
           return null;
         },

@@ -41,3 +41,12 @@ export {
   type GetCompetitionRankingsQuery,
   type GetCompetitionRankingsResponse,
 } from "./schemas.ts";
+export {
+  teamPerformanceMetricSchema,
+  teamPerformanceComponentsSchema,
+  teamPerformanceRankingRowSchema,
+  teamPerformanceRankingSnapshotSchema,
+  getTeamPerformanceRankingResponseSchema,
+  type TeamPerformanceRankingSnapshotDto,
+  type GetTeamPerformanceRankingResponse,
+} from "./team-performance.schemas.ts";

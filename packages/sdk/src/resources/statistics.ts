@@ -1,4 +1,6 @@
 import {
+  getTeamPerformanceRankingResponseSchema,
+  type GetTeamPerformanceRankingResponse,
   getCompetitionRankingsQuerySchema,
   getCompetitionRankingsResponseSchema,
   getCompetitionStandingsResponseSchema,
@@ -38,6 +40,23 @@ export type GetMyRecentMatchInput = GetMyRecentMatchPath & GetMyRecentMatchQuery
 
 export function createStatisticsResource(http: HttpClient) {
   return {
+    async getTeamPerformanceRanking(
+      input: { readonly organizationId: string; readonly competitionId: string },
+      options: RequestOptions = {},
+    ): Promise<GetTeamPerformanceRankingResponse> {
+      return http.request({
+        path: apiPath(
+          "organizations",
+          input.organizationId,
+          "competitions",
+          input.competitionId,
+          "team-performance-ranking",
+        ),
+        method: "GET",
+        options,
+        parse: (data) => getTeamPerformanceRankingResponseSchema.parse(data),
+      });
+    },
     async getMyStatistics(
       query: GetMyStatisticsQuery = {},
       options: RequestOptions = {},

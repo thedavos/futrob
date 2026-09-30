@@ -2,6 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-09-22
+- Actualización: 2026-09-30
 - Relacionado: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [ADR-0011](/docs/adr/0011-tagged-errors.md)
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
@@ -38,6 +39,28 @@ pueda escribir antes de retornar un error debe revisar este comportamiento expl�
 
 Los adapters in-memory y `NoopTransactionPort` no ofrecen rollback durable ni exclusión
 entre procesos. Sus tests no demuestran atomicidad de Postgres.
+
+### Ranking de rendimiento de equipos (2026-09-30)
+
+Statistics conserva un snapshot distinto de standings y de rankings de jugador.
+La composición de aprobación/anulación adquiere primero el lock transaccional de
+la competición (`statistics:team-performance:{competitionId}`) y después el de
+Encounter. Proyección directa, rebuild del ranking y rebuild total usan el mismo
+lock, antes de leer fuentes; las operaciones anidadas reutilizan la transacción.
+Así dos encuentros distintos no pueden reemplazar el snapshot con lecturas parciales
+del conjunto comparable. El repository además compara el fingerprint esperado al
+reemplazar. No ordena fuentes por `updatedAt` ni por máximo de revisiones.
+
+El rebuild se llama directamente y queda dentro de la transacción compartida:
+un fallo del cálculo/persistencia después de escribir causa rollback del resultado,
+contribuciones y snapshots. El rebuild total lanza errores de proyección después
+de mutar, pues retornar `Result.err` haría commit. Las ausencias legítimas de métricas
+persisten como `incomplete`; no impiden oficializar un resultado válido.
+
+La memoria ofrece exclusión reentrante por proceso; sigue sin garantizar rollback.
+Los adapters Postgres del ranking requieren contexto transaccional. Las lecturas
+validan scope, consultan adapters propios y el reader público de Results, y obtienen
+tiempo de los slots oficiales. Versiones y reglas: [contrato de producto](/product/team-performance-v1.md).
 
 ### Eventos y evolución
 

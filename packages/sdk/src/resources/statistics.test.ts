@@ -3,6 +3,39 @@ import { createFutrobClient } from "../client.ts";
 import { mockFetch, requestUrl } from "../testing/mock-fetch.ts";
 
 describe("statistics SDK resource", () => {
+  it("reads the separate team performance endpoint, encodes IDs and forwards cancellation", async () => {
+    const controller = new AbortController();
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        expect(requestUrl(input)).toBe(
+          "https://app.example.com/api/v1/organizations/org%2Fa/competitions/cup%201/team-performance-ranking",
+        );
+        expect(init?.method).toBe("GET");
+        expect(init?.signal).toBeDefined();
+        return Response.json({ ranking: null });
+      }),
+    });
+    expect(
+      await client.statistics.getTeamPerformanceRanking(
+        { organizationId: "org/a", competitionId: "cup 1" },
+        { signal: controller.signal },
+      ),
+    ).toEqual({ ranking: null });
+  });
+
+  it("rejects player-ranking payloads returned from the team resource", async () => {
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async () => Response.json({ rankings: [] })),
+    });
+    await expect(
+      client.statistics.getTeamPerformanceRanking({
+        organizationId: "organization-1",
+        competitionId: "competition-1",
+      }),
+    ).rejects.toThrow();
+  });
   it("forwards personal statistics filters", async () => {
     let requestedUrl = "";
     const client = createFutrobClient({

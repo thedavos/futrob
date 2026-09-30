@@ -36,6 +36,7 @@ suite("migration runner", () => {
         const first = await runMigrations(client, { directory });
         expect(first.applied).toHaveLength(first.total);
         expect(first.baselined).toEqual([]);
+        expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
 
         const second = await runMigrations(client, { directory });
         expect(second.applied).toEqual([]);
@@ -65,9 +66,33 @@ suite("migration runner", () => {
         expect(upgraded.applied).toEqual([
           "0043_auth_and_actors.sql",
           "0044_actor_foreign_keys.sql",
+          "0045_team_performance_rankings.sql",
         ]);
         expect(await tableExists(client, "actors")).toBe(true);
         expect(await tableExists(client, "auth_users")).toBe(true);
+      });
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "upgrades the previous 0044 schema with only the team performance migration",
+    async () => {
+      await withSchema(async (client) => {
+        for (const file of await migrationFiles(44)) {
+          await client.query(await readFile(resolve(directory, file), "utf8"));
+        }
+        const upgraded = await runMigrations(client, { directory, baseline: 44 });
+        expect(upgraded.applied).toEqual(["0045_team_performance_rankings.sql"]);
+        expect(upgraded.baselined).toHaveLength(44);
+        expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
+        expect(
+          (
+            await client.query(
+              "SELECT to_regclass('team_performance_contributions_scope_idx') AS index",
+            )
+          ).rows[0].index,
+        ).not.toBeNull();
       });
     },
     TEST_TIMEOUT_MS,
