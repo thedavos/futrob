@@ -12,7 +12,7 @@ import {
 } from "@futrob/shared-kernel";
 import { randomUUID } from "node:crypto";
 import type { Pool } from "pg";
-import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import { PostgresTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import {
   createIsolatedSchema,
@@ -29,6 +29,8 @@ import { PostgresOfficialMatchSelectionRepository } from "./official-result.repo
 import { createTransition, newActorId, newRef } from "./official-selection.fixtures.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
+// Every Postgres case is at least one remote round trip; the 5 s default is too tight.
+if (databaseUrl) vi.setConfig({ testTimeout: 60_000 });
 const SETUP_TIMEOUT_MS = 180_000;
 
 interface CandidateHarness {

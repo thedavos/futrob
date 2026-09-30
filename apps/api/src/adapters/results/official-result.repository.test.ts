@@ -5,7 +5,7 @@ import {
   PostgresTransactionPort,
 } from "@/adapters/persistence/pg-transaction.ts";
 import type { Pool } from "pg";
-import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import {
   createIsolatedSchema,
   insertTenant,
@@ -33,6 +33,8 @@ import {
 } from "./official-selection.fixtures.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
+// Every Postgres case is at least one remote round trip; the 5 s default is too tight.
+if (databaseUrl) vi.setConfig({ testTimeout: 60_000 });
 // Applying every migration to a possibly remote database is one round trip per statement.
 const SETUP_TIMEOUT_MS = 180_000;
 
