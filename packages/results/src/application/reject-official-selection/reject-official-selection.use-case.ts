@@ -22,12 +22,8 @@ import type {
 } from "../../domain/ports/official-result.repository.ts";
 import type { TeamRepresentationPort } from "../../domain/ports/team-representation.port.ts";
 import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
-import {
-  buildAction,
-  commandFingerprint,
-  conflictOrReplay,
-  requireReason,
-} from "../selection-command-support.ts";
+import { buildAction, commandFingerprint, requireReason } from "../selection-command-support.ts";
+import { conflictOrReplay } from "../selection-replay.ts";
 import { prepareTeamResponse } from "../team-response-support.ts";
 
 export interface RejectOfficialSelectionInput {
@@ -128,6 +124,7 @@ export class RejectOfficialSelectionUseCase {
         versionBefore: selection.version,
         versionAfter: nextVersion,
         reason: reason.value,
+        details: { disputeId: dispute.id },
         occurredAt: now,
       },
     );

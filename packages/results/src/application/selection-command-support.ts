@@ -28,7 +28,6 @@ import type {
   OfficialResultSlotSnapshot,
 } from "../domain/entities/official-result.ts";
 import {
-  CommandKeyReused,
   ReasonRequired,
   SelectionAlreadyApproved,
   SelectionProposalStale,
@@ -37,10 +36,6 @@ import {
 } from "../domain/errors/official-selection.errors.ts";
 import { ProviderMatchSnapshotMissing } from "../domain/errors/official-result.errors.ts";
 import type { EncounterScheduleSnapshot } from "../domain/ports/encounter-reader.port.ts";
-import type {
-  OfficialMatchSelectionRepository,
-  OfficialResultRepository,
-} from "../domain/ports/official-result.repository.ts";
 import type { ProviderMatchReaderPort } from "../domain/ports/provider-match-reader.port.ts";
 import type { TeamRepresentationPort } from "../domain/ports/team-representation.port.ts";
 import { integrityFlagsFor, type IntegrityFlag } from "../domain/policies/integrity-flags.ts";
@@ -50,7 +45,6 @@ import {
   type SelectionCommand,
 } from "../domain/policies/selection-transitions.ts";
 import { slotSelectionKey } from "../domain/policies/slot-selection.ts";
-import type { OfficialSelectionCommandOutput } from "./official-selection-output.ts";
 
 export type SelectionActor =
   | { readonly capacity: "team"; readonly actorId: ActorId; readonly teamId: TeamId }
@@ -212,66 +206,6 @@ export function staleProposal(proposalId: string): SelectionProposalStale {
   });
 }
 
-export type ReplayLookup =
-  | { readonly kind: "none" }
-  | { readonly kind: "replay"; readonly actions: readonly ConfirmationAction[] }
-  | { readonly kind: "reused"; readonly error: CommandKeyReused };
-
-/**
- * Looks the command up by `(encounter, actor, commandKey)`. Callers authorize
- * first: a historical key never restores a permission that was revoked.
- */
-export async function lookupReplay(
-  selections: OfficialMatchSelectionRepository,
-  input: {
-    readonly encounterId: EncounterId;
-    readonly actorId: ActorId;
-    readonly commandKey: string;
-    readonly fingerprint: string;
-  },
-): Promise<ReplayLookup> {
-  const actions = await selections.findActionsByCommandKey(input);
-  if (actions.length === 0) return { kind: "none" };
-  if (actions.some((action) => action.requestFingerprint !== input.fingerprint)) {
-    return {
-      kind: "reused",
-      error: new CommandKeyReused({
-        code: "results.command_key_reused",
-        message: "The command key was already used for a different request",
-      }),
-    };
-  }
-  return { kind: "replay", actions };
-}
-
-export async function replayOutput(
-  deps: {
-    readonly selections: OfficialMatchSelectionRepository;
-    readonly results: Pick<OfficialResultRepository, "findById">;
-  },
-  encounterId: EncounterId,
-  actions: readonly ConfirmationAction[],
-): Promise<OfficialSelectionCommandOutput | null> {
-  const selection = await deps.selections.findLatestByEncounter(encounterId);
-  if (!selection) return null;
-  const [proposals, disputes] = await Promise.all([
-    deps.selections.listProposals(selection.id),
-    deps.selections.listDisputes(selection.id),
-  ]);
-  const proposalId = actions.find((action) => action.proposalId)?.proposalId ?? null;
-  const resultId = actions.find((action) => action.officialResultId)?.officialResultId ?? null;
-  const flags = actions.flatMap((action) => action.details?.integrityFlags ?? []);
-  return {
-    selection,
-    proposal: proposals.find((proposal) => proposal.id === proposalId) ?? null,
-    actions,
-    dispute: disputes.at(-1) ?? null,
-    approvedResult: resultId ? await deps.results.findById(resultId) : null,
-    integrityFlags: flags,
-    replayed: true,
-  };
-}
-
 export interface ActionFactoryContext {
   readonly ids: IdGeneratorPort;
   readonly clock: ClockPort;
@@ -400,31 +334,4 @@ export function buildApprovedResult(input: {
 export function activeDispute(disputes: readonly MatchDispute[]): MatchDispute | null {
   const last = disputes.at(-1);
   return last && last.status !== "resolved" ? last : null;
-}
-
-/**
- * A commit lost the version race. If the same command already landed (concurrent
- * replay) return its outcome; otherwise report the conflict.
- */
-export async function conflictOrReplay(
-  deps: {
-    readonly selections: OfficialMatchSelectionRepository;
-    readonly results: Pick<OfficialResultRepository, "findById">;
-  },
-  input: {
-    readonly encounterId: EncounterId;
-    readonly actorId: ActorId;
-    readonly commandKey: string;
-    readonly fingerprint: string;
-    readonly expectedVersion: number;
-    readonly currentVersion: number;
-  },
-): Promise<Result<OfficialSelectionCommandOutput, SelectionVersionConflict | CommandKeyReused>> {
-  const replay = await lookupReplay(deps.selections, input);
-  if (replay.kind === "reused") return err(replay.error);
-  if (replay.kind === "replay") {
-    const output = await replayOutput(deps, input.encounterId, replay.actions);
-    if (output) return ok(output);
-  }
-  return err(versionConflict(input.expectedVersion, input.currentVersion));
 }

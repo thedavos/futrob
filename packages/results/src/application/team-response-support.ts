@@ -40,12 +40,11 @@ import type { OfficialSelectionCommandOutput } from "./official-selection-output
 import {
   approvedGuard,
   authorizeTeamActor,
-  lookupReplay,
-  replayOutput,
   staleProposal,
   statusConflict,
   versionConflict,
 } from "./selection-command-support.ts";
+import { lookupReplay, replayOutput } from "./selection-replay.ts";
 
 export type TeamResponseError =
   | EncounterNotFound

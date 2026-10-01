@@ -45,14 +45,12 @@ import {
   buildAction,
   buildApprovedResult,
   commandFingerprint,
-  conflictOrReplay,
-  lookupReplay,
-  replayOutput,
   requireReason,
   snapshotProposal,
   statusConflict,
   versionConflict,
 } from "../selection-command-support.ts";
+import { conflictOrReplay, lookupReplay, replayOutput } from "../selection-replay.ts";
 
 export type MatchDisputeDecision =
   | {
@@ -201,6 +199,7 @@ export class ResolveMatchDisputeUseCase {
         versionBefore: selection.version,
         versionAfter: nextVersion,
         reason: reason.value,
+        details: dispute ? { disputeId: dispute.id } : null,
         occurredAt: now,
       });
       const committed = await this.deps.selections.commitTransition({
@@ -302,6 +301,7 @@ export class ResolveMatchDisputeUseCase {
       officialResultId: result.id,
       details: {
         selectedProposalId: proposal.id,
+        disputeId: dispute?.id,
         acknowledgedFlags: snapshots.flags.length > 0 ? snapshots.flags : undefined,
       },
       occurredAt: now,

@@ -44,10 +44,11 @@ import type { OfficialSelectionCommandOutput } from "../official-selection-outpu
 import {
   buildAction,
   commandFingerprint,
-  conflictOrReplay,
+  normalizeReason,
   rawSlotsKey,
   requireReason,
 } from "../selection-command-support.ts";
+import { conflictOrReplay } from "../selection-replay.ts";
 import { prepareTeamResponse } from "../team-response-support.ts";
 
 export interface ProposeAlternativeOfficialSelectionInput {
@@ -96,6 +97,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
       input.proposalId,
       input.expectedVersion,
       rawSlotsKey(input.selections),
+      normalizeReason(input.reason),
     ]);
     const prepared = await prepareTeamResponse(this.deps, {
       ...input,
@@ -208,6 +210,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
       versionBefore: selection.version,
       versionAfter: nextVersion,
       reason: reason.value,
+      details: { disputeId: dispute.id },
       occurredAt: now,
     });
 

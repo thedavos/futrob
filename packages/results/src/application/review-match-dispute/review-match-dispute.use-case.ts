@@ -33,13 +33,11 @@ import {
   authorizeOperator,
   buildAction,
   commandFingerprint,
-  conflictOrReplay,
-  lookupReplay,
   normalizeReason,
-  replayOutput,
   statusConflict,
   versionConflict,
 } from "../selection-command-support.ts";
+import { conflictOrReplay, lookupReplay, replayOutput } from "../selection-replay.ts";
 
 export interface ReviewMatchDisputeInput {
   readonly actorId: ActorId;
@@ -162,6 +160,7 @@ export class ReviewMatchDisputeUseCase {
         versionBefore: selection.version,
         versionAfter: nextVersion,
         reason,
+        details: { disputeId: dispute.id },
         occurredAt: now,
       },
     );
@@ -186,9 +185,10 @@ export class ReviewMatchDisputeUseCase {
     if (committed.status === "reference_claimed") {
       throw new Panic("Reviewing a dispute never acquires references");
     }
+    const proposals = await this.deps.selections.listProposals(selection.id);
     return ok({
       selection: nextSelection,
-      proposal: null,
+      proposal: proposals.find((row) => row.id === selection.currentProposalId) ?? null,
       actions: [action],
       dispute,
       approvedResult: null,

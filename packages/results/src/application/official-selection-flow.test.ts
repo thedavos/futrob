@@ -811,6 +811,225 @@ describe("replay and races (CA-14)", () => {
   });
 });
 
+describe("a replay returns the original outcome, never a later state", () => {
+  const replayed = <T extends { replayed: boolean }>(original: T): T => ({
+    ...original,
+    replayed: true,
+  });
+
+  it("propose: still the pending proposal after the rival approved it", async () => {
+    const h = await setup();
+    const command = {
+      ...h.base(),
+      actorId: ACTORS.homeCaptain,
+      actingTeamId: HOME,
+      selections: slotRefs("m-1"),
+      expectedVersion: 0,
+      commandKey: "propose-original",
+    };
+    const original = unwrap(await h.useCases.propose.execute(command));
+    unwrap(await h.useCases.confirm.execute(rivalInput(h, 1, original.proposal!.id)));
+
+    const again = unwrap(await h.useCases.propose.execute(command));
+    expect(again).toEqual(replayed(original));
+    expect(again.selection.status).toBe("awaiting_opponent_confirmation");
+    expect(again.approvedResult).toBeNull();
+  });
+
+  it("reject and alternative: the dispute as it was opened, even after it was resolved", async () => {
+    const rejectedHarness = await setup();
+    const first = unwrap(await rejectedHarness.propose(["m-1"]));
+    const rejectCommand = {
+      ...rivalInput(rejectedHarness, 1, first.proposal!.id),
+      reason: "Wrong match",
+    };
+    const rejected = unwrap(await rejectedHarness.useCases.reject.execute(rejectCommand));
+    const review = unwrap(
+      await rejectedHarness.useCases.review.execute({
+        ...rejectedHarness.base(),
+        actorId: ACTORS.operator,
+        expectedVersion: 2,
+        commandKey: "review",
+      }),
+    );
+    unwrap(
+      await rejectedHarness.useCases.resolve.execute({
+        ...rejectedHarness.base(),
+        actorId: ACTORS.operator,
+        expectedVersion: review.selection.version,
+        decision: { type: "approve_proposal", proposalId: first.proposal!.id },
+        reason: "Original was right",
+        commandKey: "resolve",
+      }),
+    );
+    const again = unwrap(await rejectedHarness.useCases.reject.execute(rejectCommand));
+    expect(again).toEqual(replayed(rejected));
+    expect(again.dispute?.status).toBe("open");
+
+    const alternativeHarness = await setup();
+    const proposal = unwrap(await alternativeHarness.propose(["m-1"]));
+    const alternativeCommand = {
+      ...rivalInput(alternativeHarness, 1, proposal.proposal!.id),
+      selections: slotRefs("m-2"),
+      reason: "Second match",
+    };
+    const alternative = unwrap(
+      await alternativeHarness.useCases.alternative.execute(alternativeCommand),
+    );
+    unwrap(
+      await alternativeHarness.useCases.review.execute({
+        ...alternativeHarness.base(),
+        actorId: ACTORS.operator,
+        expectedVersion: 2,
+        commandKey: "review",
+      }),
+    );
+    const alternativeAgain = unwrap(
+      await alternativeHarness.useCases.alternative.execute(alternativeCommand),
+    );
+    expect(alternativeAgain).toEqual(replayed(alternative));
+    expect(alternativeAgain.selection.status).toBe("disputed");
+  });
+
+  it("review: under review even after the case returned to selection", async () => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    unwrap(
+      await h.useCases.reject.execute({ ...rivalInput(h, 1, first.proposal!.id), reason: "no" }),
+    );
+    const reviewCommand = {
+      ...h.base(),
+      actorId: ACTORS.operator,
+      expectedVersion: 2,
+      commandKey: "review-original",
+    };
+    const review = unwrap(await h.useCases.review.execute(reviewCommand));
+    unwrap(
+      await h.useCases.resolve.execute({
+        ...h.base(),
+        actorId: ACTORS.operator,
+        expectedVersion: review.selection.version,
+        decision: { type: "return_to_selection" },
+        reason: "start over",
+        commandKey: "return",
+      }),
+    );
+
+    const again = unwrap(await h.useCases.review.execute(reviewCommand));
+    expect(again).toEqual(replayed(review));
+    expect(again.dispute?.status).toBe("under_review");
+    expect(again.selection.status).toBe("organizer_review");
+  });
+
+  it("return to selection: still round 2 and proposal-less after a new proposal", async () => {
+    const h = await setup();
+    const { review } = await toReview(h);
+    const returnCommand = {
+      ...h.base(),
+      actorId: ACTORS.operator,
+      expectedVersion: review.selection.version,
+      decision: { type: "return_to_selection" as const },
+      reason: "start over",
+      commandKey: "return-original",
+    };
+    const returned = unwrap(await h.useCases.resolve.execute(returnCommand));
+    unwrap(await h.propose(["m-2"], { expectedVersion: returned.selection.version }));
+
+    const again = unwrap(await h.useCases.resolve.execute(returnCommand));
+    expect(again).toEqual(replayed(returned));
+    expect(again.selection).toMatchObject({ status: "selection_in_progress", round: 2 });
+    expect(again.proposal).toBeNull();
+  });
+
+  it("confirm and resolve: the approved snapshot even after the result was voided", async () => {
+    const confirmed = await setup();
+    const first = unwrap(await confirmed.propose(["m-1"]));
+    const confirmCommand = rivalInput(confirmed, 1, first.proposal!.id);
+    const approved = unwrap(await confirmed.useCases.confirm.execute(confirmCommand));
+    unwrap(
+      await confirmed.useCases.void.execute({
+        actorId: ACTORS.operator,
+        encounterId: ENCOUNTER,
+        reason: "mistake",
+      }),
+    );
+    const again = unwrap(await confirmed.useCases.confirm.execute(confirmCommand));
+    expect(again).toEqual(replayed(approved));
+    expect(again.approvedResult?.status).toBe("approved");
+    expect(again.selection.status).toBe("approved");
+
+    const resolved = await setup();
+    const { first: disputed, review } = await toReview(resolved);
+    const resolveCommand = {
+      ...resolved.base(),
+      actorId: ACTORS.operator,
+      expectedVersion: review.selection.version,
+      decision: { type: "approve_proposal" as const, proposalId: disputed.proposal!.id },
+      reason: "Original was right",
+      commandKey: "resolve-original",
+    };
+    const resolution = unwrap(await resolved.useCases.resolve.execute(resolveCommand));
+    unwrap(
+      await resolved.useCases.void.execute({ actorId: ACTORS.operator, encounterId: ENCOUNTER }),
+    );
+    const resolutionAgain = unwrap(await resolved.useCases.resolve.execute(resolveCommand));
+    expect(resolutionAgain).toEqual(replayed(resolution));
+    expect(resolutionAgain.dispute?.status).toBe("resolved");
+  });
+
+  it("a flagged confirmation replays as organizer review after the operator approved it", async () => {
+    const h = await setup({ incompleteMatchIds: ["m-1"] });
+    const first = unwrap(await h.propose(["m-1"]));
+    const confirmCommand = rivalInput(h, 1, first.proposal!.id);
+    const flagged = unwrap(await h.useCases.confirm.execute(confirmCommand));
+    unwrap(
+      await h.useCases.resolve.execute({
+        ...h.base(),
+        actorId: ACTORS.operator,
+        expectedVersion: flagged.selection.version,
+        decision: {
+          type: "approve_proposal",
+          proposalId: first.proposal!.id,
+          acknowledgeIntegrityFlags: true,
+        },
+        reason: "checked",
+        commandKey: "resolve",
+      }),
+    );
+
+    const again = unwrap(await h.useCases.confirm.execute(confirmCommand));
+    expect(again).toEqual(replayed(flagged));
+    expect(again.selection.status).toBe("organizer_review");
+    expect(again.approvedResult).toBeNull();
+  });
+
+  it("the same key with a different reason is a conflict, not a replay", async () => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    const command = {
+      ...rivalInput(h, 1, first.proposal!.id),
+      selections: slotRefs("m-2"),
+      reason: "Second match",
+    };
+    unwrap(await h.useCases.alternative.execute(command));
+
+    const reworded = await h.useCases.alternative.execute({ ...command, reason: "Something else" });
+    expect(codeOf(reworded)).toBe("results.command_key_reused");
+    expect(h.selections.proposals).toHaveLength(2);
+
+    const rejectHarness = await setup();
+    const proposal = unwrap(await rejectHarness.propose(["m-1"]));
+    const rejectCommand = {
+      ...rivalInput(rejectHarness, 1, proposal.proposal!.id),
+      reason: "Wrong match",
+    };
+    unwrap(await rejectHarness.useCases.reject.execute(rejectCommand));
+    expect(
+      codeOf(await rejectHarness.useCases.reject.execute({ ...rejectCommand, reason: "Other" })),
+    ).toBe("results.command_key_reused");
+  });
+});
+
 describe("reference uniqueness across encounters (FR-12)", () => {
   it("rejects a match already claimed by another encounter and audits the attempt", async () => {
     const h = await setup();

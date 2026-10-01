@@ -30,12 +30,8 @@ import type {
 import type { ProviderMatchReaderPort } from "../domain/ports/provider-match-reader.port.ts";
 import { selectionReferences } from "../domain/policies/slot-selection.ts";
 import type { OfficialSelectionCommandOutput } from "./official-selection-output.ts";
-import {
-  buildAction,
-  buildApprovedResult,
-  conflictOrReplay,
-  snapshotProposal,
-} from "./selection-command-support.ts";
+import { buildAction, buildApprovedResult, snapshotProposal } from "./selection-command-support.ts";
+import { conflictOrReplay } from "./selection-replay.ts";
 
 export interface ConfirmProposalDeps {
   readonly selections: OfficialMatchSelectionRepository;

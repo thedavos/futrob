@@ -32,13 +32,12 @@ import type { OfficialSelectionCommandOutput } from "../official-selection-outpu
 import {
   authorizeTeamActor,
   commandFingerprint,
-  lookupReplay,
-  replayOutput,
   staleProposal,
   statusConflict,
   approvedGuard,
   versionConflict,
 } from "../selection-command-support.ts";
+import { lookupReplay, replayOutput } from "../selection-replay.ts";
 
 export interface ConfirmOfficialSelectionInput {
   readonly actorId: ActorId;

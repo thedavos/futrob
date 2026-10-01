@@ -33,6 +33,8 @@ export interface ConfirmationActionDetails {
   readonly acknowledgedFlags?: readonly IntegrityFlag[];
   readonly conflictingReference?: ExternalReference;
   readonly selectedProposalId?: string;
+  /** Dispute this action opened, advanced or closed. */
+  readonly disputeId?: string;
 }
 
 /**

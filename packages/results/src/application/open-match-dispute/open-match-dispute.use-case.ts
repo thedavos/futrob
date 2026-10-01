@@ -34,14 +34,12 @@ import {
   authorizeTeamActor,
   buildAction,
   commandFingerprint,
-  conflictOrReplay,
-  lookupReplay,
-  replayOutput,
   requireReason,
   statusConflict,
   approvedGuard,
   versionConflict,
 } from "../selection-command-support.ts";
+import { conflictOrReplay, lookupReplay, replayOutput } from "../selection-replay.ts";
 
 export interface OpenMatchDisputeInput {
   readonly actorId: ActorId;
@@ -194,6 +192,7 @@ export class OpenMatchDisputeUseCase {
         versionBefore: selection.version,
         versionAfter: nextVersion,
         reason: reason.value,
+        details: { disputeId: dispute.id },
         occurredAt: now,
       },
     );

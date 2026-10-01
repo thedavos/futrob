@@ -89,6 +89,7 @@ const actionDetailsSchema = z.object({
   acknowledgedFlags: z.array(integrityFlagSchema).optional(),
   conflictingReference: externalReferenceSchema.optional(),
   selectedProposalId: z.string().optional(),
+  disputeId: z.string().optional(),
 });
 
 export const actionRowSchema = z.object({

@@ -44,13 +44,11 @@ import {
   authorizeTeamActor,
   buildAction,
   commandFingerprint,
-  conflictOrReplay,
-  lookupReplay,
   rawSlotsKey,
-  replayOutput,
   statusConflict,
   versionConflict,
 } from "../selection-command-support.ts";
+import { conflictOrReplay, lookupReplay, replayOutput } from "../selection-replay.ts";
 
 export interface SelectOfficialMatchesInput {
   readonly actorId: ActorId;

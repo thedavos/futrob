@@ -159,7 +159,7 @@ suite("official selection composition on Postgres", () => {
         commandKey: "propose",
       });
       if (!proposed.isOk()) throw new Error("propose failed");
-      const alternative = await selection.proposeAlternative.execute({
+      const alternativeCommand = {
         actorId: AWAY_CAPTAIN,
         organizationId: ORG,
         encounterId: ENCOUNTER,
@@ -169,7 +169,8 @@ suite("official selection composition on Postgres", () => {
         selections: slot("m-2"),
         reason: "It was the second match",
         commandKey: "alternative",
-      });
+      };
+      const alternative = await selection.proposeAlternative.execute(alternativeCommand);
       if (!alternative.isOk()) throw new Error("alternative failed");
       await selection.reviewDispute.execute({
         actorId: OPERATOR,
@@ -194,6 +195,12 @@ suite("official selection composition on Postgres", () => {
         "operator_resolution",
       );
       expect(project).toHaveBeenCalledTimes(1);
+
+      // A replay reports the dispute as the alternative opened it, not as resolved.
+      const replay = await selection.proposeAlternative.execute(alternativeCommand);
+      expect(replay.isOk() && replay.value.replayed).toBe(true);
+      expect(replay.isOk() && replay.value.selection.status).toBe("disputed");
+      expect(replay.isOk() && replay.value.dispute?.status).toBe("open");
       expect(await count("official_selection_proposals")).toBe(2);
       expect(await count("official_selection_actions")).toBe(4);
       expect(await count("match_disputes", "status = 'resolved'")).toBe(1);
