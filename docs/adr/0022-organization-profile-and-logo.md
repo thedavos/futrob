@@ -83,7 +83,38 @@ DEC-087 en [open-decisions](/product/open-decisions.md).
 
 ## Estado de implementación y evidencia
 
-- Aceptada por instrucción explícita del usuario (decisiones confirmadas el 2026-10-01). La
-  implementación está en curso en la rama `feat/org-create-form`.
-- Pendiente: dominio y casos de uso, migración `0045`, contratos y OpenAPI, rutas de la API, SDK,
-  subida de escudos en la web, formulario de creación, pantalla de ajustes y consumidores.
+Aceptada por instrucción explícita del usuario (decisiones confirmadas el 2026-10-01).
+Implementada en la rama `feat/org-create-form`.
+
+- Dominio y casos de uso en `@futrob/organizations` (`organization-slug.ts`, `organization-logo.ts`,
+  `CreateOrganizationUseCase`, `CheckOrganizationSlugUseCase`, `GetOrganizationProfileUseCase`,
+  `UpdateOrganizationProfileUseCase`, `SetOrganizationLogoUseCase`) con pruebas de permisos,
+  conflictos y carreras simuladas.
+- Persistencia en `apps/api/src/adapters/organizations/` y migración
+  `apps/api/migrations/0045_organization_profile.sql`.
+- Contratos, OpenAPI, SDK, rutas de la API, CLI (`org-slug-check`, `org-profile`), BFF de la web
+  (`/api/v1/organizations/:id`, `…/logo`, `…/logo/:uploadKey`, `/media/organization-logos/*`),
+  formulario de creación, ajustes y escudos en el selector, el selector de organización y la zona
+  inicial de las competiciones.
+
+Verificado de verdad:
+
+- Suite completa de Vitest, `vp check`, `typecheck` y `vp build`.
+- Migración: instalación limpia de las 45 migraciones en un Postgres real (base aislada de Neon) y
+  backfill sobre datos existentes en Postgres embebido (PGlite): slugs con tildes, colisiones,
+  nombres cortos y reservados, zona de la competición más antigua o `UTC`. Las restricciones
+  rechazan slug duplicado, mal formado y logo inconsistente.
+- Flujo en vivo con navegador contra la web, el auth y la API de la rama y una base aislada:
+  creación con slug propuesto, escudo subido a R2 local y servido con caché inmutable, slug ocupado
+  con sugerencia, edición en ajustes, `409 slug_conflict` y `400 invalid_slug` desde la API,
+  retirada del escudo, zona heredada en una competición nueva, monogramas en el selector y
+  formulario sin desbordamiento a 375 px.
+
+Brechas:
+
+- `organization-profile.migration.integration.test.ts` (con `TEST_DATABASE_URL`) no se ejecutó
+  completo: contra Neon remoto agota los tiempos de espera al aplicar 45 migraciones. Se validó
+  con las otras vías de arriba.
+- El slug no tiene consumidor: no existen rutas del portal público por organización.
+- Los escudos reemplazados quedan huérfanos en R2, como las portadas de ADR-0020.
+- La app móvil acepta los campos nuevos, pero no muestra el escudo ni edita el perfil.

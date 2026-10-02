@@ -115,7 +115,9 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
     ...fields,
     timeZone: timeZoneEdited
       ? fields.timeZone
-      : (organizationProfile.data?.timeZone ?? fields.timeZone),
+      : (organizationProfile.data?.timeZone ??
+        // No flash of the browser zone while the organization's own zone is loading.
+        (organizationProfile.isPending ? "" : fields.timeZone)),
   };
   const submitting = createDraft.isPending;
   const canCreate = create.allowed;

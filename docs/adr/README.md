@@ -43,7 +43,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0019: Inscripciones abiertas y postulación de equipos](/docs/adr/0019-competition-registration-and-applications.md)      | Aceptada    | Estado `registration` y postulación; notificación al organizador pendiente  |
 | [ADR-0020: Perfil de competición y portadas en R2](/docs/adr/0020-competition-profile-and-media.md)                           | Aceptada    | Cupo, fechas y portada; limpieza de huérfanos en R2 pendiente               |
 | [ADR-0021: Auth, actores y rate limits en el Postgres de producto](/docs/adr/0021-auth-and-actors-in-product-postgres.md)     | Aceptada    | Implementado en el checkout; Hyperdrive→Railway sin desplegar               |
-| [ADR-0022: Perfil de organización: slug, zona horaria y escudo](/docs/adr/0022-organization-profile-and-logo.md)              | Aceptada    | Aceptada; implementación en curso                                           |
+| [ADR-0022: Perfil de organización: slug, zona horaria y escudo](/docs/adr/0022-organization-profile-and-logo.md)              | Aceptada    | Implementado en el checkout; slug sin consumidor hasta el portal público    |
 
 ## Consolidación de septiembre de 2026
 
