@@ -1,4 +1,4 @@
-/** Subset of the Workers `R2Bucket` API the cover flow uses. */
+/** Subset of the Workers `R2Bucket` API the image flows use. */
 export interface MediaBucket {
   put(
     key: string,
@@ -13,7 +13,7 @@ export interface MediaBucket {
 
 export type ImageType = "png" | "jpeg" | "webp";
 
-export const MAX_COVER_BYTES = 2 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 const IMAGE_FORMATS = {
   png: { ext: "png", contentType: "image/png" },
@@ -33,7 +33,7 @@ export function detectImageType(bytes: Uint8Array): ImageType | null {
   return null;
 }
 
-export type StoreCoverResult =
+export type StoreImageResult =
   | { readonly ok: true; readonly key: string }
   | {
       readonly ok: false;
@@ -41,22 +41,23 @@ export type StoreCoverResult =
       readonly code: "media.invalid_name" | "media.too_large" | "media.unsupported_type";
     };
 
-const CREATION_KEY = /^[A-Za-z0-9_-]{1,120}$/;
+const SAFE_NAME = /^[A-Za-z0-9_-]{1,120}$/;
 
 /**
- * Writes `competition-covers/{organizationId}/{creationKey}.{ext}`. The key derives from the
- * create request's `creationKey`, so a retried upload overwrites the same object.
+ * Writes `{prefix}/{organizationId}/{name}.{ext}`. The name comes from the caller's retry key,
+ * so a retried upload overwrites the same object instead of leaving a duplicate.
  */
-export async function storeCompetitionCover(input: {
+async function storeImage(input: {
   readonly bucket: MediaBucket;
+  readonly prefix: "competition-covers" | "organization-logos";
   readonly organizationId: string;
-  readonly creationKey: string;
+  readonly name: string;
   readonly bytes: ArrayBuffer;
-}): Promise<StoreCoverResult> {
-  if (!CREATION_KEY.test(input.creationKey) || !CREATION_KEY.test(input.organizationId)) {
+}): Promise<StoreImageResult> {
+  if (!SAFE_NAME.test(input.name) || !SAFE_NAME.test(input.organizationId)) {
     return { ok: false, status: 400, code: "media.invalid_name" };
   }
-  if (input.bytes.byteLength > MAX_COVER_BYTES) {
+  if (input.bytes.byteLength > MAX_IMAGE_BYTES) {
     return { ok: false, status: 413, code: "media.too_large" };
   }
   const type = detectImageType(
@@ -64,12 +65,44 @@ export async function storeCompetitionCover(input: {
   );
   if (!type) return { ok: false, status: 415, code: "media.unsupported_type" };
   const format = IMAGE_FORMATS[type];
-  const key = `competition-covers/${input.organizationId}/${input.creationKey}.${format.ext}`;
+  const key = `${input.prefix}/${input.organizationId}/${input.name}.${format.ext}`;
   await input.bucket.put(key, input.bytes, { httpMetadata: { contentType: format.contentType } });
   return { ok: true, key };
 }
 
-/** Streams a stored cover. Keys never change content, so the response is cached forever. */
+/** Stores `competition-covers/{organizationId}/{creationKey}.{ext}`. */
+export function storeCompetitionCover(input: {
+  readonly bucket: MediaBucket;
+  readonly organizationId: string;
+  readonly creationKey: string;
+  readonly bytes: ArrayBuffer;
+}): Promise<StoreImageResult> {
+  return storeImage({
+    bucket: input.bucket,
+    prefix: "competition-covers",
+    organizationId: input.organizationId,
+    name: input.creationKey,
+    bytes: input.bytes,
+  });
+}
+
+/** Stores `organization-logos/{organizationId}/{uploadKey}.{ext}`. */
+export function storeOrganizationLogo(input: {
+  readonly bucket: MediaBucket;
+  readonly organizationId: string;
+  readonly uploadKey: string;
+  readonly bytes: ArrayBuffer;
+}): Promise<StoreImageResult> {
+  return storeImage({
+    bucket: input.bucket,
+    prefix: "organization-logos",
+    organizationId: input.organizationId,
+    name: input.uploadKey,
+    bytes: input.bytes,
+  });
+}
+
+/** Streams a stored image. Keys never change content, so the response is cached forever. */
 export async function readMedia(bucket: MediaBucket, key: string): Promise<Response> {
   const object = await bucket.get(key);
   if (!object) return new Response(null, { status: 404 });
@@ -83,7 +116,7 @@ export async function readMedia(bucket: MediaBucket, key: string): Promise<Respo
 }
 
 /** Bounds uploads even when Content-Length is absent or understated. */
-export async function readCompetitionCoverBytes(request: Request): Promise<ArrayBuffer | null> {
+export async function readImageBytes(request: Request): Promise<ArrayBuffer | null> {
   if (!request.body) return new ArrayBuffer(0);
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -93,7 +126,7 @@ export async function readCompetitionCoverBytes(request: Request): Promise<Array
       const chunk = await reader.read();
       if (chunk.done) break;
       size += chunk.value.byteLength;
-      if (size > MAX_COVER_BYTES) {
+      if (size > MAX_IMAGE_BYTES) {
         await reader.cancel();
         return null;
       }

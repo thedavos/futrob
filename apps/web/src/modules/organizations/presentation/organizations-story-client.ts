@@ -145,6 +145,9 @@ export const organizationsBrowserClient = {
         return Promise.resolve({
           organizationId: "org-story",
           name: input.name,
+          slug: input.slug ?? "org-story",
+          timeZone: input.timeZone,
+          logo: { kind: "monogram" },
           role: "organizer",
         });
       default: {

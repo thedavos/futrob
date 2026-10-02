@@ -17,7 +17,7 @@ describe("apps/api http authorization", () => {
     const created = await app.request("/api/v1/organizations", {
       method: "POST",
       headers: serviceHeaders(organizer),
-      body: JSON.stringify({ name: "Authorization Org" }),
+      body: JSON.stringify({ name: "Authorization Org", timeZone: "UTC" }),
     });
     const { organizationId } = await parseResponse(createOrganizationResponseSchema, created);
     const invitation = await app.request(`/api/v1/organizations/${organizationId}/invitations`, {
@@ -73,7 +73,7 @@ describe("apps/api http authorization", () => {
     const other = await app.request("/api/v1/organizations", {
       method: "POST",
       headers: serviceHeaders(otherOrganizer),
-      body: JSON.stringify({ name: "Other Authorization Org" }),
+      body: JSON.stringify({ name: "Other Authorization Org", timeZone: "UTC" }),
     });
     const { organizationId: otherOrganizationId } = await parseResponse(
       createOrganizationResponseSchema,

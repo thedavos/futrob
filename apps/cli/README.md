@@ -87,7 +87,9 @@ npm run cli -- e2e-golden-path --actor <actorId>
 | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `api-health`                                               | `GET /meta/health` (estado API + DB: `ok` / `skipped` / `error`)            |
 | `org-name-check <name>`                                    | Disponibilidad de nombre de organización                                    |
-| `org-create <name>`                                        | Crea organización                                                           |
+| `org-create <name> [--slug s] [--time-zone tz]`            | Crea organización (zona por defecto `UTC`)                                  |
+| `org-slug-check <slug> [--org id]`                         | Disponibilidad de slug, con sugerencia                                      |
+| `org-profile <orgId>`                                      | Perfil: nombre, slug, zona horaria y escudo                                 |
 | `org-mine`                                                 | Membresías del actor                                                        |
 | `org-invite <orgId> <email> [--role role]`                 | Invitación staff de organización                                            |
 | `onboarding-status`                                        | Estado de onboarding del actor                                              |

@@ -21,6 +21,7 @@ import {
 } from "@/modules/organizations/presentation/organization-queries.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { getBrowserTimeZone } from "@/shared/presentation/time-zone-options.ts";
 import {
   SupportErrorAlert,
   type SupportError,
@@ -97,7 +98,10 @@ export function CreateOrganizationForm({
     }
 
     try {
-      const created = await createOrganization.mutateAsync({ name: trimmed });
+      const created = await createOrganization.mutateAsync({
+        name: trimmed,
+        timeZone: getBrowserTimeZone(),
+      });
       if (onCreated) {
         onCreated({ organizationId: created.organizationId, name: created.name });
         return;

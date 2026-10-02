@@ -8,10 +8,10 @@ import {
 import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
 import { apiErrorResponse, jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
 import {
-  MAX_COVER_BYTES,
-  readCompetitionCoverBytes,
+  MAX_IMAGE_BYTES,
+  readImageBytes,
   storeCompetitionCover,
-} from "@/shared/infrastructure/media/competition-cover-storage.ts";
+} from "@/shared/infrastructure/media/media-storage.ts";
 
 export const Route = createFileRoute(
   "/api/v1/organizations/$organizationId/competitions/covers/$creationKey",
@@ -21,7 +21,7 @@ export const Route = createFileRoute(
       PUT: async ({ params, request }) => {
         try {
           const declaredLength = Number(request.headers.get("content-length") ?? "0");
-          if (declaredLength > MAX_COVER_BYTES) {
+          if (declaredLength > MAX_IMAGE_BYTES) {
             return apiErrorResponse(413, {
               code: "media.too_large",
               messageKey: "errors.media.too_large",
@@ -43,7 +43,7 @@ export const Route = createFileRoute(
           }
           const { MEDIA_BUCKET } = await getWorkerBindings();
           if (!MEDIA_BUCKET) return productApiBffErrorResponse({ kind: "unexpected" });
-          const bytes = await readCompetitionCoverBytes(request);
+          const bytes = await readImageBytes(request);
           if (bytes === null) {
             return apiErrorResponse(413, {
               code: "media.too_large",

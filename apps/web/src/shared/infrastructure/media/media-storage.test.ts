@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
   detectImageType,
-  MAX_COVER_BYTES,
-  readCompetitionCoverBytes,
+  MAX_IMAGE_BYTES,
+  readImageBytes,
   readMedia,
   storeCompetitionCover,
+  storeOrganizationLogo,
   type MediaBucket,
-} from "./competition-cover-storage.ts";
+} from "./media-storage.ts";
 
 const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0];
 const JPEG = [0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -31,7 +32,7 @@ class MemoryBucket implements MediaBucket {
 
 const bytes = (values: number[]) => new Uint8Array(values).buffer;
 
-describe("competition cover storage", () => {
+describe("image storage", () => {
   it("detects PNG, JPEG and WebP by signature and rejects anything else", () => {
     expect([PNG, JPEG, WEBP, GIF].map((file) => detectImageType(new Uint8Array(file)))).toEqual([
       "png",
@@ -57,6 +58,68 @@ describe("competition cover storage", () => {
     expect(response.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
     expect([...new Uint8Array(await response.arrayBuffer())]).toEqual(PNG);
     expect((await readMedia(bucket, "competition-covers/org-1/missing.png")).status).toBe(404);
+  });
+
+  it("stores a logo under the organization-logos prefix and never touches covers", async () => {
+    const bucket = new MemoryBucket();
+
+    const logo = await storeOrganizationLogo({
+      bucket,
+      organizationId: "org-1",
+      uploadKey: "crest-1",
+      bytes: bytes(WEBP),
+    });
+    const cover = await storeCompetitionCover({
+      bucket,
+      organizationId: "org-1",
+      creationKey: "crest-1",
+      bytes: bytes(WEBP),
+    });
+
+    expect(logo).toEqual({ ok: true, key: "organization-logos/org-1/crest-1.webp" });
+    expect(cover).toEqual({ ok: true, key: "competition-covers/org-1/crest-1.webp" });
+    expect([...bucket.objects.keys()].sort()).toEqual([
+      "competition-covers/org-1/crest-1.webp",
+      "organization-logos/org-1/crest-1.webp",
+    ]);
+  });
+
+  it("rejects an unsafe logo name, a non-image logo and an oversized logo without writing", async () => {
+    const bucket = new MemoryBucket();
+    const results = await Promise.all([
+      storeOrganizationLogo({
+        bucket,
+        organizationId: "org-1",
+        uploadKey: "../escape",
+        bytes: bytes(PNG),
+      }),
+      storeOrganizationLogo({
+        bucket,
+        organizationId: "org-1",
+        uploadKey: "crest-1",
+        bytes: bytes(GIF),
+      }),
+      storeOrganizationLogo({
+        bucket,
+        organizationId: "../org-2",
+        uploadKey: "crest-1",
+        bytes: bytes(PNG),
+      }),
+      storeOrganizationLogo({
+        bucket,
+        organizationId: "org-1",
+        uploadKey: "crest-2",
+        bytes: new Uint8Array([...PNG, ...new Array(2 * 1024 * 1024).fill(0)]).buffer,
+      }),
+    ]);
+
+    expect(results).toEqual([
+      { ok: false, status: 400, code: "media.invalid_name" },
+      { ok: false, status: 415, code: "media.unsupported_type" },
+      { ok: false, status: 400, code: "media.invalid_name" },
+      { ok: false, status: 413, code: "media.too_large" },
+    ]);
+    expect(bucket.objects.size).toBe(0);
   });
 
   it("overwrites the same object when the upload is retried", async () => {
@@ -104,14 +167,14 @@ describe("competition cover storage", () => {
   });
 });
 
-describe("bounded cover body reader", () => {
+describe("bounded image body reader", () => {
   it("reads an upload at the byte limit", async () => {
-    const body = new Uint8Array(MAX_COVER_BYTES);
+    const body = new Uint8Array(MAX_IMAGE_BYTES);
     body.set(PNG);
-    const result = await readCompetitionCoverBytes(
+    const result = await readImageBytes(
       new Request("https://futrob.test/upload", { method: "PUT", body }),
     );
-    expect(result?.byteLength).toBe(MAX_COVER_BYTES);
+    expect(result?.byteLength).toBe(MAX_IMAGE_BYTES);
     expect([...new Uint8Array(result!).slice(0, PNG.length)]).toEqual(PNG);
   });
 
@@ -120,10 +183,10 @@ describe("bounded cover body reader", () => {
     async (contentLength) => {
       const request = new Request("https://futrob.test/upload", {
         method: "PUT",
-        body: new Uint8Array(MAX_COVER_BYTES + 1),
+        body: new Uint8Array(MAX_IMAGE_BYTES + 1),
         headers: contentLength ? { "content-length": contentLength } : {},
       });
-      await expect(readCompetitionCoverBytes(request)).resolves.toBeNull();
+      await expect(readImageBytes(request)).resolves.toBeNull();
     },
   );
 });

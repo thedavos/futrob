@@ -13,9 +13,15 @@ import type {
   OrganizationMembership,
   OrganizationRepository,
 } from "@futrob/organizations";
-import { INVITATION_STATUS, REDEEM_POLICY } from "@futrob/organizations";
+import {
+  DEFAULT_ORGANIZATION_LOGO,
+  INVITATION_STATUS,
+  parseOrganizationLogo,
+  parseOrganizationSlug,
+  REDEEM_POLICY,
+} from "@futrob/organizations";
 import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
-import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
+import { asActorId, asCompetitionId, asOrganizationId, Panic } from "@futrob/shared-kernel";
 import { z } from "zod";
 import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 
@@ -30,8 +36,23 @@ export class InMemoryOrganizationRepository implements OrganizationRepository {
       : null;
     if (existing) return existing;
     if (await this.getByNormalizedName(organization.normalizedName)) return null;
+    if (await this.getBySlug(organization.slug)) return null;
     this.byId.set(organization.id, organization);
     return organization;
+  }
+
+  async update(organization: Organization): Promise<Organization | null> {
+    if (!this.byId.has(organization.id)) return null;
+    const nameOwner = await this.getByNormalizedName(organization.normalizedName);
+    if (nameOwner && nameOwner.id !== organization.id) return null;
+    const slugOwner = await this.getBySlug(organization.slug);
+    if (slugOwner && slugOwner.id !== organization.id) return null;
+    this.byId.set(organization.id, organization);
+    return organization;
+  }
+
+  async getBySlug(slug: string): Promise<Organization | null> {
+    return [...this.byId.values()].find((row) => row.slug === slug) ?? null;
   }
 
   async getByIds(ids: readonly OrganizationId[]): Promise<readonly Organization[]> {
@@ -78,6 +99,8 @@ export class InMemoryMembershipRepository implements MembershipRepository {
         return {
           organizationId: row.organizationId,
           organizationName: org?.name ?? "unknown",
+          organizationSlug: org?.slug ?? "unknown",
+          organizationLogo: org?.logo ?? DEFAULT_ORGANIZATION_LOGO,
           role: row.role,
         };
       });
@@ -219,14 +242,30 @@ export function rehydrateOrganization(row: {
   id: string;
   name: string;
   normalized_name?: string;
+  slug: string;
+  time_zone: string;
+  logo_kind: "monogram" | "upload";
+  logo_value: string | null;
   created_at: Date | string;
   created_by_actor_id: string;
   creation_key?: string | null;
 }): Organization {
+  const id = asOrganizationId(row.id);
+  const slug = parseOrganizationSlug(row.slug);
+  const logo = parseOrganizationLogo(
+    row.logo_kind === "upload"
+      ? { kind: "upload", key: row.logo_value ?? "" }
+      : { kind: "monogram" },
+    id,
+  );
+  if (!slug || !logo) throw new Panic(`Stored organization ${row.id} has an invalid slug or logo`);
   return {
-    id: asOrganizationId(row.id),
+    id,
     name: row.name,
     normalizedName: row.normalized_name ?? row.name.trim().toLocaleLowerCase("es"),
+    slug,
+    timeZone: row.time_zone,
+    logo,
     createdAt: new Date(row.created_at),
     createdByActorId: asActorId(row.created_by_actor_id),
     creationKey: row.creation_key ?? undefined,

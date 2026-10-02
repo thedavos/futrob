@@ -15,7 +15,7 @@ describe("apps/api http organizations", () => {
     const created = await app.request("/api/v1/organizations", {
       method: "POST",
       headers: serviceHeaders(organizer),
-      body: JSON.stringify({ name: "Liga Test" }),
+      body: JSON.stringify({ name: "Liga Test", timeZone: "UTC" }),
     });
     expect(created.status).toBe(201);
     const createdBody = await parseResponse(createOrganizationResponseSchema, created);
@@ -81,7 +81,7 @@ describe("apps/api http organizations", () => {
     const created = await app.request("/api/v1/organizations", {
       method: "POST",
       headers: serviceHeaders(organizer),
-      body: JSON.stringify({ name: "Liga Multi" }),
+      body: JSON.stringify({ name: "Liga Multi", timeZone: "UTC" }),
     });
     expect(created.status).toBe(201);
     const { organizationId } = await parseResponse(createOrganizationResponseSchema, created);
@@ -126,28 +126,28 @@ describe("apps/api http organizations", () => {
     const initiallyAvailable = await app.request("/api/v1/organizations/name-availability", {
       method: "POST",
       headers: serviceHeaders(firstActor),
-      body: JSON.stringify({ name: "Liga Global" }),
+      body: JSON.stringify({ name: "Liga Global", timeZone: "UTC" }),
     });
     expect(await initiallyAvailable.json()).toEqual({ available: true });
 
     const created = await app.request("/api/v1/organizations", {
       method: "POST",
       headers: serviceHeaders(firstActor),
-      body: JSON.stringify({ name: "Liga  Global" }),
+      body: JSON.stringify({ name: "Liga  Global", timeZone: "UTC" }),
     });
     expect(created.status).toBe(201);
 
     const unavailable = await app.request("/api/v1/organizations/name-availability", {
       method: "POST",
       headers: serviceHeaders("actor-name-contender"),
-      body: JSON.stringify({ name: "  LIGA GLOBAL  " }),
+      body: JSON.stringify({ name: "  LIGA GLOBAL  ", timeZone: "UTC" }),
     });
     expect(await unavailable.json()).toEqual({ available: false });
 
     const duplicate = await app.request("/api/v1/organizations", {
       method: "POST",
       headers: serviceHeaders("actor-name-contender"),
-      body: JSON.stringify({ name: "liga global" }),
+      body: JSON.stringify({ name: "liga global", timeZone: "UTC" }),
     });
     expect(duplicate.status).toBe(409);
     expect(await duplicate.json()).toMatchObject({ code: "organizations.name_conflict" });

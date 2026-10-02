@@ -7,6 +7,23 @@ export {
   type RedeemPolicy,
 } from "./domain/entities/organization-invitation.ts";
 export type { OrganizationMembership } from "./domain/entities/organization-membership.ts";
+export {
+  DEFAULT_ORGANIZATION_LOGO,
+  organizationLogoKeyPrefix,
+  parseOrganizationLogo,
+  type OrganizationLogo,
+  type OrganizationLogoInput,
+  type OrganizationLogoKey,
+} from "./domain/value-objects/organization-logo.ts";
+export {
+  ORGANIZATION_SLUG_MAX_LENGTH,
+  ORGANIZATION_SLUG_MIN_LENGTH,
+  organizationSlugCandidates,
+  parseOrganizationSlug,
+  RESERVED_ORGANIZATION_SLUGS,
+  slugifyOrganizationText,
+  type OrganizationSlug,
+} from "./domain/value-objects/organization-slug.ts";
 export type {
   AccessGrant,
   AuthorizationAuditEntry,
@@ -63,8 +80,12 @@ export {
 } from "./domain/errors/invitation.errors.ts";
 
 export {
+  InvalidOrganizationLogo,
   InvalidOrganizationName,
+  InvalidOrganizationSlug,
+  InvalidOrganizationTimeZone,
   OrganizationNameConflict,
+  OrganizationSlugConflict,
   type CreateOrganizationError,
 } from "./domain/errors/organization.errors.ts";
 export {
@@ -90,6 +111,25 @@ export {
   type CheckOrganizationNameInput,
   type CheckOrganizationNameResult,
 } from "./application/check-organization-name/check-organization-name.use-case.ts";
+export {
+  CheckOrganizationSlugUseCase,
+  type CheckOrganizationSlugInput,
+  type CheckOrganizationSlugResult,
+} from "./application/check-organization-slug/check-organization-slug.use-case.ts";
+export {
+  GetOrganizationProfileUseCase,
+  type GetOrganizationProfileInput,
+} from "./application/get-organization-profile/get-organization-profile.use-case.ts";
+export {
+  UpdateOrganizationProfileUseCase,
+  type UpdateOrganizationProfileError,
+  type UpdateOrganizationProfileInput,
+} from "./application/update-organization-profile/update-organization-profile.use-case.ts";
+export {
+  SetOrganizationLogoUseCase,
+  type SetOrganizationLogoError,
+  type SetOrganizationLogoInput,
+} from "./application/set-organization-logo/set-organization-logo.use-case.ts";
 export {
   ListMembershipsForActorUseCase,
   type ListMembershipsForActorInput,

@@ -89,7 +89,15 @@ describe("session gate", () => {
           }
         : {
             destination: { kind: "organization", organizationId: "org-1" },
-            memberships: [{ organizationId: "org-1", organizationName: "Club", role: "organizer" }],
+            memberships: [
+              {
+                organizationId: "org-1",
+                organizationName: "Club",
+                organizationSlug: "club",
+                organizationLogo: { kind: "monogram" },
+                role: "organizer",
+              },
+            ],
           };
       return new Response(JSON.stringify(body), {
         status: 200,

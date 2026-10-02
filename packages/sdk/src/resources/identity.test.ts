@@ -74,6 +74,9 @@ describe("createFutrobClient identity", () => {
           return Response.json({
             organizationId: "org-1",
             name: "Liga",
+            slug: "liga",
+            timeZone: "America/Lima",
+            logo: { kind: "monogram" },
             role: "organizer",
             competition: competitionResponse,
             profile,

@@ -7,4 +7,7 @@ export interface OrganizationRepository {
   getById(id: OrganizationId): Promise<Organization | null>;
   getByCreationKey(creationKey: string): Promise<Organization | null>;
   getByNormalizedName(normalizedName: string): Promise<Organization | null>;
+  getBySlug(slug: string): Promise<Organization | null>;
+  /** Persists name, slug, time zone and logo. Returns `null` when another organization already owns the name or slug. */
+  update(organization: Organization): Promise<Organization | null>;
 }

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type {
   CreateOrganizationRequest,
   CreateOrganizationResponse,
@@ -45,6 +45,9 @@ vi.mock("@tanstack/react-router", () => ({ useNavigate: () => mocks.navigate }))
 const created: CreateOrganizationResponse = {
   organizationId: "org-1",
   name: "Liga Norte",
+  slug: "liga-norte",
+  timeZone: "America/Lima",
+  logo: { kind: "monogram" },
   role: "organizer",
 };
 
@@ -73,7 +76,15 @@ function clientError(code: string, status = 409) {
   return new OrganizationsClientError({ status, code, message: code });
 }
 
+beforeEach(() => {
+  vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+    ...Intl.DateTimeFormat().resolvedOptions(),
+    timeZone: "America/Lima",
+  });
+});
+
 afterEach(() => {
+  vi.restoreAllMocks();
   cleanup();
   mocks.checkNameAvailability.mockReset();
   mocks.create.mockReset();
@@ -190,7 +201,7 @@ describe("CreateOrganizationForm", () => {
         params: { orgId: "org-1" },
       }),
     );
-    expect(mocks.create).toHaveBeenCalledWith({ name: "Liga Norte" });
+    expect(mocks.create).toHaveBeenCalledWith({ name: "Liga Norte", timeZone: "America/Lima" });
   });
 
   it("hands the created organization to onCreated instead of navigating", async () => {
