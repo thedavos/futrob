@@ -19,6 +19,8 @@ import { NewOrganizationPage } from "./new-organization-page.tsx";
 import {
   configureOrganizationsStory,
   type OrganizationsCreateStoryState,
+  type OrganizationsLogoStoryState,
+  type OrganizationsSlugStoryState,
 } from "./organizations-story-client.ts";
 
 const styles = stylex.create({
@@ -45,18 +47,24 @@ const SCENARIO_IDS = [
 type StoryArgs = {
   readonly scenario: OrganizationsCreateStoryState;
   readonly locale: Locale;
+  readonly slugCheck?: OrganizationsSlugStoryState;
+  readonly logo?: OrganizationsLogoStoryState;
 };
 
-function CreateOrganizationStoryShell({ scenario, locale }: StoryArgs) {
+function CreateOrganizationStoryShell({ scenario, locale, slugCheck, logo }: StoryArgs) {
   const client = useMemo(() => {
-    configureOrganizationsStory({ createOrganization: scenario });
+    configureOrganizationsStory({
+      createOrganization: scenario,
+      slugCheck: slugCheck ?? "free",
+      logo: logo ?? "success",
+    });
     return new QueryClient({
       defaultOptions: {
         queries: { retry: false, staleTime: Infinity, gcTime: Infinity },
         mutations: { retry: false },
       },
     });
-  }, [scenario]);
+  }, [scenario, slugCheck, logo]);
 
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
@@ -107,6 +115,8 @@ const meta = {
   argTypes: {
     scenario: { control: "select", options: [...SCENARIO_IDS] },
     locale: { control: "inline-radio", options: ["es", "en"] },
+    slugCheck: { control: "select", options: ["free", "taken", "invalid", "failed"] },
+    logo: { control: "select", options: ["success", "uploadFailed", "pending"] },
   },
   render: (args) => (
     <CreateOrganizationStoryShell key={`${args.scenario}-${args.locale}`} {...args} />
@@ -207,5 +217,95 @@ export const Success: Story = {
     await expect(
       await canvas.findByText("Competiciones de la organización (stub de Storybook)"),
     ).toBeVisible();
+  },
+};
+
+const CREST = new File(
+  [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])],
+  "crest.png",
+  {
+    type: "image/png",
+  },
+);
+
+export const SlugProposedFromName: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByLabelText("Nombre de la organización"), "Liga Ñandú");
+    await expect(canvas.getByLabelText("Slug")).toHaveValue("liga-nandu");
+  },
+};
+
+export const SlugTaken: Story = {
+  args: { slugCheck: "taken" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await submitName(canvas);
+    await expect(await canvas.findByText("Ese slug ya está en uso.")).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Usar «liga-norte-2»" }));
+    await expect(canvas.getByLabelText("Slug")).toHaveValue("liga-norte-2");
+    await userEvent.click(canvas.getByRole("button", { name: "Crear organización" }));
+    await expect(
+      await canvas.findByText("Competiciones de la organización (stub de Storybook)"),
+    ).toBeVisible();
+  },
+};
+
+export const SlugInvalid: Story = {
+  args: { slugCheck: "invalid" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByLabelText("Slug"), "admin");
+    await userEvent.tab();
+    await expect(
+      await canvas.findByText(
+        "Usa de 3 a 48 caracteres: minúsculas, números y guiones, sin palabras reservadas.",
+      ),
+    ).toBeVisible();
+  },
+};
+
+export const LogoPreview: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByLabelText("Nombre de la organización");
+    const input = canvasElement.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) throw new Error("file input not rendered");
+    await userEvent.upload(input, CREST);
+    await expect(await canvas.findByRole("button", { name: "Quitar escudo" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Cambiar escudo" })).toBeVisible();
+  },
+};
+
+export const LogoUploaded: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByLabelText("Nombre de la organización"), "Liga Norte");
+    const input = canvasElement.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) throw new Error("file input not rendered");
+    await userEvent.upload(input, CREST);
+    await userEvent.click(canvas.getByRole("button", { name: "Crear organización" }));
+    await expect(
+      await canvas.findByText("Competiciones de la organización (stub de Storybook)"),
+    ).toBeVisible();
+  },
+};
+
+export const LogoUploadFailed: Story = {
+  args: { logo: "uploadFailed" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByLabelText("Nombre de la organización"), "Liga Norte");
+    const input = canvasElement.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) throw new Error("file input not rendered");
+    await userEvent.upload(input, CREST);
+    await userEvent.click(canvas.getByRole("button", { name: "Crear organización" }));
+    await expect(
+      await canvas.findByText(
+        "Creamos la organización, pero no pudimos subir el escudo. Puedes subirlo desde Ajustes.",
+      ),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Reintentar subida" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Continuar sin escudo" })).toBeVisible();
   },
 };

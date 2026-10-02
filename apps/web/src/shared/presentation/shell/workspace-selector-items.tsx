@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType, ReactNode, SVGProps } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
@@ -13,12 +13,14 @@ import {
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { BuildingsIcon, PlusIcon, TrophyIcon } from "@phosphor-icons/react";
+import { OrganizationAvatar } from "@/modules/organizations/presentation/organization-avatar.tsx";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
 import {
   type WorkspaceDisplayRole,
   type WorkspaceSelectorClubOption,
+  type WorkspaceSelectorOrgOption,
 } from "./workspace-selector-model.ts";
 import { WORKSPACE_ROLE_ICONS, workspaceRoleMessageKey } from "./workspace-role-icons.ts";
 
@@ -129,11 +131,14 @@ export function RoleAwareMenuItem({
   name,
   role,
   EntityIcon,
+  leading,
   onSelect,
 }: {
   readonly name: string;
   readonly role: WorkspaceDisplayRole;
   readonly EntityIcon: ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
+  /** Replaces the generic icon, e.g. an organization's logo. */
+  readonly leading?: ReactNode;
   readonly onSelect: () => void;
 }) {
   const { t } = useI18n();
@@ -148,7 +153,7 @@ export function RoleAwareMenuItem({
       style={item.style}
     >
       <span {...applyStyles(styles.identity)}>
-        <EntityIcon aria-hidden="true" className={icon.className} style={icon.style} />
+        {leading ?? <EntityIcon aria-hidden="true" className={icon.className} style={icon.style} />}
         <span {...applyStyles(styles.truncate)}>{name}</span>
       </span>
       <RoleIcon role={role} />
@@ -207,9 +212,11 @@ export function RoleIcon({ role }: { readonly role: WorkspaceDisplayRole }) {
 export function SelectorTriggerIcon({
   selection,
   clubs,
+  organizations = [],
 }: {
   readonly selection: WorkspaceSelection;
   readonly clubs: readonly WorkspaceSelectorClubOption[];
+  readonly organizations?: readonly WorkspaceSelectorOrgOption[];
 }) {
   const icon = applyStyles(styles.iconMuted);
   switch (selection.kind) {
@@ -222,8 +229,16 @@ export function SelectorTriggerIcon({
         <PlusIcon aria-hidden="true" className={icon.className} style={icon.style} />
       );
     }
-    case WORKSPACE_SELECTION_KIND.organization:
-      return <BuildingsIcon aria-hidden="true" className={icon.className} style={icon.style} />;
+    case WORKSPACE_SELECTION_KIND.organization: {
+      const organization = organizations.find(
+        (item) => item.organizationId === selection.organizationId,
+      );
+      return organization ? (
+        <OrganizationAvatar logo={organization.logo} name={organization.name} size="sm" />
+      ) : (
+        <BuildingsIcon aria-hidden="true" className={icon.className} style={icon.style} />
+      );
+    }
     case WORKSPACE_SELECTION_KIND.competition:
       return <TrophyIcon aria-hidden="true" className={icon.className} style={icon.style} />;
     default: {

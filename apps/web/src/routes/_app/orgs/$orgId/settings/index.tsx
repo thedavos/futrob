@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
+import { OrganizationSettingsPage } from "@/modules/organizations/presentation/organization-settings-page.tsx";
 
 export const Route = createFileRoute("/_app/orgs/$orgId/settings/")({
   head: () => ({ meta: [{ title: "Ajustes | Futrob" }] }),
-  component: () => <PageScaffold page="organization.settings" />,
+  component: OrganizationSettingsRoute,
 });
+
+function OrganizationSettingsRoute() {
+  const { orgId } = Route.useParams();
+  return <OrganizationSettingsPage organizationId={orgId} />;
+}

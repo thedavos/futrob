@@ -6,6 +6,8 @@ import { applyStyles, Button, Form, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useNavigate } from "@tanstack/react-router";
 import { CompetitionDraftFields } from "@/modules/competitions/presentation/competition-draft-fields.tsx";
+import { useOrganizationProfileQuery } from "@/modules/organizations/presentation/organization-queries.ts";
+import { getBrowserTimeZone } from "@/shared/presentation/time-zone-options.ts";
 import { CompetitionsClientError } from "@/modules/competitions/presentation/competitions-browser-client.ts";
 import { useCreateCompetitionDraftMutation } from "@/modules/competitions/presentation/competition-queries.ts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
@@ -84,11 +86,6 @@ function profileErrorFor(code: string): CompetitionProfileFieldError | null {
 
 const form = applyStyles(styles.form);
 
-function browserTimeZone(): string {
-  if (!("Intl" in globalThis)) return "America/Lima";
-  return Intl.DateTimeFormat().resolvedOptions().timeZone ?? "America/Lima";
-}
-
 function emptyDraftFields(): CompetitionDraftFieldsValue {
   return {
     name: "",
@@ -96,7 +93,7 @@ function emptyDraftFields(): CompetitionDraftFieldsValue {
     customEdition: false,
     platform: null,
     region: null,
-    timeZone: browserTimeZone(),
+    timeZone: getBrowserTimeZone(),
     format: null,
   };
 }
@@ -111,12 +108,21 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
   const [profile, setProfile] = useState<CompetitionProfileFieldsValue>(DEFAULT_PROFILE_FIELDS);
   const [profileError, setProfileError] = useState<CompetitionProfileFieldError | null>(null);
   const [creationKey] = useState(() => crypto.randomUUID());
+  // The organization's zone is the starting point until the organizer picks another one.
+  const organizationProfile = useOrganizationProfileQuery(organizationId);
+  const [timeZoneEdited, setTimeZoneEdited] = useState(false);
+  const draft: CompetitionDraftFieldsValue = {
+    ...fields,
+    timeZone: timeZoneEdited
+      ? fields.timeZone
+      : (organizationProfile.data?.timeZone ?? fields.timeZone),
+  };
   const submitting = createDraft.isPending;
   const canCreate = create.allowed;
 
   async function handleSubmit() {
     setError(null);
-    const validation = validateCompetitionDraftFields(fields);
+    const validation = validateCompetitionDraftFields(draft);
     if (validation) {
       setFieldError(validation);
       return;
@@ -130,12 +136,12 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
     try {
       const created = await createDraft.mutateAsync({
         request: {
-          name: fields.name.trim(),
-          gameEdition: fields.gameEdition.trim(),
-          platform: fields.platform!,
-          region: fields.region!,
-          timeZone: fields.timeZone.trim(),
-          format: fields.format!,
+          name: draft.name.trim(),
+          gameEdition: draft.gameEdition.trim(),
+          platform: draft.platform!,
+          region: draft.region!,
+          timeZone: draft.timeZone.trim(),
+          format: draft.format!,
           ...toTeamsAndSchedule(profile),
           creationKey,
         },
@@ -192,9 +198,12 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
       <CompetitionDraftFields
         disabled={submitting || !canCreate}
         fieldError={fieldError}
-        onChange={(patch) => setFields((current) => ({ ...current, ...patch }))}
+        onChange={(patch) => {
+          if (patch.timeZone !== undefined) setTimeZoneEdited(true);
+          setFields((current) => ({ ...current, ...patch }));
+        }}
         onClearFieldError={() => setFieldError(null)}
-        value={fields}
+        value={draft}
       />
 
       <section aria-labelledby="competition-profile-heading" {...applyStyles(styles.section)}>
