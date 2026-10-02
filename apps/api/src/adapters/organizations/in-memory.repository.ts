@@ -31,13 +31,15 @@ const invitationStatusSchema = z.enum(["pending", "accepted", "revoked", "expire
 export class InMemoryOrganizationRepository implements OrganizationRepository {
   readonly byId = new Map<string, Organization>();
 
+  // `create` and `update` check uniqueness and write without awaiting in between, so two
+  // concurrent writers cannot interleave: the last one cannot restore what the first one changed.
   async create(organization: Organization): Promise<Organization | null> {
     const existing = organization.creationKey
-      ? await this.getByCreationKey(organization.creationKey)
+      ? this.findOne((row) => row.creationKey === organization.creationKey)
       : null;
     if (existing) return existing;
-    if (await this.getByNormalizedName(organization.normalizedName)) return null;
-    if (await this.getBySlug(organization.slug)) return null;
+    if (this.findOne((row) => row.normalizedName === organization.normalizedName)) return null;
+    if (this.findOne((row) => row.slug === organization.slug)) return null;
     this.byId.set(organization.id, organization);
     return organization;
   }
@@ -53,16 +55,23 @@ export class InMemoryOrganizationRepository implements OrganizationRepository {
       timeZone: changes.timeZone ?? current.timeZone,
       logo: changes.logo ?? current.logo,
     };
-    const nameOwner = await this.getByNormalizedName(next.normalizedName);
+    const nameOwner = this.findOne((row) => row.normalizedName === next.normalizedName);
     if (nameOwner && nameOwner.id !== id) return null;
-    const slugOwner = await this.getBySlug(next.slug);
+    const slugOwner = this.findOne((row) => row.slug === next.slug);
     if (slugOwner && slugOwner.id !== id) return null;
     this.byId.set(id, next);
     return next;
   }
 
+  private findOne(matches: (organization: Organization) => boolean): Organization | null {
+    for (const organization of this.byId.values()) {
+      if (matches(organization)) return organization;
+    }
+    return null;
+  }
+
   async getBySlug(slug: string): Promise<Organization | null> {
-    return [...this.byId.values()].find((row) => row.slug === slug) ?? null;
+    return this.findOne((row) => row.slug === slug);
   }
 
   async getByIds(ids: readonly OrganizationId[]): Promise<readonly Organization[]> {

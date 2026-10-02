@@ -113,6 +113,7 @@ export class FakeOrganizationRepository implements OrganizationRepository {
 
   async update(id: OrganizationId, changes: OrganizationChanges): Promise<Organization | null> {
     if (this.beforeUpdate) await this.beforeUpdate();
+    // No await below: reading the stored row and writing it back cannot be interleaved.
     const current = this.byId.get(id);
     if (!current) return null;
     const next: Organization = {
@@ -123,9 +124,10 @@ export class FakeOrganizationRepository implements OrganizationRepository {
       timeZone: changes.timeZone ?? current.timeZone,
       logo: changes.logo ?? current.logo,
     };
-    const nameOwner = await this.getByNormalizedName(next.normalizedName);
+    const rows = [...this.byId.values()];
+    const nameOwner = rows.find((row) => row.normalizedName === next.normalizedName);
     if (nameOwner && nameOwner.id !== id) return null;
-    const slugOwner = await this.getBySlug(next.slug);
+    const slugOwner = rows.find((row) => row.slug === next.slug);
     if (slugOwner && slugOwner.id !== id) return null;
     this.byId.set(id, next);
     return next;
