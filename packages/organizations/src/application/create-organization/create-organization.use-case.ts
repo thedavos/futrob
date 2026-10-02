@@ -16,6 +16,7 @@ import {
   InvalidOrganizationName,
   InvalidOrganizationSlug,
   InvalidOrganizationTimeZone,
+  OrganizationCreationKeyConflict,
   OrganizationNameConflict,
   OrganizationSlugConflict,
   type CreateOrganizationError,
@@ -90,10 +91,26 @@ export class CreateOrganizationUseCase {
       );
     }
 
+    const normalizedName = normalizeOrganizationName(name);
+
     const idempotent = input.creationKey
       ? await this.deps.organizations.getByCreationKey(input.creationKey)
       : null;
     if (idempotent) {
+      // A retry returns what the first attempt created; the same key with another request is a
+      // different organization the caller did not mean to replay.
+      const sameRequest =
+        idempotent.normalizedName === normalizedName &&
+        idempotent.timeZone === timeZone &&
+        (explicitSlug === null || idempotent.slug === explicitSlug);
+      if (!sameRequest) {
+        return err(
+          new OrganizationCreationKeyConflict({
+            code: "organizations.creation_key_conflict",
+            message: "The creation key was already used for a different organization",
+          }),
+        );
+      }
       await this.deps.memberships.add({
         organizationId: idempotent.id,
         actorId: input.actorId,
@@ -103,7 +120,6 @@ export class CreateOrganizationUseCase {
       return ok({ organization: idempotent, role: "organizer" });
     }
 
-    const normalizedName = normalizeOrganizationName(name);
     if (await this.deps.organizations.getByNormalizedName(normalizedName)) {
       return err(nameConflict());
     }

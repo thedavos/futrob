@@ -3,6 +3,7 @@ import {
   InvalidOrganizationName,
   InvalidOrganizationSlug,
   InvalidOrganizationTimeZone,
+  OrganizationCreationKeyConflict,
   OrganizationNameConflict,
   OrganizationSlugConflict,
 } from "../../domain/errors/organization.errors.ts";
@@ -189,6 +190,68 @@ describe("CreateOrganizationUseCase", () => {
     );
     expect(harness.organizations.byId.size).toBe(1);
     expect(harness.memberships.rows).toHaveLength(1);
+  });
+
+  it("answers a retried key with what the first attempt created", async () => {
+    const harness = createOrgTestHarness();
+    const useCase = new CreateOrganizationUseCase(harness);
+    const request = {
+      name: "Liga Norte",
+      slug: "norte-fc",
+      actorId: harness.actor("actor-1"),
+      timeZone: "America/Lima",
+      creationKey: "organization:actor-1:attempt-1",
+    };
+
+    const first = await useCase.execute(request);
+    const retried = await useCase.execute({ ...request, name: "  LIGA   norte " });
+
+    expect(first.isOk() && retried.isOk() && retried.value.organization).toEqual(
+      first.isOk() ? first.value.organization : null,
+    );
+    expect(harness.organizations.byId.size).toBe(1);
+  });
+
+  it.each([
+    ["another name", { name: "Liga Sur" }],
+    ["another slug", { slug: "sur-fc" }],
+    ["another time zone", { timeZone: "Europe/Madrid" }],
+  ])(
+    "rejects the same key with %s instead of returning the first organization",
+    async (_label, change) => {
+      const harness = createOrgTestHarness();
+      const useCase = new CreateOrganizationUseCase(harness);
+      const request = {
+        name: "Liga Norte",
+        slug: "norte-fc",
+        actorId: harness.actor("actor-1"),
+        timeZone: "America/Lima",
+        creationKey: "organization:actor-1:attempt-1",
+      };
+      await useCase.execute(request);
+
+      const replay = await useCase.execute({ ...request, ...change });
+
+      expect(replay.isErr() && OrganizationCreationKeyConflict.is(replay.error)).toBe(true);
+      expect(harness.organizations.byId.size).toBe(1);
+      expect(harness.memberships.rows).toHaveLength(1);
+    },
+  );
+
+  it("does not compare the slug when the retry leaves it to be derived", async () => {
+    const harness = createOrgTestHarness();
+    const useCase = new CreateOrganizationUseCase(harness);
+    const request = {
+      name: "Liga Norte",
+      actorId: harness.actor("actor-1"),
+      timeZone: "UTC",
+      creationKey: "organization:actor-1:attempt-1",
+    };
+    const first = await useCase.execute(request);
+
+    const retried = await useCase.execute(request);
+
+    expect(first.isOk() && retried.isOk() && retried.value.organization.slug).toBe("liga-norte");
   });
 
   it("rejects an equivalent organization name", async () => {

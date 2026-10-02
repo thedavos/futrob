@@ -9,6 +9,7 @@ import type {
   MembershipSummary,
   MultiRedemptionClaim,
   Organization,
+  OrganizationChanges,
   OrganizationInvitation,
   OrganizationMembership,
   OrganizationRepository,
@@ -41,14 +42,23 @@ export class InMemoryOrganizationRepository implements OrganizationRepository {
     return organization;
   }
 
-  async update(organization: Organization): Promise<Organization | null> {
-    if (!this.byId.has(organization.id)) return null;
-    const nameOwner = await this.getByNormalizedName(organization.normalizedName);
-    if (nameOwner && nameOwner.id !== organization.id) return null;
-    const slugOwner = await this.getBySlug(organization.slug);
-    if (slugOwner && slugOwner.id !== organization.id) return null;
-    this.byId.set(organization.id, organization);
-    return organization;
+  async update(id: OrganizationId, changes: OrganizationChanges): Promise<Organization | null> {
+    const current = this.byId.get(id);
+    if (!current) return null;
+    const next: Organization = {
+      ...current,
+      name: changes.name ?? current.name,
+      normalizedName: changes.normalizedName ?? current.normalizedName,
+      slug: changes.slug ?? current.slug,
+      timeZone: changes.timeZone ?? current.timeZone,
+      logo: changes.logo ?? current.logo,
+    };
+    const nameOwner = await this.getByNormalizedName(next.normalizedName);
+    if (nameOwner && nameOwner.id !== id) return null;
+    const slugOwner = await this.getBySlug(next.slug);
+    if (slugOwner && slugOwner.id !== id) return null;
+    this.byId.set(id, next);
+    return next;
   }
 
   async getBySlug(slug: string): Promise<Organization | null> {

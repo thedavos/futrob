@@ -24,7 +24,10 @@ import {
 } from "../../domain/errors/organization.errors.ts";
 import { ORGANIZATION_PERMISSION } from "../../domain/policies/organization-permissions.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
-import { parseOrganizationSlug } from "../../domain/value-objects/organization-slug.ts";
+import {
+  parseOrganizationSlug,
+  type OrganizationSlug,
+} from "../../domain/value-objects/organization-slug.ts";
 
 export interface UpdateOrganizationProfileInput {
   readonly organizationId: OrganizationId;
@@ -80,8 +83,8 @@ export class UpdateOrganizationProfileUseCase {
       );
     }
 
-    let name = current.name;
-    let normalizedName = current.normalizedName;
+    let name: string | undefined;
+    let normalizedName: string | undefined;
     if (input.name !== undefined) {
       name = input.name.trim();
       if (name.length === 0 || name.length > 120) {
@@ -97,7 +100,7 @@ export class UpdateOrganizationProfileUseCase {
       if (owner && owner.id !== current.id) return err(nameConflict());
     }
 
-    let slug = current.slug;
+    let slug: OrganizationSlug | undefined;
     if (input.slug !== undefined) {
       const parsed = parseOrganizationSlug(input.slug);
       if (!parsed) {
@@ -113,7 +116,7 @@ export class UpdateOrganizationProfileUseCase {
       slug = parsed;
     }
 
-    let timeZone = current.timeZone;
+    let timeZone: string | undefined;
     if (input.timeZone !== undefined) {
       timeZone = input.timeZone.trim();
       if (!isIanaTimeZone(timeZone)) {
@@ -126,8 +129,9 @@ export class UpdateOrganizationProfileUseCase {
       }
     }
 
-    const persisted = await this.deps.organizations.update({
-      ...current,
+    // Only the fields the caller sent are written, so a concurrent change to another field
+    // (e.g. the logo) is not overwritten with the value read above.
+    const persisted = await this.deps.organizations.update(current.id, {
       name,
       normalizedName,
       slug,
@@ -135,10 +139,22 @@ export class UpdateOrganizationProfileUseCase {
     });
     if (persisted) return ok(persisted);
 
-    // Lost a race: another organization took the name or slug after the checks above.
-    const nameOwner = await this.deps.organizations.getByNormalizedName(normalizedName);
-    if (nameOwner && nameOwner.id !== current.id) return err(nameConflict());
-    return err(slugConflict());
+    // Lost a race: the organization vanished, or another one took the name or slug.
+    if (normalizedName !== undefined) {
+      const nameOwner = await this.deps.organizations.getByNormalizedName(normalizedName);
+      if (nameOwner && nameOwner.id !== current.id) return err(nameConflict());
+    }
+    if (slug !== undefined) {
+      const slugOwner = await this.deps.organizations.getBySlug(slug);
+      if (slugOwner && slugOwner.id !== current.id) return err(slugConflict());
+    }
+    return err(
+      new OrganizationNotFound({
+        code: "organizations.not_found",
+        message: "Organization not found",
+        organizationId: input.organizationId,
+      }),
+    );
   }
 }
 

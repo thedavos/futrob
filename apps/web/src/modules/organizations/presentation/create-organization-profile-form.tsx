@@ -59,7 +59,8 @@ export function CreateOrganizationProfileForm() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [creationKey] = useState(() => crypto.randomUUID());
+  // A retry of identical data reuses its key; edited data is a new request and gets a new one.
+  const attempt = useRef<{ readonly fingerprint: string; readonly key: string } | null>(null);
   const [value, setValue] = useState<OrganizationProfileValue>(() => ({
     name: "",
     slug: "",
@@ -165,11 +166,15 @@ export function CreateOrganizationProfileForm() {
     }
 
     try {
+      const fingerprint = JSON.stringify([name, slug, value.timeZone]);
+      if (attempt.current?.fingerprint !== fingerprint) {
+        attempt.current = { fingerprint, key: crypto.randomUUID() };
+      }
       const created = await createOrganization.mutateAsync({
         name,
         slug,
         timeZone: value.timeZone,
-        creationKey,
+        creationKey: attempt.current.key,
       });
       if (value.logo.kind === "file") {
         await uploadLogo({ organizationId: created.organizationId, file: value.logo.file });

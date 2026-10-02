@@ -76,7 +76,8 @@ export class SetOrganizationLogoUseCase {
       );
     }
 
-    const persisted = await this.deps.organizations.update({ ...current, logo });
+    // Only the logo is written; other fields changed meanwhile stay as they are.
+    const persisted = await this.deps.organizations.update(current.id, { logo });
     // The name and slug are unchanged, so the repository only returns null if the row vanished.
     return persisted
       ? ok(persisted)

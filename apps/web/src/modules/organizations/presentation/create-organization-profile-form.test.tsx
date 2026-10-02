@@ -171,6 +171,25 @@ describe("CreateOrganizationProfileForm", () => {
     expect(second).toBe(first);
   });
 
+  it("uses a new creation key when the data was edited after a failed attempt", async () => {
+    mocks.create.mockRejectedValueOnce(clientError("api.internal_error", 500));
+    mocks.create.mockResolvedValueOnce(created);
+    renderForm();
+    fireEvent.change(nameField(), { target: { value: "Liga Norte" } });
+
+    fireEvent.click(submitButton());
+    await screen.findByText("No pudimos crear la organización. Inténtalo nuevamente.");
+    fireEvent.change(nameField(), { target: { value: "Liga del Norte" } });
+    fireEvent.click(submitButton());
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(2));
+
+    const [first, second] = mocks.create.mock.calls.map(([input]) => input);
+    expect(first?.name).toBe("Liga Norte");
+    expect(second?.name).toBe("Liga del Norte");
+    expect(second?.creationKey).toBeDefined();
+    expect(second?.creationKey).not.toBe(first?.creationKey);
+  });
+
   it("rejects a taken name on the field without checking the slug or creating", async () => {
     mocks.checkName.mockResolvedValueOnce({ available: false });
     renderForm();

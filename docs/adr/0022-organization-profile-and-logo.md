@@ -46,6 +46,7 @@ DEC-087 en [open-decisions](/product/open-decisions.md).
 - **Errores esperados** (`TaggedError`): `organizations.invalid_slug`,
   `organizations.slug_conflict`, `organizations.invalid_time_zone` y
   `organizations.invalid_logo`.
+- **Errores esperados** adicionales: `organizations.creation_key_conflict` (409).
 - **Endpoints** (`/api/v1`): `POST /organizations` acepta `slug?`, `timeZone` y `creationKey?`;
   `POST /organizations/slug-availability`; `GET` y `PATCH /organizations/:organizationId`;
   `PUT /organizations/:organizationId/logo` (registra la clave subida). `MembershipSummary`
@@ -65,6 +66,12 @@ DEC-087 en [open-decisions](/product/open-decisions.md).
 - Un escudo reemplazado queda huérfano en R2, la misma deuda de ADR-0020.
 - Los campos nuevos de `MembershipSummary` y de la respuesta de creación son aditivos; los
   clientes móviles actuales no se rompen.
+- Una clave de creación repetida devuelve la organización ya creada solo si nombre, zona y slug
+  (cuando se envía) coinciden; con otros datos responde `organizations.creation_key_conflict`.
+  El formulario web genera una clave nueva cuando el usuario cambia los datos tras un fallo.
+- Las escrituras de perfil son parciales (`OrganizationChanges`): solo se escriben los campos
+  enviados, de modo que dos organizadores que editan campos distintos a la vez no se pisan. Dos
+  ediciones del mismo campo siguen siendo «gana la última».
 - Crear con escudo propio requiere dos pasos (crear y subir), porque la clave de R2 incluye el
   `organizationId`. Si la subida falla, la organización ya existe y el escudo puede subirse desde
   ajustes. `creationKey` evita duplicar la organización en un reintento.

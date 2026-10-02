@@ -147,6 +147,8 @@ const es = {
   "errors.organizations.invalid_slug": "El slug no es válido. Usa minúsculas, números y guiones.",
   "errors.organizations.invalid_time_zone": "La zona horaria no es válida.",
   "errors.organizations.invalid_logo": "El escudo no es válido.",
+  "errors.organizations.creation_key_conflict":
+    "No pudimos reutilizar la solicitud anterior. Revisa los datos e inténtalo de nuevo.",
   "onboarding.competition.title": "Configura tu primera competición",
   "onboarding.competition.description":
     "Crea un borrador de FC Clubs. Configurarás los equipos, el calendario y la publicación después.",
@@ -1333,6 +1335,8 @@ const en: Catalog = {
     "The slug isn't valid. Use lowercase letters, numbers and hyphens.",
   "errors.organizations.invalid_time_zone": "The time zone isn't valid.",
   "errors.organizations.invalid_logo": "The logo isn't valid.",
+  "errors.organizations.creation_key_conflict":
+    "We couldn't reuse the previous request. Check the details and try again.",
   "onboarding.competition.title": "Set up your first competition",
   "onboarding.competition.description":
     "Create an FC Clubs draft. You'll set up teams, the schedule, and publishing later.",

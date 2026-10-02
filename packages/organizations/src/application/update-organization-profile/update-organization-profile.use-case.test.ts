@@ -13,6 +13,7 @@ import {
 } from "../../domain/errors/invitation.errors.ts";
 import { CreateOrganizationUseCase } from "../create-organization/create-organization.use-case.ts";
 import { createOrgTestHarness } from "../test-harness.ts";
+import { SetOrganizationLogoUseCase } from "../set-organization-logo/set-organization-logo.use-case.ts";
 import { UpdateOrganizationProfileUseCase } from "./update-organization-profile.use-case.ts";
 
 async function setup() {
@@ -176,6 +177,63 @@ describe("UpdateOrganizationProfileUseCase", () => {
     }
     expect(await harness.organizations.getById(organizationId)).toMatchObject({
       name: "Liga Norte",
+    });
+  });
+
+  it("keeps a logo registered while a time zone change was being saved", async () => {
+    const { harness, update, organizationId, organizer } = await setup();
+    const key = `organization-logos/${organizationId}/crest-1.png`;
+    harness.organizations.beforeUpdate = async () => {
+      harness.organizations.beforeUpdate = null;
+      const logo = await new SetOrganizationLogoUseCase(harness).execute({
+        organizationId,
+        actorId: organizer,
+        logo: { kind: "upload", key },
+      });
+      expect(logo.isOk()).toBe(true);
+    };
+
+    const result = await update.execute({
+      organizationId,
+      actorId: organizer,
+      timeZone: "America/Lima",
+    });
+
+    expect(result.isOk() && result.value).toMatchObject({
+      timeZone: "America/Lima",
+      logo: { kind: "upload", key },
+    });
+    expect(await harness.organizations.getById(organizationId)).toMatchObject({
+      timeZone: "America/Lima",
+      logo: { kind: "upload", key },
+    });
+  });
+
+  it("keeps a renamed organization when the logo is set from a stale read", async () => {
+    const { harness, update, organizationId, organizer } = await setup();
+    const setLogo = new SetOrganizationLogoUseCase(harness);
+    harness.organizations.beforeUpdate = async () => {
+      harness.organizations.beforeUpdate = null;
+      const renamed = await update.execute({
+        organizationId,
+        actorId: organizer,
+        name: "Liga del Norte",
+        slug: "norte-fc",
+      });
+      expect(renamed.isOk()).toBe(true);
+    };
+
+    const result = await setLogo.execute({
+      organizationId,
+      actorId: organizer,
+      logo: { kind: "upload", key: `organization-logos/${organizationId}/crest-2.png` },
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(await harness.organizations.getById(organizationId)).toMatchObject({
+      name: "Liga del Norte",
+      slug: "norte-fc",
+      logo: { kind: "upload", key: `organization-logos/${organizationId}/crest-2.png` },
     });
   });
 

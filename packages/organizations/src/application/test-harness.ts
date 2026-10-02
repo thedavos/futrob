@@ -9,7 +9,11 @@ import {
   type AuthorizationRequest,
   type EffectiveAccess,
 } from "@futrob/shared-kernel";
-import { normalizeOrganizationName, type Organization } from "../domain/entities/organization.ts";
+import {
+  normalizeOrganizationName,
+  type Organization,
+  type OrganizationChanges,
+} from "../domain/entities/organization.ts";
 import { DEFAULT_ORGANIZATION_LOGO } from "../domain/value-objects/organization-logo.ts";
 import {
   parseOrganizationSlug,
@@ -104,14 +108,27 @@ export class FakeOrganizationRepository implements OrganizationRepository {
     return organization;
   }
 
-  async update(organization: Organization): Promise<Organization | null> {
-    const nameOwner = await this.getByNormalizedName(organization.normalizedName);
-    if (nameOwner && nameOwner.id !== organization.id) return null;
-    const slugOwner = await this.getBySlug(organization.slug);
-    if (slugOwner && slugOwner.id !== organization.id) return null;
-    if (!this.byId.has(organization.id)) return null;
-    this.byId.set(organization.id, organization);
-    return organization;
+  /** Runs between reading the stored organization and writing; lets tests interleave writers. */
+  beforeUpdate: (() => Promise<void>) | null = null;
+
+  async update(id: OrganizationId, changes: OrganizationChanges): Promise<Organization | null> {
+    if (this.beforeUpdate) await this.beforeUpdate();
+    const current = this.byId.get(id);
+    if (!current) return null;
+    const next: Organization = {
+      ...current,
+      name: changes.name ?? current.name,
+      normalizedName: changes.normalizedName ?? current.normalizedName,
+      slug: changes.slug ?? current.slug,
+      timeZone: changes.timeZone ?? current.timeZone,
+      logo: changes.logo ?? current.logo,
+    };
+    const nameOwner = await this.getByNormalizedName(next.normalizedName);
+    if (nameOwner && nameOwner.id !== id) return null;
+    const slugOwner = await this.getBySlug(next.slug);
+    if (slugOwner && slugOwner.id !== id) return null;
+    this.byId.set(id, next);
+    return next;
   }
 
   async getBySlug(slug: string): Promise<Organization | null> {

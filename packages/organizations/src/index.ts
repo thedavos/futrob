@@ -1,4 +1,8 @@
-export { normalizeOrganizationName, type Organization } from "./domain/entities/organization.ts";
+export {
+  normalizeOrganizationName,
+  type Organization,
+  type OrganizationChanges,
+} from "./domain/entities/organization.ts";
 export {
   INVITATION_STATUS,
   REDEEM_POLICY,
@@ -84,6 +88,7 @@ export {
   InvalidOrganizationName,
   InvalidOrganizationSlug,
   InvalidOrganizationTimeZone,
+  OrganizationCreationKeyConflict,
   OrganizationNameConflict,
   OrganizationSlugConflict,
   type CreateOrganizationError,

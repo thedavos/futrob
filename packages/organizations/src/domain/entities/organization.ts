@@ -15,6 +15,18 @@ export interface Organization {
   readonly creationKey?: string;
 }
 
+/**
+ * The fields a write may change. Only the fields present are written, so two concurrent writes
+ * to different fields both survive instead of one restoring the other's stale value.
+ */
+export interface OrganizationChanges {
+  readonly name?: string | undefined;
+  readonly normalizedName?: string | undefined;
+  readonly slug?: OrganizationSlug | undefined;
+  readonly timeZone?: string | undefined;
+  readonly logo?: OrganizationLogo | undefined;
+}
+
 export function normalizeOrganizationName(value: string): string {
   return value.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("es");
 }

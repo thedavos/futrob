@@ -30,9 +30,17 @@ export class InvalidOrganizationLogo extends TaggedError("InvalidOrganizationLog
   message: string;
 }> {}
 
+export class OrganizationCreationKeyConflict extends TaggedError(
+  "OrganizationCreationKeyConflict",
+)<{
+  code: "organizations.creation_key_conflict";
+  message: string;
+}> {}
+
 export type CreateOrganizationError =
   | InvalidOrganizationName
   | OrganizationNameConflict
   | InvalidOrganizationSlug
   | OrganizationSlugConflict
-  | InvalidOrganizationTimeZone;
+  | InvalidOrganizationTimeZone
+  | OrganizationCreationKeyConflict;

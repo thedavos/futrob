@@ -1046,7 +1046,12 @@ export const futrobOpenApiV1 = {
                     maxLength: 100,
                     description: "Derived from the name when omitted.",
                   },
-                  creationKey: { type: "string", pattern: "^[A-Za-z0-9_-]{1,120}$" },
+                  creationKey: {
+                    type: "string",
+                    pattern: "^[A-Za-z0-9_-]{1,120}$",
+                    description:
+                      "Retrying with the same key and data returns the organization already created; the same key with a different name, slug or time zone answers 409 organizations.creation_key_conflict.",
+                  },
                 },
               },
             },

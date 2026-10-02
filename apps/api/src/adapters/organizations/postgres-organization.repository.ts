@@ -1,5 +1,9 @@
 import type { OrganizationId } from "@futrob/shared-kernel";
-import type { Organization, OrganizationRepository } from "@futrob/organizations";
+import type {
+  Organization,
+  OrganizationChanges,
+  OrganizationRepository,
+} from "@futrob/organizations";
 import type { Pool } from "pg";
 import { z } from "zod";
 import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
@@ -8,6 +12,22 @@ import { rehydrateOrganization } from "./in-memory.repository.ts";
 
 const ORGANIZATION_COLUMNS = `id, name, normalized_name, slug, time_zone, logo_kind, logo_value,
   created_at, created_by_actor_id, creation_key`;
+
+/** Column/value pairs for the fields present in `changes`; absent fields are left untouched. */
+export function organizationAssignments(
+  changes: OrganizationChanges,
+): readonly (readonly [column: string, value: string | null])[] {
+  const pairs: (readonly [string, string | null])[] = [];
+  if (changes.name !== undefined) pairs.push(["name", changes.name]);
+  if (changes.normalizedName !== undefined) pairs.push(["normalized_name", changes.normalizedName]);
+  if (changes.slug !== undefined) pairs.push(["slug", changes.slug]);
+  if (changes.timeZone !== undefined) pairs.push(["time_zone", changes.timeZone]);
+  if (changes.logo !== undefined) {
+    pairs.push(["logo_kind", changes.logo.kind]);
+    pairs.push(["logo_value", changes.logo.kind === "upload" ? changes.logo.key : null]);
+  }
+  return pairs;
+}
 
 const organizationRowSchema = z.object({
   id: pgTextSchema,
@@ -97,23 +117,15 @@ export class PostgresOrganizationRepository implements OrganizationRepository {
     return row ? rehydrateOrganization(organizationRowSchema.parse(row)) : null;
   }
 
-  async update(organization: Organization): Promise<Organization | null> {
+  async update(id: OrganizationId, changes: OrganizationChanges): Promise<Organization | null> {
+    const assignments = organizationAssignments(changes);
+    if (assignments.length === 0) return this.getById(id);
+    const sets = assignments.map(([column], index) => `${column} = $${index + 2}`).join(", ");
     try {
+      // Only the given columns are written, so concurrent writers of other columns do not collide.
       const result = await getPgExecutor(this.pool).query(
-        `UPDATE organizations
-         SET name = $2, normalized_name = $3, slug = $4, time_zone = $5,
-             logo_kind = $6, logo_value = $7
-         WHERE id = $1
-         RETURNING ${ORGANIZATION_COLUMNS}`,
-        [
-          organization.id,
-          organization.name,
-          organization.normalizedName,
-          organization.slug,
-          organization.timeZone,
-          organization.logo.kind,
-          organization.logo.kind === "upload" ? organization.logo.key : null,
-        ],
+        `UPDATE organizations SET ${sets} WHERE id = $1 RETURNING ${ORGANIZATION_COLUMNS}`,
+        [id, ...assignments.map(([, value]) => value)],
       );
       const row = result.rows[0];
       return row ? rehydrateOrganization(organizationRowSchema.parse(row)) : null;

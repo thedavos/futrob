@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, Form, typography } from "@futrob/ui";
+import { Alert, AlertDescription, applyStyles, Button, Form, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useNavigate } from "@tanstack/react-router";
+import { resolveCompetitionTimeZone } from "@/modules/competitions/presentation/competition-time-zone.ts";
 import { CompetitionDraftFields } from "@/modules/competitions/presentation/competition-draft-fields.tsx";
 import { useOrganizationProfileQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 import { getBrowserTimeZone } from "@/shared/presentation/time-zone-options.ts";
@@ -111,19 +112,22 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
   // The organization's zone is the starting point until the organizer picks another one.
   const organizationProfile = useOrganizationProfileQuery(organizationId);
   const [timeZoneEdited, setTimeZoneEdited] = useState(false);
-  const draft: CompetitionDraftFieldsValue = {
-    ...fields,
-    timeZone: timeZoneEdited
-      ? fields.timeZone
-      : (organizationProfile.data?.timeZone ??
-        // No flash of the browser zone while the organization's own zone is loading.
-        (organizationProfile.isPending ? "" : fields.timeZone)),
-  };
+  const organizationZone = resolveCompetitionTimeZone({
+    edited: timeZoneEdited,
+    editedTimeZone: fields.timeZone,
+    organization: organizationProfile.data
+      ? { status: "ready", timeZone: organizationProfile.data.timeZone }
+      : organizationProfile.isError
+        ? { status: "error" }
+        : { status: "loading" },
+  });
+  const draft: CompetitionDraftFieldsValue = { ...fields, timeZone: organizationZone.timeZone };
   const submitting = createDraft.isPending;
   const canCreate = create.allowed;
 
   async function handleSubmit() {
     setError(null);
+    if (organizationZone.blocked !== null) return;
     const validation = validateCompetitionDraftFields(draft);
     if (validation) {
       setFieldError(validation);
@@ -196,6 +200,21 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
           {error}
         </div>
       ) : null}
+      {organizationZone.blocked === "error" ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            No pudimos cargar la zona horaria de la organización, así que no se puede crear la
+            competición todavía.
+          </AlertDescription>
+          <Button
+            onClick={() => void organizationProfile.refetch()}
+            type="button"
+            variant="outline"
+          >
+            Reintentar
+          </Button>
+        </Alert>
+      ) : null}
 
       <CompetitionDraftFields
         disabled={submitting || !canCreate}
@@ -222,7 +241,7 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
       </section>
 
       {canCreate ? (
-        <Button disabled={submitting} type="submit">
+        <Button disabled={submitting || organizationZone.blocked !== null} type="submit">
           {submitting ? "Creando…" : "Crear competición"}
         </Button>
       ) : create.loading ? null : (
