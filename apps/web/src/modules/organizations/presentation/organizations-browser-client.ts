@@ -7,6 +7,8 @@ import {
   acceptCompetitionInvitationResponseSchema,
   resolvePostAuthDestinationResponseSchema,
   listMyMembershipsResponseSchema,
+  organizationNameAvailabilityRequestSchema,
+  organizationNameAvailabilityResponseSchema,
   type CreateOrganizationRequest,
   type CreateOrganizationResponse,
   type CreateInvitationRequest,
@@ -15,6 +17,8 @@ import {
   type AcceptCompetitionInvitationResponse,
   type ResolvePostAuthDestinationResponse,
   type ListMyMembershipsResponse,
+  type OrganizationNameAvailabilityRequest,
+  type OrganizationNameAvailabilityResponse,
   type PostAuthDestinationDto,
   type RequestId,
 } from "@futrob/api-contracts";
@@ -91,6 +95,18 @@ export const organizationsBrowserClient = {
       method: "POST",
       body,
       schema: createOrganizationResponseSchema,
+    });
+  },
+
+  checkNameAvailability(
+    input: OrganizationNameAvailabilityRequest,
+  ): Promise<OrganizationNameAvailabilityResponse> {
+    const body = organizationNameAvailabilityRequestSchema.parse(input);
+    return requestOrganizationsJson({
+      path: "/api/v1/organizations/name-availability",
+      method: "POST",
+      body,
+      schema: organizationNameAvailabilityResponseSchema,
     });
   },
 

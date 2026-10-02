@@ -6,6 +6,8 @@ import type {
   CreateOrganizationRequest,
   CreateOrganizationResponse,
   ListMyMembershipsResponse,
+  OrganizationNameAvailabilityRequest,
+  OrganizationNameAvailabilityResponse,
   PostAuthDestinationDto,
   RequestId,
   ResolvePostAuthDestinationResponse,
@@ -42,8 +44,17 @@ export type OrganizationsInvitationStoryState =
   | "rateLimited"
   | "error";
 
+export type OrganizationsCreateStoryState =
+  | "success"
+  | "nameTaken"
+  | "nameTakenOnCreate"
+  | "checkFailed"
+  | "pending"
+  | "error";
+
 export type OrganizationsStoryState = {
   readonly acceptInvitation: OrganizationsInvitationStoryState;
+  readonly createOrganization: OrganizationsCreateStoryState;
   readonly memberships: ListMyMembershipsResponse;
 };
 
@@ -64,12 +75,14 @@ const ACCEPTED_INVITATION: AcceptCompetitionInvitationResponse = {
 
 let state: OrganizationsStoryState = {
   acceptInvitation: "success",
+  createOrganization: "success",
   memberships: { memberships: [] },
 };
 
 export function configureOrganizationsStory(next: Partial<OrganizationsStoryState>): void {
   state = {
     acceptInvitation: "success",
+    createOrganization: "success",
     memberships: { memberships: [] },
     ...next,
   };
@@ -98,12 +111,47 @@ export const organizationsBrowserClient = {
     return Promise.resolve({ destination: { kind: "onboarding" }, memberships: [] });
   },
 
-  create(_input: CreateOrganizationRequest): Promise<CreateOrganizationResponse> {
-    return Promise.resolve({
-      organizationId: "org-story",
-      name: "Liga Story",
-      role: "organizer",
-    });
+  checkNameAvailability(
+    _input: OrganizationNameAvailabilityRequest,
+  ): Promise<OrganizationNameAvailabilityResponse> {
+    switch (state.createOrganization) {
+      case "nameTaken":
+        return Promise.resolve({ available: false });
+      case "checkFailed":
+        return Promise.reject(invitationError("organizations.client_error", 503));
+      case "success":
+      case "nameTakenOnCreate":
+      case "pending":
+      case "error":
+        return Promise.resolve({ available: true });
+      default: {
+        const _exhaustive: never = state.createOrganization;
+        return _exhaustive;
+      }
+    }
+  },
+
+  create(input: CreateOrganizationRequest): Promise<CreateOrganizationResponse> {
+    switch (state.createOrganization) {
+      case "pending":
+        return hang();
+      case "nameTakenOnCreate":
+        return Promise.reject(invitationError("organizations.name_conflict", 409));
+      case "error":
+        return Promise.reject(invitationError("organizations.client_error", 503));
+      case "success":
+      case "nameTaken":
+      case "checkFailed":
+        return Promise.resolve({
+          organizationId: "org-story",
+          name: input.name,
+          role: "organizer",
+        });
+      default: {
+        const _exhaustive: never = state.createOrganization;
+        return _exhaustive;
+      }
+    }
   },
 
   acceptInvitation(_input: AcceptInvitationRequest): Promise<AcceptCompetitionInvitationResponse> {

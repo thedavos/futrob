@@ -3,6 +3,7 @@ import type {
   AcceptInvitationRequest,
   CreateInvitationRequest,
   CreateOrganizationRequest,
+  OrganizationNameAvailabilityRequest,
 } from "@futrob/api-contracts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { organizationsBrowserClient } from "./organizations-browser-client.ts";
@@ -22,6 +23,13 @@ export function useCreateOrganizationMutation() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.organizations.mine() });
     },
+  });
+}
+
+export function useCheckOrganizationNameMutation() {
+  return useMutation({
+    mutationFn: (input: OrganizationNameAvailabilityRequest) =>
+      organizationsBrowserClient.checkNameAvailability(input),
   });
 }
 
