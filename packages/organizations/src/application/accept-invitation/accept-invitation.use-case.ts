@@ -33,7 +33,10 @@ import {
 } from "../../domain/errors/invitation.errors.ts";
 import { assessInvitationEligibility } from "../../domain/policies/invitation-eligibility.ts";
 
-export interface AcceptedInvitation extends MembershipSummary {
+export interface AcceptedInvitation extends Pick<
+  MembershipSummary,
+  "organizationId" | "organizationName" | "role"
+> {
   readonly competitionId: CompetitionId | null;
   readonly competitionRole: CompetitionInviteRole | null;
 }

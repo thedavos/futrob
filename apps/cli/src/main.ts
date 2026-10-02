@@ -8,7 +8,14 @@ import { run as statisticsSmoke } from "./commands/statistics-smoke.ts";
 import { run as resultsSmoke } from "./commands/results-smoke.ts";
 import { run as apiHealth } from "./commands/api-health.ts";
 import { run as clubSearch } from "./commands/search-clubs.ts";
-import { orgCreate, orgInvite, orgMine, orgNameCheck } from "./commands/organizations.ts";
+import {
+  orgCreate,
+  orgInvite,
+  orgMine,
+  orgNameCheck,
+  orgProfile,
+  orgSlugCheck,
+} from "./commands/organizations.ts";
 import { run as onboardingStatus } from "./commands/onboarding.ts";
 import {
   compCreate,
@@ -66,6 +73,8 @@ const commands = {
 
   "org-name-check": (args) => orgNameCheck(args),
   "org-create": (args) => orgCreate(args),
+  "org-slug-check": (args) => orgSlugCheck(args),
+  "org-profile": (args) => orgProfile(args),
   "org-mine": (args) => orgMine(args),
   "org-invite": (args) => orgInvite(args),
 

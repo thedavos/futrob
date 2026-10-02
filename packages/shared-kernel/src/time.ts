@@ -46,3 +46,14 @@ export function compareByTime<T>(
     }
   }
 }
+
+/** True when `value` names a time zone the runtime's `Intl` implementation accepts. */
+export function isIanaTimeZone(value: string): boolean {
+  if (!value) return false;
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}

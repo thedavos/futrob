@@ -6,6 +6,7 @@ import {
   compareTime,
   daysFromNow,
   daysFromNowIso,
+  isIanaTimeZone,
   MS_PER_DAY,
   TIME_SORT_DIRECTION,
 } from "./time.ts";
@@ -53,5 +54,18 @@ describe("time", () => {
         .sort(compareByTime((item) => item.createdAt, TIME_SORT_DIRECTION.desc))
         .map((item) => item.id),
     ).toEqual(["new", "old"]);
+  });
+});
+
+describe("isIanaTimeZone", () => {
+  it("accepts named IANA zones", () => {
+    expect(isIanaTimeZone("America/Lima")).toBe(true);
+    expect(isIanaTimeZone("UTC")).toBe(true);
+  });
+
+  it("rejects empty and unknown zones", () => {
+    expect(isIanaTimeZone("")).toBe(false);
+    expect(isIanaTimeZone("Mars/Olympus_Mons")).toBe(false);
+    expect(isIanaTimeZone("not a zone")).toBe(false);
   });
 });

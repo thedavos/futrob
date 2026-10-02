@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
-import { readMedia } from "@/shared/infrastructure/media/competition-cover-storage.ts";
+import { readMedia } from "@/shared/infrastructure/media/media-storage.ts";
 
 /** Public, immutable covers. Keys are organization-scoped and unguessable per creation. */
 export const Route = createFileRoute("/media/competition-covers/$")({

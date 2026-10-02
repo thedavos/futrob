@@ -175,6 +175,7 @@ function useWorkspaceSelectionState() {
           organizationId: item.organizationId,
           name: item.organizationName,
           role: item.role,
+          logo: item.organizationLogo,
         })),
         competitions: competitions.map((competition) => ({
           competitionId: competition.competitionId,

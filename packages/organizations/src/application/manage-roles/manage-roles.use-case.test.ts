@@ -5,7 +5,7 @@ import type {
   AuthorizationAuditRepository,
   PlatformRoleRepository,
 } from "../../domain/ports/access-grant.repository.ts";
-import { createOrgTestHarness } from "../test-harness.ts";
+import { createOrgTestHarness, organizationFixture } from "../test-harness.ts";
 import { ChangeOrganizationRoleUseCase, RevokeSuperuserUseCase } from "./manage-roles.use-case.ts";
 
 const authorization: AuthorizationPort = {
@@ -18,13 +18,15 @@ describe("role escalation guards", () => {
     const harness = createOrgTestHarness();
     const organizationId = asOrganizationId("org-1");
     const organizerId = asActorId("organizer-1");
-    harness.organizations.byId.set(organizationId, {
-      id: organizationId,
-      name: "Org",
-      normalizedName: "org",
-      createdAt: harness.clock.now(),
-      createdByActorId: organizerId,
-    });
+    harness.organizations.byId.set(
+      organizationId,
+      organizationFixture({
+        id: organizationId,
+        name: "Org",
+        createdAt: harness.clock.now(),
+        createdByActorId: organizerId,
+      }),
+    );
     await harness.memberships.add({
       organizationId,
       actorId: organizerId,

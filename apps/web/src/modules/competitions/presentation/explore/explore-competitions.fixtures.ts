@@ -112,7 +112,15 @@ export function exploreMembershipsFixture(
   role: "organizer" | "staff" | "member" = "organizer",
 ): ListMyMembershipsResponse {
   return {
-    memberships: [{ organizationId: "org-cuervos", organizationName: "Liga Cuervos", role }],
+    memberships: [
+      {
+        organizationId: "org-cuervos",
+        organizationName: "Liga Cuervos",
+        organizationSlug: "liga-cuervos",
+        organizationLogo: { kind: "monogram" },
+        role,
+      },
+    ],
   };
 }
 

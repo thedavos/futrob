@@ -1,5 +1,6 @@
 import {
   err,
+  isIanaTimeZone,
   ok,
   type ClockPort,
   type ActorId,
@@ -145,14 +146,5 @@ export class UpdateCompetitionDraftUseCase {
         }),
       );
     return ok(await this.deps.competitions.saveDraft({ competition, rules }));
-  }
-}
-
-function isIanaTimeZone(value: string): boolean {
-  try {
-    new Intl.DateTimeFormat("en", { timeZone: value }).format();
-    return Boolean(value);
-  } catch {
-    return false;
   }
 }
