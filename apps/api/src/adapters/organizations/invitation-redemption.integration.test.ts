@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
 import { Pool, type PoolClient } from "pg";
 import { PostgresTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
+import { seedActors } from "@/testing/seed-actors.ts";
 import { PostgresInvitationRepository } from "./postgres.repository.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -27,6 +28,7 @@ suite("PostgresInvitationRepository.claimRedemption", () => {
     "keeps concurrent retries by the same actor idempotent with capacity %s",
     async (maxRedemptions) => {
       await withSchema(async (pool, applicationName) => {
+        await seedActors(pool, "organizer", "same-actor");
         await pool.query(
           `INSERT INTO organizations (
              id, name, normalized_name, created_at, created_by_actor_id

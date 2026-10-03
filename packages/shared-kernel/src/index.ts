@@ -28,6 +28,7 @@ export {
   compareTime,
   daysFromNow,
   daysFromNowIso,
+  isIanaTimeZone,
   MS_PER_DAY,
   TIME_SORT_DIRECTION,
   type TimeSortDirection,

@@ -35,6 +35,7 @@ export function teamRosterManagementDetailDto(
       presentation: {
         displayName: member.presentation.displayName ?? "Jugador sin nombre público",
         avatarUrl: member.presentation.avatarUrl,
+        gameAccount: member.presentation.gameAccount,
       },
     })),
   };

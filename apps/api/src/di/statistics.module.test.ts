@@ -9,6 +9,8 @@ import {
 import { InMemoryCompetitionRosterMembershipRepository } from "@/adapters/teams/team-roster.repositories";
 import { NoopTransactionPort } from "@/adapters/persistence/pg-transaction";
 import { NoopEventPublisher } from "@/adapters/events/noop-event-publisher";
+import { performanceCompetition } from "@/testing/team-performance.fixture.ts";
+import { InMemoryCompetitionEntryRepository } from "@/adapters/competitions/competition-entry.repositories.ts";
 import { createStatisticsModule } from "./statistics.module";
 
 describe("statistics module projection", () => {
@@ -33,7 +35,7 @@ describe("statistics module projection", () => {
       createdAt: new Date("2026-08-01T00:00:00.000Z"),
     });
     const result = approvedResult();
-    await officialResults.save(result);
+    await officialResults.append(result);
     const statistics = createStatisticsModule({
       pool: null,
       resultReader: {
@@ -46,21 +48,13 @@ describe("statistics module projection", () => {
       accounts,
       rosters,
       profiles,
+      entries: new InMemoryCompetitionEntryRepository(),
       competitions: {
-        async saveDraft(draft) {
-          return draft;
-        },
         async findById() {
-          return null;
-        },
-        async findByCreationKey() {
-          return null;
+          return performanceCompetition();
         },
         async findRulesByCompetitionId() {
           return null;
-        },
-        async listByOrganization() {
-          return [];
         },
       },
       authorization: {

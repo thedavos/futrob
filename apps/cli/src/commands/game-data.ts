@@ -10,7 +10,7 @@ import { print, printJson } from "../lib/print.ts";
 const USAGE = `Uso:
   npm run cli -- club-get <externalClubId>
   npm run cli -- club-matches <externalClubId>
-  npm run cli -- sync-job-enqueue <orgId> <externalClubId> [--platform playstation] [--edition fc26] [--match-type club_match] [--max 10]
+  npm run cli -- sync-job-enqueue <orgId> <externalClubId> [--platform playstation] [--edition fc27] [--match-type club_match] [--max 10]
   npm run cli -- sync-job-run <jobId>
   npm run cli -- sync-job-run-next
   npm run cli -- provider-health [providerKey=ea-clubs]`;
@@ -66,7 +66,7 @@ export function syncJobEnqueue(raw: string[]): Effect.Effect<number, CliError> {
       providerKey: "ea-clubs" as const,
       externalClubId,
       platform: flagString(common.flags, "platform") ?? "playstation",
-      gameEdition: flagString(common.flags, "edition") ?? "fc26",
+      gameEdition: flagString(common.flags, "edition") ?? "fc27",
       matchType: flagString(common.flags, "match-type") ?? "club_match",
       maxResultCount: Number(flagString(common.flags, "max") ?? 10),
     };

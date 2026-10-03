@@ -1,5 +1,8 @@
 import type { Pool } from "pg";
 import {
+  GetTeamPerformanceRankingUseCase,
+  RebuildTeamPerformanceRankingUseCase,
+  type TeamPerformanceRankingLockPort,
   GetCompetitionRankingsUseCase,
   GetCompetitionStandingsUseCase,
   GetCompetitionTeamStatisticsUseCase,
@@ -11,7 +14,7 @@ import {
   type PlayerIdentityResolverPort,
   type PlayerProfileLookupPort,
 } from "@futrob/statistics";
-import type { CompetitionRepository } from "@futrob/competitions";
+import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
 import type { EncounterReaderPort, OfficialResultReaderPort } from "@futrob/results";
 import type {
   CompetitionRosterMembershipRepository,
@@ -44,8 +47,20 @@ import {
   PostgresTeamMatchContributionRepository,
 } from "@/adapters/statistics/team-postgres.repositories";
 
+import { OfficialTeamPerformanceSource } from "@/adapters/statistics/team-performance-source.ts";
+import {
+  InMemoryTeamPerformanceRankingLock,
+  PostgresTeamPerformanceRankingLock,
+} from "@/adapters/statistics/team-performance-lock.ts";
+import {
+  InMemoryTeamPerformanceRankingRepository,
+  PostgresTeamPerformanceRankingRepository,
+} from "@/adapters/statistics/team-performance-ranking.repositories.ts";
+
 export type StatisticsModule = {
   useCases: {
+    getTeamPerformanceRanking: GetTeamPerformanceRankingUseCase;
+    rebuildTeamPerformanceRanking: RebuildTeamPerformanceRankingUseCase;
     projectOfficialResult: ProjectOfficialResultUseCase;
     rebuildCompetitionStatistics: RebuildCompetitionStatisticsUseCase;
     rebuildCompetitionRankings: RebuildCompetitionRankingsUseCase;
@@ -56,6 +71,7 @@ export type StatisticsModule = {
     getCompetitionRankings: GetCompetitionRankingsUseCase;
   };
   ports: {
+    teamPerformanceLock: TeamPerformanceRankingLockPort;
     identities: PlayerIdentityResolverPort;
     profiles: PlayerProfileLookupPort;
   };
@@ -67,7 +83,8 @@ export function createStatisticsModule(deps: {
   accounts: PlayerGameAccountRepository;
   rosters: CompetitionRosterMembershipRepository;
   profiles: PlayerProfileRepository;
-  competitions: CompetitionRepository;
+  competitions: Pick<CompetitionRepository, "findRulesByCompetitionId" | "findById">;
+  entries: CompetitionEntryRepository;
   authorization: AuthorizationPort;
   encounterReader?: EncounterReaderPort;
   transaction: TransactionPort;
@@ -116,6 +133,27 @@ export function createStatisticsModule(deps: {
     transaction: deps.transaction,
     clock,
   });
+  const teamPerformanceLock =
+    deps.pool === null
+      ? new InMemoryTeamPerformanceRankingLock()
+      : new PostgresTeamPerformanceRankingLock(deps.pool);
+  const teamPerformanceRankings =
+    deps.pool === null
+      ? new InMemoryTeamPerformanceRankingRepository()
+      : new PostgresTeamPerformanceRankingRepository(deps.pool);
+  const teamPerformanceSources = new OfficialTeamPerformanceSource({
+    competitions: deps.competitions,
+    entries: deps.entries,
+    results: deps.resultReader,
+    contributions: teamContributions,
+  });
+  const rebuildTeamPerformance = new RebuildTeamPerformanceRankingUseCase({
+    sources: teamPerformanceSources,
+    rankings: teamPerformanceRankings,
+    lock: teamPerformanceLock,
+    transaction: deps.transaction,
+    clock,
+  });
   const projectOfficialResult = new ProjectOfficialResultUseCase({
     officialResults: deps.resultReader,
     encounterReader: deps.encounterReader,
@@ -128,12 +166,19 @@ export function createStatisticsModule(deps: {
     standings,
     matchRules,
     rebuildRankings,
+    teamPerformanceLock,
+    rebuildTeamPerformance,
     transaction: deps.transaction,
     clock,
   });
 
   return {
     useCases: {
+      getTeamPerformanceRanking: new GetTeamPerformanceRankingUseCase({
+        rankings: teamPerformanceRankings,
+        authorization: deps.authorization,
+      }),
+      rebuildTeamPerformanceRanking: rebuildTeamPerformance,
       projectOfficialResult,
       rebuildCompetitionStatistics: new RebuildCompetitionStatisticsUseCase({
         officialResults: deps.resultReader,
@@ -146,6 +191,9 @@ export function createStatisticsModule(deps: {
         standings,
         matchRules,
         rebuildRankings,
+        teamPerformanceLock,
+        teamPerformanceSources,
+        rebuildTeamPerformance,
         encounterReader: deps.encounterReader,
         eventPublisher: deps.eventPublisher,
         transaction: deps.transaction,
@@ -179,6 +227,7 @@ export function createStatisticsModule(deps: {
       }),
     },
     ports: {
+      teamPerformanceLock,
       identities,
       profiles,
     },

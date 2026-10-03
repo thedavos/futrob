@@ -21,12 +21,12 @@ describe("createActorProvisioningHooks", () => {
   it("allows a later sign-in to retry failed provisioning", async () => {
     const ensureActorForSubject = vi
       .fn<ActorProvisionerPort["ensureActorForSubject"]>()
-      .mockRejectedValueOnce(new Error("D1 unavailable"))
+      .mockRejectedValueOnce(new Error("database unavailable"))
       .mockResolvedValue(asActorId("actor-1"));
     const hooks = createActorProvisioningHooks({ ensureActorForSubject });
 
     await expect(hooks.session.create.before({ userId: "user-1" })).rejects.toThrow(
-      "D1 unavailable",
+      "database unavailable",
     );
     await expect(hooks.session.create.before({ userId: "user-1" })).resolves.toBeUndefined();
     expect(ensureActorForSubject).toHaveBeenCalledTimes(2);

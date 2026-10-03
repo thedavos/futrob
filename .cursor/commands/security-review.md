@@ -1,6 +1,6 @@
 # Review Futrob security
 
-1. Trace identity from Better Auth in `apps/auth` through `ActorId`, web BFF/native session handling, API service authentication, effective permission decisions and organization-scoped product access in Postgres. D1 owns auth/actors and BFF rate limits; product tenancy does not rely on Postgres RLS.
+1. Trace identity from Better Auth in `apps/auth` through `ActorId`, web BFF/native session handling, API service authentication, effective permission decisions and organization-scoped product access in Postgres. auth, actors and BFF rate limits live in the same Postgres (ADR-0021) and every stored `ActorId` references `actors`; product tenancy does not rely on Postgres RLS.
 2. Test cross-organization reads, writes, job claims, and public projections with predictable IDs.
 3. Verify browser code has no server secrets, Wrangler secrets, or direct private table access.
 4. Review EA sync job auth, idempotency and rate limits. Verify EA egress stays in the API game-data adapter and service/provider credentials never reach browser or native clients.

@@ -1,5 +1,6 @@
 import {
   asActorId,
+  Panic,
   type ActorId,
   type ClockPort,
   type IdGeneratorPort,
@@ -8,7 +9,17 @@ import {
   type AuthorizationRequest,
   type EffectiveAccess,
 } from "@futrob/shared-kernel";
-import type { Organization } from "../domain/entities/organization.ts";
+import {
+  normalizeOrganizationName,
+  type Organization,
+  type OrganizationChanges,
+} from "../domain/entities/organization.ts";
+import { DEFAULT_ORGANIZATION_LOGO } from "../domain/value-objects/organization-logo.ts";
+import {
+  parseOrganizationSlug,
+  slugifyOrganizationText,
+} from "../domain/value-objects/organization-slug.ts";
+import { ORGANIZATION_ROLE_PERMISSIONS } from "../domain/policies/organization-permissions.ts";
 import {
   INVITATION_STATUS,
   REDEEM_POLICY,
@@ -23,6 +34,31 @@ import type { InvitationTokenPort } from "../domain/ports/invitation-token.port.
 import type { MembershipRepository } from "../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../domain/ports/organization.repository.ts";
 import type { MembershipSummary } from "../domain/value-objects/post-auth-destination.ts";
+
+const ORGANIZATION_PERMISSION_VALUES: ReadonlySet<string> = new Set(
+  Object.values(ORGANIZATION_ROLE_PERMISSIONS).flat(),
+);
+
+/** A valid stored organization for tests that seed the repository directly. */
+export function organizationFixture(input: {
+  readonly id: OrganizationId;
+  readonly name: string;
+  readonly createdByActorId: ActorId;
+  readonly createdAt: Date;
+}): Organization {
+  const slug = parseOrganizationSlug(slugifyOrganizationText(input.name));
+  if (!slug) throw new Panic(`Fixture name ${input.name} does not produce a valid slug`);
+  return {
+    id: input.id,
+    name: input.name,
+    normalizedName: normalizeOrganizationName(input.name),
+    slug,
+    timeZone: "UTC",
+    logo: DEFAULT_ORGANIZATION_LOGO,
+    createdAt: input.createdAt,
+    createdByActorId: input.createdByActorId,
+  };
+}
 
 export class FakeClock implements ClockPort {
   constructor(private current: Date = new Date("2026-01-15T12:00:00.000Z")) {}
@@ -67,8 +103,45 @@ export class FakeOrganizationRepository implements OrganizationRepository {
       : null;
     if (existing) return existing;
     if (await this.getByNormalizedName(organization.normalizedName)) return null;
+    if (await this.getBySlug(organization.slug)) return null;
     this.byId.set(organization.id, organization);
     return organization;
+  }
+
+  /** Runs between reading the stored organization and writing; lets tests interleave writers. */
+  beforeUpdate: (() => Promise<void>) | null = null;
+
+  async update(id: OrganizationId, changes: OrganizationChanges): Promise<Organization | null> {
+    if (this.beforeUpdate) await this.beforeUpdate();
+    // No await below: reading the stored row and writing it back cannot be interleaved.
+    const current = this.byId.get(id);
+    if (!current) return null;
+    const next: Organization = {
+      ...current,
+      name: changes.name ?? current.name,
+      normalizedName: changes.normalizedName ?? current.normalizedName,
+      slug: changes.slug ?? current.slug,
+      timeZone: changes.timeZone ?? current.timeZone,
+      logo: changes.logo ?? current.logo,
+    };
+    const rows = [...this.byId.values()];
+    const nameOwner = rows.find((row) => row.normalizedName === next.normalizedName);
+    if (nameOwner && nameOwner.id !== id) return null;
+    const slugOwner = rows.find((row) => row.slug === next.slug);
+    if (slugOwner && slugOwner.id !== id) return null;
+    this.byId.set(id, next);
+    return next;
+  }
+
+  async getBySlug(slug: string): Promise<Organization | null> {
+    return [...this.byId.values()].find((row) => row.slug === slug) ?? null;
+  }
+
+  async getByIds(ids: readonly OrganizationId[]): Promise<readonly Organization[]> {
+    return [...new Set(ids)].flatMap((id) => {
+      const organization = this.byId.get(id);
+      return organization ? [organization] : [];
+    });
   }
 
   async getById(id: OrganizationId): Promise<Organization | null> {
@@ -108,6 +181,8 @@ export class FakeMembershipRepository implements MembershipRepository {
         return {
           organizationId: row.organizationId,
           organizationName: org?.name ?? "unknown",
+          organizationSlug: org?.slug ?? "unknown",
+          organizationLogo: org?.logo ?? { kind: "monogram" },
           role: row.role,
         };
       });
@@ -247,7 +322,15 @@ export function createOrgTestHarness() {
       const membership = request.scope.organizationId
         ? await memberships.findByOrgAndActor(request.scope.organizationId, request.actorId)
         : null;
-      const allowed = membership?.role === "organizer" || membership?.role === "staff";
+      const isOrganizationPermission = ORGANIZATION_PERMISSION_VALUES.has(request.permission);
+      const rolePermissions: readonly string[] = membership
+        ? ORGANIZATION_ROLE_PERMISSIONS[membership.role]
+        : [];
+      const allowed = membership
+        ? isOrganizationPermission
+          ? rolePermissions.includes(request.permission)
+          : membership.role === "organizer" || membership.role === "staff"
+        : false;
       return {
         allowed,
         permission: request.permission,

@@ -4,7 +4,7 @@ import {
   buildAuthProxyHeaders,
   buildAuthProxyTarget,
   buildAuthSessionHeaders,
-  fetchAuthSessionUserId,
+  fetchAuthSessionActorId,
   forwardAuthRequest,
   isAuthApiPath,
   proxyAuthRequest,
@@ -205,24 +205,31 @@ describe("auth proxy", () => {
   });
 });
 
-describe("fetchAuthSessionUserId", () => {
-  it("returns the user id from AUTH_SERVICE get-session", async () => {
+describe("fetchAuthSessionActorId", () => {
+  it("returns the actor id from AUTH_SERVICE get-session", async () => {
     const fetchMock = vi.fn<AuthServiceBinding["fetch"]>(
       async () =>
-        new Response(JSON.stringify({ user: { id: "user-1" }, session: { id: "sess-1" } }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
+        new Response(
+          JSON.stringify({
+            user: { id: "user-1" },
+            session: { id: "sess-1" },
+            actorId: "actor-1",
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
     );
 
-    const userId = await fetchAuthSessionUserId(
+    const actorId = await fetchAuthSessionActorId(
       new Request("http://localhost:3000/api/v1/players/me/teams", {
         headers: { cookie: "better-auth.session_token=abc" },
       }),
       { fetch: fetchMock },
     );
 
-    expect(userId).toBe("user-1");
+    expect(actorId).toBe("actor-1");
     const proxied = fetchMock.mock.calls[0]?.[0];
     expect(proxied?.url).toBe("https://futrob-auth.internal/api/auth/get-session");
     expect(proxied?.method).toBe("GET");
@@ -234,7 +241,7 @@ describe("fetchAuthSessionUserId", () => {
       async () => new Response("null", { status: 200 }),
     );
 
-    await fetchAuthSessionUserId(
+    await fetchAuthSessionActorId(
       new Request("http://localhost:3000/api/v1/players/me/external-club", {
         method: "POST",
         headers: {
@@ -258,16 +265,27 @@ describe("fetchAuthSessionUserId", () => {
   });
 
   it("returns null when auth has no session", async () => {
-    const userId = await fetchAuthSessionUserId(
+    const actorId = await fetchAuthSessionActorId(
       new Request("http://localhost:3000/api/v1/players/me"),
       { fetch: async () => new Response("null", { status: 200 }) },
     );
-    expect(userId).toBeNull();
+    expect(actorId).toBeNull();
+  });
+
+  it("returns null when the session user has no provisioned actor", async () => {
+    const actorId = await fetchAuthSessionActorId(
+      new Request("http://localhost:3000/api/v1/players/me"),
+      {
+        fetch: async () =>
+          new Response(JSON.stringify({ user: { id: "user-1" }, actorId: null }), { status: 200 }),
+      },
+    );
+    expect(actorId).toBeNull();
   });
 
   it("throws AuthServiceUnavailableError when auth returns 500", async () => {
     await expect(
-      fetchAuthSessionUserId(new Request("http://localhost:3000/api/v1/players/me"), {
+      fetchAuthSessionActorId(new Request("http://localhost:3000/api/v1/players/me"), {
         fetch: async () => new Response("nope", { status: 500 }),
       }),
     ).rejects.toBeInstanceOf(AuthServiceUnavailableError);

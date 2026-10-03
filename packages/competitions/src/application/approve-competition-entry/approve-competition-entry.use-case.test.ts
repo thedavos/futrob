@@ -1,57 +1,29 @@
+import { FakeCompetitionRepository } from "../fake-competition-repository.test-helper.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { unwrapErr } from "@futrob/test-support";
-import {
-  asActorId,
-  asCompetitionId,
-  asOrganizationId,
-  asTeamId,
-  compareByTime,
-  TIME_SORT_DIRECTION,
-} from "@futrob/shared-kernel";
+import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "../../domain/entities/competition-entry.ts";
 import { EntryAlreadyDecided } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
-import type {
-  CompetitionDraft,
-  CompetitionRepository,
-} from "../../domain/ports/competition.repository.ts";
+
 import { CreateCompetitionDraftUseCase } from "../create-competition-draft/create-competition-draft.use-case.ts";
 import { ApproveCompetitionEntryUseCase } from "./approve-competition-entry.use-case.ts";
 import { allowAllAuthorization } from "../allow-all-authorization.test-helper.ts";
 
-class FakeCompetitionRepository implements CompetitionRepository {
-  readonly rows = new Map<string, CompetitionDraft>();
-  async saveDraft(draft: CompetitionDraft) {
-    this.rows.set(draft.competition.id, draft);
-    return draft;
-  }
-  async findById(
+class FakeEntryRepository implements CompetitionEntryRepository {
+  rows: CompetitionEntry[] = [];
+  async countApprovedByCompetition(
     organizationId: ReturnType<typeof asOrganizationId>,
     competitionId: ReturnType<typeof asCompetitionId>,
   ) {
-    const draft = this.rows.get(competitionId) ?? null;
-    return draft?.competition.organizationId === organizationId ? draft : null;
-  }
-  async findByCreationKey(creationKey: string) {
-    return (
-      [...this.rows.values()].find((row) => row.competition.creationKey === creationKey) ?? null
-    );
-  }
-
-  async findRulesByCompetitionId(competitionId: ReturnType<typeof asCompetitionId>) {
-    return this.rows.get(competitionId)?.rules ?? null;
+    return this.rows.filter(
+      (entry) =>
+        entry.organizationId === organizationId &&
+        entry.competitionId === competitionId &&
+        entry.status === "approved",
+    ).length;
   }
 
-  async listByOrganization(organizationId: ReturnType<typeof asOrganizationId>) {
-    return [...this.rows.values()]
-      .map((row) => row.competition)
-      .filter((competition) => competition.organizationId === organizationId)
-      .sort(compareByTime((item) => item.updatedAt, TIME_SORT_DIRECTION.desc));
-  }
-}
-
-class FakeEntryRepository implements CompetitionEntryRepository {
-  rows: CompetitionEntry[] = [];
   async findById(organizationId: ReturnType<typeof asOrganizationId>, entryId: string) {
     return (
       this.rows.find((row) => row.id === entryId && row.organizationId === organizationId) ?? null

@@ -7,6 +7,8 @@ function membership(id: string, name: string): MembershipSummary {
   return {
     organizationId: asOrganizationId(id),
     organizationName: name,
+    organizationSlug: id,
+    organizationLogo: { kind: "monogram" },
     role: "member",
   };
 }

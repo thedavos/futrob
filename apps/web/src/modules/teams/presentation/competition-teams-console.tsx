@@ -1,15 +1,12 @@
 "use client";
 
-import { hasBrowserWindow } from "@futrob/ui";
 import { useState } from "react";
-import { buildRosterInvitationShareUrl } from "@futrob/sdk";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import type { ExternalClubDto, RosterMembershipRoleDto } from "@futrob/api-contracts";
 import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
-import type { SupportError } from "@/shared/presentation/support-error-alert.tsx";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { useSearchClubsMutation } from "@/modules/game-data/presentation/game-data-queries.ts";
-import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 import {
   useChangeRosterRoleMutation,
   useCompetitionTeamManagementDetailQuery,
@@ -19,7 +16,8 @@ import {
   useDecideTeamEntryMutation,
   useSetRosterOpenMutation,
 } from "./competition-team-queries.ts";
-import { TeamsClientError } from "./teams-browser-client.ts";
+import { rosterInvitationLink } from "./roster-invitation-link.ts";
+import { teamConsoleError } from "./team-console-error.ts";
 import { CompetitionTeamsView, type TeamConsoleCapabilities } from "./competition-teams-view.tsx";
 
 const CONSOLE_CAPABILITIES = {
@@ -41,6 +39,7 @@ export function CompetitionTeamsConsole({
   selectedTeamId: string | null;
   onSelectTeam: (teamId: string | null) => void;
 }>) {
+  const { t } = useI18n();
   const list = useCompetitionTeamManagementQuery(organizationId, competitionId);
   const detail = useCompetitionTeamManagementDetailQuery(
     organizationId,
@@ -92,7 +91,7 @@ export function CompetitionTeamsConsole({
       busy={busy}
       capabilities={capabilities}
       detail={detail.data ?? null}
-      error={error ? teamConsoleError(error) : null}
+      error={error ? teamConsoleError(error, t) : null}
       invitationUrl={invitation?.teamId === selectedTeamId ? invitation.url : null}
       hasMoreTeams={list.hasNextPage}
       items={list.data?.pages.flatMap((page) => page.items) ?? []}
@@ -113,11 +112,7 @@ export function CompetitionTeamsConsole({
       }}
       onCreateInvitation={async (input) => {
         const created = await createInvitation.mutateAsync(input);
-        const origin = hasBrowserWindow() ? window.location.origin : "https://futrob.app";
-        setInvitation({
-          teamId: created.teamId,
-          url: buildRosterInvitationShareUrl(origin, created.token),
-        });
+        setInvitation({ teamId: created.teamId, url: rosterInvitationLink(created.token) });
       }}
       onDecideEntry={async (decision) => {
         if (!detail.data) return;
@@ -140,44 +135,4 @@ export function CompetitionTeamsConsole({
       selectedTeamId={selectedTeamId}
     />
   );
-}
-
-const ERROR_COPY = {
-  "teams.roster_full": "La plantilla ya alcanzó su cupo máximo.",
-  "teams.roster_entry_inactive":
-    "Este Team ya no está activo en la competición. No se pueden cambiar plantillas.",
-  "teams.roster_competition_conflict": "Ese jugador ya pertenece a otro Team en esta competición.",
-  "authorization.forbidden": "No tienes permiso para operar este Team o esta competición.",
-  "teams.roster_invitation_expired": "La invitación ya expiró. Crea un enlace nuevo.",
-  "teams.client_network_error":
-    "No pudimos conectar con Futrob. Conservamos tu contexto para que puedas reintentar.",
-} satisfies Record<string, string>;
-
-export function teamConsoleError(error: Error): SupportError {
-  if (error instanceof TeamsClientError) {
-    return {
-      message: errorCopy(error.code),
-      requestId: error.requestId,
-      retryAfterSeconds: error.retryAfterSeconds,
-    };
-  }
-  if (error instanceof GameDataClientError) {
-    return {
-      message: errorCopy(error.code),
-      requestId: error.requestId,
-      retryAfterSeconds: error.retryAfterSeconds,
-    };
-  }
-  return { message: "No pudimos completar la operación. Revisa tu conexión e inténtalo de nuevo." };
-}
-
-function isTeamConsoleErrorCode(code: string): code is keyof typeof ERROR_COPY {
-  return Object.hasOwn(ERROR_COPY, code);
-}
-
-function errorCopy(code: string): string {
-  if (isTeamConsoleErrorCode(code)) {
-    return ERROR_COPY[code];
-  }
-  return "No pudimos completar la operación. Inténtalo nuevamente.";
 }

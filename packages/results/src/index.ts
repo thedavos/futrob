@@ -7,7 +7,40 @@ export type {
   OfficialResultSlotSnapshot,
   OfficialResultStatus,
 } from "./domain/entities/official-result.ts";
+export type { OfficialSelectionProposal } from "./domain/entities/official-match-selection.ts";
+export type {
+  ConfirmationAction,
+  ConfirmationActionDetails,
+  ConfirmationActionType,
+  ConfirmationCapacity,
+} from "./domain/entities/confirmation-action.ts";
+export type {
+  MatchDispute,
+  MatchDisputeResolution,
+  MatchDisputeStatus,
+} from "./domain/entities/match-dispute.ts";
+export type { OfficialResultApprovalBasis } from "./domain/entities/official-result.ts";
 export type { SelectionStatus } from "./domain/value-objects/selection-status.ts";
+export {
+  canApplySelectionCommand,
+  isUnderDispute,
+  selectionCommandsFor,
+  type SelectionCommand,
+} from "./domain/policies/selection-transitions.ts";
+export {
+  equivalentSlotSelections,
+  normalizeSlotSelection,
+  slotSelectionKey,
+} from "./domain/policies/slot-selection.ts";
+export {
+  integrityFlagsFor,
+  type IntegrityFlag,
+  type IntegrityFlagCode,
+} from "./domain/policies/integrity-flags.ts";
+export type {
+  TeamRepresentation,
+  TeamRepresentationPort,
+} from "./domain/ports/team-representation.port.ts";
 export {
   asEncounterStageId,
   type EncounterReaderPort,
@@ -27,8 +60,11 @@ export type {
   WriteIfEligibleResult,
 } from "./domain/ports/encounter-candidate-association.repository.ts";
 export type {
+  CommitSelectionTransitionResult,
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
+  SelectionReferenceClaims,
+  SelectionTransition,
 } from "./domain/ports/official-result.repository.ts";
 export type { OfficialResultReaderPort } from "./domain/ports/official-result-reader.port.ts";
 export type { OfficialResultApprovedEvent } from "./domain/events/official-result-approved.event.ts";
@@ -51,6 +87,25 @@ export {
   CandidateDataUnavailable,
   type ListEncounterCandidatesError,
 } from "./domain/errors/encounter-candidates.errors.ts";
+export {
+  CommandKeyReused,
+  IntegrityFlagsNotAcknowledged,
+  ProposalNotFound,
+  ReasonRequired,
+  ReferenceAlreadyClaimed,
+  SelectionAlreadyApproved,
+  SelectionProposalStale,
+  SelectionStateConflict,
+  SelectionVersionConflict,
+  SelfConfirmationForbidden,
+  type GetOfficialSelectionError,
+  type OpenMatchDisputeError,
+  type ProposeAlternativeOfficialSelectionError,
+  type ProposeOfficialSelectionError,
+  type RejectOfficialSelectionError,
+  type ResolveMatchDisputeError,
+  type ReviewMatchDisputeError,
+} from "./domain/errors/official-selection.errors.ts";
 export {
   SelectionNotFound,
   SelectionNotConfirmable,
@@ -78,10 +133,40 @@ export {
   type ListEncounterCandidatesInput,
   type ListEncounterCandidatesOutput,
 } from "./application/list-encounter-candidates/list-encounter-candidates.use-case.ts";
+export type {
+  OfficialSelectionAllowedAction,
+  OfficialSelectionCommandOutput,
+  OfficialSelectionView,
+} from "./application/official-selection-output.ts";
 export {
   SelectOfficialMatchesUseCase,
   type SelectOfficialMatchesInput,
 } from "./application/select-official-matches/select-official-matches.use-case.ts";
+export {
+  RejectOfficialSelectionUseCase,
+  type RejectOfficialSelectionInput,
+} from "./application/reject-official-selection/reject-official-selection.use-case.ts";
+export {
+  ProposeAlternativeOfficialSelectionUseCase,
+  type ProposeAlternativeOfficialSelectionInput,
+} from "./application/propose-alternative-official-selection/propose-alternative-official-selection.use-case.ts";
+export {
+  OpenMatchDisputeUseCase,
+  type OpenMatchDisputeInput,
+} from "./application/open-match-dispute/open-match-dispute.use-case.ts";
+export {
+  ReviewMatchDisputeUseCase,
+  type ReviewMatchDisputeInput,
+} from "./application/review-match-dispute/review-match-dispute.use-case.ts";
+export {
+  ResolveMatchDisputeUseCase,
+  type MatchDisputeDecision,
+  type ResolveMatchDisputeInput,
+} from "./application/resolve-match-dispute/resolve-match-dispute.use-case.ts";
+export {
+  GetOfficialSelectionUseCase,
+  type GetOfficialSelectionInput,
+} from "./application/get-official-selection/get-official-selection.use-case.ts";
 export {
   ConfirmOfficialSelectionUseCase,
   type ConfirmOfficialSelectionInput,

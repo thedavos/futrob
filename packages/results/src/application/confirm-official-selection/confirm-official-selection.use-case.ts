@@ -9,34 +9,52 @@ import {
   type IdGeneratorPort,
   type OrganizationId,
   type Result,
+  type TeamId,
 } from "@futrob/shared-kernel";
-import type {
-  OfficialResult,
-  OfficialResultSlotSnapshot,
-} from "../../domain/entities/official-result.ts";
-import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
-import type { ProviderMatchReaderPort } from "../../domain/ports/provider-match-reader.port.ts";
-import type {
-  OfficialMatchSelectionRepository,
-  OfficialResultRepository,
-} from "../../domain/ports/official-result.repository.ts";
 import {
-  OfficialResultForbidden,
-  ProviderMatchSnapshotMissing,
   SelectionNotConfirmable,
   SelectionNotFound,
   type ConfirmOfficialSelectionError,
 } from "../../domain/errors/official-result.errors.ts";
+import { SelfConfirmationForbidden } from "../../domain/errors/official-selection.errors.ts";
+import { OfficialSelectionForbidden } from "../../domain/errors/select-official-matches.errors.ts";
+import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
+import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type {
+  OfficialMatchSelectionRepository,
+  OfficialResultRepository,
+} from "../../domain/ports/official-result.repository.ts";
+import type { ProviderMatchReaderPort } from "../../domain/ports/provider-match-reader.port.ts";
+import type { TeamRepresentationPort } from "../../domain/ports/team-representation.port.ts";
+import { RESULT_PERMISSION } from "../../domain/policies/result-permissions.ts";
+import { confirmProposal } from "../confirm-proposal.ts";
+import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
+import {
+  authorizeTeamActor,
+  commandFingerprint,
+  staleProposal,
+  statusConflict,
+  approvedGuard,
+  versionConflict,
+} from "../selection-command-support.ts";
+import { lookupReplay, replayOutput } from "../selection-replay.ts";
 
 export interface ConfirmOfficialSelectionInput {
   readonly actorId: ActorId;
   readonly organizationId: OrganizationId;
   readonly encounterId: EncounterId;
+  /** Rival Team the actor speaks for; must differ from the proposing Team. */
+  readonly actingTeamId: TeamId;
+  /** The exact version being confirmed, not "the latest". */
+  readonly proposalId: string;
+  readonly expectedVersion: number;
+  readonly commandKey: string;
 }
 
 /**
- * Opponent confirmation (or organizer resolve) that materializes an approved
- * OfficialResult snapshot and emits results.official-result-approved.
+ * The rival Team confirms a specific proposal version. Agreement of both Teams
+ * approves the result (emitting one snapshot) unless an integrity flag routes
+ * the case to organizer review. Operators resolve disputes elsewhere.
  */
 export class ConfirmOfficialSelectionUseCase {
   constructor(
@@ -44,7 +62,9 @@ export class ConfirmOfficialSelectionUseCase {
       readonly encounterReader: EncounterReaderPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: OfficialResultRepository;
+      readonly associations: EncounterCandidateAssociationRepository;
       readonly providerMatches: ProviderMatchReaderPort;
+      readonly teamRepresentation: TeamRepresentationPort;
       readonly eventPublisher: EventPublisherPort;
       readonly authorization: AuthorizationPort;
       readonly ids: IdGeneratorPort;
@@ -54,7 +74,7 @@ export class ConfirmOfficialSelectionUseCase {
 
   async execute(
     input: ConfirmOfficialSelectionInput,
-  ): Promise<Result<OfficialResult, ConfirmOfficialSelectionError>> {
+  ): Promise<Result<OfficialSelectionCommandOutput, ConfirmOfficialSelectionError>> {
     const encounter = await this.deps.encounterReader.getById(input.encounterId);
     if (!encounter || encounter.organizationId !== input.organizationId) {
       return err(
@@ -66,22 +86,32 @@ export class ConfirmOfficialSelectionUseCase {
       );
     }
 
-    const authorization = await this.deps.authorization.decide({
+    const allowed = await authorizeTeamActor(this.deps, {
       actorId: input.actorId,
-      permission: "encounters.official-selection.resolve",
-      scope: {
-        organizationId: encounter.organizationId,
-        competitionId: encounter.competitionId,
-        encounterId: encounter.encounterId,
-      },
+      actingTeamId: input.actingTeamId,
+      encounter,
+      permission: RESULT_PERMISSION.officialSelectionResolve,
     });
-    if (!authorization.allowed) {
+    if (!allowed) {
       return err(
-        new OfficialResultForbidden({
-          code: "results.official_result_forbidden",
-          message: "The actor cannot confirm this official selection",
+        new OfficialSelectionForbidden({
+          code: "results.official_selection_forbidden",
+          message: "The actor cannot confirm this official selection for this team",
         }),
       );
+    }
+
+    const fingerprint = commandFingerprint([
+      "confirm",
+      input.actingTeamId,
+      input.proposalId,
+      input.expectedVersion,
+    ]);
+    const replay = await lookupReplay(this.deps.selections, { ...input, fingerprint });
+    if (replay.kind === "reused") return err(replay.error);
+    if (replay.kind === "replay") {
+      const output = await replayOutput(this.deps, input.encounterId, replay.actions);
+      if (output) return ok(output);
     }
 
     const selection = await this.deps.selections.findLatestByEncounter(input.encounterId);
@@ -94,77 +124,54 @@ export class ConfirmOfficialSelectionUseCase {
         }),
       );
     }
-    if (
-      selection.status !== "awaiting_opponent_confirmation" &&
-      selection.status !== "organizer_review"
-    ) {
+    const approved = approvedGuard(selection, "confirm", input.encounterId);
+    if (approved) return err(approved);
+    if (selection.version !== input.expectedVersion) {
+      return err(versionConflict(input.expectedVersion, selection.version));
+    }
+    if (selection.currentProposalId !== input.proposalId) {
+      return err(staleProposal(input.proposalId));
+    }
+    const conflict = statusConflict(selection, "confirm", input.encounterId);
+    if (conflict) {
+      return err(
+        conflict._tag === "SelectionAlreadyApproved"
+          ? conflict
+          : new SelectionNotConfirmable({
+              code: "results.selection_not_confirmable",
+              message: `Selection status ${selection.status} cannot be confirmed`,
+            }),
+      );
+    }
+
+    const proposals = await this.deps.selections.listProposals(selection.id);
+    const proposal = proposals.find((row) => row.id === input.proposalId);
+    if (!proposal) return err(staleProposal(input.proposalId));
+    if (proposal.proposingTeamId === null) {
       return err(
         new SelectionNotConfirmable({
           code: "results.selection_not_confirmable",
-          message: `Selection status ${selection.status} cannot be confirmed`,
+          message: "The proposing team is unknown; an operator must review this selection",
+        }),
+      );
+    }
+    if (proposal.proposingTeamId === input.actingTeamId) {
+      return err(
+        new SelfConfirmationForbidden({
+          code: "results.self_confirmation_forbidden",
+          message: "The proposing team cannot confirm its own proposal",
         }),
       );
     }
 
-    const existing = await this.deps.results.findLatestByEncounter(input.encounterId);
-    const revision = (existing?.revision ?? 0) + 1;
-    const slots: OfficialResultSlotSnapshot[] = [];
-
-    for (const slot of selection.slots) {
-      const match = await this.deps.providerMatches.getByExternalRef(slot.providerMatchRef);
-      if (!match) {
-        return err(
-          new ProviderMatchSnapshotMissing({
-            code: "results.provider_match_snapshot_missing",
-            message: "Selected provider match is not available for snapshot",
-            externalId: slot.providerMatchRef.externalId,
-          }),
-        );
-      }
-      slots.push({
-        officialSlot: slot.officialSlot,
-        providerMatchRef: slot.providerMatchRef,
-        homeExternalClubId: match.home.externalClubId,
-        awayExternalClubId: match.away.externalClubId,
-        homeGoals: match.home.goals,
-        awayGoals: match.away.goals,
-        occurredAt: match.occurredAt,
-        gameEdition: match.game.edition,
-        platform: match.game.platform,
-        players: match.players,
-      });
-    }
-
-    const approvedAt = this.deps.clock.now();
-    const result: OfficialResult = {
-      id: this.deps.ids.generate(),
-      encounterId: input.encounterId,
-      organizationId: encounter.organizationId,
-      competitionId: encounter.competitionId,
-      revision,
-      status: "approved",
-      slots,
-      approvedAt,
-      approvedBy: input.actorId,
-    };
-
-    const saved = await this.deps.results.save(result);
-    await this.deps.selections.save({
-      ...selection,
-      status: "approved",
+    return confirmProposal(this.deps, {
+      encounter,
+      selection,
+      proposal,
+      actorId: input.actorId,
+      teamId: input.actingTeamId,
+      commandKey: input.commandKey,
+      fingerprint,
     });
-    await this.deps.eventPublisher.publish({
-      eventName: "results.official-result-approved",
-      occurredAt: approvedAt.toISOString(),
-      payload: {
-        encounterId: input.encounterId,
-        organizationId: encounter.organizationId,
-        competitionId: encounter.competitionId,
-        approvedBy: input.actorId,
-        officialResultId: saved.id,
-        revision: saved.revision,
-      },
-    });
-    return ok(saved);
   }
 }

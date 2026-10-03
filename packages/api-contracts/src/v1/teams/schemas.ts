@@ -346,6 +346,10 @@ export const competitionTeamManagementMemberSchema = z.object({
   presentation: z.object({
     displayName: z.string().min(1),
     avatarUrl: z.string().url().nullable(),
+    /** Declared EA account the display name comes from; `null` when the player has none. */
+    gameAccount: z
+      .object({ platform: gamePlatformSchema, gameEdition: z.string().min(1) })
+      .nullable(),
   }),
 });
 export type CompetitionTeamManagementMemberDto = z.infer<

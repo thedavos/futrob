@@ -5,10 +5,10 @@ import type {
 } from "@futrob/results";
 import {
   assertNever,
-  err,
   ok,
   type ClockPort,
   type CompetitionId,
+  type OrganizationId,
   type EventPublisherPort,
   type Result,
   type TeamId,
@@ -36,9 +36,15 @@ import {
 import type { ProjectOfficialResultUseCase } from "../project-official-result/project-official-result.use-case.ts";
 import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
+import type {
+  TeamPerformanceRankingLockPort,
+  TeamPerformanceSourcePort,
+} from "../../domain/ports/team-performance-ranking.repository.ts";
+import type { RebuildTeamPerformanceRankingUseCase } from "../rebuild-team-performance-ranking/rebuild-team-performance-ranking.use-case.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 
 export interface RebuildCompetitionStatisticsInput {
+  readonly organizationId?: OrganizationId;
   readonly competitionId: CompetitionId;
 }
 
@@ -60,6 +66,9 @@ export interface RebuildCompetitionStatisticsDependencies {
   readonly matchRules: CompetitionMatchRulesReaderPort;
   readonly encounterReader?: EncounterReaderPort;
   readonly rebuildRankings: Pick<RebuildCompetitionRankingsUseCase, "execute">;
+  readonly teamPerformanceLock?: TeamPerformanceRankingLockPort;
+  readonly teamPerformanceSources?: TeamPerformanceSourcePort;
+  readonly rebuildTeamPerformance?: Pick<RebuildTeamPerformanceRankingUseCase, "execute">;
   readonly eventPublisher: EventPublisherPort;
   readonly transaction: TransactionPort;
   readonly clock: ClockPort;
@@ -68,13 +77,35 @@ export interface RebuildCompetitionStatisticsDependencies {
 export class RebuildCompetitionStatisticsUseCase {
   constructor(private readonly deps: RebuildCompetitionStatisticsDependencies) {}
 
-  async execute(
+  execute(
     input: RebuildCompetitionStatisticsInput,
   ): Promise<Result<RebuildCompetitionStatisticsOutput, ProjectOfficialResultError>> {
-    const officialResults = await this.deps.officialResults.listByCompetition(input.competitionId);
+    const lock = this.deps.teamPerformanceLock;
+    if (!lock) return this.executeLocked(input);
+    return this.deps.transaction.runInTransaction(() =>
+      lock.runExclusive(input.competitionId, () => this.executeLocked(input)),
+    );
+  }
+
+  private async executeLocked(
+    input: RebuildCompetitionStatisticsInput,
+  ): Promise<Result<RebuildCompetitionStatisticsOutput, ProjectOfficialResultError>> {
+    if (input.organizationId && this.deps.teamPerformanceSources) {
+      await this.deps.teamPerformanceSources.validateScope({
+        organizationId: input.organizationId,
+        competitionId: input.competitionId,
+      });
+    }
+    const officialResults = await this.deps.officialResults.listByCompetition(
+      input.competitionId,
+      input.organizationId,
+    );
     const latestResults = latestByEncounter(officialResults);
     const previousPlayers = await this.deps.contributions.listByCompetition(input.competitionId);
-    const previousTeams = await this.deps.teamContributions.listByCompetition(input.competitionId);
+    const previousTeams = await this.deps.teamContributions.listByCompetition(
+      input.competitionId,
+      input.organizationId,
+    );
     const affectedPlayerProfiles = matchedPlayerProfiles(previousPlayers);
     const affectedTeams = matchedTeams(previousTeams);
 
@@ -95,7 +126,7 @@ export class RebuildCompetitionStatisticsUseCase {
               rebuildRankings: false,
               resolutionMode: frozenByEncounter.get(officialResult.encounterId),
             });
-            if (!projected.isOk()) return err(projected.error);
+            if (!projected.isOk()) throw projected.error;
             officialResultsProjected += 1;
             contributionsProjected += projected.value.contributionsProjected;
             break;
@@ -139,6 +170,14 @@ export class RebuildCompetitionStatisticsUseCase {
       payload: rebuilt.value,
     });
     await this.deps.rebuildRankings.execute({ competitionId: input.competitionId });
+    const organizationId =
+      input.organizationId ?? latestResults[0]?.organizationId ?? previousTeams[0]?.organizationId;
+    if (organizationId && this.deps.rebuildTeamPerformance) {
+      await this.deps.rebuildTeamPerformance.execute({
+        organizationId,
+        competitionId: input.competitionId,
+      });
+    }
     return rebuilt;
   }
 

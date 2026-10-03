@@ -24,6 +24,9 @@ const draft: CompetitionDraft = {
     region: "south-america",
     timeZone: "America/Lima",
     format: "league",
+    teams: { min: 2, max: null },
+    schedule: { startsOn: null, endsOn: null },
+    cover: { kind: "preset", preset: "cup" },
     createdByActorId: asActorId("actor-1"),
     creationKey: "onboarding:competition:actor-1",
     createdAt: new Date("2026-07-31T12:00:00.000Z"),
@@ -81,6 +84,49 @@ describe.each(repositoryCases())("competition %s repository", (_name, createRepo
     expect(listed).toHaveLength(1);
     expect(listed[0]?.name).toBe("Liga Futrob");
     await expect(repository.listByOrganization(asOrganizationId("org-other"))).resolves.toEqual([]);
+  });
+});
+
+describe("in-memory partial competition updates", () => {
+  it("preserves current structure and rejects stale or foreign status transitions", async () => {
+    const repository = new InMemoryCompetitionRepository();
+    await repository.saveDraft({
+      ...draft,
+      competition: { ...draft.competition, name: "Updated name" },
+    });
+    const opened: CompetitionDraft = {
+      ...draft,
+      competition: { ...draft.competition, status: "registration" },
+    };
+    await expect(repository.changeStatus(opened, "draft")).resolves.toMatchObject({
+      competition: { status: "registration", name: "Updated name" },
+    });
+    await expect(repository.changeStatus(opened, "draft")).resolves.toBeNull();
+    await expect(
+      repository.changeStatus(
+        {
+          ...opened,
+          competition: { ...opened.competition, organizationId: asOrganizationId("org-other") },
+        },
+        "registration",
+      ),
+    ).resolves.toBeNull();
+  });
+
+  it("changes a cover without overwriting the latest name or status", async () => {
+    const repository = new InMemoryCompetitionRepository();
+    await repository.saveDraft({
+      ...draft,
+      competition: { ...draft.competition, name: "Updated name", status: "published" },
+    });
+    await expect(
+      repository.saveCover({
+        ...draft,
+        competition: { ...draft.competition, cover: { kind: "preset", preset: "league" } },
+      }),
+    ).resolves.toMatchObject({
+      competition: { status: "published", name: "Updated name", cover: { preset: "league" } },
+    });
   });
 });
 

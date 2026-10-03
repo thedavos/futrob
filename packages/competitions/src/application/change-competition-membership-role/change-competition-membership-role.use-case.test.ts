@@ -1,3 +1,4 @@
+import { FakeCompetitionRepository } from "../fake-competition-repository.test-helper.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { unwrapErr, unwrapOk } from "@futrob/test-support";
 import {
@@ -123,6 +124,9 @@ function competitionRepository(found: boolean): CompetitionRepository {
     region: "europe",
     timeZone: "UTC",
     format: "league",
+    teams: { min: 2, max: null },
+    schedule: { startsOn: null, endsOn: null },
+    cover: { kind: "preset", preset: "cup" },
     createdByActorId: managerId,
     createdAt: new Date("2026-08-07T00:00:00.000Z"),
     updatedAt: new Date("2026-08-07T00:00:00.000Z"),
@@ -137,13 +141,7 @@ function competitionRepository(found: boolean): CompetitionRepository {
     createdAt: new Date("2026-08-07T00:00:00.000Z"),
   } satisfies CompetitionRules;
 
-  return {
-    findById: async () => (found ? { competition, rules } : null),
-    saveDraft: async (draft) => draft,
-    findByCreationKey: async () => null,
-    findRulesByCompetitionId: async () => (found ? rules : null),
-    listByOrganization: async () => (found ? [competition] : []),
-  };
+  return new FakeCompetitionRepository(found ? [{ competition, rules }] : []);
 }
 
 function membershipRepository(

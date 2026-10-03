@@ -49,6 +49,7 @@ const es = {
   "shell.workspace.role.viceCaptain": "Subcapitán",
   "shell.workspace.role.player": "Jugador",
   "shell.queue.label": "Pendientes",
+  "shell.nav.loading": "Cargando navegación",
   "shell.queue.expand": "Expandir para ver los pendientes",
   "shell.queue.empty.title": "Nada por ahora",
   "shell.queue.empty.description": "Confirmaciones, invitaciones y desacuerdos aparecen aquí.",
@@ -92,6 +93,62 @@ const es = {
   "onboarding.organization.name.max": "El nombre debe tener como máximo 120 caracteres.",
   "onboarding.organization.name.conflict": "Ese nombre ya está en uso. Elige otro.",
   "onboarding.organization.review": "Revisar organización",
+  "organizations.create.title": "Crear organización",
+  "organizations.create.description": "Crea otro espacio para administrar competiciones y equipos.",
+  "organizations.create.name.label": "Nombre de la organización",
+  "organizations.create.name.placeholder": "ej. Liga Nocturna",
+  "organizations.create.name.description":
+    "Es el nombre público de tu organización. Debe ser único.",
+  "organizations.create.name.required": "Escribe el nombre de la organización.",
+  "organizations.create.name.max": "El nombre debe tener como máximo 120 caracteres.",
+  "organizations.create.name.conflict": "Ese nombre ya está en uso. Elige otro.",
+  "organizations.create.name.invalid": "El nombre no es válido.",
+  "organizations.create.checkFailed": "No pudimos verificar el nombre. Inténtalo nuevamente.",
+  "organizations.create.failed": "No pudimos crear la organización. Inténtalo nuevamente.",
+  "organizations.create.submit": "Crear organización",
+  "organizations.create.submitting": "Creando…",
+  "organizations.create.logoFailed":
+    "Creamos la organización, pero no pudimos subir el escudo. Puedes subirlo desde Ajustes.",
+  "organizations.create.logoRetry": "Reintentar subida",
+  "organizations.create.continue": "Continuar sin escudo",
+  "organizations.profile.slug.label": "Slug",
+  "organizations.profile.slug.description":
+    "Identificador único de tu organización: minúsculas, números y guiones.",
+  "organizations.profile.slug.invalid":
+    "Usa de 3 a 48 caracteres: minúsculas, números y guiones, sin palabras reservadas.",
+  "organizations.profile.slug.taken": "Ese slug ya está en uso.",
+  "organizations.profile.slug.checkFailed": "No pudimos verificar el slug. Inténtalo nuevamente.",
+  "organizations.profile.slug.useSuggestion": ({ slug }) => `Usar «${slug}»`,
+  "organizations.profile.timeZone.label": "Zona horaria",
+  "organizations.profile.timeZone.placeholder": "Selecciona una zona horaria",
+  "organizations.profile.timeZone.description":
+    "Es la zona inicial de las competiciones nuevas. No cambia las que ya existen.",
+  "organizations.profile.logo.label": "Escudo",
+  "organizations.profile.logo.description":
+    "PNG, JPEG o WebP de hasta 2 MB. Sin escudo se muestra un monograma.",
+  "organizations.profile.logo.upload": "Subir escudo",
+  "organizations.profile.logo.change": "Cambiar escudo",
+  "organizations.profile.logo.remove": "Quitar escudo",
+  "organizations.profile.logo.invalidType": "Usa una imagen PNG, JPEG o WebP.",
+  "organizations.profile.logo.tooLarge": "La imagen supera los 2 MB.",
+  "organizations.profile.logo.alt": ({ name }) => `Escudo de ${name}`,
+  "organizations.settings.title": "Ajustes de la organización",
+  "organizations.settings.description": "Nombre, slug, zona horaria y escudo de tu organización.",
+  "organizations.settings.loading": "Cargando perfil…",
+  "organizations.settings.save": "Guardar cambios",
+  "organizations.settings.saving": "Guardando…",
+  "organizations.settings.saved": "Cambios guardados.",
+  "organizations.settings.readOnly": "Solo quien organiza puede cambiar estos datos.",
+  "organizations.settings.loadFailed": "No pudimos cargar el perfil de la organización.",
+  "organizations.settings.saveFailed": "No pudimos guardar los cambios. Inténtalo nuevamente.",
+  "organizations.settings.logoFailed":
+    "Guardamos los cambios, pero no pudimos subir el escudo. Inténtalo nuevamente.",
+  "errors.organizations.slug_conflict": "Ese slug ya está en uso. Elige otro.",
+  "errors.organizations.invalid_slug": "El slug no es válido. Usa minúsculas, números y guiones.",
+  "errors.organizations.invalid_time_zone": "La zona horaria no es válida.",
+  "errors.organizations.invalid_logo": "El escudo no es válido.",
+  "errors.organizations.creation_key_conflict":
+    "No pudimos reutilizar la solicitud anterior. Revisa los datos e inténtalo de nuevo.",
   "onboarding.competition.title": "Configura tu primera competición",
   "onboarding.competition.description":
     "Crea un borrador de FC Clubs. Configurarás los equipos, el calendario y la publicación después.",
@@ -308,6 +365,7 @@ const es = {
     "Aquí verás los torneos en los que participe tu equipo.",
   "player.home.competitions.onboardingTitle": "Tu equipo aún no participa en competiciones",
   "player.home.competitions.onboardingSubtitle": "Explora torneos y da el salto a la competición.",
+  "player.home.competitions.status.registration": "Inscripciones abiertas",
   "player.home.competitions.status.published": "En curso",
   "player.home.competitions.status.draft": "Inscrito",
   "player.home.competitions.status.paused": "Pausada",
@@ -326,6 +384,91 @@ const es = {
   "player.competitions.empty.subtitle":
     "Explora los torneos disponibles y comparte los que te interesen con el capitán de tu club.",
   "player.competitions.empty.otherClub": "¿Buscas otro club?",
+  "player.competitions.explore.title": "Explorar competiciones",
+  "player.competitions.explore.description":
+    "Descubre torneos para seguir y compartir con tu club.",
+  "player.competitions.explore.breadcrumb.competitions": "Competiciones",
+  "player.competitions.explore.breadcrumb.explore": "Explorar",
+  "player.competitions.explore.search.label": "Buscar por nombre",
+  "player.competitions.explore.search.placeholder": "Nombre de la competición",
+  "player.competitions.explore.status.label": "Estado",
+  "player.competitions.explore.status.all": "Todos los estados",
+  "player.competitions.explore.status.registration": "Inscripciones abiertas",
+  "player.competitions.explore.status.published": "En curso",
+  "player.competitions.explore.status.paused": "Pausadas",
+  "player.competitions.explore.status.finished": "Finalizadas",
+  "player.competitions.explore.format.label": "Formato",
+  "player.competitions.explore.format.all": "Todos los formatos",
+  "player.competitions.explore.region.label": "Región",
+  "player.competitions.explore.region.all": "Todas las regiones",
+  "player.competitions.explore.platform.label": "Plataforma",
+  "player.competitions.explore.platform.all": "Todas las plataformas",
+  "player.competitions.explore.sort.label": "Orden",
+  "player.competitions.explore.sort.updated-desc": "Más recientes",
+  "player.competitions.explore.sort.name-asc": "Nombre A-Z",
+  "player.competitions.explore.count": ({ count }) =>
+    count === 1 ? "1 competición" : `${count} competiciones`,
+  "player.competitions.explore.loading": "Cargando competiciones…",
+  "player.competitions.explore.error":
+    "No se pudieron cargar las competiciones. Comprueba la conexión e inténtalo de nuevo.",
+  "player.competitions.explore.retry": "Reintentar",
+  "player.competitions.explore.empty.filtered.title": "No encontramos competiciones",
+  "player.competitions.explore.empty.filtered.subtitle":
+    "Prueba con otro nombre o amplía los filtros de búsqueda",
+  "player.competitions.explore.empty.filtered.cta": "Limpiar búsqueda y filtros",
+  "player.competitions.explore.empty.none.title": "Aún no hay competiciones publicadas",
+  "player.competitions.explore.empty.none.subtitle":
+    "Cuando un organizador publique un torneo, aparecerá aquí para que puedas verlo y compartirlo.",
+  "player.competitions.explore.card.view": "Ver competición",
+  "player.competitions.explore.card.share": "Compartir competición",
+  "player.competitions.explore.card.shareCopied": "Enlace copiado",
+  "player.competitions.explore.card.manage": "Gestionar",
+  "player.competitions.explore.card.participating": "Tu equipo participa",
+  "player.competitions.explore.card.organizer": ({ name }) => `Organiza ${name}`,
+  "player.competitions.explore.card.startsOn": ({ date }) => `Inicio: ${date}`,
+  "player.competitions.explore.card.endsOn": ({ date }) => `Fin: ${date}`,
+  "player.competitions.explore.card.teamsOf": ({ count, max }) => `${count} de ${max} equipos`,
+  "player.competitions.explore.card.teamsFull": ({ count }) => `Cupo completo (${count} equipos)`,
+  "player.competitions.explore.card.teams": ({ count }) =>
+    count === 1 ? "1 equipo" : `${count} equipos`,
+  "player.competitions.explore.more": "Mostrar más",
+  "player.competitions.detail.loading": "Cargando competición…",
+  "player.competitions.detail.error":
+    "No se pudo cargar la competición. Comprueba la conexión e inténtalo de nuevo.",
+  "player.competitions.detail.notFound.title": "Competición no disponible",
+  "player.competitions.detail.notFound.subtitle":
+    "Esta competición no está publicada o ya no se puede consultar.",
+  "player.competitions.detail.notFound.cta": "Volver a explorar",
+  "player.competitions.detail.meta.format": "Formato",
+  "player.competitions.detail.meta.region": "Región",
+  "player.competitions.detail.meta.platform": "Plataforma",
+  "player.competitions.detail.meta.edition": "Edición",
+  "player.competitions.detail.meta.timeZone": "Zona horaria",
+  "player.competitions.detail.meta.organizer": "Organizador",
+  "player.competitions.detail.meta.teams": "Equipos inscritos",
+  "player.competitions.detail.meta.startsOn": "Fechas",
+  "player.competitions.detail.share": "Compartir",
+  "player.competitions.detail.shareCopied": "Enlace copiado",
+  "player.competitions.detail.manage": "Gestionar",
+  "player.competitions.apply.title": "Inscribe a tu equipo",
+  "player.competitions.apply.description":
+    "Crea tu equipo para esta competición. Serás su capitán y el organizador revisará la solicitud.",
+  "player.competitions.apply.teamName": "Nombre del equipo",
+  "player.competitions.apply.submit": "Enviar solicitud",
+  "player.competitions.apply.submitting": "Enviando…",
+  "player.competitions.apply.error": "No se pudo enviar la solicitud. Inténtalo de nuevo.",
+  "player.competitions.apply.error.closed": "Las inscripciones de esta competición se cerraron.",
+  "player.competitions.apply.error.conflict": "Ya formas parte de un equipo en esta competición.",
+  "player.competitions.apply.status.pending.title": "Solicitud enviada",
+  "player.competitions.apply.status.pending.description": ({ team }) =>
+    `${team} espera la revisión del organizador.`,
+  "player.competitions.apply.status.approved.title": "Equipo inscrito",
+  "player.competitions.apply.status.approved.description": ({ team }) =>
+    `${team} ya participa en esta competición.`,
+  "player.competitions.apply.status.approved.cta": "Ir a la competición",
+  "player.competitions.apply.status.rejected.title": "Solicitud rechazada",
+  "player.competitions.apply.status.rejected.description": ({ team }) =>
+    `El organizador no aprobó a ${team}.`,
   "player.invitations.title": "Invitaciones",
   "player.invitations.description":
     "Revisa las invitaciones que has recibido y elige dónde participar.",
@@ -679,6 +822,156 @@ const es = {
   "player.gameData.statistics.subtitle":
     "Tu rating, atributos y rendimiento en partidos recientes de EA Clubs.",
   "player.gameData.statistics.cta": "Ver mis estadísticas",
+  "player.gameData.invitations.title": "Mis invitaciones",
+  "player.gameData.invitations.subtitle":
+    "Invitaciones de clubes y competiciones pendientes de respuesta.",
+  "player.gameData.invitations.cta": "Ver mis invitaciones",
+  "pages.organization.teams.title": "Equipos",
+  "pages.organization.teams.subtitle": "Equipos inscritos en las competiciones de tu organización.",
+  "pages.organization.players.title": "Jugadores",
+  "pages.organization.players.subtitle": "Quién juega en cada plantilla de tu organización.",
+  "pages.organization.invitations.title": "Invitaciones",
+  "pages.organization.invitations.subtitle":
+    "Invitaciones enviadas a staff y miembros de tu organización, con su estado.",
+  "pages.organization.members.title": "Miembros y roles",
+  "pages.organization.members.subtitle":
+    "Quién forma parte de tu organización y qué puede hacer cada persona.",
+  "pages.organization.settings.title": "Ajustes",
+  "pages.organization.settings.subtitle": "Nombre y preferencias de tu organización.",
+  "pages.competition.fixture.title": "Calendario",
+  "pages.competition.fixture.subtitle": "Jornadas y fechas de cada enfrentamiento.",
+  "pages.competition.encounters.title": "Enfrentamientos",
+  "pages.competition.encounters.subtitle": "Estado y resultado de cada cruce entre dos equipos.",
+  "pages.competition.standings.title": "Clasificación",
+  "pages.competition.standings.subtitle": "Tabla oficial, calculada solo con resultados aprobados.",
+  "pages.competition.bracket.title": "Bracket",
+  "pages.competition.bracket.subtitle": "Cuadro de eliminatorias, de la primera ronda a la final.",
+  "pages.competition.rankings.title": "Rankings",
+  "pages.competition.rankings.subtitle":
+    "Mejores jugadores y equipos según estadísticas oficiales.",
+  "pages.competition.disputes.title": "Disputas",
+  "pages.competition.disputes.subtitle":
+    "Desacuerdos sobre partidos o resultados que esperan tu decisión.",
+  "pages.competition.analytics.title": "Analíticas",
+  "pages.competition.analytics.subtitle": "Participación y actividad de la competición.",
+  "pages.competition.rules.title": "Reglamento",
+  "pages.competition.rules.subtitle":
+    "Formato, criterios de desempate y reglas de reprogramación vigentes.",
+  "pages.competitionPlayer.matches.title": "Partidos",
+  "pages.competitionPlayer.matches.subtitle":
+    "Tus partidos en esta competición: próximos y jugados.",
+  "pages.competitionPlayer.stats.title": "Estadísticas",
+  "pages.competitionPlayer.stats.subtitle": "Tus estadísticas oficiales en esta competición.",
+  "pages.competitionPlayer.team.title": "Mi equipo",
+  "pages.competitionPlayer.team.subtitle":
+    "Tu equipo en esta competición: plantilla, club EA y próximos enfrentamientos.",
+  "pages.captain.roster.title": "Plantilla",
+  "pages.captain.roster.subtitle":
+    "Revisa quién está en tu equipo, asigna roles y decide si admite jugadores nuevos.",
+  "pages.captain.invitations.title": "Invitaciones del equipo",
+  "pages.captain.invitations.subtitle":
+    "Crea enlaces para que otros jugadores se unan a tu plantilla.",
+  "captain.loading": "Cargando tu equipo…",
+  "captain.noTeam.title": "No tienes equipo en esta competición",
+  "captain.noTeam.description":
+    "Cuando te unas a una plantilla, podrás gestionar tu equipo desde aquí.",
+  "captain.noTeam.action": "Revisar mis invitaciones",
+  "captain.forbidden.title": "No tienes acceso a esta página",
+  "captain.forbidden.roster": "Solo el capitán y el subcapitán pueden gestionar la plantilla.",
+  "captain.forbidden.invitations": "Solo el capitán y el subcapitán pueden invitar jugadores.",
+  "captain.forbidden.action": "Ir a Mi equipo",
+  "captain.unavailable.title": "No se pudo comprobar tu acceso",
+  "captain.unavailable.description": "Revisa tu conexión e inténtalo de nuevo.",
+  "captain.stats.spots": "Plazas",
+  "captain.stats.spotsFull": "Plantilla llena",
+  "captain.stats.spotsLeft": (params) =>
+    count(params) === 1 ? "Queda 1 plaza" : `Quedan ${count(params)} plazas`,
+  "captain.stats.state": "Estado",
+  "captain.stats.open": "Abierta",
+  "captain.stats.closed": "Cerrada",
+  "captain.stats.openHint": "Admite jugadores por invitación",
+  "captain.stats.closedHint": "No admite jugadores nuevos",
+  "captain.stats.club": "Club EA",
+  "captain.stats.noClub": "Sin club EA",
+  "captain.stats.noClubHint": "Hace falta para consultar partidos",
+  "captain.roster.players": "Jugadores",
+  "captain.roster.column.player": "Jugador",
+  "captain.roster.column.role": "Rol",
+  "captain.roster.open": "Abrir plantilla",
+  "captain.roster.openDescription":
+    "La plantilla volverá a admitir jugadores por invitación mientras tenga plazas.",
+  "captain.roster.close": "Cerrar plantilla",
+  "captain.roster.closeDescription":
+    "Los enlaces de invitación dejarán de admitir jugadores mientras esté cerrada.",
+  "captain.roster.invite": "Invitar jugador",
+  "captain.roster.alone.title": "Solo estás tú en la plantilla",
+  "captain.roster.alone.description": "Usa «Invitar jugador» para completar el equipo.",
+  "captain.invitations.closed.title": "La plantilla está cerrada",
+  "captain.invitations.closed.description":
+    "Los enlaces no admitirán jugadores hasta que abras la plantilla.",
+  "captain.invitations.closed.action": "Ir a la plantilla",
+  "captain.invitations.full.title": "La plantilla está llena",
+  "captain.invitations.full.description":
+    "Los enlaces no admitirán jugadores hasta que haya plazas libres.",
+  "captain.invitations.empty.title": "Crea un enlace de invitación",
+  "captain.invitations.empty.description":
+    "Usa «Invitar» para generar un enlace y compártelo con el jugador. Al aceptarlo, entra en tu plantilla.",
+  "common.cancel": "Cancelar",
+  "roster.role.player": "Jugador",
+  "roster.role.captain": "Capitán",
+  "roster.role.vice_captain": "Subcapitán",
+  "roster.role.aria": "Rol de {name}",
+  "roster.role.confirmTitle": "Confirmar cambio de rol",
+  "roster.role.confirmDescription": "{name} pasará a tener el rol {role}.",
+  "roster.role.confirmAction": "Cambiar rol",
+  "roster.invite.trigger": "Invitar",
+  "roster.invite.title": "Crear invitación de plantilla",
+  "roster.invite.description":
+    "El enlace solo da acceso a este equipo y respeta el cupo y el estado actuales.",
+  "roster.invite.role": "Rol inicial",
+  "roster.invite.rolesRestricted": "Solo el capitán puede invitar con otro rol.",
+  "roster.invite.uses": "Usos",
+  "roster.invite.uses.single": "Un solo uso",
+  "roster.invite.uses.multi": "Varios usos",
+  "roster.invite.invitee": "Destinatario (ID de juego)",
+  "roster.invite.inviteePlaceholder": "Ej. davos282",
+  "roster.invite.inviteeHint":
+    "Opcional. La invitación aparecerá en las invitaciones del jugador que registró ese ID.",
+  "roster.invite.message": "Mensaje",
+  "roster.invite.messagePlaceholder": "Opcional. Un mensaje breve para el jugador invitado.",
+  "roster.invite.submit": "Crear invitación",
+  "roster.link.title": "Enlace creado",
+  "roster.link.description":
+    "Compártelo con el jugador. Lo acepta desde su cuenta de Futrob y entra en tu plantilla.",
+  "roster.link.copy": "Copiar enlace",
+  "roster.link.copied": "Copiado",
+  "roster.link.copiedStatus": "Enlace copiado",
+  "roster.club.trigger": "Asociar club",
+  "roster.club.title": "Buscar club EA",
+  "roster.club.description":
+    "Esta asociación solo sirve para localizar partidos. No verifica propiedad.",
+  "roster.club.nameAria": "Nombre del club EA",
+  "roster.club.placeholder": "Ej. Cuervos",
+  "roster.club.search": "Buscar",
+  "roster.club.searching": "Buscando…",
+  "roster.club.select": "Asociar",
+  "roster.club.searchFailed":
+    "No se pudieron buscar clubes. Revisa tu conexión e inténtalo de nuevo.",
+  "roster.club.hint": "Busca por nombre para elegir un club.",
+  "errors.teams.roster_full": "La plantilla ya alcanzó su cupo máximo.",
+  "errors.teams.roster_entry_inactive":
+    "Este equipo ya no está activo en la competición. No se pueden cambiar plantillas.",
+  "errors.teams.roster_competition_conflict":
+    "Ese jugador ya pertenece a otro equipo en esta competición.",
+  "errors.authorization.forbidden": "No tienes permiso para operar este equipo o esta competición.",
+  "errors.teams.roster_invitation_expired": "La invitación ya expiró. Crea un enlace nuevo.",
+  "errors.teams.client_network_error":
+    "No pudimos conectar con Futrob. Conservamos tu contexto para que puedas reintentar.",
+  "captain.entryClosed.title": "La inscripción no admite cambios",
+  "captain.entryClosed.description":
+    "La inscripción de tu equipo fue rechazada, así que la plantilla ya no se puede modificar.",
+  "captain.roster.column.platform": "Plataforma",
+  "captain.roster.platform.missing": "Sin identificador",
   "player.backToWorkspace": "Volver al espacio personal",
   "player.retry": "Reintentar",
   "player.partialData.description":
@@ -772,6 +1065,8 @@ export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
   readonly "common.seconds": { readonly seconds: number };
+  readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
+  readonly "organizations.profile.logo.alt": { readonly name: string };
   readonly "support.retryAfter": { readonly seconds: number };
   readonly "onboarding.shell.stepSummary": {
     readonly current: number;
@@ -800,6 +1095,12 @@ export interface MessageParamsByKey {
   readonly "player.home.updatedAgo": { readonly time: string };
   readonly "player.statistics.period.summary": { readonly from: string; readonly to: string };
   readonly "player.statistics.matchesCount": { readonly count: number };
+  readonly "captain.stats.spotsLeft": { readonly count: number };
+  readonly "roster.role.aria": { readonly name: string };
+  readonly "roster.role.confirmDescription": {
+    readonly name: string;
+    readonly role: string;
+  };
   readonly "player.statistics.record.hint": { readonly percent: string };
   readonly "player.statistics.assists.hint": { readonly average: string };
   readonly "player.statistics.goals.hint": { readonly average: string };
@@ -813,6 +1114,19 @@ export interface MessageParamsByKey {
   readonly "player.statistics.component.confidence": { readonly percent: number };
   readonly "player.statistics.component.weightedMatches": { readonly count: number };
   readonly "player.matches.results.count": { readonly count: number };
+  readonly "player.competitions.explore.count": { readonly count: number };
+  readonly "player.competitions.explore.card.teams": { readonly count: number };
+  readonly "player.competitions.explore.card.teamsOf": {
+    readonly count: number;
+    readonly max: number;
+  };
+  readonly "player.competitions.explore.card.organizer": { readonly name: string };
+  readonly "player.competitions.explore.card.teamsFull": { readonly count: number };
+  readonly "player.competitions.explore.card.startsOn": { readonly date: string };
+  readonly "player.competitions.explore.card.endsOn": { readonly date: string };
+  readonly "player.competitions.apply.status.pending.description": { readonly team: string };
+  readonly "player.competitions.apply.status.approved.description": { readonly team: string };
+  readonly "player.competitions.apply.status.rejected.description": { readonly team: string };
   readonly "player.matches.openMatchLabel": {
     readonly home: string;
     readonly homeGoals: number;
@@ -922,6 +1236,7 @@ const en: Catalog = {
   "shell.workspace.role.viceCaptain": "Vice captain",
   "shell.workspace.role.player": "Player",
   "shell.queue.label": "Pending",
+  "shell.nav.loading": "Loading navigation",
   "shell.queue.expand": "Expand to see pending items",
   "shell.queue.empty.title": "Nothing right now",
   "shell.queue.empty.description": "Confirmations, invitations, and disagreements show up here.",
@@ -965,6 +1280,63 @@ const en: Catalog = {
   "onboarding.organization.name.max": "The name must be 120 characters or fewer.",
   "onboarding.organization.name.conflict": "That name is already in use. Choose another one.",
   "onboarding.organization.review": "Review organization",
+  "organizations.create.title": "Create organization",
+  "organizations.create.description": "Create another space to manage competitions and teams.",
+  "organizations.create.name.label": "Organization name",
+  "organizations.create.name.placeholder": "e.g. Night League",
+  "organizations.create.name.description":
+    "This is your organization's public name. It must be unique.",
+  "organizations.create.name.required": "Enter the organization name.",
+  "organizations.create.name.max": "The name must be 120 characters or fewer.",
+  "organizations.create.name.conflict": "That name is already in use. Choose another one.",
+  "organizations.create.name.invalid": "The name isn't valid.",
+  "organizations.create.checkFailed": "We couldn't check the name. Try again.",
+  "organizations.create.failed": "We couldn't create the organization. Try again.",
+  "organizations.create.submit": "Create organization",
+  "organizations.create.submitting": "Creating…",
+  "organizations.create.logoFailed":
+    "We created the organization, but couldn't upload the logo. You can upload it from Settings.",
+  "organizations.create.logoRetry": "Retry upload",
+  "organizations.create.continue": "Continue without a logo",
+  "organizations.profile.slug.label": "Slug",
+  "organizations.profile.slug.description":
+    "Unique identifier for your organization: lowercase letters, numbers and hyphens.",
+  "organizations.profile.slug.invalid":
+    "Use 3 to 48 characters: lowercase letters, numbers and hyphens, no reserved words.",
+  "organizations.profile.slug.taken": "That slug is already in use.",
+  "organizations.profile.slug.checkFailed": "We couldn't check the slug. Try again.",
+  "organizations.profile.slug.useSuggestion": ({ slug }) => `Use "${slug}"`,
+  "organizations.profile.timeZone.label": "Time zone",
+  "organizations.profile.timeZone.placeholder": "Select a time zone",
+  "organizations.profile.timeZone.description":
+    "The starting zone for new competitions. It doesn't change existing ones.",
+  "organizations.profile.logo.label": "Logo",
+  "organizations.profile.logo.description":
+    "PNG, JPEG or WebP up to 2 MB. Without a logo a monogram is shown.",
+  "organizations.profile.logo.upload": "Upload logo",
+  "organizations.profile.logo.change": "Change logo",
+  "organizations.profile.logo.remove": "Remove logo",
+  "organizations.profile.logo.invalidType": "Use a PNG, JPEG or WebP image.",
+  "organizations.profile.logo.tooLarge": "The image is larger than 2 MB.",
+  "organizations.profile.logo.alt": ({ name }) => `${name} logo`,
+  "organizations.settings.title": "Organization settings",
+  "organizations.settings.description": "Name, slug, time zone and logo of your organization.",
+  "organizations.settings.loading": "Loading profile…",
+  "organizations.settings.save": "Save changes",
+  "organizations.settings.saving": "Saving…",
+  "organizations.settings.saved": "Changes saved.",
+  "organizations.settings.readOnly": "Only organizers can change these details.",
+  "organizations.settings.loadFailed": "We couldn't load the organization profile.",
+  "organizations.settings.saveFailed": "We couldn't save your changes. Try again.",
+  "organizations.settings.logoFailed":
+    "We saved your changes, but couldn't upload the logo. Try again.",
+  "errors.organizations.slug_conflict": "That slug is already in use. Choose another one.",
+  "errors.organizations.invalid_slug":
+    "The slug isn't valid. Use lowercase letters, numbers and hyphens.",
+  "errors.organizations.invalid_time_zone": "The time zone isn't valid.",
+  "errors.organizations.invalid_logo": "The logo isn't valid.",
+  "errors.organizations.creation_key_conflict":
+    "We couldn't reuse the previous request. Check the details and try again.",
   "onboarding.competition.title": "Set up your first competition",
   "onboarding.competition.description":
     "Create an FC Clubs draft. You'll set up teams, the schedule, and publishing later.",
@@ -1174,6 +1546,7 @@ const en: Catalog = {
   "player.home.competitions.emptySubtitle": "You will see the tournaments your team joins here.",
   "player.home.competitions.onboardingTitle": "Your team is not in a competition yet",
   "player.home.competitions.onboardingSubtitle": "Browse tournaments and step into competition.",
+  "player.home.competitions.status.registration": "Registration open",
   "player.home.competitions.status.published": "In progress",
   "player.home.competitions.status.draft": "Registered",
   "player.home.competitions.status.paused": "Paused",
@@ -1192,6 +1565,91 @@ const en: Catalog = {
   "player.competitions.empty.subtitle":
     "Browse available tournaments and share the ones you care about with your club captain.",
   "player.competitions.empty.otherClub": "Looking for another club?",
+  "player.competitions.explore.title": "Explore competitions",
+  "player.competitions.explore.description":
+    "Discover tournaments to follow and share with your club.",
+  "player.competitions.explore.breadcrumb.competitions": "Competitions",
+  "player.competitions.explore.breadcrumb.explore": "Explore",
+  "player.competitions.explore.search.label": "Search by name",
+  "player.competitions.explore.search.placeholder": "Competition name",
+  "player.competitions.explore.status.label": "Status",
+  "player.competitions.explore.status.all": "All statuses",
+  "player.competitions.explore.status.registration": "Registration open",
+  "player.competitions.explore.status.published": "In progress",
+  "player.competitions.explore.status.paused": "Paused",
+  "player.competitions.explore.status.finished": "Finished",
+  "player.competitions.explore.format.label": "Format",
+  "player.competitions.explore.format.all": "All formats",
+  "player.competitions.explore.region.label": "Region",
+  "player.competitions.explore.region.all": "All regions",
+  "player.competitions.explore.platform.label": "Platform",
+  "player.competitions.explore.platform.all": "All platforms",
+  "player.competitions.explore.sort.label": "Sort",
+  "player.competitions.explore.sort.updated-desc": "Most recent",
+  "player.competitions.explore.sort.name-asc": "Name A-Z",
+  "player.competitions.explore.count": ({ count }) =>
+    count === 1 ? "1 competition" : `${count} competitions`,
+  "player.competitions.explore.loading": "Loading competitions…",
+  "player.competitions.explore.error":
+    "We could not load competitions. Check your connection and try again.",
+  "player.competitions.explore.retry": "Try again",
+  "player.competitions.explore.empty.filtered.title": "We could not find competitions",
+  "player.competitions.explore.empty.filtered.subtitle":
+    "Try a different name or widen the search filters",
+  "player.competitions.explore.empty.filtered.cta": "Clear search and filters",
+  "player.competitions.explore.empty.none.title": "There are no published competitions yet",
+  "player.competitions.explore.empty.none.subtitle":
+    "When an organizer publishes a tournament, it will appear here so you can view and share it.",
+  "player.competitions.explore.card.view": "View competition",
+  "player.competitions.explore.card.share": "Share competition",
+  "player.competitions.explore.card.shareCopied": "Link copied",
+  "player.competitions.explore.card.manage": "Manage",
+  "player.competitions.explore.card.participating": "Your team is in",
+  "player.competitions.explore.card.organizer": ({ name }) => `Organized by ${name}`,
+  "player.competitions.explore.card.startsOn": ({ date }) => `Start: ${date}`,
+  "player.competitions.explore.card.endsOn": ({ date }) => `End: ${date}`,
+  "player.competitions.explore.card.teamsOf": ({ count, max }) => `${count} of ${max} teams`,
+  "player.competitions.explore.card.teamsFull": ({ count }) => `Full (${count} teams)`,
+  "player.competitions.explore.card.teams": ({ count }) =>
+    count === 1 ? "1 team" : `${count} teams`,
+  "player.competitions.explore.more": "Show more",
+  "player.competitions.detail.loading": "Loading competition…",
+  "player.competitions.detail.error":
+    "We could not load this competition. Check your connection and try again.",
+  "player.competitions.detail.notFound.title": "Competition unavailable",
+  "player.competitions.detail.notFound.subtitle":
+    "This competition is not published or can no longer be viewed.",
+  "player.competitions.detail.notFound.cta": "Back to explore",
+  "player.competitions.detail.meta.format": "Format",
+  "player.competitions.detail.meta.region": "Region",
+  "player.competitions.detail.meta.platform": "Platform",
+  "player.competitions.detail.meta.edition": "Edition",
+  "player.competitions.detail.meta.timeZone": "Time zone",
+  "player.competitions.detail.meta.organizer": "Organizer",
+  "player.competitions.detail.meta.teams": "Registered teams",
+  "player.competitions.detail.meta.startsOn": "Dates",
+  "player.competitions.detail.share": "Share",
+  "player.competitions.detail.shareCopied": "Link copied",
+  "player.competitions.detail.manage": "Manage",
+  "player.competitions.apply.title": "Register your team",
+  "player.competitions.apply.description":
+    "Create your team for this competition. You'll be its captain, and the organizer will review the request.",
+  "player.competitions.apply.teamName": "Team name",
+  "player.competitions.apply.submit": "Send request",
+  "player.competitions.apply.submitting": "Sending…",
+  "player.competitions.apply.error": "The request couldn't be sent. Try again.",
+  "player.competitions.apply.error.closed": "Registration for this competition has closed.",
+  "player.competitions.apply.error.conflict": "You're already on a team in this competition.",
+  "player.competitions.apply.status.pending.title": "Request sent",
+  "player.competitions.apply.status.pending.description": ({ team }) =>
+    `${team} is waiting for the organizer's review.`,
+  "player.competitions.apply.status.approved.title": "Team registered",
+  "player.competitions.apply.status.approved.description": ({ team }) =>
+    `${team} is taking part in this competition.`,
+  "player.competitions.apply.status.approved.cta": "Go to competition",
+  "player.competitions.apply.status.rejected.title": "Request declined",
+  "player.competitions.apply.status.rejected.description": ({ team }) =>
+    `The organizer didn't approve ${team}.`,
   "player.invitations.title": "Invitations",
   "player.invitations.description":
     "Review the invitations you have received and choose where to take part.",
@@ -1541,6 +1999,149 @@ const en: Catalog = {
   "player.gameData.statistics.subtitle":
     "Your rating, attributes and recent EA Clubs match performance.",
   "player.gameData.statistics.cta": "View my statistics",
+  "player.gameData.invitations.title": "My invitations",
+  "player.gameData.invitations.subtitle":
+    "Club and competition invitations waiting for your reply.",
+  "player.gameData.invitations.cta": "View my invitations",
+  "pages.organization.teams.title": "Teams",
+  "pages.organization.teams.subtitle": "Teams registered in your organization's competitions.",
+  "pages.organization.players.title": "Players",
+  "pages.organization.players.subtitle": "Who plays on each roster in your organization.",
+  "pages.organization.invitations.title": "Invitations",
+  "pages.organization.invitations.subtitle":
+    "Invitations sent to your organization's staff and members, with their status.",
+  "pages.organization.members.title": "Members and roles",
+  "pages.organization.members.subtitle":
+    "Who belongs to your organization and what each person can do.",
+  "pages.organization.settings.title": "Settings",
+  "pages.organization.settings.subtitle": "Your organization's name and preferences.",
+  "pages.competition.fixture.title": "Schedule",
+  "pages.competition.fixture.subtitle": "Rounds and dates for each encounter.",
+  "pages.competition.encounters.title": "Encounters",
+  "pages.competition.encounters.subtitle": "Status and result of each meeting between two teams.",
+  "pages.competition.standings.title": "Standings",
+  "pages.competition.standings.subtitle": "Official table, built only from approved results.",
+  "pages.competition.bracket.title": "Bracket",
+  "pages.competition.bracket.subtitle": "Knockout draw, from the first round to the final.",
+  "pages.competition.rankings.title": "Rankings",
+  "pages.competition.rankings.subtitle": "Top players and teams by official statistics.",
+  "pages.competition.disputes.title": "Disputes",
+  "pages.competition.disputes.subtitle":
+    "Disagreements over matches or results waiting for your decision.",
+  "pages.competition.analytics.title": "Analytics",
+  "pages.competition.analytics.subtitle": "Participation and activity in the competition.",
+  "pages.competition.rules.title": "Rules",
+  "pages.competition.rules.subtitle": "Format, tiebreakers, and rescheduling rules in effect.",
+  "pages.competitionPlayer.matches.title": "Matches",
+  "pages.competitionPlayer.matches.subtitle":
+    "Your matches in this competition: upcoming and played.",
+  "pages.competitionPlayer.stats.title": "Statistics",
+  "pages.competitionPlayer.stats.subtitle": "Your official statistics in this competition.",
+  "pages.competitionPlayer.team.title": "My team",
+  "pages.competitionPlayer.team.subtitle":
+    "Your team in this competition: roster, EA club, and upcoming encounters.",
+  "pages.captain.roster.title": "Roster",
+  "pages.captain.roster.subtitle":
+    "See who is on your team, assign roles, and decide whether it accepts new players.",
+  "pages.captain.invitations.title": "Team invitations",
+  "pages.captain.invitations.subtitle": "Create links so other players can join your roster.",
+  "captain.loading": "Loading your team…",
+  "captain.noTeam.title": "You have no team in this competition",
+  "captain.noTeam.description": "Once you join a roster, you can manage your team here.",
+  "captain.noTeam.action": "Review my invitations",
+  "captain.forbidden.title": "You don't have access to this page",
+  "captain.forbidden.roster": "Only the captain and vice-captain can manage the roster.",
+  "captain.forbidden.invitations": "Only the captain and vice-captain can invite players.",
+  "captain.forbidden.action": "Go to My team",
+  "captain.unavailable.title": "Unable to check your access",
+  "captain.unavailable.description": "Check your connection and try again.",
+  "captain.stats.spots": "Spots",
+  "captain.stats.spotsFull": "Roster full",
+  "captain.stats.spotsLeft": (params) =>
+    count(params) === 1 ? "1 spot left" : `${count(params)} spots left`,
+  "captain.stats.state": "Status",
+  "captain.stats.open": "Open",
+  "captain.stats.closed": "Closed",
+  "captain.stats.openHint": "Accepts players by invitation",
+  "captain.stats.closedHint": "Not accepting new players",
+  "captain.stats.club": "EA club",
+  "captain.stats.noClub": "No EA club",
+  "captain.stats.noClubHint": "Needed to look up matches",
+  "captain.roster.players": "Players",
+  "captain.roster.column.player": "Player",
+  "captain.roster.column.role": "Role",
+  "captain.roster.open": "Open roster",
+  "captain.roster.openDescription":
+    "The roster will accept players by invitation again while it has spots.",
+  "captain.roster.close": "Close roster",
+  "captain.roster.closeDescription":
+    "Invitation links will stop accepting players while the roster is closed.",
+  "captain.roster.invite": "Invite player",
+  "captain.roster.alone.title": "You're the only one on the roster",
+  "captain.roster.alone.description": "Use Invite player to complete your team.",
+  "captain.invitations.closed.title": "The roster is closed",
+  "captain.invitations.closed.description": "Links won't accept players until you open the roster.",
+  "captain.invitations.closed.action": "Go to roster",
+  "captain.invitations.full.title": "The roster is full",
+  "captain.invitations.full.description": "Links won't accept players until a spot opens up.",
+  "captain.invitations.empty.title": "Create an invitation link",
+  "captain.invitations.empty.description":
+    "Use Invite to generate a link and share it with the player. Once they accept, they join your roster.",
+  "common.cancel": "Cancel",
+  "roster.role.player": "Player",
+  "roster.role.captain": "Captain",
+  "roster.role.vice_captain": "Vice-captain",
+  "roster.role.aria": "Role of {name}",
+  "roster.role.confirmTitle": "Confirm role change",
+  "roster.role.confirmDescription": "{name} will become {role}.",
+  "roster.role.confirmAction": "Change role",
+  "roster.invite.trigger": "Invite",
+  "roster.invite.title": "Create roster invitation",
+  "roster.invite.description":
+    "The link only gives access to this team and respects its current spots and status.",
+  "roster.invite.role": "Starting role",
+  "roster.invite.rolesRestricted": "Only the captain can invite with another role.",
+  "roster.invite.uses": "Uses",
+  "roster.invite.uses.single": "Single use",
+  "roster.invite.uses.multi": "Multiple uses",
+  "roster.invite.invitee": "Recipient (game ID)",
+  "roster.invite.inviteePlaceholder": "E.g. davos282",
+  "roster.invite.inviteeHint":
+    "Optional. The invitation will show up in the invitations of the player who registered that ID.",
+  "roster.invite.message": "Message",
+  "roster.invite.messagePlaceholder": "Optional. A short message for the invited player.",
+  "roster.invite.submit": "Create invitation",
+  "roster.link.title": "Link created",
+  "roster.link.description":
+    "Share it with the player. They accept it from their Futrob account and join your roster.",
+  "roster.link.copy": "Copy link",
+  "roster.link.copied": "Copied",
+  "roster.link.copiedStatus": "Link copied",
+  "roster.club.trigger": "Associate club",
+  "roster.club.title": "Search for an EA club",
+  "roster.club.description":
+    "This association only helps locate matches. It does not verify ownership.",
+  "roster.club.nameAria": "EA club name",
+  "roster.club.placeholder": "E.g. Cuervos",
+  "roster.club.search": "Search",
+  "roster.club.searching": "Searching…",
+  "roster.club.select": "Associate",
+  "roster.club.searchFailed": "Unable to search clubs. Check your connection and try again.",
+  "roster.club.hint": "Search by name to pick a club.",
+  "errors.teams.roster_full": "The roster has reached its maximum size.",
+  "errors.teams.roster_entry_inactive":
+    "This team is no longer active in the competition. Rosters can't be changed.",
+  "errors.teams.roster_competition_conflict":
+    "That player already belongs to another team in this competition.",
+  "errors.authorization.forbidden": "You don't have permission to manage this team or competition.",
+  "errors.teams.roster_invitation_expired": "The invitation has expired. Create a new link.",
+  "errors.teams.client_network_error":
+    "Unable to reach Futrob. Your context is kept so you can try again.",
+  "captain.entryClosed.title": "This entry can't be changed",
+  "captain.entryClosed.description":
+    "Your team's entry was rejected, so the roster can no longer be modified.",
+  "captain.roster.column.platform": "Platform",
+  "captain.roster.platform.missing": "No identifier",
   "player.backToWorkspace": "Back to personal workspace",
   "player.retry": "Try again",
   "player.partialData.description": "Some metrics were unavailable in one or more matches.",

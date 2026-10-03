@@ -9,7 +9,12 @@ import {
   listMyMembershipsResponseSchema,
   organizationNameAvailabilityRequestSchema,
   organizationNameAvailabilityResponseSchema,
+  organizationProfileSchema,
+  organizationSlugAvailabilityRequestSchema,
+  organizationSlugAvailabilityResponseSchema,
   resolvePostAuthDestinationResponseSchema,
+  setOrganizationLogoRequestSchema,
+  updateOrganizationProfileRequestSchema,
   type AcceptInvitationRequest,
   type AcceptInvitationResponse,
   type CreateCompetitionInvitationRequest,
@@ -20,7 +25,12 @@ import {
   type ListMyMembershipsResponse,
   type OrganizationNameAvailabilityRequest,
   type OrganizationNameAvailabilityResponse,
+  type OrganizationProfileDto,
+  type OrganizationSlugAvailabilityRequest,
+  type OrganizationSlugAvailabilityResponse,
   type ResolvePostAuthDestinationResponse,
+  type SetOrganizationLogoRequest,
+  type UpdateOrganizationProfileRequest,
 } from "@futrob/api-contracts";
 import type { HttpClient, RequestOptions } from "../http.ts";
 import { apiPath } from "../internal/path.ts";
@@ -72,6 +82,62 @@ export function createOrganizationsResource(http: HttpClient) {
         body,
         options,
         parse: (data) => organizationNameAvailabilityResponseSchema.parse(data),
+      });
+    },
+
+    async checkSlugAvailability(
+      input: OrganizationSlugAvailabilityRequest,
+      options: RequestOptions = {},
+    ): Promise<OrganizationSlugAvailabilityResponse> {
+      const body = organizationSlugAvailabilityRequestSchema.parse(input);
+      return http.request({
+        path: "/organizations/slug-availability",
+        method: "POST",
+        body,
+        options,
+        parse: (data) => organizationSlugAvailabilityResponseSchema.parse(data),
+      });
+    },
+
+    async get(
+      organizationId: string,
+      options: RequestOptions = {},
+    ): Promise<OrganizationProfileDto> {
+      return http.request({
+        path: apiPath("organizations", organizationId),
+        method: "GET",
+        options,
+        parse: (data) => organizationProfileSchema.parse(data),
+      });
+    },
+
+    async updateProfile(
+      organizationId: string,
+      input: UpdateOrganizationProfileRequest,
+      options: RequestOptions = {},
+    ): Promise<OrganizationProfileDto> {
+      const body = updateOrganizationProfileRequestSchema.parse(input);
+      return http.request({
+        path: apiPath("organizations", organizationId),
+        method: "PATCH",
+        body,
+        options,
+        parse: (data) => organizationProfileSchema.parse(data),
+      });
+    },
+
+    async setLogo(
+      organizationId: string,
+      input: SetOrganizationLogoRequest,
+      options: RequestOptions = {},
+    ): Promise<OrganizationProfileDto> {
+      const body = setOrganizationLogoRequestSchema.parse(input);
+      return http.request({
+        path: apiPath("organizations", organizationId, "logo"),
+        method: "PUT",
+        body,
+        options,
+        parse: (data) => organizationProfileSchema.parse(data),
       });
     },
 

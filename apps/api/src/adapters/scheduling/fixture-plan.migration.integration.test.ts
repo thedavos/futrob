@@ -3,6 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { Pool, type PoolClient } from "pg";
+import { seedActors } from "@/testing/seed-actors.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = describe.skipIf(!databaseUrl);
@@ -73,6 +74,7 @@ async function insertCompetition(
   organizationId: string,
   competitionId: string,
 ): Promise<void> {
+  await seedActors(client, "organizer");
   await client.query(
     `INSERT INTO organizations (
        id, name, normalized_name, created_at, created_by_actor_id

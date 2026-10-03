@@ -23,6 +23,9 @@ describe("context discovery SDK resources", () => {
                 region: "south-america",
                 timeZone: "America/Lima",
                 format: "league",
+                teams: { min: 2, max: null },
+                schedule: { startsOn: null, endsOn: null },
+                cover: { kind: "preset", preset: "cup" },
                 createdAt: "2026-08-07T12:00:00.000Z",
                 updatedAt: "2026-08-07T12:00:00.000Z",
               },
@@ -37,6 +40,136 @@ describe("context discovery SDK resources", () => {
 
     expect(result.competitions[0]?.role).toBe("vice_captain");
     expect(requestedUrl).toBe("https://app.example.com/api/v1/competitions/mine");
+  });
+
+  it("explores published competitions with typed filters", async () => {
+    let requestedUrl = "";
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input) => {
+        requestedUrl = requestUrl(input);
+        return Response.json({
+          items: [
+            {
+              competition: {
+                id: "competition-1",
+                organizationId: "org-1",
+                name: "Liga Norte",
+                status: "published",
+                modality: "fc-clubs",
+                gameEdition: "FC 26",
+                platform: "pc",
+                region: "south-america",
+                timeZone: "America/Lima",
+                format: "league",
+                teams: { min: 2, max: null },
+                schedule: { startsOn: null, endsOn: null },
+                cover: { kind: "preset", preset: "cup" },
+                createdAt: "2026-08-07T12:00:00.000Z",
+                updatedAt: "2026-08-07T12:00:00.000Z",
+              },
+              organization: { id: "org-1", name: "Liga Andina" },
+              approvedTeamCount: 4,
+            },
+          ],
+          total: 1,
+          nextCursor: null,
+        });
+      }),
+    });
+
+    const result = await client.competitions.explore({
+      q: "Norte",
+      format: "league",
+      status: "published",
+    });
+
+    expect(result.items[0]?.organization.name).toBe("Liga Andina");
+    expect(result.items[0]?.approvedTeamCount).toBe(4);
+    expect(requestedUrl).toBe(
+      "https://app.example.com/api/v1/competitions/explore?q=Norte&format=league&status=published&sort=updated-desc&limit=24",
+    );
+  });
+
+  it("loads one discoverable competition", async () => {
+    let requestedUrl = "";
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input) => {
+        requestedUrl = requestUrl(input);
+        return Response.json({
+          competition: {
+            id: "competition-1",
+            organizationId: "org-1",
+            name: "Liga Norte",
+            status: "published",
+            modality: "fc-clubs",
+            gameEdition: "FC 26",
+            platform: "pc",
+            region: "south-america",
+            timeZone: "America/Lima",
+            format: "league",
+            teams: { min: 2, max: null },
+            schedule: { startsOn: null, endsOn: null },
+            cover: { kind: "preset", preset: "cup" },
+            createdAt: "2026-08-07T12:00:00.000Z",
+            updatedAt: "2026-08-07T12:00:00.000Z",
+          },
+          organization: { id: "org-1", name: "Liga Andina" },
+          approvedTeamCount: 4,
+        });
+      }),
+    });
+
+    const result = await client.competitions.getExplore("competition-1");
+
+    expect(result.competition.name).toBe("Liga Norte");
+    expect(requestedUrl).toBe("https://app.example.com/api/v1/competitions/explore/competition-1");
+  });
+
+  it("applies to a competition and reads the actor's application", async () => {
+    const calls: { url: string; method: string; body: unknown }[] = [];
+    const application = {
+      entryId: "entry-1",
+      status: "pending",
+      teamId: "team-1",
+      teamName: "Los Postulantes",
+      createdAt: "2026-09-27T12:00:00.000Z",
+    };
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        calls.push({
+          url: requestUrl(input),
+          method: init?.method ?? "GET",
+          body: init?.body ? parseMockJsonBody(init) : null,
+        });
+        return init?.method === "POST"
+          ? Response.json(application, { status: 201 })
+          : Response.json({ application });
+      }),
+    });
+
+    const applied = await client.competitions.apply("competition-1", {
+      teamName: "Los Postulantes",
+      creationKey: "apply-key-0001",
+    });
+    const mine = await client.competitions.getMyApplication("competition-1");
+
+    expect(applied.status).toBe("pending");
+    expect(mine.application?.teamName).toBe("Los Postulantes");
+    expect(calls).toEqual([
+      {
+        url: "https://app.example.com/api/v1/competitions/explore/competition-1/application",
+        method: "POST",
+        body: { teamName: "Los Postulantes", creationKey: "apply-key-0001" },
+      },
+      {
+        url: "https://app.example.com/api/v1/competitions/explore/competition-1/application",
+        method: "GET",
+        body: null,
+      },
+    ]);
   });
 
   it("loads the persisted encounter scheduling snapshot", async () => {

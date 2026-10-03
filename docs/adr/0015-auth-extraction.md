@@ -2,9 +2,20 @@
 
 - Estado: Aceptada
 - Fecha: 2026-08-22
-- Actualizada: 2026-09-22
+- Actualizada: 2026-09-29
 - Reemplaza: [ADR-0003](/docs/adr/0003-better-auth-and-d1-ownership.md)
+- Reemplazada parcialmente por: [ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)
 - Índice: [Registro de decisiones](/docs/adr/README.md)
+
+## Vigencia tras ADR-0021
+
+[ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md) reemplaza **solo el
+almacenamiento**: D1 se retira y sus tablas pasan al Postgres de producto. En los puntos
+3, 5, 6 y 7 abajo, donde dice D1 rige ADR-0021 (web ya no consulta `identity_subjects`,
+la historia de migraciones es `apps/api/migrations`, no hay schema Drizzle duplicado y el
+rate limit de Better Auth persiste en Postgres). Siguen vigentes: `apps/auth` como
+autoridad de credenciales y sesiones, Actor/IdentitySubject, el proxy por `AUTH_SERVICE`,
+Bearer para Expo y `CF-Connecting-IP`. El resto del documento conserva la redacción original.
 
 ## Contexto
 

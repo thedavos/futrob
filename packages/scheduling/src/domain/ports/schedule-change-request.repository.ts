@@ -10,5 +10,9 @@ export interface ScheduleChangeRequestRepository {
     organizationId: OrganizationId,
     encounterId: EncounterId,
   ): Promise<readonly ScheduleChangeRequest[]>;
+  listByEncounter(
+    organizationId: OrganizationId,
+    encounterId: EncounterId,
+  ): Promise<readonly ScheduleChangeRequest[]>;
   save(request: ScheduleChangeRequest): Promise<ScheduleChangeRequest>;
 }

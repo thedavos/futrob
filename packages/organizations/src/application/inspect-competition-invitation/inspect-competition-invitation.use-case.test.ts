@@ -24,6 +24,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
     const invitedActor = harness.actor("invited-player");
 
     const organization = await createOrganization.execute({
+      timeZone: "UTC",
       name: "Liga Nocturna",
       actorId: organizer,
     });
@@ -69,6 +70,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
       const harness = createOrgTestHarness();
       const organizer = harness.actor("organizer");
       const organization = await new CreateOrganizationUseCase(harness).execute({
+        timeZone: "UTC",
         name: "Liga",
         actorId: organizer,
       });
@@ -104,6 +106,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
     const harness = createOrgTestHarness();
     const organizer = harness.actor("organizer");
     const organization = await new CreateOrganizationUseCase(harness).execute({
+      timeZone: "UTC",
       name: "Liga",
       actorId: organizer,
     });
@@ -142,6 +145,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
 
     const organizer = harness.actor("organizer");
     const organization = await new CreateOrganizationUseCase(harness).execute({
+      timeZone: "UTC",
       name: "Liga",
       actorId: organizer,
     });
@@ -168,6 +172,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
     const harness = createOrgTestHarness();
     const organizer = harness.actor("organizer");
     const organization = await new CreateOrganizationUseCase(harness).execute({
+      timeZone: "UTC",
       name: "Liga",
       actorId: organizer,
     });
@@ -196,6 +201,7 @@ describe("InspectCompetitionInvitationUseCase", () => {
     const harness = createOrgTestHarness();
     const organizer = harness.actor("organizer");
     const organization = await new CreateOrganizationUseCase(harness).execute({
+      timeZone: "UTC",
       name: "Liga",
       actorId: organizer,
     });

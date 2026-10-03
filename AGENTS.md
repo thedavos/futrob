@@ -8,7 +8,7 @@ Build Futrob MVP (FC Clubs) per `product/`. Architecture: hexagonal bounded-cont
 
 1. `product/prd.md`, requirements, glossary, open-decisions
 2. `docs/architecture/overview.md`, module-boundaries, dependency-graph, ADRs
-3. `.cursor/skills/futrob-hexagonal-module/SKILL.md`
+3. `.agents/skills/futrob-hexagonal-module/SKILL.md`
 
 ## Preferred skills (by phase)
 
@@ -31,7 +31,7 @@ See `.cursor/rules/agent-skills.mdc` for the full table and Cloud Agent availabi
 | gsap                              | Landing / bracket motion (presentation only)     |
 | tanstack-start / query            | Routes, SSR, client `/api/v1` state (ADR-0012)   |
 | web-perf / seo                    | Portal budgets; crawlable published content only |
-| wrangler / workers-best-practices | D1, R2, Queues, Cron, Workers runtime            |
+| wrangler / workers-best-practices | Hyperdrive, R2, Queues, Cron, Workers runtime    |
 | sentry-instrument                 | Execution boundaries                             |
 | typescript-best-practices         | Contracts and typed boundaries                   |
 
@@ -45,7 +45,7 @@ contract, including Grafito + Lima for both theme selectors and the canonical st
 
 - Deployable Must: `apps/web` (TanStack Start → Cloudflare Workers)
 - Deployable de API de producto: `apps/api` (Hono/Node en Railway; consume `@futrob/<bc>`, dueño de Postgres `DATABASE_URL` y egress Node a EA)
-- Deployable de auth: `apps/auth` (Worker Cloudflare; Better Auth standalone, dueño del schema D1 de auth — ver ADR-0015)
+- Deployable de auth: `apps/auth` (Worker Cloudflare; Better Auth standalone; dueño de las tablas de auth y actores en el Postgres de producto vía Hyperdrive — ver ADR-0015 y ADR-0021)
 - CLI local: `apps/cli` — playground (no deployable de producto); ver `/apps/cli/README.md`
 - Móvil: `apps/mobile` — React Native + Expo (Expo Router); consume `/api/v1` vía `@futrob/sdk`; primitivas RN en `apps/mobile/src/ui/`; tokens compartidos en `packages/ui-tokens`
 - Business logic: `packages/<bc>/` (`@futrob/game-data`, `@futrob/results`, …) — domain + application + ports
@@ -59,7 +59,7 @@ MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**
 
 ## Rules
 
-- Domain/application en `@futrob/<bc>`; adapters (D1/R2/Queues/EA) solo en apps.
+- Domain/application en `@futrob/<bc>`; adapters (Postgres/R2/Queues/EA) solo en apps.
 - `packages/<bc>/src/index.ts` public API only; never export adapters.
 - Antes de crear un port genérico, buscar contratos equivalentes. Ports transversales y
   agnósticos de dominio con la misma semántica se definen una sola vez en
@@ -76,7 +76,7 @@ MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**
 - EA egress lives only in `apps/api/src/adapters/game-data/ea-clubs/` (see
   [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)); web reaches EA data through the product API.
 - Official stats only after `results.official-result-approved`.
-- Organization-scoped product queries in Postgres adapters; D1 owns auth/actors and BFF rate limits. Tenancy is enforced in application code, without relying on Postgres RLS. No Supabase / Vercel as Must.
+- Organization-scoped product queries in Postgres adapters. Auth, actors and BFF rate limits live in the same Postgres ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); `apps/api/migrations` is the only schema history and every stored `ActorId` has a foreign key to `actors`. Tenancy is enforced in application code, without relying on Postgres RLS. No Supabase / Vercel as Must.
 - **Expected failures:** domain/application/adapter errors use `TaggedError` from
   `@futrob/shared-kernel` (stable `code` for wire/i18n; see
   [ADR-0011](/docs/adr/0011-tagged-errors.md)). Zod/`api.*`/auth wire and `Panic`
@@ -95,6 +95,7 @@ vp install          # preferred (or npm ci)
 npm run check       # vp check — fmt + lint + type-aware
 npm run test        # vp test
 npm run typecheck   # tsc across workspaces
+npm run migrate -w @futrob/api   # apply pending apps/api/migrations to DATABASE_URL
 npm run dev         # web + api + auth (parallel)
 npm run web         # web only
 npm run api         # api only
@@ -112,13 +113,13 @@ Standard commands live in the `## Commands` section above and in `README.md` / `
 
 - **Node 24 is required** (`engines.node >=24`). `.cursor/cloud-install.sh` bootstraps nvm if it is missing, installs/selects Node 24, and **exits** if `node --version` is still below 24 (the Cloud image may also expose Node 22 at `/exec-daemon/node`). New shells source `~/.bashrc` for nvm's Node 24; if `node --version` ever shows 22, run `source ~/.bashrc`.
 - **`vp` is not installed globally.** Run tooling through the root `npm run` scripts (`dev`, `check`, `test`, `build`, `web`, `api`); npm puts `node_modules/.bin/vp` on `PATH` for them. For a direct call use `./node_modules/.bin/vp`, never `npx vp`.
-- **Local env files are gitignored and must exist to run the app**: `apps/web/.dev.vars`, `apps/auth/.dev.vars`, and `apps/api/.env`. Web and API `INTERNAL_JOB_SECRET` values **must match**, or the web BFF → API org/onboarding calls fail with 401. Web and auth `BETTER_AUTH_SECRET` values **must match**, or login 200s and BFF/SSR stay unauthenticated. Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` in `apps/web/.dev.vars`. Auth uses the `AUTH_SERVICE` service binding in production and local development. The Cloud install script copies the examples and aligns the secrets.
-- **D1 (auth) local state** lives at `apps/web/.wrangler/state` (shared by the `vp dev` Cloudflare plugin and `apps/auth` via `--persist-to`). `apps/auth/migrations` is the single migration history for this shared D1, including web-owned tables. If the state is reset, run `cd apps/auth && npx wrangler d1 migrations apply futrob-app --local --persist-to ../web/.wrangler/state`. Without that `--persist-to`, Wrangler migrates an unused `apps/auth/.wrangler/state`.
+- **Local env files are gitignored and must exist to run the app**: `apps/web/.dev.vars`, `apps/auth/.dev.vars`, `apps/api/.env`, and `apps/auth/.env` + `apps/web/.env` (Hyperdrive target, below). Web and API `INTERNAL_JOB_SECRET` values **must match**, or the web BFF → API org/onboarding calls fail with 401. Web and auth `BETTER_AUTH_SECRET` values **must match**, or login 200s and BFF/SSR stay unauthenticated. Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` in `apps/web/.dev.vars`. Auth uses the `AUTH_SERVICE` service binding in production and local development. The Cloud install script copies the examples and aligns the secrets.
+- **Auth data lives in the product Postgres** (ADR-0021), reached from the Workers through Hyperdrive. `wrangler dev` and the `vp dev` Cloudflare plugin need a local target: put `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=<same value as apps/api DATABASE_URL>` in `apps/auth/.env` and `apps/web/.env` (both gitignored; `.dev.vars` is not read for this). Apply the single migration history with `npm run migrate -w @futrob/api` (it records applied files in `schema_migrations`; a database that already has the schema but no ledger needs `-- --baseline <N>` once). Web has no auth schema: `get-session` from `apps/auth` already returns `actorId`.
 - **Auth serving**: `/api/auth/*` is served by the `apps/auth` worker; web reaches it only through the `AUTH_SERVICE` service binding (browser proxy and BFF/SSR `get-session`). `npm run dev` starts auth on `:8788`, and Wrangler connects the separately running local Workers by service name.
-- **Postgres is optional locally.** Without `DATABASE_URL`, `apps/api` uses process-local in-memory stores (`/api/v1/meta/health` reports `db: "skipped"`). Consequence: organizations/onboarding data is lost whenever the API restarts — and `apps/api` runs under `tsx watch`, so editing API files hot-restarts it and wipes those in-memory orgs. Set `DATABASE_URL` + apply `apps/api/migrations/*.sql` for durable data.
+- **Postgres is required to sign in.** Auth, actors and BFF rate limits need `DATABASE_URL` (Neon in development, Railway in production) with every migration applied. `apps/api` alone still runs without it on process-local in-memory stores (`/api/v1/meta/health` reports `db: "skipped"`), which are lost whenever the API restarts — `apps/api` runs under `tsx watch`, so editing API files hot-restarts it. Because every `ActorId` column references `actors`, a durable API only accepts actors that `apps/auth` has provisioned (sign up first; `INITIAL_SUPERUSER_ACTOR_ID` must be an existing actor or the bootstrap is skipped with a warning).
 - **Native install scripts**: only `esbuild`, `sharp`, and `workerd` are allowlisted (by name) in `package.json` `allowScripts` so they can fetch platform binaries. Cloud `npm ci` uses `--strict-allow-scripts` so any other lifecycle script fails the install instead of being skipped. Do not use `dangerously-allow-all-scripts`.
 - **Ports**: web `http://localhost:3000`, api `http://localhost:8787` (`/api/v1`), auth `http://localhost:8788` (`/api/auth/*`). `npm run dev` runs all three.
-- **Skills**: only `.cursor/skills/` in this repo is guaranteed on Cloud Agents. Preferred user/plugin skills are listed in `.cursor/rules/agent-skills.mdc`; follow the matching rules when those skill files are not in the checkout.
+- **Skills**: canonical skills live in `.agents/skills/` (read natively by Codex and Cursor); `.claude/skills` is a symlink to it for Claude Code. If Cloud Agents do not pick them up, add a `.cursor/skills` symlink too. Preferred user/plugin skills are listed in `.cursor/rules/agent-skills.mdc`; follow the matching rules when those skill files are not in the checkout.
 
 <!--VITE PLUS START-->
 

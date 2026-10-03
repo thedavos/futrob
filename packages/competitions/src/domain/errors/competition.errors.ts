@@ -5,6 +5,13 @@ export class CompetitionNotFound extends TaggedError("CompetitionNotFound")<{
   message: string;
 }> {}
 
+export class CompetitionNotDiscoverable extends TaggedError("CompetitionNotDiscoverable")<{
+  code: "competitions.not_discoverable";
+  message: string;
+}> {}
+
+export type GetDiscoverableCompetitionError = CompetitionNotDiscoverable;
+
 export class InvalidCompetitionName extends TaggedError("InvalidCompetitionName")<{
   code: "competitions.invalid_name";
   message: string;
@@ -31,6 +38,7 @@ export class EntryCreationKeyConflict extends TaggedError("EntryCreationKeyConfl
 }> {}
 
 export type CreateCompetitionDraftError =
+  | CompetitionProfileError
   | InvalidCompetitionName
   | InvalidCompetitionGameEdition
   | InvalidCompetitionTimeZone
@@ -40,6 +48,7 @@ export type CreateCompetitionDraftError =
 export type UpdateCompetitionDraftError =
   | CompetitionNotFound
   | CompetitionNotEditable
+  | CompetitionProfileError
   | InvalidCompetitionName
   | InvalidCompetitionGameEdition
   | InvalidCompetitionTimeZone
@@ -51,6 +60,59 @@ export type PublishCompetitionError =
   | CompetitionNotEditable
   | InvalidCompetitionRules
   | CompetitionPublishBlocked
+  | CompetitionAuthorizationForbidden;
+
+export class CompetitionRegistrationClosed extends TaggedError("CompetitionRegistrationClosed")<{
+  readonly code: "competitions.registration_closed";
+  readonly message: string;
+}> {}
+
+export class CompetitionCapacityReached extends TaggedError("CompetitionCapacityReached")<{
+  readonly code: "competitions.capacity_reached";
+  readonly message: string;
+}> {}
+
+export class InvalidCompetitionTeamRange extends TaggedError("InvalidCompetitionTeamRange")<{
+  readonly code: "competitions.invalid_team_range";
+  readonly message: string;
+}> {}
+
+export class InvalidCompetitionSchedule extends TaggedError("InvalidCompetitionSchedule")<{
+  readonly code: "competitions.invalid_schedule";
+  readonly message: string;
+}> {}
+
+export class InvalidCompetitionCover extends TaggedError("InvalidCompetitionCover")<{
+  readonly code: "competitions.invalid_cover";
+  readonly message: string;
+}> {}
+
+export type CompetitionProfileError =
+  | InvalidCompetitionTeamRange
+  | InvalidCompetitionSchedule
+  | InvalidCompetitionCover;
+
+export type UpdateCompetitionCoverError =
+  | CompetitionNotFound
+  | CompetitionNotEditable
+  | InvalidCompetitionCover
+  | CompetitionAuthorizationForbidden;
+
+export type ApplyToCompetitionError =
+  | CompetitionNotFound
+  | CompetitionRegistrationClosed
+  | CompetitionCapacityReached
+  | EntryCreationKeyConflict;
+
+export type OpenCompetitionRegistrationError =
+  | CompetitionNotFound
+  | CompetitionNotEditable
+  | InvalidCompetitionRules
+  | CompetitionAuthorizationForbidden;
+
+export type CloseCompetitionRegistrationError =
+  | CompetitionNotFound
+  | CompetitionNotEditable
   | CompetitionAuthorizationForbidden;
 
 export type JoinCompetitionError = CompetitionNotFound;
@@ -101,6 +163,7 @@ export class CompetitionPublishBlocked extends TaggedError("CompetitionPublishBl
 export type RegisterTeamEntryError =
   | CompetitionNotFound
   | CompetitionNotEditable
+  | CompetitionCapacityReached
   | EntryCreationKeyConflict
   | CompetitionAuthorizationForbidden;
 
@@ -114,6 +177,7 @@ export type ApproveCompetitionEntryError =
   | EntryNotFound
   | EntryAlreadyDecided
   | CompetitionNotFound
+  | CompetitionCapacityReached
   | CompetitionAuthorizationForbidden;
 
 export type RejectCompetitionEntryError =

@@ -1,4 +1,4 @@
-import type { CompetitionId, EncounterId } from "@futrob/shared-kernel";
+import type { CompetitionId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
 import type { OfficialResult } from "../entities/official-result.ts";
 
 /**
@@ -9,5 +9,8 @@ export interface OfficialResultReaderPort {
   getApprovedByEncounter(encounterId: EncounterId): Promise<OfficialResult | null>;
   getLatestByEncounter(encounterId: EncounterId): Promise<OfficialResult | null>;
   getById(officialResultId: string): Promise<OfficialResult | null>;
-  listByCompetition(competitionId: CompetitionId): Promise<OfficialResult[]>;
+  listByCompetition(
+    competitionId: CompetitionId,
+    organizationId?: OrganizationId,
+  ): Promise<OfficialResult[]>;
 }

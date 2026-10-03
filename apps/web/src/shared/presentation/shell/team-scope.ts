@@ -1,10 +1,12 @@
 import type { GetMyTeamsResponse } from "@futrob/api-contracts";
 
+type RosterMembership = GetMyTeamsResponse["teams"][number]["membership"];
+
 /** Prefer the active roster membership for the competition; otherwise any membership in that competition. */
-export function teamIdForCompetition(
+export function membershipForCompetition(
   competitionId: string,
   teams: GetMyTeamsResponse | undefined,
-): string | undefined {
+): RosterMembership | undefined {
   if (!teams) return undefined;
   const inCompetition = teams.teams.filter(
     (item) => item.membership.competitionId === competitionId,
@@ -13,5 +15,12 @@ export function teamIdForCompetition(
   const active = inCompetition.find(
     (item) => item.membership.id === teams.activeRosterMembershipId,
   );
-  return (active ?? inCompetition[0])?.membership.teamId;
+  return (active ?? inCompetition[0])?.membership;
+}
+
+export function teamIdForCompetition(
+  competitionId: string,
+  teams: GetMyTeamsResponse | undefined,
+): string | undefined {
+  return membershipForCompetition(competitionId, teams)?.teamId;
 }

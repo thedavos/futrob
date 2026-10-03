@@ -12,11 +12,12 @@ describe("toProviderGameEdition", () => {
   it("normalizes display editions to EA provider keys", () => {
     expect(toProviderGameEdition("FC 26")).toBe("fc26");
     expect(toProviderGameEdition("FC 25")).toBe("fc25");
+    expect(toProviderGameEdition("FC 27")).toBe("fc27");
     expect(toProviderGameEdition("fc_26")).toBe("fc26");
   });
 
   it("falls back when the edition is blank", () => {
-    expect(toProviderGameEdition("")).toBe("fc26");
+    expect(toProviderGameEdition("")).toBe("fc27");
     expect(toProviderGameEdition("   ", "fc25")).toBe("fc25");
   });
 });

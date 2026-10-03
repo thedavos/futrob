@@ -103,7 +103,11 @@ describe("apps/api http team-management", () => {
       members: [
         {
           membership: { role: "captain" },
-          presentation: { displayName: "Capitana10", avatarUrl: null },
+          presentation: {
+            displayName: "Capitana10",
+            avatarUrl: null,
+            gameAccount: { platform: "playstation", gameEdition: "FC 26" },
+          },
         },
       ],
     });

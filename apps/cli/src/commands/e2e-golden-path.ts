@@ -19,7 +19,7 @@ export function run(raw: string[]): Effect.Effect<number, CliError> {
     const common = parseCommon(raw);
     const config: ClientConfig = { baseUrl: common.baseUrl, actorId: common.actorId };
     const suffix = flagBoolean(common.flags, "keep-names") ? "" : `-${Date.now()}`;
-    const gameEdition = flagString(common.flags, "edition") ?? "fc26";
+    const gameEdition = flagString(common.flags, "edition") ?? "fc27";
     const platform = competitionPlatformSchema.parse(
       flagString(common.flags, "platform") ?? "playstation",
     );
@@ -29,7 +29,7 @@ export function run(raw: string[]): Effect.Effect<number, CliError> {
 
     step("2/8 organizations.create");
     const org = yield* apiCall(config, (client) =>
-      client.organizations.create({ name: `CLI Golden Path${suffix}` }),
+      client.organizations.create({ name: `CLI Golden Path${suffix}`, timeZone: "UTC" }),
     );
 
     step("3/8 competitions.createDraft");

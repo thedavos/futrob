@@ -37,6 +37,9 @@ function competitionDraft(): CompetitionDraft {
       region: "south-america",
       timeZone: "America/Lima",
       format: "league",
+      teams: { min: 2, max: null },
+      schedule: { startsOn: null, endsOn: null },
+      cover: { kind: "preset", preset: "cup" },
       createdByActorId: asActorId("organizer-1"),
       createdAt: new Date("2026-07-31T12:00:00.000Z"),
       updatedAt: new Date("2026-07-31T12:00:00.000Z"),
@@ -94,6 +97,10 @@ describe("createSchedulingModule schedule change requests", () => {
       scheduling.scheduleChangeRequests.findByIdempotencyKey(otherOrganizationId, "idem-1"),
     ).resolves.toBeNull();
     await expect(scheduling.encounters.findById(encounterId)).resolves.toEqual(snapshot);
+    const listed = await scheduling.listScheduleChangeRequests.execute({ actorId, encounterId });
+    expect(listed.isOk()).toBe(true);
+    if (listed.isErr()) throw listed.error;
+    expect(listed.value).toEqual([created.value]);
     expect(events).toHaveLength(1);
     expect(events[0]?.eventName).toBe("scheduling.reschedule-requested");
 

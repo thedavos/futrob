@@ -86,6 +86,7 @@ describe("competition team management contracts", () => {
           presentation: {
             displayName: "Jugador sin nombre público",
             avatarUrl: null,
+            gameAccount: null,
           },
         },
       ],

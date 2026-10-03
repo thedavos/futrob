@@ -30,7 +30,10 @@ import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.p
 import type { RosterInvitationRepository } from "../../domain/ports/roster-invitation.repository.ts";
 import type { RosterInvitationTokenPort } from "../../domain/ports/roster-invitation-token.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
-import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import {
+  permissionToGrantRosterRole,
+  TEAM_PERMISSION,
+} from "../../domain/policies/team-permissions.ts";
 import { teamPermissionError } from "../require-team-permission.ts";
 
 const DEFAULT_EXPIRES_IN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -106,6 +109,20 @@ export class CreateRosterInvitationUseCase {
       );
     }
 
+    if (role !== "player") {
+      const cannotGrant = await teamPermissionError({
+        authorization: this.deps.authorization,
+        actorId: input.invitedByActorId,
+        permission: permissionToGrantRosterRole(role),
+        scope: {
+          organizationId: input.organizationId,
+          competitionId: input.competitionId,
+          teamId: input.teamId,
+        },
+      });
+      if (cannotGrant) return err(cannotGrant);
+    }
+
     const team = await this.deps.teams.findById(input.organizationId, input.teamId);
     if (!team) {
       return err(
@@ -152,8 +169,10 @@ export class CreateRosterInvitationUseCase {
     const token = this.deps.tokens.generateToken();
     const tokenHash = this.deps.tokens.hashToken(token);
 
-    // A directed invitation targets one recipient; multi redemption never applies.
-    const redeemPolicy = inviteeActorId ? "single" : (input.redeemPolicy ?? "single");
+    // A directed invitation targets one recipient, and a role above player is never shared
+    // through a link anyone can redeem; multi redemption applies to plain player links only.
+    const redeemPolicy =
+      inviteeActorId || role !== "player" ? "single" : (input.redeemPolicy ?? "single");
 
     await this.deps.invitations.create({
       id: invitationId,

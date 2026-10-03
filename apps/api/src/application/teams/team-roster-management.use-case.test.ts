@@ -209,6 +209,7 @@ describe("GetTeamRosterManagementUseCase", () => {
     expect(result.value.members[0]?.presentation).toEqual({
       displayName: "Capitana10",
       avatarUrl: null,
+      gameAccount: { platform: "playstation", gameEdition: "FC 26" },
     });
   });
 

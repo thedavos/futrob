@@ -10,8 +10,10 @@ import {
   type EncounterId,
   type OrganizationId,
   type TeamId,
+  Panic,
 } from "@futrob/shared-kernel";
 import { asFixtureStageId } from "@futrob/scheduling";
+import { DEFAULT_ORGANIZATION_LOGO, parseOrganizationSlug } from "@futrob/organizations";
 import {
   InMemoryOrganizationRepository,
   InMemoryMembershipRepository,
@@ -124,14 +126,23 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
     organizerB: asActorId("organizer-b"),
   } satisfies Record<RbacActorKey, ActorId>;
 
-  for (const [id, name, actorId] of [
-    [ids.orgA, "Org A", actors.organizer],
-    [ids.orgB, "Org B", actors.organizerB],
+  const fixtureSlug = (value: string) => {
+    const parsed = parseOrganizationSlug(value);
+    if (!parsed) throw new Panic(`Invalid fixture slug ${value}`);
+    return parsed;
+  };
+
+  for (const [id, name, slug, actorId] of [
+    [ids.orgA, "Org A", "org-a", actors.organizer],
+    [ids.orgB, "Org B", "org-b", actors.organizerB],
   ] as const) {
     organizationRepository.byId.set(id, {
       id,
       name,
       normalizedName: name.toLowerCase(),
+      slug: fixtureSlug(slug),
+      timeZone: "UTC",
+      logo: DEFAULT_ORGANIZATION_LOGO,
       createdAt: RBAC_MATRIX_NOW,
       createdByActorId: actorId,
     });
@@ -150,6 +161,9 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
         region: "south-america",
         timeZone: "America/Lima",
         format: "league",
+        teams: { min: 2, max: null },
+        schedule: { startsOn: null, endsOn: null },
+        cover: { kind: "preset", preset: "cup" },
         createdByActorId: actors.organizer,
         createdAt: RBAC_MATRIX_NOW,
         updatedAt: RBAC_MATRIX_NOW,

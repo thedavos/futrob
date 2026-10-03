@@ -1,4 +1,5 @@
 import type {
+  ExploreCompetitionsQuery,
   GetMyGameProfileQuery,
   GetMyMatchesQuery,
   GetMyRecentMatchPath,
@@ -20,6 +21,8 @@ export const queryKeys = {
   organizations: {
     all: ["organizations"] as const,
     mine: () => [...queryKeys.organizations.all, "mine"] as const,
+    profile: (organizationId: string) =>
+      [...queryKeys.organizations.all, "profile", organizationId] as const,
   },
   authorization: {
     all: ["authorization"] as const,
@@ -36,6 +39,12 @@ export const queryKeys = {
   competitions: {
     all: ["competitions"] as const,
     mine: () => [...queryKeys.competitions.all, "mine"] as const,
+    explore: (query: ExploreCompetitionsQuery) =>
+      [...queryKeys.competitions.all, "explore", query] as const,
+    exploreDetail: (competitionId: string) =>
+      [...queryKeys.competitions.all, "explore", "detail", competitionId] as const,
+    exploreApplication: (competitionId: string) =>
+      [...queryKeys.competitions.all, "explore", "application", competitionId] as const,
     byOrganization: (organizationId: string) =>
       [...queryKeys.competitions.all, "by-organization", organizationId] as const,
     draft: (organizationId: string, competitionId: string) =>

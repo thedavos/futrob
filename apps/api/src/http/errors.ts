@@ -75,7 +75,7 @@ function statusForFailureCode(code: string): number {
   ) {
     return 503;
   }
-  if (code.includes("not_found")) {
+  if (code.includes("not_found") || code.includes("not_discoverable")) {
     return 404;
   }
   if (code.includes("forbidden") || code.includes("unauthorized") || code.includes("not_owned")) {
@@ -91,6 +91,11 @@ function statusForFailureCode(code: string): number {
     code.includes("captain_already_assigned") ||
     code.includes("not_editable") ||
     code.includes("publish_blocked") ||
+    code.includes("registration_closed") ||
+    code.includes("capacity_reached") ||
+    code.includes("limit_reached") ||
+    code.includes("rescheduling_disabled") ||
+    code.includes("active_schedule_change_request_exists") ||
     code.includes("last_organizer") ||
     code.includes("last_superuser")
   ) {

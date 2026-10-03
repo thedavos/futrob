@@ -31,6 +31,7 @@ import { EnsurePlayerProfileUseCase } from "../ensure-player-profile/ensure-play
 import { createRosterInvitationTestHarness } from "../roster-invitation-test-harness.ts";
 import { AcceptRosterInvitationUseCase } from "./accept-roster-invitation.use-case.ts";
 import { CreateRosterInvitationUseCase } from "../create-roster-invitation/create-roster-invitation.use-case.ts";
+import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
 import { CloseRosterUseCase } from "../close-roster/close-roster.use-case.ts";
 
 class Teams implements TeamRepository {
@@ -196,8 +197,13 @@ function buildHarness(options?: { maxSize?: number }) {
   const profiles = new Profiles();
   const mutations = new SerialRosterMutations();
   const shared = { clock: harness.clock, ids: harness.ids };
+  /** `${actorId}:${permission}` pairs the fake authorization refuses; everything else is allowed. */
+  const denied = new Set<string>();
   const authorization: import("@futrob/shared-kernel").AuthorizationPort = {
-    decide: async (request) => ({ ...request, allowed: true, reason: "allowed" }),
+    decide: async (request) => {
+      const allowed = !denied.has(`${request.actorId}:${request.permission}`);
+      return { ...request, allowed, reason: allowed ? "allowed" : "denied" };
+    },
     getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
   };
   const ensurePlayerProfile = new EnsurePlayerProfileUseCase({ profiles, ...shared });
@@ -234,6 +240,7 @@ function buildHarness(options?: { maxSize?: number }) {
     ids: harness.ids,
     clock: harness.clock,
     mutations,
+    authorization,
   });
 
   return {
@@ -243,10 +250,25 @@ function buildHarness(options?: { maxSize?: number }) {
     rosterStates,
     profiles,
     authorization,
+    denied,
     mutations,
     createInvitation,
     acceptInvitation,
   };
+}
+
+async function seedTeam(ctx: ReturnType<typeof buildHarness>) {
+  const orgId = asOrganizationId("org-1");
+  const teamId = asTeamId("team-1");
+  ctx.teams.rows.push({
+    id: teamId,
+    organizationId: orgId,
+    name: "FC Alpha",
+    createdAt: ctx.clock.now(),
+    createdByActorId: asActorId("staff-1"),
+    creationKey: null,
+  });
+  return { orgId, teamId, competitionId: asCompetitionId("comp-1") };
 }
 
 function wireMultiSlotGuard(ctx: ReturnType<typeof buildHarness>) {
@@ -260,20 +282,6 @@ function wireMultiSlotGuard(ctx: ReturnType<typeof buildHarness>) {
 }
 
 describe("AcceptRosterInvitationUseCase", () => {
-  async function seedTeam(ctx: ReturnType<typeof buildHarness>) {
-    const orgId = asOrganizationId("org-1");
-    const teamId = asTeamId("team-1");
-    ctx.teams.rows.push({
-      id: teamId,
-      organizationId: orgId,
-      name: "FC Alpha",
-      createdAt: ctx.clock.now(),
-      createdByActorId: asActorId("staff-1"),
-      creationKey: null,
-    });
-    return { orgId, teamId, competitionId: asCompetitionId("comp-1") };
-  }
-
   it("accepts an invitation and is idempotent on double accept", async () => {
     const ctx = buildHarness();
     const { orgId, teamId, competitionId } = await seedTeam(ctx);
@@ -763,5 +771,123 @@ describe("CreateRosterInvitationUseCase", () => {
 
     const stored = await ctx.invitations.findByTokenHash(ctx.tokens.hashToken(result.value.token));
     expect(stored?.redeemPolicy).toBe("multi");
+  });
+
+  describe("role above player", () => {
+    async function seedTeamWithViceCaptain(ctx: ReturnType<typeof buildHarness>) {
+      const scope = await seedTeam(ctx);
+      const viceCaptain = ctx.actor("vice-1");
+      // A vice-captain can invite, but cannot change roles.
+      ctx.denied.add(`${viceCaptain}:${TEAM_PERMISSION.rosterRolesManage}`);
+      return { ...scope, viceCaptain };
+    }
+
+    it.each(["captain", "vice_captain"] as const)(
+      "does not let an inviter without role management invite a %s",
+      async (role) => {
+        const ctx = buildHarness();
+        const { orgId, teamId, competitionId, viceCaptain } = await seedTeamWithViceCaptain(ctx);
+
+        const result = await ctx.createInvitation.execute({
+          organizationId: orgId,
+          competitionId,
+          teamId,
+          invitedByActorId: viceCaptain,
+          role,
+        });
+
+        expect(result.isOk()).toBe(false);
+        if (result.isOk()) return;
+        expect(result.error.code).toBe("authorization.forbidden");
+        expect(ctx.invitations.byHash.size).toBe(0);
+      },
+    );
+
+    it("still lets an inviter without role management invite players", async () => {
+      const ctx = buildHarness();
+      const { orgId, teamId, competitionId, viceCaptain } = await seedTeamWithViceCaptain(ctx);
+
+      const result = await ctx.createInvitation.execute({
+        organizationId: orgId,
+        competitionId,
+        teamId,
+        invitedByActorId: viceCaptain,
+        role: "player",
+      });
+
+      expect(result.isOk()).toBe(true);
+    });
+
+    it("issues single-use links for roles above player even when multi is requested", async () => {
+      const ctx = buildHarness();
+      const { orgId, teamId, competitionId } = await seedTeam(ctx);
+
+      const result = await ctx.createInvitation.execute({
+        organizationId: orgId,
+        competitionId,
+        teamId,
+        invitedByActorId: ctx.actor("staff-1"),
+        role: "captain",
+        redeemPolicy: "multi",
+      });
+
+      expect(result.isOk()).toBe(true);
+      expect([...ctx.invitations.byHash.values()].map((row) => row.redeemPolicy)).toEqual([
+        "single",
+      ]);
+    });
+
+    it("refuses legacy multi-use links for roles above player", async () => {
+      const ctx = buildHarness();
+      const { orgId, teamId, competitionId } = await seedTeam(ctx);
+      const invite = await ctx.createInvitation.execute({
+        organizationId: orgId,
+        competitionId,
+        teamId,
+        invitedByActorId: ctx.actor("staff-1"),
+        role: "player",
+        redeemPolicy: "multi",
+      });
+      expect(invite.isOk()).toBe(true);
+      if (!invite.isOk()) return;
+      // Simulate a link issued before elevated roles were forced to single use.
+      const stored = [...ctx.invitations.byHash.values()][0]!;
+      ctx.invitations.byHash.set(stored.tokenHash, { ...stored, role: "captain" });
+
+      const result = await ctx.acceptInvitation.execute({
+        token: invite.value.token,
+        actorId: ctx.actor("someone"),
+      });
+
+      expect(result.isOk()).toBe(false);
+      expect(ctx.rosters.rows).toHaveLength(0);
+    });
+
+    it("refuses to redeem an elevated invitation whose issuer cannot grant that role", async () => {
+      const ctx = buildHarness();
+      const { orgId, teamId, competitionId, viceCaptain } = await seedTeamWithViceCaptain(ctx);
+      // Issued before the rule existed: the issuer was allowed at that time.
+      ctx.denied.delete(`${viceCaptain}:${TEAM_PERMISSION.rosterRolesManage}`);
+      const invite = await ctx.createInvitation.execute({
+        organizationId: orgId,
+        competitionId,
+        teamId,
+        invitedByActorId: viceCaptain,
+        role: "captain",
+      });
+      expect(invite.isOk()).toBe(true);
+      if (!invite.isOk()) return;
+      ctx.denied.add(`${viceCaptain}:${TEAM_PERMISSION.rosterRolesManage}`);
+
+      const result = await ctx.acceptInvitation.execute({
+        token: invite.value.token,
+        actorId: ctx.actor("takeover"),
+      });
+
+      expect(result.isOk()).toBe(false);
+      if (result.isOk()) return;
+      expect(unwrapErr(result)).toBeInstanceOf(RosterInvitationInvalid);
+      expect(ctx.rosters.rows).toHaveLength(0);
+    });
   });
 });

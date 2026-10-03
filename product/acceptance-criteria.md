@@ -138,6 +138,22 @@ El recorrido operativo autenticado debe poder completarse tanto desde `apps/web`
 - **cuando** acepta una invitación de competición,
 - **entonces** se añade la membresía contextual de esa competición y la membresía mínima de organización, conserva el perfil personal y su historial, y obtiene solo los permisos de esas membresías.
 
+### AC-ORG-001 — Perfil de organización
+
+**Cubre:** FTR-ORG-001, FTR-ORG-003, FTR-ORG-004, FTR-ORG-005.
+
+- **Dado** un organizador que crea una organización con nombre, slug, zona horaria y escudo,
+- **cuando** envía el formulario,
+- **entonces** la organización queda creada con ese perfil, el escudo se ve en el selector y la
+  primera competición propone su zona horaria.
+- **Dado** un slug que ya usa otra organización,
+- **cuando** el actor lo propone al crear o al editar,
+- **entonces** recibe el error en el campo con una sugerencia libre y nada se guarda; si dos
+  actores lo envían a la vez, solo uno lo obtiene.
+- **Dado** un actor sin `organizations.update`,
+- **cuando** intenta cambiar el perfil,
+- **entonces** recibe denegación segura y el perfil permanece igual.
+
 ## 4. Equipos y vinculación EA
 
 ### AC-TEAM-001 — Vincular club EA

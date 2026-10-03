@@ -1,5 +1,5 @@
 # Copy to .dev.vars for local development.
-# Local D1 state is shared with apps/web via --persist-to (see package.json dev script).
+# The Postgres target for local Hyperdrive goes in apps/auth/.env (see .env.example), not here.
 # Must match apps/web/.dev.vars BETTER_AUTH_SECRET or BFF/SSR session reads fail.
 BETTER_AUTH_SECRET=replace-with-a-local-secret
 # Public web origin (cookies and CSRF). Do not leave empty.

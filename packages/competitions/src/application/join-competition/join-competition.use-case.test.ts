@@ -1,45 +1,16 @@
+import { FakeCompetitionRepository } from "../fake-competition-repository.test-helper.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
 import type { CompetitionMembership } from "../../domain/entities/competition-membership.ts";
 import { CompetitionNotFound } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionMembershipRepository } from "../../domain/ports/competition-membership.repository.ts";
-import type {
-  CompetitionDraft,
-  CompetitionRepository,
-} from "../../domain/ports/competition.repository.ts";
+import type { CompetitionDraft } from "../../domain/ports/competition.repository.ts";
 import { JoinCompetitionUseCase } from "./join-competition.use-case.ts";
 
 const organizationId = asOrganizationId("org-1");
 const competitionId = asCompetitionId("competition-1");
 const actorId = asActorId("actor-1");
 const createdAt = new Date("2026-07-31T12:00:00.000Z");
-
-class FakeCompetitionRepository implements CompetitionRepository {
-  async saveDraft(draft: CompetitionDraft): Promise<CompetitionDraft> {
-    return draft;
-  }
-
-  async findById(
-    requestedOrganizationId: typeof organizationId,
-    requestedId: typeof competitionId,
-  ) {
-    return requestedOrganizationId === organizationId && requestedId === competitionId
-      ? competitionDraft
-      : null;
-  }
-
-  async findByCreationKey(): Promise<CompetitionDraft | null> {
-    return null;
-  }
-
-  async findRulesByCompetitionId() {
-    return competitionDraft.rules;
-  }
-
-  async listByOrganization() {
-    return [competitionDraft.competition];
-  }
-}
 
 class FakeMembershipRepository implements CompetitionMembershipRepository {
   readonly rows = new Map<string, CompetitionMembership>();
@@ -81,6 +52,9 @@ const competitionDraft: CompetitionDraft = {
     region: "south-america",
     timeZone: "America/Lima",
     format: "league",
+    teams: { min: 2, max: null },
+    schedule: { startsOn: null, endsOn: null },
+    cover: { kind: "preset", preset: "cup" },
     createdByActorId: actorId,
     createdAt,
     updatedAt: createdAt,
@@ -100,7 +74,7 @@ describe("JoinCompetitionUseCase", () => {
   it("creates one contextual membership and returns it on retry", async () => {
     const memberships = new FakeMembershipRepository();
     const useCase = new JoinCompetitionUseCase({
-      competitions: new FakeCompetitionRepository(),
+      competitions: new FakeCompetitionRepository([competitionDraft]),
       memberships,
       clock: { now: () => createdAt },
     });
@@ -116,7 +90,7 @@ describe("JoinCompetitionUseCase", () => {
 
   it("rejects a competition outside the requested organization", async () => {
     const useCase = new JoinCompetitionUseCase({
-      competitions: new FakeCompetitionRepository(),
+      competitions: new FakeCompetitionRepository([competitionDraft]),
       memberships: new FakeMembershipRepository(),
       clock: { now: () => createdAt },
     });

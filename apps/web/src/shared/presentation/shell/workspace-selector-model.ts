@@ -1,3 +1,5 @@
+import type { OrganizationLogoDto } from "@futrob/api-contracts";
+
 export const WORKSPACE_DISPLAY_ROLE = {
   organizer: "organizer",
   staff: "staff",
@@ -18,6 +20,7 @@ export type WorkspaceSelectorMembershipInput = {
   readonly organizationId: string;
   readonly name: string;
   readonly role: OrgMembershipRoleInput;
+  readonly logo?: OrganizationLogoDto;
 };
 
 export type WorkspaceSelectorCompetitionInput = {
@@ -57,6 +60,7 @@ export type WorkspaceSelectorOrgOption = {
   readonly organizationId: string;
   readonly name: string;
   readonly role: WorkspaceDisplayRole;
+  readonly logo?: OrganizationLogoDto;
 };
 
 export type WorkspaceSelectorClubOption = {
@@ -110,6 +114,7 @@ export function buildWorkspaceSelectorModel(input: {
     organizationId: membership.organizationId,
     name: membership.name,
     role: orgMembershipToDisplayRole(membership.role),
+    logo: membership.logo,
   }));
 
   const orgRoleById = new Map(

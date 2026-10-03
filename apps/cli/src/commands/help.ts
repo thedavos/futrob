@@ -24,7 +24,9 @@ Comandos base:
 Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor):
   api-health              GET /meta/health (estado API + DB)
   org-name-check <name>   Disponibilidad de nombre de organización
-  org-create <name>       Crea organización
+  org-create <name> [--slug s] [--time-zone tz]  Crea organización
+  org-slug-check <slug> [--org id]  Disponibilidad de slug (con sugerencia)
+  org-profile <orgId>     Perfil: nombre, slug, zona horaria y escudo
   org-mine                Lista membresías del actor
   org-invite <orgId> <email> [--role role]
   onboarding-status       Estado de onboarding del actor
@@ -32,6 +34,12 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   comp-list <orgId>
   comp-show <orgId> <compId>
   comp-publish <orgId> <compId>
+  comp-registration-open <orgId> <compId>
+  comp-registration-close <orgId> <compId>
+  comp-explore [--q name] [--format league] [--status published]
+  comp-explore-show <competitionId>
+  comp-apply <competitionId> <teamName> [--key creationKey]
+  comp-application <competitionId>
   participant-add <orgId> <compId> <teamId>
   participant-list <orgId> <compId>
   entry-register <orgId> <compId> <teamId>
@@ -51,7 +59,7 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   club-search <query>
   club-get <externalClubId>
   club-matches <externalClubId>
-  sync-job-enqueue <orgId> <clubId> [--platform playstation] [--edition fc26] [--match-type club_match] [--max 10]
+  sync-job-enqueue <orgId> <clubId> [--platform playstation] [--edition fc27] [--match-type club_match] [--max 10]
   sync-job-run <jobId>
   sync-job-run-next
   provider-health [providerKey]

@@ -31,7 +31,7 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 - Composition: adapters y use cases se instancian en `apps/api/src/di/`; la web consume vía product API ([ADR-0013](/docs/adr/0013-ea-egress-api-only.md)).
 - Mobile consume el BFF `/api/v1` con `@futrob/sdk` y sesión Bearer; no importa BC, adapters ni secretos internos.
 - Better Auth (identidad) + Futrob (autorización/orgs).
-- API de producto Hono/Node en Railway, con Postgres. Auth/actores y rate limits BFF en D1 compartida; migraciones en `apps/auth/migrations`. R2 / Queues / Cron en web. Tenancy scoped en aplicación, sin depender de RLS.
+- API de producto Hono/Node en Railway, con Postgres. Auth, actores y rate limits BFF en ese mismo Postgres, accedido desde los Workers por Hyperdrive ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); una sola historia de migraciones en `apps/api/migrations` y FK a `actors` en toda columna de actor. R2 / Queues / Cron en web. Tenancy scoped en aplicación, sin depender de RLS.
 - shadcn/Base UI, StyleX, Vite+, Sentry en boundaries.
 - `apps/cli` para ejercitar dominio/use cases en local (no es deployable de producto).
 - `billing` queda fuera del MVP inicial.
@@ -41,7 +41,7 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 ```text
 apps/cli/                   # playground local
 apps/api/                   # API de producto (Node)
-apps/auth/                  # Better Auth Worker (D1 schema owner)
+apps/auth/                  # Better Auth Worker (escribe auth/actores en Postgres)
 apps/mobile/                # React Native + Expo; cliente nativo MVP vía SDK
 apps/web/
 ├── wrangler.jsonc
@@ -111,7 +111,7 @@ ConfirmOfficialSelection
   → analytics snapshot worker
 ```
 
-Estado actual: `apps/api/src/di/create-modules.ts` usa `NoopEventPublisher` para eventos de dominio y compone confirmación/anulación con proyección de estadísticas dentro de una transacción. El outbox y los consumidores de notificaciones/analytics del diagrama son objetivo; no están conectados por ese publisher. La cola y Cron de sync de proveedores sí tienen handlers en `apps/web/src/workers/`.
+Estado actual: `apps/api/src/di/create-modules.ts` usa `NoopEventPublisher` para eventos de dominio y compone los comandos de selección (propuesta, confirmación rival, rechazo, alternativa, disputa, resolución) y la anulación con proyección de estadísticas dentro de una transacción. El outbox y los consumidores de notificaciones/analytics del diagrama son objetivo; no están conectados por ese publisher. La cola y Cron de sync de proveedores sí tienen handlers en `apps/web/src/workers/`.
 
 ## Composition roots
 
@@ -180,6 +180,7 @@ Un módulo no escribe tablas ajenas; publica eventos / usa ports de lectura.
 - [ADR-0001](/docs/adr/0001-monorepo-and-tanstack-start-deployable.md)
 - [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md)
 - [ADR-0003](/docs/adr/0003-better-auth-and-d1-ownership.md) — histórico, reemplazado por ADR-0015
+- [ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md) — auth, actores y rate limits en Postgres
 - [ADR-0004](/docs/adr/0004-multi-tenant-d1-scoping.md)
 - [ADR-0005](/docs/adr/0005-typed-private-api.md)
 - [ADR-0006](/docs/adr/0006-game-data-provider-port.md)

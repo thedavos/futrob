@@ -21,6 +21,7 @@ import {
 } from "@futrob/ui";
 import { BuildingsIcon, CaretDownIcon, TrophyIcon } from "@phosphor-icons/react";
 import { CreateOrganizationForm } from "@/modules/organizations/presentation/create-organization-form.tsx";
+import { OrganizationAvatar } from "@/modules/organizations/presentation/organization-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   WORKSPACE_SELECTION_KIND,
@@ -118,11 +119,14 @@ export function WorkspaceSelector({
   model,
   onSelect,
   onRequestAddClub,
+  onOpen,
 }: {
   readonly selection: WorkspaceSelection;
   readonly model: WorkspaceSelectorModel;
   readonly onSelect: (selection: WorkspaceSelection) => void;
   readonly onRequestAddClub: () => void;
+  /** Fired when the menu opens, so the shell can warm the next workspace's access. */
+  readonly onOpen?: () => void;
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -180,14 +184,22 @@ export function WorkspaceSelector({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu
+        onOpenChange={(open) => {
+          if (open) onOpen?.();
+        }}
+      >
         <DropdownMenuTrigger
           render={
             <Button className={trigger.className} dense style={trigger.style} variant="outline" />
           }
         >
           <span {...applyStyles(styles.triggerLabel)}>
-            <SelectorTriggerIcon clubs={model.clubs} selection={selection} />
+            <SelectorTriggerIcon
+              clubs={model.clubs}
+              organizations={model.organizations}
+              selection={selection}
+            />
             <span {...applyStyles(styles.truncate)}>
               {selectorTriggerLabel(
                 selection,
@@ -272,6 +284,9 @@ export function WorkspaceSelector({
                   <RoleAwareMenuItem
                     EntityIcon={BuildingsIcon}
                     key={membership.organizationId}
+                    leading={
+                      <OrganizationAvatar logo={membership.logo} name={membership.name} size="sm" />
+                    }
                     name={membership.name}
                     onSelect={() =>
                       choose({

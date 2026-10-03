@@ -13,6 +13,18 @@ import { RejectCompetitionEntryUseCase } from "./reject-competition-entry.use-ca
 
 class FakeEntryRepository implements CompetitionEntryRepository {
   rows: CompetitionEntry[] = [];
+  async countApprovedByCompetition(
+    organizationId: ReturnType<typeof asOrganizationId>,
+    competitionId: ReturnType<typeof asCompetitionId>,
+  ) {
+    return this.rows.filter(
+      (entry) =>
+        entry.organizationId === organizationId &&
+        entry.competitionId === competitionId &&
+        entry.status === "approved",
+    ).length;
+  }
+
   async findById(organizationId: ReturnType<typeof asOrganizationId>, entryId: string) {
     return (
       this.rows.find((row) => row.id === entryId && row.organizationId === organizationId) ?? null

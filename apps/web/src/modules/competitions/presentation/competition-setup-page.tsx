@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
+  Alert,
+  AlertDescription,
   applyStyles,
   Badge,
   Button,
@@ -32,12 +34,22 @@ import {
   RulesStep,
 } from "./competition-setup-steps.tsx";
 import { PageAlert } from "./competition-setup-fields.tsx";
+import { CompetitionProfileFields } from "./competition-profile-fields.tsx";
+import {
+  profileFieldsFromCompetition,
+  toTeamsAndSchedule,
+  validateCompetitionProfileFields,
+  type CompetitionProfileFieldError,
+  type CompetitionProfileFieldsValue,
+} from "./competition-profile-fields-value.ts";
 import {
   useAddCompetitionParticipantMutation,
   useCompetitionDraftQuery,
   useCompetitionParticipantsQuery,
   useOrganizationTeamsQuery,
   usePublishCompetitionMutation,
+  useCompetitionRegistrationMutation,
+  useUpdateCompetitionCoverMutation,
   useRemoveCompetitionParticipantMutation,
   useUpdateCompetitionDraftMutation,
 } from "./competition-queries.ts";
@@ -122,6 +134,10 @@ export function CompetitionSetupPage({
   const add = useAddCompetitionParticipantMutation(organizationId, competitionId);
   const remove = useRemoveCompetitionParticipantMutation(organizationId, competitionId);
   const publish = usePublishCompetitionMutation(organizationId, competitionId);
+  const registration = useCompetitionRegistrationMutation(organizationId, competitionId);
+  const coverUpdate = useUpdateCompetitionCoverMutation(organizationId, competitionId);
+  const [profile, setProfile] = useState<CompetitionProfileFieldsValue | null>(null);
+  const [profileError, setProfileError] = useState<CompetitionProfileFieldError | null>(null);
   const caps = useCapabilities({ organizationId, competitionId }, SETUP_CAPABILITIES);
   const [form, setForm] = useState<UpdateCompetitionDraftRequest | null>(null);
   const [newTeamName, setNewTeamName] = useState("");
@@ -129,7 +145,10 @@ export function CompetitionSetupPage({
   const draft = draftQuery.data ?? null;
 
   useEffect(() => {
-    if (draft) setForm(toUpdateInput(draft));
+    if (!draft) return;
+    // Seed once: a cover change refreshes the draft and must not discard unsaved edits.
+    setForm((current) => current ?? toUpdateInput(draft));
+    setProfile((current) => current ?? profileFieldsFromCompetition(draft.competition));
   }, [draft]);
   const participantTeamIds = useMemo(
     () => new Set((participantsQuery.data?.participants ?? []).map((entry) => entry.teamId)),
@@ -143,12 +162,32 @@ export function CompetitionSetupPage({
   const canUpdate = caps.update;
   const canManageParticipants = caps.manageParticipants;
   const canPublish = caps.publish;
-  const readOnly = draft?.competition.status !== "draft" || !canUpdate;
-  const busy = update.isPending || add.isPending || remove.isPending || publish.isPending;
-  const error = update.error ?? add.error ?? remove.error ?? publish.error;
+  const status = draft?.competition.status;
+  const registrationOpen = status === "registration";
+  const readOnly = status !== "draft" || !canUpdate;
+  const participantsLocked = status !== "draft" && status !== "registration";
+  const busy =
+    update.isPending ||
+    add.isPending ||
+    remove.isPending ||
+    publish.isPending ||
+    registration.isPending;
+  const error =
+    update.error ??
+    add.error ??
+    remove.error ??
+    publish.error ??
+    registration.error ??
+    coverUpdate.error;
 
   async function save() {
-    if (form && !readOnly) await update.mutateAsync(form);
+    if (!form || !profile || readOnly) return;
+    const invalid = validateCompetitionProfileFields(profile);
+    if (invalid) {
+      setProfileError(invalid);
+      return;
+    }
+    await update.mutateAsync({ ...form, ...toTeamsAndSchedule(profile) });
   }
   async function continueNext() {
     if (!readOnly && ["information", "format", "rules"].includes(currentStep)) await save();
@@ -178,7 +217,7 @@ export function CompetitionSetupPage({
     <main {...applyStyles(styles.main)}>
       <header {...applyStyles(styles.header)}>
         <div>
-          <Badge variant="neutral">{readOnly ? "Publicada" : "Borrador"}</Badge>
+          <Badge variant={registrationOpen ? "info" : "neutral"}>{setupStatusLabel(status)}</Badge>
         </div>
         <PageHeaderTitle>Configurar {draft.competition.name}</PageHeaderTitle>
         <PageHeaderDescription>
@@ -193,6 +232,14 @@ export function CompetitionSetupPage({
         steps={steps}
         style={stepper.style}
       />
+      {registrationOpen ? (
+        <Alert>
+          <AlertDescription>
+            Las inscripciones están abiertas. El formato y las reglas quedan bloqueados hasta que
+            las cierres; puedes seguir gestionando participantes.
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {error ? (
         <PageAlert>
           No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
@@ -205,7 +252,21 @@ export function CompetitionSetupPage({
               disabled={readOnly}
               form={form}
               onChange={(patch) => setForm({ ...form, ...patch })}
-            />
+            >
+              {profile ? (
+                <CompetitionProfileFields
+                  coverDisabled={!canUpdate || status === "archived" || coverUpdate.isPending}
+                  disabled={readOnly}
+                  fieldError={profileError}
+                  onChange={(patch) => {
+                    setProfile({ ...profile, ...patch });
+                    if (patch.cover) coverUpdate.mutate(patch.cover);
+                  }}
+                  onClearFieldError={() => setProfileError(null)}
+                  value={profile}
+                />
+              ) : null}
+            </InformationStep>
           ) : null}
           {currentStep === "format" ? (
             <FormatStep
@@ -233,7 +294,7 @@ export function CompetitionSetupPage({
           {currentStep === "participants" ? (
             <ParticipantsStep
               availableTeams={availableTeams}
-              disabled={readOnly || busy || !canManageParticipants}
+              disabled={participantsLocked || busy || !canManageParticipants}
               newTeamName={newTeamName}
               onAdd={addParticipant}
               onNameChange={setNewTeamName}
@@ -267,18 +328,38 @@ export function CompetitionSetupPage({
             <Button disabled={busy} onClick={() => void continueNext()}>
               Continuar
             </Button>
-          ) : !readOnly && canPublish ? (
-            <Button
-              disabled={busy || approvedParticipantCount < 2}
-              onClick={() => void publish.mutateAsync()}
-            >
-              {publish.isPending ? "Publicando…" : "Publicar competición"}
-            </Button>
+          ) : !participantsLocked && canPublish ? (
+            <>
+              <Button
+                disabled={busy}
+                onClick={() => void registration.mutateAsync(registrationOpen ? "close" : "open")}
+                variant="outline"
+              >
+                {registrationLabel(registrationOpen, registration.isPending)}
+              </Button>
+              <Button
+                disabled={busy || approvedParticipantCount < 2}
+                onClick={() => void publish.mutateAsync()}
+              >
+                {publish.isPending ? "Publicando…" : "Publicar competición"}
+              </Button>
+            </>
           ) : null}
         </div>
       </div>
     </main>
   );
+}
+
+function setupStatusLabel(status: CompetitionDraftDto["competition"]["status"] | undefined) {
+  if (status === "draft" || status === undefined) return "Borrador";
+  if (status === "registration") return "Inscripciones abiertas";
+  return "Publicada";
+}
+
+function registrationLabel(open: boolean, pending: boolean): string {
+  if (open) return pending ? "Cerrando…" : "Cerrar inscripciones";
+  return pending ? "Abriendo…" : "Abrir inscripciones";
 }
 
 function toUpdateInput(draft: CompetitionDraftDto): UpdateCompetitionDraftRequest {

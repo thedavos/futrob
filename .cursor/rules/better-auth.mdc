@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Better Auth
 
-Better Auth is Futrob's only authority for credentials and sessions. It is not the business authorization model. Persistence target is **Cloudflare D1**.
+Better Auth is Futrob's only authority for credentials and sessions. It is not the business authorization model. Persistence is the product **Postgres**, reached from the Workers through Hyperdrive ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)).
 
 ## Ownership
 
@@ -18,8 +18,8 @@ Better Auth is Futrob's only authority for credentials and sessions. It is not t
 
 ## Application boundary
 
-- `SessionIdentityPort` is the only interface application code uses to resolve a session.
-- Configure Better Auth in `apps/auth`. Web proxies `/api/auth/*` and resolves sessions via `AUTH_SERVICE`, then looks up `identity_subjects` in shared D1 (ADR-0015).
+- Application code never reads sessions: use cases receive a trusted `ActorId`.
+- Configure Better Auth in `apps/auth`. Web proxies `/api/auth/*` and resolves the actor from `get-session` via `AUTH_SERVICE`; that response carries `actorId`, so web reads no session, user or identity tables (ADR-0015, ADR-0021).
 - Resolve and validate browser session cookies on the server. Native clients use the existing auth API/session storage and Bearer path; never put the API service secret in a native bundle. Client UI may display session state but never authorizes an operation.
 - Protected use cases receive a trusted `ActorId`, enforce the applicable organization/competition/roster capabilities, then execute with organization-scoped product access in apps/api (Postgres).
 
@@ -34,6 +34,6 @@ Better Auth is Futrob's only authority for credentials and sessions. It is not t
 
 Validate secrets via Wrangler/`env` at composition time. Expected names are documented in `apps/auth/.dev.vars.example` and `apps/web/.dev.vars.example`; never add real secrets to tracked files. Use separate values for local, preview, and production.
 
-When changing Better Auth schema, generate provider SQL with the installed CLI (`--help`), review it, add a Wrangler D1 migration under `apps/auth/migrations`, and verify from a clean local database.
+When changing Better Auth schema, generate provider SQL with the installed CLI (`--help`), review it, add a SQL migration under `apps/api/migrations` (the single history; `auth_*` tables), mirror it in `apps/auth/src/adapters/auth/drizzle-schema.ts`, and verify with the `auth-postgres.integration.test.ts` suite (`TEST_DATABASE_URL`) from a clean schema.
 
-Local web/API `INTERNAL_JOB_SECRET` values must match, as must web/auth `BETTER_AUTH_SECRET`. Follow AGENTS.md for local env setup and shared D1 `--persist-to`; preserve secrets without printing them.
+Local web/API `INTERNAL_JOB_SECRET` values must match, as must web/auth `BETTER_AUTH_SECRET`. Follow AGENTS.md for local env setup and the Hyperdrive `.env` target; preserve secrets without printing them.

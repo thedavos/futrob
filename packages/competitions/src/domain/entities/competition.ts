@@ -1,6 +1,15 @@
 import type { ActorId, CompetitionId, OrganizationId, GamePlatform } from "@futrob/shared-kernel";
+import type { CompetitionCover } from "../value-objects/competition-cover.ts";
+import type { CompetitionSchedule } from "../value-objects/competition-schedule.ts";
+import type { TeamRange } from "../value-objects/team-range.ts";
 
-export type CompetitionStatus = "draft" | "published" | "paused" | "finished" | "archived";
+export type CompetitionStatus =
+  | "draft"
+  | "registration"
+  | "published"
+  | "paused"
+  | "finished"
+  | "archived";
 
 export type CompetitionFormat = "league" | "knockout" | "groups-knockout" | "league-playoffs";
 
@@ -27,6 +36,9 @@ export interface Competition {
   readonly region: CompetitionRegion;
   readonly timeZone: string;
   readonly format: CompetitionFormat;
+  readonly teams: TeamRange;
+  readonly schedule: CompetitionSchedule;
+  readonly cover: CompetitionCover;
   readonly createdByActorId: ActorId;
   readonly creationKey?: string;
   readonly createdAt: Date;

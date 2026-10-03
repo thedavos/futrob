@@ -455,7 +455,7 @@ describe("OnboardingFlowProvider initialization", () => {
 
     const club = await screen.findByRole("button", { name: /Fera Enjaulada/ });
     fireEvent.click(club);
-    expect(searches.at(-1)?.gameEdition).toBe("fc26");
+    expect(searches.at(-1)?.gameEdition).toBe("fc27");
     expect(club.getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Revisar club" }));
 

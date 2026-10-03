@@ -6,9 +6,9 @@ alwaysApply: false
 
 # Futrob architecture
 
-Canonical sources: `docs/architecture/overview.md`, `docs/architecture/module-boundaries.md`, `docs/architecture/dependency-graph.md`, the [ADR index](../../docs/adr/README.md), and [futrob-hexagonal-module](../skills/futrob-hexagonal-module/SKILL.md).
+Canonical sources: `docs/architecture/overview.md`, `docs/architecture/module-boundaries.md`, `docs/architecture/dependency-graph.md`, the [ADR index](../../docs/adr/README.md), and [futrob-hexagonal-module](../../.agents/skills/futrob-hexagonal-module/SKILL.md).
 
-Use [futrob-adr](../skills/futrob-adr/SKILL.md) when evaluating or changing architectural decisions. Follow successors of replaced ADRs and distinguish accepted decisions from implementation evidence. Routine changes that follow existing decisions do not require a new ADR.
+Use [futrob-adr](../../.agents/skills/futrob-adr/SKILL.md) when evaluating or changing architectural decisions. Follow successors of replaced ADRs and distinguish accepted decisions from implementation evidence. Routine changes that follow existing decisions do not require a new ADR.
 
 ## Shape
 
@@ -30,7 +30,7 @@ web/mobile UI → web BFF → SDK → apps/api HTTP → @futrob/<bc> application
 apps/api DI → product adapters (Postgres / EA HTTP)
 ```
 
-- Domain: no React, Zod, D1, fetch, Wrangler env, Sentry.
+- Domain: no React, Zod, pg, fetch, Wrangler env, Sentry.
 - Application: no concrete adapters.
 - Package `index.ts`: no adapters, schemas DB, mappers, HTTP clients.
 - Cross-module: package public API, bridges on ports, or outbox events — never foreign adapters/tables.
@@ -47,7 +47,7 @@ analytics  → premium interpretation
 
 ## Persistence and runtime
 
-- Product persistence: Postgres in apps/api. Auth/actors and BFF rate limits: shared D1, migration history in apps/auth. Blobs: R2. Provider jobs: Queues + Cron in web calling the API.
+- Product persistence: Postgres in apps/api. Auth/actors and BFF rate limits: the same Postgres via Hyperdrive; single migration history in apps/api (ADR-0021). Blobs: R2. Provider jobs: Queues + Cron in web calling the API.
 - Tenancy: application-scoped `organizationId` in adapters (no Postgres RLS).
 - Better Auth owns sessions; the API resolves Futrob capabilities from the relevant organization, competition and roster context. Presentation uses `EffectiveAccess` and the existing `can` / `useCan` / `useCapabilities` helpers, with BC permission constants. Backend use cases enforce access.
 - The API currently uses a no-op domain event publisher and transactionally composes official-result/statistics updates. Inspect wiring before relying on outbox delivery; provider sync Queues/Cron have a separate implemented path.

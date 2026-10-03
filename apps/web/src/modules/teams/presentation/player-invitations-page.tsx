@@ -29,7 +29,8 @@ import {
   TextLink,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { ClockCounterClockwiseIcon, EnvelopeOpenIcon } from "@phosphor-icons/react";
+import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
+import invitationsUrl from "@/assets/illustration-invitations.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { InvitationDetailCard } from "./invitation-detail-card.tsx";
 import {
@@ -237,7 +238,7 @@ function PendingPanel({
     return (
       <EmptyState aria-labelledby={titleId} fill>
         <EmptyStateIcon>
-          <EnvelopeOpenIcon />
+          <img alt="" data-outline="none" src={invitationsUrl} />
         </EmptyStateIcon>
         <EmptyStateCopy>
           <EmptyStateTitle id={titleId}>{t("player.invitations.empty.title")}</EmptyStateTitle>

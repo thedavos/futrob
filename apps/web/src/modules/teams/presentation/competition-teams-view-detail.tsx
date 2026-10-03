@@ -2,9 +2,6 @@
 
 import {
   applyStyles,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
   Button,
   EmptyState,
   EmptyStateDescription,
@@ -26,15 +23,15 @@ import {
   typography,
 } from "@futrob/ui";
 import { ArrowLeftIcon, UsersThreeIcon } from "@phosphor-icons/react";
-import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import {
   ConfirmAction,
   ExternalClubDialog,
   InvitationDialog,
-  roleLabel,
   RosterRoleEditor,
 } from "./competition-team-actions.tsx";
 import type { CompetitionTeamsViewProps } from "./competition-teams-view.tsx";
+import { RosterPlayerCell } from "./roster-player-cell.tsx";
+import { useRoleLabels } from "./roster-role-labels.ts";
 import { EntryBadge, entryStatusLabel } from "./competition-teams-view-entry.tsx";
 import { styles } from "./competition-teams-view-detail.styles.ts";
 
@@ -42,9 +39,9 @@ const skeletonTitle = applyStyles(styles.skeletonTitle);
 const skeletonStats = applyStyles(styles.skeletonStats);
 const skeletonTable = applyStyles(styles.skeletonTable);
 const back = applyStyles(styles.back);
-const avatar = applyStyles(styles.avatar);
 
 export function TeamDetail(props: CompetitionTeamsViewProps) {
+  const roleLabel = useRoleLabels();
   if (!props.selectedTeamId) {
     return (
       <div {...applyStyles(styles.emptyWrap)}>
@@ -97,6 +94,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
         <div {...applyStyles(styles.actions)}>
           {capabilities.manageInvitations ? (
             <InvitationDialog
+              allowedRoles={capabilities.manageRoles ? undefined : ["player"]}
               busy={props.busy}
               invitationUrl={props.invitationUrl}
               onCreateInvitation={props.onCreateInvitation}
@@ -174,22 +172,10 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
               detail.members.map((member) => (
                 <TableRow key={member.membership.id}>
                   <TableCell>
-                    <span {...applyStyles(styles.player)}>
-                      <Avatar className={avatar.className} style={avatar.style}>
-                        {member.presentation.avatarUrl ? (
-                          <AvatarImage alt="" src={member.presentation.avatarUrl} />
-                        ) : null}
-                        <AvatarFallback>
-                          {initialsFromName(member.presentation.displayName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span
-                        title={member.presentation.displayName}
-                        {...applyStyles(styles.playerName)}
-                      >
-                        {member.presentation.displayName}
-                      </span>
-                    </span>
+                    <RosterPlayerCell
+                      avatarUrl={member.presentation.avatarUrl}
+                      displayName={member.presentation.displayName}
+                    />
                   </TableCell>
                   <TableCell>
                     {capabilities.manageRoles ? (

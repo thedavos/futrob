@@ -1,3 +1,4 @@
+import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import { apiErrorSchema } from "../errors.ts";
 import { healthResponseSchema } from "../meta/health.response.ts";
 import { pingResponseSchema } from "../meta/ping.response.ts";
@@ -35,7 +36,10 @@ import {
   acceptCompetitionInvitationResponseSchema,
   competitionDraftInputSchema,
   competitionDraftSchema,
+  exploreCompetitionsQuerySchema,
+  exploreCompetitionsResponseSchema,
   getCompetitionDraftResponseSchema,
+  getExploreCompetitionResponseSchema,
   listAccessibleCompetitionsResponseSchema,
 } from "../competitions/schemas.ts";
 import {
@@ -43,6 +47,7 @@ import {
   getMyNextEncounterResponseSchema,
   listEncounterCandidatesResponseSchema,
 } from "../encounters/schemas.ts";
+import { teamPerformanceOpenApiPaths, teamPerformanceOpenApiSchemas } from "./team-performance.ts";
 import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
   associateMyPlayerExternalClubRequestSchema,
@@ -115,7 +120,11 @@ export const futrobOpenApiV1 = {
     { name: "onboarding", description: "Actor onboarding state and path completion" },
     { name: "organizations", description: "Organizations and tenant memberships" },
     { name: "players", description: "Personal player profile and game accounts" },
-    { name: "competitions", description: "Organization-scoped competition drafts" },
+    {
+      name: "competitions",
+      description:
+        "Organization-scoped drafts and authenticated discovery of published competitions",
+    },
     { name: "authorization", description: "Contextual roles, grants and effective access" },
     { name: "encounters", description: "Persisted encounter schedule read models" },
     { name: "fixtures", description: "Deterministic competition fixture graphs" },
@@ -217,7 +226,7 @@ export const futrobOpenApiV1 = {
             name: "gameEdition",
             in: "query",
             required: false,
-            schema: { type: "string", default: "fc26" },
+            schema: { type: "string", default: "fc27" },
           },
         ],
         responses: {
@@ -268,7 +277,7 @@ export const futrobOpenApiV1 = {
             name: "gameEdition",
             in: "query",
             required: false,
-            schema: { type: "string", default: "fc26" },
+            schema: { type: "string", default: "fc27" },
           },
         ],
         responses: {
@@ -319,7 +328,7 @@ export const futrobOpenApiV1 = {
             name: "gameEdition",
             in: "query",
             required: false,
-            schema: { type: "string", default: "fc26" },
+            schema: { type: "string", default: "fc27" },
           },
           {
             name: "matchType",
@@ -1017,6 +1026,228 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/organizations": {
+      post: {
+        operationId: "createOrganization",
+        tags: ["organizations"],
+        summary: "Create an organization; the caller becomes its organizer",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name", "timeZone"],
+                properties: {
+                  name: { type: "string", minLength: 1, maxLength: 120 },
+                  timeZone: { type: "string", minLength: 1, maxLength: 100 },
+                  slug: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 100,
+                    description: "Derived from the name when omitted.",
+                  },
+                  creationKey: {
+                    type: "string",
+                    pattern: "^[A-Za-z0-9_-]{1,120}$",
+                    description:
+                      "Retrying with the same key and data returns the organization already created; the same key with a different name, slug or time zone answers 409 organizations.creation_key_conflict.",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Organization created",
+            content: {
+              "application/json": {
+                schema: {
+                  allOf: [
+                    { $ref: "#/components/schemas/OrganizationProfile" },
+                    {
+                      type: "object",
+                      required: ["role"],
+                      properties: { role: { type: "string", const: "organizer" } },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/mine": {
+      get: {
+        operationId: "listMyOrganizations",
+        tags: ["organizations"],
+        summary: "List the organizations the caller belongs to",
+        responses: {
+          "200": {
+            description: "Memberships",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["memberships"],
+                  properties: {
+                    memberships: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/OrganizationMembershipSummary" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/slug-availability": {
+      post: {
+        operationId: "checkOrganizationSlugAvailability",
+        tags: ["organizations"],
+        summary: "Check whether a slug is valid and free, with a suggestion when it is not",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["slug"],
+                properties: {
+                  slug: { type: "string", minLength: 1, maxLength: 100 },
+                  organizationId: {
+                    type: "string",
+                    description:
+                      "When editing, the slug this organization owns counts as available.",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Slug availability",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["available"],
+                  properties: {
+                    available: { type: "boolean" },
+                    reason: { type: "string", enum: ["invalid", "taken"] },
+                    suggestion: { type: ["string", "null"] },
+                  },
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}": {
+      get: {
+        operationId: "getOrganizationProfile",
+        tags: ["organizations"],
+        summary: "Read the organization profile (requires organizations.read)",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Organization profile",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/OrganizationProfile" } },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+      patch: {
+        operationId: "updateOrganizationProfile",
+        tags: ["organizations"],
+        summary: "Change name, slug or time zone (requires organizations.update)",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                minProperties: 1,
+                properties: {
+                  name: { type: "string", minLength: 1, maxLength: 120 },
+                  slug: { type: "string", minLength: 1, maxLength: 100 },
+                  timeZone: { type: "string", minLength: 1, maxLength: 100 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Updated organization profile",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/OrganizationProfile" } },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}/logo": {
+      put: {
+        operationId: "setOrganizationLogo",
+        tags: ["organizations"],
+        summary:
+          "Register an uploaded logo or return to the monogram (requires organizations.update)",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["logo"],
+                properties: { logo: { $ref: "#/components/schemas/OrganizationLogo" } },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Organization profile with its new logo",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/OrganizationProfile" } },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     "/competitions/invitations/accept": {
       post: {
         operationId: "acceptCompetitionInvitation",
@@ -1257,7 +1488,22 @@ export const futrobOpenApiV1 = {
           required: true,
           content: {
             "application/json": {
-              schema: { $ref: "#/components/schemas/CompetitionDraftInput" },
+              schema: {
+                allOf: [
+                  { $ref: "#/components/schemas/CompetitionDraftInput" },
+                  {
+                    type: "object",
+                    properties: {
+                      creationKey: {
+                        type: "string",
+                        pattern: "^[A-Za-z0-9_-]{8,120}$",
+                        description:
+                          "Client key: a retry returns the same draft and reuses the cover upload key",
+                      },
+                    },
+                  },
+                ],
+              },
             },
           },
         },
@@ -1292,7 +1538,177 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/competitions/explore": {
+      get: {
+        operationId: "exploreCompetitions",
+        tags: ["competitions"],
+        summary: "List published competitions discoverable by any authenticated actor",
+        parameters: [
+          { name: "q", in: "query", required: false, schema: { type: "string", maxLength: 120 } },
+          {
+            name: "format",
+            in: "query",
+            required: false,
+            schema: {
+              type: "string",
+              enum: ["league", "knockout", "groups-knockout", "league-playoffs"],
+            },
+          },
+          {
+            name: "status",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["registration", "published", "paused", "finished"] },
+          },
+          {
+            name: "region",
+            in: "query",
+            required: false,
+            schema: {
+              type: "string",
+              enum: [
+                "america",
+                "south-america",
+                "north-central-america",
+                "europe",
+                "africa",
+                "asia",
+                "middle-east",
+                "oceania",
+              ],
+            },
+          },
+          {
+            name: "platform",
+            in: "query",
+            required: false,
+            schema: {
+              type: "string",
+              enum: ["playstation", "xbox", "pc", "nintendo-switch-1", "nintendo-switch-2"],
+            },
+          },
+          {
+            name: "sort",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["updated-desc", "name-asc"] },
+          },
+          { name: "cursor", in: "query", required: false, schema: { type: "string" } },
+          {
+            name: "limit",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, maximum: 48, default: 24 },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Discoverable competitions matching the filters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ExploreCompetitionsResponse" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/competitions/explore/{competitionId}": {
+      get: {
+        operationId: "getExploreCompetition",
+        tags: ["competitions"],
+        summary: "Get one discoverable competition",
+        parameters: [
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Discoverable competition",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ExploreCompetition" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/competitions/explore/{competitionId}/application": {
+      get: {
+        operationId: "getMyCompetitionApplication",
+        tags: ["competitions"],
+        summary: "Get the actor's own entry in a discoverable competition, if any",
+        parameters: [
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "The actor's application or null",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["application"],
+                  properties: {
+                    application: {
+                      oneOf: [
+                        { $ref: "#/components/schemas/CompetitionApplication" },
+                        { type: "null" },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+      post: {
+        operationId: "applyToCompetition",
+        tags: ["competitions"],
+        summary:
+          "Apply with a new team to a competition in registration; the actor becomes its captain and the entry stays pending",
+        parameters: [
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["teamName", "creationKey"],
+                properties: {
+                  teamName: { type: "string", minLength: 1, maxLength: 120 },
+                  creationKey: { type: "string", minLength: 8, maxLength: 200 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Pending application (idempotent per creationKey)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/CompetitionApplication" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     ...fixtureOpenApiPaths,
+    ...teamPerformanceOpenApiPaths,
     "/encounters/{encounterId}/candidates": {
       get: {
         operationId: "listEncounterCandidates",
@@ -1384,6 +1800,60 @@ export const futrobOpenApiV1 = {
           "400": { $ref: "#/components/responses/ApiError" },
           "401": { $ref: "#/components/responses/ApiError" },
           "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/encounters/{encounterId}/schedule-change-requests": {
+      get: {
+        operationId: "listScheduleChangeRequests",
+        tags: ["encounters"],
+        summary:
+          "List authorized schedule-change requests for an encounter, including closed history",
+        parameters: [
+          { name: "encounterId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Schedule-change requests in deterministic order",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ListScheduleChangeRequestsResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+      post: {
+        operationId: "createScheduleChangeRequest",
+        tags: ["encounters"],
+        summary: "Create a schedule-change request without changing the fixture",
+        parameters: [
+          { name: "encounterId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateScheduleChangeRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Created or replayed request",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ScheduleChangeRequest" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -1701,6 +2171,85 @@ export const futrobOpenApiV1 = {
               "application/json": { schema: { $ref: "#/components/schemas/CompetitionDraft" } },
             },
           },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/registration/open": {
+      post: {
+        operationId: "openCompetitionRegistration",
+        tags: ["competitions"],
+        summary: "Open registration for a valid draft; format and rules freeze until it closes",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Competition in registration",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/CompetitionDraft" } },
+            },
+          },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/registration/close": {
+      post: {
+        operationId: "closeCompetitionRegistration",
+        tags: ["competitions"],
+        summary: "Close registration and return the competition to draft; entries are kept",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "Competition back in draft",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/CompetitionDraft" } },
+            },
+          },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/cover": {
+      put: {
+        operationId: "updateCompetitionCover",
+        tags: ["competitions"],
+        summary: "Replace the cover in any status except archived",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "competitionId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["cover"],
+                properties: { cover: { $ref: "#/components/schemas/CompetitionCover" } },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Competition with its new cover",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/CompetitionDraft" } },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
           "403": { $ref: "#/components/responses/ApiError" },
           "404": { $ref: "#/components/responses/ApiError" },
           "409": { $ref: "#/components/responses/ApiError" },
@@ -2440,6 +2989,9 @@ export const futrobOpenApiV1 = {
         type: "object",
         required: ["name", "gameEdition", "platform", "region", "timeZone", "format"],
         properties: {
+          teams: { $ref: "#/components/schemas/CompetitionTeamRange" },
+          schedule: { $ref: "#/components/schemas/CompetitionSchedule" },
+          cover: { $ref: "#/components/schemas/CompetitionCover" },
           name: { type: "string", minLength: 1, maxLength: 120 },
           gameEdition: { type: "string", minLength: 1, maxLength: 40 },
           platform: {
@@ -2509,6 +3061,9 @@ export const futrobOpenApiV1 = {
           "region",
           "timeZone",
           "format",
+          "teams",
+          "schedule",
+          "cover",
           "createdAt",
           "updatedAt",
         ],
@@ -2518,7 +3073,7 @@ export const futrobOpenApiV1 = {
           name: { type: "string" },
           status: {
             type: "string",
-            enum: ["draft", "published", "paused", "finished", "archived"],
+            enum: ["draft", "registration", "published", "paused", "finished", "archived"],
           },
           modality: { type: "string", const: "fc-clubs" },
           gameEdition: { type: "string" },
@@ -2544,6 +3099,9 @@ export const futrobOpenApiV1 = {
             type: "string",
             enum: ["league", "knockout", "groups-knockout", "league-playoffs"],
           },
+          teams: { $ref: "#/components/schemas/CompetitionTeamRange" },
+          schedule: { $ref: "#/components/schemas/CompetitionSchedule" },
+          cover: { $ref: "#/components/schemas/CompetitionCover" },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
         },
@@ -2566,6 +3124,34 @@ export const futrobOpenApiV1 = {
               },
             },
           },
+        },
+      },
+      ExploreCompetition: {
+        type: "object",
+        required: ["competition", "organization", "approvedTeamCount"],
+        properties: {
+          competition: { $ref: "#/components/schemas/Competition" },
+          organization: {
+            type: "object",
+            required: ["id", "name"],
+            properties: {
+              id: { type: "string" },
+              name: { type: "string" },
+            },
+          },
+          approvedTeamCount: { type: "integer", minimum: 0 },
+        },
+      },
+      ExploreCompetitionsResponse: {
+        type: "object",
+        required: ["items", "total", "nextCursor"],
+        properties: {
+          items: {
+            type: "array",
+            items: { $ref: "#/components/schemas/ExploreCompetition" },
+          },
+          total: { type: "integer", minimum: 0 },
+          nextCursor: { type: ["string", "null"] },
         },
       },
       EncounterScheduleSnapshot: {
@@ -2696,7 +3282,114 @@ export const futrobOpenApiV1 = {
           },
         ],
       },
+      CompetitionWallTime: {
+        type: "object",
+        required: ["year", "month", "day", "hour", "minute", "second"],
+        properties: {
+          year: { type: "integer" },
+          month: { type: "integer", minimum: 1, maximum: 12 },
+          day: { type: "integer", minimum: 1, maximum: 31 },
+          hour: { type: "integer", minimum: 0, maximum: 23 },
+          minute: { type: "integer", minimum: 0, maximum: 59 },
+          second: { type: "integer", minimum: 0, maximum: 59 },
+        },
+      },
+      RescheduleScope: {
+        oneOf: [
+          {
+            type: "object",
+            required: ["type"],
+            properties: { type: { const: "entire_encounter" } },
+          },
+          {
+            type: "object",
+            required: ["type", "officialSlot"],
+            properties: {
+              type: { const: "official_match" },
+              officialSlot: { type: "integer", enum: [1, 2] },
+            },
+          },
+        ],
+      },
+      ScheduleChangeProposal: {
+        type: "object",
+        required: [
+          "id",
+          "proposedStartAt",
+          "proposedByActorId",
+          "proposedByTeamId",
+          "reason",
+          "createdAt",
+        ],
+        properties: {
+          id: { type: "string", minLength: 1 },
+          proposedStartAt: { type: "string", format: "date-time" },
+          proposedByActorId: { type: "string", minLength: 1 },
+          proposedByTeamId: { type: "string", minLength: 1 },
+          reason: { type: "string", minLength: 1 },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      ScheduleChangeRequest: {
+        type: "object",
+        required: [
+          "id",
+          "organizationId",
+          "competitionId",
+          "encounterId",
+          "requestingTeamId",
+          "initiatedByActorId",
+          "scope",
+          "status",
+          "proposals",
+          "createdAt",
+          "updatedAt",
+        ],
+        properties: {
+          id: { type: "string", minLength: 1 },
+          organizationId: { type: "string", minLength: 1 },
+          competitionId: { type: "string", minLength: 1 },
+          encounterId: { type: "string", minLength: 1 },
+          requestingTeamId: { type: "string", minLength: 1 },
+          initiatedByActorId: { type: "string", minLength: 1 },
+          scope: { $ref: "#/components/schemas/RescheduleScope" },
+          status: {
+            type: "string",
+            enum: ["open", "accepted", "rejected", "cancelled", "expired", "escalated"],
+          },
+          proposals: {
+            type: "array",
+            minItems: 1,
+            items: { $ref: "#/components/schemas/ScheduleChangeProposal" },
+          },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      CreateScheduleChangeRequest: {
+        type: "object",
+        required: ["requestingTeamId", "scope", "proposedWallTime", "reason", "idempotencyKey"],
+        properties: {
+          requestingTeamId: { type: "string", minLength: 1 },
+          scope: { $ref: "#/components/schemas/RescheduleScope" },
+          proposedWallTime: { $ref: "#/components/schemas/CompetitionWallTime" },
+          reason: { type: "string", minLength: 1 },
+          idempotencyKey: { type: "string", minLength: 1 },
+          timeZone: { type: "string", minLength: 1 },
+        },
+      },
+      ListScheduleChangeRequestsResponse: {
+        type: "object",
+        required: ["requests"],
+        properties: {
+          requests: {
+            type: "array",
+            items: { $ref: "#/components/schemas/ScheduleChangeRequest" },
+          },
+        },
+      },
       ...fixtureOpenApiSchemas,
+      ...teamPerformanceOpenApiSchemas,
       CompetitionRules: {
         type: "object",
         required: [
@@ -2777,6 +3470,121 @@ export const futrobOpenApiV1 = {
           competitionId: { type: "string" },
           teamId: { type: "string" },
           status: { type: "string", enum: ["pending", "approved", "rejected"] },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      CompetitionTeamRange: {
+        type: "object",
+        required: ["min", "max"],
+        description: "Approved-team bounds; max null means no limit. Approvals stop at max.",
+        properties: {
+          min: { type: "integer", minimum: 2, maximum: 256 },
+          max: { type: ["integer", "null"], minimum: 2, maximum: 256 },
+        },
+      },
+      CompetitionSchedule: {
+        type: "object",
+        required: ["startsOn", "endsOn"],
+        description: "Calendar dates in the competition time zone; endsOn cannot precede startsOn.",
+        properties: {
+          startsOn: { type: ["string", "null"], format: "date" },
+          endsOn: { type: ["string", "null"], format: "date" },
+        },
+      },
+      OrganizationLogo: {
+        oneOf: [
+          {
+            type: "object",
+            required: ["kind"],
+            properties: { kind: { type: "string", const: "monogram" } },
+          },
+          {
+            type: "object",
+            required: ["kind", "key"],
+            properties: {
+              kind: { type: "string", const: "upload" },
+              key: {
+                type: "string",
+                minLength: 1,
+                maxLength: 300,
+                description: "R2 key under organization-logos/{organizationId}/.",
+              },
+            },
+          },
+        ],
+      },
+      OrganizationProfile: {
+        type: "object",
+        required: ["organizationId", "name", "slug", "timeZone", "logo"],
+        properties: {
+          organizationId: { type: "string" },
+          name: { type: "string" },
+          slug: { type: "string" },
+          timeZone: { type: "string" },
+          logo: { $ref: "#/components/schemas/OrganizationLogo" },
+        },
+      },
+      OrganizationMembershipSummary: {
+        type: "object",
+        required: [
+          "organizationId",
+          "organizationName",
+          "organizationSlug",
+          "organizationLogo",
+          "role",
+        ],
+        properties: {
+          organizationId: { type: "string" },
+          organizationName: { type: "string" },
+          organizationSlug: { type: "string" },
+          organizationLogo: { $ref: "#/components/schemas/OrganizationLogo" },
+          role: { type: "string", enum: ["organizer", "staff", "member"] },
+        },
+      },
+      CompetitionCover: {
+        oneOf: [
+          {
+            type: "object",
+            required: ["kind", "preset"],
+            properties: {
+              kind: { type: "string", const: "preset" },
+              preset: {
+                type: "string",
+                enum: [
+                  "cup",
+                  "classic",
+                  "friendlies",
+                  "groups",
+                  "league",
+                  "lightning",
+                  "playoffs",
+                  "pre-season",
+                  "supercup",
+                ],
+              },
+            },
+          },
+          {
+            type: "object",
+            required: ["kind", "key"],
+            properties: {
+              kind: { type: "string", const: "upload" },
+              key: {
+                type: "string",
+                description: "R2 key under competition-covers/{organizationId}/",
+              },
+            },
+          },
+        ],
+      },
+      CompetitionApplication: {
+        type: "object",
+        required: ["entryId", "status", "teamId", "teamName", "createdAt"],
+        properties: {
+          entryId: { type: "string" },
+          status: { type: "string", enum: ["pending", "approved", "rejected"] },
+          teamId: { type: "string" },
+          teamName: { type: "string" },
           createdAt: { type: "string", format: "date-time" },
         },
       },
@@ -2919,10 +3727,23 @@ export const futrobOpenApiV1 = {
                     },
                     presentation: {
                       type: "object",
-                      required: ["displayName", "avatarUrl"],
+                      required: ["displayName", "avatarUrl", "gameAccount"],
                       properties: {
                         displayName: { type: "string" },
                         avatarUrl: { type: ["string", "null"], format: "uri" },
+                        gameAccount: {
+                          oneOf: [
+                            { type: "null" },
+                            {
+                              type: "object",
+                              required: ["platform", "gameEdition"],
+                              properties: {
+                                platform: { type: "string", enum: [...GAME_PLATFORM_VALUES] },
+                                gameEdition: { type: "string" },
+                              },
+                            },
+                          ],
+                        },
                       },
                     },
                   },
@@ -3666,6 +4487,9 @@ export const futrobOpenApiV1 = {
         required: [
           "organizationId",
           "name",
+          "slug",
+          "timeZone",
+          "logo",
           "role",
           "competition",
           "profile",
@@ -3675,6 +4499,9 @@ export const futrobOpenApiV1 = {
         properties: {
           organizationId: { type: "string" },
           name: { type: "string" },
+          slug: { type: "string" },
+          timeZone: { type: "string" },
+          logo: { $ref: "#/components/schemas/OrganizationLogo" },
           role: { type: "string", const: "organizer" },
           competition: { $ref: "#/components/schemas/CompetitionDraft" },
           profile: { $ref: "#/components/schemas/PlayerProfile" },
@@ -3859,6 +4686,9 @@ void accessGrantSchema;
 void changeCompetitionRoleRequestSchema;
 void competitionRoleAssignmentSchema;
 void listAccessibleCompetitionsResponseSchema;
+void exploreCompetitionsQuerySchema;
+void exploreCompetitionsResponseSchema;
+void getExploreCompetitionResponseSchema;
 void encounterScheduleSnapshotSchema;
 void listEncounterCandidatesResponseSchema;
 void getMyNextEncounterResponseSchema;

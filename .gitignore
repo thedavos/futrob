@@ -43,6 +43,6 @@ npm-debug.log*
 .audit/
 
 # verify-futrob run lock (evidence/ is kept on disk, not committed)
-.cursor/skills/verify-futrob/.run/
-.cursor/skills/verify-futrob/evidence/
+.agents/skills/verify-futrob/.run/
+.agents/skills/verify-futrob/evidence/
 apps/web/src/routeTree.gen.ts

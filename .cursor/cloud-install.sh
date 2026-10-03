@@ -105,6 +105,19 @@ fi
 if ! grep -q '^FUTROB_API_BASE_URL=' apps/web/.dev.vars; then
   printf '\nFUTROB_API_BASE_URL=http://localhost:8787/api/v1\n' >> apps/web/.dev.vars
 fi
-# Non-interactive when stdin is not a TTY (Cloud / CI).
-# apps/auth owns the one migration history for the D1 shared with web.
-CI=1 npx wrangler d1 migrations apply futrob-app --local --cwd apps/auth --persist-to "$ROOT/apps/web/.wrangler/state"
+# Auth, actors and BFF rate limits live in the product Postgres (ADR-0021).
+# The Workers reach it through a local Hyperdrive target; apps/api/migrations is the
+# only schema history. Both need DATABASE_URL, which this script never invents.
+database_url="$(sed -n 's/^DATABASE_URL=//p' apps/api/.env 2>/dev/null | head -n 1 || true)"
+if [[ -n "$database_url" ]]; then
+  for env_file in apps/auth/.env apps/web/.env; do
+    touch "$env_file"
+    if ! grep -q '^CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=' "$env_file"; then
+      printf 'CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=%s\n' "$database_url" >> "$env_file"
+    fi
+  done
+  npm run migrate -w @futrob/api
+else
+  echo "DATABASE_URL is not set in apps/api/.env: skipping migrations and Hyperdrive env." >&2
+  echo "Sign-in needs Postgres; set DATABASE_URL, then re-run this script." >&2
+fi

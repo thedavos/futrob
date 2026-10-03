@@ -9,6 +9,10 @@ export interface CompetitionEntryRepository {
     teamId: TeamId,
   ): Promise<CompetitionEntry | null>;
   findByCreationKey(creationKey: string): Promise<CompetitionEntry | null>;
+  countApprovedByCompetition(
+    organizationId: OrganizationId,
+    competitionId: CompetitionId,
+  ): Promise<number>;
   listByCompetition?(
     organizationId: OrganizationId,
     competitionId: CompetitionId,

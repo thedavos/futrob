@@ -37,6 +37,8 @@ import {
 } from "../../domain/policies/build-competition-standings.ts";
 import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
+import type { TeamPerformanceRankingLockPort } from "../../domain/ports/team-performance-ranking.repository.ts";
+import type { RebuildTeamPerformanceRankingUseCase } from "../rebuild-team-performance-ranking/rebuild-team-performance-ranking.use-case.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
 import {
   buildPlayerContributions as projectPlayerContributions,
@@ -75,6 +77,8 @@ export interface ProjectOfficialResultDependencies {
   readonly standings: CompetitionStandingSnapshotRepository;
   readonly matchRules: CompetitionMatchRulesReaderPort;
   readonly rebuildRankings?: Pick<RebuildCompetitionRankingsUseCase, "execute">;
+  readonly teamPerformanceLock?: TeamPerformanceRankingLockPort;
+  readonly rebuildTeamPerformance?: Pick<RebuildTeamPerformanceRankingUseCase, "execute">;
   readonly transaction: TransactionPort;
   readonly clock: ClockPort;
 }
@@ -83,6 +87,20 @@ export class ProjectOfficialResultUseCase {
   constructor(private readonly deps: ProjectOfficialResultDependencies) {}
 
   async execute(
+    input: ProjectOfficialResultInput,
+  ): Promise<Result<ProjectOfficialResultOutput, ProjectOfficialResultError>> {
+    const result =
+      "officialResultId" in input
+        ? await this.deps.officialResults.getById(input.officialResultId)
+        : await this.deps.officialResults.getLatestByEncounter(input.encounterId);
+    const lock = this.deps.teamPerformanceLock;
+    if (!result || !lock) return this.executeLocked(input);
+    return this.deps.transaction.runInTransaction(() =>
+      lock.runExclusive(result.competitionId, () => this.executeLocked(input)),
+    );
+  }
+
+  private async executeLocked(
     input: ProjectOfficialResultInput,
   ): Promise<Result<ProjectOfficialResultOutput, ProjectOfficialResultError>> {
     const officialResult =
@@ -97,6 +115,23 @@ export class ProjectOfficialResultUseCase {
           message: "Official result was not found.",
         }),
       );
+    }
+
+    // A void can have removed all contributions. The source authority, not a max
+    // projected revision, prevents an old approved event from resurrecting it.
+    const latest = await this.deps.officialResults.getLatestByEncounter(officialResult.encounterId);
+    if (
+      latest &&
+      (latest.revision > officialResult.revision ||
+        latest.id !== officialResult.id ||
+        latest.status !== officialResult.status)
+    ) {
+      return ok({
+        officialResultId: officialResult.id,
+        revision: officialResult.revision,
+        contributionsProjected: 0,
+        matchedPlayerProfiles: 0,
+      });
     }
 
     const previousPlayers = await this.deps.contributions.listByEncounter(
@@ -151,6 +186,13 @@ export class ProjectOfficialResultUseCase {
 
     if (input.rebuildRankings !== false && this.deps.rebuildRankings) {
       await this.deps.rebuildRankings.execute({
+        competitionId: officialResult.competitionId,
+      });
+    }
+
+    if (input.rebuildRankings !== false && this.deps.rebuildTeamPerformance) {
+      await this.deps.rebuildTeamPerformance.execute({
+        organizationId: officialResult.organizationId,
         competitionId: officialResult.competitionId,
       });
     }

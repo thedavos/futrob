@@ -12,7 +12,9 @@ import {
   Caption,
   EmptyState,
   EmptyStateActions,
+  EmptyStateCopy,
   EmptyStateDescription,
+  EmptyStateIcon,
   EmptyStateTitle,
   PageHeader,
   PageHeaderDescription,
@@ -21,6 +23,9 @@ import {
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
+import clubFinderUrl from "@/assets/club-finder.svg";
+import gamepadUrl from "@/assets/gamepad.svg";
+import myStatsUrl from "@/assets/illustration-my-stats.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { useWorkspaceSelectedClubId } from "@/shared/presentation/shell/use-workspace-selection.tsx";
@@ -189,6 +194,7 @@ function PlayerStatisticsPageLoaded({
           actionHref="/player/ea-clubs"
           actionLabel={t("shell.workspace.addClub")}
           description={t("player.statistics.needsClub.description")}
+          illustrationSrc={clubFinderUrl}
           title={t("player.statistics.needsClub.title")}
         />
       ) : null}
@@ -197,6 +203,7 @@ function PlayerStatisticsPageLoaded({
           actionHref="/player/game-accounts"
           actionLabel={t("player.gameData.review")}
           description={t("player.statistics.needsGameAccount.description")}
+          illustrationSrc={gamepadUrl}
           title={t("player.statistics.needsGameAccount.title")}
         />
       ) : null}
@@ -205,6 +212,7 @@ function PlayerStatisticsPageLoaded({
           actionHref="/player/matches"
           actionLabel={t("player.nav.matches")}
           description={t("player.statistics.emptyDescription")}
+          illustrationSrc={myStatsUrl}
           title={t("player.statistics.emptyTitle")}
         />
       ) : null}
@@ -291,17 +299,24 @@ function ProfileEmpty({
   actionHref,
   actionLabel,
   description,
+  illustrationSrc,
   title,
 }: {
   readonly actionHref: "/player/ea-clubs" | "/player/game-accounts" | "/player/matches";
   readonly actionLabel: string;
   readonly description: string;
+  readonly illustrationSrc: string;
   readonly title: string;
 }) {
   return (
     <EmptyState>
-      <EmptyStateTitle>{title}</EmptyStateTitle>
-      <EmptyStateDescription>{description}</EmptyStateDescription>
+      <EmptyStateIcon>
+        <img alt="" data-outline="none" src={illustrationSrc} />
+      </EmptyStateIcon>
+      <EmptyStateCopy>
+        <EmptyStateTitle>{title}</EmptyStateTitle>
+        <EmptyStateDescription>{description}</EmptyStateDescription>
+      </EmptyStateCopy>
       <EmptyStateActions>
         <Button render={<Link to={actionHref} />} role="link">
           {actionLabel}

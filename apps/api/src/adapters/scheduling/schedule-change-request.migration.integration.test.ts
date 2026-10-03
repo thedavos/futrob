@@ -15,6 +15,7 @@ import {
 } from "@futrob/shared-kernel";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { Pool, type PoolClient } from "pg";
+import { seedActors } from "@/testing/seed-actors.ts";
 import { PostgresEncounterScheduleRepository } from "./encounter-schedule.repository.ts";
 import { PostgresScheduleChangeRequestRepository } from "./schedule-change-request.repository.ts";
 
@@ -214,6 +215,13 @@ suite("0037 schedule change requests migration", () => {
         proposals: [{ ...homeProposal, id: "req-accepted-proposal" }],
       };
       await repository.save(accepted);
+      await expect(repository.listByEncounter(organizationId, encounterId)).resolves.toEqual([
+        home,
+        accepted,
+      ]);
+      await expect(repository.listActiveByEncounter(organizationId, encounterId)).resolves.toEqual([
+        home,
+      ]);
       await expect(
         repository.countAcceptedByTeam({
           organizationId,
@@ -374,6 +382,7 @@ async function insertRequest(
 }
 
 async function seedTenants(client: PoolClient): Promise<void> {
+  await seedActors(client, "organizer", actorId);
   await insertOrganization(client, organizationId, "Org A");
   await insertOrganization(client, otherOrganizationId, "Org B");
   await insertCompetition(client, organizationId, competitionId);

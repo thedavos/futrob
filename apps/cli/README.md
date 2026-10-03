@@ -5,7 +5,7 @@ CLI local para **probar dominio, use cases y la API** mientras construyes Futrob
 ## Para qué sirve
 
 - Ejercitar entidades, value objects y reglas puras sin UI ni Workers.
-- Correr use cases con **fakes en memoria** (ports) antes de tener D1/R2.
+- Correr use cases con **fakes en memoria** (ports) antes de tener Postgres/R2.
 - Smoke rápido de flujos (encuentro → candidatos EA → selección oficial) desde la terminal.
 - Ejercitar **toda la superficie HTTP de `apps/api`** vía `@futrob/sdk` con service auth.
 - `e2e-golden-path`: flujo completo org → competición → entry → publish → fixture en un solo comando.
@@ -14,7 +14,7 @@ CLI local para **probar dominio, use cases y la API** mientras construyes Futrob
 
 - No sustituye Vitest (los tests siguen en el módulo / `packages/test-support`).
 - No es API pública ni herramienta de ops en producción.
-- No importa adapters de Cloudflare (D1, Queues, EA HTTP real) salvo comandos explícitos de integración vía `@futrob/sdk`.
+- No importa adapters de Cloudflare (Hyperdrive, Queues, EA HTTP real) salvo comandos explícitos de integración vía `@futrob/sdk`.
 - No mueve el dominio: ya vive en `@futrob/<bc>`; el CLI solo lo consume.
 
 ## Effect TS
@@ -40,6 +40,12 @@ Todos los endpoints de `apps/api` (salvo meta/openapi) exigen service auth:
 
 Sin `--actor` los endpoints protegidos responderán 401.
 
+Con la API sobre Postgres, el actor **debe existir** en `actors` (ADR-0021): cada `ActorId`
+guardado tiene una FK. Regístrate en la web y usa su id (lo devuelve
+`GET localhost:8788/api/auth/get-session` como `actorId`); un id inventado como
+`actor_demo` falla en cualquier escritura por la FK. Los smokes offline
+usan fakes en memoria y no lo necesitan.
+
 ## Uso
 
 Desde la raíz del monorepo:
@@ -57,23 +63,23 @@ npm run cli -- results-smoke
 
 # Integración (apps/api en marcha):
 npm run dev
-npm run cli -- api-health --actor actor_demo
-npm run cli -- club-search Fera --actor actor_demo --json
-npm run cli -- e2e-golden-path --actor actor_demo
+npm run cli -- api-health --actor <actorId>
+npm run cli -- club-search Fera --actor <actorId> --json
+npm run cli -- e2e-golden-path --actor <actorId>
 ```
 
 ## Comandos
 
 ### Base y dominio (offline)
 
-| Comando                  | Descripción                                                              |
-| ------------------------ | ------------------------------------------------------------------------ |
-| `help`                   | Lista comandos                                                           |
-| `ping`                   | Comprueba que el CLI arranca                                             |
-| `domain-smoke`           | Smoke de shared-kernel + tipos de scheduling/results                     |
-| `domain-smoke-game-data` | Helpers puros + `SearchExternalClubsUseCase` con provider fake           |
-| `statistics-smoke`       | `GetMyPersonalStatisticsUseCase` con fakes en memoria                    |
-| `results-smoke`          | `SelectOfficialMatches` → `ConfirmOfficialSelection` con fakes + eventos |
+| Comando                  | Descripción                                                                            |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| `help`                   | Lista comandos                                                                         |
+| `ping`                   | Comprueba que el CLI arranca                                                           |
+| `domain-smoke`           | Smoke de shared-kernel + tipos de scheduling/results                                   |
+| `domain-smoke-game-data` | Helpers puros + `SearchExternalClubsUseCase` con provider fake                         |
+| `statistics-smoke`       | `GetMyPersonalStatisticsUseCase` con fakes en memoria                                  |
+| `results-smoke`          | Propuesta → confirmación rival, y rechazo → revisión → resolución, con fakes + eventos |
 
 ### Integración (requieren `npm run dev`)
 
@@ -81,13 +87,20 @@ npm run cli -- e2e-golden-path --actor actor_demo
 | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `api-health`                                               | `GET /meta/health` (estado API + DB: `ok` / `skipped` / `error`)            |
 | `org-name-check <name>`                                    | Disponibilidad de nombre de organización                                    |
-| `org-create <name>`                                        | Crea organización                                                           |
+| `org-create <name> [--slug s] [--time-zone tz]`            | Crea organización (zona por defecto `UTC`)                                  |
+| `org-slug-check <slug> [--org id]`                         | Disponibilidad de slug, con sugerencia                                      |
+| `org-profile <orgId>`                                      | Perfil: nombre, slug, zona horaria y escudo                                 |
 | `org-mine`                                                 | Membresías del actor                                                        |
 | `org-invite <orgId> <email> [--role role]`                 | Invitación staff de organización                                            |
 | `onboarding-status`                                        | Estado de onboarding del actor                                              |
 | `comp-create <orgId> <name>`                               | Draft de competición (`--edition --platform --region --tz --format`)        |
 | `comp-list <orgId>` / `comp-show <orgId> <compId>`         | Listar / ver draft                                                          |
 | `comp-publish <orgId> <compId>`                            | Publica la competición                                                      |
+| `comp-registration-open <orgId> <compId>`                  | Abre inscripciones (`draft → registration`; formato y reglas se congelan)   |
+| `comp-registration-close <orgId> <compId>`                 | Cierra inscripciones y vuelve a borrador; conserva las inscripciones        |
+| `comp-apply <competitionId> <teamName> [--key k]`          | Postula un equipo nuevo (queda `pending`; el actor es capitán)              |
+| `comp-application <competitionId>`                         | Muestra la solicitud del actor en esa competición                           |
+| `comp-explore` / `comp-explore-show <id>`                  | Catálogo autenticado de competiciones publicadas                            |
 | `participant-add/list`                                     | Participantes de competición                                                |
 | `entry-register/approve/reject`                            | Ciclo de entries de equipos                                                 |
 | `standings <orgId> <compId>`                               | Tabla de posiciones                                                         |

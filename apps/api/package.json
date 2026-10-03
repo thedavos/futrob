@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "start": "tsx src/main.ts",
+    "migrate": "tsx src/migrate.ts",
     "format": "vp fmt",
     "lint": "vp lint",
     "check": "vp check",

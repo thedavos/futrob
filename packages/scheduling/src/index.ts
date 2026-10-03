@@ -38,6 +38,7 @@ export type {
   CompetitionRescheduleRulesPort,
 } from "./domain/ports/competition-reschedule-rules.port.ts";
 export type { ScheduleChangeRequestRepository } from "./domain/ports/schedule-change-request.repository.ts";
+export type { CompetitionTimeZonePort } from "./domain/ports/competition-time-zone.port.ts";
 export type { OfficialMatchRepository } from "./domain/ports/official-match.repository.ts";
 export type { EncounterMutationLockPort } from "./domain/ports/encounter-mutation-lock.port.ts";
 export type {
@@ -69,6 +70,11 @@ export {
   CreateScheduleChangeRequestUseCase,
   type CreateScheduleChangeRequestInput,
 } from "./application/create-schedule-change-request.use-case.ts";
+export {
+  ListScheduleChangeRequestsUseCase,
+  type ListScheduleChangeRequestsError,
+  type ListScheduleChangeRequestsInput,
+} from "./application/list-schedule-change-requests.use-case.ts";
 export { GetCompetitionFixtureUseCase } from "./application/get-competition-fixture.use-case.ts";
 export {
   EncounterScheduleAuthorizationForbidden,

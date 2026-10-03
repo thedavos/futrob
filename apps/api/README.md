@@ -128,15 +128,15 @@ Default port is `8787`. The app boots without a database. Without
 
 ## Environment
 
-| Variable                     | Required       | Default                                       | Purpose                                                            |
-| ---------------------------- | -------------- | --------------------------------------------- | ------------------------------------------------------------------ |
-| `PORT`                       | no             | `8787`                                        | HTTP listen port                                                   |
-| `NODE_ENV`                   | no             | `development`                                 | Runtime mode                                                       |
-| `DATABASE_URL`               | no (prod: yes) | unset                                         | Postgres connection string (Railway / Neon)                        |
-| `INTERNAL_JOB_SECRET`        | yes            | unset                                         | Shared with `apps/web` for trusted BFF calls (game-data, orgs, …)  |
-| `INITIAL_SUPERUSER_ACTOR_ID` | no             | unset                                         | Seeds and audits the first persisted superuser; ignored afterwards |
-| `EA_CLUBS_BASE_URL`          | no             | `https://proclubs.ea.com/api/fc`              | EA Clubs egress base                                               |
-| `CORS_ORIGINS`               | no             | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call the API            |
+| Variable                     | Required       | Default                                       | Purpose                                                           |
+| ---------------------------- | -------------- | --------------------------------------------- | ----------------------------------------------------------------- |
+| `PORT`                       | no             | `8787`                                        | HTTP listen port                                                  |
+| `NODE_ENV`                   | no             | `development`                                 | Runtime mode                                                      |
+| `DATABASE_URL`               | no (prod: yes) | unset                                         | Postgres (Neon in dev, Railway in prod); also required to sign in |
+| `INTERNAL_JOB_SECRET`        | yes            | unset                                         | Shared with `apps/web` for trusted BFF calls (game-data, orgs, …) |
+| `INITIAL_SUPERUSER_ACTOR_ID` | no             | unset                                         | Seeds and audits the first superuser; must be an existing actor   |
+| `EA_CLUBS_BASE_URL`          | no             | `https://proclubs.ea.com/api/fc`              | EA Clubs egress base                                              |
+| `CORS_ORIGINS`               | no             | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call the API           |
 
 Local file:
 
@@ -150,7 +150,7 @@ npm run api
 
 ## Railway notes
 
-- Apply every SQL migration in `apps/api/migrations/` in filename order before relying on product persistence; do not stop at an older documented migration number.
+- Apply every SQL migration in `apps/api/migrations/` in filename order before relying on persistence: `npm run migrate -w @futrob/api` runs the pending files (one transaction each, recorded in `schema_migrations`) against `DATABASE_URL`. This is the single history for product, auth (`auth_*`), `actors`/`identity_subjects` and `app_rate_limit_windows` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); do not stop at an older documented migration number. A database whose schema predates the ledger (it has tables but no `schema_migrations`) is never replayed from `0001`: the runner refuses until you record where it stands with `npm run migrate -w @futrob/api -- --baseline <N>` (`N` = number of the last migration already applied); those files are recorded, not executed.
 - Set `TEST_DATABASE_URL` to run the clean/legacy migration integration suite; it creates and
   removes a uniquely named schema without touching existing schemas.
 - Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.

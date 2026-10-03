@@ -21,8 +21,8 @@ import {
   typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { TrophyIcon } from "@phosphor-icons/react";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import noCompetitionsUrl from "@/assets/illustration-no-matches.png";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { useOrganizationCompetitionsQuery } from "./competition-queries.ts";
 
@@ -124,7 +124,7 @@ export function OrganizationCompetitionsPage({
         ) : competitions.length === 0 ? (
           <EmptyState>
             <EmptyStateIcon>
-              <TrophyIcon aria-hidden="true" />
+              <img alt="" data-outline="none" src={noCompetitionsUrl} />
             </EmptyStateIcon>
             <EmptyStateTitle>Sin competiciones todavía</EmptyStateTitle>
             <EmptyStateDescription>
@@ -184,6 +184,8 @@ function statusLabel(status: CompetitionStatusDto): string {
   switch (status) {
     case "draft":
       return "Borrador";
+    case "registration":
+      return "Inscripciones abiertas";
     case "published":
       return "Publicada";
     case "paused":

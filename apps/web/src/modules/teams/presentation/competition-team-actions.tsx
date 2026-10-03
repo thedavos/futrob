@@ -6,7 +6,6 @@ import { rosterMembershipRoleSchema } from "@futrob/api-contracts";
 import {
   applyStyles,
   typography,
-  vis,
   Alert,
   AlertDescription,
   AlertDialog,
@@ -37,63 +36,69 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-  useCopyToClipboard,
 } from "@futrob/ui";
-import {
-  CheckIcon,
-  CopyIcon,
-  LinkIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-} from "@phosphor-icons/react";
+import { LinkIcon, MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
+import { eaPlatformLabel } from "@/modules/game-data/presentation/ea-club-search-meta.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { runAction } from "@/shared/presentation/run-action.ts";
 import { styles } from "./competition-team-actions.styles.ts";
+import { InvitationLinkPanel } from "./invitation-link-panel.tsx";
+import { ROSTER_ROLES, useRoleLabels } from "./roster-role-labels.ts";
 
-const copy = applyStyles(styles.copy);
 const searchAlert = applyStyles(styles.searchAlert);
 const roleTrigger = applyStyles(styles.roleTrigger);
 
-export const roleLabel = {
-  player: "Jugador",
-  captain: "Capitán",
-  vice_captain: "Subcapitán",
-} satisfies Record<RosterMembershipRoleDto, string>;
+export type CreateInvitationInput = {
+  readonly role: RosterMembershipRoleDto;
+  readonly redeemPolicy: "single" | "multi";
+  readonly inviteeIdentifier: string | null;
+  readonly message: string | null;
+};
 
 export function InvitationDialog({
   busy,
+  disabled,
+  allowedRoles = ROSTER_ROLES,
   invitationUrl,
   onCreateInvitation,
 }: Readonly<{
   busy?: boolean;
+  disabled?: boolean;
+  /** Roles the actor may hand out; anything above player needs role-management rights. */
+  allowedRoles?: readonly RosterMembershipRoleDto[];
   invitationUrl?: string | null;
-  onCreateInvitation: (input: {
-    readonly role: RosterMembershipRoleDto;
-    readonly redeemPolicy: "single" | "multi";
-    readonly inviteeIdentifier: string | null;
-    readonly message: string | null;
-  }) => Promise<void>;
+  onCreateInvitation: (input: CreateInvitationInput) => Promise<void>;
 }>) {
+  const { t } = useI18n();
+  const roleLabel = useRoleLabels();
   const [role, setRole] = useState<RosterMembershipRoleDto>("player");
   const [policy, setPolicy] = useState<"single" | "multi">("single");
   const [inviteeIdentifier, setInviteeIdentifier] = useState("");
   const [message, setMessage] = useState("");
-  const { copyToClipboard, isCopied } = useCopyToClipboard();
+  const roleItems = allowedRoles.map((value) => ({ value, label: roleLabel[value] }));
+  const policyItems = [
+    { value: "single", label: t("roster.invite.uses.single") },
+    { value: "multi", label: t("roster.invite.uses.multi") },
+  ];
+  const onlyPlayers = allowedRoles.length === 1;
+  // Links for captain or vice-captain roles are always single use; the API enforces it too.
+  const rolePolicy = role === "player" ? policy : "single";
   return (
     <Dialog>
-      <DialogTrigger render={<Button variant="outline" />}>
-        <PlusIcon aria-hidden="true" /> Invitar
+      <DialogTrigger disabled={disabled} render={<Button variant="outline" />}>
+        <PlusIcon aria-hidden="true" /> {t("roster.invite.trigger")}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Crear invitación de plantilla</DialogTitle>
-          <DialogDescription>
-            El enlace solo da acceso a este Team y respeta el cupo y estado actuales.
-          </DialogDescription>
+          <DialogTitle>{t("roster.invite.title")}</DialogTitle>
+          <DialogDescription>{t("roster.invite.description")}</DialogDescription>
         </DialogHeader>
         <div {...applyStyles(styles.fields)}>
           <Field name="invitation-role">
-            <FieldLabel>Rol inicial</FieldLabel>
+            <FieldLabel>{t("roster.invite.role")}</FieldLabel>
             <Select
+              disabled={onlyPlayers}
+              items={roleItems}
               onValueChange={(value) => {
                 if (!value) return;
                 setRole(rosterMembershipRoleSchema.parse(value));
@@ -104,87 +109,77 @@ export function InvitationDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(roleLabel).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
+                {roleItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {onlyPlayers ? (
+              <FieldDescription>{t("roster.invite.rolesRestricted")}</FieldDescription>
+            ) : null}
           </Field>
-          <Field name="invitation-policy">
-            <FieldLabel>Usos</FieldLabel>
-            <Select
-              onValueChange={(value) => {
-                if (value === "single" || value === "multi") setPolicy(value);
-              }}
-              value={policy}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Un solo uso</SelectItem>
-                <SelectItem value="multi">Varios usos</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
+          {role === "player" ? (
+            <Field name="invitation-policy">
+              <FieldLabel>{t("roster.invite.uses")}</FieldLabel>
+              <Select
+                items={policyItems}
+                onValueChange={(value) => {
+                  if (value === "single" || value === "multi") setPolicy(value);
+                }}
+                value={policy}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {policyItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          ) : null}
           <Field name="invitation-invitee">
-            <FieldLabel>Destinatario (ID de juego)</FieldLabel>
+            <FieldLabel>{t("roster.invite.invitee")}</FieldLabel>
             <Input
               autoComplete="off"
               onChange={(event) => setInviteeIdentifier(event.target.value)}
-              placeholder="Ej. davos282"
+              placeholder={t("roster.invite.inviteePlaceholder")}
               value={inviteeIdentifier}
             />
-            <FieldDescription>
-              Opcional. La invitación aparecerá en el inbox del jugador con ese ID vinculado.
-            </FieldDescription>
+            <FieldDescription>{t("roster.invite.inviteeHint")}</FieldDescription>
           </Field>
           <Field name="invitation-message">
-            <FieldLabel>Mensaje</FieldLabel>
+            <FieldLabel>{t("roster.invite.message")}</FieldLabel>
             <Textarea
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Opcional. Un mensaje breve para el jugador invitado."
+              placeholder={t("roster.invite.messagePlaceholder")}
               rows={3}
               value={message}
             />
           </Field>
-          {invitationUrl ? (
-            <div {...applyStyles(styles.created)}>
-              <p {...applyStyles(typography.label, styles.createdLabel)}>Enlace creado</p>
-              <p {...applyStyles(styles.createdUrl)}>{invitationUrl}</p>
-              <Button
-                className={copy.className}
-                onClick={() => void copyToClipboard(invitationUrl)}
-                style={copy.style}
-                variant="outline"
-              >
-                {isCopied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
-                {isCopied ? "Copiado" : "Copiar enlace"}
-              </Button>
-              <span aria-live="polite" {...applyStyles(vis.srOnly)}>
-                {isCopied ? "Enlace copiado" : ""}
-              </span>
-            </div>
-          ) : null}
+          {invitationUrl ? <InvitationLinkPanel url={invitationUrl} /> : null}
         </div>
         <DialogFooter>
-          <DialogClose render={<Button variant="ghost" />}>Cancelar</DialogClose>
+          <DialogClose render={<Button variant="ghost" />}>{t("common.cancel")}</DialogClose>
           <Button
             disabled={busy}
             onClick={() =>
               runAction(() =>
                 onCreateInvitation({
                   role,
-                  redeemPolicy: policy,
+                  redeemPolicy: rolePolicy,
                   inviteeIdentifier: inviteeIdentifier.trim() || null,
                   message: message.trim() || null,
                 }),
               )
             }
           >
-            Crear invitación
+            {t("roster.invite.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -199,6 +194,7 @@ export function ExternalClubDialog({
   onSearchClubs: (query: string) => Promise<readonly ExternalClubDto[]>;
   onConnectClub: (club: ExternalClubDto) => Promise<void>;
 }>) {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<readonly ExternalClubDto[]>([]);
   const [searching, setSearching] = useState(false);
@@ -219,24 +215,23 @@ export function ExternalClubDialog({
   return (
     <Dialog>
       <DialogTrigger render={<Button variant="outline" />}>
-        <LinkIcon aria-hidden="true" /> Vincular club
+        <LinkIcon aria-hidden="true" /> {t("roster.club.trigger")}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Buscar club EA</DialogTitle>
-          <DialogDescription>
-            Esta asociación es operativa para localizar partidos. No verifica propiedad.
-          </DialogDescription>
+          <DialogTitle>{t("roster.club.title")}</DialogTitle>
+          <DialogDescription>{t("roster.club.description")}</DialogDescription>
         </DialogHeader>
         <div {...applyStyles(styles.search)}>
           <Input
-            aria-label="Nombre del club EA"
+            aria-label={t("roster.club.nameAria")}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ej. Cuervos"
+            placeholder={t("roster.club.placeholder")}
             value={query}
           />
           <Button disabled={!query.trim() || searching} onClick={() => runAction(search)}>
-            <MagnifyingGlassIcon aria-hidden="true" /> {searching ? "Buscando…" : "Buscar"}
+            <MagnifyingGlassIcon aria-hidden="true" />{" "}
+            {searching ? t("roster.club.searching") : t("roster.club.search")}
           </Button>
         </div>
         <ul {...applyStyles(styles.results)}>
@@ -245,28 +240,24 @@ export function ExternalClubDialog({
               <span {...applyStyles(styles.resultCopy)}>
                 <strong {...applyStyles(styles.resultName)}>{club.name}</strong>
                 <span {...applyStyles(typography.caption, styles.resultMeta)}>
-                  {club.platform} · {club.gameEdition}
+                  {eaPlatformLabel(club.platform)} · {club.gameEdition}
                 </span>
               </span>
               <DialogClose
                 render={<Button variant="outline" />}
                 onClick={() => runAction(() => onConnectClub(club))}
               >
-                Vincular
+                {t("roster.club.select")}
               </DialogClose>
             </li>
           ))}
         </ul>
         {searchFailed ? (
           <Alert className={searchAlert.className} style={searchAlert.style} variant="destructive">
-            <AlertDescription>
-              No pudimos buscar clubes. Conservamos tu selección para que puedas reintentar.
-            </AlertDescription>
+            <AlertDescription>{t("roster.club.searchFailed")}</AlertDescription>
           </Alert>
         ) : results.length === 0 ? (
-          <p {...applyStyles(typography.caption, styles.searchHint)}>
-            Busca por nombre para elegir un club.
-          </p>
+          <p {...applyStyles(typography.caption, styles.searchHint)}>{t("roster.club.hint")}</p>
         ) : null}
       </DialogContent>
     </Dialog>
@@ -286,11 +277,15 @@ export function RosterRoleEditor({
   onChangeRole: (membershipId: string, role: RosterMembershipRoleDto) => Promise<void>;
   role: RosterMembershipRoleDto;
 }>) {
+  const { t } = useI18n();
+  const roleLabel = useRoleLabels();
+  const roleItems = ROSTER_ROLES.map((value) => ({ value, label: roleLabel[value] }));
   const [pendingRole, setPendingRole] = useState<RosterMembershipRoleDto | null>(null);
   return (
     <>
       <Select
         disabled={busy}
+        items={roleItems}
         onValueChange={(value) => {
           if (!value) return;
           setPendingRole(rosterMembershipRoleSchema.parse(value));
@@ -298,16 +293,16 @@ export function RosterRoleEditor({
         value={role}
       >
         <SelectTrigger
-          aria-label={`Rol de ${displayName}`}
+          aria-label={t("roster.role.aria", { name: displayName })}
           className={roleTrigger.className}
           style={roleTrigger.style}
         >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {Object.entries(roleLabel).map(([value, label]) => (
-            <SelectItem key={value} value={value}>
-              {label}
+          {roleItems.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
             </SelectItem>
           ))}
         </SelectContent>
@@ -320,15 +315,20 @@ export function RosterRoleEditor({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar cambio de rol</AlertDialogTitle>
+            <AlertDialogTitle>{t("roster.role.confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingRole
-                ? `${displayName} pasará a tener el rol ${roleLabel[pendingRole].toLowerCase()}.`
+                ? t("roster.role.confirmDescription", {
+                    name: displayName,
+                    role: roleLabel[pendingRole].toLowerCase(),
+                  })
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel render={<Button variant="ghost" />}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel render={<Button variant="ghost" />}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               render={<Button />}
               onClick={() => {
@@ -338,7 +338,7 @@ export function RosterRoleEditor({
                 runAction(() => onChangeRole(membershipId, nextRole));
               }}
             >
-              Cambiar rol
+              {t("roster.role.confirmAction")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -362,6 +362,7 @@ export function ConfirmAction({
   onConfirm: () => Promise<void>;
   variant?: "outline" | "destructive";
 }>) {
+  const { t } = useI18n();
   return (
     <AlertDialog>
       <AlertDialogTrigger disabled={disabled} render={<Button variant={variant} />}>
@@ -373,7 +374,9 @@ export function ConfirmAction({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="ghost" />}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel render={<Button variant="ghost" />}>
+            {t("common.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             render={<Button variant={variant} />}
             onClick={() => runAction(onConfirm)}

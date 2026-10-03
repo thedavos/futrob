@@ -290,9 +290,9 @@ export const styles = stylex.create({
     minWidth: 0,
   },
   clubScroll: {
-    minHeight: "8.5rem",
-    height: "16rem",
-    maxHeight: "16rem",
+    minHeight: "14rem",
+    height: "22rem",
+    maxHeight: "22rem",
   },
   list: {
     display: "flex",

@@ -4,6 +4,7 @@ import type {
   GamePlatformDto,
 } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
+import { timeZoneOptions } from "@/shared/presentation/time-zone-options.ts";
 
 export const competitionRegions: readonly { value: CompetitionRegionDto; label: string }[] = [
   { value: "america", label: "América" },
@@ -23,22 +24,7 @@ export const competitionFormats: readonly { value: CompetitionFormatDto; label: 
   { value: "league-playoffs", label: "Liga + playoffs" },
 ];
 
-const fallbackCompetitionTimeZones = [
-  "America/Lima",
-  "America/Bogota",
-  "America/Mexico_City",
-  "America/New_York",
-  "America/Santiago",
-  "America/Sao_Paulo",
-  "Europe/London",
-  "Europe/Madrid",
-  "Africa/Johannesburg",
-  "Asia/Dubai",
-  "Asia/Tokyo",
-  "Australia/Sydney",
-] as const;
-
-export const competitionTimeZones = getCompetitionTimeZones();
+export const competitionTimeZones = timeZoneOptions;
 
 export function competitionPlatformLabel(platform: GamePlatformDto): string {
   return {
@@ -56,21 +42,4 @@ export function competitionRegionLabel(region: CompetitionRegionDto): string {
 
 export function competitionFormatLabel(format: CompetitionFormatDto): string {
   return competitionFormats.find((option) => option.value === format)?.label ?? format;
-}
-
-function getCompetitionTimeZones(): readonly { value: string; label: string }[] {
-  let values: readonly string[] = fallbackCompetitionTimeZones;
-  let localTimeZone = "UTC";
-  try {
-    localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    if ("supportedValuesOf" in Intl) {
-      values = Intl.supportedValuesOf("timeZone");
-    }
-  } catch {
-    values = fallbackCompetitionTimeZones;
-  }
-  return [...new Set(["UTC", localTimeZone, ...values])].map((value) => ({
-    value,
-    label: value.replaceAll("_", " "),
-  }));
 }

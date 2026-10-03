@@ -21,6 +21,7 @@ import type {
   CompetitionRepository,
 } from "../../domain/ports/competition.repository.ts";
 import { isValidCompetitionRules } from "../competition-draft-validation.ts";
+import { canPublish } from "../../domain/policies/competition-lifecycle.ts";
 import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
 import { competitionPermissionError } from "../require-competition-permission.ts";
 
@@ -53,7 +54,7 @@ export class PublishCompetitionUseCase {
           message: "Competition not found",
         }),
       );
-    if (draft.competition.status !== "draft")
+    if (!canPublish(draft.competition.status))
       return err(
         new CompetitionNotEditable({
           code: "competitions.not_editable",
@@ -67,14 +68,15 @@ export class PublishCompetitionUseCase {
           message: "Competition rules are invalid",
         }),
       );
-    const participants =
-      (await this.deps.entries.listByCompetition?.(input.organizationId, input.competitionId)) ??
-      [];
-    if (participants.filter((entry) => entry.status === "approved").length < 2)
+    const approved = await this.deps.entries.countApprovedByCompetition(
+      input.organizationId,
+      input.competitionId,
+    );
+    if (approved < draft.competition.teams.min)
       return err(
         new CompetitionPublishBlocked({
           code: "competitions.publish_blocked",
-          message: "At least two approved participants are required",
+          message: "Approved participants are below the competition minimum",
         }),
       );
     const published = {

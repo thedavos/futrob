@@ -22,7 +22,7 @@ describe("AcceptInvitationUseCase", () => {
     const organizer = harness.actor("org-owner");
     const captain = harness.actor("captain-1");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) {
       return;
@@ -61,7 +61,7 @@ describe("AcceptInvitationUseCase", () => {
     const acceptInvite = new AcceptInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) {
       return;
@@ -100,7 +100,7 @@ describe("AcceptInvitationUseCase", () => {
     const acceptInvite = new AcceptInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) {
       return;
@@ -145,7 +145,7 @@ describe("AcceptInvitationUseCase", () => {
     const acceptInvite = new AcceptInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
     const player = harness.actor("player-1");
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -198,7 +198,7 @@ describe("AcceptInvitationUseCase", () => {
     const winner = harness.actor("winner");
     const loser = harness.actor("loser");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -231,7 +231,7 @@ describe("AcceptInvitationUseCase", () => {
     const actorA = harness.actor("actor-a");
     const actorB = harness.actor("actor-b");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -288,7 +288,7 @@ describe("AcceptInvitationUseCase", () => {
     const organizer = harness.actor("org-owner");
     const player = harness.actor("player-1");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -336,7 +336,7 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     const acceptInvite = new AcceptInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -377,7 +377,7 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     const organizer = harness.actor("org-owner");
     const player = harness.actor("player-1");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -415,7 +415,7 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     const organizer = harness.actor("org-owner");
     const newcomer = harness.actor("newcomer");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -463,7 +463,7 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     const acceptInvite = new AcceptInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -522,7 +522,7 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     const winner = harness.actor("single-winner");
     const loser = harness.actor("single-loser");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 

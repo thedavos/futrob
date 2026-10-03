@@ -9,3 +9,12 @@ export class AuthServiceUnavailableError extends TaggedError("AuthServiceUnavail
   code: "auth.unavailable";
   message: string;
 }> {}
+
+export class AuthUnauthenticatedError extends Error {
+  readonly code = "auth.unauthenticated" as const;
+
+  constructor(message = "Authentication required") {
+    super(message);
+    this.name = "AuthUnauthenticatedError";
+  }
+}

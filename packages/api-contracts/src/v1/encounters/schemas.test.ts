@@ -2,6 +2,9 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   getMyNextEncounterResponseSchema,
   listEncounterCandidatesResponseSchema,
+  createScheduleChangeRequestSchema,
+  listScheduleChangeRequestsResponseSchema,
+  scheduleChangeRequestSchema,
 } from "./schemas.ts";
 
 const encounter = {
@@ -107,5 +110,68 @@ describe("listEncounterCandidatesResponseSchema", () => {
     if (parsed.status !== "ready") return;
     expect(parsed.candidates[0]).not.toHaveProperty("players");
     expect(parsed.candidates[0]?.playerObservationCount).toBe(22);
+  });
+});
+
+const scheduleChangeRequest = {
+  id: "req-1",
+  organizationId: "org-1",
+  competitionId: "competition-1",
+  encounterId: "encounter-1",
+  requestingTeamId: "team-home",
+  initiatedByActorId: "captain-1",
+  scope: { type: "entire_encounter" as const },
+  status: "open" as const,
+  proposals: [
+    {
+      id: "proposal-1",
+      proposedStartAt: "2026-09-21T21:30:00.000Z",
+      proposedByActorId: "captain-1",
+      proposedByTeamId: "team-home",
+      reason: "Team travel conflict",
+      createdAt: "2026-09-14T20:00:00.000Z",
+    },
+  ],
+  createdAt: "2026-09-14T20:00:00.000Z",
+  updatedAt: "2026-09-14T20:00:00.000Z",
+};
+
+describe("schedule change request contracts", () => {
+  it("accepts create input and strips an empty client time zone", () => {
+    expect(
+      createScheduleChangeRequestSchema.parse({
+        requestingTeamId: "team-home",
+        scope: { type: "official_match", officialSlot: 2 },
+        proposedWallTime: { year: 2026, month: 9, day: 21, hour: 16, minute: 30, second: 0 },
+        reason: "Team travel conflict",
+        idempotencyKey: " idem-1 ",
+      }),
+    ).toEqual({
+      requestingTeamId: "team-home",
+      scope: { type: "official_match", officialSlot: 2 },
+      proposedWallTime: { year: 2026, month: 9, day: 21, hour: 16, minute: 30, second: 0 },
+      reason: "Team travel conflict",
+      idempotencyKey: "idem-1",
+    });
+  });
+
+  it("rejects an empty idempotency key and serializes list history without the key", () => {
+    expect(
+      createScheduleChangeRequestSchema.safeParse({
+        requestingTeamId: "team-home",
+        scope: { type: "entire_encounter" },
+        proposedWallTime: { year: 2026, month: 9, day: 21, hour: 16, minute: 30, second: 0 },
+        reason: "Team travel conflict",
+        idempotencyKey: "   ",
+      }).success,
+    ).toBe(false);
+    expect(
+      listScheduleChangeRequestsResponseSchema.parse({
+        requests: [{ ...scheduleChangeRequest, status: "rejected", idempotencyKey: "secret" }],
+      }),
+    ).toEqual({ requests: [{ ...scheduleChangeRequest, status: "rejected" }] });
+    expect(scheduleChangeRequestSchema.parse(scheduleChangeRequest)).not.toHaveProperty(
+      "idempotencyKey",
+    );
   });
 });

@@ -9,7 +9,9 @@ import { print, printJson } from "../lib/print.ts";
 
 const ORG_USAGE = `Uso:
   npm run cli -- org-name-check <name>
-  npm run cli -- org-create <name>
+  npm run cli -- org-create <name> [--slug slug] [--time-zone IANA]
+  npm run cli -- org-slug-check <slug> [--org organizationId]
+  npm run cli -- org-profile <organizationId>
   npm run cli -- org-mine
   npm run cli -- org-invite <organizationId> <email> [--role organizer|staff]`;
 
@@ -37,13 +39,53 @@ export function orgCreate(raw: string[]): Effect.Effect<number, CliError> {
   return Effect.gen(function* () {
     const common = parseCommon(raw);
     const [name] = yield* requirePositionals(common.positionals, 1, ORG_USAGE);
+    const slug = flagString(common.flags, "slug");
+    const timeZone = flagString(common.flags, "time-zone") ?? "UTC";
     const result = yield* apiCall(configOf(common), (client) =>
-      client.organizations.create({ name }),
+      client.organizations.create({ name, timeZone, slug }),
     );
     if (common.json) {
       printJson(result);
     } else {
-      print(`Organización creada: ${result.organizationId} (${result.name}) role=${result.role}`);
+      print(
+        `Organización creada: ${result.organizationId} (${result.name}) slug=${result.slug} tz=${result.timeZone} role=${result.role}`,
+      );
+    }
+    return 0;
+  });
+}
+
+export function orgSlugCheck(raw: string[]): Effect.Effect<number, CliError> {
+  return Effect.gen(function* () {
+    const common = parseCommon(raw);
+    const [slug] = yield* requirePositionals(common.positionals, 1, ORG_USAGE);
+    const organizationId = flagString(common.flags, "org");
+    const result = yield* apiCall(configOf(common), (client) =>
+      client.organizations.checkSlugAvailability({ slug, organizationId }),
+    );
+    if (common.json) {
+      printJson(result);
+    } else if (result.available) {
+      print(`${slug}: disponible`);
+    } else {
+      const reason = result.reason === "invalid" ? "no válido" : "en uso";
+      print(`${slug}: ${reason}${result.suggestion ? ` (sugerido: ${result.suggestion})` : ""}`);
+    }
+    return 0;
+  });
+}
+
+export function orgProfile(raw: string[]): Effect.Effect<number, CliError> {
+  return Effect.gen(function* () {
+    const common = parseCommon(raw);
+    const [organizationId] = yield* requirePositionals(common.positionals, 1, ORG_USAGE);
+    const result = yield* apiCall(configOf(common), (client) =>
+      client.organizations.get(organizationId),
+    );
+    if (common.json) {
+      printJson(result);
+    } else {
+      print(`${result.name}\tslug=${result.slug}\ttz=${result.timeZone}\tlogo=${result.logo.kind}`);
     }
     return 0;
   });
@@ -58,7 +100,7 @@ export function orgMine(raw: string[]): Effect.Effect<number, CliError> {
       return 0;
     }
     for (const membership of result.memberships) {
-      print(`${membership.organizationId}\t${membership.role}`);
+      print(`${membership.organizationId}\t${membership.organizationSlug}\t${membership.role}`);
     }
     return 0;
   });

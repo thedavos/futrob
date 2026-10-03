@@ -1,6 +1,6 @@
 # Pullfrog — Futrob repository context
 
-Use this context alongside the specific task or PR review request. Read `AGENTS.md`, the relevant requirements and acceptance criteria in `product/`, and `docs/architecture/overview.md` before making architectural judgments. For UI work, read `design.md`; for bounded-context work, read `.cursor/skills/futrob-hexagonal-module/SKILL.md`.
+Use this context alongside the specific task or PR review request. Read `AGENTS.md`, the relevant requirements and acceptance criteria in `product/`, and `docs/architecture/overview.md` before making architectural judgments. For UI work, read `design.md`; for bounded-context work, read `.agents/skills/futrob-hexagonal-module/SKILL.md`.
 
 The PRD describes target scope, not completed functionality. Verify claims against the checked-out code, scripts and tests. Earlier ADRs preserve historical topology; follow their current-topology notes and ADR-0013/0015. Report concrete defects with an affected path, trigger and consequence; distinguish verified failures from untested risks. Do not claim live Workers, Postgres, mobile-device or EA behavior from mocked tests alone.
 
@@ -8,7 +8,7 @@ The PRD describes target scope, not completed functionality. Verify claims again
 
 - Domain/application/ports live in `packages/<bc>` and are exported through each package's public API. Product adapters and composition live in `apps/api/src/adapters` and `apps/api/src/di` (Hono/Node on Railway).
 - `apps/web` is TanStack Start on Workers: UI, authenticated BFF and provider Queue/Cron handlers. It calls the product API via `@futrob/sdk`; the old web business composition root has been removed.
-- `apps/auth` owns Better Auth and actor provisioning in shared D1. Product persistence belongs to `apps/api` in Postgres; without `DATABASE_URL`, local stores are process-local and reset on API restart.
+- `apps/auth` owns Better Auth and actor provisioning, stored in the same Postgres as the product (ADR-0021); every stored `ActorId` references `actors`. Without `DATABASE_URL`, the API alone uses process-local stores that reset on restart, and sign-in is unavailable.
 - `apps/mobile` is React Native + Expo and consumes the web BFF with the SDK and a Bearer session. Never expose `INTERNAL_JOB_SECRET` to browsers or mobile clients. BFF-to-API requests use service auth and a trusted `ActorId`.
 - EA HTTP egress lives only in `apps/api/src/adapters/game-data/ea-clubs`; pure provider schemas/mappers live in `@futrob/ea-clubs`. Keep provider-specific types out of scheduling/results/statistics domain code.
 - Keep scheduling, game-data, results, statistics and analytics separate. Sync never makes a match official. Cross-BC access uses public APIs, ports/bridges or explicitly wired events, never foreign adapters/tables.
@@ -46,10 +46,10 @@ The PRD describes target scope, not completed functionality. Verify claims again
 
 - `CompetitionRules` stores distinct `regularStage` and `knockoutStage` match rules, while encounter schedule snapshots carry `stageId`; stage-dependent scheduling adapters must resolve rules from the Encounter stage rather than use a competition-wide fallback.
 
-## Auth And D1
+## Auth And Postgres
 
 - Better Auth form sign-in and sign-up endpoints validate the request `Origin`; a proxy that preserves browser headers must include every public web origin in the auth worker's `trustedOrigins`.
-- Shared D1 has one migration history in `apps/auth/migrations`, including web BFF rate limits. Both Workers reference that directory. From `apps/auth`, local migration commands use `--persist-to ../web/.wrangler/state`; do not create a separate web migration history.
+- Auth, actors and BFF rate limits live in the product Postgres (ADR-0021) and have one migration history in `apps/api/migrations`. The Workers reach it through Hyperdrive; locally set `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` in `apps/auth/.env` and `apps/web/.env`. `get-session` returns `actorId`, so web reads no identity tables. Do not create a second migration history.
 - Preserve the auth proxy's tested client-IP handling: strip incoming spoofable forwarding headers and derive `x-real-ip` from the trusted Cloudflare client IP for the `AUTH_SERVICE` subrequest. Keep proxy and auth rate-limit tests aligned.
 
 ## Web Testing

@@ -8,12 +8,25 @@ import { run as statisticsSmoke } from "./commands/statistics-smoke.ts";
 import { run as resultsSmoke } from "./commands/results-smoke.ts";
 import { run as apiHealth } from "./commands/api-health.ts";
 import { run as clubSearch } from "./commands/search-clubs.ts";
-import { orgCreate, orgInvite, orgMine, orgNameCheck } from "./commands/organizations.ts";
+import {
+  orgCreate,
+  orgInvite,
+  orgMine,
+  orgNameCheck,
+  orgProfile,
+  orgSlugCheck,
+} from "./commands/organizations.ts";
 import { run as onboardingStatus } from "./commands/onboarding.ts";
 import {
   compCreate,
+  compExplore,
+  compExploreShow,
   compList,
   compPublish,
+  compRegistrationOpen,
+  compRegistrationClose,
+  compApply,
+  compApplication,
   compShow,
   entryApprove,
   entryRegister,
@@ -60,6 +73,8 @@ const commands = {
 
   "org-name-check": (args) => orgNameCheck(args),
   "org-create": (args) => orgCreate(args),
+  "org-slug-check": (args) => orgSlugCheck(args),
+  "org-profile": (args) => orgProfile(args),
   "org-mine": (args) => orgMine(args),
   "org-invite": (args) => orgInvite(args),
 
@@ -69,6 +84,12 @@ const commands = {
   "comp-list": (args) => compList(args),
   "comp-show": (args) => compShow(args),
   "comp-publish": (args) => compPublish(args),
+  "comp-registration-open": (args) => compRegistrationOpen(args),
+  "comp-registration-close": (args) => compRegistrationClose(args),
+  "comp-apply": (args) => compApply(args),
+  "comp-application": (args) => compApplication(args),
+  "comp-explore": (args) => compExplore(args),
+  "comp-explore-show": (args) => compExploreShow(args),
   "participant-add": (args) => participantAdd(args),
   "participant-list": (args) => participantList(args),
   "entry-register": (args) => entryRegister(args),
