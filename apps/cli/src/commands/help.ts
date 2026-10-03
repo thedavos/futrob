@@ -24,7 +24,9 @@ Comandos base:
 Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor):
   api-health              GET /meta/health (estado API + DB)
   org-name-check <name>   Disponibilidad de nombre de organización
-  org-create <name>       Crea organización
+  org-create <name> [--slug s] [--time-zone tz]  Crea organización
+  org-slug-check <slug> [--org id]  Disponibilidad de slug (con sugerencia)
+  org-profile <orgId>     Perfil: nombre, slug, zona horaria y escudo
   org-mine                Lista membresías del actor
   org-invite <orgId> <email> [--role role]
   onboarding-status       Estado de onboarding del actor

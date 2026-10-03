@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-09-22
-- Actualización: 2026-09-30
+- Actualización: 2026-10-02
 - Relacionado: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [ADR-0011](/docs/adr/0011-tagged-errors.md)
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
@@ -15,13 +15,14 @@ Este ADR formaliza la composición ya existente; no introduce un bus de eventos 
 ## Decisión
 
 La API compone los casos de uso públicos de results y statistics dentro de
-`TransactionPort.runInTransaction`, con exclusión por Encounter. Cada BC conserva
+`TransactionPort.runInTransaction`, con exclusión por competición y Encounter
+para operaciones que aprueban o anulan resultados. Cada BC conserva
 la propiedad de sus escrituras. La proyección se ejecuta después de confirmar el
 resultado o registrar su anulación, y recibe el identificador del resultado.
 
 ```text
-API composition → transacción → lock de Encounter
-  → confirmar/anular resultado
+API composition → transacción → lock de competición → lock de Encounter
+  → confirmar/resolver/anular resultado
   → proyectar estado del resultado en statistics
   → commit si se completa; rollback ante excepción
 ```
@@ -75,6 +76,17 @@ Una migración futura a consistencia eventual requerirá decidir la persistencia
 de evento/resultado, idempotencia de consumidores, reintentos, orden/versiones,
 reconstrucción y tratamiento visible de proyecciones pendientes. No basta sustituir
 la llamada a statistics por `publish()`.
+
+### Selección, disputas y resolución
+
+Todos los comandos de selección usan esta composición: transacción, lock de Encounter, comando y, solo si
+el comando aprobó un resultado y no es un replay, la proyección de statistics con rollback si falla.
+Los comandos de confirmación rival y resolución de disputa adquieren primero el lock de competición
+del ranking y después el de Encounter, igual que la anulación. Rechazos y revisiones no proyectan. La escritura de la selección, sus propuestas, su auditoría, la disputa y las reservas de referencias es una sola
+operación del repositorio (compare-and-swap de versión, con savepoint dentro de la transacción exterior);
+el resultado aprobado se añade después de ese commit y una falla posterior revierte todo. `OfficialResult`
+pasa a ser append-only: una revisión nueva se inserta y nunca reemplaza a otra. Detalle y matriz en
+[selección oficial](/docs/architecture/results-selection-disputes.md).
 
 ### Avance y reversión del bracket: ampliación pendiente
 

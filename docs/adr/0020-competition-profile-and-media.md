@@ -65,7 +65,7 @@ no puede usarlo.
 ## Estado de implementación y evidencia
 
 - Dominio y tests en `@futrob/competitions`; contratos, SDK y OpenAPI.
-- `apps/web/src/shared/infrastructure/media/competition-cover-storage.ts` con
+- `apps/web/src/shared/infrastructure/media/media-storage.ts` con
   tests, verificado contra el R2 local de Wrangler (`getPlatformProxy`).
 - Migraciones `0001`–`0041` aplicadas en Postgres 16 local y flujo HTTP
   completo verificado contra esa base.

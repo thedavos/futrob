@@ -1,8 +1,14 @@
 import {
   AssociateEncounterCandidatesUseCase,
   ConfirmOfficialSelectionUseCase,
+  GetOfficialSelectionUseCase,
   ListEncounterCandidatesUseCase,
+  OpenMatchDisputeUseCase,
+  ProposeAlternativeOfficialSelectionUseCase,
   RecalculateEncounterCandidatesUseCase,
+  RejectOfficialSelectionUseCase,
+  ResolveMatchDisputeUseCase,
+  ReviewMatchDisputeUseCase,
   SelectOfficialMatchesUseCase,
   VoidOfficialResultUseCase,
   type EncounterCandidateAssociationRepository,
@@ -11,6 +17,7 @@ import {
   type OfficialResultReaderPort,
   type OfficialResultRepository,
   type ProviderMatchReaderPort,
+  type TeamRepresentationPort,
 } from "@futrob/results";
 import type {
   AuthorizationPort,
@@ -25,7 +32,10 @@ import {
   PostgresOfficialMatchSelectionRepository,
   PostgresOfficialResultRepository,
 } from "@/adapters/results/official-result.repository.ts";
-import { InMemoryEncounterCandidateAssociationRepository } from "@/adapters/results/encounter-candidate-association.repository.ts";
+import {
+  InMemoryEncounterCandidateAssociationRepository,
+  PostgresEncounterCandidateAssociationRepository,
+} from "@/adapters/results/encounter-candidate-association.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 
 export function createResultsModule(input: {
@@ -34,6 +44,7 @@ export function createResultsModule(input: {
   readonly eventPublisher: EventPublisherPort;
   readonly encounterReader: EncounterReaderPort;
   readonly providerMatches: ProviderMatchReaderPort;
+  readonly teamRepresentation: TeamRepresentationPort;
   readonly results?: OfficialResultRepository;
   readonly selections?: OfficialMatchSelectionRepository;
   readonly associations?: EncounterCandidateAssociationRepository;
@@ -53,7 +64,10 @@ export function createResultsModule(input: {
       ? new PostgresOfficialResultRepository(input.pool)
       : new InMemoryOfficialResultRepository());
   const associations: EncounterCandidateAssociationRepository =
-    input.associations ?? new InMemoryEncounterCandidateAssociationRepository();
+    input.associations ??
+    (input.pool
+      ? new PostgresEncounterCandidateAssociationRepository(input.pool)
+      : new InMemoryEncounterCandidateAssociationRepository());
 
   const officialResultReader: OfficialResultReaderPort = {
     getApprovedByEncounter: (encounterId) => results.findApprovedByEncounter(encounterId),
@@ -62,6 +76,18 @@ export function createResultsModule(input: {
     listByCompetition: (competitionId, organizationId) =>
       results.listByCompetition(competitionId, organizationId),
   };
+
+  const selectionDeps = {
+    encounterReader: input.encounterReader,
+    selections,
+    results,
+    associations,
+    eventPublisher: input.eventPublisher,
+    authorization: input.authorization,
+    ids,
+    clock,
+  };
+  const partyDeps = { teamRepresentation: input.teamRepresentation };
 
   return {
     selections,
@@ -85,29 +111,31 @@ export function createResultsModule(input: {
       associations,
       clock,
     }),
-    selectOfficialMatches: new SelectOfficialMatchesUseCase({
-      encounterReader: input.encounterReader,
-      selections,
-      associations,
-      eventPublisher: input.eventPublisher,
-      authorization: input.authorization,
-      ids,
-      clock,
-    }),
+    selectOfficialMatches: new SelectOfficialMatchesUseCase({ ...selectionDeps, ...partyDeps }),
     confirmOfficialSelection: new ConfirmOfficialSelectionUseCase({
-      encounterReader: input.encounterReader,
-      selections,
-      results,
+      ...selectionDeps,
+      ...partyDeps,
       providerMatches: input.providerMatches,
-      eventPublisher: input.eventPublisher,
-      authorization: input.authorization,
-      ids,
-      clock,
     }),
+    rejectOfficialSelection: new RejectOfficialSelectionUseCase({ ...selectionDeps, ...partyDeps }),
+    proposeAlternativeOfficialSelection: new ProposeAlternativeOfficialSelectionUseCase({
+      ...selectionDeps,
+      ...partyDeps,
+      providerMatches: input.providerMatches,
+    }),
+    openMatchDispute: new OpenMatchDisputeUseCase({ ...selectionDeps, ...partyDeps }),
+    reviewMatchDispute: new ReviewMatchDisputeUseCase(selectionDeps),
+    resolveMatchDispute: new ResolveMatchDisputeUseCase({
+      ...selectionDeps,
+      providerMatches: input.providerMatches,
+    }),
+    getOfficialSelection: new GetOfficialSelectionUseCase({ ...selectionDeps, ...partyDeps }),
     voidOfficialResult: new VoidOfficialResultUseCase({
       results,
+      selections,
       eventPublisher: input.eventPublisher,
       authorization: input.authorization,
+      ids,
       clock,
     }),
   };

@@ -1,6 +1,6 @@
 # Registro de decisiones de arquitectura
 
-Actualizado: 2026-09-29.
+Actualizado: 2026-10-02.
 
 Este índice distingue la **vigencia de una decisión** del **estado de su implementación**.
 Aceptada no significa desplegada ni verificada de extremo a extremo. Las referencias
@@ -43,6 +43,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0019: Inscripciones abiertas y postulación de equipos](/docs/adr/0019-competition-registration-and-applications.md)      | Aceptada    | Estado `registration` y postulación; notificación al organizador pendiente  |
 | [ADR-0020: Perfil de competición y portadas en R2](/docs/adr/0020-competition-profile-and-media.md)                           | Aceptada    | Cupo, fechas y portada; limpieza de huérfanos en R2 pendiente               |
 | [ADR-0021: Auth, actores y rate limits en el Postgres de producto](/docs/adr/0021-auth-and-actors-in-product-postgres.md)     | Aceptada    | Implementado en el checkout; Hyperdrive→Railway sin desplegar               |
+| [ADR-0022: Perfil de organización: slug, zona horaria y escudo](/docs/adr/0022-organization-profile-and-logo.md)              | Aceptada    | Implementado en el checkout; slug sin consumidor hasta el portal público    |
 
 ## Consolidación de septiembre de 2026
 
@@ -52,7 +53,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 - ADR-0016 y ADR-0017 formalizan consistencia transaccional y autorización contextual.
 - ADR-0021 reemplaza el almacenamiento D1 de ADR-0015: auth, actores y rate limits pasan al Postgres de producto.
 
-Quedan **16 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
+Quedan **19 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
 archivo antiguos se conservan para no romper referencias. Para implementación nueva,
 seguir el sucesor indicado, aunque un enlace histórico aún apunte al documento anterior.
 

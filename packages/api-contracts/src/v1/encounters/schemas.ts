@@ -239,3 +239,64 @@ export const listEncounterCandidatesResponseSchema = z.discriminatedUnion("statu
 
 export type EncounterCandidateDto = z.infer<typeof encounterCandidateSchema>;
 export type ListEncounterCandidatesResponse = z.infer<typeof listEncounterCandidatesResponseSchema>;
+
+export const competitionWallTimeSchema = z.object({
+  year: z.number().int(),
+  month: z.number().int().min(1).max(12),
+  day: z.number().int().min(1).max(31),
+  hour: z.number().int().min(0).max(23),
+  minute: z.number().int().min(0).max(59),
+  second: z.number().int().min(0).max(59),
+});
+
+export const rescheduleScopeSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("entire_encounter") }),
+  z.object({
+    type: z.literal("official_match"),
+    officialSlot: z.union([z.literal(1), z.literal(2)]),
+  }),
+]);
+
+export const scheduleChangeProposalSchema = z.object({
+  id: z.string().min(1),
+  proposedStartAt: z.string().datetime(),
+  proposedByActorId: z.string().min(1),
+  proposedByTeamId: z.string().min(1),
+  reason: z.string().min(1),
+  createdAt: z.string().datetime(),
+});
+
+export const scheduleChangeRequestSchema = z.object({
+  id: z.string().min(1),
+  organizationId: z.string().min(1),
+  competitionId: z.string().min(1),
+  encounterId: z.string().min(1),
+  requestingTeamId: z.string().min(1),
+  initiatedByActorId: z.string().min(1),
+  scope: rescheduleScopeSchema,
+  status: z.enum(["open", "accepted", "rejected", "cancelled", "expired", "escalated"]),
+  proposals: z.array(scheduleChangeProposalSchema).min(1),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export type ScheduleChangeRequestDto = z.infer<typeof scheduleChangeRequestSchema>;
+
+export const createScheduleChangeRequestSchema = z.object({
+  requestingTeamId: z.string().min(1),
+  scope: rescheduleScopeSchema,
+  proposedWallTime: competitionWallTimeSchema,
+  reason: z.string().min(1),
+  idempotencyKey: z.string().trim().min(1),
+  timeZone: z.string().trim().min(1).optional(),
+});
+
+export type CreateScheduleChangeRequestBody = z.infer<typeof createScheduleChangeRequestSchema>;
+
+export const listScheduleChangeRequestsResponseSchema = z.object({
+  requests: z.array(scheduleChangeRequestSchema),
+});
+
+export type ListScheduleChangeRequestsResponse = z.infer<
+  typeof listScheduleChangeRequestsResponseSchema
+>;

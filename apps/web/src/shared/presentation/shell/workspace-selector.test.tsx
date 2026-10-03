@@ -79,6 +79,26 @@ describe("WorkspaceSelector", () => {
     expect(screen.getByLabelText("Beta, Staff")).toBeTruthy();
   });
 
+  it("shows each organization's monogram next to its name", async () => {
+    renderSelector(
+      buildWorkspaceSelectorModel({
+        memberships: [
+          { organizationId: "org-1", name: "Liga Norte", role: "organizer" },
+          { organizationId: "org-2", name: "Beta", role: "staff" },
+        ],
+        competitions: [],
+        associatedClubs: [],
+      }),
+    );
+
+    screen.getByRole("button").click();
+
+    const norte = await screen.findByLabelText("Liga Norte, Organizador");
+    const beta = screen.getByLabelText("Beta, Staff");
+    expect(norte.textContent).toContain("LN");
+    expect(beta.textContent).toContain("BE");
+  });
+
   it("lists associated clubs in the EA Clubs section", async () => {
     const model = buildWorkspaceSelectorModel({
       memberships: [],

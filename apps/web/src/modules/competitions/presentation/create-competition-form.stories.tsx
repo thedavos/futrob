@@ -18,6 +18,7 @@ import {
   competitionsStoryRequests,
   resetCompetitionsStoryRequests,
 } from "@/modules/competitions/presentation/competitions-story-client.ts";
+import { configureOrganizationsStory } from "@/modules/organizations/presentation/organizations-story-client.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { CreateCompetitionForm } from "./create-competition-form.tsx";
 
@@ -34,9 +35,14 @@ const styles = stylex.create({
 const ORG = "org-story";
 const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 
-function CreateStoryShell() {
+function CreateStoryShell({
+  profileLoad = "success",
+}: {
+  readonly profileLoad?: "success" | "error";
+}) {
   const client = useMemo(() => {
     resetCompetitionsStoryRequests();
+    configureOrganizationsStory({ profileLoad });
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false, staleTime: Infinity },
@@ -57,7 +63,7 @@ function CreateStoryShell() {
       },
     );
     return queryClient;
-  }, []);
+  }, [profileLoad]);
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
     const newRoute = createRoute({
@@ -177,5 +183,26 @@ export const InvalidTeamRange: Story = {
       await canvas.findByText("El máximo debe ser igual o mayor que el mínimo."),
     ).toBeVisible();
     await waitFor(() => expect(competitionsStoryRequests().lastCreateInput).toBeNull());
+  },
+};
+
+export const OrganizationTimeZoneFailed: Story = {
+  render: () => <CreateStoryShell profileLoad="error" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(/No pudimos cargar la zona horaria de la organización/),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Reintentar" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Crear competición" })).toBeDisabled();
+  },
+};
+
+export const InheritsOrganizationTimeZone: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("combobox", { name: "Zona horaria" })).toHaveTextContent(
+      "America/Lima",
+    );
   },
 };

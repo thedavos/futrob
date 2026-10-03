@@ -4,6 +4,7 @@ import {
   ListDiscoverableCompetitionsUseCase,
   type DiscoverableCompetitionRecord,
 } from "@futrob/competitions";
+import { parseOrganizationSlug } from "@futrob/organizations";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
 import { InMemoryOrganizationRepository } from "@/adapters/organizations/in-memory.repository.ts";
 import { ExploreCompetitionsQuery } from "./explore-competitions.query.ts";
@@ -53,10 +54,15 @@ describe("ExploreCompetitionsQuery", () => {
       record("b", "org-1"),
       record("c", "missing"),
     ]);
+    const slug = parseOrganizationSlug("league");
+    if (!slug) throw new Error("fixture slug must be valid");
     await organizations.create({
       id: asOrganizationId("org-1"),
       name: "League",
       normalizedName: "league",
+      slug,
+      timeZone: "UTC",
+      logo: { kind: "monogram" },
       createdAt: new Date(0),
       createdByActorId: asActorId("actor"),
     });

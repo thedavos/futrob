@@ -1,5 +1,17 @@
 import { TaggedError } from "@futrob/shared-kernel";
 import type { EncounterId } from "@futrob/shared-kernel";
+import type {
+  CommandKeyReused,
+  ReferenceAlreadyClaimed,
+  SelectionAlreadyApproved,
+  SelectionProposalStale,
+  SelectionVersionConflict,
+  SelfConfirmationForbidden,
+} from "./official-selection.errors.ts";
+import type {
+  CandidateNotAssociated,
+  OfficialSelectionForbidden,
+} from "./select-official-matches.errors.ts";
 
 export class SelectionNotFound extends TaggedError("SelectionNotFound")<{
   code: "results.selection_not_found";
@@ -32,7 +44,15 @@ export type ConfirmOfficialSelectionError =
   | SelectionNotFound
   | SelectionNotConfirmable
   | OfficialResultForbidden
-  | ProviderMatchSnapshotMissing;
+  | OfficialSelectionForbidden
+  | ProviderMatchSnapshotMissing
+  | CandidateNotAssociated
+  | SelectionVersionConflict
+  | SelectionProposalStale
+  | SelectionAlreadyApproved
+  | SelfConfirmationForbidden
+  | ReferenceAlreadyClaimed
+  | CommandKeyReused;
 
 export type ApproveOfficialResultError = ConfirmOfficialSelectionError;
 

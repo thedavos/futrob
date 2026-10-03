@@ -154,6 +154,9 @@ export function createFakeOnboardingGateway(input?: {
       return {
         organizationId: "org-story",
         name: request.name,
+        slug: "org-story",
+        timeZone: request.competition.timeZone,
+        logo: { kind: "monogram" },
         role: "organizer",
         competition: competitionDraftResponse(request.competition),
         profile: storyProfile,

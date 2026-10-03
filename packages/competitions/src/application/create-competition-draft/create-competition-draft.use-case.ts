@@ -1,6 +1,7 @@
 import {
   asCompetitionId,
   err,
+  isIanaTimeZone,
   ok,
   type ActorId,
   type AuthorizationPort,
@@ -182,14 +183,4 @@ function matchRules(
     rescheduleRequiresOpponentApproval: true,
     rescheduleRequiresOrganizerApproval: false,
   };
-}
-
-function isIanaTimeZone(value: string): boolean {
-  if (!value) return false;
-  try {
-    new Intl.DateTimeFormat("en", { timeZone: value }).format();
-    return true;
-  } catch {
-    return false;
-  }
 }

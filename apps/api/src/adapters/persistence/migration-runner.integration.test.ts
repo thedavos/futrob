@@ -63,10 +63,11 @@ suite("migration runner", () => {
 
         const upgraded = await runMigrations(client, { directory, baseline: 42 });
         expect(upgraded.baselined).toHaveLength(42);
-        expect(upgraded.applied).toEqual([
+        // Everything after the baseline runs, starting with the auth move.
+        expect(upgraded.applied).toEqual((await migrationFiles(Infinity)).slice(42));
+        expect(upgraded.applied.slice(0, 2)).toEqual([
           "0043_auth_and_actors.sql",
           "0044_actor_foreign_keys.sql",
-          "0045_team_performance_rankings.sql",
         ]);
         expect(await tableExists(client, "actors")).toBe(true);
         expect(await tableExists(client, "auth_users")).toBe(true);
@@ -76,15 +77,15 @@ suite("migration runner", () => {
   );
 
   it(
-    "upgrades the previous 0044 schema with only the team performance migration",
+    "upgrades the current 0046 schema with only the team performance migration",
     async () => {
       await withSchema(async (client) => {
-        for (const file of await migrationFiles(44)) {
+        for (const file of await migrationFiles(46)) {
           await client.query(await readFile(resolve(directory, file), "utf8"));
         }
-        const upgraded = await runMigrations(client, { directory, baseline: 44 });
-        expect(upgraded.applied).toEqual(["0045_team_performance_rankings.sql"]);
-        expect(upgraded.baselined).toHaveLength(44);
+        const upgraded = await runMigrations(client, { directory, baseline: 46 });
+        expect(upgraded.applied).toEqual(["0047_team_performance_rankings.sql"]);
+        expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
         expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
         expect(
           (

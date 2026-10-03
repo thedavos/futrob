@@ -3,6 +3,9 @@ import type { ExternalReference, ProviderPlayerMatchStats } from "@futrob/game-d
 
 export type OfficialResultStatus = "approved" | "voided";
 
+/** How the snapshot became official. */
+export type OfficialResultApprovalBasis = "team_agreement" | "operator_resolution";
+
 export interface OfficialResultSlotSnapshot {
   readonly officialSlot: 1 | 2;
   readonly providerMatchRef: ExternalReference;
@@ -26,4 +29,8 @@ export interface OfficialResult {
   readonly slots: readonly OfficialResultSlotSnapshot[];
   readonly approvedAt: Date;
   readonly approvedBy: ActorId;
+  /** Negotiation that produced this revision; absent on rows that predate it. */
+  readonly selectionId?: string | null;
+  readonly proposalId?: string | null;
+  readonly approvalBasis?: OfficialResultApprovalBasis | null;
 }

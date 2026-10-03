@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import { asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
-import { PostgresOrganizationRepository } from "@/adapters/organizations/postgres.repository.ts";
+import { PostgresOrganizationRepository } from "@/adapters/organizations/postgres-organization.repository.ts";
 import { seedActors } from "@/testing/seed-actors.ts";
 import { PostgresCompetitionDiscoveryReader } from "./postgres-discovery.reader.ts";
 import { encodeDiscoveryCursor } from "./discovery-cursor.ts";

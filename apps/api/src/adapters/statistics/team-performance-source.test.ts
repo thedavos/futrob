@@ -32,7 +32,7 @@ async function setup() {
   const contributions = new InMemoryTeamMatchContributionRepository();
   for (const i of [1, 2, 3]) {
     const pair = performancePair(i);
-    await results.save(officialPerformanceResult(pair));
+    await results.append(officialPerformanceResult(pair));
     await contributions.saveMany(pair);
   }
   const reader = {
@@ -83,7 +83,7 @@ describe("official team performance sources and rebuild", () => {
   it("voids old appearances, changes the fingerprint even with unchanged maximum revision", async () => {
     const { results, rebuild } = await setup();
     const before = await rebuild.execute(performanceScope);
-    await results.save({ ...results.rows[0]!, status: "voided" });
+    await results.markVoided(results.rows[0]!.id);
     const after = await rebuild.execute(performanceScope);
     expect(after.revisionFingerprint).not.toBe(before.revisionFingerprint);
     expect(after.sources[0]?.status).toBe("voided");
@@ -103,7 +103,8 @@ describe("official team performance sources and rebuild", () => {
       goalsFor: 0,
       goalsAgainst: 2,
     });
-    await results.save(officialPerformanceResult(corrected));
+    await results.markVoided("result-1");
+    await results.append(officialPerformanceResult(corrected));
     const partial = await rebuild.execute(performanceScope);
     expect(partial.projectionComplete).toBe(false);
     expect(partial.rows.every((row) => row.score === null)).toBe(true);

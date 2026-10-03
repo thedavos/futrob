@@ -9,7 +9,12 @@ import {
   listMyMembershipsResponseSchema,
   organizationNameAvailabilityRequestSchema,
   organizationNameAvailabilityResponseSchema,
+  organizationProfileSchema,
+  organizationSlugAvailabilityRequestSchema,
+  organizationSlugAvailabilityResponseSchema,
   resolvePostAuthDestinationResponseSchema,
+  setOrganizationLogoRequestSchema,
+  updateOrganizationProfileRequestSchema,
 } from "@futrob/api-contracts";
 import { resolvePostAuthDestination } from "@futrob/organizations";
 import { asOrganizationId } from "@futrob/shared-kernel";
@@ -20,6 +25,7 @@ import {
   type ServiceAuthVariables,
 } from "@/http/middleware/service-auth.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
+import { membershipDto, organizationProfileDto } from "./organization-dto.ts";
 
 export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
   const { identity, organizations } = deps.modules;
@@ -44,11 +50,7 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
     const actorId = c.get("actorId");
     const memberships = await organizations.listMembershipsForActor.execute({ actorId });
     const body = listMyMembershipsResponseSchema.parse({
-      memberships: memberships.map((membership) => ({
-        organizationId: membership.organizationId,
-        organizationName: membership.organizationName,
-        role: membership.role,
-      })),
+      memberships: memberships.map(membershipDto),
     });
     return jsonResponse(body);
   });
@@ -65,11 +67,7 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
         destination.kind === "organizationPicker"
           ? {
               kind: destination.kind,
-              memberships: destination.memberships.map((membership) => ({
-                organizationId: membership.organizationId,
-                organizationName: membership.organizationName,
-                role: membership.role,
-              })),
+              memberships: destination.memberships.map(membershipDto),
             }
           : destination.kind === "organization"
             ? {
@@ -77,11 +75,7 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
                 organizationId: destination.organizationId,
               }
             : { kind: destination.kind },
-      memberships: memberships.map((membership) => ({
-        organizationId: membership.organizationId,
-        organizationName: membership.organizationName,
-        role: membership.role,
-      })),
+      memberships: memberships.map(membershipDto),
     });
     return jsonResponse(body);
   });
@@ -97,17 +91,74 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
     const result = await organizations.createOrganization.execute({
       name: parsed.data.name,
       actorId,
+      timeZone: parsed.data.timeZone,
+      slug: parsed.data.slug,
+      // Namespaced so a client can never replay another actor's key (e.g. onboarding's).
+      creationKey: parsed.data.creationKey
+        ? `organization:${actorId}:${parsed.data.creationKey}`
+        : undefined,
     });
     if (!result.isOk()) {
       return failureToHttp(result.error);
     }
 
     const body = createOrganizationResponseSchema.parse({
-      organizationId: result.value.organization.id,
-      name: result.value.organization.name,
+      ...organizationProfileDto(result.value.organization),
       role: result.value.role,
     });
     return jsonResponse(body, 201);
+  });
+
+  secured.post("/organizations/slug-availability", async (c) => {
+    const parsed = organizationSlugAvailabilityRequestSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    return jsonResponse(
+      organizationSlugAvailabilityResponseSchema.parse(
+        await organizations.checkOrganizationSlug.execute({
+          slug: parsed.data.slug,
+          organizationId: parsed.data.organizationId
+            ? asOrganizationId(parsed.data.organizationId)
+            : undefined,
+        }),
+      ),
+    );
+  });
+
+  secured.get("/organizations/:organizationId", async (c) => {
+    const result = await organizations.getOrganizationProfile.execute({
+      organizationId: asOrganizationId(c.req.param("organizationId")),
+      actorId: c.get("actorId"),
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(organizationProfileSchema.parse(organizationProfileDto(result.value)));
+  });
+
+  secured.patch("/organizations/:organizationId", async (c) => {
+    const parsed = updateOrganizationProfileRequestSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    const result = await organizations.updateOrganizationProfile.execute({
+      organizationId: asOrganizationId(c.req.param("organizationId")),
+      actorId: c.get("actorId"),
+      ...parsed.data,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(organizationProfileSchema.parse(organizationProfileDto(result.value)));
+  });
+
+  secured.put("/organizations/:organizationId/logo", async (c) => {
+    const parsed = setOrganizationLogoRequestSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    const result = await organizations.setOrganizationLogo.execute({
+      organizationId: asOrganizationId(c.req.param("organizationId")),
+      actorId: c.get("actorId"),
+      logo: parsed.data.logo,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(organizationProfileSchema.parse(organizationProfileDto(result.value)));
   });
 
   secured.post("/organizations/:organizationId/invitations", async (c) => {

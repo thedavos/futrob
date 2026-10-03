@@ -1,11 +1,8 @@
 import type {
-  OfficialMatchSelection,
-  OfficialMatchSelectionRepository,
   OfficialResult,
   OfficialResultRepository,
   OfficialResultSlotSnapshot,
 } from "@futrob/results";
-import { gameDataProviderKeyQuerySchema } from "@futrob/api-contracts";
 import {
   asActorId,
   asCompetitionId,
@@ -18,10 +15,20 @@ import {
 import type { Pool } from "pg";
 import { z } from "zod";
 import { parseJsonColumn, type PgJsonInput } from "@/adapters/persistence/parse-json-column.ts";
-import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
+import {
+  pgNullableTextSchema,
+  pgTextSchema,
+  pgTimestampSchema,
+} from "@/adapters/persistence/pg-scalar.ts";
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
+import { externalReferenceSchema } from "./official-selection-rows.ts";
+
+export { InMemoryOfficialMatchSelectionRepository } from "./official-selection.in-memory.ts";
+export type { InMemoryReferenceClaim } from "./official-selection.in-memory.ts";
+export { PostgresOfficialMatchSelectionRepository } from "./official-selection.postgres.ts";
 
 const officialResultStatusSchema = z.enum(["approved", "voided"]);
+const approvalBasisSchema = z.enum(["team_agreement", "operator_resolution"]);
 
 const providerPlayerMatchStatsSchema = z.object({
   externalPlayerId: z.string(),
@@ -45,10 +52,7 @@ const providerPlayerMatchStatsSchema = z.object({
 
 const officialResultSlotSnapshotSchema = z.object({
   officialSlot: z.union([z.literal(1), z.literal(2)]),
-  providerMatchRef: z.object({
-    providerKey: gameDataProviderKeyQuerySchema,
-    externalId: z.string(),
-  }),
+  providerMatchRef: externalReferenceSchema,
   homeExternalClubId: z.string(),
   awayExternalClubId: z.string(),
   homeGoals: z.number(),
@@ -69,33 +73,38 @@ const officialResultRowSchema = z.object({
   slots: z.custom<PgJsonInput>((value) => value !== undefined),
   approved_at: pgTimestampSchema,
   approved_by: pgTextSchema,
+  selection_id: pgNullableTextSchema,
+  proposal_id: pgNullableTextSchema,
+  approval_basis: z.union([z.null(), approvalBasisSchema]),
 });
-
-export class InMemoryOfficialMatchSelectionRepository implements OfficialMatchSelectionRepository {
-  rows: OfficialMatchSelection[] = [];
-
-  async save(selection: OfficialMatchSelection): Promise<OfficialMatchSelection> {
-    this.rows = this.rows.filter((row) => row.id !== selection.id);
-    this.rows.push(selection);
-    return selection;
-  }
-
-  async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialMatchSelection | null> {
-    return [...this.rows].reverse().find((row) => row.encounterId === encounterId) ?? null;
-  }
-}
 
 export class InMemoryOfficialResultRepository implements OfficialResultRepository {
   rows: OfficialResult[] = [];
 
-  async save(result: OfficialResult): Promise<OfficialResult> {
-    this.rows = this.rows.filter(
-      (row) =>
-        row.id !== result.id &&
-        !(row.encounterId === result.encounterId && row.revision === result.revision),
-    );
-    this.rows.push(result);
-    return result;
+  async append(result: OfficialResult): Promise<OfficialResult> {
+    if (
+      this.rows.some(
+        (row) =>
+          row.id === result.id ||
+          (row.encounterId === result.encounterId && row.revision === result.revision),
+      )
+    ) {
+      throw new Error(
+        `Official result revision ${result.revision} already exists for encounter ${result.encounterId}`,
+      );
+    }
+    const stored = normalizeOfficialResult(result);
+    this.rows.push(stored);
+    return stored;
+  }
+
+  async markVoided(officialResultId: string): Promise<OfficialResult | null> {
+    const row = this.rows.find((candidate) => candidate.id === officialResultId);
+    if (!row) return null;
+    if (row.status === "voided") return row;
+    const voided = { ...row, status: "voided" as const };
+    this.rows = this.rows.map((candidate) => (candidate.id === voided.id ? voided : candidate));
+    return voided;
   }
 
   async findApprovedByEncounter(encounterId: EncounterId): Promise<OfficialResult | null> {
@@ -130,69 +139,33 @@ export class InMemoryOfficialResultRepository implements OfficialResultRepositor
   }
 
   async listByEncounter(encounterId: EncounterId): Promise<OfficialResult[]> {
-    return this.rows.filter((row) => row.encounterId === encounterId);
+    return this.rows
+      .filter((row) => row.encounterId === encounterId)
+      .sort((left, right) => left.revision - right.revision);
   }
 }
 
-export class PostgresOfficialMatchSelectionRepository implements OfficialMatchSelectionRepository {
-  constructor(private readonly pool: Pool) {}
-
-  async save(selection: OfficialMatchSelection): Promise<OfficialMatchSelection> {
-    await getPgExecutor(this.pool).query(
-      `INSERT INTO official_match_selections (
-         id, encounter_id, status, proposed_by_actor_id, proposed_at, slots
-       ) VALUES ($1, $2, $3, $4, $5, $6::jsonb)
-       ON CONFLICT (id) DO UPDATE SET
-         status = EXCLUDED.status,
-         slots = EXCLUDED.slots`,
-      [
-        selection.id,
-        selection.encounterId,
-        selection.status,
-        selection.proposedByActorId,
-        selection.proposedAt.toISOString(),
-        JSON.stringify(selection.slots),
-      ],
-    );
-    return selection;
-  }
-
-  async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialMatchSelection | null> {
-    const result = await getPgExecutor(this.pool).query(
-      `SELECT id, encounter_id, status, proposed_by_actor_id, proposed_at, slots
-       FROM official_match_selections
-       WHERE encounter_id = $1
-       ORDER BY proposed_at DESC
-       LIMIT 1`,
-      [encounterId],
-    );
-    const row = result.rows[0];
-    if (!row) return null;
-    return {
-      id: row.id,
-      encounterId: asEncounterId(row.encounter_id),
-      status: row.status,
-      proposedByActorId: row.proposed_by_actor_id,
-      proposedAt: new Date(row.proposed_at),
-      slots: row.slots,
-    };
-  }
+function normalizeOfficialResult(result: OfficialResult): OfficialResult {
+  return {
+    ...result,
+    selectionId: result.selectionId ?? null,
+    proposalId: result.proposalId ?? null,
+    approvalBasis: result.approvalBasis ?? null,
+  };
 }
+
+const RESULT_COLUMNS = `id, encounter_id, organization_id, competition_id, revision, status,
+  slots, approved_at, approved_by, selection_id, proposal_id, approval_basis`;
 
 export class PostgresOfficialResultRepository implements OfficialResultRepository {
   constructor(private readonly pool: Pool) {}
 
-  async save(result: OfficialResult): Promise<OfficialResult> {
+  async append(result: OfficialResult): Promise<OfficialResult> {
     await getPgExecutor(this.pool).query(
       `INSERT INTO official_results (
          id, encounter_id, organization_id, competition_id, revision, status,
-         slots, approved_at, approved_by
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
-       ON CONFLICT (encounter_id, revision) DO UPDATE SET
-         status = EXCLUDED.status,
-         slots = EXCLUDED.slots,
-         approved_at = EXCLUDED.approved_at,
-         approved_by = EXCLUDED.approved_by`,
+         slots, approved_at, approved_by, selection_id, proposal_id, approval_basis
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12)`,
       [
         result.id,
         result.encounterId,
@@ -208,15 +181,31 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
         ),
         result.approvedAt.toISOString(),
         result.approvedBy,
+        result.selectionId ?? null,
+        result.proposalId ?? null,
+        result.approvalBasis ?? null,
       ],
     );
-    return result;
+    return normalizeOfficialResult(result);
+  }
+
+  async markVoided(officialResultId: string): Promise<OfficialResult | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE official_results
+       SET status = 'voided'
+       WHERE id = $1 AND status = 'approved'
+       RETURNING ${RESULT_COLUMNS}`,
+      [officialResultId],
+    );
+    const row = result.rows[0];
+    return row
+      ? rehydrateOfficialResult(officialResultRowSchema.parse(row))
+      : this.findById(officialResultId);
   }
 
   async findApprovedByEncounter(encounterId: EncounterId): Promise<OfficialResult | null> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT id, encounter_id, organization_id, competition_id, revision, status,
-              slots, approved_at, approved_by
+      `SELECT ${RESULT_COLUMNS}
        FROM official_results
        WHERE encounter_id = $1 AND status = 'approved'
        ORDER BY revision DESC
@@ -229,8 +218,7 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
 
   async findById(officialResultId: string): Promise<OfficialResult | null> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT id, encounter_id, organization_id, competition_id, revision, status,
-              slots, approved_at, approved_by
+      `SELECT ${RESULT_COLUMNS}
        FROM official_results
        WHERE id = $1`,
       [officialResultId],
@@ -241,8 +229,7 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
 
   async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialResult | null> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT id, encounter_id, organization_id, competition_id, revision, status,
-              slots, approved_at, approved_by
+      `SELECT ${RESULT_COLUMNS}
        FROM official_results
        WHERE encounter_id = $1
        ORDER BY revision DESC
@@ -258,8 +245,7 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
     organizationId?: OrganizationId,
   ): Promise<OfficialResult[]> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT id, encounter_id, organization_id, competition_id, revision, status,
-              slots, approved_at, approved_by
+      `SELECT ${RESULT_COLUMNS}
        FROM official_results
        WHERE competition_id = $1 AND ($2::text IS NULL OR organization_id = $2)
        ORDER BY encounter_id, revision`,
@@ -270,8 +256,7 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
 
   async listByEncounter(encounterId: EncounterId): Promise<OfficialResult[]> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT id, encounter_id, organization_id, competition_id, revision, status,
-              slots, approved_at, approved_by
+      `SELECT ${RESULT_COLUMNS}
        FROM official_results
        WHERE encounter_id = $1
        ORDER BY revision`,
@@ -295,6 +280,9 @@ function rehydrateOfficialResult(row: z.infer<typeof officialResultRowSchema>): 
     slots,
     approvedAt: row.approved_at,
     approvedBy: asActorId(row.approved_by),
+    selectionId: row.selection_id,
+    proposalId: row.proposal_id,
+    approvalBasis: row.approval_basis,
   };
 }
 

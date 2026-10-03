@@ -1,16 +1,15 @@
 import { orgMembershipRoleSchema } from "@futrob/api-contracts";
-import { asOrganizationId, type ActorId, type OrganizationId } from "@futrob/shared-kernel";
+import { asOrganizationId, Panic, type ActorId, type OrganizationId } from "@futrob/shared-kernel";
 import type {
   InvitationRepository,
   MembershipRepository,
   MembershipSummary,
   MultiRedemptionClaim,
-  Organization,
   OrganizationInvitation,
+  OrganizationLogo,
   OrganizationMembership,
-  OrganizationRepository,
 } from "@futrob/organizations";
-import { INVITATION_STATUS, REDEEM_POLICY } from "@futrob/organizations";
+import { INVITATION_STATUS, parseOrganizationLogo, REDEEM_POLICY } from "@futrob/organizations";
 import type { Pool } from "pg";
 import { z } from "zod";
 import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
@@ -20,21 +19,14 @@ import {
   invitationRowSchema,
   rehydrateInvitation,
   rehydrateMembership,
-  rehydrateOrganization,
 } from "./in-memory.repository.ts";
-
-const organizationRowSchema = z.object({
-  id: pgTextSchema,
-  name: pgTextSchema,
-  normalized_name: pgTextSchema,
-  created_at: pgTimestampSchema,
-  created_by_actor_id: pgTextSchema,
-  creation_key: pgTextSchema.nullable(),
-});
 
 const membershipSummaryRowSchema = z.object({
   organization_id: pgTextSchema,
   organization_name: pgTextSchema,
+  organization_slug: pgTextSchema,
+  organization_logo_kind: z.enum(["monogram", "upload"]),
+  organization_logo_value: pgTextSchema.nullable(),
   role: orgMembershipRoleSchema,
 });
 
@@ -49,68 +41,17 @@ const invitationClaimRowSchema = invitationRowSchema.extend({
   newly_claimed: z.boolean(),
 });
 
-export class PostgresOrganizationRepository implements OrganizationRepository {
-  constructor(private readonly pool: Pool) {}
-
-  async create(organization: Organization): Promise<Organization | null> {
-    const result = await getPgExecutor(this.pool).query(
-      `INSERT INTO organizations (
-         id, name, normalized_name, created_at, created_by_actor_id, creation_key
-       ) VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT DO NOTHING
-       RETURNING id, name, normalized_name, created_at, created_by_actor_id, creation_key`,
-      [
-        organization.id,
-        organization.name,
-        organization.normalizedName,
-        organization.createdAt.toISOString(),
-        organization.createdByActorId,
-        organization.creationKey ?? null,
-      ],
-    );
-    if (result.rows[0]) return rehydrateOrganization(organizationRowSchema.parse(result.rows[0]));
-    return organization.creationKey ? await this.getByCreationKey(organization.creationKey) : null;
-  }
-
-  async getByIds(ids: readonly OrganizationId[]): Promise<readonly Organization[]> {
-    if (ids.length === 0) return [];
-    const result = await getPgExecutor(this.pool).query(
-      `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
-       FROM organizations WHERE id = ANY($1::text[])`,
-      [[...new Set(ids)]],
-    );
-    return z.array(organizationRowSchema).parse(result.rows).map(rehydrateOrganization);
-  }
-
-  async getById(id: OrganizationId): Promise<Organization | null> {
-    const result = await getPgExecutor(this.pool).query(
-      `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
-       FROM organizations WHERE id = $1`,
-      [id],
-    );
-    const row = result.rows[0];
-    return row ? rehydrateOrganization(organizationRowSchema.parse(row)) : null;
-  }
-
-  async getByCreationKey(creationKey: string): Promise<Organization | null> {
-    const result = await getPgExecutor(this.pool).query(
-      `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
-       FROM organizations WHERE creation_key = $1`,
-      [creationKey],
-    );
-    const row = result.rows[0];
-    return row ? rehydrateOrganization(organizationRowSchema.parse(row)) : null;
-  }
-
-  async getByNormalizedName(normalizedName: string): Promise<Organization | null> {
-    const result = await getPgExecutor(this.pool).query(
-      `SELECT id, name, normalized_name, created_at, created_by_actor_id, creation_key
-       FROM organizations WHERE normalized_name = $1`,
-      [normalizedName],
-    );
-    const row = result.rows[0];
-    return row ? rehydrateOrganization(organizationRowSchema.parse(row)) : null;
-  }
+function logoFromColumns(
+  organizationId: OrganizationId,
+  kind: "monogram" | "upload",
+  value: string | null,
+): OrganizationLogo {
+  const logo = parseOrganizationLogo(
+    kind === "upload" ? { kind, key: value ?? "" } : { kind },
+    organizationId,
+  );
+  if (!logo) throw new Panic(`Stored organization ${organizationId} has an invalid logo`);
+  return logo;
 }
 
 export class PostgresMembershipRepository implements MembershipRepository {
@@ -132,7 +73,8 @@ export class PostgresMembershipRepository implements MembershipRepository {
 
   async findByActor(actorId: ActorId): Promise<MembershipSummary[]> {
     const result = await getPgExecutor(this.pool).query(
-      `SELECT m.organization_id, o.name AS organization_name, m.role
+      `SELECT m.organization_id, o.name AS organization_name, o.slug AS organization_slug,
+              o.logo_kind AS organization_logo_kind, o.logo_value AS organization_logo_value, m.role
        FROM organization_memberships m
        INNER JOIN organizations o ON o.id = m.organization_id
        WHERE m.actor_id = $1
@@ -145,6 +87,12 @@ export class PostgresMembershipRepository implements MembershipRepository {
       return {
         organizationId: asOrganizationId(parsed.organization_id),
         organizationName: parsed.organization_name,
+        organizationSlug: parsed.organization_slug,
+        organizationLogo: logoFromColumns(
+          asOrganizationId(parsed.organization_id),
+          parsed.organization_logo_kind,
+          parsed.organization_logo_value,
+        ),
         role: parsed.role,
       } satisfies MembershipSummary;
     });

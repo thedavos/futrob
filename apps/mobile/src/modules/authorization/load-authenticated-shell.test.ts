@@ -53,18 +53,30 @@ const ONBOARDING_OK = {
 };
 
 const MINE_OK = {
-  memberships: [{ organizationId: "org-1", organizationName: "Club Lima", role: "organizer" }],
+  memberships: [
+    {
+      organizationId: "org-1",
+      organizationName: "Club Lima",
+      organizationSlug: "club-lima",
+      organizationLogo: { kind: "monogram" },
+      role: "organizer",
+    },
+  ],
 };
 
 const ORG_PRIVILEGED = {
   organizationId: "org-privileged",
   organizationName: "Club Privileged",
+  organizationSlug: "club-privileged",
+  organizationLogo: { kind: "monogram" as const },
   role: "organizer" as const,
 };
 
 const ORG_MEMBER = {
   organizationId: "org-member",
   organizationName: "Club Member",
+  organizationSlug: "club-member",
+  organizationLogo: { kind: "monogram" as const },
   role: "member" as const,
 };
 

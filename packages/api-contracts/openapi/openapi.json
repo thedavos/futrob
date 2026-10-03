@@ -1642,6 +1642,392 @@
         ]
       }
     },
+    "/organizations": {
+      "post": {
+        "operationId": "createOrganization",
+        "tags": ["organizations"],
+        "summary": "Create an organization; the caller becomes its organizer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "timeZone"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "slug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "Derived from the name when omitted."
+                  },
+                  "creationKey": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,120}$",
+                    "description": "Retrying with the same key and data returns the organization already created; the same key with a different name, slug or time zone answers 409 organizations.creation_key_conflict."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Organization created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/OrganizationProfile"
+                    },
+                    {
+                      "type": "object",
+                      "required": ["role"],
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "organizer"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
+    "/organizations/mine": {
+      "get": {
+        "operationId": "listMyOrganizations",
+        "tags": ["organizations"],
+        "summary": "List the organizations the caller belongs to",
+        "responses": {
+          "200": {
+            "description": "Memberships",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["memberships"],
+                  "properties": {
+                    "memberships": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OrganizationMembershipSummary"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
+    "/organizations/slug-availability": {
+      "post": {
+        "operationId": "checkOrganizationSlugAvailability",
+        "tags": ["organizations"],
+        "summary": "Check whether a slug is valid and free, with a suggestion when it is not",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["slug"],
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "organizationId": {
+                    "type": "string",
+                    "description": "When editing, the slug this organization owns counts as available."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Slug availability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["available"],
+                  "properties": {
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "enum": ["invalid", "taken"]
+                    },
+                    "suggestion": {
+                      "type": ["string", "null"]
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}": {
+      "get": {
+        "operationId": "getOrganizationProfile",
+        "tags": ["organizations"],
+        "summary": "Read the organization profile (requires organizations.read)",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationProfile"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateOrganizationProfile",
+        "tags": ["organizations"],
+        "summary": "Change name, slug or time zone (requires organizations.update)",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "minProperties": 1,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "slug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated organization profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationProfile"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/logo": {
+      "put": {
+        "operationId": "setOrganizationLogo",
+        "tags": ["organizations"],
+        "summary": "Register an uploaded logo or return to the monogram (requires organizations.update)",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["logo"],
+                "properties": {
+                  "logo": {
+                    "$ref": "#/components/schemas/OrganizationLogo"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organization profile with its new logo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationProfile"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
     "/competitions/invitations/accept": {
       "post": {
         "operationId": "acceptCompetitionInvitation",
@@ -2837,6 +3223,109 @@
             "$ref": "#/components/responses/ApiError"
           },
           "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/encounters/{encounterId}/schedule-change-requests": {
+      "get": {
+        "operationId": "listScheduleChangeRequests",
+        "tags": ["encounters"],
+        "summary": "List authorized schedule-change requests for an encounter, including closed history",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "encounterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule-change requests in deterministic order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListScheduleChangeRequestsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createScheduleChangeRequest",
+        "tags": ["encounters"],
+        "summary": "Create a schedule-change request without changing the fixture",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "encounterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateScheduleChangeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created or replayed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleChangeRequest"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
             "$ref": "#/components/responses/ApiError"
           }
         }
@@ -5609,6 +6098,207 @@
           }
         ]
       },
+      "CompetitionWallTime": {
+        "type": "object",
+        "required": ["year", "month", "day", "hour", "minute", "second"],
+        "properties": {
+          "year": {
+            "type": "integer"
+          },
+          "month": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "day": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31
+          },
+          "hour": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "minute": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 59
+          },
+          "second": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 59
+          }
+        }
+      },
+      "RescheduleScope": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "entire_encounter"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["type", "officialSlot"],
+            "properties": {
+              "type": {
+                "const": "official_match"
+              },
+              "officialSlot": {
+                "type": "integer",
+                "enum": [1, 2]
+              }
+            }
+          }
+        ]
+      },
+      "ScheduleChangeProposal": {
+        "type": "object",
+        "required": [
+          "id",
+          "proposedStartAt",
+          "proposedByActorId",
+          "proposedByTeamId",
+          "reason",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "proposedStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "proposedByActorId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "proposedByTeamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ScheduleChangeRequest": {
+        "type": "object",
+        "required": [
+          "id",
+          "organizationId",
+          "competitionId",
+          "encounterId",
+          "requestingTeamId",
+          "initiatedByActorId",
+          "scope",
+          "status",
+          "proposals",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "organizationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "competitionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "encounterId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requestingTeamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "initiatedByActorId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope": {
+            "$ref": "#/components/schemas/RescheduleScope"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "accepted", "rejected", "cancelled", "expired", "escalated"]
+          },
+          "proposals": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/ScheduleChangeProposal"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateScheduleChangeRequest": {
+        "type": "object",
+        "required": ["requestingTeamId", "scope", "proposedWallTime", "reason", "idempotencyKey"],
+        "properties": {
+          "requestingTeamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope": {
+            "$ref": "#/components/schemas/RescheduleScope"
+          },
+          "proposedWallTime": {
+            "$ref": "#/components/schemas/CompetitionWallTime"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timeZone": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "ListScheduleChangeRequestsResponse": {
+        "type": "object",
+        "required": ["requests"],
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleChangeRequest"
+            }
+          }
+        }
+      },
       "FixtureParticipantSlot": {
         "oneOf": [
           {
@@ -6579,6 +7269,85 @@
           "endsOn": {
             "type": ["string", "null"],
             "format": "date"
+          }
+        }
+      },
+      "OrganizationLogo": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["kind"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "monogram"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["kind", "key"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "upload"
+              },
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300,
+                "description": "R2 key under organization-logos/{organizationId}/."
+              }
+            }
+          }
+        ]
+      },
+      "OrganizationProfile": {
+        "type": "object",
+        "required": ["organizationId", "name", "slug", "timeZone", "logo"],
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "logo": {
+            "$ref": "#/components/schemas/OrganizationLogo"
+          }
+        }
+      },
+      "OrganizationMembershipSummary": {
+        "type": "object",
+        "required": [
+          "organizationId",
+          "organizationName",
+          "organizationSlug",
+          "organizationLogo",
+          "role"
+        ],
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "organizationSlug": {
+            "type": "string"
+          },
+          "organizationLogo": {
+            "$ref": "#/components/schemas/OrganizationLogo"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["organizer", "staff", "member"]
           }
         }
       },
@@ -8093,6 +8862,9 @@
         "required": [
           "organizationId",
           "name",
+          "slug",
+          "timeZone",
+          "logo",
           "role",
           "competition",
           "profile",
@@ -8105,6 +8877,15 @@
           },
           "name": {
             "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "logo": {
+            "$ref": "#/components/schemas/OrganizationLogo"
           },
           "role": {
             "type": "string",
