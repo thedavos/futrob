@@ -16,6 +16,56 @@ export function isInPgTransaction(): boolean {
   return pgTxStorage.getStore() !== undefined;
 }
 
+let savepointCounter = 0;
+
+/**
+ * Runs `operation` all-or-nothing: inside an outer transaction as a SAVEPOINT, otherwise
+ * in a transaction of its own. The scope is rolled back when the operation throws or when
+ * `rollbackWhen` accepts its result, so a rejected outcome leaves no trace even though
+ * the outer transaction may still commit.
+ */
+export async function runInPgAtomicScope<T>(
+  pool: Pool,
+  operation: () => Promise<T>,
+  options: { readonly rollbackWhen?: (result: T) => boolean } = {},
+): Promise<T> {
+  const existing = pgTxStorage.getStore();
+  if (existing) {
+    const savepoint = `futrob_scope_${++savepointCounter}`;
+    await existing.query(`SAVEPOINT ${savepoint}`);
+    let result: T;
+    try {
+      result = await operation();
+    } catch (error) {
+      await existing.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+      await existing.query(`RELEASE SAVEPOINT ${savepoint}`);
+      throw error;
+    }
+    if (options.rollbackWhen?.(result)) {
+      await existing.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+    }
+    await existing.query(`RELEASE SAVEPOINT ${savepoint}`);
+    return result;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await pgTxStorage.run(client, operation);
+    await client.query(options.rollbackWhen?.(result) ? "ROLLBACK" : "COMMIT");
+    return result;
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      // Prefer the original failure over a secondary rollback error.
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export class PostgresTransactionPort implements TransactionPort {
   constructor(private readonly pool: Pool) {}
 

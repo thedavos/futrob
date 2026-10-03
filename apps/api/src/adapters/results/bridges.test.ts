@@ -1,7 +1,13 @@
-import { asEncounterId, asTeamId } from "@futrob/shared-kernel";
+import {
+  asActorId,
+  asCompetitionId,
+  asEncounterId,
+  asOrganizationId,
+  asTeamId,
+} from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import { InMemoryProviderMatchRepository } from "@/adapters/game-data/persistence/in-memory.repository.ts";
-import { RepositoryProviderMatchReader } from "./bridges.ts";
+import { RepositoryProviderMatchReader, RosterTeamRepresentationReader } from "./bridges.ts";
 import { InMemoryExternalClubConnectionRepository } from "@/adapters/teams/external-club-connection.repository.ts";
 
 const query = {
@@ -62,5 +68,56 @@ describe("RepositoryProviderMatchReader", () => {
     await expect(reader.listCandidatesForEncounter(query)).resolves.toEqual({
       status: "provider_mismatch",
     });
+  });
+});
+
+describe("RosterTeamRepresentationReader", () => {
+  const organizationId = asOrganizationId("org-1");
+  const competitionId = asCompetitionId("competition-1");
+  const teamId = asTeamId("team-home");
+  const actorId = asActorId("actor-1");
+
+  function reader(input: {
+    readonly profile?: boolean;
+    readonly role?: "captain" | "vice_captain" | "player";
+    readonly membershipOrganization?: string;
+    readonly entryStatus?: string | null;
+  }) {
+    return new RosterTeamRepresentationReader({
+      profiles: {
+        findByActor: async () => (input.profile === false ? null : ({ id: "profile-1" } as never)),
+      },
+      rosters: {
+        findByTeamPlayerCompetition: async () =>
+          ({
+            organizationId: asOrganizationId(input.membershipOrganization ?? "org-1"),
+            role: input.role ?? "captain",
+          }) as never,
+      },
+      entries: {
+        findByCompetitionAndTeam: async () =>
+          input.entryStatus === null
+            ? null
+            : ({ status: input.entryStatus ?? "approved" } as never),
+      },
+    });
+  }
+  const ask = (source: RosterTeamRepresentationReader) =>
+    source.findRepresentation({ actorId, organizationId, competitionId, teamId });
+
+  it("accepts a captain or vice captain of a team with an approved entry", async () => {
+    await expect(ask(reader({}))).resolves.toEqual({ teamId, role: "captain" });
+    await expect(ask(reader({ role: "vice_captain" }))).resolves.toEqual({
+      teamId,
+      role: "vice_captain",
+    });
+  });
+
+  it("denies players, missing profiles, other organizations and unapproved entries", async () => {
+    await expect(ask(reader({ role: "player" }))).resolves.toBeNull();
+    await expect(ask(reader({ profile: false }))).resolves.toBeNull();
+    await expect(ask(reader({ membershipOrganization: "org-2" }))).resolves.toBeNull();
+    await expect(ask(reader({ entryStatus: "pending" }))).resolves.toBeNull();
+    await expect(ask(reader({ entryStatus: null }))).resolves.toBeNull();
   });
 });

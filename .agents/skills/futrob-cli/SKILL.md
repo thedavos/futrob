@@ -27,7 +27,7 @@ Four commands run without any server. Each prints JSON evidence and exits 0 or 1
 npm run cli -- domain-smoke              # shared-kernel + scheduling/results types
 npm run cli -- domain-smoke-game-data    # game-data pure helpers + fake provider use case
 npm run cli -- statistics-smoke          # personal stats use case with in-memory repos
-npm run cli -- results-smoke             # select → confirm official result, asserts emitted events
+npm run cli -- results-smoke             # propose → rival confirm, and reject → review → resolve; asserts events
 ```
 
 Run these first when touching `packages/*` domain code. They fail fast without Postgres or Workers.

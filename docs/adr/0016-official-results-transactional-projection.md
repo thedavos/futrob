@@ -53,6 +53,16 @@ de evento/resultado, idempotencia de consumidores, reintentos, orden/versiones,
 reconstrucción y tratamiento visible de proyecciones pendientes. No basta sustituir
 la llamada a statistics por `publish()`.
 
+### Selección, disputas y resolución
+
+Todos los comandos de selección usan esta composición: transacción, lock de Encounter, comando y, solo si
+el comando aprobó un resultado y no es un replay, la proyección de statistics con rollback si falla. La
+escritura de la selección, sus propuestas, su auditoría, la disputa y las reservas de referencias es una sola
+operación del repositorio (compare-and-swap de versión, con savepoint dentro de la transacción exterior);
+el resultado aprobado se añade después de ese commit y una falla posterior revierte todo. `OfficialResult`
+pasa a ser append-only: una revisión nueva se inserta y nunca reemplaza a otra. Detalle y matriz en
+[selección oficial](/docs/architecture/results-selection-disputes.md).
+
 ### Avance y reversión del bracket: ampliación pendiente
 
 La tarea [Avance ganador / clasificado / bracket](https://app.notion.com/p/3dc7b204009a815ab937c60cd28edf19)

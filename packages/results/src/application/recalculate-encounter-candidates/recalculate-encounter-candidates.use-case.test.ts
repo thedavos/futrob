@@ -1,11 +1,19 @@
-import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
+import { asOrganizationId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import { EncounterNotFound } from "../../domain/errors/select-official-matches.errors.ts";
+import {
+  ACTORS,
+  AWAY,
+  HOME,
+  MemoryOfficialResults,
+  MemoryOfficialSelections,
+  ScriptedTeamRepresentation,
+  slotRefs,
+} from "../selection-flow.test-support.ts";
 import { SelectOfficialMatchesUseCase } from "../select-official-matches/select-official-matches.use-case.ts";
 import {
   KICKOFF_PLUS_24H,
   MemoryEncounterCandidateAssociations,
-  MemorySelections,
   MutableEncounterReader,
   WindowedProviderMatchReader,
   allowAll,
@@ -28,7 +36,11 @@ const matches = [
 function createHarness() {
   const snapshot = encounterSnapshot();
   const associations = new MemoryEncounterCandidateAssociations();
-  const selections = new MemorySelections();
+  const selections = new MemoryOfficialSelections();
+  const teams = new ScriptedTeamRepresentation();
+  teams.set(ACTORS.homeCaptain, HOME);
+  teams.set(ACTORS.awayCaptain, AWAY);
+  let ids = 0;
   const encounterReader = new MutableEncounterReader(snapshot);
   const providerMatches = new WindowedProviderMatchReader(matches);
   const persistDeps = {
@@ -48,13 +60,15 @@ function createHarness() {
     select: new SelectOfficialMatchesUseCase({
       encounterReader,
       selections,
+      results: new MemoryOfficialResults(),
       associations,
+      teamRepresentation: teams,
       eventPublisher: {
         publish: async () => undefined,
         publishMany: async () => undefined,
       },
       authorization: allowAll,
-      ids: { generate: () => "sel-1" },
+      ids: { generate: () => `sel-${++ids}` },
       clock: fixedClock,
     }),
   };
@@ -69,15 +83,13 @@ describe("RecalculateEncounterCandidatesUseCase", () => {
       encounterId: harness.snapshot.encounterId,
     });
     const selected = await harness.select.execute({
-      actorId: asActorId("actor-1"),
+      actorId: ACTORS.homeCaptain,
       organizationId: asOrganizationId("org-1"),
       encounterId: harness.snapshot.encounterId,
-      selections: [
-        {
-          officialSlot: 1,
-          providerMatchRef: { providerKey: "ea-clubs", externalId: "match-t" },
-        },
-      ],
+      actingTeamId: HOME,
+      selections: slotRefs("match-t"),
+      expectedVersion: 0,
+      commandKey: "k-1",
     });
     expect(selected.isOk()).toBe(true);
 
@@ -102,7 +114,7 @@ describe("RecalculateEncounterCandidatesUseCase", () => {
       providerMatchRef: { providerKey: "ea-clubs", externalId: "match-t24" },
     });
     expect(await harness.selections.findLatestByEncounter(harness.snapshot.encounterId)).toEqual(
-      selected.isOk() ? selected.value : null,
+      selected.isOk() ? selected.value.selection : null,
     );
     expect(eligibleExternalIds(harness.associations.rows)).toEqual(["match-t24"]);
   });
