@@ -1,4 +1,4 @@
-import type { CompetitionId, EncounterId } from "@futrob/shared-kernel";
+import type { CompetitionId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
 import type { TeamMatchContribution } from "../entities/team-match-contribution.ts";
 
 export interface TeamMatchContributionRepository {
@@ -12,5 +12,8 @@ export interface TeamMatchContributionRepository {
     teamId: NonNullable<TeamMatchContribution["teamId"]>,
   ): Promise<TeamMatchContribution[]>;
   listByEncounter(encounterId: EncounterId): Promise<TeamMatchContribution[]>;
-  listByCompetition(competitionId: CompetitionId): Promise<TeamMatchContribution[]>;
+  listByCompetition(
+    competitionId: CompetitionId,
+    organizationId?: OrganizationId,
+  ): Promise<TeamMatchContribution[]>;
 }

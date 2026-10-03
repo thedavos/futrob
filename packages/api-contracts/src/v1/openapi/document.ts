@@ -47,6 +47,7 @@ import {
   getMyNextEncounterResponseSchema,
   listEncounterCandidatesResponseSchema,
 } from "../encounters/schemas.ts";
+import { teamPerformanceOpenApiPaths, teamPerformanceOpenApiSchemas } from "./team-performance.ts";
 import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
   associateMyPlayerExternalClubRequestSchema,
@@ -1707,6 +1708,7 @@ export const futrobOpenApiV1 = {
       },
     },
     ...fixtureOpenApiPaths,
+    ...teamPerformanceOpenApiPaths,
     "/encounters/{encounterId}/candidates": {
       get: {
         operationId: "listEncounterCandidates",
@@ -3387,6 +3389,7 @@ export const futrobOpenApiV1 = {
         },
       },
       ...fixtureOpenApiSchemas,
+      ...teamPerformanceOpenApiSchemas,
       CompetitionRules: {
         type: "object",
         required: [

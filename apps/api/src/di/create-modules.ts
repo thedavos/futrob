@@ -270,6 +270,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     rosters: teams.repositories.rosters,
     profiles: teams.repositories.profiles,
     competitions: competitions.repository,
+    entries: competitions.entryRepository,
     authorization: authorization.port,
     encounterReader,
     transaction,
@@ -281,6 +282,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     statistics,
     transaction,
     encounterLock: encounterMutationLock,
+    encounterReader,
   });
 
   const getMyNextEncounter = new GetMyNextEncounterUseCase({
@@ -303,17 +305,19 @@ export function createModules(input: CreateModulesInput): AppModules {
           : await results.results.findById(input.officialResultId);
       if (!existing) return results.voidOfficialResult.execute(input);
 
-      return transaction.runInTransaction(async () => {
-        return encounterMutationLock.runExclusive(existing.encounterId, async () => {
-          const voided = await results.voidOfficialResult.execute(input);
-          if (!voided.isOk()) return voided;
-          const projected = await statistics.useCases.projectOfficialResult.execute({
-            officialResultId: voided.value.id,
+      return transaction.runInTransaction(() =>
+        statistics.ports.teamPerformanceLock.runExclusive(existing.competitionId, async () => {
+          return encounterMutationLock.runExclusive(existing.encounterId, async () => {
+            const voided = await results.voidOfficialResult.execute(input);
+            if (!voided.isOk()) return voided;
+            const projected = await statistics.useCases.projectOfficialResult.execute({
+              officialResultId: voided.value.id,
+            });
+            if (!projected.isOk()) throw projected.error;
+            return voided;
           });
-          if (!projected.isOk()) throw projected.error;
-          return voided;
-        });
-      });
+        }),
+      );
     },
   };
 

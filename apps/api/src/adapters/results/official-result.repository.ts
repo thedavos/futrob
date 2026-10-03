@@ -10,6 +10,7 @@ import {
   asOrganizationId,
   type CompetitionId,
   type EncounterId,
+  type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { z } from "zod";
@@ -126,8 +127,15 @@ export class InMemoryOfficialResultRepository implements OfficialResultRepositor
     );
   }
 
-  async listByCompetition(competitionId: CompetitionId): Promise<OfficialResult[]> {
-    return this.rows.filter((row) => row.competitionId === competitionId);
+  async listByCompetition(
+    competitionId: CompetitionId,
+    organizationId?: OrganizationId,
+  ): Promise<OfficialResult[]> {
+    return this.rows.filter(
+      (row) =>
+        row.competitionId === competitionId &&
+        (organizationId === undefined || row.organizationId === organizationId),
+    );
   }
 
   async listByEncounter(encounterId: EncounterId): Promise<OfficialResult[]> {
@@ -232,13 +240,16 @@ export class PostgresOfficialResultRepository implements OfficialResultRepositor
     return row ? rehydrateOfficialResult(officialResultRowSchema.parse(row)) : null;
   }
 
-  async listByCompetition(competitionId: CompetitionId): Promise<OfficialResult[]> {
+  async listByCompetition(
+    competitionId: CompetitionId,
+    organizationId?: OrganizationId,
+  ): Promise<OfficialResult[]> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT ${RESULT_COLUMNS}
        FROM official_results
-       WHERE competition_id = $1
+       WHERE competition_id = $1 AND ($2::text IS NULL OR organization_id = $2)
        ORDER BY encounter_id, revision`,
-      [competitionId],
+      [competitionId, organizationId ?? null],
     );
     return result.rows.map((row) => rehydrateOfficialResult(officialResultRowSchema.parse(row)));
   }

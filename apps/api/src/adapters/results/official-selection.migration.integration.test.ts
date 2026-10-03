@@ -81,6 +81,7 @@ suite("0045/0046 official selection and candidate migrations", () => {
           "0045_official_selection_disputes.sql",
           "0045_organization_profile.sql",
           "0046_encounter_candidates.sql",
+          "0047_team_performance_rankings.sql",
         ]);
       } finally {
         client.release();

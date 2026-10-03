@@ -73,7 +73,8 @@ export function createResultsModule(input: {
     getApprovedByEncounter: (encounterId) => results.findApprovedByEncounter(encounterId),
     getLatestByEncounter: (encounterId) => results.findLatestByEncounter(encounterId),
     getById: (officialResultId) => results.findById(officialResultId),
-    listByCompetition: (competitionId) => results.listByCompetition(competitionId),
+    listByCompetition: (competitionId, organizationId) =>
+      results.listByCompetition(competitionId, organizationId),
   };
 
   const selectionDeps = {
