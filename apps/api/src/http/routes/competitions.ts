@@ -14,6 +14,7 @@ import {
   getCompetitionRankingsQuerySchema,
   getCompetitionRankingsResponseSchema,
   getCompetitionStandingsResponseSchema,
+  getTeamPerformanceRankingResponseSchema,
   getCompetitionTeamStatisticsResponseSchema,
   listAccessibleCompetitionsResponseSchema,
   listOrganizationCompetitionsResponseSchema,
@@ -203,6 +204,27 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     }
     return jsonResponse(getCompetitionDraftResponseSchema.parse(competitionDraftDto(draft)));
   });
+
+  secured.get(
+    "/organizations/:organizationId/competitions/:competitionId/team-performance-ranking",
+    async (c) => {
+      try {
+        const ranking = await deps.modules.statistics.useCases.getTeamPerformanceRanking.execute({
+          actorId: c.get("actorId"),
+          organizationId: asOrganizationId(c.req.param("organizationId")),
+          competitionId: asCompetitionId(c.req.param("competitionId")),
+        });
+        return jsonResponse(
+          getTeamPerformanceRankingResponseSchema.parse({
+            ranking: ranking ? { ...ranking, updatedAt: ranking.updatedAt.toISOString() } : null,
+          }),
+        );
+      } catch (error) {
+        if (TaggedError.is(error) && isHttpMappableFailure(error)) return failureToHttp(error);
+        throw error;
+      }
+    },
+  );
 
   secured.get("/organizations/:organizationId/competitions/:competitionId/standings", async (c) => {
     const organizationId = asOrganizationId(c.req.param("organizationId"));

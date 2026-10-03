@@ -1,6 +1,6 @@
 # Registro de decisiones de arquitectura
 
-Actualizado: 2026-10-01.
+Actualizado: 2026-10-03.
 
 Este índice distingue la **vigencia de una decisión** del **estado de su implementación**.
 Aceptada no significa desplegada ni verificada de extremo a extremo. Las referencias

@@ -103,6 +103,39 @@ describe("official selection composition (real resolver, in-memory stores)", () 
     expect(await modules.results.results.listByEncounter(ENCOUNTER)).toHaveLength(0);
   });
 
+  it("projects an equivalent alternative once and preserves its replay", async () => {
+    const { modules, project } = await seed();
+    const proposed = await modules.officialSelection.propose.execute({
+      actorId: HOME_CAPTAIN,
+      organizationId: ORG,
+      encounterId: ENCOUNTER,
+      actingTeamId: HOME,
+      selections: slot("m-1"),
+      expectedVersion: 0,
+      commandKey: "propose",
+    });
+    if (!proposed.isOk()) throw new Error("propose failed");
+    const input = {
+      actorId: AWAY_CAPTAIN,
+      organizationId: ORG,
+      encounterId: ENCOUNTER,
+      actingTeamId: AWAY,
+      proposalId: proposed.value.proposal!.id,
+      expectedVersion: 1,
+      selections: slot("m-1"),
+      reason: "The same match evidence",
+      commandKey: "equivalent-alternative",
+    };
+    const alternative = await modules.officialSelection.proposeAlternative.execute(input);
+    expect(alternative.isOk() && alternative.value.approvedResult?.approvalBasis).toBe(
+      "team_agreement",
+    );
+    const replay = await modules.officialSelection.proposeAlternative.execute(input);
+    expect(replay.isOk() && replay.value.replayed).toBe(true);
+    expect(project).toHaveBeenCalledTimes(1);
+    expect(await modules.results.results.listByEncounter(ENCOUNTER)).toHaveLength(1);
+  });
+
   it("resolves a dispute as an operator and projects the approval", async () => {
     const { modules, project } = await seed();
     const { officialSelection: selection } = modules;

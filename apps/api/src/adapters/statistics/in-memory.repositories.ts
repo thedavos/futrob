@@ -18,7 +18,7 @@ import {
   type TeamMatchContribution,
   type TeamMatchContributionRepository,
 } from "@futrob/statistics";
-import type { CompetitionId, EncounterId, TeamId } from "@futrob/shared-kernel";
+import type { CompetitionId, EncounterId, OrganizationId, TeamId } from "@futrob/shared-kernel";
 
 export class InMemoryPlayerMatchContributionRepository implements PlayerMatchContributionRepository {
   private readonly rows = new Map<string, PlayerMatchContribution>();
@@ -179,9 +179,14 @@ export class InMemoryTeamMatchContributionRepository implements TeamMatchContrib
     );
   }
 
-  async listByCompetition(competitionId: CompetitionId): Promise<TeamMatchContribution[]> {
+  async listByCompetition(
+    competitionId: CompetitionId,
+    organizationId?: OrganizationId,
+  ): Promise<TeamMatchContribution[]> {
     return [...this.rows.values()].filter(
-      (contribution) => contribution.competitionId === competitionId,
+      (contribution) =>
+        contribution.competitionId === competitionId &&
+        (organizationId === undefined || contribution.organizationId === organizationId),
     );
   }
 }

@@ -12,7 +12,7 @@ import type {
 } from "@futrob/statistics";
 import { RANKING_KINDS } from "@futrob/statistics";
 import type { EncounterReaderPort } from "@futrob/results";
-import type { CompetitionId, EncounterId, TeamId } from "@futrob/shared-kernel";
+import type { CompetitionId, EncounterId, OrganizationId, TeamId } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { historicalResolutionModeByEncounter } from "@/adapters/statistics/historical-resolution-mode.ts";
 import {
@@ -159,10 +159,13 @@ export class PostgresTeamMatchContributionRepository implements TeamMatchContrib
     return this.rehydrateRows(result.rows);
   }
 
-  async listByCompetition(competitionId: CompetitionId): Promise<TeamMatchContribution[]> {
+  async listByCompetition(
+    competitionId: CompetitionId,
+    organizationId?: OrganizationId,
+  ): Promise<TeamMatchContribution[]> {
     const result = await getPgExecutor(this.pool).query<TeamContributionRow>(
-      `SELECT * FROM team_match_contributions WHERE competition_id = $1`,
-      [competitionId],
+      `SELECT * FROM team_match_contributions WHERE competition_id = $1 AND ($2::text IS NULL OR organization_id = $2)`,
+      [competitionId, organizationId ?? null],
     );
     return this.rehydrateRows(result.rows);
   }
