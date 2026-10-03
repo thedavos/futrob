@@ -215,6 +215,13 @@ suite("0037 schedule change requests migration", () => {
         proposals: [{ ...homeProposal, id: "req-accepted-proposal" }],
       };
       await repository.save(accepted);
+      await expect(repository.listByEncounter(organizationId, encounterId)).resolves.toEqual([
+        home,
+        accepted,
+      ]);
+      await expect(repository.listActiveByEncounter(organizationId, encounterId)).resolves.toEqual([
+        home,
+      ]);
       await expect(
         repository.countAcceptedByTeam({
           organizationId,

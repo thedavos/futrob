@@ -93,6 +93,9 @@ function statusForFailureCode(code: string): number {
     code.includes("publish_blocked") ||
     code.includes("registration_closed") ||
     code.includes("capacity_reached") ||
+    code.includes("limit_reached") ||
+    code.includes("rescheduling_disabled") ||
+    code.includes("active_schedule_change_request_exists") ||
     code.includes("last_organizer") ||
     code.includes("last_superuser")
   ) {

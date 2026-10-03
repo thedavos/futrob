@@ -11,6 +11,7 @@ import {
   asEncounterId,
   asOrganizationId,
   asTeamId,
+  compareTime,
   type CompetitionId,
   type EncounterId,
   type OrganizationId,
@@ -56,12 +57,24 @@ export class InMemoryScheduleChangeRequestRepository implements ScheduleChangeRe
     organizationId: OrganizationId,
     encounterId: EncounterId,
   ): Promise<readonly ScheduleChangeRequest[]> {
-    return [...this.rows.values()].filter(
-      (request) =>
-        request.organizationId === organizationId &&
-        request.encounterId === encounterId &&
-        request.status === "open",
-    );
+    const requests = await this.listByEncounter(organizationId, encounterId);
+    return requests.filter((request) => request.status === "open");
+  }
+
+  async listByEncounter(
+    organizationId: OrganizationId,
+    encounterId: EncounterId,
+  ): Promise<readonly ScheduleChangeRequest[]> {
+    return [...this.rows.values()]
+      .filter(
+        (request) =>
+          request.organizationId === organizationId && request.encounterId === encounterId,
+      )
+      .sort((left, right) => {
+        const time = compareTime(left.createdAt, right.createdAt);
+        if (time !== 0) return time;
+        return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+      });
   }
 
   async countAcceptedByTeam(input: CountAcceptedReschedulesInput): Promise<number> {
@@ -139,10 +152,25 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
        ORDER BY request.created_at ASC, request.id ASC`,
       [organizationId, encounterId],
     );
-    const requests = await Promise.all(
+    return Promise.all(
       result.rows.map((row) => this.rehydrateWithProposals(requestRowSchema.parse(row))),
     );
-    return requests;
+  }
+
+  async listByEncounter(
+    organizationId: OrganizationId,
+    encounterId: EncounterId,
+  ): Promise<readonly ScheduleChangeRequest[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `${requestSelectSql}
+       WHERE request.organization_id = $1
+         AND request.encounter_id = $2
+       ORDER BY request.created_at ASC, request.id ASC`,
+      [organizationId, encounterId],
+    );
+    return Promise.all(
+      result.rows.map((row) => this.rehydrateWithProposals(requestRowSchema.parse(row))),
+    );
   }
 
   async countAcceptedByTeam(input: CountAcceptedReschedulesInput): Promise<number> {

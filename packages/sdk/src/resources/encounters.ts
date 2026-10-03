@@ -1,4 +1,6 @@
 import {
+  createScheduleChangeRequestSchema,
+  type CreateScheduleChangeRequestBody,
   editFixtureEncounterRequestSchema,
   type EditFixtureEncounterRequest,
   encounterScheduleSnapshotSchema,
@@ -7,6 +9,10 @@ import {
   type FixturePlanDto,
   generateCompetitionFixtureRequestSchema,
   type GenerateCompetitionFixtureRequest,
+  listScheduleChangeRequestsResponseSchema,
+  type ListScheduleChangeRequestsResponse,
+  scheduleChangeRequestSchema,
+  type ScheduleChangeRequestDto,
   upsertEncounterScheduleSnapshotRequestSchema,
   type UpsertEncounterScheduleSnapshotRequest,
 } from "@futrob/api-contracts";
@@ -98,6 +104,30 @@ export function createEncountersResource(http: HttpClient) {
         body: editFixtureEncounterRequestSchema.parse({ ...input, requestId }),
         options,
         parse: (data) => fixturePlanSchema.parse(data),
+      });
+    },
+    async listScheduleChangeRequests(
+      encounterId: string,
+      options: RequestOptions = {},
+    ): Promise<ListScheduleChangeRequestsResponse> {
+      return http.request({
+        path: apiPath("encounters", encounterId, "schedule-change-requests"),
+        method: "GET",
+        options,
+        parse: (data) => listScheduleChangeRequestsResponseSchema.parse(data),
+      });
+    },
+    async createScheduleChangeRequest(
+      encounterId: string,
+      input: CreateScheduleChangeRequestBody,
+      options: RequestOptions = {},
+    ): Promise<ScheduleChangeRequestDto> {
+      return http.request({
+        path: apiPath("encounters", encounterId, "schedule-change-requests"),
+        method: "POST",
+        body: createScheduleChangeRequestSchema.parse(input),
+        options,
+        parse: (data) => scheduleChangeRequestSchema.parse(data),
       });
     },
   };
