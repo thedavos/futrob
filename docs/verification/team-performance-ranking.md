@@ -76,3 +76,17 @@ termina con código 0. No se atribuye rollback durable a la memoria, ni se decla
 verificado un flujo vivo Better Auth → BFF → API: para BFF la evidencia es generación
 de ruta, typecheck y bundle. El rebuild funciona sin red de proveedor; no se verificó
 una integración EA nueva ni un deploy.
+
+## Corrección de revisión (2026-10-03)
+
+La alternativa equivalente también puede aprobar un resultado; su composición ahora
+adquiere el lock de competición antes del lock de Encounter, igual que confirmación
+y resolución. Se conserva el comportamiento de alternativas incompatibles y replay.
+La prueba de regresión Postgres retiene el lock real de competición de una confirmación
+hasta que una alternativa equivalente solicita el mismo lock. Con el orden anterior,
+una operación rechaza; con el orden corregido ambas terminan y se persiste una sola
+aprobación. La memoria comprueba aprobación por alternativa y replay sin reproyección.
+
+- API, Results y Statistics: 1.473 pruebas pasan en 84 archivos.
+- Composición Postgres: 4 casos pasan, incluida la carrera forzada sin deadlock y con una sola aprobación.
+- `npm run check -- --fix`: sin errores.

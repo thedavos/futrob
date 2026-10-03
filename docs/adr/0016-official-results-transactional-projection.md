@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-09-22
-- Actualización: 2026-10-02
+- Actualización: 2026-10-03
 - Relacionado: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [ADR-0011](/docs/adr/0011-tagged-errors.md)
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
@@ -81,8 +81,11 @@ la llamada a statistics por `publish()`.
 
 Todos los comandos de selección usan esta composición: transacción, lock de Encounter, comando y, solo si
 el comando aprobó un resultado y no es un replay, la proyección de statistics con rollback si falla.
-Los comandos de confirmación rival y resolución de disputa adquieren primero el lock de competición
-del ranking y después el de Encounter, igual que la anulación. Rechazos y revisiones no proyectan. La escritura de la selección, sus propuestas, su auditoría, la disputa y las reservas de referencias es una sola
+Los comandos de confirmación rival, alternativa y resolución de disputa adquieren primero el lock de
+competición del ranking y después el de Encounter, igual que la anulación. Una alternativa equivalente
+puede aprobar como confirmación rival; por eso usa el mismo orden incluso si luego resulta incompatible.
+Rechazos y revisiones no proyectan. La escritura de la selección, sus propuestas, su auditoría,
+la disputa y las reservas de referencias es una sola
 operación del repositorio (compare-and-swap de versión, con savepoint dentro de la transacción exterior);
 el resultado aprobado se añade después de ese commit y una falla posterior revierte todo. `OfficialResult`
 pasa a ser append-only: una revisión nueva se inserta y nunca reemplaza a otra. Detalle y matriz en

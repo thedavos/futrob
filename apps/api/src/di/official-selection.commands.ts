@@ -98,8 +98,9 @@ export function createOfficialSelectionCommands(deps: {
     propose: composed((input) => results.selectOfficialMatches.execute(input)),
     confirm: composed((input) => results.confirmOfficialSelection.execute(input), true),
     reject: composed((input) => results.rejectOfficialSelection.execute(input)),
-    proposeAlternative: composed((input) =>
-      results.proposeAlternativeOfficialSelection.execute(input),
+    proposeAlternative: composed(
+      (input) => results.proposeAlternativeOfficialSelection.execute(input),
+      true,
     ),
     openDispute: composed((input) => results.openMatchDispute.execute(input)),
     reviewDispute: composed((input) => results.reviewMatchDispute.execute(input)),

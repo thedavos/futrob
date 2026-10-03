@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import { err } from "@futrob/shared-kernel";
 import { PostgresProviderMatchRepository } from "@/adapters/game-data/persistence/postgres.repository.ts";
 import {
@@ -105,6 +105,82 @@ suite("official selection composition on Postgres", () => {
       expect(replay.isOk() && replay.value.replayed).toBe(true);
       expect(await count("official_results")).toBe(1);
       expect(project).toHaveBeenCalledTimes(2);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "serializes equivalent alternatives and rival confirmations without a lock inversion",
+    async () => {
+      const { modules, project } = await fresh();
+      const proposed = await modules.officialSelection.propose.execute({
+        actorId: HOME_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: HOME,
+        selections: slot("m-1"),
+        expectedVersion: 0,
+        commandKey: "propose",
+      });
+      if (!proposed.isOk()) throw new Error("propose failed");
+      const response = {
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        proposalId: proposed.value.proposal!.id,
+        expectedVersion: 1,
+      };
+
+      let competitionHeld!: () => void;
+      const held = new Promise<void>((resolve) => {
+        competitionHeld = resolve;
+      });
+      let alternativeWaiting!: () => void;
+      const waiting = new Promise<void>((resolve) => {
+        alternativeWaiting = resolve;
+      });
+      const lock = modules.statistics.ports.teamPerformanceLock;
+      const runExclusive = lock.runExclusive.bind(lock);
+      let attempts = 0;
+      const gate = vi.spyOn(lock, "runExclusive").mockImplementation((competitionId, operation) => {
+        const attempt = ++attempts;
+        if (attempt === 2) alternativeWaiting();
+        return runExclusive(competitionId, async () => {
+          if (attempt === 1) {
+            competitionHeld();
+            // Hold the real competition lock until the alternative requests it.
+            // An Encounter-first alternative would now deadlock with confirmation.
+            await waiting;
+          }
+          return operation();
+        });
+      });
+      try {
+        const confirmation = modules.officialSelection.confirm.execute({
+          ...response,
+          commandKey: "confirm-race",
+        });
+        await held;
+        const alternative = modules.officialSelection.proposeAlternative.execute({
+          ...response,
+          selections: slot("m-1"),
+          reason: "The same match evidence",
+          commandKey: "alternative-race",
+        });
+        const outcomes = await Promise.allSettled([confirmation, alternative]);
+        expect(outcomes.map((outcome) => outcome.status)).toEqual(["fulfilled", "fulfilled"]);
+        const [confirmed, answered] = outcomes;
+        expect(confirmed.status === "fulfilled" && confirmed.value.isOk()).toBe(true);
+        expect(
+          answered.status === "fulfilled" && answered.value.isErr() && answered.value.error.code,
+        ).toBe("results.selection_already_approved");
+        expect(await count("official_results")).toBe(1);
+        expect(await count("official_selection_actions", "action_type = 'approved'")).toBe(1);
+        expect(project).toHaveBeenCalledTimes(1);
+      } finally {
+        gate.mockRestore();
+      }
     },
     TEST_TIMEOUT_MS,
   );

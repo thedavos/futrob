@@ -97,7 +97,10 @@ incompatibles sobre la misma versión gana uno y el otro recibe `results.selecti
 `apps/api/src/di/create-modules.ts` ejecuta cada comando dentro de `TransactionPort.runInTransaction` con el
 lock del Encounter. Solo cuando el resultado trae `approvedResult` y no es un replay se proyecta statistics;
 si la proyección falla se lanza el error para revertir selección, auditoría y resultado. Proponer, rechazar,
-alternativa, disputa, revisión y devolución nunca llaman a la proyección.
+alternativa incompatible, disputa, revisión y devolución nunca llaman a la proyección. Una alternativa
+equivalente confirma y puede aprobar, igual que una confirmación explícita. Confirmación, alternativa
+y resolución adquieren el lock de competición antes del lock del Encounter para evitar órdenes inversos
+durante la proyección del ranking.
 
 El publisher de eventos sigue siendo `NoopEventPublisher`: los eventos `results.official-matches-selected`,
 `results.official-selection-confirmed`, `results.match-dispute-opened` y `results.official-result-approved`
