@@ -5,10 +5,6 @@ import { InvalidScheduleChangeDate } from "../errors/schedule-change-request.err
 import { interpretCompetitionWallTime } from "./interpret-competition-wall-time.ts";
 
 describe("interpretCompetitionWallTime", () => {
-  // HTTP POST for schedule-change is not on the product API yet — skipped.
-  // minimumRescheduleNoticeHours is not on CompetitionRescheduleRulesPort — skipped.
-  // Write-path spring-forward rejection lives on CreateScheduleChangeRequestUseCase.
-
   it("proposal proposedStartAt equals UTC epoch for competition wall time", () => {
     const interpreted = interpretCompetitionWallTime({
       timeZone: "America/Lima",

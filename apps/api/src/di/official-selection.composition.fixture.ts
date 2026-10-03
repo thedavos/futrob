@@ -1,4 +1,5 @@
 import type { ProviderMatch, ProviderMatchRepository } from "@futrob/game-data";
+import { parseOrganizationSlug } from "@futrob/organizations";
 import { asFixtureStageId } from "@futrob/scheduling";
 import {
   asActorId,
@@ -64,6 +65,9 @@ export async function seedComposition(backend: {
     id: ORG,
     name: "Org",
     normalizedName: "org",
+    slug: parseOrganizationSlug("org-selection")!,
+    timeZone: "America/Lima",
+    logo: { kind: "monogram" },
     createdAt: NOW,
     createdByActorId: OPERATOR,
   });

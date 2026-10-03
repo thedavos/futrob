@@ -7,7 +7,6 @@ import { afterEach, describe, expect, it } from "vite-plus/test";
 import { runMigrations } from "@/adapters/persistence/migration-runner.ts";
 import {
   createIsolatedSchema,
-  insertTenant,
   MIGRATIONS_DIRECTORY,
   migrateIsolatedSchema,
   type IsolatedSchema,
@@ -80,6 +79,7 @@ suite("0045/0046 official selection and candidate migrations", () => {
         const upgraded = await runMigrations(client, { directory: MIGRATIONS_DIRECTORY });
         expect(upgraded.applied).toEqual([
           "0045_official_selection_disputes.sql",
+          "0045_organization_profile.sql",
           "0046_encounter_candidates.sql",
         ]);
       } finally {
@@ -153,9 +153,26 @@ const hoursAgo = (hours: number) =>
   new Date(Date.parse("2026-09-14T20:00:00.000Z") - hours * 3_600_000);
 
 async function seedLegacyData(pool: Pool): Promise<void> {
-  await seedActors(pool, "legacy-proposer");
-  await insertTenant(pool, "org-1", "comp-1");
-  await insertTenant(pool, "org-2", "comp-2");
+  await seedActors(pool, "legacy-proposer", "tenant-organizer");
+  // This fixture intentionally targets 0044, before organization profile columns exist.
+  for (const [organizationId, competitionId] of [
+    ["org-1", "comp-1"],
+    ["org-2", "comp-2"],
+  ]) {
+    await pool.query(
+      `INSERT INTO organizations (id, name, normalized_name, created_at, created_by_actor_id)
+       VALUES ($1, $1, $1, NOW(), 'tenant-organizer')`,
+      [organizationId],
+    );
+    await pool.query(
+      `INSERT INTO competitions (
+         id, organization_id, name, status, modality, game_edition, platform,
+         region, time_zone, format, created_by_actor_id, created_at, updated_at
+       ) VALUES ($1, $2, $1, 'published', 'fc-clubs', 'fc26', 'playstation',
+         'south-america', 'America/Lima', 'league', 'tenant-organizer', NOW(), NOW())`,
+      [competitionId, organizationId],
+    );
+  }
   for (const [teamId, organizationId] of [
     ["team-1", "org-1"],
     ["team-2", "org-1"],

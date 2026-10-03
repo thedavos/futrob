@@ -1,9 +1,12 @@
 import type { OrganizationId } from "@futrob/shared-kernel";
+import type { OrganizationLogo } from "./organization-logo.ts";
 import type { OrgMembershipRole } from "./organization-membership-role.ts";
 
 export interface MembershipSummary {
   readonly organizationId: OrganizationId;
   readonly organizationName: string;
+  readonly organizationSlug: string;
+  readonly organizationLogo: OrganizationLogo;
   readonly role: OrgMembershipRole;
 }
 

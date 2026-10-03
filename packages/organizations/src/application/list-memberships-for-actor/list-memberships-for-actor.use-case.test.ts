@@ -9,6 +9,8 @@ describe("ListMembershipsForActorUseCase", () => {
       {
         organizationId: asOrganizationId("org-1"),
         organizationName: "Liga Futrob",
+        organizationSlug: "liga-futrob",
+        organizationLogo: { kind: "monogram" as const },
         role: "staff" as const,
       },
     ];

@@ -162,6 +162,20 @@ export function buildEncounterParticipationCases(): RbacMatrixCase[] {
       expected: { allowed: false, reason: "no-assignment" },
     },
     {
+      id: "encounter/participant-captain/reschedule-own-team",
+      actor: "rosterCaptain",
+      permission: ENCOUNTER_PERMISSION.rescheduleRequest,
+      scope: "orgA.compA.teamA.encounter",
+      expected: { allowed: true, reason: "allowed" },
+    },
+    {
+      id: "encounter/participant-captain/reschedule-rival-team",
+      actor: "rosterCaptain",
+      permission: ENCOUNTER_PERMISSION.rescheduleRequest,
+      scope: "orgA.compA.teamRival.encounter",
+      expected: { allowed: false, reason: "no-assignment" },
+    },
+    {
       id: "encounter/org-staff/schedule-manage",
       actor: "organizationStaff",
       permission: ENCOUNTER_PERMISSION.scheduleManage,

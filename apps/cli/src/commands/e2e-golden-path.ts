@@ -29,7 +29,7 @@ export function run(raw: string[]): Effect.Effect<number, CliError> {
 
     step("2/8 organizations.create");
     const org = yield* apiCall(config, (client) =>
-      client.organizations.create({ name: `CLI Golden Path${suffix}` }),
+      client.organizations.create({ name: `CLI Golden Path${suffix}`, timeZone: "UTC" }),
     );
 
     step("3/8 competitions.createDraft");

@@ -16,6 +16,7 @@ import {
 } from "@futrob/api-contracts";
 import { CompetitionNotFound } from "@futrob/competitions";
 import { InvitationInvalid } from "@futrob/organizations";
+import { organizationProfileDto } from "./organization-dto.ts";
 import type { ExternalClub } from "@futrob/game-data";
 import type {
   AddPlayerGameAccountError,
@@ -90,6 +91,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
         const result = await organizations.createOrganization.execute({
           name: parsed.data.name,
           actorId,
+          timeZone: parsed.data.competition.timeZone,
           creationKey: `onboarding:organization:${actorId}`,
         });
         if (!result.isOk()) throw result.error;
@@ -107,8 +109,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
 
         await identity.completeOnboarding.execute({ actorId, path: "organization" });
         return completeOrganizationOnboardingResponseSchema.parse({
-          organizationId: result.value.organization.id,
-          name: result.value.organization.name,
+          ...organizationProfileDto(result.value.organization),
           role: result.value.role,
           competition: competitionDraftDto(competition.value),
           profile: playerProfileDto(player.profile),

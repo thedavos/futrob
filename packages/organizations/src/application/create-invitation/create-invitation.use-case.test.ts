@@ -19,7 +19,7 @@ describe("CreateInvitationUseCase", () => {
     const createInvite = new CreateInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) {
       return;
@@ -44,7 +44,7 @@ describe("CreateInvitationUseCase", () => {
     const createOrg = new CreateOrganizationUseCase(harness);
     const createInvite = new CreateInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -69,7 +69,7 @@ describe("CreateInvitationUseCase", () => {
     const organizer = harness.actor("org-owner");
     const player = harness.actor("player-1");
 
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) {
       return;
@@ -109,7 +109,7 @@ describe("CreateInvitationUseCase", () => {
     const createOrg = new CreateOrganizationUseCase(harness);
     const createInvite = new CreateInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -130,7 +130,7 @@ describe("CreateInvitationUseCase", () => {
     const createOrg = new CreateOrganizationUseCase(harness);
     const createInvite = new CreateInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -154,7 +154,7 @@ describe("CreateInvitationUseCase", () => {
     const createOrg = new CreateOrganizationUseCase(harness);
     const createInvite = new CreateInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 
@@ -178,7 +178,7 @@ describe("CreateInvitationUseCase", () => {
     const createOrg = new CreateOrganizationUseCase(harness);
     const createInvite = new CreateInvitationUseCase(harness);
     const organizer = harness.actor("org-owner");
-    const org = await createOrg.execute({ name: "Club", actorId: organizer });
+    const org = await createOrg.execute({ timeZone: "UTC", name: "Club", actorId: organizer });
     expect(org.isOk()).toBe(true);
     if (!org.isOk()) return;
 

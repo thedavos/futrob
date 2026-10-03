@@ -3,6 +3,7 @@ import {
   EditFixtureEncounterUseCase,
   GenerateCompetitionFixtureUseCase,
   GetCompetitionFixtureUseCase,
+  ListScheduleChangeRequestsUseCase,
   MaterializeOfficialMatchesForEncounterUseCase,
   UpsertEncounterScheduleSnapshotUseCase,
   type EncounterMutationLockPort,
@@ -37,6 +38,7 @@ import {
   PostgresFixtureAuditPort,
 } from "@/adapters/scheduling/fixture-editing.adapters.ts";
 import { CompetitionRescheduleRulesAdapter } from "@/adapters/scheduling/competition-reschedule-rules.adapter.ts";
+import { CompetitionTimeZoneAdapter } from "@/adapters/scheduling/competition-time-zone.adapter.ts";
 import {
   InMemoryScheduleChangeRequestRepository,
   PostgresScheduleChangeRequestRepository,
@@ -119,7 +121,13 @@ export function createSchedulingModule(input: {
         fixtures: fixturePlans,
         requests: scheduleChangeRequests,
       }),
+      timeZones: new CompetitionTimeZoneAdapter(input.competitions),
       transaction: input.transaction,
+    }),
+    listScheduleChangeRequests: new ListScheduleChangeRequestsUseCase({
+      authorization: input.authorization,
+      encounters,
+      requests: scheduleChangeRequests,
     }),
     getFixture: new GetCompetitionFixtureUseCase({
       authorization: input.authorization,

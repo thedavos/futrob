@@ -10,4 +10,37 @@ export class OrganizationNameConflict extends TaggedError("OrganizationNameConfl
   message: string;
 }> {}
 
-export type CreateOrganizationError = InvalidOrganizationName | OrganizationNameConflict;
+export class InvalidOrganizationSlug extends TaggedError("InvalidOrganizationSlug")<{
+  code: "organizations.invalid_slug";
+  message: string;
+}> {}
+
+export class OrganizationSlugConflict extends TaggedError("OrganizationSlugConflict")<{
+  code: "organizations.slug_conflict";
+  message: string;
+}> {}
+
+export class InvalidOrganizationTimeZone extends TaggedError("InvalidOrganizationTimeZone")<{
+  code: "organizations.invalid_time_zone";
+  message: string;
+}> {}
+
+export class InvalidOrganizationLogo extends TaggedError("InvalidOrganizationLogo")<{
+  code: "organizations.invalid_logo";
+  message: string;
+}> {}
+
+export class OrganizationCreationKeyConflict extends TaggedError(
+  "OrganizationCreationKeyConflict",
+)<{
+  code: "organizations.creation_key_conflict";
+  message: string;
+}> {}
+
+export type CreateOrganizationError =
+  | InvalidOrganizationName
+  | OrganizationNameConflict
+  | InvalidOrganizationSlug
+  | OrganizationSlugConflict
+  | InvalidOrganizationTimeZone
+  | OrganizationCreationKeyConflict;

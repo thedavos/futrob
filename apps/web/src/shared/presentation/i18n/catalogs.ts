@@ -93,6 +93,62 @@ const es = {
   "onboarding.organization.name.max": "El nombre debe tener como máximo 120 caracteres.",
   "onboarding.organization.name.conflict": "Ese nombre ya está en uso. Elige otro.",
   "onboarding.organization.review": "Revisar organización",
+  "organizations.create.title": "Crear organización",
+  "organizations.create.description": "Crea otro espacio para administrar competiciones y equipos.",
+  "organizations.create.name.label": "Nombre de la organización",
+  "organizations.create.name.placeholder": "ej. Liga Nocturna",
+  "organizations.create.name.description":
+    "Es el nombre público de tu organización. Debe ser único.",
+  "organizations.create.name.required": "Escribe el nombre de la organización.",
+  "organizations.create.name.max": "El nombre debe tener como máximo 120 caracteres.",
+  "organizations.create.name.conflict": "Ese nombre ya está en uso. Elige otro.",
+  "organizations.create.name.invalid": "El nombre no es válido.",
+  "organizations.create.checkFailed": "No pudimos verificar el nombre. Inténtalo nuevamente.",
+  "organizations.create.failed": "No pudimos crear la organización. Inténtalo nuevamente.",
+  "organizations.create.submit": "Crear organización",
+  "organizations.create.submitting": "Creando…",
+  "organizations.create.logoFailed":
+    "Creamos la organización, pero no pudimos subir el escudo. Puedes subirlo desde Ajustes.",
+  "organizations.create.logoRetry": "Reintentar subida",
+  "organizations.create.continue": "Continuar sin escudo",
+  "organizations.profile.slug.label": "Slug",
+  "organizations.profile.slug.description":
+    "Identificador único de tu organización: minúsculas, números y guiones.",
+  "organizations.profile.slug.invalid":
+    "Usa de 3 a 48 caracteres: minúsculas, números y guiones, sin palabras reservadas.",
+  "organizations.profile.slug.taken": "Ese slug ya está en uso.",
+  "organizations.profile.slug.checkFailed": "No pudimos verificar el slug. Inténtalo nuevamente.",
+  "organizations.profile.slug.useSuggestion": ({ slug }) => `Usar «${slug}»`,
+  "organizations.profile.timeZone.label": "Zona horaria",
+  "organizations.profile.timeZone.placeholder": "Selecciona una zona horaria",
+  "organizations.profile.timeZone.description":
+    "Es la zona inicial de las competiciones nuevas. No cambia las que ya existen.",
+  "organizations.profile.logo.label": "Escudo",
+  "organizations.profile.logo.description":
+    "PNG, JPEG o WebP de hasta 2 MB. Sin escudo se muestra un monograma.",
+  "organizations.profile.logo.upload": "Subir escudo",
+  "organizations.profile.logo.change": "Cambiar escudo",
+  "organizations.profile.logo.remove": "Quitar escudo",
+  "organizations.profile.logo.invalidType": "Usa una imagen PNG, JPEG o WebP.",
+  "organizations.profile.logo.tooLarge": "La imagen supera los 2 MB.",
+  "organizations.profile.logo.alt": ({ name }) => `Escudo de ${name}`,
+  "organizations.settings.title": "Ajustes de la organización",
+  "organizations.settings.description": "Nombre, slug, zona horaria y escudo de tu organización.",
+  "organizations.settings.loading": "Cargando perfil…",
+  "organizations.settings.save": "Guardar cambios",
+  "organizations.settings.saving": "Guardando…",
+  "organizations.settings.saved": "Cambios guardados.",
+  "organizations.settings.readOnly": "Solo quien organiza puede cambiar estos datos.",
+  "organizations.settings.loadFailed": "No pudimos cargar el perfil de la organización.",
+  "organizations.settings.saveFailed": "No pudimos guardar los cambios. Inténtalo nuevamente.",
+  "organizations.settings.logoFailed":
+    "Guardamos los cambios, pero no pudimos subir el escudo. Inténtalo nuevamente.",
+  "errors.organizations.slug_conflict": "Ese slug ya está en uso. Elige otro.",
+  "errors.organizations.invalid_slug": "El slug no es válido. Usa minúsculas, números y guiones.",
+  "errors.organizations.invalid_time_zone": "La zona horaria no es válida.",
+  "errors.organizations.invalid_logo": "El escudo no es válido.",
+  "errors.organizations.creation_key_conflict":
+    "No pudimos reutilizar la solicitud anterior. Revisa los datos e inténtalo de nuevo.",
   "onboarding.competition.title": "Configura tu primera competición",
   "onboarding.competition.description":
     "Crea un borrador de FC Clubs. Configurarás los equipos, el calendario y la publicación después.",
@@ -1009,6 +1065,8 @@ export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
   readonly "common.seconds": { readonly seconds: number };
+  readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
+  readonly "organizations.profile.logo.alt": { readonly name: string };
   readonly "support.retryAfter": { readonly seconds: number };
   readonly "onboarding.shell.stepSummary": {
     readonly current: number;
@@ -1222,6 +1280,63 @@ const en: Catalog = {
   "onboarding.organization.name.max": "The name must be 120 characters or fewer.",
   "onboarding.organization.name.conflict": "That name is already in use. Choose another one.",
   "onboarding.organization.review": "Review organization",
+  "organizations.create.title": "Create organization",
+  "organizations.create.description": "Create another space to manage competitions and teams.",
+  "organizations.create.name.label": "Organization name",
+  "organizations.create.name.placeholder": "e.g. Night League",
+  "organizations.create.name.description":
+    "This is your organization's public name. It must be unique.",
+  "organizations.create.name.required": "Enter the organization name.",
+  "organizations.create.name.max": "The name must be 120 characters or fewer.",
+  "organizations.create.name.conflict": "That name is already in use. Choose another one.",
+  "organizations.create.name.invalid": "The name isn't valid.",
+  "organizations.create.checkFailed": "We couldn't check the name. Try again.",
+  "organizations.create.failed": "We couldn't create the organization. Try again.",
+  "organizations.create.submit": "Create organization",
+  "organizations.create.submitting": "Creating…",
+  "organizations.create.logoFailed":
+    "We created the organization, but couldn't upload the logo. You can upload it from Settings.",
+  "organizations.create.logoRetry": "Retry upload",
+  "organizations.create.continue": "Continue without a logo",
+  "organizations.profile.slug.label": "Slug",
+  "organizations.profile.slug.description":
+    "Unique identifier for your organization: lowercase letters, numbers and hyphens.",
+  "organizations.profile.slug.invalid":
+    "Use 3 to 48 characters: lowercase letters, numbers and hyphens, no reserved words.",
+  "organizations.profile.slug.taken": "That slug is already in use.",
+  "organizations.profile.slug.checkFailed": "We couldn't check the slug. Try again.",
+  "organizations.profile.slug.useSuggestion": ({ slug }) => `Use "${slug}"`,
+  "organizations.profile.timeZone.label": "Time zone",
+  "organizations.profile.timeZone.placeholder": "Select a time zone",
+  "organizations.profile.timeZone.description":
+    "The starting zone for new competitions. It doesn't change existing ones.",
+  "organizations.profile.logo.label": "Logo",
+  "organizations.profile.logo.description":
+    "PNG, JPEG or WebP up to 2 MB. Without a logo a monogram is shown.",
+  "organizations.profile.logo.upload": "Upload logo",
+  "organizations.profile.logo.change": "Change logo",
+  "organizations.profile.logo.remove": "Remove logo",
+  "organizations.profile.logo.invalidType": "Use a PNG, JPEG or WebP image.",
+  "organizations.profile.logo.tooLarge": "The image is larger than 2 MB.",
+  "organizations.profile.logo.alt": ({ name }) => `${name} logo`,
+  "organizations.settings.title": "Organization settings",
+  "organizations.settings.description": "Name, slug, time zone and logo of your organization.",
+  "organizations.settings.loading": "Loading profile…",
+  "organizations.settings.save": "Save changes",
+  "organizations.settings.saving": "Saving…",
+  "organizations.settings.saved": "Changes saved.",
+  "organizations.settings.readOnly": "Only organizers can change these details.",
+  "organizations.settings.loadFailed": "We couldn't load the organization profile.",
+  "organizations.settings.saveFailed": "We couldn't save your changes. Try again.",
+  "organizations.settings.logoFailed":
+    "We saved your changes, but couldn't upload the logo. Try again.",
+  "errors.organizations.slug_conflict": "That slug is already in use. Choose another one.",
+  "errors.organizations.invalid_slug":
+    "The slug isn't valid. Use lowercase letters, numbers and hyphens.",
+  "errors.organizations.invalid_time_zone": "The time zone isn't valid.",
+  "errors.organizations.invalid_logo": "The logo isn't valid.",
+  "errors.organizations.creation_key_conflict":
+    "We couldn't reuse the previous request. Check the details and try again.",
   "onboarding.competition.title": "Set up your first competition",
   "onboarding.competition.description":
     "Create an FC Clubs draft. You'll set up teams, the schedule, and publishing later.",

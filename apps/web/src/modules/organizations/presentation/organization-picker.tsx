@@ -5,6 +5,7 @@ import { applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link } from "@tanstack/react-router";
 import type { MembershipSummaryDto } from "@futrob/api-contracts";
+import { OrganizationAvatar } from "@/modules/organizations/presentation/organization-avatar.tsx";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 
 const ROLE_LABEL = {
@@ -49,7 +50,7 @@ const styles = stylex.create({
   },
   row: {
     display: "flex",
-    alignItems: "baseline",
+    alignItems: "center",
     justifyContent: "space-between",
     gap: "1rem",
     paddingBlock: "1rem",
@@ -60,6 +61,12 @@ const styles = stylex.create({
       default: null,
       ":hover": colors.primary,
     },
+  },
+  identity: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.75rem",
   },
   name: {
     fontWeight: 500,
@@ -112,7 +119,13 @@ export function OrganizationPicker() {
             style={row.style}
             to="/orgs/$orgId"
           >
-            <span {...applyStyles(styles.name)}>{membership.organizationName}</span>
+            <span {...applyStyles(styles.identity)}>
+              <OrganizationAvatar
+                logo={membership.organizationLogo}
+                name={membership.organizationName}
+              />
+              <span {...applyStyles(styles.name)}>{membership.organizationName}</span>
+            </span>
             <span {...applyStyles(styles.role)}>{ROLE_LABEL[membership.role]}</span>
           </Link>
         </li>

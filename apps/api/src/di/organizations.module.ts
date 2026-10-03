@@ -1,10 +1,14 @@
 import {
   AcceptInvitationUseCase,
   CheckOrganizationNameUseCase,
+  CheckOrganizationSlugUseCase,
   CreateInvitationUseCase,
   CreateOrganizationUseCase,
+  GetOrganizationProfileUseCase,
   ListMembershipsForActorUseCase,
   InspectCompetitionInvitationUseCase,
+  SetOrganizationLogoUseCase,
+  UpdateOrganizationProfileUseCase,
   type InvitationRepository,
   type MembershipRepository,
   type OrganizationRepository,
@@ -17,10 +21,10 @@ import {
   SystemClock,
 } from "@/adapters/organizations/crypto-ports.ts";
 import { createInMemoryOrganizationStore } from "@/adapters/organizations/in-memory.repository.ts";
+import { PostgresOrganizationRepository } from "@/adapters/organizations/postgres-organization.repository.ts";
 import {
   PostgresInvitationRepository,
   PostgresMembershipRepository,
-  PostgresOrganizationRepository,
 } from "@/adapters/organizations/postgres.repository.ts";
 import { createInMemoryAuthorizationStore } from "@/adapters/authorization/in-memory.repository.ts";
 import {
@@ -76,6 +80,10 @@ export function createOrganizationsModule(deps: OrganizationsModuleDependencies)
   return {
     createOrganization: new CreateOrganizationUseCase(ports),
     checkOrganizationName: new CheckOrganizationNameUseCase(organizations),
+    checkOrganizationSlug: new CheckOrganizationSlugUseCase(organizations),
+    getOrganizationProfile: new GetOrganizationProfileUseCase(ports),
+    updateOrganizationProfile: new UpdateOrganizationProfileUseCase(ports),
+    setOrganizationLogo: new SetOrganizationLogoUseCase(ports),
     listMembershipsForActor: new ListMembershipsForActorUseCase(memberships),
     createInvitation: new CreateInvitationUseCase(ports),
     acceptInvitation: new AcceptInvitationUseCase(ports),

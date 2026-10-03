@@ -66,8 +66,8 @@ export async function insertTenant(
   await seedActors(db, "tenant-organizer");
   await db.query(
     `INSERT INTO organizations (
-       id, name, normalized_name, created_at, created_by_actor_id
-     ) VALUES ($1, $1, $1, NOW(), 'tenant-organizer')`,
+       id, name, normalized_name, slug, time_zone, created_at, created_by_actor_id
+     ) VALUES ($1, $1, $1, $1, 'America/Lima', NOW(), 'tenant-organizer')`,
     [organizationId],
   );
   await db.query(
