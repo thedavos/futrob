@@ -49,7 +49,7 @@
 | **Propuesta**         | Dos alternativas: **A**, 24 horas desde la propuesta; **B**, un límite competitivo explícito por Encounter.                                                |
 | **Recomendación**     | **A** para el MVP. B queda como extensión cuando competitions modele un cierre de resultados.                                                              |
 | **Decisión validada** | **A**, con la regla común de esta sección. Validada por el responsable de producto el 2026-10-05 en [#129](https://github.com/thedavos/futrob/issues/129). |
-| **Runtime**           | Desbloqueado. [#130](https://github.com/thedavos/futrob/issues/130) implementa A con los vectores de la columna A.                                         |
+| **Runtime**           | Pendiente de implementación. [#130](https://github.com/thedavos/futrob/issues/130) queda desbloqueada para implementar A con los vectores de la columna A. |
 
 Hasta que #130 lo implemente, el código no aplica plazo: una propuesta sin respuesta sigue en
 `awaiting_opponent_confirmation` y nunca se aprueba por silencio.
