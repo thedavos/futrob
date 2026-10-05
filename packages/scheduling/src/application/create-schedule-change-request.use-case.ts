@@ -69,7 +69,10 @@ export class CreateScheduleChangeRequestUseCase {
       readonly eventPublisher: EventPublisherPort;
       readonly ids: IdGeneratorPort;
       readonly mutationLock: EncounterMutationLockPort;
-      readonly requests: ScheduleChangeRequestRepository;
+      readonly requests: Pick<
+        ScheduleChangeRequestRepository,
+        "findByIdempotencyKey" | "listActiveByEncounter" | "save"
+      >;
       readonly rules: CompetitionRescheduleRulesPort;
       readonly timeZones: CompetitionTimeZonePort;
       readonly transaction: TransactionPort;
