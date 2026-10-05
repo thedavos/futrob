@@ -23,6 +23,9 @@ const knockoutStageId = asFixtureStageId("plan-1:stage:2");
 function stageRules(input: {
   readonly allowRescheduling: boolean;
   readonly maxReschedulesPerTeam: number | null;
+  readonly minimumRescheduleNoticeHours?: number;
+  readonly rescheduleRequiresOpponentApproval?: boolean;
+  readonly rescheduleRequiresOrganizerApproval?: boolean;
 }) {
   return {
     officialMatchesPerEncounter: 1 as const,
@@ -32,9 +35,9 @@ function stageRules(input: {
     lossPoints: 0,
     allowRescheduling: input.allowRescheduling,
     maxReschedulesPerTeam: input.maxReschedulesPerTeam,
-    minimumRescheduleNoticeHours: 12,
-    rescheduleRequiresOpponentApproval: true,
-    rescheduleRequiresOrganizerApproval: false,
+    minimumRescheduleNoticeHours: input.minimumRescheduleNoticeHours ?? 12,
+    rescheduleRequiresOpponentApproval: input.rescheduleRequiresOpponentApproval ?? true,
+    rescheduleRequiresOrganizerApproval: input.rescheduleRequiresOrganizerApproval ?? false,
   };
 }
 
@@ -50,6 +53,9 @@ function draft(overrides?: {
     readonly knockout: {
       readonly allowRescheduling: boolean;
       readonly maxReschedulesPerTeam: number;
+      readonly minimumRescheduleNoticeHours?: number;
+      readonly rescheduleRequiresOpponentApproval?: boolean;
+      readonly rescheduleRequiresOrganizerApproval?: boolean;
     };
   };
 }): CompetitionDraft {
@@ -134,6 +140,14 @@ async function adapterWith(input?: {
   });
 }
 
+const closedRules = {
+  allowRescheduling: false,
+  maxReschedulesPerTeam: 0,
+  minimumNoticeHours: 0,
+  requiresOpponentApproval: true,
+  requiresOrganizerApproval: true,
+};
+
 describe("CompetitionRescheduleRulesAdapter", () => {
   it("reads allowRescheduling and maxReschedulesPerTeam from the competition stage", async () => {
     const adapter = await adapterWith({
@@ -145,6 +159,9 @@ describe("CompetitionRescheduleRulesAdapter", () => {
     ).resolves.toEqual({
       allowRescheduling: true,
       maxReschedulesPerTeam: 3,
+      minimumNoticeHours: 12,
+      requiresOpponentApproval: true,
+      requiresOrganizerApproval: false,
     });
   });
 
@@ -158,15 +175,24 @@ describe("CompetitionRescheduleRulesAdapter", () => {
     ).resolves.toEqual({
       allowRescheduling: true,
       maxReschedulesPerTeam: Number.MAX_SAFE_INTEGER,
+      minimumNoticeHours: 12,
+      requiresOpponentApproval: true,
+      requiresOrganizerApproval: false,
     });
   });
 
-  it("uses knockout allow/limit for a knockout Encounter when both stages differ", async () => {
+  it("uses the knockout stage rules, approvals included, for a knockout Encounter", async () => {
     const adapter = await adapterWith({
       draft: draft({
         mixed: {
           regular: { allowRescheduling: false, maxReschedulesPerTeam: 1 },
-          knockout: { allowRescheduling: true, maxReschedulesPerTeam: 4 },
+          knockout: {
+            allowRescheduling: true,
+            maxReschedulesPerTeam: 4,
+            minimumRescheduleNoticeHours: 24,
+            rescheduleRequiresOpponentApproval: false,
+            rescheduleRequiresOrganizerApproval: true,
+          },
         },
       }),
       plan: mixedFixturePlan(),
@@ -177,34 +203,34 @@ describe("CompetitionRescheduleRulesAdapter", () => {
     ).resolves.toEqual({
       allowRescheduling: true,
       maxReschedulesPerTeam: 4,
+      minimumNoticeHours: 24,
+      requiresOpponentApproval: false,
+      requiresOrganizerApproval: true,
     });
     await expect(
       adapter.getRules({ organizationId, competitionId, stageId: regularStageId }),
     ).resolves.toEqual({
       allowRescheduling: false,
       maxReschedulesPerTeam: 1,
+      minimumNoticeHours: 12,
+      requiresOpponentApproval: true,
+      requiresOrganizerApproval: false,
     });
   });
 
-  it("disables rescheduling when the competition is missing or has no stage rules", async () => {
+  it("fails closed when the competition is missing or has no stage rules", async () => {
     const adapter = await adapterWith();
 
     await expect(
       adapter.getRules({ organizationId, competitionId, stageId: regularStageId }),
-    ).resolves.toEqual({
-      allowRescheduling: false,
-      maxReschedulesPerTeam: 0,
-    });
+    ).resolves.toEqual(closedRules);
     await expect(
       adapter.getRules({
         organizationId: asOrganizationId("org-other"),
         competitionId,
         stageId: regularStageId,
       }),
-    ).resolves.toEqual({
-      allowRescheduling: false,
-      maxReschedulesPerTeam: 0,
-    });
+    ).resolves.toEqual(closedRules);
   });
 
   it("counts accepted requests only, never open or rejected attempts", async () => {
@@ -228,6 +254,8 @@ describe("CompetitionRescheduleRulesAdapter", () => {
       initiatedByActorId: asActorId("captain-1"),
       scope: { type: "entire_encounter" },
       status: "open",
+      version: 1,
+      decisions: [],
       proposals: [proposal],
       idempotencyKey: "idem-open",
       createdAt: proposal.createdAt,

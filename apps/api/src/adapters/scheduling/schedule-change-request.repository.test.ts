@@ -46,6 +46,8 @@ function request(
     initiatedByActorId: actorId,
     scope: { type: "entire_encounter" },
     status: "open",
+    version: 1,
+    decisions: [],
     proposals: [proposal({ id: `${overrides.id}-proposal` })],
     createdAt: now,
     updatedAt: now,

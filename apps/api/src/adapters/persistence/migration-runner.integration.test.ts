@@ -77,14 +77,17 @@ suite("migration runner", () => {
   );
 
   it(
-    "upgrades the current 0046 schema with only the team performance migration",
+    "upgrades the current 0046 schema with only the later migrations",
     async () => {
       await withSchema(async (client) => {
         for (const file of await migrationFiles(46)) {
           await client.query(await readFile(resolve(directory, file), "utf8"));
         }
         const upgraded = await runMigrations(client, { directory, baseline: 46 });
-        expect(upgraded.applied).toEqual(["0047_team_performance_rankings.sql"]);
+        expect(upgraded.applied).toEqual([
+          "0047_team_performance_rankings.sql",
+          "0048_schedule_change_negotiation.sql",
+        ]);
         expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
         expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
         expect(

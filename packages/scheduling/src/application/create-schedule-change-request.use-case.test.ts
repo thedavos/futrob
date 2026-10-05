@@ -46,6 +46,11 @@ const secondEncounterId = asEncounterId("encounter-2");
 const homeTeamId = asTeamId("team-home");
 const awayTeamId = asTeamId("team-away");
 const actorId = asActorId("captain-1");
+const defaultApprovals = {
+  minimumNoticeHours: 12,
+  requiresOpponentApproval: true,
+  requiresOrganizerApproval: false,
+};
 
 function limaWall(day: number, hour: number, minute: number, second = 0) {
   return {
@@ -102,7 +107,10 @@ class FakeEncounterSchedules {
   }
 }
 
-class FakeScheduleChangeRequests implements ScheduleChangeRequestRepository {
+class FakeScheduleChangeRequests implements Pick<
+  ScheduleChangeRequestRepository,
+  "findByIdempotencyKey" | "listActiveByEncounter" | "listByEncounter" | "save"
+> {
   readonly rows: ScheduleChangeRequest[] = [];
 
   constructor(private readonly missIdempotencyLookups = false) {}
@@ -268,6 +276,7 @@ function createHarness(
       (async () => ({
         allowRescheduling: options.allowRescheduling ?? true,
         maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
+        ...defaultApprovals,
       })),
     countAppliedReschedules: async (input) =>
       options.appliedReschedulesByEncounter?.get(input.encounterId) ??
@@ -365,6 +374,7 @@ describe("CreateScheduleChangeRequestUseCase", () => {
       initiatedByActorId: actorId,
       scope: { type: "entire_encounter" },
       status: "open",
+      version: 1,
       proposals: [
         {
           id: "proposal-1",
@@ -375,6 +385,7 @@ describe("CreateScheduleChangeRequestUseCase", () => {
           createdAt: now,
         },
       ],
+      decisions: [],
       idempotencyKey: "idem-1",
       createdAt: now,
       updatedAt: now,
@@ -625,7 +636,7 @@ describe("CreateScheduleChangeRequestUseCase", () => {
     const harness = createHarness({
       getRules: async (input) => {
         seen.push(input.stageId);
-        return { allowRescheduling: true, maxReschedulesPerTeam: 2 };
+        return { ...defaultApprovals, allowRescheduling: true, maxReschedulesPerTeam: 2 };
       },
     });
 
@@ -641,8 +652,8 @@ describe("CreateScheduleChangeRequestUseCase", () => {
       encounter: { ...encounter, stageId: knockoutStageId },
       getRules: async ({ stageId }) =>
         stageId === knockoutStageId
-          ? { allowRescheduling: true, maxReschedulesPerTeam: 4 }
-          : { allowRescheduling: false, maxReschedulesPerTeam: 1 },
+          ? { ...defaultApprovals, allowRescheduling: true, maxReschedulesPerTeam: 4 }
+          : { ...defaultApprovals, allowRescheduling: false, maxReschedulesPerTeam: 1 },
     });
 
     const result = await harness.useCase.execute(validInput);

@@ -1,30 +1,38 @@
 import {
   rescheduleScopesConflict,
-  type RescheduleScope,
-  type ScheduleChangeProposal,
+  type ScheduleChangeCommandReceipt,
+  type ScheduleChangeCommitOutcome,
   type ScheduleChangeRequest,
   type ScheduleChangeRequestRepository,
+  type ScheduleChangeTransition,
 } from "@futrob/scheduling";
 import {
-  asActorId,
-  asCompetitionId,
-  asEncounterId,
-  asOrganizationId,
-  asTeamId,
   compareTime,
+  type ActorId,
   type CompetitionId,
   type EncounterId,
   type OrganizationId,
   type TeamId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
-import { z } from "zod";
-import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import {
   getPgExecutor,
   isInPgTransaction,
   type PgExecutor,
 } from "@/adapters/persistence/pg-transaction.ts";
+import {
+  decisionRowSchema,
+  insertProposals,
+  proposalRowSchema,
+  receiptRowSchema,
+  rehydrateReceipt,
+  rehydrateRequest,
+  requestRowSchema,
+  requestSelectSql,
+  scopeColumns,
+  type RequestRow,
+} from "./schedule-change-request-rows.ts";
+import { writeScheduleChangeTransition } from "./schedule-change-transition.write.ts";
 import {
   activeScopeConflict,
   idempotencyConflict,
@@ -40,6 +48,48 @@ export interface CountAcceptedReschedulesInput {
 
 export class InMemoryScheduleChangeRequestRepository implements ScheduleChangeRequestRepository {
   readonly rows = new Map<string, ScheduleChangeRequest>();
+  readonly receipts: ScheduleChangeCommandReceipt[] = [];
+
+  async findById(
+    organizationId: OrganizationId,
+    requestId: string,
+  ): Promise<ScheduleChangeRequest | null> {
+    const request = this.rows.get(requestId);
+    return request?.organizationId === organizationId ? request : null;
+  }
+
+  async findCommandReceipt(
+    organizationId: OrganizationId,
+    actorId: ActorId,
+    commandKey: string,
+  ): Promise<ScheduleChangeCommandReceipt | null> {
+    return (
+      this.receipts.find(
+        (receipt) =>
+          receipt.organizationId === organizationId &&
+          receipt.actorId === actorId &&
+          receipt.commandKey === commandKey,
+      ) ?? null
+    );
+  }
+
+  async commit(
+    transition: ScheduleChangeTransition,
+    receipt: ScheduleChangeCommandReceipt,
+  ): Promise<ScheduleChangeCommitOutcome> {
+    const stored = await this.findById(transition.request.organizationId, transition.request.id);
+    if (!stored || stored.version !== transition.expectedVersion) {
+      return { kind: "version_conflict", currentVersion: stored?.version ?? 0 };
+    }
+    if (
+      await this.findCommandReceipt(receipt.organizationId, receipt.actorId, receipt.commandKey)
+    ) {
+      throw idempotencyConflict();
+    }
+    this.rows.set(transition.request.id, transition.request);
+    this.receipts.push(receipt);
+    return { kind: "committed" };
+  }
 
   async findByIdempotencyKey(
     organizationId: OrganizationId,
@@ -125,6 +175,62 @@ export class InMemoryScheduleChangeRequestRepository implements ScheduleChangeRe
 
 export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRequestRepository {
   constructor(private readonly pool: Pool) {}
+
+  async findById(
+    organizationId: OrganizationId,
+    requestId: string,
+  ): Promise<ScheduleChangeRequest | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `${requestSelectSql}
+       WHERE request.organization_id = $1 AND request.id = $2`,
+      [organizationId, requestId],
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    return this.rehydrateWithProposals(requestRowSchema.parse(row));
+  }
+
+  async findCommandReceipt(
+    organizationId: OrganizationId,
+    actorId: ActorId,
+    commandKey: string,
+  ): Promise<ScheduleChangeCommandReceipt | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, request_id, organization_id, actor_id, command_key, command_type, fingerprint,
+              target_proposal_id, resulting_version, resulting_status, created_proposal_id,
+              decision_id, occurred_at
+       FROM schedule_change_command_receipts
+       WHERE organization_id = $1 AND actor_id = $2 AND command_key = $3`,
+      [organizationId, actorId, commandKey],
+    );
+    const row = result.rows[0];
+    return row ? rehydrateReceipt(receiptRowSchema.parse(row)) : null;
+  }
+
+  async commit(
+    transition: ScheduleChangeTransition,
+    receipt: ScheduleChangeCommandReceipt,
+  ): Promise<ScheduleChangeCommitOutcome> {
+    if (isInPgTransaction()) {
+      return writeScheduleChangeTransition(getPgExecutor(this.pool), transition, receipt);
+    }
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const outcome = await writeScheduleChangeTransition(client, transition, receipt);
+      await client.query(outcome.kind === "committed" ? "COMMIT" : "ROLLBACK");
+      return outcome;
+    } catch (error) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        // Prefer the original write error over a secondary rollback error.
+      }
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
 
   async findByIdempotencyKey(
     organizationId: OrganizationId,
@@ -227,8 +333,8 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
       `INSERT INTO schedule_change_requests (
          id, organization_id, competition_id, encounter_id, requesting_team_id,
          initiated_by_actor_id, scope_type, official_slot, status, idempotency_key,
-         created_at, updated_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         created_at, updated_at, version
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        ON CONFLICT (id) DO UPDATE SET
          competition_id = EXCLUDED.competition_id,
          encounter_id = EXCLUDED.encounter_id,
@@ -254,45 +360,15 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
         request.idempotencyKey,
         request.createdAt.toISOString(),
         request.updatedAt.toISOString(),
+        request.version,
       ],
     );
     if (!upserted.rows[0]) return;
 
-    await executor.query(
-      `DELETE FROM schedule_change_proposals
-       WHERE request_id = $1 AND organization_id = $2`,
-      [request.id, request.organizationId],
-    );
-
-    const values = request.proposals.flatMap((proposal, index) => [
-      proposal.id,
-      request.id,
-      request.organizationId,
-      proposal.proposedStartAt.toISOString(),
-      proposal.proposedByActorId,
-      proposal.proposedByTeamId,
-      proposal.reason,
-      proposal.createdAt.toISOString(),
-      index + 1,
-    ]);
-    const placeholders = request.proposals
-      .map((_, index) => {
-        const offset = index * 9;
-        return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`;
-      })
-      .join(", ");
-    await executor.query(
-      `INSERT INTO schedule_change_proposals (
-         id, request_id, organization_id, proposed_start_at, proposed_by_actor_id,
-         proposed_by_team_id, reason, created_at, proposal_order
-       ) VALUES ${placeholders}`,
-      values,
-    );
+    await insertProposals(executor, request, request.proposals, 1);
   }
 
-  private async rehydrateWithProposals(
-    row: z.infer<typeof requestRowSchema>,
-  ): Promise<ScheduleChangeRequest> {
+  private async rehydrateWithProposals(row: RequestRow): Promise<ScheduleChangeRequest> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT id, request_id, organization_id, proposed_start_at, proposed_by_actor_id,
               proposed_by_team_id, reason, created_at, proposal_order
@@ -301,117 +377,18 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
        ORDER BY proposal_order ASC, created_at ASC`,
       [row.organization_id, row.id],
     );
+    const decisions = await getPgExecutor(this.pool).query(
+      `SELECT id, proposal_id, request_version, kind, authority, team_id, actor_id, reason,
+              created_at
+       FROM schedule_change_decisions
+       WHERE organization_id = $1 AND request_id = $2
+       ORDER BY request_version ASC, created_at ASC, id ASC`,
+      [row.organization_id, row.id],
+    );
     return rehydrateRequest(
       row,
       result.rows.map((proposal) => proposalRowSchema.parse(proposal)),
+      decisions.rows.map((decision) => decisionRowSchema.parse(decision)),
     );
   }
-}
-
-const requestSelectSql = `SELECT request.id, request.organization_id, request.competition_id,
-       request.encounter_id, request.requesting_team_id, request.initiated_by_actor_id,
-       request.scope_type, request.official_slot, request.status, request.idempotency_key,
-       request.created_at, request.updated_at
-FROM schedule_change_requests AS request`;
-
-const requestRowSchema = z.object({
-  id: pgTextSchema,
-  organization_id: pgTextSchema,
-  competition_id: pgTextSchema,
-  encounter_id: pgTextSchema,
-  requesting_team_id: pgTextSchema,
-  initiated_by_actor_id: pgTextSchema,
-  scope_type: z.enum(["entire_encounter", "official_match"]),
-  official_slot: z.union([z.null(), z.coerce.number().pipe(z.union([z.literal(1), z.literal(2)]))]),
-  status: z.enum(["open", "accepted", "rejected", "cancelled", "expired", "escalated"]),
-  idempotency_key: pgTextSchema,
-  created_at: pgTimestampSchema,
-  updated_at: pgTimestampSchema,
-});
-
-const proposalRowSchema = z.object({
-  id: pgTextSchema,
-  request_id: pgTextSchema,
-  organization_id: pgTextSchema,
-  proposed_start_at: pgTimestampSchema,
-  proposed_by_actor_id: pgTextSchema,
-  proposed_by_team_id: pgTextSchema,
-  reason: pgTextSchema,
-  created_at: pgTimestampSchema,
-  proposal_order: z.coerce.number().int().positive(),
-});
-
-function scopeColumns(scope: RescheduleScope) {
-  switch (scope.type) {
-    case "entire_encounter":
-      return { scopeType: "entire_encounter" as const, officialSlot: null };
-    case "official_match":
-      return { scopeType: "official_match" as const, officialSlot: scope.officialSlot };
-    default: {
-      const exhaustiveScope: never = scope;
-      void exhaustiveScope;
-      throw new TypeError("Invalid schedule change scope");
-    }
-  }
-}
-
-function rehydrateScope(
-  scopeType: "entire_encounter" | "official_match",
-  officialSlot: 1 | 2 | null,
-): RescheduleScope {
-  switch (scopeType) {
-    case "entire_encounter":
-      return { type: "entire_encounter" };
-    case "official_match":
-      if (officialSlot !== 1 && officialSlot !== 2) {
-        throw new TypeError(`Invalid official match slot: ${officialSlot}`);
-      }
-      return { type: "official_match", officialSlot };
-    default: {
-      const exhaustiveScope: never = scopeType;
-      void exhaustiveScope;
-      throw new TypeError("Invalid schedule change scope");
-    }
-  }
-}
-
-function rehydrateRequest(
-  row: z.infer<typeof requestRowSchema>,
-  proposalRows: readonly z.infer<typeof proposalRowSchema>[],
-): ScheduleChangeRequest {
-  return {
-    id: row.id,
-    organizationId: asOrganizationId(row.organization_id),
-    competitionId: asCompetitionId(row.competition_id),
-    encounterId: asEncounterId(row.encounter_id),
-    requestingTeamId: asTeamId(row.requesting_team_id),
-    initiatedByActorId: asActorId(row.initiated_by_actor_id),
-    scope: rehydrateScope(row.scope_type, row.official_slot),
-    status: row.status,
-    proposals: asProposalList(proposalRows.map(rehydrateProposal)),
-    idempotencyKey: row.idempotency_key,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-function rehydrateProposal(row: z.infer<typeof proposalRowSchema>): ScheduleChangeProposal {
-  return {
-    id: row.id,
-    proposedStartAt: row.proposed_start_at,
-    proposedByActorId: asActorId(row.proposed_by_actor_id),
-    proposedByTeamId: asTeamId(row.proposed_by_team_id),
-    reason: row.reason,
-    createdAt: row.created_at,
-  };
-}
-
-function asProposalList(
-  proposals: readonly ScheduleChangeProposal[],
-): ScheduleChangeRequest["proposals"] {
-  const [first, ...rest] = proposals;
-  if (!first) {
-    throw new TypeError("Schedule change request is missing proposals");
-  }
-  return [first, ...rest];
 }

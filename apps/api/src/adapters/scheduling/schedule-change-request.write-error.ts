@@ -14,6 +14,7 @@ const postgresDatabaseErrorSchema = z.object({
 });
 
 const IDEMPOTENCY_CONSTRAINT = "schedule_change_requests_idempotency_uidx";
+const RECEIPT_KEY_CONSTRAINT = "schedule_change_command_receipts_key_uidx";
 const ENCOUNTER_SNAPSHOT_FK = "schedule_change_requests_encounter_snapshot_fkey";
 const ACTIVE_SLOT_CONSTRAINTS = new Set([
   "schedule_change_requests_active_slot_1_uidx",
@@ -37,6 +38,16 @@ export function activeScopeConflict(
     encounterId,
     activeRequestId,
   });
+}
+
+/** A concurrent command already stored a receipt for this `(organization, actor, key)`. */
+export function isReceiptKeyConflict(error: Error): boolean {
+  const parsed = postgresDatabaseErrorSchema.safeParse(error);
+  return (
+    parsed.success &&
+    parsed.data.code === "23505" &&
+    parsed.data.constraint === RECEIPT_KEY_CONSTRAINT
+  );
 }
 
 export function mapScheduleChangeRequestWriteError(
