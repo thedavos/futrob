@@ -2,9 +2,12 @@ const REDACTED_AUDIT_TEXT = "[REDACTED]";
 
 const EMAIL_PATTERN =
   /[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+/giu;
-const INTERNATIONAL_PHONE_PATTERN = /\+\d(?:[\s().-]*\d){6,14}/gu;
-const TEN_DIGIT_PHONE_PATTERN = /(?<!\w)(?:\(\d{3}\)[ .-]?|\d{3}[ .-])\d{3}[ .-]\d{4}\b/gu;
-const LOCAL_PHONE_PATTERN = /\b\d{3}[.-]\d{4}\b/gu;
+// A dot joins adjacent digits, but sentence punctuation and line breaks end the phone.
+const INTERNATIONAL_PHONE_PATTERN =
+  /\+\d(?:(?:[ \t]+|[ \t]*[()-][ \t]*|\.)?\d){6,14}(?!\d)(?:[ \t]*(?:x|ext\.?)[ \t]*\d+)?/giu;
+const TEN_DIGIT_PHONE_PATTERN =
+  /(?<!\d)(?:\(\d{3}\)[ .-]?|\d{3}[ .-])\d{3}[ .-]\d{4}(?!\d)(?:[ \t]*(?:x|ext\.?)[ \t]*\d+)?/giu;
+const LOCAL_PHONE_PATTERN = /(?<!\d)\d{3}[.-]\d{4}(?!\d)(?:[ \t]*(?:x|ext\.?)[ \t]*\d+)?/giu;
 
 /**
  * Audit reasons preserve their explanation while replacing email addresses and

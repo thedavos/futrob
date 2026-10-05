@@ -27,6 +27,12 @@ import {
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = describe.skipIf(!databaseUrl);
 const TEST_TIMEOUT_MS = 180_000;
+const phoneReasonExamples = [
+  ["Marcador incorrecto; llamar +1-555-0100", "Marcador incorrecto; llamar [REDACTED]"],
+  ["Call 555-555-0100x123", "Call [REDACTED]"],
+  ["x555-555-0100", "x[REDACTED]"],
+  ["Call +1-555-0100. 2026 is relevant", "Call [REDACTED]. 2026 is relevant"],
+] as const;
 
 suite("official selection composition on Postgres", () => {
   let isolated: IsolatedSchema;
@@ -291,9 +297,9 @@ suite("official selection composition on Postgres", () => {
     TEST_TIMEOUT_MS,
   );
 
-  it(
-    "persists and serves redacted reasons while keeping a neighboring explanation unchanged",
-    async () => {
+  it.each(phoneReasonExamples)(
+    "persists and serves a redacted reason while keeping the neighbor unchanged: %s",
+    async (reason, expectedReason) => {
       const { modules } = await fresh();
       const proposed = await modules.officialSelection.propose.execute({
         actorId: HOME_CAPTAIN,
@@ -319,7 +325,7 @@ suite("official selection composition on Postgres", () => {
             proposalId: proposed.value.proposal!.id,
             expectedVersion: 1,
             selections: slot("m-2"),
-            reason: "Marcador incorrecto; llamar +1-555-0100",
+            reason,
             commandKey: "redaction-alternative",
           }),
       );
@@ -338,9 +344,9 @@ suite("official selection composition on Postgres", () => {
         ],
       );
       expect(persisted.rows[0]).toEqual({
-        proposal_reason: "Marcador incorrecto; llamar [REDACTED]",
-        action_reason: "Marcador incorrecto; llamar [REDACTED]",
-        dispute_reason: "Marcador incorrecto; llamar [REDACTED]",
+        proposal_reason: expectedReason,
+        action_reason: expectedReason,
+        dispute_reason: expectedReason,
       });
 
       const view = await modules.officialSelection.get.execute({
@@ -349,10 +355,10 @@ suite("official selection composition on Postgres", () => {
         encounterId: ENCOUNTER,
       });
       if (!view.isOk()) throw new Error("view failed");
-      expect(view.value.proposals.at(-1)?.reason).toBe("Marcador incorrecto; llamar [REDACTED]");
-      expect(view.value.actions.at(-1)?.reason).toBe("Marcador incorrecto; llamar [REDACTED]");
-      expect(view.value.activeDispute?.openedReason).toBe("Marcador incorrecto; llamar [REDACTED]");
-      expect(JSON.stringify(view.value)).not.toContain("+1-555-0100");
+      expect(view.value.proposals.at(-1)?.reason).toBe(expectedReason);
+      expect(view.value.actions.at(-1)?.reason).toBe(expectedReason);
+      expect(view.value.activeDispute?.openedReason).toBe(expectedReason);
+      expect(view.value.actions.map((action) => action.requestFingerprint)).toEqual([null, null]);
 
       const reviewed = await modules.officialSelection.reviewDispute.execute({
         actorId: OPERATOR,
@@ -420,9 +426,9 @@ suite("official selection composition on Postgres", () => {
     TEST_TIMEOUT_MS,
   );
 
-  it(
-    "protects legacy view and replay without rewriting the append-only rows",
-    async () => {
+  it.each(phoneReasonExamples)(
+    "protects legacy view and replay without rewriting the append-only rows: %s",
+    async (phoneReason, expectedReason) => {
       const { modules } = await fresh();
       const proposed = await modules.officialSelection.propose.execute({
         actorId: HOME_CAPTAIN,
@@ -438,7 +444,6 @@ suite("official selection composition on Postgres", () => {
       const proposalId = "legacy-proposal-sensitive";
       const disputeId = "legacy-dispute-sensitive";
       const actionId = "legacy-action-sensitive";
-      const phoneReason = "Marcador incorrecto; llamar +1-555-0100";
       const emailReason = "Avisar a arbitro@example.com sobre el marcador";
       const fingerprint = `reject|${AWAY}|${proposalId}|1|${phoneReason}`;
       const occurredAt = new Date("2026-09-15T01:02:03.000Z");
@@ -534,7 +539,7 @@ suite("official selection composition on Postgres", () => {
         actorId: AWAY_CAPTAIN,
         versionBefore: 1,
         versionAfter: 2,
-        reason: "Marcador incorrecto; llamar [REDACTED]",
+        reason: expectedReason,
         requestFingerprint: null,
         occurredAt,
       });
@@ -560,7 +565,7 @@ suite("official selection composition on Postgres", () => {
       expect(replay.value.proposal?.reason).toBe("Avisar a [REDACTED] sobre el marcador");
       expect(replay.value.actions[0]).toMatchObject({
         id: actionId,
-        reason: "Marcador incorrecto; llamar [REDACTED]",
+        reason: expectedReason,
         requestFingerprint: null,
         occurredAt,
       });

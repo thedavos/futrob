@@ -401,6 +401,33 @@ describe("reject (CA-04)", () => {
     expect(neighbor.actions[0]?.reason).toBe("Avisar al árbitro sobre el marcador");
   });
 
+  it.each([
+    ["Call 555-555-0100x123", "Call [REDACTED]"],
+    ["x555-555-0100", "x[REDACTED]"],
+    ["Call 555-0100x123", "Call [REDACTED]"],
+    ["Call (555) 555-0100 ext. 123.", "Call [REDACTED]."],
+    ["Call555-555-0100now", "Call[REDACTED]now"],
+    ["Call +1-555-0100. 2026 is relevant", "Call [REDACTED]. 2026 is relevant"],
+    ["Call +1.555.0100. 2026 is relevant", "Call [REDACTED]. 2026 is relevant"],
+    ["Call +1 (555) 0100. 2026 is relevant", "Call [REDACTED]. 2026 is relevant"],
+    ["Call +1-555-0100\n2026 is relevant", "Call [REDACTED]\n2026 is relevant"],
+    ["Fecha 2026-10-05; marcador 2-0", "Fecha 2026-10-05; marcador 2-0"],
+  ])("preserves reason context and phone boundaries: %s", async (reason, expectedReason) => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    const rejected = unwrap(
+      await h.useCases.reject.execute({
+        ...rivalInput(h, 1, first.proposal!.id),
+        reason,
+      }),
+    );
+
+    expect(rejected.actions[0]?.reason).toBe(expectedReason);
+    expect(rejected.dispute?.openedReason).toBe(expectedReason);
+    expect(h.selections.actions[1]?.reason).toBe(expectedReason);
+    expect(h.selections.disputes[0]?.openedReason).toBe(expectedReason);
+  });
+
   it("does not treat different phones with the same redacted view as the same replay", async () => {
     const h = await setup();
     const first = unwrap(await h.propose(["m-1"]));

@@ -103,6 +103,9 @@ texto, su puntuación y su capitalización no cambian. Por ejemplo:
 | `Marcador incorrecto; llamar +1-555-0100`        | `Marcador incorrecto; llamar [REDACTED]` |
 | `Avisar a arbitro@example.com sobre el marcador` | `Avisar a [REDACTED] sobre el marcador`  |
 | `Se invirtieron los slots`                       | `Se invirtieron los slots`               |
+| `Call 555-555-0100x123`                          | `Call [REDACTED]`                        |
+| `x555-555-0100`                                  | `x[REDACTED]`                            |
+| `Call +1-555-0100. 2026 is relevant`             | `Call [REDACTED]. 2026 is relevant`      |
 
 La detección cubre correos con dominio punteado; teléfonos internacionales con `+` y entre
 7 y 15 dígitos (admite espacios, puntos, guiones y paréntesis); teléfonos nacionales en
@@ -110,6 +113,12 @@ formatos `555 555 0100`, `555-555-0100` o `(555) 555-0100`; y números locales `
 o `555.0100`. No elimina números sin esos formatos, fechas ni marcadores. No pretende detectar
 toda PII ni direcciones ofuscadas: si cambia el catálogo de datos sensibles, debe ampliarse
 esta política con ejemplos de comportamiento antes de exponerlos.
+
+Los límites del teléfono son numéricos: una letra adyacente no impide redactarlo ni deja
+dígitos de su prefijo visibles. Una extensión marcada por `x`, `ext` o `ext.` (sin distinguir
+mayúsculas) se redacta junto con el número. Dentro del teléfono internacional un punto solo
+une dígitos adyacentes; punto seguido de espacio y los saltos de línea terminan el teléfono,
+conservando la puntuación y las cifras de la oración siguiente.
 
 El inventario y el límite de aplicación son:
 
