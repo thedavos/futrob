@@ -39,7 +39,7 @@ Preconditions:
 - Locale defaults to Spanish. English copy (`Log in`, `Create account`, `From the EA match to the`) is a different locale, not a failure of the Spanish recipe.
 - There are three `Crear cuenta` controls (header, hero, and the below-fold final CTA). Drive all three; proving only header + hero is an incomplete entry-point pass. The final block also has a second `Iniciar sesión`.
 - The landing header `Futrob` link is the only brand home control. `/login` and `/signup` render `AuthTunnelShell` with a non-interactive logo (`role=img`). Do not look for a `Futrob` link there.
-- `Ver cómo funciona` is an in-page `#mecanismo` jump, not a new route. Assert the heading, not only the hash.
+- `Ver cómo funciona` is an in-page `#mecanismo` jump, not a new route. In the accessibility tree it is a **button** (even though the control is an anchor). Assert the heading, not only the hash.
 - Landing is public. A leftover session must not reveal org admin chrome on `/`.
 - Client navigation from a landing CTA can update the URL to `/signup` before the signup accessibility tree paints. If the snapshot still shows the hero, navigate to `/signup` once more and wait for heading `Crea tu cuenta`.
 - Browser screenshots may land in a temp path. Copy them into `evidence/<run-id>/landing/` before cleanup.

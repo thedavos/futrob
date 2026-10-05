@@ -8,7 +8,7 @@ After signup, a new actor picks `Empezar como jugador`, may skip EA details, con
 - `onb-player-account` opens `Configura tus datos de juego` and allows `Omitir por ahora`.
 - `onb-player-club` opens `Asocia tu club EA` and allows skip.
 - `onb-player-review` shows `Confirma tu configuración` with `Perfil de jugador listo · Datos EA para después` when skipped.
-- `onb-player-finish` submits `Entrar a mi espacio` and lands on `/player` with `Tu espacio de jugador`.
+- `onb-player-finish` submits `Entrar a mi espacio` and lands on `/player` with heading `Inicio`.
 - `onb-player-guard` sending an incomplete actor to `/player` returns them to `/onboarding`.
 
 ## How to get to it (user POV)
@@ -31,8 +31,8 @@ Preconditions:
 - **Pick player.** Choose `Empezar como jugador`, then `Continuar`. The URL becomes `/onboarding/game-account`. The heading is `Configura tus datos de juego`.
 - **Skip account.** Choose `Omitir por ahora`. The URL becomes `/onboarding/club`. The heading is `Asocia tu club EA`.
 - **Skip club.** Choose `Omitir por ahora`. The URL becomes `/onboarding/review`. The heading is `Confirma tu configuración`. Visible copy includes `Perfil de jugador listo · Datos EA para después` or `Sin club asociado por ahora`.
-- **Finish.** Choose `Entrar a mi espacio`. The URL becomes `/player`. The heading is `Tu espacio de jugador`. The eyebrow is `Espacio personal`. Shortcuts `Abrir Mis partidos` and `Abrir tu perfil` are visible.
-- **Guard (separate incomplete actor).** Open `/player` before finishing review. The app must not show `Tu espacio de jugador`; it returns to `/onboarding`.
+- **Finish.** Choose `Entrar a mi espacio`. The URL becomes `/player`. The heading is `Inicio`. The shell identity mark reads `Tu espacio en Futrob` when no club is selected (catalog `Espacio personal` is unused). Sidebar includes `Mis partidos` and `Mis estadísticas`. A header button `Ver mis partidos` may appear depending on home phase; do not look for `Abrir Mis partidos` or `Abrir tu perfil`.
+- **Guard (separate incomplete actor).** Open `/player` before finishing review. The app must not show heading `Inicio` as a finished workspace; it returns to `/onboarding`.
 - **Proof.** Screenshot + ARIA of intention, of review before confirm, and of `/player` after finish. Record that the path was `player`, not `organization` or `invitation`.
 
 ## Gotchas
@@ -41,5 +41,6 @@ Preconditions:
 - Club search hits EA through the API. Skipping club is the safe seed proof; a live search is optional and rate-limited.
 - Re-finishing must not create a second organization or competition. This recipe never creates those.
 - Organizer (`Organizar`) and invitation (`Unirme`) are other entry points. Completing the player path does not verify them.
-- `/player` shows `Comprobando tu onboarding…` while the status request runs. Wait for the heading, not the pending copy.
+- `/player` shows `Comprobando tu onboarding…` while the status request runs. Wait for heading `Inicio`, not the pending copy.
+- The first `Entrar a mi espacio` can bounce back to `/onboarding/intention` if persist is still in flight. Re-open review and finish again; do not treat that bounce as a completed workspace.
 - The incomplete-actor guard lands on `/onboarding` and typically syncs to `/onboarding/intention`. The player radio may stay selected; that is not a finished workspace.
