@@ -1,4 +1,5 @@
 import { createFutrobClient, type FutrobClient } from "@futrob/sdk";
+import { randomUUID } from "expo-crypto";
 import { API_BASE_URL } from "@/config/env";
 import { clearSession, getSession } from "@/modules/identity/session-store";
 import { clearOnboardingDraft } from "@/modules/identity/onboarding-draft";
@@ -19,6 +20,7 @@ export function getFutrobClient(): FutrobClient {
     baseUrl: `${API_BASE_URL}/api/v1`,
     getAccessToken: async () => (await getSession())?.token,
     fetchImpl: fetchAndClearSessionOnUnauthorized,
+    createRequestId: randomUUID,
   });
 }
 
