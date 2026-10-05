@@ -203,6 +203,8 @@ export function matchesLegacyCommand(
     case "alternative":
       if (first.type === "confirmed") {
         if (first.proposalId !== command.proposalId) return false;
+        // Legacy used "-" for null and dropped equivalent alternatives' reasons.
+        if (command.reason === null || command.reason === "-") return false;
       } else if (
         first.type !== "alternative_proposed" ||
         proposal?.supersedesProposalId !== command.proposalId

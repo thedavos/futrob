@@ -393,6 +393,158 @@ suite("official selection composition on Postgres", () => {
   );
 
   it(
+    "replays a multi-action legacy approval without another result or projection",
+    async () => {
+      const { modules, project } = await fresh();
+      const proposed = await propose(modules);
+      const command = {
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        proposalId: proposed.proposal!.id,
+        expectedVersion: 1,
+        commandKey: "opaque-confirm",
+      };
+      const original = await modules.officialSelection.confirm.execute(command);
+      if (!original.isOk()) throw new Error("confirm failed");
+      expect(original.value.approvedResult).toMatchObject({
+        revision: 1,
+        status: "approved",
+        approvalBasis: "team_agreement",
+        slots: [{ officialSlot: 1, homeGoals: 2, awayGoals: 1 }],
+      });
+      const opaque = await isolated.pool.query(
+        "SELECT request_fingerprint FROM official_selection_actions WHERE command_key = 'opaque-confirm' ORDER BY seq",
+      );
+      expect(opaque.rows).toHaveLength(2);
+      expect(opaque.rows[0].request_fingerprint).toMatch(/^sha256:[a-f0-9]{64}$/);
+      expect(opaque.rows[1].request_fingerprint).toBe(opaque.rows[0].request_fingerprint);
+      const legacyFingerprint = `confirm|${AWAY}|${command.proposalId}|1`;
+      await isolated.pool.query(
+        `INSERT INTO official_selection_actions (
+         id, selection_id, proposal_id, organization_id, competition_id, encounter_id,
+         action_type, from_status, to_status, version_before, version_after, actor_id, team_id,
+         capacity, reason, command_key, request_fingerprint, official_result_id, details, occurred_at
+       ) SELECT 'legacy-' || action_type, selection_id, proposal_id, organization_id, competition_id, encounter_id,
+         action_type, from_status, to_status, version_before, version_after, actor_id, team_id,
+         capacity, reason, 'legacy-confirm', $1, official_result_id, details, occurred_at
+         FROM official_selection_actions WHERE command_key = 'opaque-confirm' ORDER BY seq`,
+        [legacyFingerprint],
+      );
+      const read = () =>
+        isolated.pool.query(
+          "SELECT to_jsonb(a) AS row FROM official_selection_actions a WHERE command_key = 'legacy-confirm' ORDER BY seq",
+        );
+      const before = await read();
+      const replay = await modules.officialSelection.confirm.execute({
+        ...command,
+        commandKey: "legacy-confirm",
+      });
+      expect(replay.isOk() && replay.value).toMatchObject({
+        replayed: true,
+        selection: { status: "approved", version: 2 },
+        proposal: { id: command.proposalId },
+        approvedResult: {
+          id: original.value.approvedResult!.id,
+          revision: 1,
+          approvalBasis: "team_agreement",
+        },
+        actions: [
+          { id: "legacy-confirmed", type: "confirmed", requestFingerprint: null },
+          { id: "legacy-approved", type: "approved", requestFingerprint: null },
+        ],
+      });
+      const changed = await modules.officialSelection.confirm.execute({
+        ...command,
+        proposalId: "different-proposal",
+        commandKey: "legacy-confirm",
+      });
+      expect(changed.isErr() && changed.error.code).toBe("results.command_key_reused");
+      expect((await read()).rows).toEqual(before.rows);
+      expect(await count("official_results")).toBe(1);
+      expect(await count("official_selection_proposals")).toBe(1);
+      expect(await count("official_selection_actions")).toBe(5);
+      expect(project).toHaveBeenCalledTimes(1);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "fails closed for a legacy equivalent alternative whose absent reason collided with a dash",
+    async () => {
+      const { modules, project } = await fresh();
+      const proposed = await propose(modules);
+      const command = {
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        proposalId: proposed.proposal!.id,
+        expectedVersion: 1,
+        selections: slot("m-1"),
+        reason: "",
+        commandKey: "opaque-equivalent",
+      };
+      const original = await modules.officialSelection.proposeAlternative.execute(command);
+      if (!original.isOk()) throw new Error("equivalent alternative failed");
+      expect(original.value.approvedResult).toMatchObject({ revision: 1, status: "approved" });
+      for (const [key, reason] of [
+        ["legacy-ambiguous-alternative", "-"],
+        ["legacy-ordinary-alternative", "Same evidence"],
+      ]) {
+        await isolated.pool.query(
+          `INSERT INTO official_selection_actions (
+           id, selection_id, proposal_id, organization_id, competition_id, encounter_id,
+           action_type, from_status, to_status, version_before, version_after, actor_id, team_id,
+           capacity, reason, command_key, request_fingerprint, official_result_id, details, occurred_at
+         ) SELECT $1 || '-' || action_type, selection_id, proposal_id, organization_id, competition_id, encounter_id,
+           action_type, from_status, to_status, version_before, version_after, actor_id, team_id,
+           capacity, reason, $1, $2, official_result_id, details, occurred_at
+           FROM official_selection_actions WHERE command_key = 'opaque-equivalent' ORDER BY seq`,
+          [key, `alternative|${AWAY}|${command.proposalId}|1|1=ea-clubs:m-1|${reason}`],
+        );
+      }
+      const read = () =>
+        isolated.pool.query(
+          "SELECT to_jsonb(a) AS row FROM official_selection_actions a ORDER BY seq",
+        );
+      const before = await read();
+      for (const reason of ["", "-"]) {
+        const ambiguous = await modules.officialSelection.proposeAlternative.execute({
+          ...command,
+          reason,
+          commandKey: "legacy-ambiguous-alternative",
+        });
+        expect(ambiguous.isErr() && ambiguous.error.code).toBe("results.command_key_reused");
+      }
+      const ordinary = await modules.officialSelection.proposeAlternative.execute({
+        ...command,
+        reason: "Same evidence",
+        commandKey: "legacy-ordinary-alternative",
+      });
+      expect(ordinary.isOk() && ordinary.value).toMatchObject({
+        replayed: true,
+        selection: { status: "approved", version: 2 },
+        approvedResult: { id: original.value.approvedResult!.id, revision: 1 },
+      });
+      const opaque = await modules.officialSelection.proposeAlternative.execute(command);
+      expect(opaque.isOk() && opaque.value).toEqual({ ...original.value, replayed: true });
+      const newDash = await modules.officialSelection.proposeAlternative.execute({
+        ...command,
+        reason: "-",
+      });
+      expect(newDash.isErr() && newDash.error.code).toBe("results.command_key_reused");
+      expect((await read()).rows).toEqual(before.rows);
+      expect(await count("official_selection_actions")).toBe(7);
+      expect(await count("official_selection_proposals")).toBe(1);
+      expect(await count("official_results")).toBe(1);
+      expect(project).toHaveBeenCalledTimes(1);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
     "rolls selection, audit and result back when the projection fails, then retries cleanly",
     async () => {
       const { modules, project } = await fresh();

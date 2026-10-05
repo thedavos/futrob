@@ -206,6 +206,14 @@ Una alternativa equivalente se contrasta con la propuesta confirmada. Esto prote
 de delimitadores sin cambiar ni borrar una fila. Un recibo sin los hechos necesarios falla cerrado.
 No hay fallback entre formatos; las acciones mezcladas o nulas tampoco autorizan replay.
 
+Excepción histórica irreparable sin evidencia externa: una alternativa equivalente con motivo
+vacío (null) y otra con motivo literal `"-"` tenían el mismo recibo textual, mientras sus acciones
+`confirmed`/`approved` omitían el motivo. Ambas solicitudes devuelven ahora
+`results.command_key_reused` para ese recibo ambiguo: no se inventa la identidad original,
+no se duplica ningún efecto y no se toca el historial. Los recibos opacos nuevos distinguen
+estos casos y replayan normalmente. Esta excepción explícita de compatibilidad requiere aceptación
+del responsable antes de integrar el stack; no habilita exposición de motivos.
+
 El replay reconstruye el resultado histórico y luego aplica la política de salida de #127.
 Mantiene IDs, actores, fechas, versiones y conteos; no actualiza el recibo ni duplica selección,
 disputa, resultado o proyección. Los tests de composición llaman la entrada del consumidor sobre
