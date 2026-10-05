@@ -22,12 +22,15 @@ export type ConfirmationActionType =
   | "returned_to_selection"
   | "voided"
   | "reference_reuse_rejected"
-  | "legacy_review_required";
+  | "legacy_review_required"
+  | "confirmation_expired";
 
 /** Who acted: a Team representative, an operator with `results.approve`, or the system. */
 export type ConfirmationCapacity = "team" | "operator" | "system";
 
 export interface ConfirmationActionDetails {
+  readonly confirmationDeadline?: string;
+  readonly processedAt?: string;
   readonly integrityFlags?: readonly IntegrityFlag[];
   /** Flags an operator accepted explicitly when approving. */
   readonly acknowledgedFlags?: readonly IntegrityFlag[];

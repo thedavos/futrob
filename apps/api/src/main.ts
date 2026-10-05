@@ -29,6 +29,7 @@ const modules = createModules({
   fetcher: fetch,
   eaClubsBaseUrl: env.eaClubsBaseUrl,
   pool,
+  resultsSystemActorId: env.resultsSystemActorId,
 });
 if (env.initialSuperuserActorId) {
   try {

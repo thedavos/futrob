@@ -42,8 +42,10 @@ import {
   requireReason,
   statusConflict,
   approvedGuard,
+  staleProposal,
   versionConflict,
 } from "../selection-command-support.ts";
+import { confirmationWindowGuard } from "../../domain/policies/confirmation-window.ts";
 import { conflictOrReplay, lookupReplay, replayOutput } from "../selection-replay.ts";
 
 export interface OpenMatchDisputeInput {
@@ -131,9 +133,15 @@ export class OpenMatchDisputeUseCase {
         }),
       );
     }
+    const proposals = await this.deps.selections.listProposals(selection.id);
+    const proposal = proposals.find((row) => row.id === selection.currentProposalId);
+    const now = this.deps.clock.now();
+    if (proposal) {
+      const closed = confirmationWindowGuard(proposal, now);
+      if (closed) return err(closed);
+    }
     if (isUnderDispute(selection.status)) {
       const disputes = await this.deps.selections.listDisputes(selection.id);
-      const proposals = await this.deps.selections.listProposals(selection.id);
       return ok(
         protectOfficialSelectionCommandOutput({
           selection,
@@ -154,7 +162,7 @@ export class OpenMatchDisputeUseCase {
     const conflict = statusConflict(selection, "open_dispute", input.encounterId);
     if (conflict) return err(conflict);
 
-    const now = this.deps.clock.now();
+    if (!proposal) return err(staleProposal(selection.currentProposalId ?? ""));
     const nextVersion = selection.version + 1;
     const nextSelection: OfficialMatchSelection = {
       ...selection,
@@ -238,7 +246,6 @@ export class OpenMatchDisputeUseCase {
         version: nextVersion,
       },
     });
-    const proposals = await this.deps.selections.listProposals(selection.id);
     return ok(
       protectOfficialSelectionCommandOutput({
         selection: nextSelection,

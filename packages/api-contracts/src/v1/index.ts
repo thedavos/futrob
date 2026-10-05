@@ -27,3 +27,5 @@ export { getOpenApiJsonDocument, getOpenApiJsonText, getOpenApiYamlText } from "
 export const apiV1 = {
   version: "v1" as const,
 };
+
+export { runConfirmationExpiryResponseSchema } from "./results-confirmation-expiry.ts";

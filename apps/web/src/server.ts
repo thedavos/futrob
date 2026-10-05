@@ -4,6 +4,7 @@ import { captureWorkerError, withWorkerSentry } from "@/observability/sentry.ts"
 import { createConsoleLogger } from "@futrob/logger";
 
 const logger = createConsoleLogger({ format: "plain", scope: "worker" });
+import { recoverConfirmationExpiry } from "@/workers/results-confirmation-expiry.worker.ts";
 import { recoverNextProviderSyncJob } from "@/workers/game-data-sync.worker.ts";
 
 interface WorkerEnv {
@@ -44,6 +45,20 @@ const worker = {
     logger.info("queue.batch.completed", { durationMs: Date.now() - startedAt });
   },
   scheduled(controller: ScheduledController, env: WorkerEnv, context: ExecutionContext): void {
+    const deps = {
+      fetcher: fetch,
+      apiBaseUrl: env.FUTROB_API_BASE_URL,
+      internalJobSecret: env.INTERNAL_JOB_SECRET,
+    };
+    context.waitUntil(
+      recoverConfirmationExpiry(deps).catch((cause) => {
+        captureWorkerError(cause, {
+          handler: "scheduled",
+          job: "confirmation_expiry",
+          cron: controller.cron,
+        });
+      }),
+    );
     context.waitUntil(
       recoverNextProviderSyncJob({
         fetcher: fetch,

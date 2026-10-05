@@ -1,6 +1,7 @@
 import { TaggedError } from "@futrob/shared-kernel";
 import type { EncounterId } from "@futrob/shared-kernel";
 import type {
+  ConfirmationWindowClosed,
   CommandKeyReused,
   ReferenceAlreadyClaimed,
   SelectionAlreadyApproved,
@@ -41,6 +42,7 @@ export class ProviderMatchSnapshotMissing extends TaggedError("ProviderMatchSnap
 }> {}
 
 export type ConfirmOfficialSelectionError =
+  | ConfirmationWindowClosed
   | SelectionNotFound
   | SelectionNotConfirmable
   | OfficialResultForbidden

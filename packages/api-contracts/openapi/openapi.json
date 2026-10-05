@@ -55,6 +55,57 @@
     }
   ],
   "paths": {
+    "/internal/results/confirmation-expiry/run": {
+      "post": {
+        "operationId": "runConfirmationExpiry",
+        "tags": ["results"],
+        "summary": "Recover up to 50 expired opponent confirmation windows",
+        "description": "Service-only Cron target authenticated with the internal bearer secret. Uses the API clock and configured provisioned RESULTS_SYSTEM_ACTOR_ID; accepts no actor or timestamp from callers. Silence moves the selection to organizer_review and never approves a result. Retry discovers durable pending work.",
+        "responses": {
+          "200": {
+            "description": "Expired and concurrently skipped selections in this batch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunConfirmationExpiryResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "503": {
+            "description": "Service authentication or the provisioned system actor is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/meta/ping": {
       "get": {
         "operationId": "metaPing",
@@ -4850,6 +4901,24 @@
       }
     },
     "schemas": {
+      "RunConfirmationExpiryResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "expired": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["expired", "skipped"],
+        "additionalProperties": false
+      },
       "EffectiveAccess": {
         "type": "object",
         "required": ["actorId", "scope", "roles", "permissions"],

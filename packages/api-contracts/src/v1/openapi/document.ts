@@ -48,6 +48,10 @@ import {
   listEncounterCandidatesResponseSchema,
 } from "../encounters/schemas.ts";
 import { teamPerformanceOpenApiPaths, teamPerformanceOpenApiSchemas } from "./team-performance.ts";
+import {
+  confirmationExpiryOpenApiPaths,
+  confirmationExpiryOpenApiSchemas,
+} from "./results-confirmation-expiry.ts";
 import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
   associateMyPlayerExternalClubRequestSchema,
@@ -130,6 +134,7 @@ export const futrobOpenApiV1 = {
     { name: "fixtures", description: "Deterministic competition fixture graphs" },
   ],
   paths: {
+    ...confirmationExpiryOpenApiPaths,
     "/meta/ping": {
       get: {
         operationId: "metaPing",
@@ -2547,6 +2552,7 @@ export const futrobOpenApiV1 = {
       },
     },
     schemas: {
+      ...confirmationExpiryOpenApiSchemas,
       EffectiveAccess: {
         type: "object",
         required: ["actorId", "scope", "roles", "permissions"],

@@ -70,13 +70,14 @@ export async function confirmProposal(
     readonly teamId: TeamId;
     readonly commandKey: string;
     readonly fingerprint: CommandFingerprint;
+    readonly evaluatedAt: Date;
   },
 ): Promise<Result<OfficialSelectionCommandOutput, ConfirmProposalError>> {
   const { encounter, selection, proposal } = input;
+  const now = input.evaluatedAt;
   const snapshots = await snapshotProposal(deps.providerMatches, proposal);
   if (!snapshots.ok) return err(snapshots.error);
 
-  const now = deps.clock.now();
   const approves = snapshots.flags.length === 0;
   const nextVersion = selection.version + 1;
   const context = {

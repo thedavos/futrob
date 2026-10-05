@@ -3,6 +3,7 @@ import {
   ok,
   type ActorId,
   type AuthorizationPort,
+  type ClockPort,
   type EncounterId,
   type OrganizationId,
   type Result,
@@ -15,6 +16,7 @@ import type {
 import { SelectionNotFound } from "../domain/errors/official-result.errors.ts";
 import {
   SelfConfirmationForbidden,
+  type ConfirmationWindowClosed,
   type CommandKeyReused,
   type SelectionAlreadyApproved,
   type SelectionProposalStale,
@@ -45,9 +47,11 @@ import {
   versionConflict,
 } from "./selection-command-support.ts";
 import { lookupReplay, replayOutput } from "./selection-replay.ts";
+import { confirmationWindowGuard } from "../domain/policies/confirmation-window.ts";
 import type { CommandFingerprint } from "./command-fingerprint.ts";
 
 export type TeamResponseError =
+  | ConfirmationWindowClosed
   | EncounterNotFound
   | OfficialSelectionForbidden
   | SelectionNotFound
@@ -65,6 +69,7 @@ export type TeamResponseContext =
       readonly encounter: EncounterScheduleSnapshot;
       readonly selection: OfficialMatchSelection;
       readonly proposal: OfficialSelectionProposal;
+      readonly evaluatedAt: Date;
     };
 
 /**
@@ -79,6 +84,7 @@ export async function prepareTeamResponse(
     readonly results: Pick<OfficialResultRepository, "findById">;
     readonly teamRepresentation: TeamRepresentationPort;
     readonly authorization: AuthorizationPort;
+    readonly clock: ClockPort;
   },
   input: {
     readonly actorId: ActorId;
@@ -134,6 +140,13 @@ export async function prepareTeamResponse(
       }),
     );
   }
+  const proposals = await deps.selections.listProposals(selection.id);
+  const proposal = proposals.find((row) => row.id === input.proposalId);
+  const evaluatedAt = deps.clock.now();
+  if (proposal && selection.currentProposalId === input.proposalId) {
+    const closed = confirmationWindowGuard(proposal, evaluatedAt);
+    if (closed) return err(closed);
+  }
   const approved = approvedGuard(selection, input.command, input.encounterId);
   if (approved) return err(approved);
   if (selection.version !== input.expectedVersion) {
@@ -145,8 +158,6 @@ export async function prepareTeamResponse(
   const conflict = statusConflict(selection, input.command, input.encounterId);
   if (conflict) return err(conflict);
 
-  const proposals = await deps.selections.listProposals(selection.id);
-  const proposal = proposals.find((row) => row.id === input.proposalId);
   if (!proposal) return err(staleProposal(input.proposalId));
   if (proposal.proposingTeamId === null || proposal.proposingTeamId === input.actingTeamId) {
     return err(
@@ -156,5 +167,5 @@ export async function prepareTeamResponse(
       }),
     );
   }
-  return ok({ kind: "ready", encounter, selection, proposal });
+  return ok({ kind: "ready", encounter, selection, proposal, evaluatedAt });
 }

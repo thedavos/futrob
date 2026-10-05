@@ -85,7 +85,7 @@ export class RejectOfficialSelectionUseCase {
     const auditReason = redactAuditReason(reason.value);
 
     const { encounter, selection, proposal } = prepared.value;
-    const now = this.deps.clock.now();
+    const now = prepared.value.evaluatedAt;
     const nextVersion = selection.version + 1;
     const nextSelection: OfficialMatchSelection = {
       ...selection,

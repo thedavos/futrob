@@ -977,6 +977,11 @@ suite("official selection composition on Postgres", () => {
         ],
       );
       await isolated.pool.query(
+        `INSERT INTO official_selection_confirmation_windows (proposal_id, confirmation_deadline)
+         VALUES ($1, '2026-09-16T01:02:03.000Z')`,
+        [proposalId],
+      );
+      await isolated.pool.query(
         `INSERT INTO match_disputes (
            id, selection_id, organization_id, competition_id, encounter_id, status,
            opened_by_actor_id, opened_by_team_id, opened_reason, opened_at
