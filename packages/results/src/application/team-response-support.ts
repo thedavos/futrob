@@ -45,6 +45,7 @@ import {
   versionConflict,
 } from "./selection-command-support.ts";
 import { lookupReplay, replayOutput } from "./selection-replay.ts";
+import type { CommandFingerprint } from "./command-fingerprint.ts";
 
 export type TeamResponseError =
   | EncounterNotFound
@@ -88,7 +89,7 @@ export async function prepareTeamResponse(
     readonly expectedVersion: number;
     readonly commandKey: string;
     readonly command: Extract<SelectionCommand, "reject" | "propose_alternative">;
-    readonly fingerprint: string;
+    readonly fingerprint: CommandFingerprint;
   },
 ): Promise<Result<TeamResponseContext, TeamResponseError>> {
   const encounter = await deps.encounterReader.getById(input.encounterId);

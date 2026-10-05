@@ -7,6 +7,7 @@ import type {
 import type { OfficialResult } from "../domain/entities/official-result.ts";
 import type { IntegrityFlag } from "../domain/policies/integrity-flags.ts";
 import type { SelectionCommand } from "../domain/policies/selection-transitions.ts";
+import { redactAuditReason, redactOptionalAuditReason } from "../domain/policies/audit-reason.ts";
 
 /** What a selection command returns; a replay returns the same shape with `replayed: true`. */
 export interface OfficialSelectionCommandOutput {
@@ -40,4 +41,47 @@ export interface OfficialSelectionView {
   readonly approvedResultId: string | null;
   readonly integrityFlags: readonly IntegrityFlag[];
   readonly allowedActions: readonly OfficialSelectionAllowedAction[];
+}
+
+function protectProposal(proposal: OfficialSelectionProposal): OfficialSelectionProposal {
+  return { ...proposal, reason: redactOptionalAuditReason(proposal.reason) };
+}
+
+function protectAction(action: ConfirmationAction): ConfirmationAction {
+  return {
+    ...action,
+    reason: redactOptionalAuditReason(action.reason),
+    requestFingerprint: null,
+  };
+}
+
+function protectDispute(dispute: MatchDispute): MatchDispute {
+  return {
+    ...dispute,
+    openedReason: redactAuditReason(dispute.openedReason),
+    resolutionReason: redactOptionalAuditReason(dispute.resolutionReason),
+  };
+}
+
+/** Protects command DTOs, including rows written before the redaction policy existed. */
+export function protectOfficialSelectionCommandOutput(
+  output: OfficialSelectionCommandOutput,
+): OfficialSelectionCommandOutput {
+  return {
+    ...output,
+    proposal: output.proposal ? protectProposal(output.proposal) : null,
+    actions: output.actions.map(protectAction),
+    dispute: output.dispute ? protectDispute(output.dispute) : null,
+  };
+}
+
+/** Protects authorized operational reads without changing stored append-only history. */
+export function protectOfficialSelectionView(view: OfficialSelectionView): OfficialSelectionView {
+  return {
+    ...view,
+    proposals: view.proposals.map(protectProposal),
+    actions: view.actions.map(protectAction),
+    disputes: view.disputes.map(protectDispute),
+    activeDispute: view.activeDispute ? protectDispute(view.activeDispute) : null,
+  };
 }

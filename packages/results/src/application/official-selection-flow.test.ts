@@ -345,6 +345,107 @@ describe("reject (CA-04)", () => {
     expect((await h.selections.findLatestByEncounter(ENCOUNTER))?.version).toBe(1);
   });
 
+  it("keeps the useful explanation and redacts a phone in the command result and audit", async () => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    const rawReason = "Marcador incorrecto; llamar +1-555-0100";
+    const rejected = unwrap(
+      await h.useCases.reject.execute({
+        ...rivalInput(h, 1, first.proposal!.id),
+        reason: rawReason,
+      }),
+    );
+
+    expect(rejected.dispute?.openedReason).toBe("Marcador incorrecto; llamar [REDACTED]");
+    expect(rejected.actions[0]?.reason).toBe("Marcador incorrecto; llamar [REDACTED]");
+    expect(rejected.actions[0]?.requestFingerprint).toBeNull();
+    expect(h.selections.disputes[0]?.openedReason).toBe("Marcador incorrecto; llamar [REDACTED]");
+    expect(h.selections.actions[1]?.reason).toBe("Marcador incorrecto; llamar [REDACTED]");
+    expect(JSON.stringify(h.events)).not.toContain(rawReason);
+  });
+
+  it("keeps a non-sensitive reason exactly as entered", async () => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    const rejected = unwrap(
+      await h.useCases.reject.execute({
+        ...rivalInput(h, 1, first.proposal!.id),
+        reason: "Se invirtieron los slots",
+      }),
+    );
+
+    expect(rejected.dispute?.openedReason).toBe("Se invirtieron los slots");
+    expect(rejected.actions[0]?.reason).toBe("Se invirtieron los slots");
+  });
+
+  it("redacts an email while preserving the neighboring reason without an address", async () => {
+    const withEmail = await setup();
+    const first = unwrap(await withEmail.propose(["m-1"]));
+    const sensitive = unwrap(
+      await withEmail.useCases.reject.execute({
+        ...rivalInput(withEmail, 1, first.proposal!.id),
+        reason: "Avisar a arbitro@example.com sobre el marcador",
+      }),
+    );
+
+    const withoutEmail = await setup();
+    const neighborProposal = unwrap(await withoutEmail.propose(["m-1"]));
+    const neighbor = unwrap(
+      await withoutEmail.useCases.reject.execute({
+        ...rivalInput(withoutEmail, 1, neighborProposal.proposal!.id),
+        reason: "Avisar al árbitro sobre el marcador",
+      }),
+    );
+
+    expect(sensitive.actions[0]?.reason).toBe("Avisar a [REDACTED] sobre el marcador");
+    expect(neighbor.actions[0]?.reason).toBe("Avisar al árbitro sobre el marcador");
+  });
+
+  it.each([
+    ["Call 555-555-0100x123", "Call [REDACTED]"],
+    ["x555-555-0100", "x[REDACTED]"],
+    ["Call 555-0100x123", "Call [REDACTED]"],
+    ["Call (555) 555-0100 ext. 123.", "Call [REDACTED]."],
+    ["Call555-555-0100now", "Call[REDACTED]now"],
+    ["Call +1-555-0100. 2026 is relevant", "Call [REDACTED]. 2026 is relevant"],
+    ["Call +1.555.0100. 2026 is relevant", "Call [REDACTED]. 2026 is relevant"],
+    ["Call +1 (555) 0100. 2026 is relevant", "Call [REDACTED]. 2026 is relevant"],
+    ["Call +1-555-0100\n2026 is relevant", "Call [REDACTED]\n2026 is relevant"],
+    ["Fecha 2026-10-05; marcador 2-0", "Fecha 2026-10-05; marcador 2-0"],
+  ])("preserves reason context and phone boundaries: %s", async (reason, expectedReason) => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    const rejected = unwrap(
+      await h.useCases.reject.execute({
+        ...rivalInput(h, 1, first.proposal!.id),
+        reason,
+      }),
+    );
+
+    expect(rejected.actions[0]?.reason).toBe(expectedReason);
+    expect(rejected.dispute?.openedReason).toBe(expectedReason);
+    expect(h.selections.actions[1]?.reason).toBe(expectedReason);
+    expect(h.selections.disputes[0]?.openedReason).toBe(expectedReason);
+  });
+
+  it("does not treat different phones with the same redacted view as the same replay", async () => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    const command = {
+      ...rivalInput(h, 1, first.proposal!.id),
+      reason: "Marcador incorrecto; llamar +1-555-0100",
+    };
+    unwrap(await h.useCases.reject.execute(command));
+
+    const changed = await h.useCases.reject.execute({
+      ...command,
+      reason: "Marcador incorrecto; llamar +1-555-0101",
+    });
+
+    expect(codeOf(changed)).toBe("results.command_key_reused");
+    expect(h.selections.actions).toHaveLength(2);
+  });
+
   it("the proposing team cannot reject its own proposal", async () => {
     const h = await setup();
     const first = unwrap(await h.propose(["m-1"]));

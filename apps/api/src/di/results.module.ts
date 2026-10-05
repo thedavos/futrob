@@ -37,6 +37,7 @@ import {
   PostgresEncounterCandidateAssociationRepository,
 } from "@/adapters/results/encounter-candidate-association.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
+import { NodeSelectionCommandDigest } from "@/adapters/results/selection-command-digest.ts";
 
 export function createResultsModule(input: {
   readonly pool: Pool | undefined;
@@ -78,6 +79,7 @@ export function createResultsModule(input: {
   };
 
   const selectionDeps = {
+    commandDigest: new NodeSelectionCommandDigest(),
     encounterReader: input.encounterReader,
     selections,
     results,

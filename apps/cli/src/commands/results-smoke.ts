@@ -31,7 +31,7 @@ import type {
 import type { ExternalReference, ProviderMatch } from "@futrob/game-data";
 import { externalReferenceKey } from "@futrob/game-data";
 import { print, printJson } from "../lib/print.ts";
-import { SmokeResults, SmokeSelections, smokeTeamRepresentation } from "./results-smoke-fakes.ts";
+import * as smokeFakes from "./results-smoke-fakes.ts";
 
 const ORG = asOrganizationId("org_smoke");
 const COMP = asCompetitionId("comp_smoke");
@@ -155,9 +155,9 @@ async function smoke(): Promise<number> {
     },
   };
 
-  const selections = new SmokeSelections();
-  const results = new SmokeResults();
-  const teamRepresentation = smokeTeamRepresentation([
+  const selections = new smokeFakes.SmokeSelections();
+  const results = new smokeFakes.SmokeResults();
+  const teamRepresentation = smokeFakes.smokeTeamRepresentation([
     [HOME_CAPTAIN, HOME],
     [AWAY_CAPTAIN, AWAY],
   ]);
@@ -251,6 +251,7 @@ async function smoke(): Promise<number> {
   }
 
   const common = {
+    commandDigest: new smokeFakes.SmokeCommandDigest(),
     encounterReader,
     selections,
     results,

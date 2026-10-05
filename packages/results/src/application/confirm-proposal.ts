@@ -29,9 +29,13 @@ import type {
 } from "../domain/ports/official-result.repository.ts";
 import type { ProviderMatchReaderPort } from "../domain/ports/provider-match-reader.port.ts";
 import { selectionReferences } from "../domain/policies/slot-selection.ts";
-import type { OfficialSelectionCommandOutput } from "./official-selection-output.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "./official-selection-output.ts";
 import { buildAction, buildApprovedResult, snapshotProposal } from "./selection-command-support.ts";
 import { conflictOrReplay } from "./selection-replay.ts";
+import type { CommandFingerprint } from "./command-fingerprint.ts";
 
 export interface ConfirmProposalDeps {
   readonly selections: OfficialMatchSelectionRepository;
@@ -65,7 +69,7 @@ export async function confirmProposal(
     readonly actorId: ActorId;
     readonly teamId: TeamId;
     readonly commandKey: string;
-    readonly fingerprint: string;
+    readonly fingerprint: CommandFingerprint;
   },
 ): Promise<Result<OfficialSelectionCommandOutput, ConfirmProposalError>> {
   const { encounter, selection, proposal } = input;
@@ -219,13 +223,15 @@ export async function confirmProposal(
       },
     });
   }
-  return ok({
-    selection: nextSelection,
-    proposal,
-    actions,
-    dispute: null,
-    approvedResult: result,
-    integrityFlags: snapshots.flags,
-    replayed: false,
-  });
+  return ok(
+    protectOfficialSelectionCommandOutput({
+      selection: nextSelection,
+      proposal,
+      actions,
+      dispute: null,
+      approvedResult: result,
+      integrityFlags: snapshots.flags,
+      replayed: false,
+    }),
+  );
 }

@@ -14,6 +14,7 @@ import {
 import type { MatchDispute } from "../../domain/entities/match-dispute.ts";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
 import type { OfficialResult } from "../../domain/entities/official-result.ts";
+import { redactAuditReason } from "../../domain/policies/audit-reason.ts";
 import {
   OfficialResultForbidden,
   SelectionNotFound,
@@ -30,6 +31,8 @@ import {
 } from "../../domain/errors/select-official-matches.errors.ts";
 import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { SelectionCommandDigestPort } from "../../domain/ports/selection-command-digest.port.ts";
+import { commandFingerprint } from "../command-fingerprint.ts";
 import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -37,14 +40,16 @@ import type {
 } from "../../domain/ports/official-result.repository.ts";
 import type { ProviderMatchReaderPort } from "../../domain/ports/provider-match-reader.port.ts";
 import { selectionReferences } from "../../domain/policies/slot-selection.ts";
-import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "../official-selection-output.ts";
 import {
   activeDispute,
   approvedGuard,
   authorizeOperator,
   buildAction,
   buildApprovedResult,
-  commandFingerprint,
   requireReason,
   snapshotProposal,
   statusConflict,
@@ -82,6 +87,7 @@ export class ResolveMatchDisputeUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly commandDigest: SelectionCommandDigestPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: OfficialResultRepository;
       readonly associations: EncounterCandidateAssociationRepository;
@@ -116,16 +122,12 @@ export class ResolveMatchDisputeUseCase {
     }
 
     const reason = requireReason(input.reason, "reason");
-    const fingerprint = commandFingerprint([
-      "resolve_dispute",
-      input.expectedVersion,
-      input.decision.type,
-      input.decision.type === "approve_proposal" ? input.decision.proposalId : null,
-      input.decision.type === "approve_proposal"
-        ? String(input.decision.acknowledgeIntegrityFlags === true)
-        : null,
-      reason.isOk() ? reason.value : "",
-    ]);
+    const fingerprint = commandFingerprint(this.deps.commandDigest, input, {
+      type: "resolve_dispute",
+      expectedVersion: input.expectedVersion,
+      decision: input.decision,
+      reason: reason.isOk() ? reason.value : null,
+    });
     const replay = await lookupReplay(this.deps.selections, { ...input, fingerprint });
     if (replay.kind === "reused") return err(replay.error);
     if (replay.kind === "replay") {
@@ -133,6 +135,7 @@ export class ResolveMatchDisputeUseCase {
       if (output) return ok(output);
     }
     if (reason.isErr()) return err(reason.error);
+    const auditReason = redactAuditReason(reason.value);
 
     const selection = await this.deps.selections.findLatestByEncounter(input.encounterId);
     if (!selection) {
@@ -187,7 +190,7 @@ export class ResolveMatchDisputeUseCase {
             resolvedAt: now,
             resolution: "returned_to_selection",
             resolutionProposalId: null,
-            resolutionReason: reason.value,
+            resolutionReason: auditReason,
           }
         : null;
       const action = buildAction(context, {
@@ -198,7 +201,7 @@ export class ResolveMatchDisputeUseCase {
         toStatus: "selection_in_progress",
         versionBefore: selection.version,
         versionAfter: nextVersion,
-        reason: reason.value,
+        reason: auditReason,
         details: dispute ? { disputeId: dispute.id } : null,
         occurredAt: now,
       });
@@ -223,15 +226,17 @@ export class ResolveMatchDisputeUseCase {
       if (committed.status === "reference_claimed") {
         throw new Panic("Returning a case to selection never acquires references");
       }
-      return ok({
-        selection: nextSelection,
-        proposal: null,
-        actions: [action],
-        dispute,
-        approvedResult: null,
-        integrityFlags: [],
-        replayed: false,
-      });
+      return ok(
+        protectOfficialSelectionCommandOutput({
+          selection: nextSelection,
+          proposal: null,
+          actions: [action],
+          dispute,
+          approvedResult: null,
+          integrityFlags: [],
+          replayed: false,
+        }),
+      );
     }
 
     const { proposalId, acknowledgeIntegrityFlags } = input.decision;
@@ -286,7 +291,7 @@ export class ResolveMatchDisputeUseCase {
           resolvedAt: now,
           resolution: "approved_proposal",
           resolutionProposalId: proposal.id,
-          resolutionReason: reason.value,
+          resolutionReason: auditReason,
         }
       : null;
     const action = buildAction(context, {
@@ -297,7 +302,7 @@ export class ResolveMatchDisputeUseCase {
       toStatus: "approved",
       versionBefore: selection.version,
       versionAfter: nextVersion,
-      reason: reason.value,
+      reason: auditReason,
       officialResultId: result.id,
       details: {
         selectedProposalId: proposal.id,
@@ -382,14 +387,16 @@ export class ResolveMatchDisputeUseCase {
         revision: result.revision,
       },
     });
-    return ok({
-      selection: nextSelection,
-      proposal,
-      actions: [action],
-      dispute,
-      approvedResult: result,
-      integrityFlags: snapshots.flags,
-      replayed: false,
-    });
+    return ok(
+      protectOfficialSelectionCommandOutput({
+        selection: nextSelection,
+        proposal,
+        actions: [action],
+        dispute,
+        approvedResult: result,
+        integrityFlags: snapshots.flags,
+        replayed: false,
+      }),
+    );
   }
 }
