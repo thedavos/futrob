@@ -22,6 +22,8 @@ import {
 } from "../../domain/errors/official-selection.errors.ts";
 import { EncounterNotFound } from "../../domain/errors/select-official-matches.errors.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { SelectionCommandDigestPort } from "../../domain/ports/selection-command-digest.port.ts";
+import { commandFingerprint } from "../command-fingerprint.ts";
 import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -35,7 +37,6 @@ import {
   approvedGuard,
   authorizeOperator,
   buildAction,
-  commandFingerprint,
   normalizeReason,
   statusConflict,
   versionConflict,
@@ -60,6 +61,7 @@ export class ReviewMatchDisputeUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly commandDigest: SelectionCommandDigestPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: Pick<OfficialResultRepository, "findById">;
       readonly authorization: AuthorizationPort;
@@ -91,7 +93,11 @@ export class ReviewMatchDisputeUseCase {
     }
 
     const reason = normalizeReason(input.reason);
-    const fingerprint = commandFingerprint(["review_dispute", input.expectedVersion, reason]);
+    const fingerprint = commandFingerprint(this.deps.commandDigest, input, {
+      type: "review_dispute",
+      expectedVersion: input.expectedVersion,
+      reason,
+    });
     const replay = await lookupReplay(this.deps.selections, { ...input, fingerprint });
     if (replay.kind === "reused") return err(replay.error);
     if (replay.kind === "replay") {

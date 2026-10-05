@@ -29,6 +29,8 @@ import {
 } from "../../domain/errors/select-official-matches.errors.ts";
 import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { SelectionCommandDigestPort } from "../../domain/ports/selection-command-digest.port.ts";
+import { commandFingerprint } from "../command-fingerprint.ts";
 import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -46,8 +48,6 @@ import {
 import {
   authorizeTeamActor,
   buildAction,
-  commandFingerprint,
-  rawSlotsKey,
   statusConflict,
   versionConflict,
 } from "../selection-command-support.ts";
@@ -78,6 +78,7 @@ export class SelectOfficialMatchesUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly commandDigest: SelectionCommandDigestPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: Pick<OfficialResultRepository, "findById">;
       readonly associations: EncounterCandidateAssociationRepository;
@@ -118,12 +119,12 @@ export class SelectOfficialMatchesUseCase {
       );
     }
 
-    const fingerprint = commandFingerprint([
-      "propose",
-      input.actingTeamId,
-      input.expectedVersion,
-      rawSlotsKey(input.selections),
-    ]);
+    const fingerprint = commandFingerprint(this.deps.commandDigest, input, {
+      type: "propose",
+      actingTeamId: input.actingTeamId,
+      expectedVersion: input.expectedVersion,
+      selections: input.selections,
+    });
     const replay = await lookupReplay(this.deps.selections, { ...input, fingerprint });
     if (replay.kind === "reused") return err(replay.error);
     if (replay.kind === "replay") {

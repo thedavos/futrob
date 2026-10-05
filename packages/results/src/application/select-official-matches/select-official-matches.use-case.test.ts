@@ -19,6 +19,7 @@ import {
   MemoryOfficialSelections,
   MemoryOfficialResults,
   ScriptedTeamRepresentation,
+  createTestCommandDigest,
   slotRefs,
 } from "../selection-flow.test-support.ts";
 import { AssociateEncounterCandidatesUseCase } from "../associate-encounter-candidates/associate-encounter-candidates.use-case.ts";
@@ -73,6 +74,7 @@ describe("SelectOfficialMatchesUseCase candidate eligibility", () => {
     const associate = new AssociateEncounterCandidatesUseCase(persistDeps);
     const recalc = new RecalculateEncounterCandidatesUseCase(persistDeps);
     const select = new SelectOfficialMatchesUseCase({
+      commandDigest: createTestCommandDigest(),
       encounterReader,
       selections,
       results: new MemoryOfficialResults(),
@@ -130,6 +132,7 @@ describe("SelectOfficialMatchesUseCase candidate eligibility", () => {
       await recalc.execute({ encounterId: snapshot.encounterId });
     };
     const select = new SelectOfficialMatchesUseCase({
+      commandDigest: createTestCommandDigest(),
       encounterReader,
       selections,
       associations: delegatingAssociations(inner, {

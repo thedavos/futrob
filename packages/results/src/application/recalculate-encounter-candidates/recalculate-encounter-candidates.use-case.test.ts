@@ -8,6 +8,7 @@ import {
   MemoryOfficialResults,
   MemoryOfficialSelections,
   ScriptedTeamRepresentation,
+  createTestCommandDigest,
   slotRefs,
 } from "../selection-flow.test-support.ts";
 import { SelectOfficialMatchesUseCase } from "../select-official-matches/select-official-matches.use-case.ts";
@@ -58,6 +59,7 @@ function createHarness() {
     associate: new AssociateEncounterCandidatesUseCase(persistDeps),
     recalc: new RecalculateEncounterCandidatesUseCase(persistDeps),
     select: new SelectOfficialMatchesUseCase({
+      commandDigest: createTestCommandDigest(),
       encounterReader,
       selections,
       results: new MemoryOfficialResults(),

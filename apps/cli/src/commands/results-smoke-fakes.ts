@@ -8,9 +8,24 @@ import type {
   OfficialResultRepository,
   OfficialSelectionProposal,
   SelectionTransition,
+  SelectionCommandDigestPort,
   TeamRepresentationPort,
 } from "@futrob/results";
 import type { ActorId, EncounterId, TeamId } from "@futrob/shared-kernel";
+
+/** Offline fake only; cryptographic persistence is verified in the API's Postgres tests. */
+export class SmokeCommandDigest implements SelectionCommandDigestPort {
+  private readonly receipts = new Map<string, string>();
+
+  sha256(canonical: string): string {
+    let receipt = this.receipts.get(canonical);
+    if (!receipt) {
+      receipt = (this.receipts.size + 1).toString(16).padStart(64, "0");
+      this.receipts.set(canonical, receipt);
+    }
+    return receipt;
+  }
+}
 
 /** Offline stand-in for the Postgres selection repository: same CAS and claim semantics. */
 export class SmokeSelections implements OfficialMatchSelectionRepository {

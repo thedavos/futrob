@@ -17,6 +17,7 @@ import {
   type OfficialSelectionCommandOutput,
 } from "./official-selection-output.ts";
 import { versionConflict } from "./selection-command-support.ts";
+import { matchesLegacyCommand, type CommandFingerprint } from "./command-fingerprint.ts";
 
 export type ReplayLookup =
   | { readonly kind: "none" }
@@ -33,12 +34,23 @@ export async function lookupReplay(
     readonly encounterId: EncounterId;
     readonly actorId: ActorId;
     readonly commandKey: string;
-    readonly fingerprint: string;
+    readonly fingerprint: CommandFingerprint;
   },
 ): Promise<ReplayLookup> {
   const actions = await selections.findActionsByCommandKey(input);
   if (actions.length === 0) return { kind: "none" };
-  if (actions.some((action) => action.requestFingerprint !== input.fingerprint)) {
+  const receipt = actions[0]?.requestFingerprint;
+  let matches = false;
+  if (receipt?.startsWith("sha256:")) {
+    matches =
+      /^sha256:[a-f0-9]{64}$/.test(receipt) &&
+      actions.every((action) => action.requestFingerprint === input.fingerprint.opaque);
+  } else if (receipt === input.fingerprint.legacy) {
+    const selectionId = actions[0]?.selectionId;
+    const proposals = selectionId ? await selections.listProposals(selectionId) : [];
+    matches = matchesLegacyCommand(input.fingerprint, actions, proposals);
+  }
+  if (!matches) {
     return {
       kind: "reused",
       error: new CommandKeyReused({
@@ -138,7 +150,7 @@ export async function conflictOrReplay(
     readonly encounterId: EncounterId;
     readonly actorId: ActorId;
     readonly commandKey: string;
-    readonly fingerprint: string;
+    readonly fingerprint: CommandFingerprint;
     readonly expectedVersion: number;
     readonly currentVersion: number;
   },

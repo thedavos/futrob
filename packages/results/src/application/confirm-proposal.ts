@@ -35,6 +35,7 @@ import {
 } from "./official-selection-output.ts";
 import { buildAction, buildApprovedResult, snapshotProposal } from "./selection-command-support.ts";
 import { conflictOrReplay } from "./selection-replay.ts";
+import type { CommandFingerprint } from "./command-fingerprint.ts";
 
 export interface ConfirmProposalDeps {
   readonly selections: OfficialMatchSelectionRepository;
@@ -68,7 +69,7 @@ export async function confirmProposal(
     readonly actorId: ActorId;
     readonly teamId: TeamId;
     readonly commandKey: string;
-    readonly fingerprint: string;
+    readonly fingerprint: CommandFingerprint;
   },
 ): Promise<Result<OfficialSelectionCommandOutput, ConfirmProposalError>> {
   const { encounter, selection, proposal } = input;

@@ -20,6 +20,7 @@ import {
   OPERATOR,
   ORG,
   SECOND_ENCOUNTER,
+  providerMatch,
   seedComposition,
   slot,
 } from "./official-selection.composition.fixture.ts";
@@ -64,6 +65,332 @@ suite("official selection composition on Postgres", () => {
     );
     return Number(rows[0].n);
   }
+
+  async function propose(modules: Awaited<ReturnType<typeof fresh>>["modules"]) {
+    const outcome = await modules.officialSelection.propose.execute({
+      actorId: HOME_CAPTAIN,
+      organizationId: ORG,
+      encounterId: ENCOUNTER,
+      actingTeamId: HOME,
+      selections: slot("m-1"),
+      expectedVersion: 0,
+      commandKey: "fingerprint-propose",
+    });
+    if (!outcome.isOk()) throw new Error(`propose failed: ${outcome.error.code}`);
+    return outcome.value;
+  }
+
+  it(
+    "persists a known SHA-256 receipt and distinguishes raw phones before redaction",
+    async () => {
+      const { modules } = await fresh();
+      await propose(modules);
+      const command = {
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        expectedVersion: 1,
+        reason: "  Marcador incorrecto; llamar +1-555-0100  ",
+        commandKey: "fingerprint-open",
+      };
+      const logs: CorrelationLogEntry[] = [];
+      const opened = await runWithRequestCorrelation(
+        { requestId: "fingerprint-request" },
+        { info: (entry) => logs.push(entry), error: (entry) => logs.push(entry) },
+        () => modules.officialSelection.openDispute.execute(command),
+      );
+      if (!opened.isOk()) throw new Error("open failed");
+      expect(opened.value.selection).toMatchObject({ status: "disputed", version: 2 });
+      expect(opened.value.dispute?.openedReason).toBe("Marcador incorrecto; llamar [REDACTED]");
+      expect(opened.value.actions[0]?.reason).toBe("Marcador incorrecto; llamar [REDACTED]");
+      expect(logs).toEqual([
+        { event: "db.transaction.committed", requestId: "fingerprint-request" },
+      ]);
+      const read = () =>
+        isolated.pool.query(
+          "SELECT action_type, reason, request_fingerprint FROM official_selection_actions ORDER BY version_before",
+        );
+      const before = await read();
+      // Independent OpenSSL SHA-256 vectors for the documented UTF-8 JSON tuples.
+      expect(before.rows).toEqual([
+        {
+          action_type: "proposed",
+          reason: null,
+          request_fingerprint:
+            "sha256:d59eee5f1c24c0332378b789b7f525d1eab5618089d6613ce8aa72248df9665d",
+        },
+        {
+          action_type: "dispute_opened",
+          reason: "Marcador incorrecto; llamar [REDACTED]",
+          request_fingerprint:
+            "sha256:e63aacf128f3c156fc8351a4c4fad3c9973fc784f39d68895c7bde5319406c06",
+        },
+      ]);
+
+      const replay = await modules.officialSelection.openDispute.execute({
+        ...command,
+        reason: "Marcador incorrecto; llamar +1-555-0100",
+      });
+      expect(replay.isOk() && replay.value).toEqual({ ...opened.value, replayed: true });
+      const changed = await modules.officialSelection.openDispute.execute({
+        ...command,
+        reason: "Marcador incorrecto; llamar +1-555-0101",
+      });
+      expect(changed.isErr() && changed.error.code).toBe("results.command_key_reused");
+      expect((await read()).rows).toEqual(before.rows);
+      expect(await count("official_selection_actions")).toBe(2);
+      expect(await count("match_disputes")).toBe(1);
+      expect(await count("official_selection_proposals")).toBe(1);
+
+      const roster = await modules.teams.repositories.rosters.findById(`roster-${AWAY_CAPTAIN}`);
+      if (!roster) throw new Error("missing captain");
+      await modules.teams.repositories.rosters.update({ ...roster, role: "player" });
+      const denied = await modules.officialSelection.openDispute.execute(command);
+      expect(denied.isErr() && denied.error.code).toBe("results.official_selection_forbidden");
+      await modules.teams.repositories.rosters.update(roster);
+      const authorized = await modules.officialSelection.openDispute.execute(command);
+      expect(authorized.isOk() && authorized.value).toEqual({ ...opened.value, replayed: true });
+      expect((await read()).rows).toEqual(before.rows);
+      expect(await count("match_disputes")).toBe(1);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "does not collide when a slot ID and reason contain legacy separators",
+    async () => {
+      const { modules } = await fresh();
+      await new PostgresProviderMatchRepository(isolated.pool).upsertMany([
+        providerMatch("m-2|tail"),
+      ]);
+      await modules.results.associateEncounterCandidates.execute({
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+      });
+      const proposed = await propose(modules);
+      const command = {
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        proposalId: proposed.proposal!.id,
+        expectedVersion: 1,
+        selections: slot("m-2|tail"),
+        reason: "end",
+        commandKey: "separator-alternative",
+      };
+      const original = await modules.officialSelection.proposeAlternative.execute(command);
+      if (!original.isOk()) throw new Error("alternative failed");
+      expect(original.value.proposal?.slots).toEqual([
+        { officialSlot: 1, providerMatchRef: { providerKey: "ea-clubs", externalId: "m-2|tail" } },
+      ]);
+      expect(original.value.proposal?.reason).toBe("end");
+      const same = await modules.officialSelection.proposeAlternative.execute(command);
+      expect(same.isOk() && same.value).toEqual({ ...original.value, replayed: true });
+      const colliding = { ...command, selections: slot("m-2"), reason: "tail|end" };
+      const changed = await modules.officialSelection.proposeAlternative.execute(colliding);
+      expect(changed.isErr() && changed.error.code).toBe("results.command_key_reused");
+
+      // Seed a historical receipt independently. Do not update an append-only row.
+      const legacyFingerprint = `alternative|${AWAY}|${proposed.proposal!.id}|1|1=ea-clubs:m-2|tail|end`;
+      await isolated.pool.query(
+        `INSERT INTO official_selection_actions (
+         id, selection_id, proposal_id, organization_id, competition_id, encounter_id,
+         action_type, from_status, to_status, version_before, version_after, actor_id, team_id,
+         capacity, reason, command_key, request_fingerprint, details, occurred_at
+       ) SELECT 'legacy-separator', selection_id, proposal_id, organization_id, competition_id, encounter_id,
+         action_type, from_status, to_status, version_before, version_after, actor_id, team_id,
+         capacity, reason, 'legacy-separator', $2, details, occurred_at
+         FROM official_selection_actions WHERE id = $1`,
+        [original.value.actions[0]!.id, legacyFingerprint],
+      );
+      const readLegacy = () =>
+        isolated.pool.query(
+          "SELECT to_jsonb(a) AS row FROM official_selection_actions a WHERE id = 'legacy-separator'",
+        );
+      const before = await readLegacy();
+      const legacy = await modules.officialSelection.proposeAlternative.execute({
+        ...command,
+        commandKey: "legacy-separator",
+      });
+      expect(legacy.isOk() && legacy.value).toMatchObject({
+        replayed: true,
+        selection: { status: "disputed", version: 2 },
+        proposal: { reason: "end", slots: slot("m-2|tail") },
+        actions: [{ id: "legacy-separator", requestFingerprint: null }],
+      });
+      const legacyCollision = await modules.officialSelection.proposeAlternative.execute({
+        ...colliding,
+        commandKey: "legacy-separator",
+      });
+      expect(legacyCollision.isErr() && legacyCollision.error.code).toBe(
+        "results.command_key_reused",
+      );
+      expect((await readLegacy()).rows).toEqual(before.rows);
+      expect(await count("official_selection_actions")).toBe(3);
+      expect(await count("official_selection_proposals")).toBe(2);
+      expect(await count("match_disputes")).toBe(1);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "distinguishes optional null from a literal dash in opaque and legacy review receipts",
+    async () => {
+      const { modules } = await fresh();
+      await propose(modules);
+      const opened = await modules.officialSelection.openDispute.execute({
+        actorId: HOME_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: HOME,
+        expectedVersion: 1,
+        reason: "Se invirtieron los slots",
+        commandKey: "dash-open",
+      });
+      expect(opened.isOk() && opened.value.dispute?.openedReason).toBe("Se invirtieron los slots");
+      const command = {
+        actorId: OPERATOR,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        expectedVersion: 2,
+        commandKey: "dash-review",
+      };
+      const reviewed = await modules.officialSelection.reviewDispute.execute(command);
+      if (!reviewed.isOk()) throw new Error("review failed");
+      expect(reviewed.value.selection).toMatchObject({ status: "organizer_review", version: 3 });
+      expect(reviewed.value.actions[0]?.reason).toBeNull();
+      const changed = await modules.officialSelection.reviewDispute.execute({
+        ...command,
+        reason: "-",
+      });
+      expect(changed.isErr() && changed.error.code).toBe("results.command_key_reused");
+      const replay = await modules.officialSelection.reviewDispute.execute({
+        ...command,
+        reason: "  ",
+      });
+      expect(replay.isOk() && replay.value).toEqual({ ...reviewed.value, replayed: true });
+      await isolated.pool.query(
+        `INSERT INTO official_selection_actions (
+         id, selection_id, proposal_id, organization_id, competition_id, encounter_id,
+         action_type, from_status, to_status, version_before, version_after, actor_id,
+         capacity, reason, command_key, request_fingerprint, details, occurred_at
+       ) SELECT 'legacy-dash', selection_id, proposal_id, organization_id, competition_id, encounter_id,
+         action_type, from_status, to_status, version_before, version_after, actor_id,
+         capacity, reason, 'legacy-dash', 'review_dispute|2|-', details, occurred_at
+         FROM official_selection_actions WHERE id = $1`,
+        [reviewed.value.actions[0]!.id],
+      );
+      const read = () =>
+        isolated.pool.query(
+          "SELECT to_jsonb(a) AS row FROM official_selection_actions a WHERE id = 'legacy-dash'",
+        );
+      const before = await read();
+      const legacyCommand = { ...command, commandKey: "legacy-dash" };
+      const legacy = await modules.officialSelection.reviewDispute.execute(legacyCommand);
+      expect(legacy.isOk() && legacy.value).toMatchObject({
+        replayed: true,
+        selection: { status: "organizer_review", version: 3 },
+        actions: [{ id: "legacy-dash", reason: null, requestFingerprint: null }],
+      });
+      const legacyChanged = await modules.officialSelection.reviewDispute.execute({
+        ...legacyCommand,
+        reason: "-",
+      });
+      expect(legacyChanged.isErr() && legacyChanged.error.code).toBe("results.command_key_reused");
+      expect((await read()).rows).toEqual(before.rows);
+      expect(await count("official_selection_actions")).toBe(4);
+      expect(await count("match_disputes")).toBe(1);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "canonicalizes slot order without conflating a swap or an expected version",
+    async () => {
+      const { modules } = await fresh();
+      const encounter = await modules.scheduling.encounters.findById(ENCOUNTER);
+      if (!encounter) throw new Error("missing encounter");
+      await modules.scheduling.encounters.upsert({ ...encounter, officialMatchCount: 2 });
+      const command = {
+        actorId: HOME_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: HOME,
+        selections: [{ ...slot("m-2")[0]!, officialSlot: 2 as const }, slot("m-1")[0]!],
+        expectedVersion: 0,
+        commandKey: "ordered-slots",
+      };
+      const original = await modules.officialSelection.propose.execute(command);
+      if (!original.isOk()) throw new Error("propose failed");
+      expect(original.value.selection).toMatchObject({
+        status: "awaiting_opponent_confirmation",
+        version: 1,
+      });
+      expect(original.value.proposal?.slots).toEqual([
+        { officialSlot: 1, providerMatchRef: { providerKey: "ea-clubs", externalId: "m-1" } },
+        { officialSlot: 2, providerMatchRef: { providerKey: "ea-clubs", externalId: "m-2" } },
+      ]);
+      const reordered = await modules.officialSelection.propose.execute({
+        ...command,
+        selections: [...command.selections].reverse(),
+      });
+      expect(reordered.isOk() && reordered.value).toEqual({ ...original.value, replayed: true });
+      const swapped = await modules.officialSelection.propose.execute({
+        ...command,
+        selections: [slot("m-2")[0]!, { ...slot("m-1")[0]!, officialSlot: 2 }],
+      });
+      expect(swapped.isErr() && swapped.error.code).toBe("results.command_key_reused");
+      const newVersion = await modules.officialSelection.propose.execute({
+        ...command,
+        expectedVersion: 1,
+      });
+      expect(newVersion.isErr() && newVersion.error.code).toBe("results.command_key_reused");
+      expect(await count("official_selection_actions")).toBe(1);
+      expect(await count("official_selection_proposals")).toBe(1);
+      expect(await count("official_selection_reference_claims", "released_at IS NULL")).toBe(2);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it.each(["sha256:not-a-digest", "sha512:unknown-format"])(
+    "fails closed for a malformed or unknown receipt: %s",
+    async (receipt) => {
+      const { modules } = await fresh();
+      const original = await propose(modules);
+      await isolated.pool.query(
+        `INSERT INTO official_selection_actions (
+           id, selection_id, proposal_id, organization_id, competition_id, encounter_id,
+           action_type, from_status, to_status, version_before, version_after, actor_id, team_id,
+           capacity, reason, command_key, request_fingerprint, occurred_at
+         ) SELECT 'unknown-receipt', selection_id, proposal_id, organization_id, competition_id, encounter_id,
+           action_type, from_status, to_status, version_before, version_after, actor_id, team_id,
+           capacity, reason, 'unknown-receipt', $2, occurred_at
+           FROM official_selection_actions WHERE id = $1`,
+        [original.actions[0]!.id, receipt],
+      );
+      const failed = await modules.officialSelection.propose.execute({
+        actorId: HOME_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: HOME,
+        selections: slot("m-1"),
+        expectedVersion: 0,
+        commandKey: "unknown-receipt",
+      });
+      expect(failed.isErr() && failed.error.code).toBe("results.command_key_reused");
+      const valid = await propose(modules);
+      expect(valid).toEqual({ ...original, replayed: true });
+      expect(await count("official_selection_actions")).toBe(2);
+      expect(await count("official_selection_proposals")).toBe(1);
+      const stored = await isolated.pool.query(
+        "SELECT request_fingerprint FROM official_selection_actions WHERE id = 'unknown-receipt'",
+      );
+      expect(stored.rows).toEqual([{ request_fingerprint: receipt }]);
+    },
+    TEST_TIMEOUT_MS,
+  );
 
   it(
     "rolls selection, audit and result back when the projection fails, then retries cleanly",
@@ -269,19 +596,33 @@ suite("official selection composition on Postgres", () => {
       expect(project).not.toHaveBeenCalled();
       expect(await count("official_results")).toBe(0);
 
-      const resolved = await selection.resolveDispute.execute({
+      const resolutionCommand = {
         actorId: OPERATOR,
         organizationId: ORG,
         encounterId: ENCOUNTER,
         expectedVersion: 3,
-        decision: { type: "approve_proposal", proposalId: alternative.value.proposal!.id },
+        decision: { type: "approve_proposal" as const, proposalId: alternative.value.proposal!.id },
         reason: "Evidence checked",
         commandKey: "resolve",
-      });
+      };
+      const resolved = await selection.resolveDispute.execute(resolutionCommand);
       expect(resolved.isOk() && resolved.value.approvedResult?.approvalBasis).toBe(
         "operator_resolution",
       );
       expect(project).toHaveBeenCalledTimes(1);
+      const resolutionReplay = await selection.resolveDispute.execute({
+        ...resolutionCommand,
+        decision: { ...resolutionCommand.decision, acknowledgeIntegrityFlags: false },
+      });
+      expect(resolutionReplay.isOk() && resolutionReplay.value).toEqual({
+        ...(resolved.isOk() ? resolved.value : {}),
+        replayed: true,
+      });
+      const acknowledged = await selection.resolveDispute.execute({
+        ...resolutionCommand,
+        decision: { ...resolutionCommand.decision, acknowledgeIntegrityFlags: true },
+      });
+      expect(acknowledged.isErr() && acknowledged.error.code).toBe("results.command_key_reused");
 
       // A replay reports the dispute as the alternative opened it, not as resolved.
       const replay = await selection.proposeAlternative.execute(alternativeCommand);
@@ -393,6 +734,21 @@ suite("official selection composition on Postgres", () => {
         resolution_action_reason: "Avisar al árbitro sobre el marcador",
         resolution_reason: "Avisar al árbitro sobre el marcador",
       });
+      const receipts = await isolated.pool.query(
+        "SELECT request_fingerprint FROM official_selection_actions ORDER BY version_before",
+      );
+      expect(receipts.rows).toHaveLength(4);
+      for (const receipt of receipts.rows) {
+        expect(receipt.request_fingerprint).toMatch(/^sha256:[a-f0-9]{64}$/);
+      }
+      const newHistory = await isolated.pool.query(
+        `SELECT
+           (SELECT jsonb_agg(to_jsonb(p)) FROM official_selection_proposals p) AS proposals,
+           (SELECT jsonb_agg(to_jsonb(a)) FROM official_selection_actions a) AS actions,
+           (SELECT jsonb_agg(to_jsonb(d)) FROM match_disputes d) AS disputes`,
+      );
+      expect(JSON.stringify(newHistory.rows)).not.toContain(reason);
+      expect(JSON.stringify(newHistory.rows)).not.toContain("arbitro@example.com");
 
       const neighbor = await fresh();
       const neighborProposal = await neighbor.modules.officialSelection.propose.execute({
@@ -418,10 +774,11 @@ suite("official selection composition on Postgres", () => {
       expect(rejected.isOk() && rejected.value.actions[0]?.reason).toBe("Se invirtieron los slots");
       if (!rejected.isOk()) throw new Error("neighbor reject failed");
       const neighborStored = await isolated.pool.query(
-        "SELECT reason FROM official_selection_actions WHERE id = $1",
+        "SELECT reason, request_fingerprint FROM official_selection_actions WHERE id = $1",
         [rejected.value.actions[0]!.id],
       );
-      expect(neighborStored.rows).toEqual([{ reason: "Se invirtieron los slots" }]);
+      expect(neighborStored.rows[0].reason).toBe("Se invirtieron los slots");
+      expect(neighborStored.rows[0].request_fingerprint).toMatch(/^sha256:[a-f0-9]{64}$/);
     },
     TEST_TIMEOUT_MS,
   );
@@ -570,6 +927,22 @@ suite("official selection composition on Postgres", () => {
         occurredAt,
       });
       expect(replay.value.dispute?.openedReason).toBe("Avisar a [REDACTED] sobre el marcador");
+
+      const roster = await modules.teams.repositories.rosters.findById(`roster-${AWAY_CAPTAIN}`);
+      if (!roster) throw new Error("missing captain");
+      await modules.teams.repositories.rosters.update({ ...roster, role: "player" });
+      const denied = await modules.officialSelection.reject.execute({
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        proposalId,
+        expectedVersion: 1,
+        reason: phoneReason,
+        commandKey: "legacy-reject",
+      });
+      expect(denied.isErr() && denied.error.code).toBe("results.official_selection_forbidden");
+      await modules.teams.repositories.rosters.update(roster);
 
       const changed = await modules.officialSelection.reject.execute({
         actorId: AWAY_CAPTAIN,

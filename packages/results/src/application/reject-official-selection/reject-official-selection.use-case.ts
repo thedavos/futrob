@@ -17,6 +17,8 @@ import type { OfficialMatchSelection } from "../../domain/entities/official-matc
 import { redactAuditReason } from "../../domain/policies/audit-reason.ts";
 import type { RejectOfficialSelectionError } from "../../domain/errors/official-selection.errors.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { SelectionCommandDigestPort } from "../../domain/ports/selection-command-digest.port.ts";
+import { commandFingerprint } from "../command-fingerprint.ts";
 import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -26,7 +28,7 @@ import {
   protectOfficialSelectionCommandOutput,
   type OfficialSelectionCommandOutput,
 } from "../official-selection-output.ts";
-import { buildAction, commandFingerprint, requireReason } from "../selection-command-support.ts";
+import { buildAction, requireReason } from "../selection-command-support.ts";
 import { conflictOrReplay } from "../selection-replay.ts";
 import { prepareTeamResponse } from "../team-response-support.ts";
 
@@ -50,6 +52,7 @@ export class RejectOfficialSelectionUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly commandDigest: SelectionCommandDigestPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: Pick<OfficialResultRepository, "findById">;
       readonly teamRepresentation: TeamRepresentationPort;
@@ -64,13 +67,13 @@ export class RejectOfficialSelectionUseCase {
     input: RejectOfficialSelectionInput,
   ): Promise<Result<OfficialSelectionCommandOutput, RejectOfficialSelectionError>> {
     const reason = requireReason(input.reason, "reason");
-    const fingerprint = commandFingerprint([
-      "reject",
-      input.actingTeamId,
-      input.proposalId,
-      input.expectedVersion,
-      reason.isOk() ? reason.value : "",
-    ]);
+    const fingerprint = commandFingerprint(this.deps.commandDigest, input, {
+      type: "reject",
+      actingTeamId: input.actingTeamId,
+      proposalId: input.proposalId,
+      expectedVersion: input.expectedVersion,
+      reason: reason.isOk() ? reason.value : null,
+    });
     const prepared = await prepareTeamResponse(this.deps, {
       ...input,
       command: "reject",

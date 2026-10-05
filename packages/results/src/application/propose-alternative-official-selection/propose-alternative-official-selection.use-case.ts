@@ -29,6 +29,8 @@ import {
 } from "../../domain/errors/select-official-matches.errors.ts";
 import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { SelectionCommandDigestPort } from "../../domain/ports/selection-command-digest.port.ts";
+import { commandFingerprint } from "../command-fingerprint.ts";
 import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -45,13 +47,7 @@ import {
   protectOfficialSelectionCommandOutput,
   type OfficialSelectionCommandOutput,
 } from "../official-selection-output.ts";
-import {
-  buildAction,
-  commandFingerprint,
-  normalizeReason,
-  rawSlotsKey,
-  requireReason,
-} from "../selection-command-support.ts";
+import { buildAction, normalizeReason, requireReason } from "../selection-command-support.ts";
 import { conflictOrReplay } from "../selection-replay.ts";
 import { prepareTeamResponse } from "../team-response-support.ts";
 
@@ -80,6 +76,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly commandDigest: SelectionCommandDigestPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: OfficialResultRepository;
       readonly associations: EncounterCandidateAssociationRepository;
@@ -95,14 +92,14 @@ export class ProposeAlternativeOfficialSelectionUseCase {
   async execute(
     input: ProposeAlternativeOfficialSelectionInput,
   ): Promise<Result<OfficialSelectionCommandOutput, ProposeAlternativeOfficialSelectionError>> {
-    const fingerprint = commandFingerprint([
-      "alternative",
-      input.actingTeamId,
-      input.proposalId,
-      input.expectedVersion,
-      rawSlotsKey(input.selections),
-      normalizeReason(input.reason),
-    ]);
+    const fingerprint = commandFingerprint(this.deps.commandDigest, input, {
+      type: "alternative",
+      actingTeamId: input.actingTeamId,
+      proposalId: input.proposalId,
+      expectedVersion: input.expectedVersion,
+      selections: input.selections,
+      reason: normalizeReason(input.reason),
+    });
     const prepared = await prepareTeamResponse(this.deps, {
       ...input,
       command: "propose_alternative",

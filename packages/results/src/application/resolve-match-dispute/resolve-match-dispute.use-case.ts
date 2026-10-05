@@ -31,6 +31,8 @@ import {
 } from "../../domain/errors/select-official-matches.errors.ts";
 import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { SelectionCommandDigestPort } from "../../domain/ports/selection-command-digest.port.ts";
+import { commandFingerprint } from "../command-fingerprint.ts";
 import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -48,7 +50,6 @@ import {
   authorizeOperator,
   buildAction,
   buildApprovedResult,
-  commandFingerprint,
   requireReason,
   snapshotProposal,
   statusConflict,
@@ -86,6 +87,7 @@ export class ResolveMatchDisputeUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly commandDigest: SelectionCommandDigestPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: OfficialResultRepository;
       readonly associations: EncounterCandidateAssociationRepository;
@@ -120,16 +122,12 @@ export class ResolveMatchDisputeUseCase {
     }
 
     const reason = requireReason(input.reason, "reason");
-    const fingerprint = commandFingerprint([
-      "resolve_dispute",
-      input.expectedVersion,
-      input.decision.type,
-      input.decision.type === "approve_proposal" ? input.decision.proposalId : null,
-      input.decision.type === "approve_proposal"
-        ? String(input.decision.acknowledgeIntegrityFlags === true)
-        : null,
-      reason.isOk() ? reason.value : "",
-    ]);
+    const fingerprint = commandFingerprint(this.deps.commandDigest, input, {
+      type: "resolve_dispute",
+      expectedVersion: input.expectedVersion,
+      decision: input.decision,
+      reason: reason.isOk() ? reason.value : null,
+    });
     const replay = await lookupReplay(this.deps.selections, { ...input, fingerprint });
     if (replay.kind === "reused") return err(replay.error);
     if (replay.kind === "replay") {

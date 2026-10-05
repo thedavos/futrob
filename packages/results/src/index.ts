@@ -1,3 +1,4 @@
+export type { SelectionCommandDigestPort } from "./domain/ports/selection-command-digest.port.ts";
 export type {
   OfficialMatchSelection,
   OfficialSlotSelection,

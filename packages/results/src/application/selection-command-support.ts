@@ -45,7 +45,7 @@ import {
   canApplySelectionCommand,
   type SelectionCommand,
 } from "../domain/policies/selection-transitions.ts";
-import { slotSelectionKey } from "../domain/policies/slot-selection.ts";
+import type { CommandFingerprint } from "./command-fingerprint.ts";
 
 export type SelectionActor =
   | { readonly capacity: "team"; readonly actorId: ActorId; readonly teamId: TeamId }
@@ -69,20 +69,6 @@ export function requireReason(
       message: `A reason is required (${field})`,
     }),
   );
-}
-
-/** Stable text describing what a command asked for; a replay must match it exactly. */
-export function commandFingerprint(parts: ReadonlyArray<string | number | null>): string {
-  return parts.map((part) => (part === null ? "-" : String(part))).join("|");
-}
-
-export function rawSlotsKey(
-  selections: ReadonlyArray<{
-    readonly officialSlot: 1 | 2;
-    readonly providerMatchRef: ExternalReference;
-  }>,
-): string {
-  return slotSelectionKey(selections);
 }
 
 /** The Team must play the Encounter, be represented by the actor and be allowed by policy. */
@@ -215,7 +201,7 @@ export interface ActionFactoryContext {
   readonly encounterId: EncounterId;
   readonly actor: SelectionActor;
   readonly commandKey: string | null;
-  readonly fingerprint: string | null;
+  readonly fingerprint: CommandFingerprint | null;
 }
 
 export function buildAction(
@@ -254,7 +240,7 @@ export function buildAction(
     capacity: input.capacity ?? context.actor.capacity,
     reason: redactOptionalAuditReason(input.reason ?? null),
     commandKey: input.commandKey === undefined ? context.commandKey : input.commandKey,
-    requestFingerprint: input.commandKey === null ? null : context.fingerprint,
+    requestFingerprint: input.commandKey === null ? null : (context.fingerprint?.opaque ?? null),
     officialResultId: input.officialResultId ?? null,
     details: input.details ?? null,
     occurredAt: input.occurredAt ?? context.clock.now(),

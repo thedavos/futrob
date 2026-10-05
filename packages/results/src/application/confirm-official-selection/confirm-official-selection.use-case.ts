@@ -20,6 +20,8 @@ import { SelfConfirmationForbidden } from "../../domain/errors/official-selectio
 import { OfficialSelectionForbidden } from "../../domain/errors/select-official-matches.errors.ts";
 import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { SelectionCommandDigestPort } from "../../domain/ports/selection-command-digest.port.ts";
+import { commandFingerprint } from "../command-fingerprint.ts";
 import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -31,7 +33,6 @@ import { confirmProposal } from "../confirm-proposal.ts";
 import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
 import {
   authorizeTeamActor,
-  commandFingerprint,
   staleProposal,
   statusConflict,
   approvedGuard,
@@ -60,6 +61,7 @@ export class ConfirmOfficialSelectionUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly commandDigest: SelectionCommandDigestPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: OfficialResultRepository;
       readonly associations: EncounterCandidateAssociationRepository;
@@ -101,12 +103,12 @@ export class ConfirmOfficialSelectionUseCase {
       );
     }
 
-    const fingerprint = commandFingerprint([
-      "confirm",
-      input.actingTeamId,
-      input.proposalId,
-      input.expectedVersion,
-    ]);
+    const fingerprint = commandFingerprint(this.deps.commandDigest, input, {
+      type: "confirm",
+      actingTeamId: input.actingTeamId,
+      proposalId: input.proposalId,
+      expectedVersion: input.expectedVersion,
+    });
     const replay = await lookupReplay(this.deps.selections, { ...input, fingerprint });
     if (replay.kind === "reused") return err(replay.error);
     if (replay.kind === "replay") {

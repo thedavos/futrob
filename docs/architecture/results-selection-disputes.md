@@ -137,9 +137,79 @@ propuestas o acciones append-only. La redacción de lectura conserva IDs, actore
 estados, versiones, referencias y secuencia.
 
 Esta política no redefine la identidad de replay. Dos comandos que solo difieren en el dato
-redactado deben seguir siendo distintos. Por eso el fingerprint interno todavía usa el motivo
-normalizado original. #128 debe reemplazar esa representación persistida por el digest opaco del
-contenido canónico antes de integrar o exponer estos DTOs; #127 por sí solo se mantiene como draft.
+redactado siguen siendo distintos: #128 deriva el fingerprint del motivo normalizado original,
+no del motivo redactado. #127 por sí solo no es integrable; la exposición de auditoría requiere
+integrar ambos cambios. El stack no añade rutas, DTOs wire ni pantallas de auditoría.
+
+## Recibos opacos y compatibilidad de replay (#128)
+
+Results define `SelectionCommandDigestPort`; la API compone su implementación de SHA-256 con
+`node:crypto`. No se encontró un contrato equivalente en Results ni shared-kernel: los hashes
+de tokens de Organizations/Teams tienen otra semántica. La CLI offline usa un fake estable y no
+constituye prueba de criptografía ni de persistencia.
+
+Cada recibo nuevo guarda `sha256:<64 dígitos hexadecimales minúsculos>` en la columna existente
+`request_fingerprint`. El prefijo es el único discriminante: los recibos históricos empiezan
+por el nombre del comando seguido de `|`. La codificación siguiente queda congelada para este
+formato. Un cambio futuro de algoritmo o codificación necesita un discriminante nuevo y
+verificación de los formatos anteriores, nunca reinterpretación de un recibo.
+
+La entrada del digest son los bytes UTF-8 de `JSON.stringify` de esta tupla, sin whitespace extra:
+
+```text
+["results.selection-command", organizationId, encounterId, actorId, commandType, expectedVersion, ...payload]
+```
+
+| commandType     | payload (elementos consecutivos de la tupla) |
+| --------------- | -------------------------------------------- |
+| propose         | actingTeamId, slots                          |
+| confirm         | actingTeamId, proposalId                     |
+| reject          | actingTeamId, proposalId, reason             |
+| alternative     | actingTeamId, proposalId, slots, reason      |
+| open_dispute    | actingTeamId, reason                         |
+| review_dispute  | reason                                       |
+| resolve_dispute | decision, reason                             |
+
+`slots` es una matriz de `[officialSlot, providerKey, externalId]` ordenada por slot numérico.
+`decision` es `["return_to_selection"]` o
+`["approve_proposal", proposalId, acknowledgeIntegrityFlags === true]`.
+Los números, booleanos, strings y null conservan su tipo; ni `|`, `:`, `=`, comillas ni
+saltos de línea de un campo alteran su estructura. El motivo se recorta con `trim()`; vacío,
+omitido o solo espacios se normalizan a null. No se normaliza Unicode ni se redacta antes del
+digest. Omitir el reconocimiento de flags y enviar false son equivalentes; true es diferente.
+El commandKey es la clave de búsqueda, no contenido semántico. Identidades de ámbito/actor,
+tipo, versión y todos los campos del comando sí participan; fechas/IDs generados, estado actual
+y snapshots del proveedor no participan, porque cambian después de ejecutar el comando.
+
+No hay clave secreta, provisión, key ID ni rotación: SHA-256 es determinista entre procesos.
+Esto elimina texto claro del recibo, pero no es cifrado ni evita adivinar un motivo de baja
+entropía si se obtiene acceso a la base. Los DTOs nunca exponen el recibo, ni nuevo ni legacy.
+
+Vector independiente (OpenSSL SHA-256, sin newline final):
+
+```text
+["results.selection-command","org-selection","enc-selection","actor-away-captain","open_dispute",1,"team-away","Marcador incorrecto; llamar +1-555-0100"]
+sha256:e63aacf128f3c156fc8351a4c4fad3c9973fc784f39d68895c7bde5319406c06
+```
+
+El lookup sigue a la autorización actual, incluidas representación del Team y capacidades.
+Si encuentra recibos `sha256:`, exige formato válido e igualdad del digest en todas las acciones
+de la clave; un digest diferente, malformado o desconocido da `results.command_key_reused`.
+No intenta entonces el formato legacy ni ejecuta una transición nueva.
+
+Para un recibo textual histórico se calcula únicamente en memoria la proyección textual antigua
+con el motivo original y se exige igualdad exacta. Como los delimitadores antiguos no conservaban
+tipos, también se contrastan los hechos append-only: tipo de acción, actor/ámbito, Team, versión,
+propuesta objetivo, propuesta sustituida y slots estructurados. El motivo de la acción se compara
+con la representación redactada del motivo solicitado, distinguiendo null del literal `"-"`.
+Una alternativa equivalente se contrasta con la propuesta confirmada. Esto protege colisiones
+de delimitadores sin cambiar ni borrar una fila. Un recibo sin los hechos necesarios falla cerrado.
+No hay fallback entre formatos; las acciones mezcladas o nulas tampoco autorizan replay.
+
+El replay reconstruye el resultado histórico y luego aplica la política de salida de #127.
+Mantiene IDs, actores, fechas, versiones y conteos; no actualiza el recibo ni duplica selección,
+disputa, resultado o proyección. Los tests de composición llaman la entrada del consumidor sobre
+Postgres aislado, contrastan los vectores literales y leen las filas originales tras replay/conflicto.
 
 ## Composición y estadísticas
 

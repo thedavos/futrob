@@ -22,6 +22,8 @@ import {
   OfficialSelectionForbidden,
 } from "../../domain/errors/select-official-matches.errors.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { SelectionCommandDigestPort } from "../../domain/ports/selection-command-digest.port.ts";
+import { commandFingerprint } from "../command-fingerprint.ts";
 import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
@@ -37,7 +39,6 @@ import {
   activeDispute,
   authorizeTeamActor,
   buildAction,
-  commandFingerprint,
   requireReason,
   statusConflict,
   approvedGuard,
@@ -65,6 +66,7 @@ export class OpenMatchDisputeUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly commandDigest: SelectionCommandDigestPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: Pick<OfficialResultRepository, "findById">;
       readonly teamRepresentation: TeamRepresentationPort;
@@ -104,12 +106,12 @@ export class OpenMatchDisputeUseCase {
     }
 
     const reason = requireReason(input.reason, "reason");
-    const fingerprint = commandFingerprint([
-      "open_dispute",
-      input.actingTeamId,
-      input.expectedVersion,
-      reason.isOk() ? reason.value : "",
-    ]);
+    const fingerprint = commandFingerprint(this.deps.commandDigest, input, {
+      type: "open_dispute",
+      actingTeamId: input.actingTeamId,
+      expectedVersion: input.expectedVersion,
+      reason: reason.isOk() ? reason.value : null,
+    });
     const replay = await lookupReplay(this.deps.selections, { ...input, fingerprint });
     if (replay.kind === "reused") return err(replay.error);
     if (replay.kind === "replay") {
