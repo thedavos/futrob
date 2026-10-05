@@ -29,7 +29,10 @@ import type {
 } from "../domain/ports/official-result.repository.ts";
 import type { ProviderMatchReaderPort } from "../domain/ports/provider-match-reader.port.ts";
 import { selectionReferences } from "../domain/policies/slot-selection.ts";
-import type { OfficialSelectionCommandOutput } from "./official-selection-output.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "./official-selection-output.ts";
 import { buildAction, buildApprovedResult, snapshotProposal } from "./selection-command-support.ts";
 import { conflictOrReplay } from "./selection-replay.ts";
 
@@ -219,13 +222,15 @@ export async function confirmProposal(
       },
     });
   }
-  return ok({
-    selection: nextSelection,
-    proposal,
-    actions,
-    dispute: null,
-    approvedResult: result,
-    integrityFlags: snapshots.flags,
-    replayed: false,
-  });
+  return ok(
+    protectOfficialSelectionCommandOutput({
+      selection: nextSelection,
+      proposal,
+      actions,
+      dispute: null,
+      approvedResult: result,
+      integrityFlags: snapshots.flags,
+      replayed: false,
+    }),
+  );
 }

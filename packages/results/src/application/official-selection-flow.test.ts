@@ -345,6 +345,80 @@ describe("reject (CA-04)", () => {
     expect((await h.selections.findLatestByEncounter(ENCOUNTER))?.version).toBe(1);
   });
 
+  it("keeps the useful explanation and redacts a phone in the command result and audit", async () => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    const rawReason = "Marcador incorrecto; llamar +1-555-0100";
+    const rejected = unwrap(
+      await h.useCases.reject.execute({
+        ...rivalInput(h, 1, first.proposal!.id),
+        reason: rawReason,
+      }),
+    );
+
+    expect(rejected.dispute?.openedReason).toBe("Marcador incorrecto; llamar [REDACTED]");
+    expect(rejected.actions[0]?.reason).toBe("Marcador incorrecto; llamar [REDACTED]");
+    expect(rejected.actions[0]?.requestFingerprint).toBeNull();
+    expect(h.selections.disputes[0]?.openedReason).toBe("Marcador incorrecto; llamar [REDACTED]");
+    expect(h.selections.actions[1]?.reason).toBe("Marcador incorrecto; llamar [REDACTED]");
+    expect(JSON.stringify(h.events)).not.toContain(rawReason);
+  });
+
+  it("keeps a non-sensitive reason exactly as entered", async () => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    const rejected = unwrap(
+      await h.useCases.reject.execute({
+        ...rivalInput(h, 1, first.proposal!.id),
+        reason: "Se invirtieron los slots",
+      }),
+    );
+
+    expect(rejected.dispute?.openedReason).toBe("Se invirtieron los slots");
+    expect(rejected.actions[0]?.reason).toBe("Se invirtieron los slots");
+  });
+
+  it("redacts an email while preserving the neighboring reason without an address", async () => {
+    const withEmail = await setup();
+    const first = unwrap(await withEmail.propose(["m-1"]));
+    const sensitive = unwrap(
+      await withEmail.useCases.reject.execute({
+        ...rivalInput(withEmail, 1, first.proposal!.id),
+        reason: "Avisar a arbitro@example.com sobre el marcador",
+      }),
+    );
+
+    const withoutEmail = await setup();
+    const neighborProposal = unwrap(await withoutEmail.propose(["m-1"]));
+    const neighbor = unwrap(
+      await withoutEmail.useCases.reject.execute({
+        ...rivalInput(withoutEmail, 1, neighborProposal.proposal!.id),
+        reason: "Avisar al árbitro sobre el marcador",
+      }),
+    );
+
+    expect(sensitive.actions[0]?.reason).toBe("Avisar a [REDACTED] sobre el marcador");
+    expect(neighbor.actions[0]?.reason).toBe("Avisar al árbitro sobre el marcador");
+  });
+
+  it("does not treat different phones with the same redacted view as the same replay", async () => {
+    const h = await setup();
+    const first = unwrap(await h.propose(["m-1"]));
+    const command = {
+      ...rivalInput(h, 1, first.proposal!.id),
+      reason: "Marcador incorrecto; llamar +1-555-0100",
+    };
+    unwrap(await h.useCases.reject.execute(command));
+
+    const changed = await h.useCases.reject.execute({
+      ...command,
+      reason: "Marcador incorrecto; llamar +1-555-0101",
+    });
+
+    expect(codeOf(changed)).toBe("results.command_key_reused");
+    expect(h.selections.actions).toHaveLength(2);
+  });
+
   it("the proposing team cannot reject its own proposal", async () => {
     const h = await setup();
     const first = unwrap(await h.propose(["m-1"]));

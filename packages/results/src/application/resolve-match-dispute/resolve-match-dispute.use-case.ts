@@ -14,6 +14,7 @@ import {
 import type { MatchDispute } from "../../domain/entities/match-dispute.ts";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
 import type { OfficialResult } from "../../domain/entities/official-result.ts";
+import { redactAuditReason } from "../../domain/policies/audit-reason.ts";
 import {
   OfficialResultForbidden,
   SelectionNotFound,
@@ -37,7 +38,10 @@ import type {
 } from "../../domain/ports/official-result.repository.ts";
 import type { ProviderMatchReaderPort } from "../../domain/ports/provider-match-reader.port.ts";
 import { selectionReferences } from "../../domain/policies/slot-selection.ts";
-import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "../official-selection-output.ts";
 import {
   activeDispute,
   approvedGuard,
@@ -133,6 +137,7 @@ export class ResolveMatchDisputeUseCase {
       if (output) return ok(output);
     }
     if (reason.isErr()) return err(reason.error);
+    const auditReason = redactAuditReason(reason.value);
 
     const selection = await this.deps.selections.findLatestByEncounter(input.encounterId);
     if (!selection) {
@@ -187,7 +192,7 @@ export class ResolveMatchDisputeUseCase {
             resolvedAt: now,
             resolution: "returned_to_selection",
             resolutionProposalId: null,
-            resolutionReason: reason.value,
+            resolutionReason: auditReason,
           }
         : null;
       const action = buildAction(context, {
@@ -198,7 +203,7 @@ export class ResolveMatchDisputeUseCase {
         toStatus: "selection_in_progress",
         versionBefore: selection.version,
         versionAfter: nextVersion,
-        reason: reason.value,
+        reason: auditReason,
         details: dispute ? { disputeId: dispute.id } : null,
         occurredAt: now,
       });
@@ -223,15 +228,17 @@ export class ResolveMatchDisputeUseCase {
       if (committed.status === "reference_claimed") {
         throw new Panic("Returning a case to selection never acquires references");
       }
-      return ok({
-        selection: nextSelection,
-        proposal: null,
-        actions: [action],
-        dispute,
-        approvedResult: null,
-        integrityFlags: [],
-        replayed: false,
-      });
+      return ok(
+        protectOfficialSelectionCommandOutput({
+          selection: nextSelection,
+          proposal: null,
+          actions: [action],
+          dispute,
+          approvedResult: null,
+          integrityFlags: [],
+          replayed: false,
+        }),
+      );
     }
 
     const { proposalId, acknowledgeIntegrityFlags } = input.decision;
@@ -286,7 +293,7 @@ export class ResolveMatchDisputeUseCase {
           resolvedAt: now,
           resolution: "approved_proposal",
           resolutionProposalId: proposal.id,
-          resolutionReason: reason.value,
+          resolutionReason: auditReason,
         }
       : null;
     const action = buildAction(context, {
@@ -297,7 +304,7 @@ export class ResolveMatchDisputeUseCase {
       toStatus: "approved",
       versionBefore: selection.version,
       versionAfter: nextVersion,
-      reason: reason.value,
+      reason: auditReason,
       officialResultId: result.id,
       details: {
         selectedProposalId: proposal.id,
@@ -382,14 +389,16 @@ export class ResolveMatchDisputeUseCase {
         revision: result.revision,
       },
     });
-    return ok({
-      selection: nextSelection,
-      proposal,
-      actions: [action],
-      dispute,
-      approvedResult: result,
-      integrityFlags: snapshots.flags,
-      replayed: false,
-    });
+    return ok(
+      protectOfficialSelectionCommandOutput({
+        selection: nextSelection,
+        proposal,
+        actions: [action],
+        dispute,
+        approvedResult: result,
+        integrityFlags: snapshots.flags,
+        replayed: false,
+      }),
+    );
   }
 }

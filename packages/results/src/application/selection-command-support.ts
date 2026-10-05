@@ -39,6 +39,7 @@ import type { EncounterScheduleSnapshot } from "../domain/ports/encounter-reader
 import type { ProviderMatchReaderPort } from "../domain/ports/provider-match-reader.port.ts";
 import type { TeamRepresentationPort } from "../domain/ports/team-representation.port.ts";
 import { integrityFlagsFor, type IntegrityFlag } from "../domain/policies/integrity-flags.ts";
+import { redactOptionalAuditReason } from "../domain/policies/audit-reason.ts";
 import { RESULT_PERMISSION } from "../domain/policies/result-permissions.ts";
 import {
   canApplySelectionCommand,
@@ -251,7 +252,7 @@ export function buildAction(
     actorId: context.actor.actorId,
     teamId: context.actor.capacity === "team" ? context.actor.teamId : null,
     capacity: input.capacity ?? context.actor.capacity,
-    reason: input.reason ?? null,
+    reason: redactOptionalAuditReason(input.reason ?? null),
     commandKey: input.commandKey === undefined ? context.commandKey : input.commandKey,
     requestFingerprint: input.commandKey === null ? null : context.fingerprint,
     officialResultId: input.officialResultId ?? null,

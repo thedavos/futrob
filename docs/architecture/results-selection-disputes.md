@@ -92,6 +92,46 @@ con `results.command_key_reused`. El repositorio hace compare-and-swap sobre la 
 propuesta, la auditoría, la disputa y las reservas se escriben juntos (`commitTransition`). Con dos comandos
 incompatibles sobre la misma versión gana uno y el otro recibe `results.selection_version_conflict`.
 
+## Política de motivos sensibles
+
+Results conserva la explicación operativa y sustituye cada correo o teléfono plausible por el
+literal `[REDACTED]`. El recorte exterior sigue ocurriendo antes de validar el motivo. El resto del
+texto, su puntuación y su capitalización no cambian. Por ejemplo:
+
+| Entrada                                          | Representación auditada/servida          |
+| ------------------------------------------------ | ---------------------------------------- |
+| `Marcador incorrecto; llamar +1-555-0100`        | `Marcador incorrecto; llamar [REDACTED]` |
+| `Avisar a arbitro@example.com sobre el marcador` | `Avisar a [REDACTED] sobre el marcador`  |
+| `Se invirtieron los slots`                       | `Se invirtieron los slots`               |
+
+La detección cubre correos con dominio punteado; teléfonos internacionales con `+` y entre
+7 y 15 dígitos (admite espacios, puntos, guiones y paréntesis); teléfonos nacionales en
+formatos `555 555 0100`, `555-555-0100` o `(555) 555-0100`; y números locales `555-0100`
+o `555.0100`. No elimina números sin esos formatos, fechas ni marcadores. No pretende detectar
+toda PII ni direcciones ofuscadas: si cambia el catálogo de datos sensibles, debe ampliarse
+esta política con ejemplos de comportamiento antes de exponerlos.
+
+El inventario y el límite de aplicación son:
+
+| Superficie                                           | Tratamiento                                                                                            |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `official_selection_proposals.reason`                | Las escrituras nuevas guardan la representación redactada.                                             |
+| `official_selection_actions.reason`                  | `buildAction` redacta toda acción nueva, incluidas revisión y anulación.                               |
+| `match_disputes.opened_reason` / `resolution_reason` | Las aperturas y resoluciones nuevas guardan la representación redactada.                               |
+| Vista autorizada y DTO de comando/replay             | Redactan de nuevo al salir para proteger filas legacy sin mutarlas.                                    |
+| `request_fingerprint` nuevo/legacy                   | Todo DTO sirve `null`; replay compara el valor interno original antes de mapear la salida.             |
+| Eventos y access logs actuales                       | Los eventos de selección omiten motivos y el access log solo registra método, path, status y duración. |
+| Logs de transacción                                  | Commit registra evento y request ID; rollback añade el nombre del error, no el comando ni sus motivos. |
+
+Las filas anteriores a esta política permanecen intactas. No se ejecuta `UPDATE` ni `DELETE` sobre
+propuestas o acciones append-only. La redacción de lectura conserva IDs, actores, Teams, fechas,
+estados, versiones, referencias y secuencia.
+
+Esta política no redefine la identidad de replay. Dos comandos que solo difieren en el dato
+redactado deben seguir siendo distintos. Por eso el fingerprint interno todavía usa el motivo
+normalizado original. #128 debe reemplazar esa representación persistida por el digest opaco del
+contenido canónico antes de integrar o exponer estos DTOs; #127 por sí solo se mantiene como draft.
+
 ## Composición y estadísticas
 
 `apps/api/src/di/create-modules.ts` ejecuta cada comando dentro de `TransactionPort.runInTransaction` con el

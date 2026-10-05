@@ -17,6 +17,7 @@ import type {
   OfficialMatchSelection,
   OfficialSelectionProposal,
 } from "../../domain/entities/official-match-selection.ts";
+import { redactAuditReason } from "../../domain/policies/audit-reason.ts";
 import {
   ReferenceAlreadyClaimed,
   type ProposeAlternativeOfficialSelectionError,
@@ -40,7 +41,10 @@ import {
   selectionReferences,
 } from "../../domain/policies/slot-selection.ts";
 import { confirmProposal } from "../confirm-proposal.ts";
-import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "../official-selection-output.ts";
 import {
   buildAction,
   commandFingerprint,
@@ -146,6 +150,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
 
     const reason = requireReason(input.reason, "reason");
     if (reason.isErr()) return err(reason.error);
+    const auditReason = redactAuditReason(reason.value);
 
     const now = this.deps.clock.now();
     const proposals = await this.deps.selections.listProposals(selection.id);
@@ -161,7 +166,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
       proposedByActorId: input.actorId,
       slots: normalized.slots,
       supersedesProposalId: proposal.id,
-      reason: reason.value,
+      reason: auditReason,
       createdAt: now,
     };
     const nextVersion = selection.version + 1;
@@ -181,7 +186,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
       status: "open",
       openedByActorId: input.actorId,
       openedByTeamId: input.actingTeamId,
-      openedReason: reason.value,
+      openedReason: auditReason,
       openedAt: now,
       reviewStartedByActorId: null,
       reviewStartedAt: null,
@@ -209,7 +214,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
       toStatus: "disputed",
       versionBefore: selection.version,
       versionAfter: nextVersion,
-      reason: reason.value,
+      reason: auditReason,
       details: { disputeId: dispute.id },
       occurredAt: now,
     });
@@ -286,14 +291,16 @@ export class ProposeAlternativeOfficialSelectionUseCase {
         version: nextVersion,
       },
     });
-    return ok({
-      selection: nextSelection,
-      proposal: alternative,
-      actions: [action],
-      dispute,
-      approvedResult: null,
-      integrityFlags: [],
-      replayed: false,
-    });
+    return ok(
+      protectOfficialSelectionCommandOutput({
+        selection: nextSelection,
+        proposal: alternative,
+        actions: [action],
+        dispute,
+        approvedResult: null,
+        integrityFlags: [],
+        replayed: false,
+      }),
+    );
   }
 }

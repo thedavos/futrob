@@ -28,6 +28,7 @@ import type {
   OfficialSelectionAllowedAction,
   OfficialSelectionView,
 } from "../official-selection-output.ts";
+import { protectOfficialSelectionView } from "../official-selection-output.ts";
 import {
   activeDispute,
   authorizeOperator,
@@ -125,16 +126,18 @@ export class GetOfficialSelectionUseCase {
     const flags = [...actions].reverse().find((action) => action.details?.integrityFlags?.length)
       ?.details?.integrityFlags;
 
-    return ok({
-      encounterId: input.encounterId,
-      selection,
-      proposals,
-      actions,
-      disputes,
-      activeDispute: activeDispute(disputes),
-      approvedResultId: approved?.id ?? null,
-      integrityFlags: selection?.status === "organizer_review" ? (flags ?? []) : [],
-      allowedActions,
-    });
+    return ok(
+      protectOfficialSelectionView({
+        encounterId: input.encounterId,
+        selection,
+        proposals,
+        actions,
+        disputes,
+        activeDispute: activeDispute(disputes),
+        approvedResultId: approved?.id ?? null,
+        integrityFlags: selection?.status === "organizer_review" ? (flags ?? []) : [],
+        allowedActions,
+      }),
+    );
   }
 }

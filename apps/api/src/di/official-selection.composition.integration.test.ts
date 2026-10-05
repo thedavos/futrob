@@ -2,6 +2,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import { err } from "@futrob/shared-kernel";
 import { PostgresProviderMatchRepository } from "@/adapters/game-data/persistence/postgres.repository.ts";
 import {
+  runWithRequestCorrelation,
+  type CorrelationLogEntry,
+} from "@/context/request-correlation.ts";
+import {
   createIsolatedSchema,
   migrateIsolatedSchema,
   type IsolatedSchema,
@@ -9,6 +13,7 @@ import {
 import {
   AWAY,
   AWAY_CAPTAIN,
+  COMPETITION,
   ENCOUNTER,
   HOME,
   HOME_CAPTAIN,
@@ -282,6 +287,317 @@ suite("official selection composition on Postgres", () => {
       expect(await count("match_disputes", "status = 'resolved'")).toBe(1);
       expect(await count("official_selection_reference_claims", "released_at IS NULL")).toBe(1);
       expect(await count("official_selection_reference_claims")).toBe(2);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "persists and serves redacted reasons while keeping a neighboring explanation unchanged",
+    async () => {
+      const { modules } = await fresh();
+      const proposed = await modules.officialSelection.propose.execute({
+        actorId: HOME_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: HOME,
+        selections: slot("m-1"),
+        expectedVersion: 0,
+        commandKey: "redaction-propose",
+      });
+      if (!proposed.isOk()) throw new Error("propose failed");
+
+      const logs: CorrelationLogEntry[] = [];
+      const alternative = await runWithRequestCorrelation(
+        { requestId: "redaction-request" },
+        { info: (entry) => logs.push(entry), error: (entry) => logs.push(entry) },
+        () =>
+          modules.officialSelection.proposeAlternative.execute({
+            actorId: AWAY_CAPTAIN,
+            organizationId: ORG,
+            encounterId: ENCOUNTER,
+            actingTeamId: AWAY,
+            proposalId: proposed.value.proposal!.id,
+            expectedVersion: 1,
+            selections: slot("m-2"),
+            reason: "Marcador incorrecto; llamar +1-555-0100",
+            commandKey: "redaction-alternative",
+          }),
+      );
+      if (!alternative.isOk()) throw new Error("alternative failed");
+      expect(logs).toEqual([{ event: "db.transaction.committed", requestId: "redaction-request" }]);
+
+      const persisted = await isolated.pool.query(
+        `SELECT
+           (SELECT reason FROM official_selection_proposals WHERE id = $1) AS proposal_reason,
+           (SELECT reason FROM official_selection_actions WHERE id = $2) AS action_reason,
+           (SELECT opened_reason FROM match_disputes WHERE id = $3) AS dispute_reason`,
+        [
+          alternative.value.proposal!.id,
+          alternative.value.actions[0]!.id,
+          alternative.value.dispute!.id,
+        ],
+      );
+      expect(persisted.rows[0]).toEqual({
+        proposal_reason: "Marcador incorrecto; llamar [REDACTED]",
+        action_reason: "Marcador incorrecto; llamar [REDACTED]",
+        dispute_reason: "Marcador incorrecto; llamar [REDACTED]",
+      });
+
+      const view = await modules.officialSelection.get.execute({
+        actorId: OPERATOR,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+      });
+      if (!view.isOk()) throw new Error("view failed");
+      expect(view.value.proposals.at(-1)?.reason).toBe("Marcador incorrecto; llamar [REDACTED]");
+      expect(view.value.actions.at(-1)?.reason).toBe("Marcador incorrecto; llamar [REDACTED]");
+      expect(view.value.activeDispute?.openedReason).toBe("Marcador incorrecto; llamar [REDACTED]");
+      expect(JSON.stringify(view.value)).not.toContain("+1-555-0100");
+
+      const reviewed = await modules.officialSelection.reviewDispute.execute({
+        actorId: OPERATOR,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        expectedVersion: 2,
+        reason: "Avisar a arbitro@example.com sobre el marcador",
+        commandKey: "redaction-review",
+      });
+      if (!reviewed.isOk()) throw new Error("review failed");
+      expect(reviewed.value.actions[0]?.reason).toBe("Avisar a [REDACTED] sobre el marcador");
+      const resolved = await modules.officialSelection.resolveDispute.execute({
+        actorId: OPERATOR,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        expectedVersion: 3,
+        decision: { type: "return_to_selection" },
+        reason: "Avisar al árbitro sobre el marcador",
+        commandKey: "redaction-resolve",
+      });
+      if (!resolved.isOk()) throw new Error("resolve failed");
+      expect(resolved.value.dispute?.resolutionReason).toBe("Avisar al árbitro sobre el marcador");
+      const reviewAndResolution = await isolated.pool.query(
+        `SELECT
+           (SELECT reason FROM official_selection_actions WHERE id = $1) AS review_reason,
+           (SELECT reason FROM official_selection_actions WHERE id = $2) AS resolution_action_reason,
+           (SELECT resolution_reason FROM match_disputes WHERE id = $3) AS resolution_reason`,
+        [reviewed.value.actions[0]!.id, resolved.value.actions[0]!.id, resolved.value.dispute!.id],
+      );
+      expect(reviewAndResolution.rows[0]).toEqual({
+        review_reason: "Avisar a [REDACTED] sobre el marcador",
+        resolution_action_reason: "Avisar al árbitro sobre el marcador",
+        resolution_reason: "Avisar al árbitro sobre el marcador",
+      });
+
+      const neighbor = await fresh();
+      const neighborProposal = await neighbor.modules.officialSelection.propose.execute({
+        actorId: HOME_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: HOME,
+        selections: slot("m-1"),
+        expectedVersion: 0,
+        commandKey: "neighbor-propose",
+      });
+      if (!neighborProposal.isOk()) throw new Error("neighbor propose failed");
+      const rejected = await neighbor.modules.officialSelection.reject.execute({
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        proposalId: neighborProposal.value.proposal!.id,
+        expectedVersion: 1,
+        reason: "Se invirtieron los slots",
+        commandKey: "neighbor-reject",
+      });
+      expect(rejected.isOk() && rejected.value.actions[0]?.reason).toBe("Se invirtieron los slots");
+      if (!rejected.isOk()) throw new Error("neighbor reject failed");
+      const neighborStored = await isolated.pool.query(
+        "SELECT reason FROM official_selection_actions WHERE id = $1",
+        [rejected.value.actions[0]!.id],
+      );
+      expect(neighborStored.rows).toEqual([{ reason: "Se invirtieron los slots" }]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "protects legacy view and replay without rewriting the append-only rows",
+    async () => {
+      const { modules } = await fresh();
+      const proposed = await modules.officialSelection.propose.execute({
+        actorId: HOME_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: HOME,
+        selections: slot("m-1"),
+        expectedVersion: 0,
+        commandKey: "legacy-propose",
+      });
+      if (!proposed.isOk()) throw new Error("propose failed");
+      const selection = proposed.value.selection;
+      const proposalId = "legacy-proposal-sensitive";
+      const disputeId = "legacy-dispute-sensitive";
+      const actionId = "legacy-action-sensitive";
+      const phoneReason = "Marcador incorrecto; llamar +1-555-0100";
+      const emailReason = "Avisar a arbitro@example.com sobre el marcador";
+      const fingerprint = `reject|${AWAY}|${proposalId}|1|${phoneReason}`;
+      const occurredAt = new Date("2026-09-15T01:02:03.000Z");
+
+      await isolated.pool.query(
+        `INSERT INTO official_selection_proposals (
+           id, selection_id, organization_id, competition_id, encounter_id, round, sequence,
+           proposing_team_id, proposed_by_actor_id, slots, supersedes_proposal_id, reason, created_at
+         ) VALUES ($1, $2, $3, $4, $5, 1, 2, $6, $7, $8::jsonb, $9, $10, $11)`,
+        [
+          proposalId,
+          selection.id,
+          ORG,
+          COMPETITION,
+          ENCOUNTER,
+          HOME,
+          HOME_CAPTAIN,
+          JSON.stringify(slot("m-1")),
+          proposed.value.proposal!.id,
+          emailReason,
+          occurredAt.toISOString(),
+        ],
+      );
+      await isolated.pool.query(
+        `INSERT INTO match_disputes (
+           id, selection_id, organization_id, competition_id, encounter_id, status,
+           opened_by_actor_id, opened_by_team_id, opened_reason, opened_at
+         ) VALUES ($1, $2, $3, $4, $5, 'open', $6, $7, $8, $9)`,
+        [
+          disputeId,
+          selection.id,
+          ORG,
+          COMPETITION,
+          ENCOUNTER,
+          AWAY_CAPTAIN,
+          AWAY,
+          emailReason,
+          occurredAt.toISOString(),
+        ],
+      );
+      await isolated.pool.query(
+        `INSERT INTO official_selection_actions (
+           id, selection_id, proposal_id, organization_id, competition_id, encounter_id,
+           action_type, from_status, to_status, version_before, version_after, actor_id, team_id,
+           capacity, reason, command_key, request_fingerprint, details, occurred_at
+         ) VALUES (
+           $1, $2, $3, $4, $5, $6, 'rejected', 'awaiting_opponent_confirmation', 'disputed',
+           1, 2, $7, $8, 'team', $9, 'legacy-reject', $10, $11::jsonb, $12
+         )`,
+        [
+          actionId,
+          selection.id,
+          proposalId,
+          ORG,
+          COMPETITION,
+          ENCOUNTER,
+          AWAY_CAPTAIN,
+          AWAY,
+          phoneReason,
+          fingerprint,
+          JSON.stringify({ disputeId }),
+          occurredAt.toISOString(),
+        ],
+      );
+
+      const readOriginalRows = () =>
+        isolated.pool.query(
+          `SELECT
+           (SELECT to_jsonb(p) FROM official_selection_proposals p WHERE id = $1) AS proposal,
+           (SELECT to_jsonb(a) FROM official_selection_actions a WHERE id = $2) AS action,
+           (SELECT to_jsonb(d) FROM match_disputes d WHERE id = $3) AS dispute`,
+          [proposalId, actionId, disputeId],
+        );
+      const before = await readOriginalRows();
+
+      const view = await modules.officialSelection.get.execute({
+        actorId: OPERATOR,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+      });
+      if (!view.isOk()) throw new Error("view failed");
+      const viewedProposal = view.value.proposals.find((row) => row.id === proposalId);
+      const viewedAction = view.value.actions.find((row) => row.id === actionId);
+      const viewedDispute = view.value.disputes.find((row) => row.id === disputeId);
+      expect(viewedProposal?.reason).toBe("Avisar a [REDACTED] sobre el marcador");
+      expect(viewedProposal).toMatchObject({
+        id: proposalId,
+        proposedByActorId: HOME_CAPTAIN,
+        sequence: 2,
+        createdAt: occurredAt,
+      });
+      expect(viewedAction).toMatchObject({
+        actorId: AWAY_CAPTAIN,
+        versionBefore: 1,
+        versionAfter: 2,
+        reason: "Marcador incorrecto; llamar [REDACTED]",
+        requestFingerprint: null,
+        occurredAt,
+      });
+      expect(viewedDispute?.openedReason).toBe("Avisar a [REDACTED] sobre el marcador");
+      expect(viewedDispute).toMatchObject({
+        id: disputeId,
+        openedByActorId: AWAY_CAPTAIN,
+        openedAt: occurredAt,
+      });
+
+      const replay = await modules.officialSelection.reject.execute({
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        proposalId,
+        expectedVersion: 1,
+        reason: phoneReason,
+        commandKey: "legacy-reject",
+      });
+      if (!replay.isOk()) throw new Error(`replay failed: ${replay.error.code}`);
+      expect(replay.value.replayed).toBe(true);
+      expect(replay.value.proposal?.reason).toBe("Avisar a [REDACTED] sobre el marcador");
+      expect(replay.value.actions[0]).toMatchObject({
+        id: actionId,
+        reason: "Marcador incorrecto; llamar [REDACTED]",
+        requestFingerprint: null,
+        occurredAt,
+      });
+      expect(replay.value.dispute?.openedReason).toBe("Avisar a [REDACTED] sobre el marcador");
+
+      const changed = await modules.officialSelection.reject.execute({
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        proposalId,
+        expectedVersion: 1,
+        reason: "Marcador incorrecto; llamar +1-555-0101",
+        commandKey: "legacy-reject",
+      });
+      expect(changed.isErr() && changed.error.code).toBe("results.command_key_reused");
+      expect(await count("official_selection_actions")).toBe(2);
+      expect(await count("official_selection_proposals")).toBe(2);
+      expect(await count("match_disputes")).toBe(1);
+      expect((await readOriginalRows()).rows).toEqual(before.rows);
+
+      const original = await isolated.pool.query(
+        `SELECT
+           (SELECT reason FROM official_selection_proposals WHERE id = $1) AS proposal_reason,
+           (SELECT reason FROM official_selection_actions WHERE id = $2) AS action_reason,
+           (SELECT request_fingerprint FROM official_selection_actions WHERE id = $2) AS fingerprint,
+           (SELECT occurred_at FROM official_selection_actions WHERE id = $2) AS occurred_at,
+           (SELECT opened_reason FROM match_disputes WHERE id = $3) AS dispute_reason`,
+        [proposalId, actionId, disputeId],
+      );
+      expect(original.rows[0]).toEqual({
+        proposal_reason: emailReason,
+        action_reason: phoneReason,
+        fingerprint,
+        occurred_at: occurredAt,
+        dispute_reason: emailReason,
+      });
     },
     TEST_TIMEOUT_MS,
   );

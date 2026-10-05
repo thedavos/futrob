@@ -39,7 +39,10 @@ import {
   normalizeSlotSelection,
   selectionReferences,
 } from "../../domain/policies/slot-selection.ts";
-import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "../official-selection-output.ts";
 import {
   authorizeTeamActor,
   buildAction,
@@ -285,14 +288,16 @@ export class SelectOfficialMatchesUseCase {
         version: nextVersion,
       },
     });
-    return ok({
-      selection,
-      proposal,
-      actions: [action],
-      dispute: null,
-      approvedResult: null,
-      integrityFlags: [],
-      replayed: false,
-    });
+    return ok(
+      protectOfficialSelectionCommandOutput({
+        selection,
+        proposal,
+        actions: [action],
+        dispute: null,
+        approvedResult: null,
+        integrityFlags: [],
+        replayed: false,
+      }),
+    );
   }
 }

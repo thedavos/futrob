@@ -12,7 +12,10 @@ import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
 } from "../domain/ports/official-result.repository.ts";
-import type { OfficialSelectionCommandOutput } from "./official-selection-output.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "./official-selection-output.ts";
 import { versionConflict } from "./selection-command-support.ts";
 
 export type ReplayLookup =
@@ -74,7 +77,7 @@ export async function replayOutput(
   const resultId = actions.find((action) => action.officialResultId)?.officialResultId ?? null;
   const result = resultId ? await deps.results.findById(resultId) : null;
   const disputeId = actions.find((action) => action.details?.disputeId)?.details?.disputeId;
-  return {
+  return protectOfficialSelectionCommandOutput({
     selection: {
       ...current,
       status: last.toStatus ?? current.status,
@@ -90,7 +93,7 @@ export async function replayOutput(
     approvedResult: result ? { ...result, status: "approved" } : null,
     integrityFlags: actions.flatMap((action) => action.details?.integrityFlags ?? []),
     replayed: true,
-  };
+  });
 }
 
 /** Actions that put a dispute in the `open` state. */

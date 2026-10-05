@@ -26,7 +26,10 @@ import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
 } from "../../domain/ports/official-result.repository.ts";
-import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "../official-selection-output.ts";
 import {
   activeDispute,
   approvedGuard,
@@ -186,14 +189,16 @@ export class ReviewMatchDisputeUseCase {
       throw new Panic("Reviewing a dispute never acquires references");
     }
     const proposals = await this.deps.selections.listProposals(selection.id);
-    return ok({
-      selection: nextSelection,
-      proposal: proposals.find((row) => row.id === selection.currentProposalId) ?? null,
-      actions: [action],
-      dispute,
-      approvedResult: null,
-      integrityFlags: [],
-      replayed: false,
-    });
+    return ok(
+      protectOfficialSelectionCommandOutput({
+        selection: nextSelection,
+        proposal: proposals.find((row) => row.id === selection.currentProposalId) ?? null,
+        actions: [action],
+        dispute,
+        approvedResult: null,
+        integrityFlags: [],
+        replayed: false,
+      }),
+    );
   }
 }

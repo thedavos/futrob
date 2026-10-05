@@ -14,6 +14,7 @@ import {
 } from "@futrob/shared-kernel";
 import type { MatchDispute } from "../../domain/entities/match-dispute.ts";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
+import { redactAuditReason } from "../../domain/policies/audit-reason.ts";
 import { SelectionNotFound } from "../../domain/errors/official-result.errors.ts";
 import type { OpenMatchDisputeError } from "../../domain/errors/official-selection.errors.ts";
 import {
@@ -28,7 +29,10 @@ import type {
 import type { TeamRepresentationPort } from "../../domain/ports/team-representation.port.ts";
 import { RESULT_PERMISSION } from "../../domain/policies/result-permissions.ts";
 import { isUnderDispute } from "../../domain/policies/selection-transitions.ts";
-import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "../official-selection-output.ts";
 import {
   activeDispute,
   authorizeTeamActor,
@@ -113,6 +117,7 @@ export class OpenMatchDisputeUseCase {
       if (output) return ok(output);
     }
     if (reason.isErr()) return err(reason.error);
+    const auditReason = redactAuditReason(reason.value);
 
     const selection = await this.deps.selections.findLatestByEncounter(input.encounterId);
     if (!selection) {
@@ -127,15 +132,17 @@ export class OpenMatchDisputeUseCase {
     if (isUnderDispute(selection.status)) {
       const disputes = await this.deps.selections.listDisputes(selection.id);
       const proposals = await this.deps.selections.listProposals(selection.id);
-      return ok({
-        selection,
-        proposal: proposals.find((row) => row.id === selection.currentProposalId) ?? null,
-        actions: [],
-        dispute: activeDispute(disputes),
-        approvedResult: null,
-        integrityFlags: [],
-        replayed: true,
-      });
+      return ok(
+        protectOfficialSelectionCommandOutput({
+          selection,
+          proposal: proposals.find((row) => row.id === selection.currentProposalId) ?? null,
+          actions: [],
+          dispute: activeDispute(disputes),
+          approvedResult: null,
+          integrityFlags: [],
+          replayed: true,
+        }),
+      );
     }
     const approved = approvedGuard(selection, "open_dispute", input.encounterId);
     if (approved) return err(approved);
@@ -162,7 +169,7 @@ export class OpenMatchDisputeUseCase {
       status: "open",
       openedByActorId: input.actorId,
       openedByTeamId: input.actingTeamId,
-      openedReason: reason.value,
+      openedReason: auditReason,
       openedAt: now,
       reviewStartedByActorId: null,
       reviewStartedAt: null,
@@ -191,7 +198,7 @@ export class OpenMatchDisputeUseCase {
         toStatus: "disputed",
         versionBefore: selection.version,
         versionAfter: nextVersion,
-        reason: reason.value,
+        reason: auditReason,
         details: { disputeId: dispute.id },
         occurredAt: now,
       },
@@ -230,14 +237,16 @@ export class OpenMatchDisputeUseCase {
       },
     });
     const proposals = await this.deps.selections.listProposals(selection.id);
-    return ok({
-      selection: nextSelection,
-      proposal: proposals.find((row) => row.id === selection.currentProposalId) ?? null,
-      actions: [action],
-      dispute,
-      approvedResult: null,
-      integrityFlags: [],
-      replayed: false,
-    });
+    return ok(
+      protectOfficialSelectionCommandOutput({
+        selection: nextSelection,
+        proposal: proposals.find((row) => row.id === selection.currentProposalId) ?? null,
+        actions: [action],
+        dispute,
+        approvedResult: null,
+        integrityFlags: [],
+        replayed: false,
+      }),
+    );
   }
 }
