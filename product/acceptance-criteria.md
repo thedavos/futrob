@@ -255,6 +255,28 @@ El recorrido operativo autenticado debe poder completarse tanto desde `apps/web`
 - **cuando** se intenta usarlo en otro OfficialMatch,
 - **entonces** la operación falla y queda auditada.
 
+### AC-SEL-004 — Plazo de confirmación rival sin aprobación por silencio
+
+**Cubre:** FTR-SEL-001, DEC-021, NFR-02.
+
+**Estado:** validado el 2026-10-05 con la alternativa A de
+[DEC-021](/product/open-decisions.md#31-dec-021--vencimiento-de-la-confirmación-rival): `D` es la creación de la
+propuesta más 24 horas. Las salidas exactas son las de la columna A de los vectores V21-01…V21-19.
+
+- **Dado** una propuesta con deadline `D` guardado en UTC,
+- **cuando** el rival confirma o envía una alternativa equivalente en `t < D` según el reloj de la API,
+- **entonces** el comando tiene el mismo efecto que hoy: aprueba si no hay flags bloqueantes o pasa a revisión
+  si los hay;
+- **y cuando** cualquier respuesta de Team a esa propuesta llega en `t = D` o después, aunque el vencimiento
+  aún no se haya procesado,
+- **entonces** falla sin cambio de estado, sin `OfficialResult` y sin contribución a estadísticas;
+- **y cuando** se procesa el vencimiento de una propuesta sin respuesta con reloj `≥ D`,
+- **entonces** la selección pasa a revisión del organizador con una sola acción de vencimiento, conserva la
+  propuesta y sus referencias, y no existe resultado oficial ni proyección. Repetir el proceso no añade
+  acciones.
+
+El plazo de DEC-021 no comparte regla, constante ni job con la expiración de reprogramaciones (DEC-032).
+
 ## 9. Rankings, analytics y notificaciones
 
 ### AC-RNK-001 — Tabla vs ranking de rendimiento
