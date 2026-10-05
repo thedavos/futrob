@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { MobileLanguage } from "@/modules/identity/mobile-copy";
@@ -23,7 +24,10 @@ function competitionRoute(organizationId: string, competitionId: string): string
   return `/orgs/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}`;
 }
 
-/** Personal home on `/player`. The club comes only from an explicit `club` route param. */
+/**
+ * Personal home on `/player`. The `club` route param selects the club; without it the first
+ * associated club becomes the selection (FTR-PLAYER-006), written back to the route.
+ */
 export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
   const router = useRouter();
   const { club } = useLocalSearchParams<{ club?: string }>();
@@ -33,8 +37,15 @@ export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
   });
   const open = (route: string) => router.push(nativeRoute(route));
   const selectClub = (externalClubId: string) => router.setParams({ club: externalClubId });
+  const clubs =
+    home.snapshot?.profile.kind === "ready" ? home.snapshot.profile.data.externalClubs : [];
+  const initialClub = club ? undefined : clubs[0]?.externalClubId;
 
-  if (!home.snapshot) {
+  useEffect(() => {
+    if (initialClub) router.setParams({ club: initialClub });
+  }, [initialClub, router]);
+
+  if (!home.snapshot || initialClub) {
     return home.failed && !home.loading ? (
       <EmptyState
         title={copy.loadFailedTitle}
@@ -52,8 +63,6 @@ export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
   }
 
   const model = resolvePlayerHome(home.snapshot);
-  const clubs =
-    home.snapshot.profile.kind === "ready" ? home.snapshot.profile.data.externalClubs : [];
   const slot = { copy, language, retry: home.retry, refreshing: home.loading };
 
   return (

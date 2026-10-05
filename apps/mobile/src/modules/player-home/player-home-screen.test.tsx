@@ -111,15 +111,13 @@ describe("player home on /player", () => {
     const user = userEvent.setup();
     renderApp("/");
 
-    await user.click(await screen.findByRole("button", { name: "Cuervos FC1" }));
-
     const fixture = await screen.findByRole("heading", { name: "Tu próximo enfrentamiento" });
     const hero = within(fixture.parentElement!);
     expect(hero.getByText("Cuervos FC1")).toBeInTheDocument();
     expect(hero.getByText("Tigres FC")).toBeInTheDocument();
     expect(hero.getByText("jue, 1 oct, 21:00")).toBeInTheDocument();
     expect(hero.getByText("Liga Futrob · Jornada 4")).toBeInTheDocument();
-    expect(currentLocation()?.pathname).toBe("/player");
+    expect(currentLocation()).toEqual({ pathname: "/player", params: { club: "club-cuervos" } });
   });
 
   it("shows the no-fixture state while keeping the last match and other healthy sections", async () => {
@@ -163,18 +161,15 @@ describe("player home on /player", () => {
     expect(screen.queryByText("No se pudo cargar")).toBeNull();
   });
 
-  it("asks for a club without one and never labels club B data as club A", async () => {
+  it("starts with the first associated club and never labels club B data as club A", async () => {
     const api = playerApi();
     const user = userEvent.setup();
     renderApp("/player");
 
-    expect(await screen.findByRole("heading", { name: "Selecciona un club" })).toBeInTheDocument();
-    expect(screen.queryByText(/^Tu actividad con/)).toBeNull();
-    expect(screen.queryByText("6 – 0")).toBeNull();
-
-    await user.click(screen.getByRole("button", { name: "Cuervos FC1" }));
     expect(await screen.findByText("Tu actividad con Cuervos FC1")).toBeInTheDocument();
+    expect(currentLocation()?.params).toEqual({ club: "club-cuervos" });
     expect(section("Último partido").getByText("6 – 0")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Selecciona un club" })).toBeNull();
 
     const maderas = Promise.withResolvers<Response>();
     const served = api.routes["/players/me/recent-matches"]!;
@@ -189,6 +184,27 @@ describe("player home on /player", () => {
     expect(await screen.findByText("Tu actividad con MADERAS FC")).toBeInTheDocument();
     expect(section("Último partido").getByText("2 – 1")).toBeInTheDocument();
     expect(screen.queryByText("6 – 0")).toBeNull();
+  });
+
+  it("keeps an explicit club that is not associated instead of falling back to the first", async () => {
+    playerApi();
+    renderApp("/player?club=club-unknown");
+
+    expect(
+      await screen.findByRole("heading", { name: "Ese club no está asociado a tu perfil" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^Tu actividad con/)).toBeNull();
+    expect(screen.queryByText("6 – 0")).toBeNull();
+  });
+
+  it("asks for a club when the profile has none associated", async () => {
+    const api = playerApi();
+    api.routes["/players/me"] = json({ ...profile, externalClubs: [] });
+    renderApp("/player");
+
+    expect(await screen.findByRole("heading", { name: "Selecciona un club" })).toBeInTheDocument();
+    expect(screen.queryByText(/^Tu actividad con/)).toBeNull();
+    expect(currentLocation()?.params).toEqual({});
   });
 
   it("shows the home for a 200 session and keeps the stored session", async () => {
