@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { FutrobApiError } from "@futrob/sdk";
+import { getFutrobClient } from "@/modules/api/futrob-client";
 import { loadPlayerHome } from "./load-player-home";
 import type { PlayerHomeSnapshot } from "./player-home-model";
 
@@ -10,10 +11,18 @@ type PlayerHomeLoad = {
 };
 
 /**
- * Loads the six-source snapshot for one explicit club. A retry keeps the current snapshot on
- * screen until the next one settles; a club change never presents the previous club's data.
+ * Loads the six-source snapshot for one club. Without a club, the profile is read first and its
+ * first association is handed to `onInitialClub`, so the snapshot loads once, for that club.
+ * A retry keeps the current snapshot on screen until the next one settles; a club change never
+ * presents the previous club's data.
  */
-export function usePlayerHome(externalClubId: string | undefined, onUnauthorized: () => void) {
+export function usePlayerHome(
+  externalClubId: string | undefined,
+  {
+    onInitialClub,
+    onUnauthorized,
+  }: { onInitialClub: (id: string) => void; onUnauthorized: () => void },
+) {
   const [load, setLoad] = useState<PlayerHomeLoad>({
     snapshot: null,
     loading: true,
@@ -24,9 +33,13 @@ export function usePlayerHome(externalClubId: string | undefined, onUnauthorized
   useEffect(() => {
     const controller = new AbortController();
     setLoad((current) => ({ ...current, loading: true }));
-    loadPlayerHome({ externalClubId, signal: controller.signal })
-      .then((snapshot) => {
-        if (!controller.signal.aborted) setLoad({ snapshot, loading: false, failed: false });
+    const signal = controller.signal;
+    initialClub(externalClubId, signal)
+      .then(async (initial) => {
+        if (signal.aborted) return;
+        if (initial) return onInitialClub(initial);
+        const snapshot = await loadPlayerHome({ externalClubId, signal });
+        if (!signal.aborted) setLoad({ snapshot, loading: false, failed: false });
       })
       .catch((caught) => {
         if (controller.signal.aborted) return;
@@ -42,4 +55,13 @@ export function usePlayerHome(externalClubId: string | undefined, onUnauthorized
   const snapshot = load.snapshot?.externalClubId === externalClubId ? load.snapshot : null;
   const retry = useCallback(() => setRevision((value) => value + 1), []);
   return { snapshot, loading: load.loading, failed: load.failed && !snapshot, retry };
+}
+
+async function initialClub(
+  externalClubId: string | undefined,
+  signal: AbortSignal,
+): Promise<string | undefined> {
+  if (externalClubId !== undefined) return undefined;
+  const profile = await getFutrobClient().players.getProfile({ signal });
+  return profile.externalClubs[0]?.externalClubId;
 }

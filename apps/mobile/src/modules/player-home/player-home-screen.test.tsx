@@ -186,6 +186,18 @@ describe("player home on /player", () => {
     expect(screen.queryByText("6 – 0")).toBeNull();
   });
 
+  it("loads the home snapshot once when entering without a club", async () => {
+    const api = playerApi();
+    renderApp("/player");
+
+    expect(await screen.findByText("Tu actividad con Cuervos FC1")).toBeInTheDocument();
+    const reads = (path: string) => api.requests.filter((request) => request.path === path);
+    expect(reads("/players/me/recent-matches")).toHaveLength(1);
+    expect(reads("/players/me/game-profile")).toHaveLength(1);
+    expect(reads("/players/me/next-encounter")).toHaveLength(1);
+    expect(reads("/players/me/roster-invitations")).toHaveLength(1);
+  });
+
   it("keeps an explicit club that is not associated instead of falling back to the first", async () => {
     playerApi();
     renderApp("/player?club=club-unknown");

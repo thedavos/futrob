@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { MobileLanguage } from "@/modules/identity/mobile-copy";
@@ -32,20 +31,14 @@ export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
   const router = useRouter();
   const { club } = useLocalSearchParams<{ club?: string }>();
   const copy = playerHomeCopy(language);
-  const home = usePlayerHome(club || undefined, () => {
-    void onProductUnauthorized(() => router.replace(LOGIN_ROUTE));
+  const home = usePlayerHome(club || undefined, {
+    onInitialClub: (externalClubId) => router.setParams({ club: externalClubId }),
+    onUnauthorized: () => void onProductUnauthorized(() => router.replace(LOGIN_ROUTE)),
   });
   const open = (route: string) => router.push(nativeRoute(route));
   const selectClub = (externalClubId: string) => router.setParams({ club: externalClubId });
-  const clubs =
-    home.snapshot?.profile.kind === "ready" ? home.snapshot.profile.data.externalClubs : [];
-  const initialClub = club ? undefined : clubs[0]?.externalClubId;
 
-  useEffect(() => {
-    if (initialClub) router.setParams({ club: initialClub });
-  }, [initialClub, router]);
-
-  if (!home.snapshot || initialClub) {
+  if (!home.snapshot) {
     return home.failed && !home.loading ? (
       <EmptyState
         title={copy.loadFailedTitle}
@@ -63,6 +56,8 @@ export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
   }
 
   const model = resolvePlayerHome(home.snapshot);
+  const clubs =
+    home.snapshot.profile.kind === "ready" ? home.snapshot.profile.data.externalClubs : [];
   const slot = { copy, language, retry: home.retry, refreshing: home.loading };
 
   return (
