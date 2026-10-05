@@ -198,6 +198,18 @@ describe("player home on /player", () => {
     expect(reads("/players/me/roster-invitations")).toHaveLength(1);
   });
 
+  it("keeps healthy sections when the profile fails on entry without a club", async () => {
+    const api = playerApi();
+    api.routes["/players/me"] = () => apiError(503);
+    renderApp("/player");
+
+    expect(await screen.findByText("2 invitaciones por responder")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Liga Futrob, Liga · En curso" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No pudimos cargar tu inicio")).toBeNull();
+  });
+
   it("keeps an explicit club that is not associated instead of falling back to the first", async () => {
     playerApi();
     renderApp("/player?club=club-unknown");
@@ -227,15 +239,18 @@ describe("player home on /player", () => {
     expect(await getSession()).toMatchObject({ token: "session-token" });
   });
 
-  it("clears the session and shows login when the home answers 401", async () => {
-    const api = playerApi();
-    api.routes["/players/me"] = () => apiError(401);
-    renderApp("/player?club=club-cuervos");
+  it.each(["/player?club=club-cuervos", "/player"])(
+    "clears the session and shows login when the home answers 401 (%s)",
+    async (href) => {
+      const api = playerApi();
+      api.routes["/players/me"] = () => apiError(401);
+      renderApp(href);
 
-    expect(await screen.findByText("Bienvenido de nuevo")).toBeInTheDocument();
-    expect(screen.queryByText("Tu actividad con Cuervos FC1")).toBeNull();
-    expect(await getSession()).toBeNull();
-  });
+      expect(await screen.findByText("Bienvenido de nuevo")).toBeInTheDocument();
+      expect(screen.queryByText("Tu actividad con Cuervos FC1")).toBeNull();
+      expect(await getSession()).toBeNull();
+    },
+  );
 
   it("opens an implemented competition screen from the home", async () => {
     playerApi();

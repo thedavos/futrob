@@ -62,6 +62,12 @@ async function initialClub(
   signal: AbortSignal,
 ): Promise<string | undefined> {
   if (externalClubId !== undefined) return undefined;
-  const profile = await getFutrobClient().players.getProfile({ signal });
-  return profile.externalClubs[0]?.externalClubId;
+  try {
+    const profile = await getFutrobClient().players.getProfile({ signal });
+    return profile.externalClubs[0]?.externalClubId;
+  } catch (error) {
+    if (signal.aborted || (error instanceof FutrobApiError && error.status === 401)) throw error;
+    // The snapshot reads the profile again and reports its failure per section.
+    return undefined;
+  }
 }
