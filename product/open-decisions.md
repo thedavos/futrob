@@ -31,27 +31,27 @@
 
 ## 3. Selección oficial y confirmación
 
-| ID      | Decisión pendiente                  | Default recomendado                                                                                                                                                                                 | Motivo                                                                                                                                      |
-| ------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| DEC-020 | Quién inicia la selección           | Cualquiera de los dos capitanes (o subcapitán autorizado).                                                                                                                                          | Evita deadlock si el “local” no actúa.                                                                                                      |
-| DEC-021 | Tiempo máximo de confirmación rival | **Pendiente de validación ([§3.1](#31-dec-021--vencimiento-de-la-confirmación-rival)).** Recomendación: 24 horas desde la propuesta, sin depender del inicio programado. El silencio nunca aprueba. | El default anterior («o hasta el inicio programado si ocurre antes») hace nacer vencida toda propuesta, porque se propone después de jugar. |
-| DEC-022 | Auto-aprobación                     | Si ambos capitanes confirman la misma selección y no hay flags de integridad, auto-aprobar.                                                                                                         | Reduce carga del organizador.                                                                                                               |
-| DEC-023 | Ventana temporal de candidatos      | ±6 horas alrededor de cada OfficialMatch programado, configurable por competición (1–24 h).                                                                                                         | Cubre jornadas densas sin mezclar días enteros por defecto.                                                                                 |
-| DEC-024 | Candidatos previos tras reprogramar | Se conservan; se recalcula elegibilidad/ventana con el nuevo horario.                                                                                                                               | No perder evidencia de sync.                                                                                                                |
-| DEC-025 | Partidos no seleccionados           | Permanecen para analíticas privadas/contexto; no afectan competición.                                                                                                                               | Separación oficial vs contextual.                                                                                                           |
-| DEC-026 | Unicidad de referencias externas    | Una referencia `(providerKey, externalId)` pertenece a una sola selección en todo el sistema, entre organizaciones; se libera al devolver el caso a selección o anular.                             | Un partido del proveedor no debe contar en dos competiciones. Decidido en implementación; pendiente de validación de producto.              |
-| DEC-027 | Flags de integridad bloqueantes     | `provider_data_incomplete` y `provider_match_disconnected` envían el acuerdo a revisión del organizador; elegibilidad y unicidad no son flags ni se pueden omitir.                                  | Concreta DEC-022. Decidido en implementación; pendiente de validación de producto.                                                          |
+| ID      | Decisión pendiente                  | Default recomendado                                                                                                                                                                                                            | Motivo                                                                                                                                      |
+| ------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| DEC-020 | Quién inicia la selección           | Cualquiera de los dos capitanes (o subcapitán autorizado).                                                                                                                                                                     | Evita deadlock si el “local” no actúa.                                                                                                      |
+| DEC-021 | Tiempo máximo de confirmación rival | **Validada el 2026-10-05 ([§3.1](#31-dec-021--vencimiento-de-la-confirmación-rival)).** 24 horas desde la propuesta, sin depender del inicio programado. Al vencer pasa a revisión del organizador. El silencio nunca aprueba. | El default anterior («o hasta el inicio programado si ocurre antes») hace nacer vencida toda propuesta, porque se propone después de jugar. |
+| DEC-022 | Auto-aprobación                     | Si ambos capitanes confirman la misma selección y no hay flags de integridad, auto-aprobar.                                                                                                                                    | Reduce carga del organizador.                                                                                                               |
+| DEC-023 | Ventana temporal de candidatos      | ±6 horas alrededor de cada OfficialMatch programado, configurable por competición (1–24 h).                                                                                                                                    | Cubre jornadas densas sin mezclar días enteros por defecto.                                                                                 |
+| DEC-024 | Candidatos previos tras reprogramar | Se conservan; se recalcula elegibilidad/ventana con el nuevo horario.                                                                                                                                                          | No perder evidencia de sync.                                                                                                                |
+| DEC-025 | Partidos no seleccionados           | Permanecen para analíticas privadas/contexto; no afectan competición.                                                                                                                                                          | Separación oficial vs contextual.                                                                                                           |
+| DEC-026 | Unicidad de referencias externas    | Una referencia `(providerKey, externalId)` pertenece a una sola selección en todo el sistema, entre organizaciones; se libera al devolver el caso a selección o anular.                                                        | Un partido del proveedor no debe contar en dos competiciones. Decidido en implementación; pendiente de validación de producto.              |
+| DEC-027 | Flags de integridad bloqueantes     | `provider_data_incomplete` y `provider_match_disconnected` envían el acuerdo a revisión del organizador; elegibilidad y unicidad no son flags ni se pueden omitir.                                                             | Concreta DEC-022. Decidido en implementación; pendiente de validación de producto.                                                          |
 
 ### 3.1 DEC-021 — Vencimiento de la confirmación rival
 
-| Estado                | Contenido                                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Propuesta**         | Dos alternativas: **A**, 24 horas desde la propuesta; **B**, un límite competitivo explícito por Encounter.                          |
-| **Recomendación**     | **A** para el MVP. B queda como extensión cuando competitions modele un cierre de resultados.                                        |
-| **Decisión validada** | **Ninguna.** Pendiente de validación explícita del responsable de producto en [#129](https://github.com/thedavos/futrob/issues/129). |
-| **Runtime**           | Bloqueado. [#130](https://github.com/thedavos/futrob/issues/130) no implementa vencimiento hasta que exista la decisión validada.    |
+| Estado                | Contenido                                                                                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Propuesta**         | Dos alternativas: **A**, 24 horas desde la propuesta; **B**, un límite competitivo explícito por Encounter.                                                |
+| **Recomendación**     | **A** para el MVP. B queda como extensión cuando competitions modele un cierre de resultados.                                                              |
+| **Decisión validada** | **A**, con la regla común de esta sección. Validada por el responsable de producto el 2026-10-05 en [#129](https://github.com/thedavos/futrob/issues/129). |
+| **Runtime**           | Desbloqueado. [#130](https://github.com/thedavos/futrob/issues/130) implementa A con los vectores de la columna A.                                         |
 
-Hasta la validación, el código no aplica plazo: una propuesta sin respuesta sigue en
+Hasta que #130 lo implemente, el código no aplica plazo: una propuesta sin respuesta sigue en
 `awaiting_opponent_confirmation` y nunca se aprueba por silencio.
 
 **Por qué no sirve el default anterior.** «24 horas o hasta el inicio programado si ocurre antes» compara con
@@ -61,7 +61,7 @@ alternativa.
 
 #### Alternativas
 
-| Aspecto                        | A: 24 h desde la propuesta (recomendada)                          | B: límite competitivo explícito `L`                                                       |
+| Aspecto                        | A: 24 h desde la propuesta (validada)                             | B: límite competitivo explícito `L`                                                       |
 | ------------------------------ | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Ancla                          | `createdAt` de la propuesta, del reloj de la API.                 | Instante `L` configurado para el Encounter (cierre de resultados).                        |
 | Duración                       | 24 horas exactas (86 400 000 ms), sin calendario ni zona horaria. | Ninguna: el plazo termina en `L`, cualquiera sea `createdAt`.                             |
@@ -80,8 +80,8 @@ Permite adoptar A ahora y añadir `L` después sin alargar plazos ya concedidos.
   después está fuera de plazo. `t` es el reloj de la API (`ClockPort`) al evaluar el comando, con precisión
   de milisegundo. No cuentan la hora del cliente, del BFF ni del runner.
 - **Respuestas afectadas.** Confirmar, alternativa equivalente, rechazar, alternativa incompatible y abrir
-  disputa sobre esa propuesta. Fuera de plazo todas fallan con un error estable (nombre propuesto
-  `results.confirmation_window_closed`), sin cambio de estado, sin `OfficialResult` y sin contribución a
+  disputa sobre esa propuesta. Fuera de plazo todas fallan con el error estable
+  `results.confirmation_window_closed`, sin cambio de estado, sin `OfficialResult` y sin contribución a
   estadísticas. La guardia rige aunque el vencimiento aún no se haya procesado.
 - **Confirmación tardía y alternativa equivalente.** Siguen exactamente la misma frontera. Una alternativa
   equivalente en `t < D` aprueba como una confirmación; en `t ≥ D` falla igual.
@@ -127,7 +127,7 @@ Salidas:
 - **Vence:** `organizer_review`, una acción `confirmation_expired` y cero `OfficialResult`.
 - **Pendiente:** sigue en `awaiting_opponent_confirmation` y no se registra ninguna acción.
 
-| ID     | Respuesta de B                                                       | Instante (UTC)             | A (recomendada)              | B-L1                         | B-L2                             |
+| ID     | Respuesta de B                                                       | Instante (UTC)             | A (validada)                 | B-L1                         | B-L2                             |
 | ------ | -------------------------------------------------------------------- | -------------------------- | ---------------------------- | ---------------------------- | -------------------------------- |
 | V21-01 | Confirma                                                             | `2026-10-04T11:59:59.999Z` | Aprueba                      | Aprueba                      | Aprueba                          |
 | V21-02 | Confirma                                                             | `2026-10-04T12:00:00.000Z` | Aprueba                      | Cerrada                      | Aprueba                          |
@@ -144,7 +144,7 @@ Salidas:
 
 Propuesta creada respecto del límite:
 
-| ID     | Caso                                                            | A (recomendada)                                               | B                                                                         |
+| ID     | Caso                                                            | A (validada)                                                  | B                                                                         |
 | ------ | --------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | V21-13 | `P1` creada después del kickoff (`P > K`)                       | `D = 2026-10-04T20:00:00.000Z`; el kickoff no influye.        | `D = L`; el kickoff no influye.                                           |
 | V21-14 | Límite anterior a la propuesta, `L0 = 2026-10-03T19:00:00.000Z` | No aplica.                                                    | `P1` nace vencida; confirmar en `2026-10-03T20:00:00.001Z` queda cerrada. |

@@ -114,10 +114,10 @@ se publican tras el commit pero no se entregan de forma durable. No hay outbox n
 - Disputa abierta por un Team sobre un resultado ya aprobado, sanciones, evidencias y notificaciones.
 - Consumidor que asocie candidatos (`associate`/`recalculate`) al sincronizar o reprogramar.
 
-## Vencimiento de la confirmación rival (DEC-021, propuesto)
+## Vencimiento de la confirmación rival (DEC-021)
 
-**Estado:** recomendación publicada, sin decisión validada. El runtime ([#130](https://github.com/thedavos/futrob/issues/130))
-sigue bloqueado. La comparación de alternativas y los vectores V21-01…V21-19 están en
+**Estado:** decisión validada el 2026-10-05: `D` = creación de la propuesta + 24 horas. El runtime
+([#130](https://github.com/thedavos/futrob/issues/130)) todavía no existe. La comparación de alternativas y los vectores V21-01…V21-19 están en
 [open-decisions §3.1](/product/open-decisions.md#31-dec-021--vencimiento-de-la-confirmación-rival).
 
 Forma de datos que la regla exige con cualquier alternativa:
@@ -131,8 +131,7 @@ Forma de datos que la regla exige con cualquier alternativa:
 | Efecto oficial              | Ninguno al vencer: sin `OfficialResult`, sin proyección y sin evento de aprobación.                                  |
 
 `organizer_review` ya acepta resolver sin disputa activa, igual que una confirmación con flag. Por eso la
-recomendación no añade un `SelectionStatus`. Si producto valida otro estado, la matriz de transiciones
-obliga a decidir sus comandos.
+decisión no añade un `SelectionStatus`.
 
 El kickoff (`EncounterReader.scheduledStartAt`) solo define la ventana de candidatos (DEC-023) y no es ancla
 del plazo. El TTL de reprogramación (DEC-032) pertenece a scheduling y no comparte código ni configuración.

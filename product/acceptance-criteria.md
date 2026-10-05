@@ -259,10 +259,9 @@ El recorrido operativo autenticado debe poder completarse tanto desde `apps/web`
 
 **Cubre:** FTR-SEL-001, DEC-021, NFR-02.
 
-**Estado:** propuesto. La frontera concreta depende de la alternativa que valide producto en
-[DEC-021](/product/open-decisions.md#31-dec-021--vencimiento-de-la-confirmación-rival); los vectores
-V21-01…V21-19 fijan las salidas de cada alternativa. Mientras no haya validación, no se implementa
-vencimiento.
+**Estado:** validado el 2026-10-05 con la alternativa A de
+[DEC-021](/product/open-decisions.md#31-dec-021--vencimiento-de-la-confirmación-rival): `D` es la creación de la
+propuesta más 24 horas. Las salidas exactas son las de la columna A de los vectores V21-01…V21-19.
 
 - **Dado** una propuesta con deadline `D` guardado en UTC,
 - **cuando** el rival confirma o envía una alternativa equivalente en `t < D` según el reloj de la API,
