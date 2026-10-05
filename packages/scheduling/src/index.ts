@@ -1,11 +1,23 @@
 export type { Encounter, OfficialMatchSlot } from "./domain/entities/encounter.ts";
 export {
   createInitialScheduleChangeRequest,
+  currentScheduleChangeProposal,
   type CreateInitialScheduleChangeRequestError,
   type CreateInitialScheduleChangeRequestInput,
   type ScheduleChangeRequest,
   type ScheduleChangeRequestStatus,
+  type ScheduleChangeTransition,
 } from "./domain/entities/schedule-change-request.ts";
+export type {
+  ScheduleChangeAuthority,
+  ScheduleChangeDecision,
+  ScheduleChangeDecisionKind,
+  ScheduleChangeResponder,
+} from "./domain/entities/schedule-change-decision.ts";
+export type {
+  ScheduleChangeCommandReceipt,
+  ScheduleChangeCommandType,
+} from "./domain/entities/schedule-change-command-receipt.ts";
 export {
   createScheduleChangeProposal,
   type CreateScheduleChangeProposalInput,
@@ -38,7 +50,10 @@ export type {
   CompetitionRescheduleRules,
   CompetitionRescheduleRulesPort,
 } from "./domain/ports/competition-reschedule-rules.port.ts";
-export type { ScheduleChangeRequestRepository } from "./domain/ports/schedule-change-request.repository.ts";
+export type {
+  ScheduleChangeCommitOutcome,
+  ScheduleChangeRequestRepository,
+} from "./domain/ports/schedule-change-request.repository.ts";
 export type { CompetitionTimeZonePort } from "./domain/ports/competition-time-zone.port.ts";
 export type { OfficialMatchRepository } from "./domain/ports/official-match.repository.ts";
 export type { EncounterMutationLockPort } from "./domain/ports/encounter-mutation-lock.port.ts";
@@ -76,6 +91,22 @@ export {
   type ListScheduleChangeRequestsError,
   type ListScheduleChangeRequestsInput,
 } from "./application/list-schedule-change-requests.use-case.ts";
+export {
+  AcceptScheduleChangeProposalUseCase,
+  type AcceptScheduleChangeProposalInput,
+} from "./application/accept-schedule-change-proposal.use-case.ts";
+export {
+  RejectScheduleChangeProposalUseCase,
+  type RejectScheduleChangeProposalInput,
+} from "./application/reject-schedule-change-proposal.use-case.ts";
+export {
+  CounterScheduleChangeProposalUseCase,
+  type CounterScheduleChangeProposalInput,
+} from "./application/counter-schedule-change-proposal.use-case.ts";
+export type {
+  ScheduleChangeCommandInput,
+  ScheduleChangeCommandOutput,
+} from "./application/schedule-change-command.ts";
 export { GetCompetitionFixtureUseCase } from "./application/get-competition-fixture.use-case.ts";
 export {
   EncounterScheduleAuthorizationForbidden,
@@ -111,7 +142,17 @@ export {
   ScheduleChangeRequestForbidden,
   ScheduleChangeRequestIdempotencyConflict,
   ScheduleChangeRequestNotFound,
+  ScheduleChangeApprovalNotConfigured,
+  ScheduleChangeAuthorityNotRequired,
+  ScheduleChangeConsentAlreadyRecorded,
+  ScheduleChangeProposalStale,
+  ScheduleChangeRequestClosed,
+  ScheduleChangeSelfResponseForbidden,
+  ScheduleChangeVersionConflict,
+  UnknownScheduleChangeRequest,
+  type CounterScheduleChangeProposalError,
   type CreateScheduleChangeRequestError,
+  type ScheduleChangeResponseError,
 } from "./domain/errors/schedule-change-request.errors.ts";
 export type { EncounterCreatedEvent } from "./domain/events/encounter-created.event.ts";
 export {
@@ -123,6 +164,7 @@ export {
   isKnockoutFixtureStageKind,
   selectRescheduleStageRules,
 } from "./domain/policies/select-reschedule-stage-rules.ts";
+export { requiredScheduleChangeAuthorities } from "./domain/policies/schedule-change-approval.ts";
 export type { CompetitionWallTime } from "./domain/policies/interpret-competition-wall-time.ts";
 export { replaceEncounter } from "./domain/policies/edit-fixture-encounter.ts";
 export {

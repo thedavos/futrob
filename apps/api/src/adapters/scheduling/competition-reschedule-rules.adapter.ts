@@ -35,11 +35,20 @@ export class CompetitionRescheduleRulesAdapter implements CompetitionRescheduleR
       stageKind: await this.stageKind(input.organizationId, input.competitionId, input.stageId),
     });
     if (!stage) {
-      return { allowRescheduling: false, maxReschedulesPerTeam: 0 };
+      return {
+        allowRescheduling: false,
+        maxReschedulesPerTeam: 0,
+        minimumNoticeHours: 0,
+        requiresOpponentApproval: true,
+        requiresOrganizerApproval: true,
+      };
     }
     return {
       allowRescheduling: stage.allowRescheduling,
       maxReschedulesPerTeam: stage.maxReschedulesPerTeam ?? UNLIMITED_RESCHEDULES,
+      minimumNoticeHours: stage.minimumRescheduleNoticeHours,
+      requiresOpponentApproval: stage.rescheduleRequiresOpponentApproval,
+      requiresOrganizerApproval: stage.rescheduleRequiresOrganizerApproval,
     };
   }
 

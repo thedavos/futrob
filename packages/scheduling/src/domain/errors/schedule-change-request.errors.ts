@@ -1,4 +1,6 @@
 import { TaggedError, type EncounterId, type Permission, type TeamId } from "@futrob/shared-kernel";
+import type { ScheduleChangeAuthority } from "../entities/schedule-change-decision.ts";
+import type { ScheduleChangeRequestStatus } from "../entities/schedule-change-request.ts";
 
 export class ScheduleChangeRequestNotFound extends TaggedError("ScheduleChangeRequestNotFound")<{
   code: "scheduling.schedule_change_encounter_not_found";
@@ -81,3 +83,80 @@ export type CreateScheduleChangeRequestError =
   | EncounterNotEditableForScheduleChange
   | ActiveScheduleChangeRequestExists
   | ScheduleChangeRequestIdempotencyConflict;
+
+export class UnknownScheduleChangeRequest extends TaggedError("UnknownScheduleChangeRequest")<{
+  code: "scheduling.schedule_change_request_not_found";
+  message: string;
+  requestId: string;
+}> {}
+
+export class ScheduleChangeRequestClosed extends TaggedError("ScheduleChangeRequestClosed")<{
+  code: "scheduling.schedule_change_request_closed";
+  message: string;
+  status: ScheduleChangeRequestStatus;
+}> {}
+
+export class ScheduleChangeVersionConflict extends TaggedError("ScheduleChangeVersionConflict")<{
+  code: "scheduling.schedule_change_version_conflict";
+  message: string;
+  expectedVersion: number;
+  currentVersion: number;
+}> {}
+
+export class ScheduleChangeProposalStale extends TaggedError("ScheduleChangeProposalStale")<{
+  code: "scheduling.schedule_change_proposal_stale";
+  message: string;
+  proposalId: string;
+  currentProposalId: string;
+}> {}
+
+export class ScheduleChangeSelfResponseForbidden extends TaggedError(
+  "ScheduleChangeSelfResponseForbidden",
+)<{
+  code: "scheduling.schedule_change_self_response_forbidden";
+  message: string;
+}> {}
+
+export class ScheduleChangeAuthorityNotRequired extends TaggedError(
+  "ScheduleChangeAuthorityNotRequired",
+)<{
+  code: "scheduling.schedule_change_authority_not_required";
+  message: string;
+  authority: ScheduleChangeAuthority;
+}> {}
+
+export class ScheduleChangeConsentAlreadyRecorded extends TaggedError(
+  "ScheduleChangeConsentAlreadyRecorded",
+)<{
+  code: "scheduling.schedule_change_consent_already_recorded";
+  message: string;
+  proposalId: string;
+}> {}
+
+export class ScheduleChangeApprovalNotConfigured extends TaggedError(
+  "ScheduleChangeApprovalNotConfigured",
+)<{
+  code: "scheduling.schedule_change_approval_not_configured";
+  message: string;
+}> {}
+
+export type ScheduleChangeResponseError =
+  | ScheduleChangeRequestNotFound
+  | UnknownScheduleChangeRequest
+  | ScheduleChangeRequestForbidden
+  | InvalidScheduleChangeRequest
+  | ScheduleChangeRequestIdempotencyConflict
+  | ScheduleChangeRequestClosed
+  | ScheduleChangeVersionConflict
+  | ScheduleChangeProposalStale
+  | ScheduleChangeSelfResponseForbidden
+  | ScheduleChangeAuthorityNotRequired
+  | ScheduleChangeConsentAlreadyRecorded
+  | ScheduleChangeApprovalNotConfigured
+  | ReschedulingDisabled
+  | EncounterNotEditableForScheduleChange;
+
+export type CounterScheduleChangeProposalError =
+  | ScheduleChangeResponseError
+  | InvalidScheduleChangeDate
+  | InvalidScheduleChangeReason;

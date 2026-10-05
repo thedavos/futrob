@@ -34,6 +34,8 @@ export interface HttpClientOptions {
     | undefined
     | Promise<Record<string, string> | undefined>;
   readonly fetchImpl?: typeof fetch;
+  /** Generates `X-Request-ID` values. Defaults to Web Crypto, which Hermes does not provide. */
+  readonly createRequestId?: () => string;
   /** Default per-attempt timeout for every request. Disabled when omitted. */
   readonly timeoutMs?: number;
   /** Default retry budget for idempotent verbs (GET/PUT/DELETE). Disabled when omitted. */
@@ -69,6 +71,7 @@ export class HttpClient {
   private readonly getAccessToken?: HttpClientOptions["getAccessToken"];
   private readonly getExtraHeaders?: HttpClientOptions["getExtraHeaders"];
   private readonly fetchImpl: typeof fetch;
+  private readonly createRequestId: () => string;
   private readonly defaultTimeoutMs: number | undefined;
   private readonly defaultMaxRetries: number;
 
@@ -80,6 +83,7 @@ export class HttpClient {
     // "Illegal invocation" in browsers when called as `this.fetchImpl(...)`.
     const unbound = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
     this.fetchImpl = (input, init) => unbound(input, init);
+    this.createRequestId = options.createRequestId ?? (() => crypto.randomUUID());
     this.defaultTimeoutMs = options.timeoutMs;
     this.defaultMaxRetries = normalizeRetryBudget(options.maxRetries);
   }
@@ -162,7 +166,7 @@ export class HttpClient {
     if (input.requestId) {
       headerMap.set(REQUEST_ID_HEADER, input.requestId);
     } else if (!hasRequestIdHeader(headerMap)) {
-      headerMap.set(REQUEST_ID_HEADER, crypto.randomUUID());
+      headerMap.set(REQUEST_ID_HEADER, this.createRequestId());
     }
 
     if (input.body !== undefined) {

@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
-import type {
-  CompetitionDto,
-  GetMyPlayerProfileResponse,
-  MembershipSummaryDto,
-} from "@futrob/api-contracts";
+import type { CompetitionDto, MembershipSummaryDto } from "@futrob/api-contracts";
 import { FutrobApiError } from "@futrob/sdk";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { GateBoundary } from "@/modules/identity/gate-boundary";
@@ -13,6 +9,7 @@ import { logout } from "@/modules/identity/session-lifecycle";
 import { LOGIN_ROUTE } from "@/modules/identity/session-gate";
 import { useMobileCopy } from "@/modules/identity/mobile-copy";
 import { nativeRoute } from "@/modules/identity/native-route";
+import { PlayerHomeScreen } from "@/modules/player-home/player-home-screen";
 import { Button, EmptyState, Logo, Screen, Text } from "@/ui";
 import { theme } from "@/theme/theme";
 import {
@@ -29,7 +26,6 @@ type Destination =
   | { kind: "competition"; organizationId: string; competitionId: string; setup?: boolean };
 
 type DestinationData = {
-  profile: GetMyPlayerProfileResponse | null;
   memberships: readonly MembershipSummaryDto[];
   competitions: readonly CompetitionDto[];
   permissions: ReadonlySet<string>;
@@ -38,8 +34,7 @@ type DestinationData = {
 
 async function loadDestination(destination: Destination): Promise<DestinationData> {
   const client = getFutrobClient();
-  const [profile, mine, competitions] = await Promise.all([
-    client.players.getProfile(),
+  const [mine, competitions] = await Promise.all([
     client.organizations.listMine(),
     client.competitions.listMine(),
   ]);
@@ -47,7 +42,6 @@ async function loadDestination(destination: Destination): Promise<DestinationDat
   try {
     const access = await client.authorization.getEffectiveAccess(scope, SHELL_PERMISSIONS);
     return {
-      profile,
       memberships: mine.memberships,
       competitions: competitions.competitions.map((entry) => entry.competition),
       permissions: allowedPermissionSet(access),
@@ -56,7 +50,6 @@ async function loadDestination(destination: Destination): Promise<DestinationDat
   } catch (error) {
     if (error instanceof FutrobApiError && error.status === 401) throw error;
     return {
-      profile,
       memberships: mine.memberships,
       competitions: competitions.competitions.map((entry) => entry.competition),
       permissions: new Set(),
@@ -131,29 +124,7 @@ export function NativeDestination({ destination }: { destination: Destination })
           ) : (
             <>
               {destination.kind === "player" ? (
-                <>
-                  <Text role="heading" accessibilityRole="header">
-                    {label("Mi espacio", "My space")}
-                  </Text>
-                  {data.profile?.profile ? (
-                    <>
-                      <Text>
-                        {label("Cuentas de juego", "Game accounts")}:{" "}
-                        {data.profile.gameAccounts.length}
-                      </Text>
-                      <Text>
-                        {label("Clubes EA", "EA clubs")}: {data.profile.externalClubs.length}
-                      </Text>
-                      {data.profile.externalClubs.map((club) => (
-                        <Text key={`${club.providerKey}:${club.externalClubId}`}>
-                          {club.externalClubName}
-                        </Text>
-                      ))}
-                    </>
-                  ) : (
-                    <EmptyState title={label("Perfil no disponible", "Profile unavailable")} />
-                  )}
-                </>
+                <PlayerHomeScreen language={language} />
               ) : destination.kind === "picker" ? (
                 <>
                   <Text role="heading" accessibilityRole="header">

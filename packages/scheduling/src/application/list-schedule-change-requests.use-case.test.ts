@@ -46,6 +46,8 @@ function request(
     requestingTeamId: homeTeamId,
     initiatedByActorId: actorId,
     scope: { type: "entire_encounter" },
+    version: 1,
+    decisions: [],
     proposals: [
       {
         id: `${overrides.id}-proposal`,
@@ -81,7 +83,7 @@ class FakeEncounters {
   }
 }
 
-class FakeRequests implements ScheduleChangeRequestRepository {
+class FakeRequests implements Pick<ScheduleChangeRequestRepository, "listByEncounter"> {
   constructor(readonly rows: ScheduleChangeRequest[]) {}
 
   async findByIdempotencyKey() {

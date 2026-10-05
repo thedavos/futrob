@@ -1,9 +1,30 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { FutrobApiError } from "./errors.ts";
 import { HttpClient } from "./http.ts";
 import type { HttpResponseBody } from "./wire-body.ts";
 
 describe("HttpClient request correlation", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("sends the configured request ID on runtimes without Web Crypto, such as Hermes", async () => {
+    vi.stubGlobal("crypto", undefined);
+    const sent: (string | null)[] = [];
+    const client = new HttpClient({
+      baseUrl: "https://api.futrob.test",
+      createRequestId: () => "7a1d3c52-9f0e-4b8a-a1c4-5d2e6f708192",
+      fetchImpl: async (_input, init) => {
+        sent.push(new Headers(init?.headers).get("X-Request-ID"));
+        return Response.json({ ok: true });
+      },
+    });
+
+    await client.request({ path: "/meta/ping", method: "GET", parse: (data) => data });
+
+    expect(sent).toEqual(["7a1d3c52-9f0e-4b8a-a1c4-5d2e6f708192"]);
+  });
+
   it("uses the response header when a legacy error body has no request ID", async () => {
     const requestId = "1f8c914e-a307-42aa-b2ea-ec6cfefaba83";
     const client = new HttpClient({

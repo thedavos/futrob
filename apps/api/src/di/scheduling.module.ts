@@ -1,10 +1,13 @@
 import {
+  AcceptScheduleChangeProposalUseCase,
+  CounterScheduleChangeProposalUseCase,
   CreateScheduleChangeRequestUseCase,
   EditFixtureEncounterUseCase,
   GenerateCompetitionFixtureUseCase,
   GetCompetitionFixtureUseCase,
   ListScheduleChangeRequestsUseCase,
   MaterializeOfficialMatchesForEncounterUseCase,
+  RejectScheduleChangeProposalUseCase,
   UpsertEncounterScheduleSnapshotUseCase,
   type EncounterMutationLockPort,
   type EncounterParticipantValidationPort,
@@ -81,6 +84,23 @@ export function createSchedulingModule(input: {
     input.officialResults,
     input.officialSelections,
   );
+  const rescheduleRules = new CompetitionRescheduleRulesAdapter({
+    competitions: input.competitions,
+    fixtures: fixturePlans,
+    requests: scheduleChangeRequests,
+  });
+  const timeZones = new CompetitionTimeZoneAdapter(input.competitions);
+  const negotiation = {
+    authorization: input.authorization,
+    clock,
+    editGuard,
+    encounters,
+    ids,
+    mutationLock: input.encounterMutationLock,
+    requests: scheduleChangeRequests,
+    rules: rescheduleRules,
+    transaction: input.transaction,
+  };
   return {
     encounters,
     encounterWindow,
@@ -120,13 +140,15 @@ export function createSchedulingModule(input: {
       ids,
       mutationLock: input.encounterMutationLock,
       requests: scheduleChangeRequests,
-      rules: new CompetitionRescheduleRulesAdapter({
-        competitions: input.competitions,
-        fixtures: fixturePlans,
-        requests: scheduleChangeRequests,
-      }),
-      timeZones: new CompetitionTimeZoneAdapter(input.competitions),
+      rules: rescheduleRules,
+      timeZones,
       transaction: input.transaction,
+    }),
+    acceptScheduleChangeProposal: new AcceptScheduleChangeProposalUseCase(negotiation),
+    rejectScheduleChangeProposal: new RejectScheduleChangeProposalUseCase(negotiation),
+    counterScheduleChangeProposal: new CounterScheduleChangeProposalUseCase({
+      ...negotiation,
+      timeZones,
     }),
     listScheduleChangeRequests: new ListScheduleChangeRequestsUseCase({
       authorization: input.authorization,

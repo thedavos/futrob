@@ -77,7 +77,7 @@ suite("migration runner", () => {
   );
 
   it(
-    "upgrades the 0046 schema with the team ranking and provider sync checkpoint migrations",
+    "upgrades the current 0046 schema with only the later migrations",
     async () => {
       await withSchema(async (client) => {
         for (const file of await migrationFiles(46)) {
@@ -86,6 +86,7 @@ suite("migration runner", () => {
         const upgraded = await runMigrations(client, { directory, baseline: 46 });
         expect(upgraded.applied).toEqual([
           "0047_team_performance_rankings.sql",
+          "0048_schedule_change_negotiation.sql",
           "0049_provider_sync_ingestion_checkpoint.sql",
         ]);
         expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
@@ -118,7 +119,10 @@ suite("migration runner", () => {
              'legacy-dedupe', 'legacy-request', 'queued', 0, 4, NOW(), NOW(), NOW())`,
         );
         const upgraded = await runMigrations(client, { directory, baseline: 47 });
-        expect(upgraded.applied).toEqual(["0049_provider_sync_ingestion_checkpoint.sql"]);
+        expect(upgraded.applied).toEqual([
+          "0048_schedule_change_negotiation.sql",
+          "0049_provider_sync_ingestion_checkpoint.sql",
+        ]);
         expect(
           (
             await client.query(

@@ -23,6 +23,8 @@ const request: ScheduleChangeRequest = {
   initiatedByActorId: asActorId("captain-1"),
   scope: { type: "entire_encounter" },
   status: "open",
+  version: 1,
+  decisions: [],
   proposals: [
     {
       id: "proposal-1",

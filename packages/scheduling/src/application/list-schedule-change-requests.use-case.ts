@@ -24,7 +24,7 @@ export class ListScheduleChangeRequestsUseCase {
     private readonly deps: {
       readonly authorization: AuthorizationPort;
       readonly encounters: EncounterScheduleRepository;
-      readonly requests: ScheduleChangeRequestRepository;
+      readonly requests: Pick<ScheduleChangeRequestRepository, "listByEncounter">;
     },
   ) {}
 

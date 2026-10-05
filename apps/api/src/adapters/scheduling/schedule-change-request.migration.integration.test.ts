@@ -331,6 +331,8 @@ function adapterRequest(input: {
     initiatedByActorId: actorId,
     scope: { type: "entire_encounter" },
     status: "open",
+    version: 1,
+    decisions: [],
     proposals: [
       {
         id: `${input.id}-proposal`,
