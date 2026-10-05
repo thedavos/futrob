@@ -31,8 +31,8 @@ suite("PostgresInvitationRepository.claimRedemption", () => {
         await seedActors(pool, "organizer", "same-actor");
         await pool.query(
           `INSERT INTO organizations (
-             id, name, normalized_name, created_at, created_by_actor_id
-           ) VALUES ('org-race', 'Race League', 'race league', NOW(), 'organizer')`,
+             id, name, normalized_name, slug, time_zone, created_at, created_by_actor_id
+           ) VALUES ('org-race', 'Race League', 'race league', 'race-league', 'America/Lima', NOW(), 'organizer')`,
         );
         await pool.query(
           `INSERT INTO organization_invitations (
