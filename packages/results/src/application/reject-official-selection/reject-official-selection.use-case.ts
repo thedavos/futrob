@@ -14,15 +14,21 @@ import {
 } from "@futrob/shared-kernel";
 import type { MatchDispute } from "../../domain/entities/match-dispute.ts";
 import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
+import { redactAuditReason } from "../../domain/policies/audit-reason.ts";
 import type { RejectOfficialSelectionError } from "../../domain/errors/official-selection.errors.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
+import type { SelectionCommandDigestPort } from "../../domain/ports/selection-command-digest.port.ts";
+import { commandFingerprint } from "../command-fingerprint.ts";
 import type {
   OfficialMatchSelectionRepository,
   OfficialResultRepository,
 } from "../../domain/ports/official-result.repository.ts";
 import type { TeamRepresentationPort } from "../../domain/ports/team-representation.port.ts";
-import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
-import { buildAction, commandFingerprint, requireReason } from "../selection-command-support.ts";
+import {
+  protectOfficialSelectionCommandOutput,
+  type OfficialSelectionCommandOutput,
+} from "../official-selection-output.ts";
+import { buildAction, requireReason } from "../selection-command-support.ts";
 import { conflictOrReplay } from "../selection-replay.ts";
 import { prepareTeamResponse } from "../team-response-support.ts";
 
@@ -46,6 +52,7 @@ export class RejectOfficialSelectionUseCase {
   constructor(
     private readonly deps: {
       readonly encounterReader: EncounterReaderPort;
+      readonly commandDigest: SelectionCommandDigestPort;
       readonly selections: OfficialMatchSelectionRepository;
       readonly results: Pick<OfficialResultRepository, "findById">;
       readonly teamRepresentation: TeamRepresentationPort;
@@ -60,13 +67,13 @@ export class RejectOfficialSelectionUseCase {
     input: RejectOfficialSelectionInput,
   ): Promise<Result<OfficialSelectionCommandOutput, RejectOfficialSelectionError>> {
     const reason = requireReason(input.reason, "reason");
-    const fingerprint = commandFingerprint([
-      "reject",
-      input.actingTeamId,
-      input.proposalId,
-      input.expectedVersion,
-      reason.isOk() ? reason.value : "",
-    ]);
+    const fingerprint = commandFingerprint(this.deps.commandDigest, input, {
+      type: "reject",
+      actingTeamId: input.actingTeamId,
+      proposalId: input.proposalId,
+      expectedVersion: input.expectedVersion,
+      reason: reason.isOk() ? reason.value : null,
+    });
     const prepared = await prepareTeamResponse(this.deps, {
       ...input,
       command: "reject",
@@ -75,6 +82,7 @@ export class RejectOfficialSelectionUseCase {
     if (prepared.isErr()) return err(prepared.error);
     if (prepared.value.kind === "replay") return ok(prepared.value.output);
     if (reason.isErr()) return err(reason.error);
+    const auditReason = redactAuditReason(reason.value);
 
     const { encounter, selection, proposal } = prepared.value;
     const now = this.deps.clock.now();
@@ -94,7 +102,7 @@ export class RejectOfficialSelectionUseCase {
       status: "open",
       openedByActorId: input.actorId,
       openedByTeamId: input.actingTeamId,
-      openedReason: reason.value,
+      openedReason: auditReason,
       openedAt: now,
       reviewStartedByActorId: null,
       reviewStartedAt: null,
@@ -123,7 +131,7 @@ export class RejectOfficialSelectionUseCase {
         toStatus: "disputed",
         versionBefore: selection.version,
         versionAfter: nextVersion,
-        reason: reason.value,
+        reason: auditReason,
         details: { disputeId: dispute.id },
         occurredAt: now,
       },
@@ -161,14 +169,16 @@ export class RejectOfficialSelectionUseCase {
         version: nextVersion,
       },
     });
-    return ok({
-      selection: nextSelection,
-      proposal,
-      actions: [action],
-      dispute,
-      approvedResult: null,
-      integrityFlags: [],
-      replayed: false,
-    });
+    return ok(
+      protectOfficialSelectionCommandOutput({
+        selection: nextSelection,
+        proposal,
+        actions: [action],
+        dispute,
+        approvedResult: null,
+        integrityFlags: [],
+        replayed: false,
+      }),
+    );
   }
 }

@@ -39,12 +39,13 @@ import type { EncounterScheduleSnapshot } from "../domain/ports/encounter-reader
 import type { ProviderMatchReaderPort } from "../domain/ports/provider-match-reader.port.ts";
 import type { TeamRepresentationPort } from "../domain/ports/team-representation.port.ts";
 import { integrityFlagsFor, type IntegrityFlag } from "../domain/policies/integrity-flags.ts";
+import { redactOptionalAuditReason } from "../domain/policies/audit-reason.ts";
 import { RESULT_PERMISSION } from "../domain/policies/result-permissions.ts";
 import {
   canApplySelectionCommand,
   type SelectionCommand,
 } from "../domain/policies/selection-transitions.ts";
-import { slotSelectionKey } from "../domain/policies/slot-selection.ts";
+import type { CommandFingerprint } from "./command-fingerprint.ts";
 
 export type SelectionActor =
   | { readonly capacity: "team"; readonly actorId: ActorId; readonly teamId: TeamId }
@@ -68,20 +69,6 @@ export function requireReason(
       message: `A reason is required (${field})`,
     }),
   );
-}
-
-/** Stable text describing what a command asked for; a replay must match it exactly. */
-export function commandFingerprint(parts: ReadonlyArray<string | number | null>): string {
-  return parts.map((part) => (part === null ? "-" : String(part))).join("|");
-}
-
-export function rawSlotsKey(
-  selections: ReadonlyArray<{
-    readonly officialSlot: 1 | 2;
-    readonly providerMatchRef: ExternalReference;
-  }>,
-): string {
-  return slotSelectionKey(selections);
 }
 
 /** The Team must play the Encounter, be represented by the actor and be allowed by policy. */
@@ -214,7 +201,7 @@ export interface ActionFactoryContext {
   readonly encounterId: EncounterId;
   readonly actor: SelectionActor;
   readonly commandKey: string | null;
-  readonly fingerprint: string | null;
+  readonly fingerprint: CommandFingerprint | null;
 }
 
 export function buildAction(
@@ -251,9 +238,9 @@ export function buildAction(
     actorId: context.actor.actorId,
     teamId: context.actor.capacity === "team" ? context.actor.teamId : null,
     capacity: input.capacity ?? context.actor.capacity,
-    reason: input.reason ?? null,
+    reason: redactOptionalAuditReason(input.reason ?? null),
     commandKey: input.commandKey === undefined ? context.commandKey : input.commandKey,
-    requestFingerprint: input.commandKey === null ? null : context.fingerprint,
+    requestFingerprint: input.commandKey === null ? null : (context.fingerprint?.opaque ?? null),
     officialResultId: input.officialResultId ?? null,
     details: input.details ?? null,
     occurredAt: input.occurredAt ?? context.clock.now(),

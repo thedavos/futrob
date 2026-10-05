@@ -1,4 +1,5 @@
 import type { ExternalReference, ProviderMatch } from "@futrob/game-data";
+import type { SelectionCommandDigestPort } from "../domain/ports/selection-command-digest.port.ts";
 import {
   asActorId,
   asCompetitionId,
@@ -104,6 +105,21 @@ export class ScriptedTeamRepresentation implements TeamRepresentationPort {
 }
 
 export { MemoryOfficialResults, MemoryOfficialSelections, MemoryReferenceClaims };
+
+/** Application tests model a stable opaque digest; Postgres composition proves SHA-256. */
+export function createTestCommandDigest(): SelectionCommandDigestPort {
+  const receipts = new Map<string, string>();
+  return {
+    sha256(canonical) {
+      let receipt = receipts.get(canonical);
+      if (!receipt) {
+        receipt = (receipts.size + 1).toString(16).padStart(64, "0");
+        receipts.set(canonical, receipt);
+      }
+      return receipt;
+    },
+  };
+}
 
 export const ORG = asOrganizationId("org-1");
 export const COMPETITION = asCompetitionId("competition-1");
@@ -233,6 +249,7 @@ export function createSelectionHarness(options: HarnessOptions = {}) {
   }
 
   const common = {
+    commandDigest: createTestCommandDigest(),
     encounterReader: reader,
     selections,
     results,
