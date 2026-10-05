@@ -35,6 +35,7 @@ Preconditions:
 ## Gotchas
 
 - This catalog is authenticated. It is not the public portal.
+- Unknown or draft ids must be opened as `/player/competitions/<id>`. A bare `/competitions/<id>` is a different generic `Not Found`, not `Competición no disponible`.
 - `draft` and `archived` never appear, even with a guessed id.
 - `Gestionar` appears only for organizer/staff of the owning organization. `Tu equipo participa` is presentational; the manage route still authorizes.
 - There is no toast system. Share confirmation stays on the card or detail header.

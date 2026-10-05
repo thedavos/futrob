@@ -13,7 +13,7 @@ An organizer creates an organization, a competition draft, and continues in setu
 ## How to get to it (user POV)
 
 - Onboarding path `Organizar` (intention → organization → competition → account → confirm) then the returned setup URL.
-- After a completed onboarding, `/orgs/new` → `Crear organización` → `/orgs/$orgId/competitions/new`.
+- After a completed onboarding, `/orgs/new` → `Crear organización` → `/orgs/$orgId/competitions` → `Nueva competición`.
 - Open an existing draft's setup URL with `?step=information` (or format/rules/participants/review).
 - From a terminal, after `npm run dev`: `npm run cli -- e2e-golden-path --actor <actorId>`.
 
@@ -26,14 +26,14 @@ Preconditions:
 - Prefer Postgres `DATABASE_URL`. In-memory API loses orgs on API restart.
 - CLI twin needs `FUTROB_INTERNAL_JOB_SECRET` equal to `apps/api/.env` and `--actor` set.
 
-- **Create org (UI).** Open `/orgs/new`. Heading `Crear organización`. Fill `Nombre de la organización` with `Verify Org <run-id>`. Choose `Crear organización`. The URL becomes `/orgs/<organizationId>`. Copy that id from the address bar; do not retype it from memory or OCR.
+- **Create org (UI).** Open `/orgs/new`. Heading `Crear organización`. Fill `Nombre de la organización` with `Verify Org <run-id>`. The form also has `Slug`, `Zona horaria`, and `Escudo`; accept the generated slug and default timezone unless the run is proving those fields. Choose `Crear organización`. The URL becomes `/orgs/<organizationId>/competitions` (heading `Competiciones`). Copy that id from the address bar; do not retype it from memory or OCR.
 - **Create draft (UI).** From org home, choose the shell button `Nueva competición`, or open `/orgs/<organizationId>/competitions/new` with the address-bar id. Heading `Nueva competición`. Fill `Nombre de la competición` (placeholder `ej. Liga Futrob Apertura`), choose a platform under `Plataforma de la competición`, a `Región deportiva`, and a `Formato`. Choose `Crear competición`. The URL becomes `/orgs/<organizationId>/competitions/<competitionId>/setup`.
 - **Setup.** The setup view is reachable. The page title is `Configurar <name>` with a `Borrador` badge. Stepper + step heading `Información` and field `Nombre` are visible (default when `?step=` is absent). Do not claim publish, fixture, or Match Center unless you actually drive those controls in the UI.
 - **CLI twin.** From the repo root:
 
   ```bash
   export FUTROB_INTERNAL_JOB_SECRET="$(grep '^INTERNAL_JOB_SECRET=' apps/api/.env | cut -d= -f2)"
-  npm run cli -- e2e-golden-path --actor actor_demo
+  npm run cli -- e2e-golden-path --actor <actorId-from-signup>
   ```
 
   Exit code 0. Stdout contains `Golden path OK` and JSON with `organizationId`, `competitionId`, `fixturePlanId`, `encounterCount`. Save stdout to evidence. This proves the API chain, not the web wizard.
@@ -45,7 +45,10 @@ Preconditions:
 - `Crear competición` is hidden when `canCreate` is false. That is a permission outcome, not a missing button bug.
 - `e2e-golden-path` stops at fixture. It does not sync EA, select official matches, or publish a portal.
 - Fixture-managed encounters reject manual `snapshot-set` with 409 `fixture_managed_conflict`.
+- After `Crear organización` the URL is `/orgs/$orgId/competitions` (heading `Competiciones`, empty `Sin competiciones todavía`). The stub `/orgs/$orgId` is not the create landing.
+- On Postgres, `--actor` must be a real `actors.id` from signup. Invented ids such as `actor_demo` fail the actor foreign key.
 - Unique org names: reuse of `Verify Org <run-id>` can fail. Always include the run id.
+- The draft form also has `Edición del juego` and a teams/dates/cover section. Defaults (FC 27, min 2 teams) allow submit without touching those extras.
 - After `Crear competición`, the URL is `/orgs/$orgId/competitions/$competitionId/setup` without `?step=`. The wizard defaults to `information`. The document title area reads `Configurar <name>`; assert the step heading `Información` and field `Nombre`.
 - Org home (even the provisional stub) exposes the shell button `Nueva competición` when the actor has `competitions.update`. The form submit label remains `Crear competición`.
 - A mistyped organization id on `/orgs/<id>/competitions/new` yields `scope-not-found` and the same forbidden copy as a real permission miss. Always paste the id from the address bar after `Crear organización`.
