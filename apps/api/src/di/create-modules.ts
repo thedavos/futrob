@@ -69,6 +69,7 @@ import {
   GetTeamRosterManagementUseCase,
   ListTeamRosterManagementUseCase,
 } from "@/application/teams/team-roster-management.use-case.ts";
+import { AssociateSyncedProviderMatches } from "@/application/game-data/associate-synced-provider-matches.ts";
 
 /**
  * Composition root for apps/api — the only place that wires adapters to use
@@ -122,19 +123,6 @@ export function createModules(input: CreateModulesInput): AppModules {
     searchTtlMs: 30_000,
     clubTtlMs: 300_000,
     staleMs: 300_000,
-  });
-
-  const gameData = createGameDataModule({
-    providers: [eaProvider, new ManualGameDataAdapter()],
-    ingestion: eaProvider,
-    providerMatches,
-    rawObservations,
-    jobs: providerSyncJobs,
-    ids,
-    clock,
-    maxJobAttempts: 4,
-    transaction,
-    health: providerHealth,
   });
 
   const deferredAuthorization = new DeferredAuthorizationPort();
@@ -262,6 +250,23 @@ export function createModules(input: CreateModulesInput): AppModules {
     results: officialResults,
     selections: officialSelections,
     ids,
+  });
+  const gameData = createGameDataModule({
+    providers: [eaProvider, new ManualGameDataAdapter()],
+    ingestion: eaProvider,
+    providerMatches,
+    rawObservations,
+    jobs: providerSyncJobs,
+    completion: new AssociateSyncedProviderMatches({
+      externalClubTeams: teams.externalClubTeams,
+      encounterWindow: scheduling.encounterWindow,
+      associateEncounterCandidates: results.associateEncounterCandidates,
+    }),
+    ids,
+    clock,
+    maxJobAttempts: 4,
+    transaction,
+    health: providerHealth,
   });
   const statistics = createStatisticsModule({
     pool: input.pool ?? null,

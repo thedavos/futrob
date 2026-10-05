@@ -11,11 +11,13 @@ import {
   SearchExternalClubsUseCase,
   SyncRecentProviderMatchesUseCase,
   providerRetryDelayMs,
+  providerSyncRetryDelayMs,
   type GameDataProviderPort,
   type ProviderMatchIngestionPort,
   type ProviderMatchRepository,
   type RawObservationRepository,
   type ProviderSyncJobRepository,
+  type ProviderSyncCompletionPort,
   type ProviderHealthPort,
 } from "@futrob/game-data";
 import type { ClockPort, IdGeneratorPort, TransactionPort } from "@futrob/shared-kernel";
@@ -31,6 +33,7 @@ export interface GameDataModuleDependencies {
   readonly providerMatches: ProviderMatchRepository;
   readonly rawObservations: RawObservationRepository;
   readonly jobs: ProviderSyncJobRepository;
+  readonly completion: ProviderSyncCompletionPort;
   readonly ids: IdGeneratorPort;
   readonly clock: ClockPort;
   readonly maxJobAttempts: number;
@@ -69,13 +72,16 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
     }),
     executeProviderSyncJob: new ExecuteProviderSyncJobUseCase({
       jobs: deps.jobs,
+      completion: deps.completion,
       sync: {
-        execute: (providerKey, input) => syncRecentProviderMatches.execute(providerKey, input),
+        execute: (providerKey, input, afterPersist) =>
+          syncRecentProviderMatches.execute(providerKey, input, afterPersist),
       },
       ids: deps.ids,
       clock: deps.clock,
       leaseMs: 90_000,
       retryDelayMs: providerRetryDelayMs,
+      completionRetryDelayMs: providerSyncRetryDelayMs,
       runClaimed: (job, operation) =>
         runWithPersistedJobCorrelation(createRequestCorrelation(job.requestId), job.id, operation),
     }),

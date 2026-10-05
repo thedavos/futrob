@@ -31,6 +31,10 @@ class MemoryJobs implements ProviderSyncJobRepository {
     return Promise.resolve(false);
   }
 
+  recordIngestion(): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
   scheduleRetry(): Promise<boolean> {
     return Promise.resolve(false);
   }

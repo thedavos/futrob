@@ -77,14 +77,17 @@ suite("migration runner", () => {
   );
 
   it(
-    "upgrades the current 0046 schema with only the team performance migration",
+    "upgrades the 0046 schema with the team ranking and provider sync checkpoint migrations",
     async () => {
       await withSchema(async (client) => {
         for (const file of await migrationFiles(46)) {
           await client.query(await readFile(resolve(directory, file), "utf8"));
         }
         const upgraded = await runMigrations(client, { directory, baseline: 46 });
-        expect(upgraded.applied).toEqual(["0047_team_performance_rankings.sql"]);
+        expect(upgraded.applied).toEqual([
+          "0047_team_performance_rankings.sql",
+          "0049_provider_sync_ingestion_checkpoint.sql",
+        ]);
         expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
         expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
         expect(
@@ -94,6 +97,43 @@ suite("migration runner", () => {
             )
           ).rows[0].index,
         ).not.toBeNull();
+      });
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "upgrades a 0047 job without inventing a completed ingestion",
+    async () => {
+      await withSchema(async (client) => {
+        for (const file of await migrationFiles(47)) {
+          await client.query(await readFile(resolve(directory, file), "utf8"));
+        }
+        await client.query(
+          `INSERT INTO provider_sync_jobs (
+             id, organization_id, provider_key, kind, input_json, dedupe_key, request_id,
+             status, attempt, max_attempts, available_at, created_at, updated_at
+           ) VALUES ('legacy-job', 'legacy-org', 'ea-clubs', 'recent-matches',
+             '{"externalClubId":"club-home","platform":"common-gen5","gameEdition":"fc26","matchType":"friendlyMatch","maxResultCount":10}',
+             'legacy-dedupe', 'legacy-request', 'queued', 0, 4, NOW(), NOW(), NOW())`,
+        );
+        const upgraded = await runMigrations(client, { directory, baseline: 47 });
+        expect(upgraded.applied).toEqual(["0049_provider_sync_ingestion_checkpoint.sql"]);
+        expect(
+          (
+            await client.query(
+              "SELECT id, status, attempt, ingested_matches_json FROM provider_sync_jobs",
+            )
+          ).rows,
+        ).toEqual([
+          {
+            id: "legacy-job",
+            status: "queued",
+            attempt: 0,
+            ingested_matches_json: null,
+          },
+        ]);
+        expect((await runMigrations(client, { directory })).applied).toEqual([]);
       });
     },
     TEST_TIMEOUT_MS,

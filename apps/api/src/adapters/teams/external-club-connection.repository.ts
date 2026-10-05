@@ -1,6 +1,11 @@
 import { gameDataProviderKeyQuerySchema } from "@futrob/api-contracts";
-import { asTeamId, type TeamId } from "@futrob/shared-kernel";
-import type { ExternalClubConnection, ExternalClubConnectionRepository } from "@futrob/teams";
+import { asTeamId, Panic, type TeamId } from "@futrob/shared-kernel";
+import type {
+  ExternalClubConnection,
+  ExternalClubConnectionRepository,
+  ExternalClubTeamReaderPort,
+  TeamRepository,
+} from "@futrob/teams";
 import type { Pool } from "pg";
 
 export class InMemoryExternalClubConnectionRepository implements ExternalClubConnectionRepository {
@@ -54,6 +59,72 @@ export class PostgresExternalClubConnectionRepository implements ExternalClubCon
     );
     return rehydrate(result.rows[0]);
   }
+}
+
+export class RepositoryExternalClubTeamReader implements ExternalClubTeamReaderPort {
+  constructor(
+    private readonly teams: Pick<TeamRepository, "listByOrganization">,
+    private readonly connections: Pick<ExternalClubConnectionRepository, "findByTeam">,
+  ) {}
+
+  async listTeamIds(
+    input: Parameters<ExternalClubTeamReaderPort["listTeamIds"]>[0],
+  ): Promise<readonly TeamId[]> {
+    if (!this.teams.listByOrganization) {
+      throw new Panic("Provider sync discovery requires organization-scoped Teams reads");
+    }
+    const teams = await this.teams.listByOrganization(input.organizationId);
+    const connected = await Promise.all(
+      teams.map(async (team) => ({
+        team,
+        connection: await this.connections.findByTeam(team.id),
+      })),
+    );
+    return connected
+      .filter(({ connection }) => connectionMatches(connection, input))
+      .map(({ team }) => team.id)
+      .sort((left, right) => left.localeCompare(right));
+  }
+}
+
+export class PostgresExternalClubTeamReader implements ExternalClubTeamReaderPort {
+  constructor(private readonly pool: Pool) {}
+
+  async listTeamIds(
+    input: Parameters<ExternalClubTeamReaderPort["listTeamIds"]>[0],
+  ): Promise<readonly TeamId[]> {
+    const result = await this.pool.query(
+      `SELECT connection.team_id
+       FROM team_external_club_connections AS connection
+       INNER JOIN teams AS team ON team.id = connection.team_id
+       WHERE team.organization_id = $1
+         AND connection.provider_key = $2
+         AND connection.external_club_id = $3
+         AND connection.game_edition = $4
+         AND connection.platform = $5
+       ORDER BY connection.team_id ASC`,
+      [
+        input.organizationId,
+        input.providerKey,
+        input.externalClubId,
+        input.gameEdition,
+        input.platform,
+      ],
+    );
+    return result.rows.map((row) => asTeamId(row.team_id));
+  }
+}
+
+function connectionMatches(
+  connection: ExternalClubConnection | null,
+  input: Parameters<ExternalClubTeamReaderPort["listTeamIds"]>[0],
+): boolean {
+  return (
+    connection?.providerKey === input.providerKey &&
+    connection.externalClubId === input.externalClubId &&
+    connection.gameEdition === input.gameEdition &&
+    connection.platform === input.platform
+  );
 }
 
 function rehydrate(row: {

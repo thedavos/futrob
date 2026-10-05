@@ -51,6 +51,13 @@ export class InMemoryProviderSyncJobRepository implements ProviderSyncJobReposit
     return Promise.resolve(this.jobs.get(id) ?? null);
   }
 
+  recordIngestion(input: Parameters<ProviderSyncJobRepository["recordIngestion"]>[0]) {
+    const running = this.runningWithLease(input.id, input.leaseToken);
+    if (!running || running.ingestedMatches !== undefined) return Promise.resolve(false);
+    this.jobs.set(input.id, { ...running, ingestedMatches: input.matches });
+    return Promise.resolve(true);
+  }
+
   succeed(input: Parameters<ProviderSyncJobRepository["succeed"]>[0]) {
     const running = this.runningWithLease(input.id, input.leaseToken);
     if (!running) return Promise.resolve(false);

@@ -1,5 +1,6 @@
 import type { GetRecentMatchesInput } from "../ports/game-data-provider.port.ts";
 import type { GameDataProviderKey } from "../value-objects/provider-key.ts";
+import type { ProviderSyncMatchTarget } from "../ports/provider-sync-completion.port.ts";
 
 export interface ProviderSyncJobBase {
   readonly id: string;
@@ -13,6 +14,8 @@ export interface ProviderSyncJobBase {
   readonly maxAttempts: number;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+  /** Undefined until ingestion commits; an empty array is a completed empty ingestion. */
+  readonly ingestedMatches?: readonly ProviderSyncMatchTarget[];
 }
 
 export interface QueuedProviderSyncJob extends ProviderSyncJobBase {

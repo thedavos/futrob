@@ -29,6 +29,7 @@ import {
   type CompetitionRosterMembershipRepository,
   type CompetitionRosterStateRepository,
   type ExternalClubConnectionRepository,
+  type ExternalClubTeamReaderPort,
   type PlayerExternalClubAssociationRepository,
   type PlayerGameAccountRepository,
   type PlayerProfileRepository,
@@ -45,6 +46,8 @@ import type { AuthorizationPort, TransactionPort } from "@futrob/shared-kernel";
 import {
   InMemoryExternalClubConnectionRepository,
   PostgresExternalClubConnectionRepository,
+  PostgresExternalClubTeamReader,
+  RepositoryExternalClubTeamReader,
 } from "@/adapters/teams/external-club-connection.repository.ts";
 import {
   CompetitionRulesRosterCapacityPort,
@@ -119,6 +122,9 @@ export function createTeamsModule(input: {
     rosterMutations = new InMemoryRosterMutationPort();
   }
   rosterInvitationTokens = new Sha256RosterInvitationTokenPort();
+  const externalClubTeams: ExternalClubTeamReaderPort = input.pool
+    ? new PostgresExternalClubTeamReader(input.pool)
+    : new RepositoryExternalClubTeamReader(teams, connections);
   const shared = { clock: { now: () => new Date() }, ids: { generate: () => randomUUID() } };
   const capacity: RosterCapacityPort = new CompetitionRulesRosterCapacityPort(input.competitions);
   const eventPublisher = {
@@ -242,6 +248,7 @@ export function createTeamsModule(input: {
       authorization: input.authorization,
     }),
     externalClubConnections: connections,
+    externalClubTeams,
     repositories: { profiles, teams, rosters, rosterStates, connections, accounts, capacity },
   };
 }

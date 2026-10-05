@@ -33,6 +33,7 @@ export type {
   EncounterParticipantValidationPort,
   EncounterScheduleRepository,
 } from "./domain/ports/encounter-schedule.repository.ts";
+export type { EncounterWindowReaderPort } from "./domain/ports/encounter-window-reader.port.ts";
 export type {
   CompetitionRescheduleRules,
   CompetitionRescheduleRulesPort,
