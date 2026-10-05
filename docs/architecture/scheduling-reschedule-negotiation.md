@@ -54,8 +54,10 @@ Los tres reciben `requestId`, `proposalId`, `expectedVersion` y `commandKey`, y 
 1. Encounter del tenant y permiso de lectura; si no, `schedule_change_encounter_not_found`.
 2. Solicitud del mismo tenant y Encounter; si no, `schedule_change_request_not_found`.
 3. Autorización de la capacidad. Se repite en cada replay, así que revocar el permiso lo bloquea.
-4. Recibo por `(organización, actor, commandKey)`: misma huella devuelve el estado actual con
-   `replayed: true` sin escribir; otra huella da `schedule_change_idempotency_conflict`.
+4. Recibo por `(organización, actor, commandKey)`: misma huella devuelve, con `replayed: true` y sin
+   escribir, la solicitud tal como la dejó ese comando (`resultingVersion`/`resultingStatus`, propuestas
+   hasta la vigente y decisiones anteriores a esa versión), no el estado posterior; otra huella da
+   `schedule_change_idempotency_conflict`.
 5. Objetivo: solicitud `open` (`schedule_change_request_closed`), `version` igual
    (`schedule_change_version_conflict`) y propuesta vigente (`schedule_change_proposal_stale`).
 6. Aceptar y contraproponer exigen `allowRescheduling` y el guard de slots protegidos.

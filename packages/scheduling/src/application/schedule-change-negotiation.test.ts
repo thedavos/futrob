@@ -564,6 +564,35 @@ describe("schedule change negotiation", () => {
     ]);
   });
 
+  it("replays the outcome the command produced, not a later transition", async () => {
+    const flow = negotiation({ requiresOpponentApproval: true, requiresOrganizerApproval: true });
+    const created = await flow.propose(11);
+    const d1 = created.proposals[0].id;
+    const organizerConsent = unwrap(
+      await flow.accept(organizer, asOrganizer, { proposalId: d1, version: 1 }, "organizer-1"),
+    );
+    const countered = unwrap(
+      await flow.counter(captainB, teamB, { proposalId: d1, version: 2 }, 12, "counter-1"),
+    );
+    const d2 = countered.request.proposals[1]?.id ?? "missing";
+    unwrap(await flow.accept(captainA, asRival(teamA), { proposalId: d2, version: 3 }));
+    unwrap(await flow.accept(organizer, asOrganizer, { proposalId: d2, version: 4 }));
+    expect((await flow.stored()).status).toBe("accepted");
+
+    const consentReplay = unwrap(
+      await flow.accept(organizer, asOrganizer, { proposalId: d1, version: 1 }, "organizer-1"),
+    );
+    expect(consentReplay.replayed).toBe(true);
+    expect(history(consentReplay.request)).toEqual(history(organizerConsent.request));
+    expect(history(consentReplay.request)).toMatchObject({ status: "open", version: 2 });
+
+    const counterReplay = unwrap(
+      await flow.counter(captainB, teamB, { proposalId: d1, version: 2 }, 12, "counter-1"),
+    );
+    expect(history(counterReplay.request)).toEqual(history(countered.request));
+    expect(counterReplay.request.updatedAt).toEqual(countered.request.updatedAt);
+  });
+
   it("re-authorizes a replay, so a revoked permission blocks it", async () => {
     const flow = negotiation();
     const created = await flow.propose(11);

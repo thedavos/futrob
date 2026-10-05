@@ -42,6 +42,7 @@ import type { EncounterScheduleRepository } from "../domain/ports/encounter-sche
 import type { ScheduleChangeRequestEditGuardPort } from "../domain/ports/fixture-editing.ports.ts";
 import type { ScheduleChangeRequestRepository } from "../domain/ports/schedule-change-request.repository.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
+import { scheduleChangeRequestAsOf } from "../domain/policies/schedule-change-replay.ts";
 
 /** Identifies the proposal a command answers and the request version it saw. */
 export interface ScheduleChangeCommandInput {
@@ -166,7 +167,13 @@ export async function runScheduleChangeCommand<E>(
           );
           if (receipt) {
             if (receipt.fingerprint !== fingerprint) return err(commandKeyReused());
-            return ok({ request, receipt, replayed: true });
+            const replayed = scheduleChangeRequestAsOf(request, {
+              version: receipt.resultingVersion,
+              status: receipt.resultingStatus,
+              currentProposalId: receipt.createdProposalId ?? receipt.targetProposalId,
+              at: receipt.occurredAt,
+            });
+            return ok({ request: replayed, receipt, replayed: true });
           }
 
           const target = checkScheduleChangeTarget(request, input);

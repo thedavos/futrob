@@ -123,6 +123,9 @@ suite("schedule change negotiation on Postgres", () => {
     const replay = unwrap(await second.counter(captainB, teamB, { proposalId: d1, version: 1 }));
     expect(replay.replayed).toBe(true);
     expect(replay.receipt.id).toBe(countered.receipt.id);
+    // The request is accepted by now; the replay still reports what the counter produced.
+    expect(replay.request).toMatchObject({ status: "open", version: 2, decisions: [] });
+    expect(replay.request.proposals.map((proposal) => proposal.id)).toEqual([d1, d2]);
     expect(await count(pool, "schedule_change_proposals")).toBe(2);
     expect(await count(pool, "schedule_change_command_receipts")).toBe(2);
 
