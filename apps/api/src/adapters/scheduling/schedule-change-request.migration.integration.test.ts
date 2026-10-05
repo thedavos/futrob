@@ -445,8 +445,8 @@ async function insertSnapshot(
 async function insertOrganization(client: PoolClient, id: string, name: string): Promise<void> {
   await client.query(
     `INSERT INTO organizations (
-       id, name, normalized_name, created_at, created_by_actor_id
-     ) VALUES ($1, $2, $3, NOW(), 'organizer')`,
+       id, name, normalized_name, slug, time_zone, created_at, created_by_actor_id
+     ) VALUES ($1, $2, $3, $1, 'America/Lima', NOW(), 'organizer')`,
     [id, name, name.toLowerCase()],
   );
 }

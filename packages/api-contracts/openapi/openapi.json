@@ -52,6 +52,10 @@
     {
       "name": "fixtures",
       "description": "Deterministic competition fixture graphs"
+    },
+    {
+      "name": "results",
+      "description": "Official match selection negotiated by the Encounter Teams"
     }
   ],
   "paths": {
@@ -3097,6 +3101,451 @@
             "$ref": "#/components/responses/ApiError"
           },
           "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/encounters/{encounterId}/official-selection": {
+      "get": {
+        "operationId": "getTeamOfficialSelection",
+        "tags": ["results"],
+        "summary": "Read an Encounter's official selection as one of its Teams",
+        "description": "Proposals, redacted audit history, disputes and the commands the Team can issue. Command keys and request fingerprints are never exposed.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "encounterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actingTeamId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized selection view",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialSelectionView"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/encounters/{encounterId}/official-selection/proposals": {
+      "post": {
+        "operationId": "proposeOfficialSelection",
+        "tags": ["results"],
+        "summary": "Propose the provider matches for the Encounter's official slots",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "encounterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeOfficialSelectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command outcome or its replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialSelectionCommandResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/encounters/{encounterId}/official-selection/proposals/{proposalId}/confirm": {
+      "post": {
+        "operationId": "confirmOfficialSelection",
+        "tags": ["results"],
+        "summary": "Confirm the rival Team's exact proposal version, approving the result",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "encounterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmOfficialSelectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command outcome or its replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialSelectionCommandResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/encounters/{encounterId}/official-selection/proposals/{proposalId}/reject": {
+      "post": {
+        "operationId": "rejectOfficialSelection",
+        "tags": ["results"],
+        "summary": "Reject the rival Team's proposal with a reason; the case moves to dispute",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "encounterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectOfficialSelectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command outcome or its replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialSelectionCommandResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/encounters/{encounterId}/official-selection/proposals/{proposalId}/alternative": {
+      "post": {
+        "operationId": "proposeAlternativeOfficialSelection",
+        "tags": ["results"],
+        "summary": "Answer the rival Team's proposal with an alternative selection",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "encounterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeAlternativeOfficialSelectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command outcome or its replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialSelectionCommandResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/encounters/{encounterId}/official-selection/disputes": {
+      "post": {
+        "operationId": "openMatchDispute",
+        "tags": ["results"],
+        "summary": "Open a dispute on the pending proposal",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "encounterId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenMatchDisputeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command outcome or its replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialSelectionCommandResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
             "$ref": "#/components/responses/ApiError"
           }
         }
@@ -7145,6 +7594,1578 @@
             ]
           }
         }
+      },
+      "OfficialSelectionView": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "encounterId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "selection": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "encounterId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "organizationId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "competitionId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "awaiting_provider_data",
+                      "candidates_available",
+                      "selection_in_progress",
+                      "awaiting_opponent_confirmation",
+                      "confirmed",
+                      "disputed",
+                      "organizer_review",
+                      "approved",
+                      "voided"
+                    ]
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "round": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "currentProposalId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "required": [
+                  "id",
+                  "encounterId",
+                  "organizationId",
+                  "competitionId",
+                  "status",
+                  "version",
+                  "round",
+                  "currentProposalId",
+                  "createdAt",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "round": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "sequence": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "proposingTeamId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "proposedByActorId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "slots": {
+                  "minItems": 1,
+                  "maxItems": 2,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "officialSlot": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "const": 1
+                          },
+                          {
+                            "type": "number",
+                            "const": 2
+                          }
+                        ]
+                      },
+                      "providerMatchRef": {
+                        "type": "object",
+                        "properties": {
+                          "providerKey": {
+                            "type": "string",
+                            "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                          },
+                          "externalId": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["providerKey", "externalId"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": ["officialSlot", "providerMatchRef"],
+                    "additionalProperties": false
+                  }
+                },
+                "supersedesProposalId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "reason": {
+                  "type": ["string", "null"]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "confirmationDeadline": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "round",
+                "sequence",
+                "proposingTeamId",
+                "proposedByActorId",
+                "slots",
+                "supersedesProposalId",
+                "reason",
+                "createdAt",
+                "confirmationDeadline"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "proposalId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "proposed",
+                    "confirmed",
+                    "approved",
+                    "integrity_review_required",
+                    "rejected",
+                    "alternative_proposed",
+                    "dispute_opened",
+                    "review_started",
+                    "dispute_resolved_approved",
+                    "returned_to_selection",
+                    "voided",
+                    "reference_reuse_rejected",
+                    "legacy_review_required",
+                    "confirmation_expired"
+                  ]
+                },
+                "fromStatus": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_provider_data",
+                        "candidates_available",
+                        "selection_in_progress",
+                        "awaiting_opponent_confirmation",
+                        "confirmed",
+                        "disputed",
+                        "organizer_review",
+                        "approved",
+                        "voided"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "toStatus": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_provider_data",
+                        "candidates_available",
+                        "selection_in_progress",
+                        "awaiting_opponent_confirmation",
+                        "confirmed",
+                        "disputed",
+                        "organizer_review",
+                        "approved",
+                        "voided"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "versionBefore": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "versionAfter": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "actorId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "teamId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "capacity": {
+                  "type": "string",
+                  "enum": ["team", "operator", "system"]
+                },
+                "reason": {
+                  "type": ["string", "null"]
+                },
+                "officialResultId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "details": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "integrityFlags": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "enum": ["provider_data_incomplete", "provider_match_disconnected"]
+                              },
+                              "providerMatchRef": {
+                                "type": "object",
+                                "properties": {
+                                  "providerKey": {
+                                    "type": "string",
+                                    "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                                  },
+                                  "externalId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                },
+                                "required": ["providerKey", "externalId"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": ["code", "providerMatchRef"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "acknowledgedFlags": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "enum": ["provider_data_incomplete", "provider_match_disconnected"]
+                              },
+                              "providerMatchRef": {
+                                "type": "object",
+                                "properties": {
+                                  "providerKey": {
+                                    "type": "string",
+                                    "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                                  },
+                                  "externalId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                },
+                                "required": ["providerKey", "externalId"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": ["code", "providerMatchRef"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "conflictingReference": {
+                          "type": "object",
+                          "properties": {
+                            "providerKey": {
+                              "type": "string",
+                              "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                            },
+                            "externalId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["providerKey", "externalId"],
+                          "additionalProperties": false
+                        },
+                        "selectedProposalId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "disputeId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "confirmationDeadline": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "processedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "occurredAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "proposalId",
+                "type",
+                "fromStatus",
+                "toStatus",
+                "versionBefore",
+                "versionAfter",
+                "actorId",
+                "teamId",
+                "capacity",
+                "reason",
+                "officialResultId",
+                "details",
+                "occurredAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "disputes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["open", "under_review", "resolved"]
+                },
+                "openedByActorId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "openedByTeamId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "openedReason": {
+                  "type": "string"
+                },
+                "openedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "reviewStartedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "resolvedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "resolution": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": ["approved_proposal", "returned_to_selection"]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "resolutionProposalId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "resolutionReason": {
+                  "type": ["string", "null"]
+                }
+              },
+              "required": [
+                "id",
+                "status",
+                "openedByActorId",
+                "openedByTeamId",
+                "openedReason",
+                "openedAt",
+                "reviewStartedAt",
+                "resolvedAt",
+                "resolution",
+                "resolutionProposalId",
+                "resolutionReason"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "activeDispute": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["open", "under_review", "resolved"]
+                  },
+                  "openedByActorId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "openedByTeamId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "openedReason": {
+                    "type": "string"
+                  },
+                  "openedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "reviewStartedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "resolvedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "resolution": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": ["approved_proposal", "returned_to_selection"]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "resolutionProposalId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "resolutionReason": {
+                    "type": ["string", "null"]
+                  }
+                },
+                "required": [
+                  "id",
+                  "status",
+                  "openedByActorId",
+                  "openedByTeamId",
+                  "openedReason",
+                  "openedAt",
+                  "reviewStartedAt",
+                  "resolvedAt",
+                  "resolution",
+                  "resolutionProposalId",
+                  "resolutionReason"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approvedResultId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "integrityFlags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "enum": ["provider_data_incomplete", "provider_match_disconnected"]
+                },
+                "providerMatchRef": {
+                  "type": "object",
+                  "properties": {
+                    "providerKey": {
+                      "type": "string",
+                      "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                    },
+                    "externalId": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["providerKey", "externalId"],
+                  "additionalProperties": false
+                }
+              },
+              "required": ["code", "providerMatchRef"],
+              "additionalProperties": false
+            }
+          },
+          "allowedActions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "propose",
+                "confirm",
+                "reject",
+                "propose_alternative",
+                "open_dispute",
+                "review_dispute",
+                "resolve_dispute",
+                "void"
+              ]
+            }
+          }
+        },
+        "required": [
+          "encounterId",
+          "selection",
+          "proposals",
+          "actions",
+          "disputes",
+          "activeDispute",
+          "approvedResultId",
+          "integrityFlags",
+          "allowedActions"
+        ],
+        "additionalProperties": false
+      },
+      "OfficialSelectionCommandResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "selection": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "encounterId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "organizationId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "competitionId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "awaiting_provider_data",
+                  "candidates_available",
+                  "selection_in_progress",
+                  "awaiting_opponent_confirmation",
+                  "confirmed",
+                  "disputed",
+                  "organizer_review",
+                  "approved",
+                  "voided"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "round": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "currentProposalId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "encounterId",
+              "organizationId",
+              "competitionId",
+              "status",
+              "version",
+              "round",
+              "currentProposalId",
+              "createdAt",
+              "updatedAt"
+            ],
+            "additionalProperties": false
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "round": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "sequence": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "proposingTeamId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "proposedByActorId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "slots": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "officialSlot": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "const": 1
+                            },
+                            {
+                              "type": "number",
+                              "const": 2
+                            }
+                          ]
+                        },
+                        "providerMatchRef": {
+                          "type": "object",
+                          "properties": {
+                            "providerKey": {
+                              "type": "string",
+                              "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                            },
+                            "externalId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["providerKey", "externalId"],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": ["officialSlot", "providerMatchRef"],
+                      "additionalProperties": false
+                    }
+                  },
+                  "supersedesProposalId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reason": {
+                    "type": ["string", "null"]
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "confirmationDeadline": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "required": [
+                  "id",
+                  "round",
+                  "sequence",
+                  "proposingTeamId",
+                  "proposedByActorId",
+                  "slots",
+                  "supersedesProposalId",
+                  "reason",
+                  "createdAt",
+                  "confirmationDeadline"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "proposalId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "proposed",
+                    "confirmed",
+                    "approved",
+                    "integrity_review_required",
+                    "rejected",
+                    "alternative_proposed",
+                    "dispute_opened",
+                    "review_started",
+                    "dispute_resolved_approved",
+                    "returned_to_selection",
+                    "voided",
+                    "reference_reuse_rejected",
+                    "legacy_review_required",
+                    "confirmation_expired"
+                  ]
+                },
+                "fromStatus": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_provider_data",
+                        "candidates_available",
+                        "selection_in_progress",
+                        "awaiting_opponent_confirmation",
+                        "confirmed",
+                        "disputed",
+                        "organizer_review",
+                        "approved",
+                        "voided"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "toStatus": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_provider_data",
+                        "candidates_available",
+                        "selection_in_progress",
+                        "awaiting_opponent_confirmation",
+                        "confirmed",
+                        "disputed",
+                        "organizer_review",
+                        "approved",
+                        "voided"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "versionBefore": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "versionAfter": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "actorId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "teamId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "capacity": {
+                  "type": "string",
+                  "enum": ["team", "operator", "system"]
+                },
+                "reason": {
+                  "type": ["string", "null"]
+                },
+                "officialResultId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "details": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "integrityFlags": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "enum": ["provider_data_incomplete", "provider_match_disconnected"]
+                              },
+                              "providerMatchRef": {
+                                "type": "object",
+                                "properties": {
+                                  "providerKey": {
+                                    "type": "string",
+                                    "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                                  },
+                                  "externalId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                },
+                                "required": ["providerKey", "externalId"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": ["code", "providerMatchRef"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "acknowledgedFlags": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "enum": ["provider_data_incomplete", "provider_match_disconnected"]
+                              },
+                              "providerMatchRef": {
+                                "type": "object",
+                                "properties": {
+                                  "providerKey": {
+                                    "type": "string",
+                                    "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                                  },
+                                  "externalId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                },
+                                "required": ["providerKey", "externalId"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": ["code", "providerMatchRef"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "conflictingReference": {
+                          "type": "object",
+                          "properties": {
+                            "providerKey": {
+                              "type": "string",
+                              "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                            },
+                            "externalId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["providerKey", "externalId"],
+                          "additionalProperties": false
+                        },
+                        "selectedProposalId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "disputeId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "confirmationDeadline": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "processedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "occurredAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "proposalId",
+                "type",
+                "fromStatus",
+                "toStatus",
+                "versionBefore",
+                "versionAfter",
+                "actorId",
+                "teamId",
+                "capacity",
+                "reason",
+                "officialResultId",
+                "details",
+                "occurredAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "dispute": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["open", "under_review", "resolved"]
+                  },
+                  "openedByActorId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "openedByTeamId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "openedReason": {
+                    "type": "string"
+                  },
+                  "openedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "reviewStartedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "resolvedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "resolution": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": ["approved_proposal", "returned_to_selection"]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "resolutionProposalId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "resolutionReason": {
+                    "type": ["string", "null"]
+                  }
+                },
+                "required": [
+                  "id",
+                  "status",
+                  "openedByActorId",
+                  "openedByTeamId",
+                  "openedReason",
+                  "openedAt",
+                  "reviewStartedAt",
+                  "resolvedAt",
+                  "resolution",
+                  "resolutionProposalId",
+                  "resolutionReason"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approvedResult": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["approved", "voided"]
+                  },
+                  "approvalBasis": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": ["team_agreement", "operator_resolution"]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "proposalId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "approvedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "required": [
+                  "id",
+                  "revision",
+                  "status",
+                  "approvalBasis",
+                  "proposalId",
+                  "approvedAt"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "integrityFlags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "enum": ["provider_data_incomplete", "provider_match_disconnected"]
+                },
+                "providerMatchRef": {
+                  "type": "object",
+                  "properties": {
+                    "providerKey": {
+                      "type": "string",
+                      "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                    },
+                    "externalId": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["providerKey", "externalId"],
+                  "additionalProperties": false
+                }
+              },
+              "required": ["code", "providerMatchRef"],
+              "additionalProperties": false
+            }
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "selection",
+          "proposal",
+          "actions",
+          "dispute",
+          "approvedResult",
+          "integrityFlags",
+          "replayed"
+        ],
+        "additionalProperties": false
+      },
+      "ProposeOfficialSelectionRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "actingTeamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "commandKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "selections": {
+            "minItems": 1,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "officialSlot": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "const": 1
+                    },
+                    {
+                      "type": "number",
+                      "const": 2
+                    }
+                  ]
+                },
+                "providerMatchRef": {
+                  "type": "object",
+                  "properties": {
+                    "providerKey": {
+                      "type": "string",
+                      "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                    },
+                    "externalId": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["providerKey", "externalId"]
+                }
+              },
+              "required": ["officialSlot", "providerMatchRef"]
+            }
+          }
+        },
+        "required": ["actingTeamId", "expectedVersion", "commandKey", "selections"]
+      },
+      "ConfirmOfficialSelectionRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "actingTeamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "commandKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": ["actingTeamId", "expectedVersion", "commandKey"]
+      },
+      "RejectOfficialSelectionRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "actingTeamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "commandKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": ["actingTeamId", "expectedVersion", "commandKey", "reason"]
+      },
+      "ProposeAlternativeOfficialSelectionRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "actingTeamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "commandKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "selections": {
+            "minItems": 1,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "officialSlot": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "const": 1
+                    },
+                    {
+                      "type": "number",
+                      "const": 2
+                    }
+                  ]
+                },
+                "providerMatchRef": {
+                  "type": "object",
+                  "properties": {
+                    "providerKey": {
+                      "type": "string",
+                      "enum": ["ea-clubs", "manual", "screenshot-ocr"]
+                    },
+                    "externalId": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["providerKey", "externalId"]
+                }
+              },
+              "required": ["officialSlot", "providerMatchRef"]
+            }
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": ["actingTeamId", "expectedVersion", "commandKey", "selections", "reason"]
+      },
+      "OpenMatchDisputeRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "actingTeamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "commandKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": ["actingTeamId", "expectedVersion", "commandKey", "reason"]
       },
       "CompetitionRules": {
         "type": "object",

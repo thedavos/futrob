@@ -26,13 +26,14 @@ export function validationErrorResponse(issues: ZodIssue[]): Response {
   });
 }
 
-export function failureToHttp(error: HttpMappableFailure): Response {
+/** `status` overrides the code heuristic for routes that map their failures explicitly. */
+export function failureToHttp(error: HttpMappableFailure, status?: number): Response {
   const retryAfterSeconds =
     error.retryAfterSeconds ??
     (error.retryAfterMs === undefined
       ? undefined
       : Math.max(1, Math.ceil(error.retryAfterMs / 1_000)));
-  const response = apiErrorResponse(statusForFailureCode(error.code), {
+  const response = apiErrorResponse(status ?? statusForFailureCode(error.code), {
     code: error.code,
     messageKey: `errors.${error.code}`,
     retryAfterSeconds,

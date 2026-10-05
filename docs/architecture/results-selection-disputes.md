@@ -235,7 +235,8 @@ se publican tras el commit pero no se entregan de forma durable. No hay outbox n
 
 ## Pendiente fuera de este corte
 
-- HTTP, OpenAPI, SDK, BFF y UI del Match Center (tarea 5), y la previsualización FTR-SEL-002.
+- SDK, BFF y UI del Match Center, y la previsualización FTR-SEL-002. HTTP y OpenAPI Team
+  están integrados mediante #113; #130 añade deadline y auditoría de vencimiento al contrato.
 - Disputa abierta por un Team sobre un resultado ya aprobado, sanciones, evidencias y notificaciones.
 - Consumidor que asocie candidatos (`associate`/`recalculate`) al sincronizar o reprogramar.
 

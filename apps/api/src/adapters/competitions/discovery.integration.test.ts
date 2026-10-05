@@ -25,8 +25,9 @@ describe.skipIf(!databaseUrl)("competition discovery Postgres", () => {
     for (const file of files) await pool.query(await readFile(resolve(directory, file), "utf8"));
     await seedActors(pool, "actor");
     await pool.query(`
-      INSERT INTO organizations (id, name, normalized_name, created_at, created_by_actor_id)
-      VALUES ('org-1', 'First', 'first', NOW(), 'actor'), ('org-2', 'Second', 'second', NOW(), 'actor');
+      INSERT INTO organizations (id, name, normalized_name, slug, time_zone, created_at, created_by_actor_id)
+      VALUES ('org-1', 'First', 'first', 'first', 'America/Lima', NOW(), 'actor'),
+             ('org-2', 'Second', 'second', 'second', 'America/Lima', NOW(), 'actor');
       INSERT INTO competitions (id, organization_id, name, status, modality, game_edition,
         platform, region, time_zone, format, created_by_actor_id, created_at, updated_at)
       VALUES

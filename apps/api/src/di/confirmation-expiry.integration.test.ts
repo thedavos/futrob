@@ -1,5 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
+import {
+  apiErrorSchema,
+  officialSelectionCommandResponseSchema,
+  officialSelectionViewSchema,
+} from "@futrob/api-contracts";
 import { PostgresProviderMatchRepository } from "@/adapters/game-data/persistence/postgres.repository.ts";
 import { createApp } from "@/app.ts";
 import { createModules } from "./create-modules.ts";
@@ -132,6 +137,95 @@ suite("DEC-021 Postgres confirmation and recovery", () => {
     return (await isolated.pool.query("SELECT * FROM official_selection_proposals ORDER BY id"))
       .rows;
   }
+
+  it.each(["confirm", "alternative"] as const)(
+    "HTTP %s publishes the deadline and enforces its boundary before the runner",
+    async (command) => {
+      for (const time of [
+        "2026-10-04T19:59:59.999Z",
+        "2026-10-04T20:00:00.000Z",
+        "2026-10-04T20:00:00.001Z",
+      ]) {
+        const { app, proposal, clock } = await fresh();
+        const base = `/api/v1/organizations/${ORG}/encounters/${ENCOUNTER}/official-selection`;
+        const headers = {
+          Authorization: `Bearer ${SECRET}`,
+          "X-Futrob-Actor-Id": AWAY_CAPTAIN,
+          "Content-Type": "application/json",
+        };
+        const pending = await app.request(`${base}?actingTeamId=${AWAY}`, { headers });
+        expect(pending.status).toBe(200);
+        expect(officialSelectionViewSchema.parse(await pending.json()).proposals).toMatchObject([
+          { confirmationDeadline: "2026-10-04T20:00:00.000Z" },
+        ]);
+        clock.value = new Date(time);
+        const result = await app.request(`${base}/proposals/${proposal.id}/${command}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            actingTeamId: AWAY,
+            expectedVersion: 1,
+            commandKey: "http-response",
+            ...(command === "alternative" ? { selections: slot("m-1"), reason: "Same slots" } : {}),
+          }),
+        });
+        const timely = time === "2026-10-04T19:59:59.999Z";
+        expect(result.status).toBe(timely ? 200 : 409);
+        if (timely) {
+          expect(officialSelectionCommandResponseSchema.parse(await result.json())).toMatchObject({
+            selection: { status: "approved", version: 2 },
+            proposal: { confirmationDeadline: "2026-10-04T20:00:00.000Z" },
+            approvedResult: { approvalBasis: "team_agreement" },
+          });
+        } else {
+          expect(apiErrorSchema.parse(await result.json()).code).toBe(
+            "results.confirmation_window_closed",
+          );
+        }
+        expect(await officialEffects()).toEqual(
+          timely
+            ? { results: 1, team_contributions: 2, player_contributions: 1 }
+            : { results: 0, team_contributions: 0, player_contributions: 0 },
+        );
+      }
+    },
+  );
+
+  it("GET publishes the unique system expiry audit and closes Team actions after recovery", async () => {
+    const { app, clock } = await fresh();
+    clock.value = new Date("2026-10-05T03:00:00.000Z");
+    const run = await app.request("/api/v1/internal/results/confirmation-expiry/run", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${SECRET}` },
+    });
+    expect(run.status).toBe(200);
+    expect(await run.json()).toEqual({ expired: 1, skipped: 0 });
+    const response = await app.request(
+      `/api/v1/organizations/${ORG}/encounters/${ENCOUNTER}/official-selection?actingTeamId=${AWAY}`,
+      { headers: { Authorization: `Bearer ${SECRET}`, "X-Futrob-Actor-Id": AWAY_CAPTAIN } },
+    );
+    expect(response.status).toBe(200);
+    const read = officialSelectionViewSchema.parse(await response.json());
+    expect(read.selection).toMatchObject({ status: "organizer_review", version: 2 });
+    expect(read.allowedActions).toEqual([]);
+    expect(read.approvedResultId).toBeNull();
+    expect(read.actions.filter((action) => action.type === "confirmation_expired")).toMatchObject([
+      {
+        actorId: "actor-confirmation-expiry",
+        capacity: "system",
+        occurredAt: "2026-10-05T03:00:00.000Z",
+        details: {
+          confirmationDeadline: "2026-10-04T20:00:00.000Z",
+          processedAt: "2026-10-05T03:00:00.000Z",
+        },
+      },
+    ]);
+    expect(await officialEffects()).toEqual({
+      results: 0,
+      team_contributions: 0,
+      player_contributions: 0,
+    });
+  });
 
   it.each(["confirm", "equivalent"] as const)(
     "%s before/on/after deadline uses the durable UTC window",
@@ -359,8 +453,12 @@ suite("DEC-021 Postgres confirmation and recovery", () => {
     async (configured) => {
       const h = await fresh(configured);
       h.clock.value = new Date("2026-10-04T20:00:00.000Z");
-      const unavailable = await h.modules.runConfirmationExpiry.execute();
-      expect(unavailable.isErr() ? unavailable.error.code : "expired").toBe(
+      const unavailable = await h.app.request("/api/v1/internal/results/confirmation-expiry/run", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${SECRET}` },
+      });
+      expect(unavailable.status).toBe(503);
+      expect(apiErrorSchema.parse(await unavailable.json()).code).toBe(
         "results.confirmation_expiry_actor_unavailable",
       );
       expect((await view(h.modules)).actions.map((a) => a.type)).toEqual(["proposed"]);

@@ -52,6 +52,10 @@ import {
   confirmationExpiryOpenApiPaths,
   confirmationExpiryOpenApiSchemas,
 } from "./results-confirmation-expiry.ts";
+import {
+  officialSelectionOpenApiPaths,
+  officialSelectionOpenApiSchemas,
+} from "./official-selection.ts";
 import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
   associateMyPlayerExternalClubRequestSchema,
@@ -132,6 +136,7 @@ export const futrobOpenApiV1 = {
     { name: "authorization", description: "Contextual roles, grants and effective access" },
     { name: "encounters", description: "Persisted encounter schedule read models" },
     { name: "fixtures", description: "Deterministic competition fixture graphs" },
+    { name: "results", description: "Official match selection negotiated by the Encounter Teams" },
   ],
   paths: {
     ...confirmationExpiryOpenApiPaths,
@@ -1714,6 +1719,7 @@ export const futrobOpenApiV1 = {
     },
     ...fixtureOpenApiPaths,
     ...teamPerformanceOpenApiPaths,
+    ...officialSelectionOpenApiPaths,
     "/encounters/{encounterId}/candidates": {
       get: {
         operationId: "listEncounterCandidates",
@@ -3396,6 +3402,7 @@ export const futrobOpenApiV1 = {
       },
       ...fixtureOpenApiSchemas,
       ...teamPerformanceOpenApiSchemas,
+      ...officialSelectionOpenApiSchemas,
       CompetitionRules: {
         type: "object",
         required: [
