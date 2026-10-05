@@ -76,14 +76,16 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Intention continue | button `Continuar` |
 | Skip optional onboarding | button `Omitir por ahora` |
 | Player finish | button `Entrar a mi espacio` |
-| Player home title | `Tu espacio de jugador` |
-| Open matches | `Abrir Mis partidos` |
+| Player home title | `Inicio` |
+| Shell identity (no club/gamertag) | `Tu espacio en Futrob` |
+| Open matches | sidebar link `Mis partidos` (header CTA, when present, is `Ver mis partidos`) |
 | Match view radios | `Todos`, `Liga`, `Playoff`, `Amistosos` (hidden until matches can load) |
 | Open match row | link `Ver {home} {homeGoals} – {awayGoals} {away}` — not the unused string `Ver partido` |
 | Landing final CTA | below-fold `Crear cuenta` / `Iniciar sesión` under `¿Listo para poner tu competición bajo control?` |
-| Open profile | `Abrir tu perfil` |
+| Open statistics | sidebar link `Mis estadísticas` |
 | Org name | textbox `Nombre de la organización` |
 | Create org | button `Crear organización` |
+| New competition (shell) | button `Nueva competición` |
 | Competition name | textbox `Nombre de la competición` |
 | Create competition | button `Crear competición` |
 
@@ -101,7 +103,7 @@ npm run cli -- <command> --actor <actorId> [--json]
 `e2e-golden-path` is the API golden path (org → draft → teams → entries → publish → fixture). It does **not** prove the web UI, official selection, or the public portal.
 
 ```bash
-npm run cli -- e2e-golden-path --actor actor_demo
+npm run cli -- e2e-golden-path --actor <actorId-from-signup>
 ```
 
 Expected domain failures (not harness bugs): `snapshot-set` → 409 `fixture_managed_conflict` on fixture-owned encounters; `provider-health` → 403 without `superusersManage`.
