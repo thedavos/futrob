@@ -31,6 +31,7 @@ export type { TeamRepository } from "./domain/ports/team.repository.ts";
 export type { CompetitionRosterMembershipRepository } from "./domain/ports/competition-roster-membership.repository.ts";
 export type { CompetitionRosterStateRepository } from "./domain/ports/competition-roster-state.repository.ts";
 export type { ExternalClubConnectionRepository } from "./domain/ports/external-club-connection.repository.ts";
+export type { ExternalClubTeamReaderPort } from "./domain/ports/external-club-team-reader.port.ts";
 export type { RosterCapacityPort } from "./domain/ports/roster-capacity.port.ts";
 export type { RosterEntryGatePort } from "./domain/ports/roster-entry-gate.port.ts";
 export type {

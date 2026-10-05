@@ -57,9 +57,33 @@ Wired in `apps/api/src/di/results.module.ts`:
 - `EncounterCandidateAssociationRepository`: the Postgres adapter exists; the module picks it when a pool is available (see `results.module.ts`).
 - `associateEncounterCandidates` and `recalculateEncounterCandidates` on the results module.
 
+The productive provider-sync job completes through
+`AssociateSyncedProviderMatches` in `apps/api`. The internal enqueue route
+`POST /internal/game-data/sync-jobs` persists the job; its `/:jobId/run` and
+`/run-next` consumers call the composed `executeProviderSyncJob`. After game-data commits the raw
+observations, normalized matches and the job's `ingested_matches_json` checkpoint
+in one transaction, the completion resolves connected Teams in the
+job's organization, finds Scheduling encounters for both clubs inside the candidate
+window and calls `associateEncounterCandidates`. The job is not marked `succeeded`
+until that work finishes. A process crash leaves its running lease reclaimable; a
+typed Results failure schedules the same durable job with its original `results.*`
+code. Retry resumes the persisted discovery descriptors, even if EA no longer returns
+those recent matches. `NULL` means ingestion pending; `[]` means a completed empty
+ingestion. Migration `0049_provider_sync_ingestion_checkpoint.sql` leaves legacy jobs
+pending ingestion. Replays converge through the existing provider and candidate identities.
+`maxAttempts` still bounds provider ingestion failures. Once ingested, typed completion
+failures remain `retry_scheduled` with capped backoff rather than dead-lettering unfinished
+association work; thrown failures leave a reclaimable lease. Permanent completion
+failures require operator attention and do not masquerade as successful syncs.
+
+The public `EncounterWindowReaderPort` is read-only and separate from Scheduling's
+request/negotiation repository (#121). It uses the current Encounter kickoff; applying
+per-slot schedules and consuming reschedule events remain outside #111 (#112/#122).
+No selection/confirmation contract changes are needed by #127.
+
 Not covered here:
 
-- `apps/api/src/app.ts` queue or outbox consumer for `scheduling.encounter-rescheduled`.
+- Queue or outbox consumption for `scheduling.encounter-rescheduled`.
 - `apps/api/src/di/scheduling.module.ts` (`OfficialResultFixtureEditGuard` still blocks reschedule after a proposal).
 - OpenAPI, SDK, HTTP associate/recalc routes.
 

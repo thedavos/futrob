@@ -29,6 +29,7 @@ export class SyncRecentProviderMatchesUseCase {
   async execute(
     providerKey: GameDataProviderKey,
     input: GetRecentMatchesInput,
+    afterPersist?: (matches: readonly ProviderMatch[]) => Promise<void>,
   ): Promise<Result<readonly ProviderMatch[], ProviderError>> {
     const ingestion = this.deps.ingestions.get(providerKey);
     if (!ingestion) {
@@ -64,6 +65,7 @@ export class SyncRecentProviderMatchesUseCase {
       }
 
       await this.deps.matches.upsertMany(ingested.value.matches);
+      await afterPersist?.(ingested.value.matches);
     });
     return ok(ingested.value.matches);
   }

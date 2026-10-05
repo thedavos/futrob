@@ -16,7 +16,11 @@ describe.skipIf(!databaseUrl)("provider reliability Postgres", () => {
     admin = new Pool({ connectionString: databaseUrl });
     await admin.query(`CREATE SCHEMA "${schema}"`);
     pool = new Pool({ connectionString: databaseUrl, options: `-c search_path=${schema}` });
-    for (const migration of ["0026_provider_sync_jobs.sql", "0027_provider_resilience.sql"]) {
+    for (const migration of [
+      "0026_provider_sync_jobs.sql",
+      "0027_provider_resilience.sql",
+      "0049_provider_sync_ingestion_checkpoint.sql",
+    ]) {
       const sql = await readFile(
         new URL(`../../../migrations/${migration}`, import.meta.url),
         "utf8",
@@ -31,6 +35,47 @@ describe.skipIf(!databaseUrl)("provider reliability Postgres", () => {
       await admin.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
       await admin.end();
     }
+  });
+
+  it("rejects a stale checkpoint writer and retains an empty ingestion across reclaim", async () => {
+    const jobs = new PostgresProviderSyncJobRepository(pool);
+    await jobs.enqueue({ ...queuedJob(), id: "checkpoint-job", dedupeKey: "checkpoint-dedupe" });
+    const claim = await jobs.claimNext({
+      jobId: "checkpoint-job",
+      now: new Date("2026-08-11T20:00:00.000Z"),
+      leaseToken: "checkpoint-lease",
+      leaseExpiresAt: new Date("2026-08-11T20:01:30.000Z"),
+    });
+    expect(claim).toMatchObject({ status: "running", attempt: 1 });
+    expect(
+      await jobs.recordIngestion({
+        id: "checkpoint-job",
+        leaseToken: "stale-lease",
+        matches: [],
+      }),
+    ).toBe(false);
+    expect((await jobs.findById("checkpoint-job"))?.ingestedMatches).toBeUndefined();
+    expect(
+      await jobs.recordIngestion({
+        id: "checkpoint-job",
+        leaseToken: "checkpoint-lease",
+        matches: [],
+      }),
+    ).toBe(true);
+    const reclaimed = await jobs.claimNext({
+      jobId: "checkpoint-job",
+      now: new Date("2026-08-11T20:01:31.000Z"),
+      leaseToken: "new-lease",
+      leaseExpiresAt: new Date("2026-08-11T20:03:00.000Z"),
+    });
+    expect(reclaimed).toMatchObject({ status: "running", attempt: 2, ingestedMatches: [] });
+    expect(
+      await jobs.recordIngestion({
+        id: "checkpoint-job",
+        leaseToken: "new-lease",
+        matches: [],
+      }),
+    ).toBe(false);
   });
 
   it("claims one attempt and rejects a stale half-open completion", async () => {

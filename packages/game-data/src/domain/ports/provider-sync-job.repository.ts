@@ -3,6 +3,7 @@ import type {
   QueuedProviderSyncJob,
   RunningProviderSyncJob,
 } from "../entities/provider-sync-job.ts";
+import type { ProviderSyncMatchTarget } from "./provider-sync-completion.port.ts";
 
 export interface ProviderSyncJobRepository {
   enqueue(job: QueuedProviderSyncJob): Promise<ProviderSyncJob>;
@@ -13,6 +14,12 @@ export interface ProviderSyncJobRepository {
     readonly jobId?: string;
   }): Promise<RunningProviderSyncJob | null>;
   findById(id: string): Promise<ProviderSyncJob | null>;
+  /** Must commit in the same transaction as the ingested ProviderMatches. */
+  recordIngestion(input: {
+    readonly id: string;
+    readonly leaseToken: string;
+    readonly matches: readonly ProviderSyncMatchTarget[];
+  }): Promise<boolean>;
   succeed(input: {
     readonly id: string;
     readonly leaseToken: string;

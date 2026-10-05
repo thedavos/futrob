@@ -33,6 +33,11 @@ class SingleJobRepository implements ProviderSyncJobRepository {
     return Promise.resolve(this.job);
   }
 
+  recordIngestion(input: Parameters<ProviderSyncJobRepository["recordIngestion"]>[0]) {
+    this.job = { ...this.job, ingestedMatches: input.matches };
+    return Promise.resolve(true);
+  }
+
   succeed(input: Parameters<ProviderSyncJobRepository["succeed"]>[0]) {
     if (this.job.status !== "running" || this.job.leaseToken !== input.leaseToken) {
       return Promise.resolve(false);
@@ -100,11 +105,13 @@ describe("ExecuteProviderSyncJobUseCase", () => {
     let ids = 0;
     const useCase = new ExecuteProviderSyncJobUseCase({
       jobs,
+      completion: { complete: async () => ok(undefined) },
       sync: { execute: async () => ((calls += 1), ok([])) },
       ids: { generate: () => `lease-${++ids}` },
       clock: { now: () => new Date("2026-08-11T20:00:01.000Z") },
       leaseMs: 30_000,
       retryDelayMs: () => 1_000,
+      completionRetryDelayMs: () => 1_000,
     });
 
     const first = await useCase.execute("job-1");
@@ -119,6 +126,7 @@ describe("ExecuteProviderSyncJobUseCase", () => {
     const jobs = new SingleJobRepository(queued);
     const useCase = new ExecuteProviderSyncJobUseCase({
       jobs,
+      completion: { complete: async () => ok(undefined) },
       sync: {
         execute: async () =>
           err(
@@ -134,6 +142,7 @@ describe("ExecuteProviderSyncJobUseCase", () => {
       clock: { now: () => new Date("2026-08-11T20:00:01.000Z") },
       leaseMs: 30_000,
       retryDelayMs: () => 1_000,
+      completionRetryDelayMs: () => 1_000,
     });
 
     const first = await useCase.execute("job-1");
@@ -141,5 +150,34 @@ describe("ExecuteProviderSyncJobUseCase", () => {
 
     expect(first?.status).toBe("retry_scheduled");
     expect(second?.status).toBe("dead");
+  });
+
+  it("keeps a Results completion failure recoverable without renaming its code", async () => {
+    const jobs = new SingleJobRepository(queued);
+    const useCase = new ExecuteProviderSyncJobUseCase({
+      jobs,
+      completion: {
+        complete: async () => err({ code: "results.candidate_data_unavailable" }),
+      },
+      sync: { execute: async () => ok([]) },
+      ids: { generate: () => "lease" },
+      clock: { now: () => new Date("2026-08-11T20:00:01.000Z") },
+      leaseMs: 30_000,
+      retryDelayMs: () => 1_000,
+      completionRetryDelayMs: () => 1_000,
+    });
+
+    const result = await useCase.execute("job-1");
+
+    expect(result).toMatchObject({
+      status: "retry_scheduled",
+      lastErrorCode: "results.candidate_data_unavailable",
+    });
+    const atAttemptLimit = await useCase.execute("job-1");
+    expect(atAttemptLimit).toMatchObject({
+      status: "retry_scheduled",
+      attempt: 2,
+      lastErrorCode: "results.candidate_data_unavailable",
+    });
   });
 });

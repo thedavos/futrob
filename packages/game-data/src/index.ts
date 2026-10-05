@@ -46,6 +46,7 @@ export {
   isRetryableProviderError,
   providerHealthOutcome,
   providerRetryDelayMs,
+  providerSyncRetryDelayMs,
 } from "./domain/policies/classify-provider-failure.ts";
 
 export type {
@@ -59,6 +60,12 @@ export type { GameDataProviderRegistryPort } from "./domain/ports/game-data-prov
 export type { ProviderMatchRepository } from "./domain/ports/provider-match.repository.ts";
 export type { RawObservationRepository } from "./domain/ports/raw-observation.repository.ts";
 export type { ProviderSyncJobRepository } from "./domain/ports/provider-sync-job.repository.ts";
+export type {
+  ProviderSyncCompletionFailure,
+  ProviderSyncCompletionPort,
+  ProviderSyncMatchTarget,
+} from "./domain/ports/provider-sync-completion.port.ts";
+export { ProviderSyncIngestionLeaseLost } from "./domain/errors/provider-sync-job.errors.ts";
 export type { ProviderHealthPort } from "./domain/ports/provider-health.port.ts";
 export type {
   ProviderMatchIngestionPort,

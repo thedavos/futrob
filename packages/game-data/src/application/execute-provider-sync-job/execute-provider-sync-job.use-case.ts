@@ -1,29 +1,34 @@
-import type { ClockPort, IdGeneratorPort, Result } from "@futrob/shared-kernel";
+import { ok, type ClockPort, type IdGeneratorPort, type Result } from "@futrob/shared-kernel";
 import type { ProviderMatch } from "../../domain/entities/provider-match.ts";
 import type {
   ProviderSyncJob,
   RunningProviderSyncJob,
 } from "../../domain/entities/provider-sync-job.ts";
 import type { ProviderError } from "../../domain/errors/provider.errors.ts";
+import { ProviderSyncIngestionLeaseLost } from "../../domain/errors/provider-sync-job.errors.ts";
 import { isRetryableProviderError } from "../../domain/policies/classify-provider-failure.ts";
 import type { GetRecentMatchesInput } from "../../domain/ports/game-data-provider.port.ts";
 import type { ProviderSyncJobRepository } from "../../domain/ports/provider-sync-job.repository.ts";
+import type { ProviderSyncCompletionPort } from "../../domain/ports/provider-sync-completion.port.ts";
 import type { GameDataProviderKey } from "../../domain/value-objects/provider-key.ts";
 
 export class ExecuteProviderSyncJobUseCase {
   constructor(
     private readonly deps: {
       readonly jobs: ProviderSyncJobRepository;
+      readonly completion: ProviderSyncCompletionPort;
       readonly sync: {
         execute(
           providerKey: GameDataProviderKey,
           input: GetRecentMatchesInput,
+          afterPersist: (matches: readonly ProviderMatch[]) => Promise<void>,
         ): Promise<Result<readonly ProviderMatch[], ProviderError>>;
       };
       readonly ids: IdGeneratorPort;
       readonly clock: ClockPort;
       readonly leaseMs: number;
       readonly retryDelayMs: (error: ProviderError, attempt: number) => number;
+      readonly completionRetryDelayMs: (attempt: number) => number;
       readonly runClaimed?: <T>(
         job: RunningProviderSyncJob,
         operation: () => Promise<T>,
@@ -51,9 +56,46 @@ export class ExecuteProviderSyncJobUseCase {
   }
 
   private async executeClaimed(claimed: RunningProviderSyncJob): Promise<ProviderSyncJob | null> {
-    const result = await this.deps.sync.execute(claimed.providerKey, claimed.sync);
-    const completedAt = this.deps.clock.now();
+    const result =
+      claimed.ingestedMatches !== undefined
+        ? ok(claimed.ingestedMatches)
+        : await this.deps.sync.execute(claimed.providerKey, claimed.sync, async (matches) => {
+            const recorded = await this.deps.jobs.recordIngestion({
+              id: claimed.id,
+              leaseToken: claimed.leaseToken,
+              matches: matches.map(({ provider, game, occurredAt, home, away }) => ({
+                provider,
+                game,
+                occurredAt,
+                home: { externalClubId: home.externalClubId },
+                away: { externalClubId: away.externalClubId },
+              })),
+            });
+            // Throw inside the ingestion transaction: a stale lease must not commit matches
+            // without a recoverable handoff owned by the current job runner.
+            if (!recorded)
+              throw new ProviderSyncIngestionLeaseLost({
+                code: "game_data.sync_ingestion_lease_lost",
+                message: "Provider sync ingestion lease lost",
+              });
+          });
     if (result.isOk()) {
+      const completion = await this.deps.completion.complete({
+        job: claimed,
+        matches: result.value,
+      });
+      const completedAt = this.deps.clock.now();
+      if (!completion.isOk()) {
+        await this.deps.jobs.scheduleRetry({
+          id: claimed.id,
+          leaseToken: claimed.leaseToken,
+          availableAt: new Date(
+            completedAt.getTime() + this.deps.completionRetryDelayMs(claimed.attempt),
+          ),
+          lastErrorCode: completion.error.code,
+        });
+        return this.deps.jobs.findById(claimed.id);
+      }
       await this.deps.jobs.succeed({
         id: claimed.id,
         leaseToken: claimed.leaseToken,
@@ -62,6 +104,7 @@ export class ExecuteProviderSyncJobUseCase {
       return this.deps.jobs.findById(claimed.id);
     }
 
+    const completedAt = this.deps.clock.now();
     const errorCode = result.error.code;
     if (isRetryableProviderError(result.error) && claimed.attempt < claimed.maxAttempts) {
       await this.deps.jobs.scheduleRetry({

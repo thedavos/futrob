@@ -12,6 +12,7 @@ import {
   type EncounterMutationLockPort,
   type EncounterParticipantValidationPort,
   type EncounterScheduleRepository,
+  type EncounterWindowReaderPort,
   type CompetitionFixtureSourcePort,
   type FixtureAuditPort,
   type FixturePlanRepository,
@@ -59,9 +60,11 @@ export function createSchedulingModule(input: {
   readonly encounterMutationLock: EncounterMutationLockPort;
   readonly competitions: Pick<CompetitionRepository, "findById">;
 }) {
-  const encounters: EncounterScheduleRepository = input.pool
+  const encounterStore = input.pool
     ? new PostgresEncounterScheduleRepository(input.pool)
     : new InMemoryEncounterScheduleRepository();
+  const encounters: EncounterScheduleRepository = encounterStore;
+  const encounterWindow: EncounterWindowReaderPort = encounterStore;
   const officialMatches: OfficialMatchRepository = input.pool
     ? new PostgresOfficialMatchRepository(input.pool)
     : new InMemoryOfficialMatchRepository();
@@ -100,6 +103,7 @@ export function createSchedulingModule(input: {
   };
   return {
     encounters,
+    encounterWindow,
     officialMatches,
     fixturePlans,
     scheduleChangeRequests,

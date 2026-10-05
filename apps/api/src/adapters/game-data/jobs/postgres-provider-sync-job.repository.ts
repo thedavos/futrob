@@ -86,6 +86,16 @@ export class PostgresProviderSyncJobRepository implements ProviderSyncJobReposit
     return result.rows[0] ? rehydrateJob(providerSyncJobRowSchema.parse(result.rows[0])) : null;
   }
 
+  async recordIngestion(input: Parameters<ProviderSyncJobRepository["recordIngestion"]>[0]) {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE provider_sync_jobs SET ingested_matches_json = $3::jsonb
+       WHERE id = $1 AND status = 'running' AND lease_token = $2
+         AND ingested_matches_json IS NULL`,
+      [input.id, input.leaseToken, JSON.stringify(input.matches)],
+    );
+    return (result.rowCount ?? 0) === 1;
+  }
+
   succeed(input: Parameters<ProviderSyncJobRepository["succeed"]>[0]) {
     return this.finish(input.id, input.leaseToken, "succeeded", input.completedAt, null);
   }
@@ -136,6 +146,7 @@ const providerSyncJobRowSchema = z.object({
   organization_id: pgTextSchema,
   provider_key: z.enum(["ea-clubs", "manual", "screenshot-ocr"]),
   input_json: z.unknown(),
+  ingested_matches_json: z.unknown(),
   dedupe_key: pgTextSchema,
   request_id: pgTextSchema,
   attempt: z.coerce.number(),
@@ -153,6 +164,19 @@ const providerSyncJobRowSchema = z.object({
 
 type ProviderSyncJobRow = z.infer<typeof providerSyncJobRowSchema>;
 
+const ingestedMatchesSchema = z.array(
+  z.object({
+    provider: z.object({
+      key: z.enum(["ea-clubs", "manual", "screenshot-ocr"]),
+      externalMatchId: z.string(),
+    }),
+    game: z.object({ edition: z.string(), platform: z.string(), mode: z.string() }),
+    occurredAt: z.coerce.date(),
+    home: z.object({ externalClubId: z.string() }),
+    away: z.object({ externalClubId: z.string() }),
+  }),
+);
+
 function rehydrateJob(row: ProviderSyncJobRow): ProviderSyncJob {
   const parsed = row;
   const base = {
@@ -167,6 +191,10 @@ function rehydrateJob(row: ProviderSyncJobRow): ProviderSyncJob {
     maxAttempts: parsed.max_attempts,
     createdAt: parsed.created_at,
     updatedAt: parsed.updated_at,
+    ingestedMatches:
+      parsed.ingested_matches_json == null
+        ? undefined
+        : parseJsonColumn(ingestedMatchesSchema, parsed.ingested_matches_json),
   };
   switch (parsed.status) {
     case "queued":

@@ -1,5 +1,6 @@
 import {
   asFixtureStageId,
+  type EncounterWindowReaderPort,
   type EncounterScheduleRepository,
   type EncounterScheduleSnapshot,
 } from "@futrob/scheduling";
@@ -8,6 +9,7 @@ import {
   asEncounterId,
   asOrganizationId,
   asTeamId,
+  compareByTime,
   type EncounterId,
   type TeamId,
 } from "@futrob/shared-kernel";
@@ -27,7 +29,9 @@ const encounterScheduleRowSchema = z.object({
   official_match_count: z.coerce.number().pipe(z.union([z.literal(1), z.literal(2)])),
 });
 
-export class InMemoryEncounterScheduleRepository implements EncounterScheduleRepository {
+export class InMemoryEncounterScheduleRepository
+  implements EncounterScheduleRepository, EncounterWindowReaderPort
+{
   readonly rows = new Map<EncounterId, EncounterScheduleSnapshot>();
 
   async findById(encounterId: EncounterId): Promise<EncounterScheduleSnapshot | null> {
@@ -70,9 +74,33 @@ export class InMemoryEncounterScheduleRepository implements EncounterScheduleRep
         })[0] ?? null
     );
   }
+
+  async listByOrganizationTeamsAndWindow(
+    input: Parameters<EncounterWindowReaderPort["listByOrganizationTeamsAndWindow"]>[0],
+  ): Promise<readonly EncounterScheduleSnapshot[]> {
+    if (input.teamIds.length === 0) return [];
+    const wanted = new Set(input.teamIds);
+    return [...this.rows.values()]
+      .filter(
+        (row) =>
+          row.organizationId === input.organizationId &&
+          row.scheduledStartAt >= input.from &&
+          row.scheduledStartAt <= input.to &&
+          (wanted.has(row.homeTeamId) || wanted.has(row.awayTeamId)),
+      )
+      .sort((left, right) => {
+        const byTime = compareByTime<EncounterScheduleSnapshot>((row) => row.scheduledStartAt)(
+          left,
+          right,
+        );
+        return byTime !== 0 ? byTime : left.encounterId.localeCompare(right.encounterId);
+      });
+  }
 }
 
-export class PostgresEncounterScheduleRepository implements EncounterScheduleRepository {
+export class PostgresEncounterScheduleRepository
+  implements EncounterScheduleRepository, EncounterWindowReaderPort
+{
   constructor(private readonly pool: Pool) {}
 
   async findById(encounterId: EncounterId): Promise<EncounterScheduleSnapshot | null> {
@@ -142,6 +170,27 @@ export class PostgresEncounterScheduleRepository implements EncounterScheduleRep
     );
     const row = result.rows[0];
     return row ? rehydrateEncounterScheduleSnapshot(encounterScheduleRowSchema.parse(row)) : null;
+  }
+
+  async listByOrganizationTeamsAndWindow(
+    input: Parameters<EncounterWindowReaderPort["listByOrganizationTeamsAndWindow"]>[0],
+  ): Promise<readonly EncounterScheduleSnapshot[]> {
+    if (input.teamIds.length === 0) return [];
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT encounter_id, organization_id, competition_id, stage_id, home_team_id, away_team_id,
+              scheduled_start_at, official_match_count
+       FROM encounter_schedule_snapshots
+       WHERE organization_id = $1
+         AND (home_team_id = ANY($2::text[]) OR away_team_id = ANY($2::text[]))
+         AND scheduled_start_at >= $3
+         AND scheduled_start_at <= $4
+         AND stage_id IS NOT NULL
+       ORDER BY scheduled_start_at ASC, encounter_id ASC`,
+      [input.organizationId, input.teamIds, input.from.toISOString(), input.to.toISOString()],
+    );
+    return result.rows
+      .map((row) => rehydrateEncounterScheduleSnapshot(encounterScheduleRowSchema.parse(row)))
+      .filter((row): row is EncounterScheduleSnapshot => row !== null);
   }
 }
 

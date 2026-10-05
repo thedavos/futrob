@@ -55,5 +55,9 @@ export function providerRetryDelayMs(error: ProviderError, attempt: number): num
   if (ProviderHttpFailed.is(error) && error.retryAfterMs !== undefined) {
     return error.retryAfterMs;
   }
+  return providerSyncRetryDelayMs(attempt);
+}
+
+export function providerSyncRetryDelayMs(attempt: number): number {
   return Math.min(30_000, 1_000 * 2 ** (attempt - 1));
 }
