@@ -58,6 +58,32 @@ Los mismos endpoints viven también agrupados:
 - `client.teams.rosterInvitations` — crear/aceptar invitaciones de roster
 - `client.teams.externalClubs` — vínculo EA del equipo
 
+## Selección oficial y disputas
+
+`client.results` permite leer la selección por organización, Encounter y `actingTeamId`,
+proponer, confirmar, rechazar, contraproponer y abrir una disputa. Web y Expo llaman
+al BFF con su sesión; el BFF deriva el actor y la API verifica la representación del Team.
+
+```ts
+const view = await futrob.results.getTeamOfficialSelection(organizationId, encounterId, {
+  actingTeamId,
+});
+const selection = view.selection;
+const proposalId = selection?.currentProposalId;
+if (selection && proposalId && view.allowedActions.includes("confirm")) {
+  await futrob.results.confirmOfficialSelection(organizationId, encounterId, proposalId, {
+    actingTeamId,
+    expectedVersion: selection.version,
+    commandKey: pendingCommandKey,
+  });
+}
+```
+
+La aplicación conserva la clave y el contenido del comando para reconciliar una respuesta
+perdida. Un replay devuelve el resultado original con `replayed: true`; 401 y conflictos
+siguen siendo errores. El cliente no cambia la clave ni recupera sesión automáticamente.
+El deadline viene del servidor; el SDK no recalcula plazos ni concede permisos.
+
 ## Testing
 
 Utilidades para tests disponibles como subpath público:
