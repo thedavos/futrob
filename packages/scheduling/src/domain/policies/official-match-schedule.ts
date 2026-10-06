@@ -15,7 +15,7 @@ export interface OfficialMatchScheduleChange {
 
 /**
  * Start of every slot the Encounter plays. A slot without a stored row starts with the
- * Encounter, the same rule the 0050 backfill applied to existing slots.
+ * Encounter, the same rule the 0052 backfill applied to existing slots.
  */
 export function officialMatchSchedules(
   encounter: Pick<EncounterScheduleSnapshot, "scheduledStartAt" | "officialMatchCount">,

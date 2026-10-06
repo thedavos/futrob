@@ -41,6 +41,7 @@ export interface OfficialSelectionProposal {
   readonly proposedByActorId: ActorId;
   /** Sorted by `officialSlot`. */
   readonly slots: readonly OfficialSlotSelection[];
+  readonly confirmationDeadline: Date;
   readonly supersedesProposalId: string | null;
   readonly reason: string | null;
   readonly createdAt: Date;

@@ -3,7 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { Pool, type PoolClient } from "pg";
-import { seedActors } from "@/testing/seed-actors.ts";
+import { insertTenant } from "@/testing/isolated-schema.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = describe.skipIf(!databaseUrl);
@@ -47,8 +47,8 @@ suite("0025 competition fixtures migration", { timeout: 60_000 }, () => {
   it("enforces tenant-scoped fixture graphs and generation idempotency", async () => {
     await withSchema(async (client) => {
       await applyMigrations(client);
-      await insertCompetition(client, "org-a", "comp-a");
-      await insertCompetition(client, "org-b", "comp-b");
+      await insertTenant(client, "org-a", "comp-a");
+      await insertTenant(client, "org-b", "comp-b");
       await insertPlan(client, "plan-a", "org-a", "comp-a", "generation-1");
 
       await expect(
@@ -68,30 +68,6 @@ suite("0025 competition fixtures migration", { timeout: 60_000 }, () => {
     });
   });
 });
-
-async function insertCompetition(
-  client: PoolClient,
-  organizationId: string,
-  competitionId: string,
-): Promise<void> {
-  await seedActors(client, "organizer");
-  await client.query(
-    `INSERT INTO organizations (
-       id, name, normalized_name, slug, time_zone, created_at, created_by_actor_id
-     ) VALUES ($1, $2, $3, $1, 'America/Lima', NOW(), 'organizer')`,
-    [organizationId, organizationId, organizationId],
-  );
-  await client.query(
-    `INSERT INTO competitions (
-       id, organization_id, name, status, modality, game_edition, platform,
-       region, time_zone, format, created_by_actor_id, created_at, updated_at
-     ) VALUES (
-       $1, $2, $1, 'published', 'fc-clubs', 'fc26', 'playstation',
-       'south-america', 'America/Lima', 'league', 'organizer', NOW(), NOW()
-     )`,
-    [competitionId, organizationId],
-  );
-}
 
 async function insertPlan(
   client: PoolClient,

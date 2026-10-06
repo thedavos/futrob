@@ -341,7 +341,7 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
     const before = await mkdtemp(join(tmpdir(), "futrob-migrations-"));
     try {
       for (const file of await readdir(MIGRATIONS_DIRECTORY)) {
-        if (file.endsWith(".sql") && file < "0050")
+        if (file.endsWith(".sql") && file < "0052")
           await cp(join(MIGRATIONS_DIRECTORY, file), join(before, file));
       }
       await migrateIsolatedSchema(schema.pool, before);
@@ -363,7 +363,7 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
     );
 
     const upgrade = await migrateIsolatedSchema(schema.pool);
-    expect(upgrade.applied).toEqual(["0050_schedule_change_application.sql"]);
+    expect(upgrade.applied).toContain("0052_schedule_change_application.sql");
     expect(await slotStarts(schema.pool)).toEqual([
       { slot: 1, at: D0, status: "completed" },
       { slot: 2, at: D0, status: "scheduled" },
@@ -400,7 +400,7 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
     const before = await mkdtemp(join(tmpdir(), "futrob-migrations-"));
     try {
       for (const file of await readdir(MIGRATIONS_DIRECTORY)) {
-        if (file.endsWith(".sql") && file < "0050")
+        if (file.endsWith(".sql") && file < "0052")
           await cp(join(MIGRATIONS_DIRECTORY, file), join(before, file));
       }
       await migrateIsolatedSchema(schema.pool, before);
@@ -429,7 +429,7 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
       "accepted schedule change requests exist without an applied schedule",
     );
     const ledger = await schema.pool.query<{ id: string }>(
-      `SELECT id FROM schema_migrations WHERE id LIKE '0050%'`,
+      `SELECT id FROM schema_migrations WHERE id LIKE '0052%'`,
     );
     expect(ledger.rows).toEqual([]);
   });

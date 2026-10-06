@@ -107,7 +107,7 @@ Una excepción (p. ej. del publicador de eventos) revierte igual.
 
 ### Horario por slot
 
-- Representación: `official_matches.scheduled_start_at TIMESTAMPTZ NOT NULL` (migración `0050`);
+- Representación: `official_matches.scheduled_start_at TIMESTAMPTZ NOT NULL` (migración `0052`);
   `OfficialMatch.scheduledStartAt` en el dominio. `officialMatchSchedules(encounter, matches)` da el
   inicio de cada slot que juega el Encounter; un slot sin fila empieza con el Encounter.
 - Backfill: cada slot existente recibe el `scheduled_start_at` de su Encounter. No se inventa un
@@ -140,11 +140,11 @@ Encounter. El `EncounterReaderPort` de Results y el DTO HTTP del snapshot aún n
 implementa ese puerto sobre HTTP, así que añadir `slots` exige el contrato de #123. #112 debe
 añadirlos al puente `SchedulingEncounterReader` cuando adapte las ventanas por slot.
 
-### Migración `0050`
+### Migración `0052`
 
-`0050_schedule_change_application.sql` hace el backfill y crea las tablas de aplicación. Se niega a
+`0052_schedule_change_application.sql` hace el backfill y crea las tablas de aplicación. Se niega a
 correr (y no se registra en `schema_migrations`) si existe alguna solicitud `accepted`: antes de
-`0050` nada aplicaba la fecha, así que una solicitud así no tiene horario que registrar. Ningún
+`0052` nada aplicaba la fecha, así que una solicitud así no tiene horario que registrar. Ningún
 camino de producción podía aceptar antes de #122 (no hay ruta HTTP), así que solo afecta a datos
 manuales.
 

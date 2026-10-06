@@ -128,15 +128,16 @@ Default port is `8787`. The app boots without a database. Without
 
 ## Environment
 
-| Variable                     | Required       | Default                                       | Purpose                                                           |
-| ---------------------------- | -------------- | --------------------------------------------- | ----------------------------------------------------------------- |
-| `PORT`                       | no             | `8787`                                        | HTTP listen port                                                  |
-| `NODE_ENV`                   | no             | `development`                                 | Runtime mode                                                      |
-| `DATABASE_URL`               | no (prod: yes) | unset                                         | Postgres (Neon in dev, Railway in prod); also required to sign in |
-| `INTERNAL_JOB_SECRET`        | yes            | unset                                         | Shared with `apps/web` for trusted BFF calls (game-data, orgs, …) |
-| `INITIAL_SUPERUSER_ACTOR_ID` | no             | unset                                         | Seeds and audits the first superuser; must be an existing actor   |
-| `EA_CLUBS_BASE_URL`          | no             | `https://proclubs.ea.com/api/fc`              | EA Clubs egress base                                              |
-| `CORS_ORIGINS`               | no             | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call the API           |
+| Variable                     | Required           | Default                                       | Purpose                                                                            |
+| ---------------------------- | ------------------ | --------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `PORT`                       | no                 | `8787`                                        | HTTP listen port                                                                   |
+| `NODE_ENV`                   | no                 | `development`                                 | Runtime mode                                                                       |
+| `DATABASE_URL`               | no (prod: yes)     | unset                                         | Postgres (Neon in dev, Railway in prod); also required to sign in                  |
+| `INTERNAL_JOB_SECRET`        | yes                | unset                                         | Shared with `apps/web` for trusted BFF calls (game-data, orgs, …)                  |
+| `RESULTS_SYSTEM_ACTOR_ID`    | for Results expiry | unset                                         | Existing actor provisioned through apps/auth; automatic audit uses capacity=system |
+| `INITIAL_SUPERUSER_ACTOR_ID` | no                 | unset                                         | Seeds and audits the first superuser; must be an existing actor                    |
+| `EA_CLUBS_BASE_URL`          | no                 | `https://proclubs.ea.com/api/fc`              | EA Clubs egress base                                                               |
+| `CORS_ORIGINS`               | no                 | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call the API                            |
 
 Local file:
 
@@ -176,3 +177,17 @@ Imports use the `@/` alias → `src/*` (no `../` parent paths). Configure in
 - `src/di/` — composition root (`createModules`, `createGameDataModule`).
 - `src/http/` — error mapping, DTO mappers, and route registration.
 - `src/app.ts` / `src/main.ts` — Hono app factory and the Node server entry.
+
+### Results confirmation expiry
+
+The web Cron calls `POST /api/v1/internal/results/confirmation-expiry/run` each minute with the
+internal bearer secret. The endpoint processes up to 50 due proposals and returns
+`{ "expired": 1, "skipped": 0 }`. Retry polls the same durable pending rows; silence never approves.
+It accepts no caller-supplied actor or timestamp.
+
+Provision a dedicated actor through apps/auth and set its existing ActorId as
+`RESULTS_SYSTEM_ACTOR_ID`. No Team/operator grants are needed. Without a configured, existing actor,
+the runner returns 503 `results.confirmation_expiry_actor_unavailable` and changes no selection.
+Apply `0051_official_selection_confirmation_deadlines.sql` while old API writers are stopped, then
+start this version. Legacy deadlines use the original proposal creation plus 24 hours, as validated
+for #130; proposals and prior audit remain intact.

@@ -1,5 +1,5 @@
 import { externalReferenceKey } from "@futrob/game-data";
-import { Panic, type ActorId, type EncounterId } from "@futrob/shared-kernel";
+import { compareTime, Panic, type ActorId, type EncounterId } from "@futrob/shared-kernel";
 import type { ConfirmationAction } from "../domain/entities/confirmation-action.ts";
 import type { MatchDispute } from "../domain/entities/match-dispute.ts";
 import type {
@@ -38,6 +38,20 @@ export class MemoryOfficialSelections implements OfficialMatchSelectionRepositor
   failNextCommit: Error | null = null;
 
   constructor(readonly claims = new MemoryReferenceClaims()) {}
+
+  async listDueConfirmations(input: { readonly dueAt: Date; readonly limit: number }) {
+    return [...this.selections.values()]
+      .filter((selection) => {
+        const proposal = this.proposals.find((row) => row.id === selection.currentProposalId);
+        return (
+          selection.status === "awaiting_opponent_confirmation" &&
+          proposal &&
+          compareTime(proposal.confirmationDeadline, input.dueAt) <= 0
+        );
+      })
+      .sort((left, right) => left.encounterId.localeCompare(right.encounterId))
+      .slice(0, input.limit);
+  }
 
   async findLatestByEncounter(encounterId: EncounterId) {
     return this.selections.get(encounterId) ?? null;

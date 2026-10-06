@@ -104,6 +104,7 @@ export function buildProposal(
       officialSlot: index === 0 ? (1 as const) : (2 as const),
       providerMatchRef,
     })),
+    confirmationDeadline: new Date("2026-09-15T20:00:00.000Z"),
     supersedesProposalId: null,
     reason: null,
     createdAt: at(0),

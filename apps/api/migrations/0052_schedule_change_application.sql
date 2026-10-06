@@ -2,7 +2,7 @@
 -- an append-only application history, which is also the recoverable recalculation handoff.
 --
 -- Backfill: every existing slot starts at its Encounter's start. No offset between slot 1 and
--- slot 2 is invented. From here on the Encounter start is the earliest non-voided slot.
+-- slot 2 is invented. From here on the Encounter start is its earliest slot.
 
 ALTER TABLE official_matches ADD COLUMN IF NOT EXISTS scheduled_start_at TIMESTAMPTZ;
 
@@ -19,7 +19,7 @@ ALTER TABLE official_matches ALTER COLUMN scheduled_start_at SET NOT NULL;
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM schedule_change_requests WHERE status = 'accepted') THEN
-    RAISE EXCEPTION 'accepted schedule change requests exist without an applied schedule; resolve them before 0050';
+    RAISE EXCEPTION 'accepted schedule change requests exist without an applied schedule; resolve them before 0052';
   END IF;
 END $$;
 

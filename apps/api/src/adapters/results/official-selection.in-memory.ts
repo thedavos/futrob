@@ -9,7 +9,7 @@ import type {
   OfficialSelectionProposal,
   SelectionTransition,
 } from "@futrob/results";
-import type { ActorId, EncounterId } from "@futrob/shared-kernel";
+import { compareTime, type ActorId, type EncounterId } from "@futrob/shared-kernel";
 import {
   assertNextVersion,
   commandKeyIdentity,
@@ -37,6 +37,20 @@ export class InMemoryOfficialMatchSelectionRepository implements OfficialMatchSe
   actions: ConfirmationAction[] = [];
   disputes: MatchDispute[] = [];
   claims: InMemoryReferenceClaim[] = [];
+
+  async listDueConfirmations(input: { readonly dueAt: Date; readonly limit: number }) {
+    return this.selections
+      .filter((selection) => {
+        const proposal = this.proposals.find((row) => row.id === selection.currentProposalId);
+        return (
+          selection.status === "awaiting_opponent_confirmation" &&
+          proposal &&
+          compareTime(proposal.confirmationDeadline, input.dueAt) <= 0
+        );
+      })
+      .sort((left, right) => left.encounterId.localeCompare(right.encounterId))
+      .slice(0, input.limit);
+  }
 
   async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialMatchSelection | null> {
     return this.selections.find((row) => row.encounterId === encounterId) ?? null;

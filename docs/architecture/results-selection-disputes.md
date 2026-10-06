@@ -235,16 +235,15 @@ se publican tras el commit pero no se entregan de forma durable. No hay outbox n
 
 ## Pendiente fuera de este corte
 
-- HTTP, OpenAPI, SDK, BFF y UI del Match Center (tarea 5), y la previsualización FTR-SEL-002.
-- Vencimiento de la confirmación rival (DEC-021): hoy el silencio nunca cuenta como consentimiento y no
-  hay transición por plazo. Ver la sección siguiente.
+- SDK, BFF y UI del Match Center, y la previsualización FTR-SEL-002. HTTP y OpenAPI Team
+  están integrados mediante #113; #130 añade deadline y auditoría de vencimiento al contrato.
 - Disputa abierta por un Team sobre un resultado ya aprobado, sanciones, evidencias y notificaciones.
 - Consumidor que asocie candidatos (`associate`/`recalculate`) al sincronizar o reprogramar.
 
 ## Vencimiento de la confirmación rival (DEC-021)
 
 **Estado:** decisión validada el 2026-10-05: `D` = creación de la propuesta + 24 horas. El runtime
-([#130](https://github.com/thedavos/futrob/issues/130)) todavía no existe. La comparación de alternativas y los vectores V21-01…V21-19 están en
+([#130](https://github.com/thedavos/futrob/issues/130)) está implementado en el checkout, sin despliegue. La comparación de alternativas y los vectores V21-01…V21-19 están en
 [open-decisions §3.1](/product/open-decisions.md#31-dec-021--vencimiento-de-la-confirmación-rival).
 
 Forma de datos que la regla exige con cualquier alternativa:
@@ -262,3 +261,46 @@ decisión no añade un `SelectionStatus`.
 
 El kickoff (`EncounterReader.scheduledStartAt`) solo define la ventana de candidatos (DEC-023) y no es ancla
 del plazo. El TTL de reprogramación (DEC-032) pertenece a scheduling y no comparte código ni configuración.
+
+### Persistencia, legacy y recuperación (#130)
+
+`OfficialSelectionProposal.confirmationDeadline` se guarda en
+`official_selection_confirmation_windows`, vinculada por FK a la propuesta. Propuesta y ventana se
+insertan dentro de la misma transición atómica. Ambas son append-only. Se usa `addDays(createdAt, 1)`
+(24 horas exactas), independiente del kickoff y de la zona horaria.
+
+El tratamiento legacy fue **validado explícitamente el 2026-10-05 durante #130**:
+«Validar createdAt + 24 h también para legacy». La migración `0051` añade esas ventanas sin actualizar
+ni borrar propuestas, acciones o reservas previas. No concede 24 horas desde la migración. Una
+propuesta pendiente cuyo plazo ya pasó queda sin respuesta válida hasta que el runner la envíe a
+revisión. Las propuestas históricas reciben metadata temporal para la lectura, pero sus estados y
+consentimientos no cambian; solo vence la propuesta vigente en `awaiting_opponent_confirmation`.
+
+Confirmación, alternativa equivalente, rechazo, alternativa incompatible y apertura de disputa
+leen el reloj dentro de la transacción y exclusión por Encounter de `officialSelection`. La respuesta
+`t ≥ D` devuelve `results.confirmation_window_closed` (409), incluso si el runner no corrió o ya
+registró el vencimiento. Un replay de un comando aceptado a tiempo conserva su resultado histórico
+sin ejecutar otra respuesta ni proyección. La vista autorizada oculta acciones Team fuera de plazo.
+
+El runner consulta hasta 50 pendientes vencidas por invocación, en orden de deadline y Encounter.
+Reevalúa cada propuesta después de adquirir el mismo lock y hace CAS del estado y la auditoría juntos.
+Una acción `confirmation_expired` conserva `confirmationDeadline` y `processedAt` en UTC, el actor,
+`capacity=system` y las versiones antes/después. El índice único por propuesta impide duplicar el hecho.
+No libera reservas, crea disputa ni publica un evento de aprobación.
+
+El Cron existente de web despierta `POST /api/v1/internal/results/confirmation-expiry/run` cada minuto
+con `INTERNAL_JOB_SECRET`. El endpoint no usa ActorId ni tiempo del caller. Cada vencimiento tiene su
+propia transacción: tras una caída se descubren los pendientes no confirmados, sin cola ni lease nuevos.
+Una caída posterior al commit converge a `expired: 0` en el siguiente replay. Un error de escritura
+revierte estado y auditoría; no basta devolver `Result.err` después de escribir.
+
+`RESULTS_SYSTEM_ACTOR_ID` debe identificar un actor **ya provisionado por identity mediante apps/auth**.
+Puede ser una cuenta dedicada sin grants de Team/operador. El runner comprueba su existencia en `actors`;
+no genera IDs ni inserta identidad desde Results. Ausencia o falta de configuración devuelve 503 con
+`results.confirmation_expiry_actor_unavailable`, sin transición parcial. Después de provisionar/configurar
+la identidad, se reintenta sobre las mismas ventanas durables. `actor_id` sigue NOT NULL y FK.
+
+Para aplicar este corte, detener los escritores API anteriores, aplicar la migración y arrancar la
+versión nueva con el actor configurado. El backfill incluye el historial existente al aplicar `0051`;
+no depende de lectores que inventen deadlines para filas escritas por una versión vieja después.
+No se ha desplegado ni probado un Worker remoto o egress EA como parte de #130.

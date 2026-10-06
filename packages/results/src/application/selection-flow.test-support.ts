@@ -32,6 +32,7 @@ import {
 import { RESULT_PERMISSION } from "../domain/policies/result-permissions.ts";
 import { encounterCandidateAssociationId } from "../domain/policies/reconcile-candidate-associations.ts";
 import { ConfirmOfficialSelectionUseCase } from "./confirm-official-selection/confirm-official-selection.use-case.ts";
+import { ExpireConfirmationWindowUseCase } from "./expire-confirmation-window/expire-confirmation-window.use-case.ts";
 import { GetOfficialSelectionUseCase } from "./get-official-selection/get-official-selection.use-case.ts";
 import { OpenMatchDisputeUseCase } from "./open-match-dispute/open-match-dispute.use-case.ts";
 import { ProposeAlternativeOfficialSelectionUseCase } from "./propose-alternative-official-selection/propose-alternative-official-selection.use-case.ts";
@@ -158,6 +159,8 @@ export function slotRefs(...externalIds: string[]) {
 
 export interface HarnessOptions {
   readonly officialMatchCount?: 1 | 2;
+  readonly scheduledStartAt?: Date;
+  readonly matchOccurredAt?: string;
   readonly matchIds?: readonly string[];
   readonly incompleteMatchIds?: readonly string[];
   readonly claims?: MemoryReferenceClaims;
@@ -180,7 +183,7 @@ export function createSelectionHarness(options: HarnessOptions = {}) {
 
   const matchIds = options.matchIds ?? ["m-1", "m-2", "m-3"];
   const matches: ProviderMatch[] = matchIds.map((id) => {
-    const base = providerMatch(id, "2026-09-14T20:00:00.000Z");
+    const base = providerMatch(id, options.matchOccurredAt ?? "2026-09-14T20:00:00.000Z");
     return options.incompleteMatchIds?.includes(id)
       ? { ...base, metadata: { ...base.metadata, completeness: "partial" as const } }
       : base;
@@ -195,7 +198,7 @@ export function createSelectionHarness(options: HarnessOptions = {}) {
     stageId: asEncounterStageId("stage-1"),
     homeTeamId: HOME,
     awayTeamId: AWAY,
-    scheduledStartAt: new Date("2026-09-14T20:00:00.000Z"),
+    scheduledStartAt: options.scheduledStartAt ?? new Date("2026-09-14T20:00:00.000Z"),
     officialMatchCount: options.officialMatchCount ?? 1,
     homeExternalClubId: "club-home",
     awayExternalClubId: "club-away",
@@ -266,6 +269,7 @@ export function createSelectionHarness(options: HarnessOptions = {}) {
   const nextKey = () => `key-${++keyCounter}`;
 
   const useCases = {
+    expire: new ExpireConfirmationWindowUseCase(common),
     propose: new SelectOfficialMatchesUseCase(common),
     confirm: new ConfirmOfficialSelectionUseCase(common),
     reject: new RejectOfficialSelectionUseCase(common),
