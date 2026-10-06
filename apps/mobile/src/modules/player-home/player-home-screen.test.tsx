@@ -14,22 +14,8 @@ import { cleanupApp, renderApp } from "../../../test/render-app";
 import { gameProfile, invitation, lastMatch, profile, snapshot } from "./player-home.fixtures";
 
 const LANGUAGE_KEY = "futrob.mobile.language";
-const fixtureKickoff = new Intl.DateTimeFormat("es", {
-  timeZone: "America/Lima",
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-}).format(new Date("2026-10-02T02:00:00.000Z"));
-const fixtureKickoffEn = new Intl.DateTimeFormat("en", {
-  timeZone: "America/Lima",
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-}).format(new Date("2026-10-02T02:00:00.000Z"));
+const fixtureKickoff = "jue, 1 oct, 21:00";
+const fixtureKickoffEn = "Thu, Oct 1, 09:00 PM";
 
 const competitions = (() => {
   const source = snapshot().competitions;
