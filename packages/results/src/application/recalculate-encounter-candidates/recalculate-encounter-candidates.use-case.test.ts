@@ -99,7 +99,10 @@ describe("RecalculateEncounterCandidatesUseCase", () => {
       ...harness.snapshot,
       scheduledStartAt: KICKOFF_PLUS_24H,
     };
-    const recalc = await harness.recalc.execute({ encounterId: harness.snapshot.encounterId });
+    const recalc = await harness.recalc.execute({
+      organizationId: harness.snapshot.organizationId,
+      encounterId: harness.snapshot.encounterId,
+    });
 
     expect(recalc.isOk() && recalc.value.status === "associated").toBe(true);
     expect(harness.associations.rows).toHaveLength(2);
@@ -132,13 +135,19 @@ describe("RecalculateEncounterCandidatesUseCase", () => {
       scheduledStartAt: KICKOFF_PLUS_24H,
     };
 
-    const first = await harness.recalc.execute({ encounterId: harness.snapshot.encounterId });
+    const first = await harness.recalc.execute({
+      organizationId: harness.snapshot.organizationId,
+      encounterId: harness.snapshot.encounterId,
+    });
     const ids = associationIds(harness.associations.rows);
     const eligibility = harness.associations.rows.map((row) => ({
       externalId: row.providerMatchRef.externalId,
       eligible: row.eligible,
     }));
-    const second = await harness.recalc.execute({ encounterId: harness.snapshot.encounterId });
+    const second = await harness.recalc.execute({
+      organizationId: harness.snapshot.organizationId,
+      encounterId: harness.snapshot.encounterId,
+    });
 
     expect(first.isOk() && first.value.status === "associated").toBe(true);
     expect(second.isOk() && second.value.status === "associated").toBe(true);
@@ -172,14 +181,20 @@ describe("RecalculateEncounterCandidatesUseCase", () => {
               ...harness.snapshot,
               scheduledStartAt: KICKOFF_PLUS_24H,
             };
-            await harness.recalc.execute({ encounterId: harness.snapshot.encounterId });
+            await harness.recalc.execute({
+              organizationId: harness.snapshot.organizationId,
+              encounterId: harness.snapshot.encounterId,
+            });
           }
           return loaded;
         },
       }),
     });
 
-    const result = await stale.execute({ encounterId: harness.snapshot.encounterId });
+    const result = await stale.execute({
+      organizationId: harness.snapshot.organizationId,
+      encounterId: harness.snapshot.encounterId,
+    });
 
     expect(result.isOk() && result.value.status === "associated").toBe(true);
     expect(inner.rows.find((row) => row.providerMatchRef.externalId === "match-t")).toMatchObject({
@@ -191,6 +206,91 @@ describe("RecalculateEncounterCandidatesUseCase", () => {
     expect(eligibleExternalIds(inner.rows)).toEqual(["match-t24"]);
   });
 
+  it("moves the slot 2 window alone and keeps slot 1 candidates eligible", async () => {
+    const twoSlots = encounterSnapshot({
+      officialMatchCount: 2,
+      officialMatchStarts: [
+        { slot: 1, scheduledStartAt: new Date("2026-09-14T20:00:00.000Z") },
+        { slot: 2, scheduledStartAt: new Date("2026-09-14T21:00:00.000Z") },
+      ],
+    });
+    const encounterReader = new MutableEncounterReader(twoSlots);
+    const associations = new MemoryEncounterCandidateAssociations();
+    const deps = {
+      encounterReader,
+      providerMatches: new WindowedProviderMatchReader([
+        providerMatch("slot-1-played", "2026-09-14T20:10:00.000Z"),
+        providerMatch("slot-2-old", "2026-09-15T02:30:00.000Z"),
+        providerMatch("slot-2-new", "2026-09-15T21:20:00.000Z"),
+      ]),
+      associations,
+      clock: fixedClock,
+    };
+    const input = { organizationId: twoSlots.organizationId, encounterId: twoSlots.encounterId };
+    await new AssociateEncounterCandidatesUseCase(deps).execute(input);
+    const slot1Before = associations.rows.find(
+      (row) => row.providerMatchRef.externalId === "slot-1-played",
+    );
+
+    encounterReader.snapshot = {
+      ...twoSlots,
+      officialMatchStarts: [
+        { slot: 1, scheduledStartAt: new Date("2026-09-14T20:00:00.000Z") },
+        { slot: 2, scheduledStartAt: new Date("2026-09-15T21:00:00.000Z") },
+      ],
+    };
+    const recalc = new RecalculateEncounterCandidatesUseCase(deps);
+    const first = await recalc.execute(input);
+    const afterFirst = associations.rows.map((row) => ({ ...row }));
+    await recalc.execute(input);
+
+    expect(
+      first.isOk() && first.value.status === "associated" ? first.value.windows : null,
+    ).toEqual([
+      {
+        from: new Date("2026-09-14T14:00:00.000Z"),
+        to: new Date("2026-09-15T02:00:00.000Z"),
+      },
+      {
+        from: new Date("2026-09-15T15:00:00.000Z"),
+        to: new Date("2026-09-16T03:00:00.000Z"),
+      },
+    ]);
+    expect(associations.rows.map((row) => [row.providerMatchRef.externalId, row.eligible])).toEqual(
+      [
+        ["slot-1-played", true],
+        ["slot-2-new", true],
+        ["slot-2-old", false],
+      ],
+    );
+    expect(
+      associations.rows.find((row) => row.providerMatchRef.externalId === "slot-1-played"),
+    ).toEqual(slot1Before);
+    expect(associations.rows).toEqual(afterFirst);
+  });
+
+  it("refuses an Encounter of another organization and leaves its candidates intact", async () => {
+    const harness = createHarness();
+    await harness.associate.execute({
+      organizationId: harness.snapshot.organizationId,
+      encounterId: harness.snapshot.encounterId,
+    });
+    harness.encounterReader.snapshot = { ...harness.snapshot, scheduledStartAt: KICKOFF_PLUS_24H };
+
+    const foreign = await harness.recalc.execute({
+      organizationId: asOrganizationId("org-foreign"),
+      encounterId: harness.snapshot.encounterId,
+    });
+
+    expect(foreign.isErr() && EncounterNotFound.is(foreign.error)).toBe(true);
+    expect(eligibleExternalIds(harness.associations.rows)).toEqual(["match-t"]);
+    await harness.recalc.execute({
+      organizationId: harness.snapshot.organizationId,
+      encounterId: harness.snapshot.encounterId,
+    });
+    expect(eligibleExternalIds(harness.associations.rows)).toEqual(["match-t24"]);
+  });
+
   it("fails when the encounter is missing", async () => {
     const recalc = new RecalculateEncounterCandidatesUseCase({
       encounterReader: new MutableEncounterReader(null),
@@ -198,7 +298,10 @@ describe("RecalculateEncounterCandidatesUseCase", () => {
       associations: new MemoryEncounterCandidateAssociations(),
       clock: fixedClock,
     });
-    const result = await recalc.execute({ encounterId: encounterSnapshot().encounterId });
+    const result = await recalc.execute({
+      organizationId: encounterSnapshot().organizationId,
+      encounterId: encounterSnapshot().encounterId,
+    });
     expect(result.isErr() && EncounterNotFound.is(result.error)).toBe(true);
   });
 });

@@ -30,3 +30,4 @@ export const apiV1 = {
 };
 
 export { runConfirmationExpiryResponseSchema } from "./results-confirmation-expiry.ts";
+export { runCandidateRecalculationResponseSchema } from "./results-candidate-recalculation.ts";

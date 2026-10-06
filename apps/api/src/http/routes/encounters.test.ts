@@ -137,6 +137,7 @@ describe("GET /api/v1/encounters/:encounterId/candidates", () => {
     const listEncounterCandidates = new ListEncounterCandidatesUseCase({
       encounterReader: new SchedulingEncounterReader(
         modules.scheduling.encounters,
+        modules.scheduling.officialMatches,
         modules.teams.externalClubConnections,
       ),
       providerMatches,

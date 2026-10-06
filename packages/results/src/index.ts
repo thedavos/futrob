@@ -47,6 +47,7 @@ export {
   type EncounterReaderPort,
   type EncounterScheduleSnapshot,
   type EncounterStageId,
+  type OfficialMatchStart,
 } from "./domain/ports/encounter-reader.port.ts";
 export type {
   CandidateMatchQuery,
@@ -74,6 +75,7 @@ export { RESULT_PERMISSION, RESULT_PERMISSIONS } from "./domain/policies/result-
 export {
   CANDIDATE_WINDOW_HALF_HOURS,
   candidateWindowFor,
+  candidateWindowsFor,
   type CandidateWindow,
 } from "./domain/policies/candidate-window.ts";
 export {

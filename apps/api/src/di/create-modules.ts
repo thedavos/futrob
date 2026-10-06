@@ -25,6 +25,10 @@ import {
   SchedulingEncounterReader,
   RosterTeamRepresentationReader,
 } from "@/adapters/results/bridges.ts";
+import {
+  InMemoryCandidateRecalculationCheckpoints,
+  PostgresCandidateRecalculationCheckpoints,
+} from "@/adapters/results/candidate-recalculation-checkpoint.ts";
 import { createTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import {
   CompetitionRosterEntryGate,
@@ -75,6 +79,7 @@ import {
   ListTeamRosterManagementUseCase,
 } from "@/application/teams/team-roster-management.use-case.ts";
 import { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
+import { RecalculateRescheduledCandidates } from "@/application/results/recalculate-rescheduled-candidates.ts";
 import { findProvisionedSystemActor } from "@/adapters/identity/configured-system-actor.ts";
 import { AssociateSyncedProviderMatches } from "@/application/game-data/associate-synced-provider-matches.ts";
 
@@ -240,6 +245,7 @@ export function createModules(input: CreateModulesInput): AppModules {
 
   const encounterReader = new SchedulingEncounterReader(
     scheduling.encounters,
+    scheduling.officialMatches,
     teams.externalClubConnections,
   );
   const results = createResultsModule({
@@ -359,6 +365,14 @@ export function createModules(input: CreateModulesInput): AppModules {
       clock,
       resolveSystemActor: () => findProvisionedSystemActor(input.pool, input.resultsSystemActorId),
     }),
+    recalculateRescheduledCandidates: new RecalculateRescheduledCandidates({
+      feed: scheduling.scheduleChangeApplications,
+      checkpoints: input.pool
+        ? new PostgresCandidateRecalculationCheckpoints(input.pool)
+        : new InMemoryCandidateRecalculationCheckpoints(),
+      recalculate: results.recalculateEncounterCandidates,
+      clock,
+    }),
     gameData,
     getMyNextEncounter,
     identity,
@@ -380,6 +394,8 @@ export interface AppModules {
   /** Every selection command composed with its transaction, lock and projection. */
   readonly officialSelection: OfficialSelectionCommands;
   readonly runConfirmationExpiry: RunConfirmationExpiry;
+  /** Consumes applied schedule changes; recovery is the Cron calling it again. */
+  readonly recalculateRescheduledCandidates: RecalculateRescheduledCandidates;
   readonly voidOfficialResultAndUnproject: {
     execute(
       input: VoidOfficialResultInput,

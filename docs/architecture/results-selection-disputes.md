@@ -238,7 +238,6 @@ se publican tras el commit pero no se entregan de forma durable. No hay outbox n
 - SDK, BFF y UI del Match Center, y la previsualización FTR-SEL-002. HTTP y OpenAPI Team
   están integrados mediante #113; #130 añade deadline y auditoría de vencimiento al contrato.
 - Disputa abierta por un Team sobre un resultado ya aprobado, sanciones, evidencias y notificaciones.
-- Consumidor que asocie candidatos (`associate`/`recalculate`) al sincronizar o reprogramar.
 
 ## Vencimiento de la confirmación rival (DEC-021)
 

@@ -3,8 +3,8 @@
 `@futrob/scheduling` es dueño de la `ScheduleChangeRequest`, sus propuestas, sus decisiones, los
 recibos de comando y la aplicación del horario aceptado. La negociación (aceptar, rechazar y
 contraproponer sobre la propuesta vigente) llegó con #121. Aplicar el horario, el historial de
-aplicación, el cupo consumido y el handoff de recálculo llegaron con #122. HTTP, SDK, BFF y
-pantallas (#123/#124) y el consumo del recálculo (#112) no existen todavía.
+aplicación, el cupo consumido y el handoff de recálculo llegaron con #122; su consumo, con #112.
+HTTP, SDK, BFF y pantallas (#123/#124) no existen todavía.
 
 ## Modelo
 
@@ -128,17 +128,33 @@ trigger `schedule_change_append_only`. La solicitud rehidratada expone `applicat
 un comando devuelve la aplicación solo si ese comando la produjo o ya existía.
 
 La fila de aplicación es el handoff durable para #112: se confirma con el horario y nunca se
-actualiza. El consumidor del recálculo guarda su propio checkpoint (por ejemplo, una tabla de
-Results con el `application_id` procesado) y recorre `schedule_change_applications` por
-`(organization_id, applied_at, id)`; no debe suscribirse al `NoopEventPublisher`.
+actualiza. Scheduling la expone con el puerto público `ScheduleChangeApplicationFeedPort`
+(`listAppliedAfter`, orden `(applied_at, id)` en todas las organizaciones), implementado por el
+repositorio de solicitudes. Nadie se suscribe al `NoopEventPublisher`.
+
+`RecalculateRescheduledCandidates` (`apps/api/src/application/results/`) consume el feed y llama a
+`recalculateEncounterCandidates` con la organización y el Encounter de cada aplicación. Su
+checkpoint es `encounter_candidate_recalculations` (migración `0053`, de Results): una fila por
+`application_id` con el resultado. Cada ejecución vuelve a leer desde el último `applied_at`
+registrado menos 10 minutos y salta lo ya registrado, porque una aplicación puede confirmarse
+después de otra con `applied_at` posterior. Un fallo transitorio detiene la ejecución antes de su
+checkpoint; un Encounter inexistente se registra como `encounter_not_found`. Repetir el recálculo
+converge a las mismas asociaciones. El Cron de web despierta
+`POST /api/v1/internal/results/candidate-recalculation/run` cada minuto con `INTERNAL_JOB_SECRET`.
+El recálculo no aplica horarios, no selecciona ni oficializa.
 
 ### Lectores
 
 Dentro de la API, los horarios por slot se leen con `OfficialMatchRepository.listByEncounter` y
 `officialMatchSchedules`. `EncounterScheduleSnapshot.scheduledStartAt` sigue siendo el inicio del
-Encounter. El `EncounterReaderPort` de Results y el DTO HTTP del snapshot aún no llevan slots: la web
-implementa ese puerto sobre HTTP, así que añadir `slots` exige el contrato de #123. #112 debe
-añadirlos al puente `SchedulingEncounterReader` cuando adapte las ventanas por slot.
+Encounter. El puente `SchedulingEncounterReader` llena `officialMatchStarts` del
+`EncounterReaderPort` de Results, y `candidateWindowsFor` busca candidatos alrededor de cada slot.
+El campo es opcional: si falta, todos los slots empiezan con el Encounter. La web implementa ese
+puerto sobre HTTP sin slots hasta que #123 los añada al DTO del snapshot.
+
+`ListEncounterCandidatesUseCase` y su respuesta HTTP siguen usando una sola ventana alrededor del
+inicio del Encounter. El `EncounterWindowReaderPort` del sync de proveedor también filtra por ese
+inicio, así que un partido jugado cerca de un slot 2 movido aparte no se asocia al sincronizar.
 
 ### Migración `0052`
 
