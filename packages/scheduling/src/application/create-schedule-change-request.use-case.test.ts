@@ -290,6 +290,7 @@ function createHarness(
     encounters,
     events,
     useCase: new CreateScheduleChangeRequestUseCase({
+      matches: { listByEncounter: async () => [] },
       authorization: authorization(options.allowed),
       clock: { now: () => new Date(now) },
       editGuard: {
@@ -386,6 +387,7 @@ describe("CreateScheduleChangeRequestUseCase", () => {
         },
       ],
       decisions: [],
+      application: null,
       idempotencyKey: "idem-1",
       createdAt: now,
       updatedAt: now,

@@ -39,6 +39,7 @@ export async function projectFixtureEncounter(
       organizationId: plan.organizationId,
       competitionId: plan.competitionId,
       status: "scheduled",
+      scheduledStartAt: encounter.scheduledStartAt,
       createdAt,
     })),
   );

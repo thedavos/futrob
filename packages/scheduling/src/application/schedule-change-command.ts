@@ -40,9 +40,19 @@ import type {
 import type { EncounterMutationLockPort } from "../domain/ports/encounter-mutation-lock.port.ts";
 import type { EncounterScheduleRepository } from "../domain/ports/encounter-schedule.repository.ts";
 import type { ScheduleChangeRequestEditGuardPort } from "../domain/ports/fixture-editing.ports.ts";
+import type { OfficialMatchRepository } from "../domain/ports/official-match.repository.ts";
 import type { ScheduleChangeRequestRepository } from "../domain/ports/schedule-change-request.repository.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
+import {
+  officialMatchSchedules,
+  type OfficialMatchSchedule,
+} from "../domain/policies/official-match-schedule.ts";
 import { scheduleChangeRequestAsOf } from "../domain/policies/schedule-change-replay.ts";
+
+/** The failure thrown out of the transaction to roll back writes made after `commit`. */
+interface RolledBackFailure<E> {
+  failure?: E;
+}
 
 /** Identifies the proposal a command answers and the request version it saw. */
 export interface ScheduleChangeCommandInput {
@@ -68,6 +78,7 @@ export interface ScheduleChangeCommandDeps {
   readonly editGuard: ScheduleChangeRequestEditGuardPort;
   readonly encounters: Pick<EncounterScheduleRepository, "findById">;
   readonly ids: IdGeneratorPort;
+  readonly matches: Pick<OfficialMatchRepository, "listByEncounter">;
   readonly mutationLock: EncounterMutationLockPort;
   readonly requests: ScheduleChangeRequestRepository;
   readonly rules: Pick<CompetitionRescheduleRulesPort, "getRules">;
@@ -76,6 +87,8 @@ export interface ScheduleChangeCommandDeps {
 
 export interface ScheduleChangeCommandContext {
   readonly encounter: EncounterScheduleSnapshot;
+  /** Current start of every slot, read under the Encounter lock. */
+  readonly schedules: readonly OfficialMatchSchedule[];
   readonly request: ScheduleChangeRequest;
   readonly rules: CompetitionRescheduleRules;
   readonly now: Date;
@@ -100,6 +113,14 @@ export async function runScheduleChangeCommand<E>(
     readonly decide: (
       context: ScheduleChangeCommandContext,
     ) => Promise<Result<ScheduleChangeTransition, E>>;
+    /**
+     * Writes that must commit with the transition, run after it. An error rolls back
+     * the transition, its receipt and every write made here.
+     */
+    readonly afterCommit?: (
+      context: ScheduleChangeCommandContext,
+      transition: ScheduleChangeTransition,
+    ) => Promise<Result<void, E>>;
   },
 ): Promise<Result<ScheduleChangeCommandOutput, E | ScheduleChangeResponseError>> {
   const { input } = command;
@@ -117,6 +138,9 @@ export async function runScheduleChangeCommand<E>(
     ...command.payload,
   });
 
+  // `TransactionPort` commits whatever the callback returns, including `Result.err`, so
+  // a failure after the first write is thrown to roll back and returned once outside.
+  const rollback: RolledBackFailure<E> = {};
   try {
     return await deps.transaction.runInTransaction(() =>
       deps.mutationLock.runExclusive(
@@ -211,8 +235,13 @@ export async function runScheduleChangeCommand<E>(
             }
           }
 
+          const schedules = officialMatchSchedules(
+            encounter,
+            await deps.matches.listByEncounter(encounter.encounterId),
+          );
           const now = deps.clock.now();
-          const transition = await command.decide({ encounter, request, rules, now });
+          const context = { encounter, schedules, request, rules, now };
+          const transition = await command.decide(context);
           if (transition.isErr()) return err(transition.error);
 
           const next = transition.value.request;
@@ -240,11 +269,20 @@ export async function runScheduleChangeCommand<E>(
               ),
             );
           }
+          if (command.afterCommit) {
+            const effect = await command.afterCommit(context, transition.value);
+            if (effect.isErr()) {
+              rollback.failure = effect.error;
+              throw effect.error;
+            }
+          }
           return ok({ request: next, receipt: newReceipt, replayed: false });
         },
       ),
     );
   } catch (error) {
+    const failure = rollback.failure;
+    if (failure !== undefined && error === failure) return err(failure);
     if (error instanceof ScheduleChangeRequestIdempotencyConflict) return err(error);
     throw error;
   }

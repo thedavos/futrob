@@ -83,6 +83,7 @@ export class MaterializeOfficialMatchesForEncounterUseCase {
           competitionId: encounter.competitionId,
           slot,
           status: "scheduled",
+          scheduledStartAt: encounter.scheduledStartAt,
           createdAt,
         },
     );

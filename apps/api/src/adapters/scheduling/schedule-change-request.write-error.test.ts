@@ -25,6 +25,7 @@ const request: ScheduleChangeRequest = {
   status: "open",
   version: 1,
   decisions: [],
+  application: null,
   proposals: [
     {
       id: "proposal-1",

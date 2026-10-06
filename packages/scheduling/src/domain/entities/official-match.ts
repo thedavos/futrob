@@ -19,5 +19,7 @@ export interface OfficialMatch {
   readonly competitionId: CompetitionId;
   readonly slot: 1 | 2;
   readonly status: OfficialMatchStatus;
+  /** Durable start of this slot; an `official_match` reschedule moves only this value. */
+  readonly scheduledStartAt: Date;
   readonly createdAt: Date;
 }

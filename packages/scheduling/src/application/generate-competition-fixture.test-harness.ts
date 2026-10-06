@@ -128,6 +128,19 @@ export class Matches implements OfficialMatchRepository {
   async upsertMany(matches: readonly OfficialMatch[]) {
     this.rows.push(...matches);
   }
+  async saveSchedules(matches: readonly OfficialMatch[]) {
+    for (const match of matches) {
+      const index = this.rows.findIndex(
+        (row) => row.encounterId === match.encounterId && row.slot === match.slot,
+      );
+      if (index === -1) this.rows.push(match);
+      else
+        this.rows[index] = {
+          ...(this.rows[index] ?? match),
+          scheduledStartAt: match.scheduledStartAt,
+        };
+    }
+  }
   async voidByEncounterIds(encounterIds: readonly EncounterId[]) {
     const ids = new Set(encounterIds);
     for (const [index, match] of this.rows.entries()) {

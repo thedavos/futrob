@@ -15,6 +15,7 @@ const original: OfficialMatch = {
   competitionId: asCompetitionId("competition-1"),
   slot: 1,
   status: "scheduled",
+  scheduledStartAt: new Date("2026-08-12T20:00:00.000Z"),
   createdAt: new Date("2026-08-11T07:00:00.000Z"),
 };
 

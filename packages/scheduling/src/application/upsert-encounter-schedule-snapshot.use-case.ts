@@ -1,4 +1,11 @@
-import { err, ok, type ActorId, type AuthorizationPort, type Result } from "@futrob/shared-kernel";
+import {
+  err,
+  ok,
+  type ActorId,
+  type AuthorizationPort,
+  type Result,
+  type TransactionPort,
+} from "@futrob/shared-kernel";
 import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-schedule-snapshot.ts";
 import {
   EncounterScheduleAuthorizationForbidden,
@@ -11,7 +18,9 @@ import type {
   EncounterScheduleRepository,
 } from "../domain/ports/encounter-schedule.repository.ts";
 import type { FixturePlanRepository } from "../domain/ports/fixture-plan.repository.ts";
+import type { OfficialMatchRepository } from "../domain/ports/official-match.repository.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
+import { shiftOfficialMatches } from "./shift-official-matches.ts";
 
 /** Producer for the scheduling projection consumed by authorization and results. */
 export class UpsertEncounterScheduleSnapshotUseCase {
@@ -20,7 +29,9 @@ export class UpsertEncounterScheduleSnapshotUseCase {
       readonly authorization: AuthorizationPort;
       readonly encounters: EncounterScheduleRepository;
       readonly fixtureOwnership: Pick<FixturePlanRepository, "containsEncounter">;
+      readonly matches: Pick<OfficialMatchRepository, "listByEncounter" | "saveSchedules">;
       readonly participants: EncounterParticipantValidationPort;
+      readonly transaction: TransactionPort;
     },
   ) {}
 
@@ -104,7 +115,22 @@ export class UpsertEncounterScheduleSnapshotUseCase {
         }),
       );
     }
-    const saved = await this.deps.encounters.upsert(snapshot);
+    const saved = await this.deps.transaction.runInTransaction(async () => {
+      const upserted = await this.deps.encounters.upsert(snapshot);
+      if (
+        upserted &&
+        existing &&
+        existing.scheduledStartAt.getTime() !== snapshot.scheduledStartAt.getTime()
+      ) {
+        await shiftOfficialMatches(
+          this.deps.matches,
+          snapshot.encounterId,
+          existing,
+          snapshot.scheduledStartAt,
+        );
+      }
+      return upserted;
+    });
     if (!saved) {
       return err(
         new InvalidEncounterSchedule({

@@ -20,7 +20,12 @@ import {
   type InvalidScheduleChangeDate,
   type InvalidScheduleChangeReason,
 } from "../errors/schedule-change-request.errors.ts";
-import type { RescheduleScope } from "../value-objects/reschedule-scope.ts";
+import {
+  copyRescheduleScope,
+  isRescheduleScopeOf,
+  type RescheduleScope,
+} from "../value-objects/reschedule-scope.ts";
+import type { ScheduleChangeApplication } from "./schedule-change-application.ts";
 import type {
   ScheduleChangeAuthority,
   ScheduleChangeDecision,
@@ -54,6 +59,8 @@ export interface ScheduleChangeRequest {
   readonly proposals: readonly [ScheduleChangeProposal, ...ScheduleChangeProposal[]];
   /** Append-only answers, each bound to the proposal and version it answered. */
   readonly decisions: readonly ScheduleChangeDecision[];
+  /** The schedule applied when the request became `accepted`; null otherwise. */
+  readonly application: ScheduleChangeApplication | null;
   readonly idempotencyKey: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -102,7 +109,7 @@ export function createInitialScheduleChangeRequest(
     );
   }
 
-  if (!isValidScope(input.scope, input.officialMatchCount)) {
+  if (!isRescheduleScopeOf(input.scope, input.officialMatchCount)) {
     return err(
       new InvalidScheduleChangeScope({
         code: "scheduling.invalid_schedule_change_scope",
@@ -131,43 +138,16 @@ export function createInitialScheduleChangeRequest(
     encounterId: input.encounterId,
     requestingTeamId: input.requestingTeamId,
     initiatedByActorId: input.initiatedByActorId,
-    scope: copyScope(input.scope),
+    scope: copyRescheduleScope(input.scope),
     status: "open",
     version: 1,
     proposals: [proposal.value],
     decisions: [],
+    application: null,
     idempotencyKey,
     createdAt,
     updatedAt: new Date(createdAt),
   });
-}
-
-function copyScope(scope: RescheduleScope): RescheduleScope {
-  switch (scope.type) {
-    case "entire_encounter":
-      return { type: "entire_encounter" };
-    case "official_match":
-      return { type: "official_match", officialSlot: scope.officialSlot };
-    default: {
-      const exhaustiveScope: never = scope;
-      void exhaustiveScope;
-      return { type: "entire_encounter" };
-    }
-  }
-}
-
-function isValidScope(scope: RescheduleScope, officialMatchCount: 1 | 2): boolean {
-  switch (scope.type) {
-    case "entire_encounter":
-      return true;
-    case "official_match":
-      return scope.officialSlot === 1 || (scope.officialSlot === 2 && officialMatchCount === 2);
-    default: {
-      const exhaustiveScope: never = scope;
-      void exhaustiveScope;
-      return false;
-    }
-  }
 }
 
 export function currentScheduleChangeProposal(
@@ -182,6 +162,7 @@ export interface ScheduleChangeTransition {
   readonly expectedVersion: number;
   readonly appendedProposal: ScheduleChangeProposal | null;
   readonly appendedDecision: ScheduleChangeDecision | null;
+  readonly appendedApplication: ScheduleChangeApplication | null;
 }
 
 export interface ScheduleChangeTarget {
@@ -421,6 +402,7 @@ function nextTransition(
     expectedVersion: request.version,
     appendedProposal: change.appendedProposal,
     appendedDecision: change.appendedDecision,
+    appendedApplication: null,
     request: {
       ...request,
       status: change.status,

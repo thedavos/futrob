@@ -233,7 +233,7 @@ describe("CompetitionRescheduleRulesAdapter", () => {
     ).resolves.toEqual(closedRules);
   });
 
-  it("counts accepted requests only, never open or rejected attempts", async () => {
+  it("counts applied requests only, never open or rejected attempts", async () => {
     const competitions = new InMemoryCompetitionRepository();
     await competitions.saveDraft(draft());
     const requests = new InMemoryScheduleChangeRequestRepository();
@@ -256,6 +256,7 @@ describe("CompetitionRescheduleRulesAdapter", () => {
       status: "open",
       version: 1,
       decisions: [],
+      application: null,
       proposals: [proposal],
       idempotencyKey: "idem-open",
       createdAt: proposal.createdAt,
@@ -266,6 +267,16 @@ describe("CompetitionRescheduleRulesAdapter", () => {
       ...base,
       id: "req-accepted",
       status: "accepted",
+      application: {
+        id: "application-1",
+        proposalId: "proposal-1",
+        requestVersion: 2,
+        appliedByActorId: asActorId("captain-2"),
+        previousEncounterStartAt: new Date("2026-09-20T20:00:00.000Z"),
+        appliedEncounterStartAt: new Date("2026-09-21T21:30:00.000Z"),
+        slots: [],
+        appliedAt: new Date("2026-09-15T20:00:00.000Z"),
+      },
       idempotencyKey: "idem-accepted",
     });
     await requests.save({

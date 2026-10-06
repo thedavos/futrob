@@ -43,6 +43,7 @@ import {
 } from "../domain/policies/edit-fixture-encounter.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
 import { projectFixtureEncounter } from "./project-fixture-encounters.ts";
+import { shiftOfficialMatches } from "./shift-official-matches.ts";
 
 export interface EditFixtureEncounterInput {
   readonly actorId: ActorId;
@@ -210,6 +211,14 @@ export class EditFixtureEncounterUseCase {
               code: "scheduling.fixture_update_conflict",
               message: "The fixture changed concurrently",
             }),
+          );
+        }
+        if (before.scheduledStartAt.getTime() !== after.scheduledStartAt.getTime()) {
+          await shiftOfficialMatches(
+            this.deps.matches,
+            input.encounterId,
+            before,
+            after.scheduledStartAt,
           );
         }
         await projectFixtureEncounter(this.deps, updated, after);

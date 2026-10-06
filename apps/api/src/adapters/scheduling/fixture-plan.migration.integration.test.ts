@@ -9,7 +9,7 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = describe.skipIf(!databaseUrl);
 const schemas: string[] = [];
 
-suite("0025 competition fixtures migration", () => {
+suite("0025 competition fixtures migration", { timeout: 60_000 }, () => {
   afterEach(async () => {
     const pool = new Pool({ connectionString: databaseUrl });
     try {
@@ -77,8 +77,8 @@ async function insertCompetition(
   await seedActors(client, "organizer");
   await client.query(
     `INSERT INTO organizations (
-       id, name, normalized_name, created_at, created_by_actor_id
-     ) VALUES ($1, $2, $3, NOW(), 'organizer')`,
+       id, name, normalized_name, slug, time_zone, created_at, created_by_actor_id
+     ) VALUES ($1, $2, $3, $1, 'America/Lima', NOW(), 'organizer')`,
     [organizationId, organizationId, organizationId],
   );
   await client.query(

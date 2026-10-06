@@ -189,7 +189,7 @@ export class OfficialResultFixtureEditGuard
   implements FixtureEncounterEditGuardPort, ScheduleChangeRequestEditGuardPort
 {
   constructor(
-    private readonly matches: OfficialMatchRepository,
+    private readonly matches: Pick<OfficialMatchRepository, "listByEncounter">,
     private readonly results: Pick<OfficialResultRepository, "findApprovedByEncounter">,
     private readonly selections: Pick<OfficialMatchSelectionRepository, "findLatestByEncounter">,
   ) {}

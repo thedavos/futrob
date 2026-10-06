@@ -1,6 +1,7 @@
 import { TaggedError, type EncounterId, type Permission, type TeamId } from "@futrob/shared-kernel";
 import type { ScheduleChangeAuthority } from "../entities/schedule-change-decision.ts";
 import type { ScheduleChangeRequestStatus } from "../entities/schedule-change-request.ts";
+import type { FixtureUpdateConflict } from "./fixture.errors.ts";
 
 export class ScheduleChangeRequestNotFound extends TaggedError("ScheduleChangeRequestNotFound")<{
   code: "scheduling.schedule_change_encounter_not_found";
@@ -155,6 +156,13 @@ export type ScheduleChangeResponseError =
   | ScheduleChangeApprovalNotConfigured
   | ReschedulingDisabled
   | EncounterNotEditableForScheduleChange;
+
+export type AcceptScheduleChangeProposalError =
+  | ScheduleChangeResponseError
+  | RescheduleLimitReached
+  | InvalidScheduleChangeDate
+  | InvalidScheduleChangeScope
+  | FixtureUpdateConflict;
 
 export type CounterScheduleChangeProposalError =
   | ScheduleChangeResponseError

@@ -88,6 +88,7 @@ suite("migration runner", () => {
           "0047_team_performance_rankings.sql",
           "0048_schedule_change_negotiation.sql",
           "0049_provider_sync_ingestion_checkpoint.sql",
+          "0050_schedule_change_application.sql",
         ]);
         expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
         expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
@@ -122,6 +123,7 @@ suite("migration runner", () => {
         expect(upgraded.applied).toEqual([
           "0048_schedule_change_negotiation.sql",
           "0049_provider_sync_ingestion_checkpoint.sql",
+          "0050_schedule_change_application.sql",
         ]);
         expect(
           (
