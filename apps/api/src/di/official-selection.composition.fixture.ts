@@ -2,6 +2,7 @@ import type { ProviderMatch, ProviderMatchRepository } from "@futrob/game-data";
 import { parseOrganizationSlug } from "@futrob/organizations";
 import { asFixtureStageId } from "@futrob/scheduling";
 import {
+  type ClockPort,
   asActorId,
   asCompetitionId,
   asEncounterId,
@@ -49,6 +50,8 @@ export function providerMatch(externalMatchId: string): ProviderMatch {
 export async function seedComposition(backend: {
   readonly pool: Pool | undefined;
   readonly matches: ProviderMatchRepository;
+  readonly clock?: ClockPort;
+  readonly resultsSystemActorId?: string;
 }) {
   if (backend.pool) {
     await seedActors(backend.pool, OPERATOR, HOME_CAPTAIN, AWAY_CAPTAIN, AWAY_PLAYER, STAFF);
@@ -59,6 +62,8 @@ export async function seedComposition(backend: {
     eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
     pool: backend.pool,
     providerMatches: backend.matches,
+    clock: backend.clock,
+    resultsSystemActorId: backend.resultsSystemActorId,
   });
 
   await modules.organizations.repositories.organizations.create({

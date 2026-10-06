@@ -1,4 +1,5 @@
 import {
+  addDays,
   err,
   ok,
   type ActorId,
@@ -142,6 +143,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
         teamId: input.actingTeamId,
         commandKey: input.commandKey,
         fingerprint,
+        evaluatedAt: prepared.value.evaluatedAt,
       });
     }
 
@@ -149,7 +151,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
     if (reason.isErr()) return err(reason.error);
     const auditReason = redactAuditReason(reason.value);
 
-    const now = this.deps.clock.now();
+    const now = prepared.value.evaluatedAt;
     const proposals = await this.deps.selections.listProposals(selection.id);
     const alternative: OfficialSelectionProposal = {
       id: this.deps.ids.generate(),
@@ -164,6 +166,7 @@ export class ProposeAlternativeOfficialSelectionUseCase {
       slots: normalized.slots,
       supersedesProposalId: proposal.id,
       reason: auditReason,
+      confirmationDeadline: addDays(now, 1),
       createdAt: now,
     };
     const nextVersion = selection.version + 1;

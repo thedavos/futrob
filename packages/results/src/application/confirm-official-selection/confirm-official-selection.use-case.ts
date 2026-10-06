@@ -38,6 +38,7 @@ import {
   approvedGuard,
   versionConflict,
 } from "../selection-command-support.ts";
+import { confirmationWindowGuard } from "../../domain/policies/confirmation-window.ts";
 import { lookupReplay, replayOutput } from "../selection-replay.ts";
 
 export interface ConfirmOfficialSelectionInput {
@@ -126,6 +127,13 @@ export class ConfirmOfficialSelectionUseCase {
         }),
       );
     }
+    const proposals = await this.deps.selections.listProposals(selection.id);
+    const proposal = proposals.find((row) => row.id === input.proposalId);
+    const now = this.deps.clock.now();
+    if (proposal && selection.currentProposalId === input.proposalId) {
+      const closed = confirmationWindowGuard(proposal, now);
+      if (closed) return err(closed);
+    }
     const approved = approvedGuard(selection, "confirm", input.encounterId);
     if (approved) return err(approved);
     if (selection.version !== input.expectedVersion) {
@@ -146,8 +154,6 @@ export class ConfirmOfficialSelectionUseCase {
       );
     }
 
-    const proposals = await this.deps.selections.listProposals(selection.id);
-    const proposal = proposals.find((row) => row.id === input.proposalId);
     if (!proposal) return err(staleProposal(input.proposalId));
     if (proposal.proposingTeamId === null) {
       return err(
@@ -174,6 +180,7 @@ export class ConfirmOfficialSelectionUseCase {
       teamId: input.actingTeamId,
       commandKey: input.commandKey,
       fingerprint,
+      evaluatedAt: now,
     });
   }
 }

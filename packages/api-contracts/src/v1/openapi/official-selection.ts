@@ -34,7 +34,8 @@ const failureDescription =
   "`results.provider_match_snapshot_missing`, `results.reference_already_claimed`, " +
   "`results.selection_not_confirmable`, `results.selection_version_conflict`, " +
   "`results.selection_proposal_stale`, `results.selection_state_conflict`, " +
-  "`results.selection_already_approved`, `results.command_key_reused`.";
+  "`results.selection_already_approved`, `results.command_key_reused`, " +
+  "`results.confirmation_window_closed` (the response was evaluated at or after its deadline).";
 
 function teamCommand(
   operationId: string,

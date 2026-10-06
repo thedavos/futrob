@@ -53,6 +53,7 @@ export const TEAM_OFFICIAL_SELECTION_ERROR_STATUS = {
   "results.selection_state_conflict": 409,
   "results.selection_already_approved": 409,
   "results.command_key_reused": 409,
+  "results.confirmation_window_closed": 409,
 } as const satisfies Record<TeamOfficialSelectionError["code"], number>;
 
 export function teamOfficialSelectionFailureToHttp(error: TeamOfficialSelectionError): Response {
@@ -88,6 +89,7 @@ function toProposalDto(proposal: OfficialSelectionProposal): OfficialSelectionPr
     supersedesProposalId: proposal.supersedesProposalId,
     reason: proposal.reason,
     createdAt: proposal.createdAt.toISOString(),
+    confirmationDeadline: proposal.confirmationDeadline.toISOString(),
   };
 }
 
@@ -113,6 +115,8 @@ function toActionDto(action: ConfirmationAction): OfficialSelectionActionDto {
           conflictingReference: action.details.conflictingReference,
           selectedProposalId: action.details.selectedProposalId,
           disputeId: action.details.disputeId,
+          confirmationDeadline: action.details.confirmationDeadline,
+          processedAt: action.details.processedAt,
         }
       : null,
     occurredAt: action.occurredAt.toISOString(),

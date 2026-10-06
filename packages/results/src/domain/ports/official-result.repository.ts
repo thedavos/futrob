@@ -42,6 +42,10 @@ export type CommitSelectionTransitionResult =
   | { readonly status: "reference_claimed"; readonly providerMatchRef: ExternalReference };
 
 export interface OfficialMatchSelectionRepository {
+  listDueConfirmations(input: {
+    readonly dueAt: Date;
+    readonly limit: number;
+  }): Promise<readonly OfficialMatchSelection[]>;
   /** The live selection of the Encounter, or null when none was ever proposed. */
   findLatestByEncounter(encounterId: EncounterId): Promise<OfficialMatchSelection | null>;
   listProposals(selectionId: string): Promise<readonly OfficialSelectionProposal[]>;

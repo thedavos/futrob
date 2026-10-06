@@ -84,6 +84,7 @@ suite("0045/0046 official selection and candidate migrations", () => {
           "0047_team_performance_rankings.sql",
           "0048_schedule_change_negotiation.sql",
           "0049_provider_sync_ingestion_checkpoint.sql",
+          "0051_official_selection_confirmation_deadlines.sql",
         ]);
       } finally {
         client.release();

@@ -59,6 +59,57 @@
     }
   ],
   "paths": {
+    "/internal/results/confirmation-expiry/run": {
+      "post": {
+        "operationId": "runConfirmationExpiry",
+        "tags": ["results"],
+        "summary": "Recover up to 50 expired opponent confirmation windows",
+        "description": "Service-only Cron target authenticated with the internal bearer secret. Uses the API clock and configured provisioned RESULTS_SYSTEM_ACTOR_ID; accepts no actor or timestamp from callers. Silence moves the selection to organizer_review and never approves a result. Retry discovers durable pending work.",
+        "responses": {
+          "200": {
+            "description": "Expired and concurrently skipped selections in this batch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunConfirmationExpiryResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "503": {
+            "description": "Service authentication or the provisioned system actor is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/meta/ping": {
       "get": {
         "operationId": "metaPing",
@@ -3126,7 +3177,7 @@
         "operationId": "proposeOfficialSelection",
         "tags": ["results"],
         "summary": "Propose the provider matches for the Encounter's official slots",
-        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`.",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestId"
@@ -3197,7 +3248,7 @@
         "operationId": "confirmOfficialSelection",
         "tags": ["results"],
         "summary": "Confirm the rival Team's exact proposal version, approving the result",
-        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`.",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestId"
@@ -3276,7 +3327,7 @@
         "operationId": "rejectOfficialSelection",
         "tags": ["results"],
         "summary": "Reject the rival Team's proposal with a reason; the case moves to dispute",
-        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`.",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestId"
@@ -3355,7 +3406,7 @@
         "operationId": "proposeAlternativeOfficialSelection",
         "tags": ["results"],
         "summary": "Answer the rival Team's proposal with an alternative selection",
-        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`.",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestId"
@@ -3434,7 +3485,7 @@
         "operationId": "openMatchDispute",
         "tags": ["results"],
         "summary": "Open a dispute on the pending proposal",
-        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`.",
+        "description": "The actor comes from service authentication; `actingTeamId` is verified against the Encounter rosters. Repeating `commandKey` with the same payload replays the original outcome with `replayed: true`. Failures carry a stable `code`: 400 `api.validation_error`, `results.invalid_selection`, `results.duplicate_provider_match`, `results.reason_required`; 403 `results.official_selection_forbidden`, `results.official_result_forbidden`, `results.self_confirmation_forbidden`; 404 `results.encounter_not_found`, `results.selection_not_found`; 409 `results.candidate_not_associated`, `results.provider_match_snapshot_missing`, `results.reference_already_claimed`, `results.selection_not_confirmable`, `results.selection_version_conflict`, `results.selection_proposal_stale`, `results.selection_state_conflict`, `results.selection_already_approved`, `results.command_key_reused`, `results.confirmation_window_closed` (the response was evaluated at or after its deadline).",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestId"
@@ -5299,6 +5350,24 @@
       }
     },
     "schemas": {
+      "RunConfirmationExpiryResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "expired": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["expired", "skipped"],
+        "additionalProperties": false
+      },
       "EffectiveAccess": {
         "type": "object",
         "required": ["actorId", "scope", "roles", "permissions"],
@@ -7711,6 +7780,11 @@
                   "type": "string",
                   "format": "date-time",
                   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "confirmationDeadline": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                 }
               },
               "required": [
@@ -7722,7 +7796,8 @@
                 "slots",
                 "supersedesProposalId",
                 "reason",
-                "createdAt"
+                "createdAt",
+                "confirmationDeadline"
               ],
               "additionalProperties": false
             }
@@ -7762,7 +7837,8 @@
                     "returned_to_selection",
                     "voided",
                     "reference_reuse_rejected",
-                    "legacy_review_required"
+                    "legacy_review_required",
+                    "confirmation_expired"
                   ]
                 },
                 "fromStatus": {
@@ -7935,6 +8011,16 @@
                         "disputeId": {
                           "type": "string",
                           "minLength": 1
+                        },
+                        "confirmationDeadline": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "processedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                         }
                       },
                       "additionalProperties": false
@@ -8407,6 +8493,11 @@
                     "type": "string",
                     "format": "date-time",
                     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "confirmationDeadline": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                   }
                 },
                 "required": [
@@ -8418,7 +8509,8 @@
                   "slots",
                   "supersedesProposalId",
                   "reason",
-                  "createdAt"
+                  "createdAt",
+                  "confirmationDeadline"
                 ],
                 "additionalProperties": false
               },
@@ -8462,7 +8554,8 @@
                     "returned_to_selection",
                     "voided",
                     "reference_reuse_rejected",
-                    "legacy_review_required"
+                    "legacy_review_required",
+                    "confirmation_expired"
                   ]
                 },
                 "fromStatus": {
@@ -8635,6 +8728,16 @@
                         "disputeId": {
                           "type": "string",
                           "minLength": 1
+                        },
+                        "confirmationDeadline": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "processedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                         }
                       },
                       "additionalProperties": false

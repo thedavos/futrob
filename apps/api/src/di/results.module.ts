@@ -1,5 +1,6 @@
 import {
   AssociateEncounterCandidatesUseCase,
+  ExpireConfirmationWindowUseCase,
   ConfirmOfficialSelectionUseCase,
   GetOfficialSelectionUseCase,
   ListEncounterCandidatesUseCase,
@@ -96,6 +97,7 @@ export function createResultsModule(input: {
     results,
     associations,
     officialResultReader,
+    expireConfirmationWindow: new ExpireConfirmationWindowUseCase({ selections, clock, ids }),
     listEncounterCandidates: new ListEncounterCandidatesUseCase({
       encounterReader: input.encounterReader,
       providerMatches: input.providerMatches,

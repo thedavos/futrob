@@ -77,6 +77,7 @@ export const proposalRowSchema = z.object({
   supersedes_proposal_id: pgNullableTextSchema,
   reason: pgNullableTextSchema,
   created_at: pgTimestampSchema,
+  confirmation_deadline: pgTimestampSchema,
 });
 
 const integrityFlagSchema = z.object({
@@ -85,6 +86,8 @@ const integrityFlagSchema = z.object({
 });
 
 const actionDetailsSchema = z.object({
+  confirmationDeadline: z.iso.datetime().optional(),
+  processedAt: z.iso.datetime().optional(),
   integrityFlags: z.array(integrityFlagSchema).optional(),
   acknowledgedFlags: z.array(integrityFlagSchema).optional(),
   conflictingReference: externalReferenceSchema.optional(),
@@ -113,6 +116,7 @@ export const actionRowSchema = z.object({
     "voided",
     "reference_reuse_rejected",
     "legacy_review_required",
+    "confirmation_expired",
   ]),
   from_status: z.union([z.null(), selectionStatusSchema]),
   to_status: z.union([z.null(), selectionStatusSchema]),
@@ -179,6 +183,11 @@ export async function insertProposal(
       proposal.reason,
       proposal.createdAt.toISOString(),
     ],
+  );
+  await db.query(
+    `INSERT INTO official_selection_confirmation_windows (proposal_id, confirmation_deadline)
+     VALUES ($1, $2)`,
+    [proposal.id, proposal.confirmationDeadline.toISOString()],
   );
 }
 
@@ -297,6 +306,7 @@ export function rehydrateProposal(
     proposingTeamId: row.proposing_team_id,
     proposedByActorId: asActorId(row.proposed_by_actor_id),
     slots: parseJsonColumn(proposalSlotsSchema, row.slots),
+    confirmationDeadline: row.confirmation_deadline,
     supersedesProposalId: row.supersedes_proposal_id,
     reason: row.reason,
     createdAt: row.created_at,

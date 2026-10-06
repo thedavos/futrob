@@ -49,7 +49,7 @@ import type { CommandFingerprint } from "./command-fingerprint.ts";
 
 export type SelectionActor =
   | { readonly capacity: "team"; readonly actorId: ActorId; readonly teamId: TeamId }
-  | { readonly capacity: "operator"; readonly actorId: ActorId };
+  | { readonly capacity: "operator" | "system"; readonly actorId: ActorId };
 
 /** Trimmed reason, or null when it is missing or blank. */
 export function normalizeReason(reason: string | null | undefined): string | null {

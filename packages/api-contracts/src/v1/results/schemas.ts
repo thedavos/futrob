@@ -52,6 +52,7 @@ export const officialSelectionProposalSchema = z.object({
   /** Redacted audit text. */
   reason: z.string().nullable(),
   createdAt: z.string().datetime(),
+  confirmationDeadline: z.string().datetime(),
 });
 
 /** Audit entry without its command key or request fingerprint. */
@@ -72,6 +73,7 @@ export const officialSelectionActionSchema = z.object({
     "voided",
     "reference_reuse_rejected",
     "legacy_review_required",
+    "confirmation_expired",
   ]),
   fromStatus: selectionStatusSchema.nullable(),
   toStatus: selectionStatusSchema.nullable(),
@@ -90,6 +92,8 @@ export const officialSelectionActionSchema = z.object({
       conflictingReference: providerMatchRefSchema.optional(),
       selectedProposalId: z.string().min(1).optional(),
       disputeId: z.string().min(1).optional(),
+      confirmationDeadline: z.string().datetime().optional(),
+      processedAt: z.string().datetime().optional(),
     })
     .nullable(),
   occurredAt: z.string().datetime(),

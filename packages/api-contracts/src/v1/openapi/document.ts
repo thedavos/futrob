@@ -49,6 +49,10 @@ import {
 } from "../encounters/schemas.ts";
 import { teamPerformanceOpenApiPaths, teamPerformanceOpenApiSchemas } from "./team-performance.ts";
 import {
+  confirmationExpiryOpenApiPaths,
+  confirmationExpiryOpenApiSchemas,
+} from "./results-confirmation-expiry.ts";
+import {
   officialSelectionOpenApiPaths,
   officialSelectionOpenApiSchemas,
 } from "./official-selection.ts";
@@ -135,6 +139,7 @@ export const futrobOpenApiV1 = {
     { name: "results", description: "Official match selection negotiated by the Encounter Teams" },
   ],
   paths: {
+    ...confirmationExpiryOpenApiPaths,
     "/meta/ping": {
       get: {
         operationId: "metaPing",
@@ -2553,6 +2558,7 @@ export const futrobOpenApiV1 = {
       },
     },
     schemas: {
+      ...confirmationExpiryOpenApiSchemas,
       EffectiveAccess: {
         type: "object",
         required: ["actorId", "scope", "roles", "permissions"],
