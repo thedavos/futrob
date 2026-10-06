@@ -139,7 +139,9 @@ Dentro de la API, los horarios por slot se leen con `OfficialMatchRepository.lis
 `officialMatchSchedules`. `EncounterScheduleSnapshot.scheduledStartAt` sigue siendo el inicio del
 Encounter. Desde #123 el DTO HTTP del snapshot (`GET /encounters/{id}/schedule-snapshot`, SDK
 `encounters.getScheduleSnapshot`) publica `officialMatches: [{ officialSlot, scheduledStartAt }]`
-con la misma regla. El `EncounterReaderPort` de Results todavía no lleva slots: #112 debe añadirlos
+con la misma regla. Su `scheduledStartAt` se deriva de esa misma lectura de slots (el más
+temprano): aceptar escribe todos los slots en una transacción, así que una aceptación confirmada entre
+lecturas no mezcla estados. El `EncounterReaderPort` de Results todavía no lleva slots: #112 debe añadirlos
 al puente `SchedulingEncounterReader` y a `ProductApiEncounterReader` (web) leyendo ese campo
 cuando adapte las ventanas por slot.
 
