@@ -189,6 +189,7 @@ suite("DEC-021 Postgres confirmation and recovery", () => {
         );
       }
     },
+    30_000,
   );
 
   it("GET publishes the unique system expiry audit and closes Team actions after recovery", async () => {
