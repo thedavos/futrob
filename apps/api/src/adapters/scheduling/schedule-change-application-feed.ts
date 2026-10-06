@@ -17,18 +17,21 @@ const appliedScheduleChangeRowSchema = z.object({
   applied_at: pgTimestampSchema,
 });
 
-type FeedInput = Parameters<ScheduleChangeApplicationFeedPort["listAppliedAfter"]>[0];
+type ListInput = Parameters<ScheduleChangeApplicationFeedPort["listUnacknowledged"]>[0];
+type AcknowledgeInput = Parameters<ScheduleChangeApplicationFeedPort["acknowledge"]>[0];
 
 export class InMemoryScheduleChangeApplicationFeed implements ScheduleChangeApplicationFeedPort {
+  readonly acknowledgements = new Map<string, Date>();
+
   constructor(
     private readonly requests: { readonly rows: ReadonlyMap<string, ScheduleChangeRequest> },
   ) {}
 
-  async listAppliedAfter(input: FeedInput): Promise<readonly AppliedScheduleChange[]> {
-    const after = input.after;
+  async listUnacknowledged(input: ListInput): Promise<readonly AppliedScheduleChange[]> {
     return [...this.requests.rows.values()]
       .flatMap((request): AppliedScheduleChange[] =>
-        request.application
+        request.application &&
+        !this.acknowledgements.has(acknowledgementKey(input.consumer, request.application.id))
           ? [
               {
                 applicationId: request.application.id,
@@ -40,16 +43,24 @@ export class InMemoryScheduleChangeApplicationFeed implements ScheduleChangeAppl
             ]
           : [],
       )
-      .sort(compareFeedOrder)
-      .filter((applied) => !after || compareFeedOrder(applied, after) > 0)
+      .sort((left, right) => {
+        const time = compareTime(left.appliedAt, right.appliedAt);
+        if (time !== 0) return time;
+        return left.applicationId < right.applicationId ? -1 : 1;
+      })
       .slice(0, input.limit);
+  }
+
+  async acknowledge(input: AcknowledgeInput): Promise<void> {
+    const key = acknowledgementKey(input.consumer, input.applicationId);
+    if (!this.acknowledgements.has(key)) this.acknowledgements.set(key, input.acknowledgedAt);
   }
 }
 
 export class PostgresScheduleChangeApplicationFeed implements ScheduleChangeApplicationFeedPort {
   constructor(private readonly pool: Pool) {}
 
-  async listAppliedAfter(input: FeedInput): Promise<readonly AppliedScheduleChange[]> {
+  async listUnacknowledged(input: ListInput): Promise<readonly AppliedScheduleChange[]> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT application.id, application.request_id, application.organization_id,
               request.encounter_id, application.applied_at
@@ -57,11 +68,14 @@ export class PostgresScheduleChangeApplicationFeed implements ScheduleChangeAppl
        JOIN schedule_change_requests AS request
          ON request.id = application.request_id
         AND request.organization_id = application.organization_id
-       WHERE $1::timestamptz IS NULL
-          OR (application.applied_at, application.id) > ($1::timestamptz, $2::text)
+       WHERE NOT EXISTS (
+         SELECT 1 FROM schedule_change_application_acknowledgements AS acknowledgement
+         WHERE acknowledgement.consumer = $1
+           AND acknowledgement.application_id = application.id
+       )
        ORDER BY application.applied_at ASC, application.id ASC
-       LIMIT $3`,
-      [input.after?.appliedAt.toISOString() ?? null, input.after?.applicationId ?? "", input.limit],
+       LIMIT $2`,
+      [input.consumer, input.limit],
     );
     return result.rows.map((row) => {
       const parsed = appliedScheduleChangeRowSchema.parse(row);
@@ -74,17 +88,18 @@ export class PostgresScheduleChangeApplicationFeed implements ScheduleChangeAppl
       };
     });
   }
+
+  async acknowledge(input: AcknowledgeInput): Promise<void> {
+    await getPgExecutor(this.pool).query(
+      `INSERT INTO schedule_change_application_acknowledgements (
+         consumer, application_id, acknowledged_at
+       ) VALUES ($1, $2, $3)
+       ON CONFLICT (consumer, application_id) DO NOTHING`,
+      [input.consumer, input.applicationId, input.acknowledgedAt.toISOString()],
+    );
+  }
 }
 
-function compareFeedOrder(
-  left: Pick<AppliedScheduleChange, "appliedAt" | "applicationId">,
-  right: Pick<AppliedScheduleChange, "appliedAt" | "applicationId">,
-): number {
-  const time = compareTime(left.appliedAt, right.appliedAt);
-  if (time !== 0) return time;
-  return left.applicationId < right.applicationId
-    ? -1
-    : left.applicationId > right.applicationId
-      ? 1
-      : 0;
+function acknowledgementKey(consumer: string, applicationId: string): string {
+  return `${consumer}\u0000${applicationId}`;
 }

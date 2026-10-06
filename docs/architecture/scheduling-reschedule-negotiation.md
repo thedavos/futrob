@@ -128,18 +128,19 @@ trigger `schedule_change_append_only`. La solicitud rehidratada expone `applicat
 un comando devuelve la aplicación solo si ese comando la produjo o ya existía.
 
 La fila de aplicación es el handoff durable para #112: se confirma con el horario y nunca se
-actualiza. Scheduling la expone con el puerto público `ScheduleChangeApplicationFeedPort`
-(`listAppliedAfter`, orden `(applied_at, id)` en todas las organizaciones), implementado por el
-repositorio de solicitudes. Nadie se suscribe al `NoopEventPublisher`.
+actualiza. Scheduling la expone con el puerto público `ScheduleChangeApplicationFeedPort`:
+`listUnacknowledged` devuelve, por consumidor, las aplicaciones sin confirmar (orden
+`(applied_at, id)`, todas las organizaciones) y `acknowledge` registra la confirmación en
+`schedule_change_application_acknowledgements` (migración `0053`, `(consumer, application_id)`).
+No hay cursor ni ventana temporal: `applied_at` se lee antes del commit, así que una aplicación
+puede hacerse visible después de otra posterior; mientras no tenga confirmación sigue pendiente.
+Nadie se suscribe al `NoopEventPublisher`.
 
-`RecalculateRescheduledCandidates` (`apps/api/src/application/results/`) consume el feed y llama a
-`recalculateEncounterCandidates` con la organización y el Encounter de cada aplicación. Su
-checkpoint es `encounter_candidate_recalculations` (migración `0053`, de Results): una fila por
-`application_id` con el resultado. Cada ejecución vuelve a leer desde el último `applied_at`
-registrado menos 10 minutos y salta lo ya registrado, porque una aplicación puede confirmarse
-después de otra con `applied_at` posterior. Un fallo transitorio detiene la ejecución antes de su
-checkpoint; un Encounter inexistente se registra como `encounter_not_found`. Repetir el recálculo
-converge a las mismas asociaciones. El Cron de web despierta
+`RecalculateRescheduledCandidates` (`apps/api/src/application/results/`) es el consumidor
+`results.candidate-recalculation`. Llama a `recalculateEncounterCandidates` con la organización y
+el Encounter de cada aplicación y confirma solo después de que converja o si el Encounter ya no
+existe. Un fallo transitorio o una caída dejan la aplicación pendiente para la siguiente ejecución;
+repetir el recálculo converge a las mismas asociaciones. El Cron de web despierta
 `POST /api/v1/internal/results/candidate-recalculation/run` cada minuto con `INTERNAL_JOB_SECRET`.
 El recálculo no aplica horarios, no selecciona ni oficializa.
 

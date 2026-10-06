@@ -9,19 +9,21 @@ export interface AppliedScheduleChange {
   readonly appliedAt: Date;
 }
 
-export interface ScheduleChangeApplicationFeedCursor {
-  readonly appliedAt: Date;
-  readonly applicationId: string;
-}
-
 /**
- * Durable handoff of applied schedule changes across every organization. Rows are
- * append-only; each consumer keeps its own checkpoint.
+ * Durable handoff of applied schedule changes across every organization. Each consumer
+ * acknowledges what it handled. Nothing depends on commit order: an application whose
+ * transaction commits late is listed as soon as it is visible.
  */
 export interface ScheduleChangeApplicationFeedPort {
-  /** Applications ordered by `(appliedAt, applicationId)`, strictly after `after`. */
-  listAppliedAfter(input: {
-    readonly after: ScheduleChangeApplicationFeedCursor | null;
+  /** Applications `consumer` has not acknowledged, oldest `appliedAt` first. */
+  listUnacknowledged(input: {
+    readonly consumer: string;
     readonly limit: number;
   }): Promise<readonly AppliedScheduleChange[]>;
+  /** Acknowledging the same application again keeps the first acknowledgement. */
+  acknowledge(input: {
+    readonly consumer: string;
+    readonly applicationId: string;
+    readonly acknowledgedAt: Date;
+  }): Promise<void>;
 }

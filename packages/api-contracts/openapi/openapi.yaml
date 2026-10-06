@@ -75,11 +75,12 @@ paths:
         - results
       summary: Recalculate candidates of Encounters whose schedule change was applied
       description: Service-only Cron target authenticated with the internal bearer
-        secret. Consumes the durable schedule change handoff with a Results
-        checkpoint and recalculates candidate eligibility from the stored slot
-        starts. Earlier references stay as ineligible evidence. It never applies
-        a schedule, selects, approves or projects statistics. Retry rediscovers
-        unrecorded applications.
+        secret. Consumes the durable schedule change handoff, acknowledging each
+        application after it converges, and recalculates candidate eligibility
+        from the stored slot starts. Earlier references stay as ineligible
+        evidence. It never applies a schedule, selects, approves or projects
+        statistics. Retry delivers every unacknowledged application, including
+        one whose transaction committed late.
       responses:
         "200":
           description: Applications recalculated in this run

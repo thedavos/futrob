@@ -62,7 +62,6 @@ export type {
 } from "./domain/ports/schedule-change-request.repository.ts";
 export type {
   AppliedScheduleChange,
-  ScheduleChangeApplicationFeedCursor,
   ScheduleChangeApplicationFeedPort,
 } from "./domain/ports/schedule-change-application-feed.port.ts";
 export type { CompetitionTimeZonePort } from "./domain/ports/competition-time-zone.port.ts";

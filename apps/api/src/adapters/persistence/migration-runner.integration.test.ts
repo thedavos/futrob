@@ -90,7 +90,7 @@ suite("migration runner", () => {
           "0049_provider_sync_ingestion_checkpoint.sql",
           "0051_official_selection_confirmation_deadlines.sql",
           "0052_schedule_change_application.sql",
-          "0053_reschedule_candidate_recalculation.sql",
+          "0053_schedule_change_application_acknowledgements.sql",
         ]);
         expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
         expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
@@ -127,7 +127,7 @@ suite("migration runner", () => {
           "0049_provider_sync_ingestion_checkpoint.sql",
           "0051_official_selection_confirmation_deadlines.sql",
           "0052_schedule_change_application.sql",
-          "0053_reschedule_candidate_recalculation.sql",
+          "0053_schedule_change_application_acknowledgements.sql",
         ]);
         expect(
           (

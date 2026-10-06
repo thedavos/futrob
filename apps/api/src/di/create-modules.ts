@@ -25,10 +25,6 @@ import {
   SchedulingEncounterReader,
   RosterTeamRepresentationReader,
 } from "@/adapters/results/bridges.ts";
-import {
-  InMemoryCandidateRecalculationCheckpoints,
-  PostgresCandidateRecalculationCheckpoints,
-} from "@/adapters/results/candidate-recalculation-checkpoint.ts";
 import { createTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import {
   CompetitionRosterEntryGate,
@@ -367,9 +363,6 @@ export function createModules(input: CreateModulesInput): AppModules {
     }),
     recalculateRescheduledCandidates: new RecalculateRescheduledCandidates({
       feed: scheduling.scheduleChangeApplications,
-      checkpoints: input.pool
-        ? new PostgresCandidateRecalculationCheckpoints(input.pool)
-        : new InMemoryCandidateRecalculationCheckpoints(),
       recalculate: results.recalculateEncounterCandidates,
       clock,
     }),

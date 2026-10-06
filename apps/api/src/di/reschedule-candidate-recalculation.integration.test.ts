@@ -14,6 +14,7 @@ import {
 import { Pool } from "pg";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { PostgresProviderMatchRepository } from "@/adapters/game-data/persistence/postgres.repository.ts";
+import { NoopEventPublisher } from "@/adapters/events/noop-event-publisher.ts";
 import { createApp } from "@/app.ts";
 import { stubFetch } from "@/http/http-app.harness.ts";
 import {
@@ -55,6 +56,7 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
 
   afterEach(async () => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
     for (const pool of pools.splice(0)) await pool.end();
     await isolated?.drop();
   }, TEST_TIMEOUT_MS);
@@ -93,7 +95,7 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
       await expect(modules.recalculateRescheduledCandidates.execute()).rejects.toThrow(
         "simulated crash during recalculation",
       );
-      expect(await checkpoints()).toEqual([]);
+      expect(await acknowledgements()).toEqual([]);
       expect(await eligibility(ORG, ENCOUNTER)).toEqual([["m-1", true]]);
 
       const restarted = restartedModules();
@@ -109,7 +111,7 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
           headers: { Authorization: authorization },
         });
       expect((await run("Bearer wrong-secret")).status).toBe(401);
-      expect(await checkpoints()).toEqual([]);
+      expect(await acknowledgements()).toEqual([]);
 
       const recovered = await run("Bearer job-secret");
 
@@ -123,8 +125,8 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
       ]);
       const m1After = await candidate("m-1");
       expect(m1After).toMatchObject({ id: m1Before.id, associated_at: m1Before.associated_at });
-      expect(await checkpoints()).toEqual([
-        { encounter_id: ENCOUNTER, organization_id: ORG, outcome: "associated" },
+      expect(await acknowledgements()).toEqual([
+        { consumer: "results.candidate-recalculation", encounter_id: ENCOUNTER },
       ]);
 
       const converged = await candidateTable(ORG, ENCOUNTER);
@@ -132,8 +134,8 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
       expect(replay.isOk() && replay.value).toEqual({ recalculated: 0 });
       expect(await candidateTable(ORG, ENCOUNTER)).toEqual(converged);
 
-      // A crash after recalculating but before the checkpoint repeats the same work.
-      await isolated.pool.query("DELETE FROM encounter_candidate_recalculations");
+      // A crash after recalculating but before the acknowledgement repeats the same work.
+      await isolated.pool.query("DELETE FROM schedule_change_application_acknowledgements");
       const repeated = await restarted.recalculateRescheduledCandidates.execute();
       expect(repeated.isOk() && repeated.value).toEqual({ recalculated: 1 });
       expect(
@@ -141,6 +143,69 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
       ).toEqual(converged.map(({ last_evaluated_at: _, ...row }) => row));
 
       expect(await untouchedState()).toEqual(untouchedBefore);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "recalculates an application that commits an hour after a later one was consumed",
+    async () => {
+      const modules = await seed(isolated.pool, {
+        officialMatchCount: 1,
+        matches: [
+          match("m-1", "2026-10-20T20:10:00.000Z"),
+          match("m-3", "2026-10-21T20:10:00.000Z"),
+        ],
+      });
+      vi.useFakeTimers({ toFake: ["Date"] });
+      let release = () => {};
+      const released = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let reachedPublish = () => {};
+      const holding = new Promise<void>((resolve) => {
+        reachedPublish = resolve;
+      });
+      // Publishing runs inside the accept transaction, after the application row is written.
+      vi.spyOn(NoopEventPublisher.prototype, "publish").mockImplementation(async (event) => {
+        const payload = event.payload as { readonly encounterId?: string };
+        if (
+          event.eventName !== "scheduling.encounter-rescheduled" ||
+          payload.encounterId !== ENCOUNTER
+        ) {
+          return;
+        }
+        reachedPublish();
+        await released;
+      });
+
+      // The slow accept reads its clock first and stays uncommitted inside its transaction.
+      vi.setSystemTime(new Date("2026-10-06T12:00:00.000Z"));
+      const slow = reschedule(modules, { type: "entire_encounter" }, { day: 21, hour: 15 });
+      await holding;
+      vi.setSystemTime(new Date("2026-10-06T13:00:00.000Z"));
+      await reschedule(modules, { type: "entire_encounter" }, { day: 21, hour: 15 }, NEIGHBOR);
+
+      const first = await restartedModules().recalculateRescheduledCandidates.execute();
+      expect(first.isOk() && first.value).toEqual({ recalculated: 1 });
+      expect(await acknowledgements()).toEqual([
+        { consumer: "results.candidate-recalculation", encounter_id: NEIGHBOR },
+      ]);
+      expect(await eligibility(ORG, ENCOUNTER)).toEqual([["m-1", true]]);
+
+      release();
+      await slow;
+      const late = await restartedModules().recalculateRescheduledCandidates.execute();
+
+      expect(late.isOk() && late.value).toEqual({ recalculated: 1 });
+      expect(await eligibility(ORG, ENCOUNTER)).toEqual([
+        ["m-1", false],
+        ["m-3", true],
+      ]);
+      expect(await appliedAt()).toEqual([
+        { encounter_id: ENCOUNTER, applied_at: "2026-10-06T12:00:00.000Z" },
+        { encounter_id: NEIGHBOR, applied_at: "2026-10-06T13:00:00.000Z" },
+      ]);
     },
     TEST_TIMEOUT_MS,
   );
@@ -197,12 +262,13 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
     modules: AppModules,
     scope: RescheduleScope,
     wall: { readonly day: number; readonly hour: number },
+    encounterId: EncounterId = ENCOUNTER,
   ): Promise<void> {
     const created = await modules.scheduling.createScheduleChangeRequest.execute({
       actorId: HOME_CAPTAIN,
       organizationId: ORG,
       competitionId: COMPETITION,
-      encounterId: ENCOUNTER,
+      encounterId,
       requestingTeamId: HOME,
       scope,
       timeZone: "America/Lima",
@@ -215,18 +281,18 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
         second: 0,
       },
       reason: "Travel conflict",
-      idempotencyKey: "reschedule-1",
+      idempotencyKey: `reschedule-${encounterId}`,
     });
     if (created.isErr()) throw created.error;
     const accepted = await modules.scheduling.acceptScheduleChangeProposal.execute({
       actorId: AWAY_CAPTAIN,
       organizationId: ORG,
       competitionId: COMPETITION,
-      encounterId: ENCOUNTER,
+      encounterId,
       requestId: created.value.id,
       proposalId: created.value.proposals[0]?.id ?? "missing",
       expectedVersion: created.value.version,
-      commandKey: "accept-1",
+      commandKey: `accept-${encounterId}`,
       responder: { authority: "rival_team", teamId: AWAY },
     });
     if (accepted.isErr()) throw accepted.error;
@@ -265,12 +331,29 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
     return row;
   }
 
-  async function checkpoints() {
+  async function acknowledgements() {
     const result = await isolated.pool.query(
-      `SELECT organization_id, encounter_id, outcome
-       FROM encounter_candidate_recalculations ORDER BY application_id`,
+      `SELECT acknowledgement.consumer, request.encounter_id
+       FROM schedule_change_application_acknowledgements AS acknowledgement
+       JOIN schedule_change_applications AS application
+         ON application.id = acknowledgement.application_id
+       JOIN schedule_change_requests AS request ON request.id = application.request_id
+       ORDER BY request.encounter_id`,
     );
     return result.rows;
+  }
+
+  async function appliedAt() {
+    const result = await isolated.pool.query<{ encounter_id: string; applied_at: Date }>(
+      `SELECT request.encounter_id, application.applied_at
+       FROM schedule_change_applications AS application
+       JOIN schedule_change_requests AS request ON request.id = application.request_id
+       ORDER BY request.encounter_id`,
+    );
+    return result.rows.map((row) => ({
+      encounter_id: row.encounter_id,
+      applied_at: row.applied_at.toISOString(),
+    }));
   }
 
   async function encounterStart(): Promise<string> {
