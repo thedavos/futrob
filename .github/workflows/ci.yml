@@ -59,8 +59,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    env:
-      TEST_DATABASE_URL: postgresql://postgres:futrob_test@localhost:5432/futrob_test
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -72,6 +70,10 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - run: npm run test:coverage
+      - name: Official selection HTTP on Postgres
+        run: npm run test -- --run --project api apps/api/src/http/routes/official-selection
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:futrob_test@localhost:5432/futrob_test
 
   build:
     name: Build & Bundle Budget
