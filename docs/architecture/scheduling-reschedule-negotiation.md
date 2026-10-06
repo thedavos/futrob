@@ -3,8 +3,9 @@
 `@futrob/scheduling` es dueño de la `ScheduleChangeRequest`, sus propuestas, sus decisiones, los
 recibos de comando y la aplicación del horario aceptado. La negociación (aceptar, rechazar y
 contraproponer sobre la propuesta vigente) llegó con #121. Aplicar el horario, el historial de
-aplicación, el cupo consumido y el handoff de recálculo llegaron con #122. HTTP, SDK, BFF y
-pantallas (#123/#124) y el consumo del recálculo (#112) no existen todavía.
+aplicación, el cupo consumido y el handoff de recálculo llegaron con #122. La lectura y las
+respuestas por HTTP, SDK y BFF llegaron con #123 (ver [Superficie HTTP](#superficie-http-123)).
+Las pantallas (#124) y el consumo del recálculo (#112) no existen todavía.
 
 ## Modelo
 
@@ -136,9 +137,11 @@ Results con el `application_id` procesado) y recorre `schedule_change_applicatio
 
 Dentro de la API, los horarios por slot se leen con `OfficialMatchRepository.listByEncounter` y
 `officialMatchSchedules`. `EncounterScheduleSnapshot.scheduledStartAt` sigue siendo el inicio del
-Encounter. El `EncounterReaderPort` de Results y el DTO HTTP del snapshot aún no llevan slots: la web
-implementa ese puerto sobre HTTP, así que añadir `slots` exige el contrato de #123. #112 debe
-añadirlos al puente `SchedulingEncounterReader` cuando adapte las ventanas por slot.
+Encounter. Desde #123 el DTO HTTP del snapshot (`GET /encounters/{id}/schedule-snapshot`, SDK
+`encounters.getScheduleSnapshot`) publica `officialMatches: [{ officialSlot, scheduledStartAt }]`
+con la misma regla. El `EncounterReaderPort` de Results todavía no lleva slots: #112 debe añadirlos
+al puente `SchedulingEncounterReader` y a `ProductApiEncounterReader` (web) leyendo ese campo
+cuando adapte las ventanas por slot.
 
 ### Migración `0052`
 
@@ -147,6 +150,32 @@ correr (y no se registra en `schema_migrations`) si existe alguna solicitud `acc
 `0052` nada aplicaba la fecha, así que una solicitud así no tiene horario que registrar. Ningún
 camino de producción podía aceptar antes de #122 (no hay ruta HTTP), así que solo afecta a datos
 manuales.
+
+## Superficie HTTP (#123)
+
+Bajo `/api/v1/encounters/{encounterId}/schedule-change-requests`:
+
+| Operación | Ruta                                               | Caso de uso                            |
+| --------- | -------------------------------------------------- | -------------------------------------- |
+| listar    | `GET /`                                            | `ListScheduleChangeRequestsUseCase`    |
+| crear     | `POST /`                                           | `CreateScheduleChangeRequestUseCase`   |
+| leer      | `GET /{requestId}`                                 | `GetScheduleChangeRequestUseCase`      |
+| aceptar   | `POST /{requestId}/proposals/{proposalId}/accept`  | `AcceptScheduleChangeProposalUseCase`  |
+| rechazar  | `POST /{requestId}/proposals/{proposalId}/reject`  | `RejectScheduleChangeProposalUseCase`  |
+| contra    | `POST /{requestId}/proposals/{proposalId}/counter` | `CounterScheduleChangeProposalUseCase` |
+
+- El DTO de la solicitud expone `version`, `currentProposalId`, propuestas, decisiones y
+  `application` (con antes/después de cada slot movido). Nunca expone `idempotencyKey` ni recibos.
+- Los comandos llevan `expectedVersion` y `commandKey` y devuelven `{ request, replayed }`.
+  `responder` (aceptar/rechazar) o `teamId` (contraproponer) es solo la capacidad que el actor
+  reclama; el actor sale de la autenticación de servicio y la capacidad se autoriza en el servidor.
+- La organización y la competición salen del Encounter guardado, no del body.
+- El BFF web reenvía el body validado con el cliente de la sesión
+  (`apps/web/src/modules/scheduling/server/schedule-change-requests.handler.ts`).
+- Estados HTTP: 400 validación y fecha/zona/motivo inválidos; 403 capacidad no autorizada, propia o
+  no requerida; 404 Encounter no legible o solicitud desconocida; 409 versión, propuesta vigente,
+  solicitud cerrada, consentimiento repetido, clave reutilizada, aprobación sin configurar,
+  reprogramación deshabilitada, slot protegido, cupo agotado o conflicto del fixture.
 
 ## Decisiones de producto
 
