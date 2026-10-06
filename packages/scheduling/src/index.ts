@@ -43,6 +43,7 @@ export type { EncounterScheduleSnapshot } from "./domain/entities/encounter-sche
 export type { OfficialMatch, OfficialMatchStatus } from "./domain/entities/official-match.ts";
 export type { ScheduleChangeApplication } from "./domain/entities/schedule-change-application.ts";
 export {
+  encounterStartOf,
   officialMatchSchedules,
   type OfficialMatchSchedule,
   type OfficialMatchScheduleChange,

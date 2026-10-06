@@ -7,6 +7,7 @@ import { OfficialSelectionForbidden } from "@futrob/results";
 import {
   asFixtureStageId,
   ENCOUNTER_PERMISSION,
+  encounterStartOf,
   officialMatchSchedules,
   type EncounterScheduleSnapshot,
 } from "@futrob/scheduling";
@@ -20,21 +21,28 @@ import {
 } from "@/http/middleware/service-auth.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
+/**
+ * The Encounter start is derived from the same slot read as `officialMatches`: an
+ * application writes every slot in one transaction, so a reschedule committing between
+ * the Encounter read and the slot read cannot pair an old start with new slots.
+ */
 async function scheduleSnapshotResponse(
   deps: AppDeps,
   encounter: EncounterScheduleSnapshot,
 ): Promise<Response> {
-  const matches = await deps.modules.scheduling.officialMatches.listByEncounter(
-    encounter.encounterId,
+  const schedules = officialMatchSchedules(
+    encounter,
+    await deps.modules.scheduling.officialMatches.listByEncounter(encounter.encounterId),
   );
+  const scheduledStartAt = encounterStartOf(schedules) ?? encounter.scheduledStartAt;
   return jsonResponse(
     encounterScheduleSnapshotSchema.parse({
       ...encounter,
-      scheduledStartAt: encounter.scheduledStartAt.toISOString(),
+      scheduledStartAt: scheduledStartAt.toISOString(),
       homeExternalClubId: null,
       awayExternalClubId: null,
       providerKey: null,
-      officialMatches: officialMatchSchedules(encounter, matches).map((schedule) => ({
+      officialMatches: schedules.map((schedule) => ({
         officialSlot: schedule.slot,
         scheduledStartAt: schedule.scheduledStartAt.toISOString(),
       })),

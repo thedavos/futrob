@@ -154,6 +154,7 @@ describe.each([
       actors,
       home,
       away,
+      modules,
       send,
       requestsPath,
       snapshot: async () =>
@@ -498,4 +499,38 @@ describe.each([
       ],
     });
   });
+
+  it.skipIf(skip)(
+    "a snapshot read while an accept commits reports one coherent schedule",
+    async () => {
+      const { actors, away, command, create, modules, snapshot } = await seed();
+      const created = await create(15);
+      const matches = modules.scheduling.officialMatches;
+      const listByEncounter = matches.listByEncounter.bind(matches);
+      let interleaved = false;
+      // The snapshot GET has already read the Encounter (still D0) when the accept commits.
+      matches.listByEncounter = async (encounterId) => {
+        if (!interleaved) {
+          interleaved = true;
+          const accepted = await commandOf(
+            await command(actors.awayCaptain, created, created.currentProposalId, "accept", {
+              expectedVersion: 1,
+              commandKey: "away-accept-mid-read",
+              responder: { authority: "rival_team", teamId: away },
+            }),
+          );
+          expect(accepted.request.status).toBe("accepted");
+        }
+        return listByEncounter(encounterId);
+      };
+
+      const read = await snapshot();
+
+      expect(interleaved).toBe(true);
+      expect(read).toMatchObject({
+        scheduledStartAt: D1,
+        officialMatches: [{ officialSlot: 1, scheduledStartAt: D1 }],
+      });
+    },
+  );
 });
