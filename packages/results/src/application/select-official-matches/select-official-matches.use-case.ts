@@ -1,4 +1,5 @@
 import {
+  addDays,
   err,
   ok,
   type ActorId,
@@ -181,6 +182,7 @@ export class SelectOfficialMatchesUseCase {
       slots: normalized.slots,
       supersedesProposalId: null,
       reason: null,
+      confirmationDeadline: addDays(now, 1),
       createdAt: now,
     };
     const nextVersion = currentVersion + 1;

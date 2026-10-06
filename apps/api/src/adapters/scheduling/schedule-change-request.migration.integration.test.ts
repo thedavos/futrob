@@ -222,14 +222,15 @@ suite("0037 schedule change requests migration", () => {
       await expect(repository.listActiveByEncounter(organizationId, encounterId)).resolves.toEqual([
         home,
       ]);
+      // The quota counts applied schedules; a header saved as accepted applied nothing.
       await expect(
-        repository.countAcceptedByTeam({
+        repository.countAppliedByTeam({
           organizationId,
           competitionId,
           encounterId,
           teamId: homeTeamId,
         }),
-      ).resolves.toBe(1);
+      ).resolves.toBe(0);
     });
   });
 
@@ -333,6 +334,7 @@ function adapterRequest(input: {
     status: "open",
     version: 1,
     decisions: [],
+    application: null,
     proposals: [
       {
         id: `${input.id}-proposal`,
@@ -445,8 +447,8 @@ async function insertSnapshot(
 async function insertOrganization(client: PoolClient, id: string, name: string): Promise<void> {
   await client.query(
     `INSERT INTO organizations (
-       id, name, normalized_name, created_at, created_by_actor_id
-     ) VALUES ($1, $2, $3, NOW(), 'organizer')`,
+       id, name, normalized_name, slug, time_zone, created_at, created_by_actor_id
+     ) VALUES ($1, $2, $3, $1, 'America/Lima', NOW(), 'organizer')`,
     [id, name, name.toLowerCase()],
   );
 }

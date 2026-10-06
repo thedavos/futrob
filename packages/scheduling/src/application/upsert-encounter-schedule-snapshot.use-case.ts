@@ -1,4 +1,11 @@
-import { err, ok, type ActorId, type AuthorizationPort, type Result } from "@futrob/shared-kernel";
+import {
+  err,
+  ok,
+  type ActorId,
+  type AuthorizationPort,
+  type Result,
+  type TransactionPort,
+} from "@futrob/shared-kernel";
 import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-schedule-snapshot.ts";
 import {
   EncounterScheduleAuthorizationForbidden,
@@ -10,8 +17,11 @@ import type {
   EncounterParticipantValidationPort,
   EncounterScheduleRepository,
 } from "../domain/ports/encounter-schedule.repository.ts";
+import type { EncounterMutationLockPort } from "../domain/ports/encounter-mutation-lock.port.ts";
 import type { FixturePlanRepository } from "../domain/ports/fixture-plan.repository.ts";
+import type { OfficialMatchRepository } from "../domain/ports/official-match.repository.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
+import { shiftOfficialMatches } from "./shift-official-matches.ts";
 
 /** Producer for the scheduling projection consumed by authorization and results. */
 export class UpsertEncounterScheduleSnapshotUseCase {
@@ -20,7 +30,10 @@ export class UpsertEncounterScheduleSnapshotUseCase {
       readonly authorization: AuthorizationPort;
       readonly encounters: EncounterScheduleRepository;
       readonly fixtureOwnership: Pick<FixturePlanRepository, "containsEncounter">;
+      readonly matches: Pick<OfficialMatchRepository, "listByEncounter" | "saveSchedules">;
+      readonly mutationLock: EncounterMutationLockPort;
       readonly participants: EncounterParticipantValidationPort;
+      readonly transaction: TransactionPort;
     },
   ) {}
 
@@ -74,19 +87,6 @@ export class UpsertEncounterScheduleSnapshotUseCase {
         }),
       );
     }
-    const existing = await this.deps.encounters.findById(snapshot.encounterId);
-    if (
-      existing &&
-      (existing.organizationId !== snapshot.organizationId ||
-        existing.competitionId !== snapshot.competitionId)
-    ) {
-      return err(
-        new InvalidEncounterSchedule({
-          code: "scheduling.invalid_encounter_schedule",
-          message: "An encounter cannot be moved to another organization or competition",
-        }),
-      );
-    }
     const approved = await Promise.all(
       [snapshot.homeTeamId, snapshot.awayTeamId].map((teamId) =>
         this.deps.participants.isApprovedParticipant({
@@ -104,8 +104,41 @@ export class UpsertEncounterScheduleSnapshotUseCase {
         }),
       );
     }
-    const saved = await this.deps.encounters.upsert(snapshot);
-    if (!saved) {
+    // Read the current start under the Encounter lock: an accepted reschedule may have
+    // moved the slots since, and the shift must start from what is stored now.
+    const saved = await this.deps.transaction.runInTransaction(() =>
+      this.deps.mutationLock.runExclusive(snapshot.encounterId, async () => {
+        const existing = await this.deps.encounters.findById(snapshot.encounterId);
+        if (
+          existing &&
+          (existing.organizationId !== snapshot.organizationId ||
+            existing.competitionId !== snapshot.competitionId)
+        ) {
+          return err(
+            new InvalidEncounterSchedule({
+              code: "scheduling.invalid_encounter_schedule",
+              message: "An encounter cannot be moved to another organization or competition",
+            }),
+          );
+        }
+        const upserted = await this.deps.encounters.upsert(snapshot);
+        if (
+          upserted &&
+          existing &&
+          existing.scheduledStartAt.getTime() !== snapshot.scheduledStartAt.getTime()
+        ) {
+          await shiftOfficialMatches(
+            this.deps.matches,
+            snapshot.encounterId,
+            existing,
+            snapshot.scheduledStartAt,
+          );
+        }
+        return ok(upserted);
+      }),
+    );
+    if (saved.isErr()) return err(saved.error);
+    if (!saved.value) {
       return err(
         new InvalidEncounterSchedule({
           code: "scheduling.invalid_encounter_schedule",
@@ -113,6 +146,6 @@ export class UpsertEncounterScheduleSnapshotUseCase {
         }),
       );
     }
-    return ok(saved);
+    return ok(saved.value);
   }
 }

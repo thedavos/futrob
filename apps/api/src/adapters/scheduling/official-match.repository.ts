@@ -29,6 +29,17 @@ export class InMemoryOfficialMatchRepository implements OfficialMatchRepository 
     }
   }
 
+  async saveSchedules(matches: readonly OfficialMatch[]): Promise<void> {
+    for (const match of matches) {
+      const key = officialMatchKey(match.encounterId, match.slot);
+      const existing = this.rows.get(key);
+      this.rows.set(
+        key,
+        existing ? { ...existing, scheduledStartAt: match.scheduledStartAt } : match,
+      );
+    }
+  }
+
   async voidByEncounterIds(encounterIds: readonly EncounterId[]): Promise<void> {
     const ids = new Set(encounterIds);
     for (const [key, match] of this.rows) {
@@ -43,7 +54,8 @@ export class PostgresOfficialMatchRepository implements OfficialMatchRepository 
 
   async listByEncounter(encounterId: EncounterId): Promise<OfficialMatch[]> {
     const result = await getPgExecutor(this.pool).query<OfficialMatchRow>(
-      `SELECT id, encounter_id, organization_id, competition_id, slot, status, created_at
+      `SELECT id, encounter_id, organization_id, competition_id, slot, status,
+              scheduled_start_at, created_at
        FROM official_matches
        WHERE encounter_id = $1
        ORDER BY slot`,
@@ -53,6 +65,17 @@ export class PostgresOfficialMatchRepository implements OfficialMatchRepository 
   }
 
   async upsertMany(matches: readonly OfficialMatch[]): Promise<void> {
+    await this.insert(matches, "DO NOTHING");
+  }
+
+  async saveSchedules(matches: readonly OfficialMatch[]): Promise<void> {
+    await this.insert(matches, "DO UPDATE SET scheduled_start_at = EXCLUDED.scheduled_start_at");
+  }
+
+  private async insert(
+    matches: readonly OfficialMatch[],
+    onConflict: "DO NOTHING" | "DO UPDATE SET scheduled_start_at = EXCLUDED.scheduled_start_at",
+  ): Promise<void> {
     if (matches.length === 0) return;
 
     const values = matches.flatMap((match) => [
@@ -62,20 +85,22 @@ export class PostgresOfficialMatchRepository implements OfficialMatchRepository 
       match.competitionId,
       match.slot,
       match.status,
+      match.scheduledStartAt.toISOString(),
       match.createdAt.toISOString(),
     ]);
     const placeholders = matches
       .map((_, index) => {
-        const offset = index * 7;
-        return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`;
+        const offset = index * 8;
+        return `(${Array.from({ length: 8 }, (_, column) => `$${offset + column + 1}`).join(", ")})`;
       })
       .join(", ");
 
     await getPgExecutor(this.pool).query(
       `INSERT INTO official_matches (
-         id, encounter_id, organization_id, competition_id, slot, status, created_at
+         id, encounter_id, organization_id, competition_id, slot, status, scheduled_start_at,
+         created_at
        ) VALUES ${placeholders}
-       ON CONFLICT (encounter_id, slot) DO NOTHING`,
+       ON CONFLICT (encounter_id, slot) ${onConflict}`,
       values,
     );
   }
@@ -96,6 +121,7 @@ interface OfficialMatchRow extends QueryResultRow {
   competition_id: string;
   slot: number;
   status: string;
+  scheduled_start_at: Date | string;
   created_at: Date | string;
 }
 
@@ -107,6 +133,7 @@ function rehydrateOfficialMatch(row: OfficialMatchRow): OfficialMatch {
     competitionId: asCompetitionId(row.competition_id),
     slot: parseOfficialMatchSlot(row.slot),
     status: parseOfficialMatchStatus(row.status),
+    scheduledStartAt: new Date(row.scheduled_start_at),
     createdAt: new Date(row.created_at),
   };
 }

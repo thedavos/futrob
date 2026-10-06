@@ -18,9 +18,11 @@ import { registerPlayerRoutes } from "@/http/routes/players.ts";
 import { registerTeamRoutes } from "@/http/routes/teams.ts";
 import { registerAuthorizationRoutes } from "@/http/routes/authorization.ts";
 import { registerEncounterRoutes } from "@/http/routes/encounters.ts";
+import { registerOfficialSelectionRoutes } from "@/http/routes/official-selection.ts";
 import { registerScheduleChangeRequestRoutes } from "@/http/routes/schedule-change-requests.ts";
 import { registerFixtureRoutes } from "@/http/routes/fixtures.ts";
 import { registerProviderSyncJobRoutes } from "@/http/routes/provider-sync-jobs.ts";
+import { registerConfirmationExpiryRoutes } from "@/http/routes/confirmation-expiry.ts";
 import { registerProviderHealthRoutes } from "@/http/routes/provider-health.ts";
 
 export interface AppDeps {
@@ -75,6 +77,7 @@ export function createApp(deps: AppDeps): Hono {
   registerMetaRoutes(v1, deps);
   registerOpenApiRoutes(v1);
   registerProviderSyncJobRoutes(v1, deps);
+  registerConfirmationExpiryRoutes(v1, deps);
   registerProviderHealthRoutes(v1, deps);
   registerGameDataClubRoutes(v1, deps);
   registerCompetitionRoutes(v1, deps);
@@ -86,6 +89,7 @@ export function createApp(deps: AppDeps): Hono {
   registerAuthorizationRoutes(v1, deps);
   registerEncounterRoutes(v1, deps);
   registerScheduleChangeRequestRoutes(v1, deps);
+  registerOfficialSelectionRoutes(v1, deps);
   registerFixtureRoutes(v1, deps);
 
   app.route("/api/v1", v1);

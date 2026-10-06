@@ -3,6 +3,7 @@ import {
   ok,
   type ActorId,
   type AuthorizationPort,
+  type ClockPort,
   type EncounterId,
   type OrganizationId,
   type Result,
@@ -19,6 +20,7 @@ import type {
   OfficialResultRepository,
 } from "../../domain/ports/official-result.repository.ts";
 import type { TeamRepresentationPort } from "../../domain/ports/team-representation.port.ts";
+import { confirmationWindowGuard } from "../../domain/policies/confirmation-window.ts";
 import { RESULT_PERMISSION } from "../../domain/policies/result-permissions.ts";
 import {
   selectionCommandsFor,
@@ -65,6 +67,7 @@ export class GetOfficialSelectionUseCase {
       readonly results: Pick<OfficialResultRepository, "findApprovedByEncounter">;
       readonly teamRepresentation: TeamRepresentationPort;
       readonly authorization: AuthorizationPort;
+      readonly clock: ClockPort;
     },
   ) {}
 
@@ -111,9 +114,16 @@ export class GetOfficialSelectionUseCase {
     const currentProposal = proposals.find((row) => row.id === selection?.currentProposalId);
     const status = selection?.status ?? null;
     const commands = selectionCommandsFor(status);
+    const windowClosed =
+      currentProposal && confirmationWindowGuard(currentProposal, this.deps.clock.now());
     const allowedActions: OfficialSelectionAllowedAction[] = commands.filter((command) => {
       if (!actingTeamId) return !TEAM_COMMANDS.includes(command);
       if (!TEAM_COMMANDS.includes(command)) return false;
+      if (
+        windowClosed &&
+        ["confirm", "reject", "propose_alternative", "open_dispute"].includes(command)
+      )
+        return false;
       // The proposing Team cannot answer its own proposal.
       if (["confirm", "reject", "propose_alternative"].includes(command)) {
         return (

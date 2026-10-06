@@ -48,6 +48,7 @@ function request(
     scope: { type: "entire_encounter" },
     version: 1,
     decisions: [],
+    application: null,
     proposals: [
       {
         id: `${overrides.id}-proposal`,

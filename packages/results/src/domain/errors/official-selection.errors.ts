@@ -16,6 +16,12 @@ import type {
   SelectionNotFound,
 } from "./official-result.errors.ts";
 
+export class ConfirmationWindowClosed extends TaggedError("ConfirmationWindowClosed")<{
+  code: "results.confirmation_window_closed";
+  message: string;
+  proposalId: string;
+}> {}
+
 export class SelectionVersionConflict extends TaggedError("SelectionVersionConflict")<{
   code: "results.selection_version_conflict";
   message: string;
@@ -92,6 +98,7 @@ export type ProposeOfficialSelectionError =
   | ReferenceAlreadyClaimed;
 
 export type RejectOfficialSelectionError =
+  | ConfirmationWindowClosed
   | SelectionAuthorityError
   | SelectionNotFound
   | SelectionConcurrencyError
@@ -106,6 +113,7 @@ export type ProposeAlternativeOfficialSelectionError =
   | SelectionNotConfirmable;
 
 export type OpenMatchDisputeError =
+  | ConfirmationWindowClosed
   | SelectionAuthorityError
   | SelectionNotFound
   | SelectionConcurrencyError

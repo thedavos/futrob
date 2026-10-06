@@ -4,15 +4,20 @@ import type {
   ScheduleChangeTransition,
 } from "@futrob/scheduling";
 import type { PgExecutor } from "@/adapters/persistence/pg-transaction.ts";
-import { insertDecision, insertProposals, insertReceipt } from "./schedule-change-request-rows.ts";
+import {
+  insertApplication,
+  insertDecision,
+  insertProposals,
+  insertReceipt,
+} from "./schedule-change-request-rows.ts";
 import {
   idempotencyConflict,
   isReceiptKeyConflict,
 } from "./schedule-change-request.write-error.ts";
 
 /**
- * Compare-and-set on the request version, then append the proposal or decision and
- * the receipt. Nothing is written when the version moved.
+ * Compare-and-set on the request version, then append the proposal or decision, the
+ * receipt and the applied schedule. Nothing is written when the version moved.
  */
 export async function writeScheduleChangeTransition(
   executor: PgExecutor,
@@ -55,6 +60,9 @@ export async function writeScheduleChangeTransition(
       await insertDecision(executor, request, transition.appendedDecision);
     }
     await insertReceipt(executor, receipt);
+    if (transition.appendedApplication) {
+      await insertApplication(executor, request, transition.appendedApplication);
+    }
   } catch (error) {
     if (error instanceof Error && isReceiptKeyConflict(error)) throw idempotencyConflict();
     throw error;

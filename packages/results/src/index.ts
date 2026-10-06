@@ -89,6 +89,7 @@ export {
   type ListEncounterCandidatesError,
 } from "./domain/errors/encounter-candidates.errors.ts";
 export {
+  ConfirmationWindowClosed,
   CommandKeyReused,
   IntegrityFlagsNotAcknowledged,
   ProposalNotFound,
@@ -177,3 +178,9 @@ export {
   type VoidOfficialResultDependencies,
   type VoidOfficialResultInput,
 } from "./application/void-official-result/void-official-result.use-case.ts";
+
+export {
+  ExpireConfirmationWindowUseCase,
+  type ExpireConfirmationWindowInput,
+  type ExpireConfirmationWindowOutput,
+} from "./application/expire-confirmation-window/expire-confirmation-window.use-case.ts";

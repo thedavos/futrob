@@ -21,10 +21,13 @@ import {
   type PgExecutor,
 } from "@/adapters/persistence/pg-transaction.ts";
 import {
+  applicationRowSchema,
+  applicationSlotRowSchema,
   decisionRowSchema,
   insertProposals,
   proposalRowSchema,
   receiptRowSchema,
+  rehydrateApplication,
   rehydrateReceipt,
   rehydrateRequest,
   requestRowSchema,
@@ -39,7 +42,7 @@ import {
   mapScheduleChangeRequestWriteError,
 } from "./schedule-change-request.write-error.ts";
 
-export interface CountAcceptedReschedulesInput {
+export interface CountAppliedReschedulesInput {
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
   readonly encounterId: EncounterId;
@@ -127,14 +130,14 @@ export class InMemoryScheduleChangeRequestRepository implements ScheduleChangeRe
       });
   }
 
-  async countAcceptedByTeam(input: CountAcceptedReschedulesInput): Promise<number> {
+  async countAppliedByTeam(input: CountAppliedReschedulesInput): Promise<number> {
     return [...this.rows.values()].filter(
       (request) =>
         request.organizationId === input.organizationId &&
         request.competitionId === input.competitionId &&
         request.encounterId === input.encounterId &&
         request.requestingTeamId === input.teamId &&
-        request.status === "accepted",
+        request.application !== null,
     ).length;
   }
 
@@ -279,15 +282,17 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
     );
   }
 
-  async countAcceptedByTeam(input: CountAcceptedReschedulesInput): Promise<number> {
+  async countAppliedByTeam(input: CountAppliedReschedulesInput): Promise<number> {
     const result = await getPgExecutor(this.pool).query<{ count: string | number }>(
       `SELECT COUNT(*)::integer AS count
-       FROM schedule_change_requests
-       WHERE organization_id = $1
-         AND competition_id = $2
-         AND encounter_id = $3
-         AND requesting_team_id = $4
-         AND status = 'accepted'`,
+       FROM schedule_change_applications AS application
+       JOIN schedule_change_requests AS request
+         ON request.id = application.request_id
+        AND request.organization_id = application.organization_id
+       WHERE request.organization_id = $1
+         AND request.competition_id = $2
+         AND request.encounter_id = $3
+         AND request.requesting_team_id = $4`,
       [input.organizationId, input.competitionId, input.encounterId, input.teamId],
     );
     return Number(result.rows[0]?.count ?? 0);
@@ -385,10 +390,31 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
        ORDER BY request_version ASC, created_at ASC, id ASC`,
       [row.organization_id, row.id],
     );
+    const applications = await getPgExecutor(this.pool).query(
+      `SELECT id, request_id, proposal_id, request_version, applied_by_actor_id,
+              previous_encounter_start_at, applied_encounter_start_at, applied_at
+       FROM schedule_change_applications
+       WHERE organization_id = $1 AND request_id = $2`,
+      [row.organization_id, row.id],
+    );
+    const slots = await getPgExecutor(this.pool).query(
+      `SELECT application_id, slot, previous_start_at, applied_start_at
+       FROM schedule_change_application_slots
+       WHERE request_id = $1
+       ORDER BY slot ASC`,
+      [row.id],
+    );
+    const application = applications.rows[0];
     return rehydrateRequest(
       row,
       result.rows.map((proposal) => proposalRowSchema.parse(proposal)),
       decisions.rows.map((decision) => decisionRowSchema.parse(decision)),
+      application
+        ? rehydrateApplication(
+            applicationRowSchema.parse(application),
+            slots.rows.map((slot) => applicationSlotRowSchema.parse(slot)),
+          )
+        : null,
     );
   }
 }

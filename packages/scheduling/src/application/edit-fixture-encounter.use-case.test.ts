@@ -1,6 +1,7 @@
 import {
   asActorId,
   asCompetitionId,
+  asOfficialMatchSlotId,
   asOrganizationId,
   asTeamId,
   type AuthorizationPort,
@@ -60,10 +61,14 @@ class Snapshots implements EncounterScheduleRepository {
 }
 
 class Matches implements OfficialMatchRepository {
+  constructor(public rows: OfficialMatch[] = []) {}
   async listByEncounter() {
-    return [] satisfies OfficialMatch[];
+    return this.rows;
   }
   async upsertMany() {}
+  async saveSchedules(saved: readonly OfficialMatch[]) {
+    this.rows = this.rows.map((row) => saved.find((match) => match.slot === row.slot) ?? row);
+  }
   async voidByEncounterIds() {}
 }
 
@@ -72,6 +77,7 @@ function createUseCase(input: {
   readonly audits?: FixtureAuditEntry[];
   readonly events?: DomainEvent[];
   readonly canEdit?: boolean;
+  readonly matches?: Matches;
 }) {
   let stored = input.plan ?? original;
   const audits = input.audits ?? [];
@@ -123,7 +129,7 @@ function createUseCase(input: {
         markSuperseded: async () => {},
         containsEncounter: async () => true,
       },
-      matches: new Matches(),
+      matches: input.matches ?? new Matches(),
       mutationLock: { runExclusive: async (_encounterId, operation) => operation() },
       source: {
         load: async () => ({
@@ -190,6 +196,42 @@ describe("EditFixtureEncounterUseCase", () => {
     expect(await harness.snapshots.findById(encounter.id)).toMatchObject({
       scheduledStartAt: new Date("2026-09-02T01:00:00.000Z"),
     });
+  });
+
+  it("moves the stored OfficialMatch start with the edited Encounter start", async () => {
+    const encounter = original.stages
+      .flatMap((stage) => stage.rounds.flatMap((round) => round.encounters))
+      .find((item) => item.home.kind === "team" && item.away.kind === "team");
+    if (!encounter) throw new Error("fixture has no team encounter");
+    const matches = new Matches([
+      {
+        id: asOfficialMatchSlotId(`${encounter.id}:official-match:1`),
+        encounterId: encounter.id,
+        organizationId,
+        competitionId,
+        slot: 1,
+        status: "scheduled",
+        scheduledStartAt: encounter.scheduledStartAt,
+        createdAt: new Date("2026-08-11T21:00:00.000Z"),
+      },
+    ]);
+    const harness = createUseCase({ matches });
+
+    const changed = await harness.useCase.execute({
+      actorId: asActorId("staff-1"),
+      organizationId,
+      competitionId,
+      fixturePlanId: original.id,
+      encounterId: encounter.id,
+      scheduledStartAt: new Date("2026-09-02T01:00:00.000Z"),
+      reason: "Broadcast window",
+      requestId: "request-slots",
+    });
+
+    expect(changed.isOk()).toBe(true);
+    expect(matches.rows.map((row) => [row.slot, row.scheduledStartAt.toISOString()])).toEqual([
+      [1, "2026-09-02T01:00:00.000Z"],
+    ]);
   });
 
   it("rejects team-vs-bye reschedules that collide with another encounter", async () => {

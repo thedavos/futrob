@@ -11,6 +11,7 @@ import {
   interpretCompetitionWallTime,
   type CompetitionWallTime,
 } from "../domain/policies/interpret-competition-wall-time.ts";
+import { currentStartFor } from "../domain/policies/official-match-schedule.ts";
 import {
   runScheduleChangeCommand,
   type ScheduleChangeCommandDeps,
@@ -51,7 +52,7 @@ export class CounterScheduleChangeProposalUseCase {
         reason: input.reason.trim(),
       },
       movesSchedule: true,
-      decide: async ({ encounter, request, now }) => {
+      decide: async ({ encounter, schedules, request, now }) => {
         const timeZone = await this.deps.timeZones.getTimeZone({
           organizationId: encounter.organizationId,
           competitionId: encounter.competitionId,
@@ -80,7 +81,7 @@ export class CounterScheduleChangeProposalUseCase {
         const proposal = createScheduleChangeProposal({
           id: this.deps.ids.generate(),
           proposedStartAt: proposedStartAt.value,
-          currentStartAt: encounter.scheduledStartAt,
+          currentStartAt: currentStartFor(request.scope, schedules) ?? encounter.scheduledStartAt,
           proposedByActorId: input.actorId,
           proposedByTeamId: input.teamId,
           reason: input.reason,

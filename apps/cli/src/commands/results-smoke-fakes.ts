@@ -11,7 +11,7 @@ import type {
   SelectionCommandDigestPort,
   TeamRepresentationPort,
 } from "@futrob/results";
-import type { ActorId, EncounterId, TeamId } from "@futrob/shared-kernel";
+import { compareTime, type ActorId, type EncounterId, type TeamId } from "@futrob/shared-kernel";
 
 /** Offline fake only; cryptographic persistence is verified in the API's Postgres tests. */
 export class SmokeCommandDigest implements SelectionCommandDigestPort {
@@ -34,6 +34,19 @@ export class SmokeSelections implements OfficialMatchSelectionRepository {
   private readonly actions: ConfirmationAction[] = [];
   private readonly disputes: MatchDispute[] = [];
   private readonly claims = new Map<string, string>();
+
+  async listDueConfirmations(input: { readonly dueAt: Date; readonly limit: number }) {
+    return [...this.selections.values()]
+      .filter((selection) => {
+        const proposal = this.proposals.find((row) => row.id === selection.currentProposalId);
+        return (
+          selection.status === "awaiting_opponent_confirmation" &&
+          proposal &&
+          compareTime(proposal.confirmationDeadline, input.dueAt) <= 0
+        );
+      })
+      .slice(0, input.limit);
+  }
 
   async findLatestByEncounter(encounterId: EncounterId) {
     return this.selections.get(encounterId) ?? null;

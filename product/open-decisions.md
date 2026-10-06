@@ -49,10 +49,10 @@
 | **Propuesta**         | Dos alternativas: **A**, 24 horas desde la propuesta; **B**, un límite competitivo explícito por Encounter.                                                |
 | **Recomendación**     | **A** para el MVP. B queda como extensión cuando competitions modele un cierre de resultados.                                                              |
 | **Decisión validada** | **A**, con la regla común de esta sección. Validada por el responsable de producto el 2026-10-05 en [#129](https://github.com/thedavos/futrob/issues/129). |
-| **Runtime**           | Pendiente de implementación. [#130](https://github.com/thedavos/futrob/issues/130) queda desbloqueada para implementar A con los vectores de la columna A. |
+| **Runtime**           | Implementado en el checkout de [#130](https://github.com/thedavos/futrob/issues/130), sin despliegue; verifica los vectores de la columna A.               |
 
-Hasta que #130 lo implemente, el código no aplica plazo: una propuesta sin respuesta sigue en
-`awaiting_opponent_confirmation` y nunca se aprueba por silencio.
+El runtime de #130 aplica el plazo por reloj aunque el runner esté retrasado. Sin respuesta, el runner
+traslada la propuesta vencida a `organizer_review`; nunca se aprueba por silencio.
 
 **Por qué no sirve el default anterior.** «24 horas o hasta el inicio programado si ocurre antes» compara con
 el kickoff, pero la selección elige partidos ya jugados. Con kickoff 2026-10-03T18:00Z y propuesta
@@ -106,8 +106,10 @@ Permite adoptar A ahora y añadir `L` después sin alargar plazos ya concedidos.
   con el reloj de la API; el runner solo materializa el vencimiento. En B, fijar `L` requiere además
   un permiso de organizador que todavía no existe.
 
-La identidad del actor de sistema y el tratamiento de propuestas pendientes previas al deadline se
-resuelven en #130 sin cambiar esta regla.
+En #130 se exige `RESULTS_SYSTEM_ACTOR_ID` ya provisionado por identity. El tratamiento legacy fue
+validado explícitamente el 2026-10-05 durante esa implementación: conservar filas inmutables y guardar
+el deadline original `createdAt + 24 h` en una tabla temporal separada. Si ya pasó, el runner las envía
+a `organizer_review`, sin plazo nuevo ni aprobación por silencio.
 
 #### Vectores de aceptación
 

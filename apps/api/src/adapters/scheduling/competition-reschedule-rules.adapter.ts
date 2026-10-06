@@ -8,7 +8,7 @@ import {
   type FixtureStageId,
 } from "@futrob/scheduling";
 import type { CompetitionId, OrganizationId } from "@futrob/shared-kernel";
-import type { CountAcceptedReschedulesInput } from "@/adapters/scheduling/schedule-change-request.repository.ts";
+import type { CountAppliedReschedulesInput } from "@/adapters/scheduling/schedule-change-request.repository.ts";
 
 const UNLIMITED_RESCHEDULES = Number.MAX_SAFE_INTEGER;
 
@@ -18,7 +18,7 @@ export class CompetitionRescheduleRulesAdapter implements CompetitionRescheduleR
       readonly competitions: Pick<CompetitionRepository, "findById">;
       readonly fixtures: Pick<FixturePlanRepository, "listActive">;
       readonly requests: {
-        countAcceptedByTeam(input: CountAcceptedReschedulesInput): Promise<number>;
+        countAppliedByTeam(input: CountAppliedReschedulesInput): Promise<number>;
       };
     },
   ) {}
@@ -52,8 +52,8 @@ export class CompetitionRescheduleRulesAdapter implements CompetitionRescheduleR
     };
   }
 
-  countAppliedReschedules(input: CountAcceptedReschedulesInput): Promise<number> {
-    return this.deps.requests.countAcceptedByTeam(input);
+  countAppliedReschedules(input: CountAppliedReschedulesInput): Promise<number> {
+    return this.deps.requests.countAppliedByTeam(input);
   }
 
   private async stageKind(

@@ -35,7 +35,12 @@ import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 import type { ProviderMatchRepository } from "@futrob/game-data";
-import type { CompetitionId, OrganizationId, TransactionPort } from "@futrob/shared-kernel";
+import type {
+  ClockPort,
+  CompetitionId,
+  OrganizationId,
+  TransactionPort,
+} from "@futrob/shared-kernel";
 import type { VoidOfficialResultInput } from "@futrob/results";
 import {
   InMemoryOfficialMatchSelectionRepository,
@@ -69,6 +74,8 @@ import {
   GetTeamRosterManagementUseCase,
   ListTeamRosterManagementUseCase,
 } from "@/application/teams/team-roster-management.use-case.ts";
+import { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
+import { findProvisionedSystemActor } from "@/adapters/identity/configured-system-actor.ts";
 import { AssociateSyncedProviderMatches } from "@/application/game-data/associate-synced-provider-matches.ts";
 
 /**
@@ -81,11 +88,13 @@ export interface CreateModulesInput {
   readonly pool: Pool | undefined;
   /** Test seam: observations the results module reads candidates from. */
   readonly providerMatches?: ProviderMatchRepository;
+  readonly clock?: ClockPort;
+  readonly resultsSystemActorId?: string;
 }
 
 export function createModules(input: CreateModulesInput): AppModules {
   const ids = new CryptoIdGenerator();
-  const clock = new SystemClock();
+  const clock = input.clock ?? new SystemClock();
   const transaction = createTransactionPort(input.pool);
   const providerMatches =
     input.providerMatches ??
@@ -249,6 +258,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     }),
     results: officialResults,
     selections: officialSelections,
+    clock,
     ids,
   });
   const gameData = createGameDataModule({
@@ -343,6 +353,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     competitionApplications,
     competitions,
     officialSelection,
+    runConfirmationExpiry: new RunConfirmationExpiry({
+      selections: results.selections,
+      expire: officialSelection.expire,
+      clock,
+      resolveSystemActor: () => findProvisionedSystemActor(input.pool, input.resultsSystemActorId),
+    }),
     gameData,
     getMyNextEncounter,
     identity,
@@ -363,6 +379,7 @@ export interface AppModules {
   readonly competitions: CompetitionsModule;
   /** Every selection command composed with its transaction, lock and projection. */
   readonly officialSelection: OfficialSelectionCommands;
+  readonly runConfirmationExpiry: RunConfirmationExpiry;
   readonly voidOfficialResultAndUnproject: {
     execute(
       input: VoidOfficialResultInput,

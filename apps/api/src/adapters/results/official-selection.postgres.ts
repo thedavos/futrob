@@ -37,6 +37,22 @@ import {
 export class PostgresOfficialMatchSelectionRepository implements OfficialMatchSelectionRepository {
   constructor(private readonly pool: Pool) {}
 
+  async listDueConfirmations(input: { readonly dueAt: Date; readonly limit: number }) {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT selection.id, selection.encounter_id, selection.organization_id, selection.competition_id,
+              selection.status, selection.version, selection.round, selection.current_proposal_id,
+              selection.created_at, selection.updated_at
+       FROM official_match_selections selection
+       JOIN official_selection_confirmation_windows confirmation ON confirmation.proposal_id = selection.current_proposal_id
+       WHERE selection.superseded_at IS NULL AND selection.status = 'awaiting_opponent_confirmation'
+         AND confirmation.confirmation_deadline <= $1
+       ORDER BY confirmation.confirmation_deadline, selection.encounter_id
+       LIMIT $2`,
+      [input.dueAt.toISOString(), input.limit],
+    );
+    return result.rows.map((row) => rehydrateSelection(selectionRowSchema.parse(row)));
+  }
+
   async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialMatchSelection | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT id, encounter_id, organization_id, competition_id, status, version, round,
@@ -53,8 +69,9 @@ export class PostgresOfficialMatchSelectionRepository implements OfficialMatchSe
     const result = await getPgExecutor(this.pool).query(
       `SELECT id, selection_id, organization_id, competition_id, encounter_id, round, sequence,
               proposing_team_id, proposed_by_actor_id, slots, supersedes_proposal_id, reason,
-              created_at
-       FROM official_selection_proposals
+              proposal.created_at, confirmation.confirmation_deadline
+       FROM official_selection_proposals proposal
+       JOIN official_selection_confirmation_windows confirmation ON confirmation.proposal_id = proposal.id
        WHERE selection_id = $1
        ORDER BY sequence`,
       [selectionId],

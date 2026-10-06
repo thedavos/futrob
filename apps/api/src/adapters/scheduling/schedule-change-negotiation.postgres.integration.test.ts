@@ -57,7 +57,7 @@ const limaThreePm = (day: number) => ({
 
 const schemas: IsolatedSchema[] = [];
 
-suite("schedule change negotiation on Postgres", () => {
+suite("schedule change negotiation on Postgres", { timeout: 60_000 }, () => {
   afterEach(async () => {
     for (const schema of schemas.splice(0)) await schema.drop();
   });
@@ -230,6 +230,7 @@ suite("schedule change negotiation on Postgres", () => {
         expectedVersion: 2,
         appendedProposal: null,
         appendedDecision: decision,
+        appendedApplication: null,
       },
       receipt,
     );

@@ -1,6 +1,7 @@
 import {
   ActiveScheduleChangeRequestExists,
   ScheduleChangeRequestIdempotencyConflict,
+  type ScheduleChangeApplication,
   type ScheduleChangeProposal,
   type ScheduleChangeRequest,
 } from "@futrob/scheduling";
@@ -35,6 +36,17 @@ function proposal(
   };
 }
 
+const APPLIED: ScheduleChangeApplication = {
+  id: "application-1",
+  proposalId: "proposal-1",
+  requestVersion: 2,
+  appliedByActorId: asActorId("captain-2"),
+  previousEncounterStartAt: new Date("2026-09-20T20:00:00.000Z"),
+  appliedEncounterStartAt: new Date("2026-09-21T21:30:00.000Z"),
+  slots: [],
+  appliedAt: new Date("2026-09-15T20:00:00.000Z"),
+};
+
 function request(
   overrides: Partial<ScheduleChangeRequest> & Pick<ScheduleChangeRequest, "id" | "idempotencyKey">,
 ): ScheduleChangeRequest {
@@ -48,6 +60,7 @@ function request(
     status: "open",
     version: 1,
     decisions: [],
+    application: null,
     proposals: [proposal({ id: `${overrides.id}-proposal` })],
     createdAt: now,
     updatedAt: now,
@@ -191,7 +204,7 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
     ]);
   });
 
-  it("counts only accepted requests for the requesting Team on that Encounter", async () => {
+  it("counts only applied requests for the requesting Team on that Encounter", async () => {
     const repository = new InMemoryScheduleChangeRequestRepository();
     await repository.save(request({ id: "req-open", idempotencyKey: "idem-open" }));
     await repository.save(
@@ -199,6 +212,7 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
         id: "req-accepted",
         idempotencyKey: "idem-accepted",
         status: "accepted",
+        application: APPLIED,
         encounterId: asEncounterId("encounter-2"),
       }),
     );
@@ -207,6 +221,7 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
         id: "req-accepted-here",
         idempotencyKey: "idem-accepted-here",
         status: "accepted",
+        application: APPLIED,
       }),
     );
     await repository.save(
@@ -215,6 +230,7 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
         idempotencyKey: "idem-other-org",
         organizationId: otherOrganizationId,
         status: "accepted",
+        application: APPLIED,
       }),
     );
     await repository.save(
@@ -226,7 +242,7 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
     );
 
     await expect(
-      repository.countAcceptedByTeam({
+      repository.countAppliedByTeam({
         organizationId,
         competitionId,
         encounterId,

@@ -1,5 +1,6 @@
 import type {
   RescheduleScope,
+  ScheduleChangeApplication,
   ScheduleChangeCommandReceipt,
   ScheduleChangeDecision,
   ScheduleChangeProposal,
@@ -85,6 +86,24 @@ export const receiptRowSchema = z.object({
   created_proposal_id: pgTextSchema.nullable(),
   decision_id: pgTextSchema.nullable(),
   occurred_at: pgTimestampSchema,
+});
+
+export const applicationRowSchema = z.object({
+  id: pgTextSchema,
+  request_id: pgTextSchema,
+  proposal_id: pgTextSchema,
+  request_version: z.coerce.number().int().positive(),
+  applied_by_actor_id: pgTextSchema,
+  previous_encounter_start_at: pgTimestampSchema,
+  applied_encounter_start_at: pgTimestampSchema,
+  applied_at: pgTimestampSchema,
+});
+
+export const applicationSlotRowSchema = z.object({
+  application_id: pgTextSchema,
+  slot: z.coerce.number().pipe(z.union([z.literal(1), z.literal(2)])),
+  previous_start_at: pgTimestampSchema,
+  applied_start_at: pgTimestampSchema,
 });
 
 /** Proposals are append-only: existing rows are never rewritten or reordered. */
@@ -175,6 +194,45 @@ export async function insertReceipt(
   );
 }
 
+/** Fails on a second application of the same request (`schedule_change_applications_request_uidx`). */
+export async function insertApplication(
+  executor: PgExecutor,
+  request: ScheduleChangeRequest,
+  application: ScheduleChangeApplication,
+): Promise<void> {
+  await executor.query(
+    `INSERT INTO schedule_change_applications (
+       id, request_id, organization_id, proposal_id, request_version, applied_by_actor_id,
+       previous_encounter_start_at, applied_encounter_start_at, applied_at
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [
+      application.id,
+      request.id,
+      request.organizationId,
+      application.proposalId,
+      application.requestVersion,
+      application.appliedByActorId,
+      application.previousEncounterStartAt.toISOString(),
+      application.appliedEncounterStartAt.toISOString(),
+      application.appliedAt.toISOString(),
+    ],
+  );
+  for (const slot of application.slots) {
+    await executor.query(
+      `INSERT INTO schedule_change_application_slots (
+         application_id, request_id, slot, previous_start_at, applied_start_at
+       ) VALUES ($1, $2, $3, $4, $5)`,
+      [
+        application.id,
+        request.id,
+        slot.slot,
+        slot.previousStartAt.toISOString(),
+        slot.appliedStartAt.toISOString(),
+      ],
+    );
+  }
+}
+
 export function scopeColumns(scope: RescheduleScope) {
   switch (scope.type) {
     case "entire_encounter":
@@ -213,6 +271,7 @@ export function rehydrateRequest(
   row: z.infer<typeof requestRowSchema>,
   proposalRows: readonly z.infer<typeof proposalRowSchema>[],
   decisionRows: readonly z.infer<typeof decisionRowSchema>[],
+  application: ScheduleChangeApplication | null,
 ): ScheduleChangeRequest {
   return {
     id: row.id,
@@ -226,6 +285,7 @@ export function rehydrateRequest(
     version: row.version,
     proposals: asProposalList(proposalRows.map(rehydrateProposal)),
     decisions: decisionRows.map(rehydrateDecision),
+    application,
     idempotencyKey: row.idempotency_key,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -260,6 +320,28 @@ function rehydrateDecision(row: z.infer<typeof decisionRowSchema>): ScheduleChan
     actorId: asActorId(row.actor_id),
     reason: row.reason,
     createdAt: row.created_at,
+  };
+}
+
+export function rehydrateApplication(
+  row: z.infer<typeof applicationRowSchema>,
+  slotRows: readonly z.infer<typeof applicationSlotRowSchema>[],
+): ScheduleChangeApplication {
+  return {
+    id: row.id,
+    proposalId: row.proposal_id,
+    requestVersion: row.request_version,
+    appliedByActorId: asActorId(row.applied_by_actor_id),
+    previousEncounterStartAt: row.previous_encounter_start_at,
+    appliedEncounterStartAt: row.applied_encounter_start_at,
+    slots: slotRows
+      .filter((slot) => slot.application_id === row.id)
+      .map((slot) => ({
+        slot: slot.slot,
+        previousStartAt: slot.previous_start_at,
+        appliedStartAt: slot.applied_start_at,
+      })),
+    appliedAt: row.applied_at,
   };
 }
 

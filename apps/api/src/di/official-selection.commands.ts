@@ -1,4 +1,7 @@
 import type {
+  ExpireConfirmationWindowInput,
+  ExpireConfirmationWindowOutput,
+  SelectionVersionConflict,
   ConfirmOfficialSelectionError,
   ConfirmOfficialSelectionInput,
   EncounterReaderPort,
@@ -32,6 +35,11 @@ type Command<Input, Failure> = SelectionCommand<Input, OfficialSelectionCommandO
 
 /** Every selection command composed with its transaction, Encounter lock and projection. */
 export interface OfficialSelectionCommands {
+  readonly expire: SelectionCommand<
+    ExpireConfirmationWindowInput,
+    ExpireConfirmationWindowOutput,
+    SelectionVersionConflict
+  >;
   readonly propose: Command<SelectOfficialMatchesInput, ProposeOfficialSelectionError>;
   readonly confirm: Command<ConfirmOfficialSelectionInput, ConfirmOfficialSelectionError>;
   readonly reject: Command<RejectOfficialSelectionInput, RejectOfficialSelectionError>;
@@ -95,6 +103,14 @@ export function createOfficialSelectionCommands(deps: {
 
   const { results } = deps;
   return {
+    expire: {
+      execute: (input) =>
+        deps.transaction.runInTransaction(() =>
+          deps.encounterLock.runExclusive(input.encounterId, () =>
+            results.expireConfirmationWindow.execute(input),
+          ),
+        ),
+    },
     propose: composed((input) => results.selectOfficialMatches.execute(input)),
     confirm: composed((input) => results.confirmOfficialSelection.execute(input), true),
     reject: composed((input) => results.rejectOfficialSelection.execute(input)),

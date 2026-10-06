@@ -2,6 +2,7 @@ import {
   asActorId,
   asCompetitionId,
   asEncounterId,
+  asOfficialMatchSlotId,
   asOrganizationId,
   asTeamId,
   type AuthorizationPort,
@@ -10,6 +11,7 @@ import { unwrapErr } from "@futrob/test-support";
 import { describe, expect, it } from "vite-plus/test";
 import { asFixtureStageId } from "../domain/entities/fixture-plan.ts";
 import type { EncounterScheduleSnapshot } from "../domain/entities/encounter-schedule-snapshot.ts";
+import type { OfficialMatch } from "../domain/entities/official-match.ts";
 import type { EncounterScheduleRepository } from "../domain/ports/encounter-schedule.repository.ts";
 import { UpsertEncounterScheduleSnapshotUseCase } from "./upsert-encounter-schedule-snapshot.use-case.ts";
 
@@ -56,10 +58,27 @@ function participants(approvedTeamIds: readonly string[] = ["home-1", "away-1"])
 
 const independentEncounter = { containsEncounter: async () => false };
 
+function slotDeps(matches: OfficialMatch[] = []) {
+  return {
+    mutationLock: { runExclusive: <T>(_id: unknown, run: () => Promise<T>) => run() },
+    matches: {
+      listByEncounter: async () => matches,
+      saveSchedules: async (saved: readonly OfficialMatch[]) => {
+        for (const match of saved) {
+          const index = matches.findIndex((row) => row.slot === match.slot);
+          if (index !== -1) matches[index] = match;
+        }
+      },
+    },
+    transaction: { runInTransaction: <T>(run: () => Promise<T>) => run() },
+  };
+}
+
 describe("UpsertEncounterScheduleSnapshotUseCase", () => {
   it("persists the projection used by authorization and results", async () => {
     const encounters = new Encounters();
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
+      ...slotDeps(),
       encounters,
       fixtureOwnership: independentEncounter,
       authorization: authorization(true),
@@ -72,6 +91,7 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
 
   it("rejects an unauthorized producer", async () => {
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
+      ...slotDeps(),
       encounters: new Encounters(),
       fixtureOwnership: independentEncounter,
       authorization: authorization(false),
@@ -85,6 +105,7 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
     const encounters = new Encounters();
     await encounters.upsert(snapshot);
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
+      ...slotDeps(),
       encounters,
       fixtureOwnership: independentEncounter,
       authorization: authorization(true),
@@ -102,6 +123,7 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
 
   it("rejects a Team owned by another tenant", async () => {
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
+      ...slotDeps(),
       encounters: new Encounters(),
       fixtureOwnership: independentEncounter,
       authorization: authorization(true),
@@ -114,6 +136,7 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
   it("rejects a Team that is not an approved competition participant", async () => {
     const unapproved = { ...snapshot, awayTeamId: asTeamId("pending-team") };
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
+      ...slotDeps(),
       encounters: new Encounters(),
       fixtureOwnership: independentEncounter,
       authorization: authorization(true),
@@ -126,6 +149,7 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
   it("rejects the legacy snapshot writer for a fixture-managed encounter", async () => {
     const encounters = new Encounters();
     const result = await new UpsertEncounterScheduleSnapshotUseCase({
+      ...slotDeps(),
       encounters,
       fixtureOwnership: { containsEncounter: async () => true },
       authorization: authorization(true),
@@ -136,5 +160,106 @@ describe("UpsertEncounterScheduleSnapshotUseCase", () => {
     if (result.isOk()) return;
     expect(result.error.code).toBe("scheduling.fixture_managed_conflict");
     expect(await encounters.findById(snapshot.encounterId)).toBeNull();
+  });
+
+  it("moves stored slots by the same delta when an existing Encounter start changes", async () => {
+    const encounters = new Encounters();
+    await encounters.upsert(snapshot);
+    const slot = (number: 1 | 2, at: string): OfficialMatch => ({
+      id: asOfficialMatchSlotId(`encounter-1:official-match:${number}`),
+      encounterId: snapshot.encounterId,
+      organizationId: snapshot.organizationId,
+      competitionId: snapshot.competitionId,
+      slot: number,
+      status: "scheduled",
+      scheduledStartAt: new Date(at),
+      createdAt: new Date("2026-08-01T00:00:00.000Z"),
+    });
+    const matches = [slot(1, "2026-08-10T20:00:00.000Z"), slot(2, "2026-08-10T21:00:00.000Z")];
+
+    const result = await new UpsertEncounterScheduleSnapshotUseCase({
+      ...slotDeps(matches),
+      encounters,
+      fixtureOwnership: independentEncounter,
+      authorization: authorization(true),
+      participants: participants(),
+    }).execute({
+      actorId: asActorId("staff-1"),
+      snapshot: { ...snapshot, scheduledStartAt: new Date("2026-08-11T20:00:00.000Z") },
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(matches.map((row) => [row.slot, row.scheduledStartAt.toISOString()])).toEqual([
+      [1, "2026-08-11T20:00:00.000Z"],
+      [2, "2026-08-11T21:00:00.000Z"],
+    ]);
+  });
+
+  it("keeps the Encounter start and its slots consistent when an accepted reschedule races it", async () => {
+    const encounters = new Encounters();
+    await encounters.upsert(snapshot);
+    const slot = (number: 1 | 2, at: string): OfficialMatch => ({
+      id: asOfficialMatchSlotId(`encounter-1:official-match:${number}`),
+      encounterId: snapshot.encounterId,
+      organizationId: snapshot.organizationId,
+      competitionId: snapshot.competitionId,
+      slot: number,
+      status: "scheduled",
+      scheduledStartAt: new Date(at),
+      createdAt: new Date("2026-08-01T00:00:00.000Z"),
+    });
+    let rows = [slot(1, "2026-08-10T20:00:00.000Z"), slot(2, "2026-08-10T21:00:00.000Z")];
+    let tail: Promise<unknown> = Promise.resolve();
+    const lock = {
+      runExclusive<T>(_id: unknown, run: () => Promise<T>): Promise<T> {
+        const turn = tail.then(run);
+        tail = turn.catch(() => undefined);
+        return turn;
+      },
+    };
+    // An accepted reschedule to 2026-08-11T20:00Z arrives while the upsert reads the slots.
+    let accepted: Promise<void> | null = null;
+    const acceptUnderLock = () =>
+      lock.runExclusive(snapshot.encounterId, async () => {
+        await encounters.upsert({
+          ...snapshot,
+          scheduledStartAt: new Date("2026-08-11T20:00:00.000Z"),
+        });
+        rows = [slot(1, "2026-08-11T20:00:00.000Z"), slot(2, "2026-08-11T21:00:00.000Z")];
+      });
+    const matches = {
+      listByEncounter: async () => {
+        accepted ??= acceptUnderLock();
+        const read = rows;
+        // Yield long enough for an unlocked writer to run to completion.
+        for (let turn = 0; turn < 10; turn++) await Promise.resolve();
+        return read;
+      },
+      saveSchedules: async (saved: readonly OfficialMatch[]) => {
+        rows = rows.map((row) => saved.find((match) => match.slot === row.slot) ?? row);
+      },
+    };
+
+    const result = await new UpsertEncounterScheduleSnapshotUseCase({
+      ...slotDeps(),
+      matches,
+      mutationLock: lock,
+      encounters,
+      fixtureOwnership: independentEncounter,
+      authorization: authorization(true),
+      participants: participants(),
+    }).execute({
+      actorId: asActorId("staff-1"),
+      snapshot: { ...snapshot, scheduledStartAt: new Date("2026-08-12T20:00:00.000Z") },
+    });
+    await accepted;
+
+    expect(result.isOk()).toBe(true);
+    // Serialized, the later writer wins whole: the Encounter starts with slot 1, 1h apart.
+    const start = (await encounters.findById(snapshot.encounterId))?.scheduledStartAt;
+    expect(rows.map((row) => row.scheduledStartAt)).toEqual([
+      start,
+      start && new Date(start.getTime() + 60 * 60 * 1000),
+    ]);
   });
 });
