@@ -1,0 +1,28 @@
+# npm run test -- --run --project mobile --project sdk --reporter=verbose
+
+Node: v24.21.0
+Cwd: /Users/davidvargas/Davion Software/Development/futrob-qa-126
+Date: 2026-10-05
+
+Result: 27 test files passed, 171 tests passed, 0 failed.
+Duration: 12.46s (transform 17.40s, setup 6.03s, import 26.82s, tests 5.63s, environment 22.18s)
+
+Player-home screen cases (apps/mobile/src/modules/player-home/player-home-screen.test.tsx):
+- takes an authenticated player from the entry gate to /player and shows the dated fixture (520ms)
+- shows the no-fixture state while keeping the last match and other healthy sections (168ms)
+- counts only pending invitations (125ms)
+- keeps healthy sections through a failed source and recovers it on retry (380ms)
+- keeps pending invitations and the last match when switching ES and EN (380ms)
+- starts with the first associated club and never labels club B data as club A (274ms)
+- loads the home snapshot once when entering without a club (70ms)
+- keeps healthy sections when the profile fails on entry without a club (83ms)
+- keeps an explicit club that is not associated instead of falling back to the first (92ms)
+- asks for a club when the profile has none associated (62ms)
+- shows the home for a 200 session and keeps the stored session (53ms)
+- clears the session and shows login when the home answers 401 (/player?club=club-cuervos) (50ms)
+- clears the session and shows login when the home answers 401 (/player) (24ms)
+- lets a neighboring 200 sign-in return to the dated home after a 401 (483ms)
+- opens an implemented competition screen from the home (94ms)
+- cancels pending home reads on unmount so a late 401 changes nothing (59ms)
+
+These cases run under the integrated mobile Vite+ project (react-native-web / jsdom / in-memory Expo router). They are screen-behavior evidence, not native proof.

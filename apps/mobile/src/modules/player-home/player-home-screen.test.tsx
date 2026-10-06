@@ -5,12 +5,31 @@ import type {
   NextEncounterDto,
   PlayerRecentProviderMatchDto,
 } from "@futrob/api-contracts";
+import * as SecureStore from "expo-secure-store";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { clearSession, getSession, saveSession } from "@/modules/identity/session-store";
 import { currentLocation } from "../../../test/expo-router";
 import { apiError, installFakeApi } from "../../../test/fake-api";
 import { cleanupApp, renderApp } from "../../../test/render-app";
 import { gameProfile, invitation, lastMatch, profile, snapshot } from "./player-home.fixtures";
+
+const LANGUAGE_KEY = "futrob.mobile.language";
+const fixtureKickoff = new Intl.DateTimeFormat("es", {
+  timeZone: "America/Lima",
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+}).format(new Date("2026-10-02T02:00:00.000Z"));
+const fixtureKickoffEn = new Intl.DateTimeFormat("en", {
+  timeZone: "America/Lima",
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+}).format(new Date("2026-10-02T02:00:00.000Z"));
 
 const competitions = (() => {
   const source = snapshot().competitions;
@@ -102,6 +121,7 @@ beforeEach(async () => {
 afterEach(async () => {
   cleanupApp();
   await clearSession();
+  await SecureStore.deleteItemAsync(LANGUAGE_KEY);
   vi.unstubAllGlobals();
 });
 
@@ -115,9 +135,13 @@ describe("player home on /player", () => {
     const hero = within(fixture.parentElement!);
     expect(hero.getByText("Cuervos FC1")).toBeInTheDocument();
     expect(hero.getByText("Tigres FC")).toBeInTheDocument();
-    expect(hero.getByText("jue, 1 oct, 21:00")).toBeInTheDocument();
+    expect(hero.getByText(fixtureKickoff)).toBeInTheDocument();
     expect(hero.getByText("Liga Futrob · Jornada 4")).toBeInTheDocument();
     expect(currentLocation()).toEqual({ pathname: "/player", params: { club: "club-cuervos" } });
+
+    await user.click(hero.getByRole("button", { name: "Ver competición" }));
+    expect(await screen.findByRole("heading", { name: "Liga Futrob" })).toBeInTheDocument();
+    expect(currentLocation()?.pathname).toBe("/orgs/org-1/competitions/competition-liga");
   });
 
   it("shows the no-fixture state while keeping the last match and other healthy sections", async () => {
@@ -148,6 +172,7 @@ describe("player home on /player", () => {
     await screen.findByRole("heading", { name: "Invitaciones" });
     expect(section("Invitaciones").getByText("No se pudo cargar")).toBeInTheDocument();
     expect(section("Tu próximo enfrentamiento").getByText("Tigres FC")).toBeInTheDocument();
+    expect(section("Último partido").getByText("6 – 0")).toBeInTheDocument();
 
     const recovered = Promise.withResolvers<Response>();
     api.routes["/players/me/roster-invitations"] = () => recovered.promise;
@@ -159,6 +184,33 @@ describe("player home on /player", () => {
     recovered.resolve(Response.json({ invitations: [invitation("invite-1", "pending")] }));
     expect(await screen.findByText("1 invitación por responder")).toBeInTheDocument();
     expect(screen.queryByText("No se pudo cargar")).toBeNull();
+    expect(section("Último partido").getByText("6 – 0")).toBeInTheDocument();
+  });
+
+  it("keeps pending invitations and the last match when switching ES and EN", async () => {
+    playerApi();
+    const user = userEvent.setup();
+    renderApp("/player?club=club-cuervos");
+
+    await screen.findByRole("heading", { name: "Invitaciones" });
+    expect(section("Invitaciones").getByText("2 invitaciones por responder")).toBeInTheDocument();
+    expect(section("Último partido").getByText("6 – 0")).toBeInTheDocument();
+    expect(screen.getByText(fixtureKickoff)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "English" }));
+
+    expect(await screen.findByRole("heading", { name: "Invitations" })).toBeInTheDocument();
+    expect(section("Invitations").getByText("2 invitations to answer")).toBeInTheDocument();
+    expect(section("Last match").getByText("6 – 0")).toBeInTheDocument();
+    expect(screen.getByText(fixtureKickoffEn)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View competition" })).toBeInTheDocument();
+    expect(screen.getByText("Your activity with Cuervos FC1")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Español" }));
+
+    expect(await screen.findByRole("heading", { name: "Invitaciones" })).toBeInTheDocument();
+    expect(section("Invitaciones").getByText("2 invitaciones por responder")).toBeInTheDocument();
+    expect(section("Último partido").getByText("6 – 0")).toBeInTheDocument();
   });
 
   it("starts with the first associated club and never labels club B data as club A", async () => {
@@ -251,6 +303,34 @@ describe("player home on /player", () => {
       expect(await getSession()).toBeNull();
     },
   );
+
+  it("lets a neighboring 200 sign-in return to the dated home after a 401", async () => {
+    const api = playerApi();
+    api.routes["/players/me"] = () => apiError(401);
+    api.routes["/api/auth/sign-in/email"] = json({
+      token: "session-after-reentry",
+      user: { id: "actor-1", name: "Davos", email: "davos@example.com" },
+    });
+    const user = userEvent.setup();
+    renderApp("/player?club=club-cuervos");
+
+    expect(await screen.findByText("Bienvenido de nuevo")).toBeInTheDocument();
+    expect(await getSession()).toBeNull();
+
+    api.routes["/players/me"] = json(profile);
+    await user.type(screen.getByLabelText("Correo electrónico"), "davos@example.com");
+    await user.type(screen.getByLabelText("Contraseña"), "password1");
+    await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
+
+    expect(await screen.findByText("Tu actividad con Cuervos FC1")).toBeInTheDocument();
+    const fixture = screen.getByRole("heading", { name: "Tu próximo enfrentamiento" });
+    const hero = within(fixture.parentElement!);
+    expect(hero.getByText("Cuervos FC1")).toBeInTheDocument();
+    expect(hero.getByText("Tigres FC")).toBeInTheDocument();
+    expect(hero.getByText(fixtureKickoff)).toBeInTheDocument();
+    expect(await getSession()).toMatchObject({ token: "session-after-reentry" });
+    expect(currentLocation()).toEqual({ pathname: "/player", params: { club: "club-cuervos" } });
+  });
 
   it("opens an implemented competition screen from the home", async () => {
     playerApi();

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AUTH_BASE_URL } from "@/config/env";
+import { AUTH_BASE_URL, AUTH_ORIGIN } from "@/config/env";
 
 /**
  * Better Auth email/password endpoints served by apps/auth (`/api/auth/*`).
@@ -80,7 +80,12 @@ async function requestAuth(
   try {
     response = await fetch(`${AUTH_BASE_URL}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        // Expo Go sends Origin: exp://…; Better Auth only trusts HTTP origins.
+        Origin: AUTH_ORIGIN,
+      },
       body: JSON.stringify(body),
     });
   } catch {
@@ -136,6 +141,7 @@ export async function signOutRemote(token: string): Promise<RemoteSignOutResult>
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
+        Origin: AUTH_ORIGIN,
       },
     });
   } catch {
