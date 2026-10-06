@@ -170,6 +170,7 @@ export function createSchedulingModule(input: {
       encounters,
       fixtureOwnership: fixturePlans,
       matches: officialMatches,
+      mutationLock: input.encounterMutationLock,
       participants: input.participants,
       transaction: input.transaction,
     }),
