@@ -31,31 +31,31 @@ El issue pedía no inferir el primer club. #133 autorizó el primer club asociad
 
 ## Criterios
 
-| Criterio                           | Resultado                                | Evidencia                                                                                                                                                      |
-| ---------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Gate autenticado llega a `/player` | Pass (iOS, Android)                      | Recorrido 3-4 y 7. Capturas `ios-06`, `ios-09`, `android-02`                                                                                                   |
-| Club inicial = primer asociado     | Pass. No se revirtió #133                | `Your activity with Lidl uItra` en ambas plataformas                                                                                                           |
-| Cambio de club sin mezclar fuentes | Pass                                     | `ios-11`, `android-03`. Subtítulo Bishops. Lidl sigue como opción no seleccionada                                                                              |
-| Ready / vacío                      | Pass en los estados que el dato permite  | Vacío sin clubes: `ios-06/07`. Ready sin torneo/inbox/identificador: `ios-09/10`, `android-02/04`                                                              |
-| Error parcial + retry de sección   | Pass en harness. Pendiente nativo        | No hubo fuente 4xx/5xx en vivo salvo el gate de orgs. `player-home-screen.test.tsx` conserva `6 – 0` y recupera invitaciones                                   |
-| Invitaciones                       | Pass vacío nativo. Pendientes en harness | Nativo: `Sin invitaciones pendientes`. Harness: `2 invitaciones por responder`                                                                                 |
-| 401 limpia sesión y muestra login  | Pass iOS nativo y harness                | `ios-12`. Android no reejecutó 401 (sesión ya revocada)                                                                                                        |
-| 200 vecino reingresa               | Pass harness. iOS nativo tras sign-out   | Login EN → `/player` ready                                                                                                                                     |
-| ES/EN                              | Pass                                     | iOS vacío y Android ready. Harness conserva `6 – 0` y fecha `Intl`                                                                                             |
-| CTA existentes                     | Pass a rutas existentes en harness       | `Ver competición` → `/orgs/org-1/competitions/competition-liga`. En vivo no hay competición ni enfrentamiento. No se inventó CTA                               |
-| Nombres y roles (árbol AX)         | Pass parcial                             | iOS: `button` English/Sign out/clubes, `header` Inicio/Home, labels de sección. Android: `android.widget.Button` Español/clubes                                |
-| Targets ≥44 dp                     | Pass medido                              | iOS puntos: English y Cerrar sesión 354×44; clubes 354×44. Android 420 dpi: Español 116 px (44.2 dp), Lidl 116 px, Bishops 115 px (43.8 dp, redondeo de píxel) |
-| VoiceOver / TalkBack               | Pendiente                                | `agent-device settings` no enciende VoiceOver ni TalkBack. No se recorrió el rotor ni el lector                                                                |
-| Conservar fuentes sanas            | Pass                                     | Cambio de club oculta el snapshot anterior. Error de perfil en harness mantiene invitaciones y competición                                                     |
-| Recuperación visible               | Pass                                     | Gate `Reintentar` tras migrate. Loader de club. Retry de sección en harness                                                                                    |
-| No rediseñar loader                | Pass                                     | Se dejó `Loading your activity…` / `Cargando tu actividad…`                                                                                                    |
-| No acreditar Expo web              | Pass                                     | Solo Expo Go                                                                                                                                                   |
+| Criterio                           | Resultado                                | Evidencia                                                                                                                                                                                                                             |
+| ---------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gate autenticado llega a `/player` | Pass (iOS, Android)                      | Recorrido 3-4 y 7. Capturas `ios-06`, `ios-09`, `android-02`                                                                                                                                                                          |
+| Club inicial = primer asociado     | Pass. No se revirtió #133                | `Your activity with Lidl uItra` en ambas plataformas                                                                                                                                                                                  |
+| Cambio de club sin mezclar fuentes | Pass                                     | `ios-11`, `android-03`. Subtítulo Bishops. Lidl sigue como opción no seleccionada                                                                                                                                                     |
+| Ready / vacío                      | Pass en los estados que el dato permite  | Vacío sin clubes: `ios-06/07`. Ready sin torneo/inbox/identificador: `ios-09/10`, `android-02/04`                                                                                                                                     |
+| Error parcial + retry de sección   | Pass en harness. Pendiente nativo        | No hubo fuente 4xx/5xx en vivo salvo el gate de orgs. `player-home-screen.test.tsx` conserva `6 – 0` y recupera invitaciones                                                                                                          |
+| Invitaciones                       | Pass vacío nativo. Pendientes en harness | Nativo: `Sin invitaciones pendientes`. Harness: `2 invitaciones por responder`                                                                                                                                                        |
+| 401 limpia sesión y muestra login  | Pass iOS nativo y harness                | `ios-12`. Android no reejecutó 401 (sesión ya revocada)                                                                                                                                                                               |
+| 200 vecino reingresa               | Pass harness. iOS nativo tras sign-out   | Login EN → `/player` ready                                                                                                                                                                                                            |
+| ES/EN                              | Pass                                     | iOS vacío y Android ready. Harness conserva `6 – 0` y fecha `Intl`                                                                                                                                                                    |
+| CTA existentes                     | Pass a rutas existentes en harness       | `Ver competición` → `/orgs/org-1/competitions/competition-liga`. En vivo no hay competición ni enfrentamiento. No se inventó CTA                                                                                                      |
+| Nombres y roles (árbol AX)         | Pass parcial                             | iOS: `button` English/Sign out/clubes, `header` Inicio/Home, labels de sección. Android: `android.widget.Button` Español/clubes                                                                                                       |
+| Targets ≥44 dp                     | Pass medido                              | iOS puntos: English y Cerrar sesión 354×44; clubes 354×44. Android 420 dpi: Español 116 px (44.2 dp), Lidl 116 px, Bishops 115 px (43.8 dp, redondeo de píxel)                                                                        |
+| VoiceOver / TalkBack               | Pendiente. Intentado, no disponible      | iOS 26.3 Settings no lista VoiceOver. Búsqueda: `No Results for “VoiceOver”` (`ios-13`). Android: Use TalkBack > Allow. El toggle volvió a Off. Servicio enabled, `Bound services:{}`, `touchExplorationEnabled=false` (`android-05`) |
+| Conservar fuentes sanas            | Pass                                     | Cambio de club oculta el snapshot anterior. Error de perfil en harness mantiene invitaciones y competición                                                                                                                            |
+| Recuperación visible               | Pass                                     | Gate `Reintentar` tras migrate. Loader de club. Retry de sección en harness                                                                                                                                                           |
+| No rediseñar loader                | Pass                                     | Se dejó `Loading your activity…` / `Cargando tu actividad…`                                                                                                                                                                           |
+| No acreditar Expo web              | Pass                                     | Solo Expo Go                                                                                                                                                                                                                          |
 
 ## Capturas
 
-iOS: `ios-02` cuenta de juego, `ios-03` club, `ios-04` review, `ios-05` gate error, `ios-06/07` vacío ES/EN, `ios-08` login tras sign-out, `ios-09/10` ready Lidl, `ios-11` Bishops, `ios-12` login tras 401.
+iOS: `ios-02` cuenta de juego, `ios-03` club, `ios-04` review, `ios-05` gate error, `ios-06/07` vacío ES/EN, `ios-08` login tras sign-out, `ios-09/10` ready Lidl, `ios-11` Bishops, `ios-12` login tras 401, `ios-13` Settings sin VoiceOver.
 
-Android: `android-01` login EN, `android-02` ready Lidl, `android-03` Bishops EN, `android-04` Bishops ES.
+Android: `android-01` login EN, `android-02` ready Lidl, `android-03` Bishops EN, `android-04` Bishops ES, `android-05` TalkBack no enlaza.
 
 ## Pruebas
 
@@ -99,7 +99,9 @@ jsdom + react-native-web prueba comportamiento de pantalla. No sustituye iOS/And
 
 ## Bloqueos y pendientes
 
-- VoiceOver y TalkBack no verificados. Dejan el criterio de lector pendiente.
+- VoiceOver no existe en el iPhone 17 Pro iOS 26.3 simulator. Settings > Accessibility no lo muestra. La búsqueda del sistema no tiene resultados. Hace falta un dispositivo físico o un runtime que exponga VoiceOver.
+- TalkBack está instalado en el emulador API 36 (`com.google.android.marvin.talkback/.TalkBackService`). El toggle de Settings y el Allow no lo enlazan. `touchExplorationEnabled` permanece false. Hace falta un dispositivo o imagen donde el servicio bindée.
+- CI de #143: Format & Lint, Typecheck, Test y Build & Bundle Budget en verde en `c1cbe7de`. pullfrog seguía pending al publicar esta nota.
 - CTA nativo a competición y error parcial nativo por fuente no se vieron. El dato en vivo no los produce.
 - Invitaciones pendientes nativas no se sembraron.
 - Expo Go Android ANR al perder Metro. Tras relanzar el flujo sí llegó a `/player`.
