@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  acceptScheduleChangeProposalRequestSchema,
   getMyNextEncounterResponseSchema,
   listEncounterCandidatesResponseSchema,
   createScheduleChangeRequestSchema,
@@ -122,6 +123,8 @@ const scheduleChangeRequest = {
   initiatedByActorId: "captain-1",
   scope: { type: "entire_encounter" as const },
   status: "open" as const,
+  version: 1,
+  currentProposalId: "proposal-1",
   proposals: [
     {
       id: "proposal-1",
@@ -132,6 +135,8 @@ const scheduleChangeRequest = {
       createdAt: "2026-09-14T20:00:00.000Z",
     },
   ],
+  decisions: [],
+  application: null,
   createdAt: "2026-09-14T20:00:00.000Z",
   updatedAt: "2026-09-14T20:00:00.000Z",
 };
@@ -173,5 +178,28 @@ describe("schedule change request contracts", () => {
     expect(scheduleChangeRequestSchema.parse(scheduleChangeRequest)).not.toHaveProperty(
       "idempotencyKey",
     );
+  });
+
+  it("keeps the claimed capacity but drops any actor or role a command body carries", () => {
+    expect(
+      acceptScheduleChangeProposalRequestSchema.parse({
+        expectedVersion: 2,
+        commandKey: " accept-1 ",
+        responder: { authority: "organizer", role: "superuser" },
+        actorId: "actor-forged",
+        role: "organizer",
+      }),
+    ).toEqual({
+      expectedVersion: 2,
+      commandKey: "accept-1",
+      responder: { authority: "organizer" },
+    });
+    expect(
+      acceptScheduleChangeProposalRequestSchema.safeParse({
+        expectedVersion: 0,
+        commandKey: "accept-1",
+        responder: { authority: "organizer" },
+      }).success,
+    ).toBe(false);
   });
 });

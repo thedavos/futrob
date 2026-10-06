@@ -14,6 +14,16 @@ export const encounterScheduleSnapshotSchema = z.object({
   homeExternalClubId: z.string().min(1).nullable(),
   awayExternalClubId: z.string().min(1).nullable(),
   providerKey: z.string().min(1).nullable(),
+  /** Start of every slot the Encounter plays; an `official_match` reschedule moves one. */
+  officialMatches: z
+    .array(
+      z.object({
+        officialSlot: z.union([z.literal(1), z.literal(2)]),
+        scheduledStartAt: z.string().datetime(),
+      }),
+    )
+    .min(1)
+    .max(2),
 });
 
 export type EncounterScheduleSnapshotDto = z.infer<typeof encounterScheduleSnapshotSchema>;
@@ -266,6 +276,45 @@ export const scheduleChangeProposalSchema = z.object({
   createdAt: z.string().datetime(),
 });
 
+/** The capacity an actor claims; the server authorizes it, so claiming grants nothing. */
+export const scheduleChangeResponderSchema = z.discriminatedUnion("authority", [
+  z.object({ authority: z.literal("rival_team"), teamId: z.string().min(1) }),
+  z.object({ authority: z.literal("organizer") }),
+]);
+
+export const scheduleChangeDecisionSchema = z.object({
+  id: z.string().min(1),
+  proposalId: z.string().min(1),
+  /** Request version the responder answered. */
+  requestVersion: z.number().int().positive(),
+  kind: z.enum(["consent", "rejection"]),
+  responder: scheduleChangeResponderSchema,
+  actorId: z.string().min(1),
+  reason: z.string().min(1).nullable(),
+  createdAt: z.string().datetime(),
+});
+
+export const scheduleChangeApplicationSchema = z.object({
+  id: z.string().min(1),
+  proposalId: z.string().min(1),
+  requestVersion: z.number().int().positive(),
+  appliedByActorId: z.string().min(1),
+  previousEncounterStartAt: z.string().datetime(),
+  appliedEncounterStartAt: z.string().datetime(),
+  /** Only the slots whose start moved. */
+  slots: z
+    .array(
+      z.object({
+        officialSlot: z.union([z.literal(1), z.literal(2)]),
+        previousStartAt: z.string().datetime(),
+        appliedStartAt: z.string().datetime(),
+      }),
+    )
+    .min(1)
+    .max(2),
+  appliedAt: z.string().datetime(),
+});
+
 export const scheduleChangeRequestSchema = z.object({
   id: z.string().min(1),
   organizationId: z.string().min(1),
@@ -275,7 +324,14 @@ export const scheduleChangeRequestSchema = z.object({
   initiatedByActorId: z.string().min(1),
   scope: rescheduleScopeSchema,
   status: z.enum(["open", "accepted", "rejected", "cancelled", "expired", "escalated"]),
+  /** Commands send it back as `expectedVersion`. */
+  version: z.number().int().positive(),
+  /** The only proposal commands may answer: the last one in `proposals`. */
+  currentProposalId: z.string().min(1),
   proposals: z.array(scheduleChangeProposalSchema).min(1),
+  decisions: z.array(scheduleChangeDecisionSchema),
+  /** The schedule applied when the request became `accepted`; null otherwise. */
+  application: scheduleChangeApplicationSchema.nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -299,4 +355,47 @@ export const listScheduleChangeRequestsResponseSchema = z.object({
 
 export type ListScheduleChangeRequestsResponse = z.infer<
   typeof listScheduleChangeRequestsResponseSchema
+>;
+
+export const scheduleChangeCommandResponseSchema = z.object({
+  /** The request as this command left it; a replay returns that state, not a later one. */
+  request: scheduleChangeRequestSchema,
+  /** True when the command key had already produced this outcome. */
+  replayed: z.boolean(),
+});
+
+export type ScheduleChangeCommandResponse = z.infer<typeof scheduleChangeCommandResponseSchema>;
+
+const scheduleChangeCommandSchema = z.object({
+  /** Request `version` the caller read. */
+  expectedVersion: z.number().int().positive(),
+  /** Client-chosen key; repeating it with the same payload returns the original outcome. */
+  commandKey: z.string().trim().min(1).max(200),
+});
+
+export const acceptScheduleChangeProposalRequestSchema = scheduleChangeCommandSchema.extend({
+  responder: scheduleChangeResponderSchema,
+});
+
+export const rejectScheduleChangeProposalRequestSchema = scheduleChangeCommandSchema.extend({
+  responder: scheduleChangeResponderSchema,
+  reason: z.string().optional(),
+});
+
+export const counterScheduleChangeProposalRequestSchema = scheduleChangeCommandSchema.extend({
+  /** The rival Team of the current proposal, answering with a new date. */
+  teamId: z.string().min(1),
+  proposedWallTime: competitionWallTimeSchema,
+  reason: z.string().min(1),
+  timeZone: z.string().trim().min(1).optional(),
+});
+
+export type AcceptScheduleChangeProposalRequest = z.infer<
+  typeof acceptScheduleChangeProposalRequestSchema
+>;
+export type RejectScheduleChangeProposalRequest = z.infer<
+  typeof rejectScheduleChangeProposalRequestSchema
+>;
+export type CounterScheduleChangeProposalRequest = z.infer<
+  typeof counterScheduleChangeProposalRequestSchema
 >;

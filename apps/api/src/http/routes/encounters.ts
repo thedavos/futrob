@@ -4,7 +4,12 @@ import {
   upsertEncounterScheduleSnapshotRequestSchema,
 } from "@futrob/api-contracts";
 import { OfficialSelectionForbidden } from "@futrob/results";
-import { asFixtureStageId, ENCOUNTER_PERMISSION } from "@futrob/scheduling";
+import {
+  asFixtureStageId,
+  ENCOUNTER_PERMISSION,
+  officialMatchSchedules,
+  type EncounterScheduleSnapshot,
+} from "@futrob/scheduling";
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
@@ -14,6 +19,28 @@ import {
   type ServiceAuthVariables,
 } from "@/http/middleware/service-auth.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
+
+async function scheduleSnapshotResponse(
+  deps: AppDeps,
+  encounter: EncounterScheduleSnapshot,
+): Promise<Response> {
+  const matches = await deps.modules.scheduling.officialMatches.listByEncounter(
+    encounter.encounterId,
+  );
+  return jsonResponse(
+    encounterScheduleSnapshotSchema.parse({
+      ...encounter,
+      scheduledStartAt: encounter.scheduledStartAt.toISOString(),
+      homeExternalClubId: null,
+      awayExternalClubId: null,
+      providerKey: null,
+      officialMatches: officialMatchSchedules(encounter, matches).map((schedule) => ({
+        officialSlot: schedule.slot,
+        scheduledStartAt: schedule.scheduledStartAt.toISOString(),
+      })),
+    }),
+  );
+}
 
 export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
@@ -94,15 +121,7 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
         messageKey: "errors.scheduling.encounter_not_found",
       });
     }
-    return jsonResponse(
-      encounterScheduleSnapshotSchema.parse({
-        ...encounter,
-        scheduledStartAt: encounter.scheduledStartAt.toISOString(),
-        homeExternalClubId: null,
-        awayExternalClubId: null,
-        providerKey: null,
-      }),
-    );
+    return scheduleSnapshotResponse(deps, encounter);
   });
 
   secured.put("/encounters/:encounterId/schedule-snapshot", async (c) => {
@@ -127,15 +146,7 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
       },
     });
     if (result.isErr()) return failureToHttp(result.error);
-    return jsonResponse(
-      encounterScheduleSnapshotSchema.parse({
-        ...result.value,
-        scheduledStartAt: result.value.scheduledStartAt.toISOString(),
-        homeExternalClubId: null,
-        awayExternalClubId: null,
-        providerKey: null,
-      }),
-    );
+    return scheduleSnapshotResponse(deps, result.value);
   });
 
   app.route("/", secured);

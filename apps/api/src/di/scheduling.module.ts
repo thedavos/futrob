@@ -2,6 +2,7 @@ import {
   AcceptScheduleChangeProposalUseCase,
   CounterScheduleChangeProposalUseCase,
   CreateScheduleChangeRequestUseCase,
+  GetScheduleChangeRequestUseCase,
   EditFixtureEncounterUseCase,
   GenerateCompetitionFixtureUseCase,
   GetCompetitionFixtureUseCase,
@@ -157,6 +158,11 @@ export function createSchedulingModule(input: {
       timeZones,
     }),
     listScheduleChangeRequests: new ListScheduleChangeRequestsUseCase({
+      authorization: input.authorization,
+      encounters,
+      requests: scheduleChangeRequests,
+    }),
+    getScheduleChangeRequest: new GetScheduleChangeRequestUseCase({
       authorization: input.authorization,
       encounters,
       requests: scheduleChangeRequests,

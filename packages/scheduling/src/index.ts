@@ -98,6 +98,11 @@ export {
   type ListScheduleChangeRequestsInput,
 } from "./application/list-schedule-change-requests.use-case.ts";
 export {
+  GetScheduleChangeRequestUseCase,
+  type GetScheduleChangeRequestError,
+  type GetScheduleChangeRequestInput,
+} from "./application/get-schedule-change-request.use-case.ts";
+export {
   AcceptScheduleChangeProposalUseCase,
   type AcceptScheduleChangeProposalDeps,
   type AcceptScheduleChangeProposalInput,
