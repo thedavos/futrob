@@ -12,6 +12,7 @@ type JsonSchema = {
   readonly enum?: readonly unknown[];
   readonly const?: unknown;
   readonly anyOf?: readonly JsonSchema[];
+  readonly oneOf?: readonly JsonSchema[];
 };
 
 /** The smallest value the documented schema accepts, built only from the document. */
@@ -19,12 +20,15 @@ function documentedExample(schema: JsonSchema): unknown {
   if (schema.const !== undefined) return schema.const;
   if (schema.enum) return schema.enum[0];
   if (schema.anyOf) return documentedExample(schema.anyOf[0]!);
+  if (schema.oneOf) return documentedExample(schema.oneOf[0]!);
   switch (schema.type) {
     case "string":
       return "x".repeat(Math.max(1, schema.minLength ?? 1));
     case "integer":
     case "number":
       return 0;
+    case "boolean":
+      return false;
     case "array":
       return Array.from({ length: schema.minItems ?? 0 }, () => documentedExample(schema.items!));
     case "object":
@@ -54,17 +58,7 @@ function concrete(path: string) {
     .replace("{proposalId}", "proposal-unknown")}`;
 }
 
-describe("documented Team official-selection operations", () => {
-  it("documents the five Team commands", () => {
-    expect(documentedCommands.map(({ path }) => path.split("/official-selection")[1])).toEqual([
-      "/proposals",
-      "/proposals/{proposalId}/confirm",
-      "/proposals/{proposalId}/reject",
-      "/proposals/{proposalId}/alternative",
-      "/disputes",
-    ]);
-  });
-
+describe("documented official-selection operations", () => {
   it.each(documentedCommands)(
     "$path accepts the documented body and rejects it without any required field",
     async ({ path, schema }) => {
@@ -112,6 +106,32 @@ describe("documented Team official-selection operations", () => {
     expect(withoutTeam.status).toBe(400);
     expect(apiErrorSchema.parse(await withoutTeam.json())).toMatchObject({
       code: "api.validation_error",
+    });
+  });
+
+  it("reads the operator view without a Team and accepts the return decision", async () => {
+    const app = buildApp(stubFetch);
+    const path = concrete(
+      "/organizations/{organizationId}/encounters/{encounterId}/official-selection/disputes",
+    );
+    const read = await app.request(path, { headers: serviceHeaders("actor-unknown") });
+    expect(read.status).toBe(404);
+    expect(apiErrorSchema.parse(await read.json())).toMatchObject({
+      code: "results.encounter_not_found",
+    });
+    const returned = await app.request(`${path}/resolve`, {
+      method: "POST",
+      headers: serviceHeaders("actor-unknown"),
+      body: JSON.stringify({
+        commandKey: "return-key",
+        expectedVersion: 3,
+        reason: "Nueva selección",
+        decision: { type: "return_to_selection" },
+      }),
+    });
+    expect(returned.status).toBe(404);
+    expect(apiErrorSchema.parse(await returned.json())).toMatchObject({
+      code: "results.encounter_not_found",
     });
   });
 

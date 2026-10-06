@@ -7,6 +7,8 @@ import {
   proposeAlternativeOfficialSelectionRequestSchema,
   proposeOfficialSelectionRequestSchema,
   rejectOfficialSelectionRequestSchema,
+  resolveMatchDisputeRequestSchema,
+  reviewMatchDisputeRequestSchema,
 } from "../results/schemas.ts";
 
 const BASE = "/organizations/{organizationId}/encounters/{encounterId}/official-selection";
@@ -78,6 +80,25 @@ function teamCommand(
   };
 }
 
+function operatorCommand(operationId: string, summary: string, requestSchema: string) {
+  const command = teamCommand(operationId, summary, requestSchema, false);
+  return {
+    post: {
+      ...command.post,
+      description:
+        "Requires `encounters.results.approve` on the authenticated actor and Encounter scope. " +
+        "Actor, role and permissions in the body grant no authority. A nonblank reason is required. " +
+        "Repeating `commandKey` with the same payload returns the original outcome with " +
+        "`replayed: true` and no duplicate projection. Resolution approves the exact `proposalId` " +
+        "in the current round at `expectedVersion`, with `acknowledgeIntegrityFlags: true` when " +
+        "blocking flags exist, or returns to selection, releasing references and requiring " +
+        "a new proposal and consent. Only approval creates an official result, atomically with " +
+        "statistics. 404 `results.proposal_not_found`; 409 " +
+        `\`results.integrity_flags_not_acknowledged\`. ${failureDescription}`,
+    },
+  };
+}
+
 export const officialSelectionOpenApiPaths = {
   [BASE]: {
     get: {
@@ -131,11 +152,47 @@ export const officialSelectionOpenApiPaths = {
     "ProposeAlternativeOfficialSelectionRequest",
     true,
   ),
-  [`${BASE}/disputes`]: teamCommand(
-    "openMatchDispute",
-    "Open a dispute on the pending proposal",
-    "OpenMatchDisputeRequest",
-    false,
+  [`${BASE}/disputes`]: {
+    ...teamCommand(
+      "openMatchDispute",
+      "Open a dispute on the pending proposal",
+      "OpenMatchDisputeRequest",
+      false,
+    ),
+    get: {
+      operationId: "getOperatorOfficialSelection",
+      tags: ["results"],
+      summary: "Read the operational selection and dispute history as an operator",
+      description:
+        "Requires `encounters.results.approve` on the authenticated actor and Encounter scope. " +
+        "Returns the shared OfficialSelectionView, including redacted audit reasons, " +
+        "proposal deadlines and allowed operator actions. Command keys, fingerprints and " +
+        "raw provider payloads are never exposed. Reading does not process expiration.",
+      parameters: [...scopeParameters],
+      responses: {
+        "200": {
+          description: "Authorized operational selection view",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/OfficialSelectionView" },
+            },
+          },
+        },
+        "401": errorResponse,
+        "403": errorResponse,
+        "404": errorResponse,
+      },
+    },
+  },
+  [`${BASE}/disputes/review`]: operatorCommand(
+    "reviewMatchDispute",
+    "Take a disputed case into organizer review without approving a result",
+    "ReviewMatchDisputeRequest",
+  ),
+  [`${BASE}/disputes/resolve`]: operatorCommand(
+    "resolveMatchDispute",
+    "Resolve organizer review by approving an exact proposal or returning to selection",
+    "ResolveMatchDisputeRequest",
   ),
 } as const;
 
@@ -153,4 +210,6 @@ export const officialSelectionOpenApiSchemas = {
     "input",
   ),
   OpenMatchDisputeRequest: toSchema(openMatchDisputeRequestSchema, "input"),
+  ReviewMatchDisputeRequest: toSchema(reviewMatchDisputeRequestSchema, "input"),
+  ResolveMatchDisputeRequest: toSchema(resolveMatchDisputeRequestSchema, "input"),
 };

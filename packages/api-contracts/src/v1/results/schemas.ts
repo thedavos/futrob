@@ -136,7 +136,7 @@ export const officialSelectionViewSchema = z.object({
   activeDispute: matchDisputeSchema.nullable(),
   approvedResultId: z.string().min(1).nullable(),
   integrityFlags: z.array(integrityFlagSchema),
-  /** Commands the requesting Team can issue now; version checks still apply. */
+  /** Commands the requesting Team or operator can issue now; version checks still apply. */
   allowedActions: z.array(officialSelectionAllowedActionSchema),
 });
 
@@ -166,13 +166,19 @@ export const getTeamOfficialSelectionQuerySchema = z.object({
   actingTeamId: z.string().min(1),
 });
 
-const teamCommandSchema = z.object({
-  /** Team the authenticated actor speaks for; the server verifies the representation. */
-  actingTeamId: z.string().min(1),
+const selectionCommandFields = {
   /** Selection version the caller read; `0` before the first proposal. */
   expectedVersion: z.number().int().nonnegative(),
   /** Client-chosen key; repeating it with the same payload returns the original outcome. */
   commandKey: z.string().trim().min(1).max(200),
+};
+
+const selectionCommandSchema = z.object(selectionCommandFields);
+
+const teamCommandSchema = z.object({
+  /** Team the authenticated actor speaks for; the server verifies the representation. */
+  actingTeamId: z.string().min(1),
+  ...selectionCommandFields,
 });
 
 const slotSelectionsSchema = z.array(officialSlotSelectionSchema).min(1).max(2);
@@ -197,6 +203,22 @@ export const openMatchDisputeRequestSchema = teamCommandSchema.extend({
   reason: auditReasonSchema,
 });
 
+export const reviewMatchDisputeRequestSchema = selectionCommandSchema.extend({
+  reason: auditReasonSchema.trim().min(1),
+});
+
+export const resolveMatchDisputeRequestSchema = selectionCommandSchema.extend({
+  reason: auditReasonSchema.trim().min(1),
+  decision: z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("approve_proposal"),
+      proposalId: z.string().min(1),
+      acknowledgeIntegrityFlags: z.boolean().optional(),
+    }),
+    z.object({ type: z.literal("return_to_selection") }),
+  ]),
+});
+
 export type OfficialSelectionViewDto = z.infer<typeof officialSelectionViewSchema>;
 export type OfficialSelectionCommandResponse = z.infer<
   typeof officialSelectionCommandResponseSchema
@@ -212,3 +234,5 @@ export type ProposeAlternativeOfficialSelectionRequest = z.infer<
   typeof proposeAlternativeOfficialSelectionRequestSchema
 >;
 export type OpenMatchDisputeRequest = z.infer<typeof openMatchDisputeRequestSchema>;
+export type ReviewMatchDisputeRequest = z.infer<typeof reviewMatchDisputeRequestSchema>;
+export type ResolveMatchDisputeRequest = z.infer<typeof resolveMatchDisputeRequestSchema>;

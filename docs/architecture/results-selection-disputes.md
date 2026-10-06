@@ -3,8 +3,31 @@
 `@futrob/results` es dueño de las transiciones, las propuestas, las acciones de confirmación, las
 disputas y su auditoría. La API compone la atomicidad con statistics ([ADR-0016](/docs/adr/0016-official-results-transactional-projection.md));
 la autorización es contextual ([ADR-0017](/docs/adr/0017-contextual-capability-authorization.md)).
-Este documento describe el corte de dominio y persistencia; HTTP, SDK, BFF y pantallas (tarea 5) no
-existen todavía.
+El contrato HTTP publica las operaciones Team y la lectura/toma/resolución del operador. SDK, BFF
+y pantallas de este flujo permanecen fuera de este corte.
+
+## HTTP del operador
+
+Base `/api/v1/organizations/:organizationId/encounters/:encounterId/official-selection`:
+
+| Método y ruta            | Contrato                                                                                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /disputes`          | `OfficialSelectionView`, sin `actingTeamId`; incluye historial sanitizado, deadlines y acciones permitidas.                                                                    |
+| `POST /disputes/review`  | `ReviewMatchDisputeRequest`: `commandKey`, `expectedVersion` y motivo no vacío.                                                                                                |
+| `POST /disputes/resolve` | `ResolveMatchDisputeRequest`: misma base y `decision` discriminada entre `approve_proposal` (con `proposalId` y `acknowledgeIntegrityFlags` opcional) y `return_to_selection`. |
+
+Los comandos devuelven `OfficialSelectionCommandResponse`. Las tres operaciones exigen
+`encounters.results.approve` contextual y actor de service auth; body/query no concede autoridad.
+La aprobación elige una propuesta de la ronda vigente en la versión exacta de selección y exige
+`acknowledgeIntegrityFlags: true` si hay flags bloqueantes. No permite aprobar sin pasar por revisión.
+La resolución también sirve a los casos ya enviados a revisión por integridad o vencimiento, sin
+inventar una disputa. Leer no procesa vencimientos.
+
+Los fallos usan códigos estables y detalles seguros: 400 validación, 401 autenticación, 403 permiso,
+404 Encounter/selección/propuesta ausente, 409 versión/estado/clave/flags/eligibilidad/referencia.
+Un replay conserva IDs y no duplica proyecciones. Devolver libera referencias sin resultado,
+incrementa la ronda y exige propuesta y consentimiento nuevos. La coordinación SDK/BFF se sigue en
+[#115](https://github.com/thedavos/futrob/issues/115); esta superficie no implementa esos clientes.
 
 ## Modelo
 
