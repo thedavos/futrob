@@ -129,15 +129,21 @@ describe("official-selection SDK over HTTP", () => {
       proposal: { id: "proposal/1" },
       replayed: false,
     });
-    await client.results.confirmOfficialSelection("org/1", "enc/1", "proposal/1", common, options);
-    await client.results.rejectOfficialSelection(
+    const confirmed = await client.results.confirmOfficialSelection(
+      "org/1",
+      "enc/1",
+      "proposal/1",
+      common,
+      options,
+    );
+    const rejected = await client.results.rejectOfficialSelection(
       "org/1",
       "enc/1",
       "proposal/1",
       { ...common, reason: "Wrong match" },
       options,
     );
-    await client.results.proposeAlternativeOfficialSelection(
+    const alternative = await client.results.proposeAlternativeOfficialSelection(
       "org/1",
       "enc/1",
       "proposal/1",
@@ -150,12 +156,19 @@ describe("official-selection SDK over HTTP", () => {
       },
       options,
     );
-    await client.results.openMatchDispute(
+    const disputed = await client.results.openMatchDispute(
       "org/1",
       "enc/1",
       { ...common, reason: "Wrong score" },
       options,
     );
+    for (const result of [confirmed, rejected, alternative, disputed]) {
+      expect(result).toMatchObject({
+        selection: { version: 1, currentProposalId: "proposal/1" },
+        proposal: { id: "proposal/1", confirmationDeadline: "2026-10-07T12:00:00.000Z" },
+        replayed: false,
+      });
+    }
     expect(
       requests.map(({ path, method, body, marker }) => ({
         path: path.split("official-selection")[1],
@@ -345,12 +358,41 @@ describe("official-selection SDK over HTTP", () => {
     });
   });
   it("reads and commands the operator with the exact proposal decision and flags", async () => {
-    reply = (path) => ({
-      status: 200,
-      data: path.endsWith("/disputes")
-        ? { ...view, allowedActions: ["review_dispute", "resolve_dispute"] }
-        : { ...outcome, selection: { ...selection, status: "organizer_review", version: 2 } },
-    });
+    reply = (path, rawBody) => {
+      if (path.endsWith("/disputes"))
+        return {
+          status: 200,
+          data: { ...view, allowedActions: ["review_dispute", "resolve_dispute"] },
+        };
+      if (path.endsWith("/review"))
+        return {
+          status: 200,
+          data: { ...outcome, selection: { ...selection, status: "organizer_review", version: 2 } },
+        };
+      const body = rawBody as { decision: { type: string } };
+      const approving = body.decision.type === "approve_proposal";
+      return {
+        status: 200,
+        data: {
+          ...outcome,
+          selection: {
+            ...selection,
+            status: approving ? "approved" : "selection_in_progress",
+            version: 3,
+          },
+          approvedResult: approving
+            ? {
+                id: "operator-result-1",
+                revision: 1,
+                status: "approved",
+                approvalBasis: "operator_resolution",
+                proposalId: "proposal/1",
+                approvedAt: "2026-10-06T14:00:00.000Z",
+              }
+            : null,
+        },
+      };
+    };
     const client = createFutrobClient({ baseUrl });
     const read = await client.results.getOperatorOfficialSelection("org/1", "enc/1");
     expect(read).toMatchObject({
@@ -366,7 +408,7 @@ describe("official-selection SDK over HTTP", () => {
       selection: { status: "organizer_review", version: 2 },
       replayed: false,
     });
-    await client.results.resolveMatchDispute("org/1", "enc/1", {
+    const approved = await client.results.resolveMatchDispute("org/1", "enc/1", {
       expectedVersion: 2,
       commandKey: "operator-approve",
       reason: "Approve checked match",
@@ -376,11 +418,26 @@ describe("official-selection SDK over HTTP", () => {
         acknowledgeIntegrityFlags: true,
       },
     });
-    await client.results.resolveMatchDispute("org/1", "enc/1", {
+    const returned = await client.results.resolveMatchDispute("org/1", "enc/1", {
       expectedVersion: 2,
       commandKey: "operator-return",
       reason: "Repeat selection",
       decision: { type: "return_to_selection" },
+    });
+    expect(approved).toMatchObject({
+      selection: { status: "approved", version: 3 },
+      approvedResult: {
+        id: "operator-result-1",
+        revision: 1,
+        approvalBasis: "operator_resolution",
+        proposalId: "proposal/1",
+      },
+      replayed: false,
+    });
+    expect(returned).toMatchObject({
+      selection: { status: "selection_in_progress", version: 3 },
+      approvedResult: null,
+      replayed: false,
     });
     expect(
       requests.map(({ path, method, body }) => ({
