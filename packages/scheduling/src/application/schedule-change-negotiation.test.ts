@@ -3,8 +3,10 @@ import {
   asCompetitionId,
   asEncounterId,
   asOrganizationId,
+  asOfficialMatchSlotId,
   asTeamId,
   type ActorId,
+  type DomainEvent,
   type AuthorizationPort,
   type EncounterId,
   type OrganizationId,
@@ -23,6 +25,8 @@ import {
   asFixtureStageId,
   type CompetitionRescheduleRules,
   type EncounterScheduleSnapshot,
+  type OfficialMatch,
+  type RescheduleScope,
   type ScheduleChangeCommandOutput,
   type ScheduleChangeCommandReceipt,
   type ScheduleChangeCommitOutcome,
@@ -46,11 +50,11 @@ const organizer = asActorId("organizer-1");
 const D0 = "2026-10-10T20:00:00.000Z";
 const D1 = "2026-10-11T20:00:00.000Z";
 const D2 = "2026-10-12T20:00:00.000Z";
-const limaThreePm = (day: number) => ({
+const limaThreePm = (day: number, hour = 15) => ({
   year: 2026,
   month: 10,
   day,
-  hour: 15,
+  hour,
   minute: 0,
   second: 0,
 });
@@ -157,8 +161,27 @@ class Grants implements AuthorizationPort {
   }
 }
 
-function negotiation(approvals: Approvals = OPPONENT_ONLY) {
+function negotiation(
+  approvals: Approvals = OPPONENT_ONLY,
+  options: {
+    readonly slots?: readonly [string, string];
+    readonly maxReschedulesPerTeam?: number;
+  } = {},
+) {
   const requests = new MemoryRequests();
+  const [slot1, slot2] = options.slots ?? [D0, D0];
+  let snapshot: EncounterScheduleSnapshot = { ...encounter, scheduledStartAt: new Date(slot1) };
+  let slots: OfficialMatch[] = [slot1, slot2].map((at, index) => ({
+    id: asOfficialMatchSlotId(`official-match-${index + 1}`),
+    encounterId,
+    organizationId,
+    competitionId,
+    slot: index === 0 ? 1 : 2,
+    status: "scheduled",
+    scheduledStartAt: new Date(at),
+    createdAt: new Date(D0),
+  }));
+  const events: DomainEvent[] = [];
   const grants = new Grants();
   for (const [actor, team] of [
     [captainA, teamA],
@@ -174,8 +197,11 @@ function negotiation(approvals: Approvals = OPPONENT_ONLY) {
   let sequence = 0;
   let now = new Date("2026-10-01T12:00:00.000Z");
   const encounters = {
-    findById: async (id: EncounterId) => (id === encounterId ? encounter : null),
-    upsert: async (snapshot: EncounterScheduleSnapshot) => snapshot,
+    findById: async (id: EncounterId) => (id === encounterId ? snapshot : null),
+    upsert: async (next: EncounterScheduleSnapshot) => {
+      snapshot = next;
+      return next;
+    },
     deleteByEncounterIds: async () => undefined,
     findNextUpcomingByTeamIds: async () => null,
   };
@@ -185,24 +211,37 @@ function negotiation(approvals: Approvals = OPPONENT_ONLY) {
     editGuard: { canRequestScheduleChange: async () => true },
     encounters,
     ids: { generate: () => `id-${++sequence}` },
+    matches: {
+      listByEncounter: async () => slots,
+      saveSchedules: async (saved: readonly OfficialMatch[]) => {
+        slots = slots.map((row) => saved.find((match) => match.slot === row.slot) ?? row);
+      },
+    },
+    fixtures: { listActive: async () => [], updateEncounter: async () => null },
+    eventPublisher: {
+      publish: async (event: DomainEvent) => {
+        events.push(event);
+      },
+      publishMany: async () => undefined,
+    },
     mutationLock: { runExclusive: <T>(_id: EncounterId, run: () => Promise<T>) => run() },
     requests,
     rules: {
       getRules: async () => ({
         allowRescheduling: true,
-        maxReschedulesPerTeam: 2,
+        maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
         minimumNoticeHours: 12,
         ...approvals,
       }),
-      countAppliedReschedules: async () => 0,
+      countAppliedReschedules: async (input: { readonly teamId: TeamId }) =>
+        [...requests.rows.values()].filter(
+          (row) => row.application !== null && row.requestingTeamId === input.teamId,
+        ).length,
     },
     timeZones: { getTimeZone: async () => "America/Lima" },
     transaction: { runInTransaction: <T>(run: () => Promise<T>) => run() },
   };
-  const create = new CreateScheduleChangeRequestUseCase({
-    ...deps,
-    eventPublisher: { publish: async () => undefined, publishMany: async () => undefined },
-  });
+  const create = new CreateScheduleChangeRequestUseCase(deps);
   const accept = new AcceptScheduleChangeProposalUseCase(deps);
   const reject = new RejectScheduleChangeProposalUseCase(deps);
   const counter = new CounterScheduleChangeProposalUseCase(deps);
@@ -214,16 +253,19 @@ function negotiation(approvals: Approvals = OPPONENT_ONLY) {
     advanceClock(ms: number) {
       now = new Date(now.getTime() + ms);
     },
-    async propose(day = 11): Promise<ScheduleChangeRequest> {
+    async propose(
+      day = 11,
+      at: { readonly hour?: number; readonly scope?: RescheduleScope; readonly key?: string } = {},
+    ): Promise<ScheduleChangeRequest> {
       const created = await create.execute({
         ...target,
         actorId: captainA,
         requestingTeamId: teamA,
-        scope: { type: "entire_encounter" },
-        proposedWallTime: limaThreePm(day),
+        scope: at.scope ?? { type: "entire_encounter" },
+        proposedWallTime: limaThreePm(day, at.hour),
         timeZone: "America/Lima",
         reason: "Travel conflict",
-        idempotencyKey: "create-1",
+        idempotencyKey: at.key ?? "create-1",
       });
       return unwrap(created);
     },
@@ -232,12 +274,13 @@ function negotiation(approvals: Approvals = OPPONENT_ONLY) {
       responder: ScheduleChangeResponder,
       at: { proposalId: string; version: number },
       commandKey = `accept-${actorId}-${at.proposalId}`,
+      requestId = "id-1",
     ) {
       return accept.execute({
         ...target,
         actorId,
         responder,
-        requestId: "id-1",
+        requestId,
         proposalId: at.proposalId,
         expectedVersion: at.version,
         commandKey,
@@ -291,6 +334,14 @@ function negotiation(approvals: Approvals = OPPONENT_ONLY) {
     receipts: () => requests.receipts,
     encounterStart: async () =>
       (await encounters.findById(encounterId))?.scheduledStartAt.toISOString(),
+    slotStarts: () =>
+      slots.map((row) => ({
+        slot: row.slot,
+        at: row.scheduledStartAt.toISOString(),
+        status: row.status,
+      })),
+    rescheduled: () =>
+      events.filter((event) => event.eventName === "scheduling.encounter-rescheduled"),
   };
 }
 
@@ -618,5 +669,168 @@ describe("schedule change negotiation", () => {
     });
     expect(errorCode(foreign)).toBe("scheduling.schedule_change_encounter_not_found");
     expect((await flow.stored()).version).toBe(1);
+  });
+  describe("applying the accepted schedule", () => {
+    const slot2At = "2026-10-10T21:00:00.000Z";
+    const slot2Moved = "2026-10-11T21:00:00.000Z";
+
+    it("moves D0 to D1 once with the consent that completes the approvals; replay keeps the counts", async () => {
+      const flow = negotiation();
+      const created = await flow.propose(11);
+      const proposalId = created.proposals[0].id;
+
+      const accepted = unwrap(
+        await flow.accept(captainB, asRival(teamB), { proposalId, version: 1 }),
+      );
+
+      expect(await flow.encounterStart()).toBe(D1);
+      expect(flow.slotStarts()).toEqual([
+        { slot: 1, at: D1, status: "scheduled" },
+        { slot: 2, at: D1, status: "scheduled" },
+      ]);
+      expect((await flow.stored()).application).toEqual({
+        id: accepted.request.application?.id,
+        proposalId,
+        requestVersion: 2,
+        appliedByActorId: captainB,
+        previousEncounterStartAt: new Date(D0),
+        appliedEncounterStartAt: new Date(D1),
+        slots: [
+          { slot: 1, previousStartAt: new Date(D0), appliedStartAt: new Date(D1) },
+          { slot: 2, previousStartAt: new Date(D0), appliedStartAt: new Date(D1) },
+        ],
+        appliedAt: new Date("2026-10-01T12:00:00.000Z"),
+      });
+      expect(flow.rescheduled().map((event) => event.payload)).toEqual([
+        {
+          encounterId,
+          previousStartAt: D0,
+          newStartAt: D1,
+          scope: { type: "entire_encounter" },
+          approvedBy: captainB,
+        },
+      ]);
+
+      flow.advanceClock(60_000);
+      const replay = unwrap(
+        await flow.accept(captainB, asRival(teamB), { proposalId, version: 1 }),
+      );
+      expect(replay.replayed).toBe(true);
+      expect(replay.request.application).toEqual(accepted.request.application);
+      expect(flow.receipts()).toHaveLength(1);
+      expect(flow.rescheduled()).toHaveLength(1);
+      expect(await flow.encounterStart()).toBe(D1);
+    });
+
+    it("moves only slot 2 for an official_match request on slot 2", async () => {
+      const flow = negotiation(OPPONENT_ONLY, { slots: [D0, slot2At] });
+      const created = await flow.propose(11, {
+        hour: 16,
+        scope: { type: "official_match", officialSlot: 2 },
+      });
+
+      unwrap(
+        await flow.accept(captainB, asRival(teamB), {
+          proposalId: created.proposals[0].id,
+          version: 1,
+        }),
+      );
+
+      expect(flow.slotStarts()).toEqual([
+        { slot: 1, at: D0, status: "scheduled" },
+        { slot: 2, at: slot2Moved, status: "scheduled" },
+      ]);
+      expect(await flow.encounterStart()).toBe(D0);
+      expect((await flow.stored()).application?.slots).toEqual([
+        { slot: 2, previousStartAt: new Date(slot2At), appliedStartAt: new Date(slot2Moved) },
+      ]);
+    });
+
+    it("moves every slot by the same delta for an entire_encounter request", async () => {
+      const flow = negotiation(OPPONENT_ONLY, { slots: [D0, slot2At] });
+      const created = await flow.propose(11);
+
+      unwrap(
+        await flow.accept(captainB, asRival(teamB), {
+          proposalId: created.proposals[0].id,
+          version: 1,
+        }),
+      );
+
+      expect(flow.slotStarts()).toEqual([
+        { slot: 1, at: D1, status: "scheduled" },
+        { slot: 2, at: slot2Moved, status: "scheduled" },
+      ]);
+      expect(await flow.encounterStart()).toBe(D1);
+    });
+
+    it("keeps D0 until every required authority consents to the current proposal", async () => {
+      const flow = negotiation({ requiresOpponentApproval: true, requiresOrganizerApproval: true });
+      const created = await flow.propose(11);
+      const d1 = created.proposals[0].id;
+
+      unwrap(await flow.accept(organizer, asOrganizer, { proposalId: d1, version: 1 }));
+      expect(await flow.encounterStart()).toBe(D0);
+
+      const countered = unwrap(
+        await flow.counter(captainB, teamB, { proposalId: d1, version: 2 }, 12),
+      );
+      const d2 = countered.request.proposals[1]?.id ?? "missing";
+      // The organizer consented to D1 only, so the rival's consent to D2 is not enough.
+      unwrap(await flow.accept(captainA, asRival(teamA), { proposalId: d2, version: 3 }));
+      expect(await flow.encounterStart()).toBe(D0);
+      expect((await flow.stored()).application).toBeNull();
+
+      unwrap(await flow.accept(organizer, asOrganizer, { proposalId: d2, version: 4 }));
+      expect(await flow.encounterStart()).toBe(D2);
+      expect((await flow.stored()).application?.proposalId).toBe(d2);
+    });
+
+    it("refuses the consent that would exceed the quota and leaves that request open", async () => {
+      const flow = negotiation(OPPONENT_ONLY, { maxReschedulesPerTeam: 1 });
+      const slot1 = await flow.propose(11, {
+        scope: { type: "official_match", officialSlot: 1 },
+        key: "slot-1",
+      });
+      const slot2 = await flow.propose(12, {
+        scope: { type: "official_match", officialSlot: 2 },
+        key: "slot-2",
+      });
+
+      const first = await flow.accept(
+        captainB,
+        asRival(teamB),
+        { proposalId: slot1.proposals[0].id, version: 1 },
+        "accept-slot-1",
+        slot1.id,
+      );
+      const second = await flow.accept(
+        captainB,
+        asRival(teamB),
+        { proposalId: slot2.proposals[0].id, version: 1 },
+        "accept-slot-2",
+        slot2.id,
+      );
+
+      expect(first.isOk()).toBe(true);
+      expect(errorCode(second)).toBe("scheduling.reschedule_limit_reached");
+      expect(flow.slotStarts().map((row) => row.at)).toEqual([D1, D0]);
+      expect(flow.receipts().map((receipt) => receipt.commandKey)).toEqual(["accept-slot-1"]);
+    });
+
+    it("does not apply a proposal whose start has already passed", async () => {
+      const flow = negotiation();
+      const created = await flow.propose(11);
+      flow.advanceClock(Date.parse(D1) - Date.parse("2026-10-01T12:00:00.000Z"));
+
+      const late = await flow.accept(captainB, asRival(teamB), {
+        proposalId: created.proposals[0].id,
+        version: 1,
+      });
+
+      expect(errorCode(late)).toBe("scheduling.invalid_schedule_change_date");
+      expect(await flow.encounterStart()).toBe(D0);
+      expect((await flow.stored()).status).toBe("open");
+    });
   });
 });

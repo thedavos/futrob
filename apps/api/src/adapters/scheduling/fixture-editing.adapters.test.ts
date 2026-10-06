@@ -34,8 +34,6 @@ describe("OfficialResultFixtureEditGuard", () => {
     const guard = new OfficialResultFixtureEditGuard(
       {
         listByEncounter: async () => [],
-        upsertMany: async () => {},
-        voidByEncounterIds: async () => {},
       },
       { findApprovedByEncounter: async () => approved },
       { findLatestByEncounter: async () => null },
@@ -55,8 +53,6 @@ describe("OfficialResultFixtureEditGuard", () => {
     const guard = new OfficialResultFixtureEditGuard(
       {
         listByEncounter: async () => matches,
-        upsertMany: async () => {},
-        voidByEncounterIds: async () => {},
       },
       { findApprovedByEncounter: async () => null },
       { findLatestByEncounter: async () => null },
@@ -141,6 +137,7 @@ describe("OfficialResultFixtureEditGuard", () => {
       matches: {
         listByEncounter: async () => [],
         upsertMany: async () => {},
+        saveSchedules: async () => {},
         voidByEncounterIds: async () => {},
       },
       mutationLock: lock,
@@ -174,8 +171,6 @@ describe("OfficialResultFixtureEditGuard", () => {
     const guard = new OfficialResultFixtureEditGuard(
       {
         listByEncounter: async () => [],
-        upsertMany: async () => {},
-        voidByEncounterIds: async () => {},
       },
       { findApprovedByEncounter: async () => null },
       {
@@ -214,6 +209,7 @@ describe("OfficialResultFixtureEditGuard.canRequestScheduleChange", () => {
     competitionId,
     slot: 1,
     status: "scheduled",
+    scheduledStartAt: new Date("2026-08-12T20:00:00.000Z"),
     createdAt: new Date("2026-08-11T07:00:00.000Z"),
   };
   const completedSlotTwo: OfficialMatch = {
@@ -227,8 +223,6 @@ describe("OfficialResultFixtureEditGuard.canRequestScheduleChange", () => {
     const guard = new OfficialResultFixtureEditGuard(
       {
         listByEncounter: async () => [scheduled, completedSlotTwo],
-        upsertMany: async () => {},
-        voidByEncounterIds: async () => {},
       },
       { findApprovedByEncounter: async () => null },
       { findLatestByEncounter: async () => null },

@@ -41,6 +41,12 @@ export {
 } from "./domain/entities/fixture-plan.ts";
 export type { EncounterScheduleSnapshot } from "./domain/entities/encounter-schedule-snapshot.ts";
 export type { OfficialMatch, OfficialMatchStatus } from "./domain/entities/official-match.ts";
+export type { ScheduleChangeApplication } from "./domain/entities/schedule-change-application.ts";
+export {
+  officialMatchSchedules,
+  type OfficialMatchSchedule,
+  type OfficialMatchScheduleChange,
+} from "./domain/policies/official-match-schedule.ts";
 export type {
   EncounterParticipantValidationPort,
   EncounterScheduleRepository,
@@ -93,6 +99,7 @@ export {
 } from "./application/list-schedule-change-requests.use-case.ts";
 export {
   AcceptScheduleChangeProposalUseCase,
+  type AcceptScheduleChangeProposalDeps,
   type AcceptScheduleChangeProposalInput,
 } from "./application/accept-schedule-change-proposal.use-case.ts";
 export {
@@ -150,6 +157,7 @@ export {
   ScheduleChangeSelfResponseForbidden,
   ScheduleChangeVersionConflict,
   UnknownScheduleChangeRequest,
+  type AcceptScheduleChangeProposalError,
   type CounterScheduleChangeProposalError,
   type CreateScheduleChangeRequestError,
   type ScheduleChangeResponseError,

@@ -35,12 +35,17 @@ import type { CompetitionTimeZonePort } from "../domain/ports/competition-time-z
 import type { EncounterMutationLockPort } from "../domain/ports/encounter-mutation-lock.port.ts";
 import type { EncounterScheduleRepository } from "../domain/ports/encounter-schedule.repository.ts";
 import type { ScheduleChangeRequestEditGuardPort } from "../domain/ports/fixture-editing.ports.ts";
+import type { OfficialMatchRepository } from "../domain/ports/official-match.repository.ts";
 import type { ScheduleChangeRequestRepository } from "../domain/ports/schedule-change-request.repository.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
 import {
   interpretCompetitionWallTime,
   type CompetitionWallTime,
 } from "../domain/policies/interpret-competition-wall-time.ts";
+import {
+  currentStartFor,
+  officialMatchSchedules,
+} from "../domain/policies/official-match-schedule.ts";
 import {
   rescheduleScopesConflict,
   type RescheduleScope,
@@ -68,6 +73,7 @@ export class CreateScheduleChangeRequestUseCase {
       readonly encounters: EncounterScheduleRepository;
       readonly eventPublisher: EventPublisherPort;
       readonly ids: IdGeneratorPort;
+      readonly matches: Pick<OfficialMatchRepository, "listByEncounter">;
       readonly mutationLock: EncounterMutationLockPort;
       readonly requests: Pick<
         ScheduleChangeRequestRepository,
@@ -220,6 +226,10 @@ export class CreateScheduleChangeRequestUseCase {
             );
           }
 
+          const schedules = officialMatchSchedules(
+            encounter,
+            await this.deps.matches.listByEncounter(encounter.encounterId),
+          );
           const now = this.deps.clock.now();
           const created = createInitialScheduleChangeRequest({
             requestId: this.deps.ids.generate(),
@@ -230,7 +240,7 @@ export class CreateScheduleChangeRequestUseCase {
             homeTeamId: encounter.homeTeamId,
             awayTeamId: encounter.awayTeamId,
             officialMatchCount: encounter.officialMatchCount,
-            currentStartAt: encounter.scheduledStartAt,
+            currentStartAt: currentStartFor(input.scope, schedules) ?? encounter.scheduledStartAt,
             requestingTeamId: input.requestingTeamId,
             initiatedByActorId: input.actorId,
             scope: input.scope,

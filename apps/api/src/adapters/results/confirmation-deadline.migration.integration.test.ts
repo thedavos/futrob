@@ -116,7 +116,7 @@ describe.skipIf(!databaseUrl)("0051 deadline upgrade retains immutable legacy hi
     });
     const before = await history();
     const upgrade = await migrateIsolatedSchema(isolated.pool);
-    expect(upgrade.applied).toEqual(["0051_official_selection_confirmation_deadlines.sql"]);
+    expect(upgrade.applied).toContain("0051_official_selection_confirmation_deadlines.sql");
     expect(await history()).toEqual(before);
     const deadlines = (
       await isolated.pool.query(

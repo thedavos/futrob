@@ -18,3 +18,33 @@ export function rescheduleScopesConflict(left: RescheduleScope, right: Reschedul
     }
   }
 }
+
+/** A detached copy, so a stored request never aliases caller input. */
+export function copyRescheduleScope(scope: RescheduleScope): RescheduleScope {
+  switch (scope.type) {
+    case "entire_encounter":
+      return { type: "entire_encounter" };
+    case "official_match":
+      return { type: "official_match", officialSlot: scope.officialSlot };
+    default: {
+      const exhaustiveScope: never = scope;
+      void exhaustiveScope;
+      return { type: "entire_encounter" };
+    }
+  }
+}
+
+/** The scope names the whole Encounter or one of its slots. */
+export function isRescheduleScopeOf(scope: RescheduleScope, officialMatchCount: 1 | 2): boolean {
+  switch (scope.type) {
+    case "entire_encounter":
+      return true;
+    case "official_match":
+      return scope.officialSlot === 1 || (scope.officialSlot === 2 && officialMatchCount === 2);
+    default: {
+      const exhaustiveScope: never = scope;
+      void exhaustiveScope;
+      return false;
+    }
+  }
+}

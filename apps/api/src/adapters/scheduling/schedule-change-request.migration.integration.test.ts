@@ -222,14 +222,15 @@ suite("0037 schedule change requests migration", () => {
       await expect(repository.listActiveByEncounter(organizationId, encounterId)).resolves.toEqual([
         home,
       ]);
+      // The quota counts applied schedules; a header saved as accepted applied nothing.
       await expect(
-        repository.countAcceptedByTeam({
+        repository.countAppliedByTeam({
           organizationId,
           competitionId,
           encounterId,
           teamId: homeTeamId,
         }),
-      ).resolves.toBe(1);
+      ).resolves.toBe(0);
     });
   });
 
@@ -333,6 +334,7 @@ function adapterRequest(input: {
     status: "open",
     version: 1,
     decisions: [],
+    application: null,
     proposals: [
       {
         id: `${input.id}-proposal`,

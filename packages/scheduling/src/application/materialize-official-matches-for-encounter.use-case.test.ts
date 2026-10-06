@@ -46,6 +46,8 @@ class OfficialMatches implements OfficialMatchRepository {
     }
   }
 
+  async saveSchedules() {}
+
   async voidByEncounterIds() {}
 }
 

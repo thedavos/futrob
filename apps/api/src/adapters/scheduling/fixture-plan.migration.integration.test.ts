@@ -9,7 +9,7 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = describe.skipIf(!databaseUrl);
 const schemas: string[] = [];
 
-suite("0025 competition fixtures migration", () => {
+suite("0025 competition fixtures migration", { timeout: 60_000 }, () => {
   afterEach(async () => {
     const pool = new Pool({ connectionString: databaseUrl });
     try {

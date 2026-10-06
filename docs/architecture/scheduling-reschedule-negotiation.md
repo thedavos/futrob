@@ -1,10 +1,10 @@
-# Reprogramación: negociación, aprobaciones y contrato para aplicar el horario
+# Reprogramación: negociación, aprobaciones y aplicación del horario
 
-`@futrob/scheduling` es dueño de la `ScheduleChangeRequest`, sus propuestas, sus decisiones y los
-recibos de comando. Este documento cubre el corte de negociación (#121): aceptar, rechazar y
-contraproponer sobre la propuesta vigente. Aplicar el horario aprobado, el historial de aplicación,
-el cupo consumido y el handoff de recálculo pertenecen a #122. HTTP, SDK, BFF y pantallas no existen
-todavía.
+`@futrob/scheduling` es dueño de la `ScheduleChangeRequest`, sus propuestas, sus decisiones, los
+recibos de comando y la aplicación del horario aceptado. La negociación (aceptar, rechazar y
+contraproponer sobre la propuesta vigente) llegó con #121. Aplicar el horario, el historial de
+aplicación, el cupo consumido y el handoff de recálculo llegaron con #122. HTTP, SDK, BFF y
+pantallas (#123/#124) y el consumo del recálculo (#112) no existen todavía.
 
 ## Modelo
 
@@ -65,57 +65,102 @@ Los tres reciben `requestId`, `proposalId`, `expectedVersion` y `commandKey`, y 
 
 | Comando        | Efecto                                                                                    |
 | -------------- | ----------------------------------------------------------------------------------------- |
-| aceptar        | Añade consentimiento; `accepted` cuando todas las autoridades requeridas consintieron.    |
+| aceptar        | Añade consentimiento; con el último requerido, `accepted` y aplica el horario.            |
 | rechazar       | Añade rechazo (motivo opcional); `rejected`. El horario no cambia.                        |
 | contraproponer | Añade propuesta del rival, que pasa a ser vigente. Consentimientos previos ya no cuentan. |
 
 Todas incrementan `version`. Los consentimientos de propuestas anteriores siguen en el historial.
 
-## Contrato que consume #122
+## Aplicar el horario (#122)
 
-- `accepted` significa "todas las aprobaciones requeridas sobre la propuesta vigente". Hoy nada aplica
-  la fecha. #122 debe aplicar dentro de la misma transacción del comando que produce `accepted`
-  (`AcceptScheduleChangeProposalUseCase`). Así, `accepted` y la fecha aplicada nunca divergen. Si
-  prefiere un estado intermedio, debe introducirlo antes de exponer la API.
-- Fecha aprobada: `currentScheduleChangeProposal(request).proposedStartAt`. Alcance: `request.scope`.
-- El cupo `maxReschedulesPerTeam` cuenta solicitudes `accepted` del Team solicitante
-  (`countAcceptedByTeam`). Si #122 separa aprobado de aplicado, debe cambiar ese conteo.
-- `PostgresTransactionPort` confirma cuando el callback devuelve `Result.err`. En este corte ningún
-  camino escribe antes de un `err`: el CAS se evalúa antes de cualquier `INSERT`. #122 escribe más
-  (fecha, historial, cupo, handoff) y necesita un rollback explícito tras una escritura fallida.
+`accepted` significa "todas las aprobaciones requeridas sobre la propuesta vigente, y el horario
+aplicado". El consentimiento que completa las aprobaciones aplica el horario dentro de la misma
+transacción y bajo el mismo lock del Encounter (`AcceptScheduleChangeProposalUseCase`). No existe un
+estado intermedio aprobado-sin-aplicar: aceptación y aplicación no divergen.
 
-### Horario por slot (propuesta para #122 y #112)
+Antes de la primera escritura, el aceptar que completa las aprobaciones comprueba:
 
-Hoy `EncounterScheduleSnapshot` tiene una sola fecha y `official_matches` no tiene horario.
+- Cupo: `maxReschedulesPerTeam` contra las aplicaciones del Team solicitante en ese Encounter
+  (`countAppliedReschedules`, que cuenta filas de `schedule_change_applications`). Si el cupo se
+  agotó, falla con `scheduling.reschedule_limit_reached` y la solicitud sigue `open`. Así, dos
+  solicitudes abiertas a la vez (slot 1 y slot 2) no superan el cupo.
+- La fecha aceptada sigue en el futuro; si no, `scheduling.invalid_schedule_change_date`.
+- `allowRescheduling` y el guard de slots protegidos o resultado aprobado, como en #121.
 
-- Representación: `official_matches.scheduled_start_at TIMESTAMPTZ NOT NULL` por slot. El tipo
-  `OfficialMatchSlot { slotNumber, scheduledStartAt, status }` de `domain/entities/encounter.ts` ya
-  describe esa forma. Los lectores públicos (snapshot/reader de Results) exponen
-  `slots: { slot: 1 | 2; scheduledStartAt }[]`.
+Después del `commit` de la transición escribe, en este orden y en la misma transacción:
+
+1. `official_matches.scheduled_start_at` de cada slot del Encounter (crea el slot si no existía).
+2. `encounter_schedule_snapshots.scheduled_start_at`, si cambia el inicio del Encounter.
+3. El `scheduled_start_at` del Encounter en el fixture activo, con compare-and-set de `revision`.
+4. Evento `scheduling.encounter-rescheduled` (notificación; no es la entrega durable).
+
+La transición de la solicitud, el recibo y la fila de aplicación se escriben en el `commit`.
+
+### Rollback explícito
+
+`PostgresTransactionPort` confirma lo que devuelve el callback, incluido `Result.err`. Por eso
+`runScheduleChangeCommand` convierte un error posterior a la primera escritura en una excepción
+interna (`ScheduleChangeRollback`) que revierte la transacción y vuelve a ser `Result.err` fuera de
+ella. La prueba de Postgres provoca un conflicto real de revisión del fixture tras escribir slots,
+inicio, solicitud y aplicación; todas las tablas quedan como antes y el reintento aplica una vez.
+Una excepción (p. ej. del publicador de eventos) revierte igual.
+
+### Horario por slot
+
+- Representación: `official_matches.scheduled_start_at TIMESTAMPTZ NOT NULL` (migración `0052`);
+  `OfficialMatch.scheduledStartAt` en el dominio. `officialMatchSchedules(encounter, matches)` da el
+  inicio de cada slot que juega el Encounter; un slot sin fila empieza con el Encounter.
 - Backfill: cada slot existente recibe el `scheduled_start_at` de su Encounter. No se inventa un
-  desfase entre slot 1 y slot 2. Desde entonces, `EncounterScheduleSnapshot.scheduledStartAt` es el
-  mínimo de los slots no anulados.
-- `official_match` slot N: solo cambia `scheduled_start_at` del slot N. El otro slot conserva fecha y
-  estado. La validación "distinta de la actual" de la propuesta debe usar la fecha del slot N, no la
-  del Encounter (hoy usa la del Encounter).
-- `entire_encounter`: la fecha propuesta es el nuevo inicio del Encounter. Todos los slots se
-  desplazan el mismo delta (`propuesta - inicio actual`) para conservar su separación. Requiere que
-  ningún slot esté protegido (lo garantiza el guard actual). Esta regla debe validarla producto.
-- Pruebas futuras (#122, no ejecutables hoy): slot 1 a 2026-10-10T20:00Z y slot 2 a
-  2026-10-10T21:00Z; aplicar slot 2 a 2026-10-11T21:00Z deja slot 1 exactamente en
-  2026-10-10T20:00Z. Su vecino `entire_encounter` a 2026-10-11T20:00Z deja slot 2 en
-  2026-10-11T21:00Z. Además, el upgrade/backfill de `official_matches` y el replay de la aplicación
-  sin duplicar historial ni cupo.
+  desfase entre slot 1 y slot 2. Desde entonces el inicio del Encounter es el slot más temprano.
+- `official_match` slot N: solo cambia el slot N. El otro slot conserva fecha y estado. "Distinta de
+  la actual" al proponer o contraproponer se compara con la fecha del slot N.
+- `entire_encounter` (decisión de producto del 2026-10-05): la fecha propuesta es el nuevo inicio del
+  Encounter; todos los slots se desplazan el mismo delta (`propuesta - inicio actual`) y conservan
+  su separación. Requiere que ningún slot esté protegido (guard existente).
+- Los escritores directos del inicio del Encounter (edición auditada del fixture y upsert manual del
+  snapshot) desplazan los slots guardados con la misma regla.
 
-## Decisiones pendientes de producto
+### Historial y handoff de recálculo
 
-1. Etapa sin aprobación de oponente ni de organizador: ¿la solicitud se acepta al crearse
-   (autoservicio) o la configuración es inválida? Hoy falla cerrado con
-   `schedule_change_approval_not_configured`.
-2. Semántica de `minimumRescheduleNoticeHours`: ¿antelación respecto del horario actual, del
-   propuesto o de ambos? Se expone en el puerto, pero no se aplica.
-3. Las reglas se leen al ejecutar cada comando, no al crear la solicitud. Un cambio de reglas
-   afecta a las solicitudes abiertas. Si el reglamento versionado debe congelarlas, hay que guardar
-   la versión de reglas en la solicitud.
+`schedule_change_applications` (una fila por solicitud, `UNIQUE (request_id)`) y
+`schedule_change_application_slots` (antes/después de cada slot movido) son append-only con el
+trigger `schedule_change_append_only`. La solicitud rehidratada expone `application`; el replay de
+un comando devuelve la aplicación solo si ese comando la produjo o ya existía.
+
+La fila de aplicación es el handoff durable para #112: se confirma con el horario y nunca se
+actualiza. El consumidor del recálculo guarda su propio checkpoint (por ejemplo, una tabla de
+Results con el `application_id` procesado) y recorre `schedule_change_applications` por
+`(organization_id, applied_at, id)`; no debe suscribirse al `NoopEventPublisher`.
+
+### Lectores
+
+Dentro de la API, los horarios por slot se leen con `OfficialMatchRepository.listByEncounter` y
+`officialMatchSchedules`. `EncounterScheduleSnapshot.scheduledStartAt` sigue siendo el inicio del
+Encounter. El `EncounterReaderPort` de Results y el DTO HTTP del snapshot aún no llevan slots: la web
+implementa ese puerto sobre HTTP, así que añadir `slots` exige el contrato de #123. #112 debe
+añadirlos al puente `SchedulingEncounterReader` cuando adapte las ventanas por slot.
+
+### Migración `0052`
+
+`0052_schedule_change_application.sql` hace el backfill y crea las tablas de aplicación. Se niega a
+correr (y no se registra en `schema_migrations`) si existe alguna solicitud `accepted`: antes de
+`0052` nada aplicaba la fecha, así que una solicitud así no tiene horario que registrar. Ningún
+camino de producción podía aceptar antes de #122 (no hay ruta HTTP), así que solo afecta a datos
+manuales.
+
+## Decisiones de producto
+
+Validadas el 2026-10-05:
+
+1. `entire_encounter` desplaza todos los slots el mismo delta (arriba).
+2. Etapa sin aprobación de oponente ni de organizador: falla cerrado con
+   `scheduling.schedule_change_approval_not_configured`; no hay autoservicio.
+3. Las reglas se leen al ejecutar cada comando. Al aplicar se revalidan `allowRescheduling` y el
+   cupo con las reglas vigentes; no se congela la versión de reglas en la solicitud.
+
+Pendiente:
+
+- Semántica de `minimumRescheduleNoticeHours`: ¿antelación respecto del horario actual, del
+  propuesto o de ambos? Se expone en el puerto y no se aplica.
 
 TTL, expiración y escalado (DEC-032/033) quedan fuera de este corte.

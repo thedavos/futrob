@@ -26,6 +26,10 @@ export function scheduleChangeRequestAsOf(
     version: outcome.version,
     proposals: first ? [first, ...rest] : request.proposals,
     decisions: request.decisions.filter((decision) => decision.requestVersion < outcome.version),
+    application:
+      request.application && request.application.requestVersion <= outcome.version
+        ? request.application
+        : null,
     updatedAt: new Date(outcome.at.getTime()),
   };
 }
