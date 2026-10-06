@@ -84,6 +84,12 @@ perdida. Un replay devuelve el resultado original con `replayed: true`; 401 y co
 siguen siendo errores. El cliente no cambia la clave ni recupera sesión automáticamente.
 El deadline viene del servidor; el SDK no recalcula plazos ni concede permisos.
 
+El operador usa `getOperatorOfficialSelection`, `reviewMatchDispute` y
+`resolveMatchDispute`. La resolución exige motivo y conserva la decisión publicada:
+aprobar una `proposalId` concreta con reconocimiento explícito de flags cuando proceda,
+o `return_to_selection`. El BFF deriva el actor de la sesión y la API exige la capacidad
+de aprobar resultados; enviar un rol no concede autoridad.
+
 ## Testing
 
 Utilidades para tests disponibles como subpath público:

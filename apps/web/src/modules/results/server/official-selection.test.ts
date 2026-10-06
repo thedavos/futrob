@@ -2,6 +2,9 @@ import { createServer, type Server } from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
 import {
+  getOperatorOfficialSelection,
+  reviewMatchDispute,
+  resolveMatchDispute,
   getTeamOfficialSelection,
   proposeOfficialSelection,
   confirmOfficialSelection,
@@ -100,6 +103,13 @@ describe("authenticated official-selection BFF over HTTP", () => {
       if (req.headers.authorization !== "Bearer service-secret")
         return failure(401, "api.unauthorized");
       if (actor === "foreign-captain") return failure(403, "results.official_selection_forbidden");
+      if (req.url?.includes("/disputes") && req.method === "GET" && actor !== "actor-operator")
+        return failure(403, "results.official_selection_forbidden");
+      if (
+        (req.url?.endsWith("/review") || req.url?.endsWith("/resolve")) &&
+        actor !== "actor-operator"
+      )
+        return failure(403, "results.official_result_forbidden");
       if (req.method === "GET")
         return reply(200, {
           encounterId: "enc-1",
@@ -110,8 +120,9 @@ describe("authenticated official-selection BFF over HTTP", () => {
           activeDispute: null,
           approvedResultId: state === "approved" ? "result-1" : null,
           integrityFlags: [],
-          allowedActions:
-            state === "approved"
+          allowedActions: req.url?.endsWith("/disputes")
+            ? ["review_dispute", "resolve_dispute"]
+            : state === "approved"
               ? []
               : ["confirm", "reject", "propose_alternative", "open_dispute"],
           rawEa: { secret: "raw" },
@@ -123,7 +134,15 @@ describe("authenticated official-selection BFF over HTTP", () => {
       if (body.expectedVersion !== version)
         return failure(409, "results.selection_version_conflict");
       version += 1;
-      state = req.url?.endsWith("/confirm") ? "approved" : "disputed";
+      state = req.url?.endsWith("/review")
+        ? "organizer_review"
+        : req.url?.endsWith("/resolve")
+          ? body.decision.type === "return_to_selection"
+            ? "selection_in_progress"
+            : "approved"
+          : req.url?.endsWith("/confirm")
+            ? "approved"
+            : "disputed";
       const result = {
         ...outcome,
         selection: { ...selection, status: state, version },
@@ -133,7 +152,9 @@ describe("authenticated official-selection BFF over HTTP", () => {
                 id: "result-1",
                 revision: 1,
                 status: "approved",
-                approvalBasis: "team_agreement",
+                approvalBasis: req.url?.endsWith("/resolve")
+                  ? "operator_resolution"
+                  : "team_agreement",
                 proposalId: "proposal-1",
                 approvedAt: "2026-10-06T13:00:00.000Z",
               }
@@ -162,9 +183,11 @@ describe("authenticated official-selection BFF over HTTP", () => {
                   actorId:
                     cookie === "session=foreign"
                       ? "foreign-captain"
-                      : cookie === "session=home"
-                        ? "captain-home"
-                        : "captain-away",
+                      : cookie === "session=operator"
+                        ? "actor-operator"
+                        : cookie === "session=home"
+                          ? "captain-home"
+                          : "captain-away",
                 }
               : null,
           );
@@ -396,5 +419,194 @@ describe("authenticated official-selection BFF over HTTP", () => {
       selection: { status: "disputed", version: 2 },
       replayed: false,
     });
+  });
+  it("operator reads, takes and approves the exact proposal, with replay and trusted identity", async () => {
+    const deniedRead = await getOperatorOfficialSelection(incoming("home"), scope);
+    expect(deniedRead.status).toBe(403);
+    expect(await deniedRead.json()).toEqual({
+      code: "results.official_selection_forbidden",
+      messageKey: "errors.results.official_selection_forbidden",
+      requestId,
+    });
+    const denied = await reviewMatchDispute(
+      incoming("home", {
+        expectedVersion: 1,
+        commandKey: "forged-operator",
+        reason: "Check",
+        role: "organizer",
+        actorId: "actor-operator",
+      }),
+      scope,
+    );
+    expect(denied.status).toBe(403);
+    expect(await denied.json()).toEqual({
+      code: "results.official_result_forbidden",
+      messageKey: "errors.results.official_result_forbidden",
+      requestId,
+    });
+    const read = await getOperatorOfficialSelection(incoming("operator"), scope);
+    expect(await read.json()).toMatchObject({
+      selection: { status: "awaiting_opponent_confirmation", version: 1 },
+      allowedActions: ["review_dispute", "resolve_dispute"],
+    });
+    const reviewed = await reviewMatchDispute(
+      incoming("operator", { expectedVersion: 1, commandKey: "review", reason: " Check match " }),
+      scope,
+    );
+    expect(await reviewed.json()).toMatchObject({
+      selection: { status: "organizer_review", version: 2 },
+      approvedResult: null,
+    });
+    const stale = await resolveMatchDispute(
+      incoming("operator", {
+        expectedVersion: 1,
+        commandKey: "stale-resolve",
+        reason: "Verified",
+        decision: {
+          type: "approve_proposal",
+          proposalId: "proposal-1",
+          acknowledgeIntegrityFlags: true,
+        },
+      }),
+      scope,
+    );
+    expect(stale.status).toBe(409);
+    expect(await stale.json()).toEqual({
+      code: "results.selection_version_conflict",
+      messageKey: "errors.results.selection_version_conflict",
+      requestId,
+    });
+    const body = {
+      expectedVersion: 2,
+      commandKey: "resolve",
+      reason: "Verified match",
+      decision: {
+        type: "approve_proposal",
+        proposalId: "proposal-1",
+        acknowledgeIntegrityFlags: true,
+      },
+      role: "organizer",
+      actingTeamId: "away",
+    };
+    const approved = await resolveMatchDispute(incoming("operator", body), scope);
+    expect(await approved.json()).toMatchObject({
+      selection: { status: "approved", version: 3 },
+      approvedResult: {
+        id: "result-1",
+        revision: 1,
+        approvalBasis: "operator_resolution",
+        proposalId: "proposal-1",
+      },
+      replayed: false,
+    });
+    const replay = await resolveMatchDispute(incoming("operator", body), scope);
+    expect(await replay.json()).toMatchObject({
+      selection: { version: 3 },
+      approvedResult: { id: "result-1", revision: 1 },
+      replayed: true,
+    });
+    expect(received.slice(2)).toEqual([
+      {
+        path: "/api/v1/organizations/org-1/encounters/enc-1/official-selection/disputes",
+        actor: "actor-operator",
+        body: null,
+        requestId,
+      },
+      {
+        path: "/api/v1/organizations/org-1/encounters/enc-1/official-selection/disputes/review",
+        actor: "actor-operator",
+        body: { expectedVersion: 1, commandKey: "review", reason: "Check match" },
+        requestId,
+      },
+      {
+        path: "/api/v1/organizations/org-1/encounters/enc-1/official-selection/disputes/resolve",
+        actor: "actor-operator",
+        body: {
+          expectedVersion: 1,
+          commandKey: "stale-resolve",
+          reason: "Verified",
+          decision: {
+            type: "approve_proposal",
+            proposalId: "proposal-1",
+            acknowledgeIntegrityFlags: true,
+          },
+        },
+        requestId,
+      },
+      {
+        path: "/api/v1/organizations/org-1/encounters/enc-1/official-selection/disputes/resolve",
+        actor: "actor-operator",
+        body: {
+          expectedVersion: 2,
+          commandKey: "resolve",
+          reason: "Verified match",
+          decision: {
+            type: "approve_proposal",
+            proposalId: "proposal-1",
+            acknowledgeIntegrityFlags: true,
+          },
+        },
+        requestId,
+      },
+      {
+        path: "/api/v1/organizations/org-1/encounters/enc-1/official-selection/disputes/resolve",
+        actor: "actor-operator",
+        body: {
+          expectedVersion: 2,
+          commandKey: "resolve",
+          reason: "Verified match",
+          decision: {
+            type: "approve_proposal",
+            proposalId: "proposal-1",
+            acknowledgeIntegrityFlags: true,
+          },
+        },
+        requestId,
+      },
+    ]);
+  });
+
+  it("return-to-selection and invalid operator input preserve the published decision", async () => {
+    const invalid = await resolveMatchDispute(
+      incoming("operator", {
+        expectedVersion: 1,
+        commandKey: "missing-proposal",
+        reason: "Check",
+        decision: { type: "approve_proposal" },
+      }),
+      scope,
+    );
+    expect(invalid.status).toBe(400);
+    expect(await invalid.json()).toEqual({
+      code: "api.validation_error",
+      messageKey: "errors.api.validation_error",
+      requestId,
+    });
+    expect(received).toEqual([]);
+    const body = {
+      expectedVersion: 1,
+      commandKey: "return",
+      reason: "New consent required",
+      decision: { type: "return_to_selection" },
+    };
+    const returned = await resolveMatchDispute(incoming("operator", body), scope);
+    expect(await returned.json()).toMatchObject({
+      selection: { status: "selection_in_progress", version: 2 },
+      approvedResult: null,
+      replayed: false,
+    });
+    expect(received).toEqual([
+      {
+        path: "/api/v1/organizations/org-1/encounters/enc-1/official-selection/disputes/resolve",
+        actor: "actor-operator",
+        body: {
+          expectedVersion: 1,
+          commandKey: "return",
+          reason: "New consent required",
+          decision: { type: "return_to_selection" },
+        },
+        requestId,
+      },
+    ]);
   });
 });

@@ -1,4 +1,8 @@
 import {
+  reviewMatchDisputeRequestSchema,
+  resolveMatchDisputeRequestSchema,
+  type ReviewMatchDisputeRequest,
+  type ResolveMatchDisputeRequest,
   proposeOfficialSelectionRequestSchema,
   type ProposeOfficialSelectionRequest,
   confirmOfficialSelectionRequestSchema,
@@ -23,6 +27,70 @@ import { apiPath } from "../internal/path.ts";
 
 export function createResultsResource(http: HttpClient) {
   return {
+    async getOperatorOfficialSelection(
+      organizationId: string,
+      encounterId: string,
+      options: RequestOptions = {},
+    ): Promise<OfficialSelectionViewDto> {
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "encounters",
+          encounterId,
+          "official-selection",
+          "disputes",
+        ),
+        method: "GET",
+        options,
+        parse: (data) => officialSelectionViewSchema.parse(data),
+      });
+    },
+    async reviewMatchDispute(
+      organizationId: string,
+      encounterId: string,
+      input: ReviewMatchDisputeRequest,
+      options: RequestOptions = {},
+    ): Promise<OfficialSelectionCommandResponse> {
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "encounters",
+          encounterId,
+          "official-selection",
+          "disputes",
+          "review",
+        ),
+        method: "POST",
+        body: reviewMatchDisputeRequestSchema.parse(input),
+        options,
+        parse: (data) => officialSelectionCommandResponseSchema.parse(data),
+      });
+    },
+    async resolveMatchDispute(
+      organizationId: string,
+      encounterId: string,
+      input: ResolveMatchDisputeRequest,
+      options: RequestOptions = {},
+    ): Promise<OfficialSelectionCommandResponse> {
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "encounters",
+          encounterId,
+          "official-selection",
+          "disputes",
+          "resolve",
+        ),
+        method: "POST",
+        body: resolveMatchDisputeRequestSchema.parse(input),
+        options,
+        parse: (data) => officialSelectionCommandResponseSchema.parse(data),
+      });
+    },
+
     async getTeamOfficialSelection(
       organizationId: string,
       encounterId: string,

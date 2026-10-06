@@ -344,4 +344,108 @@ describe("official-selection SDK over HTTP", () => {
       proposal: { id: "proposal/1", confirmationDeadline: "2026-10-07T12:00:00.000Z" },
     });
   });
+  it("reads and commands the operator with the exact proposal decision and flags", async () => {
+    reply = (path) => ({
+      status: 200,
+      data: path.endsWith("/disputes")
+        ? { ...view, allowedActions: ["review_dispute", "resolve_dispute"] }
+        : { ...outcome, selection: { ...selection, status: "organizer_review", version: 2 } },
+    });
+    const client = createFutrobClient({ baseUrl });
+    const read = await client.results.getOperatorOfficialSelection("org/1", "enc/1");
+    expect(read).toMatchObject({
+      selection: { version: 1 },
+      allowedActions: ["review_dispute", "resolve_dispute"],
+    });
+    const reviewed = await client.results.reviewMatchDispute("org/1", "enc/1", {
+      expectedVersion: 1,
+      commandKey: "operator-review",
+      reason: " Check slots ",
+    });
+    expect(reviewed).toMatchObject({
+      selection: { status: "organizer_review", version: 2 },
+      replayed: false,
+    });
+    await client.results.resolveMatchDispute("org/1", "enc/1", {
+      expectedVersion: 2,
+      commandKey: "operator-approve",
+      reason: "Approve checked match",
+      decision: {
+        type: "approve_proposal",
+        proposalId: "proposal/1",
+        acknowledgeIntegrityFlags: true,
+      },
+    });
+    await client.results.resolveMatchDispute("org/1", "enc/1", {
+      expectedVersion: 2,
+      commandKey: "operator-return",
+      reason: "Repeat selection",
+      decision: { type: "return_to_selection" },
+    });
+    expect(
+      requests.map(({ path, method, body }) => ({
+        path: path.split("official-selection")[1],
+        method,
+        body,
+      })),
+    ).toEqual([
+      { path: "/disputes", method: "GET", body: null },
+      {
+        path: "/disputes/review",
+        method: "POST",
+        body: { expectedVersion: 1, commandKey: "operator-review", reason: "Check slots" },
+      },
+      {
+        path: "/disputes/resolve",
+        method: "POST",
+        body: {
+          expectedVersion: 2,
+          commandKey: "operator-approve",
+          reason: "Approve checked match",
+          decision: {
+            type: "approve_proposal",
+            proposalId: "proposal/1",
+            acknowledgeIntegrityFlags: true,
+          },
+        },
+      },
+      {
+        path: "/disputes/resolve",
+        method: "POST",
+        body: {
+          expectedVersion: 2,
+          commandKey: "operator-return",
+          reason: "Repeat selection",
+          decision: { type: "return_to_selection" },
+        },
+      },
+    ]);
+  });
+
+  it("requires an operator reason and exact approval proposal before issuing HTTP", async () => {
+    const client = createFutrobClient({ baseUrl });
+    await expect(
+      client.results.reviewMatchDispute("org/1", "enc/1", {
+        expectedVersion: 1,
+        commandKey: "review",
+        reason: "  ",
+      }),
+    ).rejects.toMatchObject({ name: "ZodError" });
+    await expect(
+      client.results.resolveMatchDispute("org/1", "enc/1", {
+        expectedVersion: 1,
+        commandKey: "approve",
+        reason: "Check",
+        decision: { type: "approve_proposal", proposalId: "" },
+      }),
+    ).rejects.toMatchObject({ name: "ZodError" });
+    expect(requests).toEqual([]);
+    expect(
+      await client.results.reviewMatchDispute("org/1", "enc/1", {
+        expectedVersion: 1,
+        commandKey: "review",
+        reason: "Check",
+      }),
+    ).toMatchObject({ proposal: { id: "proposal/1" }, replayed: false });
+  });
 });

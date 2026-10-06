@@ -1,4 +1,6 @@
 import {
+  reviewMatchDisputeRequestSchema,
+  resolveMatchDisputeRequestSchema,
   getTeamOfficialSelectionQuerySchema,
   proposeOfficialSelectionRequestSchema,
   confirmOfficialSelectionRequestSchema,
@@ -124,5 +126,25 @@ export function proposeAlternativeOfficialSelection(request: Request, scope: Pro
 export function openMatchDispute(request: Request, scope: SelectionScope) {
   return selectionCommand(request, openMatchDisputeRequestSchema, (client, input) =>
     client.results.openMatchDispute(scope.organizationId, scope.encounterId, input),
+  );
+}
+
+export function getOperatorOfficialSelection(request: Request, scope: SelectionScope) {
+  return selectionRequest(request, async (client) =>
+    jsonResponse(
+      await client.results.getOperatorOfficialSelection(scope.organizationId, scope.encounterId),
+    ),
+  );
+}
+
+export function reviewMatchDispute(request: Request, scope: SelectionScope) {
+  return selectionCommand(request, reviewMatchDisputeRequestSchema, (client, input) =>
+    client.results.reviewMatchDispute(scope.organizationId, scope.encounterId, input),
+  );
+}
+
+export function resolveMatchDispute(request: Request, scope: SelectionScope) {
+  return selectionCommand(request, resolveMatchDisputeRequestSchema, (client, input) =>
+    client.results.resolveMatchDispute(scope.organizationId, scope.encounterId, input),
   );
 }
