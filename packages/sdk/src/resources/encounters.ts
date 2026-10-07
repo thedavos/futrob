@@ -1,4 +1,8 @@
 import {
+  acceptScheduleChangeProposalRequestSchema,
+  type AcceptScheduleChangeProposalRequest,
+  counterScheduleChangeProposalRequestSchema,
+  type CounterScheduleChangeProposalRequest,
   createScheduleChangeRequestSchema,
   type CreateScheduleChangeRequestBody,
   editFixtureEncounterRequestSchema,
@@ -11,6 +15,10 @@ import {
   type GenerateCompetitionFixtureRequest,
   listScheduleChangeRequestsResponseSchema,
   type ListScheduleChangeRequestsResponse,
+  rejectScheduleChangeProposalRequestSchema,
+  type RejectScheduleChangeProposalRequest,
+  scheduleChangeCommandResponseSchema,
+  type ScheduleChangeCommandResponse,
   scheduleChangeRequestSchema,
   type ScheduleChangeRequestDto,
   upsertEncounterScheduleSnapshotRequestSchema,
@@ -130,7 +138,80 @@ export function createEncountersResource(http: HttpClient) {
         parse: (data) => scheduleChangeRequestSchema.parse(data),
       });
     },
+    async getScheduleChangeRequest(
+      encounterId: string,
+      requestId: string,
+      options: RequestOptions = {},
+    ): Promise<ScheduleChangeRequestDto> {
+      return http.request({
+        path: apiPath("encounters", encounterId, "schedule-change-requests", requestId),
+        method: "GET",
+        options,
+        parse: (data) => scheduleChangeRequestSchema.parse(data),
+      });
+    },
+    async acceptScheduleChangeProposal(
+      target: ScheduleChangeProposalTarget,
+      input: AcceptScheduleChangeProposalRequest,
+      options: RequestOptions = {},
+    ): Promise<ScheduleChangeCommandResponse> {
+      return http.request({
+        path: proposalCommandPath(target, "accept"),
+        method: "POST",
+        body: acceptScheduleChangeProposalRequestSchema.parse(input),
+        options,
+        parse: (data) => scheduleChangeCommandResponseSchema.parse(data),
+      });
+    },
+    async rejectScheduleChangeProposal(
+      target: ScheduleChangeProposalTarget,
+      input: RejectScheduleChangeProposalRequest,
+      options: RequestOptions = {},
+    ): Promise<ScheduleChangeCommandResponse> {
+      return http.request({
+        path: proposalCommandPath(target, "reject"),
+        method: "POST",
+        body: rejectScheduleChangeProposalRequestSchema.parse(input),
+        options,
+        parse: (data) => scheduleChangeCommandResponseSchema.parse(data),
+      });
+    },
+    async counterScheduleChangeProposal(
+      target: ScheduleChangeProposalTarget,
+      input: CounterScheduleChangeProposalRequest,
+      options: RequestOptions = {},
+    ): Promise<ScheduleChangeCommandResponse> {
+      return http.request({
+        path: proposalCommandPath(target, "counter"),
+        method: "POST",
+        body: counterScheduleChangeProposalRequestSchema.parse(input),
+        options,
+        parse: (data) => scheduleChangeCommandResponseSchema.parse(data),
+      });
+    },
   };
+}
+
+/** The proposal a response command answers. */
+export interface ScheduleChangeProposalTarget {
+  readonly encounterId: string;
+  readonly requestId: string;
+  readonly proposalId: string;
+}
+
+function proposalCommandPath(
+  target: ScheduleChangeProposalTarget,
+  command: "accept" | "reject" | "counter",
+): string {
+  return apiPath(
+    "encounters",
+    target.encounterId,
+    "schedule-change-requests",
+    target.requestId,
+    "proposals",
+    target.proposalId,
+    command,
+  );
 }
 
 export type EncountersResource = ReturnType<typeof createEncountersResource>;

@@ -43,6 +43,7 @@ export type { EncounterScheduleSnapshot } from "./domain/entities/encounter-sche
 export type { OfficialMatch, OfficialMatchStatus } from "./domain/entities/official-match.ts";
 export type { ScheduleChangeApplication } from "./domain/entities/schedule-change-application.ts";
 export {
+  encounterStartOf,
   officialMatchSchedules,
   type OfficialMatchSchedule,
   type OfficialMatchScheduleChange,
@@ -97,6 +98,11 @@ export {
   type ListScheduleChangeRequestsError,
   type ListScheduleChangeRequestsInput,
 } from "./application/list-schedule-change-requests.use-case.ts";
+export {
+  GetScheduleChangeRequestUseCase,
+  type GetScheduleChangeRequestError,
+  type GetScheduleChangeRequestInput,
+} from "./application/get-schedule-change-request.use-case.ts";
 export {
   AcceptScheduleChangeProposalUseCase,
   type AcceptScheduleChangeProposalDeps,

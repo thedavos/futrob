@@ -2458,7 +2458,8 @@ paths:
         closed history
       parameters:
         - *a2
-        - name: encounterId
+        - &a8
+          name: encounterId
           in: path
           required: true
           schema:
@@ -2472,10 +2473,9 @@ paths:
                 $ref: "#/components/schemas/ListScheduleChangeRequestsResponse"
           headers:
             X-Request-ID: *a1
-        "401":
+        "401": &a7
           $ref: "#/components/responses/ApiError"
-        "404":
-          $ref: "#/components/responses/ApiError"
+        "404": *a7
     post:
       operationId: createScheduleChangeRequest
       tags:
@@ -2483,11 +2483,7 @@ paths:
       summary: Create a schedule-change request without changing the fixture
       parameters:
         - *a2
-        - name: encounterId
-          in: path
-          required: true
-          schema:
-            type: string
+        - *a8
       requestBody:
         required: true
         content:
@@ -2503,16 +2499,217 @@ paths:
                 $ref: "#/components/schemas/ScheduleChangeRequest"
           headers:
             X-Request-ID: *a1
-        "400":
-          $ref: "#/components/responses/ApiError"
-        "401":
-          $ref: "#/components/responses/ApiError"
-        "403":
-          $ref: "#/components/responses/ApiError"
-        "404":
-          $ref: "#/components/responses/ApiError"
-        "409":
-          $ref: "#/components/responses/ApiError"
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
+  /encounters/{encounterId}/schedule-change-requests/{requestId}:
+    get:
+      operationId: getScheduleChangeRequest
+      tags:
+        - encounters
+      summary: Read one schedule-change request with its proposals, decisions and
+        application
+      description: Readable by actors who can read the Encounter; anyone else gets 404
+        `scheduling.schedule_change_encounter_not_found`. An unknown request, or
+        one of another Encounter, is 404
+        `scheduling.schedule_change_request_not_found`.
+      parameters:
+        - *a2
+        - *a8
+        - &a9
+          name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The request and its full history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleChangeRequest"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+        "404": *a7
+  /encounters/{encounterId}/schedule-change-requests/{requestId}/proposals/{proposalId}/accept:
+    post:
+      operationId: acceptScheduleChangeProposal
+      tags:
+        - encounters
+      summary: Consent to the current proposal; the last required consent applies the
+        new schedule
+      description: "Answers the current proposal of an open request at
+        `expectedVersion`. The actor comes from service authentication;
+        `responder` (or `teamId`) is only the capacity claimed, and the server
+        authorizes it. Repeating `commandKey` with the same payload replays the
+        original outcome with `replayed: true` and no new effect. Failures carry
+        a stable `code`: 400 `api.validation_error`,
+        `scheduling.invalid_schedule_change_request`,
+        `scheduling.invalid_schedule_change_date` (also a `timeZone` other than
+        the competition's), `scheduling.invalid_schedule_change_reason`,
+        `scheduling.invalid_schedule_change_scope`; 403
+        `authorization.forbidden`,
+        `scheduling.schedule_change_self_response_forbidden`,
+        `scheduling.schedule_change_authority_not_required`; 404
+        `scheduling.schedule_change_encounter_not_found`,
+        `scheduling.schedule_change_request_not_found`; 409
+        `scheduling.schedule_change_version_conflict`,
+        `scheduling.schedule_change_proposal_stale`,
+        `scheduling.schedule_change_request_closed`,
+        `scheduling.schedule_change_consent_already_recorded`,
+        `scheduling.schedule_change_idempotency_conflict`,
+        `scheduling.schedule_change_approval_not_configured`,
+        `scheduling.rescheduling_disabled`,
+        `scheduling.encounter_not_editable_for_schedule_change`,
+        `scheduling.reschedule_limit_reached`,
+        `scheduling.fixture_update_conflict`."
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - &a10
+          name: proposalId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptScheduleChangeProposalRequest"
+      responses:
+        "200":
+          description: The request as the command left it, or its replay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleChangeCommandResponse"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
+  /encounters/{encounterId}/schedule-change-requests/{requestId}/proposals/{proposalId}/reject:
+    post:
+      operationId: rejectScheduleChangeProposal
+      tags:
+        - encounters
+      summary: Reject the current proposal and close the request without changing the
+        schedule
+      description: "Answers the current proposal of an open request at
+        `expectedVersion`. The actor comes from service authentication;
+        `responder` (or `teamId`) is only the capacity claimed, and the server
+        authorizes it. Repeating `commandKey` with the same payload replays the
+        original outcome with `replayed: true` and no new effect. Failures carry
+        a stable `code`: 400 `api.validation_error`,
+        `scheduling.invalid_schedule_change_request`,
+        `scheduling.invalid_schedule_change_date` (also a `timeZone` other than
+        the competition's), `scheduling.invalid_schedule_change_reason`,
+        `scheduling.invalid_schedule_change_scope`; 403
+        `authorization.forbidden`,
+        `scheduling.schedule_change_self_response_forbidden`,
+        `scheduling.schedule_change_authority_not_required`; 404
+        `scheduling.schedule_change_encounter_not_found`,
+        `scheduling.schedule_change_request_not_found`; 409
+        `scheduling.schedule_change_version_conflict`,
+        `scheduling.schedule_change_proposal_stale`,
+        `scheduling.schedule_change_request_closed`,
+        `scheduling.schedule_change_consent_already_recorded`,
+        `scheduling.schedule_change_idempotency_conflict`,
+        `scheduling.schedule_change_approval_not_configured`,
+        `scheduling.rescheduling_disabled`,
+        `scheduling.encounter_not_editable_for_schedule_change`,
+        `scheduling.reschedule_limit_reached`,
+        `scheduling.fixture_update_conflict`."
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectScheduleChangeProposalRequest"
+      responses:
+        "200":
+          description: The request as the command left it, or its replay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleChangeCommandResponse"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
+  /encounters/{encounterId}/schedule-change-requests/{requestId}/proposals/{proposalId}/counter:
+    post:
+      operationId: counterScheduleChangeProposal
+      tags:
+        - encounters
+      summary: Answer the current proposal with a new date in the competition time zone
+      description: "Answers the current proposal of an open request at
+        `expectedVersion`. The actor comes from service authentication;
+        `responder` (or `teamId`) is only the capacity claimed, and the server
+        authorizes it. Repeating `commandKey` with the same payload replays the
+        original outcome with `replayed: true` and no new effect. Failures carry
+        a stable `code`: 400 `api.validation_error`,
+        `scheduling.invalid_schedule_change_request`,
+        `scheduling.invalid_schedule_change_date` (also a `timeZone` other than
+        the competition's), `scheduling.invalid_schedule_change_reason`,
+        `scheduling.invalid_schedule_change_scope`; 403
+        `authorization.forbidden`,
+        `scheduling.schedule_change_self_response_forbidden`,
+        `scheduling.schedule_change_authority_not_required`; 404
+        `scheduling.schedule_change_encounter_not_found`,
+        `scheduling.schedule_change_request_not_found`; 409
+        `scheduling.schedule_change_version_conflict`,
+        `scheduling.schedule_change_proposal_stale`,
+        `scheduling.schedule_change_request_closed`,
+        `scheduling.schedule_change_consent_already_recorded`,
+        `scheduling.schedule_change_idempotency_conflict`,
+        `scheduling.schedule_change_approval_not_configured`,
+        `scheduling.rescheduling_disabled`,
+        `scheduling.encounter_not_editable_for_schedule_change`,
+        `scheduling.reschedule_limit_reached`,
+        `scheduling.fixture_update_conflict`."
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CounterScheduleChangeProposalRequest"
+      responses:
+        "200":
+          description: The request as the command left it, or its replay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleChangeCommandResponse"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
   /organizations/{organizationId}/competitions/{competitionId}:
     get:
       operationId: getCompetitionDraft
@@ -4502,6 +4699,7 @@ components:
         - homeExternalClubId
         - awayExternalClubId
         - providerKey
+        - officialMatches
       properties:
         encounterId:
           type: string
@@ -4535,6 +4733,27 @@ components:
           type:
             - string
             - "null"
+        officialMatches:
+          type: array
+          description: Start of every slot the Encounter plays. An `official_match`
+            reschedule moves one slot; the Encounter starts with its earliest
+            slot.
+          minItems: 1
+          maxItems: 2
+          items:
+            type: object
+            required:
+              - officialSlot
+              - scheduledStartAt
+            properties:
+              officialSlot:
+                type: integer
+                enum:
+                  - 1
+                  - 2
+              scheduledStartAt:
+                type: string
+                format: date-time
     EncounterCandidateTeam:
       type: object
       required:
@@ -4676,100 +4895,9 @@ components:
           properties:
             status:
               const: provider_mismatch
-    CompetitionWallTime:
-      type: object
-      required:
-        - year
-        - month
-        - day
-        - hour
-        - minute
-        - second
-      properties:
-        year:
-          type: integer
-        month:
-          type: integer
-          minimum: 1
-          maximum: 12
-        day:
-          type: integer
-          minimum: 1
-          maximum: 31
-        hour:
-          type: integer
-          minimum: 0
-          maximum: 23
-        minute:
-          type: integer
-          minimum: 0
-          maximum: 59
-        second:
-          type: integer
-          minimum: 0
-          maximum: 59
-    RescheduleScope:
-      oneOf:
-        - type: object
-          required:
-            - type
-          properties:
-            type:
-              const: entire_encounter
-        - type: object
-          required:
-            - type
-            - officialSlot
-          properties:
-            type:
-              const: official_match
-            officialSlot:
-              type: integer
-              enum:
-                - 1
-                - 2
-    ScheduleChangeProposal:
-      type: object
-      required:
-        - id
-        - proposedStartAt
-        - proposedByActorId
-        - proposedByTeamId
-        - reason
-        - createdAt
-      properties:
-        id:
-          type: string
-          minLength: 1
-        proposedStartAt:
-          type: string
-          format: date-time
-        proposedByActorId:
-          type: string
-          minLength: 1
-        proposedByTeamId:
-          type: string
-          minLength: 1
-        reason:
-          type: string
-          minLength: 1
-        createdAt:
-          type: string
-          format: date-time
     ScheduleChangeRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
       type: object
-      required:
-        - id
-        - organizationId
-        - competitionId
-        - encounterId
-        - requestingTeamId
-        - initiatedByActorId
-        - scope
-        - status
-        - proposals
-        - createdAt
-        - updatedAt
       properties:
         id:
           type: string
@@ -4790,7 +4918,30 @@ components:
           type: string
           minLength: 1
         scope:
-          $ref: "#/components/schemas/RescheduleScope"
+          oneOf:
+            - type: object
+              properties:
+                type:
+                  type: string
+                  const: entire_encounter
+              required:
+                - type
+              additionalProperties: false
+            - type: object
+              properties:
+                type:
+                  type: string
+                  const: official_match
+                officialSlot:
+                  anyOf:
+                    - type: number
+                      const: 1
+                    - type: number
+                      const: 2
+              required:
+                - type
+                - officialSlot
+              additionalProperties: false
         status:
           type: string
           enum:
@@ -4800,33 +4951,787 @@ components:
             - cancelled
             - expired
             - escalated
+        version:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        currentProposalId:
+          type: string
+          minLength: 1
         proposals:
-          type: array
           minItems: 1
+          type: array
           items:
-            $ref: "#/components/schemas/ScheduleChangeProposal"
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              proposedStartAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+              proposedByActorId:
+                type: string
+                minLength: 1
+              proposedByTeamId:
+                type: string
+                minLength: 1
+              reason:
+                type: string
+                minLength: 1
+              createdAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            required:
+              - id
+              - proposedStartAt
+              - proposedByActorId
+              - proposedByTeamId
+              - reason
+              - createdAt
+            additionalProperties: false
+        decisions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              proposalId:
+                type: string
+                minLength: 1
+              requestVersion:
+                type: integer
+                exclusiveMinimum: 0
+                maximum: 9007199254740991
+              kind:
+                type: string
+                enum:
+                  - consent
+                  - rejection
+              responder:
+                oneOf:
+                  - type: object
+                    properties:
+                      authority:
+                        type: string
+                        const: rival_team
+                      teamId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - authority
+                      - teamId
+                    additionalProperties: false
+                  - type: object
+                    properties:
+                      authority:
+                        type: string
+                        const: organizer
+                    required:
+                      - authority
+                    additionalProperties: false
+              actorId:
+                type: string
+                minLength: 1
+              reason:
+                anyOf:
+                  - type: string
+                    minLength: 1
+                  - type: "null"
+              createdAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            required:
+              - id
+              - proposalId
+              - requestVersion
+              - kind
+              - responder
+              - actorId
+              - reason
+              - createdAt
+            additionalProperties: false
+        application:
+          anyOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                  minLength: 1
+                proposalId:
+                  type: string
+                  minLength: 1
+                requestVersion:
+                  type: integer
+                  exclusiveMinimum: 0
+                  maximum: 9007199254740991
+                appliedByActorId:
+                  type: string
+                  minLength: 1
+                previousEncounterStartAt:
+                  type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                appliedEncounterStartAt:
+                  type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                slots:
+                  minItems: 1
+                  maxItems: 2
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      officialSlot:
+                        anyOf:
+                          - type: number
+                            const: 1
+                          - type: number
+                            const: 2
+                      previousStartAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      appliedStartAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    required:
+                      - officialSlot
+                      - previousStartAt
+                      - appliedStartAt
+                    additionalProperties: false
+                appliedAt:
+                  type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+              required:
+                - id
+                - proposalId
+                - requestVersion
+                - appliedByActorId
+                - previousEncounterStartAt
+                - appliedEncounterStartAt
+                - slots
+                - appliedAt
+              additionalProperties: false
+            - type: "null"
         createdAt:
           type: string
           format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
         updatedAt:
           type: string
           format: date-time
-    CreateScheduleChangeRequest:
-      type: object
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
       required:
+        - id
+        - organizationId
+        - competitionId
+        - encounterId
         - requestingTeamId
+        - initiatedByActorId
         - scope
-        - proposedWallTime
-        - reason
-        - idempotencyKey
+        - status
+        - version
+        - currentProposalId
+        - proposals
+        - decisions
+        - application
+        - createdAt
+        - updatedAt
+      additionalProperties: false
+    ListScheduleChangeRequestsResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        requests:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              organizationId:
+                type: string
+                minLength: 1
+              competitionId:
+                type: string
+                minLength: 1
+              encounterId:
+                type: string
+                minLength: 1
+              requestingTeamId:
+                type: string
+                minLength: 1
+              initiatedByActorId:
+                type: string
+                minLength: 1
+              scope:
+                oneOf:
+                  - type: object
+                    properties:
+                      type:
+                        type: string
+                        const: entire_encounter
+                    required:
+                      - type
+                    additionalProperties: false
+                  - type: object
+                    properties:
+                      type:
+                        type: string
+                        const: official_match
+                      officialSlot:
+                        anyOf:
+                          - type: number
+                            const: 1
+                          - type: number
+                            const: 2
+                    required:
+                      - type
+                      - officialSlot
+                    additionalProperties: false
+              status:
+                type: string
+                enum:
+                  - open
+                  - accepted
+                  - rejected
+                  - cancelled
+                  - expired
+                  - escalated
+              version:
+                type: integer
+                exclusiveMinimum: 0
+                maximum: 9007199254740991
+              currentProposalId:
+                type: string
+                minLength: 1
+              proposals:
+                minItems: 1
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      minLength: 1
+                    proposedStartAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    proposedByActorId:
+                      type: string
+                      minLength: 1
+                    proposedByTeamId:
+                      type: string
+                      minLength: 1
+                    reason:
+                      type: string
+                      minLength: 1
+                    createdAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  required:
+                    - id
+                    - proposedStartAt
+                    - proposedByActorId
+                    - proposedByTeamId
+                    - reason
+                    - createdAt
+                  additionalProperties: false
+              decisions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      minLength: 1
+                    proposalId:
+                      type: string
+                      minLength: 1
+                    requestVersion:
+                      type: integer
+                      exclusiveMinimum: 0
+                      maximum: 9007199254740991
+                    kind:
+                      type: string
+                      enum:
+                        - consent
+                        - rejection
+                    responder:
+                      oneOf:
+                        - type: object
+                          properties:
+                            authority:
+                              type: string
+                              const: rival_team
+                            teamId:
+                              type: string
+                              minLength: 1
+                          required:
+                            - authority
+                            - teamId
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            authority:
+                              type: string
+                              const: organizer
+                          required:
+                            - authority
+                          additionalProperties: false
+                    actorId:
+                      type: string
+                      minLength: 1
+                    reason:
+                      anyOf:
+                        - type: string
+                          minLength: 1
+                        - type: "null"
+                    createdAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  required:
+                    - id
+                    - proposalId
+                    - requestVersion
+                    - kind
+                    - responder
+                    - actorId
+                    - reason
+                    - createdAt
+                  additionalProperties: false
+              application:
+                anyOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                        minLength: 1
+                      proposalId:
+                        type: string
+                        minLength: 1
+                      requestVersion:
+                        type: integer
+                        exclusiveMinimum: 0
+                        maximum: 9007199254740991
+                      appliedByActorId:
+                        type: string
+                        minLength: 1
+                      previousEncounterStartAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      appliedEncounterStartAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      slots:
+                        minItems: 1
+                        maxItems: 2
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            officialSlot:
+                              anyOf:
+                                - type: number
+                                  const: 1
+                                - type: number
+                                  const: 2
+                            previousStartAt:
+                              type: string
+                              format: date-time
+                              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            appliedStartAt:
+                              type: string
+                              format: date-time
+                              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          required:
+                            - officialSlot
+                            - previousStartAt
+                            - appliedStartAt
+                          additionalProperties: false
+                      appliedAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    required:
+                      - id
+                      - proposalId
+                      - requestVersion
+                      - appliedByActorId
+                      - previousEncounterStartAt
+                      - appliedEncounterStartAt
+                      - slots
+                      - appliedAt
+                    additionalProperties: false
+                  - type: "null"
+              createdAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+              updatedAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            required:
+              - id
+              - organizationId
+              - competitionId
+              - encounterId
+              - requestingTeamId
+              - initiatedByActorId
+              - scope
+              - status
+              - version
+              - currentProposalId
+              - proposals
+              - decisions
+              - application
+              - createdAt
+              - updatedAt
+            additionalProperties: false
+      required:
+        - requests
+      additionalProperties: false
+    ScheduleChangeCommandResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        request:
+          type: object
+          properties:
+            id:
+              type: string
+              minLength: 1
+            organizationId:
+              type: string
+              minLength: 1
+            competitionId:
+              type: string
+              minLength: 1
+            encounterId:
+              type: string
+              minLength: 1
+            requestingTeamId:
+              type: string
+              minLength: 1
+            initiatedByActorId:
+              type: string
+              minLength: 1
+            scope:
+              oneOf:
+                - type: object
+                  properties:
+                    type:
+                      type: string
+                      const: entire_encounter
+                  required:
+                    - type
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    type:
+                      type: string
+                      const: official_match
+                    officialSlot:
+                      anyOf:
+                        - type: number
+                          const: 1
+                        - type: number
+                          const: 2
+                  required:
+                    - type
+                    - officialSlot
+                  additionalProperties: false
+            status:
+              type: string
+              enum:
+                - open
+                - accepted
+                - rejected
+                - cancelled
+                - expired
+                - escalated
+            version:
+              type: integer
+              exclusiveMinimum: 0
+              maximum: 9007199254740991
+            currentProposalId:
+              type: string
+              minLength: 1
+            proposals:
+              minItems: 1
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    minLength: 1
+                  proposedStartAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  proposedByActorId:
+                    type: string
+                    minLength: 1
+                  proposedByTeamId:
+                    type: string
+                    minLength: 1
+                  reason:
+                    type: string
+                    minLength: 1
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                required:
+                  - id
+                  - proposedStartAt
+                  - proposedByActorId
+                  - proposedByTeamId
+                  - reason
+                  - createdAt
+                additionalProperties: false
+            decisions:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    minLength: 1
+                  proposalId:
+                    type: string
+                    minLength: 1
+                  requestVersion:
+                    type: integer
+                    exclusiveMinimum: 0
+                    maximum: 9007199254740991
+                  kind:
+                    type: string
+                    enum:
+                      - consent
+                      - rejection
+                  responder:
+                    oneOf:
+                      - type: object
+                        properties:
+                          authority:
+                            type: string
+                            const: rival_team
+                          teamId:
+                            type: string
+                            minLength: 1
+                        required:
+                          - authority
+                          - teamId
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          authority:
+                            type: string
+                            const: organizer
+                        required:
+                          - authority
+                        additionalProperties: false
+                  actorId:
+                    type: string
+                    minLength: 1
+                  reason:
+                    anyOf:
+                      - type: string
+                        minLength: 1
+                      - type: "null"
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                required:
+                  - id
+                  - proposalId
+                  - requestVersion
+                  - kind
+                  - responder
+                  - actorId
+                  - reason
+                  - createdAt
+                additionalProperties: false
+            application:
+              anyOf:
+                - type: object
+                  properties:
+                    id:
+                      type: string
+                      minLength: 1
+                    proposalId:
+                      type: string
+                      minLength: 1
+                    requestVersion:
+                      type: integer
+                      exclusiveMinimum: 0
+                      maximum: 9007199254740991
+                    appliedByActorId:
+                      type: string
+                      minLength: 1
+                    previousEncounterStartAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    appliedEncounterStartAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    slots:
+                      minItems: 1
+                      maxItems: 2
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          officialSlot:
+                            anyOf:
+                              - type: number
+                                const: 1
+                              - type: number
+                                const: 2
+                          previousStartAt:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          appliedStartAt:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - officialSlot
+                          - previousStartAt
+                          - appliedStartAt
+                        additionalProperties: false
+                    appliedAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  required:
+                    - id
+                    - proposalId
+                    - requestVersion
+                    - appliedByActorId
+                    - previousEncounterStartAt
+                    - appliedEncounterStartAt
+                    - slots
+                    - appliedAt
+                  additionalProperties: false
+                - type: "null"
+            createdAt:
+              type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            updatedAt:
+              type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+          required:
+            - id
+            - organizationId
+            - competitionId
+            - encounterId
+            - requestingTeamId
+            - initiatedByActorId
+            - scope
+            - status
+            - version
+            - currentProposalId
+            - proposals
+            - decisions
+            - application
+            - createdAt
+            - updatedAt
+          additionalProperties: false
+        replayed:
+          type: boolean
+      required:
+        - request
+        - replayed
+      additionalProperties: false
+    CreateScheduleChangeRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
       properties:
         requestingTeamId:
           type: string
           minLength: 1
         scope:
-          $ref: "#/components/schemas/RescheduleScope"
+          oneOf:
+            - type: object
+              properties:
+                type:
+                  type: string
+                  const: entire_encounter
+              required:
+                - type
+            - type: object
+              properties:
+                type:
+                  type: string
+                  const: official_match
+                officialSlot:
+                  anyOf:
+                    - type: number
+                      const: 1
+                    - type: number
+                      const: 2
+              required:
+                - type
+                - officialSlot
         proposedWallTime:
-          $ref: "#/components/schemas/CompetitionWallTime"
+          type: object
+          properties:
+            year:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            month:
+              type: integer
+              minimum: 1
+              maximum: 12
+            day:
+              type: integer
+              minimum: 1
+              maximum: 31
+            hour:
+              type: integer
+              minimum: 0
+              maximum: 23
+            minute:
+              type: integer
+              minimum: 0
+              maximum: 59
+            second:
+              type: integer
+              minimum: 0
+              maximum: 59
+          required:
+            - year
+            - month
+            - day
+            - hour
+            - minute
+            - second
         reason:
           type: string
           minLength: 1
@@ -4836,15 +5741,147 @@ components:
         timeZone:
           type: string
           minLength: 1
-    ListScheduleChangeRequestsResponse:
-      type: object
       required:
-        - requests
+        - requestingTeamId
+        - scope
+        - proposedWallTime
+        - reason
+        - idempotencyKey
+    AcceptScheduleChangeProposalRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
       properties:
-        requests:
-          type: array
-          items:
-            $ref: "#/components/schemas/ScheduleChangeRequest"
+        expectedVersion:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        commandKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+        responder:
+          oneOf:
+            - type: object
+              properties:
+                authority:
+                  type: string
+                  const: rival_team
+                teamId:
+                  type: string
+                  minLength: 1
+              required:
+                - authority
+                - teamId
+            - type: object
+              properties:
+                authority:
+                  type: string
+                  const: organizer
+              required:
+                - authority
+      required:
+        - expectedVersion
+        - commandKey
+        - responder
+    RejectScheduleChangeProposalRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        expectedVersion:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        commandKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+        responder:
+          oneOf:
+            - type: object
+              properties:
+                authority:
+                  type: string
+                  const: rival_team
+                teamId:
+                  type: string
+                  minLength: 1
+              required:
+                - authority
+                - teamId
+            - type: object
+              properties:
+                authority:
+                  type: string
+                  const: organizer
+              required:
+                - authority
+        reason:
+          type: string
+      required:
+        - expectedVersion
+        - commandKey
+        - responder
+    CounterScheduleChangeProposalRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        expectedVersion:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        commandKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+        teamId:
+          type: string
+          minLength: 1
+        proposedWallTime:
+          type: object
+          properties:
+            year:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            month:
+              type: integer
+              minimum: 1
+              maximum: 12
+            day:
+              type: integer
+              minimum: 1
+              maximum: 31
+            hour:
+              type: integer
+              minimum: 0
+              maximum: 23
+            minute:
+              type: integer
+              minimum: 0
+              maximum: 59
+            second:
+              type: integer
+              minimum: 0
+              maximum: 59
+          required:
+            - year
+            - month
+            - day
+            - hour
+            - minute
+            - second
+        reason:
+          type: string
+          minLength: 1
+        timeZone:
+          type: string
+          minLength: 1
+      required:
+        - expectedVersion
+        - commandKey
+        - teamId
+        - proposedWallTime
+        - reason
     FixtureParticipantSlot:
       oneOf:
         - type: object

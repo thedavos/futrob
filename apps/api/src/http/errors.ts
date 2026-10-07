@@ -80,7 +80,12 @@ function statusForFailureCode(code: string): number {
   if (code.includes("not_found") || code.includes("not_discoverable")) {
     return 404;
   }
-  if (code.includes("forbidden") || code.includes("unauthorized") || code.includes("not_owned")) {
+  if (
+    code.includes("forbidden") ||
+    code.includes("unauthorized") ||
+    code.includes("not_owned") ||
+    code === "scheduling.schedule_change_authority_not_required"
+  ) {
     return 403;
   }
   if (
@@ -99,6 +104,10 @@ function statusForFailureCode(code: string): number {
     code.includes("limit_reached") ||
     code.includes("rescheduling_disabled") ||
     code.includes("active_schedule_change_request_exists") ||
+    code === "scheduling.schedule_change_request_closed" ||
+    code === "scheduling.schedule_change_proposal_stale" ||
+    code === "scheduling.schedule_change_consent_already_recorded" ||
+    code === "scheduling.schedule_change_approval_not_configured" ||
     code.includes("last_organizer") ||
     code.includes("last_superuser")
   ) {
