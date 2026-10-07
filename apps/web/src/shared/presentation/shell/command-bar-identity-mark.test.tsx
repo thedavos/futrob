@@ -12,7 +12,7 @@ describe("CommandBarIdentityMark", () => {
   it("renders EA logo, gamertag, club crest and club name in that order", () => {
     const { container } = render(
       <CommandBarIdentityMark
-        emptyLabel="Tu espacio en Futrob"
+        emptyLabel="Sin organización"
         identity={{
           gamertag: "davos282",
           clubName: "Fera Enjaulada",
@@ -36,7 +36,7 @@ describe("CommandBarIdentityMark", () => {
   it("renders the loading caption while the profile is loading", () => {
     const { container } = render(
       <CommandBarIdentityMark
-        emptyLabel="Tu espacio en Futrob"
+        emptyLabel="Sin organización"
         identity={{ gamertag: "davos282", clubName: "Fera Enjaulada", imageUrl: null }}
         loadingLabel="Cargando tu espacio…"
         ready={false}

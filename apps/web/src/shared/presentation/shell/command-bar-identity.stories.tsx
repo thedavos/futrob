@@ -51,7 +51,7 @@ const meta = {
     gamertag: "davos282",
     clubName: "Fera Enjaulada",
     imageUrl: null,
-    emptyLabel: "Tu espacio en Futrob",
+    emptyLabel: "Sin organización",
     ready: true,
   },
   argTypes: {
@@ -102,7 +102,7 @@ export const States: Story = {
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Cuenta y club</p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Tu espacio en Futrob"
+            emptyLabel="Sin organización"
             identity={{
               gamertag: "davos282",
               clubName: "Fera Enjaulada",
@@ -117,7 +117,7 @@ export const States: Story = {
         </p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Tu espacio en Futrob"
+            emptyLabel="Sin organización"
             identity={{ gamertag: "davos282", clubName: null, imageUrl: null }}
           />
         </Chrome>
@@ -126,7 +126,7 @@ export const States: Story = {
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Organización</p>
         <Chrome>
           <CommandBarWorkspaceMark
-            emptyLabel="Tu espacio en Futrob"
+            emptyLabel="Sin organización"
             roleLabel="Miembro"
             workspace={{ name: "Orga interclubes", role: "member" }}
           />
@@ -136,7 +136,7 @@ export const States: Story = {
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Competición</p>
         <Chrome>
           <CommandBarWorkspaceMark
-            emptyLabel="Tu espacio en Futrob"
+            emptyLabel="Sin organización"
             roleLabel="Capitán"
             workspace={{ name: "Liga Futrob", role: "captain" }}
           />
@@ -146,18 +146,18 @@ export const States: Story = {
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Solo club</p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Tu espacio en Futrob"
+            emptyLabel="Sin organización"
             identity={{ gamertag: null, clubName: "Fera Enjaulada", imageUrl: null }}
           />
         </Chrome>
       </div>
       <div {...applyProps(undefined, undefined, styles.group)}>
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
-          Tu espacio en Futrob
+          Sin organización
         </p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Tu espacio en Futrob"
+            emptyLabel="Sin organización"
             identity={{ gamertag: null, clubName: null, imageUrl: null }}
           />
         </Chrome>
@@ -166,7 +166,7 @@ export const States: Story = {
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Cargando</p>
         <Chrome>
           <CommandBarIdentityMark
-            emptyLabel="Tu espacio en Futrob"
+            emptyLabel="Sin organización"
             identity={{ gamertag: null, clubName: null, imageUrl: null }}
             loadingLabel="Cargando tu espacio…"
             ready={false}

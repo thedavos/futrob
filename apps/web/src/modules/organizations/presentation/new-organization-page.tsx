@@ -9,6 +9,11 @@ const styles = stylex.create({
   main: {
     width: "100%",
     maxWidth: "36rem",
+    marginInline: "auto",
+    display: "flex",
+    flexDirection: "column",
+    flexGrow: 1,
+    justifyContent: "center",
   },
 });
 
