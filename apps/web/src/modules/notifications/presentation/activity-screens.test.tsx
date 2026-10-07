@@ -216,6 +216,37 @@ describe("activity screens", () => {
     expect(await screen.findByText("No puedes ver esta actividad")).toBeTruthy();
   });
 
+  it("asks the server for the active space so the limit never hides its rows", async () => {
+    listForOrganization.mockResolvedValue(page([dispute]));
+    listMine.mockResolvedValue(page([]));
+    renderWith(
+      <>
+        <ShellPendingQueue
+          allowedPermissions={new Set(["encounters.results.approve"])}
+          selection={{ kind: "competition", competitionId: "cmp-a", organizationId: ORG }}
+        />
+        <ShellPendingQueue
+          allowedPermissions={new Set()}
+          selection={{ kind: "organization", organizationId: "org-b" }}
+        />
+      </>,
+    );
+    expect(await screen.findByText("Resolver disputa")).toBeTruthy();
+    expect(listForOrganization).toHaveBeenCalledWith(ORG, {
+      status: "open",
+      requiresAction: true,
+      limit: 50,
+      competitionId: "cmp-a",
+    });
+    expect(listMine).toHaveBeenCalledWith({
+      status: "open",
+      requiresAction: true,
+      limit: 50,
+      competitionId: undefined,
+      organizationId: "org-b",
+    });
+  });
+
   it("lists the invitee's own invitation in the personal space", async () => {
     listMine.mockResolvedValue(
       page([

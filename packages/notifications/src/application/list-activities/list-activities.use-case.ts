@@ -7,7 +7,7 @@ import {
   type Result,
 } from "@futrob/shared-kernel";
 import type {
-  ActivityAudienceRef,
+  ActivityAudienceScope,
   ActivityEntry,
   ActivityStatus,
 } from "../../domain/entities/activity-entry.ts";
@@ -25,8 +25,10 @@ export const ACTIVITY_PAGE_SIZE = { default: 25, max: 50 } as const;
 
 export interface ListActivitiesInput {
   /** Already authorized by the caller. An empty list yields an empty page. */
-  readonly audiences: readonly ActivityAudienceRef[];
+  readonly audiences: readonly ActivityAudienceScope[];
+  /** Narrows the page to one space before the limit applies. */
   readonly organizationId?: OrganizationId;
+  readonly competitionId?: string;
   readonly status?: ActivityStatus;
   readonly requiresAction?: boolean;
   readonly limit?: number;
@@ -75,6 +77,7 @@ export class ListActivitiesUseCase {
     const rows = await this.deps.activities.list({
       audiences: input.audiences,
       organizationId: input.organizationId,
+      competitionId: input.competitionId,
       status: input.status,
       requiresAction: input.requiresAction,
       now: this.deps.clock.now(),

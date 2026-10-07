@@ -63,9 +63,13 @@ export class MemoryActivities implements ActivityEntryRepository {
       .filter(
         (row) =>
           query.audiences.some(
-            (ref) => ref.audience === row.audience && ref.audienceId === row.audienceId,
+            (ref) =>
+              ref.audience === row.audience &&
+              ref.audienceId === row.audienceId &&
+              (ref.competitionId === undefined || ref.competitionId === row.competitionId),
           ) &&
           (query.organizationId === undefined || row.organizationId === query.organizationId) &&
+          (query.competitionId === undefined || row.competitionId === query.competitionId) &&
           (query.status === undefined || row.status === query.status) &&
           (query.requiresAction === undefined || row.requiresAction === query.requiresAction) &&
           (query.status !== ACTIVITY_STATUS.open ||

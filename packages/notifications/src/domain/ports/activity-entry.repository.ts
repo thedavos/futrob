@@ -1,6 +1,7 @@
 import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
 import type {
   ActivityAudienceRef,
+  ActivityAudienceScope,
   ActivityEntry,
   ActivitySource,
   ActivityStatus,
@@ -13,9 +14,10 @@ export interface ActivityPosition {
 }
 
 export interface ActivityQuery {
-  /** Rows of any of these audiences. Never empty. */
-  readonly audiences: readonly ActivityAudienceRef[];
+  /** Rows of any of these audiences, each within its competition when it names one. */
+  readonly audiences: readonly ActivityAudienceScope[];
   readonly organizationId?: OrganizationId;
+  readonly competitionId?: string;
   readonly status?: ActivityStatus;
   readonly requiresAction?: boolean;
   /** With `status: open`, rows whose `expiresAt` is not after `now` are left out. */

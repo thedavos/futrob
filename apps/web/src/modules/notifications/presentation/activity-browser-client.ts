@@ -20,6 +20,9 @@ export class ActivityClientError extends Error {
 
 /** Omit `status` and `requiresAction` for the full feed; pending lists set both. */
 export type ActivityListQuery = {
+  /** Personal feed only: narrows to one organization before the limit applies. */
+  readonly organizationId?: string;
+  readonly competitionId?: string;
   readonly status?: ActivityStatusDto;
   readonly requiresAction?: boolean;
   readonly limit?: number;
@@ -28,6 +31,8 @@ export type ActivityListQuery = {
 
 function withQuery(path: string, query: ActivityListQuery): string {
   const search = new URLSearchParams();
+  if (query.organizationId) search.set("organizationId", query.organizationId);
+  if (query.competitionId) search.set("competitionId", query.competitionId);
   if (query.status) search.set("status", query.status);
   if (query.requiresAction !== undefined) {
     search.set("requiresAction", String(query.requiresAction));

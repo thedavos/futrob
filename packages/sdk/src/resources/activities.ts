@@ -8,6 +8,9 @@ import { apiPath } from "../internal/path.ts";
 
 /** Omit `status` and `requiresAction` for the full feed; pending lists set both. */
 export interface ListActivitiesInput {
+  /** Personal feed only: narrows to one organization before the limit applies. */
+  readonly organizationId?: string;
+  readonly competitionId?: string;
   readonly status?: ActivityStatusDto;
   readonly requiresAction?: boolean;
   readonly limit?: number;
@@ -16,6 +19,8 @@ export interface ListActivitiesInput {
 
 function withQuery(path: string, input: ListActivitiesInput): string {
   const search = new URLSearchParams();
+  if (input.organizationId) search.set("organizationId", input.organizationId);
+  if (input.competitionId) search.set("competitionId", input.competitionId);
   if (input.status) search.set("status", input.status);
   if (input.requiresAction !== undefined) {
     search.set("requiresAction", String(input.requiresAction));

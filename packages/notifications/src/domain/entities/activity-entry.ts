@@ -52,6 +52,14 @@ export interface ActivityAudienceRef {
 }
 
 /**
+ * An audience the reader may see, optionally only within one competition. Team authority
+ * is contextual: a captain of a Team in one competition is not its captain in another.
+ */
+export interface ActivityAudienceScope extends ActivityAudienceRef {
+  readonly competitionId?: string;
+}
+
+/**
  * Display snapshot taken when the fact happened. It names things; it never carries
  * free-text reasons, which stay redacted in their owning audit trail.
  */

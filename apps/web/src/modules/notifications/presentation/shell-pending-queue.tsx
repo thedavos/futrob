@@ -18,7 +18,7 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueueTaskItem } from "@/shared/presentation/shell/queue-task-item.tsx";
 import type { WorkspaceSelection } from "@/shared/presentation/shell/workspace-selection.ts";
 import { usePendingActivitiesQuery } from "./activity-queries.ts";
-import { pendingActivitySource, rowsForSource } from "./activity-sources.ts";
+import { pendingActivitySource } from "./activity-sources.ts";
 import { activityRowView, formatActivityTime } from "./activity-view.ts";
 
 const QueueTaskLink = createLink(QueueTaskItem);
@@ -143,6 +143,6 @@ export function ShellPendingQueue({
     ? { status: "pending" }
     : query.isError
       ? { status: "error", retry: () => void query.refetch() }
-      : { status: "success", activities: rowsForSource(query.data.activities, source) };
+      : { status: "success", activities: query.data.activities };
   return <PendingQueueView state={state} />;
 }

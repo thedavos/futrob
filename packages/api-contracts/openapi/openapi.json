@@ -3177,6 +3177,15 @@
             }
           },
           {
+            "name": "competitionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Only rows of this competition, applied before the page limit."
+          },
+          {
             "name": "status",
             "in": "query",
             "required": false,
@@ -3251,6 +3260,24 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "name": "organizationId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Only rows of this organization, applied before the page limit."
+          },
+          {
+            "name": "competitionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Only rows of this competition, applied before the page limit."
           },
           {
             "name": "status",

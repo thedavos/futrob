@@ -8,6 +8,8 @@ import type {
 
 /** Filters that distinguish one activity listing from another in the cache. */
 type ActivityQueryKey = {
+  readonly organizationId?: string;
+  readonly competitionId?: string;
   readonly status?: "open" | "closed";
   readonly requiresAction?: boolean;
   readonly limit?: number;

@@ -8,6 +8,7 @@ export {
   isPending,
   type ActivityAudience,
   type ActivityAudienceRef,
+  type ActivityAudienceScope,
   type ActivityEntry,
   type ActivityKind,
   type ActivityResourceType,

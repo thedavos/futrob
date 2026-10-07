@@ -20,6 +20,7 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const ORG_A = asOrganizationId("org-a");
 const ORG_B = asOrganizationId("org-b");
 const CMP_A = asCompetitionId("cmp-a");
+const CMP_B = asCompetitionId("cmp-b");
 const OPENER = asActorId("act-opener");
 const OPERATOR = asActorId("act-operator");
 const INVITEE = asActorId("act-1");
@@ -192,6 +193,22 @@ function contract(name: string, repository: () => ActivityEntryRepository) {
       expect(await items(mine)).toEqual([]);
     });
 
+    it("narrows to a competition before the limit, past fifty newer rows elsewhere", async () => {
+      now = at("09:00");
+      await record.execute(dispute("dsp-active"));
+      now = at("10:00");
+      for (let index = 0; index < 50; index += 1) {
+        await record.execute(dispute(`dsp-other-${index}`, { competitionId: CMP_B }));
+      }
+      const scoped = await items({ ...PENDING, competitionId: CMP_A, limit: 50 });
+      expect(scoped.map((row) => row.sourceId)).toEqual(["dsp-active"]);
+      const teamScoped = await items({
+        audiences: [{ ...ORG_AUDIENCE, competitionId: CMP_B }],
+        limit: 50,
+      });
+      expect(teamScoped).toHaveLength(50);
+    }, 60_000);
+
     it("pages twelve rows that share times without repeats or gaps", async () => {
       for (let index = 0; index < 12; index += 1) {
         now = index < 6 ? at("10:00") : at("11:00");
@@ -249,6 +266,14 @@ describe.skipIf(!databaseUrl)("postgres activity repository", () => {
        ) VALUES ($1, $2, 'Liga A', 'published', 'fc-clubs', 'fc26', 'playstation',
                  'south-america', 'UTC', 'league', 'organizer', NOW(), NOW())`,
       [CMP_A, ORG_A],
+    );
+    await isolated.pool.query(
+      `INSERT INTO competitions (
+         id, organization_id, name, status, modality, game_edition, platform,
+         region, time_zone, format, created_by_actor_id, created_at, updated_at
+       ) VALUES ($1, $2, 'Liga B', 'published', 'fc-clubs', 'fc26', 'playstation',
+                 'south-america', 'UTC', 'league', 'organizer', NOW(), NOW())`,
+      [CMP_B, ORG_A],
     );
   });
 

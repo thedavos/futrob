@@ -1,4 +1,3 @@
-import type { ActivityEntryDto } from "@futrob/api-contracts";
 import { RESULT_PERMISSION } from "@futrob/results";
 import {
   WORKSPACE_SELECTION_KIND,
@@ -47,16 +46,4 @@ export function pendingActivitySource(
           }
         : { kind: "mine", competitionId: selection.competitionId };
   }
-}
-
-/** Keeps the rows that belong to the space the source was narrowed to. */
-export function rowsForSource(
-  rows: readonly ActivityEntryDto[],
-  source: PendingActivitySource,
-): readonly ActivityEntryDto[] {
-  return rows.filter(
-    (row) =>
-      (source.organizationId === undefined || row.organizationId === source.organizationId) &&
-      (source.competitionId === undefined || row.competitionId === source.competitionId),
-  );
 }

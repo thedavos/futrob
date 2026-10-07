@@ -7,8 +7,11 @@ import {
 } from "@futrob/api-contracts";
 import { createApp } from "@/app.ts";
 import { InMemoryProviderMatchRepository } from "@/adapters/game-data/persistence/in-memory.repository.ts";
+import { asCompetitionId } from "@futrob/shared-kernel";
 import {
+  AWAY,
   AWAY_CAPTAIN,
+  COMPETITION,
   ENCOUNTER,
   HOME,
   HOME_CAPTAIN,
@@ -253,5 +256,52 @@ describe("apps/api http activities", () => {
     expect(
       (await activities(app, `/organizations/${ORG}/activities`, OPERATOR)).activities,
     ).toMatchObject([{ kind: "selection_confirmation", requiresAction: false }]);
+  });
+
+  it("lists a Team's proposal only in the competition where the actor captains that Team", async () => {
+    const { modules } = await seedComposition({
+      pool: undefined,
+      matches: new InMemoryProviderMatchRepository(),
+    });
+    const app = createApp({
+      modules,
+      checkDbHealth: () => Promise.resolve("skipped"),
+      internalJobSecret: INTERNAL_JOB_SECRET,
+      correlationLogger: { info: () => {}, error: () => {} },
+    });
+    // Same Team in a second league, where the captain of the first only plays.
+    const otherLeague = asCompetitionId("comp-other-league");
+    await modules.teams.repositories.rosters.add({
+      id: "roster-away-captain-other-league",
+      organizationId: ORG,
+      competitionId: otherLeague,
+      teamId: AWAY,
+      playerProfileId: `profile-${AWAY_CAPTAIN}`,
+      gameAccountId: null,
+      role: "player",
+      createdAt: new Date("2026-09-14T21:00:00.000Z"),
+    });
+    for (const [competitionId, proposalId] of [
+      [COMPETITION, "proposal-captained"],
+      [otherLeague, "proposal-only-played"],
+    ] as const) {
+      const recorded = await modules.notifications.recordActivity.execute({
+        organizationId: ORG,
+        competitionId,
+        kind: "selection_confirmation",
+        source: { name: "proposal", id: proposalId },
+        resource: { type: "encounter", id: `enc-${proposalId}` },
+        actorId: HOME_CAPTAIN,
+        recipients: [{ audience: "team", audienceId: AWAY, requiresAction: true }],
+      });
+      expect(recorded.isOk()).toBe(true);
+    }
+
+    const pending = await activities(
+      app,
+      "/players/me/activities?status=open&requiresAction=true",
+      AWAY_CAPTAIN,
+    );
+    expect(pending.activities.map((row) => row.resourceId)).toEqual(["enc-proposal-captained"]);
   });
 });

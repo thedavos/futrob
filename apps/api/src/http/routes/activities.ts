@@ -4,7 +4,7 @@ import {
   listActivitiesResponseSchema,
   type ActivityEntryDto,
 } from "@futrob/api-contracts";
-import type { ActivityAudienceRef, ActivityEntry } from "@futrob/notifications";
+import type { ActivityAudienceScope, ActivityEntry } from "@futrob/notifications";
 import { RESULT_PERMISSION } from "@futrob/results";
 import { asOrganizationId, type ActorId, type OrganizationId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
@@ -45,17 +45,20 @@ export function registerActivityRoutes(app: Hono, deps: AppDeps): void {
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
   secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
 
+  /** `organizationId` comes from the path on the organization feed, never from the query. */
   async function list(
     query: Record<string, string>,
-    audiences: readonly ActivityAudienceRef[],
-    organizationId?: OrganizationId,
+    audiences: readonly ActivityAudienceScope[],
+    pathOrganizationId?: OrganizationId,
   ): Promise<Response> {
     const parsed = listActivitiesQuerySchema.safeParse(query);
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    const { organizationId, ...filters } = parsed.data;
     const result = await deps.modules.notifications.listActivities.execute({
       audiences,
-      organizationId,
-      ...parsed.data,
+      ...filters,
+      organizationId:
+        pathOrganizationId ?? (organizationId ? asOrganizationId(organizationId) : undefined),
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
@@ -66,20 +69,24 @@ export function registerActivityRoutes(app: Hono, deps: AppDeps): void {
     );
   }
 
-  async function representedTeamIds(actorId: ActorId): Promise<readonly string[]> {
+  /**
+   * Teams the actor speaks for, each only in the competition where the roster gives that
+   * authority (ADR-0017): captain of a Team in one league is not its captain in another.
+   */
+  async function representedTeams(actorId: ActorId): Promise<readonly ActivityAudienceScope[]> {
     const { teams } = deps.modules;
     const details = await teams.getPlayerProfile.execute({ actorId });
     if (!details.profile) return [];
     const memberships = await teams.listRostersForPlayer.execute({
       playerProfileId: details.profile.id,
     });
-    return [
-      ...new Set(
-        memberships
-          .filter((membership) => membership.role !== "player")
-          .map((membership) => membership.teamId),
-      ),
-    ];
+    return memberships
+      .filter((membership) => membership.role !== "player")
+      .map((membership) => ({
+        audience: "team" as const,
+        audienceId: membership.teamId,
+        competitionId: membership.competitionId,
+      }));
   }
 
   secured.get("/organizations/:organizationId/activities", async (c) => {
@@ -99,10 +106,9 @@ export function registerActivityRoutes(app: Hono, deps: AppDeps): void {
 
   secured.get("/players/me/activities", async (c) => {
     const actorId = c.get("actorId");
-    const teamIds = await representedTeamIds(actorId);
     return list(c.req.query(), [
       { audience: "actor", audienceId: actorId },
-      ...teamIds.map((teamId) => ({ audience: "team" as const, audienceId: teamId })),
+      ...(await representedTeams(actorId)),
     ]);
   });
 

@@ -38,8 +38,14 @@ export type ActivityEntryDto = z.infer<typeof activityEntrySchema>;
 
 const booleanQuerySchema = z.enum(["true", "false"]).transform((value) => value === "true");
 
-/** Query of both activity listings. Omit `status`/`requiresAction` for the full feed. */
+/**
+ * Query of both activity listings. Omit `status`/`requiresAction` for the full feed.
+ * `organizationId` (personal feed only) and `competitionId` narrow the page to one space
+ * before the limit applies.
+ */
 export const listActivitiesQuerySchema = z.object({
+  organizationId: z.string().min(1).optional(),
+  competitionId: z.string().min(1).optional(),
   status: activityStatusSchema.optional(),
   requiresAction: booleanQuerySchema.optional(),
   limit: z.coerce.number().int().min(1).max(ACTIVITY_PAGE_LIMIT.max).optional(),

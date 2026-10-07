@@ -5,6 +5,13 @@ import { ACTIVITY_PAGE_LIMIT, listActivitiesResponseSchema } from "../notificati
 // renumbers every other anchor in the generated document.
 const queryParameters = () => [
   {
+    name: "competitionId",
+    in: "query",
+    required: false,
+    schema: { type: "string" },
+    description: "Only rows of this competition, applied before the page limit.",
+  },
+  {
     name: "status",
     in: "query",
     required: false,
@@ -68,7 +75,16 @@ export const activityOpenApiPaths = {
       description:
         "Rows addressed to the actor (directed roster invitations) and to every Team the actor " +
         "represents as captain or vice-captain (proposals to confirm).",
-      parameters: queryParameters(),
+      parameters: [
+        {
+          name: "organizationId",
+          in: "query",
+          required: false,
+          schema: { type: "string" },
+          description: "Only rows of this organization, applied before the page limit.",
+        },
+        ...queryParameters(),
+      ],
       responses: listResponses(),
     },
   },

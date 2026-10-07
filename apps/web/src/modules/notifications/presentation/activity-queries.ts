@@ -40,18 +40,33 @@ export function useOrganizationActivityFeedQuery(organizationId: string) {
   });
 }
 
-/** Open rows that need the viewer to act, for the sidebar of the active space. */
+/**
+ * Open rows that need the viewer to act, for the sidebar of the active space. The space is
+ * sent to the server so it narrows the rows before the page limit, never after.
+ */
 export function usePendingActivitiesQuery(source: PendingActivitySource) {
-  const query = { status: "open", requiresAction: true, limit: PENDING_ACTIVITY_LIMIT } as const;
+  const pending = { status: "open", requiresAction: true, limit: PENDING_ACTIVITY_LIMIT } as const;
+  const scope = { competitionId: source.competitionId };
   return useQuery({
     queryKey:
       source.kind === "organization"
-        ? queryKeys.activities.organization(source.organizationId, query)
-        : queryKeys.activities.mine(query),
+        ? queryKeys.activities.organization(source.organizationId, { ...pending, ...scope })
+        : queryKeys.activities.mine({
+            ...pending,
+            ...scope,
+            organizationId: source.organizationId,
+          }),
     queryFn: () =>
       source.kind === "organization"
-        ? activityBrowserClient.listForOrganization(source.organizationId, query)
-        : activityBrowserClient.listMine(query),
+        ? activityBrowserClient.listForOrganization(source.organizationId, {
+            ...pending,
+            ...scope,
+          })
+        : activityBrowserClient.listMine({
+            ...pending,
+            ...scope,
+            organizationId: source.organizationId,
+          }),
     staleTime: 30_000,
   });
 }

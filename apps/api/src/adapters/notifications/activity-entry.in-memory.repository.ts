@@ -65,12 +65,18 @@ export class InMemoryActivityEntryRepository implements ActivityEntryRepository 
       .filter((row) => {
         if (
           !query.audiences.some(
-            (ref) => ref.audience === row.audience && ref.audienceId === row.audienceId,
+            (ref) =>
+              ref.audience === row.audience &&
+              ref.audienceId === row.audienceId &&
+              (ref.competitionId === undefined || ref.competitionId === row.competitionId),
           )
         ) {
           return false;
         }
         if (query.organizationId !== undefined && row.organizationId !== query.organizationId) {
+          return false;
+        }
+        if (query.competitionId !== undefined && row.competitionId !== query.competitionId) {
           return false;
         }
         if (query.status !== undefined && row.status !== query.status) return false;

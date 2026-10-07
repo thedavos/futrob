@@ -158,14 +158,27 @@ export class PostgresActivityEntryRepository implements ActivityEntryRepository 
     const params: QueryValue[] = [
       query.audiences.map((ref) => ref.audience),
       query.audiences.map((ref) => ref.audienceId),
+      query.audiences.map((ref) => ref.competitionId ?? ""),
     ];
-    const where = [`(audience, audience_id) IN (SELECT * FROM unnest($1::text[], $2::text[]))`];
+    // An empty competition means the audience is not narrowed to one competition.
+    const where = [
+      `EXISTS (
+         SELECT 1 FROM unnest($1::text[], $2::text[], $3::text[])
+           AS scope (audience, audience_id, competition_id)
+         WHERE scope.audience = activity_entries.audience
+           AND scope.audience_id = activity_entries.audience_id
+           AND (scope.competition_id = '' OR scope.competition_id = activity_entries.competition_id)
+       )`,
+    ];
     const bind = (value: QueryValue) => {
       params.push(value);
       return `$${params.length}`;
     };
     if (query.organizationId !== undefined) {
       where.push(`organization_id = ${bind(query.organizationId)}`);
+    }
+    if (query.competitionId !== undefined) {
+      where.push(`competition_id = ${bind(query.competitionId)}`);
     }
     if (query.status !== undefined) where.push(`status = ${bind(query.status)}`);
     if (query.requiresAction !== undefined) {
