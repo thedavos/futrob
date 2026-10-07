@@ -17,6 +17,27 @@ Cuando este plan esté construido:
 El mantenedor hereda una proyección en `@futrob/notifications`. La fila resume el hecho. La auditoría
 de resultados, fixtures, invitaciones y reprogramaciones sigue en sus tablas.
 
+## Estado de implementación
+
+T0–T8 están implementados en la rama `feat/activity-feed`. T9 (verificación en vivo) queda
+abierta. Diferencias con el plan original:
+
+- La migración es `0054_activity_entries.sql`: `main` ya tenía una `0053`.
+- La lectura personal vive en `GET /api/v1/players/me/activities`, junto al resto de `/players/me`.
+- T0 no necesitó un caso RBAC nuevo: la matriz de roles ya prueba `encounters.results.approve`
+  en el scope de organización (organizador y staff sí, `member` no).
+- T3 y T7 comparten un único proyector (`SelectionActivityProjector`) que reconcilia desde la
+  salida de cada comando: abre la propuesta que el rival debe confirmar, cierra cualquier otra
+  propuesta tocada y sigue el estado de la disputa.
+- El backfill cubre disputas abiertas, propuestas pendientes con equipo proponente e
+  invitaciones dirigidas pendientes. No hay backfill de publicaciones: `competitions` no guarda
+  cuándo se publicó.
+- En `main` el inicio de organización era un placeholder. La sección «Actividad reciente» se
+  añadió a ese placeholder como componente propio (`OrganizationRecentActivity`), listo para
+  sustituir al feed derivado de `updatedAt` del rediseño en curso.
+- `create-modules.ts` superaba el límite de 400 líneas; la composición de anular un resultado
+  se movió a `official-selection.commands.ts` sin cambiar su comportamiento.
+
 ## Lo que se decidió y por qué
 
 - **Una tabla, `activity_entries`.** Cada fila es un hecho para una audiencia. Tres tablas por
@@ -97,7 +118,7 @@ Contrato HTTP:
 - `GET /api/v1/organizations/:organizationId/activities?status=&requiresAction=&limit=&cursor=`
   devuelve `{ activities, nextCursor }`. `limit` por defecto 25, máximo 50. Exige el permiso de
   operador fijado en T0.
-- `GET /api/v1/me/activities?status=&requiresAction=&limit=&cursor=` devuelve lo mismo para el actor
+- `GET /api/v1/players/me/activities?status=&requiresAction=&limit=&cursor=` devuelve lo mismo para el actor
   y sus equipos.
 
 ## Pantallas
@@ -148,11 +169,11 @@ T9 cierra todo
 
 ### T0. Permiso de lectura y ADR-0008
 
-- [ ] Confirmar en la matriz RBAC si el organizador obtiene `encounters.results.approve` en el scope
+- [x] Confirmar en la matriz RBAC si el organizador obtiene `encounters.results.approve` en el scope
       de organización. Si no, elegir `competitions.update`. No se crea un permiso nuevo.
-- [ ] Añadir un caso a la matriz RBAC que fije el permiso: organizador permitido, `member` con solo
+- [x] Añadir un caso a la matriz RBAC que fije el permiso: organizador permitido, `member` con solo
       `organizations.read` denegado.
-- [ ] Actualizar «Estado de implementación» de ADR-0008: canal web como proyección transaccional;
+- [x] Actualizar «Estado de implementación» de ADR-0008: canal web como proyección transaccional;
       email y outbox pendientes.
 
 Hecho cuando el caso RBAC pasa y el ADR está actualizado.
@@ -161,42 +182,42 @@ Hecho cuando el caso RBAC pasa y el ADR está actualizado.
 
 Depende de: nada.
 
-- [ ] Tipos de fila, los 4 `kind`, las 3 audiencias y la forma de `subject` por `kind` en
+- [x] Tipos de fila, los 4 `kind`, las 3 audiencias y la forma de `subject` por `kind` en
       `packages/notifications/src/domain/`.
-- [ ] `recordActivity`: inserta o devuelve la fila existente.
-- [ ] `closeActivity`: cierra por origen, o por origen y audiencia; conserva el primer cierre;
+- [x] `recordActivity`: inserta o devuelve la fila existente.
+- [x] `closeActivity`: cierra por origen, o por origen y audiencia; conserva el primer cierre;
       devuelve cuántas filas cerró.
-- [ ] `listActivities`: audiencia con lista de ids, `organizationId` opcional, `status`,
+- [x] `listActivities`: audiencia con lista de ids, `organizationId` opcional, `status`,
       `requiresAction`, `now`, `limit`, `cursor`. Devuelve `nextCursor`.
-- [ ] Errores `TaggedError` con códigos `notifications.*`. `ClockPort` inyectable.
-- [ ] Repositorio en memoria y suite de contrato parametrizada por repositorio.
-- [ ] `index.ts` exporta solo la API pública.
+- [x] Errores `TaggedError` con códigos `notifications.*`. `ClockPort` inyectable.
+- [x] Repositorio en memoria y suite de contrato parametrizada por repositorio.
+- [x] `index.ts` exporta solo la API pública.
 
 Pruebas (memoria):
 
-- [ ] Abrir `dsp-1` de `org-a`/`cmp-a` a las 10:00. El listado abierto y accionable de la
+- [x] Abrir `dsp-1` de `org-a`/`cmp-a` a las 10:00. El listado abierto y accionable de la
       organización devuelve una fila `match_dispute` con `competitionId cmp-a`. Un segundo `record`
       devuelve el mismo id y el listado sigue con una fila.
-- [ ] Cerrar a las 11:00: listado abierto vacío; reciente con `closed`, `closedAt` y `lastEventAt`
+- [x] Cerrar a las 11:00: listado abierto vacío; reciente con `closed`, `closedAt` y `lastEventAt`
       11:00. Cerrar a las 12:00 deja 11:00.
-- [ ] `competition_published` a las 09:00 nacida cerrada: `closedAt = openedAt`; ordenada detrás de
+- [x] `competition_published` a las 09:00 nacida cerrada: `closedAt = openedAt`; ordenada detrás de
       la disputa cerrada a las 11:00.
-- [ ] La misma disputa en `org-b` no aparece en `org-a`.
-- [ ] Cerrar un origen desconocido devuelve `ok` con 0 y el listado no cambia.
-- [ ] Invitación a `act-1` que vence a las 12:00: aparece a las 11:00, no a las 12:01; `act-2` vacío.
-- [ ] Propuesta `p-1` para `tm-away`: aparece con `team ∈ [tm-away]`, no con `[tm-home]`.
-- [ ] Con 12 filas, `limit 10` devuelve 10 y `nextCursor`; la segunda página devuelve 2 y
+- [x] La misma disputa en `org-b` no aparece en `org-a`.
+- [x] Cerrar un origen desconocido devuelve `ok` con 0 y el listado no cambia.
+- [x] Invitación a `act-1` que vence a las 12:00: aparece a las 11:00, no a las 12:01; `act-2` vacío.
+- [x] Propuesta `p-1` para `tm-away`: aparece con `team ∈ [tm-away]`, no con `[tm-home]`.
+- [x] Con 12 filas, `limit 10` devuelve 10 y `nextCursor`; la segunda página devuelve 2 y
       `nextCursor` nulo, sin repetir ni saltar filas con el mismo `last_event_at`.
 
 ### T2. Migración y adapter Postgres
 
 Depende de: T1.
 
-- [ ] `apps/api/migrations/0053_activity_entries.sql`: tabla, CHECK de `closed_at`, FK a
+- [x] `apps/api/migrations/0054_activity_entries.sql`: tabla, CHECK de `closed_at`, FK a
       `organizations` y `actors`, clave única, índices de feed y de Pendientes.
-- [ ] Backfill de `match_disputes` con `status <> 'resolved'` y de `roster_invitations` `pending`
+- [x] Backfill de `match_disputes` con `status <> 'resolved'` y de `roster_invitations` `pending`
       con `invitee_actor_id` no nulo.
-- [ ] Adapter en `apps/api/src/adapters/notifications/` con `getPgExecutor` para participar en la
+- [x] Adapter en `apps/api/src/adapters/notifications/` con `getPgExecutor` para participar en la
       transacción en curso.
 
 Hecho cuando la suite de T1 pasa contra Postgres, una disputa abierta antes de migrar aparece en el
@@ -206,18 +227,18 @@ listado y `npm run migrate -w @futrob/api` es idempotente.
 
 Depende de: T1, T2.
 
-- [ ] Módulo de notifications en `apps/api/src/di/create-modules.ts`, en memoria o Postgres según
+- [x] Módulo de notifications en `apps/api/src/di/create-modules.ts`, en memoria o Postgres según
       `DATABASE_URL`.
-- [ ] En `composed()` de `createOfficialSelectionCommands`, tras `outcome.isOk()` y dentro del lock:
+- [x] En `composed()` de `createOfficialSelectionCommands`, tras `outcome.isOk()` y dentro del lock:
       `openDispute` registra, `resolveDispute` cierra, `reviewDispute` no cambia nada. No se omite en
       replay: ambos son idempotentes.
-- [ ] `subject` con los datos que la composición ya tiene o con una lectura por id.
+- [x] `subject` con los datos que la composición ya tiene o con una lectura por id.
 
 Pruebas:
 
-- [ ] Composición en memoria: abrir y listar da una fila abierta; repetir no suma; resolver la cierra
+- [x] Composición en memoria: abrir y listar da una fila abierta; repetir no suma; resolver la cierra
       y Pendientes queda vacío.
-- [ ] Ampliar «rolls selection, audit and result back when the projection fails» en
+- [x] Ampliar «rolls selection, audit and result back when the projection fails» en
       `official-selection.composition.integration.test.ts`: tras el fallo no hay fila nueva; el
       reintento limpio deja exactamente las filas esperadas.
 
@@ -225,8 +246,8 @@ Pruebas:
 
 Depende de: T3.
 
-- [ ] Envolver `competitions.publish` en `transaction.runInTransaction` en la composición.
-- [ ] Registrar la fila de organización nacida cerrada con `subject.competitionName`.
+- [x] Envolver `competitions.publish` en `transaction.runInTransaction` en la composición.
+- [x] Registrar la fila de organización nacida cerrada con `subject.competitionName`.
 
 Hecho cuando publicar y listar devuelve una fila cerrada con `closedAt = openedAt` y republicar no
 duplica.
@@ -235,98 +256,98 @@ duplica.
 
 Depende de: T0, T1. Se desarrolla contra memoria; se mergea después de T3.
 
-- [ ] Schemas en `@futrob/api-contracts`: fila, `nextCursor`, query params.
-- [ ] `GET /organizations/:organizationId/activities` con el permiso de T0.
-- [ ] `GET /me/activities` que resuelve los equipos del actor (capitán o vicecapitán) con
+- [x] Schemas en `@futrob/api-contracts`: fila, `nextCursor`, query params.
+- [x] `GET /organizations/:organizationId/activities` con el permiso de T0.
+- [x] `GET /me/activities` que resuelve los equipos del actor (capitán o vicecapitán) con
       `list-rosters-for-player`.
-- [ ] Métodos en `@futrob/sdk` con paginación.
+- [x] Métodos en `@futrob/sdk` con paginación.
 
 Pruebas:
 
-- [ ] El organizador de `org-a` recibe la disputa con `kind`, `status`, `resourceId` y `subject`.
-- [ ] Un `member` con solo `organizations.read` recibe 403; un actor ajeno recibe el rechazo que ya
+- [x] El organizador de `org-a` recibe la disputa con `kind`, `status`, `resourceId` y `subject`.
+- [x] Un `member` con solo `organizations.read` recibe 403; un actor ajeno recibe el rechazo que ya
       usa `/organizations/:id/competitions`.
-- [ ] `limit=10` sobre 12 filas devuelve 10 y `nextCursor`; con el cursor devuelve 2.
-- [ ] `act-1` recibe su invitación y `act-2` una lista vacía; el capitán de `tm-away` recibe la
+- [x] `limit=10` sobre 12 filas devuelve 10 y `nextCursor`; con el cursor devuelve 2.
+- [x] `act-1` recibe su invitación y `act-2` una lista vacía; el capitán de `tm-away` recibe la
       propuesta y el de `tm-home` no.
 
 ### T6a. Inicio de organización: últimas 10 y CTA
 
 Depende de: T5 (T4 para tener datos reales).
 
-- [ ] Consultar `listActivities` de organización con `limit 10`, sin filtro de estado ni de acción.
-- [ ] Fila con título por `kind`, `subject`, estado y tiempo relativo; clic al recurso.
-- [ ] CTA «Ver toda la actividad» hacia `/orgs/$orgId/activity`, visible con al menos una fila.
-- [ ] Copy ES/EN en `catalogs.ts`.
-- [ ] Eliminar `recentOrganizationActivity` y sus tests.
-- [ ] Historias: lleno con los 4 `kind`, exactamente 10, vacío sin CTA, cargando, error.
+- [x] Consultar `listActivities` de organización con `limit 10`, sin filtro de estado ni de acción.
+- [x] Fila con título por `kind`, `subject`, estado y tiempo relativo; clic al recurso.
+- [x] CTA «Ver toda la actividad» hacia `/orgs/$orgId/activity`, visible con al menos una fila.
+- [x] Copy ES/EN en `catalogs.ts`.
+- [x] Eliminar `recentOrganizationActivity` y sus tests.
+- [x] Historias: lleno con los 4 `kind`, exactamente 10, vacío sin CTA, cargando, error.
 
 Pruebas:
 
-- [ ] Con una disputa abierta, una confirmación en vigilancia, una invitación en vigilancia y una
+- [x] Con una disputa abierta, una confirmación en vigilancia, una invitación en vigilancia y una
       publicación más reciente, la sección muestra las cuatro y la publicación primero.
-- [ ] Con 12 filas muestra 10 y el CTA.
-- [ ] Sin filas muestra el vacío y no el CTA.
+- [x] Con 12 filas muestra 10 y el CTA.
+- [x] Sin filas muestra el vacío y no el CTA.
 
 ### T6b. Pantalla «Toda la actividad»
 
 Depende de: T5. Puede ir en paralelo con T6a si la fila visual se extrae primero en T6a.
 
-- [ ] Ruta `apps/web/src/routes/_app/orgs/$orgId/activity.tsx` con el permiso de T0.
-- [ ] Lista paginada de 25 con «Cargar más» mientras haya `nextCursor`.
-- [ ] Estados: cargando, vacío, error con reintento, permiso denegado.
-- [ ] Historias de Storybook de cada estado.
+- [x] Ruta `apps/web/src/routes/_app/orgs/$orgId/activity.tsx` con el permiso de T0.
+- [x] Lista paginada de 25 con «Cargar más» mientras haya `nextCursor`.
+- [x] Estados: cargando, vacío, error con reintento, permiso denegado.
+- [x] Historias de Storybook de cada estado.
 
 Pruebas:
 
-- [ ] Con 30 filas muestra 25; «Cargar más» añade 5 y desaparece.
-- [ ] Un `member` ve el estado de permiso denegado.
+- [x] Con 30 filas muestra 25; «Cargar más» añade 5 y desaparece.
+- [x] Un `member` ve el estado de permiso denegado.
 
 ### T6c. Pendientes en la sidebar
 
 Depende de: T5.
 
-- [ ] Sustituir `QueuePlaceholder` por filas `QueueTaskItem` según el espacio activo:
+- [x] Sustituir `QueuePlaceholder` por filas `QueueTaskItem` según el espacio activo:
       organización o `/me`.
-- [ ] Estados lleno, vacío («Nada por ahora»), cargando y error.
+- [x] Estados lleno, vacío («Nada por ahora»), cargando y error.
 
 Pruebas:
 
-- [ ] Con una disputa abierta y una publicación más reciente, Pendientes muestra la disputa y no la
+- [x] Con una disputa abierta y una publicación más reciente, Pendientes muestra la disputa y no la
       publicación.
-- [ ] Al resolver la disputa, Pendientes muestra «Nada por ahora» y el inicio conserva la disputa
+- [x] Al resolver la disputa, Pendientes muestra «Nada por ahora» y el inicio conserva la disputa
       cerrada.
 
 ### T7. Confirmaciones de selección
 
 Depende de: T3, T5.
 
-- [ ] `propose` registra la fila del equipo rival y la de organización en vigilancia, con origen
+- [x] `propose` registra la fila del equipo rival y la de organización en vigilancia, con origen
       `proposal:<id>` y `expires_at` = plazo de confirmación.
-- [ ] `confirm`, `reject` y `openDispute` cierran por `proposal:<id>`.
-- [ ] `proposeAlternative` cierra la anterior y registra la nueva para el otro equipo.
-- [ ] `expire` cierra, incluida su rama fuera de `composed()` que usa el proceso de expiración.
+- [x] `confirm`, `reject` y `openDispute` cierran por `proposal:<id>`.
+- [x] `proposeAlternative` cierra la anterior y registra la nueva para el otro equipo.
+- [x] `expire` cierra, incluida su rama fuera de `composed()` que usa el proceso de expiración.
 
 Pruebas:
 
-- [ ] propose → proposeAlternative → confirm deja una fila cerrada por propuesta y ninguna abierta.
-- [ ] `expire` cierra la fila de la propuesta.
-- [ ] El capitán rival la ve en `/me` y el proponente no.
+- [x] propose → proposeAlternative → confirm deja una fila cerrada por propuesta y ninguna abierta.
+- [x] `expire` cierra la fila de la propuesta.
+- [x] El capitán rival la ve en `/me` y el proponente no.
 
 ### T8. Invitaciones dirigidas
 
 Depende de: T3.
 
-- [ ] Envolver `createRosterInvitation` en una transacción en la composición y verificar que el
+- [x] Envolver `createRosterInvitation` en una transacción en la composición y verificar que el
       repositorio usa `getPgExecutor`.
-- [ ] Registrar solo si `inviteeActorId` no es nulo.
-- [ ] Cerrar en `acceptRosterInvitation` y en `respondToRosterInvitation` (aceptar y declinar).
+- [x] Registrar solo si `inviteeActorId` no es nulo.
+- [x] Cerrar en `acceptRosterInvitation` y en `respondToRosterInvitation` (aceptar y declinar).
 
 Pruebas:
 
-- [ ] Crear y declinar deja la fila cerrada.
-- [ ] Aceptar por token cierra la fila del invitado y la de organización.
-- [ ] Una invitación solo por token no crea fila.
+- [x] Crear y declinar deja la fila cerrada.
+- [x] Aceptar por token cierra la fila del invitado y la de organización.
+- [x] Una invitación solo por token no crea fila.
 
 ### T9. Verificación end-to-end
 

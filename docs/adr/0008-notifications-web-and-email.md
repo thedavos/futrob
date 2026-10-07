@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-17
-- Actualizada: 2026-09-22
+- Actualizada: 2026-10-07
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
@@ -33,8 +33,17 @@ considerar un evento emitido como notificación entregada.
 
 ## Estado de implementación y evidencia
 
-Decisión aceptada, implementación pendiente. El package
-[notifications](/packages/notifications/src/index.ts) es un scaffold sin casos de uso
-exportados. El publisher de dominio actual es no-op; ver
-[ADR-0016](/docs/adr/0016-official-results-transactional-projection.md).
-Este documento define el objetivo y no certifica un servicio de entrega existente.
+El canal in-app/web existe como proyección transaccional. El package
+[notifications](/packages/notifications/src/index.ts) expone `recordActivity`,
+`closeActivity` y `listActivities` sobre `activity_entries`
+([migración 0054](/apps/api/migrations/0054_activity_entries.sql)): una fila por hecho y
+audiencia (`organization`, `team`, `actor`), única por origen y audiencia. La composición en
+`apps/api` la escribe dentro de la transacción del comando que produce el hecho (selección
+oficial, publicación de competición, invitaciones dirigidas), igual que la proyección de
+[ADR-0016](/docs/adr/0016-official-results-transactional-projection.md): si la escritura falla,
+el comando revierte; cerrar un origen inexistente no falla. Esta tabla es el intent persistido
+del canal web; no hay consumer ni entrega asíncrona.
+
+Siguen pendientes el email, el outbox general, los reintentos y la deduplicación por
+`(event_id, channel, recipient)`. El publisher de dominio sigue siendo no-op. Este documento
+no certifica un servicio de entrega de email existente.
