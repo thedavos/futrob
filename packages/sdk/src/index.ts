@@ -16,7 +16,7 @@ export { buildRosterInvitationShareUrl } from "./roster-invitation-share-url.ts"
 
 export type { AuthorizationResource } from "./resources/authorization.ts";
 export type { CompetitionsResource } from "./resources/competitions.ts";
-export type { EncountersResource } from "./resources/encounters.ts";
+export type { EncountersResource, ScheduleChangeProposalTarget } from "./resources/encounters.ts";
 export type { GameDataResource } from "./resources/game-data.ts";
 export type { IdentityResource } from "./resources/identity.ts";
 export type { MetaResource } from "./resources/meta.ts";

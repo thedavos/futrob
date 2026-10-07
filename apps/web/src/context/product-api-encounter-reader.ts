@@ -23,6 +23,10 @@ export class ProductApiEncounterReader implements EncounterReaderPort {
         awayTeamId: asTeamId(snapshot.awayTeamId),
         scheduledStartAt: new Date(snapshot.scheduledStartAt),
         officialMatchCount: snapshot.officialMatchCount,
+        officialMatchStarts: snapshot.officialMatches.map((match) => ({
+          slot: match.officialSlot,
+          scheduledStartAt: new Date(match.scheduledStartAt),
+        })),
         homeExternalClubId: snapshot.homeExternalClubId,
         awayExternalClubId: snapshot.awayExternalClubId,
         providerKey: snapshot.providerKey,

@@ -20,6 +20,8 @@ import type {
   ProposeAlternativeOfficialSelectionError,
   ProposeOfficialSelectionError,
   RejectOfficialSelectionError,
+  ResolveMatchDisputeError,
+  ReviewMatchDisputeError,
 } from "@futrob/results";
 import { failureToHttp } from "@/http/errors.ts";
 
@@ -58,6 +60,23 @@ export const TEAM_OFFICIAL_SELECTION_ERROR_STATUS = {
 
 export function teamOfficialSelectionFailureToHttp(error: TeamOfficialSelectionError): Response {
   return failureToHttp(error, TEAM_OFFICIAL_SELECTION_ERROR_STATUS[error.code]);
+}
+
+export type OperatorOfficialSelectionError =
+  | GetOfficialSelectionError
+  | ReviewMatchDisputeError
+  | ResolveMatchDisputeError;
+
+const OPERATOR_OFFICIAL_SELECTION_ERROR_STATUS = {
+  ...TEAM_OFFICIAL_SELECTION_ERROR_STATUS,
+  "results.proposal_not_found": 404,
+  "results.integrity_flags_not_acknowledged": 409,
+} as const satisfies Record<OperatorOfficialSelectionError["code"], number>;
+
+export function operatorOfficialSelectionFailureToHttp(
+  error: OperatorOfficialSelectionError,
+): Response {
+  return failureToHttp(error, OPERATOR_OFFICIAL_SELECTION_ERROR_STATUS[error.code]);
 }
 
 function toSelectionDto(selection: OfficialMatchSelection) {

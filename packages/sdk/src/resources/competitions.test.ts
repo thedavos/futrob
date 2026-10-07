@@ -190,6 +190,10 @@ describe("context discovery SDK resources", () => {
           homeExternalClubId: null,
           awayExternalClubId: null,
           providerKey: null,
+          officialMatches: [
+            { officialSlot: 1, scheduledStartAt: "2026-08-07T12:00:00.000Z" },
+            { officialSlot: 2, scheduledStartAt: "2026-08-08T12:00:00.000Z" },
+          ],
         });
       }),
     });
@@ -197,6 +201,10 @@ describe("context discovery SDK resources", () => {
     const result = await client.encounters.getScheduleSnapshot("encounter-1");
 
     expect(result.officialMatchCount).toBe(2);
+    expect(result.officialMatches).toEqual([
+      { officialSlot: 1, scheduledStartAt: "2026-08-07T12:00:00.000Z" },
+      { officialSlot: 2, scheduledStartAt: "2026-08-08T12:00:00.000Z" },
+    ]);
     expect(requestedUrl).toBe(
       "https://app.example.com/api/v1/encounters/encounter-1/schedule-snapshot",
     );
@@ -222,6 +230,10 @@ describe("context discovery SDK resources", () => {
           homeExternalClubId: null,
           awayExternalClubId: null,
           providerKey: null,
+          officialMatches: [
+            { officialSlot: 1, scheduledStartAt: "2026-08-07T12:00:00.000Z" },
+            { officialSlot: 2, scheduledStartAt: "2026-08-07T12:00:00.000Z" },
+          ],
         });
       }),
     });

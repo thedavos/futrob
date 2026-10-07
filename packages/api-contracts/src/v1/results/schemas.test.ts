@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
-import { officialSelectionActionSchema, proposeOfficialSelectionRequestSchema } from "./schemas.ts";
+import {
+  officialSelectionActionSchema,
+  proposeOfficialSelectionRequestSchema,
+  resolveMatchDisputeRequestSchema,
+  reviewMatchDisputeRequestSchema,
+} from "./schemas.ts";
 
 const action = {
   id: "action-1",
@@ -19,6 +24,80 @@ const action = {
 } as const;
 
 describe("official selection wire contract", () => {
+  it("normalizes operator reasons and keys, preserving the exact proposal and flag acknowledgement", () => {
+    expect(
+      resolveMatchDisputeRequestSchema.parse({
+        actorId: "actor-forged",
+        actingTeamId: "team-forged",
+        role: "superuser",
+        expectedVersion: 3,
+        commandKey: "  operator-resolve  ",
+        reason: "  Marcador 2-1 validado  ",
+        decision: {
+          type: "approve_proposal",
+          proposalId: "proposal-1",
+          acknowledgeIntegrityFlags: true,
+        },
+      }),
+    ).toEqual({
+      expectedVersion: 3,
+      commandKey: "operator-resolve",
+      reason: "Marcador 2-1 validado",
+      decision: {
+        type: "approve_proposal",
+        proposalId: "proposal-1",
+        acknowledgeIntegrityFlags: true,
+      },
+    });
+    expect(
+      reviewMatchDisputeRequestSchema.parse({
+        expectedVersion: 2,
+        commandKey: "review",
+        reason: "  Revisar marcador  ",
+      }),
+    ).toEqual({ expectedVersion: 2, commandKey: "review", reason: "Revisar marcador" });
+  });
+
+  it("requires a nonblank operator reason and a proposal only for approval", () => {
+    const body = {
+      expectedVersion: 3,
+      commandKey: "return",
+      reason: "Rehacer selección",
+      decision: { type: "return_to_selection" },
+    };
+    expect(resolveMatchDisputeRequestSchema.parse(body)).toEqual({
+      expectedVersion: 3,
+      commandKey: "return",
+      reason: "Rehacer selección",
+      decision: { type: "return_to_selection" },
+    });
+    for (const invalid of [
+      { ...body, reason: " " },
+      { ...body, expectedVersion: -1 },
+      { ...body, commandKey: "" },
+      { ...body, decision: { type: "approve_proposal" } },
+      {
+        ...body,
+        decision: {
+          type: "approve_proposal",
+          proposalId: "proposal-1",
+          acknowledgeIntegrityFlags: "true",
+        },
+      },
+    ]) {
+      expect(resolveMatchDisputeRequestSchema.safeParse(invalid).success).toBe(false);
+    }
+    for (const reason of [undefined, " "]) {
+      expect(
+        reviewMatchDisputeRequestSchema.safeParse({
+          expectedVersion: 2,
+          commandKey: "review",
+          reason,
+        }).success,
+      ).toBe(false);
+    }
+  });
+
   it("drops command keys and request fingerprints from an audit entry", () => {
     expect(
       officialSelectionActionSchema.parse({

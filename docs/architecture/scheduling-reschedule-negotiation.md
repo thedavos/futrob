@@ -3,8 +3,9 @@
 `@futrob/scheduling` es dueño de la `ScheduleChangeRequest`, sus propuestas, sus decisiones, los
 recibos de comando y la aplicación del horario aceptado. La negociación (aceptar, rechazar y
 contraproponer sobre la propuesta vigente) llegó con #121. Aplicar el horario, el historial de
-aplicación, el cupo consumido y el handoff de recálculo llegaron con #122; su consumo, con #112.
-HTTP, SDK, BFF y pantallas (#123/#124) no existen todavía.
+aplicación, el cupo consumido y el handoff de recálculo llegaron con #122. La lectura y las
+respuestas por HTTP, SDK y BFF llegaron con #123 (ver [Superficie HTTP](#superficie-http-123)); el
+consumo del recálculo, con #112. Las pantallas (#124) no existen todavía.
 
 ## Modelo
 
@@ -148,10 +149,16 @@ El recálculo no aplica horarios, no selecciona ni oficializa.
 
 Dentro de la API, los horarios por slot se leen con `OfficialMatchRepository.listByEncounter` y
 `officialMatchSchedules`. `EncounterScheduleSnapshot.scheduledStartAt` sigue siendo el inicio del
-Encounter. El puente `SchedulingEncounterReader` llena `officialMatchStarts` del
-`EncounterReaderPort` de Results, y `candidateWindowsFor` busca candidatos alrededor de cada slot.
-El campo es opcional: si falta, todos los slots empiezan con el Encounter. La web implementa ese
-puerto sobre HTTP sin slots hasta que #123 los añada al DTO del snapshot.
+Encounter. Desde #123 el DTO HTTP del snapshot (`GET /encounters/{id}/schedule-snapshot`, SDK
+`encounters.getScheduleSnapshot`) publica `officialMatches: [{ officialSlot, scheduledStartAt }]`
+con la misma regla. Su `scheduledStartAt` se deriva de esa misma lectura de slots (el más
+temprano): aceptar escribe todos los slots en una transacción, así que una aceptación confirmada entre
+lecturas no mezcla estados.
+
+Con #112 el `EncounterReaderPort` de Results lleva `officialMatchStarts`: lo llenan el puente
+`SchedulingEncounterReader` (API) y `ProductApiEncounterReader` (web, desde `officialMatches`), y
+`candidateWindowsFor` busca candidatos alrededor de cada slot. Si el campo falta, todos los slots
+empiezan con el Encounter.
 
 `ListEncounterCandidatesUseCase` y su respuesta HTTP siguen usando una sola ventana alrededor del
 inicio del Encounter. El `EncounterWindowReaderPort` del sync de proveedor también filtra por ese
@@ -164,6 +171,32 @@ correr (y no se registra en `schema_migrations`) si existe alguna solicitud `acc
 `0052` nada aplicaba la fecha, así que una solicitud así no tiene horario que registrar. Ningún
 camino de producción podía aceptar antes de #122 (no hay ruta HTTP), así que solo afecta a datos
 manuales.
+
+## Superficie HTTP (#123)
+
+Bajo `/api/v1/encounters/{encounterId}/schedule-change-requests`:
+
+| Operación | Ruta                                               | Caso de uso                            |
+| --------- | -------------------------------------------------- | -------------------------------------- |
+| listar    | `GET /`                                            | `ListScheduleChangeRequestsUseCase`    |
+| crear     | `POST /`                                           | `CreateScheduleChangeRequestUseCase`   |
+| leer      | `GET /{requestId}`                                 | `GetScheduleChangeRequestUseCase`      |
+| aceptar   | `POST /{requestId}/proposals/{proposalId}/accept`  | `AcceptScheduleChangeProposalUseCase`  |
+| rechazar  | `POST /{requestId}/proposals/{proposalId}/reject`  | `RejectScheduleChangeProposalUseCase`  |
+| contra    | `POST /{requestId}/proposals/{proposalId}/counter` | `CounterScheduleChangeProposalUseCase` |
+
+- El DTO de la solicitud expone `version`, `currentProposalId`, propuestas, decisiones y
+  `application` (con antes/después de cada slot movido). Nunca expone `idempotencyKey` ni recibos.
+- Los comandos llevan `expectedVersion` y `commandKey` y devuelven `{ request, replayed }`.
+  `responder` (aceptar/rechazar) o `teamId` (contraproponer) es solo la capacidad que el actor
+  reclama; el actor sale de la autenticación de servicio y la capacidad se autoriza en el servidor.
+- La organización y la competición salen del Encounter guardado, no del body.
+- El BFF web reenvía el body validado con el cliente de la sesión
+  (`apps/web/src/modules/scheduling/server/schedule-change-requests.handler.ts`).
+- Estados HTTP: 400 validación y fecha/zona/motivo inválidos; 403 capacidad no autorizada, propia o
+  no requerida; 404 Encounter no legible o solicitud desconocida; 409 versión, propuesta vigente,
+  solicitud cerrada, consentimiento repetido, clave reutilizada, aprobación sin configurar,
+  reprogramación deshabilitada, slot protegido, cupo agotado o conflicto del fixture.
 
 ## Decisiones de producto
 

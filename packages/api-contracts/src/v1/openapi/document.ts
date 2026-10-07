@@ -62,6 +62,10 @@ import {
 } from "./official-selection.ts";
 import { fixtureOpenApiPaths, fixtureOpenApiSchemas } from "./fixtures.ts";
 import {
+  scheduleChangeRequestOpenApiPaths,
+  scheduleChangeRequestOpenApiSchemas,
+} from "./schedule-change-requests.ts";
+import {
   associateMyPlayerExternalClubRequestSchema,
   associateMyPlayerExternalClubResponseSchema,
   competitionTeamManagementDetailResponseSchema,
@@ -1819,60 +1823,7 @@ export const futrobOpenApiV1 = {
         },
       },
     },
-    "/encounters/{encounterId}/schedule-change-requests": {
-      get: {
-        operationId: "listScheduleChangeRequests",
-        tags: ["encounters"],
-        summary:
-          "List authorized schedule-change requests for an encounter, including closed history",
-        parameters: [
-          { name: "encounterId", in: "path", required: true, schema: { type: "string" } },
-        ],
-        responses: {
-          "200": {
-            description: "Schedule-change requests in deterministic order",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ListScheduleChangeRequestsResponse" },
-              },
-            },
-          },
-          "401": { $ref: "#/components/responses/ApiError" },
-          "404": { $ref: "#/components/responses/ApiError" },
-        },
-      },
-      post: {
-        operationId: "createScheduleChangeRequest",
-        tags: ["encounters"],
-        summary: "Create a schedule-change request without changing the fixture",
-        parameters: [
-          { name: "encounterId", in: "path", required: true, schema: { type: "string" } },
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/CreateScheduleChangeRequest" },
-            },
-          },
-        },
-        responses: {
-          "200": {
-            description: "Created or replayed request",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ScheduleChangeRequest" },
-              },
-            },
-          },
-          "400": { $ref: "#/components/responses/ApiError" },
-          "401": { $ref: "#/components/responses/ApiError" },
-          "403": { $ref: "#/components/responses/ApiError" },
-          "404": { $ref: "#/components/responses/ApiError" },
-          "409": { $ref: "#/components/responses/ApiError" },
-        },
-      },
-    },
+    ...scheduleChangeRequestOpenApiPaths,
     "/organizations/{organizationId}/competitions/{competitionId}": {
       get: {
         operationId: "getCompetitionDraft",
@@ -3186,6 +3137,7 @@ export const futrobOpenApiV1 = {
           "homeExternalClubId",
           "awayExternalClubId",
           "providerKey",
+          "officialMatches",
         ],
         properties: {
           encounterId: { type: "string" },
@@ -3199,6 +3151,21 @@ export const futrobOpenApiV1 = {
           homeExternalClubId: { type: ["string", "null"] },
           awayExternalClubId: { type: ["string", "null"] },
           providerKey: { type: ["string", "null"] },
+          officialMatches: {
+            type: "array",
+            description:
+              "Start of every slot the Encounter plays. An `official_match` reschedule moves one slot; the Encounter starts with its earliest slot.",
+            minItems: 1,
+            maxItems: 2,
+            items: {
+              type: "object",
+              required: ["officialSlot", "scheduledStartAt"],
+              properties: {
+                officialSlot: { type: "integer", enum: [1, 2] },
+                scheduledStartAt: { type: "string", format: "date-time" },
+              },
+            },
+          },
         },
       },
       EncounterCandidateTeam: {
@@ -3300,112 +3267,7 @@ export const futrobOpenApiV1 = {
           },
         ],
       },
-      CompetitionWallTime: {
-        type: "object",
-        required: ["year", "month", "day", "hour", "minute", "second"],
-        properties: {
-          year: { type: "integer" },
-          month: { type: "integer", minimum: 1, maximum: 12 },
-          day: { type: "integer", minimum: 1, maximum: 31 },
-          hour: { type: "integer", minimum: 0, maximum: 23 },
-          minute: { type: "integer", minimum: 0, maximum: 59 },
-          second: { type: "integer", minimum: 0, maximum: 59 },
-        },
-      },
-      RescheduleScope: {
-        oneOf: [
-          {
-            type: "object",
-            required: ["type"],
-            properties: { type: { const: "entire_encounter" } },
-          },
-          {
-            type: "object",
-            required: ["type", "officialSlot"],
-            properties: {
-              type: { const: "official_match" },
-              officialSlot: { type: "integer", enum: [1, 2] },
-            },
-          },
-        ],
-      },
-      ScheduleChangeProposal: {
-        type: "object",
-        required: [
-          "id",
-          "proposedStartAt",
-          "proposedByActorId",
-          "proposedByTeamId",
-          "reason",
-          "createdAt",
-        ],
-        properties: {
-          id: { type: "string", minLength: 1 },
-          proposedStartAt: { type: "string", format: "date-time" },
-          proposedByActorId: { type: "string", minLength: 1 },
-          proposedByTeamId: { type: "string", minLength: 1 },
-          reason: { type: "string", minLength: 1 },
-          createdAt: { type: "string", format: "date-time" },
-        },
-      },
-      ScheduleChangeRequest: {
-        type: "object",
-        required: [
-          "id",
-          "organizationId",
-          "competitionId",
-          "encounterId",
-          "requestingTeamId",
-          "initiatedByActorId",
-          "scope",
-          "status",
-          "proposals",
-          "createdAt",
-          "updatedAt",
-        ],
-        properties: {
-          id: { type: "string", minLength: 1 },
-          organizationId: { type: "string", minLength: 1 },
-          competitionId: { type: "string", minLength: 1 },
-          encounterId: { type: "string", minLength: 1 },
-          requestingTeamId: { type: "string", minLength: 1 },
-          initiatedByActorId: { type: "string", minLength: 1 },
-          scope: { $ref: "#/components/schemas/RescheduleScope" },
-          status: {
-            type: "string",
-            enum: ["open", "accepted", "rejected", "cancelled", "expired", "escalated"],
-          },
-          proposals: {
-            type: "array",
-            minItems: 1,
-            items: { $ref: "#/components/schemas/ScheduleChangeProposal" },
-          },
-          createdAt: { type: "string", format: "date-time" },
-          updatedAt: { type: "string", format: "date-time" },
-        },
-      },
-      CreateScheduleChangeRequest: {
-        type: "object",
-        required: ["requestingTeamId", "scope", "proposedWallTime", "reason", "idempotencyKey"],
-        properties: {
-          requestingTeamId: { type: "string", minLength: 1 },
-          scope: { $ref: "#/components/schemas/RescheduleScope" },
-          proposedWallTime: { $ref: "#/components/schemas/CompetitionWallTime" },
-          reason: { type: "string", minLength: 1 },
-          idempotencyKey: { type: "string", minLength: 1 },
-          timeZone: { type: "string", minLength: 1 },
-        },
-      },
-      ListScheduleChangeRequestsResponse: {
-        type: "object",
-        required: ["requests"],
-        properties: {
-          requests: {
-            type: "array",
-            items: { $ref: "#/components/schemas/ScheduleChangeRequest" },
-          },
-        },
-      },
+      ...scheduleChangeRequestOpenApiSchemas,
       ...fixtureOpenApiSchemas,
       ...teamPerformanceOpenApiSchemas,
       ...officialSelectionOpenApiSchemas,
