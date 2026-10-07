@@ -1,4 +1,4 @@
-import type { ClockPort, EncounterId, Result } from "@futrob/shared-kernel";
+import type { ClockPort, EncounterId, OrganizationId, Result } from "@futrob/shared-kernel";
 import type { EncounterCandidateAssociationRepository } from "../../domain/ports/encounter-candidate-association.repository.ts";
 import type { EncounterReaderPort } from "../../domain/ports/encounter-reader.port.ts";
 import type { ProviderMatchReaderPort } from "../../domain/ports/provider-match-reader.port.ts";
@@ -9,6 +9,7 @@ import {
 } from "../associate-encounter-candidates/associate-encounter-candidates.use-case.ts";
 
 export interface RecalculateEncounterCandidatesInput {
+  readonly organizationId: OrganizationId;
   readonly encounterId: EncounterId;
 }
 

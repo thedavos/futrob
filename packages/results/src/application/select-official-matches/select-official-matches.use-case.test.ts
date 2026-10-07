@@ -96,7 +96,10 @@ describe("SelectOfficialMatchesUseCase candidate eligibility", () => {
     );
 
     encounterReader.snapshot = { ...snapshot, scheduledStartAt: KICKOFF_PLUS_24H };
-    await recalc.execute({ encounterId: snapshot.encounterId });
+    await recalc.execute({
+      organizationId: snapshot.organizationId,
+      encounterId: snapshot.encounterId,
+    });
     const afterReschedule = await select.execute(proposeInput(snapshot, "match-t"));
 
     expect(afterReschedule.isOk()).toBe(false);
@@ -129,7 +132,10 @@ describe("SelectOfficialMatchesUseCase candidate eligibility", () => {
       if (recalcRan) return;
       recalcRan = true;
       encounterReader.snapshot = { ...snapshot, scheduledStartAt: KICKOFF_PLUS_24H };
-      await recalc.execute({ encounterId: snapshot.encounterId });
+      await recalc.execute({
+        organizationId: snapshot.organizationId,
+        encounterId: snapshot.encounterId,
+      });
     };
     const select = new SelectOfficialMatchesUseCase({
       commandDigest: createTestCommandDigest(),

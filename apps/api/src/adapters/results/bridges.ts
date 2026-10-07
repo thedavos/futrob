@@ -9,7 +9,11 @@ import type {
   TeamRepresentationPort,
 } from "@futrob/results";
 import type { CompetitionEntryRepository } from "@futrob/competitions";
-import type { EncounterScheduleRepository } from "@futrob/scheduling";
+import {
+  officialMatchSchedules,
+  type EncounterScheduleRepository,
+  type OfficialMatchRepository,
+} from "@futrob/scheduling";
 import type { EncounterId } from "@futrob/shared-kernel";
 import type {
   CompetitionRosterMembershipRepository,
@@ -20,6 +24,7 @@ import type {
 export class SchedulingEncounterReader implements EncounterReaderPort {
   constructor(
     private readonly schedules: EncounterScheduleRepository,
+    private readonly officialMatches: Pick<OfficialMatchRepository, "listByEncounter">,
     private readonly connections: ExternalClubConnectionRepository,
   ) {}
 
@@ -27,7 +32,8 @@ export class SchedulingEncounterReader implements EncounterReaderPort {
     const snapshot = await this.schedules.findById(encounterId);
     if (!snapshot) return null;
 
-    const [home, away] = await Promise.all([
+    const [matches, home, away] = await Promise.all([
+      this.officialMatches.listByEncounter(encounterId),
       this.connections.findByTeam(snapshot.homeTeamId),
       this.connections.findByTeam(snapshot.awayTeamId),
     ]);
@@ -41,6 +47,7 @@ export class SchedulingEncounterReader implements EncounterReaderPort {
       awayTeamId: snapshot.awayTeamId,
       scheduledStartAt: snapshot.scheduledStartAt,
       officialMatchCount: snapshot.officialMatchCount,
+      officialMatchStarts: officialMatchSchedules(snapshot, matches),
       homeExternalClubId: home?.externalClubId ?? null,
       awayExternalClubId: away?.externalClubId ?? null,
       providerKey: home?.providerKey ?? "ea-clubs",

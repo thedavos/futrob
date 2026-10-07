@@ -18,11 +18,16 @@ import {
   type FixtureAuditPort,
   type FixturePlanRepository,
   type OfficialMatchRepository,
+  type ScheduleChangeApplicationFeedPort,
 } from "@futrob/scheduling";
 import type { CompetitionRepository } from "@futrob/competitions";
 import type { AuthorizationPort, EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
 import type { OfficialMatchSelectionRepository, OfficialResultRepository } from "@futrob/results";
 import type { Pool } from "pg";
+import {
+  InMemoryScheduleChangeApplicationFeed,
+  PostgresScheduleChangeApplicationFeed,
+} from "@/adapters/scheduling/schedule-change-application-feed.ts";
 import {
   InMemoryEncounterScheduleRepository,
   PostgresEncounterScheduleRepository,
@@ -75,9 +80,13 @@ export function createSchedulingModule(input: {
   const fixtureAudit: FixtureAuditPort = input.pool
     ? new PostgresFixtureAuditPort(input.pool)
     : new InMemoryFixtureAuditPort();
+  const inMemoryRequests = new InMemoryScheduleChangeRequestRepository();
   const scheduleChangeRequests = input.pool
     ? new PostgresScheduleChangeRequestRepository(input.pool)
-    : new InMemoryScheduleChangeRequestRepository();
+    : inMemoryRequests;
+  const scheduleChangeApplications: ScheduleChangeApplicationFeedPort = input.pool
+    ? new PostgresScheduleChangeApplicationFeed(input.pool)
+    : new InMemoryScheduleChangeApplicationFeed(inMemoryRequests);
   const clock = new SystemClock();
   const ids = new CryptoIdGenerator();
   const editGuard = new OfficialResultFixtureEditGuard(
@@ -109,6 +118,7 @@ export function createSchedulingModule(input: {
     officialMatches,
     fixturePlans,
     scheduleChangeRequests,
+    scheduleChangeApplications,
     generateFixture: new GenerateCompetitionFixtureUseCase({
       authorization: input.authorization,
       clock,

@@ -83,8 +83,10 @@ No selection/confirmation contract changes are needed by #127.
 
 Not covered here:
 
-- Queue or outbox consumption for `scheduling.encounter-rescheduled`.
 - `apps/api/src/di/scheduling.module.ts` (`OfficialResultFixtureEditGuard` still blocks reschedule after a proposal).
 - OpenAPI, SDK, HTTP associate/recalc routes.
 
-A later consumer should persist the new kickoff first, then call `recalculateEncounterCandidates.execute({ encounterId })`. Replay of the same event must converge.
+Applied reschedules are consumed from Scheduling's durable application handoff by
+`RecalculateRescheduledCandidates`, which calls
+`recalculateEncounterCandidates.execute({ organizationId, encounterId })` after the new slot starts
+are committed. See [scheduling-reschedule-negotiation.md](./scheduling-reschedule-negotiation.md).

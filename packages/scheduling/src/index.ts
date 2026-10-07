@@ -61,6 +61,10 @@ export type {
   ScheduleChangeCommitOutcome,
   ScheduleChangeRequestRepository,
 } from "./domain/ports/schedule-change-request.repository.ts";
+export type {
+  AppliedScheduleChange,
+  ScheduleChangeApplicationFeedPort,
+} from "./domain/ports/schedule-change-application-feed.port.ts";
 export type { CompetitionTimeZonePort } from "./domain/ports/competition-time-zone.port.ts";
 export type { OfficialMatchRepository } from "./domain/ports/official-match.repository.ts";
 export type { EncounterMutationLockPort } from "./domain/ports/encounter-mutation-lock.port.ts";

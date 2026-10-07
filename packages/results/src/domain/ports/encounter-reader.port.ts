@@ -17,6 +17,11 @@ export function asEncounterStageId(value: string): EncounterStageId {
   return value as EncounterStageId;
 }
 
+export interface OfficialMatchStart {
+  readonly slot: 1 | 2;
+  readonly scheduledStartAt: Date;
+}
+
 export interface EncounterScheduleSnapshot {
   readonly encounterId: EncounterId;
   readonly organizationId: OrganizationId;
@@ -24,8 +29,14 @@ export interface EncounterScheduleSnapshot {
   readonly stageId: EncounterStageId;
   readonly homeTeamId: TeamId;
   readonly awayTeamId: TeamId;
+  /** Earliest start among the Encounter's OfficialMatch slots. */
   readonly scheduledStartAt: Date;
   readonly officialMatchCount: 1 | 2;
+  /**
+   * Start of each OfficialMatch slot. A slot may move on its own, so candidates are
+   * searched around every slot. Absent means every slot starts at `scheduledStartAt`.
+   */
+  readonly officialMatchStarts?: readonly OfficialMatchStart[];
   readonly homeExternalClubId: string | null;
   readonly awayExternalClubId: string | null;
   readonly providerKey: string | null;

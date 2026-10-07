@@ -1,3 +1,4 @@
+import type { ExternalReference } from "@futrob/game-data";
 import { err, ok, type ClockPort, type OrganizationId, type Result } from "@futrob/shared-kernel";
 import {
   CandidateDataUnavailable,
@@ -12,7 +13,7 @@ import type {
 } from "../../domain/ports/encounter-reader.port.ts";
 import type { ProviderMatchReaderPort } from "../../domain/ports/provider-match-reader.port.ts";
 import {
-  candidateWindowFor,
+  candidateWindowsFor,
   type CandidateWindow,
 } from "../../domain/policies/candidate-window.ts";
 import { reconcileCandidateAssociations } from "../../domain/policies/reconcile-candidate-associations.ts";
@@ -25,7 +26,7 @@ export interface AssociateEncounterCandidatesInput {
 export type AssociateEncounterCandidatesOutput =
   | {
       readonly status: "associated";
-      readonly window: CandidateWindow;
+      readonly windows: readonly CandidateWindow[];
       readonly associations: readonly EncounterCandidateAssociation[];
     }
   | {
@@ -70,14 +71,23 @@ export async function persistEncounterCandidateAssociations(
         );
       }
 
-      const window = candidateWindowFor(encounter.scheduledStartAt);
-      const read = await deps.providerMatches.listCandidatesForEncounter({
-        encounterId: encounter.encounterId,
-        homeTeamId: encounter.homeTeamId,
-        awayTeamId: encounter.awayTeamId,
-        window,
-      });
-      if (read.status !== "ready") return ok(read);
+      const windows = candidateWindowsFor(encounter);
+      const inWindowRefs: ExternalReference[] = [];
+      for (const window of windows) {
+        const read = await deps.providerMatches.listCandidatesForEncounter({
+          encounterId: encounter.encounterId,
+          homeTeamId: encounter.homeTeamId,
+          awayTeamId: encounter.awayTeamId,
+          window,
+        });
+        if (read.status !== "ready") return ok(read);
+        for (const match of read.matches) {
+          inWindowRefs.push({
+            providerKey: match.provider.key,
+            externalId: match.provider.externalMatchId,
+          });
+        }
+      }
 
       const loaded = await deps.associations.loadForEncounter(
         encounter.organizationId,
@@ -88,10 +98,7 @@ export async function persistEncounterCandidateAssociations(
         encounter.encounterId,
         reconcileCandidateAssociations({
           existing: loaded.associations,
-          inWindowRefs: read.matches.map((match) => ({
-            providerKey: match.provider.key,
-            externalId: match.provider.externalMatchId,
-          })),
+          inWindowRefs,
           organizationId: encounter.organizationId,
           encounterId: encounter.encounterId,
           now: deps.clock.now(),
@@ -102,7 +109,7 @@ export async function persistEncounterCandidateAssociations(
         case "replaced":
           return ok({
             status: "associated",
-            window,
+            windows,
             associations: replaced.associations,
           });
         case "conflict":

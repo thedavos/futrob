@@ -53,6 +53,10 @@ import {
   confirmationExpiryOpenApiSchemas,
 } from "./results-confirmation-expiry.ts";
 import {
+  candidateRecalculationOpenApiPaths,
+  candidateRecalculationOpenApiSchemas,
+} from "./results-candidate-recalculation.ts";
+import {
   officialSelectionOpenApiPaths,
   officialSelectionOpenApiSchemas,
 } from "./official-selection.ts";
@@ -144,6 +148,7 @@ export const futrobOpenApiV1 = {
   ],
   paths: {
     ...confirmationExpiryOpenApiPaths,
+    ...candidateRecalculationOpenApiPaths,
     "/meta/ping": {
       get: {
         operationId: "metaPing",
@@ -2510,6 +2515,7 @@ export const futrobOpenApiV1 = {
     },
     schemas: {
       ...confirmationExpiryOpenApiSchemas,
+      ...candidateRecalculationOpenApiSchemas,
       EffectiveAccess: {
         type: "object",
         required: ["actorId", "scope", "roles", "permissions"],

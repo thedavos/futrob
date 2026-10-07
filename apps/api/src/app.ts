@@ -22,6 +22,7 @@ import { registerOfficialSelectionRoutes } from "@/http/routes/official-selectio
 import { registerScheduleChangeRequestRoutes } from "@/http/routes/schedule-change-requests.ts";
 import { registerFixtureRoutes } from "@/http/routes/fixtures.ts";
 import { registerProviderSyncJobRoutes } from "@/http/routes/provider-sync-jobs.ts";
+import { registerCandidateRecalculationRoutes } from "@/http/routes/candidate-recalculation.ts";
 import { registerConfirmationExpiryRoutes } from "@/http/routes/confirmation-expiry.ts";
 import { registerProviderHealthRoutes } from "@/http/routes/provider-health.ts";
 
@@ -78,6 +79,7 @@ export function createApp(deps: AppDeps): Hono {
   registerOpenApiRoutes(v1);
   registerProviderSyncJobRoutes(v1, deps);
   registerConfirmationExpiryRoutes(v1, deps);
+  registerCandidateRecalculationRoutes(v1, deps);
   registerProviderHealthRoutes(v1, deps);
   registerGameDataClubRoutes(v1, deps);
   registerCompetitionRoutes(v1, deps);
