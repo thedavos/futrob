@@ -3,8 +3,45 @@
 `@futrob/results` es dueño de las transiciones, las propuestas, las acciones de confirmación, las
 disputas y su auditoría. La API compone la atomicidad con statistics ([ADR-0016](/docs/adr/0016-official-results-transactional-projection.md));
 la autorización es contextual ([ADR-0017](/docs/adr/0017-contextual-capability-authorization.md)).
-Este documento describe el corte de dominio y persistencia; HTTP, SDK, BFF y pantallas (tarea 5) no
-existen todavía.
+El contrato HTTP publica las operaciones Team y la lectura/toma/resolución del operador.
+`@futrob/sdk` y el BFF autenticado consumen ambas superficies mediante
+[#115](https://github.com/thedavos/futrob/issues/115), implementado en este checkout sin despliegue.
+Las pantallas de este flujo permanecen fuera de este corte.
+
+## HTTP del operador
+
+Base `/api/v1/organizations/:organizationId/encounters/:encounterId/official-selection`:
+
+| Método y ruta            | Contrato                                                                                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /disputes`          | `OfficialSelectionView`, sin `actingTeamId`; incluye historial sanitizado, deadlines y acciones permitidas.                                                                    |
+| `POST /disputes/review`  | `ReviewMatchDisputeRequest`: `commandKey`, `expectedVersion` y motivo no vacío.                                                                                                |
+| `POST /disputes/resolve` | `ResolveMatchDisputeRequest`: misma base y `decision` discriminada entre `approve_proposal` (con `proposalId` y `acknowledgeIntegrityFlags` opcional) y `return_to_selection`. |
+
+Los comandos devuelven `OfficialSelectionCommandResponse`. Las tres operaciones exigen
+`encounters.results.approve` contextual y actor de service auth; body/query no concede autoridad.
+La aprobación elige una propuesta de la ronda vigente en la versión exacta de selección y exige
+`acknowledgeIntegrityFlags: true` si hay flags bloqueantes. No permite aprobar sin pasar por revisión.
+La resolución también sirve a los casos ya enviados a revisión por integridad o vencimiento, sin
+inventar una disputa. Leer no procesa vencimientos.
+
+Los fallos usan códigos estables y detalles seguros: 400 validación, 401 autenticación, 403 permiso,
+404 Encounter/selección/propuesta ausente, 409 versión/estado/clave/flags/eligibilidad/referencia.
+Un replay conserva IDs y no duplica proyecciones. Devolver libera referencias sin resultado,
+incrementa la ronda y exige propuesta y consentimiento nuevos.
+
+## SDK y BFF autenticado
+
+El recurso `results` de `@futrob/sdk` ofrece lectura Team, propuesta, confirmación, rechazo,
+contrapropuesta y apertura de disputa. Para el operador ofrece lectura, toma y resolución del caso.
+Los métodos y ejemplos están en [el README del SDK](/packages/sdk/README.md).
+
+El BFF de `apps/web` publica esas mismas rutas bajo la base anterior. Obtiene el actor de la sesión
+y delega a la API la autorización contextual; body/query no conceden autoridad. SDK y BFF validan
+entradas y respuestas con los contratos públicos. Conservan `commandKey`, `expectedVersion`,
+propuesta exacta, decisiones, deadlines y códigos seguros, sin generar otra clave ni duplicar un
+comando al recibir un conflicto. Solo devuelven el DTO público con historial sanitizado por Results/API,
+sin payload EA crudo ni recibos internos.
 
 ## Modelo
 
@@ -235,8 +272,9 @@ se publican tras el commit pero no se entregan de forma durable. No hay outbox n
 
 ## Pendiente fuera de este corte
 
-- SDK, BFF y UI del Match Center, y la previsualización FTR-SEL-002. HTTP y OpenAPI Team
-  están integrados mediante #113; #130 añade deadline y auditoría de vencimiento al contrato.
+- UI del Match Center y la previsualización FTR-SEL-002. HTTP y OpenAPI Team están integrados
+  mediante #113; #130 añade deadline y auditoría de vencimiento al contrato. SDK y BFF Team y
+  operador están implementados mediante #115.
 - Disputa abierta por un Team sobre un resultado ya aprobado, sanciones, evidencias y notificaciones.
 - Consumidor que asocie candidatos (`associate`/`recalculate`) al sincronizar o reprogramar.
 

@@ -5,6 +5,8 @@ import {
   proposeAlternativeOfficialSelectionRequestSchema,
   proposeOfficialSelectionRequestSchema,
   rejectOfficialSelectionRequestSchema,
+  resolveMatchDisputeRequestSchema,
+  reviewMatchDisputeRequestSchema,
 } from "@futrob/api-contracts";
 import type { OfficialSelectionCommandOutput } from "@futrob/results";
 import { asEncounterId, asOrganizationId, asTeamId, type Result } from "@futrob/shared-kernel";
@@ -14,9 +16,11 @@ import type { AppDeps } from "@/app.ts";
 import { validationErrorResponse } from "@/http/errors.ts";
 import {
   teamOfficialSelectionFailureToHttp,
+  operatorOfficialSelectionFailureToHttp,
   toOfficialSelectionCommandResponse,
   toOfficialSelectionViewDto,
   type TeamOfficialSelectionError,
+  type OperatorOfficialSelectionError,
 } from "@/http/mappers/official-selection.ts";
 import {
   createServiceAuthMiddleware,
@@ -28,25 +32,37 @@ const BASE = "/organizations/:organizationId/encounters/:encounterId/official-se
 
 type SecuredContext = Context<{ Variables: ServiceAuthVariables }>;
 
-/** Scope every Team command shares: the actor comes from service auth, never from the body. */
-function commandScope(
+function operatorCommandScope(
   c: SecuredContext,
-  body: { actingTeamId: string; expectedVersion: number; commandKey: string },
+  body: { expectedVersion: number; commandKey: string },
 ) {
   return {
     actorId: c.get("actorId"),
     organizationId: asOrganizationId(c.req.param("organizationId") ?? ""),
     encounterId: asEncounterId(c.req.param("encounterId") ?? ""),
-    actingTeamId: asTeamId(body.actingTeamId),
     expectedVersion: body.expectedVersion,
     commandKey: body.commandKey,
   };
+}
+
+function commandScope(
+  c: SecuredContext,
+  body: { actingTeamId: string; expectedVersion: number; commandKey: string },
+) {
+  return { ...operatorCommandScope(c, body), actingTeamId: asTeamId(body.actingTeamId) };
 }
 
 function commandResponse(
   outcome: Result<OfficialSelectionCommandOutput, TeamOfficialSelectionError>,
 ): Response {
   if (outcome.isErr()) return teamOfficialSelectionFailureToHttp(outcome.error);
+  return jsonResponse(toOfficialSelectionCommandResponse(outcome.value));
+}
+
+function operatorCommandResponse(
+  outcome: Result<OfficialSelectionCommandOutput, OperatorOfficialSelectionError>,
+): Response {
+  if (outcome.isErr()) return operatorOfficialSelectionFailureToHttp(outcome.error);
   return jsonResponse(toOfficialSelectionCommandResponse(outcome.value));
 }
 
@@ -57,11 +73,44 @@ async function parseBody<Body>(
   return schema.safeParse(await c.req.json().catch(() => null));
 }
 
-/** Team representative routes over the composed official-selection commands. */
+/** Authorized reads and mutations over the composed official-selection commands. */
 export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void {
   const secured = new Hono<{ Variables: ServiceAuthVariables }>();
   secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
   const commands = deps.modules.officialSelection;
+
+  secured.get(`${BASE}/disputes`, async (c) => {
+    const outcome = await commands.get.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(c.req.param("organizationId")),
+      encounterId: asEncounterId(c.req.param("encounterId")),
+    });
+    if (outcome.isErr()) return operatorOfficialSelectionFailureToHttp(outcome.error);
+    return jsonResponse(toOfficialSelectionViewDto(outcome.value));
+  });
+
+  secured.post(`${BASE}/disputes/review`, async (c) => {
+    const body = await parseBody(c, reviewMatchDisputeRequestSchema);
+    if (!body.success) return validationErrorResponse(body.error.issues);
+    return operatorCommandResponse(
+      await commands.reviewDispute.execute({
+        ...operatorCommandScope(c, body.data),
+        reason: body.data.reason,
+      }),
+    );
+  });
+
+  secured.post(`${BASE}/disputes/resolve`, async (c) => {
+    const body = await parseBody(c, resolveMatchDisputeRequestSchema);
+    if (!body.success) return validationErrorResponse(body.error.issues);
+    return operatorCommandResponse(
+      await commands.resolveDispute.execute({
+        ...operatorCommandScope(c, body.data),
+        reason: body.data.reason,
+        decision: body.data.decision,
+      }),
+    );
+  });
 
   secured.get(BASE, async (c) => {
     const query = getTeamOfficialSelectionQuerySchema.safeParse(c.req.query());
