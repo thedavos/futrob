@@ -8,9 +8,14 @@ import {
   TextLink,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { OrganizationRecentActivity } from "@/modules/notifications/presentation/organization-recent-activity.tsx";
+
 const styles = stylex.create({
   main: {
+    display: "flex",
     width: "100%",
+    flexDirection: "column",
+    gap: "1.5rem",
   },
   id: {
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
@@ -34,6 +39,7 @@ function OrgHomePage() {
           operativo llega en la siguiente entrega.
         </PageHeaderDescription>
       </PageHeader>
+      <OrganizationRecentActivity organizationId={orgId} />
       <TextLink render={<Link to="/orgs" />}>Ver todas las organizaciones</TextLink>
     </main>
   );

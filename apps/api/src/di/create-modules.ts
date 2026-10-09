@@ -41,7 +41,6 @@ import type {
   OrganizationId,
   TransactionPort,
 } from "@futrob/shared-kernel";
-import type { VoidOfficialResultInput } from "@futrob/results";
 import {
   InMemoryOfficialMatchSelectionRepository,
   InMemoryOfficialResultRepository,
@@ -65,9 +64,13 @@ import {
 import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
 import {
   createOfficialSelectionCommands,
+  createVoidOfficialResultAndUnproject,
   type OfficialSelectionCommands,
+  type VoidOfficialResultAndUnproject,
 } from "./official-selection.commands.ts";
 import { createResultsModule, type ResultsModule } from "./results.module.ts";
+import { createActivityFeed, type NotificationsModule } from "./notifications.module.ts";
+import type { ActivityCommands } from "@/application/notifications/activity-commands.ts";
 import { createStatisticsModule, type StatisticsModule } from "./statistics.module.ts";
 import { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
 import {
@@ -294,12 +297,23 @@ export function createModules(input: CreateModulesInput): AppModules {
     eventPublisher,
   });
 
+  const activityFeed = createActivityFeed({
+    pool: input.pool,
+    clock,
+    ids,
+    transaction,
+    encounterReader,
+    competitions,
+    teams,
+  });
   const officialSelection = createOfficialSelectionCommands({
     results,
     statistics,
     transaction,
     encounterLock: encounterMutationLock,
     encounterReader,
+    clock,
+    activity: activityFeed.selection,
   });
 
   const getMyNextEncounter = new GetMyNextEncounterUseCase({
@@ -314,29 +328,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     fixturePlans: scheduling.fixturePlans,
   });
 
-  const voidOfficialResultAndUnproject = {
-    async execute(input: VoidOfficialResultInput) {
-      const existing =
-        "encounterId" in input
-          ? await results.results.findLatestByEncounter(input.encounterId)
-          : await results.results.findById(input.officialResultId);
-      if (!existing) return results.voidOfficialResult.execute(input);
-
-      return transaction.runInTransaction(() =>
-        statistics.ports.teamPerformanceLock.runExclusive(existing.competitionId, async () => {
-          return encounterMutationLock.runExclusive(existing.encounterId, async () => {
-            const voided = await results.voidOfficialResult.execute(input);
-            if (!voided.isOk()) return voided;
-            const projected = await statistics.useCases.projectOfficialResult.execute({
-              officialResultId: voided.value.id,
-            });
-            if (!projected.isOk()) throw projected.error;
-            return voided;
-          });
-        }),
-      );
-    },
-  };
+  const voidOfficialResultAndUnproject = createVoidOfficialResultAndUnproject({
+    results,
+    statistics,
+    transaction,
+    encounterLock: encounterMutationLock,
+  });
 
   const competitionApplications = new CompetitionApplicationFlow({
     transaction,
@@ -351,6 +348,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
 
   return {
+    activityCommands: activityFeed.commands,
     authorization,
     competitionApplications,
     competitions,
@@ -369,6 +367,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     gameData,
     getMyNextEncounter,
     identity,
+    notifications: activityFeed.notifications,
     organizations,
     results,
     scheduling,
@@ -381,6 +380,8 @@ export function createModules(input: CreateModulesInput): AppModules {
 }
 
 export interface AppModules {
+  /** Commands of other contexts composed with their activity feed writes. */
+  readonly activityCommands: ActivityCommands;
   readonly authorization: AuthorizationModule;
   readonly competitionApplications: CompetitionApplicationFlow;
   readonly competitions: CompetitionsModule;
@@ -389,14 +390,11 @@ export interface AppModules {
   readonly runConfirmationExpiry: RunConfirmationExpiry;
   /** Consumes applied schedule changes; recovery is the Cron calling it again. */
   readonly recalculateRescheduledCandidates: RecalculateRescheduledCandidates;
-  readonly voidOfficialResultAndUnproject: {
-    execute(
-      input: VoidOfficialResultInput,
-    ): ReturnType<ResultsModule["voidOfficialResult"]["execute"]>;
-  };
+  readonly voidOfficialResultAndUnproject: VoidOfficialResultAndUnproject;
   readonly getMyNextEncounter: GetMyNextEncounterUseCase;
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
+  readonly notifications: NotificationsModule;
   readonly organizations: OrganizationsModule;
   readonly results: ResultsModule;
   readonly scheduling: SchedulingModule;
