@@ -2,19 +2,11 @@ import type { ReactNode } from "react";
 import type { PlayerGameProfileDto } from "@futrob/api-contracts";
 import { ChartPieIcon, HandshakeIcon, SoccerBallIcon, StarIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import {
-  applyStyles,
-  Stat,
-  StatGroup,
-  StatHint,
-  StatLabel,
-  StatValue,
-  type Icon,
-  type StatValueProps,
-} from "@futrob/ui";
+import { applyStyles, Stat, StatGroup, StatHint, StatLabel, type Icon } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
 import { winPercent } from "./player-profile-model.ts";
 
 /** Decorative marker beside the label / value / hint stack. */
@@ -90,6 +82,7 @@ export function PlayerProfileKpis({
     <section aria-label={t("player.statistics.summary")}>
       <StatGroup {...applyStyles(styles.group)}>
         <KpiStat
+          emptyLabel={t("player.noData")}
           icon={<KpiIcon icon={ChartPieIcon} />}
           label={t("player.statistics.record")}
           value={`${profile.summary.wins}–${profile.summary.draws}–${profile.summary.losses}`}
@@ -100,25 +93,21 @@ export function PlayerProfileKpis({
           }
         />
         <KpiStat
+          emptyLabel={t("player.noData")}
           icon={<KpiIcon icon={StarIcon} />}
           label={t("player.metric.rating")}
           value={
             profile.summary.averages.rating === null
-              ? t("player.noData")
+              ? null
               : numberFormat.format(profile.summary.averages.rating)
           }
-          valueTone={profile.summary.averages.rating === null ? "muted" : "default"}
           hint={<StatHint>{t("player.statistics.rating.hint")}</StatHint>}
         />
         <KpiStat
+          emptyLabel={t("player.noData")}
           icon={<KpiIcon icon={SoccerBallIcon} />}
           label={t("player.metric.goals")}
-          value={
-            goalsAverage === null
-              ? t("player.noData")
-              : numberFormat.format(profile.summary.totals.goals)
-          }
-          valueTone={goalsAverage === null ? "muted" : "default"}
+          value={goalsAverage === null ? null : numberFormat.format(profile.summary.totals.goals)}
           hint={
             goalsAverage === null ? null : (
               <StatHint>
@@ -128,14 +117,12 @@ export function PlayerProfileKpis({
           }
         />
         <KpiStat
+          emptyLabel={t("player.noData")}
           icon={<KpiIcon icon={HandshakeIcon} />}
           label={t("player.metric.assists")}
           value={
-            assistsAverage === null
-              ? t("player.noData")
-              : numberFormat.format(profile.summary.totals.assists)
+            assistsAverage === null ? null : numberFormat.format(profile.summary.totals.assists)
           }
-          valueTone={assistsAverage === null ? "muted" : "default"}
           hint={
             assistsAverage === null ? null : (
               <StatHint>
@@ -152,17 +139,17 @@ export function PlayerProfileKpis({
 }
 
 function KpiStat({
+  emptyLabel,
   icon,
   label,
   value,
   hint,
-  valueTone,
 }: {
+  readonly emptyLabel: string;
   readonly icon: ReactNode;
   readonly label: ReactNode;
-  readonly value: ReactNode;
+  readonly value: string | null;
   readonly hint: ReactNode;
-  readonly valueTone?: StatValueProps["tone"];
 }) {
   return (
     <Stat {...applyStyles(styles.panel)}>
@@ -170,7 +157,7 @@ function KpiStat({
         {icon}
         <div {...applyStyles(styles.textCol)}>
           <StatLabel>{label}</StatLabel>
-          <StatValue tone={valueTone}>{value}</StatValue>
+          <MetricStatValue emptyLabel={emptyLabel} size="default" value={value} />
           {hint}
         </div>
       </div>

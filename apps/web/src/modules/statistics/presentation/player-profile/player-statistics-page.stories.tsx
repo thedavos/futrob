@@ -269,7 +269,10 @@ export const PartialData: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("heading", { name: "davos282" })).toBeVisible();
-    await expect(canvas.getAllByText("Sin datos").length).toBeGreaterThan(0);
+    const emptyValues = canvas.getAllByText("Sin datos");
+    await expect(emptyValues.length).toBeGreaterThan(0);
+    await expect(emptyValues[0]).toHaveAttribute("data-size", "empty");
+    await expect(emptyValues[0]).toHaveAttribute("data-tone", "muted");
     await expect(
       canvas.getByText("Algunas métricas no estuvieron disponibles en todos los partidos."),
     ).toBeVisible();

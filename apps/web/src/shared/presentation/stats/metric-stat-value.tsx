@@ -17,7 +17,7 @@ export function MetricStatValue({
     <StatValue
       className={className}
       data-metric={metric}
-      size={value === null ? "empty" : size}
+      size={value === null && size === "default" ? "empty" : size}
       tone={value === null ? "muted" : "default"}
     >
       {value ?? emptyLabel}

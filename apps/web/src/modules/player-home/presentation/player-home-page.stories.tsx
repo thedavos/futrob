@@ -26,6 +26,7 @@ import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
   competitionsMineFixture,
   gameProfileHomeFixture,
+  gameProfileHomePartialFixture,
   invitationsEmptyFixture,
   invitationsPendingFixture,
   nextEncounterResponseFixture,
@@ -67,6 +68,7 @@ const SCENARIO_IDS = [
   "errorNoData",
   "errorWithCachedData",
   "nextEncounterMissing",
+  "unavailableRating",
 ] as const;
 
 type ScenarioId = (typeof SCENARIO_IDS)[number];
@@ -213,6 +215,8 @@ function scenarioState(id: ScenarioId): HomeStoryState {
       return completeDashboard({ overlay: "error-cached" });
     case "nextEncounterMissing":
       return completeDashboard({ nextEncounter: nextEncounterResponseFixture(null) });
+    case "unavailableRating":
+      return completeDashboard({ gameProfile: gameProfileHomePartialFixture() });
     default: {
       const _exhaustive: never = id;
       return _exhaustive;
@@ -503,6 +507,20 @@ export const NextEncounterMissing = story(
   async ({ canvasElement }) => {
     await expectText(canvasElement, "Sin enfrentamientos programados");
     await expectText(canvasElement, "Ver mis competiciones");
+  },
+);
+
+export const UnavailableRating = story(
+  "Rating sin datos",
+  "unavailableRating",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const emptyRating = await canvas.findByText("Sin datos");
+    await expect(emptyRating).toBeVisible();
+    await expect(emptyRating).toHaveAttribute("data-slot", "stat-value");
+    await expect(emptyRating).toHaveAttribute("data-size", "empty");
+    await expect(emptyRating).toHaveAttribute("data-tone", "muted");
+    await expect(emptyRating).toHaveTextContent("Sin datos");
   },
 );
 

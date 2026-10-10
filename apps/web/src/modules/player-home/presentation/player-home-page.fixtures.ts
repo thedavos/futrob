@@ -10,7 +10,10 @@ import type {
   PlayerRecentProviderMatchDto,
 } from "@futrob/api-contracts";
 import { recentProviderMatchFixture } from "@/modules/statistics/presentation/player-matches-page.fixtures.ts";
-import { gameProfileReadyFixture } from "@/modules/statistics/presentation/player-profile/player-statistics-page.fixtures.ts";
+import {
+  gameProfilePartialFixture,
+  gameProfileReadyFixture,
+} from "@/modules/statistics/presentation/player-profile/player-statistics-page.fixtures.ts";
 import {
   playerGameAccountFixture,
   playerProfileFixture,
@@ -188,6 +191,10 @@ export function recentMatchesNoneFixture(): Extract<
 
 export function gameProfileHomeFixture(): GetMyGameProfileResponse {
   return { status: "ready", profile: gameProfileReadyFixture() };
+}
+
+export function gameProfileHomePartialFixture(): GetMyGameProfileResponse {
+  return { status: "ready", profile: gameProfilePartialFixture() };
 }
 
 export function invitationsPendingFixture(): ListMyRosterInvitationsResponse {

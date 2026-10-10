@@ -2,6 +2,7 @@ import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
 import { applyProps, type HostClassName } from "#styles/apply";
+import { media } from "#styles/media.stylex";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -41,6 +42,16 @@ const styles = stylex.create({
     letterSpacing: "-0.02em",
     fontVariantNumeric: "tabular-nums",
   },
+  sizeEmpty: {
+    fontSize: "1.25rem",
+    fontWeight: "var(--typo-score-weight)",
+    letterSpacing: "var(--typo-score-tracking)",
+    fontVariantNumeric: "tabular-nums",
+    lineHeight: {
+      default: "var(--typo-score-size)",
+      [media.sm]: "var(--text-4xl)",
+    },
+  },
   toneDefault: { color: colors.foreground },
   toneMuted: { color: colors.mutedForeground },
   toneSuccess: { color: colors.success },
@@ -74,7 +85,7 @@ const alignStyles = {
 const sizeStyles = {
   default: typography.score,
   compact: styles.sizeCompact,
-  empty: typography.caption,
+  empty: styles.sizeEmpty,
 } as const;
 
 const toneStyles = {

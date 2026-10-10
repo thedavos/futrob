@@ -206,6 +206,9 @@ describe("PlayerStatisticsPage", () => {
     expect(goals.textContent).toContain("Goles");
     expect(goals.textContent).toContain("Sin datos");
     expect(goals.textContent).not.toContain("0,64");
+    const emptyValue = goals.querySelector('[data-slot="stat-value"][data-size="empty"]');
+    expect(emptyValue?.textContent).toBe("Sin datos");
+    expect(emptyValue?.getAttribute("data-tone")).toBe("muted");
   });
 
   it("explains the EA window when the range has no appearances", async () => {

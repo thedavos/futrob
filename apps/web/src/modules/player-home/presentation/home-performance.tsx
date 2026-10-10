@@ -8,19 +8,11 @@ import {
   TrophyIcon,
 } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import {
-  applyStyles,
-  Text,
-  Stat,
-  StatGroup,
-  StatLabel,
-  StatValue,
-  type Icon,
-  type StatValueProps,
-} from "@futrob/ui";
+import { applyStyles, Text, Stat, StatGroup, StatLabel, type Icon } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
 import { HomeBanner, HomeCard } from "./home-card.tsx";
 import type { PlayerHomePerformanceSlot } from "./player-home-model.ts";
 
@@ -106,34 +98,34 @@ export function HomePerformance({ slot }: { readonly slot: PlayerHomePerformance
     case "stats": {
       const summary = slot.profile?.summary;
       const rating = summary?.averages.rating;
+      const emptyLabel = t("player.noData");
       return (
         <section aria-label={t("player.statistics.summary")}>
           <StatGroup className={styles.group}>
             <KpiStat
+              emptyLabel={emptyLabel}
               icon={<KpiIcon icon={CourtBasketballIcon} />}
               label={t("player.home.stats.matches")}
-              value={
-                slot.profile ? numberFormat.format(slot.profile.sampleSize) : t("player.noData")
-              }
+              value={slot.profile ? numberFormat.format(slot.profile.sampleSize) : null}
             />
             <KpiStat
+              emptyLabel={emptyLabel}
               icon={<KpiIcon icon={TrophyIcon} />}
               label={t("player.home.stats.wins")}
-              value={summary ? numberFormat.format(summary.wins) : t("player.noData")}
+              value={summary ? numberFormat.format(summary.wins) : null}
             />
             <KpiStat
+              emptyLabel={emptyLabel}
               icon={<KpiIcon icon={StarIcon} />}
               label={t("player.home.stats.rating")}
-              value={rating == null ? t("player.noData") : numberFormat.format(rating)}
-              valueTone={rating == null ? "muted" : "default"}
+              value={rating == null ? null : numberFormat.format(rating)}
             />
             <KpiStat
+              emptyLabel={emptyLabel}
               icon={<KpiIcon icon={SoccerBallIcon} />}
               label={t("player.home.stats.goalsAssists")}
               value={
-                summary
-                  ? numberFormat.format(summary.totals.goals + summary.totals.assists)
-                  : t("player.noData")
+                summary ? numberFormat.format(summary.totals.goals + summary.totals.assists) : null
               }
             />
           </StatGroup>
@@ -180,15 +172,15 @@ export function HomePerformance({ slot }: { readonly slot: PlayerHomePerformance
 }
 
 function KpiStat({
+  emptyLabel,
   icon,
   label,
   value,
-  valueTone,
 }: {
+  readonly emptyLabel: string;
   readonly icon: ReactNode;
   readonly label: ReactNode;
-  readonly value: ReactNode;
-  readonly valueTone?: StatValueProps["tone"];
+  readonly value: string | null;
 }) {
   return (
     <Stat className={styles.panel}>
@@ -196,7 +188,7 @@ function KpiStat({
         {icon}
         <div {...applyStyles(styles.textCol)}>
           <StatLabel>{label}</StatLabel>
-          <StatValue tone={valueTone}>{value}</StatValue>
+          <MetricStatValue emptyLabel={emptyLabel} size="default" value={value} />
         </div>
       </div>
     </Stat>
