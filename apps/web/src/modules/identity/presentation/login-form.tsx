@@ -14,7 +14,7 @@ import {
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link } from "@tanstack/react-router";
-import { LockIcon, EnvelopeSimpleIcon } from "@phosphor-icons/react";
+import { EyeIcon, EyeSlashIcon, LockIcon, EnvelopeSimpleIcon } from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { useAuthResume } from "@/modules/identity/presentation/auth-resume.tsx";
 import {
@@ -53,6 +53,41 @@ const styles = stylex.create({
     fontSize: "0.875rem",
     lineHeight: "1.25rem",
     color: colors.destructive,
+  },
+  toggle: {
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    color: {
+      default: colors.mutedForeground,
+      ":hover": colors.foreground,
+    },
+  },
+  iconSwap: {
+    position: "relative",
+    width: "1rem",
+    height: "1rem",
+  },
+  swapIcon: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    width: "1rem",
+    height: "1rem",
+    transitionProperty: "opacity, filter, scale",
+    transitionDuration: "var(--duration-slow)",
+    transitionTimingFunction: "var(--ease-standard)",
+  },
+  swapHidden: {
+    scale: "0.25",
+    opacity: 0,
+    filter: "blur(4px)",
+  },
+  swapVisible: {
+    scale: 1,
+    opacity: 1,
+    filter: "blur(0)",
   },
   actions: {
     display: "flex",
@@ -101,10 +136,20 @@ function loginErrorMessage(error: AuthClientError): string {
 export function LoginForm() {
   const { redirectTo, afterAuthenticated } = useAuthResume();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const validation = useFormValidation<LoginField>();
 
   const isSubmitting = state.status === "submitting" || state.status === "success";
   const form = applyStyles(styles.form);
+  const toggle = applyStyles(styles.toggle);
+  const eye = applyStyles(
+    styles.swapIcon,
+    isPasswordVisible ? styles.swapHidden : styles.swapVisible,
+  );
+  const eyeSlash = applyStyles(
+    styles.swapIcon,
+    isPasswordVisible ? styles.swapVisible : styles.swapHidden,
+  );
   const submit = applyStyles(styles.submit);
   const link = applyStyles(styles.link);
 
@@ -180,11 +225,30 @@ export function LoginForm() {
           <InputWithIcon
             autoComplete="current-password"
             disabled={isSubmitting}
+            endAction={
+              <Button
+                aria-label={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-pressed={isPasswordVisible}
+                className={toggle.className}
+                disabled={isSubmitting}
+                onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
+                size="icon"
+                static
+                style={toggle.style}
+                type="button"
+                variant="ghost"
+              >
+                <span aria-hidden="true" {...applyStyles(styles.iconSwap)}>
+                  <EyeIcon className={eye.className} style={eye.style} />
+                  <EyeSlashIcon className={eyeSlash.className} style={eyeSlash.style} />
+                </span>
+              </Button>
+            }
             id="password"
             name="password"
             placeholder="Ingresa tu contraseña"
             startIcon={LockIcon}
-            type="password"
+            type={isPasswordVisible ? "text" : "password"}
           />
           <FieldError />
         </Field>

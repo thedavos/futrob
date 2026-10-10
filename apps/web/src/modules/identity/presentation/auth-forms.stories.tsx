@@ -22,6 +22,33 @@ export const Signup: Story = {
 };
 
 /** El usuario puede revelar y volver a ocultar la contraseña sin perder su valor. */
+export const LoginPasswordVisibility: Story = {
+  name: "Login / Password visibility",
+  render: () => <AuthRouterDecorator initialPath="/login" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const password = canvas.getByLabelText("Contraseña");
+    const showPassword = canvas.getByRole("button", { name: "Mostrar contraseña" });
+
+    await userEvent.type(password, "clave1234");
+    await expect(password).toHaveAttribute("type", "password");
+    await expect(showPassword).toHaveAttribute("aria-pressed", "false");
+
+    await userEvent.click(showPassword);
+
+    await expect(password).toHaveAttribute("type", "text");
+    await expect(password).toHaveValue("clave1234");
+    const hidePassword = canvas.getByRole("button", { name: "Ocultar contraseña" });
+    await expect(hidePassword).toHaveAttribute("aria-pressed", "true");
+
+    await userEvent.click(hidePassword);
+
+    await expect(password).toHaveAttribute("type", "password");
+    await expect(password).toHaveValue("clave1234");
+  },
+};
+
+/** El usuario puede revelar y volver a ocultar la contraseña sin perder su valor. */
 export const SignupPasswordVisibility: Story = {
   name: "Signup / Password visibility",
   render: () => <AuthRouterDecorator initialPath="/signup" />,
