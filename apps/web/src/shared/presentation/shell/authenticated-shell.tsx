@@ -2,6 +2,8 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import {
   ActionBar,
+  ActionBarEnd,
+  ActionBarStart,
   applyStyles,
   Button,
   SidebarInset,
@@ -10,7 +12,7 @@ import {
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { Fragment, type ReactNode, useCallback, useEffect, useState } from "react";
 import {
   ShellActionBarProvider,
   useShellActionBar,
@@ -20,11 +22,7 @@ import {
   writeStoredShellChrome,
 } from "@/shared/presentation/shell/shell-chrome-storage.ts";
 import { commandsFor } from "@/shared/presentation/shell/shell-commands.ts";
-import {
-  WORKSPACE_SELECTION_KIND,
-  selectionAfterAssociatingClub,
-  type WorkspaceSelection,
-} from "@/shared/presentation/shell/workspace-selection.ts";
+import { selectionAfterAssociatingClub } from "@/shared/presentation/shell/workspace-selection.ts";
 import {
   WorkspaceSelectionProvider,
   useWorkspaceSelection,
@@ -185,7 +183,6 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
             identity={selectionState.playerIdentity}
             identityReady={selectionState.playerIdentityReady}
             onAddClub={() => setAddClubOpen(true)}
-            selection={selectionState.selection}
             workspace={workspace}
             workspaceRoleLabel={workspaceRoleLabel}
           />
@@ -211,7 +208,6 @@ function CommandBar({
   commands,
   identity,
   identityReady,
-  selection,
   workspace,
   workspaceRoleLabel,
   onAddClub,
@@ -219,7 +215,6 @@ function CommandBar({
   readonly commands: ReturnType<typeof commandsFor>;
   readonly identity: CommandBarIdentity;
   readonly identityReady: boolean;
-  readonly selection: WorkspaceSelection;
   readonly workspace: CommandBarWorkspace | null;
   readonly workspaceRoleLabel: string | null;
   readonly onAddClub: () => void;
@@ -255,14 +250,6 @@ function CommandBar({
               key={command.id}
               onClick={() => {
                 if (command.disabled) return;
-                if (command.id === "new-competition") {
-                  if (selection.kind !== WORKSPACE_SELECTION_KIND.organization) return;
-                  void navigate({
-                    to: "/orgs/$orgId/competitions/new",
-                    params: { orgId: selection.organizationId },
-                  });
-                  return;
-                }
                 if (command.id === "accept-invite") {
                   void navigate({ to: "/invitations/accept" });
                   return;
@@ -285,11 +272,24 @@ function CommandBar({
 function ShellActionBarSlot() {
   const { actions } = useShellActionBar();
   if (actions.length === 0) return null;
+  const start = actions.filter((action) => action.placement === "start");
+  const end = actions.filter((action) => action.placement === "end");
   return (
     <ActionBar>
-      {actions.map((action) => (
-        <span key={action.id}>{action.node}</span>
-      ))}
+      {start.length > 0 ? (
+        <ActionBarStart>
+          {start.map((action) => (
+            <Fragment key={action.id}>{action.node}</Fragment>
+          ))}
+        </ActionBarStart>
+      ) : null}
+      {end.length > 0 ? (
+        <ActionBarEnd>
+          {end.map((action) => (
+            <Fragment key={action.id}>{action.node}</Fragment>
+          ))}
+        </ActionBarEnd>
+      ) : null}
     </ActionBar>
   );
 }

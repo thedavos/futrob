@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 
 export type ShellAction = {
   readonly id: string;
+  readonly placement: "start" | "end";
   readonly node: ReactNode;
 };
 

@@ -19,30 +19,25 @@ export function commandsFor(
 ): readonly ShellCommand[] {
   let commands: readonly ShellCommand[];
   if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
-    commands = [
-      { id: "sync", label: "Sync EA", disabled: true },
-      {
-        id: "publish",
-        label: "Publicar",
-        disabled: true,
-        requiredPermission: COMPETITION_PERMISSION.publish,
-      },
-      {
-        id: "manage-roster",
-        label: "Gestionar plantilla",
-        disabled: true,
-        requiredPermission: TEAM_PERMISSION.rosterManage,
-      },
-    ];
+    commands = isCompetitionSetupPath(pathname)
+      ? []
+      : [
+          { id: "sync", label: "Sync EA", disabled: true },
+          {
+            id: "publish",
+            label: "Publicar",
+            disabled: true,
+            requiredPermission: COMPETITION_PERMISSION.publish,
+          },
+          {
+            id: "manage-roster",
+            label: "Gestionar plantilla",
+            disabled: true,
+            requiredPermission: TEAM_PERMISSION.rosterManage,
+          },
+        ];
   } else if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
-    commands = [
-      {
-        id: "new-competition",
-        label: "Nueva competición",
-        href: `/orgs/${selection.organizationId}/competitions/new`,
-        requiredPermission: COMPETITION_PERMISSION.update,
-      },
-    ];
+    commands = [];
   } else if (pathname.startsWith("/player/competitions")) {
     commands = [
       { id: "accept-invite", label: "Aceptar invitación", disabled: false, variant: "link" },
@@ -59,4 +54,8 @@ export function commandsFor(
       )
     : commands;
   return visible.map(({ requiredPermission: _requiredPermission, ...command }) => command);
+}
+
+function isCompetitionSetupPath(pathname: string): boolean {
+  return /\/competitions\/[^/]+\/setup\/?$/.test(pathname);
 }

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
-import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { TEAM_PERMISSION } from "@futrob/teams";
 
 import { commandsFor } from "./shell-commands.ts";
@@ -16,6 +15,17 @@ describe("commandsFor", () => {
     });
     expect(commands.map((command) => command.id)).toEqual(["sync", "publish", "manage-roster"]);
     expect(commands.every((command) => command.disabled)).toBe(true);
+  });
+
+  it("hides competition command-bar actions on setup", () => {
+    expect(
+      commandsFor("/orgs/o1/competitions/c1/setup", {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        competitionId: "c1",
+        organizationId: "o1",
+        label: "Copa",
+      }).map((command) => command.id),
+    ).toEqual([]);
   });
 
   it("filters competition actions by effective permissions", () => {
@@ -55,31 +65,24 @@ describe("commandsFor", () => {
     expect(commands.map((command) => command.id)).toEqual(["sync"]);
   });
 
-  it("returns enabled new-competition for organization workspace", () => {
-    const commands = commandsFor("/orgs/o1", {
-      kind: WORKSPACE_SELECTION_KIND.organization,
-      organizationId: "o1",
-      label: "Org",
-    });
-    expect(commands).toEqual([
-      {
-        id: "new-competition",
-        label: "Nueva competición",
-        href: "/orgs/o1/competitions/new",
-      },
-    ]);
-  });
-
-  it("hides new-competition without competitions.update", () => {
-    const commands = commandsFor(
-      "/orgs/o1",
-      {
+  it("returns no command-bar actions for the organization workspace", () => {
+    expect(
+      commandsFor("/orgs/o1", {
         kind: WORKSPACE_SELECTION_KIND.organization,
         organizationId: "o1",
-      },
-      new Set([ORGANIZATION_PERMISSION.read]),
-    );
-    expect(commands).toEqual([]);
+        label: "Org",
+      }),
+    ).toEqual([]);
+    expect(
+      commandsFor(
+        "/orgs/o1",
+        {
+          kind: WORKSPACE_SELECTION_KIND.organization,
+          organizationId: "o1",
+        },
+        new Set([COMPETITION_PERMISSION.update]),
+      ),
+    ).toEqual([]);
   });
 
   it("returns associate club for ea-clubs path", () => {

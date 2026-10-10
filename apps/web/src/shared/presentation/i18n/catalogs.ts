@@ -143,6 +143,11 @@ const es = {
   "organizations.settings.saveFailed": "No pudimos guardar los cambios. Inténtalo nuevamente.",
   "organizations.settings.logoFailed":
     "Guardamos los cambios, pero no pudimos subir el escudo. Inténtalo nuevamente.",
+  "competitions.setup.step": ({ step, total }) => `Paso ${step} de ${total}`,
+  "competitions.setup.back": "Anterior",
+  "competitions.setup.saveDraft": "Guardar borrador",
+  "competitions.setup.saving": "Guardando…",
+  "competitions.setup.continue": "Continuar",
   "errors.organizations.slug_conflict": "Ese slug ya está en uso. Elige otro.",
   "errors.organizations.invalid_slug": "El slug no es válido. Usa minúsculas, números y guiones.",
   "errors.organizations.invalid_time_zone": "La zona horaria no es válida.",
@@ -838,6 +843,39 @@ const es = {
     "Quién forma parte de tu organización y qué puede hacer cada persona.",
   "pages.organization.settings.title": "Ajustes",
   "pages.organization.settings.subtitle": "Nombre y preferencias de tu organización.",
+  "org.home.description": "Vista general de tu organización",
+  "org.home.createCompetition": "Crear competición",
+  "org.home.summary": "Resumen",
+  "org.home.kpi.active": "Competiciones activas",
+  "org.home.kpi.teams": "Equipos",
+  "org.home.kpi.drafts": "Borradores",
+  "org.home.empty.title": "Tu organización empieza aquí",
+  "org.home.empty.description": "Crea tu primera competición para organizar equipos y encuentros.",
+  "org.home.competitions": "Competiciones",
+  "org.home.competitions.viewAll": "Ver todas",
+  "org.home.table.name": "Nombre",
+  "org.home.table.status": "Estado",
+  "org.home.table.teams": "Equipos",
+  "org.home.table.start": "Inicio",
+  "org.home.table.actions": "Acciones",
+  "org.home.table.noStart": "Sin fecha",
+  "org.home.actions.menu": ({ name }) => `Acciones de ${name}`,
+  "org.home.actions.open": "Abrir",
+  "org.home.actions.configure": "Configurar",
+  "org.home.actions.teams": "Ver equipos",
+  "org.home.activity": "Actividad reciente",
+  "org.home.activity.empty": "Aún no hay actividad reciente.",
+  "org.home.activity.team": ({ time }) => `Equipo registrado · ${time}`,
+  "org.home.activity.competition": ({ status, time }) => `${status} · ${time}`,
+  "org.home.status.draft": "Borrador",
+  "org.home.status.registration": "Inscripciones abiertas",
+  "org.home.status.published": "Publicada",
+  "org.home.status.paused": "Pausada",
+  "org.home.status.finished": "Finalizada",
+  "org.home.status.archived": "Archivada",
+  "org.home.error.competitions":
+    "No se pudieron cargar las competiciones. Comprueba la conexión e inténtalo de nuevo.",
+  "org.home.error.profile": "No se pudo cargar el nombre de la organización.",
   "pages.competition.fixture.title": "Calendario",
   "pages.competition.fixture.subtitle": "Jornadas y fechas de cada enfrentamiento.",
   "pages.competition.encounters.title": "Enfrentamientos",
@@ -1067,6 +1105,7 @@ export interface MessageParamsByKey {
   readonly "common.seconds": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
+  readonly "competitions.setup.step": { readonly step: number; readonly total: number };
   readonly "support.retryAfter": { readonly seconds: number };
   readonly "onboarding.shell.stepSummary": {
     readonly current: number;
@@ -1188,6 +1227,9 @@ export interface MessageParamsByKey {
   };
   readonly "player.matchDetail.rosters.registered": { readonly count: number };
   readonly "player.matchDetail.rosters.playerCount": { readonly count: number };
+  readonly "org.home.activity.team": { readonly time: string };
+  readonly "org.home.activity.competition": { readonly status: string; readonly time: string };
+  readonly "org.home.actions.menu": { readonly name: string };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -1330,6 +1372,11 @@ const en: Catalog = {
   "organizations.settings.saveFailed": "We couldn't save your changes. Try again.",
   "organizations.settings.logoFailed":
     "We saved your changes, but couldn't upload the logo. Try again.",
+  "competitions.setup.step": ({ step, total }) => `Step ${step} of ${total}`,
+  "competitions.setup.back": "Back",
+  "competitions.setup.saveDraft": "Save draft",
+  "competitions.setup.saving": "Saving…",
+  "competitions.setup.continue": "Continue",
   "errors.organizations.slug_conflict": "That slug is already in use. Choose another one.",
   "errors.organizations.invalid_slug":
     "The slug isn't valid. Use lowercase letters, numbers and hyphens.",
@@ -2015,6 +2062,39 @@ const en: Catalog = {
     "Who belongs to your organization and what each person can do.",
   "pages.organization.settings.title": "Settings",
   "pages.organization.settings.subtitle": "Your organization's name and preferences.",
+  "org.home.description": "Overview of your organization",
+  "org.home.createCompetition": "Create competition",
+  "org.home.summary": "Summary",
+  "org.home.kpi.active": "Active competitions",
+  "org.home.kpi.teams": "Teams",
+  "org.home.kpi.drafts": "Drafts",
+  "org.home.empty.title": "Your organization starts here",
+  "org.home.empty.description": "Create your first competition to organize teams and encounters.",
+  "org.home.competitions": "Competitions",
+  "org.home.competitions.viewAll": "View all",
+  "org.home.table.name": "Name",
+  "org.home.table.status": "Status",
+  "org.home.table.teams": "Teams",
+  "org.home.table.start": "Start",
+  "org.home.table.actions": "Actions",
+  "org.home.table.noStart": "No date",
+  "org.home.actions.menu": ({ name }) => `Actions for ${name}`,
+  "org.home.actions.open": "Open",
+  "org.home.actions.configure": "Set up",
+  "org.home.actions.teams": "View teams",
+  "org.home.activity": "Recent activity",
+  "org.home.activity.empty": "No recent activity yet.",
+  "org.home.activity.team": ({ time }) => `Registered team · ${time}`,
+  "org.home.activity.competition": ({ status, time }) => `${status} · ${time}`,
+  "org.home.status.draft": "Draft",
+  "org.home.status.registration": "Registration open",
+  "org.home.status.published": "Published",
+  "org.home.status.paused": "Paused",
+  "org.home.status.finished": "Finished",
+  "org.home.status.archived": "Archived",
+  "org.home.error.competitions":
+    "Unable to load competitions. Check your connection and try again.",
+  "org.home.error.profile": "Unable to load the organization name.",
   "pages.competition.fixture.title": "Schedule",
   "pages.competition.fixture.subtitle": "Rounds and dates for each encounter.",
   "pages.competition.encounters.title": "Encounters",
