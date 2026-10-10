@@ -213,7 +213,8 @@ La navegación de producto usa `typography.label`. El estado activo no depende �
   una tercera isla de icono ni un `StatValue` fuera de `typography.score` / `compact` / `empty`.
   - `StatLabel`: `typography.label` (12 px, peso 500), `muted-foreground`.
   - `StatValue` size: `default` (`typography.score`, 30→36 px, peso 600, tabular) |
-    `compact` (20 px, peso 600, tabular) | `empty` (`typography.caption` para ausencia textual).
+    `compact` (20 px, peso 600, tabular) | `empty` (misma caja, peso 600 y tracking que
+    `score`; cuerpo 20 px para copy textual como «Sin datos»).
   - `tone`: `default` (`foreground`) | `muted` | `success` | `warning` | `error` (`error` → danger).
     `muted` para valores no disponibles (`—`). El color no comunica solo; acompaña label/hint.
     El formateo (locale, `%`, miles) es de la presentación; el primitivo no conoce dominio.
@@ -341,9 +342,12 @@ resúmenes de una sola cifra (organización, portal autenticado, bloques equival
   al 20 %); icono `primary`. No usar `accent` sólido (`#293514`) aquí: la isla es lima
   diluida, no un chip de selección.
 - Columna textual: `StatLabel` (12 px, 500, `muted-foreground`) + `StatValue` `default`
-  (30→36 px, 600, tabular, `foreground`). Gap 4 px. Sin `StatHint`.
-- Métricas de Inicio: partidos, victorias, rating, goles+asistencias. Rating `muted` solo
-  cuando el promedio no existe.
+  (30→36 px, 600, tabular, `foreground`). Gap 4 px. Sin `StatHint`. Ausencia textual
+  (`Sin datos`) usa `size="empty"`: misma fila y tipo que `score` (peso 600, tracking,
+  caja 30→36 px), cuerpo 20 px y `tone` `muted`, para que el copy quepa sin romper el
+  ritmo de las teselas.
+- Métricas de Inicio: partidos, victorias, rating, goles+asistencias. Rating `muted` /
+  `empty` cuando el promedio no existe. Un cero real sigue en `default`.
 
 #### Composición Stat perfil {#composicion-stat-perfil}
 
@@ -356,7 +360,8 @@ unidad, periodo o desglose (promedio, %, muestra).
 - Icono Phosphor regular 32 px a la izquierda, `muted-foreground`, **sin isla**. Fondo
   oliva solo si una selección o énfasis lo justifica.
 - Stack: `StatLabel` + `StatValue` `default` + `StatHint` (`caption` 12 px, 400). Gap 4 px
-  entre líneas; 12 px entre icono y texto.
+  entre líneas; 12 px entre icono y texto. Ausencia textual usa `size="empty"` (caja y
+  peso de `score`) y `muted`.
 - Cuatro resúmenes de Mis estadísticas: balance V–E–D con % de victorias, rating promedio,
   goles totales con promedio, asistencias totales con promedio.
 
@@ -713,6 +718,25 @@ La vista personal no muestra disputas, payloads EA crudos, tokens ni datos admin
 - Invitaciones
 - Organización (miembros, roles)
 - Ajustes
+
+#### Inicio de organización
+
+Referencia: `organization-home-page.tsx` en `/orgs/:orgId`.
+
+Orden: PageHeader → tres teselas de [Inicio](#composicion-stat-inicio) → vacío o dos secciones.
+El nombre de la organización es el título; la descripción es «Vista general de tu organización».
+
+- «Crear competición» en el encabezado solo cuando ya hay competiciones y el actor tiene
+  `competitions.update`. En el primer uso el CTA vive en el vacío, no en el encabezado.
+- KPIs: competiciones activas (`registration`, `published`, `paused`), equipos y borradores.
+  No existe una cola de actividades pendientes; el borrador es el trabajo medible. Un cero
+  real sigue en cero. Si equipos no carga, el valor es «Sin datos».
+- Sin competiciones: `EmptyState` con `illustration-create-competition.png`, «Tu organización
+  empieza aquí» y el CTA de crear. No es un error ni una carga.
+- Con competiciones: tabla «Competiciones» (nombre, estado, equipos aprobados, inicio y
+  menú de acciones) y «Actividad reciente» (competiciones por `updatedAt` y equipos por
+  `createdAt`). La actividad no atribuye un actor. Sin fecha de inicio: «Sin fecha». Si el
+  conteo de equipos no carga: «Sin datos», no un cero.
 
 #### Navegación dentro de competición (Contexto activo)
 

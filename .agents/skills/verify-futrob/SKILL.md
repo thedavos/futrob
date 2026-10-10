@@ -85,7 +85,7 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Open statistics | sidebar link `Mis estadísticas` |
 | Org name | textbox `Nombre de la organización` |
 | Create org | button `Crear organización` |
-| New competition (shell) | button `Nueva competición` |
+| New competition (org home) | button `Crear competición` |
 | Competition name | textbox `Nombre de la competición` |
 | Create competition | button `Crear competición` |
 
