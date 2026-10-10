@@ -8,6 +8,9 @@ import type {
   ExploreCompetitionsResponse,
   GetExploreCompetitionResponse,
   ListAccessibleCompetitionsResponse,
+  ListCompetitionParticipantsResponse,
+  ListOrganizationCompetitionsResponse,
+  ListOrganizationTeamsResponse,
   RequestId,
 } from "@futrob/api-contracts";
 
@@ -65,12 +68,29 @@ let application: CompetitionsStoryQueryState<GetMyCompetitionApplicationResponse
   application: null,
 };
 
+let organizationCompetitions: CompetitionsStoryQueryState<ListOrganizationCompetitionsResponse> = {
+  competitions: [],
+};
+
+let organizationTeams: CompetitionsStoryQueryState<ListOrganizationTeamsResponse> = { teams: [] };
+
+let organizationParticipants: Record<
+  string,
+  CompetitionsStoryQueryState<ListCompetitionParticipantsResponse>
+> = {};
+
 export function configureCompetitionsStory(next: {
   readonly application?: CompetitionsStoryQueryState<GetMyCompetitionApplicationResponse>;
   readonly competitions?: CompetitionsStoryQueryState<ListAccessibleCompetitionsResponse>;
   readonly explore?: CompetitionsStoryQueryState<ExploreCompetitionsResponse>;
   readonly exploreNext?: ExploreCompetitionsResponse | null;
   readonly exploreDetail?: CompetitionsStoryQueryState<GetExploreCompetitionResponse> | "not-found";
+  readonly organizationCompetitions?: CompetitionsStoryQueryState<ListOrganizationCompetitionsResponse>;
+  readonly organizationTeams?: CompetitionsStoryQueryState<ListOrganizationTeamsResponse>;
+  readonly organizationParticipants?: Record<
+    string,
+    CompetitionsStoryQueryState<ListCompetitionParticipantsResponse>
+  >;
 }): void {
   if (next.competitions !== undefined) competitions = next.competitions;
   if (next.explore !== undefined) {
@@ -80,6 +100,13 @@ export function configureCompetitionsStory(next: {
   if (next.exploreNext !== undefined) exploreNext = next.exploreNext;
   if (next.exploreDetail !== undefined) exploreDetail = next.exploreDetail;
   if (next.application !== undefined) application = next.application;
+  if (next.organizationCompetitions !== undefined) {
+    organizationCompetitions = next.organizationCompetitions;
+  }
+  if (next.organizationTeams !== undefined) organizationTeams = next.organizationTeams;
+  if (next.organizationParticipants !== undefined) {
+    organizationParticipants = next.organizationParticipants;
+  }
 }
 
 export function getMyCompetitionApplication(): Promise<GetMyCompetitionApplicationResponse> {
@@ -136,8 +163,8 @@ export async function getExploreCompetition(
   return resolveQuery(exploreDetail);
 }
 
-export async function listOrganizationCompetitions() {
-  return { competitions: [] };
+export function listOrganizationCompetitions(): Promise<ListOrganizationCompetitionsResponse> {
+  return resolveQuery(organizationCompetitions);
 }
 
 export async function getCompetitionDraft() {
@@ -210,12 +237,15 @@ export async function updateCompetitionDraft() {
   throw new CompetitionsClientError(503, "competitions.unavailable");
 }
 
-export async function listCompetitionParticipants() {
-  return { participants: [] };
+export function listCompetitionParticipants(
+  _organizationId: string,
+  competitionId: string,
+): Promise<ListCompetitionParticipantsResponse> {
+  return resolveQuery(organizationParticipants[competitionId] ?? { participants: [] });
 }
 
-export async function listOrganizationTeams() {
-  return { teams: [] };
+export function listOrganizationTeams(): Promise<ListOrganizationTeamsResponse> {
+  return resolveQuery(organizationTeams);
 }
 
 export async function addCompetitionParticipant() {
