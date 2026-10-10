@@ -22,6 +22,7 @@ const styles = stylex.create({
   main: {
     width: "100%",
     maxWidth: "36rem",
+    marginInline: "auto",
   },
   body: {
     marginTop: "1rem",
