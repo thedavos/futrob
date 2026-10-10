@@ -30,7 +30,8 @@ const styles = stylex.create({
     width: "auto",
     maxWidth: "100%",
     justifyContent: "flex-start",
-    paddingInline: "0.375rem",
+    paddingInlineStart: 0,
+    paddingInlineEnd: "0.375rem",
   },
   row: {
     display: "flex",
@@ -86,7 +87,11 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
   const shortName = abbreviatedDisplayName(name);
   const items = accountNavItems();
   const trigger = applyStyles(compact ? styles.triggerCompact : styles.triggerExpanded);
+  const triggerStyle = compact
+    ? trigger.style
+    : { ...trigger.style, paddingInlineStart: 0, paddingInlineEnd: "0.375rem" };
   const avatar = applyStyles(styles.avatar);
+  const avatarStyle = { ...avatar.style, width: "1.5rem", height: "1.5rem" };
   const fallback = applyStyles(styles.fallback);
   const caret = applyStyles(styles.caret);
   const menu = applyStyles(styles.menu);
@@ -100,13 +105,13 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
             className={trigger.className}
             dense
             size={compact ? "icon" : "default"}
-            style={trigger.style}
+            style={triggerStyle}
             variant="ghost"
           />
         }
       >
         <span {...applyStyles(styles.row, compact && styles.rowCompact)}>
-          <Avatar className={avatar.className} style={avatar.style}>
+          <Avatar className={avatar.className} style={avatarStyle}>
             <AvatarFallback className={fallback.className} style={fallback.style}>
               {initialsFromName(name)}
             </AvatarFallback>

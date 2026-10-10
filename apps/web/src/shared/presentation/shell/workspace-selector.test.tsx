@@ -79,6 +79,42 @@ describe("WorkspaceSelector", () => {
     expect(screen.getByLabelText("Beta, Staff")).toBeTruthy();
   });
 
+  it("paints an uploaded organization logo without the avatar disc", async () => {
+    renderSelector(
+      buildWorkspaceSelectorModel({
+        memberships: [
+          {
+            organizationId: "org-1",
+            name: "Cuervos Org",
+            role: "organizer",
+            logo: { kind: "upload", key: "organization-logos/org-1/crest.png" },
+          },
+        ],
+        competitions: [],
+        associatedClubs: [],
+      }),
+      {
+        selection: {
+          kind: WORKSPACE_SELECTION_KIND.organization,
+          organizationId: "org-1",
+          label: "Cuervos Org",
+        },
+      },
+    );
+
+    const trigger = screen.getByRole("button");
+    const triggerLogo = trigger.querySelector("img");
+    expect(triggerLogo?.getAttribute("src")).toBe("/media/organization-logos/org-1/crest.png");
+    expect(triggerLogo?.getAttribute("data-outline")).toBe("none");
+    expect(trigger.querySelector("[data-slot='avatar']")).toBeNull();
+
+    trigger.click();
+    const menuItem = await screen.findByLabelText("Cuervos Org, Organizador");
+    const menuLogo = menuItem.querySelector("img");
+    expect(menuLogo?.getAttribute("data-outline")).toBe("none");
+    expect(menuItem.querySelector("[data-slot='avatar']")).toBeNull();
+  });
+
   it("shows each organization's monogram next to its name", async () => {
     renderSelector(
       buildWorkspaceSelectorModel({

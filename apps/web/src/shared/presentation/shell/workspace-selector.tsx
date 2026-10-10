@@ -285,7 +285,12 @@ export function WorkspaceSelector({
                     EntityIcon={BuildingsIcon}
                     key={membership.organizationId}
                     leading={
-                      <OrganizationAvatar logo={membership.logo} name={membership.name} size="sm" />
+                      <OrganizationAvatar
+                        bare
+                        logo={membership.logo}
+                        name={membership.name}
+                        size="sm"
+                      />
                     }
                     name={membership.name}
                     onSelect={() =>

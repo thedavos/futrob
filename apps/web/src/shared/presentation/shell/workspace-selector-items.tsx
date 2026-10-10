@@ -234,7 +234,7 @@ export function SelectorTriggerIcon({
         (item) => item.organizationId === selection.organizationId,
       );
       return organization ? (
-        <OrganizationAvatar logo={organization.logo} name={organization.name} size="sm" />
+        <OrganizationAvatar bare logo={organization.logo} name={organization.name} size="sm" />
       ) : (
         <BuildingsIcon aria-hidden="true" className={icon.className} style={icon.style} />
       );
