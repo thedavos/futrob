@@ -171,8 +171,9 @@ function ChoiceGroup<Value>({
   );
 }
 
-type ChoiceGroupItemProps<Value = string> = Radio.Root.Props<Value> & {
+type ChoiceGroupItemProps<Value = string> = Omit<Radio.Root.Props<Value>, "className"> & {
   appearance?: ChoiceGroupAppearance;
+  className?: HostClassName;
   /** Compact desktop/operator mode. Touch layouts stay at the accessible 44px target. */
   dense?: boolean;
 };

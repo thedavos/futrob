@@ -1,25 +1,14 @@
 "use client";
 
 import { z } from "zod";
-import type { ReactNode } from "react";
-import { applyStyles, Field, FieldLabel, Input, typography } from "@futrob/ui";
+import { applyStyles, typography } from "@futrob/ui";
 import { styles } from "./competition-setup-steps.styles.ts";
 import type {
   CompetitionDraftDto,
-  CompetitionFormatDto,
   CompetitionMatchRulesDto,
   UpdateCompetitionDraftRequest,
 } from "@futrob/api-contracts";
-import {
-  competitionFormatSchema,
-  competitionPlatformSchema,
-  competitionRegionSchema,
-} from "@futrob/api-contracts";
-import {
-  competitionFormats,
-  competitionRegions,
-  competitionTimeZones,
-} from "./competition-draft-meta.ts";
+import { competitionPlatformLabel } from "./competition-draft-meta.ts";
 import {
   NumberField,
   PageAlert,
@@ -30,102 +19,9 @@ import {
 
 export { ParticipantsStep } from "./competition-setup-participants.tsx";
 
-const platforms = ["playstation", "xbox", "pc", "nintendo-switch-1", "nintendo-switch-2"] as const;
-export function InformationStep({
-  form,
-  onChange,
-  disabled,
-  children,
-}: {
-  form: UpdateCompetitionDraftRequest;
-  onChange: (patch: Partial<UpdateCompetitionDraftRequest>) => void;
-  disabled: boolean;
-  children?: ReactNode;
-}) {
-  return (
-    <section {...applyStyles(styles.section)}>
-      <StepHeading title="Información" copy="Identidad operativa del torneo FC Clubs." />
-      <Field>
-        <FieldLabel htmlFor="competition-name">Nombre</FieldLabel>
-        <Input
-          disabled={disabled}
-          id="competition-name"
-          maxLength={120}
-          onChange={(event) => onChange({ name: event.target.value })}
-          value={form.name}
-        />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="competition-edition">Edición</FieldLabel>
-        <Input
-          disabled={disabled}
-          id="competition-edition"
-          maxLength={40}
-          onChange={(event) => onChange({ gameEdition: event.target.value })}
-          value={form.gameEdition}
-        />
-      </Field>
-      <div {...applyStyles(styles.pair)}>
-        <SelectField
-          disabled={disabled}
-          id="competition-platform"
-          items={platforms.map((value) => ({ value, label: value }))}
-          label="Plataforma"
-          onChange={(value) => onChange({ platform: competitionPlatformSchema.parse(value) })}
-          value={form.platform}
-        />
-        <SelectField
-          disabled={disabled}
-          id="competition-region"
-          items={competitionRegions}
-          label="Región"
-          onChange={(value) => onChange({ region: competitionRegionSchema.parse(value) })}
-          value={form.region}
-        />
-      </div>
-      <SelectField
-        disabled={disabled}
-        id="competition-timezone"
-        items={competitionTimeZones}
-        label="Zona horaria"
-        onChange={(value) => onChange({ timeZone: value })}
-        value={form.timeZone}
-      />
-      {children}
-    </section>
-  );
-}
+export { InformationStep } from "./competition-information-step.tsx";
 
-export function FormatStep({
-  form,
-  onChange,
-  disabled,
-}: {
-  form: UpdateCompetitionDraftRequest;
-  onChange: (format: CompetitionFormatDto) => void;
-  disabled: boolean;
-}) {
-  return (
-    <section {...applyStyles(styles.section)}>
-      <StepHeading
-        title="Formato"
-        copy="La modalidad del MVP es FC Clubs. El formato define qué etapas requieren reglas."
-      />
-      <div {...applyStyles(styles.mutedCard)}>
-        <p {...applyStyles(typography.label)}>Modalidad</p>
-        <p {...applyStyles(styles.modalityValue)}>FC Clubs</p>
-      </div>
-      <SelectField
-        disabled={disabled}
-        id="competition-format"
-        items={competitionFormats}
-        label="Formato competitivo"
-        onChange={(value) => onChange(competitionFormatSchema.parse(value))}
-        value={form.format}
-      />
-    </section>
-  );
-}
+export { FormatStep } from "./competition-format-step.tsx";
 
 export function RulesStep({
   form,
@@ -301,7 +197,7 @@ export function ReviewStep({
         {[
           ["Nombre", draft.competition.name],
           ["Formato", draft.competition.format],
-          ["Plataforma", draft.competition.platform],
+          ["Plataforma", competitionPlatformLabel(draft.competition.platform)],
           ["Participantes aprobados", String(participantCount)],
         ].map(([term, value]) => (
           <div key={term} {...applyStyles(styles.mutedCard)}>

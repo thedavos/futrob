@@ -31,6 +31,11 @@ const styles = stylex.create({
     display: "grid",
     gap: "0.5rem",
   },
+  titleRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+  },
   title: {
     fontSize: "1.25rem",
     lineHeight: "1.75rem",
@@ -136,11 +141,22 @@ export function RuleToggle({
     </div>
   );
 }
-export function StepHeading({ title, copy }: { title: string; copy: string }) {
+export function StepHeading({
+  title,
+  copy,
+  badge,
+}: {
+  title: string;
+  copy?: string;
+  badge?: ReactNode;
+}) {
   return (
     <header {...applyStyles(styles.heading)}>
-      <h2 {...applyStyles(styles.title)}>{title}</h2>
-      <p {...applyStyles(typography.caption, styles.copy)}>{copy}</p>
+      <div {...applyStyles(styles.titleRow)}>
+        <h2 {...applyStyles(styles.title)}>{title}</h2>
+        {badge}
+      </div>
+      {copy ? <p {...applyStyles(typography.caption, styles.copy)}>{copy}</p> : null}
     </header>
   );
 }

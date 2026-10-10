@@ -7,6 +7,10 @@ export const styles = stylex.create({
     display: "grid",
     gap: "1.5rem",
   },
+  subsection: {
+    display: "grid",
+    gap: "1.5rem",
+  },
   pair: {
     display: "grid",
     gap: "1.5rem",
@@ -15,13 +19,27 @@ export const styles = stylex.create({
       [media.sm]: "repeat(2, minmax(0, 1fr))",
     },
   },
+  columns: {
+    display: "grid",
+    alignItems: "start",
+    gap: "1rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.lg]: "minmax(0, 1.5fr) minmax(18rem, 0.85fr)",
+    },
+  },
+  content: {
+    display: "grid",
+    gap: "1.5rem",
+    padding: {
+      default: "1.25rem",
+      [media.sm]: "2rem",
+    },
+  },
   mutedCard: {
     borderRadius: "var(--corner-lg)",
     backgroundColor: colors.muted,
     padding: "1rem",
-  },
-  modalityValue: {
-    marginTop: "0.25rem",
   },
   rules: {
     display: "grid",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { CompetitionCoverPresetDto } from "@futrob/api-contracts";
 import {
@@ -150,70 +150,24 @@ export function CompetitionProfileFields({
 
   return (
     <div {...applyStyles(styles.stack)}>
-      <div {...applyStyles(styles.pair)}>
-        <Field invalid={fieldError?.field === "min-teams"}>
-          <FieldLabel htmlFor={`${idPrefix}-min-teams`}>Mínimo de equipos</FieldLabel>
-          <Input
-            {...invalidProps("min-teams")}
-            disabled={disabled}
-            id={`${idPrefix}-min-teams`}
-            inputMode="numeric"
-            max={256}
-            min={2}
-            onChange={(event) => change({ minTeams: event.target.value })}
-            type="number"
-            value={value.minTeams}
-          />
-          <FieldDescription>Hacen falta para publicar.</FieldDescription>
-          {errorFor("min-teams")}
-        </Field>
-        <Field invalid={fieldError?.field === "max-teams"}>
-          <FieldLabel htmlFor={`${idPrefix}-max-teams`}>Máximo de equipos</FieldLabel>
-          <Input
-            {...invalidProps("max-teams")}
-            disabled={disabled}
-            id={`${idPrefix}-max-teams`}
-            inputMode="numeric"
-            max={256}
-            min={2}
-            onChange={(event) => change({ maxTeams: event.target.value })}
-            placeholder="Sin límite"
-            type="number"
-            value={value.maxTeams}
-          />
-          <FieldDescription>Opcional. Al completarse, no se aprueban más equipos.</FieldDescription>
-          {errorFor("max-teams")}
-        </Field>
-      </div>
-      <div {...applyStyles(styles.pair)}>
-        <Field invalid={fieldError?.field === "start-date"}>
-          <FieldLabel htmlFor={`${idPrefix}-starts-on`}>Fecha de inicio</FieldLabel>
-          <Input
-            {...invalidProps("start-date")}
-            disabled={disabled}
-            id={`${idPrefix}-starts-on`}
-            onChange={(event) => change({ startsOn: event.target.value })}
-            type="date"
-            value={value.startsOn}
-          />
-          <FieldDescription>Opcional.</FieldDescription>
-          {errorFor("start-date")}
-        </Field>
-        <Field invalid={fieldError?.field === "end-date"}>
-          <FieldLabel htmlFor={`${idPrefix}-ends-on`}>Fecha de fin</FieldLabel>
-          <Input
-            {...invalidProps("end-date")}
-            disabled={disabled}
-            id={`${idPrefix}-ends-on`}
-            min={value.startsOn || undefined}
-            onChange={(event) => change({ endsOn: event.target.value })}
-            type="date"
-            value={value.endsOn}
-          />
-          <FieldDescription>Opcional.</FieldDescription>
-          {errorFor("end-date")}
-        </Field>
-      </div>
+      <CompetitionTeamCapacityFields
+        disabled={disabled}
+        errorFor={errorFor}
+        fieldError={fieldError}
+        idPrefix={idPrefix}
+        invalidProps={invalidProps}
+        onChange={change}
+        value={value}
+      />
+      <CompetitionScheduleFields
+        disabled={disabled}
+        errorFor={errorFor}
+        fieldError={fieldError}
+        idPrefix={idPrefix}
+        invalidProps={invalidProps}
+        onChange={change}
+        value={value}
+      />
       <CompetitionCoverPicker
         disabled={coverDisabled}
         error={errorFor("cover")}
@@ -221,6 +175,109 @@ export function CompetitionProfileFields({
         onChange={(cover) => change({ cover })}
         value={value.cover}
       />
+    </div>
+  );
+}
+
+type ProfileFieldHelpers = {
+  readonly value: CompetitionProfileFieldsValue;
+  readonly onChange: (patch: Partial<CompetitionProfileFieldsValue>) => void;
+  readonly disabled: boolean;
+  readonly idPrefix: string;
+  readonly fieldError: CompetitionProfileFieldError | null;
+  readonly invalidProps: (field: CompetitionProfileFieldError["field"]) => {
+    "aria-invalid": boolean;
+    "aria-describedby": string | undefined;
+  };
+  readonly errorFor: (field: CompetitionProfileFieldError["field"]) => ReactNode;
+};
+
+export function CompetitionTeamCapacityFields({
+  value,
+  onChange,
+  disabled,
+  idPrefix,
+  fieldError,
+  invalidProps,
+  errorFor,
+}: ProfileFieldHelpers) {
+  return (
+    <div {...applyStyles(styles.pair)}>
+      <Field invalid={fieldError?.field === "min-teams"}>
+        <FieldLabel htmlFor={`${idPrefix}-min-teams`}>Mínimo de equipos</FieldLabel>
+        <Input
+          {...invalidProps("min-teams")}
+          disabled={disabled}
+          id={`${idPrefix}-min-teams`}
+          inputMode="numeric"
+          max={256}
+          min={2}
+          onChange={(event) => onChange({ minTeams: event.target.value })}
+          type="number"
+          value={value.minTeams}
+        />
+        <FieldDescription>Hacen falta para publicar.</FieldDescription>
+        {errorFor("min-teams")}
+      </Field>
+      <Field invalid={fieldError?.field === "max-teams"}>
+        <FieldLabel htmlFor={`${idPrefix}-max-teams`}>Máximo de equipos</FieldLabel>
+        <Input
+          {...invalidProps("max-teams")}
+          disabled={disabled}
+          id={`${idPrefix}-max-teams`}
+          inputMode="numeric"
+          max={256}
+          min={2}
+          onChange={(event) => onChange({ maxTeams: event.target.value })}
+          placeholder="Sin límite"
+          type="number"
+          value={value.maxTeams}
+        />
+        <FieldDescription>Opcional. Al completarse, no se aprueban más equipos.</FieldDescription>
+        {errorFor("max-teams")}
+      </Field>
+    </div>
+  );
+}
+
+export function CompetitionScheduleFields({
+  value,
+  onChange,
+  disabled,
+  idPrefix,
+  fieldError,
+  invalidProps,
+  errorFor,
+}: ProfileFieldHelpers) {
+  return (
+    <div {...applyStyles(styles.pair)}>
+      <Field invalid={fieldError?.field === "start-date"}>
+        <FieldLabel htmlFor={`${idPrefix}-starts-on`}>Fecha de inicio</FieldLabel>
+        <Input
+          {...invalidProps("start-date")}
+          disabled={disabled}
+          id={`${idPrefix}-starts-on`}
+          onChange={(event) => onChange({ startsOn: event.target.value })}
+          type="date"
+          value={value.startsOn}
+        />
+        <FieldDescription>Opcional.</FieldDescription>
+        {errorFor("start-date")}
+      </Field>
+      <Field invalid={fieldError?.field === "end-date"}>
+        <FieldLabel htmlFor={`${idPrefix}-ends-on`}>Fecha de fin</FieldLabel>
+        <Input
+          {...invalidProps("end-date")}
+          disabled={disabled}
+          id={`${idPrefix}-ends-on`}
+          min={value.startsOn || undefined}
+          onChange={(event) => onChange({ endsOn: event.target.value })}
+          type="date"
+          value={value.endsOn}
+        />
+        <FieldDescription>Opcional.</FieldDescription>
+        {errorFor("end-date")}
+      </Field>
     </div>
   );
 }

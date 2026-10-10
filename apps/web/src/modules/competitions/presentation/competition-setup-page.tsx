@@ -7,9 +7,9 @@ import {
   AlertDescription,
   applyStyles,
   Badge,
-  Button,
   Card,
   CardContent,
+  PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
   Stepper,
@@ -33,8 +33,8 @@ import {
   ReviewStep,
   RulesStep,
 } from "./competition-setup-steps.tsx";
+import { CompetitionSetupActionBarRegistration } from "./competition-setup-action-bar.tsx";
 import { PageAlert } from "./competition-setup-fields.tsx";
-import { CompetitionProfileFields } from "./competition-profile-fields.tsx";
 import {
   profileFieldsFromCompetition,
   toTeamsAndSchedule,
@@ -61,11 +61,17 @@ const styles = stylex.create({
   main: {
     width: "100%",
   },
-  header: {
-    marginBottom: "2rem",
-    display: "grid",
-    gap: "0.75rem",
-    textAlign: "center",
+  titleRow: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  title: {
+    width: "fit-content",
+    minWidth: 0,
+    maxWidth: "100%",
+    flexShrink: 1,
   },
   stepper: {
     marginBottom: "2.5rem",
@@ -86,21 +92,10 @@ const styles = stylex.create({
       [media.sm]: "2rem",
     },
   },
-  actions: {
-    marginTop: "1.5rem",
-    display: "flex",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: "0.75rem",
-  },
-  actionGroup: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "0.75rem",
-  },
 });
 
 const stepper = applyStyles(styles.stepper);
+const setupTitle = applyStyles(styles.title);
 
 export type CompetitionSetupStep = "information" | "format" | "rules" | "participants" | "review";
 const steps = [
@@ -215,16 +210,17 @@ export function CompetitionSetupPage({
 
   return (
     <main {...applyStyles(styles.main)}>
-      <header {...applyStyles(styles.header)}>
-        <div>
+      <PageHeader>
+        <div {...applyStyles(styles.titleRow)}>
+          <PageHeaderTitle className={setupTitle.className} style={setupTitle.style} truncate>
+            Configurar competición
+          </PageHeaderTitle>
           <Badge variant={registrationOpen ? "info" : "neutral"}>{setupStatusLabel(status)}</Badge>
         </div>
-        <PageHeaderTitle>Configurar {draft.competition.name}</PageHeaderTitle>
         <PageHeaderDescription>
-          Guarda el avance y vuelve cuando quieras. La asociación EA es declarativa y no verifica
-          propiedad.
+          Define los datos de tu competición. Puedes guardar y continuar después.
         </PageHeaderDescription>
-      </header>
+      </PageHeader>
       <Stepper
         aria-label="Configuración de competición"
         className={stepper.className}
@@ -245,108 +241,98 @@ export function CompetitionSetupPage({
           No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
         </PageAlert>
       ) : null}
-      <Card>
-        <CardContent className={styles.content}>
-          {currentStep === "information" ? (
-            <InformationStep
-              disabled={readOnly}
-              form={form}
-              onChange={(patch) => setForm({ ...form, ...patch })}
-            >
-              {profile ? (
-                <CompetitionProfileFields
-                  coverDisabled={!canUpdate || status === "archived" || coverUpdate.isPending}
-                  disabled={readOnly}
-                  fieldError={profileError}
-                  onChange={(patch) => {
+      {currentStep === "information" ? (
+        <InformationStep
+          disabled={readOnly}
+          form={form}
+          onChange={(patch) => setForm({ ...form, ...patch })}
+          profile={
+            profile
+              ? {
+                  coverDisabled: !canUpdate || status === "archived" || coverUpdate.isPending,
+                  fieldError: profileError,
+                  onChange: (patch) => {
                     setProfile({ ...profile, ...patch });
                     if (patch.cover) coverUpdate.mutate(patch.cover);
-                  }}
-                  onClearFieldError={() => setProfileError(null)}
-                  value={profile}
-                />
-              ) : null}
-            </InformationStep>
-          ) : null}
-          {currentStep === "format" ? (
-            <FormatStep
-              disabled={readOnly}
-              form={form}
-              onChange={(next) => {
-                if (next === form.format) return;
-                if (
-                  !globalThis.confirm(
-                    "Cambiar el formato reemplazará las reglas incompatibles. ¿Continuar?",
-                  )
-                )
-                  return;
-                setForm({ ...form, format: next, rules: rulesForFormat(next) });
-              }}
-            />
-          ) : null}
-          {currentStep === "rules" ? (
-            <RulesStep
-              disabled={readOnly}
-              form={form}
-              onChange={(rules) => setForm({ ...form, rules })}
-            />
-          ) : null}
-          {currentStep === "participants" ? (
-            <ParticipantsStep
-              availableTeams={availableTeams}
-              disabled={participantsLocked || busy || !canManageParticipants}
-              newTeamName={newTeamName}
-              onAdd={addParticipant}
-              onNameChange={setNewTeamName}
-              onRemove={(id: string) => remove.mutateAsync(id)}
-              onTeamChange={setSelectedTeamId}
-              participants={participantsQuery.data?.participants ?? []}
-              selectedTeamId={selectedTeamId}
-              teams={teamsQuery.data?.teams ?? []}
-            />
-          ) : null}
-          {currentStep === "review" ? (
-            <ReviewStep draft={draft} participantCount={approvedParticipantCount} />
-          ) : null}
-        </CardContent>
-      </Card>
-      <div {...applyStyles(styles.actions)}>
-        <Button
-          disabled={currentStep === "information" || busy}
-          onClick={() => move(-1)}
-          variant="outline"
-        >
-          Anterior
-        </Button>
-        <div {...applyStyles(styles.actionGroup)}>
-          {!readOnly && currentStep !== "participants" && currentStep !== "review" ? (
-            <Button disabled={busy} onClick={() => void save()} variant="outline">
-              {update.isPending ? "Guardando…" : "Guardar"}
-            </Button>
-          ) : null}
-          {currentStep !== "review" ? (
-            <Button disabled={busy} onClick={() => void continueNext()}>
-              Continuar
-            </Button>
-          ) : !participantsLocked && canPublish ? (
-            <>
-              <Button
-                disabled={busy}
-                onClick={() => void registration.mutateAsync(registrationOpen ? "close" : "open")}
-                variant="outline"
-              >
-                {registrationLabel(registrationOpen, registration.isPending)}
-              </Button>
-              <Button
-                disabled={busy || approvedParticipantCount < 2}
-                onClick={() => void publish.mutateAsync()}
-              >
-                {publish.isPending ? "Publicando…" : "Publicar competición"}
-              </Button>
-            </>
-          ) : null}
-        </div>
-      </div>
+                  },
+                  onClearFieldError: () => setProfileError(null),
+                  value: profile,
+                }
+              : null
+          }
+        />
+      ) : null}
+      {currentStep === "format" ? (
+        <FormatStep
+          disabled={readOnly}
+          form={form}
+          onFormatChange={(next) => {
+            if (next === form.format) return;
+            if (
+              !globalThis.confirm(
+                "Cambiar el formato reemplazará las reglas incompatibles. ¿Continuar?",
+              )
+            )
+              return;
+            setForm({ ...form, format: next, rules: rulesForFormat(next) });
+          }}
+          onRulesChange={(rules) => setForm({ ...form, rules })}
+        />
+      ) : null}
+      {currentStep === "rules" || currentStep === "participants" || currentStep === "review" ? (
+        <Card>
+          <CardContent className={styles.content}>
+            {currentStep === "rules" ? (
+              <RulesStep
+                disabled={readOnly}
+                form={form}
+                onChange={(rules) => setForm({ ...form, rules })}
+              />
+            ) : null}
+            {currentStep === "participants" ? (
+              <ParticipantsStep
+                availableTeams={availableTeams}
+                disabled={participantsLocked || busy || !canManageParticipants}
+                newTeamName={newTeamName}
+                onAdd={addParticipant}
+                onNameChange={setNewTeamName}
+                onRemove={(id: string) => remove.mutateAsync(id)}
+                onTeamChange={setSelectedTeamId}
+                participants={participantsQuery.data?.participants ?? []}
+                selectedTeamId={selectedTeamId}
+                teams={teamsQuery.data?.teams ?? []}
+              />
+            ) : null}
+            {currentStep === "review" ? (
+              <ReviewStep draft={draft} participantCount={approvedParticipantCount} />
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+      <CompetitionSetupActionBarRegistration
+        busy={busy}
+        canContinue={currentStep !== "review"}
+        canGoBack={currentStep !== "information"}
+        canSave={!readOnly}
+        onBack={() => move(-1)}
+        onContinue={() => void continueNext()}
+        onSave={() => void save()}
+        review={
+          currentStep === "review" && !participantsLocked && canPublish
+            ? {
+                onPublish: () => void publish.mutateAsync(),
+                onRegistration: () =>
+                  void registration.mutateAsync(registrationOpen ? "close" : "open"),
+                publishDisabled: approvedParticipantCount < 2,
+                publishLabel: publish.isPending ? "Publicando…" : "Publicar competición",
+                registrationLabel: registrationLabel(registrationOpen, registration.isPending),
+              }
+            : undefined
+        }
+        saving={update.isPending}
+        step={steps.findIndex((step) => step.id === currentStep) + 1}
+        total={steps.length}
+      />
     </main>
   );
 }
