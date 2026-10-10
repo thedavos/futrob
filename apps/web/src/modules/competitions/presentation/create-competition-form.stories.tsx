@@ -202,7 +202,7 @@ export const InheritsOrganizationTimeZone: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("combobox", { name: "Zona horaria" })).toHaveTextContent(
-      "America/Lima",
+      "Lima · UTC-5",
     );
   },
 };

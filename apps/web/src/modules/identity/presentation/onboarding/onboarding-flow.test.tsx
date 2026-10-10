@@ -697,10 +697,10 @@ describe("OnboardingFlowProvider initialization", () => {
 
     const timeZone = await screen.findByRole("combobox", { name: "Zona horaria" });
     fireEvent.click(timeZone);
-    const lima = await screen.findByRole("option", { name: "America/Lima" });
+    const lima = await screen.findByRole("option", { name: "Lima · UTC-5" });
     fireEvent.pointerDown(lima, { pointerType: "mouse" });
     fireEvent.click(lima);
-    expect(timeZone.textContent).toContain("America/Lima");
+    expect(timeZone.textContent).toContain("Lima · UTC-5");
   });
 
   it("offers competition data as an aligned optional account action", async () => {

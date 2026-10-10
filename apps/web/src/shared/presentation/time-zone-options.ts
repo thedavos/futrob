@@ -27,6 +27,42 @@ export function getBrowserTimeZone(): string {
   }
 }
 
+function timeZoneCity(timeZone: string): string {
+  if (timeZone === "UTC") return "UTC";
+  const city = timeZone.split("/").at(-1) ?? timeZone;
+  return city.replaceAll("_", " ");
+}
+
+/** `GMT-5` and `GMT-05:00` become `UTC-5`. A whole hour drops the minutes. */
+function utcOffsetLabel(timeZone: string, now: Date): string | null {
+  try {
+    const raw =
+      new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        timeZoneName: "shortOffset",
+        hour: "numeric",
+      })
+        .formatToParts(now)
+        .find((part) => part.type === "timeZoneName")?.value ?? "";
+    if (raw === "GMT" || raw === "UTC") return "UTC";
+    const match = /^(?:GMT|UTC)([+-])(\d{1,2})(?::?(\d{2}))?$/.exec(raw);
+    if (!match) return null;
+    const hours = String(Number(match[2]));
+    const minutes = match[3] && match[3] !== "00" ? `:${match[3]}` : "";
+    return `UTC${match[1]}${hours}${minutes}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Visible zone name. The stored value stays the IANA id. The offset follows `now`. */
+export function timeZoneLabel(timeZone: string, now = new Date()): string {
+  const city = timeZoneCity(timeZone);
+  if (city === "UTC") return "UTC";
+  const offset = utcOffsetLabel(timeZone, now);
+  return offset ? `${city} · ${offset}` : city;
+}
+
 function buildTimeZoneOptions(): readonly TimeZoneOption[] {
   let values: readonly string[] = FALLBACK_TIME_ZONES;
   try {
@@ -38,7 +74,7 @@ function buildTimeZoneOptions(): readonly TimeZoneOption[] {
   }
   return [...new Set(["UTC", getBrowserTimeZone(), ...values])].map((value) => ({
     value,
-    label: value.replaceAll("_", " "),
+    label: timeZoneLabel(value),
   }));
 }
 
