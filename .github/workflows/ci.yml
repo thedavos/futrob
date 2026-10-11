@@ -74,6 +74,12 @@ jobs:
         run: npm run test -- --run --project api apps/api/src/http/routes/official-selection
         env:
           TEST_DATABASE_URL: postgresql://postgres:futrob_test@localhost:5432/futrob_test
+      - name: Activity feed on Postgres
+        run: >-
+          npm run test -- --run --project api apps/api/src/adapters/notifications
+          apps/api/src/di/official-selection.composition.integration
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:futrob_test@localhost:5432/futrob_test
 
   build:
     name: Build & Bundle Budget

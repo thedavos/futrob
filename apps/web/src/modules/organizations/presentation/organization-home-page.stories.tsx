@@ -250,7 +250,6 @@ export const Ready = story("Con datos", "ready", async ({ canvasElement }) => {
   await expect(within(league).getByText("Competición oficial · FC 26")).toBeVisible();
   await expect(within(league).getByText("1")).toBeVisible();
   await expect(canvas.getByRole("row", { name: /Copa de otoño/ })).toHaveTextContent("—");
-  await expect(canvas.getByText("Cuervos FC")).toBeVisible();
   await userEvent.click(canvas.getByRole("button", { name: "Acciones de Liga Metropolitana" }));
   const body = within(canvasElement.ownerDocument.body);
   await waitFor(() => {

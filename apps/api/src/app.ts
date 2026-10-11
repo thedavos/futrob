@@ -25,6 +25,7 @@ import { registerProviderSyncJobRoutes } from "@/http/routes/provider-sync-jobs.
 import { registerCandidateRecalculationRoutes } from "@/http/routes/candidate-recalculation.ts";
 import { registerConfirmationExpiryRoutes } from "@/http/routes/confirmation-expiry.ts";
 import { registerProviderHealthRoutes } from "@/http/routes/provider-health.ts";
+import { registerActivityRoutes } from "@/http/routes/activities.ts";
 
 export interface AppDeps {
   readonly modules: AppModules;
@@ -93,6 +94,7 @@ export function createApp(deps: AppDeps): Hono {
   registerScheduleChangeRequestRoutes(v1, deps);
   registerOfficialSelectionRoutes(v1, deps);
   registerFixtureRoutes(v1, deps);
+  registerActivityRoutes(v1, deps);
 
   app.route("/api/v1", v1);
 

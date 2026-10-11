@@ -313,7 +313,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
       );
       if (!parsed.success) return validationErrorResponse(parsed.error.issues);
 
-      const result = await deps.modules.teams.createRosterInvitation.execute({
+      const result = await deps.modules.activityCommands.createRosterInvitation.execute({
         organizationId,
         competitionId,
         teamId,
@@ -343,7 +343,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     );
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
 
-    const result = await deps.modules.teams.acceptRosterInvitation.execute({
+    const result = await deps.modules.activityCommands.acceptRosterInvitation.execute({
       token: parsed.data.token,
       actorId: asActorId(c.get("actorId")),
     });
@@ -392,7 +392,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     );
     if (!parsed.success) return validationErrorResponse(parsed.error.issues);
 
-    const result = await deps.modules.teams.respondToRosterInvitation.execute({
+    const result = await deps.modules.activityCommands.respondToRosterInvitation.execute({
       invitationId: c.req.param("invitationId"),
       actorId: asActorId(c.get("actorId")),
       action: parsed.data.action,

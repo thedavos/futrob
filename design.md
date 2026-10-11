@@ -634,7 +634,7 @@ sidebar izquierda | command bar + contenido con scroll + action bar opcional
 Regiones de la sidebar (scroll independiente del contenido central):
 
 1. **Header sticky:** fila de cuenta (avatar + nombre abreviado + colapsar) y selector de contexto.
-2. **Content (scroll):** pendientes del espacio activo (placeholder hasta que existan colas de dominio).
+2. **Content (scroll):** pendientes del espacio activo: filas abiertas que requieren acción de la proyección de actividad (`QueueTaskItem`). Un operador de la organización ve las de la organización (disputas); el resto ve las suyas y las de los equipos que capitanea (confirmaciones, invitaciones dirigidas). Vacío «Nada por ahora».
 3. **Footer sticky:** navegación General (Inicio, Competiciones, …).
 
 Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive en el header de la sidebar. La web responsive usa Sheet con las mismas regiones.
@@ -709,6 +709,10 @@ crear una organización ni aceptar una invitación.
 
 La vista personal no muestra disputas, payloads EA crudos, tokens ni datos administrativos de organizaciones en las que el actor no sea miembro.
 
+#### Actividad de la organización
+
+El inicio de organización incluye la sección **Actividad reciente**: las últimas 10 actividades de todo tipo (disputas, selecciones por confirmar, invitaciones dirigidas, competiciones publicadas), abiertas o cerradas, de la más reciente a la más antigua. Cada fila lleva icono con tono de estado, título que nombra lo que hay que hacer o lo que pasó, nombres del enfrentamiento o equipo y tiempo relativo. La cabecera ofrece «Ver toda la actividad» (`TextLink` caption + chevron) hacia `/orgs/:orgId/activity`, que pagina 25 filas con «Cargar más». Sin filas, la sección muestra su vacío y no el enlace. Solo quien opera la organización lee esta actividad; a los demás la sección no se muestra y la pantalla completa explica el acceso.
+
 #### Navegación de organización (General)
 
 - Inicio
@@ -734,9 +738,8 @@ El nombre de la organización es el título; la descripción es «Vista general 
 - Sin competiciones: `EmptyState` con `illustration-create-competition.png`, «Tu organización
   empieza aquí» y el CTA de crear. No es un error ni una carga.
 - Con competiciones: tabla «Competiciones» (nombre, estado, equipos aprobados, inicio y
-  menú de acciones) y «Actividad reciente» (competiciones por `updatedAt` y equipos por
-  `createdAt`). La actividad no atribuye un actor. Sin fecha de inicio: «Sin fecha». Si el
-  conteo de equipos no carga: «Sin datos», no un cero.
+  menú de acciones) y la sección «Actividad reciente» del feed (`OrganizationRecentActivity`).
+  Sin fecha de inicio: «Sin fecha». Si el conteo de equipos no carga: «Sin datos», no un cero.
 
 #### Navegación dentro de competición (Contexto activo)
 

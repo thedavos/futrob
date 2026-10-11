@@ -585,16 +585,112 @@ suite("official selection composition on Postgres", () => {
         ),
       ).toBe(1);
       expect(await count("official_selection_reference_claims", "released_at IS NULL")).toBe(1);
+      expect(await count("activity_entries", "status = 'open'")).toBe(2);
+      expect(await count("activity_entries")).toBe(2);
 
       const retried = await modules.officialSelection.confirm.execute(confirm);
       expect(retried.isOk() && retried.value.approvedResult?.revision).toBe(1);
       expect(await count("official_results")).toBe(1);
       expect(await count("official_selection_actions", "action_type = 'approved'")).toBe(1);
+      expect(await count("activity_entries", "status = 'closed'")).toBe(2);
+      expect(await count("activity_entries")).toBe(2);
 
       const replay = await modules.officialSelection.confirm.execute(confirm);
       expect(replay.isOk() && replay.value.replayed).toBe(true);
       expect(await count("official_results")).toBe(1);
       expect(project).toHaveBeenCalledTimes(2);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "rolls the command back when its activity cannot be written",
+    async () => {
+      const { modules } = await fresh();
+      const record = vi
+        .spyOn(modules.notifications.writer, "record")
+        .mockRejectedValueOnce(new Error("activity exploded"));
+      const propose = {
+        actorId: HOME_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: HOME,
+        selections: slot("m-1"),
+        expectedVersion: 0,
+        commandKey: "propose-activity",
+      };
+      await expect(modules.officialSelection.propose.execute(propose)).rejects.toThrow(
+        "activity exploded",
+      );
+      expect(await count("official_selection_proposals")).toBe(0);
+      expect(await count("activity_entries")).toBe(0);
+
+      const retried = await modules.officialSelection.propose.execute(propose);
+      expect(retried.isOk()).toBe(true);
+      expect(await count("official_selection_proposals")).toBe(1);
+      expect(
+        await count(
+          "activity_entries",
+          "audience = 'team' AND requires_action AND status = 'open'",
+        ),
+      ).toBe(1);
+      record.mockRestore();
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "projects a dispute once and closes it when the operator resolves it",
+    async () => {
+      const { modules } = await fresh();
+      const proposed = await propose(modules);
+      const open = {
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        actingTeamId: AWAY,
+        expectedVersion: 1,
+        reason: "Wrong match",
+        commandKey: "dispute-activity",
+      };
+      const opened = await modules.officialSelection.openDispute.execute(open);
+      if (!opened.isOk()) throw new Error(`dispute failed: ${opened.error.code}`);
+      await modules.officialSelection.openDispute.execute(open);
+      const disputeId = opened.value.dispute!.id;
+      expect(
+        await count(
+          "activity_entries",
+          `kind = 'match_dispute' AND status = 'open' AND requires_action AND source_id = '${disputeId}'`,
+        ),
+      ).toBe(1);
+      expect(
+        await count("activity_entries", "kind = 'selection_confirmation' AND status = 'open'"),
+      ).toBe(0);
+
+      await modules.officialSelection.reviewDispute.execute({
+        actorId: OPERATOR,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        expectedVersion: 2,
+        commandKey: "review-activity",
+      });
+      const resolved = await modules.officialSelection.resolveDispute.execute({
+        actorId: OPERATOR,
+        organizationId: ORG,
+        encounterId: ENCOUNTER,
+        expectedVersion: 3,
+        decision: { type: "approve_proposal", proposalId: proposed.proposal!.id },
+        reason: "Evidence checked",
+        commandKey: "resolve-activity",
+      });
+      expect(resolved.isOk()).toBe(true);
+      expect(await count("activity_entries", "kind = 'match_dispute'")).toBe(1);
+      expect(
+        await count(
+          "activity_entries",
+          `kind = 'match_dispute' AND status = 'closed' AND closed_by_actor_id = '${OPERATOR}'`,
+        ),
+      ).toBe(1);
     },
     TEST_TIMEOUT_MS,
   );

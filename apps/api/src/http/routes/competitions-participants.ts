@@ -130,13 +130,11 @@ export function registerCompetitionParticipantRoutes(app: Hono, deps: AppDeps): 
   secured.post("/organizations/:organizationId/competitions/:competitionId/publish", async (c) => {
     const organizationId = asOrganizationId(c.req.param("organizationId"));
     const competitionId = asCompetitionId(c.req.param("competitionId"));
-    const result = await deps.modules.transaction.runInTransaction(() =>
-      deps.modules.competitions.publish.execute({
-        actorId: c.get("actorId"),
-        organizationId,
-        competitionId,
-      }),
-    );
+    const result = await deps.modules.activityCommands.publishCompetition.execute({
+      actorId: c.get("actorId"),
+      organizationId,
+      competitionId,
+    });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(publishCompetitionResponseSchema.parse(competitionDraftDto(result.value)));
   });

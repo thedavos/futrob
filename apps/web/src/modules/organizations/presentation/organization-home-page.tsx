@@ -107,11 +107,7 @@ export function OrganizationHomePage({ organizationId }: { readonly organization
       ) : competitionsQuery.isPending ? null : competitions.length === 0 ? (
         <OrganizationHomeEmpty canCreate={create.allowed} organizationId={organizationId} />
       ) : (
-        <OrganizationHomeSections
-          competitions={competitions}
-          organizationId={organizationId}
-          teams={teamsQuery.isSuccess ? teams : []}
-        />
+        <OrganizationHomeSections competitions={competitions} organizationId={organizationId} />
       )}
     </main>
   );

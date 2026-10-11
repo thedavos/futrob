@@ -48,6 +48,7 @@ import {
   listEncounterCandidatesResponseSchema,
 } from "../encounters/schemas.ts";
 import { teamPerformanceOpenApiPaths, teamPerformanceOpenApiSchemas } from "./team-performance.ts";
+import { activityOpenApiPaths, activityOpenApiSchemas } from "./activities.ts";
 import {
   confirmationExpiryOpenApiPaths,
   confirmationExpiryOpenApiSchemas,
@@ -145,6 +146,7 @@ export const futrobOpenApiV1 = {
     { name: "encounters", description: "Persisted encounter schedule read models" },
     { name: "fixtures", description: "Deterministic competition fixture graphs" },
     { name: "results", description: "Official match selection negotiated by the Encounter Teams" },
+    { name: "notifications", description: "Activity feeds and pending work per audience" },
   ],
   paths: {
     ...confirmationExpiryOpenApiPaths,
@@ -1728,6 +1730,7 @@ export const futrobOpenApiV1 = {
     },
     ...fixtureOpenApiPaths,
     ...teamPerformanceOpenApiPaths,
+    ...activityOpenApiPaths,
     ...officialSelectionOpenApiPaths,
     "/encounters/{encounterId}/candidates": {
       get: {
@@ -3270,6 +3273,7 @@ export const futrobOpenApiV1 = {
       ...scheduleChangeRequestOpenApiSchemas,
       ...fixtureOpenApiSchemas,
       ...teamPerformanceOpenApiSchemas,
+      ...activityOpenApiSchemas,
       ...officialSelectionOpenApiSchemas,
       CompetitionRules: {
         type: "object",

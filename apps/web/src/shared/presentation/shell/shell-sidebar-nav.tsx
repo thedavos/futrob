@@ -4,10 +4,6 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import {
   applyStyles,
   Button,
-  EmptyState,
-  EmptyStateCopy,
-  EmptyStateDescription,
-  EmptyStateTitle,
   Sheet,
   SheetBody,
   SheetContent,
@@ -45,6 +41,7 @@ import type { WorkspaceSelection } from "@/shared/presentation/shell/workspace-s
 import { WorkspaceSelector } from "@/shared/presentation/shell/workspace-selector.tsx";
 import type { WorkspaceSelectorModel } from "@/shared/presentation/shell/workspace-selector-model.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { ShellPendingQueue } from "@/modules/notifications/presentation/shell-pending-queue.tsx";
 
 const SidebarNavLink = createLink(SidebarMenuLink);
 
@@ -104,10 +101,6 @@ const styles = stylex.create({
     minHeight: 0,
     flexGrow: 1,
     flexDirection: "column",
-  },
-  queueEmpty: {
-    paddingBlock: "1rem",
-    paddingInline: 0,
   },
   navIcon: {
     width: "1rem",
@@ -278,7 +271,7 @@ function ShellSidebarBody({
         <SidebarContent>
           <SidebarGroup className={queueGroup.className} style={queueGroup.style}>
             <SidebarGroupLabel>{t("shell.queue.label")}</SidebarGroupLabel>
-            <QueuePlaceholder />
+            <ShellPendingQueue allowedPermissions={allowedPermissions} selection={selection} />
           </SidebarGroup>
         </SidebarContent>
       )}
@@ -293,20 +286,6 @@ function ShellSidebarBody({
         )}
       </SidebarFooter>
     </>
-  );
-}
-
-function QueuePlaceholder() {
-  const { t } = useI18n();
-  const empty = applyStyles(styles.queueEmpty);
-
-  return (
-    <EmptyState className={empty.className} fill style={empty.style}>
-      <EmptyStateCopy>
-        <EmptyStateTitle>{t("shell.queue.empty.title")}</EmptyStateTitle>
-        <EmptyStateDescription>{t("shell.queue.empty.description")}</EmptyStateDescription>
-      </EmptyStateCopy>
-    </EmptyState>
   );
 }
 

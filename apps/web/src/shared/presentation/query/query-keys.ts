@@ -6,7 +6,24 @@ import type {
   GetMyStatisticsQuery,
 } from "@futrob/api-contracts";
 
+/** Filters that distinguish one activity listing from another in the cache. */
+type ActivityQueryKey = {
+  readonly organizationId?: string;
+  readonly competitionId?: string;
+  readonly status?: "open" | "closed";
+  readonly requiresAction?: boolean;
+  readonly limit?: number;
+};
+
 export const queryKeys = {
+  activities: {
+    all: ["activities"] as const,
+    organization: (organizationId: string, query: ActivityQueryKey) =>
+      [...queryKeys.activities.all, "organization", organizationId, query] as const,
+    organizationFeed: (organizationId: string) =>
+      [...queryKeys.activities.all, "organization", organizationId, "feed"] as const,
+    mine: (query: ActivityQueryKey) => [...queryKeys.activities.all, "mine", query] as const,
+  },
   identity: {
     all: ["identity"] as const,
     onboardingStatus: () => [...queryKeys.identity.all, "onboarding-status"] as const,

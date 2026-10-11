@@ -31,6 +31,8 @@ tags:
     description: Deterministic competition fixture graphs
   - name: results
     description: Official match selection negotiated by the Encounter Teams
+  - name: notifications
+    description: Activity feeds and pending work per audience
 paths:
   /internal/results/confirmation-expiry/run:
     post:
@@ -2079,6 +2081,142 @@ paths:
         "401":
           $ref: "#/components/responses/ApiError"
         "403":
+          $ref: "#/components/responses/ApiError"
+  /organizations/{organizationId}/activities:
+    get:
+      operationId: listOrganizationActivities
+      tags:
+        - notifications
+      summary: List the organization's activity feed for its operators
+      description: "Requires `encounters.results.approve` on the organization. Lists
+        every kind: disputes to resolve, watched proposals and directed
+        invitations, and publications. Failures: 400 `api.validation_error`,
+        `notifications.invalid_cursor`; 403 `authorization.forbidden`."
+      parameters:
+        - *a2
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: competitionId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Only rows of this competition, applied before the page limit.
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - open
+              - closed
+        - name: requiresAction
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 25
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Newest first by `lastEventAt`. Pending lists ask for
+            `status=open&requiresAction=true`; open rows past `expiresAt` are
+            left out of them. Pass `nextCursor` back as `cursor`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListActivitiesResponse"
+          headers:
+            X-Request-ID: *a1
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "401":
+          $ref: "#/components/responses/ApiError"
+        "403":
+          $ref: "#/components/responses/ApiError"
+  /players/me/activities:
+    get:
+      operationId: listMyActivities
+      tags:
+        - notifications
+      summary: List the actor's activity and that of the Teams they captain
+      description: Rows addressed to the actor (directed roster invitations) and to
+        every Team the actor represents as captain or vice-captain (proposals to
+        confirm).
+      parameters:
+        - *a2
+        - name: organizationId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Only rows of this organization, applied before the page limit.
+        - name: competitionId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Only rows of this competition, applied before the page limit.
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - open
+              - closed
+        - name: requiresAction
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 25
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Newest first by `lastEventAt`. Pending lists ask for
+            `status=open&requiresAction=true`; open rows past `expiresAt` are
+            left out of them. Pass `nextCursor` back as `cursor`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListActivitiesResponse"
+          headers:
+            X-Request-ID: *a1
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "401":
           $ref: "#/components/responses/ApiError"
   /organizations/{organizationId}/encounters/{encounterId}/official-selection:
     get:
@@ -6668,6 +6806,115 @@ components:
           anyOf:
             - $ref: "#/components/schemas/TeamPerformanceRankingSnapshot"
             - type: "null"
+    ListActivitiesResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        activities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              organizationId:
+                type: string
+              competitionId:
+                type:
+                  - string
+                  - "null"
+              audience:
+                type: string
+                enum:
+                  - organization
+                  - team
+                  - actor
+              kind:
+                type: string
+                enum:
+                  - match_dispute
+                  - selection_confirmation
+                  - roster_invitation
+                  - competition_published
+              status:
+                type: string
+                enum:
+                  - open
+                  - closed
+              requiresAction:
+                type: boolean
+              resourceType:
+                type: string
+                enum:
+                  - encounter
+                  - roster_invitation
+                  - competition
+              resourceId:
+                type: string
+              subject:
+                type: object
+                properties:
+                  competitionName:
+                    type:
+                      - string
+                      - "null"
+                  encounterLabel:
+                    type:
+                      - string
+                      - "null"
+                  teamName:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - competitionName
+                  - encounterLabel
+                  - teamName
+                additionalProperties: false
+              openedAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+              closedAt:
+                anyOf:
+                  - type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  - type: "null"
+              expiresAt:
+                anyOf:
+                  - type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  - type: "null"
+              lastEventAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            required:
+              - id
+              - organizationId
+              - competitionId
+              - audience
+              - kind
+              - status
+              - requiresAction
+              - resourceType
+              - resourceId
+              - subject
+              - openedAt
+              - closedAt
+              - expiresAt
+              - lastEventAt
+            additionalProperties: false
+        nextCursor:
+          type:
+            - string
+            - "null"
+      required:
+        - activities
+        - nextCursor
+      additionalProperties: false
     OfficialSelectionView:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object

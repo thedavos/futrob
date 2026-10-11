@@ -249,7 +249,17 @@ export function createTeamsModule(input: {
     }),
     externalClubConnections: connections,
     externalClubTeams,
-    repositories: { profiles, teams, rosters, rosterStates, connections, accounts, capacity },
+    repositories: {
+      profiles,
+      teams,
+      rosters,
+      rosterStates,
+      connections,
+      accounts,
+      capacity,
+      rosterInvitations,
+      rosterInvitationTokens,
+    },
   };
 }
 

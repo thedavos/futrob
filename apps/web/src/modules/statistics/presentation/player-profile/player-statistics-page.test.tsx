@@ -153,7 +153,10 @@ describe("PlayerStatisticsPage", () => {
     expect(screen.getByText(/de victorias/)).toBeTruthy();
     expect(screen.getByText("11")).toBeTruthy();
     expect(screen.getByText("0,39 por partido")).toBeTruthy();
-    expect(await screen.findByRole("heading", { name: "Rating por partido" })).toBeTruthy();
+    // The rating chart is a lazy chunk; under CI coverage it can take longer than 1 s.
+    expect(
+      await screen.findByRole("heading", { name: "Rating por partido" }, { timeout: 5_000 }),
+    ).toBeTruthy();
     expect(screen.getByText("1 sin resultado")).toBeTruthy();
     expect(screen.getAllByText("Sin resultado").length).toBeGreaterThan(0);
     expect(screen.queryByRole("tab")).toBeNull();
