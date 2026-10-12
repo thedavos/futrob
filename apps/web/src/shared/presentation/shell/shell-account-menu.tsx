@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import {
@@ -82,6 +83,7 @@ const styles = stylex.create({
 export function AccountMenu({ compact = false }: { readonly compact?: boolean }) {
   const session = authClient.useSession();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const user = session.data?.user;
   const name = user?.name?.trim() || user?.email || "Cuenta";
   const shortName = abbreviatedDisplayName(name);
@@ -153,6 +155,7 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
         <DropdownMenuItem
           onClick={() => {
             void authClient.signOut().then(() => {
+              queryClient.clear();
               void navigate({ to: "/login", replace: true });
             });
           }}

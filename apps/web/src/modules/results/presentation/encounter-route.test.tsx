@@ -36,8 +36,13 @@ function serve(routes: Record<string, () => Response>) {
 const VIEW_PATH = "/api/v1/organizations/org-1/encounters/encounter-1";
 const CANDIDATES_PATH = "/api/v1/encounters/encounter-1/candidates";
 
-function renderEncounter(locale: Locale = "es", competitionId = "competition-1") {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const newQueryClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+function renderEncounter(
+  locale: Locale = "es",
+  competitionId = "competition-1",
+  queryClient = newQueryClient(),
+) {
   return render(
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale={locale}>
@@ -196,5 +201,29 @@ describe("Encounter page", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Cuervos FC vs Maderas FC" }),
     ).toBeTruthy();
+  });
+
+  it("drops cached candidates once a later read is refused", async () => {
+    const user = userEvent.setup();
+    const queryClient = newQueryClient();
+    serve({
+      [VIEW_PATH]: () => Response.json(encounterView()),
+      [CANDIDATES_PATH]: () => Response.json(ready([m1])),
+    });
+    renderEncounter("es", "competition-1", queryClient);
+    expect(
+      await screen.findByRole("listitem", { name: /^Cuervos EA contra Maderas EA/ }),
+    ).toBeTruthy();
+
+    serve({
+      [VIEW_PATH]: () => Response.json(encounterView()),
+      [CANDIDATES_PATH]: () =>
+        Response.json({ code: "results.encounter_not_found" }, { status: 404 }),
+    });
+    await user.click(screen.getByRole("button", { name: "Actualizar candidatos" }));
+
+    expect(await screen.findByText("Candidatos restringidos")).toBeTruthy();
+    expect(screen.queryByRole("list", { name: "Partidos EA candidatos" })).toBeNull();
+    expect(screen.queryByText("Cuervos EA")).toBeNull();
   });
 });
