@@ -1,7 +1,10 @@
 # Propuesta: expiración y escalada de reprogramaciones (DEC-032 / DEC-033)
 
-**Estado:** propuesta pendiente de validación. No es una decisión aprobada. No hay runtime de
-expiración ni de escalada. No actualiza [open-decisions.md](/product/open-decisions.md).
+**Estado:** fronteras validadas el 2026-10-12. No implementada. Este archivo no edita
+[open-decisions.md](/product/open-decisions.md).
+**Validación:** responsable de producto, este hilo. Se adoptan las respuestas recomendadas
+de las siete preguntas abiertas.
+**Checkout observado:** `github/main` @ `79776dd6`.
 
 **Dueña:** `@futrob/scheduling`.
 **No dueña:** `@futrob/results`, el plazo DEC-021, ni la antelación mínima. Ese tema vive en
@@ -19,13 +22,14 @@ nunca acepta.
 Hoy la negociación existe ([scheduling-reschedule-negotiation.md](/docs/architecture/scheduling-reschedule-negotiation.md)).
 Una solicitud `open` puede quedarse abierta para siempre. Los estados `expired` y `escalated` ya
 están en el tipo, pero ningún comando los escribe. DEC-032 y DEC-033 piden un plazo y un cierre
-operativo. El default de [open-decisions.md](/product/open-decisions.md) dice «12 horas o según
-reglamento». Esa frase se evalúa aquí. No se trata como regla ya aprobada.
+operativo. El default de [open-decisions.md](/product/open-decisions.md) decía «12 horas o según
+reglamento». Esa frase se evaluó aquí. La lectura validada es el reglamento de etapa, con
+default 12. El registro canónico no se copia en este corte.
 
 DEC-021 (confirmación rival de resultados) es otra política. Vive en results. Dura 24 horas. Escala
 a `organizer_review`. No comparte constante, campo, job ni estado con esta propuesta. El texto
-vigente de DEC-021 que menciona «12 horas» y `escalated` solo apunta al default de DEC-032. No
-valida DEC-032.
+vigente de DEC-021 que menciona «12 horas» y `escalated` solo apuntaba al default. La validación
+de DEC-032/033 vive en este archivo, no en results.
 
 ## Qué hay hoy (observado)
 
@@ -47,7 +51,7 @@ valida DEC-032.
 
 Antes de la regla, la unidad que vence es esta:
 
-| Elemento | Contrato propuesto |
+| Elemento | Contrato validado |
 | --- | --- |
 | Qué vence | La ventana de respuesta de la **propuesta vigente**. No un reloj aparte de la solicitud. |
 | Ancla | `createdAt` de esa propuesta, según el reloj de la API (`ClockPort`). |
@@ -70,7 +74,7 @@ de la solicitud **no** es ancla si ya hubo contrapropuesta.
 | Aspecto | A. 12 h fijas de producto | B. Reglamento de etapa, default 12 h | C. `min(duración, kickoff actual)` |
 | --- | --- | --- | --- |
 | Ancla | `createdAt` de la propuesta vigente | Igual | `createdAt`, recortado por el inicio actual `K` |
-| Duración | 12 h exactas | Entero `rescheduleProposalExpiryHours` (recomendado 1–72), default 12 | 12 h o las horas del reglamento, recortadas por `K` |
+| Duración | 12 h exactas | Entero `rescheduleProposalExpiryHours` (1–72), default 12 | 12 h o las horas del reglamento, recortadas por `K` |
 | Quién fija el plazo | La regla de producto | El organizador en el reglamento de etapa | La regla, limitada por el calendario |
 | Campo nuevo en competitions | No | Sí. Distinto de `minimumRescheduleNoticeHours` | El de A o B, más el recorte |
 | Propuesta después de `K` | Recibe su ventana completa | Recibe su ventana completa | Nace vencida |
@@ -88,24 +92,31 @@ en el futuro. El runner escala al llegar `D`.
 
 ### Destino al vencer
 
-| Aspecto | 1. `open` → `escalated` (recomendado) | 2. `open` → `expired` → `escalated` | 3. `open` → `expired` y se acaba |
+| Aspecto | 1. `open` → `escalated` (validada) | 2. `open` → `expired` → `escalated` | 3. `open` → `expired` y se acaba |
 | --- | --- | --- | --- |
 | Encaje con DEC-033 | Directo | Hay un limbo extra | El organizador no recibe el caso |
 | Solicitud activa | `escalated` sigue activa y bloquea otra incompatible | Hay que definir si `expired` bloquea | Se puede abrir otra y saltarse al organizador |
 | Jobs | Uno | Dos, o un segundo comando manual | Uno, sin cierre operativo |
 
-Se recomienda 1. El glosario lista `expired` y `escalated` por separado. Eso se lee aquí como
-hecho de vencimiento más estado de la solicitud, no como dos estados terminales.
+La opción 1 está validada. El glosario lista `expired` y `escalated` por separado. Eso se lee
+aquí como hecho de vencimiento más estado de la solicitud, no como dos estados terminales.
 
-## Recomendación
+## Decisión validada
 
-**Duración:** alternativa B. Campo nuevo `rescheduleProposalExpiryHours` en las reglas de etapa.
-Entero de 1 a 72. Default 12. No reutilizar `minimumRescheduleNoticeHours`.
+El 2026-10-12 el responsable de producto adoptó las siete recomendaciones. Quedan así:
 
-**Por qué B.** El default escrito en DEC-032 ya contempla reglamento. Una copa de fin de semana no
-tiene el mismo ritmo que una liga semanal. Una propuesta a las 22:00 con 12 h fijas vence a las
-10:00. Eso puede ser lo que se busca. El reglamento deja elegir 24 h sin otra decisión de producto.
-Si se prefiere cero superficie nueva en competitions, la alternativa A es el recorte válido.
+| Pregunta | Elección |
+| --- | --- |
+| Duración | **B.** Campo nuevo `rescheduleProposalExpiryHours` en las reglas de etapa. Entero 1–72. Default 12. No reutilizar `minimumRescheduleNoticeHours`. |
+| Default 12 h | Se conserva. Una propuesta a las 22:00 vence a las 10:00. El reglamento puede subir a 24. |
+| Conservar horario | Sí. Es un cierre válido en `escalated`. |
+| Cupo al fijar fecha | Sí. Baja el cupo del Team que **abrió** la solicitud. |
+| Estado al resolver | `resolved_by_organizer`. No se reutiliza `accepted`. |
+| Walkover | Intención en scheduling. Cero `OfficialResult` en este corte. |
+| Antelación mínima al fijar fecha | El comando post-escalada no queda bloqueado por N. Crear, contraproponer y aceptar siguen en el otro thread. |
+
+**Por qué B.** El default escrito en DEC-032 ya contemplaba reglamento. Una copa de fin de semana
+no tiene el mismo ritmo que una liga semanal. A queda como recorte rechazado. C sigue descartada.
 
 **Ancla.** `createdAt` de la propuesta vigente. Cada contrapropuesta guarda un `D` propio.
 
@@ -121,7 +132,8 @@ incompatible hasta que el organizador cierre.
 
 ## Regla común
 
-Estas reglas valen para A y para B. C no entra.
+Estas reglas son la política validada (B). Las columnas A y C de los vectores solo contrastan
+alternativas rechazadas. C no entra en el runtime.
 
 ### Respuestas a tiempo y tardías
 
@@ -167,9 +179,9 @@ Un cambio de «quién debe aprobar» no reabre una solicitud `escalated` ni la a
 
 Las solicitudes `open` creadas antes de esta política no tienen `D`.
 
-Al migrar, se calcula `D = createdAt + duración` de la propuesta vigente. La duración es 12 h en A,
-o el valor del reglamento (default 12) en B. Se guarda. No se concede un plazo nuevo desde la
-migración.
+Al migrar, se calcula `D = createdAt + duración` de la propuesta vigente. La duración es el valor
+del reglamento de esa etapa, o 12 si no hay valor. Se guarda. No se concede un plazo nuevo desde
+la migración.
 
 Si ese `D` ya pasó, los Teams ya no pueden responder. El runner las pasa a `escalated` en el
 primer barrido. No se aceptan por silencio. No se inventa fecha.
@@ -217,7 +229,7 @@ silencio no elige perdedor. Solo deja la solicitud lista para que el runner la e
 | | DEC-021 | DEC-032 / DEC-033 |
 | --- | --- | --- |
 | Contexto | results, selección oficial | scheduling, cambio de horario |
-| Default de duración | 24 h, validado | 12 h o reglamento, **pendiente** |
+| Default de duración | 24 h, validado | Reglamento de etapa, default 12. Validado aquí. |
 | Destino | `organizer_review` | `escalated` |
 | Efecto oficial al vencer | Ninguno | Ninguno |
 | Job | confirmation-expiry | otro job, otro endpoint |
@@ -255,19 +267,20 @@ Efecto:
 
 `resolved_by_organizer` no existe aún en el runtime. Hoy `accepted` significa «todas las
 aprobaciones requeridas sobre la propuesta vigente, y el horario aplicado». Mezclar ambos
-escondería la base legal. Se recomienda añadir el estado al implementar. Hasta entonces, no
-está aprobado.
+escondería la base legal. El estado nuevo se añade al implementar.
 
-**Cupo (recomendación, pendiente de validar).** Consumir el cupo del Team que **abrió** la
-solicitud. Ese Team pidió el cambio. El organizador solo desbloquea el calendario.
+**Cupo.** Consumir el cupo del Team que **abrió** la solicitud. Ese Team pidió el cambio. El
+organizador solo desbloquea el calendario.
 
-**Antelación mínima.** Fuera de esta propuesta. El otro thread es dueño. Recomendación para no
-dejar casos abiertos: la fecha impuesta por el organizador no se bloquea por la antelación de
-Teams. Eso lo tiene que confirmar ese thread.
+**Antelación mínima.** El otro thread es dueño de N en crear, contraproponer y aceptar. Allí el
+organizador no bypasea N dentro de la negociación. Aquí, el comando que **fija fecha** sobre una
+solicitud ya `escalated` no queda bloqueado por N. Si no, un caso vencido con el partido cerca
+no se podría cerrar por fecha. La edición de fixture sigue siendo el camino de emergencia que
+no pasa por esta solicitud.
 
 Sigue bloqueado: slot protegido, selección o resultado aprobado, fecha no futura.
 
-### 2. Conservar el horario (recomendado aunque DEC-033 no lo nombra)
+### 2. Conservar el horario
 
 Cierra la solicitud como `resolved_by_organizer` con desenlace `schedule_kept`. El horario no
 cambia. No hay aplicación. No se consume cupo. Los Teams pueden abrir otra solicitud después, si
@@ -325,9 +338,10 @@ Contexto común, salvo que la fila diga otra cosa:
   piden.
 - El reloj es el de la API.
 
-Deadlines:
+Deadlines. La política validada es B. La columna A es B con el default 12. B-6 es B con
+reglamento 6. C está descartada.
 
-- **A (12 h fijas):** `D = 2026-11-01T20:00:00.000Z`.
+- **A / B-12:** `D = 2026-11-01T20:00:00.000Z`.
 - **B-6 (reglamento 6 h):** `D = 2026-11-01T14:00:00.000Z`.
 - **C (descartada, tope `K`):** `D = 2026-11-01T18:00:00.000Z`.
 
@@ -406,11 +420,12 @@ En A no hay cambio de reglamento. V32-14 y V32-16 se leen igual. V32-15 usaría 
 
 ### Resolución del organizador
 
-Tras V32-10 en A. Solicitud `escalated`. Horario sigue en `K`.
+Tras V32-10 con `D` de 12 h (default B, igual que la columna A). Solicitud `escalated`.
+Horario sigue en `K`. El aviso mínimo de etapa es 12 h.
 
 | ID | Decisión | Instante (UTC) | Resultado |
 | --- | --- | --- | --- |
-| V32-27 | Fija `S3 = 2026-11-03T19:00:00.000Z` | `2026-11-02T09:00:00.000Z` | Fecha fijada. Horario `S3`. Cupo +1 del Team A (si se valida esa regla). |
+| V32-27 | Fija `S3 = 2026-11-03T19:00:00.000Z` | `2026-11-02T09:00:00.000Z` | Fecha fijada. Horario `S3`. Cupo +1 del Team A. |
 | V32-28 | Fija `S3 = 2026-11-02T08:00:00.000Z` | `2026-11-02T09:00:00.000Z` | Falla fecha no futura. Sigue `escalated`. |
 | V32-29 | Acepta `P1` con el comando de negociación | `2026-11-02T09:00:00.000Z` | Falla. La negociación está cerrada. |
 | V32-30 | B contrapropone | `2026-11-02T09:00:00.000Z` | Falla. Los Teams no negocian en `escalated`. |
@@ -419,42 +434,46 @@ Tras V32-10 en A. Solicitud `escalated`. Horario sigue en `K`.
 | V32-33 | Walkover sin nombrar Teams | `2026-11-02T09:00:00.000Z` | Falla. El silencio no elige perdedor. |
 | V32-34 | Otra solicitud incompatible del Team B, misma scope | `2026-11-02T09:00:00.000Z` | Falla. `escalated` sigue activa. |
 | V32-35 | Runner otra vez | `2026-11-02T10:00:00.000Z` | Omite. Una sola acción de vencimiento. |
+| V32-36 | Fija `S3 = 2026-11-02T12:00:00.000Z` (3 h vista, N = 12) | `2026-11-02T09:00:00.000Z` | Fecha fijada. Horario `S3`. N no bloquea este comando. Cupo +1 del Team A. |
 
-## Qué necesita validación
+## Preguntas ya cerradas
 
-Estas preguntas las tiene que responder producto. La evidencia no las cierra.
+Validadas el 2026-10-12. No se reabren en el desarrollo posterior.
 
-1. **¿A o B?** 12 h fijas, o reglamento con default 12 y campo nuevo 1–72. Recomendación: B.
-2. **¿12 h es el default correcto?** Una propuesta nocturna vence a la mañana siguiente.
-3. **¿Se añade «conservar horario»?** DEC-033 solo nombra fecha o walkover. Recomendación: sí.
-4. **¿El cupo baja al fijar fecha el organizador?** Recomendación: sí, contra el Team que abrió.
-5. **¿`resolved_by_organizer` es estado nuevo o se reutiliza `accepted`?** Recomendación: estado
-   nuevo.
-6. **Walkover de verdad.** ¿Se espera un `OfficialResult` en el mismo corte, o basta la intención
-   en scheduling y results se abre después?
-7. **Antelación mínima al fijar fecha.** Lo confirma el otro thread. Recomendación de este lado:
-   el organizador no queda bloqueado por la antelación de Teams.
+| # | Pregunta | Elección |
+| --- | --- | --- |
+| 1 | ¿A o B? | B. Reglamento, campo nuevo 1–72, default 12. |
+| 2 | ¿12 h es el default? | Sí. El organizador puede poner 24 en el reglamento. |
+| 3 | ¿Conservar horario? | Sí. |
+| 4 | ¿Cupo al fijar fecha? | Sí, del Team que abrió. |
+| 5 | ¿Estado al resolver? | `resolved_by_organizer`. |
+| 6 | ¿Walkover oficial en este corte? | No. Solo intención en scheduling. |
+| 7 | ¿N bloquea fijar fecha tras escalar? | No. N sigue atando crear, contra y aceptar. |
 
 ## Fuera de alcance
 
 - Runtime, migraciones, job, HTTP, SDK, pantallas.
-- Semántica de `minimumRescheduleNoticeHours` (otro thread, otro archivo).
+- Semántica de `minimumRescheduleNoticeHours` en crear, contraproponer y aceptar (otro thread).
 - DEC-034 (fecha límite de reprogramar, solo staff).
-- Marcar DEC-032 o DEC-033 como validadas.
+- Copiar esta política a [open-decisions.md](/product/open-decisions.md) en este corte.
 - ADR nuevo. La frontera scheduling ≠ results ya está decidida. Esta propuesta no la mueve.
-- Pruebas artificiales sobre este texto. Los vectores V32-01…V32-35 son el contrato cuando se
+- Pruebas artificiales sobre este texto. Los vectores V32-01…V32-36 son el contrato cuando se
   implemente.
 
 ## Relación con el desarrollo posterior
 
-Cuando producto valide, el trabajo de implementación debe:
+La política de este archivo es el contrato. El trabajo de implementación debe:
 
-1. Guardar `D` al crear cada propuesta.
+1. Guardar `D` al crear cada propuesta, con las horas del reglamento (default 12).
 2. Rechazar respuestas con `t ≥ D` antes de cambiar estado.
 3. Pasar `open` → `escalated` una vez, con lock, CAS y actor de sistema.
 4. Tratar `escalated` como solicitud activa.
-5. Añadir los comandos de resolución del organizador.
-6. Ejercitar los vectores validados con reloj y fechas **literales**. No comparar este documento
-   ni una constante suelta.
+5. Añadir los tres comandos de resolución del organizador (`schedule_set`, `schedule_kept`,
+   `walkover_intended`) hacia `resolved_by_organizer`.
+6. Consumir el cupo del Team solicitante solo en `schedule_set`.
+7. No aplicar N al fijar fecha en `escalated`.
+8. Ejercitar V32-01…V32-36 con reloj y fechas **literales**. No comparar este documento ni una
+   constante suelta.
 
-Hasta esa validación, el default de DEC-032/033 sigue siendo default, no regla.
+El default de DEC-032/033 en [open-decisions.md](/product/open-decisions.md) aún no se reescribe.
+La lectura validada vive aquí hasta ese copiado.
