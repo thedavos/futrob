@@ -77,7 +77,7 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Skip optional onboarding | button `Omitir por ahora` |
 | Player finish | button `Entrar a mi espacio` |
 | Player home title | `Inicio` |
-| Shell identity (no club/gamertag) | `Tu espacio en Futrob` |
+| Shell identity (no club/gamertag) | command-bar empty label `Sin organización` (account menu still shows the given name) |
 | Open matches | sidebar link `Mis partidos` (header CTA, when present, is `Ver mis partidos`) |
 | Match view radios | `Todos`, `Liga`, `Playoff`, `Amistosos` (hidden until matches can load) |
 | Open match row | link `Ver {home} {homeGoals} – {awayGoals} {away}` — not the unused string `Ver partido` |
@@ -85,9 +85,10 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Open statistics | sidebar link `Mis estadísticas` |
 | Org name | textbox `Nombre de la organización` |
 | Create org | button `Crear organización` |
-| New competition (org home) | button `Crear competición` |
+| New competition (org competitions index, empty) | button `Nueva competición` |
+| New competition (org home `/orgs/$orgId` when competitions exist) | button `Crear competición` |
 | Competition name | textbox `Nombre de la competición` |
-| Create competition | button `Crear competición` |
+| Create competition (draft form submit) | button `Crear competición` |
 
 Do not drive by coordinates or tab order. After each mutation, snapshot the resulting URL and a visible heading — not only the click.
 

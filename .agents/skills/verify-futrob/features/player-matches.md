@@ -25,7 +25,7 @@ Preconditions:
 - `helpers/verify-futrob doctor` exits 0.
 - Seed proof uses an actor **without** a `PlayerExternalClubAssociation` unless the run documents a linked club.
 
-- **Workspace entry.** Open `/player`. Choose the sidebar link `Mis partidos` (not the unused string `Abrir Mis partidos`). When the home header shows a matches CTA, its name is `Ver mis partidos`. The URL is `/player/matches` (search includes `view=all`). The heading is `Mis partidos`.
+- **Workspace entry.** Open `/player`. Choose the sidebar link `Mis partidos` (not the unused string `Abrir Mis partidos`). When the home header shows a matches CTA, its name is `Ver mis partidos`. The URL is `/player/matches`. Default view is `all`; the `view` search param may be omitted when it is that default. The heading is `Mis partidos`.
 - **Needs club.** With no club association, an empty state title `Asocia un club para ver partidos recientes` is visible. The run must not show a provider error that implies a failed EA fetch for this empty case.
 - **Direct route.** Open `/player/matches`. Same heading and empty or populated region. If populated, the radiogroup includes `Todos`, `Liga`, `Playoff`, `Amistosos`. Choosing `Todos` keeps `aria-checked=true` on that radio. The region name for all-matches is `Todos los partidos`.
 - **Official split.** Open `/player` and choose the sidebar link `Mis estadísticas` (not the unused string `Abrir tu perfil`), or open `/player/statistics`. The heading is `Mis estadísticas`. A needs-club empty title is `Asocia un club para reconocer tus partidos`. A ready profile may also show the player display name. This page is the EA recent game-profile, not official competition standings. Mis partidos must not present official standings or dispute admin.
@@ -39,4 +39,5 @@ Preconditions:
 - `No jugaste` on a row is valid when the identifier did not appear for the selected club. Do not treat it as a load error.
 - Linking a club during this recipe is a different feature (EA search). If you link one, say so; do not silently switch the empty-state proof.
 - Radios `Todos` / `Liga` / `Playoff` / `Amistosos` stay hidden on the needs-club empty state. That is expected, not a missing-control bug.
+- A club without a game identifier is a different empty (`Añade una cuenta de juego` on Mis partidos, `Registra tu identificador de juego` on Mis estadísticas). Seed proof uses no club association; do not treat those strings as the needs-club title.
 - Official standings and disputes stay off this list. `/player/statistics` (`Mis estadísticas`) is the personal EA recent-profile, not a separate official-history list.

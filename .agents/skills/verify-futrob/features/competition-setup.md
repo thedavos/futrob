@@ -27,8 +27,8 @@ Preconditions:
 - CLI twin needs `FUTROB_INTERNAL_JOB_SECRET` equal to `apps/api/.env` and `--actor` set.
 
 - **Create org (UI).** Open `/orgs/new`. Heading `Crear organización`. Fill `Nombre de la organización` with `Verify Org <run-id>`. The form also has `Slug`, `Zona horaria`, and `Escudo`; accept the generated slug and default timezone unless the run is proving those fields. Choose `Crear organización`. The URL becomes `/orgs/<organizationId>/competitions` (heading `Competiciones`). Copy that id from the address bar; do not retype it from memory or OCR.
-- **Create draft (UI).** From org home, choose `Crear competición`, or open `/orgs/<organizationId>/competitions/new` with the address-bar id. Heading `Nueva competición`. Fill `Nombre de la competición` (placeholder `ej. Liga Futrob Apertura`), choose a platform under `Plataforma de la competición`, a `Región deportiva`, and a `Formato`. Choose `Crear competición`. The URL becomes `/orgs/<organizationId>/competitions/<competitionId>/setup`.
-- **Setup.** The setup view is reachable. The page title is `Configurar <name>` with a `Borrador` badge. Stepper + step heading `Información` and field `Nombre` are visible (default when `?step=` is absent). Do not claim publish, fixture, or Match Center unless you actually drive those controls in the UI.
+- **Create draft (UI).** From the competitions index empty state, choose `Nueva competición`, or open `/orgs/<organizationId>/competitions/new` with the address-bar id. Heading `Nueva competición`. Fill `Nombre de la competición` (placeholder `ej. Liga Futrob Apertura`), choose a platform under `Plataforma de la competición`, a `Región deportiva`, and a `Formato`. Choose the form submit `Crear competición`. The URL becomes `/orgs/<organizationId>/competitions/<competitionId>/setup`.
+- **Setup.** The setup view is reachable. The page title is `Configurar competición` with a `Borrador` badge. The stepper step is `Información` (default when `?step=` is absent); the step body heading is `Información general` and the name field is `Nombre de la competición`. Do not claim publish, fixture, or Match Center unless you actually drive those controls in the UI.
 - **CLI twin.** From the repo root:
 
   ```bash
@@ -37,7 +37,7 @@ Preconditions:
   ```
 
   Exit code 0. Stdout contains `Golden path OK` and JSON with `organizationId`, `competitionId`, `fixturePlanId`, `encounterCount`. Save stdout to evidence. This proves the API chain, not the web wizard.
-- **Proof.** UI: screenshot + ARIA of the new org home and of setup `Información`. CLI: command transcript with exit 0. Record both entry points if both were used; if only CLI ran, say the UI entry is unverified.
+- **Proof.** UI: screenshot + ARIA of the competitions index after org create and of setup `Información general`. CLI: command transcript with exit 0. Record both entry points if both were used; if only CLI ran, say the UI entry is unverified.
 
 ## Gotchas
 
@@ -45,11 +45,11 @@ Preconditions:
 - `Crear competición` is hidden when `canCreate` is false. That is a permission outcome, not a missing button bug.
 - `e2e-golden-path` stops at fixture. It does not sync EA, select official matches, or publish a portal.
 - Fixture-managed encounters reject manual `snapshot-set` with 409 `fixture_managed_conflict`.
-- After `Crear organización` the URL is `/orgs/$orgId/competitions` (heading `Competiciones`, empty `Sin competiciones todavía`). The stub `/orgs/$orgId` is not the create landing.
+- After `Crear organización` the URL is `/orgs/$orgId/competitions` (heading `Competiciones`, empty `Sin competiciones todavía`). The empty-state button is `Nueva competición`. `Crear competición` is the draft-form submit, and the org-home (`/orgs/$orgId`) header/empty control when the actor has `competitions.update` and competitions already exist. The stub `/orgs/$orgId` is not the create landing.
 - On Postgres, `--actor` must be a real `actors.id` from signup. Invented ids such as `actor_demo` fail the actor foreign key.
 - Unique org names: reuse of `Verify Org <run-id>` can fail. Always include the run id.
 - The draft form also has `Edición del juego` and a teams/dates/cover section. Defaults (FC 27, min 2 teams) allow submit without touching those extras.
-- After `Crear competición`, the URL is `/orgs/$orgId/competitions/$competitionId/setup` without `?step=`. The wizard defaults to `information`. The document title area reads `Configurar <name>`; assert the step heading `Información` and field `Nombre`.
-- Org home exposes `Crear competición` in the page header when competitions already exist, and in the empty state otherwise, when the actor has `competitions.update`. The form submit label remains `Crear competición`.
+- After `Crear competición`, the URL is `/orgs/$orgId/competitions/$competitionId/setup` without `?step=`. The wizard defaults to `information`. The header title is `Configurar competición` (not the competition name). Assert the stepper `Información`, the body heading `Información general`, and field `Nombre de la competición`.
+- Org home `/orgs/$orgId` exposes `Crear competición` in the page header when competitions already exist, and in the empty state otherwise, when the actor has `competitions.update`. The competitions index empty CTA is `Nueva competición`. The draft form submit label remains `Crear competición`.
 - A mistyped organization id on `/orgs/<id>/competitions/new` yields `scope-not-found` and the same forbidden copy as a real permission miss. Always paste the id from the address bar after `Crear organización`.
 - Never treat the CLI twin as a substitute for the UI entry points listed above.
