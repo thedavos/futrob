@@ -51,18 +51,18 @@ de DEC-032/033 vive en este archivo, no en results.
 
 Antes de la regla, la unidad que vence es esta:
 
-| Elemento | Contrato validado |
-| --- | --- |
-| Qué vence | La ventana de respuesta de la **propuesta vigente**. No un reloj aparte de la solicitud. |
-| Ancla | `createdAt` de esa propuesta, según el reloj de la API (`ClockPort`). |
-| Duración | Horas enteras exactas en milisegundos. Sin calendario y sin zona horaria. 12 h = 43 200 000 ms. |
-| Deadline `D` | Se calcula y se guarda en UTC al **crear** esa propuesta (solicitud nueva o contrapropuesta). |
-| Reloj `t` | `ClockPort.now()` dentro de la transacción del comando. No cuenta el cliente, el BFF ni el runner. |
-| Frontera | `t < D` está a tiempo. `t = D` o después está fuera de plazo. Precisión de milisegundo. |
-| Solicitud `open` | Sigue negociable mientras `t < D` y faltan consentimientos requeridos. |
-| Solicitud `escalated` | La propuesta vigente venció sin el último consentimiento. Los Teams ya no negocian. |
-| Hecho de vencimiento | Una sola acción de auditoría (`schedule_change_expired`, capacidad `system`) al pasar a `escalated`. |
-| Estado `expired` | No se escribe. El vencimiento es el hecho. El estado de la solicitud es `escalated`. |
+| Elemento              | Contrato validado                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| Qué vence             | La ventana de respuesta de la **propuesta vigente**. No un reloj aparte de la solicitud.             |
+| Ancla                 | `createdAt` de esa propuesta, según el reloj de la API (`ClockPort`).                                |
+| Duración              | Horas enteras exactas en milisegundos. Sin calendario y sin zona horaria. 12 h = 43 200 000 ms.      |
+| Deadline `D`          | Se calcula y se guarda en UTC al **crear** esa propuesta (solicitud nueva o contrapropuesta).        |
+| Reloj `t`             | `ClockPort.now()` dentro de la transacción del comando. No cuenta el cliente, el BFF ni el runner.   |
+| Frontera              | `t < D` está a tiempo. `t = D` o después está fuera de plazo. Precisión de milisegundo.              |
+| Solicitud `open`      | Sigue negociable mientras `t < D` y faltan consentimientos requeridos.                               |
+| Solicitud `escalated` | La propuesta vigente venció sin el último consentimiento. Los Teams ya no negocian.                  |
+| Hecho de vencimiento  | Una sola acción de auditoría (`schedule_change_expired`, capacidad `system`) al pasar a `escalated`. |
+| Estado `expired`      | No se escribe. El vencimiento es el hecho. El estado de la solicitud es `escalated`.                 |
 
 El kickoff actual del Encounter **no** es ancla. El inicio propuesto **no** es ancla. La creación
 de la solicitud **no** es ancla si ya hubo contrapropuesta.
@@ -71,15 +71,15 @@ de la solicitud **no** es ancla si ya hubo contrapropuesta.
 
 ### Duración y origen del plazo
 
-| Aspecto | A. 12 h fijas de producto | B. Reglamento de etapa, default 12 h | C. `min(duración, kickoff actual)` |
-| --- | --- | --- | --- |
-| Ancla | `createdAt` de la propuesta vigente | Igual | `createdAt`, recortado por el inicio actual `K` |
-| Duración | 12 h exactas | Entero `rescheduleProposalExpiryHours` (1–72), default 12 | 12 h o las horas del reglamento, recortadas por `K` |
-| Quién fija el plazo | La regla de producto | El organizador en el reglamento de etapa | La regla, limitada por el calendario |
-| Campo nuevo en competitions | No | Sí. Distinto de `minimumRescheduleNoticeHours` | El de A o B, más el recorte |
-| Propuesta después de `K` | Recibe su ventana completa | Recibe su ventana completa | Nace vencida |
-| Cambio de reglamento | No aplica | No reescribe un `D` ya guardado | Igual que A o B para el `D` guardado |
-| Coste | Un campo `D` por propuesta y un runner | Además, campo de reglas, UI y validación | El de A o B, más propuestas nacidas muertas |
+| Aspecto                     | A. 12 h fijas de producto              | B. Reglamento de etapa, default 12 h                      | C. `min(duración, kickoff actual)`                  |
+| --------------------------- | -------------------------------------- | --------------------------------------------------------- | --------------------------------------------------- |
+| Ancla                       | `createdAt` de la propuesta vigente    | Igual                                                     | `createdAt`, recortado por el inicio actual `K`     |
+| Duración                    | 12 h exactas                           | Entero `rescheduleProposalExpiryHours` (1–72), default 12 | 12 h o las horas del reglamento, recortadas por `K` |
+| Quién fija el plazo         | La regla de producto                   | El organizador en el reglamento de etapa                  | La regla, limitada por el calendario                |
+| Campo nuevo en competitions | No                                     | Sí. Distinto de `minimumRescheduleNoticeHours`            | El de A o B, más el recorte                         |
+| Propuesta después de `K`    | Recibe su ventana completa             | Recibe su ventana completa                                | Nace vencida                                        |
+| Horas tras publicar         | Fijas                                  | Congeladas con el resto de la estructura (FTR-COMP-001)   | Igual que A o B                                     |
+| Coste                       | Un campo `D` por propuesta y un runner | Además, campo de reglas, UI y validación                  | El de A o B, más propuestas nacidas muertas         |
 
 C se descarta. Es el mismo error que el default viejo de DEC-021. Los capitanes piden cambio cuando
 ya no pueden jugar. Eso suele ser cerca o después del horario actual. Con `K` como tope, muchas
@@ -92,11 +92,11 @@ en el futuro. El runner escala al llegar `D`.
 
 ### Destino al vencer
 
-| Aspecto | 1. `open` → `escalated` (validada) | 2. `open` → `expired` → `escalated` | 3. `open` → `expired` y se acaba |
-| --- | --- | --- | --- |
-| Encaje con DEC-033 | Directo | Hay un limbo extra | El organizador no recibe el caso |
-| Solicitud activa | `escalated` sigue activa y bloquea otra incompatible | Hay que definir si `expired` bloquea | Se puede abrir otra y saltarse al organizador |
-| Jobs | Uno | Dos, o un segundo comando manual | Uno, sin cierre operativo |
+| Aspecto            | 1. `open` → `escalated` (validada)                   | 2. `open` → `expired` → `escalated`  | 3. `open` → `expired` y se acaba              |
+| ------------------ | ---------------------------------------------------- | ------------------------------------ | --------------------------------------------- |
+| Encaje con DEC-033 | Directo                                              | Hay un limbo extra                   | El organizador no recibe el caso              |
+| Solicitud activa   | `escalated` sigue activa y bloquea otra incompatible | Hay que definir si `expired` bloquea | Se puede abrir otra y saltarse al organizador |
+| Jobs               | Uno                                                  | Dos, o un segundo comando manual     | Uno, sin cierre operativo                     |
 
 La opción 1 está validada. El glosario lista `expired` y `escalated` por separado. Eso se lee
 aquí como hecho de vencimiento más estado de la solicitud, no como dos estados terminales.
@@ -105,15 +105,15 @@ aquí como hecho de vencimiento más estado de la solicitud, no como dos estados
 
 El 2026-10-12 el responsable de producto adoptó las siete recomendaciones. Quedan así:
 
-| Pregunta | Elección |
-| --- | --- |
-| Duración | **B.** Campo nuevo `rescheduleProposalExpiryHours` en las reglas de etapa. Entero 1–72. Default 12. No reutilizar `minimumRescheduleNoticeHours`. |
-| Default 12 h | Se conserva. Una propuesta a las 22:00 vence a las 10:00. El reglamento puede subir a 24. |
-| Conservar horario | Sí. Es un cierre válido en `escalated`. |
-| Cupo al fijar fecha | Sí. Baja el cupo del Team que **abrió** la solicitud. |
-| Estado al resolver | `resolved_by_organizer`. No se reutiliza `accepted`. |
-| Walkover | Intención en scheduling. Cero `OfficialResult` en este corte. |
-| Antelación mínima al fijar fecha | El comando post-escalada no queda bloqueado por N. Crear, contraproponer y aceptar siguen en el otro thread. |
+| Pregunta                         | Elección                                                                                                                                          |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Duración                         | **B.** Campo nuevo `rescheduleProposalExpiryHours` en las reglas de etapa. Entero 1–72. Default 12. No reutilizar `minimumRescheduleNoticeHours`. |
+| Default 12 h                     | Se conserva. Una propuesta a las 22:00 vence a las 10:00. El reglamento puede subir a 24.                                                         |
+| Conservar horario                | Sí. Es un cierre válido en `escalated`.                                                                                                           |
+| Cupo al fijar fecha              | Sí. Baja el cupo del Team que **abrió** la solicitud.                                                                                             |
+| Estado al resolver               | `resolved_by_organizer`. No se reutiliza `accepted`.                                                                                              |
+| Walkover                         | Intención en scheduling. Cero `OfficialResult` en este corte.                                                                                     |
+| Antelación mínima al fijar fecha | El comando post-escalada no queda bloqueado por N. Crear, contraproponer y aceptar siguen en el otro thread.                                      |
 
 **Por qué B.** El default escrito en DEC-032 ya contemplaba reglamento. Una copa de fin de semana
 no tiene el mismo ritmo que una liga semanal. A queda como recorte rechazado. C sigue descartada.
@@ -162,18 +162,25 @@ hasta `D` y luego escala. El consentimiento parcial queda en el historial. No ap
 
 El reloj **no** se reinicia cuando llega el primer consentimiento.
 
-### Cambios de reglamento
+### Reglamento publicado
 
-`D` se guarda al crear la propuesta. Cambiar `rescheduleProposalExpiryHours` no reescribe un `D`
-ya guardado.
+FTR-COMP-001 y el runtime de draft congelan identidad, formato, reglas y participantes al
+publicar. Este corte **no** abre una excepción para editar `rescheduleProposalExpiryHours` en
+una competición publicada o con inscripciones abiertas.
 
-Una contrapropuesta posterior lee las reglas de ese momento y guarda su propio `D`.
+`D` se guarda igual al crear cada propuesta. Así crear y contraproponer comparten un camino.
+Una contrapropuesta posterior lee las horas **publicadas** de ese momento y guarda su propio
+`D`. En el MVP esas horas son las mismas que al abrir la solicitud.
+
+La columna B-6 de los vectores es otra competición (u otra etapa) publicada con 6 h. No es un
+cambio a mitad de una solicitud abierta.
 
 `allowRescheduling` y el cupo se siguen releyendo al aplicar un horario, como hoy. Tras escalar,
-el organizador puede cerrar el caso aunque el reglamento haya desactivado reprogramaciones nuevas.
-Fijar fecha sigue bloqueado si el alcance tiene slot protegido, selección o resultado aprobado.
+el organizador puede cerrar el caso aunque el valor **publicado** deje `allowRescheduling` en
+false. Fijar fecha sigue bloqueado si el alcance tiene slot protegido, selección o resultado
+aprobado.
 
-Un cambio de «quién debe aprobar» no reabre una solicitud `escalated` ni la acepta.
+Un valor publicado de «quién debe aprobar» no reabre una solicitud `escalated` ni la acepta.
 
 ### Tratamiento legacy
 
@@ -226,14 +233,14 @@ silencio no elige perdedor. Solo deja la solicitud lista para que el runner la e
 
 ### Separada de DEC-021
 
-| | DEC-021 | DEC-032 / DEC-033 |
-| --- | --- | --- |
-| Contexto | results, selección oficial | scheduling, cambio de horario |
-| Default de duración | 24 h, validado | Reglamento de etapa, default 12. Validado aquí. |
-| Destino | `organizer_review` | `escalated` |
-| Efecto oficial al vencer | Ninguno | Ninguno |
-| Job | confirmation-expiry | otro job, otro endpoint |
-| Constante o campo | propios | propios |
+|                          | DEC-021                    | DEC-032 / DEC-033                               |
+| ------------------------ | -------------------------- | ----------------------------------------------- |
+| Contexto                 | results, selección oficial | scheduling, cambio de horario                   |
+| Default de duración      | 24 h, validado             | Reglamento de etapa, default 12. Validado aquí. |
+| Destino                  | `organizer_review`         | `escalated`                                     |
+| Efecto oficial al vencer | Ninguno                    | Ninguno                                         |
+| Job                      | confirmation-expiry        | otro job, otro endpoint                         |
+| Constante o campo        | propios                    | propios                                         |
 
 Un reglamento que cambie esta política no cambia DEC-021. Al revés tampoco.
 
@@ -359,96 +366,93 @@ Salidas:
 
 ### Frontera y silencio
 
-| ID | Acción | Instante (UTC) | A (12 h) | B-6 (6 h) | C (descartada) |
-| --- | --- | --- | --- | --- | --- |
-| V32-01 | B acepta | `2026-11-01T13:59:59.999Z` | Aplica | Aplica | Aplica |
-| V32-02 | B acepta | `2026-11-01T14:00:00.000Z` | Aplica | Cerrada | Aplica |
-| V32-03 | B acepta | `2026-11-01T17:59:59.999Z` | Aplica | Cerrada | Aplica |
-| V32-04 | B acepta | `2026-11-01T18:00:00.000Z` | Aplica | Cerrada | Cerrada |
-| V32-05 | B acepta | `2026-11-01T19:59:59.999Z` | Aplica | Cerrada | Cerrada |
-| V32-06 | B acepta | `2026-11-01T20:00:00.000Z` | Cerrada | Cerrada | Cerrada |
-| V32-07 | B acepta | `2026-11-01T20:00:00.001Z` | Cerrada | Cerrada | Cerrada |
-| V32-08 | B rechaza | `2026-11-01T20:00:00.000Z` | Cerrada | Cerrada | Cerrada |
-| V32-09 | Silencio; runner | `2026-11-01T19:59:59.999Z` | Sigue abierta | Escala | Escala |
-| V32-10 | Silencio; runner | `2026-11-01T20:00:00.000Z` | Escala | Escala | Escala |
+| ID     | Acción           | Instante (UTC)             | A (12 h)      | B-6 (6 h) | C (descartada) |
+| ------ | ---------------- | -------------------------- | ------------- | --------- | -------------- |
+| V32-01 | B acepta         | `2026-11-01T13:59:59.999Z` | Aplica        | Aplica    | Aplica         |
+| V32-02 | B acepta         | `2026-11-01T14:00:00.000Z` | Aplica        | Cerrada   | Aplica         |
+| V32-03 | B acepta         | `2026-11-01T17:59:59.999Z` | Aplica        | Cerrada   | Aplica         |
+| V32-04 | B acepta         | `2026-11-01T18:00:00.000Z` | Aplica        | Cerrada   | Cerrada        |
+| V32-05 | B acepta         | `2026-11-01T19:59:59.999Z` | Aplica        | Cerrada   | Cerrada        |
+| V32-06 | B acepta         | `2026-11-01T20:00:00.000Z` | Cerrada       | Cerrada   | Cerrada        |
+| V32-07 | B acepta         | `2026-11-01T20:00:00.001Z` | Cerrada       | Cerrada   | Cerrada        |
+| V32-08 | B rechaza        | `2026-11-01T20:00:00.000Z` | Cerrada       | Cerrada   | Cerrada        |
+| V32-09 | Silencio; runner | `2026-11-01T19:59:59.999Z` | Sigue abierta | Escala    | Escala         |
+| V32-10 | Silencio; runner | `2026-11-01T20:00:00.000Z` | Escala        | Escala    | Escala         |
 
 ### Contrapropuesta
 
 B contrapropone `P2` con `S2 = 2026-11-03T21:00:00.000Z` en el instante de la fila. El reglamento
 no cambia entre `P1` y `P2`.
 
-| ID | Instante de `P2` | A: `D2` | A: efecto | B-6: `D2` | B-6: efecto |
-| --- | --- | --- | --- | --- | --- |
-| V32-11 | `2026-11-01T12:00:00.000Z` | `2026-11-02T00:00:00.000Z` | `open`, `P2` vigente | `2026-11-01T18:00:00.000Z` | `open`, `P2` vigente |
-| V32-12 | `2026-11-01T14:00:00.000Z` | `2026-11-02T02:00:00.000Z` | `open`, `P2` vigente | — | Cerrada; `P1` sigue vigente |
-| V32-13 | `2026-11-01T20:00:00.000Z` | — | Cerrada; `P1` sigue vigente | — | Cerrada; `P1` sigue vigente |
+| ID     | Instante de `P2`           | A: `D2`                    | A: efecto                   | B-6: `D2`                  | B-6: efecto                 |
+| ------ | -------------------------- | -------------------------- | --------------------------- | -------------------------- | --------------------------- |
+| V32-11 | `2026-11-01T12:00:00.000Z` | `2026-11-02T00:00:00.000Z` | `open`, `P2` vigente        | `2026-11-01T18:00:00.000Z` | `open`, `P2` vigente        |
+| V32-12 | `2026-11-01T14:00:00.000Z` | `2026-11-02T02:00:00.000Z` | `open`, `P2` vigente        | —                          | Cerrada; `P1` sigue vigente |
+| V32-13 | `2026-11-01T20:00:00.000Z` | —                          | Cerrada; `P1` sigue vigente | —                          | Cerrada; `P1` sigue vigente |
 
 Aceptar `P1` después de un `P2` a tiempo falla por propuesta obsoleta, no por el plazo.
 
-### Reglamento que cambia a mitad
+### Reglamento publicado, sin edición a mitad
 
-`P1` nace con 12 h. `D1 = 2026-11-01T20:00:00.000Z` queda guardado. A las
-`2026-11-01T10:00:00.000Z` el reglamento pasa a 6 h.
+La competición de `P1` ya está publicada con 12 h. `D1 = 2026-11-01T20:00:00.000Z`.
 
-| ID | Acción | Instante (UTC) | Resultado |
-| --- | --- | --- | --- |
-| V32-14 | B acepta `P1` | `2026-11-01T16:00:00.000Z` | Aplica. El `D` guardado no se recorta. |
-| V32-15 | B contrapropone `P2` | `2026-11-01T12:00:00.000Z` | `open`. `D2 = 2026-11-01T18:00:00.000Z` (6 h desde `P2`). |
-| V32-16 | Runner sobre `P1` (sin contra) | `2026-11-01T20:00:00.000Z` | Escala. El reglamento nuevo no adelanta `D1`. |
-
-En A no hay cambio de reglamento. V32-14 y V32-16 se leen igual. V32-15 usaría `D2` de 12 h.
+| ID     | Acción                                                                   | Instante (UTC)             | Resultado                                                                                |
+| ------ | ------------------------------------------------------------------------ | -------------------------- | ---------------------------------------------------------------------------------------- |
+| V32-14 | El organizador intenta cambiar `rescheduleProposalExpiryHours` de 12 a 6 | `2026-11-01T10:00:00.000Z` | Falla. Estructura no editable (`competitions.not_editable`, FTR-COMP-001). `D1` intacto. |
+| V32-15 | B contrapropone `P2` con las 12 h publicadas                             | `2026-11-01T12:00:00.000Z` | `open`. `D2 = 2026-11-02T00:00:00.000Z`.                                                 |
+| V32-16 | Silencio. Runner sobre `P1`                                              | `2026-11-01T20:00:00.000Z` | Escala. Las horas publicadas no se movieron.                                             |
 
 ### Aceptación concurrente con el vencimiento
 
-| ID | Primera escritura que gana | Segunda operación | Resultado |
-| --- | --- | --- | --- |
-| V32-17 | B acepta en `2026-11-01T19:59:59.999Z` (último consentimiento) | Runner en `2026-11-01T20:00:00.000Z` | Aplica. El runner omite. Una sola aplicación. |
-| V32-18 | B acepta en `2026-11-01T20:00:00.001Z` | Runner en `2026-11-02T03:00:00.000Z` | Cerrada; luego escala una vez. Horario intacto. |
-| V32-19 | Runner en `2026-11-01T20:00:00.000Z` | B acepta en `2026-11-01T20:00:00.100Z` | Escala. El aceptar falla por solicitud cerrada o ventana cerrada. Horario intacto. |
-| V32-20 | Rival consiente en `2026-11-01T19:59:59.999Z`; también hace falta el organizador | Runner en `2026-11-01T20:00:00.000Z` | Escala. Horario intacto. El consentimiento parcial no aplica. |
-| V32-21 | Replay del aceptar de V32-17 | Runner | El replay devuelve `accepted` histórico. El runner omite. |
+| ID     | Primera escritura que gana                                                       | Segunda operación                      | Resultado                                                                          |
+| ------ | -------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
+| V32-17 | B acepta en `2026-11-01T19:59:59.999Z` (último consentimiento)                   | Runner en `2026-11-01T20:00:00.000Z`   | Aplica. El runner omite. Una sola aplicación.                                      |
+| V32-18 | B acepta en `2026-11-01T20:00:00.001Z`                                           | Runner en `2026-11-02T03:00:00.000Z`   | Cerrada; luego escala una vez. Horario intacto.                                    |
+| V32-19 | Runner en `2026-11-01T20:00:00.000Z`                                             | B acepta en `2026-11-01T20:00:00.100Z` | Escala. El aceptar falla por solicitud cerrada o ventana cerrada. Horario intacto. |
+| V32-20 | Rival consiente en `2026-11-01T19:59:59.999Z`; también hace falta el organizador | Runner en `2026-11-01T20:00:00.000Z`   | Escala. Horario intacto. El consentimiento parcial no aplica.                      |
+| V32-21 | Replay del aceptar de V32-17                                                     | Runner                                 | El replay devuelve `accepted` histórico. El runner omite.                          |
 
 ### Kickoff, fecha propuesta y legacy
 
-| ID | Caso | A (12 h) | B-6 | C (descartada) |
-| --- | --- | --- | --- | --- |
-| V32-22 | `P1` se crea después de `K`, en `2026-11-01T19:00:00.000Z` | `D = 2026-11-02T07:00:00.000Z`. `K` no recorta. | `D = 2026-11-02T01:00:00.000Z`. `K` no recorta. | `D = K < P`. Nace vencida. |
-| V32-23 | Default viejo `min(P + 12 h, K)` con `P` de V32-22 | Descartado: nace vencida. | Descartado. | Es C. |
-| V32-24 | `S1` ya pasó y `t < D`. B acepta en `2026-11-01T19:00:00.000Z` con `S1 = 2026-11-01T12:00:00.000Z` | Falla `scheduling.invalid_schedule_change_date`. Sigue `open`. | Igual si `t < D` de B. | No se usa. |
-| V32-25 | Misma `S1` pasada. Runner en `D` | Escala. Horario intacto. | Escala. | — |
-| V32-26 | Legacy `open`, `createdAt = 2026-10-20T08:00:00.000Z`, migrado después de ese `D` | `D` retroactivo `2026-10-20T20:00:00.000Z`. Responder ya falla. El runner escala. Sin plazo nuevo. | Igual con `D = 2026-10-20T14:00:00.000Z` si el reglamento leído es 6 h. | Nace o queda vencida según `K`. |
+| ID     | Caso                                                                                               | A (12 h)                                                                                           | B-6                                                                     | C (descartada)                  |
+| ------ | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------- |
+| V32-22 | `P1` se crea después de `K`, en `2026-11-01T19:00:00.000Z`                                         | `D = 2026-11-02T07:00:00.000Z`. `K` no recorta.                                                    | `D = 2026-11-02T01:00:00.000Z`. `K` no recorta.                         | `D = K < P`. Nace vencida.      |
+| V32-23 | Default viejo `min(P + 12 h, K)` con `P` de V32-22                                                 | Descartado: nace vencida.                                                                          | Descartado.                                                             | Es C.                           |
+| V32-24 | `S1` ya pasó y `t < D`. B acepta en `2026-11-01T19:00:00.000Z` con `S1 = 2026-11-01T12:00:00.000Z` | Falla `scheduling.invalid_schedule_change_date`. Sigue `open`.                                     | Igual si `t < D` de B.                                                  | No se usa.                      |
+| V32-25 | Misma `S1` pasada. Runner en `D`                                                                   | Escala. Horario intacto.                                                                           | Escala.                                                                 | —                               |
+| V32-26 | Legacy `open`, `createdAt = 2026-10-20T08:00:00.000Z`, migrado después de ese `D`                  | `D` retroactivo `2026-10-20T20:00:00.000Z`. Responder ya falla. El runner escala. Sin plazo nuevo. | Igual con `D = 2026-10-20T14:00:00.000Z` si el reglamento leído es 6 h. | Nace o queda vencida según `K`. |
 
 ### Resolución del organizador
 
 Tras V32-10 con `D` de 12 h (default B, igual que la columna A). Solicitud `escalated`.
 Horario sigue en `K`. El aviso mínimo de etapa es 12 h.
 
-| ID | Decisión | Instante (UTC) | Resultado |
-| --- | --- | --- | --- |
-| V32-27 | Fija `S3 = 2026-11-03T19:00:00.000Z` | `2026-11-02T09:00:00.000Z` | Fecha fijada. Horario `S3`. Cupo +1 del Team A. |
-| V32-28 | Fija `S3 = 2026-11-02T08:00:00.000Z` | `2026-11-02T09:00:00.000Z` | Falla fecha no futura. Sigue `escalated`. |
-| V32-29 | Acepta `P1` con el comando de negociación | `2026-11-02T09:00:00.000Z` | Falla. La negociación está cerrada. |
-| V32-30 | B contrapropone | `2026-11-02T09:00:00.000Z` | Falla. Los Teams no negocian en `escalated`. |
-| V32-31 | Conserva el horario | `2026-11-02T09:00:00.000Z` | Horario conservado. `K` intacto. Cupo intacto. |
-| V32-32 | Walkover. Ganador Team A. Motivo «rival no respondió» | `2026-11-02T09:00:00.000Z` | Walkover intended. `K` intacto. Cero `OfficialResult`. Cero proyección. |
-| V32-33 | Walkover sin nombrar Teams | `2026-11-02T09:00:00.000Z` | Falla. El silencio no elige perdedor. |
-| V32-34 | Otra solicitud incompatible del Team B, misma scope | `2026-11-02T09:00:00.000Z` | Falla. `escalated` sigue activa. |
-| V32-35 | Runner otra vez | `2026-11-02T10:00:00.000Z` | Omite. Una sola acción de vencimiento. |
+| ID     | Decisión                                                 | Instante (UTC)             | Resultado                                                                  |
+| ------ | -------------------------------------------------------- | -------------------------- | -------------------------------------------------------------------------- |
+| V32-27 | Fija `S3 = 2026-11-03T19:00:00.000Z`                     | `2026-11-02T09:00:00.000Z` | Fecha fijada. Horario `S3`. Cupo +1 del Team A.                            |
+| V32-28 | Fija `S3 = 2026-11-02T08:00:00.000Z`                     | `2026-11-02T09:00:00.000Z` | Falla fecha no futura. Sigue `escalated`.                                  |
+| V32-29 | Acepta `P1` con el comando de negociación                | `2026-11-02T09:00:00.000Z` | Falla. La negociación está cerrada.                                        |
+| V32-30 | B contrapropone                                          | `2026-11-02T09:00:00.000Z` | Falla. Los Teams no negocian en `escalated`.                               |
+| V32-31 | Conserva el horario                                      | `2026-11-02T09:00:00.000Z` | Horario conservado. `K` intacto. Cupo intacto.                             |
+| V32-32 | Walkover. Ganador Team A. Motivo «rival no respondió»    | `2026-11-02T09:00:00.000Z` | Walkover intended. `K` intacto. Cero `OfficialResult`. Cero proyección.    |
+| V32-33 | Walkover sin nombrar Teams                               | `2026-11-02T09:00:00.000Z` | Falla. El silencio no elige perdedor.                                      |
+| V32-34 | Otra solicitud incompatible del Team B, misma scope      | `2026-11-02T09:00:00.000Z` | Falla. `escalated` sigue activa.                                           |
+| V32-35 | Runner otra vez                                          | `2026-11-02T10:00:00.000Z` | Omite. Una sola acción de vencimiento.                                     |
 | V32-36 | Fija `S3 = 2026-11-02T12:00:00.000Z` (3 h vista, N = 12) | `2026-11-02T09:00:00.000Z` | Fecha fijada. Horario `S3`. N no bloquea este comando. Cupo +1 del Team A. |
 
 ## Preguntas ya cerradas
 
 Validadas el 2026-10-12. No se reabren en el desarrollo posterior.
 
-| # | Pregunta | Elección |
-| --- | --- | --- |
-| 1 | ¿A o B? | B. Reglamento, campo nuevo 1–72, default 12. |
-| 2 | ¿12 h es el default? | Sí. El organizador puede poner 24 en el reglamento. |
-| 3 | ¿Conservar horario? | Sí. |
-| 4 | ¿Cupo al fijar fecha? | Sí, del Team que abrió. |
-| 5 | ¿Estado al resolver? | `resolved_by_organizer`. |
-| 6 | ¿Walkover oficial en este corte? | No. Solo intención en scheduling. |
-| 7 | ¿N bloquea fijar fecha tras escalar? | No. N sigue atando crear, contra y aceptar. |
+| #   | Pregunta                             | Elección                                            |
+| --- | ------------------------------------ | --------------------------------------------------- |
+| 1   | ¿A o B?                              | B. Reglamento, campo nuevo 1–72, default 12.        |
+| 2   | ¿12 h es el default?                 | Sí. El organizador puede poner 24 en el reglamento. |
+| 3   | ¿Conservar horario?                  | Sí.                                                 |
+| 4   | ¿Cupo al fijar fecha?                | Sí, del Team que abrió.                             |
+| 5   | ¿Estado al resolver?                 | `resolved_by_organizer`.                            |
+| 6   | ¿Walkover oficial en este corte?     | No. Solo intención en scheduling.                   |
+| 7   | ¿N bloquea fijar fecha tras escalar? | No. N sigue atando crear, contra y aceptar.         |
 
 ## Fuera de alcance
 
@@ -464,7 +468,8 @@ Validadas el 2026-10-12. No se reabren en el desarrollo posterior.
 
 La política de este archivo es el contrato. El trabajo de implementación debe:
 
-1. Guardar `D` al crear cada propuesta, con las horas del reglamento (default 12).
+1. Guardar `D` al crear cada propuesta, con las horas **publicadas** (default 12). No añadir
+   un comando que edite esas horas tras publicar.
 2. Rechazar respuestas con `t ≥ D` antes de cambiar estado.
 3. Pasar `open` → `escalated` una vez, con lock, CAS y actor de sistema.
 4. Tratar `escalated` como solicitud activa.
