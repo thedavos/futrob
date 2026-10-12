@@ -1,5 +1,6 @@
 import {
   encounterScheduleSnapshotSchema,
+  encounterViewSchema,
   listEncounterCandidatesResponseSchema,
   upsertEncounterScheduleSnapshotRequestSchema,
 } from "@futrob/api-contracts";
@@ -15,6 +16,7 @@ import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@fut
 import { Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
 import { apiErrorResponse, failureToHttp } from "@/http/errors.ts";
+import { encounterViewDto } from "@/http/mappers/next-encounter.ts";
 import {
   createServiceAuthMiddleware,
   type ServiceAuthVariables,
@@ -102,6 +104,33 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
         return exhaustive;
       }
     }
+  });
+
+  secured.get("/organizations/:organizationId/encounters/:encounterId", async (c) => {
+    const notFound = () =>
+      apiErrorResponse(404, {
+        code: "scheduling.encounter_not_found",
+        messageKey: "errors.scheduling.encounter_not_found",
+      });
+    const encounter = await deps.modules.scheduling.encounters.findById(
+      asEncounterId(c.req.param("encounterId")),
+    );
+    if (!encounter || encounter.organizationId !== c.req.param("organizationId")) {
+      return notFound();
+    }
+    const decision = await deps.modules.authorization.port.decide({
+      actorId: c.get("actorId"),
+      permission: ENCOUNTER_PERMISSION.read,
+      scope: {
+        organizationId: encounter.organizationId,
+        competitionId: encounter.competitionId,
+        encounterId: encounter.encounterId,
+      },
+    });
+    if (!decision.allowed) return notFound();
+    const view = await deps.modules.getEncounterView.execute(encounter);
+    if (!view) return notFound();
+    return jsonResponse(encounterViewSchema.parse(encounterViewDto(view)));
   });
 
   secured.get("/encounters/:encounterId/schedule-snapshot", async (c) => {

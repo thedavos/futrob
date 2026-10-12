@@ -2,6 +2,18 @@ import { z } from "zod";
 import { externalClubSchema } from "../game-data/schemas.ts";
 import { requestIdSchema } from "../request-correlation.ts";
 
+const officialMatchStartsSchema = z
+  .array(
+    z.object({
+      officialSlot: z.union([z.literal(1), z.literal(2)]),
+      scheduledStartAt: z.string().datetime(),
+    }),
+  )
+  .min(1)
+  .max(2);
+
+const seriesResolutionModeSchema = z.enum(["independent_matches", "aggregate_score"]);
+
 export const encounterScheduleSnapshotSchema = z.object({
   encounterId: z.string().min(1),
   organizationId: z.string().min(1),
@@ -15,15 +27,7 @@ export const encounterScheduleSnapshotSchema = z.object({
   awayExternalClubId: z.string().min(1).nullable(),
   providerKey: z.string().min(1).nullable(),
   /** Start of every slot the Encounter plays; an `official_match` reschedule moves one. */
-  officialMatches: z
-    .array(
-      z.object({
-        officialSlot: z.union([z.literal(1), z.literal(2)]),
-        scheduledStartAt: z.string().datetime(),
-      }),
-    )
-    .min(1)
-    .max(2),
+  officialMatches: officialMatchStartsSchema,
 });
 
 export type EncounterScheduleSnapshotDto = z.infer<typeof encounterScheduleSnapshotSchema>;
@@ -61,7 +65,7 @@ export const fixtureParticipantSlotSchema = z.discriminatedUnion("kind", [
 
 export const fixtureSeriesSchema = z.object({
   id: z.string().min(1),
-  resolutionMode: z.enum(["independent_matches", "aggregate_score"]),
+  resolutionMode: seriesResolutionModeSchema,
   officialMatches: z
     .array(
       z.object({
@@ -196,6 +200,16 @@ export const getMyNextEncounterResponseSchema = z.object({
 });
 
 export type GetMyNextEncounterResponse = z.infer<typeof getMyNextEncounterResponseSchema>;
+
+/** One Encounter as both participants and staff read it before acting on it. */
+export const encounterViewSchema = nextEncounterSchema.extend({
+  /** Null when the Encounter is not in an active fixture plan. */
+  resolutionMode: seriesResolutionModeSchema.nullable(),
+  /** Start of every slot the Encounter plays. */
+  officialMatches: officialMatchStartsSchema,
+});
+
+export type EncounterViewDto = z.infer<typeof encounterViewSchema>;
 
 const encounterCandidateTeamSchema = z.object({
   externalClubId: z.string().min(1),
