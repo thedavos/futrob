@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
+import { announceIdentityChange } from "@/shared/presentation/query/identity-change.ts";
 import {
   navigateAfterAuth,
   type AfterAuthKind,
@@ -34,8 +35,7 @@ export function AuthResumeProvider({ children, redirectTo }: AuthResumeProviderP
     () => ({
       redirectTo,
       afterAuthenticated: (kind) => {
-        // A new identity must not read what the previous session cached.
-        queryClient.clear();
+        announceIdentityChange(queryClient);
         return navigateAfterAuth({
           kind,
           redirectTo,
