@@ -1,4 +1,9 @@
-import type { GetMyNextEncounterResponse, NextEncounterDto } from "@futrob/api-contracts";
+import type {
+  EncounterViewDto,
+  GetMyNextEncounterResponse,
+  NextEncounterDto,
+} from "@futrob/api-contracts";
+import type { EncounterView } from "@/application/scheduling/get-encounter-view.use-case.ts";
 import type { MyNextEncounter } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
 
 export function nextEncounterDto(encounter: MyNextEncounter): NextEncounterDto {
@@ -17,4 +22,15 @@ export function getMyNextEncounterResponse(
   encounter: MyNextEncounter | null,
 ): GetMyNextEncounterResponse {
   return { encounter: encounter ? nextEncounterDto(encounter) : null };
+}
+
+export function encounterViewDto(view: EncounterView): EncounterViewDto {
+  return {
+    ...nextEncounterDto(view),
+    resolutionMode: view.resolutionMode,
+    officialMatches: view.officialMatches.map((match) => ({
+      officialSlot: match.slot,
+      scheduledStartAt: match.scheduledStartAt.toISOString(),
+    })),
+  };
 }
