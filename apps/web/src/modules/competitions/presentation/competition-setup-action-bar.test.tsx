@@ -82,12 +82,45 @@ describe("Competition setup action bar", () => {
     expect(screen.getByRole("button", { name: "Continuar" }).hasAttribute("disabled")).toBe(false);
   });
 
-  it("disables continue on the last step and keeps back available", async () => {
+  it("hides continue on the last step and keeps back available", async () => {
     renderBar(props({ step: 5, canGoBack: true, canContinue: false }));
 
     expect(await screen.findByText("Paso 5 de 5")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Anterior" }).hasAttribute("disabled")).toBe(false);
-    expect(screen.getByRole("button", { name: "Continuar" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.queryByRole("button", { name: "Continuar" })).toBeNull();
+  });
+
+  it("offers registration beside continue on participants and beside publish on review", async () => {
+    const { rerender } = renderBar(
+      props({
+        step: 4,
+        canGoBack: true,
+        registration: { label: "Abrir inscripciones", onRegistration: noop },
+      }),
+    );
+
+    expect(await screen.findByRole("button", { name: "Abrir inscripciones" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Publicar competición" })).toBeNull();
+
+    rerender(
+      <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+        <ShellActionBarProvider>
+          <RegisteredBar
+            value={props({
+              step: 5,
+              canGoBack: true,
+              canContinue: false,
+              registration: { label: "Abrir inscripciones", onRegistration: noop },
+              publish: { disabled: true, label: "Publicar competición", onPublish: noop },
+            })}
+          />
+        </ShellActionBarProvider>
+      </I18nProvider>,
+    );
+
+    expect(await screen.findByRole("button", { name: "Publicar competición" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Continuar" })).toBeNull();
   });
 
   it("saves the draft from the outline action", async () => {

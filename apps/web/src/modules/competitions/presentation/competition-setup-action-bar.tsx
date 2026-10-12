@@ -17,12 +17,15 @@ const styles = stylex.create({
   },
 });
 
-export type CompetitionSetupReviewActions = {
-  readonly registrationLabel: string;
+export type CompetitionSetupRegistrationAction = {
+  readonly label: string;
   readonly onRegistration: () => void;
-  readonly publishLabel: string;
+};
+
+export type CompetitionSetupPublishAction = {
+  readonly label: string;
   readonly onPublish: () => void;
-  readonly publishDisabled: boolean;
+  readonly disabled: boolean;
 };
 
 export type CompetitionSetupActionBarProps = {
@@ -36,7 +39,8 @@ export type CompetitionSetupActionBarProps = {
   readonly onBack: () => void;
   readonly onSave: () => void;
   readonly onContinue: () => void;
-  readonly review?: CompetitionSetupReviewActions;
+  readonly registration?: CompetitionSetupRegistrationAction;
+  readonly publish?: CompetitionSetupPublishAction;
 };
 
 export function CompetitionSetupActionBarStart({
@@ -69,10 +73,18 @@ export function CompetitionSetupActionBarEnd({
   busy,
   onSave,
   onContinue,
-  review,
+  registration,
+  publish,
 }: Pick<
   CompetitionSetupActionBarProps,
-  "canContinue" | "canSave" | "saving" | "busy" | "onSave" | "onContinue" | "review"
+  | "canContinue"
+  | "canSave"
+  | "saving"
+  | "busy"
+  | "onSave"
+  | "onContinue"
+  | "registration"
+  | "publish"
 >) {
   const { t } = useI18n();
   return (
@@ -80,29 +92,26 @@ export function CompetitionSetupActionBarEnd({
       <Button dense disabled={!canSave || busy} onClick={onSave} type="button" variant="outline">
         {saving ? t("competitions.setup.saving") : t("competitions.setup.saveDraft")}
       </Button>
-      <Button dense disabled={!canContinue || busy} onClick={onContinue} type="button">
-        {t("competitions.setup.continue")}
-      </Button>
-      {review ? (
-        <>
-          <Button
-            dense
-            disabled={busy}
-            onClick={review.onRegistration}
-            type="button"
-            variant="outline"
-          >
-            {review.registrationLabel}
-          </Button>
-          <Button
-            dense
-            disabled={busy || review.publishDisabled}
-            onClick={review.onPublish}
-            type="button"
-          >
-            {review.publishLabel}
-          </Button>
-        </>
+      {registration ? (
+        <Button
+          dense
+          disabled={busy}
+          onClick={registration.onRegistration}
+          type="button"
+          variant="outline"
+        >
+          {registration.label}
+        </Button>
+      ) : null}
+      {canContinue ? (
+        <Button dense disabled={busy} onClick={onContinue} type="button">
+          {t("competitions.setup.continue")}
+        </Button>
+      ) : null}
+      {publish ? (
+        <Button dense disabled={busy || publish.disabled} onClick={publish.onPublish} type="button">
+          {publish.label}
+        </Button>
       ) : null}
     </>
   );
@@ -144,12 +153,19 @@ export function CompetitionSetupActionBarRegistration(props: CompetitionSetupAct
             canSave={current.canSave}
             onContinue={() => latest.current.onContinue()}
             onSave={() => latest.current.onSave()}
-            review={
-              current.review
+            publish={
+              current.publish
                 ? {
-                    ...current.review,
-                    onPublish: () => latest.current.review?.onPublish(),
-                    onRegistration: () => latest.current.review?.onRegistration(),
+                    ...current.publish,
+                    onPublish: () => latest.current.publish?.onPublish(),
+                  }
+                : undefined
+            }
+            registration={
+              current.registration
+                ? {
+                    ...current.registration,
+                    onRegistration: () => latest.current.registration?.onRegistration(),
                   }
                 : undefined
             }
@@ -173,8 +189,8 @@ function actionBarSignature(props: CompetitionSetupActionBarProps): string {
     props.canSave,
     props.saving,
     props.busy,
-    props.review?.registrationLabel ?? "",
-    props.review?.publishLabel ?? "",
-    props.review?.publishDisabled ?? "",
+    props.registration?.label ?? "",
+    props.publish?.label ?? "",
+    props.publish?.disabled ?? "",
   ].join("|");
 }

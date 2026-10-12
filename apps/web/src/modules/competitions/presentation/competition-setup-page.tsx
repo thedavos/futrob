@@ -7,8 +7,6 @@ import {
   AlertDescription,
   applyStyles,
   Badge,
-  Card,
-  CardContent,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
@@ -16,16 +14,15 @@ import {
   Subtitle,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
 import type {
   CompetitionDraftDto,
   CompetitionFormatDto,
   CompetitionMatchRulesDto,
-  CompetitionParticipantInput,
   UpdateCompetitionDraftRequest,
 } from "@futrob/api-contracts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
+import { useCompetitionTeamManagementQuery } from "@/modules/teams/presentation/competition-team-queries.ts";
 import {
   FormatStep,
   InformationStep,
@@ -34,6 +31,7 @@ import {
   RulesStep,
 } from "./competition-setup-steps.tsx";
 import { CompetitionSetupActionBarRegistration } from "./competition-setup-action-bar.tsx";
+import { competitionPlatformLabel } from "./competition-draft-meta.ts";
 import { PageAlert } from "./competition-setup-fields.tsx";
 import {
   profileFieldsFromCompetition,
@@ -43,7 +41,6 @@ import {
   type CompetitionProfileFieldsValue,
 } from "./competition-profile-fields-value.ts";
 import {
-  useAddCompetitionParticipantMutation,
   useCompetitionDraftQuery,
   useCompetitionParticipantsQuery,
   useOrganizationTeamsQuery,
@@ -76,21 +73,9 @@ const styles = stylex.create({
   stepper: {
     marginBottom: "2.5rem",
   },
-  content: {
+  body: {
     display: "grid",
-    gap: "1.5rem",
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "2rem",
-    },
-    paddingTop: {
-      default: "1.25rem",
-      [media.sm]: "2rem",
-    },
-    paddingBottom: {
-      default: "1.25rem",
-      [media.sm]: "2rem",
-    },
+    gap: "1rem",
   },
 });
 
@@ -125,8 +110,8 @@ export function CompetitionSetupPage({
   const draftQuery = useCompetitionDraftQuery(organizationId, competitionId);
   const participantsQuery = useCompetitionParticipantsQuery(organizationId, competitionId);
   const teamsQuery = useOrganizationTeamsQuery(organizationId);
+  const teamManagement = useCompetitionTeamManagementQuery(organizationId, competitionId);
   const update = useUpdateCompetitionDraftMutation(organizationId, competitionId);
-  const add = useAddCompetitionParticipantMutation(organizationId, competitionId);
   const remove = useRemoveCompetitionParticipantMutation(organizationId, competitionId);
   const publish = usePublishCompetitionMutation(organizationId, competitionId);
   const registration = useCompetitionRegistrationMutation(organizationId, competitionId);
@@ -135,8 +120,6 @@ export function CompetitionSetupPage({
   const [profileError, setProfileError] = useState<CompetitionProfileFieldError | null>(null);
   const caps = useCapabilities({ organizationId, competitionId }, SETUP_CAPABILITIES);
   const [form, setForm] = useState<UpdateCompetitionDraftRequest | null>(null);
-  const [newTeamName, setNewTeamName] = useState("");
-  const [selectedTeamId, setSelectedTeamId] = useState("");
   const draft = draftQuery.data ?? null;
 
   useEffect(() => {
@@ -145,13 +128,20 @@ export function CompetitionSetupPage({
     setForm((current) => current ?? toUpdateInput(draft));
     setProfile((current) => current ?? profileFieldsFromCompetition(draft.competition));
   }, [draft]);
-  const participantTeamIds = useMemo(
-    () => new Set((participantsQuery.data?.participants ?? []).map((entry) => entry.teamId)),
-    [participantsQuery.data],
-  );
-  const availableTeams = (teamsQuery.data?.teams ?? []).filter(
-    (team) => !participantTeamIds.has(team.id),
-  );
+  useEffect(() => {
+    if (teamManagement.hasNextPage && !teamManagement.isFetchingNextPage) {
+      void teamManagement.fetchNextPage();
+    }
+  }, [teamManagement.hasNextPage, teamManagement.isFetchingNextPage, teamManagement.fetchNextPage]);
+  const clubs = useMemo(() => {
+    const names: Record<string, string> = {};
+    for (const page of teamManagement.data?.pages ?? []) {
+      for (const item of page.items) {
+        if (item.externalClub) names[item.team.id] = item.externalClub.externalClubName;
+      }
+    }
+    return names;
+  }, [teamManagement.data]);
   const approvedParticipantCount =
     participantsQuery.data?.participants.filter((entry) => entry.status === "approved").length ?? 0;
   const canUpdate = caps.update;
@@ -161,19 +151,9 @@ export function CompetitionSetupPage({
   const registrationOpen = status === "registration";
   const readOnly = status !== "draft" || !canUpdate;
   const participantsLocked = status !== "draft" && status !== "registration";
-  const busy =
-    update.isPending ||
-    add.isPending ||
-    remove.isPending ||
-    publish.isPending ||
-    registration.isPending;
+  const busy = update.isPending || remove.isPending || publish.isPending || registration.isPending;
   const error =
-    update.error ??
-    add.error ??
-    remove.error ??
-    publish.error ??
-    registration.error ??
-    coverUpdate.error;
+    update.error ?? remove.error ?? publish.error ?? registration.error ?? coverUpdate.error;
 
   async function save() {
     if (!form || !profile || readOnly) return;
@@ -187,11 +167,6 @@ export function CompetitionSetupPage({
   async function continueNext() {
     if (!readOnly && ["information", "format", "rules"].includes(currentStep)) await save();
     move(1);
-  }
-  async function addParticipant(input: CompetitionParticipantInput) {
-    await add.mutateAsync(input);
-    setNewTeamName("");
-    setSelectedTeamId("");
   }
   function move(delta: -1 | 1) {
     const index = steps.findIndex((step) => step.id === currentStep);
@@ -228,87 +203,87 @@ export function CompetitionSetupPage({
         steps={steps}
         style={stepper.style}
       />
-      {registrationOpen ? (
-        <Alert>
-          <AlertDescription>
-            Las inscripciones están abiertas. El formato y las reglas quedan bloqueados hasta que
-            las cierres; puedes seguir gestionando participantes.
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      {error ? (
-        <PageAlert>
-          No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
-        </PageAlert>
-      ) : null}
-      {currentStep === "information" ? (
-        <InformationStep
-          disabled={readOnly}
-          form={form}
-          onChange={(patch) => setForm({ ...form, ...patch })}
-          profile={
-            profile
-              ? {
-                  coverDisabled: !canUpdate || status === "archived" || coverUpdate.isPending,
-                  fieldError: profileError,
-                  onChange: (patch) => {
-                    setProfile({ ...profile, ...patch });
-                    if (patch.cover) coverUpdate.mutate(patch.cover);
-                  },
-                  onClearFieldError: () => setProfileError(null),
-                  value: profile,
-                }
-              : null
-          }
-        />
-      ) : null}
-      {currentStep === "format" ? (
-        <FormatStep
-          disabled={readOnly}
-          form={form}
-          onFormatChange={(next) => {
-            if (next === form.format) return;
-            if (
-              !globalThis.confirm(
-                "Cambiar el formato reemplazará las reglas incompatibles. ¿Continuar?",
+      <div {...applyStyles(styles.body)}>
+        {registrationOpen ? (
+          <Alert>
+            <AlertDescription>
+              Las inscripciones están abiertas. El formato y las reglas quedan bloqueados hasta que
+              las cierres; puedes seguir gestionando participantes.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {error ? (
+          <PageAlert>
+            No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
+          </PageAlert>
+        ) : null}
+        {currentStep === "information" ? (
+          <InformationStep
+            disabled={readOnly}
+            form={form}
+            onChange={(patch) => setForm({ ...form, ...patch })}
+            profile={
+              profile
+                ? {
+                    coverDisabled: !canUpdate || status === "archived" || coverUpdate.isPending,
+                    fieldError: profileError,
+                    onChange: (patch) => {
+                      setProfile({ ...profile, ...patch });
+                      if (patch.cover) coverUpdate.mutate(patch.cover);
+                    },
+                    onClearFieldError: () => setProfileError(null),
+                    value: profile,
+                  }
+                : null
+            }
+          />
+        ) : null}
+        {currentStep === "format" ? (
+          <FormatStep
+            disabled={readOnly}
+            form={form}
+            onFormatChange={(next) => {
+              if (next === form.format) return;
+              if (
+                !globalThis.confirm(
+                  "Cambiar el formato reemplazará las reglas incompatibles. ¿Continuar?",
+                )
               )
-            )
-              return;
-            setForm({ ...form, format: next, rules: rulesForFormat(next) });
-          }}
-          onRulesChange={(rules) => setForm({ ...form, rules })}
-        />
-      ) : null}
-      {currentStep === "rules" || currentStep === "participants" || currentStep === "review" ? (
-        <Card>
-          <CardContent className={styles.content}>
-            {currentStep === "rules" ? (
-              <RulesStep
-                disabled={readOnly}
-                form={form}
-                onChange={(rules) => setForm({ ...form, rules })}
-              />
-            ) : null}
-            {currentStep === "participants" ? (
-              <ParticipantsStep
-                availableTeams={availableTeams}
-                disabled={participantsLocked || busy || !canManageParticipants}
-                newTeamName={newTeamName}
-                onAdd={addParticipant}
-                onNameChange={setNewTeamName}
-                onRemove={(id: string) => remove.mutateAsync(id)}
-                onTeamChange={setSelectedTeamId}
-                participants={participantsQuery.data?.participants ?? []}
-                selectedTeamId={selectedTeamId}
-                teams={teamsQuery.data?.teams ?? []}
-              />
-            ) : null}
-            {currentStep === "review" ? (
-              <ReviewStep draft={draft} participantCount={approvedParticipantCount} />
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
+                return;
+              setForm({ ...form, format: next, rules: rulesForFormat(next) });
+            }}
+            onRulesChange={(rules) => setForm({ ...form, rules })}
+          />
+        ) : null}
+        {currentStep === "rules" ? (
+          <RulesStep
+            disabled={readOnly}
+            form={form}
+            onChange={(rules) => setForm({ ...form, rules })}
+          />
+        ) : null}
+        {currentStep === "participants" ? (
+          <ParticipantsStep
+            capacity={draft.competition.teams}
+            clubs={clubs}
+            clubsPending={teamManagement.isPending}
+            disabled={participantsLocked || busy || !canManageParticipants}
+            gameEdition={draft.competition.gameEdition}
+            onRemove={(id: string) => remove.mutateAsync(id)}
+            participants={participantsQuery.data?.participants ?? []}
+            platformLabel={competitionPlatformLabel(draft.competition.platform)}
+            teams={teamsQuery.data?.teams ?? []}
+          />
+        ) : null}
+        {currentStep === "review" ? (
+          <ReviewStep
+            draft={draft}
+            onEdit={onStepChange}
+            participants={participantsQuery.data?.participants ?? []}
+            teams={teamsQuery.data?.teams ?? []}
+          />
+        ) : null}
+      </div>
       <CompetitionSetupActionBarRegistration
         busy={busy}
         canContinue={currentStep !== "review"}
@@ -317,15 +292,23 @@ export function CompetitionSetupPage({
         onBack={() => move(-1)}
         onContinue={() => void continueNext()}
         onSave={() => void save()}
-        review={
+        publish={
           currentStep === "review" && !participantsLocked && canPublish
             ? {
+                disabled: approvedParticipantCount < draft.competition.teams.min,
+                label: publish.isPending ? "Publicando…" : "Publicar competición",
                 onPublish: () => void publish.mutateAsync(),
+              }
+            : undefined
+        }
+        registration={
+          (currentStep === "participants" || currentStep === "review") &&
+          !participantsLocked &&
+          canPublish
+            ? {
+                label: registrationLabel(registrationOpen, registration.isPending),
                 onRegistration: () =>
                   void registration.mutateAsync(registrationOpen ? "close" : "open"),
-                publishDisabled: approvedParticipantCount < 2,
-                publishLabel: publish.isPending ? "Publicando…" : "Publicar competición",
-                registrationLabel: registrationLabel(registrationOpen, registration.isPending),
               }
             : undefined
         }

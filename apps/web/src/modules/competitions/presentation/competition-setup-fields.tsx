@@ -91,25 +91,27 @@ export function SelectField({
   );
 }
 export function NumberField({
+  id,
   label,
   value,
   onChange,
   min,
   disabled,
 }: {
+  id?: string;
   label: string;
   value: number | null;
   onChange: (value: number | null) => void;
   min: number;
   disabled: boolean;
 }) {
-  const id = `rule-${label.toLowerCase().replaceAll(" ", "-")}`;
+  const fieldId = id ?? `rule-${label.toLowerCase().replaceAll(" ", "-")}`;
   return (
     <Field>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <FieldLabel htmlFor={fieldId}>{label}</FieldLabel>
       <Input
         disabled={disabled}
-        id={id}
+        id={fieldId}
         min={min}
         onChange={(event) =>
           onChange(event.target.value === "" ? null : Number(event.target.value))
@@ -121,21 +123,23 @@ export function NumberField({
   );
 }
 export function RuleToggle({
+  id,
   label,
   checked,
   onChange,
   disabled,
 }: {
+  id?: string;
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled: boolean;
 }) {
-  const id = `rule-${label.toLowerCase().replaceAll(" ", "-")}`;
+  const fieldId = id ?? `rule-${label.toLowerCase().replaceAll(" ", "-")}`;
   return (
     <div {...applyStyles(styles.toggle)}>
-      <Checkbox checked={checked} disabled={disabled} id={id} onCheckedChange={onChange} />
-      <label {...applyStyles(typography.label)} htmlFor={id}>
+      <Checkbox checked={checked} disabled={disabled} id={fieldId} onCheckedChange={onChange} />
+      <label {...applyStyles(typography.label)} htmlFor={fieldId}>
         {label}
       </label>
     </div>

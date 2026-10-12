@@ -865,9 +865,10 @@ Se conservan los IDs `UX-*` para trazabilidad. Son criterios de aceptación, no 
 - **UX-WIZ-002** Borrador guardable/reanudable.
 - **UX-WIZ-003** Cambiar formato o partidos-por-enfrentamiento pide confirmación antes de borrar datos incompatibles.
 - **UX-WIZ-004** Errores junto al campo + resumen enlazable.
-- **UX-WIZ-005** Publicar muestra revisión final de edición, modalidad, formato, reglas y timezone.
+- **UX-WIZ-005** La revisión muestra el resumen guardado (información, formato, reglas y participantes, cada bloque con Editar) junto a la vista previa y la lista para publicar. Las fechas son opcionales. Publicar exige reglas válidas y al menos `teams.min` equipos aprobados.
 - **UX-WIZ-006** El onboarding del organizador crea un draft con nombre, edición, plataforma, región, timezone y formato, sin generar stages ni fixture.
 - **UX-WIZ-007** El Stepper de cinco pasos no produce scroll horizontal y en móvil anuncia número, total y nombre del paso actual.
+- **UX-WIZ-008** Continuar no aparece en revisión. Abrir o cerrar inscripciones está en participantes y en revisión; publicar solo en revisión.
 
 ### Match Center
 

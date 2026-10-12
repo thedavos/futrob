@@ -50,7 +50,8 @@ function SetupBar(props: CompetitionSetupActionBarProps) {
             canSave={props.canSave}
             onContinue={props.onContinue}
             onSave={props.onSave}
-            review={props.review}
+            publish={props.publish}
+            registration={props.registration}
             saving={props.saving}
           />
         </ActionBarEnd>
@@ -91,6 +92,39 @@ export const LastStep: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.findByText("Paso 5 de 5")).resolves.toBeTruthy();
     await expect(canvas.getByRole("button", { name: "Anterior" })).toBeEnabled();
-    await expect(canvas.getByRole("button", { name: "Continuar" })).toBeDisabled();
+    await expect(canvas.queryByRole("button", { name: "Continuar" })).toBeNull();
+  },
+};
+
+export const Participants: Story = {
+  render: () => (
+    <SetupBar
+      {...firstStep}
+      canGoBack
+      registration={{ label: "Abrir inscripciones", onRegistration: noop }}
+      step={4}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: "Abrir inscripciones" })).toBeEnabled();
+    await expect(canvas.getByRole("button", { name: "Continuar" })).toBeEnabled();
+    await expect(canvas.queryByRole("button", { name: "Publicar competición" })).toBeNull();
+  },
+};
+
+export const Review: Story = {
+  render: () => (
+    <SetupBar
+      {...lastStep}
+      publish={{ disabled: true, label: "Publicar competición", onPublish: noop }}
+      registration={{ label: "Abrir inscripciones", onRegistration: noop }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: "Abrir inscripciones" })).toBeEnabled();
+    await expect(canvas.getByRole("button", { name: "Publicar competición" })).toBeDisabled();
+    await expect(canvas.queryByRole("button", { name: "Continuar" })).toBeNull();
   },
 };

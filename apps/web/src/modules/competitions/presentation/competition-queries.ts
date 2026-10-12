@@ -146,6 +146,9 @@ export function useAddCompetitionParticipantMutation(
           queryKey: queryKeys.competitions.participants(organizationId, competitionId),
         }),
         queryClient.invalidateQueries({ queryKey: queryKeys.competitions.teams(organizationId) }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
+        }),
       ]);
     },
   });
@@ -160,9 +163,14 @@ export function useRemoveCompetitionParticipantMutation(
     mutationFn: (entryId: string) =>
       removeCompetitionParticipant(organizationId, competitionId, entryId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.competitions.participants(organizationId, competitionId),
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.competitions.participants(organizationId, competitionId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
+        }),
+      ]);
     },
   });
 }
