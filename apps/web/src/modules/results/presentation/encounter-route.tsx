@@ -31,6 +31,7 @@ export function EncounterRoute({
   })();
 
   const candidates: CandidatesState = (() => {
+    if (candidatesQuery.isError && isRefusal(candidatesQuery.error)) return { kind: "forbidden" };
     if (candidatesQuery.data) {
       return {
         kind: "ready",
@@ -42,9 +43,7 @@ export function EncounterRoute({
       };
     }
     if (candidatesQuery.isError) {
-      return isRefusal(candidatesQuery.error)
-        ? { kind: "forbidden" }
-        : { kind: "error", retry: () => void candidatesQuery.refetch() };
+      return { kind: "error", retry: () => void candidatesQuery.refetch() };
     }
     return { kind: "loading" };
   })();
