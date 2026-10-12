@@ -18,6 +18,7 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
+import { announceIdentityChange } from "@/shared/presentation/query/identity-change.ts";
 import { accountNavItems } from "@/shared/presentation/shell/nav-registry.ts";
 
 const styles = stylex.create({
@@ -155,7 +156,7 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
         <DropdownMenuItem
           onClick={() => {
             void authClient.signOut().then(() => {
-              queryClient.clear();
+              announceIdentityChange(queryClient);
               void navigate({ to: "/login", replace: true });
             });
           }}

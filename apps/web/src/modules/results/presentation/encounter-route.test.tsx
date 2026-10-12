@@ -2,10 +2,14 @@
 
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import {
+  announceIdentityChange,
+  useForgetIdentityFromOtherTabs,
+} from "@/shared/presentation/query/identity-change.ts";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { encounterView, m1, m2, m3, readyCandidates as ready } from "./encounter-page.fixtures.ts";
 import { EncounterRoute } from "./encounter-route.tsx";
@@ -21,7 +25,7 @@ vi.mock("@tanstack/react-router", () => ({
 type Sent = { readonly method: string; readonly path: string };
 let sent: Sent[];
 
-function serve(routes: Record<string, () => Response>) {
+function serve(routes: Record<string, () => Response | Promise<Response>>) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -36,6 +40,11 @@ function serve(routes: Record<string, () => Response>) {
 const VIEW_PATH = "/api/v1/organizations/org-1/encounters/encounter-1";
 const CANDIDATES_PATH = "/api/v1/encounters/encounter-1/candidates";
 
+function ForgetFromOtherTabs({ queryClient }: { readonly queryClient: QueryClient }) {
+  useForgetIdentityFromOtherTabs(queryClient);
+  return null;
+}
+
 const newQueryClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 function renderEncounter(
@@ -45,6 +54,7 @@ function renderEncounter(
 ) {
   return render(
     <QueryClientProvider client={queryClient}>
+      <ForgetFromOtherTabs queryClient={queryClient} />
       <I18nProvider initialLocale={locale}>
         <EncounterRoute
           competitionId={competitionId}
@@ -225,5 +235,32 @@ describe("Encounter page", () => {
     expect(await screen.findByText("Candidatos restringidos")).toBeTruthy();
     expect(screen.queryByRole("list", { name: "Partidos EA candidatos" })).toBeNull();
     expect(screen.queryByText("Cuervos EA")).toBeNull();
+  });
+
+  it("hides candidates as soon as another tab signs in, before any new read answers", async () => {
+    serve({
+      [VIEW_PATH]: () => Response.json(encounterView()),
+      [CANDIDATES_PATH]: () => Response.json(ready([m1])),
+    });
+    renderEncounter();
+    expect(
+      await screen.findByRole("listitem", { name: /^Cuervos EA contra Maderas EA/ }),
+    ).toBeTruthy();
+
+    serve({
+      [VIEW_PATH]: () => new Promise<Response>(() => undefined),
+      [CANDIDATES_PATH]: () => new Promise<Response>(() => undefined),
+    });
+    const before = sent.length;
+    announceIdentityChange(newQueryClient());
+
+    await waitFor(() => expect(screen.queryByText("Cuervos EA")).toBeNull());
+    expect(screen.queryByRole("list", { name: "Partidos EA candidatos" })).toBeNull();
+    expect(
+      sent
+        .slice(before)
+        .map((request) => `${request.method} ${request.path}`)
+        .sort(),
+    ).toEqual([`GET ${CANDIDATES_PATH}`, `GET ${VIEW_PATH}`]);
   });
 });
