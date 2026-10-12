@@ -1,8 +1,10 @@
 # Propuesta: antelación mínima de reprogramación
 
-**Estado:** propuesta pendiente de validación. No está aprobada. No está implementada.
+**Estado:** fronteras validadas el 2026-10-12. No implementada. Sin ID DEC en
+[open-decisions.md](/product/open-decisions.md).
 **Tarea:** 6. Precisar `minimumRescheduleNoticeHours`.
-**Fecha:** 2026-10-12.
+**Validación:** responsable de producto, este hilo. Se adoptan las respuestas
+recomendadas de la §11.
 **Checkout observado:** `github/main` @ `79776dd6`.
 **Fuera de este corte:** DEC-032, DEC-033 y cualquier cambio a
 [open-decisions.md](/product/open-decisions.md) o
@@ -16,7 +18,7 @@ instantes literales y un resultado concreto. No se escriben tests sobre este tex
 El reglamento de cada etapa ya pide un aviso mínimo en horas. Hoy ese número se guarda
 y no se aplica.
 
-La recomendación es esta:
+La regla validada es esta:
 
 > No puedes cambiar un horario que todavía no ha llegado si faltan menos de N horas
 > para ese horario. Tampoco puedes dejar el nuevo horario a menos de N horas vista.
@@ -76,9 +78,9 @@ En el milisegundo exacto del límite, cumple. Un milisegundo después, no.
 A y B no son equivalentes. Un mismo comando puede cumplir una y fallar la otra.
 Los vectores V6-07 y V6-08 lo muestran.
 
-## 4. Recomendación
+## 4. Decisión validada
 
-**Opción C**, con estas fronteras.
+**Opción C**, con estas fronteras. Validada el 2026-10-12.
 
 1. **Aviso del actual.** Si un slot que el alcance movería tiene horario vigente
    `T_actual > now`, exige `T_actual - now >= N horas`.
@@ -110,11 +112,11 @@ Por qué el hueco del horario pasado. FTR-SCH-002 bloquea aprobado o finalizado,
 un pendiente que se pasó de hora. Bloquear a los capitanes ahí deja el Encounter
 muerto hasta una edición de fixture. Inferred: en FC Clubs el no-show y el fallo
 de servidor son frecuentes. C2 (saltar el aviso del actual si `T_actual <= now`)
-es la lectura operativa. C1 (bloquear también ese caso) queda como alternativa
-explícita en la §11.
+es la lectura validada. C1 queda descartada. Ver §10.
 
-Esta propuesta no asigna un ID DEC. El registro vive en
-[open-decisions.md](/product/open-decisions.md), que este hilo no edita.
+Este archivo no asigna un ID DEC. El registro canónico sigue en
+[open-decisions.md](/product/open-decisions.md). Este hilo no lo edita para no
+pisar el corte DEC-032/033.
 
 ## 5. Frontera exacta
 
@@ -240,7 +242,7 @@ Salidas:
 - **Fecha inválida:** `scheduling.invalid_schedule_change_date`. No es aviso.
 - **Rechaza:** `rejected`, horario intacto.
 
-| ID | Acción | `now` | Actual | Propuesto | A | B | C (recomendada) |
+| ID | Acción | `now` | Actual | Propuesto | A | B | C (validada) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | V6-01 | Crear | `2026-10-13T07:59:59.999Z` | `2026-10-13T20:00:00.000Z` | `P_far` | Crea | Crea | Crea |
 | V6-02 | Crear | `2026-10-13T08:00:00.000Z` | `2026-10-13T20:00:00.000Z` | `P_far` | Crea | Crea | Crea |
@@ -284,11 +286,13 @@ Mismo `N = 12` salvo V6-10 y V6-11.
 V6-21 y V6-22 son el par de alcance. El vecino positivo de un Encounter bloqueado
 es mover solo el slot lejano.
 
-V6-24 es C2. Si se valida C1, esa fila pasa a aviso actual y V6-25 no cambia.
+V6-24 es C2, ya validada. C1 habría convertido esa fila en aviso actual. V6-25
+no cambia.
 
 ## 8. Qué hereda el desarrollo posterior
 
-Cuando esta propuesta se valide, el trabajo de código debe:
+Las fronteras de la §5 y la columna C de V6-01…V6-28 son el contrato. El trabajo
+de código, en un PR distinto, debe:
 
 1. Aplicar los predicados de la §5 en crear, contraproponer y aceptar.
 2. Dejar rechazar, listar y leer sin aviso.
@@ -313,13 +317,14 @@ No implementar nada de eso en este PR.
 | DEC-081 | Publicar bloquea reglas. | Explica por qué el releer suele ser estable tras publicar. |
 | Edición de fixture | Camino auditado del organizador. | Fuera del aviso. |
 
-Tensión observada, no resuelta. Default de aviso `12` y default DEC-032 `12`. Si
-C revalida el actual al aceptar, una solicitud abierta exactamente 12 horas
+Tensión observada, no resuelta. Default de aviso `12` y default DEC-032 `12`.
+C revalida el actual al aceptar. Una solicitud abierta exactamente 12 horas
 antes del kickoff (V6-02) solo se puede aceptar en ese mismo milisegundo
 (V6-17). Un milisegundo después falla (V6-18). El TTL de 12 horas no llega a
-usarse. Eso no decide DEC-032. Queda como pregunta.
+usarse. Este hilo no cambia DEC-032. El corte de expiración y escalada vive en
+[#152](https://github.com/thedavos/futrob/pull/152), otro archivo de propuestas.
 
-## 10. Alternativas no recomendadas
+## 10. Alternativas descartadas
 
 **A.** Más simple y más cerca de «no toques el partido de esta noche». Deja pasar
 V6-07. Un capitán puede citar al rival en 1 hora.
@@ -339,26 +344,21 @@ organizador por fixture. Peor para dos capitanes que ya acordaron otra hora.
 `encounters.reschedule.resolve` ignoraría N. Mezcla emergencia y acuerdo. La
 emergencia ya tiene edición de fixture.
 
-## 11. Preguntas que el usuario debe validar
+## 11. Preguntas y respuestas validadas
 
-Estas no se pueden cerrar solo con el código ni con el PRD.
+Validado el 2026-10-12 por el responsable de producto. Se adoptan las respuestas
+recomendadas. A, B, C1, el aceptar sin revalidar y el bypass del organizador
+quedan descartados. El desarrollo posterior no las reabre.
 
-1. **¿C, A o B?** La recomendación es C. V6-07 y V6-08 son los casos que
-   distinguen.
-2. **¿C2 o C1 cuando el horario actual ya pasó?** La recomendación es C2
-   (V6-24 crea, V6-25 sigue bloqueada por el propuesto). C1 bloquearía V6-24.
-3. **¿El aceptar revalida el aviso del actual?** La recomendación es sí
-   (V6-16…V6-18). La alternativa es no revalidarlo y aceptar la cancelación
-   tardía.
-4. **¿El organizador queda atado en la negociación y usa el fixture para
-   emergencias?** La recomendación es sí.
-5. **¿`N = 0` apaga el aviso y no el «debe ser futuro»?** La recomendación es
-   sí (V6-10…V6-12).
-6. **Tras validar C, ¿hay que revisar el default 12 frente al TTL de DEC-032?**
-   Este hilo no lo decide. Si C y la revalidación se aceptan, el default 12
-   deja casi sin margen al TTL 12. Opciones posteriores: subir el default de
-   aviso, bajar el TTL, o no revalidar el actual al aceptar.
+| # | Pregunta | Respuesta validada | Contrato |
+| --- | --- | --- | --- |
+| 1 | ¿C, A o B? | **C.** Aviso del actual y del propuesto. | Columna C de V6-01…V6-09. |
+| 2 | ¿Horario actual ya pasado? | **C2.** No se exige aviso del actual si `T_actual <= now`. Sigue el aviso del propuesto. | V6-24 crea. V6-25 aviso propuesto. |
+| 3 | ¿El aceptar revalida el aviso del actual? | **Sí.** El reloj y el N vigentes del comando. | V6-16 y V6-17 aplican. V6-18 aviso actual. |
+| 4 | ¿El organizador en la negociación? | **Atado a N.** La emergencia usa la edición de fixture. | §4 puntos 6 y 7. |
+| 5 | ¿`N = 0`? | **Apaga solo el aviso.** «Futuro y distinto» sigue. | V6-10 y V6-11 crean. V6-12 fecha inválida. |
+| 6 | ¿Revisar el default 12 frente al TTL de DEC-032? | **No se decide aquí.** La tensión queda documentada. | §9. El corte DEC-032/033 es [#152](https://github.com/thedavos/futrob/pull/152). |
 
-Si se valida C con las fronteras de la §5, el desarrollo posterior implementa
-V6-01…V6-28 sin reabrir A y B. Si se elige A o B, se reescribe la columna de
-esa opción como contrato y se descartan las filas que dejen de distinguir.
+Siguiente paso de producto, no de este PR: registrar la decisión en
+[open-decisions.md](/product/open-decisions.md) cuando no pise el hilo
+DEC-032/033. Siguiente paso de código: otro PR que implemente V6-01…V6-28.
