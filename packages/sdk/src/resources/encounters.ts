@@ -9,6 +9,8 @@ import {
   type EditFixtureEncounterRequest,
   encounterScheduleSnapshotSchema,
   type EncounterScheduleSnapshotDto,
+  encounterViewSchema,
+  type EncounterViewDto,
   fixturePlanSchema,
   type FixturePlanDto,
   generateCompetitionFixtureRequestSchema,
@@ -29,6 +31,18 @@ import { apiPath } from "../internal/path.ts";
 
 export function createEncountersResource(http: HttpClient) {
   return {
+    async getView(
+      organizationId: string,
+      encounterId: string,
+      options: RequestOptions = {},
+    ): Promise<EncounterViewDto> {
+      return http.request({
+        path: apiPath("organizations", organizationId, "encounters", encounterId),
+        method: "GET",
+        options,
+        parse: (data) => encounterViewSchema.parse(data),
+      });
+    },
     async getScheduleSnapshot(
       encounterId: string,
       options: RequestOptions = {},
