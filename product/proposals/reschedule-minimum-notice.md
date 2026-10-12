@@ -6,9 +6,12 @@
 **Validación:** responsable de producto, este hilo. Se adoptan las respuestas
 recomendadas de la §11.
 **Checkout observado:** `github/main` @ `79776dd6`.
-**Fuera de este corte:** DEC-032, DEC-033 y cualquier cambio a
-[open-decisions.md](/product/open-decisions.md) o
-[scheduling-reschedule-negotiation.md](/docs/architecture/scheduling-reschedule-negotiation.md).
+**Vigencia hasta el DEC:** este archivo manda la semántica del aviso. La guía de
+negociación solo apunta aquí. [open-decisions.md](/product/open-decisions.md)
+aún no registra un ID.
+**Fuera de este corte:** DEC-032, DEC-033 y cualquier otra edición de
+[open-decisions.md](/product/open-decisions.md). La guía de negociación no toca
+TTL ni escalada.
 
 Este archivo es el contrato de las pruebas del desarrollo posterior. Cada vector usa
 instantes literales y un resultado concreto. No se escriben tests sobre este texto.
@@ -69,11 +72,11 @@ Un instante objetivo `T` cumple el aviso si y solo si
 `T.getTime() - now.getTime() >= N × 3_600_000`.
 En el milisegundo exacto del límite, cumple. Un milisegundo después, no.
 
-| Opción | Qué mira | Qué evita | Qué deja pasar |
-| --- | --- | --- | --- |
-| **A. Solo actual** | Cada horario vigente que el alcance movería. | Cancelar un partido que empieza pronto. | Proponer un partido nuevo dentro de N horas si el actual está lejos. |
-| **B. Solo propuesto** | El horario nuevo, y cada slot que resultaría de aplicarlo. | Citar a los equipos con menos de N horas. | Cancelar el partido de esta noche y moverlo a la semana que viene. |
-| **C. Ambos** | A y B a la vez. | Los dos abusos. | Nada de lo anterior, salvo el caso «horario actual ya pasado» de la §5. |
+| Opción                | Qué mira                                                   | Qué evita                                 | Qué deja pasar                                                          |
+| --------------------- | ---------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------- |
+| **A. Solo actual**    | Cada horario vigente que el alcance movería.               | Cancelar un partido que empieza pronto.   | Proponer un partido nuevo dentro de N horas si el actual está lejos.    |
+| **B. Solo propuesto** | El horario nuevo, y cada slot que resultaría de aplicarlo. | Citar a los equipos con menos de N horas. | Cancelar el partido de esta noche y moverlo a la semana que viene.      |
+| **C. Ambos**          | A y B a la vez.                                            | Los dos abusos.                           | Nada de lo anterior, salvo el caso «horario actual ya pasado» de la §5. |
 
 A y B no son equivalentes. Un mismo comando puede cumplir una y fallar la otra.
 Los vectores V6-07 y V6-08 lo muestran.
@@ -167,13 +170,13 @@ resultado guardado. Un reintento sin recibo se evalúa otra vez.
 
 ### Comandos
 
-| Comando | ¿Mira el aviso? | Efecto si falla |
-| --- | --- | --- |
-| Crear solicitud | Sí. Actual y propuesto. | No crea la solicitud. |
-| Contraproponer | Sí. Actual vigente y nuevo propuesto. | La solicitud sigue `open`. La propuesta anterior sigue vigente. |
+| Comando                       | ¿Mira el aviso?                         | Efecto si falla                                                      |
+| ----------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| Crear solicitud               | Sí. Actual y propuesto.                 | No crea la solicitud.                                                |
+| Contraproponer                | Sí. Actual vigente y nuevo propuesto.   | La solicitud sigue `open`. La propuesta anterior sigue vigente.      |
 | Aceptar (consienta o aplique) | Sí. Actual vigente y propuesto vigente. | Sin consentimiento nuevo. Si era el último, no aplica. Sigue `open`. |
-| Rechazar | No. | Cierra `rejected`. El horario no cambia. |
-| Listar o leer | No. | Sin efecto. |
+| Rechazar                      | No.                                     | Cierra `rejected`. El horario no cambia.                             |
+| Listar o leer                 | No.                                     | Sin efecto.                                                          |
 
 Aceptar se mira aunque falte otra autoridad. Así el primer consentimiento no queda
 registrado si el reglamento ya no permite aplicar.
@@ -242,17 +245,17 @@ Salidas:
 - **Fecha inválida:** `scheduling.invalid_schedule_change_date`. No es aviso.
 - **Rechaza:** `rejected`, horario intacto.
 
-| ID | Acción | `now` | Actual | Propuesto | A | B | C (validada) |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| V6-01 | Crear | `2026-10-13T07:59:59.999Z` | `2026-10-13T20:00:00.000Z` | `P_far` | Crea | Crea | Crea |
-| V6-02 | Crear | `2026-10-13T08:00:00.000Z` | `2026-10-13T20:00:00.000Z` | `P_far` | Crea | Crea | Crea |
-| V6-03 | Crear | `2026-10-13T08:00:00.001Z` | `2026-10-13T20:00:00.000Z` | `P_far` | Aviso actual | Crea | Aviso actual |
-| V6-04 | Crear | `2026-10-13T07:59:59.999Z` | `C_far` | `2026-10-13T20:00:00.000Z` | Crea | Crea | Crea |
-| V6-05 | Crear | `2026-10-13T08:00:00.000Z` | `C_far` | `2026-10-13T20:00:00.000Z` | Crea | Crea | Crea |
-| V6-06 | Crear | `2026-10-13T08:00:00.001Z` | `C_far` | `2026-10-13T20:00:00.000Z` | Crea | Aviso propuesto | Aviso propuesto |
-| V6-07 | Crear | `2026-10-13T08:00:00.000Z` | `C_far` | `2026-10-13T09:00:00.000Z` | Crea | Aviso propuesto | Aviso propuesto |
-| V6-08 | Crear | `2026-10-13T08:00:00.000Z` | `2026-10-13T09:00:00.000Z` | `P_far` | Aviso actual | Crea | Aviso actual |
-| V6-09 | Crear | `2026-10-13T08:00:00.000Z` | `2026-10-13T09:00:00.000Z` | `2026-10-13T09:30:00.000Z` | Aviso actual | Aviso propuesto | Aviso actual |
+| ID    | Acción | `now`                      | Actual                     | Propuesto                  | A            | B               | C (validada)    |
+| ----- | ------ | -------------------------- | -------------------------- | -------------------------- | ------------ | --------------- | --------------- |
+| V6-01 | Crear  | `2026-10-13T07:59:59.999Z` | `2026-10-13T20:00:00.000Z` | `P_far`                    | Crea         | Crea            | Crea            |
+| V6-02 | Crear  | `2026-10-13T08:00:00.000Z` | `2026-10-13T20:00:00.000Z` | `P_far`                    | Crea         | Crea            | Crea            |
+| V6-03 | Crear  | `2026-10-13T08:00:00.001Z` | `2026-10-13T20:00:00.000Z` | `P_far`                    | Aviso actual | Crea            | Aviso actual    |
+| V6-04 | Crear  | `2026-10-13T07:59:59.999Z` | `C_far`                    | `2026-10-13T20:00:00.000Z` | Crea         | Crea            | Crea            |
+| V6-05 | Crear  | `2026-10-13T08:00:00.000Z` | `C_far`                    | `2026-10-13T20:00:00.000Z` | Crea         | Crea            | Crea            |
+| V6-06 | Crear  | `2026-10-13T08:00:00.001Z` | `C_far`                    | `2026-10-13T20:00:00.000Z` | Crea         | Aviso propuesto | Aviso propuesto |
+| V6-07 | Crear  | `2026-10-13T08:00:00.000Z` | `C_far`                    | `2026-10-13T09:00:00.000Z` | Crea         | Aviso propuesto | Aviso propuesto |
+| V6-08 | Crear  | `2026-10-13T08:00:00.000Z` | `2026-10-13T09:00:00.000Z` | `P_far`                    | Aviso actual | Crea            | Aviso actual    |
+| V6-09 | Crear  | `2026-10-13T08:00:00.000Z` | `2026-10-13T09:00:00.000Z` | `2026-10-13T09:30:00.000Z` | Aviso actual | Aviso propuesto | Aviso actual    |
 
 V6-07 es el caso que tumba A. V6-08 es el caso que tumba B. V6-02 y V6-05 son el
 límite inclusivo. V6-03 y V6-06 son el milisegundo posterior.
@@ -261,27 +264,27 @@ límite inclusivo. V6-03 y V6-06 son el milisegundo posterior.
 
 Mismo `N = 12` salvo V6-10 y V6-11.
 
-| ID | Caso | `now` | Resultado C |
-| --- | --- | --- | --- |
-| V6-10 | Crear con `N = 0`, actual `2026-10-13T09:00:00.000Z`, propuesto `P_far` | `2026-10-13T08:00:00.000Z` | Crea. El aviso está apagado. |
-| V6-11 | Crear con `N = 0`, propuesto `2026-10-13T08:00:00.001Z`, actual `C_far` | `2026-10-13T08:00:00.000Z` | Crea. Sigue siendo futuro y distinto. |
-| V6-12 | Crear con `N = 0`, propuesto `2026-10-13T08:00:00.000Z` | `2026-10-13T08:00:00.000Z` | Fecha inválida. El cero no relaja «estrictamente futuro». |
-| V6-13 | Contraproponer a `P_far` con actual `2026-10-13T20:00:00.000Z` | `2026-10-13T08:00:00.000Z` | Nueva propuesta vigente. Consentimientos previos no cuentan. |
-| V6-14 | Contraproponer a `2026-10-13T09:00:00.000Z` con actual `C_far` | `2026-10-13T08:00:00.000Z` | Aviso propuesto. La propuesta anterior sigue vigente. Solicitud `open`. |
-| V6-15 | Contraproponer a `P_far` con actual `2026-10-13T09:00:00.000Z` | `2026-10-13T08:00:00.000Z` | Aviso actual. La propuesta anterior sigue vigente. |
-| V6-16 | Aceptar (último consentimiento) una propuesta `P_far` creada en V6-01 | `2026-10-13T07:59:59.999Z` | Aplica. Horario = `P_far`. |
-| V6-17 | Aceptar la misma solicitud de V6-01 | `2026-10-13T08:00:00.000Z` | Aplica. Sigue en el límite. |
-| V6-18 | Aceptar la misma solicitud de V6-01 | `2026-10-13T08:00:00.001Z` | Aviso actual. Sigue `open`. Horario original intacto. |
-| V6-19 | Aceptar una propuesta `2026-10-13T20:00:00.000Z` (actual `C_far`) | `2026-10-13T08:00:00.001Z` | Aviso propuesto. Sigue `open`. |
-| V6-20 | Rechazar con actual `2026-10-13T09:00:00.000Z` | `2026-10-13T08:00:00.000Z` | `rejected`. Horario intacto. El aviso no actúa. |
-| V6-21 | Crear `official_match` slot 2. Slot 1 = `2026-10-13T09:00:00.000Z`. Slot 2 = `2026-10-13T20:00:00.000Z`. Propuesto slot 2 = `P_far` | `2026-10-13T08:00:00.000Z` | Crea. Slot 1 está dentro de la ventana y no entra en el alcance. |
-| V6-22 | Crear `entire_encounter` con los mismos slots que V6-21. Propuesto = `P_far` | `2026-10-13T08:00:00.000Z` | Aviso actual. El slot 1 es el inicio del Encounter y se movería. |
-| V6-23 | Crear `official_match` slot 1 con los mismos slots que V6-21. Propuesto = `P_far` | `2026-10-13T08:00:00.000Z` | Aviso actual. El slot 1 está a 1 hora. |
-| V6-24 | Crear. Actual `2026-10-13T07:00:00.000Z` (ya pasó). Propuesto `2026-10-13T21:00:00.000Z` | `2026-10-13T08:00:00.000Z` | Crea. El aviso del actual no aplica. El propuesto cumple 13 horas. |
-| V6-25 | Crear. Actual `2026-10-13T07:00:00.000Z`. Propuesto `2026-10-13T09:00:00.000Z` | `2026-10-13T08:00:00.000Z` | Aviso propuesto. |
-| V6-26 | Aceptar. La solicitud se creó con `N = 12` y 18 horas de holgura. El N vigente ahora es `24` | holgura actual 18 h | Aviso actual. El N no se congeló. |
-| V6-27 | Aceptar. Misma solicitud. El N vigente ahora es `0` | holgura actual 18 h | Aplica, si la fecha sigue futura. |
-| V6-28 | Aceptar una propuesta cuyo `proposedStartAt` ya no es futuro | `proposedStartAt` | Fecha inválida, no aviso. Vecino de V6-18. |
+| ID    | Caso                                                                                                                                | `now`                      | Resultado C                                                             |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ----------------------------------------------------------------------- |
+| V6-10 | Crear con `N = 0`, actual `2026-10-13T09:00:00.000Z`, propuesto `P_far`                                                             | `2026-10-13T08:00:00.000Z` | Crea. El aviso está apagado.                                            |
+| V6-11 | Crear con `N = 0`, propuesto `2026-10-13T08:00:00.001Z`, actual `C_far`                                                             | `2026-10-13T08:00:00.000Z` | Crea. Sigue siendo futuro y distinto.                                   |
+| V6-12 | Crear con `N = 0`, propuesto `2026-10-13T08:00:00.000Z`                                                                             | `2026-10-13T08:00:00.000Z` | Fecha inválida. El cero no relaja «estrictamente futuro».               |
+| V6-13 | Contraproponer a `P_far` con actual `2026-10-13T20:00:00.000Z`                                                                      | `2026-10-13T08:00:00.000Z` | Nueva propuesta vigente. Consentimientos previos no cuentan.            |
+| V6-14 | Contraproponer a `2026-10-13T09:00:00.000Z` con actual `C_far`                                                                      | `2026-10-13T08:00:00.000Z` | Aviso propuesto. La propuesta anterior sigue vigente. Solicitud `open`. |
+| V6-15 | Contraproponer a `P_far` con actual `2026-10-13T09:00:00.000Z`                                                                      | `2026-10-13T08:00:00.000Z` | Aviso actual. La propuesta anterior sigue vigente.                      |
+| V6-16 | Aceptar (último consentimiento) una propuesta `P_far` creada en V6-01                                                               | `2026-10-13T07:59:59.999Z` | Aplica. Horario = `P_far`.                                              |
+| V6-17 | Aceptar la misma solicitud de V6-01                                                                                                 | `2026-10-13T08:00:00.000Z` | Aplica. Sigue en el límite.                                             |
+| V6-18 | Aceptar la misma solicitud de V6-01                                                                                                 | `2026-10-13T08:00:00.001Z` | Aviso actual. Sigue `open`. Horario original intacto.                   |
+| V6-19 | Aceptar una propuesta `2026-10-13T20:00:00.000Z` (actual `C_far`)                                                                   | `2026-10-13T08:00:00.001Z` | Aviso propuesto. Sigue `open`.                                          |
+| V6-20 | Rechazar con actual `2026-10-13T09:00:00.000Z`                                                                                      | `2026-10-13T08:00:00.000Z` | `rejected`. Horario intacto. El aviso no actúa.                         |
+| V6-21 | Crear `official_match` slot 2. Slot 1 = `2026-10-13T09:00:00.000Z`. Slot 2 = `2026-10-13T20:00:00.000Z`. Propuesto slot 2 = `P_far` | `2026-10-13T08:00:00.000Z` | Crea. Slot 1 está dentro de la ventana y no entra en el alcance.        |
+| V6-22 | Crear `entire_encounter` con los mismos slots que V6-21. Propuesto = `P_far`                                                        | `2026-10-13T08:00:00.000Z` | Aviso actual. El slot 1 es el inicio del Encounter y se movería.        |
+| V6-23 | Crear `official_match` slot 1 con los mismos slots que V6-21. Propuesto = `P_far`                                                   | `2026-10-13T08:00:00.000Z` | Aviso actual. El slot 1 está a 1 hora.                                  |
+| V6-24 | Crear. Actual `2026-10-13T07:00:00.000Z` (ya pasó). Propuesto `2026-10-13T21:00:00.000Z`                                            | `2026-10-13T08:00:00.000Z` | Crea. El aviso del actual no aplica. El propuesto cumple 13 horas.      |
+| V6-25 | Crear. Actual `2026-10-13T07:00:00.000Z`. Propuesto `2026-10-13T09:00:00.000Z`                                                      | `2026-10-13T08:00:00.000Z` | Aviso propuesto.                                                        |
+| V6-26 | Aceptar. La solicitud se creó con `N = 12` y 18 horas de holgura. El N vigente ahora es `24`                                        | holgura actual 18 h        | Aviso actual. El N no se congeló.                                       |
+| V6-27 | Aceptar. Misma solicitud. El N vigente ahora es `0`                                                                                 | holgura actual 18 h        | Aplica, si la fecha sigue futura.                                       |
+| V6-28 | Aceptar una propuesta cuyo `proposedStartAt` ya no es futuro                                                                        | `proposedStartAt`          | Fecha inválida, no aviso. Vecino de V6-18.                              |
 
 V6-21 y V6-22 son el par de alcance. El vecino positivo de un Encounter bloqueado
 es mover solo el slot lejano.
@@ -306,16 +309,16 @@ No implementar nada de eso en este PR.
 
 ## 9. Relación con otras decisiones
 
-| Decisión | Relación | Este corte |
-| --- | --- | --- |
-| DEC-021 | Plazo de confirmación de selección en results. 24 h desde la propuesta. | Distinta. No compartir código ni default. |
-| DEC-030 | Cupo de 2 reprogramaciones por Team y Encounter. | Ya se aplica. El aviso no lo sustituye. |
-| DEC-031 | Quién inicia. | Sin cambio. |
-| DEC-032 | TTL de la solicitud de reprogramación. Default 12 h. | Fuera. Ver tensión abajo. |
-| DEC-033 | Escalada al expirar. | Fuera. |
-| DEC-034 | Fecha límite de reprogramar. Luego solo organizador. | Distinta del aviso N. |
-| DEC-081 | Publicar bloquea reglas. | Explica por qué el releer suele ser estable tras publicar. |
-| Edición de fixture | Camino auditado del organizador. | Fuera del aviso. |
+| Decisión           | Relación                                                                | Este corte                                                 |
+| ------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------- |
+| DEC-021            | Plazo de confirmación de selección en results. 24 h desde la propuesta. | Distinta. No compartir código ni default.                  |
+| DEC-030            | Cupo de 2 reprogramaciones por Team y Encounter.                        | Ya se aplica. El aviso no lo sustituye.                    |
+| DEC-031            | Quién inicia.                                                           | Sin cambio.                                                |
+| DEC-032            | TTL de la solicitud de reprogramación. Default 12 h.                    | Fuera. Ver tensión abajo.                                  |
+| DEC-033            | Escalada al expirar.                                                    | Fuera.                                                     |
+| DEC-034            | Fecha límite de reprogramar. Luego solo organizador.                    | Distinta del aviso N.                                      |
+| DEC-081            | Publicar bloquea reglas.                                                | Explica por qué el releer suele ser estable tras publicar. |
+| Edición de fixture | Camino auditado del organizador.                                        | Fuera del aviso.                                           |
 
 Tensión observada, no resuelta. Default de aviso `12` y default DEC-032 `12`.
 C revalida el actual al aceptar. Una solicitud abierta exactamente 12 horas
@@ -350,15 +353,16 @@ Validado el 2026-10-12 por el responsable de producto. Se adoptan las respuestas
 recomendadas. A, B, C1, el aceptar sin revalidar y el bypass del organizador
 quedan descartados. El desarrollo posterior no las reabre.
 
-| # | Pregunta | Respuesta validada | Contrato |
-| --- | --- | --- | --- |
-| 1 | ¿C, A o B? | **C.** Aviso del actual y del propuesto. | Columna C de V6-01…V6-09. |
-| 2 | ¿Horario actual ya pasado? | **C2.** No se exige aviso del actual si `T_actual <= now`. Sigue el aviso del propuesto. | V6-24 crea. V6-25 aviso propuesto. |
-| 3 | ¿El aceptar revalida el aviso del actual? | **Sí.** El reloj y el N vigentes del comando. | V6-16 y V6-17 aplican. V6-18 aviso actual. |
-| 4 | ¿El organizador en la negociación? | **Atado a N.** La emergencia usa la edición de fixture. | §4 puntos 6 y 7. |
-| 5 | ¿`N = 0`? | **Apaga solo el aviso.** «Futuro y distinto» sigue. | V6-10 y V6-11 crean. V6-12 fecha inválida. |
-| 6 | ¿Revisar el default 12 frente al TTL de DEC-032? | **No se decide aquí.** La tensión queda documentada. | §9. El corte DEC-032/033 es [#152](https://github.com/thedavos/futrob/pull/152). |
+| #   | Pregunta                                         | Respuesta validada                                                                       | Contrato                                                                         |
+| --- | ------------------------------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 1   | ¿C, A o B?                                       | **C.** Aviso del actual y del propuesto.                                                 | Columna C de V6-01…V6-09.                                                        |
+| 2   | ¿Horario actual ya pasado?                       | **C2.** No se exige aviso del actual si `T_actual <= now`. Sigue el aviso del propuesto. | V6-24 crea. V6-25 aviso propuesto.                                               |
+| 3   | ¿El aceptar revalida el aviso del actual?        | **Sí.** El reloj y el N vigentes del comando.                                            | V6-16 y V6-17 aplican. V6-18 aviso actual.                                       |
+| 4   | ¿El organizador en la negociación?               | **Atado a N.** La emergencia usa la edición de fixture.                                  | §4 puntos 6 y 7.                                                                 |
+| 5   | ¿`N = 0`?                                        | **Apaga solo el aviso.** «Futuro y distinto» sigue.                                      | V6-10 y V6-11 crean. V6-12 fecha inválida.                                       |
+| 6   | ¿Revisar el default 12 frente al TTL de DEC-032? | **No se decide aquí.** La tensión queda documentada.                                     | §9. El corte DEC-032/033 es [#152](https://github.com/thedavos/futrob/pull/152). |
 
 Siguiente paso de producto, no de este PR: registrar la decisión en
 [open-decisions.md](/product/open-decisions.md) cuando no pise el hilo
-DEC-032/033. Siguiente paso de código: otro PR que implemente V6-01…V6-28.
+DEC-032/033. La guía de negociación ya apunta a este archivo. Siguiente paso de
+código: otro PR que implemente V6-01…V6-28.

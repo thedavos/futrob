@@ -208,9 +208,12 @@ Validadas el 2026-10-05:
 3. Las reglas se leen al ejecutar cada comando. Al aplicar se revalidan `allowRescheduling` y el
    cupo con las reglas vigentes; no se congela la versión de reglas en la solicitud.
 
-Pendiente:
+Validada el 2026-10-12, sin ID DEC ni runtime:
 
-- Semántica de `minimumRescheduleNoticeHours`: ¿antelación respecto del horario actual, del
-  propuesto o de ambos? Se expone en el puerto y no se aplica.
+- Semántica de `minimumRescheduleNoticeHours`: opción C (horario actual y propuesto),
+  con C2 si el horario actual ya pasó. Hasta el registro en
+  [open-decisions.md](/product/open-decisions.md), manda
+  [reschedule-minimum-notice.md](/product/proposals/reschedule-minimum-notice.md).
+  Se expone en el puerto y todavía no se aplica.
 
 TTL, expiración y escalado (DEC-032/033) quedan fuera de este corte.
