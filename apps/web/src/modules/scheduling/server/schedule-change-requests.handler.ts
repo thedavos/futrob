@@ -3,6 +3,7 @@ import {
   counterScheduleChangeProposalRequestSchema,
   createScheduleChangeRequestSchema,
   listScheduleChangeRequestsResponseSchema,
+  resolveScheduleChangeRequestSchema,
   rejectScheduleChangeProposalRequestSchema,
   scheduleChangeCommandResponseSchema,
   scheduleChangeRequestSchema,
@@ -66,6 +67,18 @@ export function handleGetScheduleChangeRequest(
       await client.encounters.getScheduleChangeRequest(params.encounterId, params.requestId),
     );
   });
+}
+
+export async function handleResolveScheduleChangeRequest(
+  request: Request,
+  params: RequestParams,
+  connect: ConnectProductApi,
+): Promise<Response> {
+  const body = await parseBody(request, resolveScheduleChangeRequestSchema);
+  if (!body.success) return validationError(body.error);
+  return respondToCommand(request, connect, (client) =>
+    client.encounters.resolveScheduleChangeRequest(params.encounterId, params.requestId, body.data),
+  );
 }
 
 /**

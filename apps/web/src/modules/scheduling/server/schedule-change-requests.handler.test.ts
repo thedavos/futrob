@@ -4,6 +4,7 @@ import { AuthUnauthenticatedError } from "@/context/auth.ts";
 import { createProductApiClient } from "@/context/product-api-client.ts";
 import {
   handleGetScheduleChangeRequest,
+  handleResolveScheduleChangeRequest,
   handleScheduleChangeProposalCommand,
   type ConnectProductApi,
 } from "./schedule-change-requests.handler.ts";
@@ -30,6 +31,7 @@ const accepted = {
       proposedByTeamId: "team-home",
       reason: "Home travel conflict",
       createdAt: "2026-10-01T12:00:00.000Z",
+      responseDeadline: "2026-10-02T00:00:00.000Z",
     },
   ],
   decisions: [
@@ -44,6 +46,8 @@ const accepted = {
       createdAt: "2026-10-02T12:00:00.000Z",
     },
   ],
+  actions: [],
+  allowedActions: [],
   application: {
     id: "application-1",
     proposalId: "proposal-1",
@@ -235,5 +239,73 @@ describe("schedule-change BFF", () => {
     expect(session.sent).toEqual([
       { method: "GET", url: REQUEST_PATH, actor: "actor-away-player", body: null },
     ]);
+  });
+});
+
+describe("organizer resolution BFF", () => {
+  it("uses the authenticated actor, strips forged authority and forwards replay history", async () => {
+    const resolved = { ...accepted, status: "resolved_by_organizer", version: 3 };
+    const session = sessionOf("actor-organizer", () =>
+      Response.json({ request: resolved, replayed: true }),
+    );
+    const body = {
+      proposalId: "proposal-1",
+      expectedVersion: 2,
+      commandKey: "resolve-1",
+      resolution: {
+        outcome: "walkover_intended",
+        reason: "Opponent absent",
+        winningTeamId: "team-home",
+      },
+    };
+    const response = await handleResolveScheduleChangeRequest(
+      browserPost({
+        ...body,
+        actorId: "forged",
+        role: "superuser",
+      }),
+      target,
+      session.connect,
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ request: resolved, replayed: true });
+    expect(session.sent).toEqual([
+      { method: "POST", url: `${REQUEST_PATH}/resolve`, actor: "actor-organizer", body },
+    ]);
+  });
+
+  it("requires a session and preserves API denial and window conflicts", async () => {
+    const body = {
+      proposalId: "proposal-1",
+      expectedVersion: 2,
+      commandKey: "resolve-1",
+      resolution: { outcome: "schedule_kept", reason: "Keep schedule" },
+    };
+    const anonymous: ConnectProductApi = () => Promise.reject(new AuthUnauthenticatedError());
+    const unauthenticated = await handleResolveScheduleChangeRequest(
+      browserPost(body),
+      target,
+      anonymous,
+    );
+    expect(unauthenticated.status).toBe(401);
+    expect(await unauthenticated.json()).toMatchObject({ code: "auth.unauthenticated" });
+    for (const [status, code] of [
+      [403, "authorization.forbidden"],
+      [409, "scheduling.schedule_change_response_window_closed"],
+    ] as const) {
+      const session = sessionOf("actor-away-player", () =>
+        Response.json({ code, messageKey: `errors.${code}` }, { status }),
+      );
+      const response = await handleResolveScheduleChangeRequest(
+        browserPost(body),
+        target,
+        session.connect,
+      );
+      expect(response.status).toBe(status);
+      expect(await response.json()).toMatchObject({ code });
+      expect(session.sent).toEqual([
+        { method: "POST", url: `${REQUEST_PATH}/resolve`, actor: "actor-away-player", body },
+      ]);
+    }
   });
 });

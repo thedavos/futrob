@@ -1,3 +1,4 @@
+import { recoverScheduleChangeExpiry } from "@/workers/scheduling-reschedule-expiry.worker.ts";
 import startServer from "@tanstack/react-start/server-entry";
 import { registerWorkers, type QueueBatch } from "@/bootstrap/register-workers.ts";
 import { captureWorkerError, withWorkerSentry } from "@/observability/sentry.ts";
@@ -51,6 +52,15 @@ const worker = {
       apiBaseUrl: env.FUTROB_API_BASE_URL,
       internalJobSecret: env.INTERNAL_JOB_SECRET,
     };
+    context.waitUntil(
+      recoverScheduleChangeExpiry(deps).catch((cause) => {
+        captureWorkerError(cause, {
+          handler: "scheduled",
+          job: "schedule_change_expiry",
+          cron: controller.cron,
+        });
+      }),
+    );
     context.waitUntil(
       recoverConfirmationExpiry(deps).catch((cause) => {
         captureWorkerError(cause, {

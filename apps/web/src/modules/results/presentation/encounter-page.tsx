@@ -28,6 +28,10 @@ import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { MatchPitchSurface } from "@/shared/presentation/match-pitch-surface.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import {
+  ScheduleChangesSection,
+  type ScheduleChangesState,
+} from "@/modules/scheduling/presentation/schedule-changes-section.tsx";
 import { CandidatesSection } from "./encounter-candidates.tsx";
 import {
   assignCandidate,
@@ -65,7 +69,9 @@ export function EncounterPageView({
   competitionId,
   encounter,
   organizationId,
+  scheduleChanges,
 }: {
+  readonly scheduleChanges?: ScheduleChangesState;
   readonly candidates: CandidatesState;
   readonly competitionId: string;
   readonly encounter: EncounterState;
@@ -124,6 +130,7 @@ export function EncounterPageView({
       return (
         <EncounterReady
           candidates={candidates}
+          scheduleChanges={scheduleChanges}
           encountersLink={encountersLink}
           view={encounter.view}
         />
@@ -138,10 +145,12 @@ export function EncounterPageView({
 function EncounterReady({
   candidates,
   encountersLink,
+  scheduleChanges,
   view,
 }: {
   readonly candidates: CandidatesState;
   readonly encountersLink: ReactElement;
+  readonly scheduleChanges?: ScheduleChangesState;
   readonly view: EncounterViewDto;
 }) {
   const { locale, t } = useI18n();
@@ -171,6 +180,7 @@ function EncounterReady({
         <EncounterBreadcrumb current={title} link={encountersLink} t={t} />
         <EncounterHero formats={formats} t={t} view={view} />
       </header>
+      {scheduleChanges ? <ScheduleChangesSection state={scheduleChanges} view={view} /> : null}
       <section aria-labelledby="encounter-slots" {...applyStyles(styles.section)}>
         <div {...applyStyles(styles.sectionCopy)}>
           <SectionTitle id="encounter-slots">{t("encounter.slots.title")}</SectionTitle>
