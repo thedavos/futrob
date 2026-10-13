@@ -21,7 +21,12 @@ import {
   type ScheduleChangeApplicationFeedPort,
 } from "@futrob/scheduling";
 import type { CompetitionRepository } from "@futrob/competitions";
-import type { AuthorizationPort, EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
+import type {
+  AuthorizationPort,
+  ClockPort,
+  EventPublisherPort,
+  TransactionPort,
+} from "@futrob/shared-kernel";
 import type { OfficialMatchSelectionRepository, OfficialResultRepository } from "@futrob/results";
 import type { Pool } from "pg";
 import {
@@ -57,6 +62,7 @@ import {
 export function createSchedulingModule(input: {
   readonly pool: Pool | undefined;
   readonly authorization: AuthorizationPort;
+  readonly clock?: ClockPort;
   readonly participants: EncounterParticipantValidationPort;
   readonly fixtureSource: CompetitionFixtureSourcePort;
   readonly eventPublisher: EventPublisherPort;
@@ -87,7 +93,7 @@ export function createSchedulingModule(input: {
   const scheduleChangeApplications: ScheduleChangeApplicationFeedPort = input.pool
     ? new PostgresScheduleChangeApplicationFeed(input.pool)
     : new InMemoryScheduleChangeApplicationFeed(inMemoryRequests);
-  const clock = new SystemClock();
+  const clock = input.clock ?? new SystemClock();
   const ids = new CryptoIdGenerator();
   const editGuard = new OfficialResultFixtureEditGuard(
     officialMatches,

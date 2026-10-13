@@ -12,6 +12,7 @@ import {
   type CompetitionWallTime,
 } from "../domain/policies/interpret-competition-wall-time.ts";
 import { currentStartFor } from "../domain/policies/official-match-schedule.ts";
+import { checkRescheduleMinimumNotice } from "../domain/policies/reschedule-minimum-notice.ts";
 import {
   runScheduleChangeCommand,
   type ScheduleChangeCommandDeps,
@@ -52,7 +53,7 @@ export class CounterScheduleChangeProposalUseCase {
         reason: input.reason.trim(),
       },
       movesSchedule: true,
-      decide: async ({ encounter, schedules, request, now }) => {
+      decide: async ({ encounter, schedules, request, rules, now }) => {
         const timeZone = await this.deps.timeZones.getTimeZone({
           organizationId: encounter.organizationId,
           competitionId: encounter.competitionId,
@@ -88,6 +89,15 @@ export class CounterScheduleChangeProposalUseCase {
           now,
         });
         if (proposal.isErr()) return err(proposal.error);
+        const notice = checkRescheduleMinimumNotice({
+          scope: request.scope,
+          schedules,
+          proposedStartAt: proposal.value.proposedStartAt,
+          minimumNoticeHours: rules.minimumNoticeHours,
+          now,
+        });
+        if (notice.isErr()) return err(notice.error);
+
         return counterScheduleChange(request, { target: input, proposal: proposal.value, now });
       },
     });

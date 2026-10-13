@@ -53,9 +53,13 @@ const httpMappableFailureSchema = z.object({
 });
 
 const taggedErrorDetailsSchema = apiErrorDetailsSchema.partial();
+const rescheduleNoticeDetailsSchema = apiErrorDetailsSchema.pick({ anchor: true }).strip();
 
 function detailsFromTaggedProps(error: HttpMappableFailure): ApiErrorDetails | undefined {
   if (error.code.startsWith("game_data.ea_clubs_")) return undefined;
+  if (error.code === "scheduling.reschedule_notice_not_met") {
+    return rescheduleNoticeDetailsSchema.parse(error);
+  }
   const parsed = taggedErrorDetailsSchema.safeParse(error);
   if (!parsed.success) return undefined;
   return Object.keys(parsed.data).length > 0 ? parsed.data : undefined;
@@ -103,6 +107,7 @@ function statusForFailureCode(code: string): number {
     code.includes("capacity_reached") ||
     code.includes("limit_reached") ||
     code.includes("rescheduling_disabled") ||
+    code === "scheduling.reschedule_notice_not_met" ||
     code.includes("active_schedule_change_request_exists") ||
     code === "scheduling.schedule_change_request_closed" ||
     code === "scheduling.schedule_change_proposal_stale" ||
