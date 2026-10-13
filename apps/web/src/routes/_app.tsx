@@ -4,6 +4,8 @@ import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { authClient } from "@/modules/identity/auth-client.ts";
+import { PrivateContentGate } from "@/modules/identity/presentation/private-content-gate.tsx";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { AuthenticatedShell } from "@/shared/presentation/shell/authenticated-shell.tsx";
 
 const styles = stylex.create({
@@ -31,6 +33,7 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useI18n();
   const session = authClient.useSession();
   const bare = isBareAuthenticatedRoute(location.pathname);
 
@@ -45,21 +48,21 @@ function AppLayout() {
   }, [location.pathname, navigate, session.data?.user, session.isPending]);
 
   if (session.isPending || session.data?.user == null) {
-    return <div {...applyStyles(styles.pending)}>Comprobando sesión…</div>;
-  }
-
-  if (bare) {
-    return (
-      <div {...applyStyles(styles.bare)}>
-        <Outlet />
-      </div>
-    );
+    return <div {...applyStyles(styles.pending)}>{t("auth.session.checking")}</div>;
   }
 
   return (
-    <AuthenticatedShell>
-      <Outlet />
-    </AuthenticatedShell>
+    <PrivateContentGate>
+      {bare ? (
+        <div {...applyStyles(styles.bare)}>
+          <Outlet />
+        </div>
+      ) : (
+        <AuthenticatedShell>
+          <Outlet />
+        </AuthenticatedShell>
+      )}
+    </PrivateContentGate>
   );
 }
 
