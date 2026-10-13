@@ -210,3 +210,31 @@ describe("createFutrobClient encounters schedule-change-requests", () => {
     ]);
   });
 });
+
+it.each(["current", "proposed"] as const)(
+  "preserves the %s notice anchor for schedule-change consumers",
+  async (anchor) => {
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: mockFetch(() =>
+        Response.json(
+          {
+            code: "scheduling.reschedule_notice_not_met",
+            messageKey: "errors.scheduling.reschedule_notice_not_met",
+            details: { anchor },
+          },
+          { status: 409 },
+        ),
+      ),
+    });
+
+    await expect(
+      client.encounters.createScheduleChangeRequest("encounter-1", createBody),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "scheduling.reschedule_notice_not_met",
+      messageKey: "errors.scheduling.reschedule_notice_not_met",
+      details: { anchor },
+    });
+  },
+);

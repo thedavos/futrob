@@ -6,6 +6,7 @@ import {
   ProviderSchemaError,
   ProviderUnavailable,
 } from "@futrob/game-data";
+import { RescheduleNoticeNotMet } from "@futrob/scheduling";
 import { failureToHttp } from "./errors.ts";
 
 describe("game-data HTTP failures", () => {
@@ -89,4 +90,26 @@ describe("game-data HTTP failures", () => {
       code: "game_data.provider_refresh_in_progress",
     });
   });
+});
+
+describe("reschedule minimum notice HTTP failures", () => {
+  it.each(["current", "proposed"] as const)(
+    "publishes the %s anchor as a conflict",
+    async (anchor) => {
+      const response = failureToHttp(
+        new RescheduleNoticeNotMet({
+          code: "scheduling.reschedule_notice_not_met",
+          message: "Minimum notice not met",
+          anchor,
+        }),
+      );
+
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({
+        code: "scheduling.reschedule_notice_not_met",
+        messageKey: "errors.scheduling.reschedule_notice_not_met",
+        details: { anchor },
+      });
+    },
+  );
 });
