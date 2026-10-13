@@ -208,12 +208,19 @@ Validadas el 2026-10-05:
 3. Las reglas se leen al ejecutar cada comando. Al aplicar se revalidan `allowRescheduling` y el
    cupo con las reglas vigentes; no se congela la versión de reglas en la solicitud.
 
-Validada el 2026-10-12, sin ID DEC ni runtime:
+Validada el 2026-10-12, registrada en DEC-035:
 
-- Semántica de `minimumRescheduleNoticeHours`: opción C (horario actual y propuesto),
-  con C2 si el horario actual ya pasó. Hasta el registro en
-  [open-decisions.md](/product/open-decisions.md), manda
-  [reschedule-minimum-notice.md](/product/proposals/reschedule-minimum-notice.md).
-  Se expone en el puerto y todavía no se aplica.
+- `minimumRescheduleNoticeHours` se aplica en crear, contraproponer y aceptar,
+  antes de persistir incluso un consentimiento parcial. La política compara el horario
+  actual futuro y los horarios propuestos de los slots afectados (opción C); omite el
+  aviso del actual pasado o igual al reloj (C2). Exactamente N horas cumple y cero
+  desactiva solo aviso. Se releen N y reloj dentro del lock/transacción existentes,
+  después de resolver replay. El organizador no tiene bypass en negociación.
+- Una denegación devuelve HTTP 409 `scheduling.reschedule_notice_not_met`, con
+  `anchor: current | proposed`, sin efectos. La fecha no futura conserva su error 400.
+  Rechazar no aplica aviso. La edición auditada de fixture conserva su camino separado.
+- Contrato completo y vectores en
+  [reschedule-minimum-notice.md](/product/proposals/reschedule-minimum-notice.md);
+  registro canónico en [DEC-035](/product/open-decisions.md#dec-035--antelación-mínima-de-reprogramación).
 
 TTL, expiración y escalado (DEC-032/033) quedan fuera de este corte.

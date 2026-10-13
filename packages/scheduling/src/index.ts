@@ -155,6 +155,7 @@ export {
   InvalidScheduleChangeRequest,
   InvalidScheduleChangeScope,
   RescheduleLimitReached,
+  RescheduleNoticeNotMet,
   ReschedulingDisabled,
   ScheduleChangeRequestForbidden,
   ScheduleChangeRequestIdempotencyConflict,

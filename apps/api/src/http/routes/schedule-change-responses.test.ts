@@ -71,10 +71,12 @@ describe.each([
       stranger: `actor-stranger-${tag}`,
     };
     if (isolated) await seedActors(isolated.pool, ...Object.values(actors));
+    let now = new Date();
     const modules = createModules({
       fetcher: stubFetch,
       eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
       pool: isolated?.pool,
+      clock: { now: () => new Date(now.getTime()) },
     });
     const app = createApp({
       modules,
@@ -152,6 +154,9 @@ describe.each([
     const requestsPath = `/encounters/${encounter.id}/schedule-change-requests`;
     return {
       actors,
+      setNow: (instant: string) => {
+        now = new Date(instant);
+      },
       home,
       away,
       modules,
@@ -195,6 +200,145 @@ describe.each([
         ),
     };
   }
+
+  it.skipIf(skip)(
+    "returns notice anchors through HTTP and preserves state until an exact-boundary retry",
+    async () => {
+      const flow = await seed();
+      const createBody = {
+        requestingTeamId: flow.home,
+        scope: { type: "entire_encounter" },
+        proposedWallTime: limaSix(15),
+        reason: "Home travel conflict",
+        idempotencyKey: "notice-create",
+      };
+      flow.setNow("2099-01-10T11:00:00.001Z");
+      const denied = await flow.send(
+        flow.actors.homeCaptain,
+        "POST",
+        flow.requestsPath,
+        createBody,
+      );
+      expect(denied.status).toBe(409);
+      expect(apiErrorSchema.parse(await denied.json())).toMatchObject({
+        code: "scheduling.reschedule_notice_not_met",
+        messageKey: "errors.scheduling.reschedule_notice_not_met",
+        details: { anchor: "current" },
+      });
+      expect(
+        await (await flow.send(flow.actors.homeCaptain, "GET", flow.requestsPath)).json(),
+      ).toEqual({ requests: [] });
+      expect((await flow.snapshot()).scheduledStartAt).toBe("2099-01-10T23:00:00.000Z");
+
+      flow.setNow("2099-01-10T11:00:00.000Z");
+      const createdResponse = await flow.send(
+        flow.actors.homeCaptain,
+        "POST",
+        flow.requestsPath,
+        createBody,
+      );
+      expect(createdResponse.status).toBe(200);
+      const created = await requestOf(createdResponse);
+      const acceptBody = {
+        expectedVersion: 1,
+        commandKey: "notice-accept",
+        responder: { authority: "rival_team", teamId: flow.away },
+      };
+      flow.setNow("2099-01-10T11:00:00.001Z");
+      const rejectedConsent = await flow.command(
+        flow.actors.awayCaptain,
+        created,
+        created.currentProposalId,
+        "accept",
+        acceptBody,
+      );
+      expect(rejectedConsent.status).toBe(409);
+      expect(apiErrorSchema.parse(await rejectedConsent.json())).toMatchObject({
+        code: "scheduling.reschedule_notice_not_met",
+        details: { anchor: "current" },
+      });
+      expect(
+        await (
+          await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`)
+        ).json(),
+      ).toEqual(created);
+      expect((await flow.snapshot()).scheduledStartAt).toBe("2099-01-10T23:00:00.000Z");
+
+      flow.setNow("2099-01-10T11:00:00.000Z");
+      const acceptedResponse = await flow.command(
+        flow.actors.awayCaptain,
+        created,
+        created.currentProposalId,
+        "accept",
+        acceptBody,
+      );
+      expect(acceptedResponse.status).toBe(200);
+      const accepted = await commandOf(acceptedResponse);
+      expect(accepted.request).toMatchObject({ status: "accepted", version: 2 });
+      expect((await flow.snapshot()).scheduledStartAt).toBe("2099-01-15T23:00:00.000Z");
+      flow.setNow("2099-01-15T23:00:00.000Z");
+      const replayResponse = await flow.command(
+        flow.actors.awayCaptain,
+        created,
+        created.currentProposalId,
+        "accept",
+        acceptBody,
+      );
+      expect(replayResponse.status).toBe(200);
+      expect(await commandOf(replayResponse)).toEqual({ ...accepted, replayed: true });
+    },
+  );
+
+  it.skipIf(skip)(
+    "returns a proposed notice error to the captain and accepts the twelve-hour neighbor",
+    async () => {
+      const flow = await seed();
+      const created = await flow.create(15);
+      flow.setNow("2099-01-09T12:00:00.001Z");
+      const body = {
+        expectedVersion: 1,
+        commandKey: "notice-counter",
+        teamId: flow.away,
+        proposedWallTime: { year: 2099, month: 1, day: 9, hour: 19, minute: 0, second: 0 },
+        reason: "Away travel conflict",
+      };
+      const denied = await flow.command(
+        flow.actors.awayCaptain,
+        created,
+        created.currentProposalId,
+        "counter",
+        body,
+      );
+      expect(denied.status).toBe(409);
+      expect(apiErrorSchema.parse(await denied.json())).toMatchObject({
+        code: "scheduling.reschedule_notice_not_met",
+        details: { anchor: "proposed" },
+      });
+      expect(
+        await (
+          await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`)
+        ).json(),
+      ).toEqual(created);
+      flow.setNow("2099-01-09T12:00:00.000Z");
+      const counterResponse = await flow.command(
+        flow.actors.awayCaptain,
+        created,
+        created.currentProposalId,
+        "counter",
+        body,
+      );
+      expect(counterResponse.status).toBe(200);
+      expect((await commandOf(counterResponse)).request).toMatchObject({
+        status: "open",
+        version: 2,
+        proposals: [
+          { proposedStartAt: "2099-01-15T23:00:00.000Z" },
+          { proposedStartAt: "2099-01-10T00:00:00.000Z" },
+        ],
+      });
+      expect((await flow.snapshot()).scheduledStartAt).toBe("2099-01-10T23:00:00.000Z");
+    },
+  );
 
   it.skipIf(skip)(
     "create D1, counter D2 and accept moves the Encounter to D2 once, with both proposals in history",

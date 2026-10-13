@@ -33,6 +33,7 @@ import {
   encounterStartOf,
   rescheduleOfficialMatches,
 } from "../domain/policies/official-match-schedule.ts";
+import { checkRescheduleMinimumNotice } from "../domain/policies/reschedule-minimum-notice.ts";
 import {
   runScheduleChangeCommand,
   type ScheduleChangeCommandContext,
@@ -84,6 +85,25 @@ export class AcceptScheduleChangeProposalUseCase {
           now: context.now,
         });
         if (consent.isErr()) return err(consent.error);
+        const proposal = currentScheduleChangeProposal(context.request);
+        if (proposal.proposedStartAt.getTime() <= context.now.getTime()) {
+          return err(
+            new InvalidScheduleChangeDate({
+              code: "scheduling.invalid_schedule_change_date",
+              message: "The accepted start is no longer in the future",
+            }),
+          );
+        }
+
+        const notice = checkRescheduleMinimumNotice({
+          scope: context.request.scope,
+          schedules: context.schedules,
+          proposedStartAt: proposal.proposedStartAt,
+          minimumNoticeHours: context.rules.minimumNoticeHours,
+          now: context.now,
+        });
+        if (notice.isErr()) return err(notice.error);
+
         if (consent.value.request.status !== "accepted") return ok(consent.value);
         return this.prepareApplication(context, consent.value, input.actorId);
       },
@@ -115,14 +135,6 @@ export class AcceptScheduleChangeProposalUseCase {
     }
 
     const proposal = currentScheduleChangeProposal(request);
-    if (proposal.proposedStartAt.getTime() <= now.getTime()) {
-      return err(
-        new InvalidScheduleChangeDate({
-          code: "scheduling.invalid_schedule_change_date",
-          message: "The accepted start is no longer in the future",
-        }),
-      );
-    }
     const changes = rescheduleOfficialMatches(request.scope, proposal.proposedStartAt, schedules);
     const previousStart = encounterStartOf(schedules);
     const appliedStart = changes

@@ -23,6 +23,7 @@ import {
   ListScheduleChangeRequestsUseCase,
   RejectScheduleChangeProposalUseCase,
   asFixtureStageId,
+  createInitialScheduleChangeRequest,
   type CompetitionRescheduleRules,
   type EncounterScheduleSnapshot,
   type OfficialMatch,
@@ -194,6 +195,7 @@ function negotiation(
   grants.allow(organizer, ENCOUNTER_PERMISSION.rescheduleRequest);
   grants.allow(organizer, ENCOUNTER_PERMISSION.rescheduleResolve);
 
+  let minimumNoticeHours = 12;
   let sequence = 0;
   let now = new Date("2026-10-01T12:00:00.000Z");
   const encounters = {
@@ -230,7 +232,7 @@ function negotiation(
       getRules: async () => ({
         allowRescheduling: true,
         maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
-        minimumNoticeHours: 12,
+        minimumNoticeHours,
         ...approvals,
       }),
       countAppliedReschedules: async (input: { readonly teamId: TeamId }) =>
@@ -250,6 +252,46 @@ function negotiation(
 
   return {
     grants,
+    setClock(instant: string) {
+      now = new Date(instant);
+    },
+    setNotice(hours: number) {
+      minimumNoticeHours = hours;
+    },
+    createAt(instant: string, scope: RescheduleScope = { type: "entire_encounter" }) {
+      return create.execute({
+        ...target,
+        actorId: captainA,
+        requestingTeamId: teamA,
+        scope,
+        proposedWallTime: limaWallTime(instant),
+        timeZone: "America/Lima",
+        reason: "Travel conflict",
+        idempotencyKey: "create-1",
+      });
+    },
+    async counterAt(
+      instant: string,
+      at: { proposalId: string; version: number },
+      commandKey = "counter-notice",
+    ) {
+      return counter.execute({
+        ...target,
+        actorId: captainB,
+        teamId: teamB,
+        requestId:
+          (await requests.findByIdempotencyKey(organizationId, "create-1"))?.id ?? "missing",
+        ...at,
+        expectedVersion: at.version,
+        commandKey,
+        proposedWallTime: limaWallTime(instant),
+        timeZone: "America/Lima",
+        reason: "Stadium unavailable",
+      });
+    },
+    allRequests: () => list.execute({ ...target, actorId: organizer }).then(unwrap),
+    appliedCount: () => deps.rules.countAppliedReschedules({ teamId: teamA }),
+    allEvents: () => events,
     advanceClock(ms: number) {
       now = new Date(now.getTime() + ms);
     },
@@ -832,5 +874,391 @@ describe("schedule change negotiation", () => {
       expect(await flow.encounterStart()).toBe(D0);
       expect((await flow.stored()).status).toBe("open");
     });
+  });
+});
+
+function limaWallTime(instant: string) {
+  const local = new Date(Date.parse(instant) - 5 * 3_600_000);
+  return {
+    year: local.getUTCFullYear(),
+    month: local.getUTCMonth() + 1,
+    day: local.getUTCDate(),
+    hour: local.getUTCHours(),
+    minute: local.getUTCMinutes(),
+    second: local.getUTCSeconds(),
+  };
+}
+
+describe("minimum reschedule notice — validated V6 behavior", () => {
+  const boundary = "2026-10-13T08:00:00.000Z";
+  const before = "2026-10-13T07:59:59.999Z";
+  const after = "2026-10-13T08:00:00.001Z";
+  const current = "2026-10-13T20:00:00.000Z";
+  const currentFar = "2026-10-20T20:00:00.000Z";
+  const proposedFar = "2026-10-20T21:00:00.000Z";
+  const near = "2026-10-13T09:00:00.000Z";
+  const past = "2026-10-13T07:00:00.000Z";
+  const flowAt = (currentAt: string, now = boundary, approvals = OPPONENT_ONLY) => {
+    const flow = negotiation(approvals, { slots: [currentAt, currentAt] });
+    flow.setClock(now);
+    return flow;
+  };
+  const targetOf = (request: ScheduleChangeRequest) => ({
+    proposalId: request.proposals.at(-1)!.id,
+    version: request.version,
+  });
+  const observe = async (flow: ReturnType<typeof negotiation>) => ({
+    requests: await flow.allRequests(),
+    slots: flow.slotStarts(),
+    encounter: await flow.encounterStart(),
+    receipts: [...flow.receipts()],
+    events: [...flow.allEvents()],
+    quota: await flow.appliedCount(),
+  });
+  const noticeError = <T>(result: Result<T, { code: string }>, anchor: string) => {
+    expect(result.isErr() ? result.error : null).toMatchObject({
+      code: "scheduling.reschedule_notice_not_met",
+      anchor,
+    });
+  };
+
+  it.each([
+    ["V6-01", before, current, proposedFar, 12, null],
+    ["V6-02", boundary, current, proposedFar, 12, null],
+    ["V6-03", after, current, proposedFar, 12, "current"],
+    ["V6-04", before, currentFar, current, 12, null],
+    ["V6-05", boundary, currentFar, current, 12, null],
+    ["V6-06", after, currentFar, current, 12, "proposed"],
+    ["V6-07", boundary, currentFar, near, 12, "proposed"],
+    ["V6-08", boundary, near, proposedFar, 12, "current"],
+    ["V6-09", boundary, near, "2026-10-13T09:30:00.000Z", 12, "current"],
+    ["V6-10", boundary, near, proposedFar, 0, null],
+    ["V6-24", boundary, past, "2026-10-13T21:00:00.000Z", 12, null],
+    ["V6-25", boundary, past, near, 12, "proposed"],
+    ["C2 current equals now", boundary, boundary, current, 12, null],
+  ] as const)(
+    "%s creates only when both applicable anchors meet notice",
+    async (_id, now, actual, proposed, hours, anchor) => {
+      const flow = flowAt(actual, now);
+      flow.setNotice(hours);
+      const prior = await observe(flow);
+      const result = await flow.createAt(proposed);
+      if (anchor) {
+        noticeError(result, anchor);
+        expect(await observe(flow)).toEqual(prior);
+        expect(await flow.allRequests()).toEqual([]);
+      } else {
+        const request = unwrap(result);
+        expect(history(request)).toMatchObject({
+          status: "open",
+          version: 1,
+          proposals: [{ at: proposed, team: "team-a", reason: "Travel conflict" }],
+          decisions: [],
+        });
+        expect((await flow.stored()).proposals[0].proposedStartAt.toISOString()).toBe(proposed);
+        expect(flow.slotStarts()).toEqual([
+          { slot: 1, at: actual, status: "scheduled" },
+          { slot: 2, at: actual, status: "scheduled" },
+        ]);
+        expect(await flow.encounterStart()).toBe(actual);
+        expect(await flow.appliedCount()).toBe(0);
+      }
+    },
+  );
+
+  it("V6-11 preserves the one-millisecond future boundary with notice disabled", async () => {
+    const request = unwrap(
+      createInitialScheduleChangeRequest({
+        requestId: "request-ms",
+        proposalId: "proposal-ms",
+        organizationId,
+        competitionId,
+        encounterId,
+        homeTeamId: teamA,
+        awayTeamId: teamB,
+        officialMatchCount: 2,
+        currentStartAt: new Date(currentFar),
+        requestingTeamId: teamA,
+        initiatedByActorId: captainA,
+        scope: { type: "entire_encounter" },
+        proposedStartAt: new Date("2026-10-13T08:00:00.001Z"),
+        reason: "Travel conflict",
+        idempotencyKey: "ms",
+        now: new Date(boundary),
+      }),
+    );
+    expect(request.status).toBe("open");
+    expect(request.proposals[0].proposedStartAt.toISOString()).toBe("2026-10-13T08:00:00.001Z");
+    // Wall-time input has whole-second precision; shift both instants 1 ms for the use-case neighbor.
+    const flow = flowAt(currentFar, before);
+    flow.setNotice(0);
+    unwrap(await flow.createAt(boundary));
+    expect((await flow.stored()).proposals[0].proposedStartAt.toISOString()).toBe(boundary);
+    expect(await flow.encounterStart()).toBe(currentFar);
+  });
+
+  it("V6-12 keeps strict future validation when notice is disabled", async () => {
+    const flow = flowAt(currentFar);
+    flow.setNotice(0);
+    const prior = await observe(flow);
+    expect(errorCode(await flow.createAt(boundary))).toBe(
+      "scheduling.invalid_schedule_change_date",
+    );
+    expect(await observe(flow)).toEqual(prior);
+  });
+
+  it("V6-13 replaces the current proposal at the inclusive limit and requires fresh consents", async () => {
+    const flow = flowAt(current, before, {
+      requiresOpponentApproval: true,
+      requiresOrganizerApproval: true,
+    });
+    const created = unwrap(await flow.createAt("2026-10-19T20:00:00.000Z"));
+    const consent = unwrap(await flow.accept(organizer, asOrganizer, targetOf(created)));
+    flow.setClock(boundary);
+    const countered = unwrap(await flow.counterAt(proposedFar, targetOf(consent.request)));
+    expect(history(countered.request)).toMatchObject({
+      status: "open",
+      version: 3,
+      proposals: [{ at: "2026-10-19T20:00:00.000Z" }, { at: proposedFar }],
+      decisions: [{ authority: "organizer", requestVersion: 1, kind: "consent" }],
+    });
+    const rival = unwrap(await flow.accept(captainA, asRival(teamA), targetOf(countered.request)));
+    expect(rival.request.status).toBe("open");
+    expect(await flow.encounterStart()).toBe(current);
+    const completed = unwrap(await flow.accept(organizer, asOrganizer, targetOf(rival.request)));
+    expect(completed.request.status).toBe("accepted");
+    expect(await flow.encounterStart()).toBe(proposedFar);
+  });
+
+  it.each([
+    ["V6-14", currentFar, near, "proposed"],
+    ["V6-15", near, proposedFar, "current"],
+  ] as const)(
+    "%s preserves the prior proposal and all effects on denied counter",
+    async (_id, actual, proposed, anchor) => {
+      const flow = flowAt(actual, "2026-10-12T08:00:00.000Z");
+      const created = unwrap(await flow.createAt("2026-10-19T20:00:00.000Z"));
+      flow.setClock(boundary);
+      const prior = await observe(flow);
+      noticeError(await flow.counterAt(proposed, targetOf(created)), anchor);
+      expect(await observe(flow)).toEqual(prior);
+      expect(history(await flow.stored())).toMatchObject({
+        status: "open",
+        version: 1,
+        proposals: [{ at: "2026-10-19T20:00:00.000Z" }],
+        decisions: [],
+      });
+    },
+  );
+
+  it.each([
+    ["V6-16", current, proposedFar, before, 12, null],
+    ["V6-17", current, proposedFar, boundary, 12, null],
+    ["V6-18", current, proposedFar, after, 12, "current"],
+    ["V6-19", currentFar, current, after, 12, "proposed"],
+    ["V6-26", "2026-10-14T02:00:00.000Z", proposedFar, boundary, 24, "current"],
+    ["V6-27", "2026-10-14T02:00:00.000Z", proposedFar, boundary, 0, null],
+  ] as const)(
+    "%s revalidates current clock and rules before the last consent",
+    async (_id, actual, proposed, now, hours, anchor) => {
+      const flow = flowAt(actual, before);
+      const created = unwrap(await flow.createAt(proposed));
+      flow.setClock(now);
+      flow.setNotice(hours);
+      const prior = await observe(flow);
+      const result = await flow.accept(captainB, asRival(teamB), targetOf(created));
+      if (anchor) {
+        noticeError(result, anchor);
+        expect(await observe(flow)).toEqual(prior);
+        expect(history(await flow.stored())).toMatchObject({
+          status: "open",
+          version: 1,
+          decisions: [],
+        });
+      } else {
+        expect(unwrap(result).request.status).toBe("accepted");
+        expect((await flow.stored()).status).toBe("accepted");
+        expect(await flow.encounterStart()).toBe(proposed);
+        expect(flow.slotStarts()).toEqual([
+          { slot: 1, at: proposed, status: "scheduled" },
+          { slot: 2, at: proposed, status: "scheduled" },
+        ]);
+        expect(await flow.appliedCount()).toBe(1);
+        expect(flow.rescheduled().map((e) => e.payload)).toEqual([
+          {
+            encounterId: "encounter-1",
+            previousStartAt: actual,
+            newStartAt: proposed,
+            scope: { type: "entire_encounter" },
+            approvedBy: "captain-b",
+          },
+        ]);
+      }
+    },
+  );
+
+  it("V6-20 rejects inside the notice window without applying or consuming quota", async () => {
+    const flow = flowAt(near, "2026-10-12T08:00:00.000Z");
+    const created = unwrap(await flow.createAt(proposedFar));
+    flow.setClock(boundary);
+    expect(
+      unwrap(await flow.reject(captainB, asRival(teamB), targetOf(created))).request.status,
+    ).toBe("rejected");
+    expect((await flow.stored()).status).toBe("rejected");
+    expect(await flow.encounterStart()).toBe(near);
+    expect(await flow.appliedCount()).toBe(0);
+    expect(flow.rescheduled()).toEqual([]);
+  });
+
+  it.each([
+    ["V6-21", { type: "official_match", officialSlot: 2 }, null],
+    ["V6-22", { type: "entire_encounter" }, "current"],
+    ["V6-23", { type: "official_match", officialSlot: 1 }, "current"],
+  ] as const)("%s checks exactly the slots affected by the scope", async (_id, scope, anchor) => {
+    const flow = negotiation(OPPONENT_ONLY, { slots: [near, current] });
+    flow.setClock(boundary);
+    const prior = await observe(flow);
+    const result = await flow.createAt(proposedFar, scope);
+    if (anchor) {
+      noticeError(result, anchor);
+      expect(await observe(flow)).toEqual(prior);
+    } else {
+      const created = unwrap(result);
+      expect(created.status).toBe("open");
+      unwrap(await flow.accept(captainB, asRival(teamB), targetOf(created)));
+      expect(flow.slotStarts()).toEqual([
+        { slot: 1, at: near, status: "scheduled" },
+        { slot: 2, at: proposedFar, status: "scheduled" },
+      ]);
+      expect(await flow.encounterStart()).toBe(near);
+    }
+  });
+
+  it("V6-28 reports invalid date before notice when the accepted proposal equals now", async () => {
+    const flow = flowAt(currentFar, before);
+    const created = unwrap(await flow.createAt(current));
+    flow.setClock(current);
+    const prior = await observe(flow);
+    expect(errorCode(await flow.accept(captainB, asRival(teamB), targetOf(created)))).toBe(
+      "scheduling.invalid_schedule_change_date",
+    );
+    expect(await observe(flow)).toEqual(prior);
+  });
+
+  it.each([captainB, organizer])(
+    "revalidates even the first consent by %s and never bypasses organizer notice",
+    async (actor) => {
+      const flow = flowAt(current, before, {
+        requiresOpponentApproval: true,
+        requiresOrganizerApproval: true,
+      });
+      const created = unwrap(await flow.createAt(proposedFar));
+      flow.setClock(after);
+      const prior = await observe(flow);
+      const responder = actor === organizer ? asOrganizer : asRival(teamB);
+      noticeError(await flow.accept(actor, responder, targetOf(created)), "current");
+      expect(await observe(flow)).toEqual(prior);
+      flow.setNotice(0);
+      expect(unwrap(await flow.accept(actor, responder, targetOf(created))).request.status).toBe(
+        "open",
+      );
+      expect(history(await flow.stored()).decisions).toEqual([
+        {
+          proposalId: created.proposals[0].id,
+          requestVersion: 1,
+          kind: "consent",
+          authority: responder.authority,
+          actorId: actor,
+        },
+      ]);
+    },
+  );
+
+  it("retries denied creation and counter with the newly read notice rule", async () => {
+    const flow = flowAt(near);
+    const prior = await observe(flow);
+    noticeError(await flow.createAt(proposedFar), "current");
+    expect(await observe(flow)).toEqual(prior);
+    flow.setNotice(0);
+    const created = unwrap(await flow.createAt(proposedFar));
+    expect(created.status).toBe("open");
+    flow.setNotice(12);
+    const beforeCounter = await observe(flow);
+    noticeError(await flow.counterAt("2026-10-21T21:00:00.000Z", targetOf(created)), "current");
+    expect(await observe(flow)).toEqual(beforeCounter);
+    flow.setNotice(0);
+    const countered = unwrap(await flow.counterAt("2026-10-21T21:00:00.000Z", targetOf(created)));
+    expect(history(countered.request)).toMatchObject({
+      status: "open",
+      version: 2,
+      proposals: [{ at: "2026-10-20T21:00:00.000Z" }, { at: "2026-10-21T21:00:00.000Z" }],
+      decisions: [],
+    });
+    expect(await flow.encounterStart()).toBe("2026-10-13T09:00:00.000Z");
+    expect(await flow.appliedCount()).toBe(0);
+  });
+
+  it("checks every future slot when the Encounter's earliest slot is already past", async () => {
+    const blocked = negotiation(OPPONENT_ONLY, { slots: [past, near] });
+    blocked.setClock(boundary);
+    const prior = await observe(blocked);
+    noticeError(await blocked.createAt(proposedFar), "current");
+    expect(await observe(blocked)).toEqual(prior);
+    const allowed = negotiation(OPPONENT_ONLY, { slots: [past, current] });
+    allowed.setClock(boundary);
+    const created = unwrap(await allowed.createAt(proposedFar));
+    expect(created.status).toBe("open");
+    expect(
+      unwrap(await allowed.accept(captainB, asRival(teamB), targetOf(created))).request.status,
+    ).toBe("accepted");
+    expect(allowed.slotStarts()).toEqual([
+      { slot: 1, at: "2026-10-20T21:00:00.000Z", status: "scheduled" },
+      { slot: 2, at: "2026-10-21T10:00:00.000Z", status: "scheduled" },
+    ]);
+  });
+
+  it("counter checks the new proposal after the old proposal enters the notice window", async () => {
+    const flow = flowAt(currentFar, before);
+    const created = unwrap(await flow.createAt(current));
+    flow.setClock(after);
+    const countered = unwrap(await flow.counterAt(proposedFar, targetOf(created)));
+    expect(history(countered.request)).toMatchObject({
+      status: "open",
+      version: 2,
+      proposals: [{ at: "2026-10-13T20:00:00.000Z" }, { at: "2026-10-20T21:00:00.000Z" }],
+      decisions: [],
+    });
+    expect(await flow.encounterStart()).toBe("2026-10-20T20:00:00.000Z");
+  });
+
+  it("replays saved create, counter and consent after notice closes without new effects", async () => {
+    const flow = flowAt(current, before, {
+      requiresOpponentApproval: true,
+      requiresOrganizerApproval: true,
+    });
+    const created = unwrap(await flow.createAt("2026-10-19T20:00:00.000Z"));
+    const countered = unwrap(await flow.counterAt(proposedFar, targetOf(created)));
+    const consent = unwrap(await flow.accept(organizer, asOrganizer, targetOf(countered.request)));
+    flow.setClock(after);
+    flow.setNotice(24);
+    const prior = await observe(flow);
+    expect(unwrap(await flow.createAt("2026-10-19T20:00:00.000Z")).id).toBe(created.id);
+    const counterReplay = unwrap(await flow.counterAt(proposedFar, targetOf(created)));
+    expect(counterReplay.replayed).toBe(true);
+    expect(history(counterReplay.request)).toMatchObject({
+      status: "open",
+      version: 2,
+      decisions: [],
+      proposals: [{ at: "2026-10-19T20:00:00.000Z" }, { at: proposedFar }],
+    });
+    const replay = unwrap(await flow.accept(organizer, asOrganizer, targetOf(countered.request)));
+    expect(replay.replayed).toBe(true);
+    expect(replay.receipt.id).toBe(consent.receipt.id);
+    expect(history(replay.request)).toMatchObject({
+      status: "open",
+      version: 3,
+      decisions: [{ kind: "consent", authority: "organizer", requestVersion: 2 }],
+    });
+    expect(await observe(flow)).toEqual(prior);
   });
 });
