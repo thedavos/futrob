@@ -374,11 +374,16 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
 
     const conflict = await failing.accept(captainB, rival(teamB), target);
     expect(errorCode(conflict)).toBe("scheduling.fixture_update_conflict");
-    expect(await scheduleState(pool)).toEqual(before);
+    // The independent writer's revision survives; the failed application's writes do not.
+    const afterConcurrentEdit = {
+      ...before,
+      fixturePlans: before.fixturePlans.map((plan) => ({ ...plan, revision: 2 })),
+    };
+    expect(await scheduleState(pool)).toEqual(afterConcurrentEdit);
 
     const throwing = await applicationFlow(pool, {}, { publishFails: true });
     await expect(throwing.accept(captainB, rival(teamB), target)).rejects.toThrow("bus down");
-    expect(await scheduleState(pool)).toEqual(before);
+    expect(await scheduleState(pool)).toEqual(afterConcurrentEdit);
 
     const healthy = await applicationFlow(pool);
     const applied = unwrap(await healthy.accept(captainB, rival(teamB), target));
@@ -682,7 +687,7 @@ async function rowCounts(pool: Pool) {
 /** Every row a schedule application touches, in a stable order and as plain JSON. */
 async function scheduleState(pool: Pool) {
   const rows = async (sql: string) =>
-    JSON.parse(JSON.stringify((await pool.query(sql)).rows)) as unknown[];
+    JSON.parse(JSON.stringify((await pool.query(sql)).rows)) as Record<string, unknown>[];
   const starts = (list: unknown[]) =>
     list.map((row) => ({ start: new Date((row as { start: string }).start).toISOString() }));
   return {
