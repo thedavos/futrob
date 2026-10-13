@@ -1123,6 +1123,78 @@ const es = {
   "landing.cta.secondary": "Iniciar sesión",
   "landing.footer.tagline": "Preciso para operar. Claro para competir.",
   "landing.footer.madeBy": "Futrob es creado por Davion Software.",
+  "encounter.breadcrumb": "Ruta del enfrentamiento",
+  "encounter.title": ({ home, away }) => `${home} vs ${away}`,
+  "encounter.vs": "VS",
+  "encounter.side.home": "Local",
+  "encounter.side.away": "Visitante",
+  "encounter.round": ({ number }) => `Jornada ${number}`,
+  "encounter.roundOf": ({ number, total }) => `Jornada ${number} de ${total}`,
+  "encounter.timeZone": ({ zone }) => `Horarios en ${zone}`,
+  "encounter.loading": "Cargando enfrentamiento",
+  "encounter.error": "No pudimos cargar el enfrentamiento.",
+  "encounter.notFound.title": "Enfrentamiento no disponible",
+  "encounter.notFound.description":
+    "No existe en esta competición o tu cuenta no tiene acceso a él.",
+  "encounter.forbidden.title": "Sin acceso a este enfrentamiento",
+  "encounter.forbidden.description":
+    "Tu cuenta no tiene permiso para ver este enfrentamiento. Pide acceso a la organización.",
+  "encounter.backToEncounters": "Volver a enfrentamientos",
+  "encounter.slots.title": "Partidos oficiales",
+  "encounter.slots.description":
+    "Cada partido tiene su propio horario. Asigna un partido EA para ver el resultado antes de proponerlo.",
+  "encounter.slot.label": ({ slot }) => `Partido ${slot}`,
+  "encounter.slot.unassigned": "Sin partido EA asignado",
+  "encounter.slot.unmatched": "Los clubes de este partido EA no son los de ambos equipos.",
+  "encounter.slot.clear": ({ slot }) => `Quitar partido EA del partido ${slot}`,
+  "encounter.preview.title": "Vista previa",
+  "encounter.preview.note":
+    "Solo en esta pantalla: no se guarda ni oficializa. El resultado cuenta cuando el rival confirma la propuesta.",
+  "encounter.preview.incomplete": "Asigna un partido EA a cada partido oficial para ver la serie.",
+  "encounter.preview.aggregate": "Global",
+  "encounter.preview.result": "Resultado",
+  "encounter.preview.independent":
+    "Cada partido cuenta por separado; esta competición no usa marcador global.",
+  "encounter.preview.modeUnknown":
+    "La competición todavía no define cómo se resuelve la serie; revisa cada marcador.",
+  "encounter.outcome.win": ({ team }) => `Gana ${team}`,
+  "encounter.outcome.draw": "Empate",
+  "encounter.candidates.title": "Partidos EA candidatos",
+  "encounter.candidates.description":
+    "Partidos EA entre los clubes de ambos equipos cerca del horario. Elegir uno no envía nada.",
+  "encounter.candidates.window": ({ from, to }) => `Buscados entre ${from} y ${to}`,
+  "encounter.candidates.updated": ({ time }) => `Actualizado a las ${time}`,
+  "encounter.candidates.refresh": "Actualizar candidatos",
+  "encounter.candidates.refreshing": "Actualizando candidatos",
+  "encounter.candidates.refreshFailed":
+    "No pudimos actualizar. Ves los últimos candidatos cargados.",
+  "encounter.candidates.list": "Partidos EA candidatos",
+  "encounter.candidates.empty.title": "Sin partidos EA todavía",
+  "encounter.candidates.empty.description":
+    "No hay partidos EA entre ambos clubes cerca del horario. Actualiza después de jugar.",
+  "encounter.candidates.notConnected.title": "Falta conectar un club EA",
+  "encounter.candidates.notConnected.side": ({ team }) => `${team} no tiene un club EA conectado.`,
+  "encounter.candidates.notConnected.description":
+    "Los candidatos aparecen cuando ambos equipos conectan su club EA.",
+  "encounter.candidates.providerMismatch.title": "Clubes de proveedores distintos",
+  "encounter.candidates.providerMismatch.description":
+    "Los clubes de ambos equipos usan proveedores de datos distintos, así que sus partidos no se pueden comparar.",
+  "encounter.candidates.forbidden.title": "Candidatos restringidos",
+  "encounter.candidates.forbidden.description":
+    "Solo los equipos del enfrentamiento y la organización ven los partidos EA candidatos.",
+  "encounter.candidates.error": "No pudimos cargar los partidos EA candidatos.",
+  "encounter.candidate.label": ({ home, away, time }) => `${home} contra ${away}, ${time}`,
+  "encounter.candidate.duration": ({ minutes }) => `${minutes} min`,
+  "encounter.candidate.durationUnknown": "Duración desconocida",
+  "encounter.candidate.disconnected": "Hubo desconexión",
+  "encounter.candidate.forfeit": "Victoria por abandono",
+  "encounter.candidate.partial": "Datos parciales",
+  "encounter.candidate.unverified": "Datos sin verificar",
+  "encounter.candidate.players": ({ count }) =>
+    count === 1 ? "1 jugador registrado" : `${count} jugadores registrados`,
+  "encounter.candidate.useIn": ({ slot }) => `Usar en partido ${slot}`,
+  "encounter.candidate.usedIn": ({ slot }) => `En partido ${slot}`,
+  "encounter.candidate.unused": "Sin usar",
   "landing.footer.legal": "© 2026 Futrob",
 } satisfies Record<string, Message>;
 
@@ -1130,6 +1202,25 @@ export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "encounter.title": { readonly home: string; readonly away: string };
+  readonly "encounter.round": { readonly number: number };
+  readonly "encounter.roundOf": { readonly number: number; readonly total: number };
+  readonly "encounter.timeZone": { readonly zone: string };
+  readonly "encounter.slot.label": { readonly slot: number };
+  readonly "encounter.slot.clear": { readonly slot: number };
+  readonly "encounter.outcome.win": { readonly team: string };
+  readonly "encounter.candidates.window": { readonly from: string; readonly to: string };
+  readonly "encounter.candidates.updated": { readonly time: string };
+  readonly "encounter.candidates.notConnected.side": { readonly team: string };
+  readonly "encounter.candidate.label": {
+    readonly home: string;
+    readonly away: string;
+    readonly time: string;
+  };
+  readonly "encounter.candidate.duration": { readonly minutes: number };
+  readonly "encounter.candidate.players": { readonly count: number };
+  readonly "encounter.candidate.useIn": { readonly slot: number };
+  readonly "encounter.candidate.usedIn": { readonly slot: number };
   readonly "common.seconds": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
@@ -2362,6 +2453,78 @@ const en: Catalog = {
   "landing.cta.secondary": "Log in",
   "landing.footer.tagline": "Precise to operate. Clear to compete.",
   "landing.footer.madeBy": "Futrob is made by Davion Software.",
+  "encounter.breadcrumb": "Encounter path",
+  "encounter.title": ({ home, away }) => `${home} vs ${away}`,
+  "encounter.vs": "VS",
+  "encounter.side.home": "Home",
+  "encounter.side.away": "Away",
+  "encounter.round": ({ number }) => `Matchday ${number}`,
+  "encounter.roundOf": ({ number, total }) => `Matchday ${number} of ${total}`,
+  "encounter.timeZone": ({ zone }) => `Times in ${zone}`,
+  "encounter.loading": "Loading encounter",
+  "encounter.error": "We couldn't load this encounter.",
+  "encounter.notFound.title": "Encounter unavailable",
+  "encounter.notFound.description":
+    "It isn't part of this competition, or your account can't access it.",
+  "encounter.forbidden.title": "No access to this encounter",
+  "encounter.forbidden.description":
+    "Your account isn't allowed to view this encounter. Ask the organization for access.",
+  "encounter.backToEncounters": "Back to encounters",
+  "encounter.slots.title": "Official matches",
+  "encounter.slots.description":
+    "Each match has its own kickoff. Assign an EA match to see the result before you propose it.",
+  "encounter.slot.label": ({ slot }) => `Match ${slot}`,
+  "encounter.slot.unassigned": "No EA match assigned",
+  "encounter.slot.unmatched": "This EA match wasn't played by both teams' clubs.",
+  "encounter.slot.clear": ({ slot }) => `Remove EA match from match ${slot}`,
+  "encounter.preview.title": "Preview",
+  "encounter.preview.note":
+    "Only on this screen: nothing is saved or made official. The result counts once the opponent confirms the proposal.",
+  "encounter.preview.incomplete": "Assign an EA match to every official match to see the series.",
+  "encounter.preview.aggregate": "Aggregate",
+  "encounter.preview.result": "Result",
+  "encounter.preview.independent":
+    "Each match counts on its own; this competition doesn't use an aggregate score.",
+  "encounter.preview.modeUnknown":
+    "The competition doesn't define how the series is decided yet; check each score.",
+  "encounter.outcome.win": ({ team }) => `${team} wins`,
+  "encounter.outcome.draw": "Draw",
+  "encounter.candidates.title": "Candidate EA matches",
+  "encounter.candidates.description":
+    "EA matches between both teams' clubs around kickoff. Choosing one sends nothing.",
+  "encounter.candidates.window": ({ from, to }) => `Searched between ${from} and ${to}`,
+  "encounter.candidates.updated": ({ time }) => `Updated at ${time}`,
+  "encounter.candidates.refresh": "Refresh candidates",
+  "encounter.candidates.refreshing": "Refreshing candidates",
+  "encounter.candidates.refreshFailed":
+    "We couldn't refresh. You're seeing the last candidates we loaded.",
+  "encounter.candidates.list": "Candidate EA matches",
+  "encounter.candidates.empty.title": "No EA matches yet",
+  "encounter.candidates.empty.description":
+    "There are no EA matches between both clubs around kickoff. Refresh after you play.",
+  "encounter.candidates.notConnected.title": "An EA club isn't connected",
+  "encounter.candidates.notConnected.side": ({ team }) => `${team} has no EA club connected.`,
+  "encounter.candidates.notConnected.description":
+    "Candidates appear once both teams connect their EA club.",
+  "encounter.candidates.providerMismatch.title": "Clubs on different providers",
+  "encounter.candidates.providerMismatch.description":
+    "Both teams' clubs use different data providers, so their matches can't be compared.",
+  "encounter.candidates.forbidden.title": "Candidates restricted",
+  "encounter.candidates.forbidden.description":
+    "Only the encounter's teams and the organization can see candidate EA matches.",
+  "encounter.candidates.error": "We couldn't load candidate EA matches.",
+  "encounter.candidate.label": ({ home, away, time }) => `${home} against ${away}, ${time}`,
+  "encounter.candidate.duration": ({ minutes }) => `${minutes} min`,
+  "encounter.candidate.durationUnknown": "Duration unknown",
+  "encounter.candidate.disconnected": "Someone disconnected",
+  "encounter.candidate.forfeit": "Won by forfeit",
+  "encounter.candidate.partial": "Partial data",
+  "encounter.candidate.unverified": "Unverified data",
+  "encounter.candidate.players": ({ count }) =>
+    count === 1 ? "1 player recorded" : `${count} players recorded`,
+  "encounter.candidate.useIn": ({ slot }) => `Use in match ${slot}`,
+  "encounter.candidate.usedIn": ({ slot }) => `In match ${slot}`,
+  "encounter.candidate.unused": "Unused",
   "landing.footer.legal": "© 2026 Futrob",
 };
 

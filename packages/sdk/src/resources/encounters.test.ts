@@ -210,3 +210,39 @@ describe("createFutrobClient encounters schedule-change-requests", () => {
     ]);
   });
 });
+
+describe("createFutrobClient encounters view", () => {
+  it("reads one Encounter with both Teams and each slot's start", async () => {
+    const view = {
+      encounterId: "encounter-1",
+      competition: {
+        id: "competition-1",
+        organizationId: "org-1",
+        name: "Liga Futrob",
+        timeZone: "America/Lima",
+      },
+      round: { number: 4, total: 9 },
+      scheduledStartAt: "2026-09-14T20:00:00.000Z",
+      officialMatchCount: 2,
+      home: { teamId: "team-home", name: "Cuervos FC", externalClub: null },
+      away: { teamId: "team-away", name: "Maderas FC", externalClub: null },
+      resolutionMode: "aggregate_score",
+      officialMatches: [
+        { officialSlot: 1, scheduledStartAt: "2026-09-14T20:00:00.000Z" },
+        { officialSlot: 2, scheduledStartAt: "2026-09-16T22:30:00.000Z" },
+      ],
+    };
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        expect(requestUrl(input)).toBe(
+          "https://api.example.com/api/v1/organizations/org-1/encounters/encounter-1",
+        );
+        expect(init?.method).toBe("GET");
+        return Response.json(view);
+      }),
+    });
+
+    await expect(client.encounters.getView("org-1", "encounter-1")).resolves.toEqual(view);
+  });
+});
