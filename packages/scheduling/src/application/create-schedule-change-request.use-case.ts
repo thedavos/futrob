@@ -46,6 +46,7 @@ import {
   currentStartFor,
   officialMatchSchedules,
 } from "../domain/policies/official-match-schedule.ts";
+import { checkRescheduleMinimumNotice } from "../domain/policies/reschedule-minimum-notice.ts";
 import {
   rescheduleScopesConflict,
   type RescheduleScope,
@@ -250,6 +251,14 @@ export class CreateScheduleChangeRequestUseCase {
             now,
           });
           if (created.isErr()) return err(created.error);
+          const notice = checkRescheduleMinimumNotice({
+            scope: input.scope,
+            schedules,
+            proposedStartAt,
+            minimumNoticeHours: competitionRules.minimumNoticeHours,
+            now,
+          });
+          if (notice.isErr()) return err(notice.error);
 
           const saved = await this.deps.requests.save(created.value);
           const initialProposal = saved.proposals[0];

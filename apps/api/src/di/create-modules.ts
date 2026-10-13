@@ -182,6 +182,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     organizations: organizations.repositories.organizations,
   });
   const scheduling = createSchedulingModule({
+    clock,
     pool: input.pool,
     authorization: deferredAuthorization,
     eventPublisher,

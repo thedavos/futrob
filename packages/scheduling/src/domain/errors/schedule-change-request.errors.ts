@@ -41,6 +41,12 @@ export class ReschedulingDisabled extends TaggedError("ReschedulingDisabled")<{
   message: string;
 }> {}
 
+export class RescheduleNoticeNotMet extends TaggedError("RescheduleNoticeNotMet")<{
+  code: "scheduling.reschedule_notice_not_met";
+  message: string;
+  anchor: "current" | "proposed";
+}> {}
+
 export class RescheduleLimitReached extends TaggedError("RescheduleLimitReached")<{
   code: "scheduling.reschedule_limit_reached";
   message: string;
@@ -81,6 +87,7 @@ export type CreateScheduleChangeRequestError =
   | InvalidScheduleChangeReason
   | ReschedulingDisabled
   | RescheduleLimitReached
+  | RescheduleNoticeNotMet
   | EncounterNotEditableForScheduleChange
   | ActiveScheduleChangeRequestExists
   | ScheduleChangeRequestIdempotencyConflict;
@@ -160,11 +167,13 @@ export type ScheduleChangeResponseError =
 export type AcceptScheduleChangeProposalError =
   | ScheduleChangeResponseError
   | RescheduleLimitReached
+  | RescheduleNoticeNotMet
   | InvalidScheduleChangeDate
   | InvalidScheduleChangeScope
   | FixtureUpdateConflict;
 
 export type CounterScheduleChangeProposalError =
+  | RescheduleNoticeNotMet
   | ScheduleChangeResponseError
   | InvalidScheduleChangeDate
   | InvalidScheduleChangeReason;

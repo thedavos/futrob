@@ -2705,6 +2705,7 @@ export const futrobOpenApiV1 = {
             type: "object",
             additionalProperties: false,
             properties: {
+              anchor: { type: "string", enum: ["current", "proposed"] },
               organizationId: { type: "string" },
               role: { type: "string" },
               status: { type: "string" },
