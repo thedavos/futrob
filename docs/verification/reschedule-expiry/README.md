@@ -7,6 +7,17 @@ No se hizo merge ni despliegue desde este hilo. El PR espera #154.
 
 ## Comprobaciones
 
+El primer CI de #159 falló porque `test:coverage` no recibía `TEST_DATABASE_URL`;
+las seis pruebas de coherencia intentaban abrir Postgres sin configuración.
+La corrección configura la conexión para todo el job Test, de modo que la cobertura
+incluye las suites durables. La suite de coherencia contempla ejecución local sin
+base, como las demás suites Postgres; CI dispone de la base y ejecuta sus seis pruebas.
+
+La reproducción de `npm run test:coverage` con Postgres aislado terminó con exit 0:
+3.949 pruebas pasan, líneas 85,31 %, ramas 76,2 %, statements 83,24 % y funciones
+83,44 %. Las seis pruebas de coherencia pasan sin skips; sin base configurada se
+reportan explícitamente como omitidas.
+
 | Comando                                                                      | Resultado                                               |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `./node_modules/.bin/vp install`                                             | Exit 0                                                  |

@@ -13,6 +13,8 @@ import {
 } from "@/testing/schedule-change-expiry.test-helper.ts";
 import type { ScheduleChangeRequest } from "@futrob/scheduling";
 
+const suite = describe.skipIf(!process.env.TEST_DATABASE_URL);
+
 function pauseAfterHeader(pool: Pool) {
   const reached = barrier();
   const resume = barrier();
@@ -52,7 +54,7 @@ function observable(request: ScheduleChangeRequest) {
   };
 }
 
-describe("durable aggregate read coherence", { timeout: 60_000 }, () => {
+suite("durable aggregate read coherence", { timeout: 60_000 }, () => {
   it.each([
     "findById",
     "findByIdempotencyKey",
