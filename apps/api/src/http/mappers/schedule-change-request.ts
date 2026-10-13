@@ -10,6 +10,7 @@ import type {
 
 export function toScheduleChangeRequestDto(
   request: ScheduleChangeRequest,
+  allowedActions: ScheduleChangeRequestDto["allowedActions"] = [],
 ): ScheduleChangeRequestDto {
   const { application } = request;
   return {
@@ -33,6 +34,7 @@ export function toScheduleChangeRequestDto(
       proposedByTeamId: proposal.proposedByTeamId,
       reason: proposal.reason,
       createdAt: proposal.createdAt.toISOString(),
+      responseDeadline: proposal.responseDeadline.toISOString(),
     })),
     decisions: request.decisions.map((decision) => ({
       id: decision.id,
@@ -46,6 +48,19 @@ export function toScheduleChangeRequestDto(
       actorId: decision.actorId,
       reason: decision.reason,
       createdAt: decision.createdAt.toISOString(),
+    })),
+    allowedActions,
+    actions: request.actions.map((action) => ({
+      ...action,
+      responseDeadline: action.responseDeadline.toISOString(),
+      processedAt: action.processedAt.toISOString(),
+      resolution:
+        action.resolution?.outcome === "schedule_set"
+          ? {
+              ...action.resolution,
+              proposedStartAt: action.resolution.proposedStartAt.toISOString(),
+            }
+          : action.resolution,
     })),
     application: application
       ? {

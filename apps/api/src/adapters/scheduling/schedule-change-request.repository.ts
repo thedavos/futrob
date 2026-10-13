@@ -1,3 +1,4 @@
+import { readScheduleChangeActions } from "./schedule-change-actions.ts";
 import {
   rescheduleScopesConflict,
   type ScheduleChangeCommandReceipt,
@@ -18,6 +19,7 @@ import type { Pool } from "pg";
 import {
   getPgExecutor,
   isInPgTransaction,
+  runInPgReadSnapshot,
   type PgExecutor,
 } from "@/adapters/persistence/pg-transaction.ts";
 import {
@@ -111,7 +113,9 @@ export class InMemoryScheduleChangeRequestRepository implements ScheduleChangeRe
     encounterId: EncounterId,
   ): Promise<readonly ScheduleChangeRequest[]> {
     const requests = await this.listByEncounter(organizationId, encounterId);
-    return requests.filter((request) => request.status === "open");
+    return requests.filter(
+      (request) => request.status === "open" || request.status === "escalated",
+    );
   }
 
   async listByEncounter(
@@ -157,13 +161,13 @@ export class InMemoryScheduleChangeRequestRepository implements ScheduleChangeRe
       throw idempotencyConflict();
     }
 
-    if (request.status === "open") {
+    if (request.status === "open" || request.status === "escalated") {
       const conflicting = [...this.rows.values()].find(
         (row) =>
           row.id !== request.id &&
           row.organizationId === request.organizationId &&
           row.encounterId === request.encounterId &&
-          row.status === "open" &&
+          (row.status === "open" || row.status === "escalated") &&
           rescheduleScopesConflict(row.scope, request.scope),
       );
       if (conflicting) {
@@ -183,14 +187,11 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
     organizationId: OrganizationId,
     requestId: string,
   ): Promise<ScheduleChangeRequest | null> {
-    const result = await getPgExecutor(this.pool).query(
-      `${requestSelectSql}
-       WHERE request.organization_id = $1 AND request.id = $2`,
+    const rows = await this.readRequests(
+      `${requestSelectSql} WHERE request.organization_id = $1 AND request.id = $2`,
       [organizationId, requestId],
     );
-    const row = result.rows[0];
-    if (!row) return null;
-    return this.rehydrateWithProposals(requestRowSchema.parse(row));
+    return rows[0] ?? null;
   }
 
   async findCommandReceipt(
@@ -239,30 +240,22 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
     organizationId: OrganizationId,
     idempotencyKey: string,
   ): Promise<ScheduleChangeRequest | null> {
-    const result = await getPgExecutor(this.pool).query(
-      `${requestSelectSql}
-       WHERE request.organization_id = $1 AND request.idempotency_key = $2`,
+    const rows = await this.readRequests(
+      `${requestSelectSql} WHERE request.organization_id = $1 AND request.idempotency_key = $2`,
       [organizationId, idempotencyKey],
     );
-    const row = result.rows[0];
-    if (!row) return null;
-    return this.rehydrateWithProposals(requestRowSchema.parse(row));
+    return rows[0] ?? null;
   }
 
   async listActiveByEncounter(
     organizationId: OrganizationId,
     encounterId: EncounterId,
   ): Promise<readonly ScheduleChangeRequest[]> {
-    const result = await getPgExecutor(this.pool).query(
+    return this.readRequests(
       `${requestSelectSql}
-       WHERE request.organization_id = $1
-         AND request.encounter_id = $2
-         AND request.status = 'open'
+       WHERE request.organization_id = $1 AND request.encounter_id = $2 AND request.status IN ('open', 'escalated')
        ORDER BY request.created_at ASC, request.id ASC`,
       [organizationId, encounterId],
-    );
-    return Promise.all(
-      result.rows.map((row) => this.rehydrateWithProposals(requestRowSchema.parse(row))),
     );
   }
 
@@ -270,15 +263,11 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
     organizationId: OrganizationId,
     encounterId: EncounterId,
   ): Promise<readonly ScheduleChangeRequest[]> {
-    const result = await getPgExecutor(this.pool).query(
+    return this.readRequests(
       `${requestSelectSql}
-       WHERE request.organization_id = $1
-         AND request.encounter_id = $2
+       WHERE request.organization_id = $1 AND request.encounter_id = $2
        ORDER BY request.created_at ASC, request.id ASC`,
       [organizationId, encounterId],
-    );
-    return Promise.all(
-      result.rows.map((row) => this.rehydrateWithProposals(requestRowSchema.parse(row))),
     );
   }
 
@@ -373,10 +362,21 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
     await insertProposals(executor, request, request.proposals, 1);
   }
 
+  private readRequests(sql: string, values: string[]): Promise<readonly ScheduleChangeRequest[]> {
+    return runInPgReadSnapshot(this.pool, async () => {
+      const result = await getPgExecutor(this.pool).query(sql, values);
+      const requests: ScheduleChangeRequest[] = [];
+      for (const row of result.rows) {
+        requests.push(await this.rehydrateWithProposals(requestRowSchema.parse(row)));
+      }
+      return requests;
+    });
+  }
+
   private async rehydrateWithProposals(row: RequestRow): Promise<ScheduleChangeRequest> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT id, request_id, organization_id, proposed_start_at, proposed_by_actor_id,
-              proposed_by_team_id, reason, created_at, proposal_order
+              proposed_by_team_id, reason, created_at, proposal_order, response_deadline
        FROM schedule_change_proposals
        WHERE organization_id = $1 AND request_id = $2
        ORDER BY proposal_order ASC, created_at ASC`,
@@ -405,6 +405,11 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
       [row.id],
     );
     const application = applications.rows[0];
+    const actions = await readScheduleChangeActions(
+      getPgExecutor(this.pool),
+      row.organization_id,
+      row.id,
+    );
     return rehydrateRequest(
       row,
       result.rows.map((proposal) => proposalRowSchema.parse(proposal)),
@@ -415,6 +420,7 @@ export class PostgresScheduleChangeRequestRepository implements ScheduleChangeRe
             slots.rows.map((slot) => applicationSlotRowSchema.parse(slot)),
           )
         : null,
+      actions,
     );
   }
 }

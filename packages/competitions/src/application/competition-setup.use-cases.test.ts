@@ -155,6 +155,104 @@ async function harness() {
 }
 
 describe("competition setup", () => {
+  it.each([1, 6, 12, 72])(
+    "stores a %i hour proposal response window independently of minimum notice",
+    async (hours) => {
+      const { competitions, entries, clock, draft } = await harness();
+      const input = updateInput(draft);
+      const result = await new UpdateCompetitionDraftUseCase({
+        competitions,
+        entries,
+        clock,
+        authorization: allowAllAuthorization,
+      }).execute({
+        ...input,
+        rules: {
+          ...input.rules,
+          regularStage: {
+            ...draft.rules.regularStage!,
+            minimumRescheduleNoticeHours: 24,
+            rescheduleProposalExpiryHours: hours,
+          },
+        },
+      });
+      if (!result.isOk()) throw result.error;
+      const stored = await competitions.findById(
+        draft.competition.organizationId,
+        draft.competition.id,
+      );
+      expect(stored?.rules.regularStage).toMatchObject({
+        rescheduleProposalExpiryHours: hours,
+        minimumRescheduleNoticeHours: 24,
+      });
+    },
+  );
+
+  it.each([0, -1, 73, 1.5, Number.NaN])(
+    "rejects invalid proposal expiry %s without altering stored rules",
+    async (hours) => {
+      const { competitions, entries, clock, draft } = await harness();
+      const input = updateInput(draft);
+      const result = await new UpdateCompetitionDraftUseCase({
+        competitions,
+        entries,
+        clock,
+        authorization: allowAllAuthorization,
+      }).execute({
+        ...input,
+        rules: {
+          ...input.rules,
+          regularStage: { ...draft.rules.regularStage!, rescheduleProposalExpiryHours: hours },
+        },
+      });
+      expect(result.isOk() ? "ok" : result.error.code).toBe("competitions.invalid_rules");
+      const stored = await competitions.findById(
+        draft.competition.organizationId,
+        draft.competition.id,
+      );
+      expect(stored?.rules.regularStage?.rescheduleProposalExpiryHours).toBe(12);
+    },
+  );
+
+  it("V32-14 freezes proposal expiry after publishing and while registration is open", async () => {
+    const { competitions, entries, clock, ids, draft } = await harness();
+    const input = updateInput(draft);
+    const scope = {
+      actorId: input.actorId,
+      organizationId: input.organizationId,
+      competitionId: input.competitionId,
+    };
+    const deps = { competitions, entries, clock, ids, authorization: allowAllAuthorization };
+    const update = new UpdateCompetitionDraftUseCase(deps);
+    const changedRules = {
+      ...input.rules,
+      regularStage: { ...draft.rules.regularStage!, rescheduleProposalExpiryHours: 6 },
+    };
+    const opened = await new OpenCompetitionRegistrationUseCase(deps).execute(scope);
+    if (!opened.isOk()) throw opened.error;
+    const registrationEdit = await update.execute({ ...input, rules: changedRules });
+    expect(registrationEdit.isOk() ? "ok" : registrationEdit.error.code).toBe(
+      "competitions.not_editable",
+    );
+    for (const teamId of ["team-1", "team-2"]) {
+      const entry = await new RegisterTeamEntryUseCase(deps).execute({
+        ...scope,
+        teamId: asTeamId(teamId),
+        approved: true,
+      });
+      if (!entry.isOk()) throw entry.error;
+    }
+    const published = await new PublishCompetitionUseCase(deps).execute(scope);
+    if (!published.isOk()) throw published.error;
+    const publishedEdit = await update.execute({ ...input, rules: changedRules });
+    expect(publishedEdit.isOk() ? "ok" : publishedEdit.error.code).toBe(
+      "competitions.not_editable",
+    );
+    const stored = await competitions.findById(scope.organizationId, scope.competitionId);
+    expect(stored?.competition.status).toBe("published");
+    expect(stored?.rules.regularStage?.rescheduleProposalExpiryHours).toBe(12);
+  });
+
   it("rejects incompatible stage and points rules", async () => {
     const { competitions, entries, clock, draft } = await harness();
     const result = await new UpdateCompetitionDraftUseCase({

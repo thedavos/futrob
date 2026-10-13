@@ -17,6 +17,8 @@ import {
   type GenerateCompetitionFixtureRequest,
   listScheduleChangeRequestsResponseSchema,
   type ListScheduleChangeRequestsResponse,
+  resolveScheduleChangeRequestSchema,
+  type ResolveScheduleChangeRequestBody,
   rejectScheduleChangeProposalRequestSchema,
   type RejectScheduleChangeProposalRequest,
   scheduleChangeCommandResponseSchema,
@@ -162,6 +164,20 @@ export function createEncountersResource(http: HttpClient) {
         method: "GET",
         options,
         parse: (data) => scheduleChangeRequestSchema.parse(data),
+      });
+    },
+    async resolveScheduleChangeRequest(
+      encounterId: string,
+      requestId: string,
+      input: ResolveScheduleChangeRequestBody,
+      options: RequestOptions = {},
+    ): Promise<ScheduleChangeCommandResponse> {
+      return http.request({
+        path: apiPath("encounters", encounterId, "schedule-change-requests", requestId, "resolve"),
+        method: "POST",
+        body: resolveScheduleChangeRequestSchema.parse(input),
+        options,
+        parse: (data) => scheduleChangeCommandResponseSchema.parse(data),
       });
     },
     async acceptScheduleChangeProposal(

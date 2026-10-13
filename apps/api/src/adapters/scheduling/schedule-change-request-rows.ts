@@ -1,6 +1,7 @@
 import type {
   RescheduleScope,
   ScheduleChangeApplication,
+  ScheduleChangeAction,
   ScheduleChangeCommandReceipt,
   ScheduleChangeDecision,
   ScheduleChangeProposal,
@@ -30,6 +31,7 @@ const requestStatusSchema = z.enum([
   "cancelled",
   "expired",
   "escalated",
+  "resolved_by_organizer",
 ]);
 
 export const requestRowSchema = z.object({
@@ -57,6 +59,7 @@ export const proposalRowSchema = z.object({
   proposed_by_team_id: pgTextSchema,
   reason: pgTextSchema,
   created_at: pgTimestampSchema,
+  response_deadline: pgTimestampSchema,
   proposal_order: z.coerce.number().int().positive(),
 });
 
@@ -78,7 +81,7 @@ export const receiptRowSchema = z.object({
   organization_id: pgTextSchema,
   actor_id: pgTextSchema,
   command_key: pgTextSchema,
-  command_type: z.enum(["accept", "reject", "counter"]),
+  command_type: z.enum(["accept", "reject", "counter", "expire", "resolve"]),
   fingerprint: pgTextSchema,
   target_proposal_id: pgTextSchema,
   resulting_version: z.coerce.number().int().positive(),
@@ -123,17 +126,18 @@ export async function insertProposals(
     proposal.reason,
     proposal.createdAt.toISOString(),
     firstOrder + index,
+    proposal.responseDeadline.toISOString(),
   ]);
   const placeholders = proposals
     .map((_, index) => {
-      const offset = index * 9;
-      return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`;
+      const offset = index * 10;
+      return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10})`;
     })
     .join(", ");
   await executor.query(
     `INSERT INTO schedule_change_proposals (
        id, request_id, organization_id, proposed_start_at, proposed_by_actor_id,
-       proposed_by_team_id, reason, created_at, proposal_order
+       proposed_by_team_id, reason, created_at, proposal_order, response_deadline
      ) VALUES ${placeholders}
      ON CONFLICT (id) DO NOTHING`,
     values,
@@ -272,6 +276,7 @@ export function rehydrateRequest(
   proposalRows: readonly z.infer<typeof proposalRowSchema>[],
   decisionRows: readonly z.infer<typeof decisionRowSchema>[],
   application: ScheduleChangeApplication | null,
+  actions: readonly ScheduleChangeAction[],
 ): ScheduleChangeRequest {
   return {
     id: row.id,
@@ -286,6 +291,7 @@ export function rehydrateRequest(
     proposals: asProposalList(proposalRows.map(rehydrateProposal)),
     decisions: decisionRows.map(rehydrateDecision),
     application,
+    actions,
     idempotencyKey: row.idempotency_key,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -300,6 +306,7 @@ function rehydrateProposal(row: z.infer<typeof proposalRowSchema>): ScheduleChan
     proposedByTeamId: asTeamId(row.proposed_by_team_id),
     reason: row.reason,
     createdAt: row.created_at,
+    responseDeadline: row.response_deadline,
   };
 }
 

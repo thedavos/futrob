@@ -25,6 +25,7 @@ export function scheduleChangeRequestAsOf(
     status: outcome.status,
     version: outcome.version,
     proposals: first ? [first, ...rest] : request.proposals,
+    actions: request.actions.filter((action) => action.toVersion <= outcome.version),
     decisions: request.decisions.filter((decision) => decision.requestVersion < outcome.version),
     application:
       request.application && request.application.requestVersion <= outcome.version

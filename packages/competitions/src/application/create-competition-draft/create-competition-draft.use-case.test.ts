@@ -60,6 +60,7 @@ describe("CreateCompetitionDraftUseCase", () => {
         lossPoints: 0,
         maxReschedulesPerTeam: 2,
         minimumRescheduleNoticeHours: 12,
+        rescheduleProposalExpiryHours: 12,
       },
     });
   });

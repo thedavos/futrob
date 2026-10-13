@@ -66,6 +66,27 @@ export async function runInPgAtomicScope<T>(
   }
 }
 
+/** Keeps multi-query aggregate reads on one database snapshot. Mutation callers reuse their locked transaction. */
+export async function runInPgReadSnapshot<T>(pool: Pool, operation: () => Promise<T>): Promise<T> {
+  if (pgTxStorage.getStore()) return operation();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
+    const result = await pgTxStorage.run(client, operation);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      // Preserve the original read failure.
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export class PostgresTransactionPort implements TransactionPort {
   constructor(private readonly pool: Pool) {}
 

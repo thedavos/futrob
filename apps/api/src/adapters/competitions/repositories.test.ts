@@ -44,6 +44,7 @@ const draft: CompetitionDraft = {
       allowRescheduling: true,
       maxReschedulesPerTeam: 2,
       minimumRescheduleNoticeHours: 12,
+      rescheduleProposalExpiryHours: 12,
       rescheduleRequiresOpponentApproval: true,
       rescheduleRequiresOrganizerApproval: false,
     },

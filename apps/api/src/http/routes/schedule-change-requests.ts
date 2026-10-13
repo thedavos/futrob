@@ -3,11 +3,17 @@ import {
   counterScheduleChangeProposalRequestSchema,
   createScheduleChangeRequestSchema,
   listScheduleChangeRequestsResponseSchema,
+  resolveScheduleChangeRequestSchema,
   rejectScheduleChangeProposalRequestSchema,
   scheduleChangeCommandResponseSchema,
   scheduleChangeRequestSchema,
 } from "@futrob/api-contracts";
-import type { ScheduleChangeCommandOutput, ScheduleChangeResponder } from "@futrob/scheduling";
+import {
+  ENCOUNTER_PERMISSION,
+  type ScheduleChangeCommandOutput,
+  type ScheduleChangeResponder,
+  type ScheduleChangeRequest,
+} from "@futrob/scheduling";
 import { asEncounterId, asTeamId, type Result } from "@futrob/shared-kernel";
 import { Hono, type Context } from "hono";
 import type { z } from "zod";
@@ -85,6 +91,22 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     };
   }
 
+  async function requestDto(c: SecuredContext, request: ScheduleChangeRequest) {
+    const access =
+      request.status === "escalated"
+        ? await deps.modules.authorization.port.decide({
+            actorId: c.get("actorId"),
+            permission: ENCOUNTER_PERMISSION.rescheduleResolve,
+            scope: {
+              organizationId: request.organizationId,
+              competitionId: request.competitionId,
+              encounterId: request.encounterId,
+            },
+          })
+        : null;
+    return toScheduleChangeRequestDto(request, access?.allowed ? ["resolve"] : []);
+  }
+
   secured.get(BASE, async (c) => {
     const result = await scheduling.listScheduleChangeRequests.execute({
       actorId: c.get("actorId"),
@@ -93,7 +115,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(
       listScheduleChangeRequestsResponseSchema.parse({
-        requests: result.value.map(toScheduleChangeRequestDto),
+        requests: await Promise.all(result.value.map((request) => requestDto(c, request))),
       }),
     );
   });
@@ -119,9 +141,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
       idempotencyKey: parsed.data.idempotencyKey,
     });
     if (result.isErr()) return failureToHttp(result.error);
-    return jsonResponse(
-      scheduleChangeRequestSchema.parse(toScheduleChangeRequestDto(result.value)),
-    );
+    return jsonResponse(scheduleChangeRequestSchema.parse(await requestDto(c, result.value)));
   });
 
   secured.get(`${BASE}/:requestId`, async (c) => {
@@ -131,8 +151,26 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
       requestId: c.req.param("requestId"),
     });
     if (result.isErr()) return failureToHttp(result.error);
-    return jsonResponse(
-      scheduleChangeRequestSchema.parse(toScheduleChangeRequestDto(result.value)),
+    return jsonResponse(scheduleChangeRequestSchema.parse(await requestDto(c, result.value)));
+  });
+
+  secured.post(`${BASE}/:requestId/resolve`, async (c) => {
+    const body = await parseBody(c, resolveScheduleChangeRequestSchema);
+    if (!body.success) return validationErrorResponse(body.error.issues);
+    const scope = await commandScope(c, body.data);
+    if (!scope) return encounterNotFound();
+    const resolution = body.data.resolution;
+    return commandResponse(
+      await scheduling.resolveScheduleChangeRequest.execute({
+        ...scope,
+        proposalId: body.data.proposalId,
+        resolution:
+          resolution.outcome === "schedule_set"
+            ? { ...resolution, proposedStartAt: new Date(resolution.proposedStartAt) }
+            : resolution.outcome === "walkover_intended"
+              ? { ...resolution, winningTeamId: asTeamId(resolution.winningTeamId) }
+              : resolution,
+      }),
     );
   });
 

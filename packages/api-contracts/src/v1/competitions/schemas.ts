@@ -91,6 +91,7 @@ export const competitionMatchRulesSchema = z.object({
   allowRescheduling: z.boolean(),
   maxReschedulesPerTeam: z.number().int().nonnegative().nullable(),
   minimumRescheduleNoticeHours: z.number().int().nonnegative(),
+  rescheduleProposalExpiryHours: z.number().int().min(1).max(72).default(12),
   rescheduleRequiresOpponentApproval: z.boolean(),
   rescheduleRequiresOrganizerApproval: z.boolean(),
 });

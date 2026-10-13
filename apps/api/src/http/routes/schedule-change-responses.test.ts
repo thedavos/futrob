@@ -7,7 +7,13 @@ import {
   scheduleChangeCommandResponseSchema,
   scheduleChangeRequestSchema,
 } from "@futrob/api-contracts";
-import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
+import {
+  asActorId,
+  asEncounterId,
+  asCompetitionId,
+  asOrganizationId,
+  asTeamId,
+} from "@futrob/shared-kernel";
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { createApp } from "@/app.ts";
 import { createModules } from "@/di/create-modules.ts";
@@ -71,7 +77,7 @@ describe.each([
       stranger: `actor-stranger-${tag}`,
     };
     if (isolated) await seedActors(isolated.pool, ...Object.values(actors));
-    let now = new Date();
+    let now = new Date("2026-10-01T12:00:00.000Z");
     const modules = createModules({
       fetcher: stubFetch,
       eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
@@ -153,6 +159,9 @@ describe.each([
 
     const requestsPath = `/encounters/${encounter.id}/schedule-change-requests`;
     return {
+      setTime(value: string) {
+        now = new Date(value);
+      },
       actors,
       setNow: (instant: string) => {
         now = new Date(instant);
@@ -293,6 +302,7 @@ describe.each([
     "returns a proposed notice error to the captain and accepts the twelve-hour neighbor",
     async () => {
       const flow = await seed();
+      flow.setNow("2099-01-09T12:00:00.000Z");
       const created = await flow.create(15);
       flow.setNow("2099-01-09T12:00:00.001Z");
       const body = {
@@ -337,6 +347,181 @@ describe.each([
         ],
       });
       expect((await flow.snapshot()).scheduledStartAt).toBe("2099-01-10T23:00:00.000Z");
+    },
+  );
+
+  it.skipIf(skip)(
+    "late responses fail without waiting for the runner; organizer resolves with real scoped authority",
+    async () => {
+      const {
+        actors,
+        home,
+        away,
+        modules,
+        send,
+        requestsPath,
+        create,
+        command,
+        snapshot,
+        setTime,
+      } = await seed();
+      const created = await create(15);
+      expect(created.proposals[0]?.responseDeadline).toBe("2026-10-02T00:00:00.000Z");
+      setTime("2026-10-02T00:00:00.000Z");
+      expect(
+        await failureOf(
+          await command(actors.awayCaptain, created, created.currentProposalId, "accept", {
+            expectedVersion: 1,
+            commandKey: "late-accept",
+            responder: { authority: "rival_team", teamId: away },
+          }),
+        ),
+      ).toEqual({ status: 409, code: "scheduling.schedule_change_response_window_closed" });
+      expect((await snapshot()).scheduledStartAt).toBe(D0);
+      const expired = await modules.scheduling.expireScheduleChangeProposal.execute({
+        actorId: asActorId(actors.organizer),
+        organizationId: asOrganizationId(created.organizationId),
+        encounterId: asEncounterId(created.encounterId),
+        requestId: created.id,
+      });
+      if (expired.isErr()) throw expired.error;
+      expect(expired.value).toEqual({ status: "escalated" });
+      const organizerView = await requestOf(
+        await send(actors.organizer, "GET", `${requestsPath}/${created.id}`),
+      );
+      const captainView = await requestOf(
+        await send(actors.awayCaptain, "GET", `${requestsPath}/${created.id}`),
+      );
+      expect({
+        status: organizerView.status,
+        version: organizerView.version,
+        actions: organizerView.allowedActions,
+      }).toEqual({ status: "escalated", version: 2, actions: ["resolve"] });
+      expect(captainView.allowedActions).toEqual([]);
+      expect(organizerView.actions).toMatchObject([
+        {
+          kind: "schedule_change_expired",
+          authority: "system",
+          proposalId: created.currentProposalId,
+          fromVersion: 1,
+          toVersion: 2,
+          responseDeadline: "2026-10-02T00:00:00.000Z",
+          processedAt: "2026-10-02T00:00:00.000Z",
+          resolution: null,
+        },
+      ]);
+      const body = {
+        proposalId: created.currentProposalId,
+        expectedVersion: 2,
+        commandKey: "organizer-keep",
+        resolution: { outcome: "schedule_kept", reason: "Keep the agreed fixture" },
+      };
+      expect(
+        await failureOf(
+          await send(actors.awayCaptain, "POST", `${requestsPath}/${created.id}/resolve`, {
+            ...body,
+            actorId: actors.organizer,
+          }),
+        ),
+      ).toEqual({ status: 403, code: "authorization.forbidden" });
+      const resolved = await commandOf(
+        await send(actors.organizer, "POST", `${requestsPath}/${created.id}/resolve`, body),
+      );
+      expect({
+        status: resolved.request.status,
+        version: resolved.request.version,
+        allowedActions: resolved.request.allowedActions,
+        replayed: resolved.replayed,
+      }).toEqual({
+        status: "resolved_by_organizer",
+        version: 3,
+        allowedActions: [],
+        replayed: false,
+      });
+      expect(resolved.request.actions[1]).toMatchObject({
+        authority: "organizer",
+        actorId: actors.organizer,
+        fromVersion: 2,
+        toVersion: 3,
+        resolution: { outcome: "schedule_kept", reason: "Keep the agreed fixture" },
+      });
+      expect(
+        await commandOf(
+          await send(actors.organizer, "POST", `${requestsPath}/${created.id}/resolve`, body),
+        ),
+      ).toEqual({ request: resolved.request, replayed: true });
+      expect((await snapshot()).scheduledStartAt).toBe(D0);
+      const reopened = await create(16);
+      expect({ status: reopened.status, team: reopened.requestingTeamId }).toEqual({
+        status: "open",
+        team: home,
+      });
+    },
+  );
+
+  it.skipIf(skip)(
+    "organizer schedule_set applies every scoped slot; walkover remains intent without an official result",
+    async () => {
+      for (const outcome of ["schedule_set", "walkover_intended"] as const) {
+        const { actors, home, modules, send, requestsPath, create, snapshot, setTime } =
+          await seed("knockout");
+        const created = await create(15);
+        setTime("2026-10-02T00:00:00.000Z");
+        const expired = await modules.scheduling.expireScheduleChangeProposal.execute({
+          actorId: asActorId(actors.organizer),
+          organizationId: asOrganizationId(created.organizationId),
+          encounterId: asEncounterId(created.encounterId),
+          requestId: created.id,
+        });
+        if (expired.isErr()) throw expired.error;
+        const resolution =
+          outcome === "schedule_set"
+            ? {
+                outcome,
+                reason: "Organizer emergency slot",
+                proposedStartAt: "2026-10-02T01:00:00.000Z",
+              }
+            : { outcome, reason: "Opponent absent", winningTeamId: home };
+        const body = {
+          proposalId: created.currentProposalId,
+          expectedVersion: 2,
+          commandKey: `organizer-${outcome}`,
+          resolution,
+        };
+        const resolved = await commandOf(
+          await send(actors.organizer, "POST", `${requestsPath}/${created.id}/resolve`, body),
+        );
+        expect({
+          status: resolved.request.status,
+          version: resolved.request.version,
+          replayed: resolved.replayed,
+        }).toEqual({ status: "resolved_by_organizer", version: 3, replayed: false });
+        expect(resolved.request.actions[1]?.resolution).toEqual(resolution);
+        const expectedDate = outcome === "schedule_set" ? "2026-10-02T01:00:00.000Z" : D0;
+        expect(await snapshot()).toMatchObject({
+          scheduledStartAt: expectedDate,
+          officialMatches: [
+            { officialSlot: 1, scheduledStartAt: expectedDate },
+            { officialSlot: 2, scheduledStartAt: expectedDate },
+          ],
+        });
+        expect(resolved.request.application?.slots ?? null).toEqual(
+          outcome === "schedule_set"
+            ? [
+                { officialSlot: 1, previousStartAt: D0, appliedStartAt: expectedDate },
+                { officialSlot: 2, previousStartAt: D0, appliedStartAt: expectedDate },
+              ]
+            : null,
+        );
+        expect(
+          await commandOf(
+            await send(actors.organizer, "POST", `${requestsPath}/${created.id}/resolve`, body),
+          ),
+        ).toEqual({ request: resolved.request, replayed: true });
+        expect(
+          await modules.results.results.findLatestByEncounter(asEncounterId(created.encounterId)),
+        ).toBeNull();
+      }
     },
   );
 

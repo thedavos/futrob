@@ -48,6 +48,7 @@ const awayTeamId = asTeamId("team-away");
 const actorId = asActorId("captain-1");
 const defaultApprovals = {
   minimumNoticeHours: 12,
+  proposalExpiryHours: 12,
   requiresOpponentApproval: true,
   requiresOrganizerApproval: false,
 };
@@ -384,10 +385,12 @@ describe("CreateScheduleChangeRequestUseCase", () => {
           proposedByTeamId: homeTeamId,
           reason: "Team travel conflict",
           createdAt: now,
+          responseDeadline: new Date("2026-09-15T08:00:00.000Z"),
         },
       ],
       decisions: [],
       application: null,
+      actions: [],
       idempotencyKey: "idem-1",
       createdAt: now,
       updatedAt: now,

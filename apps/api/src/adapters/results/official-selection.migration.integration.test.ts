@@ -87,6 +87,8 @@ suite("0045/0046 official selection and candidate migrations", () => {
           "0051_official_selection_confirmation_deadlines.sql",
           "0052_schedule_change_application.sql",
           "0053_schedule_change_application_acknowledgements.sql",
+          "0054_activity_entries.sql",
+          "0055_schedule_change_expiry_resolution.sql",
         ]);
       } finally {
         client.release();

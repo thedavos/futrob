@@ -37,6 +37,7 @@ export function performanceCompetition(): CompetitionDraft {
         allowRescheduling: false,
         maxReschedulesPerTeam: 0,
         minimumRescheduleNoticeHours: 0,
+        rescheduleProposalExpiryHours: 12,
         rescheduleRequiresOpponentApproval: false,
         rescheduleRequiresOrganizerApproval: false,
       },

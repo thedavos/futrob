@@ -167,6 +167,7 @@ function negotiation(
   options: {
     readonly slots?: readonly [string, string];
     readonly maxReschedulesPerTeam?: number;
+    readonly proposalExpiryHours?: number;
   } = {},
 ) {
   const requests = new MemoryRequests();
@@ -233,6 +234,7 @@ function negotiation(
         allowRescheduling: true,
         maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
         minimumNoticeHours,
+        proposalExpiryHours: options.proposalExpiryHours ?? 12,
         ...approvals,
       }),
       countAppliedReschedules: async (input: { readonly teamId: TeamId }) =>
@@ -862,8 +864,12 @@ describe("schedule change negotiation", () => {
 
     it("does not apply a proposal whose start has already passed", async () => {
       const flow = negotiation();
+      flow.setNotice(0);
+      flow.advanceClock(
+        Date.parse("2026-10-11T19:00:00.000Z") - Date.parse("2026-10-01T12:00:00.000Z"),
+      );
       const created = await flow.propose(11);
-      flow.advanceClock(Date.parse(D1) - Date.parse("2026-10-01T12:00:00.000Z"));
+      flow.advanceClock(3_600_000);
 
       const late = await flow.accept(captainB, asRival(teamB), {
         proposalId: created.proposals[0].id,
@@ -899,7 +905,7 @@ describe("minimum reschedule notice — validated V6 behavior", () => {
   const near = "2026-10-13T09:00:00.000Z";
   const past = "2026-10-13T07:00:00.000Z";
   const flowAt = (currentAt: string, now = boundary, approvals = OPPONENT_ONLY) => {
-    const flow = negotiation(approvals, { slots: [currentAt, currentAt] });
+    const flow = negotiation(approvals, { slots: [currentAt, currentAt], proposalExpiryHours: 72 });
     flow.setClock(now);
     return flow;
   };

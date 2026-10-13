@@ -1,3 +1,4 @@
+import { insertScheduleChangeAction } from "./schedule-change-actions.ts";
 import type {
   ScheduleChangeCommandReceipt,
   ScheduleChangeCommitOutcome,
@@ -59,6 +60,8 @@ export async function writeScheduleChangeTransition(
     if (transition.appendedDecision) {
       await insertDecision(executor, request, transition.appendedDecision);
     }
+    if (transition.appendedAction)
+      await insertScheduleChangeAction(executor, request, transition.appendedAction);
     await insertReceipt(executor, receipt);
     if (transition.appendedApplication) {
       await insertApplication(executor, request, transition.appendedApplication);

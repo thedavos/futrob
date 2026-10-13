@@ -28,6 +28,7 @@ import {
   InvalidScheduleChangeRequest,
   ReschedulingDisabled,
   ScheduleChangeRequestForbidden,
+  ScheduleChangeResponseWindowClosed,
   ScheduleChangeRequestIdempotencyConflict,
   ScheduleChangeRequestNotFound,
   UnknownScheduleChangeRequest,
@@ -200,8 +201,26 @@ export async function runScheduleChangeCommand<E>(
             return ok({ request: replayed, receipt, replayed: true });
           }
 
-          const target = checkScheduleChangeTarget(request, input);
+          const target = checkScheduleChangeTarget(
+            request,
+            input,
+            command.type === "resolve" ? "escalated" : "open",
+          );
           if (target.isErr()) return err(target.error);
+
+          const now = deps.clock.now();
+          if (
+            command.type !== "resolve" &&
+            now.getTime() >= target.value.responseDeadline.getTime()
+          ) {
+            return err(
+              new ScheduleChangeResponseWindowClosed({
+                code: "scheduling.schedule_change_response_window_closed",
+                message: "The proposal response window has closed",
+                responseDeadline: target.value.responseDeadline.toISOString(),
+              }),
+            );
+          }
 
           const rules = await deps.rules.getRules({
             organizationId: encounter.organizationId,
@@ -209,7 +228,7 @@ export async function runScheduleChangeCommand<E>(
             stageId: encounter.stageId,
           });
           if (command.movesSchedule) {
-            if (!rules.allowRescheduling) {
+            if (!rules.allowRescheduling && command.type !== "resolve") {
               return err(
                 new ReschedulingDisabled({
                   code: "scheduling.rescheduling_disabled",
@@ -239,7 +258,6 @@ export async function runScheduleChangeCommand<E>(
             encounter,
             await deps.matches.listByEncounter(encounter.encounterId),
           );
-          const now = deps.clock.now();
           const context = { encounter, schedules, request, rules, now };
           const transition = await command.decide(context);
           if (transition.isErr()) return err(transition.error);

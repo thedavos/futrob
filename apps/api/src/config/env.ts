@@ -5,6 +5,7 @@ export interface ApiEnv {
   readonly eaClubsBaseUrl: string;
   readonly internalJobSecret: string;
   readonly resultsSystemActorId: string | undefined;
+  readonly schedulingSystemActorId: string | undefined;
   readonly initialSuperuserActorId: string | undefined;
 }
 
@@ -21,6 +22,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): ApiEnv {
     eaClubsBaseUrl: source.EA_CLUBS_BASE_URL || DEFAULT_EA_CLUBS_BASE_URL,
     internalJobSecret: source.INTERNAL_JOB_SECRET ?? "",
     resultsSystemActorId: source.RESULTS_SYSTEM_ACTOR_ID || undefined,
+    schedulingSystemActorId: source.SCHEDULING_SYSTEM_ACTOR_ID || undefined,
     initialSuperuserActorId: source.INITIAL_SUPERUSER_ACTOR_ID || undefined,
   };
 }

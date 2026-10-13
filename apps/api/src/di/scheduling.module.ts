@@ -1,5 +1,11 @@
 import {
+  InMemoryScheduleChangeExpiryFeed,
+  PostgresScheduleChangeExpiryFeed,
+} from "@/adapters/scheduling/schedule-change-expiry-feed.ts";
+import {
   AcceptScheduleChangeProposalUseCase,
+  ResolveScheduleChangeRequestUseCase,
+  ExpireScheduleChangeProposalUseCase,
   CounterScheduleChangeProposalUseCase,
   CreateScheduleChangeRequestUseCase,
   GetScheduleChangeRequestUseCase,
@@ -61,8 +67,8 @@ import {
 
 export function createSchedulingModule(input: {
   readonly pool: Pool | undefined;
-  readonly authorization: AuthorizationPort;
   readonly clock?: ClockPort;
+  readonly authorization: AuthorizationPort;
   readonly participants: EncounterParticipantValidationPort;
   readonly fixtureSource: CompetitionFixtureSourcePort;
   readonly eventPublisher: EventPublisherPort;
@@ -125,6 +131,15 @@ export function createSchedulingModule(input: {
     fixturePlans,
     scheduleChangeRequests,
     scheduleChangeApplications,
+    scheduleChangeExpiryFeed: input.pool
+      ? new PostgresScheduleChangeExpiryFeed(input.pool)
+      : new InMemoryScheduleChangeExpiryFeed(inMemoryRequests),
+    expireScheduleChangeProposal: new ExpireScheduleChangeProposalUseCase(negotiation),
+    resolveScheduleChangeRequest: new ResolveScheduleChangeRequestUseCase({
+      ...negotiation,
+      eventPublisher: input.eventPublisher,
+      fixtures: fixturePlans,
+    }),
     generateFixture: new GenerateCompetitionFixtureUseCase({
       authorization: input.authorization,
       clock,
