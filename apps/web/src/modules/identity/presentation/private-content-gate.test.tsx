@@ -4,7 +4,7 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 
 type User = { readonly id: string; readonly name: string };
@@ -122,6 +122,15 @@ function holdNextSessionCheck(): () => Promise<void> {
     });
   };
 }
+
+// Transform the tab's module graph once, so no test pays the cold import against its timeout.
+beforeAll(async () => {
+  await Promise.all([
+    import("./private-content-gate.tsx"),
+    import("@/shared/presentation/i18n/i18n-provider.tsx"),
+    import("@/shared/presentation/query/identity-change.ts"),
+  ]);
+}, 60_000);
 
 beforeEach(() => {
   sessionUser = ANA;
