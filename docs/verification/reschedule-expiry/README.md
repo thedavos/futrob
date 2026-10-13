@@ -2,8 +2,9 @@
 
 Verificado el 2026-10-13 sobre Node 24.21.0. La capa usa el Encounter de
 [#154](https://github.com/thedavos/futrob/pull/154) e integra la política de aviso de
-[#156](https://github.com/thedavos/futrob/pull/156). Durante la verificación se integró #156 en main; #154 sigue abierto.
-No se hizo merge ni despliegue desde este hilo. El PR espera #154.
+[#156](https://github.com/thedavos/futrob/pull/156). Ambos PR ya están integrados;
+#159 tiene base `main` y su rama incorpora `main` en `63b7f546`, incluida la
+corrección de sesión de #157. No se integró ningún PR ni se desplegó desde este hilo.
 
 ## Comprobaciones
 
@@ -13,9 +14,9 @@ La corrección configura la conexión para todo el job Test, de modo que la cobe
 incluye las suites durables. La suite de coherencia contempla ejecución local sin
 base, como las demás suites Postgres; CI dispone de la base y ejecuta sus seis pruebas.
 
-La reproducción de `npm run test:coverage` con Postgres aislado terminó con exit 0:
-3.949 pruebas pasan, líneas 85,31 %, ramas 76,2 %, statements 83,24 % y funciones
-83,44 %. Las seis pruebas de coherencia pasan sin skips; sin base configurada se
+La reproducción de `npm run test:coverage` con Postgres aislado, después de integrar
+`main`, terminó con exit 0: 481 archivos y 3.955 pruebas pasan; líneas 85,35 % y
+ramas 76,26 %. Las seis pruebas de coherencia pasan sin skips; sin base configurada se
 reportan explícitamente como omitidas.
 
 | Comando                                                                      | Resultado                                               |
