@@ -58,6 +58,8 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
   const [owner, setOwner] = useState<CacheOwner>(sessionUserId);
   const ownerRef = useRef<CacheOwner>(sessionUserId);
   const [status, setStatus] = useState<GateStatus>(initialStatus);
+  // Closed because the tab was hidden, and no check started since.
+  const awaitingVisible = useRef(status === "confirming");
   const attempt = useRef(0);
   const focusBeforeHide = useRef<HTMLElement | null>(null);
 
@@ -74,6 +76,7 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
 
   const confirm = useCallback(async () => {
     const current = ++attempt.current;
+    awaitingVisible.current = false;
     setStatus("confirming");
     const confirmed = await readSessionUserId();
     if (current !== attempt.current) return;
@@ -95,6 +98,7 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
         return;
       }
       attempt.current++;
+      awaitingVisible.current = true;
       const active = document.activeElement;
       focusBeforeHide.current = active instanceof HTMLElement ? active : null;
       // Commit now: the frame shown when the tab comes back must already hide the content.
@@ -102,6 +106,8 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
     const stopListening = listenForIdentityChanges(() => void confirm());
+    // The tab may have come forward before this listener existed, and that event is gone.
+    if (awaitingVisible.current && document.visibilityState === "visible") void confirm();
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
       stopListening();

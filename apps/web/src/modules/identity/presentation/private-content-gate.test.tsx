@@ -231,6 +231,21 @@ describe("private content when the tab comes back", () => {
     expect(await screen.findByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
   });
 
+  it("shows the screen of a tab that opened hidden and came forward before the gate listened", async () => {
+    // The first read happens while rendering; the tab is visible by the time effects run,
+    // and its visibilitychange fired before anyone listened.
+    let reads = 0;
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => (reads++ === 0 ? "hidden" : "visible"),
+    });
+
+    await openTab();
+
+    expect(await screen.findByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
+    expect(screen.queryByText("Comprobando sesión…")).toBeNull();
+  });
+
   it("hides the previous user's data in a visible tab as soon as the notice arrives", async () => {
     await openTab();
     expect(await screen.findByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
