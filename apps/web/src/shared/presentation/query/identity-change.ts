@@ -19,11 +19,17 @@ export function announceIdentityChange(queryClient: QueryClient): void {
   channel.close();
 }
 
+/**
+ * Runs `listener` when another tab announces an identity change. Delivery is best effort:
+ * a hidden or suspended tab may hear it late or never.
+ */
+export function listenForIdentityChanges(listener: () => void): () => void {
+  const channel = new BroadcastChannel(IDENTITY_CHANNEL);
+  channel.onmessage = () => listener();
+  return () => channel.close();
+}
+
 /** Keeps this tab's cache in step with identity changes made in other tabs. */
 export function useForgetIdentityFromOtherTabs(queryClient: QueryClient): void {
-  useEffect(() => {
-    const channel = new BroadcastChannel(IDENTITY_CHANNEL);
-    channel.onmessage = () => forgetCachedIdentity(queryClient);
-    return () => channel.close();
-  }, [queryClient]);
+  useEffect(() => listenForIdentityChanges(() => forgetCachedIdentity(queryClient)), [queryClient]);
 }

@@ -8,6 +8,7 @@ import { applyStyles, Button, hasBrowserWindow } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { listenForIdentityChanges } from "@/shared/presentation/query/identity-change.ts";
 
 const styles = stylex.create({
   notice: {
@@ -45,8 +46,9 @@ function initialStatus(): GateStatus {
  *
  * Another tab can sign in, sign up or sign out while this one is hidden, and the identity
  * notice may never reach a suspended tab. So hiding the tab hides private content, and
- * coming back asks `get-session` before showing it again. The same user gets the screen
- * back as it was; a different user, or none, gets an empty cache and a fresh tree.
+ * coming back (or hearing the notice) asks `get-session` before showing it again. The same
+ * user gets the screen back as it was; a different user, or none, gets an empty cache and a
+ * fresh tree.
  */
 export function PrivateContentGate({ children }: Readonly<{ children: ReactNode }>) {
   const queryClient = useQueryClient();
@@ -83,7 +85,7 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
       adopt(confirmed);
       authClient.$store.notify("$sessionSignal");
     }
-    setStatus("open");
+    setStatus(document.visibilityState === "visible" ? "open" : "confirming");
   }, [adopt]);
 
   useEffect(() => {
@@ -99,7 +101,11 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
       flushSync(() => setStatus("confirming"));
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    const stopListening = listenForIdentityChanges(() => void confirm());
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      stopListening();
+    };
   }, [confirm]);
 
   // The session can also move on its own, e.g. after a sign-out broadcast from another tab.

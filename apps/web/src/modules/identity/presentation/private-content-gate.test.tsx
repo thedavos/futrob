@@ -100,8 +100,13 @@ function setVisibility(next: DocumentVisibilityState) {
   });
 }
 
-/** Another tab changes who is signed in. This tab is suspended and never hears about it. */
-async function anotherTabSignsIn(user: User | null) {
+/** Another tab changes who is signed in. This tab is suspended and never hears the notice. */
+function anotherTabSignsIn(user: User | null) {
+  sessionUser = user;
+}
+
+/** Another tab, with its own QueryClient, signs in and announces it to every open tab. */
+async function anotherTabSignsInAndAnnounces(user: User) {
   const { announceIdentityChange } = await import("@/shared/presentation/query/identity-change.ts");
   sessionUser = user;
   announceIdentityChange(new QueryClient());
@@ -141,10 +146,10 @@ describe("private content when the tab comes back", () => {
   it("never shows the previous user's data after another tab signed in someone else", async () => {
     await openTab();
     expect(await screen.findByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
-    await userEvent.type(screen.getByRole("textbox", { name: "Nota" }), "borrador de Ana");
+    await userEvent.type(screen.getByRole("textbox", { name: "Nota" }), "nota");
 
     setVisibility("hidden");
-    await anotherTabSignsIn(BRUNO);
+    anotherTabSignsIn(BRUNO);
     const answerSessionCheck = holdNextSessionCheck();
     setVisibility("visible");
 
@@ -188,7 +193,7 @@ describe("private content when the tab comes back", () => {
     expect(await screen.findByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
 
     setVisibility("hidden");
-    await anotherTabSignsIn(null);
+    anotherTabSignsIn(null);
     const answerSessionCheck = holdNextSessionCheck();
     setVisibility("visible");
 
@@ -215,5 +220,21 @@ describe("private content when the tab comes back", () => {
     await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
 
     expect(await screen.findByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
+  });
+
+  it("hides the previous user's data in a visible tab as soon as the notice arrives", async () => {
+    await openTab();
+    expect(await screen.findByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
+
+    const answerSessionCheck = holdNextSessionCheck();
+    await anotherTabSignsInAndAnnounces(BRUNO);
+
+    expect(await screen.findByText("Comprobando sesión…")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Ana Ruiz" })).toBeNull();
+
+    await answerSessionCheck();
+
+    expect(await screen.findByRole("heading", { name: "Bruno Díaz" })).toBeVisible();
+    expect(screen.queryByText("Ana Ruiz")).toBeNull();
   });
 });
