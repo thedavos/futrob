@@ -1,25 +1,24 @@
 # Propuesta: antelación mínima de reprogramación
 
-**Estado:** fronteras validadas el 2026-10-12. No implementada. Sin ID DEC en
-[open-decisions.md](/product/open-decisions.md).
+**Estado:** referencia histórica de la propuesta validada el 2026-10-12,
+registrada como **DEC-035** en [open-decisions.md](/product/open-decisions.md).
+Implementada en [PR #156](https://github.com/thedavos/futrob/pull/156).
 **Tarea:** 6. Precisar `minimumRescheduleNoticeHours`.
 **Validación:** responsable de producto, este hilo. Se adoptan las respuestas
 recomendadas de la §11.
-**Checkout observado:** `github/main` @ `79776dd6`.
-**Vigencia hasta el DEC:** este archivo manda la semántica del aviso. La guía de
-negociación solo apunta aquí. [open-decisions.md](/product/open-decisions.md)
-aún no registra un ID.
-**Fuera de este corte:** DEC-032, DEC-033 y cualquier otra edición de
-[open-decisions.md](/product/open-decisions.md). La guía de negociación no toca
+**Checkout observado al elaborar la propuesta:** `github/main` @ `79776dd6`.
+**Vigencia:** DEC-035 registra la decisión canónica. Este archivo conserva las
+fronteras, los vectores de comportamiento y las alternativas como historial.
+**Fuera de este corte:** DEC-032 y DEC-033. La implementación del aviso no cambia
 TTL ni escalada.
 
-Este archivo es el contrato de las pruebas del desarrollo posterior. Cada vector usa
+Este archivo conserva el contrato de las pruebas de PR #156. Cada vector usa
 instantes literales y un resultado concreto. No se escriben tests sobre este texto.
 
 ## 1. La regla en lenguaje sencillo
 
-El reglamento de cada etapa ya pide un aviso mínimo en horas. Hoy ese número se guarda
-y no se aplica.
+El reglamento de cada etapa pide un aviso mínimo en horas. Antes de PR #156 ese
+número se guardaba sin aplicarse; el PR incorpora su validación en Scheduling.
 
 La regla validada es esta:
 
@@ -34,9 +33,9 @@ A las 08:00:00.000 UTC del mismo día todavía puedes proponer un cambio a una f
 lejana. A las 08:00:00.001 UTC ya no. Si el partido actual es en una semana pero
 propones jugar en 1 hora, también se bloquea.
 
-## 2. Qué hay hoy
+## 2. Contexto observado antes de la implementación
 
-Observado en este checkout:
+Observado en `github/main` @ `79776dd6`, al elaborar la propuesta:
 
 - Competitions guarda `minimumRescheduleNoticeHours` por etapa. Entero `>= 0`.
   Default de alta de draft: `12`. La UI lo etiqueta «Aviso mínimo (horas)».
@@ -53,9 +52,10 @@ Observado en este checkout:
 - La edición auditada del fixture (`encounters.schedule.manage`) es otro camino. No
   pasa por `ScheduleChangeRequest`.
 
-El hueco abierto está escrito en la arquitectura de negociación: antelación respecto
-del horario actual, del propuesto o de ambos. [#107](https://github.com/thedavos/futrob/issues/107)
-deja la antelación mínima pendiente y pide no inventar la regla al implementar.
+El hueco entonces abierto en la arquitectura de negociación era la antelación
+respecto del horario actual, del propuesto o de ambos.
+[#107](https://github.com/thedavos/futrob/issues/107) pedía validar la regla antes
+de implementarla. DEC-035 registra la respuesta y PR #156 la aplica.
 
 Fuentes: [prd.md](/product/prd.md) §6–11, [mvp-requirements.md](/product/mvp-requirements.md)
 FR-08 y FTR-SCH-001…003, [domain-glossary.md](/product/domain-glossary.md) §6,
@@ -117,9 +117,9 @@ muerto hasta una edición de fixture. Inferred: en FC Clubs el no-show y el fall
 de servidor son frecuentes. C2 (saltar el aviso del actual si `T_actual <= now`)
 es la lectura validada. C1 queda descartada. Ver §10.
 
-Este archivo no asigna un ID DEC. El registro canónico sigue en
-[open-decisions.md](/product/open-decisions.md). Este hilo no lo edita para no
-pisar el corte DEC-032/033.
+La decisión está registrada como DEC-035 en
+[open-decisions.md](/product/open-decisions.md). Su registro conserva la historia
+y las secciones de DEC-032/033.
 
 ## 5. Frontera exacta
 
@@ -219,7 +219,6 @@ tensión si ambos defaults quedan en 12 horas. Ver §11.
 
 ### Fuera de alcance
 
-- Implementar el predicado en código.
 - TTL, expiración, estado `escalated` o walkover (DEC-032/033).
 - Ligar la edición de fixture al aviso.
 - Cambiar el default `12` del draft.
@@ -292,10 +291,10 @@ es mover solo el slot lejano.
 V6-24 es C2, ya validada. C1 habría convertido esa fila en aviso actual. V6-25
 no cambia.
 
-## 8. Qué hereda el desarrollo posterior
+## 8. Contrato implementado en PR #156
 
-Las fronteras de la §5 y la columna C de V6-01…V6-28 son el contrato. El trabajo
-de código, en un PR distinto, debe:
+Las fronteras de la §5 y la columna C de V6-01…V6-28 son el contrato implementado
+en [PR #156](https://github.com/thedavos/futrob/pull/156):
 
 1. Aplicar los predicados de la §5 en crear, contraproponer y aceptar.
 2. Dejar rechazar, listar y leer sin aviso.
@@ -305,7 +304,8 @@ de código, en un PR distinto, debe:
    V6-21 junto a V6-22, V6-10 junto a V6-08, V6-20 junto a V6-08).
 5. No afirmar el contrato leyendo la constante `12` ni este Markdown.
 
-No implementar nada de eso en este PR.
+PR #153 validó la propuesta sin cambios de runtime. PR #156 implementa este
+contrato y sus pruebas de comportamiento.
 
 ## 9. Relación con otras decisiones
 
@@ -362,7 +362,7 @@ quedan descartados. El desarrollo posterior no las reabre.
 | 5   | ¿`N = 0`?                                        | **Apaga solo el aviso.** «Futuro y distinto» sigue.                                      | V6-10 y V6-11 crean. V6-12 fecha inválida.                                       |
 | 6   | ¿Revisar el default 12 frente al TTL de DEC-032? | **No se decide aquí.** La tensión queda documentada.                                     | §9. El corte DEC-032/033 es [#152](https://github.com/thedavos/futrob/pull/152). |
 
-Siguiente paso de producto, no de este PR: registrar la decisión en
-[open-decisions.md](/product/open-decisions.md) cuando no pise el hilo
-DEC-032/033. La guía de negociación ya apunta a este archivo. Siguiente paso de
-código: otro PR que implemente V6-01…V6-28.
+La validación de producto se incorporó en PR #153. DEC-035 quedó registrada en
+[open-decisions.md](/product/open-decisions.md) y PR #156 implementa la política
+con V6-01…V6-28 como pruebas de comportamiento. Las alternativas y respuestas de
+este archivo se conservan como historial; DEC-032/033 siguen siendo otro corte.

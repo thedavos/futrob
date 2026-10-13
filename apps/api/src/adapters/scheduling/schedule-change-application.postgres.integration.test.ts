@@ -90,6 +90,130 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
     for (const schema of schemas.splice(0)) await schema.drop();
   });
 
+  it("persists nothing when creation misses the notice boundary, then creates at the exact boundary", async () => {
+    const pool = await migratedPool();
+    const flow = await applicationFlow(pool);
+    flow.setNow("2026-10-10T08:00:00.001Z");
+    const before = await scheduleState(pool);
+
+    expect(errorCode(await flow.tryPropose(11))).toBe("scheduling.reschedule_notice_not_met");
+    expect(await scheduleState(pool)).toEqual(before);
+
+    flow.setNow("2026-10-10T08:00:00.000Z");
+    const created = unwrap(await flow.tryPropose(11));
+    expect(created).toMatchObject({ status: "open", version: 1 });
+    expect(created.proposals.map((proposal) => proposal.proposedStartAt.toISOString())).toEqual([
+      D1,
+    ]);
+    expect(await encounterStart(pool)).toBe(D0);
+    const persisted = await scheduleState(pool);
+
+    flow.setNow("2026-10-11T20:00:00.000Z");
+    await flow.setNotice(48);
+    expect(unwrap(await flow.tryPropose(11)).id).toBe(created.id);
+    expect(await scheduleState(pool)).toEqual(persisted);
+  });
+
+  it("preserves the current proposal and every row on a denied counter, then accepts its boundary neighbor", async () => {
+    const pool = await migratedPool();
+    const flow = await applicationFlow(pool);
+    const created = await flow.propose(11);
+    const target = { proposalId: created.proposals[0].id, version: 1 };
+    const before = await scheduleState(pool);
+    flow.setNow("2026-10-10T08:00:00.001Z");
+
+    expect(errorCode(await flow.counter(captainB, teamB, target, 12))).toBe(
+      "scheduling.reschedule_notice_not_met",
+    );
+    expect(await scheduleState(pool)).toEqual(before);
+
+    flow.setNow("2026-10-10T08:00:00.000Z");
+    const countered = unwrap(await flow.counter(captainB, teamB, target, 12));
+    expect(countered.request).toMatchObject({ status: "open", version: 2 });
+    expect(
+      countered.request.proposals.map((proposal) => proposal.proposedStartAt.toISOString()),
+    ).toEqual([D1, D2]);
+    expect(await encounterStart(pool)).toBe(D0);
+    const persisted = await scheduleState(pool);
+    flow.setNow(D2);
+    await flow.setNotice(48);
+    expect(unwrap(await flow.counter(captainB, teamB, target, 12)).replayed).toBe(true);
+    expect(await scheduleState(pool)).toEqual(persisted);
+  });
+
+  it.each([false, true])(
+    "revalidates notice before acceptance (organizer required: %s) without persisting a denial",
+    async (requiresOrganizerApproval) => {
+      const pool = await migratedPool();
+      const flow = await applicationFlow(pool, { requiresOrganizerApproval });
+      const created = await flow.propose(11);
+      const target = { proposalId: created.proposals[0].id, version: 1 };
+      const before = await scheduleState(pool);
+      flow.setNow("2026-10-10T08:00:00.001Z");
+      const actor = requiresOrganizerApproval ? organizer : captainB;
+      const responder: ScheduleChangeResponder = requiresOrganizerApproval
+        ? { authority: "organizer" }
+        : rival(teamB);
+
+      expect(errorCode(await flow.accept(actor, responder, target))).toBe(
+        "scheduling.reschedule_notice_not_met",
+      );
+      expect(await scheduleState(pool)).toEqual(before);
+
+      flow.setNow("2026-10-10T08:00:00.000Z");
+      const accepted = unwrap(await flow.accept(actor, responder, target));
+      expect(accepted.request).toMatchObject({
+        status: requiresOrganizerApproval ? "open" : "accepted",
+        version: 2,
+      });
+      expect(await encounterStart(pool)).toBe(requiresOrganizerApproval ? D0 : D1);
+      expect(await rowCounts(pool)).toEqual({
+        applications: requiresOrganizerApproval ? 0 : 1,
+        applicationSlots: requiresOrganizerApproval ? 0 : 2,
+        receipts: 1,
+        proposals: 1,
+      });
+      const persisted = await scheduleState(pool);
+      flow.setNow(D1);
+      await flow.setNotice(48);
+      expect(unwrap(await flow.accept(actor, responder, target)).replayed).toBe(true);
+      expect(await scheduleState(pool)).toEqual(persisted);
+    },
+  );
+
+  it("rereads current N for final consent and preserves the earlier consent on denial", async () => {
+    const pool = await migratedPool();
+    const flow = await applicationFlow(pool, { requiresOrganizerApproval: true });
+    const created = await flow.propose(11);
+    flow.setNow("2026-10-10T02:00:00.000Z");
+    unwrap(
+      await flow.accept(captainB, rival(teamB), {
+        proposalId: created.proposals[0].id,
+        version: 1,
+      }),
+    );
+    const target = { proposalId: created.proposals[0].id, version: 2 };
+    const before = await scheduleState(pool);
+    await flow.setNotice(24);
+
+    expect(errorCode(await flow.accept(organizer, { authority: "organizer" }, target))).toBe(
+      "scheduling.reschedule_notice_not_met",
+    );
+    expect(await scheduleState(pool)).toEqual(before);
+
+    await flow.setNotice(0);
+    expect(
+      unwrap(await flow.accept(organizer, { authority: "organizer" }, target)).request.status,
+    ).toBe("accepted");
+    expect(await encounterStart(pool)).toBe(D1);
+    expect(await rowCounts(pool)).toEqual({
+      applications: 1,
+      applicationSlots: 2,
+      receipts: 2,
+      proposals: 1,
+    });
+  });
+
   it("moves D0 to D1 once with complete approvals and replays without new rows", async () => {
     const pool = await migratedPool();
     const flow = await applicationFlow(pool);
@@ -250,11 +374,16 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
 
     const conflict = await failing.accept(captainB, rival(teamB), target);
     expect(errorCode(conflict)).toBe("scheduling.fixture_update_conflict");
-    expect(await scheduleState(pool)).toEqual(before);
+    // The independent writer's revision survives; the failed application's writes do not.
+    const afterConcurrentEdit = {
+      ...before,
+      fixturePlans: before.fixturePlans.map((plan) => ({ ...plan, revision: 2 })),
+    };
+    expect(await scheduleState(pool)).toEqual(afterConcurrentEdit);
 
     const throwing = await applicationFlow(pool, {}, { publishFails: true });
     await expect(throwing.accept(captainB, rival(teamB), target)).rejects.toThrow("bus down");
-    expect(await scheduleState(pool)).toEqual(before);
+    expect(await scheduleState(pool)).toEqual(afterConcurrentEdit);
 
     const healthy = await applicationFlow(pool);
     const applied = unwrap(await healthy.accept(captainB, rival(teamB), target));
@@ -558,7 +687,7 @@ async function rowCounts(pool: Pool) {
 /** Every row a schedule application touches, in a stable order and as plain JSON. */
 async function scheduleState(pool: Pool) {
   const rows = async (sql: string) =>
-    JSON.parse(JSON.stringify((await pool.query(sql)).rows)) as unknown[];
+    JSON.parse(JSON.stringify((await pool.query(sql)).rows)) as Record<string, unknown>[];
   const starts = (list: unknown[]) =>
     list.map((row) => ({ start: new Date((row as { start: string }).start).toISOString() }));
   return {
@@ -570,8 +699,12 @@ async function scheduleState(pool: Pool) {
     fixture: starts(
       await rows(`SELECT scheduled_start_at AS start FROM fixture_encounters ORDER BY id`),
     ),
+    encounterRows: await rows(`SELECT * FROM encounter_schedule_snapshots ORDER BY encounter_id`),
+    fixtureRows: await rows(`SELECT * FROM fixture_encounters ORDER BY id`),
+    fixturePlans: await rows(`SELECT * FROM fixture_plans ORDER BY id`),
     slots: await rows(`SELECT * FROM official_matches ORDER BY encounter_id, slot`),
     request: await rows(`SELECT status, version FROM schedule_change_requests ORDER BY id`),
+    requestRows: await rows(`SELECT * FROM schedule_change_requests ORDER BY id`),
     proposals: await rows(`SELECT * FROM schedule_change_proposals ORDER BY id`),
     decisions: await rows(`SELECT * FROM schedule_change_decisions ORDER BY id`),
     receipts: await rows(`SELECT * FROM schedule_change_command_receipts ORDER BY id`),
@@ -630,9 +763,10 @@ async function applicationFlow(
   const encounters = new PostgresEncounterScheduleRepository(pool);
   const events: DomainEvent[] = [];
   const approved = new Set<EncounterId>();
+  let currentNow = NOW;
   const deps: AcceptScheduleChangeProposalDeps = {
     authorization: grants,
-    clock: { now: () => new Date(NOW) },
+    clock: { now: () => new Date(currentNow) },
     editGuard: new OfficialResultFixtureEditGuard(
       matches,
       {
@@ -683,6 +817,32 @@ async function applicationFlow(
     (await requests.findByIdempotencyKey(organizationId, key))?.id ?? "missing";
 
   return {
+    setNow: (now: string) => {
+      currentNow = now;
+    },
+    setNotice: async (hours: number) => {
+      const draft = competitionDraft(approvals.requiresOrganizerApproval ?? false);
+      const regularStage = draft.rules.regularStage;
+      if (!regularStage) throw new Error("Expected regular-stage rules");
+      await competitions.saveDraft({
+        ...draft,
+        rules: {
+          ...draft.rules,
+          regularStage: { ...regularStage, minimumRescheduleNoticeHours: hours },
+        },
+      });
+    },
+    tryPropose: (day: number) =>
+      create.execute({
+        ...target,
+        actorId: captainA,
+        requestingTeamId: teamA,
+        scope: { type: "entire_encounter" },
+        timeZone: "America/Lima",
+        proposedWallTime: lima(day),
+        reason: "Travel conflict",
+        idempotencyKey: "create-1",
+      }),
     approveResult: (id: EncounterId) => approved.add(id),
     rescheduled: () =>
       events.filter((event) => event.eventName === "scheduling.encounter-rescheduled"),

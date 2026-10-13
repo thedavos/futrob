@@ -4,6 +4,7 @@ import { requestIdSchema } from "./request-correlation.ts";
 /** Typed wire props for expected failures (ADR-0011). Keep keys stable for i18n/clients. */
 export const apiErrorDetailsSchema = z
   .object({
+    anchor: z.enum(["current", "proposed"]).optional(),
     organizationId: z.string().optional(),
     role: z.string().optional(),
     status: z.string().optional(),

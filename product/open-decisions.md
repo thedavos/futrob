@@ -179,6 +179,36 @@ documento.
 | DEC-033 | Escalada                         | Si expira sin acuerdo, estado `escalated` y el organizador puede fijar fecha o walkover. | Cierre operativo.          |
 | DEC-034 | Fecha límite de reprogramaciones | Configurable; tras ella solo organizador/staff.                                          | Control de calendario.     |
 
+### DEC-035 · Antelación mínima de reprogramación
+
+**Validada el 2026-10-12.** Fuente e historia de alternativas:
+[propuesta de antelación mínima](/product/proposals/reschedule-minimum-notice.md),
+mergeada en PR #153. Esta sección registra la opción C con C2; no cambia DEC-032/033.
+
+- Crear, contraproponer y aceptar releen `minimumRescheduleNoticeHours` de la etapa.
+  Usan un único `ClockPort.now()` dentro de la transacción y del lock del Encounter.
+- Cada slot afectado cuyo horario actual sea futuro exige `actual - now >= N × 3_600_000`.
+  Si el actual es pasado o igual a `now`, se omite únicamente ese aviso (C2).
+- La propuesta y cada horario resultante afectado exigen la misma duración exacta.
+  La frontera es inclusiva. `official_match` solo mira su slot; `entire_encounter`
+  mira todos y conserva su separación mediante el desplazamiento existente.
+- `N = 0` apaga ambos avisos; no relaja fecha futura/distinta, permisos, cupos,
+  alcance, reprogramación habilitada ni guardas de selección/resultado aprobado.
+- Aceptar revalida incluso antes de guardar un consentimiento parcial. Organizador
+  y rival siguen la misma política en negociación; editar el fixture sigue fuera.
+- Fallar devuelve `scheduling.reschedule_notice_not_met`, HTTP 409, con
+  `anchor: current | proposed`. El actual tiene prioridad si ambos avisos fallan.
+  Una propuesta no futura sigue dando `scheduling.invalid_schedule_change_date`.
+  No se escribe solicitud, propuesta, consentimiento, recibo, aplicación ni horario
+  por una denegación. Rechazar, leer y listar no aplican aviso.
+- Un replay autorizado con recibo conserva su resultado sin revalidar el aviso.
+  Un intento denegado sin recibo se evalúa de nuevo con las reglas y reloj vigentes.
+
+La tensión entre aviso y TTL de 12 horas queda documentada en la propuesta: abrir
+exactamente en la frontera puede dejar de permitir aceptar un milisegundo después.
+Este registro no resuelve TTL, escalada, deadline, walkover ni notificaciones.
+Los vectores V6-01…V6-28 de la propuesta son el contrato de comportamiento.
+
 ## 5. Datos EA y estadísticas
 
 | ID      | Decisión pendiente                | Default recomendado                                                                                                                                                                 | Motivo                               |

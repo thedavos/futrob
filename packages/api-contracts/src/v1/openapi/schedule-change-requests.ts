@@ -54,6 +54,16 @@ const commandFailures =
   "`scheduling.encounter_not_editable_for_schedule_change`, " +
   "`scheduling.reschedule_limit_reached`, `scheduling.fixture_update_conflict`.";
 
+const minimumNoticeRule =
+  "Create, counter and accept revalidate the stage's current minimum notice against the " +
+  "current and proposed times of every affected slot, including organizer consent. " +
+  "The exact boundary is inclusive; current times at or before now are exempt. " +
+  "Zero disables notice only: proposed dates must still be strictly future. " +
+  "A violation is 409 `scheduling.reschedule_notice_not_met`, with " +
+  "`details.anchor` equal to `current` or `proposed` (current takes priority). " +
+  "No request, consent, schedule or quota changes persist on denial. " +
+  "Recorded replays do not revalidate notice. ";
+
 function responseCommand(operationId: string, summary: string, requestSchema: string) {
   return {
     post: {
@@ -64,7 +74,11 @@ function responseCommand(operationId: string, summary: string, requestSchema: st
         "Answers the current proposal of an open request at `expectedVersion`. The actor comes " +
         "from service authentication; `responder` (or `teamId`) is only the capacity claimed, " +
         "and the server authorizes it. Repeating `commandKey` with the same payload replays " +
-        `the original outcome with \`replayed: true\` and no new effect. ${commandFailures}`,
+        `the original outcome with \`replayed: true\` and no new effect. ` +
+        (operationId === "rejectScheduleChangeProposal"
+          ? "Reject does not enforce minimum reschedule notice. "
+          : minimumNoticeRule) +
+        commandFailures,
       parameters: [encounterParameter, requestParameter, proposalParameter],
       requestBody: { required: true, content: jsonContent(requestSchema) },
       responses: {
@@ -103,6 +117,7 @@ export const scheduleChangeRequestOpenApiPaths = {
       operationId: "createScheduleChangeRequest",
       tags: ["encounters"],
       summary: "Create a schedule-change request without changing the fixture",
+      description: minimumNoticeRule,
       parameters: [encounterParameter],
       requestBody: { required: true, content: jsonContent("CreateScheduleChangeRequest") },
       responses: {
