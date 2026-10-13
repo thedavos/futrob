@@ -5,7 +5,7 @@ import type { FixtureStageId } from "../entities/fixture-plan.ts";
 export interface CompetitionRescheduleRules {
   readonly allowRescheduling: boolean;
   readonly maxReschedulesPerTeam: number;
-  /** Carried for the owner contract; its enforcement semantics are not decided yet. */
+  /** Exact minimum hours before current future slots and proposed starts; zero disables notice. */
   readonly minimumNoticeHours: number;
   readonly requiresOpponentApproval: boolean;
   readonly requiresOrganizerApproval: boolean;
