@@ -223,4 +223,48 @@ Validada el 2026-10-12, registrada en DEC-035:
   [reschedule-minimum-notice.md](/product/proposals/reschedule-minimum-notice.md);
   registro canónico en [DEC-035](/product/open-decisions.md#dec-035--antelación-mínima-de-reprogramación).
 
-TTL, expiración y escalado (DEC-032/033) quedan fuera de este corte.
+## Vencimiento y resolución (DEC-032 / DEC-033)
+
+Cada propuesta guarda `responseDeadline` en UTC desde su `createdAt`, con las horas de etapa
+`rescheduleProposalExpiryHours` (1–72, default 12). La regla sigue congelada al publicar.
+`minimumRescheduleNoticeHours` es una política independiente.
+
+La migración `0055_schedule_change_expiry_resolution.sql` añade el campo y calcula todos los
+plazos legacy desde su creación original. Los casos ya vencidos no reciben una ventana nueva.
+Las guardas de aceptar/rechazar/contraproponer exigen `t < D` después de comprobar un replay
+válido, dentro de la transacción y del lock. El runner retrasado no permite respuestas tardías.
+
+`ExpireScheduleChangeProposalUseCase` comparte lock y CAS con la negociación. Pasa a
+`escalated`, incrementa versión y añade una sola acción `schedule_change_expired` y recibo.
+Las solicitudes `open` y `escalated` conservan la exclusión por alcance en los índices de
+Postgres. El reloj del kickoff no dispara la transición.
+
+`POST /api/v1/internal/scheduling/reschedule-expiry/run`, autenticado con
+`INTERNAL_JOB_SECRET`, recupera hasta 50 casos por barrido, ordenados por deadline y solicitud.
+Cron web lo despierta cada minuto mediante su worker independiente. Una caída o fallo antes
+del commit deja el caso pendiente; una repetición después del commit lo omite.
+`SCHEDULING_SYSTEM_ACTOR_ID` debe referenciar un actor existente provisionado por identidad.
+Si no está configurado o no existe, el endpoint devuelve 503 y no procesa casos.
+El actor puede ser el mismo actor provisionado usado por otros jobs, pero este job y su
+configuración pertenecen a Scheduling. No crea actores ni usa la configuración de DEC-021.
+
+El organizador usa `POST /encounters/{encounterId}/schedule-change-requests/{requestId}/resolve`
+con `proposalId`, `expectedVersion`, `commandKey` y una resolución:
+
+- `schedule_set`: motivo e inicio UTC futuro/distinto. Usa el aplicador compartido con aceptar,
+  registra aplicación y handoff, consume cupo del Team solicitante y mantiene las guardas de
+  slots, selección y resultados. No requiere consentimientos antiguos ni aviso mínimo.
+- `schedule_kept`: motivo, sin aplicación ni cupo.
+- `walkover_intended`: motivo y `winningTeamId` participante; intención sobre el alcance de
+  la solicitud, sin horario nuevo, aplicación, cupo, OfficialResult o proyección oficial.
+
+Los tres cierran como `resolved_by_organizer` y añaden acción de auditoría append-only con
+resolución, actor, deadline y versiones. Replay requiere autorización vigente y conserva
+el resultado histórico. El DTO expone `actions` y `allowedActions`; `resolve` solo aparece
+para el actor autorizado sobre una solicitud `escalated`. La sección operativa se compone
+sobre el Encounter canónico de #116 / PR #154.
+
+Límites operativos: backlog de más de 50 casos requiere varios barridos. La indisponibilidad
+del actor o del runner retrasa la escalada visible, pero no abre la ventana de respuesta.
+El handoff existente recupera el recálculo de candidatos; no se afirma entrega de correo.
+Walkover oficial sigue pendiente de un contrato propio en Results.
