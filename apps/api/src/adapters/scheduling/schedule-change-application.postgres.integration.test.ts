@@ -117,6 +117,7 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
   it("preserves the current proposal and every row on a denied counter, then accepts its boundary neighbor", async () => {
     const pool = await migratedPool();
     const flow = await applicationFlow(pool);
+    flow.setNow("2026-10-10T07:00:00.000Z");
     const created = await flow.propose(11);
     const target = { proposalId: created.proposals[0].id, version: 1 };
     const before = await scheduleState(pool);
@@ -146,6 +147,7 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
     async (requiresOrganizerApproval) => {
       const pool = await migratedPool();
       const flow = await applicationFlow(pool, { requiresOrganizerApproval });
+      flow.setNow("2026-10-10T07:00:00.000Z");
       const created = await flow.propose(11);
       const target = { proposalId: created.proposals[0].id, version: 1 };
       const before = await scheduleState(pool);
@@ -184,6 +186,7 @@ suite("applying an accepted schedule change on Postgres", { timeout: 60_000 }, (
   it("rereads current N for final consent and preserves the earlier consent on denial", async () => {
     const pool = await migratedPool();
     const flow = await applicationFlow(pool, { requiresOrganizerApproval: true });
+    flow.setNow("2026-10-10T01:00:00.000Z");
     const created = await flow.propose(11);
     flow.setNow("2026-10-10T02:00:00.000Z");
     unwrap(
@@ -1009,6 +1012,7 @@ function competitionDraft(requiresOrganizerApproval: boolean): CompetitionDraft 
         allowRescheduling: true,
         maxReschedulesPerTeam: 2,
         minimumRescheduleNoticeHours: 12,
+        rescheduleProposalExpiryHours: 12,
         rescheduleRequiresOpponentApproval: true,
         rescheduleRequiresOrganizerApproval: requiresOrganizerApproval,
       },

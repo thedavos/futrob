@@ -9,6 +9,7 @@ export interface CompetitionMatchRules {
   readonly allowRescheduling: boolean;
   readonly maxReschedulesPerTeam: number | null;
   readonly minimumRescheduleNoticeHours: number;
+  readonly rescheduleProposalExpiryHours: number;
   readonly rescheduleRequiresOpponentApproval: boolean;
   readonly rescheduleRequiresOrganizerApproval: boolean;
 }

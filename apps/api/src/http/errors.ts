@@ -77,6 +77,7 @@ function statusForFailureCode(code: string): number {
     code === "game_data.provider_unavailable" ||
     code === "game_data.provider_refresh_in_progress" ||
     code === "results.candidate_data_unavailable" ||
+    code === "scheduling.schedule_change_expiry_actor_unavailable" ||
     code === "results.confirmation_expiry_actor_unavailable"
   ) {
     return 503;
@@ -94,6 +95,7 @@ function statusForFailureCode(code: string): number {
   }
   if (
     code === "results.confirmation_window_closed" ||
+    code === "scheduling.schedule_change_response_window_closed" ||
     code.includes("conflict") ||
     code.includes("exhausted") ||
     code.includes("roster_full") ||

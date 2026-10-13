@@ -6,6 +6,7 @@ import {
   createScheduleChangeRequestSchema,
   listScheduleChangeRequestsResponseSchema,
   scheduleChangeRequestSchema,
+  resolveScheduleChangeRequestSchema,
 } from "./schemas.ts";
 
 const encounter = {
@@ -133,9 +134,12 @@ const scheduleChangeRequest = {
       proposedByTeamId: "team-home",
       reason: "Team travel conflict",
       createdAt: "2026-09-14T20:00:00.000Z",
+      responseDeadline: "2026-09-15T08:00:00.000Z",
     },
   ],
   decisions: [],
+  actions: [],
+  allowedActions: [],
   application: null,
   createdAt: "2026-09-14T20:00:00.000Z",
   updatedAt: "2026-09-14T20:00:00.000Z",
@@ -201,5 +205,47 @@ describe("schedule change request contracts", () => {
         responder: { authority: "organizer" },
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("organizer resolution contract", () => {
+  it("requires the outcome payload and strips forged actor authority", () => {
+    const command = { proposalId: "proposal-1", expectedVersion: 2, commandKey: " resolve-1 " };
+    expect(
+      resolveScheduleChangeRequestSchema.parse({
+        ...command,
+        actorId: "forged",
+        resolution: { outcome: "schedule_kept", reason: " Keep current date " },
+      }),
+    ).toEqual({
+      proposalId: "proposal-1",
+      expectedVersion: 2,
+      commandKey: "resolve-1",
+      resolution: { outcome: "schedule_kept", reason: "Keep current date" },
+    });
+    for (const resolution of [
+      { outcome: "schedule_set", reason: "New date" },
+      { outcome: "walkover_intended", reason: "Opponent absent" },
+      { outcome: "schedule_kept", reason: "   " },
+      { outcome: "schedule_set", reason: "New date", proposedStartAt: "2026-10-20T10:00:00-05:00" },
+    ]) {
+      expect(resolveScheduleChangeRequestSchema.safeParse({ ...command, resolution }).success).toBe(
+        false,
+      );
+    }
+    expect(
+      resolveScheduleChangeRequestSchema.parse({
+        ...command,
+        resolution: {
+          outcome: "schedule_set",
+          reason: "New date",
+          proposedStartAt: "2026-10-20T15:00:00.000Z",
+        },
+      }).resolution,
+    ).toEqual({
+      outcome: "schedule_set",
+      reason: "New date",
+      proposedStartAt: "2026-10-20T15:00:00.000Z",
+    });
   });
 });

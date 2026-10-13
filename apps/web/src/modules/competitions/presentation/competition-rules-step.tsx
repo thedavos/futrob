@@ -11,6 +11,7 @@ import type {
   CompetitionMatchRulesDto,
   UpdateCompetitionDraftRequest,
 } from "@futrob/api-contracts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { NumberField, RuleToggle, SelectField, StepHeading } from "./competition-setup-fields.tsx";
 
 const TIEBREAKS = ["Puntos", "Diferencia de goles", "Goles a favor"] as const;
@@ -128,6 +129,7 @@ export function RulesStep({
   onChange: (rules: UpdateCompetitionDraftRequest["rules"]) => void;
   disabled: boolean;
 }) {
+  const { t } = useI18n();
   const knockoutLabel = form.format === "league-playoffs" ? "Playoffs" : "Eliminación";
   const stages: Stage[] = [];
   if (form.rules.regularStage) {
@@ -271,6 +273,28 @@ export function RulesStep({
                       }
                     />
                   </div>
+                  <NumberField
+                    disabled={disabled || !stage.rules.allowRescheduling}
+                    id={`${stage.key}-proposal-expiry`}
+                    label={t("competitions.reschedule.expiryLabel")}
+                    description={t("competitions.reschedule.expiryHelp")}
+                    min={1}
+                    max={72}
+                    value={stage.rules.rescheduleProposalExpiryHours}
+                    error={
+                      !Number.isInteger(stage.rules.rescheduleProposalExpiryHours) ||
+                      stage.rules.rescheduleProposalExpiryHours < 1 ||
+                      stage.rules.rescheduleProposalExpiryHours > 72
+                        ? t("competitions.reschedule.expiryInvalid")
+                        : undefined
+                    }
+                    onChange={(rescheduleProposalExpiryHours) =>
+                      updateStage(stage.key, {
+                        ...stage.rules,
+                        rescheduleProposalExpiryHours: rescheduleProposalExpiryHours ?? 0,
+                      })
+                    }
+                  />
                   <RuleToggle
                     checked={stage.rules.rescheduleRequiresOpponentApproval}
                     disabled={disabled || !stage.rules.allowRescheduling}

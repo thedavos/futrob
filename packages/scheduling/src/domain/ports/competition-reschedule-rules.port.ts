@@ -7,6 +7,7 @@ export interface CompetitionRescheduleRules {
   readonly maxReschedulesPerTeam: number;
   /** Exact minimum hours before current future slots and proposed starts; zero disables notice. */
   readonly minimumNoticeHours: number;
+  readonly proposalExpiryHours: number;
   readonly requiresOpponentApproval: boolean;
   readonly requiresOrganizerApproval: boolean;
 }

@@ -7,6 +7,74 @@ export type Message = string | ((params: TranslationParams) => string);
 const count = (params: TranslationParams): number => Number(params.count ?? 0);
 
 const es = {
+  "competitions.reschedule.expiryLabel": "Plazo de respuesta de la propuesta (horas)",
+  "competitions.reschedule.expiryHelp":
+    "De 1 a 72 horas desde cada propuesta. Al vencer, el organizador resuelve la solicitud.",
+  "competitions.reschedule.expiryInvalid": "Introduce horas enteras entre 1 y 72.",
+  "reschedule.title": "Reprogramaciones",
+  "reschedule.description":
+    "Consulta las propuestas y resuelve las solicitudes escaladas. El silencio no acepta un cambio.",
+  "reschedule.loading": "Cargando reprogramaciones…",
+  "reschedule.empty": "Sin solicitudes de reprogramación",
+  "reschedule.emptyHelp": "Las solicitudes y sus decisiones aparecerán aquí.",
+  "reschedule.forbidden": "No tienes acceso al historial de reprogramaciones.",
+  "reschedule.error": "No pudimos cargar las reprogramaciones.",
+  "reschedule.refresh": "Actualizar reprogramaciones",
+  "reschedule.refreshFailed":
+    "No pudimos actualizar el historial. Los datos mostrados pueden haber cambiado.",
+  "reschedule.status.open": "En negociación",
+  "reschedule.status.accepted": "Horario aplicado por consentimiento",
+  "reschedule.status.rejected": "Rechazada",
+  "reschedule.status.cancelled": "Cancelada",
+  "reschedule.status.expired": "Vencida",
+  "reschedule.status.escalated": "Escalada al organizador",
+  "reschedule.status.resolved_by_organizer": "Resuelta por el organizador",
+  "reschedule.scope.encounter": "Todo el enfrentamiento",
+  "reschedule.scope.slot": "Partido {slot}",
+  "reschedule.requestedBy": "Solicitada por {team}",
+  "reschedule.proposedBy": "Propuesta de {team}",
+  "reschedule.proposedStart": "Inicio propuesto",
+  "reschedule.deadline": "Plazo de respuesta: {date}",
+  "reschedule.history": "Historial de propuestas y decisiones",
+  "reschedule.proposal": "Propuesta {number}",
+  "reschedule.consent": "Consentimiento de {actor}",
+  "reschedule.rejection": "Rechazo de {actor}",
+  "reschedule.organizer": "Organizador",
+  "reschedule.system": "Sistema",
+  "reschedule.expiredAt": "Plazo vencido el {deadline}; escalada procesada el {processed}.",
+  "reschedule.resolvedAt": "Resolución registrada el {date} por {actor}.",
+  "reschedule.noPermission":
+    "Solo un operador con permiso para resolver puede cerrar esta solicitud escalada.",
+  "reschedule.resolve": "Resolver solicitud escalada",
+  "reschedule.outcome": "Desenlace",
+  "reschedule.outcome.schedule_set": "Fijar nueva fecha",
+  "reschedule.outcome.schedule_kept": "Conservar horario",
+  "reschedule.outcome.walkover_intended": "Registrar intención de walkover",
+  "reschedule.keepHelp": "Conserva el horario actual y cierra la solicitud sin consumir cupo.",
+  "reschedule.setHelp":
+    "Aplica la nueva fecha al alcance solicitado y consume cupo del equipo que abrió la solicitud.",
+  "reschedule.walkoverHelp":
+    "Solo registra una intención. No crea un resultado oficial ni cambia estadísticas, tabla o bracket.",
+  "reschedule.reason": "Motivo de la resolución",
+  "reschedule.reasonRequired": "Escribe un motivo para cerrar la solicitud.",
+  "reschedule.newStart": "Nueva fecha y hora",
+  "reschedule.zone": "Hora de la competición: {zone}",
+  "reschedule.dateInvalid": "Introduce una fecha válida en la zona de la competición.",
+  "reschedule.winningTeam": "Equipo ganador de la intención",
+  "reschedule.winnerRequired": "Elige un equipo ganador para registrar la intención.",
+  "reschedule.save": "Guardar resolución",
+  "reschedule.saving": "Guardando resolución…",
+  "reschedule.success": "Resolución guardada. El historial refleja el cierre.",
+  "reschedule.conflict":
+    "La solicitud cambió. Se ha actualizado el historial; revisa su estado antes de volver a resolver.",
+  "errors.scheduling.schedule_change_response_window_closed":
+    "El plazo de respuesta venció. El organizador debe resolver la solicitud.",
+  "errors.scheduling.schedule_change_not_escalated":
+    "La solicitud todavía no está escalada para su resolución.",
+  "errors.scheduling.invalid_schedule_change_resolution":
+    "Comprueba el desenlace, el motivo y el equipo de la resolución.",
+  "errors.scheduling.schedule_change_concurrency_conflict":
+    "La solicitud cambió. Actualiza el historial antes de resolver.",
   "app.description":
     "Organiza ligas y copas de EA SPORTS FC Clubs con datos de partidos, resultados oficiales, tablas y brackets en un solo lugar.",
   "app.title": "Futrob | Competiciones FC Clubs",
@@ -1204,6 +1272,16 @@ export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  "reschedule.scope.slot": { slot: number };
+  "reschedule.requestedBy": { team: string };
+  "reschedule.proposedBy": { team: string };
+  "reschedule.deadline": { date: string };
+  "reschedule.proposal": { number: number };
+  "reschedule.consent": { actor: string };
+  "reschedule.rejection": { actor: string };
+  "reschedule.expiredAt": { deadline: string; processed: string };
+  "reschedule.resolvedAt": { date: string; actor: string };
+  "reschedule.zone": { zone: string };
   readonly "encounter.title": { readonly home: string; readonly away: string };
   readonly "encounter.round": { readonly number: number };
   readonly "encounter.roundOf": { readonly number: number; readonly total: number };
@@ -1357,6 +1435,76 @@ export type ParameterizedMessageKey = keyof MessageParamsByKey;
 export type ParameterlessMessageKey = Exclude<MessageKey, ParameterizedMessageKey>;
 
 const en: Catalog = {
+  "competitions.reschedule.expiryLabel": "Proposal response window (hours)",
+  "competitions.reschedule.expiryHelp":
+    "Between 1 and 72 hours from each proposal. Once it expires, the organizer resolves the request.",
+  "competitions.reschedule.expiryInvalid": "Enter whole hours between 1 and 72.",
+  "reschedule.title": "Rescheduling",
+  "reschedule.description":
+    "Review proposals and resolve escalated requests. Silence never accepts a change.",
+  "reschedule.loading": "Loading reschedule requests…",
+  "reschedule.empty": "No reschedule requests",
+  "reschedule.emptyHelp": "Requests and their decisions will appear here.",
+  "reschedule.forbidden": "You do not have access to the reschedule history.",
+  "reschedule.error": "We could not load the reschedule requests.",
+  "reschedule.refresh": "Refresh reschedule requests",
+  "reschedule.refreshFailed":
+    "We could not refresh the history. The displayed data may have changed.",
+  "reschedule.status.open": "In negotiation",
+  "reschedule.status.accepted": "Schedule applied by consent",
+  "reschedule.status.rejected": "Rejected",
+  "reschedule.status.cancelled": "Cancelled",
+  "reschedule.status.expired": "Expired",
+  "reschedule.status.escalated": "Escalated to the organizer",
+  "reschedule.status.resolved_by_organizer": "Resolved by the organizer",
+  "reschedule.scope.encounter": "Entire encounter",
+  "reschedule.scope.slot": "Match {slot}",
+  "reschedule.requestedBy": "Requested by {team}",
+  "reschedule.proposedBy": "Proposal from {team}",
+  "reschedule.proposedStart": "Proposed kickoff",
+  "reschedule.deadline": "Response deadline: {date}",
+  "reschedule.history": "Proposal and decision history",
+  "reschedule.proposal": "Proposal {number}",
+  "reschedule.consent": "Consent from {actor}",
+  "reschedule.rejection": "Rejection from {actor}",
+  "reschedule.organizer": "Organizer",
+  "reschedule.system": "System",
+  "reschedule.expiredAt":
+    "Response window closed at {deadline}; escalation processed at {processed}.",
+  "reschedule.resolvedAt": "Resolution recorded at {date} by {actor}.",
+  "reschedule.noPermission":
+    "Only an operator with permission to resolve can close this escalated request.",
+  "reschedule.resolve": "Resolve escalated request",
+  "reschedule.outcome": "Outcome",
+  "reschedule.outcome.schedule_set": "Set a new date",
+  "reschedule.outcome.schedule_kept": "Keep the schedule",
+  "reschedule.outcome.walkover_intended": "Record walkover intention",
+  "reschedule.keepHelp":
+    "Keeps the current schedule and closes the request without consuming allowance.",
+  "reschedule.setHelp":
+    "Applies the new date to the requested scope and consumes allowance from the Team that opened the request.",
+  "reschedule.walkoverHelp":
+    "Records an intention only. It creates no official result and changes no statistics, standings or bracket.",
+  "reschedule.reason": "Resolution reason",
+  "reschedule.reasonRequired": "Enter a reason to close the request.",
+  "reschedule.newStart": "New date and time",
+  "reschedule.zone": "Competition time: {zone}",
+  "reschedule.dateInvalid": "Enter a valid date in the competition time zone.",
+  "reschedule.winningTeam": "Winning Team for the intention",
+  "reschedule.winnerRequired": "Choose a winning Team to record the intention.",
+  "reschedule.save": "Save resolution",
+  "reschedule.saving": "Saving resolution…",
+  "reschedule.success": "Resolution saved. The history reflects the closed request.",
+  "reschedule.conflict":
+    "The request changed. The history has been refreshed; review its state before resolving again.",
+  "errors.scheduling.schedule_change_response_window_closed":
+    "The response window closed. The organizer must resolve the request.",
+  "errors.scheduling.schedule_change_not_escalated":
+    "The request has not yet escalated for resolution.",
+  "errors.scheduling.invalid_schedule_change_resolution":
+    "Check the outcome, reason and Team for this resolution.",
+  "errors.scheduling.schedule_change_concurrency_conflict":
+    "The request changed. Refresh the history before resolving.",
   "app.description":
     "Run EA SPORTS FC Clubs leagues and cups with match data, official results, tables, and brackets in one place.",
   "app.title": "Futrob | FC Clubs competitions",

@@ -26,6 +26,7 @@ const stage = (count: 1 | 2): CompetitionMatchRulesDto => ({
   allowRescheduling: true,
   maxReschedulesPerTeam: null,
   minimumRescheduleNoticeHours: 24,
+  rescheduleProposalExpiryHours: 12,
   rescheduleRequiresOpponentApproval: true,
   rescheduleRequiresOrganizerApproval: false,
 });

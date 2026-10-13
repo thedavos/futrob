@@ -31,6 +31,7 @@ function proposal(
     proposedByActorId: actorId,
     proposedByTeamId: teamId,
     reason: "Team travel conflict",
+    responseDeadline: new Date("2026-10-02T00:00:00.000Z"),
     createdAt: now,
     ...overrides,
   };
@@ -61,6 +62,7 @@ function request(
     version: 1,
     decisions: [],
     application: null,
+    actions: [],
     proposals: [proposal({ id: `${overrides.id}-proposal` })],
     createdAt: now,
     updatedAt: now,
@@ -258,6 +260,7 @@ describe("InMemoryScheduleChangeRequestRepository", () => {
       id: "proposal-2",
       proposedStartAt: new Date("2026-09-22T21:30:00.000Z"),
       reason: "Counter with a later kickoff",
+      responseDeadline: new Date("2026-10-02T00:00:00.000Z"),
       createdAt: new Date("2026-09-14T21:00:00.000Z"),
     });
     const saved = await repository.save(

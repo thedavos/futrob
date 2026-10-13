@@ -17,6 +17,7 @@ const stage = (count: 1 | 2): CompetitionMatchRulesDto => ({
   allowRescheduling: true,
   maxReschedulesPerTeam: 2,
   minimumRescheduleNoticeHours: 12,
+  rescheduleProposalExpiryHours: 12,
   rescheduleRequiresOpponentApproval: true,
   rescheduleRequiresOrganizerApproval: false,
 });
@@ -55,6 +56,25 @@ describe("competition review copy", () => {
     expect(matchesSummary("league-playoffs", playoffs)).toBe(
       "Etapa regular: 1 partido por enfrentamiento · Playoffs: 2 partidos por enfrentamiento",
     );
+  });
+
+  it("requires whole proposal expiry hours from 1 through 72 before publishing", () => {
+    for (const hours of [1, 12, 72]) {
+      expect(
+        rulesArePublishable(
+          "league",
+          rules({ ...stage(1), rescheduleProposalExpiryHours: hours }, null),
+        ),
+      ).toBe(true);
+    }
+    for (const hours of [0, 73, 1.5]) {
+      expect(
+        rulesArePublishable(
+          "league",
+          rules({ ...stage(1), rescheduleProposalExpiryHours: hours }, null),
+        ),
+      ).toBe(false);
+    }
   });
 
   it("accepts only the stage shape and points a publish would accept", () => {

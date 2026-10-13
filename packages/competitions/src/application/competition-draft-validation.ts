@@ -43,6 +43,13 @@ function isValidMatchRules(rules: CompetitionMatchRules): boolean {
   ) {
     return false;
   }
+  if (
+    !Number.isInteger(rules.rescheduleProposalExpiryHours) ||
+    rules.rescheduleProposalExpiryHours < 1 ||
+    rules.rescheduleProposalExpiryHours > 72
+  ) {
+    return false;
+  }
   return (
     rules.maxReschedulesPerTeam == null ||
     (Number.isInteger(rules.maxReschedulesPerTeam) && rules.maxReschedulesPerTeam >= 0)

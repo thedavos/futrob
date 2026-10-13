@@ -335,6 +335,7 @@ function adapterRequest(input: {
     version: 1,
     decisions: [],
     application: null,
+    actions: [],
     proposals: [
       {
         id: `${input.id}-proposal`,
@@ -342,6 +343,7 @@ function adapterRequest(input: {
         proposedByActorId: actorId,
         proposedByTeamId: input.teamId,
         reason: "Team travel conflict",
+        responseDeadline: new Date("2026-09-15T08:00:00.000Z"),
         createdAt: now,
       },
     ],

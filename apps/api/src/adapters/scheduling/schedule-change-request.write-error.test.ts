@@ -26,6 +26,7 @@ const request: ScheduleChangeRequest = {
   version: 1,
   decisions: [],
   application: null,
+  actions: [],
   proposals: [
     {
       id: "proposal-1",
@@ -33,6 +34,7 @@ const request: ScheduleChangeRequest = {
       proposedByActorId: asActorId("captain-1"),
       proposedByTeamId: asTeamId("team-home"),
       reason: "Team travel conflict",
+      responseDeadline: new Date("2026-10-02T00:00:00.000Z"),
       createdAt: new Date("2026-09-14T20:00:00.000Z"),
     },
   ],

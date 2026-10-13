@@ -87,6 +87,7 @@ export class CounterScheduleChangeProposalUseCase {
           proposedByTeamId: input.teamId,
           reason: input.reason,
           now,
+          proposalExpiryHours: rules.proposalExpiryHours,
         });
         if (proposal.isErr()) return err(proposal.error);
         const notice = checkRescheduleMinimumNotice({

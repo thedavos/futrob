@@ -149,6 +149,7 @@ export class ScheduleChangeApprovalNotConfigured extends TaggedError(
 }> {}
 
 export type ScheduleChangeResponseError =
+  | ScheduleChangeResponseWindowClosed
   | ScheduleChangeRequestNotFound
   | UnknownScheduleChangeRequest
   | ScheduleChangeRequestForbidden
@@ -177,3 +178,22 @@ export type CounterScheduleChangeProposalError =
   | ScheduleChangeResponseError
   | InvalidScheduleChangeDate
   | InvalidScheduleChangeReason;
+
+export class ScheduleChangeResponseWindowClosed extends TaggedError(
+  "ScheduleChangeResponseWindowClosed",
+)<{
+  code: "scheduling.schedule_change_response_window_closed";
+  message: string;
+  responseDeadline: string;
+}> {}
+
+export class InvalidScheduleChangeResolution extends TaggedError(
+  "InvalidScheduleChangeResolution",
+)<{
+  code: "scheduling.invalid_schedule_change_resolution";
+  message: string;
+}> {}
+
+export type ResolveScheduleChangeRequestError =
+  | AcceptScheduleChangeProposalError
+  | InvalidScheduleChangeResolution;

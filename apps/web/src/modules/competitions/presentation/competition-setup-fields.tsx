@@ -8,6 +8,8 @@ import {
   applyStyles,
   Checkbox,
   Field,
+  FieldDescription,
+  FieldError,
   FieldLabel,
   Input,
   Select,
@@ -96,6 +98,9 @@ export function NumberField({
   value,
   onChange,
   min,
+  max,
+  description,
+  error,
   disabled,
 }: {
   id?: string;
@@ -103,22 +108,30 @@ export function NumberField({
   value: number | null;
   onChange: (value: number | null) => void;
   min: number;
+  max?: number;
+  description?: string;
+  error?: string;
   disabled: boolean;
 }) {
   const fieldId = id ?? `rule-${label.toLowerCase().replaceAll(" ", "-")}`;
   return (
-    <Field>
+    <Field invalid={Boolean(error)}>
       <FieldLabel htmlFor={fieldId}>{label}</FieldLabel>
       <Input
         disabled={disabled}
         id={fieldId}
         min={min}
+        max={max}
+        step={1}
+        aria-invalid={Boolean(error)}
         onChange={(event) =>
           onChange(event.target.value === "" ? null : Number(event.target.value))
         }
         type="number"
         value={value ?? ""}
       />
+      {description ? <FieldDescription>{description}</FieldDescription> : null}
+      {error ? <FieldError match>{error}</FieldError> : null}
     </Field>
   );
 }

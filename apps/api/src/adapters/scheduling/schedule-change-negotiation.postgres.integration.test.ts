@@ -526,6 +526,7 @@ function competitionDraft(approvals: {
         allowRescheduling: true,
         maxReschedulesPerTeam: 2,
         minimumRescheduleNoticeHours: 12,
+        rescheduleProposalExpiryHours: 12,
         rescheduleRequiresOpponentApproval: approvals.requiresOpponentApproval,
         rescheduleRequiresOrganizerApproval: approvals.requiresOrganizerApproval,
       },

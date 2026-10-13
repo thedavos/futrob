@@ -1,3 +1,4 @@
+import { registerScheduleChangeExpiryRoutes } from "@/http/routes/schedule-change-expiry.ts";
 import { cors } from "hono/cors";
 import { Hono } from "hono";
 import { REQUEST_ID_HEADER } from "@futrob/api-contracts";
@@ -80,6 +81,7 @@ export function createApp(deps: AppDeps): Hono {
   registerOpenApiRoutes(v1);
   registerProviderSyncJobRoutes(v1, deps);
   registerConfirmationExpiryRoutes(v1, deps);
+  registerScheduleChangeExpiryRoutes(v1, deps);
   registerCandidateRecalculationRoutes(v1, deps);
   registerProviderHealthRoutes(v1, deps);
   registerGameDataClubRoutes(v1, deps);

@@ -1,7 +1,7 @@
 import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
 import type { ScheduleChangeRequestStatus } from "./schedule-change-request.ts";
 
-export type ScheduleChangeCommandType = "accept" | "reject" | "counter";
+export type ScheduleChangeCommandType = "accept" | "reject" | "counter" | "expire" | "resolve";
 
 /**
  * Durable record of one negotiation command, keyed by `(organization, actor,

@@ -288,6 +288,7 @@ export const scheduleChangeProposalSchema = z.object({
   proposedByTeamId: z.string().min(1),
   reason: z.string().min(1),
   createdAt: z.string().datetime(),
+  responseDeadline: z.string().datetime(),
 });
 
 /** The capacity an actor claims; the server authorizes it, so claiming grants nothing. */
@@ -329,6 +330,35 @@ export const scheduleChangeApplicationSchema = z.object({
   appliedAt: z.string().datetime(),
 });
 
+export const scheduleChangeResolutionSchema = z.discriminatedUnion("outcome", [
+  z.object({
+    outcome: z.literal("schedule_set"),
+    reason: z.string().trim().min(1).max(500),
+    proposedStartAt: z.string().datetime(),
+  }),
+  z.object({ outcome: z.literal("schedule_kept"), reason: z.string().trim().min(1).max(500) }),
+  z.object({
+    outcome: z.literal("walkover_intended"),
+    reason: z.string().trim().min(1).max(500),
+    winningTeamId: z.string().min(1),
+  }),
+]);
+
+export type ScheduleChangeResolutionDto = z.infer<typeof scheduleChangeResolutionSchema>;
+
+export const scheduleChangeActionSchema = z.object({
+  id: z.string().min(1),
+  kind: z.enum(["schedule_change_expired", "schedule_change_resolved"]),
+  actorId: z.string().min(1),
+  authority: z.enum(["system", "organizer"]),
+  proposalId: z.string().min(1),
+  fromVersion: z.number().int().positive(),
+  toVersion: z.number().int().positive(),
+  responseDeadline: z.string().datetime(),
+  processedAt: z.string().datetime(),
+  resolution: scheduleChangeResolutionSchema.nullable(),
+});
+
 export const scheduleChangeRequestSchema = z.object({
   id: z.string().min(1),
   organizationId: z.string().min(1),
@@ -337,14 +367,24 @@ export const scheduleChangeRequestSchema = z.object({
   requestingTeamId: z.string().min(1),
   initiatedByActorId: z.string().min(1),
   scope: rescheduleScopeSchema,
-  status: z.enum(["open", "accepted", "rejected", "cancelled", "expired", "escalated"]),
+  status: z.enum([
+    "open",
+    "accepted",
+    "rejected",
+    "cancelled",
+    "expired",
+    "escalated",
+    "resolved_by_organizer",
+  ]),
   /** Commands send it back as `expectedVersion`. */
   version: z.number().int().positive(),
   /** The only proposal commands may answer: the last one in `proposals`. */
   currentProposalId: z.string().min(1),
   proposals: z.array(scheduleChangeProposalSchema).min(1),
   decisions: z.array(scheduleChangeDecisionSchema),
-  /** The schedule applied when the request became `accepted`; null otherwise. */
+  actions: z.array(scheduleChangeActionSchema),
+  allowedActions: z.array(z.literal("resolve")),
+  /** The schedule applied by consent or organizer resolution; null for outcomes that keep it. */
   application: scheduleChangeApplicationSchema.nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -413,3 +453,16 @@ export type RejectScheduleChangeProposalRequest = z.infer<
 export type CounterScheduleChangeProposalRequest = z.infer<
   typeof counterScheduleChangeProposalRequestSchema
 >;
+
+export const resolveScheduleChangeRequestSchema = scheduleChangeCommandSchema.extend({
+  proposalId: z.string().min(1),
+  resolution: scheduleChangeResolutionSchema,
+});
+
+export type ResolveScheduleChangeRequestBody = z.infer<typeof resolveScheduleChangeRequestSchema>;
+
+export const runScheduleChangeExpiryResponseSchema = z.object({
+  escalated: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+});
+export type RunScheduleChangeExpiryResponse = z.infer<typeof runScheduleChangeExpiryResponseSchema>;

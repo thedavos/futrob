@@ -2792,6 +2792,39 @@ paths:
           $ref: "#/components/responses/ApiError"
         "403":
           $ref: "#/components/responses/ApiError"
+  /internal/scheduling/reschedule-expiry/run:
+    post:
+      operationId: runScheduleChangeExpiry
+      tags:
+        - encounters
+      summary: Recover expired schedule-change proposals and escalate pending requests
+      description: Service-only runner authenticated with the internal bearer secret.
+        Uses API time and the existing provisioned SCHEDULING_SYSTEM_ACTOR_ID;
+        accepts no caller actor or timestamp. Processes durable pending work
+        idempotently. The request remains active when escalated; silence never
+        changes the fixture, consumes quota or approves a result.
+      responses:
+        "200":
+          description: Escalated and concurrently skipped requests in the batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunScheduleChangeExpiryResponse"
+          headers:
+            X-Request-ID: *a1
+        "401": &a7
+          $ref: "#/components/responses/ApiError"
+        "409": *a7
+        "503":
+          description: Provisioned system actor unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID: *a1
+      parameters:
+        - *a2
   /encounters/{encounterId}/schedule-change-requests:
     get:
       operationId: listScheduleChangeRequests
@@ -2816,23 +2849,25 @@ paths:
                 $ref: "#/components/schemas/ListScheduleChangeRequestsResponse"
           headers:
             X-Request-ID: *a1
-        "401": &a7
-          $ref: "#/components/responses/ApiError"
+        "401": *a7
         "404": *a7
     post:
       operationId: createScheduleChangeRequest
       tags:
         - encounters
       summary: Create a schedule-change request without changing the fixture
-      description: "Create, counter and accept revalidate the stage's current minimum
-        notice against the current and proposed times of every affected slot,
-        including organizer consent. The exact boundary is inclusive; current
-        times at or before now are exempt. Zero disables notice only: proposed
-        dates must still be strictly future. A violation is 409
-        `scheduling.reschedule_notice_not_met`, with `details.anchor` equal to
-        `current` or `proposed` (current takes priority). No request, consent,
-        schedule or quota changes persist on denial. Recorded replays do not
-        revalidate notice. "
+      description: "The proposal stores its UTC responseDeadline anchored to API
+        createdAt plus the stage's rescheduleProposalExpiryHours (integer 1–72,
+        default 12). It differs from minimum notice. An escalated request
+        remains active and blocks incompatible requests. Create, counter and
+        accept revalidate the stage's current minimum notice against the current
+        and proposed times of every affected slot, including organizer consent.
+        The exact boundary is inclusive; current times at or before now are
+        exempt. Zero disables notice only: proposed dates must still be strictly
+        future. A violation is 409 `scheduling.reschedule_notice_not_met`, with
+        `details.anchor` equal to `current` or `proposed` (current takes
+        priority). No request, consent, schedule or quota changes persist on
+        denial. Recorded replays do not revalidate notice. "
       parameters:
         - *a2
         - *a8
@@ -2861,12 +2896,14 @@ paths:
       operationId: getScheduleChangeRequest
       tags:
         - encounters
-      summary: Read one schedule-change request with its proposals, decisions and
-        application
-      description: Readable by actors who can read the Encounter; anyone else gets 404
+      summary: Read one schedule-change request with proposals, decisions, application
+        and operator audit
+      description: "Includes allowedActions: resolve only for an escalated request
+        when the authenticated actor has encounters.reschedule.resolve. Readable
+        by actors who can read the Encounter; anyone else gets 404
         `scheduling.schedule_change_encounter_not_found`. An unknown request, or
         one of another Encounter, is 404
-        `scheduling.schedule_change_request_not_found`.
+        `scheduling.schedule_change_request_not_found`."
       parameters:
         - *a2
         - *a8
@@ -2895,7 +2932,10 @@ paths:
       summary: Consent to the current proposal; the last required consent applies the
         new schedule
       description: "Answers the current proposal of an open request at
-        `expectedVersion`. The actor comes from service authentication;
+        `expectedVersion` only while API time is strictly before its persisted
+        UTC responseDeadline. At the deadline or later it fails with 409
+        scheduling.schedule_change_response_window_closed even if the expiry
+        runner is delayed. The actor comes from service authentication;
         `responder` (or `teamId`) is only the capacity claimed, and the server
         authorizes it. Repeating `commandKey` with the same payload replays the
         original outcome with `replayed: true` and no new effect. Create,
@@ -2920,6 +2960,7 @@ paths:
         `scheduling.schedule_change_version_conflict`,
         `scheduling.schedule_change_proposal_stale`,
         `scheduling.schedule_change_request_closed`,
+        `scheduling.schedule_change_response_window_closed`,
         `scheduling.schedule_change_consent_already_recorded`,
         `scheduling.schedule_change_idempotency_conflict`,
         `scheduling.schedule_change_approval_not_configured`,
@@ -2965,7 +3006,10 @@ paths:
       summary: Reject the current proposal and close the request without changing the
         schedule
       description: "Answers the current proposal of an open request at
-        `expectedVersion`. The actor comes from service authentication;
+        `expectedVersion` only while API time is strictly before its persisted
+        UTC responseDeadline. At the deadline or later it fails with 409
+        scheduling.schedule_change_response_window_closed even if the expiry
+        runner is delayed. The actor comes from service authentication;
         `responder` (or `teamId`) is only the capacity claimed, and the server
         authorizes it. Repeating `commandKey` with the same payload replays the
         original outcome with `replayed: true` and no new effect. Reject does
@@ -2983,6 +3027,7 @@ paths:
         `scheduling.schedule_change_version_conflict`,
         `scheduling.schedule_change_proposal_stale`,
         `scheduling.schedule_change_request_closed`,
+        `scheduling.schedule_change_response_window_closed`,
         `scheduling.schedule_change_consent_already_recorded`,
         `scheduling.schedule_change_idempotency_conflict`,
         `scheduling.schedule_change_approval_not_configured`,
@@ -3022,7 +3067,10 @@ paths:
         - encounters
       summary: Answer the current proposal with a new date in the competition time zone
       description: "Answers the current proposal of an open request at
-        `expectedVersion`. The actor comes from service authentication;
+        `expectedVersion` only while API time is strictly before its persisted
+        UTC responseDeadline. At the deadline or later it fails with 409
+        scheduling.schedule_change_response_window_closed even if the expiry
+        runner is delayed. The actor comes from service authentication;
         `responder` (or `teamId`) is only the capacity claimed, and the server
         authorizes it. Repeating `commandKey` with the same payload replays the
         original outcome with `replayed: true` and no new effect. Create,
@@ -3047,6 +3095,7 @@ paths:
         `scheduling.schedule_change_version_conflict`,
         `scheduling.schedule_change_proposal_stale`,
         `scheduling.schedule_change_request_closed`,
+        `scheduling.schedule_change_response_window_closed`,
         `scheduling.schedule_change_consent_already_recorded`,
         `scheduling.schedule_change_idempotency_conflict`,
         `scheduling.schedule_change_approval_not_configured`,
@@ -3068,6 +3117,67 @@ paths:
       responses:
         "200":
           description: The request as the command left it, or its replay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleChangeCommandResponse"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
+  /encounters/{encounterId}/schedule-change-requests/{requestId}/resolve:
+    post:
+      operationId: resolveScheduleChangeRequest
+      tags:
+        - encounters
+      summary: Resolve an escalated request by setting a date, keeping it or recording
+        walkover intent
+      description: "Requires encounters.reschedule.resolve for the Encounter scope.
+        Only escalated requests can be resolved. schedule_set applies the
+        request scope atomically and consumes the opening Team's quota; minimum
+        notice does not block it. schedule_kept and walkover_intended keep the
+        schedule and quota. Walkover is Scheduling intent only: no
+        OfficialResult or official statistics are created. A nonempty reason,
+        current proposal, expectedVersion and commandKey are required; identical
+        retries replay the original outcome. Invalid outcomes produce 400
+        scheduling.invalid_schedule_change_resolution. Failures carry a stable
+        `code`: 400 `api.validation_error`,
+        `scheduling.invalid_schedule_change_request`,
+        `scheduling.invalid_schedule_change_date` (also a `timeZone` other than
+        the competition's), `scheduling.invalid_schedule_change_reason`,
+        `scheduling.invalid_schedule_change_scope`; 403
+        `authorization.forbidden`,
+        `scheduling.schedule_change_self_response_forbidden`,
+        `scheduling.schedule_change_authority_not_required`; 404
+        `scheduling.schedule_change_encounter_not_found`,
+        `scheduling.schedule_change_request_not_found`; 409
+        `scheduling.schedule_change_version_conflict`,
+        `scheduling.schedule_change_proposal_stale`,
+        `scheduling.schedule_change_request_closed`,
+        `scheduling.schedule_change_response_window_closed`,
+        `scheduling.schedule_change_consent_already_recorded`,
+        `scheduling.schedule_change_idempotency_conflict`,
+        `scheduling.schedule_change_approval_not_configured`,
+        `scheduling.rescheduling_disabled`,
+        `scheduling.encounter_not_editable_for_schedule_change`,
+        `scheduling.reschedule_limit_reached`,
+        `scheduling.fixture_update_conflict`."
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveScheduleChangeRequest"
+      responses:
+        "200":
+          description: Resolved request and audit, or replay
           content:
             application/json:
               schema:
@@ -5280,6 +5390,89 @@ components:
           properties:
             status:
               const: provider_mismatch
+    RunScheduleChangeExpiryResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        escalated:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        skipped:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - escalated
+        - skipped
+      additionalProperties: false
+    ResolveScheduleChangeRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        expectedVersion:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        commandKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+        proposalId:
+          type: string
+          minLength: 1
+        resolution:
+          oneOf:
+            - type: object
+              properties:
+                outcome:
+                  type: string
+                  const: schedule_set
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                proposedStartAt:
+                  type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+              required:
+                - outcome
+                - reason
+                - proposedStartAt
+            - type: object
+              properties:
+                outcome:
+                  type: string
+                  const: schedule_kept
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+              required:
+                - outcome
+                - reason
+            - type: object
+              properties:
+                outcome:
+                  type: string
+                  const: walkover_intended
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                winningTeamId:
+                  type: string
+                  minLength: 1
+              required:
+                - outcome
+                - reason
+                - winningTeamId
+      required:
+        - expectedVersion
+        - commandKey
+        - proposalId
+        - resolution
     ScheduleChangeRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -5336,6 +5529,7 @@ components:
             - cancelled
             - expired
             - escalated
+            - resolved_by_organizer
         version:
           type: integer
           exclusiveMinimum: 0
@@ -5369,6 +5563,10 @@ components:
                 type: string
                 format: date-time
                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+              responseDeadline:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
             required:
               - id
               - proposedStartAt
@@ -5376,6 +5574,7 @@ components:
               - proposedByTeamId
               - reason
               - createdAt
+              - responseDeadline
             additionalProperties: false
         decisions:
           type: array
@@ -5441,6 +5640,115 @@ components:
               - reason
               - createdAt
             additionalProperties: false
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              kind:
+                type: string
+                enum:
+                  - schedule_change_expired
+                  - schedule_change_resolved
+              actorId:
+                type: string
+                minLength: 1
+              authority:
+                type: string
+                enum:
+                  - system
+                  - organizer
+              proposalId:
+                type: string
+                minLength: 1
+              fromVersion:
+                type: integer
+                exclusiveMinimum: 0
+                maximum: 9007199254740991
+              toVersion:
+                type: integer
+                exclusiveMinimum: 0
+                maximum: 9007199254740991
+              responseDeadline:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+              processedAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+              resolution:
+                anyOf:
+                  - oneOf:
+                      - type: object
+                        properties:
+                          outcome:
+                            type: string
+                            const: schedule_set
+                          reason:
+                            type: string
+                            minLength: 1
+                            maxLength: 500
+                          proposedStartAt:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - outcome
+                          - reason
+                          - proposedStartAt
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          outcome:
+                            type: string
+                            const: schedule_kept
+                          reason:
+                            type: string
+                            minLength: 1
+                            maxLength: 500
+                        required:
+                          - outcome
+                          - reason
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          outcome:
+                            type: string
+                            const: walkover_intended
+                          reason:
+                            type: string
+                            minLength: 1
+                            maxLength: 500
+                          winningTeamId:
+                            type: string
+                            minLength: 1
+                        required:
+                          - outcome
+                          - reason
+                          - winningTeamId
+                        additionalProperties: false
+                  - type: "null"
+            required:
+              - id
+              - kind
+              - actorId
+              - authority
+              - proposalId
+              - fromVersion
+              - toVersion
+              - responseDeadline
+              - processedAt
+              - resolution
+            additionalProperties: false
+        allowedActions:
+          type: array
+          items:
+            type: string
+            const: resolve
         application:
           anyOf:
             - type: object
@@ -5528,6 +5836,8 @@ components:
         - currentProposalId
         - proposals
         - decisions
+        - actions
+        - allowedActions
         - application
         - createdAt
         - updatedAt
@@ -5593,6 +5903,7 @@ components:
                   - cancelled
                   - expired
                   - escalated
+                  - resolved_by_organizer
               version:
                 type: integer
                 exclusiveMinimum: 0
@@ -5626,6 +5937,10 @@ components:
                       type: string
                       format: date-time
                       pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    responseDeadline:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
                   required:
                     - id
                     - proposedStartAt
@@ -5633,6 +5948,7 @@ components:
                     - proposedByTeamId
                     - reason
                     - createdAt
+                    - responseDeadline
                   additionalProperties: false
               decisions:
                 type: array
@@ -5698,6 +6014,115 @@ components:
                     - reason
                     - createdAt
                   additionalProperties: false
+              actions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      minLength: 1
+                    kind:
+                      type: string
+                      enum:
+                        - schedule_change_expired
+                        - schedule_change_resolved
+                    actorId:
+                      type: string
+                      minLength: 1
+                    authority:
+                      type: string
+                      enum:
+                        - system
+                        - organizer
+                    proposalId:
+                      type: string
+                      minLength: 1
+                    fromVersion:
+                      type: integer
+                      exclusiveMinimum: 0
+                      maximum: 9007199254740991
+                    toVersion:
+                      type: integer
+                      exclusiveMinimum: 0
+                      maximum: 9007199254740991
+                    responseDeadline:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    processedAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    resolution:
+                      anyOf:
+                        - oneOf:
+                            - type: object
+                              properties:
+                                outcome:
+                                  type: string
+                                  const: schedule_set
+                                reason:
+                                  type: string
+                                  minLength: 1
+                                  maxLength: 500
+                                proposedStartAt:
+                                  type: string
+                                  format: date-time
+                                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                              required:
+                                - outcome
+                                - reason
+                                - proposedStartAt
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                outcome:
+                                  type: string
+                                  const: schedule_kept
+                                reason:
+                                  type: string
+                                  minLength: 1
+                                  maxLength: 500
+                              required:
+                                - outcome
+                                - reason
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                outcome:
+                                  type: string
+                                  const: walkover_intended
+                                reason:
+                                  type: string
+                                  minLength: 1
+                                  maxLength: 500
+                                winningTeamId:
+                                  type: string
+                                  minLength: 1
+                              required:
+                                - outcome
+                                - reason
+                                - winningTeamId
+                              additionalProperties: false
+                        - type: "null"
+                  required:
+                    - id
+                    - kind
+                    - actorId
+                    - authority
+                    - proposalId
+                    - fromVersion
+                    - toVersion
+                    - responseDeadline
+                    - processedAt
+                    - resolution
+                  additionalProperties: false
+              allowedActions:
+                type: array
+                items:
+                  type: string
+                  const: resolve
               application:
                 anyOf:
                   - type: object
@@ -5785,6 +6210,8 @@ components:
               - currentProposalId
               - proposals
               - decisions
+              - actions
+              - allowedActions
               - application
               - createdAt
               - updatedAt
@@ -5851,6 +6278,7 @@ components:
                 - cancelled
                 - expired
                 - escalated
+                - resolved_by_organizer
             version:
               type: integer
               exclusiveMinimum: 0
@@ -5884,6 +6312,10 @@ components:
                     type: string
                     format: date-time
                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  responseDeadline:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
                 required:
                   - id
                   - proposedStartAt
@@ -5891,6 +6323,7 @@ components:
                   - proposedByTeamId
                   - reason
                   - createdAt
+                  - responseDeadline
                 additionalProperties: false
             decisions:
               type: array
@@ -5956,6 +6389,115 @@ components:
                   - reason
                   - createdAt
                 additionalProperties: false
+            actions:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    minLength: 1
+                  kind:
+                    type: string
+                    enum:
+                      - schedule_change_expired
+                      - schedule_change_resolved
+                  actorId:
+                    type: string
+                    minLength: 1
+                  authority:
+                    type: string
+                    enum:
+                      - system
+                      - organizer
+                  proposalId:
+                    type: string
+                    minLength: 1
+                  fromVersion:
+                    type: integer
+                    exclusiveMinimum: 0
+                    maximum: 9007199254740991
+                  toVersion:
+                    type: integer
+                    exclusiveMinimum: 0
+                    maximum: 9007199254740991
+                  responseDeadline:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  processedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  resolution:
+                    anyOf:
+                      - oneOf:
+                          - type: object
+                            properties:
+                              outcome:
+                                type: string
+                                const: schedule_set
+                              reason:
+                                type: string
+                                minLength: 1
+                                maxLength: 500
+                              proposedStartAt:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            required:
+                              - outcome
+                              - reason
+                              - proposedStartAt
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              outcome:
+                                type: string
+                                const: schedule_kept
+                              reason:
+                                type: string
+                                minLength: 1
+                                maxLength: 500
+                            required:
+                              - outcome
+                              - reason
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              outcome:
+                                type: string
+                                const: walkover_intended
+                              reason:
+                                type: string
+                                minLength: 1
+                                maxLength: 500
+                              winningTeamId:
+                                type: string
+                                minLength: 1
+                            required:
+                              - outcome
+                              - reason
+                              - winningTeamId
+                            additionalProperties: false
+                      - type: "null"
+                required:
+                  - id
+                  - kind
+                  - actorId
+                  - authority
+                  - proposalId
+                  - fromVersion
+                  - toVersion
+                  - responseDeadline
+                  - processedAt
+                  - resolution
+                additionalProperties: false
+            allowedActions:
+              type: array
+              items:
+                type: string
+                const: resolve
             application:
               anyOf:
                 - type: object
@@ -6043,6 +6585,8 @@ components:
             - currentProposalId
             - proposals
             - decisions
+            - actions
+            - allowedActions
             - application
             - createdAt
             - updatedAt

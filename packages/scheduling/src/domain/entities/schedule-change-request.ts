@@ -25,6 +25,7 @@ import {
   isRescheduleScopeOf,
   type RescheduleScope,
 } from "../value-objects/reschedule-scope.ts";
+import type { ScheduleChangeAction } from "./schedule-change-action.ts";
 import type { ScheduleChangeApplication } from "./schedule-change-application.ts";
 import type {
   ScheduleChangeAuthority,
@@ -42,7 +43,8 @@ export type ScheduleChangeRequestStatus =
   | "rejected"
   | "cancelled"
   | "expired"
-  | "escalated";
+  | "escalated"
+  | "resolved_by_organizer";
 
 export interface ScheduleChangeRequest {
   readonly id: string;
@@ -61,6 +63,7 @@ export interface ScheduleChangeRequest {
   readonly decisions: readonly ScheduleChangeDecision[];
   /** The schedule applied when the request became `accepted`; null otherwise. */
   readonly application: ScheduleChangeApplication | null;
+  readonly actions: readonly ScheduleChangeAction[];
   readonly idempotencyKey: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -83,6 +86,7 @@ export interface CreateInitialScheduleChangeRequestInput {
   readonly reason: string;
   readonly idempotencyKey: string;
   readonly now: Date;
+  readonly proposalExpiryHours?: number;
 }
 
 export type CreateInitialScheduleChangeRequestError =
@@ -127,6 +131,7 @@ export function createInitialScheduleChangeRequest(
     proposedByTeamId: input.requestingTeamId,
     reason: input.reason,
     now: input.now,
+    proposalExpiryHours: input.proposalExpiryHours,
   });
   if (proposal.isErr()) return proposal;
 
@@ -144,6 +149,7 @@ export function createInitialScheduleChangeRequest(
     proposals: [proposal.value],
     decisions: [],
     application: null,
+    actions: [],
     idempotencyKey,
     createdAt,
     updatedAt: new Date(createdAt),
@@ -163,6 +169,7 @@ export interface ScheduleChangeTransition {
   readonly appendedProposal: ScheduleChangeProposal | null;
   readonly appendedDecision: ScheduleChangeDecision | null;
   readonly appendedApplication: ScheduleChangeApplication | null;
+  readonly appendedAction?: ScheduleChangeAction;
 }
 
 export interface ScheduleChangeTarget {
@@ -179,8 +186,9 @@ export type ScheduleChangeTargetError =
 export function checkScheduleChangeTarget(
   request: ScheduleChangeRequest,
   target: ScheduleChangeTarget,
+  requiredStatus: "open" | "escalated" = "open",
 ): Result<ScheduleChangeProposal, ScheduleChangeTargetError> {
-  if (request.status !== "open") {
+  if (request.status !== requiredStatus) {
     return err(
       new ScheduleChangeRequestClosed({
         code: "scheduling.schedule_change_request_closed",

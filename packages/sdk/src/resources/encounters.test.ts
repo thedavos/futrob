@@ -22,9 +22,12 @@ const requestDto = {
       proposedByTeamId: "team-home",
       reason: "Team travel conflict",
       createdAt: "2026-09-14T20:00:00.000Z",
+      responseDeadline: "2026-09-15T08:00:00.000Z",
     },
   ],
   decisions: [],
+  actions: [],
+  allowedActions: [],
   application: null,
   createdAt: "2026-09-14T20:00:00.000Z",
   updatedAt: "2026-09-14T20:00:00.000Z",
@@ -101,6 +104,8 @@ describe("createFutrobClient encounters schedule-change-requests", () => {
         status: "accepted" as const,
         version: 3,
         currentProposalId: "proposal-2",
+        actions: [],
+        allowedActions: [],
         application: {
           id: "application-1",
           proposalId: "proposal-2",
@@ -211,34 +216,6 @@ describe("createFutrobClient encounters schedule-change-requests", () => {
   });
 });
 
-it.each(["current", "proposed"] as const)(
-  "preserves the %s notice anchor for schedule-change consumers",
-  async (anchor) => {
-    const client = createFutrobClient({
-      baseUrl: "https://api.example.com/api/v1",
-      fetchImpl: mockFetch(() =>
-        Response.json(
-          {
-            code: "scheduling.reschedule_notice_not_met",
-            messageKey: "errors.scheduling.reschedule_notice_not_met",
-            details: { anchor },
-          },
-          { status: 409 },
-        ),
-      ),
-    });
-
-    await expect(
-      client.encounters.createScheduleChangeRequest("encounter-1", createBody),
-    ).rejects.toMatchObject({
-      status: 409,
-      code: "scheduling.reschedule_notice_not_met",
-      messageKey: "errors.scheduling.reschedule_notice_not_met",
-      details: { anchor },
-    });
-  },
-);
-
 describe("createFutrobClient encounters view", () => {
   it("reads one Encounter with both Teams and each slot's start", async () => {
     const view = {
@@ -272,5 +249,85 @@ describe("createFutrobClient encounters view", () => {
     });
 
     await expect(client.encounters.getView("org-1", "encounter-1")).resolves.toEqual(view);
+  });
+});
+it.each(["current", "proposed"] as const)(
+  "preserves the %s notice anchor for schedule-change consumers",
+  async (anchor) => {
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: mockFetch(() =>
+        Response.json(
+          {
+            code: "scheduling.reschedule_notice_not_met",
+            messageKey: "errors.scheduling.reschedule_notice_not_met",
+            details: { anchor },
+          },
+          { status: 409 },
+        ),
+      ),
+    });
+
+    await expect(
+      client.encounters.createScheduleChangeRequest("encounter-1", createBody),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "scheduling.reschedule_notice_not_met",
+      messageKey: "errors.scheduling.reschedule_notice_not_met",
+      details: { anchor },
+    });
+  },
+);
+
+describe("organizer resolution SDK", () => {
+  it("sends each resolution to the encoded request and returns resolved history and replay", async () => {
+    const sent: { url: string; method: string | undefined; body: unknown }[] = [];
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        sent.push({ url: requestUrl(input), method: init?.method, body: parseMockJsonBody(init) });
+        return Response.json({
+          request: { ...requestDto, status: "resolved_by_organizer", version: 3 },
+          replayed: true,
+        });
+      }),
+    });
+    const resolutions = [
+      {
+        outcome: "schedule_set" as const,
+        reason: "New date",
+        proposedStartAt: "2026-10-20T15:00:00.000Z",
+      },
+      { outcome: "schedule_kept" as const, reason: "Keep date" },
+      {
+        outcome: "walkover_intended" as const,
+        reason: "Opponent absent",
+        winningTeamId: "team-home",
+      },
+    ];
+    for (const resolution of resolutions) {
+      const response = await client.encounters.resolveScheduleChangeRequest("enc/1", "req/1", {
+        proposalId: "proposal-1",
+        expectedVersion: 2,
+        commandKey: " resolve-1 ",
+        resolution,
+      });
+      expect({
+        status: response.request.status,
+        version: response.request.version,
+        replayed: response.replayed,
+      }).toEqual({
+        status: "resolved_by_organizer",
+        version: 3,
+        replayed: true,
+      });
+    }
+    expect(sent).toEqual(
+      resolutions.map((resolution) => ({
+        url: "https://api.example.com/api/v1/encounters/enc%2F1/schedule-change-requests/req%2F1/resolve",
+        method: "POST",
+        body: { proposalId: "proposal-1", expectedVersion: 2, commandKey: "resolve-1", resolution },
+      })),
+    );
   });
 });

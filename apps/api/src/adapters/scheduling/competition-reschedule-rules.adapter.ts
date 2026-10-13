@@ -39,6 +39,7 @@ export class CompetitionRescheduleRulesAdapter implements CompetitionRescheduleR
         allowRescheduling: false,
         maxReschedulesPerTeam: 0,
         minimumNoticeHours: 0,
+        proposalExpiryHours: 12,
         requiresOpponentApproval: true,
         requiresOrganizerApproval: true,
       };
@@ -47,6 +48,7 @@ export class CompetitionRescheduleRulesAdapter implements CompetitionRescheduleR
       allowRescheduling: stage.allowRescheduling,
       maxReschedulesPerTeam: stage.maxReschedulesPerTeam ?? UNLIMITED_RESCHEDULES,
       minimumNoticeHours: stage.minimumRescheduleNoticeHours,
+      proposalExpiryHours: stage.rescheduleProposalExpiryHours,
       requiresOpponentApproval: stage.rescheduleRequiresOpponentApproval,
       requiresOrganizerApproval: stage.rescheduleRequiresOrganizerApproval,
     };

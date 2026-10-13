@@ -1,0 +1,28 @@
+status         | version |      outcome      |    scope_type    |           winning_team_id
+-----------------------+---------+-------------------+------------------+--------------------------------------
+ resolved_by_organizer |       3 | schedule_set      | entire_encounter |
+ resolved_by_organizer |       3 | schedule_kept     | entire_encounter |
+ resolved_by_organizer |       3 | walkover_intended | entire_encounter | e0ba4e8e-e541-4171-bc80-baf8c2bb6100
+ resolved_by_organizer |       3 | walkover_intended | official_match   | e0ba4e8e-e541-4171-bc80-baf8c2bb6100
+(4 rows)
+
+   scheduled_start_at
+------------------------
+ 2026-11-01 15:00:00+00
+ 2026-11-01 15:00:00+00
+(2 rows)
+
+ quota
+-------
+     1
+(1 row)
+
+ official_results
+------------------
+                0
+(1 row)
+
+ standing_snapshots
+--------------------
+                  0
+(1 row)

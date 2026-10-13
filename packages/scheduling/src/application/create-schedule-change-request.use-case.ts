@@ -249,6 +249,7 @@ export class CreateScheduleChangeRequestUseCase {
             reason: input.reason,
             idempotencyKey,
             now,
+            proposalExpiryHours: competitionRules.proposalExpiryHours,
           });
           if (created.isErr()) return err(created.error);
           const notice = checkRescheduleMinimumNotice({

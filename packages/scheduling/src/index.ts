@@ -196,3 +196,22 @@ export {
   ENCOUNTER_PERMISSION,
   ENCOUNTER_PERMISSIONS,
 } from "./domain/policies/encounter-permissions.ts";
+export type {
+  ScheduleChangeAction,
+  ScheduleChangeResolution,
+} from "./domain/entities/schedule-change-action.ts";
+export type {
+  DueScheduleChangeRequest,
+  ScheduleChangeExpiryFeedPort,
+} from "./domain/ports/schedule-change-expiry-feed.port.ts";
+export { ExpireScheduleChangeProposalUseCase } from "./application/expire-schedule-change-proposal.use-case.ts";
+export {
+  ResolveScheduleChangeRequestUseCase,
+  type ResolveScheduleChangeRequestInput,
+} from "./application/resolve-schedule-change-request.use-case.ts";
+export {
+  ScheduleChangeResponseWindowClosed,
+  InvalidScheduleChangeResolution,
+  type ResolveScheduleChangeRequestError,
+} from "./domain/errors/schedule-change-request.errors.ts";
+export { interpretCompetitionWallTime } from "./domain/policies/interpret-competition-wall-time.ts";

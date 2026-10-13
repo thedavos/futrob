@@ -24,6 +24,7 @@ function stageRules(input: {
   readonly allowRescheduling: boolean;
   readonly maxReschedulesPerTeam: number | null;
   readonly minimumRescheduleNoticeHours?: number;
+  readonly rescheduleProposalExpiryHours?: number;
   readonly rescheduleRequiresOpponentApproval?: boolean;
   readonly rescheduleRequiresOrganizerApproval?: boolean;
 }) {
@@ -36,6 +37,7 @@ function stageRules(input: {
     allowRescheduling: input.allowRescheduling,
     maxReschedulesPerTeam: input.maxReschedulesPerTeam,
     minimumRescheduleNoticeHours: input.minimumRescheduleNoticeHours ?? 12,
+    rescheduleProposalExpiryHours: input.rescheduleProposalExpiryHours ?? 12,
     rescheduleRequiresOpponentApproval: input.rescheduleRequiresOpponentApproval ?? true,
     rescheduleRequiresOrganizerApproval: input.rescheduleRequiresOrganizerApproval ?? false,
   };
@@ -54,6 +56,7 @@ function draft(overrides?: {
       readonly allowRescheduling: boolean;
       readonly maxReschedulesPerTeam: number;
       readonly minimumRescheduleNoticeHours?: number;
+      readonly rescheduleProposalExpiryHours?: number;
       readonly rescheduleRequiresOpponentApproval?: boolean;
       readonly rescheduleRequiresOrganizerApproval?: boolean;
     };
@@ -144,6 +147,7 @@ const closedRules = {
   allowRescheduling: false,
   maxReschedulesPerTeam: 0,
   minimumNoticeHours: 0,
+  proposalExpiryHours: 12,
   requiresOpponentApproval: true,
   requiresOrganizerApproval: true,
 };
@@ -160,6 +164,7 @@ describe("CompetitionRescheduleRulesAdapter", () => {
       allowRescheduling: true,
       maxReschedulesPerTeam: 3,
       minimumNoticeHours: 12,
+      proposalExpiryHours: 12,
       requiresOpponentApproval: true,
       requiresOrganizerApproval: false,
     });
@@ -176,6 +181,7 @@ describe("CompetitionRescheduleRulesAdapter", () => {
       allowRescheduling: true,
       maxReschedulesPerTeam: Number.MAX_SAFE_INTEGER,
       minimumNoticeHours: 12,
+      proposalExpiryHours: 12,
       requiresOpponentApproval: true,
       requiresOrganizerApproval: false,
     });
@@ -190,6 +196,7 @@ describe("CompetitionRescheduleRulesAdapter", () => {
             allowRescheduling: true,
             maxReschedulesPerTeam: 4,
             minimumRescheduleNoticeHours: 24,
+            rescheduleProposalExpiryHours: 6,
             rescheduleRequiresOpponentApproval: false,
             rescheduleRequiresOrganizerApproval: true,
           },
@@ -204,6 +211,7 @@ describe("CompetitionRescheduleRulesAdapter", () => {
       allowRescheduling: true,
       maxReschedulesPerTeam: 4,
       minimumNoticeHours: 24,
+      proposalExpiryHours: 6,
       requiresOpponentApproval: false,
       requiresOrganizerApproval: true,
     });
@@ -213,6 +221,7 @@ describe("CompetitionRescheduleRulesAdapter", () => {
       allowRescheduling: false,
       maxReschedulesPerTeam: 1,
       minimumNoticeHours: 12,
+      proposalExpiryHours: 12,
       requiresOpponentApproval: true,
       requiresOrganizerApproval: false,
     });
@@ -243,6 +252,7 @@ describe("CompetitionRescheduleRulesAdapter", () => {
       proposedByActorId: asActorId("captain-1"),
       proposedByTeamId: teamId,
       reason: "Travel",
+      responseDeadline: new Date("2026-09-15T08:00:00.000Z"),
       createdAt: new Date("2026-09-14T20:00:00.000Z"),
     };
     const base: ScheduleChangeRequest = {
@@ -256,6 +266,7 @@ describe("CompetitionRescheduleRulesAdapter", () => {
       status: "open",
       version: 1,
       decisions: [],
+      actions: [],
       application: null,
       proposals: [proposal],
       idempotencyKey: "idem-open",

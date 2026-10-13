@@ -91,6 +91,8 @@ suite("migration runner", () => {
           "0051_official_selection_confirmation_deadlines.sql",
           "0052_schedule_change_application.sql",
           "0053_schedule_change_application_acknowledgements.sql",
+          "0054_activity_entries.sql",
+          "0055_schedule_change_expiry_resolution.sql",
         ]);
         expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
         expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
@@ -128,6 +130,8 @@ suite("migration runner", () => {
           "0051_official_selection_confirmation_deadlines.sql",
           "0052_schedule_change_application.sql",
           "0053_schedule_change_application_acknowledgements.sql",
+          "0054_activity_entries.sql",
+          "0055_schedule_change_expiry_resolution.sql",
         ]);
         expect(
           (

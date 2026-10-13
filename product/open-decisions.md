@@ -171,13 +171,13 @@ documento.
 
 ## 4. Reprogramación
 
-| ID      | Decisión pendiente               | Default recomendado                                                                      | Motivo                     |
-| ------- | -------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------- |
-| DEC-030 | Máximo de reprogramaciones       | 2 por Team por Encounter, configurable.                                                  | Evita abuso sin rigidizar. |
-| DEC-031 | Quién puede iniciar              | Capitán, subcapitán con permiso, organizador/staff.                                      | Alineado al PRD.           |
-| DEC-032 | Expiración de propuesta          | 12 horas o según reglamento de competición.                                              | Fuerza resolución.         |
-| DEC-033 | Escalada                         | Si expira sin acuerdo, estado `escalated` y el organizador puede fijar fecha o walkover. | Cierre operativo.          |
-| DEC-034 | Fecha límite de reprogramaciones | Configurable; tras ella solo organizador/staff.                                          | Control de calendario.     |
+| ID      | Decisión pendiente               | Default recomendado                                                                                                                                             | Motivo                     |
+| ------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| DEC-030 | Máximo de reprogramaciones       | 2 por Team por Encounter, configurable.                                                                                                                         | Evita abuso sin rigidizar. |
+| DEC-031 | Quién puede iniciar              | Capitán, subcapitán con permiso, organizador/staff.                                                                                                             | Alineado al PRD.           |
+| DEC-032 | Expiración de propuesta          | **Validada el 2026-10-12 (§4.1).** Reglamento de etapa `rescheduleProposalExpiryHours`, entero 1–72, default 12; deadline por propuesta.                        | Fuerza resolución.         |
+| DEC-033 | Escalada                         | **Validada el 2026-10-12 (§4.1).** `escalated` activa; organizador cierra como `resolved_by_organizer` fijando fecha, conservando horario o indicando walkover. | Cierre operativo.          |
+| DEC-034 | Fecha límite de reprogramaciones | Configurable; tras ella solo organizador/staff.                                                                                                                 | Control de calendario.     |
 
 ### DEC-035 · Antelación mínima de reprogramación
 
@@ -208,6 +208,40 @@ La tensión entre aviso y TTL de 12 horas queda documentada en la propuesta: abr
 exactamente en la frontera puede dejar de permitir aceptar un milisegundo después.
 Este registro no resuelve TTL, escalada, deadline, walkover ni notificaciones.
 Los vectores V6-01…V6-28 de la propuesta son el contrato de comportamiento.
+
+### 4.1 DEC-032 / DEC-033 — Vencimiento y resolución del organizador
+
+Política validada por producto en [#152](https://github.com/thedavos/futrob/pull/152).
+El contrato y los vectores V32-01…V32-36 están en
+[reschedule-expiry-escalation.md](/product/proposals/reschedule-expiry-escalation.md).
+
+- Cada propuesta guarda en UTC `responseDeadline = createdAt + rescheduleProposalExpiryHours`.
+  Crear y contraproponer leen la regla publicada de su etapa. Publicar congela esas horas.
+  No se recorta por el horario actual ni por la fecha propuesta.
+- Aceptar, rechazar y contraproponer requieren `ClockPort.now() < responseDeadline`, evaluado
+  dentro de la transacción y bajo el lock del Encounter. Una respuesta tardía falla con
+  `scheduling.schedule_change_response_window_closed`, aunque el runner se retrase.
+  Un replay autorizado conserva el resultado histórico del comando que ya fue confirmado.
+- El runner recuperable pasa `open` a `escalated` con CAS y una acción
+  `schedule_change_expired`, actor provisionado de sistema, deadline, reloj de procesamiento
+  y versiones. No aplica horarios ni consume cupo. `escalated` bloquea solicitudes incompatibles.
+- Legacy recibe el plazo desde la creación original de cada propuesta, con el reglamento de
+  su etapa o 12 h. No obtiene una ventana nueva desde la migración. Solo los casos `open`
+  vencidos escalan; las solicitudes terminales conservan su estado.
+- `encounters.reschedule.resolve` cierra únicamente una solicitud `escalated`, con motivo
+  obligatorio y estado `resolved_by_organizer`. `schedule_set` aplica el alcance y los slots
+  atómicamente, consume cupo del Team que abrió la solicitud y registra handoff de recálculo.
+  Conserva las guardas de fecha futura/distinta, cupo y slots/selecciones/resultados protegidos.
+  La antelación mínima no bloquea este comando post-escalada.
+- `schedule_kept` conserva horario y cupo. `walkover_intended` exige señalar un Team ganador
+  participante; conserva horario y cupo y no crea OfficialResult ni estadísticas oficiales.
+- DEC-021 mantiene su política de Results, plazo, estado, configuración y job propios.
+  La política hermana de antelación mínima permanece en
+  [reschedule-minimum-notice.md](/product/proposals/reschedule-minimum-notice.md).
+
+Runtime de esta entrega: migración `0055`, guardas, runner, resolución, HTTP/SDK/BFF y sección
+operativa del Encounter. Sin despliegue. Verificación y límites operativos en
+[la guía de Scheduling](/docs/architecture/scheduling-reschedule-negotiation.md).
 
 ## 5. Datos EA y estadísticas
 

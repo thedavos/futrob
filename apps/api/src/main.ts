@@ -30,6 +30,7 @@ const modules = createModules({
   eaClubsBaseUrl: env.eaClubsBaseUrl,
   pool,
   resultsSystemActorId: env.resultsSystemActorId,
+  schedulingSystemActorId: env.schedulingSystemActorId,
 });
 if (env.initialSuperuserActorId) {
   try {

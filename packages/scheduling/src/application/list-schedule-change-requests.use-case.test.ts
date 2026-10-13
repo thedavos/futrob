@@ -49,6 +49,7 @@ function request(
     version: 1,
     decisions: [],
     application: null,
+    actions: [],
     proposals: [
       {
         id: `${overrides.id}-proposal`,
@@ -57,6 +58,7 @@ function request(
         proposedByTeamId: homeTeamId,
         reason: "Team travel conflict",
         createdAt: now,
+        responseDeadline: new Date("2026-10-02T00:00:00.000Z"),
       },
     ],
     idempotencyKey: overrides.id,
@@ -143,6 +145,7 @@ describe("ListScheduleChangeRequestsUseCase", () => {
           proposedByTeamId: homeTeamId,
           reason: "First proposal",
           createdAt: now,
+          responseDeadline: new Date("2026-10-02T00:00:00.000Z"),
         },
         {
           id: "proposal-b",
@@ -151,6 +154,7 @@ describe("ListScheduleChangeRequestsUseCase", () => {
           proposedByTeamId: awayTeamId,
           reason: "Counter",
           createdAt: later,
+          responseDeadline: new Date("2026-10-03T00:00:00.000Z"),
         },
       ],
     });

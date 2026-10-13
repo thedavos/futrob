@@ -1,3 +1,6 @@
+import type { AppModules } from "./app-modules.ts";
+export type { AppModules } from "./app-modules.ts";
+import { RunScheduleChangeExpiry } from "@/application/scheduling/run-schedule-change-expiry.ts";
 import {
   InMemoryProviderMatchRepository,
   InMemoryRawObservationRepository,
@@ -35,12 +38,7 @@ import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 import type { ProviderMatchRepository } from "@futrob/game-data";
-import type {
-  ClockPort,
-  CompetitionId,
-  OrganizationId,
-  TransactionPort,
-} from "@futrob/shared-kernel";
+import type { ClockPort, CompetitionId, OrganizationId } from "@futrob/shared-kernel";
 import {
   InMemoryOfficialMatchSelectionRepository,
   InMemoryOfficialResultRepository,
@@ -48,30 +46,27 @@ import {
   PostgresOfficialResultRepository,
 } from "@/adapters/results/official-result.repository.ts";
 import type { Pool } from "pg";
-import { createGameDataModule, type GameDataModule } from "./game-data.module.ts";
-import { createIdentityModule, type IdentityModule } from "./identity.module.ts";
-import { createOrganizationsModule, type OrganizationsModule } from "./organizations.module.ts";
-import { createCompetitionsModule, type CompetitionsModule } from "./competitions.module.ts";
-import { createTeamsModule, type TeamsModule } from "./teams.module.ts";
+import { createGameDataModule } from "./game-data.module.ts";
+import { createIdentityModule } from "./identity.module.ts";
+import { createOrganizationsModule } from "./organizations.module.ts";
+import { createCompetitionsModule } from "./competitions.module.ts";
+import { createTeamsModule } from "./teams.module.ts";
 import { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
-import { createAuthorizationModule, type AuthorizationModule } from "./authorization.module.ts";
+import { createAuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
 import { CompetitionFixtureSourceAdapter } from "@/adapters/scheduling/competition-fixture-source.ts";
 import {
   InMemoryEncounterMutationLock,
   PostgresEncounterMutationLock,
 } from "@/adapters/scheduling/encounter-mutation-lock.ts";
-import { createSchedulingModule, type SchedulingModule } from "./scheduling.module.ts";
+import { createSchedulingModule } from "./scheduling.module.ts";
 import {
   createOfficialSelectionCommands,
   createVoidOfficialResultAndUnproject,
-  type OfficialSelectionCommands,
-  type VoidOfficialResultAndUnproject,
 } from "./official-selection.commands.ts";
-import { createResultsModule, type ResultsModule } from "./results.module.ts";
-import { createActivityFeed, type NotificationsModule } from "./notifications.module.ts";
-import type { ActivityCommands } from "@/application/notifications/activity-commands.ts";
-import { createStatisticsModule, type StatisticsModule } from "./statistics.module.ts";
+import { createResultsModule } from "./results.module.ts";
+import { createActivityFeed } from "./notifications.module.ts";
+import { createStatisticsModule } from "./statistics.module.ts";
 import type { EncounterSummaryDependencies } from "@/application/scheduling/encounter-summary.ts";
 import { GetEncounterViewUseCase } from "@/application/scheduling/get-encounter-view.use-case.ts";
 import { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
@@ -96,6 +91,7 @@ export interface CreateModulesInput {
   readonly providerMatches?: ProviderMatchRepository;
   readonly clock?: ClockPort;
   readonly resultsSystemActorId?: string;
+  readonly schedulingSystemActorId?: string;
 }
 
 export function createModules(input: CreateModulesInput): AppModules {
@@ -363,6 +359,13 @@ export function createModules(input: CreateModulesInput): AppModules {
     competitionApplications,
     competitions,
     officialSelection,
+    runScheduleChangeExpiry: new RunScheduleChangeExpiry({
+      feed: scheduling.scheduleChangeExpiryFeed,
+      expire: scheduling.expireScheduleChangeProposal,
+      clock,
+      resolveSystemActor: () =>
+        findProvisionedSystemActor(input.pool, input.schedulingSystemActorId),
+    }),
     runConfirmationExpiry: new RunConfirmationExpiry({
       selections: results.selections,
       expire: officialSelection.expire,
@@ -388,33 +391,4 @@ export function createModules(input: CreateModulesInput): AppModules {
     transaction,
     voidOfficialResultAndUnproject,
   };
-}
-
-export interface AppModules {
-  /** Commands of other contexts composed with their activity feed writes. */
-  readonly activityCommands: ActivityCommands;
-  readonly authorization: AuthorizationModule;
-  readonly competitionApplications: CompetitionApplicationFlow;
-  readonly competitions: CompetitionsModule;
-  /** Every selection command composed with its transaction, lock and projection. */
-  readonly officialSelection: OfficialSelectionCommands;
-  readonly runConfirmationExpiry: RunConfirmationExpiry;
-  /** Consumes applied schedule changes; recovery is the Cron calling it again. */
-  readonly recalculateRescheduledCandidates: RecalculateRescheduledCandidates;
-  readonly voidOfficialResultAndUnproject: VoidOfficialResultAndUnproject;
-  readonly getMyNextEncounter: GetMyNextEncounterUseCase;
-  readonly getEncounterView: GetEncounterViewUseCase;
-  readonly gameData: GameDataModule;
-  readonly identity: IdentityModule;
-  readonly notifications: NotificationsModule;
-  readonly organizations: OrganizationsModule;
-  readonly results: ResultsModule;
-  readonly scheduling: SchedulingModule;
-  readonly statistics: StatisticsModule;
-  readonly teams: TeamsModule;
-  readonly teamManagement: {
-    readonly list: ListTeamRosterManagementUseCase;
-    readonly get: GetTeamRosterManagementUseCase;
-  };
-  readonly transaction: TransactionPort;
 }

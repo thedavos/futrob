@@ -38,6 +38,7 @@ function serve(routes: Record<string, () => Response | Promise<Response>>) {
 }
 
 const VIEW_PATH = "/api/v1/organizations/org-1/encounters/encounter-1";
+const SCHEDULE_CHANGES_PATH = "/api/v1/encounters/encounter-1/schedule-change-requests";
 const CANDIDATES_PATH = "/api/v1/encounters/encounter-1/candidates";
 
 function ForgetFromOtherTabs({ queryClient }: { readonly queryClient: QueryClient }) {
@@ -109,6 +110,7 @@ describe("Encounter page", () => {
     expect(sent).toEqual([
       { method: "GET", path: VIEW_PATH },
       { method: "GET", path: CANDIDATES_PATH },
+      { method: "GET", path: SCHEDULE_CHANGES_PATH },
     ]);
   });
 
@@ -261,6 +263,6 @@ describe("Encounter page", () => {
         .slice(before)
         .map((request) => `${request.method} ${request.path}`)
         .sort(),
-    ).toEqual([`GET ${CANDIDATES_PATH}`, `GET ${VIEW_PATH}`]);
+    ).toEqual([`GET ${CANDIDATES_PATH}`, `GET ${SCHEDULE_CHANGES_PATH}`, `GET ${VIEW_PATH}`]);
   });
 });

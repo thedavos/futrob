@@ -11,6 +11,7 @@ export interface ScheduleChangeProposal {
   readonly proposedByTeamId: TeamId;
   readonly reason: string;
   readonly createdAt: Date;
+  readonly responseDeadline: Date;
 }
 
 export interface CreateScheduleChangeProposalInput {
@@ -21,6 +22,7 @@ export interface CreateScheduleChangeProposalInput {
   readonly proposedByTeamId: TeamId;
   readonly reason: string;
   readonly now: Date;
+  readonly proposalExpiryHours?: number;
 }
 
 export function createScheduleChangeProposal(
@@ -61,5 +63,6 @@ export function createScheduleChangeProposal(
     proposedByTeamId: input.proposedByTeamId,
     reason,
     createdAt: new Date(nowTime),
+    responseDeadline: new Date(nowTime + (input.proposalExpiryHours ?? 12) * 3_600_000),
   });
 }
