@@ -72,6 +72,8 @@ import { createResultsModule, type ResultsModule } from "./results.module.ts";
 import { createActivityFeed, type NotificationsModule } from "./notifications.module.ts";
 import type { ActivityCommands } from "@/application/notifications/activity-commands.ts";
 import { createStatisticsModule, type StatisticsModule } from "./statistics.module.ts";
+import type { EncounterSummaryDependencies } from "@/application/scheduling/encounter-summary.ts";
+import { GetEncounterViewUseCase } from "@/application/scheduling/get-encounter-view.use-case.ts";
 import { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
 import {
   GetTeamRosterManagementUseCase,
@@ -317,16 +319,23 @@ export function createModules(input: CreateModulesInput): AppModules {
     activity: activityFeed.selection,
   });
 
-  const getMyNextEncounter = new GetMyNextEncounterUseCase({
-    clock,
-    profiles: teams.repositories.profiles,
-    rosters: teams.repositories.rosters,
-    encounters: scheduling.encounters,
+  const encounterSummaryDeps: EncounterSummaryDependencies = {
     competitions: competitions.repository,
     teams: { findById: teams.repositories.teams.findById.bind(teams.repositories.teams) },
     connections: teams.repositories.connections,
     getExternalClub: (providerKey, input) => gameData.getExternalClub.execute(providerKey, input),
     fixturePlans: scheduling.fixturePlans,
+  };
+  const getMyNextEncounter = new GetMyNextEncounterUseCase({
+    ...encounterSummaryDeps,
+    clock,
+    profiles: teams.repositories.profiles,
+    rosters: teams.repositories.rosters,
+    encounters: scheduling.encounters,
+  });
+  const getEncounterView = new GetEncounterViewUseCase({
+    ...encounterSummaryDeps,
+    officialMatches: scheduling.officialMatches,
   });
 
   const voidOfficialResultAndUnproject = createVoidOfficialResultAndUnproject({
@@ -367,6 +376,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     }),
     gameData,
     getMyNextEncounter,
+    getEncounterView,
     identity,
     notifications: activityFeed.notifications,
     organizations,
@@ -393,6 +403,7 @@ export interface AppModules {
   readonly recalculateRescheduledCandidates: RecalculateRescheduledCandidates;
   readonly voidOfficialResultAndUnproject: VoidOfficialResultAndUnproject;
   readonly getMyNextEncounter: GetMyNextEncounterUseCase;
+  readonly getEncounterView: GetEncounterViewUseCase;
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
   readonly notifications: NotificationsModule;

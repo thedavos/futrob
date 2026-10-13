@@ -1,7 +1,9 @@
 "use client";
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
+import { announceIdentityChange } from "@/shared/presentation/query/identity-change.ts";
 import {
   navigateAfterAuth,
   type AfterAuthKind,
@@ -27,19 +29,22 @@ type AuthResumeProviderProps = Readonly<{
 export function AuthResumeProvider({ children, redirectTo }: AuthResumeProviderProps) {
   const navigate = useNavigate();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const value = useMemo<AuthResumeValue>(
     () => ({
       redirectTo,
-      afterAuthenticated: (kind) =>
-        navigateAfterAuth({
+      afterAuthenticated: (kind) => {
+        announceIdentityChange(queryClient);
+        return navigateAfterAuth({
           kind,
           redirectTo,
           navigate,
           router,
-        }),
+        });
+      },
     }),
-    [navigate, redirectTo, router],
+    [navigate, queryClient, redirectTo, router],
   );
 
   return <AuthResumeContext.Provider value={value}>{children}</AuthResumeContext.Provider>;

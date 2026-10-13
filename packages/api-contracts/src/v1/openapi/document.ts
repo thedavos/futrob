@@ -1755,6 +1755,29 @@ export const futrobOpenApiV1 = {
         },
       },
     },
+    "/organizations/{organizationId}/encounters/{encounterId}": {
+      get: {
+        operationId: "getEncounterView",
+        tags: ["encounters"],
+        summary: "Get an Encounter with both Teams, its competition time zone and every slot start",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+          { name: "encounterId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "The Encounter as an actor with `encounters.read` sees it",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/EncounterView" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "404": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+    },
     "/encounters/{encounterId}/schedule-snapshot": {
       get: {
         operationId: "getEncounterScheduleSnapshot",
@@ -3973,6 +3996,36 @@ export const futrobOpenApiV1 = {
           home: { $ref: "#/components/schemas/NextEncounterSide" },
           away: { $ref: "#/components/schemas/NextEncounterSide" },
         },
+      },
+      EncounterView: {
+        allOf: [
+          { $ref: "#/components/schemas/NextEncounter" },
+          {
+            type: "object",
+            required: ["resolutionMode", "officialMatches"],
+            properties: {
+              resolutionMode: {
+                type: ["string", "null"],
+                enum: ["independent_matches", "aggregate_score", null],
+                description: "Null when the Encounter is not in an active fixture plan.",
+              },
+              officialMatches: {
+                type: "array",
+                description: "Start of every slot the Encounter plays.",
+                minItems: 1,
+                maxItems: 2,
+                items: {
+                  type: "object",
+                  required: ["officialSlot", "scheduledStartAt"],
+                  properties: {
+                    officialSlot: { type: "integer", enum: [1, 2] },
+                    scheduledStartAt: { type: "string", format: "date-time" },
+                  },
+                },
+              },
+            },
+          },
+        ],
       },
       GetMyNextEncounterResponse: {
         type: "object",
