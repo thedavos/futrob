@@ -1,10 +1,10 @@
 "use client";
 
-import { Activity, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Activity, useCallback, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, hasBrowserWindow } from "@futrob/ui";
+import { applyStyles, Button, hasBrowserWindow, useExternalSync } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -91,7 +91,7 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
     setStatus(document.visibilityState === "visible" ? "open" : "confirming");
   }, [adopt]);
 
-  useEffect(() => {
+  useExternalSync(() => {
     function onVisibilityChange() {
       if (document.visibilityState === "visible") {
         void confirm();
@@ -115,13 +115,13 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
   }, [confirm]);
 
   // The session can also move on its own, e.g. after a sign-out broadcast from another tab.
-  useEffect(() => {
+  useExternalSync(() => {
     if (sessionUserId !== null) adopt(sessionUserId);
   }, [adopt, sessionUserId]);
 
   const open = status === "open" && sessionUserId !== null && sessionUserId === owner;
 
-  useEffect(() => {
+  useExternalSync(() => {
     if (!open) return;
     const previous = focusBeforeHide.current;
     focusBeforeHide.current = null;

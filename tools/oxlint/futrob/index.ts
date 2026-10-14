@@ -2,6 +2,7 @@ import { eslintCompatPlugin } from "@oxlint/plugins";
 
 import { bcDependencyGraphRule } from "./rules/bc-dependency-graph.ts";
 import { noCrossModuleAdapterImportRule } from "./rules/no-cross-module-adapter-import.ts";
+import { noRawUseEffectRule } from "./rules/no-raw-use-effect.ts";
 import { noUnparsedJsonBoundaryRule } from "./rules/no-unparsed-json-boundary.ts";
 import { preferTaggedErrorRule } from "./rules/prefer-tagged-error.ts";
 
@@ -11,6 +12,7 @@ const futrobPlugin = eslintCompatPlugin({
   rules: {
     "bc-dependency-graph": bcDependencyGraphRule,
     "no-cross-module-adapter-import": noCrossModuleAdapterImportRule,
+    "no-raw-use-effect": noRawUseEffectRule,
     "no-unparsed-json-boundary": noUnparsedJsonBoundaryRule,
     "prefer-tagged-error": preferTaggedErrorRule,
   },

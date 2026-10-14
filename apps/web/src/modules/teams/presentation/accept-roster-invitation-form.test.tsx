@@ -1,12 +1,25 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from "react";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import type { AcceptRosterInvitationRequest } from "@futrob/api-contracts";
+import type {
+  AcceptRosterInvitationRequest,
+  AcceptRosterInvitationResponse,
+} from "@futrob/api-contracts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
-import { TeamsClientError } from "./teams-browser-client.ts";
 import { AcceptRosterInvitationForm } from "./accept-roster-invitation-form.tsx";
+
+const accepted: AcceptRosterInvitationResponse = {
+  id: "membership-1",
+  organizationId: "org-1",
+  competitionId: "comp-1",
+  teamId: "team-1",
+  playerProfileId: "profile-1",
+  gameAccountId: null,
+  role: "player",
+  createdAt: "2026-08-14T22:00:00.000Z",
+};
 
 type TestNavigateInput = {
   readonly to: string;
@@ -14,7 +27,8 @@ type TestNavigateInput = {
 };
 
 const mocks = vi.hoisted(() => ({
-  accept: vi.fn<(input: AcceptRosterInvitationRequest) => Promise<Record<string, never>>>(),
+  accept:
+    vi.fn<(input: AcceptRosterInvitationRequest) => Promise<AcceptRosterInvitationResponse>>(),
   navigate: vi.fn<(input: TestNavigateInput) => Promise<void>>(),
 }));
 
@@ -40,30 +54,22 @@ afterEach(() => {
   cleanup();
   mocks.accept.mockReset();
   mocks.navigate.mockReset();
-  vi.useRealTimers();
 });
 
 describe("AcceptRosterInvitationForm", () => {
-  it("offers a usable retry after auto-accept is rate limited", async () => {
-    mocks.accept
-      .mockRejectedValueOnce(
-        new TeamsClientError(429, "api.rate_limited", "2170e2f6-a47e-4338-83c3-27c054630800", 2),
-      )
-      .mockResolvedValueOnce({});
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+  it("accepts a typed token through the mutation, not a query", async () => {
+    mocks.accept.mockResolvedValue(accepted);
     render(
       <QueryTestProvider>
-        <AcceptRosterInvitationForm autoAccept initialToken="roster-token" />
+        <AcceptRosterInvitationForm />
       </QueryTestProvider>,
     );
-
-    expect(await screen.findByText("Podrás reintentar en 2 s.")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Reintentar en 2 s" })).toBeDisabled();
-
-    void act(() => vi.advanceTimersByTime(2_000));
-    fireEvent.click(screen.getByRole("button", { name: "Reintentar invitación" }));
-
-    await waitFor(() => expect(mocks.accept).toHaveBeenCalledTimes(2));
-    expect(mocks.accept).toHaveBeenLastCalledWith({ token: "roster-token" });
+    fireEvent.change(screen.getByLabelText("Código de invitación"), {
+      target: { value: "typed-token" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Unirme a la plantilla" }));
+    await waitFor(() => expect(mocks.accept).toHaveBeenCalledTimes(1));
+    expect(mocks.accept).toHaveBeenCalledWith({ token: "typed-token" });
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: "/player" }));
   });
 });

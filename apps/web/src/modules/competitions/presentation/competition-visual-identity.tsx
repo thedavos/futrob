@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { CompetitionCoverPresetDto } from "@futrob/api-contracts";
 import {
@@ -10,6 +10,7 @@ import {
   ChoiceGroupIndicator,
   ChoiceGroupItem,
   typography,
+  useObjectUrl,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { ImageIcon, UploadSimpleIcon } from "@phosphor-icons/react";
@@ -225,17 +226,8 @@ function collapsedPresets(cover: CoverSelection): readonly CompetitionCoverPrese
 }
 
 function useCoverPreview(cover: CoverSelection): string | null {
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const file = cover.kind === "file" ? cover.file : null;
-  useEffect(() => {
-    if (!file) {
-      setObjectUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setObjectUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+  const objectUrl = useObjectUrl(file);
   if (cover.kind === "file") return objectUrl;
   if (cover.kind === "upload") return competitionCoverSrc(cover);
   return null;

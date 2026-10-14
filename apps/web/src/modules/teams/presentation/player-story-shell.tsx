@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type ReactElement } from "react";
+import { useMemo, type ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -9,7 +9,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { applyProps, typography } from "@futrob/ui";
+import { applyProps, typography, useExternalSync } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -81,7 +81,7 @@ export function PlayerStoryShell({
     return queryClient;
   }, [state]);
 
-  useEffect(() => {
+  useExternalSync(() => {
     configureExternalClubSearch(searchStoryExternalClubs);
     return () => configureExternalClubSearch(null);
   }, []);

@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import type {
@@ -19,7 +11,10 @@ import type {
   SearchClubsQueryInput,
 } from "@futrob/api-contracts";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
-import { useSaveOnboardingProgressMutation } from "@/modules/identity/presentation/identity-queries.ts";
+import {
+  useSaveOnboardingProgressMutation,
+  useSeededOnboardingStatus,
+} from "@/modules/identity/presentation/identity-queries.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
 import {
@@ -104,10 +99,7 @@ export function OnboardingFlowProvider({
   const [draft, setDraft] = useState<OnboardingDraft>(createEmptyDraft);
   const draftRef = useRef(draft);
   draftRef.current = draft;
-
-  useEffect(() => {
-    queryClient.setQueryData(queryKeys.identity.onboardingStatus(), initialStatus);
-  }, [initialStatus, queryClient]);
+  useSeededOnboardingStatus(initialStatus);
 
   const value = useMemo<OnboardingFlowValue>(
     () => ({

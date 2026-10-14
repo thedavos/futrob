@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
@@ -19,6 +19,7 @@ import {
   useCheckOrganizationNameMutation,
   useCreateOrganizationMutation,
 } from "@/modules/organizations/presentation/organization-queries.ts";
+import { useFocusWhenIdle } from "@/shared/presentation/forms/use-focus-when-idle.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { getBrowserTimeZone } from "@/shared/presentation/time-zone-options.ts";
@@ -61,17 +62,10 @@ export function CreateOrganizationForm({
   const createOrganization = useCreateOrganizationMutation();
   const submitting = checkName.isPending || createOrganization.isPending;
   const nameRef = useRef<HTMLInputElement>(null);
-  const refocusName = useRef(false);
-
-  // The input is disabled while submitting, so focus returns to it once the request settles.
-  useEffect(() => {
-    if (submitting || !refocusName.current) return;
-    refocusName.current = false;
-    nameRef.current?.focus();
-  }, [submitting]);
+  const focusWhenIdle = useFocusWhenIdle(submitting, { name: nameRef });
 
   function rejectName(message: string) {
-    refocusName.current = true;
+    focusWhenIdle("name");
     validation.applyServerErrors({ name: message });
   }
 

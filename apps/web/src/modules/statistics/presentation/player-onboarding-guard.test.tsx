@@ -8,11 +8,14 @@ import { PlayerOnboardingGuard } from "./player-onboarding-guard.tsx";
 
 const mocks = vi.hoisted(() => ({
   getOnboardingStatus: vi.fn<() => Promise<{ completed: boolean }>>(),
-  navigate: vi.fn<() => Promise<void>>(() => Promise.resolve()),
+  navigate: vi.fn<(input: { readonly to: string; readonly replace?: boolean }) => void>(),
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  useNavigate: () => mocks.navigate,
+  Navigate: (props: { readonly to: string; readonly replace?: boolean }) => {
+    mocks.navigate(props);
+    return null;
+  },
 }));
 
 vi.mock("@/modules/identity/presentation/identity-browser-client.ts", () => ({

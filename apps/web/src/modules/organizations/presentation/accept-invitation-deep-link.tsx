@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
@@ -12,10 +12,6 @@ import {
   PageHeaderTitle,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { useNavigate } from "@tanstack/react-router";
-import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
-import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
-import { useAcceptInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
 import {
   SupportErrorAlert,
   type SupportError,
@@ -55,52 +51,21 @@ const styles = stylex.create({
 
 const logo = applyStyles(styles.logo);
 
-export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: string }>) {
-  const navigate = useNavigate();
-  const acceptInvitation = useAcceptInvitationMutation();
-  const [error, setError] = useState<SupportError | null>(null);
-  const started = useRef(false);
+export function AcceptInvitationDeepLink({
+  error,
+  onRetry,
+  retrying = false,
+}: Readonly<{
+  error: SupportError | null;
+  onRetry?: () => void;
+  retrying?: boolean;
+}>) {
   const retry = useRetryAfterCountdown();
-
-  const acceptToken = useCallback(async () => {
-    if (retry.blocked) return;
-    setError(null);
-    try {
-      const accepted = await acceptInvitation.mutateAsync({ token: plainToken });
-      if (accepted.destination.kind === "competition") {
-        await navigate({
-          to: "/orgs/$orgId/competitions/$competitionId",
-          params: {
-            orgId: accepted.destination.organizationId,
-            competitionId: accepted.destination.competitionId,
-          },
-          replace: true,
-        });
-        return;
-      }
-      await navigate({
-        to: "/orgs/$orgId",
-        params: { orgId: accepted.organizationId },
-        replace: true,
-      });
-    } catch (caught) {
-      const clientError = caught instanceof OrganizationsClientError ? caught : null;
-      retry.start(clientError?.retryAfterSeconds);
-      setError({
-        message: clientError?.retryAfterSeconds
-          ? "Alcanzaste el límite temporal de invitaciones."
-          : invitationAcceptErrorMessage(clientError),
-        requestId: clientError?.requestId,
-        retryAfterSeconds: clientError?.retryAfterSeconds,
-      });
-    }
-  }, [acceptInvitation, navigate, plainToken, retry]);
-
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    void acceptToken();
-  }, [acceptToken]);
+  const startedForError = useRef<SupportError | null>(null);
+  if (error?.retryAfterSeconds && error !== startedForError.current) {
+    startedForError.current = error;
+    retry.start(error.retryAfterSeconds);
+  }
 
   return (
     <main {...applyStyles(styles.main)}>
@@ -119,17 +84,15 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
           <SupportErrorAlert
             error={{ ...error, retryAfterSeconds: retry.remainingSeconds || undefined }}
           />
-          <Button
-            disabled={acceptInvitation.isPending || retry.blocked}
-            onClick={() => void acceptToken()}
-            type="button"
-          >
-            {acceptInvitation.isPending
-              ? "Procesando…"
-              : retry.blocked
-                ? `Reintentar en ${retry.remainingSeconds} s`
-                : "Reintentar invitación"}
-          </Button>
+          {onRetry ? (
+            <Button disabled={retrying || retry.blocked} onClick={onRetry} type="button">
+              {retrying
+                ? "Procesando…"
+                : retry.blocked
+                  ? `Reintentar en ${retry.remainingSeconds} s`
+                  : "Reintentar invitación"}
+            </Button>
+          ) : null}
         </div>
       ) : (
         <Caption>Un momento…</Caption>

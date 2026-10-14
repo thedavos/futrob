@@ -82,6 +82,11 @@ export const queryKeys = {
     all: ["teams"] as const,
     competitionManagement: (organizationId: string, competitionId: string) =>
       [...queryKeys.teams.all, "competition-management", organizationId, competitionId] as const,
+    competitionManagementClubNames: (organizationId: string, competitionId: string) =>
+      [
+        ...queryKeys.teams.competitionManagement(organizationId, competitionId),
+        "club-names",
+      ] as const,
     competitionManagementDetail: (organizationId: string, competitionId: string, teamId: string) =>
       [
         ...queryKeys.teams.competitionManagement(organizationId, competitionId),

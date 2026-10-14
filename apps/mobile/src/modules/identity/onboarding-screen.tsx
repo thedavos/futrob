@@ -1,16 +1,13 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import type { ExternalClubDto, OnboardingStepDto } from "@futrob/api-contracts";
 import { FutrobApiError } from "@futrob/sdk";
-import { getFutrobClient } from "@/modules/api/futrob-client";
 import { theme } from "@/theme/theme";
 import { Button, EmptyState, Logo, Screen, Text } from "@/ui";
 import { GateBoundary } from "./gate-boundary.tsx";
-import { getSession } from "./session-store.ts";
-import { clearPendingInvitation, peekPendingInvitation } from "./onboarding-draft.ts";
+import type { NativeOnboardingFlow } from "./onboarding-flow.ts";
 import {
-  NativeOnboardingFlow,
   stepsForPath,
   accountIsValid,
   competitionFromDraft,
@@ -19,7 +16,7 @@ import {
 import { useMobileCopy, type MobileCopyKey, type MobileLanguage } from "./mobile-copy.ts";
 import { OnboardingFields } from "./onboarding-fields.tsx";
 import { nativeRoute } from "./native-route.ts";
-import type { GateResult } from "./session-gate.ts";
+import { useNativeOnboardingFlow } from "./use-native-onboarding-flow.ts";
 
 function apiMessage(
   error: Error,
@@ -60,55 +57,16 @@ function apiMessage(
 export function OnboardingScreen({ step }: { step: OnboardingStepDto }) {
   const router = useRouter();
   const { language, t, toggleLanguage } = useMobileCopy();
-  const [flow, setFlow] = useState<NativeOnboardingFlow | null>(null);
+  const flowQuery = useNativeOnboardingFlow(step);
+  const flow = flowQuery.data?.flow ?? null;
   const [, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clubQuery, setClubQuery] = useState("");
   const [clubs, setClubs] = useState<readonly ExternalClubDto[]>([]);
   const refresh = () => setRevision((value) => value + 1);
-
-  const onReady = useCallback(
-    (result: GateResult) => {
-      if (result.kind !== "onboarding") return;
-      let cancelled = false;
-      void (async () => {
-        const session = await getSession();
-        if (!session) return;
-        const next = await NativeOnboardingFlow.load(
-          session.user.id,
-          result.status,
-          getFutrobClient(),
-        );
-        const pending = await peekPendingInvitation();
-        if (pending) {
-          await next.update({ path: "invitation", invitationToken: pending });
-          await next.goTo("invitation");
-          await clearPendingInvitation();
-          if (!cancelled) router.replace("/(onboarding)/invitation");
-        } else if (!cancelled) {
-          setFlow(next);
-          if (step === "review" && next.draft.path === "invitation") {
-            await next.reinspectRestoredInvitation();
-            if (!cancelled) setRevision((value) => value + 1);
-          }
-        }
-      })().catch((caught) => {
-        if (!cancelled)
-          setError(
-            apiMessage(
-              caught instanceof Error ? caught : new Error(t("genericError")),
-              language,
-              t,
-            ),
-          );
-      });
-      return () => {
-        cancelled = true;
-      };
-    },
-    [router, step, language],
-  );
+  const loadError =
+    flowQuery.error instanceof Error ? apiMessage(flowQuery.error, language, t) : error;
 
   async function change(patch: Parameters<NativeOnboardingFlow["update"]>[0]) {
     if (!flow) return;
@@ -206,18 +164,21 @@ export function OnboardingScreen({ step }: { step: OnboardingStepDto }) {
     );
   }
 
+  if (flowQuery.data?.kind === "redirect") {
+    return <Redirect href={nativeRoute(flowQuery.data.href)} />;
+  }
+
   return (
     <GateBoundary
       mode="onboarding"
       route={`/(onboarding)/${step === "intention" ? "welcome" : step}`}
-      onReady={onReady}
     >
       <Screen scroll>
         <View style={{ gap: theme.spacing[6], maxWidth: 420, width: "100%", alignSelf: "center" }}>
           {header()}
-          {error ? (
+          {loadError ? (
             <Text color="danger" accessibilityRole="alert">
-              {error}
+              {loadError}
             </Text>
           ) : null}
           {flow ? (

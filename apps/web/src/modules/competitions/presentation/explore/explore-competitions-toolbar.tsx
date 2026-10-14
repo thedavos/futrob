@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   competitionFormatSchema,
   competitionPlatformSchema,
@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
   typography,
+  useExternalSync,
 } from "@futrob/ui";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {
@@ -35,7 +36,6 @@ import {
   toExploreSearchParams,
   type ExploreCompetitionsSearch,
 } from "./explore-search.ts";
-import { useDebouncedValue } from "./use-debounced-value.ts";
 
 const ALL = "__all__";
 const FORMATS = competitionFormatSchema.options;
@@ -65,22 +65,30 @@ export function ExploreCompetitionsToolbar({
   readonly t: Translator;
 }) {
   const [query, setQuery] = useState(search.q ?? "");
-  const debouncedQuery = useDebouncedValue(query, 300);
-  const searchRef = useRef(search);
-  const onSearchChangeRef = useRef(onSearchChange);
-  searchRef.current = search;
-  onSearchChangeRef.current = onSearchChange;
-
-  useEffect(() => {
+  const [prevSearchQuery, setPrevSearchQuery] = useState(search.q);
+  if (search.q !== prevSearchQuery) {
+    setPrevSearchQuery(search.q);
     setQuery(search.q ?? "");
-  }, [search.q]);
+  }
+  const searchRef = useRef(search);
+  searchRef.current = search;
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const current = searchRef.current;
-    const nextQuery = debouncedQuery.trim() || undefined;
-    if (nextQuery === current.q) return;
-    onSearchChangeRef.current(toExploreSearchParams({ ...current, q: nextQuery }));
-  }, [debouncedQuery]);
+  useExternalSync(() => {
+    return () => {
+      if (debounceRef.current !== null) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  function onQueryInput(next: string) {
+    setQuery(next);
+    if (debounceRef.current !== null) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const nextQuery = next.trim() || undefined;
+      if (nextQuery === searchRef.current.q) return;
+      onSearchChange(toExploreSearchParams({ ...searchRef.current, q: nextQuery }));
+    }, 300);
+  }
 
   function patch(next: Partial<ExploreCompetitionsSearch>) {
     onSearchChange(toExploreSearchParams({ ...search, ...next }));
@@ -93,7 +101,7 @@ export function ExploreCompetitionsToolbar({
           <InputWithIcon
             aria-label={t("player.competitions.explore.search.label")}
             dense
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => onQueryInput(event.target.value)}
             placeholder={t("player.competitions.explore.search.placeholder")}
             startIcon={MagnifyingGlassIcon}
             type="search"

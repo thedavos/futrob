@@ -12,15 +12,12 @@ import {
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { Fragment, type ReactNode, useCallback, useEffect, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import {
   ShellActionBarProvider,
   useShellActionBar,
 } from "@/shared/presentation/shell/shell-action-bar.tsx";
-import {
-  readStoredShellChrome,
-  writeStoredShellChrome,
-} from "@/shared/presentation/shell/shell-chrome-storage.ts";
+import { useShellChromeCollapsed } from "@/shared/presentation/shell/shell-chrome-store.ts";
 import { commandsFor } from "@/shared/presentation/shell/shell-commands.ts";
 import { selectionAfterAssociatingClub } from "@/shared/presentation/shell/workspace-selection.ts";
 import {
@@ -131,18 +128,8 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
     selectionState.selection,
     selectionState.allowedPermissions,
   );
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, onCollapsedChange] = useShellChromeCollapsed();
   const [addClubOpen, setAddClubOpen] = useState(false);
-
-  useEffect(() => {
-    const stored = readStoredShellChrome();
-    if (stored) setCollapsed(stored.collapsed);
-  }, []);
-
-  const onCollapsedChange = useCallback((next: boolean) => {
-    setCollapsed(next);
-    writeStoredShellChrome({ collapsed: next });
-  }, []);
 
   return (
     <SidebarProvider

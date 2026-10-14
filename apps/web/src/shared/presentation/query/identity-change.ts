@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useExternalSync } from "@futrob/ui";
 import type { QueryClient } from "@tanstack/react-query";
 
 const IDENTITY_CHANNEL = "futrob:identity-changed";
@@ -31,5 +31,8 @@ export function listenForIdentityChanges(listener: () => void): () => void {
 
 /** Keeps this tab's cache in step with identity changes made in other tabs. */
 export function useForgetIdentityFromOtherTabs(queryClient: QueryClient): void {
-  useEffect(() => listenForIdentityChanges(() => forgetCachedIdentity(queryClient)), [queryClient]);
+  useExternalSync(
+    () => listenForIdentityChanges(() => forgetCachedIdentity(queryClient)),
+    [queryClient],
+  );
 }

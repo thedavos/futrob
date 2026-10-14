@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
 
 const LANGUAGE_KEY = "futrob.mobile.language";
 export type MobileLanguage = "es" | "en";
@@ -170,7 +171,7 @@ export function localizeAuthMessage(
 
 export function useMobileCopy() {
   const [language, setLanguage] = useState<MobileLanguage>("es");
-  useEffect(() => {
+  useExternalSync(() => {
     void SecureStore.getItemAsync(LANGUAGE_KEY).then((saved) => {
       if (saved === "es" || saved === "en") setLanguage(saved);
     });

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type RefObject } from "react";
+import { useCallback, useRef, type RefObject } from "react";
+import { useExternalSync } from "@futrob/ui";
 
 /**
  * Focuses a field once `busy` clears. Inputs are disabled while a request runs, so focusing
@@ -13,7 +14,7 @@ export function useFocusWhenIdle<Field extends string>(
 ): (field: Field) => void {
   const pending = useRef<Field | null>(null);
 
-  useEffect(() => {
+  useExternalSync(() => {
     if (busy || pending.current === null) return;
     fields[pending.current].current?.focus();
     pending.current = null;

@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { OrganizationLogoDto } from "@futrob/api-contracts";
-import { applyStyles, Button, FieldDescription, FieldError, FieldLabel } from "@futrob/ui";
+import {
+  applyStyles,
+  Button,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  useObjectUrl,
+} from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { OrganizationAvatar } from "./organization-avatar.tsx";
 import { LOGO_ACCEPT, logoFileProblem } from "./organization-logo.ts";
@@ -126,19 +133,4 @@ export function OrganizationLogoPicker({
       </div>
     </div>
   );
-}
-
-/** An object URL for `file`, revoked when the file changes or the component unmounts. */
-function useObjectUrl(file: File | null): string | null {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!file) {
-      setUrl(null);
-      return;
-    }
-    const created = URL.createObjectURL(file);
-    setUrl(created);
-    return () => URL.revokeObjectURL(created);
-  }, [file]);
-  return url;
 }

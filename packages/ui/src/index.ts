@@ -212,6 +212,8 @@ export { Textarea } from "./components/textarea";
 export type { TextareaProps } from "./components/textarea";
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/tooltip";
 export { useCopyToClipboard } from "./hooks/use-copy-to-clipboard";
+export { useExternalSync } from "./hooks/use-external-sync";
+export { useObjectUrl } from "./hooks/use-object-url";
 export type { Icon, IconProps, IconWeight } from "./lib/icon";
 export { FUTROB_ICON_CATALOG } from "./icons/catalog";
 export type { FutrobIconEntry } from "./icons/catalog";

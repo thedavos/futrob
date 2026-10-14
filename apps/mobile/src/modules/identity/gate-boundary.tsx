@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
+import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
 import { AppState, ActivityIndicator, View } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { Redirect, useFocusEffect } from "expo-router";
 import { Button, EmptyState, Screen, Text } from "@/ui";
 import { theme } from "@/theme/theme";
-import { resolveSessionGate, type GateResult } from "./session-gate.ts";
+import { useSessionGateQuery, useResetSessionGate } from "./use-session-gate-query.ts";
 import { useMobileCopy } from "./mobile-copy.ts";
 import { nativeRoute } from "./native-route.ts";
 
@@ -11,56 +12,29 @@ export function GateBoundary({
   children,
   mode,
   route,
-  onReady,
 }: {
   children?: ReactNode;
   mode: "onboarding" | "ready" | "entry";
   route?: string;
-  onReady?: (result: GateResult) => void | (() => void);
 }) {
-  const router = useRouter();
   const { t } = useMobileCopy();
-  const [result, setResult] = useState<GateResult | null>(null);
-  const [revision, setRevision] = useState(0);
-  const refresh = useCallback(() => setRevision((value) => value + 1), []);
+  const query = useSessionGateQuery();
+  const reset = useResetSessionGate();
 
   useFocusEffect(
     useCallback(() => {
-      refresh();
-    }, [refresh]),
+      void query.refetch();
+    }, [query.refetch]),
   );
-  useEffect(() => {
+  useExternalSync(() => {
     const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") refresh();
+      if (state === "active") void query.refetch();
     });
     return () => subscription.remove();
-  }, [refresh]);
+  }, [query.refetch]);
 
-  useEffect(() => {
-    let cancelled = false;
-    let disposeReady: void | (() => void);
-    setResult(null);
-    void resolveSessionGate().then((next) => {
-      if (cancelled) return;
-      setResult(next);
-      if (next.kind === "error") return;
-      if (
-        mode === "entry" ||
-        next.kind !== mode ||
-        (mode === "onboarding" && route && next.route !== route)
-      ) {
-        router.replace(nativeRoute(next.route));
-        return;
-      }
-      disposeReady = onReady?.(next);
-    });
-    return () => {
-      cancelled = true;
-      disposeReady?.();
-    };
-  }, [mode, onReady, revision, route, router]);
-
-  if (!result || (result.kind !== "error" && mode === "entry")) {
+  const result = query.data;
+  if (!result || query.isPending) {
     return (
       <Screen>
         <View style={{ flex: 1, justifyContent: "center" }}>
@@ -79,12 +53,17 @@ export function GateBoundary({
               {t("wait")} {result.retryAfterSeconds} s.
             </Text>
           ) : null}
-          <Button label={t("retry")} onPress={refresh} />
+          <Button label={t("retry")} onPress={reset} />
         </View>
       </Screen>
     );
   }
-  if (result.kind !== mode || (mode === "onboarding" && route && result.route !== route))
-    return null;
+  if (
+    mode === "entry" ||
+    result.kind !== mode ||
+    (mode === "onboarding" && route && result.route !== route)
+  ) {
+    return <Redirect href={nativeRoute(result.route)} />;
+  }
   return <>{children}</>;
 }
