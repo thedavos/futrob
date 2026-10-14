@@ -11,7 +11,7 @@ const DISABLE_COMMENT = /(?:eslint|oxlint|oxc)-disable(?:-next-line|-line)?\b/;
 const DISABLE_RULE = /(?:futrob\/)?no-raw-use-effect\b/;
 
 const RAW_USE_EFFECT_MESSAGE =
-  "Do not import or call raw useEffect/useLayoutEffect. Derive during render, handle the event, reset with key, use useSyncExternalStore, or TanStack Query for data. Synchronize with an external system only through useExternalSync from @futrob/ui.";
+  "Do not import or call raw useEffect/useLayoutEffect. Derive during render, handle the event, reset with key, use useSyncExternalStore, or TanStack Query for data. Do not load or fetch data in useExternalSync. Synchronize with an external system only through useExternalSync from @futrob/ui.";
 
 function isReactSource(value: string): boolean {
   return REACT_SOURCES.has(value);
