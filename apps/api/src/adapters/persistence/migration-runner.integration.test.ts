@@ -92,6 +92,7 @@ suite("migration runner", () => {
           "0052_schedule_change_application.sql",
           "0053_schedule_change_application_acknowledgements.sql",
           "0054_activity_entries.sql",
+          "0055_competition_entry_invitations.sql",
           "0055_schedule_change_expiry_resolution.sql",
         ]);
         expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
@@ -131,6 +132,7 @@ suite("migration runner", () => {
           "0052_schedule_change_application.sql",
           "0053_schedule_change_application_acknowledgements.sql",
           "0054_activity_entries.sql",
+          "0055_competition_entry_invitations.sql",
           "0055_schedule_change_expiry_resolution.sql",
         ]);
         expect(
