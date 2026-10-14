@@ -34,11 +34,83 @@ export type OpenApiRouteSpec = {
   >;
 };
 
+type JsonBodyRequest<TBody extends z.ZodType> = {
+  body: {
+    required: true;
+    content: { "application/json": { schema: TBody } };
+  };
+};
+
+type DefinedOpenApiRoute<TPath extends string, TRequest> = {
+  method: OpenApiRouteSpec["method"];
+  path: TPath;
+  operationId: string;
+  tags: string[];
+  summary: string;
+  description?: string;
+  security?: [] | undefined;
+  request: TRequest;
+  responses: RouteResponses;
+  getRoutingPath(): string;
+};
+
+type RouteSpec<TPath extends string, TBody = unknown, TQuery = unknown, TParams = unknown> = Omit<
+  OpenApiRouteSpec,
+  "body" | "query" | "params" | "path"
+> & {
+  readonly path: TPath;
+} & (unknown extends TBody ? { readonly body?: never } : { readonly body: TBody }) &
+  (unknown extends TQuery ? { readonly query?: never } : { readonly query: TQuery }) &
+  (unknown extends TParams ? { readonly params?: never } : { readonly params: TParams });
+
 function isErrorStatus(status: number): status is OpenApiErrorStatus {
   return OPENAPI_ERROR_STATUSES.some((allowed) => allowed === status);
 }
 
-export function defineRoute(spec: OpenApiRouteSpec) {
+export function defineRoute<
+  TPath extends string,
+  TBody extends z.ZodType,
+  TQuery extends z.ZodType,
+  TParams extends z.ZodType,
+>(
+  spec: RouteSpec<TPath, TBody, TQuery, TParams>,
+): DefinedOpenApiRoute<TPath, JsonBodyRequest<TBody> & { query: TQuery; params: TParams }>;
+export function defineRoute<
+  TPath extends string,
+  TBody extends z.ZodType,
+  TQuery extends z.ZodType,
+>(
+  spec: RouteSpec<TPath, TBody, TQuery>,
+): DefinedOpenApiRoute<TPath, JsonBodyRequest<TBody> & { query: TQuery }>;
+export function defineRoute<
+  TPath extends string,
+  TBody extends z.ZodType,
+  TParams extends z.ZodType,
+>(
+  spec: RouteSpec<TPath, TBody, unknown, TParams>,
+): DefinedOpenApiRoute<TPath, JsonBodyRequest<TBody> & { params: TParams }>;
+export function defineRoute<
+  TPath extends string,
+  TQuery extends z.ZodType,
+  TParams extends z.ZodType,
+>(
+  spec: RouteSpec<TPath, unknown, TQuery, TParams>,
+): DefinedOpenApiRoute<TPath, { query: TQuery; params: TParams }>;
+export function defineRoute<TPath extends string, TBody extends z.ZodType>(
+  spec: RouteSpec<TPath, TBody>,
+): DefinedOpenApiRoute<TPath, JsonBodyRequest<TBody>>;
+export function defineRoute<TPath extends string, TQuery extends z.ZodType>(
+  spec: RouteSpec<TPath, unknown, TQuery>,
+): DefinedOpenApiRoute<TPath, { query: TQuery }>;
+export function defineRoute<TPath extends string, TParams extends z.ZodType>(
+  spec: RouteSpec<TPath, unknown, unknown, TParams>,
+): DefinedOpenApiRoute<TPath, { params: TParams }>;
+export function defineRoute<TPath extends string>(
+  spec: RouteSpec<TPath>,
+): DefinedOpenApiRoute<TPath, undefined>;
+export function defineRoute(
+  spec: OpenApiRouteSpec,
+): DefinedOpenApiRoute<string, RouteRequest | undefined> {
   const request: RouteRequest = {};
   if (spec.params) request.params = spec.params;
   if (spec.query) request.query = spec.query;
@@ -91,6 +163,9 @@ export function defineRoute(spec: OpenApiRouteSpec) {
       : API_ERROR_RESPONSE;
   }
 
+  // SAFETY: createRoute infers a widened request union from the mutable
+  // `RouteRequest` builder; overloads restore the precise request type for
+  // `c.req.valid()` without changing the runtime object.
   return createRoute({
     method: spec.method,
     path: spec.path,
@@ -101,5 +176,5 @@ export function defineRoute(spec: OpenApiRouteSpec) {
     security: spec.public === true ? [] : undefined,
     request: spec.params || spec.query || spec.body ? request : undefined,
     responses,
-  });
+  }) as DefinedOpenApiRoute<string, RouteRequest | undefined>;
 }

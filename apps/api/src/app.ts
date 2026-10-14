@@ -1,11 +1,12 @@
 import { registerScheduleChangeExpiryRoutes } from "@/http/routes/schedule-change-expiry.ts";
 import { cors } from "hono/cors";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { REQUEST_ID_HEADER } from "@futrob/api-contracts";
 import type { DbHealthStatus } from "@/adapters/persistence/postgres.ts";
 import { logCorrelatedError, type CorrelationLogger } from "@/context/request-correlation.ts";
 import type { AppModules } from "@/di/create-modules.ts";
-import { apiErrorResponse } from "@/http/errors.ts";
+import { apiErrorResponse, openApiHttpExceptionResponse } from "@/http/errors.ts";
 import { createRequestCorrelationMiddleware } from "@/http/middleware/request-correlation.ts";
 import { captureUnexpectedError } from "@/observability/sentry.ts";
 import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
@@ -68,6 +69,10 @@ export function createApp(deps: AppDeps): Hono {
   app.use("/api/v1/*", createRequestCorrelationMiddleware(deps.correlationLogger));
 
   app.onError((error) => {
+    if (error instanceof HTTPException) {
+      const mapped = openApiHttpExceptionResponse(error);
+      if (mapped) return mapped;
+    }
     logCorrelatedError("http.request.failed", { errorName: error.name });
     captureUnexpectedError(error);
     return apiErrorResponse(500, {

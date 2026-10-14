@@ -1,6 +1,7 @@
 import type { ApiErrorBody, ApiErrorDetails } from "@futrob/api-contracts";
 import { apiErrorDetailsSchema } from "@futrob/api-contracts";
 import type { AnyTaggedError } from "@futrob/shared-kernel";
+import type { HTTPException } from "hono/http-exception";
 import { z, type ZodIssue } from "zod";
 import { currentRequestCorrelation } from "@/context/request-correlation.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
@@ -24,6 +25,22 @@ export function validationErrorResponse(issues: ZodIssue[]): Response {
     messageKey: "errors.api.validation_error",
     details: { issues },
   });
+}
+
+/**
+ * OpenAPIHono throws HTTPException for malformed JSON (400) and unsupported
+ * media types (415) before the Zod defaultHook runs. Map those to the same
+ * ApiError envelope as `safeParse` failures so clients never see a raw Hono body.
+ */
+export function openApiHttpExceptionResponse(error: HTTPException): Response | undefined {
+  if (error.status !== 400 && error.status !== 415) return undefined;
+  return validationErrorResponse([
+    {
+      code: "custom",
+      path: [],
+      message: error.message,
+    },
+  ]);
 }
 
 /** `status` overrides the code heuristic for routes that map their failures explicitly. */
