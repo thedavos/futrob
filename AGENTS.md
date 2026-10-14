@@ -82,6 +82,18 @@ MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**
   [ADR-0011](/docs/adr/0011-tagged-errors.md)). Zod/`api.*`/auth wire and `Panic`
   (defects) stay outside TaggedError.
 
+## React effects
+
+Raw `useEffect` / `useLayoutEffect` are banned in `apps/web`, `apps/mobile`, and
+`packages/ui`. Derive during render, handle events, reset with `key`, use
+`useSyncExternalStore`, or TanStack Query for server data. The only allowed
+effect wrapper is `useExternalSync` from `@futrob/ui`
+(`packages/ui/src/hooks/use-external-sync.ts`), documented as synchronizing with
+an external system only (DOM APIs, subscriptions, timers, imperative third-party
+widgets). Pass the full dependency list — do not drop `deps`. Oxlint enforces
+this via `react/set-state-in-effect`, `react-you-might-not-need-an-effect/*`, and
+`futrob/no-raw-use-effect`. Do not disable those rules.
+
 ## Separation
 
 ```text

@@ -74,6 +74,10 @@ export default defineConfig({
         name: "futrob",
         specifier: "./tools/oxlint/futrob/index.ts",
       },
+      {
+        name: "react-you-might-not-need-an-effect",
+        specifier: "eslint-plugin-react-you-might-not-need-an-effect",
+      },
     ],
     plugins: ["typescript", "import"],
     options: {
@@ -155,8 +159,12 @@ export default defineConfig({
       {
         files: ["apps/web/**", "packages/ui/**"],
         plugins: ["typescript", "react", "jsx-a11y", "import"],
+        env: {
+          browser: true,
+        },
         rules: {
           "react/self-closing-comp": "error",
+          "react/set-state-in-effect": "error",
           "jsx-a11y/label-has-associated-control": [
             "error",
             { controlComponents: ["Switch", "Checkbox"] },
@@ -164,6 +172,33 @@ export default defineConfig({
           "jsx-a11y/alt-text": "error",
           "react/button-has-type": "error",
           "jsx-a11y/no-autofocus": "error",
+          "futrob/no-raw-use-effect": "error",
+          "react-you-might-not-need-an-effect/no-derived-state": "error",
+          "react-you-might-not-need-an-effect/no-chain-state-updates": "error",
+          "react-you-might-not-need-an-effect/no-event-handler": "error",
+          "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change": "error",
+          "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": "error",
+          "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": "error",
+          "react-you-might-not-need-an-effect/no-pass-data-to-parent": "error",
+          "react-you-might-not-need-an-effect/no-external-store-subscription": "error",
+          "react-you-might-not-need-an-effect/no-initialize-state": "error",
+        },
+      },
+      {
+        files: ["apps/mobile/**"],
+        plugins: ["typescript", "react", "import"],
+        rules: {
+          "react/set-state-in-effect": "error",
+          "futrob/no-raw-use-effect": "error",
+          "react-you-might-not-need-an-effect/no-derived-state": "error",
+          "react-you-might-not-need-an-effect/no-chain-state-updates": "error",
+          "react-you-might-not-need-an-effect/no-event-handler": "error",
+          "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change": "error",
+          "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": "error",
+          "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": "error",
+          "react-you-might-not-need-an-effect/no-pass-data-to-parent": "error",
+          "react-you-might-not-need-an-effect/no-external-store-subscription": "error",
+          "react-you-might-not-need-an-effect/no-initialize-state": "error",
         },
       },
       {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { hasBrowserWindow } from "#lib/browser-runtime";
+import { useExternalSync } from "#hooks/use-external-sync";
 
 function legacyCopyToClipboard(value: string): boolean {
   const textArea = document.createElement("textarea");
@@ -41,7 +42,7 @@ export function useCopyToClipboard({ timeout = 2000, onCopy }: UseCopyToClipboar
   const [isCopied, setIsCopied] = useState(false);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  useExternalSync(() => {
     return () => {
       if (resetTimerRef.current !== null) {
         clearTimeout(resetTimerRef.current);
