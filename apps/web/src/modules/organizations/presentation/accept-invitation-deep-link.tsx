@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useRef } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
@@ -10,13 +10,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
-  useExternalSync,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { useNavigate } from "@tanstack/react-router";
+import { Navigate } from "@tanstack/react-router";
 import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
 import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
-import { useAcceptInvitationMutation } from "@/modules/organizations/presentation/organization-queries.ts";
+import { useAcceptInvitationQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 import {
   SupportErrorAlert,
   type SupportError,
@@ -57,51 +56,45 @@ const styles = stylex.create({
 const logo = applyStyles(styles.logo);
 
 export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: string }>) {
-  const navigate = useNavigate();
-  const acceptInvitation = useAcceptInvitationMutation();
-  const [error, setError] = useState<SupportError | null>(null);
-  const started = useRef(false);
+  const acceptInvitation = useAcceptInvitationQuery(plainToken);
   const retry = useRetryAfterCountdown();
-
-  const acceptToken = useCallback(async () => {
-    if (retry.blocked) return;
-    setError(null);
-    try {
-      const accepted = await acceptInvitation.mutateAsync({ token: plainToken });
-      if (accepted.destination.kind === "competition") {
-        await navigate({
-          to: "/orgs/$orgId/competitions/$competitionId",
-          params: {
-            orgId: accepted.destination.organizationId,
-            competitionId: accepted.destination.competitionId,
-          },
-          replace: true,
-        });
-        return;
-      }
-      await navigate({
-        to: "/orgs/$orgId",
-        params: { orgId: accepted.organizationId },
-        replace: true,
-      });
-    } catch (caught) {
-      const clientError = caught instanceof OrganizationsClientError ? caught : null;
-      retry.start(clientError?.retryAfterSeconds);
-      setError({
+  const startedForError = useRef(0);
+  const clientError =
+    acceptInvitation.error instanceof OrganizationsClientError ? acceptInvitation.error : null;
+  if (
+    acceptInvitation.isError &&
+    clientError?.retryAfterSeconds &&
+    acceptInvitation.errorUpdatedAt !== startedForError.current
+  ) {
+    startedForError.current = acceptInvitation.errorUpdatedAt;
+    retry.start(clientError.retryAfterSeconds);
+  }
+  const error: SupportError | null = acceptInvitation.isError
+    ? {
         message: clientError?.retryAfterSeconds
           ? "Alcanzaste el límite temporal de invitaciones."
           : invitationAcceptErrorMessage(clientError),
         requestId: clientError?.requestId,
         retryAfterSeconds: clientError?.retryAfterSeconds,
-      });
-    }
-  }, [acceptInvitation, navigate, plainToken, retry]);
+      }
+    : null;
 
-  useExternalSync(() => {
-    if (started.current) return;
-    started.current = true;
-    void acceptToken();
-  }, [acceptToken]);
+  if (acceptInvitation.data) {
+    const accepted = acceptInvitation.data;
+    if (accepted.destination.kind === "competition") {
+      return (
+        <Navigate
+          params={{
+            orgId: accepted.destination.organizationId,
+            competitionId: accepted.destination.competitionId,
+          }}
+          replace
+          to="/orgs/$orgId/competitions/$competitionId"
+        />
+      );
+    }
+    return <Navigate params={{ orgId: accepted.organizationId }} replace to="/orgs/$orgId" />;
+  }
 
   return (
     <main {...applyStyles(styles.main)}>
@@ -121,11 +114,11 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
             error={{ ...error, retryAfterSeconds: retry.remainingSeconds || undefined }}
           />
           <Button
-            disabled={acceptInvitation.isPending || retry.blocked}
-            onClick={() => void acceptToken()}
+            disabled={acceptInvitation.isFetching || retry.blocked}
+            onClick={() => void acceptInvitation.refetch()}
             type="button"
           >
-            {acceptInvitation.isPending
+            {acceptInvitation.isFetching
               ? "Procesando…"
               : retry.blocked
                 ? `Reintentar en ${retry.remainingSeconds} s`

@@ -15,14 +15,16 @@ import {
   readFormString,
   hasBrowserWindow,
   typography,
-  useExternalSync,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { CheckCircleIcon } from "@phosphor-icons/react";
 import { resolveSafeRedirect } from "@/modules/identity/presentation/safe-redirect.ts";
 import { TeamsClientError } from "@/modules/teams/presentation/teams-browser-client.ts";
-import { useAcceptRosterInvitationMutation } from "@/modules/teams/presentation/player-queries.ts";
+import {
+  useAcceptRosterInvitationMutation,
+  useAcceptRosterInvitationQuery,
+} from "@/modules/teams/presentation/player-queries.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import {
   SupportErrorAlert,
@@ -92,9 +94,34 @@ export function AcceptRosterInvitationForm(props: {
   const [accepted, setAccepted] = useState(false);
   const validation = useFormValidation<AcceptRosterInvitationField>();
   const acceptInvitation = useAcceptRosterInvitationMutation();
-  const submitting = acceptInvitation.isPending;
-  const autoAttempted = useRef(false);
+  const autoAcceptToken = props.autoAccept ? props.initialToken : undefined;
+  const autoAccept = useAcceptRosterInvitationQuery(
+    autoAcceptToken ?? "",
+    autoAcceptToken !== undefined,
+  );
+  const submitting = acceptInvitation.isPending || autoAccept.isFetching;
   const retry = useRetryAfterCountdown();
+  const startedForError = useRef(0);
+  const autoError = autoAccept.error instanceof TeamsClientError ? autoAccept.error : null;
+  if (
+    autoAccept.isError &&
+    autoError?.retryAfterSeconds &&
+    autoAccept.errorUpdatedAt !== startedForError.current
+  ) {
+    startedForError.current = autoAccept.errorUpdatedAt;
+    retry.start(autoError.retryAfterSeconds);
+  }
+  const displayedError: SupportError | null = autoAccept.isError
+    ? {
+        message: autoError?.retryAfterSeconds
+          ? "Alcanzaste el límite temporal de invitaciones."
+          : autoError
+            ? rosterInvitationErrorMessage(autoError.code)
+            : "No se pudo unirte a la plantilla. Inténtalo de nuevo.",
+        requestId: autoError?.requestId,
+        retryAfterSeconds: autoError?.retryAfterSeconds,
+      }
+    : error;
 
   async function acceptToken(token: string) {
     const trimmed = token.trim();
@@ -123,18 +150,20 @@ export function AcceptRosterInvitationForm(props: {
     }
   }
 
-  useExternalSync(() => {
-    if (!props.autoAccept || props.initialToken === undefined || autoAttempted.current) return;
-    autoAttempted.current = true;
-    void acceptToken(props.initialToken);
-  }, [props.autoAccept, props.initialToken]);
-
   async function handleSubmit(formValues: AcceptRosterInvitationValues) {
     await acceptToken(formValues.token);
   }
 
   function retryInitialToken() {
+    if (autoAcceptToken !== undefined) {
+      void autoAccept.refetch();
+      return;
+    }
     if (props.initialToken !== undefined) void acceptToken(props.initialToken);
+  }
+
+  if (autoAccept.data) {
+    return <Navigate replace to="/player" />;
   }
 
   if (accepted) {
@@ -146,7 +175,7 @@ export function AcceptRosterInvitationForm(props: {
     );
   }
 
-  if (props.autoAccept && submitting && error === null) {
+  if (props.autoAccept && submitting && displayedError === null) {
     return (
       <p {...applyStyles(typography.subtitle, styles.pending)}>
         Procesando tu invitación a la plantilla…
@@ -162,9 +191,9 @@ export function AcceptRosterInvitationForm(props: {
       onFormSubmit={handleSubmit}
       style={form.style}
     >
-      {error ? (
+      {displayedError ? (
         <SupportErrorAlert
-          error={{ ...error, retryAfterSeconds: retry.remainingSeconds || undefined }}
+          error={{ ...displayedError, retryAfterSeconds: retry.remainingSeconds || undefined }}
         />
       ) : null}
 
@@ -199,7 +228,7 @@ export function AcceptRosterInvitationForm(props: {
           ? "Procesando…"
           : retry.blocked
             ? `Reintentar en ${retry.remainingSeconds} s`
-            : error && props.initialToken !== undefined
+            : displayedError && props.initialToken !== undefined
               ? "Reintentar invitación"
               : "Unirme a la plantilla"}
       </Button>

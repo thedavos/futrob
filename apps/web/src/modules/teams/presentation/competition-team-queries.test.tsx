@@ -6,10 +6,12 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
+  useCompetitionTeamClubNamesQuery,
   useCompetitionTeamManagementQuery,
   useSetRosterOpenMutation,
 } from "./competition-team-queries.ts";
 import { teamsBrowserClient } from "./teams-browser-client.ts";
+import { teamSummaryFixture } from "./competition-teams-view.fixtures.ts";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -47,6 +49,40 @@ describe("competition Team pagination", () => {
       limit: 25,
     });
     expect(fetched?.data?.pages).toHaveLength(2);
+  });
+
+  it("walks every cursor page into a club-name map", async () => {
+    const first = teamSummaryFixture();
+    const second = teamSummaryFixture();
+    vi.spyOn(teamsBrowserClient, "listCompetitionManagement")
+      .mockResolvedValueOnce({
+        items: [{ ...first, team: { ...first.team, id: "team-1" } }],
+        nextCursor: "team-25",
+      })
+      .mockResolvedValueOnce({
+        items: [
+          {
+            ...second,
+            team: { ...second.team, id: "team-2" },
+            externalClub: second.externalClub
+              ? { ...second.externalClub, externalClubName: "Tigres" }
+              : null,
+          },
+        ],
+        nextCursor: null,
+      });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+    });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () => useCompetitionTeamClubNamesQuery("org-1", "competition-1"),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual({ "team-1": "Cuervos EA", "team-2": "Tigres" });
   });
 });
 

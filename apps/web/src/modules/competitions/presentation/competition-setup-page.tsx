@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
@@ -12,7 +12,6 @@ import {
   PageHeaderTitle,
   Stepper,
   Subtitle,
-  useExternalSync,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type {
@@ -23,7 +22,7 @@ import type {
 } from "@futrob/api-contracts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
-import { useCompetitionTeamManagementQuery } from "@/modules/teams/presentation/competition-team-queries.ts";
+import { useCompetitionTeamClubNamesQuery } from "@/modules/teams/presentation/competition-team-queries.ts";
 import {
   FormatStep,
   InformationStep,
@@ -111,7 +110,7 @@ export function CompetitionSetupPage({
   const draftQuery = useCompetitionDraftQuery(organizationId, competitionId);
   const participantsQuery = useCompetitionParticipantsQuery(organizationId, competitionId);
   const teamsQuery = useOrganizationTeamsQuery(organizationId);
-  const teamManagement = useCompetitionTeamManagementQuery(organizationId, competitionId);
+  const clubNames = useCompetitionTeamClubNamesQuery(organizationId, competitionId);
   const update = useUpdateCompetitionDraftMutation(organizationId, competitionId);
   const remove = useRemoveCompetitionParticipantMutation(organizationId, competitionId);
   const publish = usePublishCompetitionMutation(organizationId, competitionId);
@@ -129,20 +128,7 @@ export function CompetitionSetupPage({
   if (draft && profile === null) {
     setProfile(profileFieldsFromCompetition(draft.competition));
   }
-  useExternalSync(() => {
-    if (teamManagement.hasNextPage && !teamManagement.isFetchingNextPage) {
-      void teamManagement.fetchNextPage();
-    }
-  }, [teamManagement.hasNextPage, teamManagement.isFetchingNextPage, teamManagement.fetchNextPage]);
-  const clubs = useMemo(() => {
-    const names: Record<string, string> = {};
-    for (const page of teamManagement.data?.pages ?? []) {
-      for (const item of page.items) {
-        if (item.externalClub) names[item.team.id] = item.externalClub.externalClubName;
-      }
-    }
-    return names;
-  }, [teamManagement.data]);
+  const clubs = clubNames.data ?? {};
   const approvedParticipantCount =
     participantsQuery.data?.participants.filter((entry) => entry.status === "approved").length ?? 0;
   const canUpdate = caps.update;
@@ -267,7 +253,7 @@ export function CompetitionSetupPage({
           <ParticipantsStep
             capacity={draft.competition.teams}
             clubs={clubs}
-            clubsPending={teamManagement.isPending}
+            clubsPending={clubNames.isPending}
             disabled={participantsLocked || busy || !canManageParticipants}
             gameEdition={draft.competition.gameEdition}
             onRemove={(id: string) => remove.mutateAsync(id)}

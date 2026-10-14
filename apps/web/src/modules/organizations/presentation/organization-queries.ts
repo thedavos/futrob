@@ -87,6 +87,22 @@ export function useAcceptInvitationMutation() {
   });
 }
 
+/** One-shot accept for a deep-link token. Retry with `refetch`; do not wrap this in an effect. */
+export function useAcceptInvitationQuery(token: string) {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: queryKeys.organizations.acceptInvitation(token),
+    queryFn: async () => {
+      const accepted = await organizationsBrowserClient.acceptInvitation({ token });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.organizations.mine() });
+      return accepted;
+    },
+    retry: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+}
+
 export function useCreateCompetitionInvitationMutation(
   organizationId: string,
   competitionId: string,

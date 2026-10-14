@@ -31,7 +31,13 @@ vi.mock("./organizations-browser-client.ts", async (importOriginal) => {
   };
 });
 
-vi.mock("@tanstack/react-router", () => ({ useNavigate: () => mocks.navigate }));
+vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => mocks.navigate,
+  Navigate: ({ to, params }: { to: string; params?: Record<string, string> }) => {
+    void mocks.navigate({ to, params });
+    return null;
+  },
+}));
 
 afterEach(() => {
   cleanup();

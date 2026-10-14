@@ -35,6 +35,30 @@ export function useCompetitionTeamManagementQuery(organizationId: string, compet
   });
 }
 
+/** Loads every management page so setup can map team ids to club names without fetch-in-effect. */
+export function useCompetitionTeamClubNamesQuery(organizationId: string, competitionId: string) {
+  return useQuery({
+    queryKey: queryKeys.teams.competitionManagementClubNames(organizationId, competitionId),
+    queryFn: async () => {
+      const names: Record<string, string> = {};
+      let cursor: string | undefined;
+      do {
+        const page = await teamsBrowserClient.listCompetitionManagement(
+          organizationId,
+          competitionId,
+          { cursor, limit: 25 },
+        );
+        for (const item of page.items) {
+          if (item.externalClub) names[item.team.id] = item.externalClub.externalClubName;
+        }
+        cursor = page.nextCursor ?? undefined;
+      } while (cursor);
+      return names;
+    },
+    enabled: organizationId.length > 0 && competitionId.length > 0,
+  });
+}
+
 export function useCompetitionTeamManagementDetailQuery(
   organizationId: string,
   competitionId: string,

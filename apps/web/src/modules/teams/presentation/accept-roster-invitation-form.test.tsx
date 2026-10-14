@@ -34,6 +34,10 @@ vi.mock("@tanstack/react-router", () => ({
     <a {...props}>{children}</a>
   ),
   useNavigate: () => mocks.navigate,
+  Navigate: ({ to }: { to: string }) => {
+    void mocks.navigate({ to });
+    return null;
+  },
 }));
 
 afterEach(() => {

@@ -41,12 +41,16 @@ export const queryKeys = {
     meTeams: () => [...queryKeys.players.all, "me", "teams"] as const,
     meRosterInvitations: () => [...queryKeys.players.all, "me", "roster-invitations"] as const,
     meNextEncounter: () => [...queryKeys.players.all, "me", "next-encounter"] as const,
+    acceptRosterInvitation: (token: string) =>
+      [...queryKeys.players.all, "accept-roster-invitation", token] as const,
   },
   organizations: {
     all: ["organizations"] as const,
     mine: () => [...queryKeys.organizations.all, "mine"] as const,
     profile: (organizationId: string) =>
       [...queryKeys.organizations.all, "profile", organizationId] as const,
+    acceptInvitation: (token: string) =>
+      [...queryKeys.organizations.all, "accept-invitation", token] as const,
   },
   authorization: {
     all: ["authorization"] as const,
@@ -82,6 +86,11 @@ export const queryKeys = {
     all: ["teams"] as const,
     competitionManagement: (organizationId: string, competitionId: string) =>
       [...queryKeys.teams.all, "competition-management", organizationId, competitionId] as const,
+    competitionManagementClubNames: (organizationId: string, competitionId: string) =>
+      [
+        ...queryKeys.teams.competitionManagement(organizationId, competitionId),
+        "club-names",
+      ] as const,
     competitionManagementDetail: (organizationId: string, competitionId: string, teamId: string) =>
       [
         ...queryKeys.teams.competitionManagement(organizationId, competitionId),
