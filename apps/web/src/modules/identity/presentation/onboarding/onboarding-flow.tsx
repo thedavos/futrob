@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { useExternalSync } from "@futrob/ui";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import type {
@@ -105,7 +98,7 @@ export function OnboardingFlowProvider({
   const draftRef = useRef(draft);
   draftRef.current = draft;
 
-  useEffect(() => {
+  useExternalSync(() => {
     queryClient.setQueryData(queryKeys.identity.onboardingStatus(), initialStatus);
   }, [initialStatus, queryClient]);
 

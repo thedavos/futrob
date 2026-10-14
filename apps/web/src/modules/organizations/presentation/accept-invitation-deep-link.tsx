@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
@@ -10,6 +10,7 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  useExternalSync,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { useNavigate } from "@tanstack/react-router";
@@ -96,7 +97,7 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
     }
   }, [acceptInvitation, navigate, plainToken, retry]);
 
-  useEffect(() => {
+  useExternalSync(() => {
     if (started.current) return;
     started.current = true;
     void acceptToken();

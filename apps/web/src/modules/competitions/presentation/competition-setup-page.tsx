@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
@@ -12,6 +12,7 @@ import {
   PageHeaderTitle,
   Stepper,
   Subtitle,
+  useExternalSync,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type {
@@ -122,13 +123,13 @@ export function CompetitionSetupPage({
   const [form, setForm] = useState<UpdateCompetitionDraftRequest | null>(null);
   const draft = draftQuery.data ?? null;
 
-  useEffect(() => {
-    if (!draft) return;
-    // Seed once: a cover change refreshes the draft and must not discard unsaved edits.
-    setForm((current) => current ?? toUpdateInput(draft));
-    setProfile((current) => current ?? profileFieldsFromCompetition(draft.competition));
-  }, [draft]);
-  useEffect(() => {
+  if (draft && form === null) {
+    setForm(toUpdateInput(draft));
+  }
+  if (draft && profile === null) {
+    setProfile(profileFieldsFromCompetition(draft.competition));
+  }
+  useExternalSync(() => {
     if (teamManagement.hasNextPage && !teamManagement.isFetchingNextPage) {
       void teamManagement.fetchNextPage();
     }

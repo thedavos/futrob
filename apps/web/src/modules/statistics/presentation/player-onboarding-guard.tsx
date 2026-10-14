@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import { Navigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -23,15 +23,12 @@ const styles = stylex.create({
 
 export function PlayerOnboardingGuard({ children }: { readonly children: ReactNode }) {
   const { t } = useI18n();
-  const navigate = useNavigate();
   const query = useOnboardingStatusQuery();
   const allowed = query.data?.completed === true;
 
-  useEffect(() => {
-    if (query.isError || (query.data !== undefined && !query.data.completed)) {
-      void navigate({ to: "/onboarding", replace: true });
-    }
-  }, [navigate, query.data, query.isError]);
+  if (query.isError || (query.data !== undefined && !query.data.completed)) {
+    return <Navigate replace to="/onboarding" />;
+  }
 
   return allowed ? (
     children

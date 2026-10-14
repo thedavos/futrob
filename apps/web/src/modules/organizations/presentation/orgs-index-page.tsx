@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
@@ -11,7 +10,7 @@ import {
   TextLink,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import { OrganizationPicker } from "@/modules/organizations/presentation/organization-picker.tsx";
 import { useMyMembershipsQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 
@@ -33,25 +32,15 @@ const styles = stylex.create({
 });
 
 export function OrgsIndexPage() {
-  const navigate = useNavigate();
   const membershipsQuery = useMyMembershipsQuery();
   const memberships = membershipsQuery.data?.memberships;
 
-  useEffect(() => {
-    if (!memberships) {
-      return;
-    }
-    if (memberships.length === 0) {
-      void navigate({ to: "/onboarding" });
-      return;
-    }
-    if (memberships.length === 1) {
-      void navigate({
-        to: "/orgs/$orgId",
-        params: { orgId: memberships[0]!.organizationId },
-      });
-    }
-  }, [memberships, navigate]);
+  if (memberships?.length === 0) {
+    return <Navigate to="/onboarding" />;
+  }
+  if (memberships?.length === 1) {
+    return <Navigate params={{ orgId: memberships[0]!.organizationId }} to="/orgs/$orgId" />;
+  }
 
   const showPicker = membershipsQuery.isError || (memberships != null && memberships.length > 1);
 

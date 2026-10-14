@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 import {
@@ -120,21 +120,17 @@ export function EditGameAccountDialog({
     null,
   );
   const [formErrorKey, setFormErrorKey] = useState<ParameterlessMessageKey | null>(null);
-  const pending = updateAccount.isPending;
-  const validationError = validationErrorKey ? t(validationErrorKey) : null;
-
-  useEffect(() => {
-    if (!open) {
-      setInvalidField(null);
-      setValidationErrorKey(null);
-      setFormErrorKey(null);
-      return;
-    }
+  const [resetKey, setResetKey] = useState(`${account.id}:${open}`);
+  const nextResetKey = `${account.id}:${open}`;
+  if (nextResetKey !== resetKey) {
+    setResetKey(nextResetKey);
     setDraft(draftFromAccount(account));
     setInvalidField(null);
     setValidationErrorKey(null);
     setFormErrorKey(null);
-  }, [open, account]);
+  }
+  const pending = updateAccount.isPending;
+  const validationError = validationErrorKey ? t(validationErrorKey) : null;
 
   function patchDraft(patch: Partial<EditDraft>) {
     setDraft((current) => ({ ...current, ...patch }));

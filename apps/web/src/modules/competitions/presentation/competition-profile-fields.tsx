@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { CompetitionCoverPresetDto } from "@futrob/api-contracts";
 import {
@@ -15,6 +15,7 @@ import {
   FieldLabel,
   Input,
   typography,
+  useObjectUrl,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -379,17 +380,8 @@ export function CompetitionCoverPicker({
 }
 
 function useCoverPreview(value: CoverSelection): string | null {
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const file = value.kind === "file" ? value.file : null;
-  useEffect(() => {
-    if (!file) {
-      setObjectUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setObjectUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+  const objectUrl = useObjectUrl(file);
   if (value.kind === "file") return objectUrl;
   if (value.kind === "upload") return competitionCoverSrc(value);
   return null;

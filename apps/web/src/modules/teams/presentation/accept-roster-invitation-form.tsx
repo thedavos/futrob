@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
@@ -15,6 +15,7 @@ import {
   readFormString,
   hasBrowserWindow,
   typography,
+  useExternalSync,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -122,7 +123,7 @@ export function AcceptRosterInvitationForm(props: {
     }
   }
 
-  useEffect(() => {
+  useExternalSync(() => {
     if (!props.autoAccept || props.initialToken === undefined || autoAttempted.current) return;
     autoAttempted.current = true;
     void acceptToken(props.initialToken);

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, typography } from "@futrob/ui";
+import { applyStyles, Button, typography, useExternalSync } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { useOptionalShellActionBar } from "@/shared/presentation/shell/shell-action-bar.tsx";
@@ -126,7 +126,7 @@ export function CompetitionSetupActionBarRegistration(props: CompetitionSetupAct
   latest.current = props;
   const signature = actionBarSignature(props);
 
-  useEffect(() => {
+  useExternalSync(() => {
     if (!setActions || !clearActions) return;
     const current = latest.current;
     setActions([

@@ -1,5 +1,4 @@
-import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { Navigate, Outlet, createFileRoute, useLocation } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -31,24 +30,17 @@ export const Route = createFileRoute("/_app")({
 });
 
 function AppLayout() {
-  const navigate = useNavigate();
   const location = useLocation();
   const { t } = useI18n();
   const session = authClient.useSession();
   const bare = isBareAuthenticatedRoute(location.pathname);
 
-  useEffect(() => {
-    if (!session.isPending && session.data?.user == null) {
-      void navigate({
-        to: "/login",
-        search: { redirectTo: location.pathname },
-        replace: true,
-      });
-    }
-  }, [location.pathname, navigate, session.data?.user, session.isPending]);
-
-  if (session.isPending || session.data?.user == null) {
+  if (session.isPending) {
     return <div {...applyStyles(styles.pending)}>{t("auth.session.checking")}</div>;
+  }
+
+  if (session.data?.user == null) {
+    return <Navigate replace search={{ redirectTo: location.pathname }} to="/login" />;
   }
 
   return (

@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { useExternalSync } from "@futrob/ui";
 import type { Locale } from "./catalogs.ts";
 import { localeOpenGraphCode } from "./locale.ts";
 import { createTranslator, type Translator } from "./translate.ts";
@@ -41,7 +34,7 @@ export function I18nProvider({
     [locale, persistLocale],
   );
 
-  useEffect(() => {
+  useExternalSync(() => {
     document.documentElement.lang = locale;
     document
       .querySelector<HTMLMetaElement>('meta[property="og:locale"]')

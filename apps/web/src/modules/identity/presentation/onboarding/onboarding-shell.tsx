@@ -1,6 +1,13 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Logo, Stepper, typography, type StepperStep } from "@futrob/ui";
+import {
+  applyStyles,
+  Logo,
+  Stepper,
+  typography,
+  useExternalSync,
+  type StepperStep,
+} from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import {
@@ -124,15 +131,15 @@ export function OnboardingShell({
   const titleRef = useRef<HTMLHeadingElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useExternalSync(() => {
     titleRef.current?.focus();
   }, [currentStepId]);
 
-  useEffect(() => {
+  useExternalSync(() => {
     if (error) errorRef.current?.focus();
   }, [error]);
 
-  useEffect(() => {
+  useExternalSync(() => {
     document.title = `${title} | Futrob`;
   }, [title]);
 
