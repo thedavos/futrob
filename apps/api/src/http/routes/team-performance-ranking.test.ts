@@ -58,6 +58,15 @@ describe("private team performance HTTP", () => {
       (await app.request(`${path}/rankings?kind=team`, { headers: serviceHeaders("actor-1") }))
         .status,
     ).toBe(400);
+
+    const emptyKind = await app.request(`${path}/rankings?kind=`, {
+      headers: serviceHeaders("actor-1"),
+    });
+    expect(emptyKind.status).toBe(400);
+    expect(await emptyKind.json()).toMatchObject({
+      code: "api.validation_error",
+      messageKey: "errors.api.validation_error",
+    });
   });
 
   it("returns null before projection and incomplete after void, never an invented zero", async () => {

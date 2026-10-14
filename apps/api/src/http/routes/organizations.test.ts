@@ -182,10 +182,13 @@ describe("apps/api http organizations", () => {
       body: "{",
     });
     expect(malformed.status).toBe(400);
-    expect(await malformed.json()).toMatchObject({
+    const malformedBody = await malformed.json();
+    expect(malformedBody).toMatchObject({
       code: "api.validation_error",
       messageKey: "errors.api.validation_error",
     });
+    expect(malformedBody).toHaveProperty("requestId");
+    expect(JSON.stringify(malformedBody)).not.toContain("Malformed JSON in request body");
   });
 
   it("does not validate the body of an unauthenticated request", async () => {
