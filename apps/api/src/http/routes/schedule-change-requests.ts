@@ -1,12 +1,8 @@
 import {
-  acceptScheduleChangeProposalRequestSchema,
-  counterScheduleChangeProposalRequestSchema,
-  createScheduleChangeRequestSchema,
   listScheduleChangeRequestsResponseSchema,
-  resolveScheduleChangeRequestSchema,
-  rejectScheduleChangeProposalRequestSchema,
   scheduleChangeCommandResponseSchema,
   scheduleChangeRequestSchema,
+  type acceptScheduleChangeProposalRequestSchema,
 } from "@futrob/api-contracts";
 import {
   ENCOUNTER_PERMISSION,
@@ -15,36 +11,28 @@ import {
   type ScheduleChangeRequest,
 } from "@futrob/scheduling";
 import { asEncounterId, asTeamId, type Result } from "@futrob/shared-kernel";
-import { Hono, type Context } from "hono";
+import { type Context, type Hono } from "hono";
 import type { z } from "zod";
 import type { AppDeps } from "@/app.ts";
-import {
-  apiErrorResponse,
-  failureToHttp,
-  validationErrorResponse,
-  type HttpMappableFailure,
-} from "@/http/errors.ts";
-import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+import { apiErrorResponse, failureToHttp, type HttpMappableFailure } from "@/http/errors.ts";
+import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
 import {
   toScheduleChangeCommandResponse,
   toScheduleChangeRequestDto,
 } from "@/http/mappers/schedule-change-request.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
+import {
+  acceptScheduleChangeProposalRoute,
+  counterScheduleChangeProposalRoute,
+  createScheduleChangeRequestRoute,
+  getScheduleChangeRequestRoute,
+  listScheduleChangeRequestsRoute,
+  rejectScheduleChangeProposalRoute,
+  resolveScheduleChangeRequestRoute,
+} from "@/http/openapi/routes/encounters.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
-const BASE = "/encounters/:encounterId/schedule-change-requests";
-const PROPOSAL = `${BASE}/:requestId/proposals/:proposalId`;
-
 type SecuredContext = Context<{ Variables: ServiceAuthVariables }>;
-
-async function parseBody<Body>(
-  c: SecuredContext,
-  schema: z.ZodType<Body>,
-): Promise<z.ZodSafeParseResult<Body>> {
-  return schema.safeParse(await c.req.json().catch(() => null));
-}
 
 function toResponder(
   responder: z.infer<typeof acceptScheduleChangeProposalRequestSchema>["responder"],
@@ -64,8 +52,7 @@ function commandResponse(
 }
 
 export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): void {
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
-  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
   const scheduling = deps.modules.scheduling;
 
   /**
@@ -76,7 +63,8 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     c: SecuredContext,
     body: { expectedVersion: number; commandKey: string },
   ) {
-    const encounterId = asEncounterId(c.req.param("encounterId") ?? "");
+    const params = c.req.param();
+    const encounterId = asEncounterId(params.encounterId ?? "");
     const encounter = await scheduling.encounters.findById(encounterId);
     if (!encounter) return null;
     return {
@@ -84,8 +72,8 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
       organizationId: encounter.organizationId,
       competitionId: encounter.competitionId,
       encounterId,
-      requestId: c.req.param("requestId") ?? "",
-      proposalId: c.req.param("proposalId") ?? "",
+      requestId: params.requestId ?? "",
+      proposalId: params.proposalId ?? "",
       expectedVersion: body.expectedVersion,
       commandKey: body.commandKey,
     };
@@ -107,10 +95,10 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     return toScheduleChangeRequestDto(request, access?.allowed ? ["resolve"] : []);
   }
 
-  secured.get(BASE, async (c) => {
+  secured.openapi(listScheduleChangeRequestsRoute, async (c) => {
     const result = await scheduling.listScheduleChangeRequests.execute({
       actorId: c.get("actorId"),
-      encounterId: asEncounterId(c.req.param("encounterId")),
+      encounterId: asEncounterId(c.req.valid("param").encounterId),
     });
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(
@@ -120,11 +108,9 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     );
   });
 
-  secured.post(BASE, async (c) => {
-    const parsed = await parseBody(c, createScheduleChangeRequestSchema);
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
-    const encounterId = asEncounterId(c.req.param("encounterId"));
+  secured.openapi(createScheduleChangeRequestRoute, async (c) => {
+    const parsed = c.req.valid("json");
+    const encounterId = asEncounterId(c.req.valid("param").encounterId);
     const encounter = await scheduling.encounters.findById(encounterId);
     if (!encounter) return encounterNotFound();
 
@@ -133,37 +119,37 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
       organizationId: encounter.organizationId,
       competitionId: encounter.competitionId,
       encounterId,
-      requestingTeamId: asTeamId(parsed.data.requestingTeamId),
-      scope: parsed.data.scope,
-      timeZone: parsed.data.timeZone,
-      proposedWallTime: parsed.data.proposedWallTime,
-      reason: parsed.data.reason,
-      idempotencyKey: parsed.data.idempotencyKey,
+      requestingTeamId: asTeamId(parsed.requestingTeamId),
+      scope: parsed.scope,
+      timeZone: parsed.timeZone,
+      proposedWallTime: parsed.proposedWallTime,
+      reason: parsed.reason,
+      idempotencyKey: parsed.idempotencyKey,
     });
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(scheduleChangeRequestSchema.parse(await requestDto(c, result.value)));
   });
 
-  secured.get(`${BASE}/:requestId`, async (c) => {
+  secured.openapi(getScheduleChangeRequestRoute, async (c) => {
+    const params = c.req.valid("param");
     const result = await scheduling.getScheduleChangeRequest.execute({
       actorId: c.get("actorId"),
-      encounterId: asEncounterId(c.req.param("encounterId")),
-      requestId: c.req.param("requestId"),
+      encounterId: asEncounterId(params.encounterId),
+      requestId: params.requestId,
     });
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(scheduleChangeRequestSchema.parse(await requestDto(c, result.value)));
   });
 
-  secured.post(`${BASE}/:requestId/resolve`, async (c) => {
-    const body = await parseBody(c, resolveScheduleChangeRequestSchema);
-    if (!body.success) return validationErrorResponse(body.error.issues);
-    const scope = await commandScope(c, body.data);
+  secured.openapi(resolveScheduleChangeRequestRoute, async (c) => {
+    const body = c.req.valid("json");
+    const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
-    const resolution = body.data.resolution;
+    const resolution = body.resolution;
     return commandResponse(
       await scheduling.resolveScheduleChangeRequest.execute({
         ...scope,
-        proposalId: body.data.proposalId,
+        proposalId: body.proposalId,
         resolution:
           resolution.outcome === "schedule_set"
             ? { ...resolution, proposedStartAt: new Date(resolution.proposedStartAt) }
@@ -174,45 +160,42 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     );
   });
 
-  secured.post(`${PROPOSAL}/accept`, async (c) => {
-    const body = await parseBody(c, acceptScheduleChangeProposalRequestSchema);
-    if (!body.success) return validationErrorResponse(body.error.issues);
-    const scope = await commandScope(c, body.data);
+  secured.openapi(acceptScheduleChangeProposalRoute, async (c) => {
+    const body = c.req.valid("json");
+    const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
     return commandResponse(
       await scheduling.acceptScheduleChangeProposal.execute({
         ...scope,
-        responder: toResponder(body.data.responder),
+        responder: toResponder(body.responder),
       }),
     );
   });
 
-  secured.post(`${PROPOSAL}/reject`, async (c) => {
-    const body = await parseBody(c, rejectScheduleChangeProposalRequestSchema);
-    if (!body.success) return validationErrorResponse(body.error.issues);
-    const scope = await commandScope(c, body.data);
+  secured.openapi(rejectScheduleChangeProposalRoute, async (c) => {
+    const body = c.req.valid("json");
+    const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
     return commandResponse(
       await scheduling.rejectScheduleChangeProposal.execute({
         ...scope,
-        responder: toResponder(body.data.responder),
-        reason: body.data.reason,
+        responder: toResponder(body.responder),
+        reason: body.reason,
       }),
     );
   });
 
-  secured.post(`${PROPOSAL}/counter`, async (c) => {
-    const body = await parseBody(c, counterScheduleChangeProposalRequestSchema);
-    if (!body.success) return validationErrorResponse(body.error.issues);
-    const scope = await commandScope(c, body.data);
+  secured.openapi(counterScheduleChangeProposalRoute, async (c) => {
+    const body = c.req.valid("json");
+    const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
     return commandResponse(
       await scheduling.counterScheduleChangeProposal.execute({
         ...scope,
-        teamId: asTeamId(body.data.teamId),
-        timeZone: body.data.timeZone,
-        proposedWallTime: body.data.proposedWallTime,
-        reason: body.data.reason,
+        teamId: asTeamId(body.teamId),
+        timeZone: body.timeZone,
+        proposedWallTime: body.proposedWallTime,
+        reason: body.reason,
       }),
     );
   });
