@@ -211,7 +211,7 @@ export const encounterViewSchema = nextEncounterSchema.extend({
 
 export type EncounterViewDto = z.infer<typeof encounterViewSchema>;
 
-const encounterCandidateTeamSchema = z.object({
+export const encounterCandidateTeamSchema = z.object({
   externalClubId: z.string().min(1),
   name: z.string().min(1),
   goals: z.number().int().nonnegative(),

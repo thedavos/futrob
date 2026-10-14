@@ -75,9 +75,10 @@ apps/web, Expo  ──► @futrob/sdk
 ## Cómo añadir un endpoint
 
 1. Schemas en `@futrob/api-contracts`.
-2. Regenerar OpenAPI.
-3. Método en `@futrob/sdk` (web y cliente React Native / Expo).
-4. Handler de producto en `apps/api` → use case del package; añadir proxy autenticado en `apps/web` para clientes web/mobile.
+2. Registrar la operación con `defineRoute` / `createRoute` en `apps/api/src/http/openapi/routes/`.
+3. Regenerar OpenAPI (`npm run generate:openapi`) y comprobar `npm run openapi:check`.
+4. Método en `@futrob/sdk` (web y cliente React Native / Expo).
+5. Handler de producto en `apps/api` → use case del package; añadir proxy autenticado en `apps/web` para clientes web/mobile.
 
 ## Anti-patrones
 

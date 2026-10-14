@@ -24,6 +24,7 @@ export * from "./statistics/index.ts";
 export * from "./results/index.ts";
 export * from "./notifications/index.ts";
 export { futrobOpenApiV1 } from "./openapi/document.ts";
+export type { FutrobOpenApiDocument } from "./openapi/openapi-access.ts";
 export { getOpenApiJsonDocument, getOpenApiJsonText, getOpenApiYamlText } from "./openapi/serve.ts";
 
 export const apiV1 = {

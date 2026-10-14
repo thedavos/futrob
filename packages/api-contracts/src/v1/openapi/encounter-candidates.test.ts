@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
 import { futrobOpenApiV1 } from "./document.ts";
+import { getOpenApiOperation } from "./openapi-access.ts";
 
 describe("encounter candidates OpenAPI contract", () => {
   it("registers the authenticated read endpoint and retryable unavailable response", () => {
-    expect(futrobOpenApiV1.paths["/encounters/{encounterId}/candidates"].get).toMatchObject({
+    expect(
+      getOpenApiOperation(futrobOpenApiV1.paths["/encounters/{encounterId}/candidates"], "get"),
+    ).toMatchObject({
       operationId: "listEncounterCandidates",
       responses: {
         "200": {

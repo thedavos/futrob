@@ -25,15 +25,16 @@ describe("rate-limit contract", () => {
     ["/organizations/invitations/accept", "post"],
     ["/competitions/invitations/accept", "post"],
     ["/roster-invitations/accept", "post"],
-  ] as const satisfies ReadonlyArray<
-    readonly [keyof typeof futrobOpenApiV1.paths, OpenApiHttpMethod]
-  >)("documents 429 for %s", (path, method) => {
-    const pathItem = futrobOpenApiV1.paths[path];
-    const operation = getOpenApiOperation(pathItem, method);
-    expect(getOpenApiResponse(operation, "429")).toEqual({
-      $ref: "#/components/responses/RateLimited",
-    });
-  });
+  ] as const satisfies ReadonlyArray<readonly [string, OpenApiHttpMethod]>)(
+    "documents 429 for %s",
+    (path, method) => {
+      const pathItem = futrobOpenApiV1.paths[path];
+      const operation = getOpenApiOperation(pathItem, method);
+      expect(getOpenApiResponse(operation, "429")).toEqual({
+        $ref: "#/components/responses/RateLimited",
+      });
+    },
+  );
 
   it("documents Retry-After on the rate-limited response", () => {
     expect(futrobOpenApiV1.components.responses.RateLimited.headers).toMatchObject({

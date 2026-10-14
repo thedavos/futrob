@@ -8,11 +8,13 @@ Schemas Zod y OpenAPI del transporte HTTP privado `/api/v1`.
 - Sin shapes de EA Clubs (esas viven en el adapter).
 
 ```bash
-npm run generate:openapi -w @futrob/api-contracts
+npm run generate:openapi
 ```
 
-Artefactos: [`/packages/api-contracts/openapi`](/packages/api-contracts/openapi).
+The generator lives in `apps/api` (`@hono/zod-openapi` over the Zod schemas in this
+package) and writes [`/packages/api-contracts/openapi`](/packages/api-contracts/openapi).
+CI runs `npm run openapi:check` so those artifacts cannot drift.
 
-Servidos en runtime: `/api/v1/openapi.json` y `/api/v1/openapi.yaml`.
+Served at runtime: `/api/v1/openapi.json` and `/api/v1/openapi.yaml`.
 
 Ver guía: [`/packages/README.md`](/packages/README.md).
