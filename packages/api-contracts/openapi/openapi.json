@@ -490,6 +490,9 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           }
@@ -498,7 +501,17 @@
         "tags": [
           "authorization"
         ],
-        "summary": "Assign an audited platform superuser"
+        "summary": "Assign an audited platform superuser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManageSuperuserRequest"
+              }
+            }
+          }
+        }
       },
       "delete": {
         "parameters": [
@@ -512,6 +525,16 @@
             "required": true,
             "name": "actorId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "required": false,
+            "name": "reason",
+            "in": "query"
           }
         ],
         "responses": {
@@ -522,6 +545,9 @@
                 "$ref": "#/components/headers/RequestId"
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -22690,6 +22716,16 @@
         "required": [
           "invitations"
         ]
+      },
+      "ManageSuperuserRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
       },
       "NextEncounter": {
         "type": "object",

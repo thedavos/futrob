@@ -3,7 +3,6 @@ import {
   competitionRoleAssignmentSchema,
   effectiveAccessSchema,
   listAccessGrantsResponseSchema,
-  manageSuperuserRequestSchema,
   organizationRoleAssignmentSchema,
   permissionSchema,
   platformRoleAssignmentSchema,
@@ -20,7 +19,7 @@ import {
 import type { Hono } from "hono";
 import type { AccessGrant } from "@futrob/organizations";
 import type { AppDeps } from "@/app.ts";
-import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp } from "@/http/errors.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
   assignSuperuserRoute,
@@ -132,14 +131,12 @@ export function registerAuthorizationRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  // Request body is not in the OpenAPI operation; keep the historical optional `reason`.
   secured.openapi(assignSuperuserRoute, async (c) => {
-    const parsed = manageSuperuserRequestSchema.safeParse(await c.req.json().catch(() => ({})));
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    const parsed = c.req.valid("json");
     const result = await deps.modules.authorization.assignSuperuser.execute({
       actorId: c.get("actorId"),
       targetActorId: asActorId(c.req.valid("param").actorId),
-      reason: parsed.data.reason,
+      reason: parsed.reason,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
@@ -150,14 +147,12 @@ export function registerAuthorizationRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  // Query `reason` is not in the OpenAPI operation; keep the historical optional parse.
   secured.openapi(revokeSuperuserRoute, async (c) => {
-    const parsed = manageSuperuserRequestSchema.safeParse(c.req.query());
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+    const parsed = c.req.valid("query");
     const result = await deps.modules.authorization.revokeSuperuser.execute({
       actorId: c.get("actorId"),
       targetActorId: asActorId(c.req.valid("param").actorId),
-      reason: parsed.data.reason,
+      reason: parsed.reason,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return new Response(null, { status: 204 });
