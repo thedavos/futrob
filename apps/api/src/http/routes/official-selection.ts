@@ -29,13 +29,14 @@ type SecuredContext = Context<{ Variables: ServiceAuthVariables }>;
 
 function operatorCommandScope(
   c: SecuredContext,
+  organizationId: string,
+  encounterId: string,
   body: { expectedVersion: number; commandKey: string },
 ) {
-  const params = c.req.param();
   return {
     actorId: c.get("actorId"),
-    organizationId: asOrganizationId(params.organizationId ?? ""),
-    encounterId: asEncounterId(params.encounterId ?? ""),
+    organizationId: asOrganizationId(organizationId),
+    encounterId: asEncounterId(encounterId),
     expectedVersion: body.expectedVersion,
     commandKey: body.commandKey,
   };
@@ -43,9 +44,14 @@ function operatorCommandScope(
 
 function commandScope(
   c: SecuredContext,
+  organizationId: string,
+  encounterId: string,
   body: { actingTeamId: string; expectedVersion: number; commandKey: string },
 ) {
-  return { ...operatorCommandScope(c, body), actingTeamId: asTeamId(body.actingTeamId) };
+  return {
+    ...operatorCommandScope(c, organizationId, encounterId, body),
+    actingTeamId: asTeamId(body.actingTeamId),
+  };
 }
 
 function commandResponse(
@@ -80,9 +86,10 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
 
   secured.openapi(reviewMatchDisputeRoute, async (c) => {
     const body = c.req.valid("json");
+    const params = c.req.valid("param");
     return operatorCommandResponse(
       await commands.reviewDispute.execute({
-        ...operatorCommandScope(c, body),
+        ...operatorCommandScope(c, params.organizationId, params.encounterId, body),
         reason: body.reason,
       }),
     );
@@ -90,9 +97,10 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
 
   secured.openapi(resolveMatchDisputeRoute, async (c) => {
     const body = c.req.valid("json");
+    const params = c.req.valid("param");
     return operatorCommandResponse(
       await commands.resolveDispute.execute({
-        ...operatorCommandScope(c, body),
+        ...operatorCommandScope(c, params.organizationId, params.encounterId, body),
         reason: body.reason,
         decision: body.decision,
       }),
@@ -114,9 +122,10 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
 
   secured.openapi(proposeOfficialSelectionRoute, async (c) => {
     const body = c.req.valid("json");
+    const params = c.req.valid("param");
     return commandResponse(
       await commands.propose.execute({
-        ...commandScope(c, body),
+        ...commandScope(c, params.organizationId, params.encounterId, body),
         selections: body.selections,
       }),
     );
@@ -124,20 +133,22 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
 
   secured.openapi(confirmOfficialSelectionRoute, async (c) => {
     const body = c.req.valid("json");
+    const params = c.req.valid("param");
     return commandResponse(
       await commands.confirm.execute({
-        ...commandScope(c, body),
-        proposalId: c.req.valid("param").proposalId,
+        ...commandScope(c, params.organizationId, params.encounterId, body),
+        proposalId: params.proposalId,
       }),
     );
   });
 
   secured.openapi(rejectOfficialSelectionRoute, async (c) => {
     const body = c.req.valid("json");
+    const params = c.req.valid("param");
     return commandResponse(
       await commands.reject.execute({
-        ...commandScope(c, body),
-        proposalId: c.req.valid("param").proposalId,
+        ...commandScope(c, params.organizationId, params.encounterId, body),
+        proposalId: params.proposalId,
         reason: body.reason,
       }),
     );
@@ -145,10 +156,11 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
 
   secured.openapi(proposeAlternativeOfficialSelectionRoute, async (c) => {
     const body = c.req.valid("json");
+    const params = c.req.valid("param");
     return commandResponse(
       await commands.proposeAlternative.execute({
-        ...commandScope(c, body),
-        proposalId: c.req.valid("param").proposalId,
+        ...commandScope(c, params.organizationId, params.encounterId, body),
+        proposalId: params.proposalId,
         selections: body.selections,
         reason: body.reason,
       }),
@@ -157,9 +169,10 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
 
   secured.openapi(openMatchDisputeRoute, async (c) => {
     const body = c.req.valid("json");
+    const params = c.req.valid("param");
     return commandResponse(
       await commands.openDispute.execute({
-        ...commandScope(c, body),
+        ...commandScope(c, params.organizationId, params.encounterId, body),
         reason: body.reason,
       }),
     );
