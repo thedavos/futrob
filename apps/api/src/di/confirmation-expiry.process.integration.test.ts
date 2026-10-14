@@ -1,7 +1,7 @@
 import { fork, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
 import { resolve } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
 import { z } from "zod";
 import { PostgresProviderMatchRepository } from "@/adapters/game-data/persistence/postgres.repository.ts";
@@ -21,9 +21,12 @@ import {
 } from "./official-selection.composition.fixture.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
+const CRASH_LOCK_KEY = 1_300_051;
+
 describe.skipIf(!databaseUrl)("confirmation expiry across a real API process crash", () => {
   let isolated: IsolatedSchema;
   let child: ChildProcess | undefined;
+  let childErrors = "";
   beforeAll(async () => {
     isolated = await createIsolatedSchema(databaseUrl!, "confirmation_process");
     await migrateIsolatedSchema(isolated.pool);
@@ -38,6 +41,7 @@ describe.skipIf(!databaseUrl)("confirmation expiry across a real API process cra
   }, 180_000);
 
   async function start() {
+    childErrors = "";
     child = fork(
       resolve(import.meta.dirname, "../testing/confirmation-expiry-process.fixture.ts"),
       [],
@@ -51,19 +55,20 @@ describe.skipIf(!databaseUrl)("confirmation expiry across a real API process cra
           TEST_CLOCK: "2026-10-05T03:00:00.000Z",
           TEST_ACTOR_ID: "actor-process-system",
         },
-        stdio: ["ignore", "ignore", "pipe", "ipc"],
+        stdio: ["ignore", "pipe", "pipe", "ipc"],
       },
     );
-    let errors = "";
-    child.stderr?.on("data", (chunk: Buffer) => {
-      errors += chunk.toString();
-    });
+    const appendChildOutput = (chunk: Buffer) => {
+      childErrors += chunk.toString();
+    };
+    child.stdout?.on("data", appendChildOutput);
+    child.stderr?.on("data", appendChildOutput);
     const ready = await Promise.race([
       once(child, "message").then(
         ([message]) => z.object({ port: z.number() }).parse(message).port,
       ),
       once(child, "exit").then(() => {
-        throw new Error(`API process exited before ready: ${errors}`);
+        throw new Error(`API process exited before ready: ${childErrors}`);
       }),
     ]);
     return `http://127.0.0.1:${ready}/api/v1/internal/results/confirmation-expiry/run`;
@@ -91,32 +96,39 @@ describe.skipIf(!databaseUrl)("confirmation expiry across a real API process cra
     );
     const before = (await isolated.pool.query("SELECT * FROM official_selection_proposals")).rows;
     const blocker = await isolated.pool.connect();
-    await blocker.query("SELECT pg_advisory_lock(1300051)");
+    await blocker.query("SELECT pg_advisory_lock($1::bigint)", [CRASH_LOCK_KEY]);
     await isolated.pool.query(`CREATE FUNCTION block_expiry_action() RETURNS trigger AS $$ BEGIN
-      IF NEW.action_type = 'confirmation_expired' THEN PERFORM pg_advisory_xact_lock(1300051); END IF;
+      IF NEW.action_type = 'confirmation_expired' THEN PERFORM pg_advisory_xact_lock(${CRASH_LOCK_KEY}); END IF;
       RETURN NEW; END; $$ LANGUAGE plpgsql;
       CREATE TRIGGER block_expiry BEFORE INSERT ON official_selection_actions FOR EACH ROW EXECUTE FUNCTION block_expiry_action()`);
     const headers = { Authorization: "Bearer process-expiry-secret" };
     const firstUrl = await start();
     const interrupted = fetch(firstUrl, { method: "POST", headers }).catch(() => null);
     try {
-      let waiting = false;
-      for (let attempt = 0; attempt < 200; attempt += 1) {
-        const query = await isolated.pool.query(
-          "SELECT EXISTS (SELECT 1 FROM pg_locks WHERE locktype = 'advisory' AND objid = 1300051 AND NOT granted) AS waiting",
-        );
-        if (query.rows[0].waiting === true) {
-          waiting = true;
-          break;
-        }
-      }
-      if (!waiting) throw new Error("Expiry did not reach the injected crash boundary");
+      // Coverage CI saturates the runner; 200 tight polls returned before the forked
+      // API reached this lock (~5–7s). Wait with a yield so the child can progress.
+      await vi.waitFor(
+        async () => {
+          if (child === undefined || child.exitCode !== null || child.signalCode !== null) {
+            throw new Error(`API process exited before crash boundary: ${childErrors}`);
+          }
+          const query = await isolated.pool.query(
+            `SELECT EXISTS (
+               SELECT 1 FROM pg_locks
+               WHERE locktype = 'advisory' AND objsubid = 1 AND objid = $1 AND NOT granted
+             ) AS waiting`,
+            [CRASH_LOCK_KEY],
+          );
+          expect(query.rows[0].waiting).toBe(true);
+        },
+        { timeout: 15_000, interval: 50 },
+      );
       const exited = once(child!, "exit");
       child!.kill("SIGKILL");
       await exited;
       await interrupted;
     } finally {
-      await blocker.query("SELECT pg_advisory_unlock(1300051)");
+      await blocker.query("SELECT pg_advisory_unlock($1::bigint)", [CRASH_LOCK_KEY]);
       blocker.release();
       await isolated.pool.query(
         "DROP TRIGGER block_expiry ON official_selection_actions; DROP FUNCTION block_expiry_action()",
