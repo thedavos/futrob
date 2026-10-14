@@ -1,21 +1,14 @@
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import { asCompetitionId, asTeamId, TaggedError } from "@futrob/shared-kernel";
 import {
-  getMyGameProfileQuerySchema,
   getMyGameProfileResponseSchema,
-  getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
-  getMyRecentMatchPathSchema,
-  getMyRecentMatchQuerySchema,
   getMyRecentMatchResponseSchema,
-  getMyRecentMatchesQuerySchema,
   getMyRecentMatchesResponseSchema,
   getMyNextEncounterResponseSchema,
   getMyPlayerProfileResponseSchema,
-  getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
   getMyTeamsResponseSchema,
-  setActiveTeamRequestSchema,
   setActiveTeamResponseSchema,
   type GetMyGameProfileQuery,
   type GetMyStatisticsQuery,
@@ -34,19 +27,25 @@ import {
 } from "@/http/mappers/game-data.ts";
 import { getMyNextEncounterResponse } from "@/http/mappers/next-encounter.ts";
 import { playerTeamMembershipDto } from "@/http/mappers/team.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+  getMyGameProfileRoute,
+  getMyMatchesRoute,
+  getMyNextEncounterRoute,
+  getMyPlayerProfileRoute,
+  getMyRecentMatchRoute,
+  getMyRecentMatchesRoute,
+  getMyStatisticsRoute,
+} from "@/http/openapi/routes/players.ts";
+import { getMyTeamsRoute, setMyActiveTeamRoute } from "@/http/openapi/routes/teams.ts";
 import { registerPersonalGameAccountRoutes } from "@/http/routes/players-personal-accounts.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
   const { gameData, teams, statistics } = deps.modules;
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
-  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
 
-  secured.get("/players/me", async (c) => {
+  secured.openapi(getMyPlayerProfileRoute, async (c) => {
     const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
     const externalClubs = await Promise.all(
       details.externalClubs.map(async (club) => {
@@ -78,21 +77,13 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
 
   registerPersonalGameAccountRoutes(secured, teams);
 
-  secured.get("/players/me/statistics", async (c) => {
-    const parsed = getMyStatisticsQuerySchema.safeParse({
-      competitionId: c.req.query("competitionId") ?? undefined,
-      teamId: c.req.query("teamId") ?? undefined,
-      gameEdition: c.req.query("gameEdition") ?? undefined,
-      platform: c.req.query("platform") ?? undefined,
-      position: c.req.query("position") ?? undefined,
-    });
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(getMyStatisticsRoute, async (c) => {
+    const parsed = c.req.valid("query");
     let stats;
     try {
       stats = await statistics.useCases.getMyPersonalStatistics.execute({
         actorId: c.get("actorId"),
-        ...personalStatisticsFilters(parsed.data),
+        ...personalStatisticsFilters(parsed),
       });
     } catch (error) {
       if (TaggedError.is(error) && isHttpMappableFailure(error)) {
@@ -119,28 +110,18 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/players/me/matches", async (c) => {
-    const parsed = getMyMatchesQuerySchema.safeParse({
-      competitionId: c.req.query("competitionId") ?? undefined,
-      teamId: c.req.query("teamId") ?? undefined,
-      gameEdition: c.req.query("gameEdition") ?? undefined,
-      platform: c.req.query("platform") ?? undefined,
-      position: c.req.query("position") ?? undefined,
-      cursor: c.req.query("cursor") ?? undefined,
-      limit: c.req.query("limit") ?? undefined,
-    });
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(getMyMatchesRoute, async (c) => {
+    const parsed = c.req.valid("query");
     let page;
     try {
-      const filters = personalStatisticsFilters(parsed.data);
+      const filters = personalStatisticsFilters(parsed);
       const base = {
         actorId: c.get("actorId"),
-        limit: parsed.data.limit,
+        limit: parsed.limit,
         ...filters,
       };
       page = await statistics.useCases.listMyMatchContributions.execute(
-        parsed.data.cursor === undefined ? base : { ...base, cursor: parsed.data.cursor },
+        parsed.cursor === undefined ? base : { ...base, cursor: parsed.cursor },
       );
     } catch (error) {
       if (TaggedError.is(error) && isHttpMappableFailure(error)) {
@@ -156,15 +137,11 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/players/me/recent-matches", async (c) => {
-    const parsed = getMyRecentMatchesQuerySchema.safeParse({
-      externalClubId: c.req.query("externalClubId") ?? undefined,
-    });
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(getMyRecentMatchesRoute, async (c) => {
+    const parsed = c.req.valid("query");
     const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
-    const clubs = clubsForRecentMatches(details.externalClubs, parsed.data.externalClubId);
-    if (parsed.data.externalClubId && details.externalClubs.length > 0 && clubs.length === 0) {
+    const clubs = clubsForRecentMatches(details.externalClubs, parsed.externalClubId);
+    if (parsed.externalClubId && details.externalClubs.length > 0 && clubs.length === 0) {
       return validationErrorResponse([
         {
           code: "custom",
@@ -183,17 +160,11 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/players/me/game-profile", async (c) => {
-    const parsed = getMyGameProfileQuerySchema.safeParse({
-      externalClubId: c.req.query("externalClubId") ?? undefined,
-      from: c.req.query("from") ?? undefined,
-      to: c.req.query("to") ?? undefined,
-    });
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(getMyGameProfileRoute, async (c) => {
+    const parsed = c.req.valid("query");
     const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
-    const clubs = clubsForRecentMatches(details.externalClubs, parsed.data.externalClubId);
-    if (parsed.data.externalClubId && details.externalClubs.length > 0 && clubs.length === 0) {
+    const clubs = clubsForRecentMatches(details.externalClubs, parsed.externalClubId);
+    if (parsed.externalClubId && details.externalClubs.length > 0 && clubs.length === 0) {
       return validationErrorResponse([
         {
           code: "custom",
@@ -205,7 +176,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     const profile = await gameData.getPlayerGameProfile.execute({
       accounts: recentMatchAccounts(details),
       clubs: clubs.map(toRecentMatchClub),
-      period: gameProfilePeriod(parsed.data),
+      period: gameProfilePeriod(parsed),
     });
     if (!profile.isOk()) return failureToHttp(profile.error);
     return jsonResponse(
@@ -213,20 +184,11 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/players/me/recent-matches/:providerKey/:externalMatchId", async (c) => {
-    const path = getMyRecentMatchPathSchema.safeParse({
-      providerKey: c.req.param("providerKey"),
-      externalMatchId: c.req.param("externalMatchId"),
-    });
-    if (!path.success) return validationErrorResponse(path.error.issues);
-
-    const query = getMyRecentMatchQuerySchema.safeParse({
-      externalClubId: c.req.query("externalClubId") ?? undefined,
-    });
-    if (!query.success) return validationErrorResponse(query.error.issues);
-
+  secured.openapi(getMyRecentMatchRoute, async (c) => {
+    const path = c.req.valid("param");
+    const query = c.req.valid("query");
     const details = await teams.getPlayerProfile.execute({ actorId: c.get("actorId") });
-    if (query.data.externalClubId === undefined && details.externalClubs.length > 0) {
+    if (query.externalClubId === undefined && details.externalClubs.length > 0) {
       return validationErrorResponse([
         {
           code: "custom",
@@ -237,10 +199,9 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     }
     const selectedClub = details.externalClubs.find(
       (club) =>
-        club.providerKey === path.data.providerKey &&
-        club.externalClubId === query.data.externalClubId,
+        club.providerKey === path.providerKey && club.externalClubId === query.externalClubId,
     );
-    if (query.data.externalClubId && details.externalClubs.length > 0 && !selectedClub) {
+    if (query.externalClubId && details.externalClubs.length > 0 && !selectedClub) {
       return validationErrorResponse([
         {
           code: "custom",
@@ -253,8 +214,8 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     const found = await gameData.getPlayerRecentProviderMatch.execute({
       accounts: recentMatchAccounts(details),
       club: selectedClub ? toRecentMatchClub(selectedClub) : null,
-      providerKey: path.data.providerKey,
-      externalMatchId: path.data.externalMatchId,
+      providerKey: path.providerKey,
+      externalMatchId: path.externalMatchId,
     });
     if (!found.isOk()) return failureToHttp(found.error);
     return jsonResponse(
@@ -262,7 +223,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/players/me/next-encounter", async (c) => {
+  secured.openapi(getMyNextEncounterRoute, async (c) => {
     const encounter = await deps.modules.getMyNextEncounter.execute({
       actorId: c.get("actorId"),
     });
@@ -271,7 +232,7 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/players/me/teams", async (c) => {
+  secured.openapi(getMyTeamsRoute, async (c) => {
     const actorId = c.get("actorId");
     const details = await teams.getPlayerProfile.execute({ actorId });
     if (!details.profile) {
@@ -308,13 +269,11 @@ export function registerPlayerRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.put("/players/me/active-team", async (c) => {
-    const parsed = setActiveTeamRequestSchema.safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(setMyActiveTeamRoute, async (c) => {
+    const parsed = c.req.valid("json");
     const result = await teams.setActiveTeam.execute({
       actorId: c.get("actorId"),
-      rosterMembershipId: parsed.data.rosterMembershipId,
+      rosterMembershipId: parsed.rosterMembershipId,
     });
     if (!result.isOk()) return failureToHttp(result.error);
 
