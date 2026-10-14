@@ -114,6 +114,9 @@ export const bcDependencyGraphRule = defineRule({
       ImportExpression(node: ESTree.ImportExpression) {
         checkDynamicImport(context, node, context.getFilename());
       },
+      TSImportType(node: ESTree.TSImportType) {
+        checkImportSource(context, node.source, node.source.value, context.getFilename());
+      },
     };
   },
 });

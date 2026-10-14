@@ -42,6 +42,11 @@ ruleTester.run("bc-dependency-graph", bcDependencyGraphRule, {
         "/repo/packages/statistics/src/application/project-official-result/project-official-result.use-case.ts",
       code: `import type { OfficialResult } from "@futrob/results";`,
     },
+    {
+      name: "allows a TS import() type of an allowed BC",
+      filename: "/repo/packages/results/src/domain/policies/slot-selection.ts",
+      code: `type Match = import("@futrob/game-data").ProviderMatch;`,
+    },
   ],
   invalid: [
     {
@@ -60,6 +65,12 @@ ruleTester.run("bc-dependency-graph", bcDependencyGraphRule, {
       name: "rejects analytics importing identity",
       filename: "/repo/packages/analytics/src/application/snapshot.ts",
       code: `import type { ActorId } from "@futrob/identity";`,
+      errors: [{ messageId: "disallowedBc" }],
+    },
+    {
+      name: "rejects a TS import() type of a disallowed BC",
+      filename: "/repo/packages/analytics/src/application/snapshot.ts",
+      code: `type Status = import("@futrob/identity").OnboardingStatus;`,
       errors: [{ messageId: "disallowedBc" }],
     },
     {
