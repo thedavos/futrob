@@ -1,33 +1,26 @@
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import {
-  getClubMatchesQuerySchema,
   getClubMatchesResponseSchema,
-  getClubQuerySchema,
   getClubResponseSchema,
-  searchClubsQuerySchema,
   searchClubsResponseSchema,
 } from "@futrob/api-contracts";
 import type { AppDeps } from "@/app.ts";
-import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp } from "@/http/errors.ts";
 import { toExternalClubDto, toProviderMatchDto } from "@/http/mappers/game-data.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+  getExternalClubRoute,
+  getRecentProviderMatchesRoute,
+  searchExternalClubsRoute,
+} from "@/http/openapi/routes/game-data.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
   const { gameData } = deps.modules;
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
-  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
 
-  secured.get("/game-data/clubs/search", async (c) => {
-    const parsed = searchClubsQuerySchema.safeParse(c.req.query());
-    if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
-    }
-
-    const { query, providerKey, platform, gameEdition } = parsed.data;
+  secured.openapi(searchExternalClubsRoute, async (c) => {
+    const { query, providerKey, platform, gameEdition } = c.req.valid("query");
     const result = await gameData.searchExternalClubs.execute(providerKey, {
       query,
       platform,
@@ -41,15 +34,10 @@ export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(body);
   });
 
-  secured.get("/game-data/clubs/:externalClubId", async (c) => {
-    const parsed = getClubQuerySchema.safeParse(c.req.query());
-    if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
-    }
-
-    const { providerKey, platform, gameEdition } = parsed.data;
+  secured.openapi(getExternalClubRoute, async (c) => {
+    const { providerKey, platform, gameEdition } = c.req.valid("query");
     const result = await gameData.getExternalClub.execute(providerKey, {
-      externalClubId: c.req.param("externalClubId"),
+      externalClubId: c.req.valid("param").externalClubId,
       platform,
       gameEdition,
     });
@@ -61,15 +49,10 @@ export function registerGameDataClubRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(body);
   });
 
-  secured.get("/game-data/clubs/:externalClubId/matches", async (c) => {
-    const parsed = getClubMatchesQuerySchema.safeParse(c.req.query());
-    if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
-    }
-
-    const { providerKey, platform, gameEdition, matchType, maxResultCount } = parsed.data;
+  secured.openapi(getRecentProviderMatchesRoute, async (c) => {
+    const { providerKey, platform, gameEdition, matchType, maxResultCount } = c.req.valid("query");
     const result = await gameData.getRecentProviderMatches.execute(providerKey, {
-      externalClubId: c.req.param("externalClubId"),
+      externalClubId: c.req.valid("param").externalClubId,
       platform,
       gameEdition,
       matchType,
