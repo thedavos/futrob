@@ -12,10 +12,6 @@ import {
   PageHeaderTitle,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { Navigate } from "@tanstack/react-router";
-import { invitationAcceptErrorMessage } from "@/modules/organizations/presentation/invitation-accept-errors.ts";
-import { OrganizationsClientError } from "@/modules/organizations/presentation/organizations-browser-client.ts";
-import { useAcceptInvitationQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 import {
   SupportErrorAlert,
   type SupportError,
@@ -55,45 +51,20 @@ const styles = stylex.create({
 
 const logo = applyStyles(styles.logo);
 
-export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: string }>) {
-  const acceptInvitation = useAcceptInvitationQuery(plainToken);
+export function AcceptInvitationDeepLink({
+  error,
+  onRetry,
+  retrying = false,
+}: Readonly<{
+  error: SupportError | null;
+  onRetry?: () => void;
+  retrying?: boolean;
+}>) {
   const retry = useRetryAfterCountdown();
-  const startedForError = useRef(0);
-  const clientError =
-    acceptInvitation.error instanceof OrganizationsClientError ? acceptInvitation.error : null;
-  if (
-    acceptInvitation.isError &&
-    clientError?.retryAfterSeconds &&
-    acceptInvitation.errorUpdatedAt !== startedForError.current
-  ) {
-    startedForError.current = acceptInvitation.errorUpdatedAt;
-    retry.start(clientError.retryAfterSeconds);
-  }
-  const error: SupportError | null = acceptInvitation.isError
-    ? {
-        message: clientError?.retryAfterSeconds
-          ? "Alcanzaste el límite temporal de invitaciones."
-          : invitationAcceptErrorMessage(clientError),
-        requestId: clientError?.requestId,
-        retryAfterSeconds: clientError?.retryAfterSeconds,
-      }
-    : null;
-
-  if (acceptInvitation.data) {
-    const accepted = acceptInvitation.data;
-    if (accepted.destination.kind === "competition") {
-      return (
-        <Navigate
-          params={{
-            orgId: accepted.destination.organizationId,
-            competitionId: accepted.destination.competitionId,
-          }}
-          replace
-          to="/orgs/$orgId/competitions/$competitionId"
-        />
-      );
-    }
-    return <Navigate params={{ orgId: accepted.organizationId }} replace to="/orgs/$orgId" />;
+  const startedForError = useRef<SupportError | null>(null);
+  if (error?.retryAfterSeconds && error !== startedForError.current) {
+    startedForError.current = error;
+    retry.start(error.retryAfterSeconds);
   }
 
   return (
@@ -113,17 +84,15 @@ export function AcceptInvitationDeepLink({ plainToken }: Readonly<{ plainToken: 
           <SupportErrorAlert
             error={{ ...error, retryAfterSeconds: retry.remainingSeconds || undefined }}
           />
-          <Button
-            disabled={acceptInvitation.isFetching || retry.blocked}
-            onClick={() => void acceptInvitation.refetch()}
-            type="button"
-          >
-            {acceptInvitation.isFetching
-              ? "Procesando…"
-              : retry.blocked
-                ? `Reintentar en ${retry.remainingSeconds} s`
-                : "Reintentar invitación"}
-          </Button>
+          {onRetry ? (
+            <Button disabled={retrying || retry.blocked} onClick={onRetry} type="button">
+              {retrying
+                ? "Procesando…"
+                : retry.blocked
+                  ? `Reintentar en ${retry.remainingSeconds} s`
+                  : "Reintentar invitación"}
+            </Button>
+          ) : null}
         </div>
       ) : (
         <Caption>Un momento…</Caption>

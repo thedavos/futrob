@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
@@ -17,14 +17,12 @@ import {
   typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { CheckCircleIcon } from "@phosphor-icons/react";
 import { resolveSafeRedirect } from "@/modules/identity/presentation/safe-redirect.ts";
 import { TeamsClientError } from "@/modules/teams/presentation/teams-browser-client.ts";
-import {
-  useAcceptRosterInvitationMutation,
-  useAcceptRosterInvitationQuery,
-} from "@/modules/teams/presentation/player-queries.ts";
+import { useAcceptRosterInvitationMutation } from "@/modules/teams/presentation/player-queries.ts";
+import { rosterInvitationAcceptFailure } from "@/modules/teams/presentation/accept-roster-invitation-once.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 import {
   SupportErrorAlert,
@@ -33,9 +31,6 @@ import {
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 
 const styles = stylex.create({
-  pending: {
-    color: colors.mutedForeground,
-  },
   form: {
     display: "flex",
     flexDirection: "column",
@@ -64,67 +59,17 @@ type AcceptRosterInvitationValues = {
 
 type AcceptRosterInvitationField = keyof AcceptRosterInvitationValues;
 
-function rosterInvitationErrorMessage(code: string): string {
-  switch (code) {
-    case "teams.roster_invitation_not_found":
-      return "No encontramos esa invitación a la plantilla.";
-    case "teams.roster_invitation_expired":
-      return "La invitación a la plantilla ha caducado.";
-    case "teams.roster_invitation_revoked":
-      return "La invitación a la plantilla fue revocada.";
-    case "teams.roster_full":
-      return "La plantilla ya está completa.";
-    case "teams.roster_competition_conflict":
-      return "Ya perteneces a otro equipo en esta competición.";
-    case "teams.roster_locked":
-      return "La plantilla está cerrada para esta competición.";
-    case "teams.roster_invitation_invalid":
-      return "La invitación a la plantilla ya no es válida.";
-    default:
-      return "No se pudo unirte a la plantilla. Inténtalo de nuevo.";
-  }
-}
-
-export function AcceptRosterInvitationForm(props: {
-  readonly initialToken?: string;
-  readonly autoAccept?: boolean;
-}) {
+export function AcceptRosterInvitationForm() {
   const navigate = useNavigate();
   const [error, setError] = useState<SupportError | null>(null);
   const [accepted, setAccepted] = useState(false);
   const validation = useFormValidation<AcceptRosterInvitationField>();
   const acceptInvitation = useAcceptRosterInvitationMutation();
-  const autoAcceptToken = props.autoAccept ? props.initialToken : undefined;
-  const autoAccept = useAcceptRosterInvitationQuery(
-    autoAcceptToken ?? "",
-    autoAcceptToken !== undefined,
-  );
-  const submitting = acceptInvitation.isPending || autoAccept.isFetching;
+  const submitting = acceptInvitation.isPending;
   const retry = useRetryAfterCountdown();
-  const startedForError = useRef(0);
-  const autoError = autoAccept.error instanceof TeamsClientError ? autoAccept.error : null;
-  if (
-    autoAccept.isError &&
-    autoError?.retryAfterSeconds &&
-    autoAccept.errorUpdatedAt !== startedForError.current
-  ) {
-    startedForError.current = autoAccept.errorUpdatedAt;
-    retry.start(autoError.retryAfterSeconds);
-  }
-  const displayedError: SupportError | null = autoAccept.isError
-    ? {
-        message: autoError?.retryAfterSeconds
-          ? "Alcanzaste el límite temporal de invitaciones."
-          : autoError
-            ? rosterInvitationErrorMessage(autoError.code)
-            : "No se pudo unirte a la plantilla. Inténtalo de nuevo.",
-        requestId: autoError?.requestId,
-        retryAfterSeconds: autoError?.retryAfterSeconds,
-      }
-    : error;
 
-  async function acceptToken(token: string) {
-    const trimmed = token.trim();
+  async function handleSubmit(formValues: AcceptRosterInvitationValues) {
+    const trimmed = formValues.token.trim();
     if (trimmed.length === 0 || retry.blocked) return;
 
     setError(null);
@@ -135,35 +80,12 @@ export function AcceptRosterInvitationForm(props: {
       setAccepted(true);
       await navigate({ to: "/player" });
     } catch (caught) {
+      const failure = rosterInvitationAcceptFailure(caught instanceof Error ? caught : null);
       if (caught instanceof TeamsClientError) {
         retry.start(caught.retryAfterSeconds);
-        setError({
-          message: caught.retryAfterSeconds
-            ? "Alcanzaste el límite temporal de invitaciones."
-            : rosterInvitationErrorMessage(caught.code),
-          requestId: caught.requestId,
-          retryAfterSeconds: caught.retryAfterSeconds,
-        });
-      } else {
-        setError({ message: "No se pudo unirte a la plantilla. Inténtalo de nuevo." });
       }
+      setError(failure);
     }
-  }
-
-  async function handleSubmit(formValues: AcceptRosterInvitationValues) {
-    await acceptToken(formValues.token);
-  }
-
-  function retryInitialToken() {
-    if (autoAcceptToken !== undefined) {
-      void autoAccept.refetch();
-      return;
-    }
-    if (props.initialToken !== undefined) void acceptToken(props.initialToken);
-  }
-
-  if (autoAccept.data) {
-    return <Navigate replace to="/player" />;
   }
 
   if (accepted) {
@@ -175,14 +97,6 @@ export function AcceptRosterInvitationForm(props: {
     );
   }
 
-  if (props.autoAccept && submitting && displayedError === null) {
-    return (
-      <p {...applyStyles(typography.subtitle, styles.pending)}>
-        Procesando tu invitación a la plantilla…
-      </p>
-    );
-  }
-
   return (
     <Form<AcceptRosterInvitationValues>
       aria-busy={submitting}
@@ -191,46 +105,33 @@ export function AcceptRosterInvitationForm(props: {
       onFormSubmit={handleSubmit}
       style={form.style}
     >
-      {displayedError ? (
+      {error ? (
         <SupportErrorAlert
-          error={{ ...displayedError, retryAfterSeconds: retry.remainingSeconds || undefined }}
+          error={{ ...error, retryAfterSeconds: retry.remainingSeconds || undefined }}
         />
       ) : null}
 
-      {props.initialToken === undefined ? (
-        <Field
-          {...validation.getFieldValidationProps("token")}
-          disabled={submitting}
-          name="token"
-          validate={(value) =>
-            readFormString(value).trim().length === 0
-              ? "Escribe el enlace o código de invitación."
-              : null
-          }
-        >
-          <FieldLabel htmlFor="roster-invitation-token">Código de invitación</FieldLabel>
-          <Input
-            autoComplete="off"
-            disabled={submitting}
-            id="roster-invitation-token"
-            name="token"
-          />
-          <FieldError />
-        </Field>
-      ) : null}
-
-      <Button
-        disabled={submitting || retry.blocked}
-        onClick={props.initialToken === undefined ? undefined : retryInitialToken}
-        type={props.initialToken === undefined ? "submit" : "button"}
+      <Field
+        {...validation.getFieldValidationProps("token")}
+        disabled={submitting}
+        name="token"
+        validate={(value) =>
+          readFormString(value).trim().length === 0
+            ? "Escribe el enlace o código de invitación."
+            : null
+        }
       >
+        <FieldLabel htmlFor="roster-invitation-token">Código de invitación</FieldLabel>
+        <Input autoComplete="off" disabled={submitting} id="roster-invitation-token" name="token" />
+        <FieldError />
+      </Field>
+
+      <Button disabled={submitting || retry.blocked} type="submit">
         {submitting
           ? "Procesando…"
           : retry.blocked
             ? `Reintentar en ${retry.remainingSeconds} s`
-            : displayedError && props.initialToken !== undefined
-              ? "Reintentar invitación"
-              : "Unirme a la plantilla"}
+            : "Unirme a la plantilla"}
       </Button>
 
       <p {...applyStyles(typography.caption, styles.hint)}>

@@ -3,7 +3,6 @@ export const mobileQueryKeys = {
   onboardingFlow: (step: string) => ["onboarding-flow", step] as const,
   playerHome: (externalClubId: string | undefined) => ["player-home", externalClubId] as const,
   playerProfile: () => ["player-profile"] as const,
-  invitationAccept: (token: string) => ["invitation-accept", token] as const,
   destination: (destination: {
     readonly kind: string;
     readonly organizationId?: string;

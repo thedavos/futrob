@@ -1,58 +1,42 @@
-import { createFileRoute } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Logo, PageHeader, PageHeaderDescription, PageHeaderTitle } from "@futrob/ui";
-import { media } from "@futrob/ui/styles/media.stylex";
-import { AcceptRosterInvitationForm } from "@/modules/teams/presentation/accept-roster-invitation-form.tsx";
-
-const styles = stylex.create({
-  main: {
-    marginInline: "auto",
-    width: "100%",
-    maxWidth: "36rem",
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "2rem",
-    },
-    paddingBlock: "2.5rem",
-  },
-  brand: {
-    marginBottom: "2.5rem",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.625rem",
-  },
-  logo: {
-    height: "2rem",
-    width: "auto",
-  },
-  wordmark: {
-    fontWeight: 600,
-    letterSpacing: "0.025em",
-  },
-});
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { AcceptRosterInvitationDeepLink } from "@/modules/teams/presentation/accept-roster-invitation-deep-link.tsx";
+import {
+  forgetRosterInvitationAccept,
+  loadRosterInvitationAccept,
+} from "@/modules/teams/presentation/accept-roster-invitation-once.ts";
 
 export const Route = createFileRoute("/_app/roster-invitations/accept/$token")({
+  ssr: false,
+  preload: false,
+  staleTime: Infinity,
+  gcTime: Infinity,
   head: () => ({ meta: [{ title: "Unirte a una plantilla | Futrob" }] }),
+  pendingComponent: AcceptRosterInvitationPending,
+  loader: ({ params, preload }) => loadRosterInvitationAccept(params.token, preload),
   component: AcceptRosterInvitationTokenPage,
 });
 
+function AcceptRosterInvitationPending() {
+  return <AcceptRosterInvitationDeepLink error={null} />;
+}
+
 function AcceptRosterInvitationTokenPage() {
   const { token } = Route.useParams();
-  const logo = applyStyles(styles.logo);
+  const result = Route.useLoaderData();
+  const router = useRouter();
+
+  if (result.kind !== "error") {
+    return <AcceptRosterInvitationPending />;
+  }
 
   return (
-    <main {...applyStyles(styles.main)}>
-      <header {...applyStyles(styles.brand)}>
-        <Logo className={logo.className} style={logo.style} />
-        <span {...applyStyles(styles.wordmark)}>Futrob</span>
-      </header>
-      <PageHeader>
-        <PageHeaderTitle>Únete a una plantilla</PageHeaderTitle>
-        <PageHeaderDescription>
-          Estamos procesando tu invitación para unirte al equipo.
-        </PageHeaderDescription>
-      </PageHeader>
-      <AcceptRosterInvitationForm autoAccept initialToken={token} />
-    </main>
+    <AcceptRosterInvitationDeepLink
+      error={result.error}
+      onRetry={() => {
+        forgetRosterInvitationAccept(token);
+        void router.invalidate();
+      }}
+      retrying={router.state.isLoading}
+    />
   );
 }

@@ -98,25 +98,6 @@ export function useAcceptRosterInvitationMutation() {
   });
 }
 
-/** One-shot auto-accept for a deep-link token. Retry with `refetch`. */
-export function useAcceptRosterInvitationQuery(token: string, enabled: boolean) {
-  const queryClient = useQueryClient();
-  return useQuery({
-    queryKey: queryKeys.players.acceptRosterInvitation(token),
-    queryFn: async () => {
-      const accepted = await teamsBrowserClient.acceptRosterInvitation({ token });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });
-      await invalidateEffectiveAccessQueries(queryClient);
-      return accepted;
-    },
-    enabled,
-    retry: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
-}
-
 export function useMyNextEncounterQuery(enabled = true) {
   return useQuery({
     queryKey: queryKeys.players.meNextEncounter(),
