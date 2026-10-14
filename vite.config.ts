@@ -141,6 +141,7 @@ export default defineConfig({
       ],
       "futrob/no-unparsed-json-boundary": "error",
       "futrob/no-cross-module-adapter-import": "error",
+      "futrob/bc-dependency-graph": "error",
     },
     overrides: [
       {
@@ -201,11 +202,56 @@ export default defineConfig({
                   name: "@sentry/node",
                   message: "Domain/application must not import Sentry Node bindings.",
                 },
+                {
+                  name: "pg",
+                  message: "Domain/application must not import Postgres clients.",
+                },
+                {
+                  name: "postgres",
+                  message: "Domain/application must not import Postgres clients.",
+                },
+                {
+                  name: "hono",
+                  message: "Domain/application must not import Hono.",
+                },
+                {
+                  name: "wrangler",
+                  message: "Domain/application must not import Wrangler.",
+                },
+                {
+                  name: "@futrob/sdk",
+                  message: "Domain/application must not import the product SDK.",
+                },
+                {
+                  name: "@futrob/api-contracts",
+                  message: "Domain/application must not import wire contracts.",
+                },
+                {
+                  name: "@futrob/ui",
+                  message: "Domain/application must not import UI primitives.",
+                },
+                {
+                  name: "@futrob/ui-tokens",
+                  message: "Domain/application must not import UI tokens.",
+                },
+                {
+                  name: "@futrob/logger",
+                  message:
+                    "Domain/application must not import the logger; logging belongs at app boundaries.",
+                },
               ],
               patterns: [
                 {
                   group: ["**/apps/web/**", "**/apps/api/**"],
                   message: "BC packages must not import app-layer modules.",
+                },
+                {
+                  regex: "^(node:|cloudflare:)",
+                  message: "Domain/application must not import Node or Cloudflare runtimes.",
+                },
+                {
+                  group: ["@hono/*", "@cloudflare/*"],
+                  message: "Domain/application must not import Hono or Cloudflare packages.",
                 },
               ],
             },
@@ -268,6 +314,7 @@ export default defineConfig({
           "vitest/expect-expect": ["error", { assertFunctionNames: ["expect", "runCase"] }],
           "futrob/prefer-tagged-error": "off",
           "futrob/no-cross-module-adapter-import": "off",
+          "futrob/bc-dependency-graph": "off",
         },
       },
     ],

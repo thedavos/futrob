@@ -18,7 +18,7 @@ export function normalizePath(filePath: string): string {
   return filePath.replaceAll("\\", "/");
 }
 
-function resolveImportPath(importerPath: string, source: string): string {
+export function resolveImportPath(importerPath: string, source: string): string {
   if (source.startsWith("/")) return normalizePath(source);
   const importerSegments = normalizePath(importerPath).split("/");
   importerSegments.pop();
@@ -33,6 +33,14 @@ function resolveImportPath(importerPath: string, source: string): string {
   }
 
   return importerSegments.join("/");
+}
+
+export function isInsideRoot(resolvedPath: string, root: string): boolean {
+  const normalizedResolved = normalizePath(resolvedPath);
+  const normalizedRoot = normalizePath(root);
+  return (
+    normalizedResolved === normalizedRoot || normalizedResolved.startsWith(`${normalizedRoot}/`)
+  );
 }
 
 export function isTestOrFixtureFile(filePath: string): boolean {
