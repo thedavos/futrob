@@ -59,9 +59,10 @@ promover el contrato privado a API pública de terceros por publicar su OpenAPI.
 
 Hay generador desde Zod (`apps/api/scripts/generate-openapi.ts`), artefactos OpenAPI
 comprometidos, recursos SDK y un paso de CI que regenera y exige `git diff --exit-code`
-sobre `packages/api-contracts/openapi`. Los handlers HTTP de producto siguen en Hono
-plano; el registro OpenAPI alimenta el documento, y la cobertura de rutas comprueba que
-coincidan los paths.
+sobre `packages/api-contracts/openapi`. Los handlers HTTP de producto se registran con
+`OpenAPIHono` / `app.openapi(route, handler)` sobre las mismas definiciones `createRoute`
+que alimentan el documento; el `defaultHook` de `createOpenApiRouter` mapea fallos Zod a
+`api.validation_error`. La cobertura de rutas comprueba que coincidan los paths.
 
 - [Contratos](/packages/api-contracts/package.json), [registro OpenAPI](/apps/api/src/http/openapi/), [SDK](/packages/sdk/src/client.ts).
 - [Autenticación de servicio](/apps/api/src/http/middleware/service-auth.ts).
