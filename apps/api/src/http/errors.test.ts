@@ -7,7 +7,8 @@ import {
   ProviderUnavailable,
 } from "@futrob/game-data";
 import { RescheduleNoticeNotMet } from "@futrob/scheduling";
-import { failureToHttp } from "./errors.ts";
+import { HTTPException } from "hono/http-exception";
+import { failureToHttp, openApiHttpExceptionResponse } from "./errors.ts";
 
 describe("game-data HTTP failures", () => {
   it("maps an open circuit to a retryable sanitized response", async () => {
@@ -112,4 +113,47 @@ describe("reschedule minimum notice HTTP failures", () => {
       });
     },
   );
+});
+
+describe("OpenAPIHono HTTPException mapping", () => {
+  it("maps body-parse 400 to api.validation_error without Hono's message", async () => {
+    const mapped = openApiHttpExceptionResponse(
+      new HTTPException(400, { message: "Malformed JSON in request body" }),
+    );
+
+    expect(mapped).toBeDefined();
+    expect(mapped?.status).toBe(400);
+    const body = await mapped?.json();
+    expect(body).toMatchObject({
+      code: "api.validation_error",
+      messageKey: "errors.api.validation_error",
+    });
+    expect(JSON.stringify(body)).not.toContain("Malformed JSON in request body");
+  });
+
+  it("keeps 415 as api.unsupported_media_type without Hono's message", async () => {
+    const mapped = openApiHttpExceptionResponse(
+      new HTTPException(415, { message: "Unsupported Media Type" }),
+    );
+
+    expect(mapped).toBeDefined();
+    expect(mapped?.status).toBe(415);
+    const body = await mapped?.json();
+    expect(body).toEqual({
+      code: "api.unsupported_media_type",
+      messageKey: "errors.api.unsupported_media_type",
+    });
+    expect(JSON.stringify(body)).not.toContain("Unsupported Media Type");
+  });
+
+  it("does not rewrite HTTPExceptions that are not OpenAPI body-parse failures", () => {
+    expect(
+      openApiHttpExceptionResponse(new HTTPException(401, { message: "Custom error message" })),
+    ).toBeUndefined();
+    expect(
+      openApiHttpExceptionResponse(
+        new HTTPException(400, { res: new Response("already shaped", { status: 400 }) }),
+      ),
+    ).toBeUndefined();
+  });
 });

@@ -27,20 +27,30 @@ export function validationErrorResponse(issues: ZodIssue[]): Response {
   });
 }
 
+const MALFORMED_JSON_ISSUE: ZodIssue = {
+  code: "custom",
+  path: [],
+  message: "Request body is not valid JSON",
+};
+
 /**
- * OpenAPIHono throws HTTPException for malformed JSON (400) and unsupported
- * media types (415) before the Zod defaultHook runs. Map those to the same
- * ApiError envelope as `safeParse` failures so clients never see a raw Hono body.
+ * OpenAPIHono / Hono validators throw HTTPException before `defaultHook`:
+ * malformed JSON (400) and undeclared media types (415). Map only those
+ * body-parse failures onto the ApiError envelope. Do not rewrite other
+ * HTTPExceptions, and never echo Hono's `error.message` to clients.
  */
 export function openApiHttpExceptionResponse(error: HTTPException): Response | undefined {
-  if (error.status !== 400 && error.status !== 415) return undefined;
-  return validationErrorResponse([
-    {
-      code: "custom",
-      path: [],
-      message: error.message,
-    },
-  ]);
+  if (error.res) return undefined;
+  if (error.status === 415) {
+    return apiErrorResponse(415, {
+      code: "api.unsupported_media_type",
+      messageKey: "errors.api.unsupported_media_type",
+    });
+  }
+  if (error.status === 400) {
+    return validationErrorResponse([MALFORMED_JSON_ISSUE]);
+  }
+  return undefined;
 }
 
 /** `status` overrides the code heuristic for routes that map their failures explicitly. */
