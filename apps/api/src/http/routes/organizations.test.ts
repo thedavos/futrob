@@ -160,4 +160,44 @@ describe("apps/api http organizations", () => {
 
     expect(res.status).toBe(401);
   });
+
+  it("rejects an invalid JSON body with the ApiError validation envelope", async () => {
+    const app = buildApp(stubFetch);
+
+    const missingFields = await app.request("/api/v1/organizations", {
+      method: "POST",
+      headers: serviceHeaders("actor-validation"),
+      body: JSON.stringify({}),
+    });
+    expect(missingFields.status).toBe(400);
+    expect(await missingFields.json()).toMatchObject({
+      code: "api.validation_error",
+      messageKey: "errors.api.validation_error",
+      details: { issues: expect.any(Array) },
+    });
+
+    const malformed = await app.request("/api/v1/organizations", {
+      method: "POST",
+      headers: serviceHeaders("actor-validation"),
+      body: "{",
+    });
+    expect(malformed.status).toBe(400);
+    expect(await malformed.json()).toMatchObject({
+      code: "api.validation_error",
+      messageKey: "errors.api.validation_error",
+    });
+  });
+
+  it("does not validate the body of an unauthenticated request", async () => {
+    const app = buildApp(stubFetch);
+
+    const res = await app.request("/api/v1/organizations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+
+    expect(res.status).toBe(401);
+    expect(await res.json()).toMatchObject({ code: "api.unauthorized" });
+  });
 });

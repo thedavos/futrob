@@ -1,52 +1,47 @@
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import {
-  acceptInvitationRequestSchema,
   acceptInvitationResponseSchema,
-  createOrganizationInvitationRequestSchema,
   createInvitationResponseSchema,
-  createOrganizationRequestSchema,
   createOrganizationResponseSchema,
   listMyMembershipsResponseSchema,
-  organizationNameAvailabilityRequestSchema,
   organizationNameAvailabilityResponseSchema,
   organizationProfileSchema,
-  organizationSlugAvailabilityRequestSchema,
   organizationSlugAvailabilityResponseSchema,
   resolvePostAuthDestinationResponseSchema,
-  setOrganizationLogoRequestSchema,
-  updateOrganizationProfileRequestSchema,
 } from "@futrob/api-contracts";
 import { resolvePostAuthDestination } from "@futrob/organizations";
 import { asOrganizationId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
-import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp } from "@/http/errors.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+  acceptOrganizationInvitationRoute,
+  checkOrganizationNameAvailabilityRoute,
+  checkOrganizationSlugAvailabilityRoute,
+  createOrganizationInvitationRoute,
+  createOrganizationRoute,
+  getOrganizationProfileRoute,
+  listMyOrganizationsRoute,
+  resolvePostAuthDestinationRoute,
+  setOrganizationLogoRoute,
+  updateOrganizationProfileRoute,
+} from "@/http/openapi/routes/organizations.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 import { membershipDto, organizationProfileDto } from "./organization-dto.ts";
 
 export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
   const { identity, organizations } = deps.modules;
-  const auth = createServiceAuthMiddleware(deps.internalJobSecret);
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
 
-  secured.use("*", auth);
-
-  secured.post("/organizations/name-availability", async (c) => {
-    const parsed = organizationNameAvailabilityRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+  secured.openapi(checkOrganizationNameAvailabilityRoute, async (c) => {
     return jsonResponse(
       organizationNameAvailabilityResponseSchema.parse(
-        await organizations.checkOrganizationName.execute(parsed.data),
+        await organizations.checkOrganizationName.execute(c.req.valid("json")),
       ),
     );
   });
 
-  secured.get("/organizations/mine", async (c) => {
+  secured.openapi(listMyOrganizationsRoute, async (c) => {
     const actorId = c.get("actorId");
     const memberships = await organizations.listMembershipsForActor.execute({ actorId });
     const body = listMyMembershipsResponseSchema.parse({
@@ -55,7 +50,7 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(body);
   });
 
-  secured.get("/organizations/post-auth-destination", async (c) => {
+  secured.openapi(resolvePostAuthDestinationRoute, async (c) => {
     const actorId = c.get("actorId");
     const onboarding = await identity.getOnboardingStatus.execute({ actorId });
     const memberships = onboarding.completed
@@ -80,143 +75,123 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(body);
   });
 
-  secured.post("/organizations", async (c) => {
+  secured.openapi(createOrganizationRoute, async (c) => {
     const actorId = c.get("actorId");
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = createOrganizationRequestSchema.safeParse(json);
-    if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
-    }
+    const body = c.req.valid("json");
 
     const result = await organizations.createOrganization.execute({
-      name: parsed.data.name,
+      name: body.name,
       actorId,
-      timeZone: parsed.data.timeZone,
-      slug: parsed.data.slug,
+      timeZone: body.timeZone,
+      slug: body.slug,
       // Namespaced so a client can never replay another actor's key (e.g. onboarding's).
-      creationKey: parsed.data.creationKey
-        ? `organization:${actorId}:${parsed.data.creationKey}`
-        : undefined,
+      creationKey: body.creationKey ? `organization:${actorId}:${body.creationKey}` : undefined,
     });
     if (!result.isOk()) {
       return failureToHttp(result.error);
     }
 
-    const body = createOrganizationResponseSchema.parse({
-      ...organizationProfileDto(result.value.organization),
-      role: result.value.role,
-    });
-    return jsonResponse(body, 201);
+    return jsonResponse(
+      createOrganizationResponseSchema.parse({
+        ...organizationProfileDto(result.value.organization),
+        role: result.value.role,
+      }),
+      201,
+    );
   });
 
-  secured.post("/organizations/slug-availability", async (c) => {
-    const parsed = organizationSlugAvailabilityRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+  secured.openapi(checkOrganizationSlugAvailabilityRoute, async (c) => {
+    const body = c.req.valid("json");
     return jsonResponse(
       organizationSlugAvailabilityResponseSchema.parse(
         await organizations.checkOrganizationSlug.execute({
-          slug: parsed.data.slug,
-          organizationId: parsed.data.organizationId
-            ? asOrganizationId(parsed.data.organizationId)
-            : undefined,
+          slug: body.slug,
+          organizationId: body.organizationId ? asOrganizationId(body.organizationId) : undefined,
         }),
       ),
     );
   });
 
-  secured.get("/organizations/:organizationId", async (c) => {
+  secured.openapi(getOrganizationProfileRoute, async (c) => {
     const result = await organizations.getOrganizationProfile.execute({
-      organizationId: asOrganizationId(c.req.param("organizationId")),
+      organizationId: asOrganizationId(c.req.valid("param").organizationId),
       actorId: c.get("actorId"),
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(organizationProfileSchema.parse(organizationProfileDto(result.value)));
   });
 
-  secured.patch("/organizations/:organizationId", async (c) => {
-    const parsed = updateOrganizationProfileRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+  secured.openapi(updateOrganizationProfileRoute, async (c) => {
     const result = await organizations.updateOrganizationProfile.execute({
-      organizationId: asOrganizationId(c.req.param("organizationId")),
+      organizationId: asOrganizationId(c.req.valid("param").organizationId),
       actorId: c.get("actorId"),
-      ...parsed.data,
+      ...c.req.valid("json"),
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(organizationProfileSchema.parse(organizationProfileDto(result.value)));
   });
 
-  secured.put("/organizations/:organizationId/logo", async (c) => {
-    const parsed = setOrganizationLogoRequestSchema.safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+  secured.openapi(setOrganizationLogoRoute, async (c) => {
     const result = await organizations.setOrganizationLogo.execute({
-      organizationId: asOrganizationId(c.req.param("organizationId")),
+      organizationId: asOrganizationId(c.req.valid("param").organizationId),
       actorId: c.get("actorId"),
-      logo: parsed.data.logo,
+      logo: c.req.valid("json").logo,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(organizationProfileSchema.parse(organizationProfileDto(result.value)));
   });
 
-  secured.post("/organizations/:organizationId/invitations", async (c) => {
+  secured.openapi(createOrganizationInvitationRoute, async (c) => {
     const actorId = c.get("actorId");
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = createOrganizationInvitationRequestSchema.safeParse(json);
-    if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
-    }
+    const body = c.req.valid("json");
 
     const result = await organizations.createInvitation.execute({
-      organizationId: asOrganizationId(c.req.param("organizationId")),
-      role: parsed.data.role,
+      organizationId: asOrganizationId(c.req.valid("param").organizationId),
+      role: body.role,
       invitedByActorId: actorId,
-      email: parsed.data.email,
-      expiresInMs: parsed.data.expiresInMs,
-      redeemPolicy: parsed.data.redeemPolicy,
-      maxRedemptions: parsed.data.maxRedemptions,
+      email: body.email,
+      expiresInMs: body.expiresInMs,
+      redeemPolicy: body.redeemPolicy,
+      maxRedemptions: body.maxRedemptions,
     });
     if (!result.isOk()) {
       return failureToHttp(result.error);
     }
 
-    const body = createInvitationResponseSchema.parse({
-      invitationId: result.value.invitationId,
-      competitionId: null,
-      token: result.value.token,
-      expiresAt: result.value.expiresAt.toISOString(),
-      redeemPolicy: result.value.redeemPolicy,
-      maxRedemptions: result.value.maxRedemptions,
-    });
-    return jsonResponse(body, 201);
+    return jsonResponse(
+      createInvitationResponseSchema.parse({
+        invitationId: result.value.invitationId,
+        competitionId: null,
+        token: result.value.token,
+        expiresAt: result.value.expiresAt.toISOString(),
+        redeemPolicy: result.value.redeemPolicy,
+        maxRedemptions: result.value.maxRedemptions,
+      }),
+      201,
+    );
   });
 
-  secured.post("/organizations/invitations/accept", async (c) => {
+  secured.openapi(acceptOrganizationInvitationRoute, async (c) => {
     const actorId = c.get("actorId");
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = acceptInvitationRequestSchema.safeParse(json);
-    if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
-    }
+    const body = c.req.valid("json");
 
     const result = await organizations.acceptInvitation.execute({
-      token: parsed.data.token,
+      token: body.token,
       actorId,
     });
     if (!result.isOk()) {
       return failureToHttp(result.error);
     }
 
-    const body = acceptInvitationResponseSchema.parse({
-      organizationId: result.value.organizationId,
-      organizationName: result.value.organizationName,
-      role: result.value.role,
-      competitionId: result.value.competitionId,
-      competitionRole: result.value.competitionRole,
-    });
-    return jsonResponse(body);
+    return jsonResponse(
+      acceptInvitationResponseSchema.parse({
+        organizationId: result.value.organizationId,
+        organizationName: result.value.organizationName,
+        role: result.value.role,
+        competitionId: result.value.competitionId,
+        competitionRole: result.value.competitionRole,
+      }),
+    );
   });
 
   app.route("/", secured);
