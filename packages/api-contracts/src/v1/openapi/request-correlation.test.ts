@@ -20,7 +20,7 @@ describe("request correlation contract", () => {
       required: false,
       schema: { format: "uuid", type: "string" },
     });
-    expect(futrobOpenApiV1.components.schemas.ApiError.properties.requestId).toEqual({
+    expect(futrobOpenApiV1.components.schemas.ApiError?.properties?.requestId).toEqual({
       format: "uuid",
       type: "string",
     });

@@ -93,8 +93,6 @@ export default defineConfig({
       "**/*.test.tsx",
       "**/*.stories.tsx",
       // Generated / pure-data files — exempt from size limits permanently.
-      "packages/api-contracts/scripts/**",
-      "packages/api-contracts/src/v1/openapi/document.ts",
       "apps/web/src/shared/presentation/i18n/catalogs.ts",
       ".agent/**",
       ".agents/**",
@@ -388,6 +386,8 @@ export default defineConfig({
         functions: 69,
         lines: 74,
       },
+      // Generated OAS artifacts are JSON/YAML, not instrumentable JS.
+      exclude: ["**/openapi/*.{json,yaml}"],
     },
   },
 });

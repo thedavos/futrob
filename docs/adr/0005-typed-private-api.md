@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-10
-- Actualizada: 2026-09-29
+- Actualizada: 2026-10-14
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
@@ -33,7 +33,11 @@ y el actor para operaciones de producto; los endpoints internos de jobs usan su
 middleware específico. El secreto interno nunca se distribuye a web cliente o Expo.
 La API Node no interpreta el token de sesión de Expo como secreto de servicio.
 
-OpenAPI se genera desde el contrato mediante el script del package. Los cambios de
+OpenAPI 3.1 se genera desde los schemas Zod del contrato, no se escribe a mano.
+`@futrob/api-contracts` posee Zod y los artefactos `openapi.{json,yaml}` comprobados
+en git. El cableado `createRoute` / `@hono/zod-openapi` vive en el adaptador HTTP de
+`apps/api` (el package de contratos no depende de Hono). `npm run generate:openapi`
+reconstruye los artefactos; `npm run openapi:check` en CI impide drift. Los cambios de
 wire deben mantener schemas, SDK y consumidores alineados. No se ofrece una API de
 terceros como compromiso de producto MVP.
 
@@ -53,10 +57,13 @@ promover el contrato privado a API pública de terceros por publicar su OpenAPI.
 
 ## Estado de implementación y evidencia
 
-Hay generador, artefactos OpenAPI y recursos SDK. La CI actual no tiene un paso explícito
-de regeneración/comprobación de drift OpenAPI; no se considera esa garantía implementada.
+Hay generador desde Zod (`apps/api/scripts/generate-openapi.ts`), artefactos OpenAPI
+comprometidos, recursos SDK y un paso de CI que regenera y exige `git diff --exit-code`
+sobre `packages/api-contracts/openapi`. Los handlers HTTP de producto siguen en Hono
+plano; el registro OpenAPI alimenta el documento, y la cobertura de rutas comprueba que
+coincidan los paths.
 
-- [Contratos y script](/packages/api-contracts/package.json), [SDK](/packages/sdk/src/client.ts).
+- [Contratos](/packages/api-contracts/package.json), [registro OpenAPI](/apps/api/src/http/openapi/), [SDK](/packages/sdk/src/client.ts).
 - [Autenticación de servicio](/apps/api/src/http/middleware/service-auth.ts).
 - [Cliente nativo](/apps/mobile/src/modules/api/futrob-client.ts).
-- [CI](/.github/workflows/ci.yml).
+- [CI](/.github/workflows/ci.yml) (`npm run openapi:check`).

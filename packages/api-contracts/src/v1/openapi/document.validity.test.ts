@@ -31,6 +31,8 @@ function collectRefs(document: unknown): string[] {
 }
 
 describe("OpenAPI document validity", () => {
+  // Generated OAS inlines more schemas than the old hand-written document;
+  // @seriousme/openapi-schema-validator needs well over 60s on CI.
   it("is a valid OAS 3.1 specification whose $refs resolve", async () => {
     const document = jsonRecordSchema.parse(JSON.parse(JSON.stringify(futrobOpenApiV1)));
     const validator = new Validator();
@@ -41,5 +43,5 @@ describe("OpenAPI document validity", () => {
     for (const ref of collectRefs(document)) {
       expect(resolvePointer(document, ref), ref).toBeDefined();
     }
-  }, 60_000);
+  }, 180_000);
 });

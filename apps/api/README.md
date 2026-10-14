@@ -23,7 +23,8 @@ Meta / contract:
 - `GET /meta/ping` — service ping (`pingResponseSchema`).
 - `GET /meta/health` — `SELECT 1` against Postgres when `DATABASE_URL` is set,
   otherwise `db: "skipped"`.
-- `GET /openapi.json` and `GET /openapi.yaml` — the `@futrob/api-contracts` document.
+- `GET /openapi.json` and `GET /openapi.yaml` — the checked-in OAS 3.1 artifacts
+  generated from Zod (`npm run generate:openapi`).
 
 Game data (service auth from `apps/web` BFF — not browser cookies):
 

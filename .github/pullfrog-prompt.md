@@ -23,9 +23,9 @@ The PRD describes target scope, not completed functionality. Verify claims again
 
 ## API Contracts
 
-- Runtime `/api/v1/openapi.json` and `/api/v1/openapi.yaml` are served from `packages/api-contracts/src/v1/openapi/document.ts`, not directly from the generated files.
-- After changing the OpenAPI source document, regenerate checked-in artifacts with `npm run generate:openapi -w @futrob/api-contracts`.
-- Adding an SDK resource or response schema does not automatically update OpenAPI; verify the source document and both generated artifacts stay synchronized.
+- Runtime `/api/v1/openapi.json` and `/api/v1/openapi.yaml` are served from the checked-in artifacts in `packages/api-contracts/openapi`, generated from Zod via `@hono/zod-openapi` in `apps/api`.
+- After changing Zod schemas or `apps/api/src/http/openapi` routes, regenerate with `npm run generate:openapi` and keep `npm run openapi:check` green.
+- Adding an SDK resource or response schema does not automatically update OpenAPI; register the operation in the API OpenAPI routes and regenerate both artifacts.
 
 ## Package Testing
 
