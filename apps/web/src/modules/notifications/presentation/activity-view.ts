@@ -4,6 +4,7 @@ import {
   CheckSquareIcon,
   EnvelopeSimpleIcon,
   MegaphoneSimpleIcon,
+  ShieldPlusIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
@@ -25,7 +26,11 @@ export type ActivityDestination =
       readonly to: "/player/competitions/$competitionId/matches";
       readonly params: { readonly competitionId: string };
     }
-  | { readonly to: "/invitations"; readonly params?: undefined };
+  | { readonly to: "/invitations"; readonly params?: undefined }
+  | {
+      readonly to: "/entry-invitations/$invitationId";
+      readonly params: { readonly invitationId: string };
+    };
 
 export interface ActivityRowView {
   readonly id: string;
@@ -61,6 +66,12 @@ function titleKey(entry: ActivityEntryDto, now: Date): ParameterlessMessageKey {
       return entry.requiresAction ? "activity.invitation.pending" : "activity.invitation.watching";
     case "competition_published":
       return "activity.competitionPublished";
+    case "entry_invitation":
+      if (!open) return "activity.entryInvitation.closed";
+      if (isExpired(entry, now)) return "activity.entryInvitation.expired";
+      return entry.requiresAction
+        ? "activity.entryInvitation.pending"
+        : "activity.entryInvitation.watching";
   }
 }
 
@@ -74,6 +85,8 @@ function icon(entry: ActivityEntryDto): Icon {
       return EnvelopeSimpleIcon;
     case "competition_published":
       return MegaphoneSimpleIcon;
+    case "entry_invitation":
+      return ShieldPlusIcon;
   }
 }
 
@@ -98,6 +111,9 @@ function subtitle(entry: ActivityEntryDto): string | null {
 function destination(entry: ActivityEntryDto): ActivityDestination | null {
   const competitionId = entry.competitionId;
   if (entry.audience === "actor") {
+    if (entry.kind === "entry_invitation") {
+      return { to: "/entry-invitations/$invitationId", params: { invitationId: entry.resourceId } };
+    }
     return entry.kind === "roster_invitation" ? { to: "/invitations" } : null;
   }
   if (!competitionId) return null;
@@ -113,6 +129,7 @@ function destination(entry: ActivityEntryDto): ActivityDestination | null {
     case "roster_invitation":
       return { to: "/orgs/$orgId/competitions/$competitionId/teams", params };
     case "competition_published":
+    case "entry_invitation":
       return { to: "/orgs/$orgId/competitions/$competitionId", params };
   }
 }

@@ -69,5 +69,8 @@ function isBareAuthenticatedRoute(pathname: string): boolean {
   if (/^\/roster-invitations\/accept\/[^/]+/.test(pathname)) {
     return true;
   }
+  if (/^\/entry-invitations\/link\/[^/]+/.test(pathname)) {
+    return true;
+  }
   return false;
 }

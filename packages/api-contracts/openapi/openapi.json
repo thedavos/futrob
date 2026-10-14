@@ -1726,6 +1726,294 @@
         }
       }
     },
+    "/entry-invitations/{invitationId}": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "invitationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invitation preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryInvitationPreview"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "previewEntryInvitation",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Preview a directed invitation"
+      }
+    },
+    "/entry-invitations/{invitationId}/accept": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "invitationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Team entered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptEntryInvitationResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "operationId": "acceptEntryInvitation",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Accept a directed invitation",
+        "description": "Creates the Team with `teamName`, its approved entry and the actor's captaincy (ADR-0023). Idempotent under `creationKey`. Failures: 400 `competitions.entry_invitation_revoked|expired`; 403 `competitions.entry_invitation_forbidden`; 404 `competitions.entry_invitation_not_found`; 409 `competitions.capacity_reached`, `competitions.not_editable`, `competitions.entry_invitation_already_decided`, `teams.roster_competition_conflict`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptEntryInvitationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entry-invitations/{invitationId}/decline": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "invitationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Declined",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "declineEntryInvitation",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Decline a directed invitation"
+      }
+    },
+    "/entry-invitations/links/{code}": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invitation preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryInvitationPreview"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "previewEntryInvitationLink",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Preview an invitation link"
+      }
+    },
+    "/entry-invitations/links/{code}/accept": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Team entered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptEntryInvitationResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "operationId": "acceptEntryInvitationLink",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Enter a team through an invitation link",
+        "description": "Creates the Team with `teamName`, its approved entry and the actor's captaincy (ADR-0023). Idempotent under `creationKey`. Failures: 400 `competitions.entry_invitation_revoked|expired`; 403 `competitions.entry_invitation_forbidden`; 404 `competitions.entry_invitation_not_found`; 409 `competitions.capacity_reached`, `competitions.not_editable`, `competitions.entry_invitation_already_decided`, `teams.roster_competition_conflict`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptEntryInvitationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/game-data/clubs/{externalClubId}": {
       "get": {
         "parameters": [
@@ -4437,6 +4725,373 @@
           "competitions"
         ],
         "summary": "Reject a pending competition team entry"
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/entry-invitations": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Invitation sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentEntryInvitation"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "inviteTeamCaptain",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Invite a player to bring a team to the competition",
+        "description": "Requires `competitions.invitations.manage` and a competition in draft or registration. Failures: 404 `competitions.entry_invitee_not_found`; 409 `competitions.entry_invitation_pending_conflict`, `competitions.not_editable`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteTeamCaptainRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invitations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSentEntryInvitationsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listSentEntryInvitations",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "List the directed entry invitations of a competition",
+        "description": "Requires `competitions.invitations.manage`. Newest first."
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/entry-invitations/{invitationId}": {
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "invitationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revoked",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "revokeEntryInvitation",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Revoke a pending entry invitation"
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/entry-invitations/candidates": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Players",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchEntryInviteesResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "operationId": "searchEntryInvitees",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Search players to invite by the start of their gamertag",
+        "description": "At least 3 characters; at most 10 players."
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/entry-invitations/link": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryInvitationLinkResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "ensureEntryInvitationLink",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Get the competition's invitation link, creating it the first time"
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/entry-invitations/link/regenerate": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "New link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryInvitationLinkResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "regenerateEntryInvitationLink",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Revoke the active link and issue a new one"
       }
     },
     "/organizations/{organizationId}/competitions/{competitionId}/fixture": {
@@ -8101,6 +8756,40 @@
         "description": "Rows addressed to the actor (directed roster invitations) and to every Team the actor represents as captain or vice-captain (proposals to confirm)."
       }
     },
+    "/players/me/entry-invitations": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Invitations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMyEntryInvitationsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listMyEntryInvitations",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "List the entry invitations addressed to the actor",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/players/me/external-club": {
       "post": {
         "responses": {
@@ -9195,6 +9884,75 @@
           "competitionId",
           "competitionName",
           "destination"
+        ]
+      },
+      "AcceptEntryInvitationRequest": {
+        "type": "object",
+        "properties": {
+          "teamName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "creationKey": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "teamName",
+          "creationKey"
+        ]
+      },
+      "AcceptEntryInvitationResponse": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "competitionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "application": {
+            "type": "object",
+            "properties": {
+              "entryId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected"
+                ]
+              },
+              "teamId": {
+                "type": "string"
+              },
+              "teamName": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "entryId",
+              "status",
+              "teamId",
+              "teamName",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "organizationId",
+          "competitionId",
+          "application"
         ]
       },
       "AcceptScheduleChangeProposalRequest": {
@@ -13623,6 +14381,185 @@
           "gameEdition",
           "matchType",
           "maxResultCount"
+        ]
+      },
+      "EntryInvitationLinkResponse": {
+        "type": "object",
+        "properties": {
+          "link": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "code",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "link"
+        ]
+      },
+      "EntryInvitationPreview": {
+        "type": "object",
+        "properties": {
+          "invitation": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "channel": {
+                "type": "string",
+                "enum": [
+                  "directed",
+                  "link"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "accepted",
+                  "declined",
+                  "revoked"
+                ]
+              },
+              "message": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "expiresAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "channel",
+              "status",
+              "message",
+              "expiresAt"
+            ]
+          },
+          "competition": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "organizationId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "organizationName": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "platform": {
+                "type": "string",
+                "enum": [
+                  "playstation",
+                  "xbox",
+                  "pc",
+                  "nintendo-switch-1",
+                  "nintendo-switch-2"
+                ]
+              },
+              "gameEdition": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "registration",
+                  "published",
+                  "paused",
+                  "finished",
+                  "archived"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "organizationId",
+              "organizationName",
+              "name",
+              "platform",
+              "gameEdition",
+              "status"
+            ]
+          },
+          "suggestedTeamName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "existing": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "entryId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected"
+                ]
+              },
+              "teamId": {
+                "type": "string"
+              },
+              "teamName": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "entryId",
+              "status",
+              "teamId",
+              "teamName",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "invitation",
+          "competition",
+          "suggestedTeamName",
+          "existing"
         ]
       },
       "ExploreCompetition": {
@@ -20391,6 +21328,31 @@
           "expiresAt"
         ]
       },
+      "InviteTeamCaptainRequest": {
+        "type": "object",
+        "properties": {
+          "inviteeActorId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inviteeLabel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 280
+          }
+        },
+        "required": [
+          "inviteeActorId",
+          "inviteeLabel"
+        ]
+      },
       "ListAccessibleCompetitionsResponse": {
         "type": "object",
         "properties": {
@@ -20651,7 +21613,8 @@
                     "match_dispute",
                     "selection_confirmation",
                     "roster_invitation",
-                    "competition_published"
+                    "competition_published",
+                    "entry_invitation"
                   ]
                 },
                 "status": {
@@ -20669,7 +21632,8 @@
                   "enum": [
                     "encounter",
                     "roster_invitation",
-                    "competition"
+                    "competition",
+                    "entry_invitation"
                   ]
                 },
                 "resourceId": {
@@ -20986,6 +21950,96 @@
               "status"
             ]
           }
+        ]
+      },
+      "ListMyEntryInvitationsResponse": {
+        "type": "object",
+        "properties": {
+          "invitations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "accepted",
+                    "declined",
+                    "revoked"
+                  ]
+                },
+                "message": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "expiresAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "competition": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "organizationId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "platform": {
+                      "type": "string",
+                      "enum": [
+                        "playstation",
+                        "xbox",
+                        "pc",
+                        "nintendo-switch-1",
+                        "nintendo-switch-2"
+                      ]
+                    },
+                    "gameEdition": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "organizationId",
+                    "name",
+                    "platform",
+                    "gameEdition"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "status",
+                "message",
+                "createdAt",
+                "expiresAt",
+                "competition"
+              ]
+            }
+          }
+        },
+        "required": [
+          "invitations"
         ]
       },
       "ListRosterResponse": {
@@ -21555,6 +22609,86 @@
         },
         "required": [
           "requests"
+        ]
+      },
+      "ListSentEntryInvitationsResponse": {
+        "type": "object",
+        "properties": {
+          "invitations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "inviteeActorId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "inviteeLabel": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "message": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "accepted",
+                    "declined",
+                    "revoked"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "expiresAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "respondedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "acceptedEntryId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "inviteeActorId",
+                "inviteeLabel",
+                "message",
+                "status",
+                "createdAt",
+                "expiresAt",
+                "respondedAt",
+                "acceptedEntryId"
+              ]
+            }
+          }
+        },
+        "required": [
+          "invitations"
         ]
       },
       "NextEncounter": {
@@ -28076,6 +29210,152 @@
         },
         "required": [
           "clubs"
+        ]
+      },
+      "SearchEntryInviteesResponse": {
+        "type": "object",
+        "properties": {
+          "players": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "actorId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "gamertag": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "platform": {
+                  "type": "string",
+                  "enum": [
+                    "playstation",
+                    "xbox",
+                    "pc",
+                    "nintendo-switch-1",
+                    "nintendo-switch-2"
+                  ]
+                },
+                "gameEdition": {
+                  "type": "string"
+                },
+                "club": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "imageUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "platform": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "imageUrl",
+                    "platform"
+                  ]
+                },
+                "inCompetition": {
+                  "type": "boolean"
+                },
+                "invitationPending": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "actorId",
+                "gamertag",
+                "platform",
+                "gameEdition",
+                "club",
+                "inCompetition",
+                "invitationPending"
+              ]
+            }
+          }
+        },
+        "required": [
+          "players"
+        ]
+      },
+      "SentEntryInvitation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inviteeActorId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inviteeLabel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "declined",
+              "revoked"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "respondedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "acceptedEntryId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "inviteeActorId",
+          "inviteeLabel",
+          "message",
+          "status",
+          "createdAt",
+          "expiresAt",
+          "respondedAt",
+          "acceptedEntryId"
         ]
       },
       "SetActiveTeamRequest": {

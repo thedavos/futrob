@@ -7,6 +7,7 @@ export const activityKindSchema = z.enum([
   "selection_confirmation",
   "roster_invitation",
   "competition_published",
+  "entry_invitation",
 ]);
 export type ActivityKindDto = z.infer<typeof activityKindSchema>;
 
@@ -22,7 +23,7 @@ export const activityEntrySchema = z.object({
   kind: activityKindSchema,
   status: activityStatusSchema,
   requiresAction: z.boolean(),
-  resourceType: z.enum(["encounter", "roster_invitation", "competition"]),
+  resourceType: z.enum(["encounter", "roster_invitation", "competition", "entry_invitation"]),
   resourceId: z.string(),
   subject: z.object({
     competitionName: z.string().nullable(),

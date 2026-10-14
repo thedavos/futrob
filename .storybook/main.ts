@@ -47,6 +47,11 @@ const browserClientMocks: readonly BrowserClientMock[] = [
     skip: "competitions-story-client",
     names: ["competitions-browser-client"],
   },
+  {
+    file: webPresentation("modules/competitions/presentation/entry-invitations-story-client.ts"),
+    skip: "entry-invitations-story-client",
+    names: ["entry-invitations-browser-client"],
+  },
 ];
 
 function mockFileFor(name: string): string {

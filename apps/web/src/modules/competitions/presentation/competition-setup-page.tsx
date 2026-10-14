@@ -33,6 +33,7 @@ import {
 import { CompetitionSetupActionBarRegistration } from "./competition-setup-action-bar.tsx";
 import { competitionPlatformLabel } from "./competition-draft-meta.ts";
 import { PageAlert } from "./competition-setup-fields.tsx";
+import { useCompetitionEntryInvitations } from "./entry-invitations/use-competition-entry-invitations.tsx";
 import {
   profileFieldsFromCompetition,
   toTeamsAndSchedule,
@@ -94,6 +95,7 @@ const SETUP_CAPABILITIES = {
   update: COMPETITION_PERMISSION.update,
   manageParticipants: COMPETITION_PERMISSION.participantsManage,
   publish: COMPETITION_PERMISSION.publish,
+  inviteTeams: COMPETITION_PERMISSION.invitationsManage,
 } as const;
 
 export function CompetitionSetupPage({
@@ -141,6 +143,13 @@ export function CompetitionSetupPage({
   const busy = update.isPending || remove.isPending || publish.isPending || registration.isPending;
   const error =
     update.error ?? remove.error ?? publish.error ?? registration.error ?? coverUpdate.error;
+  const invitations = useCompetitionEntryInvitations({
+    organizationId,
+    competitionId,
+    competition: draft?.competition ?? { name: "", gameEdition: "", platform: "pc" },
+    canInvite: caps.inviteTeams && draft !== null,
+    participantsLocked,
+  });
 
   async function save() {
     if (!form || !profile || readOnly) return;
@@ -256,12 +265,15 @@ export function CompetitionSetupPage({
             clubsPending={clubNames.isPending}
             disabled={participantsLocked || busy || !canManageParticipants}
             gameEdition={draft.competition.gameEdition}
+            invite={invitations.invite}
             onRemove={(id: string) => remove.mutateAsync(id)}
             participants={participantsQuery.data?.participants ?? []}
             platformLabel={competitionPlatformLabel(draft.competition.platform)}
+            sentInvitations={invitations.sentInvitations}
             teams={teamsQuery.data?.teams ?? []}
           />
         ) : null}
+        {invitations.dialog}
         {currentStep === "review" ? (
           <ReviewStep
             draft={draft}

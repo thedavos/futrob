@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import type { MyEntryInvitationDto } from "@futrob/api-contracts";
 import { daysFromNowIso } from "@futrob/shared-kernel";
+import { configureEntryInvitationsStory } from "@/modules/competitions/presentation/entry-invitations-story-client.ts";
 import type { PlayerStoryState } from "./player-story-client.ts";
 import {
   playerProfileFixture,
@@ -143,21 +145,58 @@ const INVITATIONS_ROUTES: readonly PlayerStoryRoute[] = [
   },
 ];
 
+function EntryInvitationDestination() {
+  return <p>Invitación de competición</p>;
+}
+
+const ENTRY_INVITATION_ROUTES: readonly PlayerStoryRoute[] = [
+  ...INVITATIONS_ROUTES,
+  { path: "/entry-invitations/$invitationId", component: EntryInvitationDestination },
+];
+
+function competitionInvitation(
+  id: string,
+  name: string,
+  overrides: Partial<MyEntryInvitationDto> = {},
+): MyEntryInvitationDto {
+  return {
+    id,
+    status: "pending",
+    message: null,
+    createdAt: daysFromNowIso(-1),
+    expiresAt: daysFromNowIso(13),
+    competition: {
+      id: `cmp-${id}`,
+      organizationId: "org-1",
+      name,
+      platform: "playstation",
+      gameEdition: "FC 26",
+    },
+    ...overrides,
+  };
+}
+
+const NO_ENTRY_INVITATIONS: readonly MyEntryInvitationDto[] = [];
+
 function InvitationsStoryShell({
   locale = "es",
   scenario,
+  entryInvitations = NO_ENTRY_INVITATIONS,
+  routes = INVITATIONS_ROUTES,
 }: {
   readonly locale?: "es" | "en";
   readonly scenario: ScenarioId;
+  readonly entryInvitations?: readonly MyEntryInvitationDto[];
+  readonly routes?: readonly PlayerStoryRoute[];
 }) {
   const state = useMemo(() => scenarioState(scenario), [scenario]);
+  useMemo(() => {
+    configureEntryInvitationsStory({
+      myInvitations: { invitations: [...entryInvitations] },
+    });
+  }, [entryInvitations]);
   return (
-    <PlayerStoryShell
-      initialPath="/invitations"
-      locale={locale}
-      routes={INVITATIONS_ROUTES}
-      state={state}
-    />
+    <PlayerStoryShell initialPath="/invitations" locale={locale} routes={routes} state={state} />
   );
 }
 
@@ -374,4 +413,40 @@ export const Mobile: Story = {
   args: { scenario: "conInvitaciones" },
   parameters: { viewport: { defaultViewport: "mobile1" } },
   render: (args) => <InvitationsStoryShell key={args.scenario} {...args} />,
+};
+
+export const ConInvitacionDeCompeticion: Story = {
+  name: "Con invitación de competición",
+  args: { scenario: "emptySinHistorial" },
+  render: (args) => (
+    <InvitationsStoryShell
+      entryInvitations={[
+        competitionInvitation("entry-inv-interclubes", "Copa Interclubes", {
+          message: "Te esperamos en la copa.",
+        }),
+        competitionInvitation("entry-inv-vencida", "Copa vencida", {
+          expiresAt: daysFromNowIso(-1),
+        }),
+      ]}
+      routes={ENTRY_INVITATION_ROUTES}
+      scenario={args.scenario}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "Invitaciones a competiciones" }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText("Al aceptar, nombras tu equipo y quedas como su capitán."),
+    ).toBeVisible();
+    await expect(canvas.getByText("Copa Interclubes")).toBeVisible();
+    await expect(canvas.getByText("FC 26 · PlayStation")).toBeVisible();
+    await expect(canvas.getByText("«Te esperamos en la copa.»")).toBeVisible();
+    await expect(canvas.queryByText("Copa vencida")).toBeNull();
+    await expect(canvas.getByRole("link", { name: "Ver invitación" })).toHaveAttribute(
+      "href",
+      "/entry-invitations/entry-inv-interclubes",
+    );
+  },
 };

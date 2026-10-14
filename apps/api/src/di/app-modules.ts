@@ -9,6 +9,7 @@ import type {
   ListTeamRosterManagementUseCase,
 } from "@/application/teams/team-roster-management.use-case.ts";
 import type { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
+import type { EntryInvitationsComposition } from "./entry-invitations.composition.ts";
 import type { ActivityCommands } from "@/application/notifications/activity-commands.ts";
 import type { SchedulingModule } from "./scheduling.module.ts";
 import type { GameDataModule } from "./game-data.module.ts";
@@ -31,6 +32,7 @@ export interface AppModules {
   readonly authorization: AuthorizationModule;
   readonly competitionApplications: CompetitionApplicationFlow;
   readonly competitions: CompetitionsModule;
+  readonly entryInvitations: EntryInvitationsComposition;
   /** Every selection command composed with its transaction, lock and projection. */
   readonly officialSelection: OfficialSelectionCommands;
   readonly runConfirmationExpiry: RunConfirmationExpiry;

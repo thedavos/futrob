@@ -44,10 +44,11 @@ const activityRowSchema = z.object({
     "selection_confirmation",
     "roster_invitation",
     "competition_published",
+    "entry_invitation",
   ]),
   status: z.enum(["open", "closed"]),
   requires_action: z.boolean(),
-  resource_type: z.enum(["encounter", "roster_invitation", "competition"]),
+  resource_type: z.enum(["encounter", "roster_invitation", "competition", "entry_invitation"]),
   resource_id: pgTextSchema,
   subject: subjectSchema,
   actor_id: pgTextSchema,
@@ -56,7 +57,13 @@ const activityRowSchema = z.object({
   closed_at: nullableTimestampSchema,
   expires_at: nullableTimestampSchema,
   last_event_at: pgTimestampSchema,
-  source_name: z.enum(["match_dispute", "proposal", "roster_invitation", "competition"]),
+  source_name: z.enum([
+    "match_dispute",
+    "proposal",
+    "roster_invitation",
+    "competition",
+    "entry_invitation",
+  ]),
   source_id: pgTextSchema,
 });
 

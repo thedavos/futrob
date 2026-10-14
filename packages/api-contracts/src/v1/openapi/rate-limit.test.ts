@@ -25,6 +25,8 @@ describe("rate-limit contract", () => {
     ["/organizations/invitations/accept", "post"],
     ["/competitions/invitations/accept", "post"],
     ["/roster-invitations/accept", "post"],
+    ["/entry-invitations/{invitationId}/accept", "post"],
+    ["/entry-invitations/links/{code}/accept", "post"],
   ] as const satisfies ReadonlyArray<readonly [string, OpenApiHttpMethod]>)(
     "documents 429 for %s",
     (path, method) => {

@@ -5,6 +5,7 @@ export * from "./players.ts";
 export * from "./identity.ts";
 export * from "./organizations.ts";
 export * from "./competitions.ts";
+export * from "./entry-invitations.ts";
 export * from "./teams.ts";
 export * from "./authorization.ts";
 export * from "./encounters.ts";

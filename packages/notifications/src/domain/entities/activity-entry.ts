@@ -14,6 +14,7 @@ export const ACTIVITY_KIND = {
   selectionConfirmation: "selection_confirmation",
   rosterInvitation: "roster_invitation",
   competitionPublished: "competition_published",
+  entryInvitation: "entry_invitation",
 } as const;
 
 export type ActivityKind = (typeof ACTIVITY_KIND)[keyof typeof ACTIVITY_KIND];
@@ -28,6 +29,7 @@ export const ACTIVITY_SOURCE = {
   proposal: "proposal",
   rosterInvitation: "roster_invitation",
   competition: "competition",
+  entryInvitation: "entry_invitation",
 } as const;
 
 export type ActivitySourceName = (typeof ACTIVITY_SOURCE)[keyof typeof ACTIVITY_SOURCE];
@@ -37,6 +39,7 @@ export const ACTIVITY_RESOURCE = {
   encounter: "encounter",
   rosterInvitation: "roster_invitation",
   competition: "competition",
+  entryInvitation: "entry_invitation",
 } as const;
 
 export type ActivityResourceType = (typeof ACTIVITY_RESOURCE)[keyof typeof ACTIVITY_RESOURCE];

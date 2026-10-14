@@ -40,6 +40,9 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   comp-explore-show <competitionId>
   comp-apply <competitionId> <teamName> [--key creationKey]
   comp-application <competitionId>
+  comp-invite-team <orgId> <compId> <actorId> <label> [--message text]
+  comp-invite-link <orgId> <compId> [--regenerate]
+  entry-invite-accept <teamName> (--id invitationId | --code code) [--key creationKey]
   participant-add <orgId> <compId> <teamId>
   participant-list <orgId> <compId>
   entry-register <orgId> <compId> <teamId>

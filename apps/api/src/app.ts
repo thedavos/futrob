@@ -11,6 +11,7 @@ import { captureUnexpectedError } from "@/observability/sentry.ts";
 import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
 import { registerCompetitionRoutes } from "@/http/routes/competitions.ts";
 import { registerCompetitionParticipantRoutes } from "@/http/routes/competitions-participants.ts";
+import { registerEntryInvitationRoutes } from "@/http/routes/entry-invitations.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
 import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
@@ -87,6 +88,7 @@ export function createApp(deps: AppDeps): Hono {
   registerGameDataClubRoutes(v1, deps);
   registerCompetitionRoutes(v1, deps);
   registerCompetitionParticipantRoutes(v1, deps);
+  registerEntryInvitationRoutes(v1, deps);
   registerOnboardingRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);
   registerPlayerRoutes(v1, deps);

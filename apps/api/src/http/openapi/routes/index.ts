@@ -1,5 +1,6 @@
 import * as authorization from "@/http/openapi/routes/authorization.ts";
 import * as competitions from "@/http/openapi/routes/competitions.ts";
+import * as entryInvitations from "@/http/openapi/routes/entry-invitations.ts";
 import * as encounters from "@/http/openapi/routes/encounters.ts";
 import * as fixtures from "@/http/openapi/routes/fixtures.ts";
 import * as gameData from "@/http/openapi/routes/game-data.ts";
@@ -15,6 +16,7 @@ import * as teams from "@/http/openapi/routes/teams.ts";
 export * from "@/http/openapi/routes/authorization.ts";
 export * from "@/http/openapi/routes/competitions.ts";
 export * from "@/http/openapi/routes/encounters.ts";
+export * from "@/http/openapi/routes/entry-invitations.ts";
 export * from "@/http/openapi/routes/fixtures.ts";
 export * from "@/http/openapi/routes/game-data.ts";
 export * from "@/http/openapi/routes/identity.ts";
@@ -34,6 +36,7 @@ export const openApiRoutes = [
   ...Object.values(identity),
   ...Object.values(organizations),
   ...Object.values(competitions),
+  ...Object.values(entryInvitations),
   ...Object.values(fixtures),
   ...Object.values(statistics),
   ...Object.values(notifications),

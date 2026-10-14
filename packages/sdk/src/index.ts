@@ -13,10 +13,15 @@ export {
 } from "./http.ts";
 export { httpResponseBodySchema, type HttpResponseBody } from "./wire-body.ts";
 export { buildRosterInvitationShareUrl } from "./roster-invitation-share-url.ts";
+export { buildEntryInvitationShareUrl, buildWhatsAppShareUrl } from "./entry-invitation-share.ts";
 
 export type { ActivitiesResource, ListActivitiesInput } from "./resources/activities.ts";
 export type { AuthorizationResource } from "./resources/authorization.ts";
 export type { CompetitionsResource } from "./resources/competitions.ts";
+export type {
+  EntryInvitationsResource,
+  EntryInvitationTarget,
+} from "./resources/entry-invitations.ts";
 export type { EncountersResource, ScheduleChangeProposalTarget } from "./resources/encounters.ts";
 export type { GameDataResource } from "./resources/game-data.ts";
 export type { IdentityResource } from "./resources/identity.ts";

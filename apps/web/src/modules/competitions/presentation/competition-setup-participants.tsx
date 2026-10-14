@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
@@ -9,6 +9,7 @@ import {
   Card,
   CardContent,
   EmptyState,
+  EmptyStateActions,
   EmptyStateCopy,
   EmptyStateDescription,
   EmptyStateIcon,
@@ -26,8 +27,10 @@ import type {
   CompetitionEntryStatusDto,
   TeamDto,
 } from "@futrob/api-contracts";
+import { PlusIcon } from "@phosphor-icons/react";
 import squadUrl from "@/assets/illustration-squad.png";
 import { SelectField, StepHeading } from "./competition-setup-fields.tsx";
+import type { InviteTeamAction } from "./entry-invitations/use-competition-entry-invitations.tsx";
 
 const STATUS_FILTERS = [
   { value: "all", label: "Todos los estados" },
@@ -43,6 +46,21 @@ const ENTRY_STATUS_BADGES = {
 } as const;
 
 const styles = stylex.create({
+  headingRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "1rem",
+  },
+  inviteAction: {
+    display: "grid",
+    justifyItems: {
+      default: "start",
+      [media.sm]: "end",
+    },
+    gap: "0.25rem",
+  },
   columns: {
     display: "grid",
     alignItems: "start",
@@ -158,6 +176,8 @@ export function ParticipantsStep({
   gameEdition,
   onRemove,
   disabled,
+  invite = null,
+  sentInvitations = null,
 }: {
   teams: readonly TeamDto[];
   participants: readonly CompetitionEntryDto[];
@@ -168,6 +188,9 @@ export function ParticipantsStep({
   gameEdition: string;
   onRemove: (id: string) => Promise<void>;
   disabled: boolean;
+  /** Null when the actor cannot invite teams. */
+  invite?: InviteTeamAction | null;
+  sentInvitations?: ReactNode;
 }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]["value"]>("all");
@@ -188,11 +211,14 @@ export function ParticipantsStep({
     <div {...applyStyles(styles.columns)}>
       <Card>
         <CardContent className={styles.cardBody}>
-          <StepHeading
-            badge={<Badge variant="neutral">{participants.length}</Badge>}
-            copy="Revisa los equipos inscritos en la competición."
-            title="Equipos participantes"
-          />
+          <div {...applyStyles(styles.headingRow)}>
+            <StepHeading
+              badge={<Badge variant="neutral">{participants.length}</Badge>}
+              copy="Revisa los equipos inscritos en la competición."
+              title="Equipos participantes"
+            />
+            {invite && participants.length > 0 ? <InviteTeamButton invite={invite} /> : null}
+          </div>
           {participants.length === 0 ? null : (
             <div {...applyStyles(styles.filters)}>
               <Field>
@@ -217,7 +243,7 @@ export function ParticipantsStep({
             </div>
           )}
           {participants.length === 0 ? (
-            <ParticipantsEmpty />
+            <ParticipantsEmpty invite={invite} />
           ) : (
             <>
               <div {...applyStyles(styles.list)}>
@@ -250,6 +276,7 @@ export function ParticipantsStep({
               </p>
             </>
           )}
+          {sentInvitations}
         </CardContent>
       </Card>
       <Card>
@@ -287,7 +314,29 @@ export function ParticipantsStep({
   );
 }
 
-function ParticipantsEmpty() {
+function InviteTeamButton({ invite }: { readonly invite: InviteTeamAction }) {
+  const reasonId = useId();
+  return (
+    <div {...applyStyles(styles.inviteAction)}>
+      <Button
+        aria-describedby={invite.disabledReason ? reasonId : undefined}
+        disabled={invite.disabledReason !== null}
+        onClick={invite.onOpen}
+        type="button"
+      >
+        <PlusIcon aria-hidden="true" />
+        Invitar equipo
+      </Button>
+      {invite.disabledReason ? (
+        <p id={reasonId} {...applyStyles(typography.caption, styles.factLabel)}>
+          {invite.disabledReason}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function ParticipantsEmpty({ invite }: { readonly invite: InviteTeamAction | null }) {
   const titleId = useId();
   return (
     <EmptyState aria-labelledby={titleId}>
@@ -297,9 +346,16 @@ function ParticipantsEmpty() {
       <EmptyStateCopy>
         <EmptyStateTitle id={titleId}>Aún no hay equipos</EmptyStateTitle>
         <EmptyStateDescription>
-          Aparecerán aquí cuando alguien se postule con las inscripciones abiertas.
+          {invite
+            ? "Invita equipos de Futrob o comparte un enlace. También aparecerán aquí quienes se postulen con las inscripciones abiertas."
+            : "Aparecerán aquí cuando alguien se postule con las inscripciones abiertas."}
         </EmptyStateDescription>
       </EmptyStateCopy>
+      {invite ? (
+        <EmptyStateActions>
+          <InviteTeamButton invite={invite} />
+        </EmptyStateActions>
+      ) : null}
     </EmptyState>
   );
 }

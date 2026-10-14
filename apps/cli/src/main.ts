@@ -53,6 +53,7 @@ import {
   syncJobRun,
   syncJobRunNext,
 } from "./commands/game-data.ts";
+import { compInviteLink, compInviteTeam, entryInviteAccept } from "./commands/entry-invitations.ts";
 import { myMatches, myNextEncounter, myStats, playerMe } from "./commands/players.ts";
 import { run as e2eGoldenPath } from "./commands/e2e-golden-path.ts";
 import type { CliError } from "./lib/errors.ts";
@@ -88,6 +89,9 @@ const commands = {
   "comp-registration-close": (args) => compRegistrationClose(args),
   "comp-apply": (args) => compApply(args),
   "comp-application": (args) => compApplication(args),
+  "comp-invite-team": (args) => compInviteTeam(args),
+  "comp-invite-link": (args) => compInviteLink(args),
+  "entry-invite-accept": (args) => entryInviteAccept(args),
   "comp-explore": (args) => compExplore(args),
   "comp-explore-show": (args) => compExploreShow(args),
   "participant-add": (args) => participantAdd(args),

@@ -10,6 +10,11 @@ export class InvalidTeamName extends TaggedError("InvalidTeamName")<{
   message: string;
 }> {}
 
+export class InvalidPlayerSearch extends TaggedError("InvalidPlayerSearch")<{
+  code: "teams.invalid_player_search";
+  message: string;
+}> {}
+
 export class CreationKeyConflict extends TaggedError("CreationKeyConflict")<{
   code: "teams.creation_key_conflict";
   message: string;

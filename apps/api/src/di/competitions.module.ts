@@ -20,7 +20,18 @@ import {
   ListCompetitionParticipantsUseCase,
   ListAccessibleCompetitionsUseCase,
   RemoveCompetitionParticipantUseCase,
+  InviteTeamCaptainUseCase,
+  EnsureEntryInvitationLinkUseCase,
+  RegenerateEntryInvitationLinkUseCase,
+  RevokeEntryInvitationUseCase,
+  ListCompetitionEntryInvitationsUseCase,
+  ListMyEntryInvitationsUseCase,
+  ResolveEntryInvitationUseCase,
+  RecordEntryInvitationAcceptanceUseCase,
+  DeclineEntryInvitationUseCase,
+  RegisterInvitedEntryUseCase,
   type CompetitionDiscoveryReader,
+  type EntryInvitationRepository,
   type CompetitionEntryRepository,
   type CompetitionMembershipRepository,
   type CompetitionRepository,
@@ -40,6 +51,11 @@ import {
   InMemoryCompetitionEntryRepository,
   PostgresCompetitionEntryRepository,
 } from "@/adapters/competitions/competition-entry.repositories.ts";
+import {
+  InMemoryEntryInvitationRepository,
+  PostgresEntryInvitationRepository,
+  RandomEntryInvitationCodePort,
+} from "@/adapters/competitions/entry-invitation.repositories.ts";
 import { InMemoryCompetitionDiscoveryReader } from "@/adapters/competitions/in-memory-discovery.reader.ts";
 import {
   InMemoryCompetitionMembershipRepository,
@@ -86,6 +102,16 @@ export function createCompetitionsModule(input: {
   const listDiscoverable = new ListDiscoverableCompetitionsUseCase(discovery);
   const getDiscoverable = new GetDiscoverableCompetitionUseCase(discovery);
   const shared = { clock: { now: () => new Date() }, ids: { generate: () => randomUUID() } };
+  const invitations: EntryInvitationRepository = input.pool
+    ? new PostgresEntryInvitationRepository(input.pool)
+    : new InMemoryEntryInvitationRepository();
+  const invitationDeps = {
+    authorization: input.authorization,
+    competitions,
+    invitations,
+    codes: new RandomEntryInvitationCodePort(),
+    ...shared,
+  };
   return {
     repository: competitions,
     membershipRepository: memberships,
@@ -161,6 +187,19 @@ export function createCompetitionsModule(input: {
       entries,
       authorization: input.authorization,
     }),
+    entryInvitations: {
+      repository: invitations,
+      invite: new InviteTeamCaptainUseCase(invitationDeps),
+      ensureLink: new EnsureEntryInvitationLinkUseCase(invitationDeps),
+      regenerateLink: new RegenerateEntryInvitationLinkUseCase(invitationDeps),
+      revoke: new RevokeEntryInvitationUseCase(invitationDeps),
+      listSent: new ListCompetitionEntryInvitationsUseCase(invitationDeps),
+      listMine: new ListMyEntryInvitationsUseCase(invitations),
+      resolve: new ResolveEntryInvitationUseCase(invitationDeps),
+      recordAcceptance: new RecordEntryInvitationAcceptanceUseCase(invitationDeps),
+      decline: new DeclineEntryInvitationUseCase(invitationDeps),
+      registerEntry: new RegisterInvitedEntryUseCase({ competitions, entries, ...shared }),
+    },
     explore: new ExploreCompetitionsQuery({
       list: listDiscoverable,
       get: getDiscoverable,

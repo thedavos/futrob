@@ -54,6 +54,7 @@ export {
 export {
   TeamNotFound,
   InvalidTeamName,
+  InvalidPlayerSearch,
   CreationKeyConflict,
   RosterCompetitionConflict,
   RosterLocked,
@@ -179,3 +180,13 @@ export {
   type RespondToRosterInvitationOutcome,
   type RosterInvitationResponseAction,
 } from "./application/respond-to-roster-invitation/respond-to-roster-invitation.use-case.ts";
+export type {
+  PlayerDirectoryClub,
+  PlayerDirectoryEntry,
+  PlayerDirectoryReader,
+} from "./domain/ports/player-directory.reader.ts";
+export {
+  PLAYER_SEARCH_MAX_RESULTS,
+  PLAYER_SEARCH_MIN_LENGTH,
+  SearchPlayersUseCase,
+} from "./application/search-players/search-players.use-case.ts";

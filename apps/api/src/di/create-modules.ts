@@ -49,6 +49,7 @@ import type { Pool } from "pg";
 import { createGameDataModule } from "./game-data.module.ts";
 import { createIdentityModule } from "./identity.module.ts";
 import { createOrganizationsModule } from "./organizations.module.ts";
+import { createEntryInvitations } from "./entry-invitations.composition.ts";
 import { createCompetitionsModule } from "./competitions.module.ts";
 import { createTeamsModule } from "./teams.module.ts";
 import { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
@@ -353,11 +354,20 @@ export function createModules(input: CreateModulesInput): AppModules {
     rosters: teams.repositories.rosters,
   });
 
+  const entryInvitations = createEntryInvitations({
+    transaction,
+    writer: activityFeed.notifications.writer,
+    competitions,
+    teams,
+    organizations: organizations.repositories.organizations,
+  });
+
   return {
     activityCommands: activityFeed.commands,
     authorization,
     competitionApplications,
     competitions,
+    entryInvitations,
     officialSelection,
     runScheduleChangeExpiry: new RunScheduleChangeExpiry({
       feed: scheduling.scheduleChangeExpiryFeed,

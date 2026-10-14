@@ -135,6 +135,10 @@ const es = {
   "activity.invitation.watching": "Invitación enviada",
   "activity.invitation.expired": "Invitación vencida",
   "activity.invitation.closed": "Invitación respondida",
+  "activity.entryInvitation.pending": "Invitación a una competición",
+  "activity.entryInvitation.watching": "Equipo invitado",
+  "activity.entryInvitation.expired": "Invitación a competición vencida",
+  "activity.entryInvitation.closed": "Invitación a competición respondida",
   "activity.competitionPublished": "Competición publicada",
   "activity.recent.title": "Actividad reciente",
   "activity.recent.viewAll": "Ver toda la actividad",
@@ -573,6 +577,10 @@ const es = {
   "player.competitions.apply.status.rejected.description": ({ team }) =>
     `El organizador no aprobó a ${team}.`,
   "player.invitations.title": "Invitaciones",
+  "player.invitations.competitions.title": "Invitaciones a competiciones",
+  "player.invitations.competitions.description":
+    "Al aceptar, nombras tu equipo y quedas como su capitán.",
+  "player.invitations.competitions.open": "Ver invitación",
   "player.invitations.description":
     "Revisa las invitaciones que has recibido y elige dónde participar.",
   "player.invitations.redeem": "Canjear un código de invitación",
@@ -1565,6 +1573,10 @@ const en: Catalog = {
   "activity.invitation.watching": "Invitation sent",
   "activity.invitation.expired": "Invitation expired",
   "activity.invitation.closed": "Invitation answered",
+  "activity.entryInvitation.pending": "Competition invitation",
+  "activity.entryInvitation.watching": "Team invited",
+  "activity.entryInvitation.expired": "Competition invitation expired",
+  "activity.entryInvitation.closed": "Competition invitation answered",
   "activity.competitionPublished": "Competition published",
   "activity.recent.title": "Recent activity",
   "activity.recent.viewAll": "View all activity",
@@ -1997,6 +2009,10 @@ const en: Catalog = {
   "player.competitions.apply.status.rejected.description": ({ team }) =>
     `The organizer didn't approve ${team}.`,
   "player.invitations.title": "Invitations",
+  "player.invitations.competitions.title": "Competition invitations",
+  "player.invitations.competitions.description":
+    "When you accept, you name your team and become its captain.",
+  "player.invitations.competitions.open": "View invitation",
   "player.invitations.description":
     "Review the invitations you have received and choose where to take part.",
   "player.invitations.redeem": "Redeem an invitation code",

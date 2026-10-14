@@ -4,6 +4,7 @@ export const BFF_RATE_LIMIT_POLICY = {
   eaClubSearch: "ea-club-search",
   invitationAccept: "invitation-accept",
   invitationPreview: "invitation-preview",
+  playerSearch: "player-search",
 } as const;
 
 export type BffRateLimitPolicy = (typeof BFF_RATE_LIMIT_POLICY)[keyof typeof BFF_RATE_LIMIT_POLICY];
@@ -31,6 +32,11 @@ export const DEFAULT_BFF_RATE_LIMIT_POLICIES = {
     windowSeconds: 900,
     actorMaxAttempts: 5,
     ipMaxAttempts: 5,
+  },
+  [BFF_RATE_LIMIT_POLICY.playerSearch]: {
+    windowSeconds: 60,
+    actorMaxAttempts: 30,
+    ipMaxAttempts: 60,
   },
 } satisfies BffRateLimitPolicies;
 
@@ -69,6 +75,11 @@ const POLICY_ENV_KEYS = {
     actorMaxAttempts: "RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX",
     ipMaxAttempts: "RATE_LIMIT_INVITATION_PREVIEW_IP_MAX",
   },
+  [BFF_RATE_LIMIT_POLICY.playerSearch]: {
+    windowSeconds: "RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS",
+    actorMaxAttempts: "RATE_LIMIT_PLAYER_SEARCH_ACTOR_MAX",
+    ipMaxAttempts: "RATE_LIMIT_PLAYER_SEARCH_IP_MAX",
+  },
 } as const satisfies Record<
   BffRateLimitPolicy,
   Readonly<{ windowSeconds: string; actorMaxAttempts: string; ipMaxAttempts: string }>
@@ -85,6 +96,7 @@ export function parseBffRateLimitPolicies(source: Readonly<Record<string, string
       source,
       BFF_RATE_LIMIT_POLICY.invitationPreview,
     ),
+    [BFF_RATE_LIMIT_POLICY.playerSearch]: policyFromEnv(source, BFF_RATE_LIMIT_POLICY.playerSearch),
   } satisfies BffRateLimitPolicies;
 }
 

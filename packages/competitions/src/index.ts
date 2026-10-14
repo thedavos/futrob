@@ -171,3 +171,58 @@ export {
 } from "./application/list-accessible-competitions/list-accessible-competitions.use-case.ts";
 export { ListDiscoverableCompetitionsUseCase } from "./application/list-discoverable-competitions/list-discoverable-competitions.use-case.ts";
 export { GetDiscoverableCompetitionUseCase } from "./application/get-discoverable-competition/get-discoverable-competition.use-case.ts";
+
+export {
+  DIRECTED_ENTRY_INVITATION_TTL_DAYS,
+  ENTRY_INVITATION_CHANNEL,
+  ENTRY_INVITATION_MESSAGE_MAX_LENGTH,
+  ENTRY_INVITATION_STATUS,
+  type EntryInvitation,
+  type EntryInvitationChannel,
+  type EntryInvitationStatus,
+} from "./domain/entities/entry-invitation.ts";
+export {
+  EntryInvitationAlreadyDecided,
+  EntryInvitationExpired,
+  EntryInvitationForbidden,
+  EntryInvitationNotFound,
+  EntryInvitationPendingConflict,
+  EntryInvitationRevoked,
+  InvalidEntryInvitationMessage,
+  type DeclineEntryInvitationError,
+  type EntryInvitationEligibilityError,
+  type InviteTeamCaptainError,
+  type ManageEntryInvitationsError,
+  type ResolveEntryInvitationError,
+  type RevokeEntryInvitationError,
+} from "./domain/errors/entry-invitation.errors.ts";
+export type { EntryInvitationRepository } from "./domain/ports/entry-invitation.repository.ts";
+export type { EntryInvitationCodePort } from "./domain/ports/entry-invitation-code.port.ts";
+export {
+  InviteTeamCaptainUseCase,
+  type InviteTeamCaptainInput,
+} from "./application/entry-invitations/invite-team-captain.use-case.ts";
+export {
+  EnsureEntryInvitationLinkUseCase,
+  RegenerateEntryInvitationLinkUseCase,
+} from "./application/entry-invitations/entry-invitation-link.use-cases.ts";
+export {
+  RevokeEntryInvitationUseCase,
+  type RevokeEntryInvitationInput,
+} from "./application/entry-invitations/revoke-entry-invitation.use-case.ts";
+export {
+  ListCompetitionEntryInvitationsUseCase,
+  ListMyEntryInvitationsUseCase,
+} from "./application/entry-invitations/list-entry-invitations.use-cases.ts";
+export {
+  DeclineEntryInvitationUseCase,
+  RecordEntryInvitationAcceptanceUseCase,
+  ResolveEntryInvitationUseCase,
+  type EntryInvitationReference,
+  type ResolvedEntryInvitation,
+} from "./application/entry-invitations/respond-to-entry-invitation.use-cases.ts";
+export type { EntryInvitationScope } from "./application/entry-invitations/manage-entry-invitations.guard.ts";
+export {
+  RegisterInvitedEntryUseCase,
+  type RegisterInvitedEntryError,
+} from "./application/entry-invitations/register-invited-entry.use-case.ts";

@@ -100,6 +100,9 @@ npm run cli -- e2e-golden-path --actor <actorId>
 | `comp-registration-close <orgId> <compId>`                 | Cierra inscripciones y vuelve a borrador; conserva las inscripciones        |
 | `comp-apply <competitionId> <teamName> [--key k]`          | Postula un equipo nuevo (queda `pending`; el actor es capitán)              |
 | `comp-application <competitionId>`                         | Muestra la solicitud del actor en esa competición                           |
+| `comp-invite-team <orgId> <compId> <actorId> <label>`      | Invita a un jugador a ser capitán de un equipo nuevo                        |
+| `comp-invite-link <orgId> <compId> [--regenerate]`         | Obtiene o regenera el enlace compartible de inscripción                     |
+| `entry-invite-accept <teamName> (--id id \| --code code)`  | Acepta una invitación y crea el equipo aprobado                             |
 | `comp-explore` / `comp-explore-show <id>`                  | Catálogo autenticado de competiciones publicadas                            |
 | `participant-add/list`                                     | Participantes de competición                                                |
 | `entry-register/approve/reject`                            | Ciclo de entries de equipos                                                 |

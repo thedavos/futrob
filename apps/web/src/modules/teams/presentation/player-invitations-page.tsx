@@ -43,6 +43,7 @@ import {
   useMyRosterInvitationsQuery,
   useRespondToRosterInvitationMutation,
 } from "./player-queries.ts";
+import { MyEntryInvitations } from "@/modules/competitions/presentation/entry-invitations/my-entry-invitations.tsx";
 
 const INVITATIONS_TAB = {
   pending: "pending",
@@ -174,6 +175,7 @@ export function PlayerInvitationsPage() {
       </PageHeader>
 
       <div {...applyStyles(styles.body)}>
+        <MyEntryInvitations />
         {invitationsQuery.isError ? (
           <Alert variant="destructive">
             <AlertDescription>{t("player.invitations.error")}</AlertDescription>

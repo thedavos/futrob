@@ -174,6 +174,20 @@ El recorrido operativo autenticado debe poder completarse tanto desde `apps/web`
 - **y cuando** existen reglas válidas y al menos dos participantes aprobados puede publicar,
 - **y después de publicar** cualquier mutación estructural falla con `competitions.not_editable`.
 
+### AC-COMP-003 — Invitar equipos
+
+**Cubre:** FTR-COMP-001, ADR-0023.
+
+- **Dado** un organizador o staff con una competición en `draft` o `registration`,
+- **cuando** busca un jugador por al menos 3 caracteres de su gamertag y le envía una invitación,
+- **entonces** el jugador la ve en Pendientes y puede aceptarla o rechazarla,
+- **y cuando** la acepta y nombra su equipo, el equipo queda inscrito como aprobado y el jugador es su capitán.
+- **Dado** el enlace de invitación de la competición,
+- **cuando** un actor autenticado sin equipo en ella lo abre y acepta,
+- **entonces** su equipo queda inscrito como aprobado,
+- **y cuando** el organizador regenera el enlace, el anterior responde `competitions.entry_invitation_revoked`.
+- **Y** con el cupo lleno, aceptar responde `competitions.capacity_reached` sin crear el equipo.
+
 ## 5. Fixtures y modos de serie
 
 ### AC-FIX-001 — Enfrentamiento con dos partidos

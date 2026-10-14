@@ -27,6 +27,11 @@ const TEST_POLICIES: BffRateLimitPolicies = {
     actorMaxAttempts: 1,
     ipMaxAttempts: 1,
   },
+  [BFF_RATE_LIMIT_POLICY.playerSearch]: {
+    windowSeconds: 60,
+    actorMaxAttempts: 1,
+    ipMaxAttempts: 1,
+  },
 };
 
 function attempt(input: Partial<RateLimitAttempt> = {}): RateLimitAttempt {
