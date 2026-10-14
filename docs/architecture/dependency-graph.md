@@ -80,6 +80,8 @@ sequenceDiagram
 ## Verificación
 
 - Import lint: `domain` sin adapters; `di/` único lugar de concreciones (hoy solo `apps/api/src/di`, ver [ADR-0013](/docs/adr/0013-ea-egress-api-only.md)).
+- El DAG BC→BC de este documento está enforced por la regla oxlint `futrob/bc-dependency-graph`. El mapa canónico de lint vive en [`tools/oxlint/futrob/shared/bc-graph.ts`](/tools/oxlint/futrob/shared/bc-graph.ts). Cualquier arista nueva, eliminada o excepción debe actualizar **ambos** archivos a la vez; las excepciones van en `GRAPH_ALLOWLIST` con un comentario `TODO`, nunca como baseline silencioso.
+- `no-restricted-imports` bloquea infra (pg, postgres, Hono, Node, Cloudflare, Wrangler, SDK, api-contracts, UI, logger) en `packages/*/src/{domain,application}`. `@futrob/shared-kernel` sigue permitido.
 - Tests de dominio sin I/O.
 - Application tests con ports fake.
 - Adapter tests Postgres según ownership + fixtures EA sanitizadas.
