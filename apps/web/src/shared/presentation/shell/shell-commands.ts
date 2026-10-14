@@ -1,6 +1,4 @@
 import type { Permission } from "@futrob/shared-kernel";
-import { COMPETITION_PERMISSION } from "@futrob/competitions";
-import { TEAM_PERMISSION } from "@futrob/teams";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
 
 export type ShellCommand = {
@@ -18,25 +16,10 @@ export function commandsFor(
   allowedPermissions?: ReadonlySet<string>,
 ): readonly ShellCommand[] {
   let commands: readonly ShellCommand[];
-  if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
-    commands = isCompetitionSetupPath(pathname)
-      ? []
-      : [
-          { id: "sync", label: "Sync EA", disabled: true },
-          {
-            id: "publish",
-            label: "Publicar",
-            disabled: true,
-            requiredPermission: COMPETITION_PERMISSION.publish,
-          },
-          {
-            id: "manage-roster",
-            label: "Gestionar plantilla",
-            disabled: true,
-            requiredPermission: TEAM_PERMISSION.rosterManage,
-          },
-        ];
-  } else if (selection.kind === WORKSPACE_SELECTION_KIND.organization) {
+  if (
+    selection.kind === WORKSPACE_SELECTION_KIND.competition ||
+    selection.kind === WORKSPACE_SELECTION_KIND.organization
+  ) {
     commands = [];
   } else if (pathname.startsWith("/player/competitions")) {
     commands = [
@@ -54,8 +37,4 @@ export function commandsFor(
       )
     : commands;
   return visible.map(({ requiredPermission: _requiredPermission, ...command }) => command);
-}
-
-function isCompetitionSetupPath(pathname: string): boolean {
-  return /\/competitions\/[^/]+\/setup\/?$/.test(pathname);
 }

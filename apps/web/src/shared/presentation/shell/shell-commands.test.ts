@@ -1,68 +1,19 @@
 import { describe, expect, it } from "vite-plus/test";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
-import { TEAM_PERMISSION } from "@futrob/teams";
 
 import { commandsFor } from "./shell-commands.ts";
 import { WORKSPACE_SELECTION_KIND } from "./workspace-selection.ts";
 
 describe("commandsFor", () => {
-  it("returns competition stubs for competition workspace", () => {
-    const commands = commandsFor("/orgs/o1/competitions/c1", {
-      kind: WORKSPACE_SELECTION_KIND.competition,
-      competitionId: "c1",
-      organizationId: "o1",
-      label: "Copa",
-    });
-    expect(commands.map((command) => command.id)).toEqual(["sync", "publish", "manage-roster"]);
-    expect(commands.every((command) => command.disabled)).toBe(true);
-  });
-
-  it("hides competition command-bar actions on setup", () => {
+  it("returns no command-bar actions for a competition workspace", () => {
     expect(
-      commandsFor("/orgs/o1/competitions/c1/setup", {
+      commandsFor("/orgs/o1/competitions/c1", {
         kind: WORKSPACE_SELECTION_KIND.competition,
         competitionId: "c1",
         organizationId: "o1",
         label: "Copa",
-      }).map((command) => command.id),
+      }),
     ).toEqual([]);
-  });
-
-  it("filters competition actions by effective permissions", () => {
-    const captain = commandsFor(
-      "/orgs/o1/competitions/c1",
-      {
-        kind: WORKSPACE_SELECTION_KIND.competition,
-        competitionId: "c1",
-        organizationId: "o1",
-      },
-      new Set([TEAM_PERMISSION.rosterManage]),
-    );
-    expect(captain.map((command) => command.id)).toEqual(["sync", "manage-roster"]);
-
-    const staff = commandsFor(
-      "/orgs/o1/competitions/c1",
-      {
-        kind: WORKSPACE_SELECTION_KIND.competition,
-        competitionId: "c1",
-        organizationId: "o1",
-      },
-      new Set([COMPETITION_PERMISSION.publish]),
-    );
-    expect(staff.map((command) => command.id)).toEqual(["sync", "publish"]);
-  });
-
-  it("hides privileged competition actions when capabilities are empty", () => {
-    const commands = commandsFor(
-      "/orgs/o1/competitions/c1",
-      {
-        kind: WORKSPACE_SELECTION_KIND.competition,
-        competitionId: "c1",
-        organizationId: "o1",
-      },
-      new Set(),
-    );
-    expect(commands.map((command) => command.id)).toEqual(["sync"]);
   });
 
   it("returns no command-bar actions for the organization workspace", () => {
