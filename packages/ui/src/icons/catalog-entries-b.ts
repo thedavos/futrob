@@ -3,13 +3,16 @@ import {
   LinkSimpleIcon,
   ListIcon,
   ListChecksIcon,
+  ListNumbersIcon,
   LockIcon,
   MagnifyingGlassIcon,
+  MedalIcon,
   MinusIcon,
   MonitorIcon,
   PersonSimpleThrowIcon,
   PlusIcon,
   PlugsIcon,
+  PresentationChartIcon,
   RectangleIcon,
   ScalesIcon,
   ShieldIcon,
@@ -17,12 +20,14 @@ import {
   SidebarSimpleIcon,
   SignpostIcon,
   SoccerBallIcon,
+  SquaresFourIcon,
   StarIcon,
   SwordIcon,
   TicketIcon,
   TrayIcon,
   TrendDownIcon,
   TrendUpIcon,
+  TreeStructureIcon,
   TrophyIcon,
   UserIcon,
   UsersIcon,
@@ -60,6 +65,12 @@ export const FUTROB_ICON_CATALOG_B = [
     Icon: ListChecksIcon,
   },
   {
+    name: "ListNumbersIcon",
+    label: "Clasificación",
+    usage: "Tabla oficial en la navegación de competición",
+    Icon: ListNumbersIcon,
+  },
+  {
     name: "LockIcon",
     label: "Candado",
     usage: "Campos de contraseña",
@@ -70,6 +81,12 @@ export const FUTROB_ICON_CATALOG_B = [
     label: "Buscar",
     usage: "Inputs de búsqueda",
     Icon: MagnifyingGlassIcon,
+  },
+  {
+    name: "MedalIcon",
+    label: "Rankings",
+    usage: "Rankings de la competición en la navegación",
+    Icon: MedalIcon,
   },
   {
     name: "MinusIcon",
@@ -102,6 +119,12 @@ export const FUTROB_ICON_CATALOG_B = [
     Icon: PlugsIcon,
   },
   {
+    name: "PresentationChartIcon",
+    label: "Analíticas",
+    usage: "Analíticas de la competición en la navegación",
+    Icon: PresentationChartIcon,
+  },
+  {
     name: "RectangleIcon",
     label: "Tarjeta",
     usage: "Tarjetas amarillas y rojas en Mis partidos",
@@ -110,7 +133,7 @@ export const FUTROB_ICON_CATALOG_B = [
   {
     name: "ScalesIcon",
     label: "Balanza",
-    usage: "Disciplina en el perfil de atributos del jugador",
+    usage: "Disciplina del jugador y disputas de la competición",
     Icon: ScalesIcon,
   },
   {
@@ -140,8 +163,14 @@ export const FUTROB_ICON_CATALOG_B = [
   {
     name: "SoccerBallIcon",
     label: "Balón",
-    usage: "Goles y hat-trick en Mis partidos",
+    usage: "Goles, hat-trick y enfrentamientos de competición",
     Icon: SoccerBallIcon,
+  },
+  {
+    name: "SquaresFourIcon",
+    label: "Resumen",
+    usage: "Resumen de la competición en la navegación",
+    Icon: SquaresFourIcon,
   },
   {
     name: "StarIcon",
@@ -178,6 +207,12 @@ export const FUTROB_ICON_CATALOG_B = [
     label: "Tendencia al alza",
     usage: "Rating al alza en Mis partidos",
     Icon: TrendUpIcon,
+  },
+  {
+    name: "TreeStructureIcon",
+    label: "Bracket",
+    usage: "Eliminación de la competición en la navegación",
+    Icon: TreeStructureIcon,
   },
   {
     name: "TrophyIcon",

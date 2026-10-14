@@ -126,4 +126,23 @@ describe("contextNavFor", () => {
     );
     expect(section.items.map((item) => item.id)).toEqual(["overview", "matches", "stats"]);
   });
+
+  it("gives every competition destination an icon for the collapsed rail", () => {
+    const player = contextNavFor({
+      kind: WORKSPACE_SELECTION_KIND.competition,
+      competitionId: "c1",
+      organizationId: null,
+    });
+    const operator = contextNavFor(
+      {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        competitionId: "c1",
+        organizationId: "org-1",
+      },
+      new Set([COMPETITION_PERMISSION.update, COMPETITION_PERMISSION.read, TEAM_PERMISSION.read]),
+    );
+    for (const item of [...player.items, ...operator.items]) {
+      expect(item.icon, item.id).toBeTruthy();
+    }
+  });
 });

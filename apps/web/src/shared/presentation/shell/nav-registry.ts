@@ -23,7 +23,16 @@ export type ShellNavIconId =
   | "teams"
   | "players"
   | "organization"
-  | "settings";
+  | "settings"
+  | "overview"
+  | "fixture"
+  | "encounters"
+  | "standings"
+  | "bracket"
+  | "rankings"
+  | "disputes"
+  | "analytics"
+  | "rules";
 
 export type ShellNavItem = {
   readonly id: string;
@@ -130,25 +139,28 @@ function personalCompetitionContext(
     ? `/orgs/${organizationId}/competitions/${competitionId}`
     : `/player/competitions/${competitionId}`;
   return [
-    { id: "overview", label: "Resumen", href: base },
-    { id: "matches", label: "Partidos", href: `${base}/matches` },
-    { id: "stats", label: "Estadísticas", href: `${base}/stats` },
+    { id: "overview", label: "Resumen", href: base, icon: "overview" },
+    { id: "matches", label: "Partidos", href: `${base}/matches`, icon: "matches" },
+    { id: "stats", label: "Estadísticas", href: `${base}/stats`, icon: "statistics" },
     {
       id: "team",
       label: "Mi equipo",
       href: `${base}/team`,
+      icon: "teams",
       requiredPermission: TEAM_PERMISSION.read,
     },
     {
       id: "roster",
       label: "Plantilla",
       href: `${base}/team/roster`,
+      icon: "players",
       requiredPermission: TEAM_PERMISSION.rosterManage,
     },
     {
       id: "team-invitations",
       label: "Invitaciones del equipo",
       href: `${base}/team/invitations`,
+      icon: "invitations",
       requiredPermission: TEAM_PERMISSION.invitationsManage,
     },
   ];
@@ -164,60 +176,70 @@ function organizationCompetitionContext(
       id: "overview",
       label: "Resumen",
       href: base,
+      icon: "overview",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "fixture",
       label: "Calendario",
       href: `${base}/fixture`,
+      icon: "fixture",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "encounters",
       label: "Enfrentamientos",
       href: `${base}/encounters`,
+      icon: "encounters",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "standings",
       label: "Clasificación",
       href: `${base}/standings`,
+      icon: "standings",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "bracket",
       label: "Bracket",
       href: `${base}/bracket`,
+      icon: "bracket",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "rankings",
       label: "Rankings",
       href: `${base}/rankings`,
+      icon: "rankings",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "teams",
       label: "Equipos",
       href: `${base}/teams`,
+      icon: "teams",
       requiredPermission: TEAM_PERMISSION.read,
     },
     {
       id: "disputes",
       label: "Disputas",
       href: `${base}/disputes`,
+      icon: "disputes",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "analytics",
       label: "Analíticas",
       href: `${base}/analytics`,
+      icon: "analytics",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "rules",
       label: "Reglamento",
       href: `${base}/rules`,
+      icon: "rules",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
   ];

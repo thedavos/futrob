@@ -3,6 +3,7 @@ import {
   ArrowDownRightIcon,
   ArrowUpRightIcon,
   ArrowsLeftRightIcon,
+  BookOpenTextIcon,
   BroadcastIcon,
   BuildingsIcon,
   CalendarDotsIcon,
@@ -60,6 +61,12 @@ export const FUTROB_ICON_CATALOG_A = [
     label: "Emisión",
     usage: "Canales / radio / sync en vivo",
     Icon: BroadcastIcon,
+  },
+  {
+    name: "BookOpenTextIcon",
+    label: "Reglamento",
+    usage: "Reglamento de la competición en la navegación",
+    Icon: BookOpenTextIcon,
   },
   {
     name: "BuildingsIcon",
