@@ -1,33 +1,25 @@
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import {
-  addToRosterRequestSchema,
   addToRosterResponseSchema,
-  acceptRosterInvitationRequestSchema,
   acceptRosterInvitationResponseSchema,
-  changeRosterRoleRequestSchema,
   changeRosterRoleResponseSchema,
   closeRosterResponseSchema,
-  connectTeamExternalClubRequestSchema,
   connectTeamExternalClubResponseSchema,
-  createRosterInvitationRequestSchema,
   createRosterInvitationResponseSchema,
-  createTeamRequestSchema,
   createTeamResponseSchema,
   competitionTeamManagementDetailResponseSchema,
-  competitionTeamManagementListQuerySchema,
   competitionTeamManagementListResponseSchema,
   getTeamExternalClubResponseSchema,
   listMyRosterInvitationsResponseSchema,
   listRosterResponseSchema,
   openRosterResponseSchema,
-  respondToRosterInvitationRequestSchema,
   respondToRosterInvitationResponseSchema,
 } from "@futrob/api-contracts";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
-import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp } from "@/http/errors.ts";
 import {
   rosterInvitationInboxItemDto,
   rosterInvitationMetaDto,
@@ -36,10 +28,27 @@ import {
   teamDto,
   teamExternalClubDto,
 } from "@/http/mappers/team.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+  acceptRosterInvitationRoute,
+  listMyRosterInvitationsRoute,
+  respondToRosterInvitationRoute,
+} from "@/http/openapi/routes/players.ts";
+import {
+  addToTeamRosterRoute,
+  changeRosterRoleRoute,
+  closeTeamRosterRoute,
+  connectCompetitionTeamExternalClubRoute,
+  connectOrganizationTeamExternalClubRoute,
+  createOrganizationTeamRoute,
+  createRosterInvitationRoute,
+  getCompetitionTeamExternalClubRoute,
+  getCompetitionTeamManagementRoute,
+  getOrganizationTeamExternalClubRoute,
+  listCompetitionTeamManagementRoute,
+  listTeamRosterRoute,
+  openTeamRosterRoute,
+} from "@/http/openapi/routes/teams.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 import { requireApiPermission } from "@/http/require-api-permission.ts";
 import {
@@ -48,192 +57,164 @@ import {
 } from "@/http/mappers/team-management.ts";
 
 export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
-  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
 
-  secured.post("/organizations/:organizationId/teams", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const parsed = createTeamRequestSchema.safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(createOrganizationTeamRoute, async (c) => {
+    const organizationId = asOrganizationId(c.req.valid("param").organizationId);
+    const parsed = c.req.valid("json");
     const result = await deps.modules.teams.createTeam.execute({
       organizationId,
       actorId: c.get("actorId"),
-      name: parsed.data.name,
-      creationKey: parsed.data.creationKey,
+      name: parsed.name,
+      creationKey: parsed.creationKey,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(createTeamResponseSchema.parse(teamDto(result.value)), 201);
   });
 
-  secured.get(
-    "/organizations/:organizationId/competitions/:competitionId/team-management",
-    async (c) => {
-      const parsed = competitionTeamManagementListQuerySchema.safeParse(c.req.query());
-      if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const forbidden = await requireApiPermission(deps, {
-        actorId: asActorId(c.get("actorId")),
-        permission: COMPETITION_PERMISSION.participantsRead,
-        scope: { organizationId, competitionId },
-      });
-      if (forbidden) return forbidden;
-      const result = await deps.modules.teamManagement.list.execute({
-        actorId: asActorId(c.get("actorId")),
-        organizationId,
-        competitionId,
-        ...parsed.data,
-      });
-      return jsonResponse(
-        competitionTeamManagementListResponseSchema.parse({
-          items: result.items.map(teamRosterManagementSummaryDto),
-          nextCursor: result.nextCursor ?? null,
-        }),
-      );
-    },
-  );
-
-  secured.get(
-    "/organizations/:organizationId/competitions/:competitionId/team-management/:teamId",
-    async (c) => {
-      const result = await deps.modules.teamManagement.get.execute({
-        actorId: asActorId(c.get("actorId")),
-        organizationId: asOrganizationId(c.req.param("organizationId")),
-        competitionId: asCompetitionId(c.req.param("competitionId")),
-        teamId: asTeamId(c.req.param("teamId")),
-      });
-      if (!result.isOk()) return failureToHttp(result.error);
-      return jsonResponse(
-        competitionTeamManagementDetailResponseSchema.parse(
-          teamRosterManagementDetailDto(result.value),
-        ),
-      );
-    },
-  );
-
-  secured.get(
-    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/roster",
-    async (c) => {
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const teamId = asTeamId(c.req.param("teamId"));
-      const forbidden = await requireApiPermission(deps, {
-        actorId: asActorId(c.get("actorId")),
-        permission: TEAM_PERMISSION.rosterRead,
-        scope: { organizationId, competitionId, teamId },
-      });
-      if (forbidden) return forbidden;
-
-      const memberships = await deps.modules.teams.listRosterForTeam.execute({
-        organizationId,
-        competitionId,
-        teamId,
-      });
-      return jsonResponse(
-        listRosterResponseSchema.parse({
-          memberships: memberships.map(rosterMembershipDto),
-        }),
-      );
-    },
-  );
-
-  secured.post(
-    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/roster",
-    async (c) => {
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const teamId = asTeamId(c.req.param("teamId"));
-      const parsed = addToRosterRequestSchema.safeParse(await c.req.json().catch(() => null));
-      if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
-      const result = await deps.modules.teams.addToRoster.execute({
-        actorId: asActorId(c.get("actorId")),
-        organizationId,
-        competitionId,
-        teamId,
-        playerProfileId: parsed.data.playerProfileId,
-        gameAccountId: parsed.data.gameAccountId,
-        role: parsed.data.role,
-      });
-      if (!result.isOk()) return failureToHttp(result.error);
-      return jsonResponse(addToRosterResponseSchema.parse(rosterMembershipDto(result.value)), 201);
-    },
-  );
-
-  secured.patch(
-    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/roster/:membershipId",
-    async (c) => {
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const teamId = asTeamId(c.req.param("teamId"));
-      const parsed = changeRosterRoleRequestSchema.safeParse(await c.req.json().catch(() => null));
-      if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
-      const result = await deps.modules.teams.changeRosterRole.execute({
-        actorId: asActorId(c.get("actorId")),
-        organizationId,
-        competitionId,
-        teamId,
-        rosterMembershipId: c.req.param("membershipId"),
-        role: parsed.data.role,
-      });
-      if (!result.isOk()) return failureToHttp(result.error);
-      return jsonResponse(changeRosterRoleResponseSchema.parse(rosterMembershipDto(result.value)));
-    },
-  );
-
-  secured.post(
-    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/roster/close",
-    async (c) => {
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const teamId = asTeamId(c.req.param("teamId"));
-      const result = await deps.modules.teams.closeRoster.execute({
-        actorId: asActorId(c.get("actorId")),
-        organizationId,
-        competitionId,
-        teamId,
-      });
-      if (!result.isOk()) return failureToHttp(result.error);
-      return jsonResponse(closeRosterResponseSchema.parse(rosterStateDto(result.value)));
-    },
-  );
-
-  secured.post(
-    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/roster/open",
-    async (c) => {
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const teamId = asTeamId(c.req.param("teamId"));
-      const result = await deps.modules.teams.openRoster.execute({
-        actorId: asActorId(c.get("actorId")),
-        organizationId,
-        competitionId,
-        teamId,
-      });
-      if (!result.isOk()) return failureToHttp(result.error);
-      return jsonResponse(openRosterResponseSchema.parse(rosterStateDto(result.value)));
-    },
-  );
-
-  secured.put("/organizations/:organizationId/teams/:teamId/external-club", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const teamId = asTeamId(c.req.param("teamId"));
-    const parsed = connectTeamExternalClubRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
+  secured.openapi(listCompetitionTeamManagementRoute, async (c) => {
+    const parsed = c.req.valid("query");
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
+    const forbidden = await requireApiPermission(deps, {
+      actorId: asActorId(c.get("actorId")),
+      permission: COMPETITION_PERMISSION.participantsRead,
+      scope: { organizationId, competitionId },
+    });
+    if (forbidden) return forbidden;
+    const result = await deps.modules.teamManagement.list.execute({
+      actorId: asActorId(c.get("actorId")),
+      organizationId,
+      competitionId,
+      ...parsed,
+    });
+    return jsonResponse(
+      competitionTeamManagementListResponseSchema.parse({
+        items: result.items.map(teamRosterManagementSummaryDto),
+        nextCursor: result.nextCursor ?? null,
+      }),
     );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+  });
+
+  secured.openapi(getCompetitionTeamManagementRoute, async (c) => {
+    const params = c.req.valid("param");
+    const result = await deps.modules.teamManagement.get.execute({
+      actorId: asActorId(c.get("actorId")),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+      teamId: asTeamId(params.teamId),
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      competitionTeamManagementDetailResponseSchema.parse(
+        teamRosterManagementDetailDto(result.value),
+      ),
+    );
+  });
+
+  secured.openapi(listTeamRosterRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
+    const teamId = asTeamId(params.teamId);
+    const forbidden = await requireApiPermission(deps, {
+      actorId: asActorId(c.get("actorId")),
+      permission: TEAM_PERMISSION.rosterRead,
+      scope: { organizationId, competitionId, teamId },
+    });
+    if (forbidden) return forbidden;
+
+    const memberships = await deps.modules.teams.listRosterForTeam.execute({
+      organizationId,
+      competitionId,
+      teamId,
+    });
+    return jsonResponse(
+      listRosterResponseSchema.parse({
+        memberships: memberships.map(rosterMembershipDto),
+      }),
+    );
+  });
+
+  secured.openapi(addToTeamRosterRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
+    const teamId = asTeamId(params.teamId);
+    const parsed = c.req.valid("json");
+
+    const result = await deps.modules.teams.addToRoster.execute({
+      actorId: asActorId(c.get("actorId")),
+      organizationId,
+      competitionId,
+      teamId,
+      playerProfileId: parsed.playerProfileId,
+      gameAccountId: parsed.gameAccountId,
+      role: parsed.role,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(addToRosterResponseSchema.parse(rosterMembershipDto(result.value)), 201);
+  });
+
+  secured.openapi(changeRosterRoleRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
+    const teamId = asTeamId(params.teamId);
+    const parsed = c.req.valid("json");
+
+    const result = await deps.modules.teams.changeRosterRole.execute({
+      actorId: asActorId(c.get("actorId")),
+      organizationId,
+      competitionId,
+      teamId,
+      rosterMembershipId: params.membershipId,
+      role: parsed.role,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(changeRosterRoleResponseSchema.parse(rosterMembershipDto(result.value)));
+  });
+
+  secured.openapi(closeTeamRosterRoute, async (c) => {
+    const params = c.req.valid("param");
+    const result = await deps.modules.teams.closeRoster.execute({
+      actorId: asActorId(c.get("actorId")),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+      teamId: asTeamId(params.teamId),
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(closeRosterResponseSchema.parse(rosterStateDto(result.value)));
+  });
+
+  secured.openapi(openTeamRosterRoute, async (c) => {
+    const params = c.req.valid("param");
+    const result = await deps.modules.teams.openRoster.execute({
+      actorId: asActorId(c.get("actorId")),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+      teamId: asTeamId(params.teamId),
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(openRosterResponseSchema.parse(rosterStateDto(result.value)));
+  });
+
+  secured.openapi(connectOrganizationTeamExternalClubRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const teamId = asTeamId(params.teamId);
+    const parsed = c.req.valid("json");
 
     const result = await deps.modules.teams.connectTeamExternalClub.execute({
       actorId: asActorId(c.get("actorId")),
       organizationId,
       teamId,
-      providerKey: parsed.data.providerKey,
-      externalClubId: parsed.data.externalClubId,
-      externalClubName: parsed.data.externalClubName,
-      platform: parsed.data.platform,
-      gameEdition: parsed.data.gameEdition,
+      providerKey: parsed.providerKey,
+      externalClubId: parsed.externalClubId,
+      externalClubName: parsed.externalClubName,
+      platform: parsed.platform,
+      gameEdition: parsed.gameEdition,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
@@ -241,9 +222,10 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/organizations/:organizationId/teams/:teamId/external-club", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const teamId = asTeamId(c.req.param("teamId"));
+  secured.openapi(getOrganizationTeamExternalClubRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const teamId = asTeamId(params.teamId);
     const forbidden = await requireApiPermission(deps, {
       actorId: asActorId(c.get("actorId")),
       permission: TEAM_PERMISSION.externalClubRead,
@@ -257,94 +239,76 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.put(
-    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/external-club",
-    async (c) => {
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const teamId = asTeamId(c.req.param("teamId"));
-      const parsed = connectTeamExternalClubRequestSchema.safeParse(
-        await c.req.json().catch(() => null),
-      );
-      if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-      const result = await deps.modules.teams.connectTeamExternalClub.execute({
-        actorId: asActorId(c.get("actorId")),
-        organizationId,
-        competitionId,
-        teamId,
-        ...parsed.data,
-      });
-      if (!result.isOk()) return failureToHttp(result.error);
-      return jsonResponse(
-        connectTeamExternalClubResponseSchema.parse(teamExternalClubDto(result.value)),
-      );
-    },
-  );
-
-  secured.get(
-    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/external-club",
-    async (c) => {
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const teamId = asTeamId(c.req.param("teamId"));
-      const forbidden = await requireApiPermission(deps, {
-        actorId: asActorId(c.get("actorId")),
-        permission: TEAM_PERMISSION.externalClubRead,
-        scope: { organizationId, competitionId, teamId },
-      });
-      if (forbidden) return forbidden;
-      const connection = await deps.modules.teams.getTeamExternalClub.execute({ teamId });
-      return jsonResponse(
-        getTeamExternalClubResponseSchema.parse(
-          connection ? teamExternalClubDto(connection) : null,
-        ),
-      );
-    },
-  );
-
-  secured.post(
-    "/organizations/:organizationId/competitions/:competitionId/teams/:teamId/roster-invitations",
-    async (c) => {
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      const teamId = asTeamId(c.req.param("teamId"));
-      const parsed = createRosterInvitationRequestSchema.safeParse(
-        await c.req.json().catch(() => null),
-      );
-      if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
-      const result = await deps.modules.activityCommands.createRosterInvitation.execute({
-        organizationId,
-        competitionId,
-        teamId,
-        invitedByActorId: asActorId(c.get("actorId")),
-        role: parsed.data.role,
-        expiresInMs: parsed.data.expiresInMs,
-        redeemPolicy: parsed.data.redeemPolicy,
-        inviteeIdentifier: parsed.data.inviteeIdentifier,
-        message: parsed.data.message,
-        invitedByDisplayName: parsed.data.invitedByDisplayName,
-      });
-      if (!result.isOk()) return failureToHttp(result.error);
-
-      return jsonResponse(
-        createRosterInvitationResponseSchema.parse({
-          ...rosterInvitationMetaDto(result.value),
-          token: result.value.token,
-        }),
-        201,
-      );
-    },
-  );
-
-  secured.post("/roster-invitations/accept", async (c) => {
-    const parsed = acceptRosterInvitationRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
+  secured.openapi(connectCompetitionTeamExternalClubRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
+    const teamId = asTeamId(params.teamId);
+    const parsed = c.req.valid("json");
+    const result = await deps.modules.teams.connectTeamExternalClub.execute({
+      actorId: asActorId(c.get("actorId")),
+      organizationId,
+      competitionId,
+      teamId,
+      ...parsed,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      connectTeamExternalClubResponseSchema.parse(teamExternalClubDto(result.value)),
     );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+  });
 
+  secured.openapi(getCompetitionTeamExternalClubRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
+    const teamId = asTeamId(params.teamId);
+    const forbidden = await requireApiPermission(deps, {
+      actorId: asActorId(c.get("actorId")),
+      permission: TEAM_PERMISSION.externalClubRead,
+      scope: { organizationId, competitionId, teamId },
+    });
+    if (forbidden) return forbidden;
+    const connection = await deps.modules.teams.getTeamExternalClub.execute({ teamId });
+    return jsonResponse(
+      getTeamExternalClubResponseSchema.parse(connection ? teamExternalClubDto(connection) : null),
+    );
+  });
+
+  secured.openapi(createRosterInvitationRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
+    const teamId = asTeamId(params.teamId);
+    const parsed = c.req.valid("json");
+
+    const result = await deps.modules.activityCommands.createRosterInvitation.execute({
+      organizationId,
+      competitionId,
+      teamId,
+      invitedByActorId: asActorId(c.get("actorId")),
+      role: parsed.role,
+      expiresInMs: parsed.expiresInMs,
+      redeemPolicy: parsed.redeemPolicy,
+      inviteeIdentifier: parsed.inviteeIdentifier,
+      message: parsed.message,
+      invitedByDisplayName: parsed.invitedByDisplayName,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+
+    return jsonResponse(
+      createRosterInvitationResponseSchema.parse({
+        ...rosterInvitationMetaDto(result.value),
+        token: result.value.token,
+      }),
+      201,
+    );
+  });
+
+  secured.openapi(acceptRosterInvitationRoute, async (c) => {
+    const parsed = c.req.valid("json");
     const result = await deps.modules.activityCommands.acceptRosterInvitation.execute({
-      token: parsed.data.token,
+      token: parsed.token,
       actorId: asActorId(c.get("actorId")),
     });
     if (!result.isOk()) return failureToHttp(result.error);
@@ -355,7 +319,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/players/me/roster-invitations", async (c) => {
+  secured.openapi(listMyRosterInvitationsRoute, async (c) => {
     const actorId = asActorId(c.get("actorId"));
     const invitations = await deps.modules.teams.listMyRosterInvitations.execute({ actorId });
     const { teams, rosters, profiles } = deps.modules.teams.repositories;
@@ -386,16 +350,12 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(listMyRosterInvitationsResponseSchema.parse({ invitations: items }));
   });
 
-  secured.post("/roster-invitations/:invitationId/respond", async (c) => {
-    const parsed = respondToRosterInvitationRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(respondToRosterInvitationRoute, async (c) => {
+    const parsed = c.req.valid("json");
     const result = await deps.modules.activityCommands.respondToRosterInvitation.execute({
-      invitationId: c.req.param("invitationId"),
+      invitationId: c.req.valid("param").invitationId,
       actorId: asActorId(c.get("actorId")),
-      action: parsed.data.action,
+      action: parsed.action,
     });
     if (!result.isOk()) return failureToHttp(result.error);
 
