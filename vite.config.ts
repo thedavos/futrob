@@ -386,6 +386,8 @@ export default defineConfig({
         functions: 69,
         lines: 74,
       },
+      // Generated OAS artifacts are JSON/YAML, not instrumentable JS.
+      exclude: ["**/openapi/*.{json,yaml}"],
     },
   },
 });
