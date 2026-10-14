@@ -47,6 +47,16 @@ ruleTester.run("bc-dependency-graph", bcDependencyGraphRule, {
       filename: "/repo/packages/results/src/domain/policies/slot-selection.ts",
       code: `type Match = import("@futrob/game-data").ProviderMatch;`,
     },
+    {
+      name: "allows a TS import() type of shared-kernel",
+      filename: "/repo/packages/analytics/src/application/snapshot.ts",
+      code: `type Authz = import("@futrob/shared-kernel").AuthorizationPort;`,
+    },
+    {
+      name: "skips TS import() types in test files",
+      filename: "/repo/packages/analytics/src/application/snapshot.test.ts",
+      code: `type Status = import("@futrob/identity").OnboardingStatus;`,
+    },
   ],
   invalid: [
     {
@@ -72,6 +82,18 @@ ruleTester.run("bc-dependency-graph", bcDependencyGraphRule, {
       filename: "/repo/packages/analytics/src/application/snapshot.ts",
       code: `type Status = import("@futrob/identity").OnboardingStatus;`,
       errors: [{ messageId: "disallowedBc" }],
+    },
+    {
+      name: "rejects typeof import() of a disallowed BC",
+      filename: "/repo/packages/analytics/src/application/snapshot.ts",
+      code: `type Identity = typeof import("@futrob/identity");`,
+      errors: [{ messageId: "disallowedBc" }],
+    },
+    {
+      name: "rejects a deep import via TS import() type",
+      filename: "/repo/packages/results/src/domain/policies/slot-selection.ts",
+      code: `type Match = import("@futrob/game-data/src/domain/entities/provider-match.ts").ProviderMatch;`,
+      errors: [{ messageId: "deepImport" }],
     },
     {
       name: "rejects a deep import of another BC",
