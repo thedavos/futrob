@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
+import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
 import { AppState, ActivityIndicator, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Button, EmptyState, Screen, Text } from "@/ui";
@@ -29,14 +30,14 @@ export function GateBoundary({
       refresh();
     }, [refresh]),
   );
-  useEffect(() => {
+  useExternalSync(() => {
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") refresh();
     });
     return () => subscription.remove();
   }, [refresh]);
 
-  useEffect(() => {
+  useExternalSync(() => {
     let cancelled = false;
     let disposeReady: void | (() => void);
     setResult(null);

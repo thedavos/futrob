@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
 import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getFutrobClient } from "@/modules/api/futrob-client";
@@ -16,7 +17,7 @@ export default function InvitationLinkRoute() {
   const [error, setError] = useState(false);
   const [revision, setRevision] = useState(0);
 
-  useEffect(() => {
+  useExternalSync(() => {
     if (!plainToken) {
       setError(true);
       return;

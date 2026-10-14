@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
 import type { CompetitionDto, MembershipSummaryDto } from "@futrob/api-contracts";
@@ -68,7 +69,7 @@ export function NativeDestination({ destination }: { destination: Destination })
   const orgId = "organizationId" in destination ? destination.organizationId : undefined;
   const competitionId = "competitionId" in destination ? destination.competitionId : undefined;
 
-  useEffect(() => {
+  useExternalSync(() => {
     let cancelled = false;
     setData(null);
     setError(false);

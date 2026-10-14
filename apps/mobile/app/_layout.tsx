@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
@@ -20,7 +20,7 @@ export default function RootLayout() {
     Manrope_700Bold,
   });
 
-  useEffect(() => {
+  useExternalSync(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync().catch(() => {});
     }

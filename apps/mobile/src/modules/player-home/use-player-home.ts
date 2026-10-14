@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
 import { FutrobApiError } from "@futrob/sdk";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { loadPlayerHome } from "./load-player-home";
@@ -30,7 +31,7 @@ export function usePlayerHome(
   });
   const [revision, setRevision] = useState(0);
 
-  useEffect(() => {
+  useExternalSync(() => {
     const controller = new AbortController();
     setLoad((current) => ({ ...current, loading: true }));
     const signal = controller.signal;
