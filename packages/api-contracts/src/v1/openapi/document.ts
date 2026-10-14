@@ -66,6 +66,20 @@ import {
   scheduleChangeRequestOpenApiPaths,
   scheduleChangeRequestOpenApiSchemas,
 } from "./schedule-change-requests.ts";
+import { playerMeSurfaceOpenApiPaths, playerMeSurfaceOpenApiSchemas } from "./player-me-surface.ts";
+import { teamRosterOpenApiPaths, teamRosterOpenApiSchemas } from "./team-roster.ts";
+import {
+  competitionEntriesOpenApiPaths,
+  competitionEntriesOpenApiSchemas,
+} from "./competition-entries.ts";
+import {
+  postAuthDestinationOpenApiPaths,
+  postAuthDestinationOpenApiSchemas,
+} from "./post-auth-destination.ts";
+import {
+  organizationInvitationOpenApiPaths,
+  organizationInvitationOpenApiSchemas,
+} from "./organization-invitations.ts";
 import {
   associateMyPlayerExternalClubRequestSchema,
   associateMyPlayerExternalClubResponseSchema,
@@ -1732,6 +1746,11 @@ export const futrobOpenApiV1 = {
     ...teamPerformanceOpenApiPaths,
     ...activityOpenApiPaths,
     ...officialSelectionOpenApiPaths,
+    ...playerMeSurfaceOpenApiPaths,
+    ...teamRosterOpenApiPaths,
+    ...competitionEntriesOpenApiPaths,
+    ...postAuthDestinationOpenApiPaths,
+    ...organizationInvitationOpenApiPaths,
     "/encounters/{encounterId}/candidates": {
       get: {
         operationId: "listEncounterCandidates",
@@ -1846,6 +1865,7 @@ export const futrobOpenApiV1 = {
           "400": { $ref: "#/components/responses/ApiError" },
           "401": { $ref: "#/components/responses/ApiError" },
           "403": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -1924,7 +1944,34 @@ export const futrobOpenApiV1 = {
               },
             },
           },
+          "401": { $ref: "#/components/responses/ApiError" },
           "403": { $ref: "#/components/responses/ApiError" },
+        },
+      },
+      post: {
+        operationId: "createOrganizationTeam",
+        tags: ["teams"],
+        summary: "Create a team in the organization",
+        parameters: [
+          { name: "organizationId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/CreateTeamRequest" } },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Created team",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/Team" } },
+            },
+          },
+          "400": { $ref: "#/components/responses/ApiError" },
+          "401": { $ref: "#/components/responses/ApiError" },
+          "403": { $ref: "#/components/responses/ApiError" },
+          "409": { $ref: "#/components/responses/ApiError" },
         },
       },
     },
@@ -3299,6 +3346,11 @@ export const futrobOpenApiV1 = {
       ...teamPerformanceOpenApiSchemas,
       ...activityOpenApiSchemas,
       ...officialSelectionOpenApiSchemas,
+      ...playerMeSurfaceOpenApiSchemas,
+      ...teamRosterOpenApiSchemas,
+      ...competitionEntriesOpenApiSchemas,
+      ...postAuthDestinationOpenApiSchemas,
+      ...organizationInvitationOpenApiSchemas,
       CompetitionRules: {
         type: "object",
         required: [

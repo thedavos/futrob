@@ -35,6 +35,8 @@
   "devDependencies": {
     "@types/node": "^26.5.0",
     "@types/pg": "^8.23.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "tsx": "4.23.13",
     "typescript": "6.0.2",
     "vite-plus": "0.2.8"

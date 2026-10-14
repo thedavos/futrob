@@ -46,6 +46,7 @@ export default defineConfig({
       "**/routeTree.gen.ts",
       "**/paraglide/**",
       "**/openapi/*.yaml",
+      "**/openapi/*.json",
       ".agent/**",
       ".agents/**",
       ".claude/**",

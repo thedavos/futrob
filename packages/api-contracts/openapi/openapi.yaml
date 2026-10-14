@@ -2646,6 +2646,497 @@ paths:
         "403": *a3
         "404": *a3
         "409": *a3
+  /players/me/game-profile:
+    get:
+      operationId: getMyGameProfile
+      tags:
+        - players
+      summary: Read the authenticated player's provider game profile
+      parameters:
+        - *a2
+        - name: externalClubId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Ready profile or a missing-club/account state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetMyGameProfileResponse"
+          headers:
+            X-Request-ID: *a1
+        "400": &a7
+          $ref: "#/components/responses/ApiError"
+        "401": *a7
+        "503": *a7
+  /players/me/teams:
+    get:
+      operationId: getMyTeams
+      tags:
+        - teams
+      summary: List roster memberships of the authenticated player
+      responses:
+        "200":
+          description: Memberships and the active roster id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetMyTeamsResponse"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+      parameters:
+        - *a2
+  /players/me/active-team:
+    put:
+      operationId: setMyActiveTeam
+      tags:
+        - teams
+      summary: Select the authenticated player's active roster membership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetActiveTeamRequest"
+      responses:
+        "200":
+          description: Persisted active roster membership
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetActiveTeamResponse"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+      parameters:
+        - *a2
+  /organizations/{organizationId}/competitions/{competitionId}/teams/{teamId}/roster:
+    get:
+      operationId: listTeamRoster
+      tags:
+        - teams
+      summary: List authorized roster memberships for a competition team
+      parameters:
+        - *a2
+        - &a8
+          name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - &a9
+          name: competitionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - &a10
+          name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Roster memberships
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListRosterResponse"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+        "403": *a7
+    post:
+      operationId: addToTeamRoster
+      tags:
+        - teams
+      summary: Add a player profile to a competition team roster
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddToRosterRequest"
+      responses:
+        "201":
+          description: Created membership
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionRosterMembership"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
+  /organizations/{organizationId}/competitions/{competitionId}/teams/{teamId}/roster/{membershipId}:
+    patch:
+      operationId: changeRosterRole
+      tags:
+        - teams
+      summary: Change the role of a roster membership
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a10
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeRosterRoleRequest"
+      responses:
+        "200":
+          description: Updated membership
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionRosterMembership"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+  /organizations/{organizationId}/competitions/{competitionId}/teams/{teamId}/roster/close:
+    post:
+      operationId: closeTeamRoster
+      tags:
+        - teams
+      summary: Lock the competition team roster
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a10
+      responses:
+        "200":
+          description: Locked roster state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterState"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+        "403": *a7
+        "409": *a7
+  /organizations/{organizationId}/competitions/{competitionId}/teams/{teamId}/roster/open:
+    post:
+      operationId: openTeamRoster
+      tags:
+        - teams
+      summary: Unlock the competition team roster
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a10
+      responses:
+        "200":
+          description: Unlocked roster state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterState"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+        "403": *a7
+        "409": *a7
+  /organizations/{organizationId}/teams/{teamId}/external-club:
+    get:
+      operationId: getOrganizationTeamExternalClub
+      tags:
+        - teams
+      summary: Read the organization team's linked external club
+      parameters:
+        - *a2
+        - *a8
+        - *a10
+      responses:
+        "200":
+          description: Connection or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetTeamExternalClubResponse"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+        "403": *a7
+    put:
+      operationId: connectOrganizationTeamExternalClub
+      tags:
+        - teams
+      summary: Link an external club to an organization team
+      parameters:
+        - *a2
+        - *a8
+        - *a10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectTeamExternalClubRequest"
+      responses:
+        "200":
+          description: Persisted connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamExternalClubConnection"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+  /organizations/{organizationId}/competitions/{competitionId}/teams/{teamId}/external-club:
+    get:
+      operationId: getCompetitionTeamExternalClub
+      tags:
+        - teams
+      summary: Read the competition team's linked external club
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a10
+      responses:
+        "200":
+          description: Connection or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetTeamExternalClubResponse"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+        "403": *a7
+    put:
+      operationId: connectCompetitionTeamExternalClub
+      tags:
+        - teams
+      summary: Link an external club to a competition team
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectTeamExternalClubRequest"
+      responses:
+        "200":
+          description: Persisted connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamExternalClubConnection"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+  /organizations/{organizationId}/competitions/{competitionId}/teams/{teamId}/roster-invitations:
+    post:
+      operationId: createRosterInvitation
+      tags:
+        - teams
+      summary: Create a roster invitation for a competition team
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRosterInvitationRequest"
+      responses:
+        "201":
+          description: Created invitation including the one-time token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateRosterInvitationResponse"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "409": *a7
+  /organizations/{organizationId}/competitions/{competitionId}/entries:
+    post:
+      operationId: registerTeamEntry
+      tags:
+        - competitions
+      summary: Register an existing organization team as a competition entry
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterTeamEntryRequest"
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionEntry"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
+  /organizations/{organizationId}/competitions/{competitionId}/entries/{entryId}/approve:
+    post:
+      operationId: approveTeamEntry
+      tags:
+        - competitions
+      summary: Approve a pending competition team entry
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - &a11
+          name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approved entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionEntry"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
+  /organizations/{organizationId}/competitions/{competitionId}/entries/{entryId}/reject:
+    post:
+      operationId: rejectTeamEntry
+      tags:
+        - competitions
+      summary: Reject a pending competition team entry
+      parameters:
+        - *a2
+        - *a8
+        - *a9
+        - *a11
+      responses:
+        "200":
+          description: Rejected entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionEntry"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
+  /organizations/post-auth-destination:
+    get:
+      operationId: resolvePostAuthDestination
+      tags:
+        - organizations
+      summary: Resolve where an authenticated actor should land after sign-in
+      responses:
+        "200":
+          description: Onboarding, personal space, an organization, or a picker
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolvePostAuthDestinationResponse"
+          headers:
+            X-Request-ID: *a1
+        "401": *a7
+      parameters:
+        - *a2
+  /organizations/{organizationId}/invitations:
+    post:
+      operationId: createOrganizationInvitation
+      tags:
+        - organizations
+      summary: Create an invitation to join the organization
+      parameters:
+        - *a2
+        - *a8
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrganizationInvitationRequest"
+      responses:
+        "201":
+          description: Organization invitation created, including the one-time token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateInvitationResponse"
+          headers:
+            X-Request-ID: *a1
+        "400": *a7
+        "401": *a7
+        "403": *a7
+        "404": *a7
+        "409": *a7
   /encounters/{encounterId}/candidates:
     get:
       operationId: listEncounterCandidates
@@ -2792,6 +3283,8 @@ paths:
           $ref: "#/components/responses/ApiError"
         "403":
           $ref: "#/components/responses/ApiError"
+        "409":
+          $ref: "#/components/responses/ApiError"
   /internal/scheduling/reschedule-expiry/run:
     post:
       operationId: runScheduleChangeExpiry
@@ -2812,9 +3305,9 @@ paths:
                 $ref: "#/components/schemas/RunScheduleChangeExpiryResponse"
           headers:
             X-Request-ID: *a1
-        "401": &a7
+        "401": &a12
           $ref: "#/components/responses/ApiError"
-        "409": *a7
+        "409": *a12
         "503":
           description: Provisioned system actor unavailable
           content:
@@ -2834,7 +3327,7 @@ paths:
         closed history
       parameters:
         - *a2
-        - &a8
+        - &a13
           name: encounterId
           in: path
           required: true
@@ -2849,8 +3342,8 @@ paths:
                 $ref: "#/components/schemas/ListScheduleChangeRequestsResponse"
           headers:
             X-Request-ID: *a1
-        "401": *a7
-        "404": *a7
+        "401": *a12
+        "404": *a12
     post:
       operationId: createScheduleChangeRequest
       tags:
@@ -2870,7 +3363,7 @@ paths:
         denial. Recorded replays do not revalidate notice. "
       parameters:
         - *a2
-        - *a8
+        - *a13
       requestBody:
         required: true
         content:
@@ -2886,11 +3379,11 @@ paths:
                 $ref: "#/components/schemas/ScheduleChangeRequest"
           headers:
             X-Request-ID: *a1
-        "400": *a7
-        "401": *a7
-        "403": *a7
-        "404": *a7
-        "409": *a7
+        "400": *a12
+        "401": *a12
+        "403": *a12
+        "404": *a12
+        "409": *a12
   /encounters/{encounterId}/schedule-change-requests/{requestId}:
     get:
       operationId: getScheduleChangeRequest
@@ -2906,8 +3399,8 @@ paths:
         `scheduling.schedule_change_request_not_found`."
       parameters:
         - *a2
-        - *a8
-        - &a9
+        - *a13
+        - &a14
           name: requestId
           in: path
           required: true
@@ -2922,8 +3415,8 @@ paths:
                 $ref: "#/components/schemas/ScheduleChangeRequest"
           headers:
             X-Request-ID: *a1
-        "401": *a7
-        "404": *a7
+        "401": *a12
+        "404": *a12
   /encounters/{encounterId}/schedule-change-requests/{requestId}/proposals/{proposalId}/accept:
     post:
       operationId: acceptScheduleChangeProposal
@@ -2970,9 +3463,9 @@ paths:
         `scheduling.fixture_update_conflict`."
       parameters:
         - *a2
-        - *a8
-        - *a9
-        - &a10
+        - *a13
+        - *a14
+        - &a15
           name: proposalId
           in: path
           required: true
@@ -2993,11 +3486,11 @@ paths:
                 $ref: "#/components/schemas/ScheduleChangeCommandResponse"
           headers:
             X-Request-ID: *a1
-        "400": *a7
-        "401": *a7
-        "403": *a7
-        "404": *a7
-        "409": *a7
+        "400": *a12
+        "401": *a12
+        "403": *a12
+        "404": *a12
+        "409": *a12
   /encounters/{encounterId}/schedule-change-requests/{requestId}/proposals/{proposalId}/reject:
     post:
       operationId: rejectScheduleChangeProposal
@@ -3037,9 +3530,9 @@ paths:
         `scheduling.fixture_update_conflict`."
       parameters:
         - *a2
-        - *a8
-        - *a9
-        - *a10
+        - *a13
+        - *a14
+        - *a15
       requestBody:
         required: true
         content:
@@ -3055,11 +3548,11 @@ paths:
                 $ref: "#/components/schemas/ScheduleChangeCommandResponse"
           headers:
             X-Request-ID: *a1
-        "400": *a7
-        "401": *a7
-        "403": *a7
-        "404": *a7
-        "409": *a7
+        "400": *a12
+        "401": *a12
+        "403": *a12
+        "404": *a12
+        "409": *a12
   /encounters/{encounterId}/schedule-change-requests/{requestId}/proposals/{proposalId}/counter:
     post:
       operationId: counterScheduleChangeProposal
@@ -3105,9 +3598,9 @@ paths:
         `scheduling.fixture_update_conflict`."
       parameters:
         - *a2
-        - *a8
-        - *a9
-        - *a10
+        - *a13
+        - *a14
+        - *a15
       requestBody:
         required: true
         content:
@@ -3123,11 +3616,11 @@ paths:
                 $ref: "#/components/schemas/ScheduleChangeCommandResponse"
           headers:
             X-Request-ID: *a1
-        "400": *a7
-        "401": *a7
-        "403": *a7
-        "404": *a7
-        "409": *a7
+        "400": *a12
+        "401": *a12
+        "403": *a12
+        "404": *a12
+        "409": *a12
   /encounters/{encounterId}/schedule-change-requests/{requestId}/resolve:
     post:
       operationId: resolveScheduleChangeRequest
@@ -3167,8 +3660,8 @@ paths:
         `scheduling.fixture_update_conflict`."
       parameters:
         - *a2
-        - *a8
-        - *a9
+        - *a13
+        - *a14
       requestBody:
         required: true
         content:
@@ -3184,11 +3677,11 @@ paths:
                 $ref: "#/components/schemas/ScheduleChangeCommandResponse"
           headers:
             X-Request-ID: *a1
-        "400": *a7
-        "401": *a7
-        "403": *a7
-        "404": *a7
-        "409": *a7
+        "400": *a12
+        "401": *a12
+        "403": *a12
+        "404": *a12
+        "409": *a12
   /organizations/{organizationId}/competitions/{competitionId}:
     get:
       operationId: getCompetitionDraft
@@ -3291,7 +3784,44 @@ paths:
                       $ref: "#/components/schemas/Team"
           headers:
             X-Request-ID: *a1
+        "401":
+          $ref: "#/components/responses/ApiError"
         "403":
+          $ref: "#/components/responses/ApiError"
+    post:
+      operationId: createOrganizationTeam
+      tags:
+        - teams
+      summary: Create a team in the organization
+      parameters:
+        - *a2
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeamRequest"
+      responses:
+        "201":
+          description: Created team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+          headers:
+            X-Request-ID: *a1
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "401":
+          $ref: "#/components/responses/ApiError"
+        "403":
+          $ref: "#/components/responses/ApiError"
+        "409":
           $ref: "#/components/responses/ApiError"
   /organizations/{organizationId}/competitions/{competitionId}/standings:
     get:
@@ -8813,6 +9343,1459 @@ components:
         - commandKey
         - reason
         - decision
+    GetMyGameProfileResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      oneOf:
+        - type: object
+          properties:
+            status:
+              type: string
+              const: needs_club
+          required:
+            - status
+          additionalProperties: false
+        - type: object
+          properties:
+            status:
+              type: string
+              const: needs_game_account
+          required:
+            - status
+          additionalProperties: false
+        - type: object
+          properties:
+            status:
+              type: string
+              const: ready
+            profile:
+              type: object
+              properties:
+                identity:
+                  type: object
+                  properties:
+                    displayName:
+                      type: string
+                      minLength: 1
+                    preferredPosition:
+                      anyOf:
+                        - type: string
+                          minLength: 1
+                        - type: "null"
+                    preferredRole:
+                      type: string
+                      enum:
+                        - attack
+                        - midfield
+                        - defense
+                        - goalkeeper
+                        - unknown
+                  required:
+                    - displayName
+                    - preferredPosition
+                    - preferredRole
+                  additionalProperties: false
+                sampleSize:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                attributes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      category:
+                        type: string
+                        enum:
+                          - attack
+                          - pass
+                          - defense
+                          - impact
+                          - discipline
+                      score:
+                        type: integer
+                        minimum: 0
+                        maximum: 100
+                      components:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                              enum:
+                                - goalsPerMatch
+                                - shotsPerMatch
+                                - shotAccuracy
+                                - offensiveRoleRating
+                                - passSuccess
+                                - passVolume
+                                - tacklesMadePerMatch
+                                - tackleSuccess
+                                - defensiveRoleRating
+                                - averageRating
+                                - winRate
+                                - goalsAssistsPerMatch
+                                - fewerRedsPerMatch
+                            weight:
+                              type: number
+                              minimum: 0
+                              maximum: 1
+                            raw:
+                              type:
+                                - number
+                                - "null"
+                            rawKind:
+                              type: string
+                              enum:
+                                - perMatch
+                                - percent
+                                - rating
+                                - score
+                            score:
+                              type:
+                                - number
+                                - "null"
+                            points:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            confidence:
+                              type: number
+                              minimum: 0
+                              maximum: 1
+                            sampleCount:
+                              type: integer
+                              minimum: 0
+                              maximum: 9007199254740991
+                          required:
+                            - key
+                            - weight
+                            - raw
+                            - rawKind
+                            - score
+                            - points
+                            - confidence
+                            - sampleCount
+                          additionalProperties: false
+                    required:
+                      - category
+                      - score
+                      - components
+                    additionalProperties: false
+                evolution:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      occurredAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      rating:
+                        type:
+                          - number
+                          - "null"
+                      outcome:
+                        type: string
+                        enum:
+                          - win
+                          - draw
+                          - loss
+                          - unknown
+                    required:
+                      - occurredAt
+                      - rating
+                      - outcome
+                    additionalProperties: false
+                summary:
+                  type: object
+                  properties:
+                    matchesPlayed:
+                      type: integer
+                      minimum: 0
+                      maximum: 9007199254740991
+                    wins:
+                      type: integer
+                      minimum: 0
+                      maximum: 9007199254740991
+                    draws:
+                      type: integer
+                      minimum: 0
+                      maximum: 9007199254740991
+                    losses:
+                      type: integer
+                      minimum: 0
+                      maximum: 9007199254740991
+                    minutes:
+                      type:
+                        - number
+                        - "null"
+                    totals:
+                      type: object
+                      properties:
+                        goals:
+                          type: number
+                        assists:
+                          type: number
+                        shots:
+                          type: number
+                        passAttempts:
+                          type: number
+                        passesMade:
+                          type: number
+                        tackleAttempts:
+                          type: number
+                        tacklesMade:
+                          type: number
+                        saves:
+                          type: number
+                        yellowCards:
+                          type: number
+                        redCards:
+                          type: number
+                        mvpAwards:
+                          type: number
+                        rating:
+                          type: number
+                      required:
+                        - goals
+                        - assists
+                        - shots
+                        - passAttempts
+                        - passesMade
+                        - tackleAttempts
+                        - tacklesMade
+                        - saves
+                        - yellowCards
+                        - redCards
+                        - mvpAwards
+                        - rating
+                      additionalProperties: false
+                    averages:
+                      type: object
+                      properties:
+                        goals:
+                          type:
+                            - number
+                            - "null"
+                        assists:
+                          type:
+                            - number
+                            - "null"
+                        shots:
+                          type:
+                            - number
+                            - "null"
+                        passAttempts:
+                          type:
+                            - number
+                            - "null"
+                        passesMade:
+                          type:
+                            - number
+                            - "null"
+                        tackleAttempts:
+                          type:
+                            - number
+                            - "null"
+                        tacklesMade:
+                          type:
+                            - number
+                            - "null"
+                        saves:
+                          type:
+                            - number
+                            - "null"
+                        yellowCards:
+                          type:
+                            - number
+                            - "null"
+                        redCards:
+                          type:
+                            - number
+                            - "null"
+                        mvpAwards:
+                          type:
+                            - number
+                            - "null"
+                        rating:
+                          type:
+                            - number
+                            - "null"
+                      required:
+                        - goals
+                        - assists
+                        - shots
+                        - passAttempts
+                        - passesMade
+                        - tackleAttempts
+                        - tacklesMade
+                        - saves
+                        - yellowCards
+                        - redCards
+                        - mvpAwards
+                        - rating
+                      additionalProperties: false
+                    partial:
+                      type: object
+                      properties:
+                        minutes:
+                          type: boolean
+                        goals:
+                          type: boolean
+                        assists:
+                          type: boolean
+                        shots:
+                          type: boolean
+                        passAttempts:
+                          type: boolean
+                        passesMade:
+                          type: boolean
+                        tackleAttempts:
+                          type: boolean
+                        tacklesMade:
+                          type: boolean
+                        saves:
+                          type: boolean
+                        yellowCards:
+                          type: boolean
+                        redCards:
+                          type: boolean
+                        mvpAwards:
+                          type: boolean
+                        rating:
+                          type: boolean
+                      required:
+                        - minutes
+                        - goals
+                        - assists
+                        - shots
+                        - passAttempts
+                        - passesMade
+                        - tackleAttempts
+                        - tacklesMade
+                        - saves
+                        - yellowCards
+                        - redCards
+                        - mvpAwards
+                        - rating
+                      additionalProperties: false
+                  required:
+                    - matchesPlayed
+                    - wins
+                    - draws
+                    - losses
+                    - minutes
+                    - totals
+                    - averages
+                    - partial
+                  additionalProperties: false
+                byTeam:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      matchesPlayed:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      wins:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      draws:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      losses:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      minutes:
+                        type:
+                          - number
+                          - "null"
+                      totals:
+                        type: object
+                        properties:
+                          goals:
+                            type: number
+                          assists:
+                            type: number
+                          shots:
+                            type: number
+                          passAttempts:
+                            type: number
+                          passesMade:
+                            type: number
+                          tackleAttempts:
+                            type: number
+                          tacklesMade:
+                            type: number
+                          saves:
+                            type: number
+                          yellowCards:
+                            type: number
+                          redCards:
+                            type: number
+                          mvpAwards:
+                            type: number
+                          rating:
+                            type: number
+                        required:
+                          - goals
+                          - assists
+                          - shots
+                          - passAttempts
+                          - passesMade
+                          - tackleAttempts
+                          - tacklesMade
+                          - saves
+                          - yellowCards
+                          - redCards
+                          - mvpAwards
+                          - rating
+                        additionalProperties: false
+                      averages:
+                        type: object
+                        properties:
+                          goals:
+                            type:
+                              - number
+                              - "null"
+                          assists:
+                            type:
+                              - number
+                              - "null"
+                          shots:
+                            type:
+                              - number
+                              - "null"
+                          passAttempts:
+                            type:
+                              - number
+                              - "null"
+                          passesMade:
+                            type:
+                              - number
+                              - "null"
+                          tackleAttempts:
+                            type:
+                              - number
+                              - "null"
+                          tacklesMade:
+                            type:
+                              - number
+                              - "null"
+                          saves:
+                            type:
+                              - number
+                              - "null"
+                          yellowCards:
+                            type:
+                              - number
+                              - "null"
+                          redCards:
+                            type:
+                              - number
+                              - "null"
+                          mvpAwards:
+                            type:
+                              - number
+                              - "null"
+                          rating:
+                            type:
+                              - number
+                              - "null"
+                        required:
+                          - goals
+                          - assists
+                          - shots
+                          - passAttempts
+                          - passesMade
+                          - tackleAttempts
+                          - tacklesMade
+                          - saves
+                          - yellowCards
+                          - redCards
+                          - mvpAwards
+                          - rating
+                        additionalProperties: false
+                      partial:
+                        type: object
+                        properties:
+                          minutes:
+                            type: boolean
+                          goals:
+                            type: boolean
+                          assists:
+                            type: boolean
+                          shots:
+                            type: boolean
+                          passAttempts:
+                            type: boolean
+                          passesMade:
+                            type: boolean
+                          tackleAttempts:
+                            type: boolean
+                          tacklesMade:
+                            type: boolean
+                          saves:
+                            type: boolean
+                          yellowCards:
+                            type: boolean
+                          redCards:
+                            type: boolean
+                          mvpAwards:
+                            type: boolean
+                          rating:
+                            type: boolean
+                        required:
+                          - minutes
+                          - goals
+                          - assists
+                          - shots
+                          - passAttempts
+                          - passesMade
+                          - tackleAttempts
+                          - tacklesMade
+                          - saves
+                          - yellowCards
+                          - redCards
+                          - mvpAwards
+                          - rating
+                        additionalProperties: false
+                      clubId:
+                        type: string
+                        minLength: 1
+                      clubName:
+                        type: string
+                        minLength: 1
+                    required:
+                      - matchesPlayed
+                      - wins
+                      - draws
+                      - losses
+                      - minutes
+                      - totals
+                      - averages
+                      - partial
+                      - clubId
+                      - clubName
+                    additionalProperties: false
+                byPosition:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      matchesPlayed:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      wins:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      draws:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      losses:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      minutes:
+                        type:
+                          - number
+                          - "null"
+                      totals:
+                        type: object
+                        properties:
+                          goals:
+                            type: number
+                          assists:
+                            type: number
+                          shots:
+                            type: number
+                          passAttempts:
+                            type: number
+                          passesMade:
+                            type: number
+                          tackleAttempts:
+                            type: number
+                          tacklesMade:
+                            type: number
+                          saves:
+                            type: number
+                          yellowCards:
+                            type: number
+                          redCards:
+                            type: number
+                          mvpAwards:
+                            type: number
+                          rating:
+                            type: number
+                        required:
+                          - goals
+                          - assists
+                          - shots
+                          - passAttempts
+                          - passesMade
+                          - tackleAttempts
+                          - tacklesMade
+                          - saves
+                          - yellowCards
+                          - redCards
+                          - mvpAwards
+                          - rating
+                        additionalProperties: false
+                      averages:
+                        type: object
+                        properties:
+                          goals:
+                            type:
+                              - number
+                              - "null"
+                          assists:
+                            type:
+                              - number
+                              - "null"
+                          shots:
+                            type:
+                              - number
+                              - "null"
+                          passAttempts:
+                            type:
+                              - number
+                              - "null"
+                          passesMade:
+                            type:
+                              - number
+                              - "null"
+                          tackleAttempts:
+                            type:
+                              - number
+                              - "null"
+                          tacklesMade:
+                            type:
+                              - number
+                              - "null"
+                          saves:
+                            type:
+                              - number
+                              - "null"
+                          yellowCards:
+                            type:
+                              - number
+                              - "null"
+                          redCards:
+                            type:
+                              - number
+                              - "null"
+                          mvpAwards:
+                            type:
+                              - number
+                              - "null"
+                          rating:
+                            type:
+                              - number
+                              - "null"
+                        required:
+                          - goals
+                          - assists
+                          - shots
+                          - passAttempts
+                          - passesMade
+                          - tackleAttempts
+                          - tacklesMade
+                          - saves
+                          - yellowCards
+                          - redCards
+                          - mvpAwards
+                          - rating
+                        additionalProperties: false
+                      partial:
+                        type: object
+                        properties:
+                          minutes:
+                            type: boolean
+                          goals:
+                            type: boolean
+                          assists:
+                            type: boolean
+                          shots:
+                            type: boolean
+                          passAttempts:
+                            type: boolean
+                          passesMade:
+                            type: boolean
+                          tackleAttempts:
+                            type: boolean
+                          tacklesMade:
+                            type: boolean
+                          saves:
+                            type: boolean
+                          yellowCards:
+                            type: boolean
+                          redCards:
+                            type: boolean
+                          mvpAwards:
+                            type: boolean
+                          rating:
+                            type: boolean
+                        required:
+                          - minutes
+                          - goals
+                          - assists
+                          - shots
+                          - passAttempts
+                          - passesMade
+                          - tackleAttempts
+                          - tacklesMade
+                          - saves
+                          - yellowCards
+                          - redCards
+                          - mvpAwards
+                          - rating
+                        additionalProperties: false
+                      position:
+                        type: string
+                        minLength: 1
+                      role:
+                        type: string
+                        enum:
+                          - attack
+                          - midfield
+                          - defense
+                          - goalkeeper
+                          - unknown
+                    required:
+                      - matchesPlayed
+                      - wins
+                      - draws
+                      - losses
+                      - minutes
+                      - totals
+                      - averages
+                      - partial
+                      - position
+                      - role
+                    additionalProperties: false
+              required:
+                - identity
+                - sampleSize
+                - attributes
+                - evolution
+                - summary
+                - byTeam
+                - byPosition
+              additionalProperties: false
+          required:
+            - status
+            - profile
+          additionalProperties: false
+    GetMyTeamsResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        teams:
+          type: array
+          items:
+            type: object
+            properties:
+              membership:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    minLength: 1
+                  organizationId:
+                    type: string
+                    minLength: 1
+                  competitionId:
+                    type: string
+                    minLength: 1
+                  teamId:
+                    type: string
+                    minLength: 1
+                  playerProfileId:
+                    type: string
+                    minLength: 1
+                  gameAccountId:
+                    anyOf:
+                      - type: string
+                        minLength: 1
+                      - type: "null"
+                  role:
+                    type: string
+                    enum:
+                      - player
+                      - captain
+                      - vice_captain
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                required:
+                  - id
+                  - organizationId
+                  - competitionId
+                  - teamId
+                  - playerProfileId
+                  - gameAccountId
+                  - role
+                  - createdAt
+                additionalProperties: false
+              team:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    minLength: 1
+                  organizationId:
+                    type: string
+                    minLength: 1
+                  name:
+                    type: string
+                    minLength: 1
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                required:
+                  - id
+                  - organizationId
+                  - name
+                  - createdAt
+                additionalProperties: false
+              active:
+                type: boolean
+            required:
+              - membership
+              - team
+              - active
+            additionalProperties: false
+        activeRosterMembershipId:
+          anyOf:
+            - type: string
+              minLength: 1
+            - type: "null"
+      required:
+        - teams
+        - activeRosterMembershipId
+      additionalProperties: false
+    SetActiveTeamRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        rosterMembershipId:
+          type: string
+          minLength: 1
+      required:
+        - rosterMembershipId
+    SetActiveTeamResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        actorId:
+          type: string
+          minLength: 1
+        rosterMembershipId:
+          type: string
+          minLength: 1
+        updatedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+      required:
+        - actorId
+        - rosterMembershipId
+        - updatedAt
+      additionalProperties: false
+    CreateTeamRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        creationKey:
+          type: string
+          minLength: 1
+          maxLength: 160
+      required:
+        - name
+    CompetitionRosterMembership:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        organizationId:
+          type: string
+          minLength: 1
+        competitionId:
+          type: string
+          minLength: 1
+        teamId:
+          type: string
+          minLength: 1
+        playerProfileId:
+          type: string
+          minLength: 1
+        gameAccountId:
+          anyOf:
+            - type: string
+              minLength: 1
+            - type: "null"
+        role:
+          type: string
+          enum:
+            - player
+            - captain
+            - vice_captain
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+      required:
+        - id
+        - organizationId
+        - competitionId
+        - teamId
+        - playerProfileId
+        - gameAccountId
+        - role
+        - createdAt
+      additionalProperties: false
+    ListRosterResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        memberships:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              organizationId:
+                type: string
+                minLength: 1
+              competitionId:
+                type: string
+                minLength: 1
+              teamId:
+                type: string
+                minLength: 1
+              playerProfileId:
+                type: string
+                minLength: 1
+              gameAccountId:
+                anyOf:
+                  - type: string
+                    minLength: 1
+                  - type: "null"
+              role:
+                type: string
+                enum:
+                  - player
+                  - captain
+                  - vice_captain
+              createdAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            required:
+              - id
+              - organizationId
+              - competitionId
+              - teamId
+              - playerProfileId
+              - gameAccountId
+              - role
+              - createdAt
+            additionalProperties: false
+      required:
+        - memberships
+      additionalProperties: false
+    AddToRosterRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        playerProfileId:
+          type: string
+          minLength: 1
+        gameAccountId:
+          anyOf:
+            - type: string
+              minLength: 1
+            - type: "null"
+        role:
+          default: player
+          type: string
+          enum:
+            - player
+            - captain
+            - vice_captain
+      required:
+        - playerProfileId
+    ChangeRosterRoleRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - player
+            - captain
+            - vice_captain
+      required:
+        - role
+    RosterState:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        organizationId:
+          type: string
+          minLength: 1
+        competitionId:
+          type: string
+          minLength: 1
+        teamId:
+          type: string
+          minLength: 1
+        lockedAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+            - type: "null"
+      required:
+        - organizationId
+        - competitionId
+        - teamId
+        - lockedAt
+      additionalProperties: false
+    ConnectTeamExternalClubRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        providerKey:
+          type: string
+          enum:
+            - ea-clubs
+            - manual
+            - screenshot-ocr
+        externalClubId:
+          type: string
+          minLength: 1
+          maxLength: 80
+        externalClubName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        platform:
+          type: string
+          minLength: 1
+          maxLength: 40
+        gameEdition:
+          type: string
+          minLength: 1
+          maxLength: 40
+      required:
+        - providerKey
+        - externalClubId
+        - externalClubName
+        - platform
+        - gameEdition
+    TeamExternalClubConnection:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        teamId:
+          type: string
+          minLength: 1
+        providerKey:
+          type: string
+          enum:
+            - ea-clubs
+            - manual
+            - screenshot-ocr
+        externalClubId:
+          type: string
+          minLength: 1
+        externalClubName:
+          type: string
+          minLength: 1
+        platform:
+          type: string
+          minLength: 1
+        gameEdition:
+          type: string
+          minLength: 1
+      required:
+        - teamId
+        - providerKey
+        - externalClubId
+        - externalClubName
+        - platform
+        - gameEdition
+      additionalProperties: false
+    GetTeamExternalClubResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      anyOf:
+        - type: object
+          properties:
+            teamId:
+              type: string
+              minLength: 1
+            providerKey:
+              type: string
+              enum:
+                - ea-clubs
+                - manual
+                - screenshot-ocr
+            externalClubId:
+              type: string
+              minLength: 1
+            externalClubName:
+              type: string
+              minLength: 1
+            platform:
+              type: string
+              minLength: 1
+            gameEdition:
+              type: string
+              minLength: 1
+          required:
+            - teamId
+            - providerKey
+            - externalClubId
+            - externalClubName
+            - platform
+            - gameEdition
+          additionalProperties: false
+        - type: "null"
+    CreateRosterInvitationRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        role:
+          default: player
+          type: string
+          enum:
+            - player
+            - captain
+            - vice_captain
+        expiresInMs:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        redeemPolicy:
+          default: single
+          type: string
+          enum:
+            - single
+            - multi
+        inviteeIdentifier:
+          anyOf:
+            - type: string
+              minLength: 1
+              maxLength: 80
+            - type: "null"
+        message:
+          anyOf:
+            - type: string
+              minLength: 1
+              maxLength: 500
+            - type: "null"
+        invitedByDisplayName:
+          anyOf:
+            - type: string
+              minLength: 1
+              maxLength: 120
+            - type: "null"
+    CreateRosterInvitationResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        invitationId:
+          type: string
+          minLength: 1
+        organizationId:
+          type: string
+          minLength: 1
+        competitionId:
+          type: string
+          minLength: 1
+        teamId:
+          type: string
+          minLength: 1
+        role:
+          type: string
+          enum:
+            - player
+            - captain
+            - vice_captain
+        status:
+          type: string
+          enum:
+            - pending
+            - accepted
+            - declined
+            - revoked
+            - expired
+        expiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        token:
+          type: string
+          minLength: 1
+      required:
+        - invitationId
+        - organizationId
+        - competitionId
+        - teamId
+        - role
+        - status
+        - expiresAt
+        - createdAt
+        - token
+      additionalProperties: false
+    RegisterTeamEntryRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        teamId:
+          type: string
+          minLength: 1
+        creationKey:
+          type: string
+          minLength: 1
+          maxLength: 160
+      required:
+        - teamId
+    ResolvePostAuthDestinationResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        destination:
+          oneOf:
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  const: onboarding
+              required:
+                - kind
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  const: personal
+              required:
+                - kind
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  const: organization
+                organizationId:
+                  type: string
+                  minLength: 1
+              required:
+                - kind
+                - organizationId
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  const: organizationPicker
+                memberships:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      organizationId:
+                        type: string
+                        minLength: 1
+                      organizationName:
+                        type: string
+                        minLength: 1
+                      organizationSlug:
+                        type: string
+                        minLength: 1
+                      organizationLogo:
+                        oneOf:
+                          - type: object
+                            properties:
+                              kind:
+                                type: string
+                                const: monogram
+                            required:
+                              - kind
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              kind:
+                                type: string
+                                const: upload
+                              key:
+                                type: string
+                                minLength: 1
+                                maxLength: 300
+                            required:
+                              - kind
+                              - key
+                            additionalProperties: false
+                      role:
+                        type: string
+                        enum:
+                          - organizer
+                          - staff
+                          - member
+                    required:
+                      - organizationId
+                      - organizationName
+                      - organizationSlug
+                      - organizationLogo
+                      - role
+                    additionalProperties: false
+              required:
+                - kind
+                - memberships
+              additionalProperties: false
+        memberships:
+          type: array
+          items:
+            type: object
+            properties:
+              organizationId:
+                type: string
+                minLength: 1
+              organizationName:
+                type: string
+                minLength: 1
+              organizationSlug:
+                type: string
+                minLength: 1
+              organizationLogo:
+                oneOf:
+                  - type: object
+                    properties:
+                      kind:
+                        type: string
+                        const: monogram
+                    required:
+                      - kind
+                    additionalProperties: false
+                  - type: object
+                    properties:
+                      kind:
+                        type: string
+                        const: upload
+                      key:
+                        type: string
+                        minLength: 1
+                        maxLength: 300
+                    required:
+                      - kind
+                      - key
+                    additionalProperties: false
+              role:
+                type: string
+                enum:
+                  - organizer
+                  - staff
+                  - member
+            required:
+              - organizationId
+              - organizationName
+              - organizationSlug
+              - organizationLogo
+              - role
+            additionalProperties: false
+      required:
+        - destination
+        - memberships
+      additionalProperties: false
+    CreateOrganizationInvitationRequest:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - staff
+            - member
+        email:
+          type: string
+          format: email
+          pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+        expiresInMs:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        redeemPolicy:
+          type: string
+          enum:
+            - single
+            - multi
+        maxRedemptions:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 100000
+      required:
+        - role
+    CreateInvitationResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        invitationId:
+          type: string
+          minLength: 1
+        competitionId:
+          anyOf:
+            - type: string
+              minLength: 1
+            - type: "null"
+        token:
+          type: string
+          minLength: 1
+        expiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        redeemPolicy:
+          type: string
+          enum:
+            - single
+            - multi
+        maxRedemptions:
+          anyOf:
+            - type: integer
+              exclusiveMinimum: 0
+              maximum: 9007199254740991
+            - type: "null"
+      required:
+        - invitationId
+        - token
+        - expiresAt
+        - redeemPolicy
+        - maxRedemptions
+      additionalProperties: false
     CompetitionRules:
       type: object
       required:

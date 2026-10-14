@@ -6,7 +6,7 @@ import {
 import type { ProviderSyncJob } from "@futrob/game-data";
 import type { AppDeps } from "@/app.ts";
 import { currentRequestCorrelation, logCorrelatedInfo } from "@/context/request-correlation.ts";
-import { validationErrorResponse } from "@/http/errors.ts";
+import { apiErrorResponse, validationErrorResponse } from "@/http/errors.ts";
 import { createInternalJobAuthMiddleware } from "@/http/middleware/service-auth.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
@@ -51,7 +51,10 @@ export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
     });
     return job
       ? jsonResponse(toSyncJobDto(job))
-      : jsonResponse({ code: "game_data.sync_job_not_claimable" }, 409);
+      : apiErrorResponse(409, {
+          code: "game_data.sync_job_not_claimable",
+          messageKey: "errors.game_data.sync_job_not_claimable",
+        });
   });
 
   app.route("/", internal);
