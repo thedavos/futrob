@@ -39,6 +39,7 @@
     "ui:storybook": "npm run storybook",
     "ui:storybook:build": "npm run storybook:build",
     "generate:openapi": "npm run generate:openapi -w @futrob/api-contracts",
+    "openapi:check": "npm run generate:openapi && git diff --exit-code packages/api-contracts/openapi",
     "generate:routes": "npm run generate:routes -w @futrob/web"
   },
   "dependencies": {

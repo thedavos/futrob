@@ -27,6 +27,7 @@ jobs:
       - run: npm run generate:routes
       # Guard: packages/ui/src/tokens.css must match @futrob/ui-tokens data.
       - run: npm run generate:css:check -w @futrob/ui-tokens
+      - run: npm run generate:openapi && git diff --exit-code packages/api-contracts/openapi
       - run: npm run check
 
   typecheck:
