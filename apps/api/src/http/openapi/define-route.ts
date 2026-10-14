@@ -9,6 +9,8 @@ export type OpenApiSuccessStatus = 200 | 201 | 202 | 204;
 
 type RouteRequest = NonNullable<RouteConfig["request"]>;
 type RouteResponses = RouteConfig["responses"];
+type RouteParamSchema = NonNullable<RouteRequest["params"]>;
+type RouteQuerySchema = NonNullable<RouteRequest["query"]>;
 
 export type OpenApiRouteSpec = {
   readonly method: "get" | "post" | "put" | "patch" | "delete";
@@ -70,44 +72,47 @@ function isErrorStatus(status: number): status is OpenApiErrorStatus {
 export function defineRoute<
   TPath extends string,
   TBody extends z.ZodType,
-  TQuery extends z.ZodType,
-  TParams extends z.ZodType,
+  TQuery extends RouteQuerySchema,
+  TParams extends RouteParamSchema,
 >(
   spec: RouteSpec<TPath, TBody, TQuery, TParams>,
 ): DefinedOpenApiRoute<TPath, JsonBodyRequest<TBody> & { query: TQuery; params: TParams }>;
 export function defineRoute<
   TPath extends string,
   TBody extends z.ZodType,
-  TQuery extends z.ZodType,
+  TQuery extends RouteQuerySchema,
 >(
   spec: RouteSpec<TPath, TBody, TQuery>,
 ): DefinedOpenApiRoute<TPath, JsonBodyRequest<TBody> & { query: TQuery }>;
 export function defineRoute<
   TPath extends string,
   TBody extends z.ZodType,
-  TParams extends z.ZodType,
+  TParams extends RouteParamSchema,
 >(
   spec: RouteSpec<TPath, TBody, unknown, TParams>,
 ): DefinedOpenApiRoute<TPath, JsonBodyRequest<TBody> & { params: TParams }>;
 export function defineRoute<
   TPath extends string,
-  TQuery extends z.ZodType,
-  TParams extends z.ZodType,
+  TQuery extends RouteQuerySchema,
+  TParams extends RouteParamSchema,
 >(
   spec: RouteSpec<TPath, unknown, TQuery, TParams>,
 ): DefinedOpenApiRoute<TPath, { query: TQuery; params: TParams }>;
 export function defineRoute<TPath extends string, TBody extends z.ZodType>(
   spec: RouteSpec<TPath, TBody>,
 ): DefinedOpenApiRoute<TPath, JsonBodyRequest<TBody>>;
-export function defineRoute<TPath extends string, TQuery extends z.ZodType>(
+export function defineRoute<TPath extends string, TQuery extends RouteQuerySchema>(
   spec: RouteSpec<TPath, unknown, TQuery>,
 ): DefinedOpenApiRoute<TPath, { query: TQuery }>;
-export function defineRoute<TPath extends string, TParams extends z.ZodType>(
+export function defineRoute<TPath extends string, TParams extends RouteParamSchema>(
   spec: RouteSpec<TPath, unknown, unknown, TParams>,
 ): DefinedOpenApiRoute<TPath, { params: TParams }>;
 export function defineRoute<TPath extends string>(
   spec: RouteSpec<TPath>,
 ): DefinedOpenApiRoute<TPath, undefined>;
+export function defineRoute(
+  spec: OpenApiRouteSpec,
+): DefinedOpenApiRoute<string, RouteRequest | undefined>;
 export function defineRoute(
   spec: OpenApiRouteSpec,
 ): DefinedOpenApiRoute<string, RouteRequest | undefined> {
