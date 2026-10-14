@@ -1,13 +1,9 @@
-import { Hono } from "hono";
 import {
-  acceptEntryInvitationRequestSchema,
   acceptEntryInvitationResponseSchema,
   entryInvitationLinkResponseSchema,
   entryInvitationPreviewSchema,
-  inviteTeamCaptainRequestSchema,
   listMyEntryInvitationsResponseSchema,
   listSentEntryInvitationsResponseSchema,
-  searchEntryInviteesQuerySchema,
   searchEntryInviteesResponseSchema,
   sentEntryInvitationSchema,
 } from "@futrob/api-contracts";
@@ -17,14 +13,26 @@ import {
   type EntryInvitationReference,
 } from "@futrob/competitions";
 import { asActorId, asCompetitionId, asOrganizationId, type ActorId } from "@futrob/shared-kernel";
-import type { Context } from "hono";
+import { type Context, type Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
-import { apiErrorResponse, failureToHttp, validationErrorResponse } from "@/http/errors.ts";
-import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+import { apiErrorResponse, failureToHttp } from "@/http/errors.ts";
 import { competitionApplicationDto } from "@/http/mappers/competition-entry.ts";
+import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
+import {
+  acceptEntryInvitationLinkRoute,
+  acceptEntryInvitationRoute,
+  declineEntryInvitationRoute,
+  ensureEntryInvitationLinkRoute,
+  inviteTeamCaptainRoute,
+  listMyEntryInvitationsRoute,
+  listSentEntryInvitationsRoute,
+  previewEntryInvitationLinkRoute,
+  previewEntryInvitationRoute,
+  regenerateEntryInvitationLinkRoute,
+  revokeEntryInvitationRoute,
+  searchEntryInviteesRoute,
+} from "@/http/openapi/routes/entry-invitations.ts";
 import { requireApiPermission } from "@/http/require-api-permission.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
@@ -64,32 +72,29 @@ function linkDto(invitation: EntryInvitation) {
  * the link code.
  */
 export function registerEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
-  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
   const { competitions, entryInvitations, teams } = deps.modules;
   const useCases = competitions.entryInvitations;
-  const base = "/organizations/:organizationId/competitions/:competitionId/entry-invitations";
 
-  function scope(c: SecuredContext) {
+  function scope(c: SecuredContext, params: Record<string, string>) {
     return {
       actorId: c.get("actorId"),
-      organizationId: asOrganizationId(c.req.param("organizationId") ?? ""),
-      competitionId: asCompetitionId(c.req.param("competitionId") ?? ""),
+      organizationId: asOrganizationId(params.organizationId ?? ""),
+      competitionId: asCompetitionId(params.competitionId ?? ""),
     };
   }
 
-  secured.get(base, async (c) => {
-    const result = await useCases.listSent.execute(scope(c));
+  secured.openapi(listSentEntryInvitationsRoute, async (c) => {
+    const result = await useCases.listSent.execute(scope(c, c.req.valid("param")));
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
       listSentEntryInvitationsResponseSchema.parse({ invitations: result.value.map(sentDto) }),
     );
   });
 
-  secured.post(base, async (c) => {
-    const parsed = inviteTeamCaptainRequestSchema.safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-    const inviteeActorId = asActorId(parsed.data.inviteeActorId);
+  secured.openapi(inviteTeamCaptainRoute, async (c) => {
+    const body = c.req.valid("json");
+    const inviteeActorId = asActorId(body.inviteeActorId);
     if (!(await teams.repositories.profiles.findByActor(inviteeActorId))) {
       return apiErrorResponse(404, {
         code: "competitions.entry_invitee_not_found",
@@ -97,51 +102,51 @@ export function registerEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
       });
     }
     const result = await entryInvitations.commands.invite.execute({
-      ...scope(c),
+      ...scope(c, c.req.valid("param")),
       inviteeActorId,
-      inviteeLabel: parsed.data.inviteeLabel,
-      message: parsed.data.message,
+      inviteeLabel: body.inviteeLabel,
+      message: body.message,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(sentEntryInvitationSchema.parse(sentDto(result.value)), 201);
   });
 
-  secured.delete(`${base}/:invitationId`, async (c) => {
+  secured.openapi(revokeEntryInvitationRoute, async (c) => {
+    const params = c.req.valid("param");
     const result = await entryInvitations.commands.revoke.execute({
-      ...scope(c),
-      invitationId: c.req.param("invitationId"),
+      ...scope(c, params),
+      invitationId: params.invitationId,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return new Response(null, { status: 204 });
   });
 
-  secured.post(`${base}/link`, async (c) => {
+  secured.openapi(ensureEntryInvitationLinkRoute, async (c) => {
     const result = await deps.modules.transaction.runInTransaction(() =>
-      useCases.ensureLink.execute(scope(c)),
+      useCases.ensureLink.execute(scope(c, c.req.valid("param"))),
     );
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(entryInvitationLinkResponseSchema.parse(linkDto(result.value)));
   });
 
-  secured.post(`${base}/link/regenerate`, async (c) => {
+  secured.openapi(regenerateEntryInvitationLinkRoute, async (c) => {
     const result = await deps.modules.transaction.runInTransaction(() =>
-      useCases.regenerateLink.execute(scope(c)),
+      useCases.regenerateLink.execute(scope(c, c.req.valid("param"))),
     );
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(entryInvitationLinkResponseSchema.parse(linkDto(result.value)), 201);
   });
 
-  secured.get(`${base}/candidates`, async (c) => {
-    const parsed = searchEntryInviteesQuerySchema.safeParse(c.req.query());
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-    const { organizationId, competitionId, actorId } = scope(c);
+  secured.openapi(searchEntryInviteesRoute, async (c) => {
+    const query = c.req.valid("query");
+    const { organizationId, competitionId, actorId } = scope(c, c.req.valid("param"));
     const forbidden = await requireApiPermission(deps, {
       actorId,
       permission: COMPETITION_PERMISSION.invitationsManage,
       scope: { organizationId, competitionId },
     });
     if (forbidden) return forbidden;
-    const found = await teams.searchPlayers.execute({ query: parsed.data.q });
+    const found = await teams.searchPlayers.execute({ query: query.q });
     if (!found.isOk()) return failureToHttp(found.error);
     const players = await Promise.all(
       found.value.map(async (player) => ({
@@ -169,7 +174,7 @@ export function registerEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
     );
   }
 
-  secured.get("/players/me/entry-invitations", async (c) => {
+  secured.openapi(listMyEntryInvitationsRoute, async (c) => {
     const invitations = await useCases.listMine.execute({ actorId: c.get("actorId") });
     const items = await Promise.all(
       invitations.map(async (invitation) => {
@@ -201,15 +206,10 @@ export function registerEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  function reference(c: SecuredContext): EntryInvitationReference {
-    const code = c.req.param("code");
-    return code ? { code } : { invitationId: c.req.param("invitationId") ?? "" };
-  }
-
-  async function preview(c: SecuredContext) {
+  async function preview(c: SecuredContext, reference: EntryInvitationReference) {
     const result = await entryInvitations.acceptance.preview({
       actorId: c.get("actorId"),
-      reference: reference(c),
+      reference,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     const { invitation, competition, organizationName, suggestedTeamName, existing } = result.value;
@@ -237,16 +237,16 @@ export function registerEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
     );
   }
 
-  async function accept(c: SecuredContext) {
-    const parsed = acceptEntryInvitationRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+  async function accept(
+    c: SecuredContext,
+    reference: EntryInvitationReference,
+    body: { teamName: string; creationKey: string },
+  ) {
     const result = await entryInvitations.acceptance.accept({
       actorId: c.get("actorId"),
-      reference: reference(c),
-      teamName: parsed.data.teamName,
-      creationKey: parsed.data.creationKey,
+      reference,
+      teamName: body.teamName,
+      creationKey: body.creationKey,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
@@ -259,14 +259,22 @@ export function registerEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
     );
   }
 
-  secured.get("/entry-invitations/links/:code", preview);
-  secured.post("/entry-invitations/links/:code/accept", accept);
-  secured.get("/entry-invitations/:invitationId", preview);
-  secured.post("/entry-invitations/:invitationId/accept", accept);
-  secured.post("/entry-invitations/:invitationId/decline", async (c) => {
+  secured.openapi(previewEntryInvitationRoute, async (c) =>
+    preview(c, { invitationId: c.req.valid("param").invitationId }),
+  );
+  secured.openapi(acceptEntryInvitationRoute, async (c) =>
+    accept(c, { invitationId: c.req.valid("param").invitationId }, c.req.valid("json")),
+  );
+  secured.openapi(previewEntryInvitationLinkRoute, async (c) =>
+    preview(c, { code: c.req.valid("param").code }),
+  );
+  secured.openapi(acceptEntryInvitationLinkRoute, async (c) =>
+    accept(c, { code: c.req.valid("param").code }, c.req.valid("json")),
+  );
+  secured.openapi(declineEntryInvitationRoute, async (c) => {
     const result = await entryInvitations.commands.decline.execute({
       actorId: c.get("actorId"),
-      invitationId: c.req.param("invitationId"),
+      invitationId: c.req.valid("param").invitationId,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return new Response(null, { status: 204 });
