@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
@@ -9,10 +11,12 @@ import {
   Manrope_700Bold,
   useFonts,
 } from "@expo-google-fonts/manrope";
+import { createMobileQueryClient } from "@/modules/query/create-query-client";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+  const [queryClient] = useState(createMobileQueryClient);
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
@@ -27,7 +31,7 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
@@ -37,6 +41,6 @@ export default function RootLayout() {
         <Stack.Screen name="(onboarding)/[step]" />
         <Stack.Screen name="(home)/index" />
       </Stack>
-    </>
+    </QueryClientProvider>
   );
 }

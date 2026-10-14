@@ -1,7 +1,8 @@
-import { useCallback, useState } from "react";
-import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
+import { useQuery } from "@tanstack/react-query";
 import { FutrobApiError } from "@futrob/sdk";
 import { getFutrobClient } from "@/modules/api/futrob-client";
+import { onProductUnauthorized } from "@/modules/identity/session-lifecycle";
+import { mobileQueryKeys } from "@/modules/query/query-keys";
 import { loadPlayerHome } from "./load-player-home";
 import type { PlayerHomeSnapshot } from "./player-home-model";
 
@@ -9,66 +10,69 @@ type PlayerHomeLoad = {
   readonly snapshot: PlayerHomeSnapshot | null;
   readonly loading: boolean;
   readonly failed: boolean;
+  readonly initialClub?: string;
+  readonly unauthorized: boolean;
+  readonly retry: () => void;
 };
 
 /**
  * Loads the six-source snapshot for one club. Without a club, the profile is read first and its
- * first association is handed to `onInitialClub`, so the snapshot loads once, for that club.
- * A retry keeps the current snapshot on screen until the next one settles; a club change never
- * presents the previous club's data.
+ * first association is handed to the caller as `initialClub`, so the snapshot loads once, for
+ * that club. A retry keeps the current snapshot on screen until the next one settles; a club
+ * change never presents the previous club's data.
  */
-export function usePlayerHome(
-  externalClubId: string | undefined,
-  {
-    onInitialClub,
-    onUnauthorized,
-  }: { onInitialClub: (id: string) => void; onUnauthorized: () => void },
-) {
-  const [load, setLoad] = useState<PlayerHomeLoad>({
-    snapshot: null,
-    loading: true,
-    failed: false,
-  });
-  const [revision, setRevision] = useState(0);
-
-  useExternalSync(() => {
-    const controller = new AbortController();
-    setLoad((current) => ({ ...current, loading: true }));
-    const signal = controller.signal;
-    initialClub(externalClubId, signal)
-      .then(async (initial) => {
-        if (signal.aborted) return;
-        if (initial) return onInitialClub(initial);
-        const snapshot = await loadPlayerHome({ externalClubId, signal });
-        if (!signal.aborted) setLoad({ snapshot, loading: false, failed: false });
-      })
-      .catch((caught) => {
-        if (controller.signal.aborted) return;
-        if (caught instanceof FutrobApiError && caught.status === 401) {
-          onUnauthorized();
-          return;
+export function usePlayerHome(externalClubId: string | undefined): PlayerHomeLoad {
+  const profileQuery = useQuery({
+    queryKey: mobileQueryKeys.playerProfile(),
+    queryFn: async ({ signal }) => {
+      try {
+        return await getFutrobClient().players.getProfile({ signal });
+      } catch (error) {
+        if (error instanceof FutrobApiError && error.status === 401) {
+          await onProductUnauthorized(() => undefined);
         }
-        setLoad((current) => ({ ...current, loading: false, failed: true }));
-      });
-    return () => controller.abort();
-  }, [externalClubId, revision]);
+        throw error;
+      }
+    },
+    enabled: externalClubId === undefined,
+    retry: false,
+  });
+  const firstClub = profileQuery.data?.externalClubs[0]?.externalClubId;
+  const homeQuery = useQuery({
+    queryKey: mobileQueryKeys.playerHome(externalClubId),
+    queryFn: async ({ signal }) => {
+      try {
+        return await loadPlayerHome({ externalClubId, signal });
+      } catch (error) {
+        if (error instanceof FutrobApiError && error.status === 401) {
+          await onProductUnauthorized(() => undefined);
+        }
+        throw error;
+      }
+    },
+    enabled:
+      externalClubId !== undefined ||
+      (profileQuery.isFetched && firstClub === undefined && !isUnauthorized(profileQuery.error)),
+    retry: false,
+  });
 
-  const snapshot = load.snapshot?.externalClubId === externalClubId ? load.snapshot : null;
-  const retry = useCallback(() => setRevision((value) => value + 1), []);
-  return { snapshot, loading: load.loading, failed: load.failed && !snapshot, retry };
+  const error = profileQuery.error ?? homeQuery.error;
+  const snapshot =
+    homeQuery.data?.externalClubId === externalClubId ? (homeQuery.data ?? null) : null;
+  const loading = profileQuery.isFetching || homeQuery.isFetching;
+  return {
+    snapshot,
+    loading,
+    failed: homeQuery.isError && !snapshot && !isUnauthorized(error),
+    initialClub: externalClubId === undefined ? firstClub : undefined,
+    unauthorized: isUnauthorized(error),
+    retry: () => {
+      void profileQuery.refetch();
+      void homeQuery.refetch();
+    },
+  };
 }
 
-async function initialClub(
-  externalClubId: string | undefined,
-  signal: AbortSignal,
-): Promise<string | undefined> {
-  if (externalClubId !== undefined) return undefined;
-  try {
-    const profile = await getFutrobClient().players.getProfile({ signal });
-    return profile.externalClubs[0]?.externalClubId;
-  } catch (error) {
-    if (signal.aborted || (error instanceof FutrobApiError && error.status === 401)) throw error;
-    // The snapshot reads the profile again and reports its failure per section.
-    return undefined;
-  }
+function isUnauthorized(error: Error | null | undefined): boolean {
+  return error instanceof FutrobApiError && error.status === 401;
 }

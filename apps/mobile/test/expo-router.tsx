@@ -1,6 +1,8 @@
 import { useSyncExternalStore, type ComponentType } from "react";
 import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
 
+export type Href = string;
+
 /**
  * In-memory stand-in for the subset of Expo Router the app uses. Screen tests mount the real
  * `app/` route files through `TestRouter`; navigation changes which route file is rendered.
@@ -121,6 +123,14 @@ export function useLocalSearchParams() {
 
 export function useFocusEffect(effect: () => void | (() => void)) {
   useExternalSync(effect, [effect]);
+}
+
+export function Redirect({ href }: { href: string }) {
+  const path = href;
+  useExternalSync(() => {
+    router.replace(path);
+  }, [path]);
+  return null;
 }
 
 export function Stack() {

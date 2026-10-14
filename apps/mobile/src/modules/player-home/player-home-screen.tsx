@@ -1,9 +1,8 @@
 import { ActivityIndicator, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import type { MobileLanguage } from "@/modules/identity/mobile-copy";
 import { nativeRoute } from "@/modules/identity/native-route";
 import { LOGIN_ROUTE } from "@/modules/identity/session-gate";
-import { onProductUnauthorized } from "@/modules/identity/session-lifecycle";
 import { theme } from "@/theme/theme";
 import { Button, EmptyState, Text } from "@/ui";
 import { playerHomeCopy } from "./player-home-copy";
@@ -31,12 +30,16 @@ export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
   const router = useRouter();
   const { club } = useLocalSearchParams<{ club?: string }>();
   const copy = playerHomeCopy(language);
-  const home = usePlayerHome(club || undefined, {
-    onInitialClub: (externalClubId) => router.setParams({ club: externalClubId }),
-    onUnauthorized: () => void onProductUnauthorized(() => router.replace(LOGIN_ROUTE)),
-  });
+  const home = usePlayerHome(club || undefined);
   const open = (route: string) => router.push(nativeRoute(route));
   const selectClub = (externalClubId: string) => router.setParams({ club: externalClubId });
+
+  if (home.unauthorized) {
+    return <Redirect href={LOGIN_ROUTE} />;
+  }
+  if (!club && home.initialClub) {
+    return <Redirect href={nativeRoute(`/player?club=${encodeURIComponent(home.initialClub)}`)} />;
+  }
 
   if (!home.snapshot) {
     return home.failed && !home.loading ? (
