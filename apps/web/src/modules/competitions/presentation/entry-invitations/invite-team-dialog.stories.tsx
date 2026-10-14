@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import type { EntryInviteeCandidateDto } from "@futrob/api-contracts";
@@ -75,11 +76,14 @@ function InviteTeamStory({
   onRegenerateLink,
   onRetryLink,
 }: StoryArgs) {
+  const [queryClient] = useState(
+    () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  );
   const [open, setOpen] = useState(initiallyOpen);
   const [tab, setTab] = useState<InviteTeamTab>(initialTab);
   const [link, setLink] = useState(initialLink);
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <Button onClick={() => setOpen(true)} type="button">
         Invitar equipo
       </Button>
@@ -101,7 +105,7 @@ function InviteTeamStory({
         searchPlayers={searchPlayers}
         tab={tab}
       />
-    </>
+    </QueryClientProvider>
   );
 }
 
@@ -206,7 +210,9 @@ export const FutrobSearchNeedsThreeCharacters: Story = {
 
 export const FutrobNoResults: Story = {
   name: "Equipo en Futrob: sin resultados",
-  args: { searchPlayers: fn(async () => []) },
+  args: {
+    searchPlayers: fn(async (_query: string): Promise<readonly EntryInviteeCandidateDto[]> => []),
+  },
   play: async ({ canvasElement }) => {
     const body = screen(canvasElement);
     await userEvent.type(await body.findByRole("searchbox", { name: "Buscar capitán" }), "zzz");
@@ -233,9 +239,7 @@ export const FutrobPendingConflict: Story = {
   name: "Equipo en Futrob: ya invitado",
   args: {
     onInvite: fn(async () => {
-      throw Object.assign(new Error("conflict"), {
-        code: "competitions.entry_invitation_pending_conflict",
-      });
+      throw new CompetitionsClientError(409, "competitions.entry_invitation_pending_conflict");
     }),
   },
   play: async ({ canvasElement }) => {

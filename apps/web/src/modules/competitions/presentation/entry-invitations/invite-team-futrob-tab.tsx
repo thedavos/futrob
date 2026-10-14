@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import * as stylex from "@stylexjs/stylex";
 import type { EntryInviteeCandidateDto, GamePlatformDto } from "@futrob/api-contracts";
 import {
@@ -26,7 +27,6 @@ import {
   WarningCircleIcon,
   XIcon,
 } from "@phosphor-icons/react";
-import { useDebouncedValue } from "../explore/use-debounced-value.ts";
 import {
   InviteeCandidateCard,
   InviteeSearchResults,
@@ -111,33 +111,40 @@ export function InviteTeamFutrobTab({
     results: useId(),
   };
   const [query, setQuery] = useState("");
-  const debouncedQuery = useDebouncedValue(query.trim(), 300);
-  const [search, setSearch] = useState<InviteeSearchState>({ kind: "idle" });
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selected, setSelected] = useState<EntryInviteeCandidateDto | null>(null);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const canSearch = debouncedQuery.length >= ENTRY_INVITEE_SEARCH_MIN_LENGTH;
+  const playersQuery = useQuery({
+    queryKey: ["competitions", "entry-invitee-search", debouncedQuery],
+    queryFn: () => searchPlayers(debouncedQuery),
+    enabled: canSearch,
+  });
+  const search: InviteeSearchState = !canSearch
+    ? { kind: "idle" }
+    : playersQuery.isError
+      ? { kind: "error" }
+      : playersQuery.isSuccess
+        ? { kind: "ready", players: playersQuery.data }
+        : { kind: "loading" };
 
-  useEffect(() => {
-    if (debouncedQuery.length < ENTRY_INVITEE_SEARCH_MIN_LENGTH) {
-      setSearch({ kind: "idle" });
+  function changeQuery(value: string) {
+    setQuery(value);
+    setSentTo(null);
+    if (searchTimer.current !== null) clearTimeout(searchTimer.current);
+    const trimmed = value.trim();
+    if (trimmed.length < ENTRY_INVITEE_SEARCH_MIN_LENGTH) {
+      setDebouncedQuery("");
       return;
     }
-    let current = true;
-    setSearch({ kind: "loading" });
-    searchPlayers(debouncedQuery).then(
-      (players) => {
-        if (current) setSearch({ kind: "ready", players });
-      },
-      () => {
-        if (current) setSearch({ kind: "error" });
-      },
-    );
-    return () => {
-      current = false;
-    };
-  }, [debouncedQuery, searchPlayers]);
+    searchTimer.current = setTimeout(() => {
+      setDebouncedQuery(trimmed);
+    }, 300);
+  }
 
   async function send() {
     if (!selected || sending) return;
@@ -153,6 +160,8 @@ export function InviteTeamFutrobTab({
       setSelected(null);
       setMessage("");
       setQuery("");
+      setDebouncedQuery("");
+      if (searchTimer.current !== null) clearTimeout(searchTimer.current);
     } catch (caught) {
       setError(
         entryInvitationErrorMessage(
@@ -202,7 +211,7 @@ export function InviteTeamFutrobTab({
               query ? (
                 <Button
                   aria-label="Borrar búsqueda"
-                  onClick={() => setQuery("")}
+                  onClick={() => changeQuery("")}
                   size="icon"
                   type="button"
                   variant="ghost"
@@ -212,10 +221,7 @@ export function InviteTeamFutrobTab({
               ) : undefined
             }
             id={ids.search}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setSentTo(null);
-            }}
+            onChange={(event) => changeQuery(event.target.value)}
             placeholder="Gamertag del jugador"
             startIcon={MagnifyingGlassIcon}
             type="search"
