@@ -1,3 +1,4 @@
+import "@/http/openapi/zod-openapi-setup.ts";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { OPENAPI_DOCUMENT_INFO } from "@/http/openapi/document-config.ts";
 import {
@@ -7,7 +8,6 @@ import {
 } from "@/http/openapi/postprocess.ts";
 import { registerNamedComponents } from "@/http/openapi/register-components.ts";
 import { openApiRoutes } from "@/http/openapi/routes/index.ts";
-import "@/http/openapi/named-schema.ts";
 
 let cached: OpenApiDocument | undefined;
 

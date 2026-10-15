@@ -1,3 +1,4 @@
+import "@/http/openapi/zod-openapi-setup.ts";
 import { serve } from "@hono/node-server";
 import { createPostgresHealth, createPostgresPool } from "@/adapters/persistence/postgres.ts";
 import { createApp } from "@/app.ts";
