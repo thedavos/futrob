@@ -47,7 +47,7 @@
     "zod": "4.6.6"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.63.1",
+    "@cloudflare/vite-plugin": "^1.64.0",
     "@futrob/test-support": "0.1.0",
     "@stylexjs/unplugin": "^0.19.1",
     "@testing-library/react": "^16.3.3",
@@ -61,6 +61,6 @@
     "sharp": "^0.35.5",
     "typescript": "6.0.2",
     "vite-plus": "0.2.8",
-    "wrangler": "^4.149.0"
+    "wrangler": "^4.151.0"
   }
 }
