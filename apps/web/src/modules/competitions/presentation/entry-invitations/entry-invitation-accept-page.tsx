@@ -55,6 +55,7 @@ export function EntryInvitationAcceptPage({
           : undefined
       }
       onOpenCompetition={openTeam}
+      onRetry={() => void preview.refetch()}
       platformLabel={competitionPlatformLabel}
       state={state}
     />

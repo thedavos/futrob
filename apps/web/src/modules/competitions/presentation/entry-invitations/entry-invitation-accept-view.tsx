@@ -7,7 +7,6 @@ import type { EntryInvitationPreviewDto, GamePlatformDto } from "@futrob/api-con
 import {
   Alert,
   AlertDescription,
-  AlertTitle,
   applyStyles,
   Button,
   Card,
@@ -27,6 +26,7 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import { CheckCircleIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { CompetitionsClientError } from "../competitions-browser-client.ts";
 import { entryInvitationErrorMessage } from "./entry-invitation-copy.ts";
+import { EntryInvitationLoadError } from "./entry-invitation-load-error.tsx";
 import { InvitedCompetitionHeader } from "./invited-competition-header.tsx";
 import {
   EntryInvitationUnavailable,
@@ -123,6 +123,7 @@ export function EntryInvitationAcceptView({
   onAccept,
   onDecline,
   onOpenCompetition,
+  onRetry,
 }: {
   readonly state: EntryInvitationPreviewState;
   readonly platformLabel: (platform: GamePlatformDto) => string;
@@ -130,6 +131,8 @@ export function EntryInvitationAcceptView({
   /** Only a directed invitation can be declined. */
   readonly onDecline?: () => Promise<void>;
   readonly onOpenCompetition: (competitionId: string) => void;
+  /** Loads the invitation again after a failure that may pass. */
+  readonly onRetry: () => void;
 }) {
   switch (state.kind) {
     case "loading":
@@ -156,15 +159,7 @@ export function EntryInvitationAcceptView({
           />
         );
       }
-      return (
-        <Alert variant="destructive">
-          <WarningCircleIcon aria-hidden="true" />
-          <AlertTitle>No puedes usar esta invitación</AlertTitle>
-          <AlertDescription>
-            {entryInvitationErrorMessage(state.error, "No pudimos cargar la invitación.")}
-          </AlertDescription>
-        </Alert>
-      );
+      return <EntryInvitationLoadError error={state.error} onRetry={onRetry} />;
     }
     case "ready":
       return (

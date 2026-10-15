@@ -22,7 +22,7 @@ const open: PublicEntryInvitationLinkDto = {
 };
 
 const meta = {
-  title: "Product/Competitions/Entry invitation link (signed out)",
+  title: "Product/Competitions/Entry invitation/Sin cuenta",
   component: EntryInvitationPublicView,
   decorators: [withEntryInvitationRouter],
   parameters: { layout: "padded" },

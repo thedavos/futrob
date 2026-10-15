@@ -38,7 +38,7 @@ function coded(code: string): CompetitionsClientError {
 }
 
 const meta = {
-  title: "Product/Competitions/Entry invitation",
+  title: "Product/Competitions/Entry invitation/Con sesión",
   component: EntryInvitationAcceptView,
   decorators: [withEntryInvitationRouter],
   parameters: { layout: "padded" },
@@ -48,6 +48,7 @@ const meta = {
     onAccept: fn(async () => {}),
     onDecline: fn(async () => {}),
     onOpenCompetition: fn(),
+    onRetry: fn(),
   },
   argTypes: {
     state: { control: false },
@@ -258,12 +259,26 @@ export const AlreadyAnswered: Story = {
 export const LoadFailed: Story = {
   name: "Error al cargar",
   args: { state: { kind: "error", error: coded("api.rate_limited") } },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("No puedes usar esta invitación")).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "No pudimos cargar la invitación" }),
+    ).toBeVisible();
     await expect(
       canvas.getByText("Demasiados intentos. Espera un momento y vuelve a intentarlo."),
     ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Reintentar" }));
+    await expect(args.onRetry).toHaveBeenCalledTimes(1);
+  },
+};
+
+export const LoadFailedOffline: Story = {
+  name: "Error al cargar: sin conexión",
+  args: { state: { kind: "error", error: null } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Revisa tu conexión y vuelve a intentarlo.")).toBeVisible();
+    await expect(canvas.queryByText("No puedes usar esta invitación")).toBeNull();
   },
 };
 

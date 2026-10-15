@@ -1,29 +1,14 @@
 "use client";
 
-import { useId } from "react";
 import { Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import type { GamePlatformDto, PublicEntryInvitationLinkDto } from "@futrob/api-contracts";
-import {
-  applyStyles,
-  Button,
-  Card,
-  CardContent,
-  EmptyState,
-  EmptyStateActions,
-  EmptyStateCopy,
-  EmptyStateDescription,
-  EmptyStateIcon,
-  EmptyStateTitle,
-  Skeleton,
-  typography,
-} from "@futrob/ui";
+import { applyStyles, Button, Card, CardContent, Skeleton, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { WarningCircleIcon } from "@phosphor-icons/react";
 import type { CompetitionsClientError } from "../competitions-browser-client.ts";
 import { InvitedCompetitionHeader } from "./invited-competition-header.tsx";
-import { entryInvitationErrorMessage } from "./entry-invitation-copy.ts";
+import { EntryInvitationLoadError } from "./entry-invitation-load-error.tsx";
 import { EntryInvitationUnavailable } from "./entry-invitation-unavailable.tsx";
 
 /** What a signed-out visitor's link resolves to; the caller owns the request. */
@@ -55,10 +40,6 @@ const styles = stylex.create({
     flexWrap: "wrap",
     gap: "0.5rem",
   },
-  errorIcon: {
-    width: "2rem",
-    height: "2rem",
-  },
   skeletonLine: {
     height: "1.5rem",
   },
@@ -82,7 +63,6 @@ export function EntryInvitationPublicView({
   readonly platformLabel: (platform: GamePlatformDto) => string;
   readonly onRetry: () => void;
 }) {
-  const titleId = useId();
   switch (state.kind) {
     case "loading":
       return (
@@ -95,27 +75,7 @@ export function EntryInvitationPublicView({
         </Card>
       );
     case "error":
-      return (
-        <EmptyState aria-labelledby={titleId}>
-          <EmptyStateIcon>
-            <WarningCircleIcon aria-hidden="true" {...applyStyles(styles.errorIcon)} />
-          </EmptyStateIcon>
-          <EmptyStateCopy>
-            <EmptyStateTitle id={titleId}>No pudimos cargar la invitación</EmptyStateTitle>
-            <EmptyStateDescription>
-              {entryInvitationErrorMessage(
-                state.error,
-                "Revisa tu conexión y vuelve a intentarlo.",
-              )}
-            </EmptyStateDescription>
-          </EmptyStateCopy>
-          <EmptyStateActions>
-            <Button onClick={onRetry} type="button" variant="outline">
-              Reintentar
-            </Button>
-          </EmptyStateActions>
-        </EmptyState>
-      );
+      return <EntryInvitationLoadError error={state.error} onRetry={onRetry} />;
     case "ready": {
       const { link } = state;
       if (link.state === "unavailable") {
