@@ -56,11 +56,11 @@ export class PostgresBffRateLimiter implements BffRateLimiter {
     const config = this.policies[attempt.policy];
     const windowMs = config.windowSeconds * 1000;
     const windowStartedAt = Math.floor(attempt.nowMs / windowMs) * windowMs;
-    const actorFingerprint = await fingerprintRateLimitSubject(
-      this.fingerprintSecret,
-      "actor",
-      attempt.actorId,
-    );
+    const actorId = attempt.actorId;
+    const actorFingerprint =
+      actorId === null
+        ? null
+        : await fingerprintRateLimitSubject(this.fingerprintSecret, "actor", actorId);
     const retentionCutoff = attempt.nowMs - this.maxPolicyWindowMs;
 
     // Purge and both counters commit together, in a fixed order so concurrent
@@ -68,19 +68,22 @@ export class PostgresBffRateLimiter implements BffRateLimiter {
     const { actorCount, ipCount } = await this.withPostgres((client) =>
       inTransaction(client, async () => {
         await client.query(PURGE_EXPIRED_WINDOWS_SQL, [retentionCutoff]);
-        const actor = await client.query(INCREMENT_WINDOW_SQL, [
-          attempt.policy,
-          "actor",
-          actorFingerprint,
-          windowStartedAt,
-        ]);
+        const actor =
+          actorFingerprint === null
+            ? null
+            : await client.query(INCREMENT_WINDOW_SQL, [
+                attempt.policy,
+                "actor",
+                actorFingerprint,
+                windowStartedAt,
+              ]);
         const ip = await client.query(INCREMENT_WINDOW_SQL, [
           attempt.policy,
           "ip",
           attempt.ipFingerprint,
           windowStartedAt,
         ]);
-        return { actorCount: readCount(actor), ipCount: readCount(ip) };
+        return { actorCount: actor === null ? 0 : readCount(actor), ipCount: readCount(ip) };
       }),
     );
 

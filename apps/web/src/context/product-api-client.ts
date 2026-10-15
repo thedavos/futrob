@@ -44,6 +44,24 @@ export function createProductApiClient(input: {
   });
 }
 
+/**
+ * Server-only SDK client with the service secret and no actor, for actor-free routes such as
+ * a signed-out visitor's invitation preview.
+ */
+export function createServiceProductApiClient(input: {
+  readonly internalJobSecret: string;
+  readonly requestId: RequestId;
+  readonly baseUrl?: string;
+  readonly fetchImpl?: typeof fetch;
+}): FutrobClient {
+  return createFutrobClient({
+    baseUrl: resolveProductApiBaseUrl(input.baseUrl),
+    getAccessToken: () => input.internalJobSecret,
+    getExtraHeaders: () => ({ [REQUEST_ID_HEADER]: input.requestId }),
+    fetchImpl: withUnreachableMapping(input.fetchImpl),
+  });
+}
+
 function withUnreachableMapping(fetchImpl: typeof fetch | undefined): typeof fetch {
   const unbound = fetchImpl ?? globalThis.fetch.bind(globalThis);
   const mappedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {

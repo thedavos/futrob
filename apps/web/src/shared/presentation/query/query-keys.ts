@@ -83,6 +83,8 @@ export const queryKeys = {
       [...queryKeys.competitions.entryInvitations(organizationId, competitionId), "link"] as const,
     entryInvitation: (reference: string) =>
       [...queryKeys.competitions.all, "entry-invitation", reference] as const,
+    publicEntryInvitationLink: (code: string) =>
+      [...queryKeys.competitions.all, "public-entry-invitation-link", code] as const,
     myEntryInvitations: () => [...queryKeys.competitions.all, "my-entry-invitations"] as const,
   },
   teams: {

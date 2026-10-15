@@ -27,6 +27,11 @@ const TEST_POLICIES: BffRateLimitPolicies = {
     actorMaxAttempts: 1,
     ipMaxAttempts: 1,
   },
+  [BFF_RATE_LIMIT_POLICY.invitationPublicPreview]: {
+    windowSeconds: 900,
+    actorMaxAttempts: 1,
+    ipMaxAttempts: 2,
+  },
   [BFF_RATE_LIMIT_POLICY.playerSearch]: {
     windowSeconds: 60,
     actorMaxAttempts: 1,
@@ -37,7 +42,7 @@ const TEST_POLICIES: BffRateLimitPolicies = {
 function attempt(input: Partial<RateLimitAttempt> = {}): RateLimitAttempt {
   return {
     policy: input.policy ?? BFF_RATE_LIMIT_POLICY.eaClubSearch,
-    actorId: input.actorId ?? asActorId("actor-1"),
+    actorId: input.actorId === undefined ? asActorId("actor-1") : input.actorId,
     ipFingerprint: input.ipFingerprint ?? "1".repeat(64),
     nowMs: input.nowMs ?? 12_345,
   };
@@ -68,6 +73,20 @@ describe("PostgresBffRateLimiter transaction", () => {
 
     await expect(limiter.check(attempt())).resolves.toEqual({ outcome: "allowed" });
     expect(statements).toEqual(["BEGIN", "DELETE", "INSERT", "INSERT", "COMMIT"]);
+  });
+
+  it("counts only the IP window for a signed-out attempt", async () => {
+    const { statements, withPostgres } = scriptedClient();
+    const limiter = new PostgresBffRateLimiter({
+      withPostgres,
+      fingerprintSecret: "dedicated-test-secret",
+      policies: TEST_POLICIES,
+    });
+
+    await expect(limiter.check(attempt({ actorId: null }))).resolves.toEqual({
+      outcome: "allowed",
+    });
+    expect(statements).toEqual(["BEGIN", "DELETE", "INSERT", "COMMIT"]);
   });
 
   it("rolls back and rethrows when a statement fails", async () => {
@@ -127,6 +146,22 @@ suite("PostgresBffRateLimiter on Postgres (migration 0043)", () => {
     await expect(limiter.check(attempt())).resolves.toEqual({
       outcome: "limited",
       limitedBy: "actor",
+      retryAfterSeconds: expect.any(Number),
+    });
+  });
+
+  it("limits signed-out attempts by IP alone", async () => {
+    const { limiter } = await createLimiter();
+    const anonymous = attempt({
+      actorId: null,
+      policy: BFF_RATE_LIMIT_POLICY.invitationPublicPreview,
+    });
+    await limiter.check(anonymous);
+    await limiter.check(anonymous);
+
+    await expect(limiter.check(anonymous)).resolves.toEqual({
+      outcome: "limited",
+      limitedBy: "ip",
       retryAfterSeconds: expect.any(Number),
     });
   });

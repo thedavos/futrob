@@ -4,6 +4,7 @@ export const BFF_RATE_LIMIT_POLICY = {
   eaClubSearch: "ea-club-search",
   invitationAccept: "invitation-accept",
   invitationPreview: "invitation-preview",
+  invitationPublicPreview: "invitation-public-preview",
   playerSearch: "player-search",
 } as const;
 
@@ -33,6 +34,12 @@ export const DEFAULT_BFF_RATE_LIMIT_POLICIES = {
     actorMaxAttempts: 5,
     ipMaxAttempts: 5,
   },
+  // Signed-out landing: counted per IP only, and roomier because visitors reload it.
+  [BFF_RATE_LIMIT_POLICY.invitationPublicPreview]: {
+    windowSeconds: 900,
+    actorMaxAttempts: 30,
+    ipMaxAttempts: 30,
+  },
   [BFF_RATE_LIMIT_POLICY.playerSearch]: {
     windowSeconds: 60,
     actorMaxAttempts: 30,
@@ -42,7 +49,8 @@ export const DEFAULT_BFF_RATE_LIMIT_POLICIES = {
 
 export type RateLimitAttempt = Readonly<{
   policy: BffRateLimitPolicy;
-  actorId: ActorId;
+  /** `null` for a signed-out request, which is counted by IP alone. */
+  actorId: ActorId | null;
   ipFingerprint: string;
   nowMs: number;
 }>;
@@ -75,6 +83,11 @@ const POLICY_ENV_KEYS = {
     actorMaxAttempts: "RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX",
     ipMaxAttempts: "RATE_LIMIT_INVITATION_PREVIEW_IP_MAX",
   },
+  [BFF_RATE_LIMIT_POLICY.invitationPublicPreview]: {
+    windowSeconds: "RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS",
+    actorMaxAttempts: "RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX",
+    ipMaxAttempts: "RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX",
+  },
   [BFF_RATE_LIMIT_POLICY.playerSearch]: {
     windowSeconds: "RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS",
     actorMaxAttempts: "RATE_LIMIT_PLAYER_SEARCH_ACTOR_MAX",
@@ -95,6 +108,10 @@ export function parseBffRateLimitPolicies(source: Readonly<Record<string, string
     [BFF_RATE_LIMIT_POLICY.invitationPreview]: policyFromEnv(
       source,
       BFF_RATE_LIMIT_POLICY.invitationPreview,
+    ),
+    [BFF_RATE_LIMIT_POLICY.invitationPublicPreview]: policyFromEnv(
+      source,
+      BFF_RATE_LIMIT_POLICY.invitationPublicPreview,
     ),
     [BFF_RATE_LIMIT_POLICY.playerSearch]: policyFromEnv(source, BFF_RATE_LIMIT_POLICY.playerSearch),
   } satisfies BffRateLimitPolicies;

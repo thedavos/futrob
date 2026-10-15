@@ -4,6 +4,7 @@ import {
   entryInvitationPreviewSchema,
   listMyEntryInvitationsResponseSchema,
   listSentEntryInvitationsResponseSchema,
+  publicEntryInvitationLinkSchema,
   searchEntryInviteesResponseSchema,
   sentEntryInvitationSchema,
   type AcceptEntryInvitationRequest,
@@ -13,6 +14,7 @@ import {
   type InviteTeamCaptainRequest,
   type ListMyEntryInvitationsResponse,
   type ListSentEntryInvitationsResponse,
+  type PublicEntryInvitationLinkDto,
   type SearchEntryInviteesResponse,
   type SentEntryInvitationDto,
 } from "@futrob/api-contracts";
@@ -139,6 +141,11 @@ export function previewEntryInvitation(
   reference: EntryInvitationReference,
 ): Promise<EntryInvitationPreviewDto> {
   return request(referencePath(reference), "GET", entryInvitationPreviewSchema);
+}
+
+/** What a link shows to a signed-out visitor. */
+export function getPublicEntryInvitationLink(code: string): Promise<PublicEntryInvitationLinkDto> {
+  return request(referencePath({ code }, "/public"), "GET", publicEntryInvitationLinkSchema);
 }
 
 export function acceptEntryInvitation(

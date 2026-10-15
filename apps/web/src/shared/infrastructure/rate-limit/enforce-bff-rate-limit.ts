@@ -38,6 +38,9 @@ type RateLimitBindings = Readonly<{
   RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS?: string;
   RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX?: string;
   RATE_LIMIT_INVITATION_PREVIEW_IP_MAX?: string;
+  RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS?: string;
+  RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX?: string;
+  RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX?: string;
   RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS?: string;
   RATE_LIMIT_PLAYER_SEARCH_ACTOR_MAX?: string;
   RATE_LIMIT_PLAYER_SEARCH_IP_MAX?: string;
@@ -75,7 +78,8 @@ export function shouldBypassBffRateLimit(environment: string): boolean {
 export async function enforceBffRateLimit(
   input: Readonly<{
     request: Request;
-    actorId: ActorId;
+    /** `null` for a signed-out request, limited by IP alone. */
+    actorId: ActorId | null;
     requestId: RequestId;
     policy: BffRateLimitPolicy;
   }>,
@@ -134,6 +138,15 @@ export async function enforceBffRateLimit(
           RATE_LIMIT_INVITATION_PREVIEW_IP_MAX:
             bindings.RATE_LIMIT_INVITATION_PREVIEW_IP_MAX ??
             process.env.RATE_LIMIT_INVITATION_PREVIEW_IP_MAX,
+          RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS:
+            bindings.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS ??
+            process.env.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS,
+          RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX:
+            bindings.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX ??
+            process.env.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX,
+          RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX:
+            bindings.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX ??
+            process.env.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX,
           RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS:
             bindings.RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS ??
             process.env.RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS,

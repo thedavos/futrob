@@ -6,6 +6,7 @@ import {
   inviteTeamCaptainRequestSchema,
   listMyEntryInvitationsResponseSchema,
   listSentEntryInvitationsResponseSchema,
+  publicEntryInvitationLinkSchema,
   searchEntryInviteesQuerySchema,
   searchEntryInviteesResponseSchema,
   sentEntryInvitationSchema,
@@ -133,6 +134,17 @@ export function handlePreviewEntryInvitation(
 ): Promise<Response> {
   return respond(request, connect, async (client) =>
     entryInvitationPreviewSchema.parse(await client.entryInvitations.preview(target)),
+  );
+}
+
+/** Signed-out preview of a link; `connect` supplies an actor-free client. */
+export function handlePublicEntryInvitationLink(
+  request: Request,
+  code: string,
+  connect: ConnectProductApi,
+): Promise<Response> {
+  return respond(request, connect, async (client) =>
+    publicEntryInvitationLinkSchema.parse(await client.entryInvitations.previewPublicLink(code)),
   );
 }
 

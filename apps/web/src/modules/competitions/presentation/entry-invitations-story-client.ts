@@ -4,6 +4,7 @@ import type {
   EntryInvitationPreviewDto,
   ListMyEntryInvitationsResponse,
   ListSentEntryInvitationsResponse,
+  PublicEntryInvitationLinkDto,
   SearchEntryInviteesResponse,
   SentEntryInvitationDto,
 } from "@futrob/api-contracts";
@@ -53,6 +54,10 @@ export function listMyEntryInvitations(): Promise<ListMyEntryInvitationsResponse
 }
 
 export function previewEntryInvitation(): Promise<EntryInvitationPreviewDto> {
+  return unavailable();
+}
+
+export function getPublicEntryInvitationLink(): Promise<PublicEntryInvitationLinkDto> {
   return unavailable();
 }
 

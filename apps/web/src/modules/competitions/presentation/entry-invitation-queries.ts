@@ -6,6 +6,7 @@ import {
   acceptEntryInvitation,
   declineEntryInvitation,
   getEntryInvitationLink,
+  getPublicEntryInvitationLink,
   inviteTeamCaptain,
   listMyEntryInvitations,
   listSentEntryInvitations,
@@ -78,6 +79,15 @@ export function useEntryInvitationPreviewQuery(reference: EntryInvitationReferen
   return useQuery({
     queryKey: queryKeys.competitions.entryInvitation(referenceKey(reference)),
     queryFn: () => previewEntryInvitation(reference),
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function usePublicEntryInvitationLinkQuery(code: string) {
+  return useQuery({
+    queryKey: queryKeys.competitions.publicEntryInvitationLink(code),
+    queryFn: () => getPublicEntryInvitationLink(code),
     retry: false,
     refetchOnWindowFocus: false,
   });

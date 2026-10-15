@@ -58,6 +58,11 @@ describe("BffRateLimiter contract", () => {
         actorMaxAttempts: 5,
         ipMaxAttempts: 5,
       },
+      [BFF_RATE_LIMIT_POLICY.invitationPublicPreview]: {
+        windowSeconds: 900,
+        actorMaxAttempts: 30,
+        ipMaxAttempts: 30,
+      },
       [BFF_RATE_LIMIT_POLICY.playerSearch]: {
         windowSeconds: 60,
         actorMaxAttempts: 30,
