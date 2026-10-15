@@ -121,6 +121,35 @@ npm run cli -- help
 
 `apps/cli` has no local Vite+ app config — only root fmt/lint. Do not claim Workers/EA integrations work without direct evidence.
 
+## Verification by change type
+
+- **Code:** run `npm run check`, affected typechecks and relevant tests. `check`
+  includes the [hexagonal import and BC graph rules](vite.config.ts); when changing
+  BC dependencies, update the [documented graph](docs/architecture/dependency-graph.md)
+  and [lint map](tools/oxlint/futrob/shared/bc-graph.ts) together.
+- **HTTP/API contracts:** run the affected contract tests and
+  [route coverage verifier](apps/api/src/http/contract/route-coverage.test.ts).
+  Regenerate OpenAPI with `npm run generate:openapi`, review the artifact diff,
+  then run `npm run openapi:check` once the intended artifacts are staged.
+- **Domain/API behavior:** use [futrob-cli](.agents/skills/futrob-cli/SKILL.md)
+  for relevant offline smokes; run the live API golden path after cross-module changes.
+  Keep the command, output and exit code as evidence.
+- **Persistence/migrations:** run affected adapter/integration tests against Postgres;
+  follow [database-change](.cursor/commands/database-change.md) for schema changes.
+  Report the database-backed results and any skipped prerequisites.
+- **Web flows (UI, auth, onboarding, organizations):** use
+  [verify-futrob](.agents/skills/verify-futrob/SKILL.md) before claiming the flow works.
+  Read its [feature map](.agents/skills/verify-futrob/features/README.md), exercise
+  affected entry points and retain action/result snapshots, screenshots and mutation
+  readbacks in its evidence directory. Report unmapped or blocked paths explicitly.
+- **UI tokens / release:** for token changes run
+  `npm run generate:css:check -w @futrob/ui-tokens`; for web bundle changes run
+  `npm run build` then `npm run bundle:budget`. Use
+  [release-check](.cursor/commands/release-check.md) for release-wide validation.
+
+Finish with checks run, pass/fail/blocked results and evidence paths. Distinguish
+unit/contract results from live integration proof; skipped checks remain unverified.
+
 ## Cursor Cloud specific instructions
 
 Standard commands live in the `## Commands` section above and in `README.md` / `apps/api/README.md`; only the non-obvious startup caveats are captured here.
