@@ -2,7 +2,6 @@ import {
   encounterScheduleSnapshotSchema,
   encounterViewSchema,
   listEncounterCandidatesResponseSchema,
-  upsertEncounterScheduleSnapshotRequestSchema,
 } from "@futrob/api-contracts";
 import { OfficialSelectionForbidden } from "@futrob/results";
 import {
@@ -13,14 +12,17 @@ import {
   type EncounterScheduleSnapshot,
 } from "@futrob/scheduling";
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
 import { apiErrorResponse, failureToHttp } from "@/http/errors.ts";
 import { encounterViewDto } from "@/http/mappers/next-encounter.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+  getEncounterScheduleSnapshotRoute,
+  getEncounterViewRoute,
+  listEncounterCandidatesRoute,
+  upsertEncounterScheduleSnapshotRoute,
+} from "@/http/openapi/routes/encounters.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 /**
@@ -53,11 +55,10 @@ async function scheduleSnapshotResponse(
 }
 
 export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
-  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
 
-  secured.get("/encounters/:encounterId/candidates", async (c) => {
-    const encounterId = asEncounterId(c.req.param("encounterId"));
+  secured.openapi(listEncounterCandidatesRoute, async (c) => {
+    const encounterId = asEncounterId(c.req.valid("param").encounterId);
     const encounter = await deps.modules.scheduling.encounters.findById(encounterId);
     if (!encounter) {
       return apiErrorResponse(404, {
@@ -106,16 +107,17 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
     }
   });
 
-  secured.get("/organizations/:organizationId/encounters/:encounterId", async (c) => {
+  secured.openapi(getEncounterViewRoute, async (c) => {
+    const params = c.req.valid("param");
     const notFound = () =>
       apiErrorResponse(404, {
         code: "scheduling.encounter_not_found",
         messageKey: "errors.scheduling.encounter_not_found",
       });
     const encounter = await deps.modules.scheduling.encounters.findById(
-      asEncounterId(c.req.param("encounterId")),
+      asEncounterId(params.encounterId),
     );
-    if (!encounter || encounter.organizationId !== c.req.param("organizationId")) {
+    if (!encounter || encounter.organizationId !== params.organizationId) {
       return notFound();
     }
     const decision = await deps.modules.authorization.port.decide({
@@ -133,9 +135,9 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(encounterViewSchema.parse(encounterViewDto(view)));
   });
 
-  secured.get("/encounters/:encounterId/schedule-snapshot", async (c) => {
+  secured.openapi(getEncounterScheduleSnapshotRoute, async (c) => {
     const encounter = await deps.modules.scheduling.encounters.findById(
-      asEncounterId(c.req.param("encounterId")),
+      asEncounterId(c.req.valid("param").encounterId),
     );
     if (!encounter) {
       return apiErrorResponse(404, {
@@ -161,30 +163,35 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
     return scheduleSnapshotResponse(deps, encounter);
   });
 
-  secured.put("/encounters/:encounterId/schedule-snapshot", async (c) => {
-    const parsed = upsertEncounterScheduleSnapshotRequestSchema.safeParse(await c.req.json());
-    if (!parsed.success) {
-      return apiErrorResponse(400, {
-        code: "api.validation_failed",
-        messageKey: "errors.api.validation_failed",
+  secured.openapi(
+    upsertEncounterScheduleSnapshotRoute,
+    async (c) => {
+      const parsed = c.req.valid("json");
+      const result = await deps.modules.scheduling.upsertEncounterSchedule.execute({
+        actorId: c.get("actorId"),
+        snapshot: {
+          encounterId: asEncounterId(c.req.valid("param").encounterId),
+          organizationId: asOrganizationId(parsed.organizationId),
+          competitionId: asCompetitionId(parsed.competitionId),
+          stageId: asFixtureStageId(parsed.stageId),
+          homeTeamId: asTeamId(parsed.homeTeamId),
+          awayTeamId: asTeamId(parsed.awayTeamId),
+          scheduledStartAt: new Date(parsed.scheduledStartAt),
+          officialMatchCount: parsed.officialMatchCount,
+        },
       });
-    }
-    const result = await deps.modules.scheduling.upsertEncounterSchedule.execute({
-      actorId: c.get("actorId"),
-      snapshot: {
-        encounterId: asEncounterId(c.req.param("encounterId")),
-        organizationId: asOrganizationId(parsed.data.organizationId),
-        competitionId: asCompetitionId(parsed.data.competitionId),
-        stageId: asFixtureStageId(parsed.data.stageId),
-        homeTeamId: asTeamId(parsed.data.homeTeamId),
-        awayTeamId: asTeamId(parsed.data.awayTeamId),
-        scheduledStartAt: new Date(parsed.data.scheduledStartAt),
-        officialMatchCount: parsed.data.officialMatchCount,
-      },
-    });
-    if (result.isErr()) return failureToHttp(result.error);
-    return scheduleSnapshotResponse(deps, result.value);
-  });
+      if (result.isErr()) return failureToHttp(result.error);
+      return scheduleSnapshotResponse(deps, result.value);
+    },
+    (result) => {
+      if (!result.success) {
+        return apiErrorResponse(400, {
+          code: "api.validation_failed",
+          messageKey: "errors.api.validation_failed",
+        });
+      }
+    },
+  );
 
   app.route("/", secured);
 }

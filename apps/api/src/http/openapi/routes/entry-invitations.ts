@@ -1,4 +1,4 @@
-import { defineRoute, type OpenApiRouteSpec } from "@/http/openapi/define-route.ts";
+import { defineRoute } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
 import {
   AcceptEntryInvitationRequest,
@@ -24,28 +24,6 @@ const ACCEPT_DESCRIPTION =
   "404 `competitions.entry_invitation_not_found`; 409 `competitions.capacity_reached`, " +
   "`competitions.not_editable`, `competitions.entry_invitation_already_decided`, " +
   "`teams.roster_competition_conflict`.";
-
-function acceptRoute(spec: Pick<OpenApiRouteSpec, "path" | "operationId" | "summary" | "params">) {
-  return defineRoute({
-    ...spec,
-    method: "post",
-    tags: ["competitions"],
-    description: ACCEPT_DESCRIPTION,
-    body: AcceptEntryInvitationRequest,
-    success: { status: 201, description: "Team entered", schema: AcceptEntryInvitationResponse },
-    errors: [400, 401, 403, 404, 409, 429],
-  });
-}
-
-function previewRoute(spec: Pick<OpenApiRouteSpec, "path" | "operationId" | "summary" | "params">) {
-  return defineRoute({
-    ...spec,
-    method: "get",
-    tags: ["competitions"],
-    success: { status: 200, description: "Invitation preview", schema: EntryInvitationPreview },
-    errors: [400, 401, 403, 404, 409],
-  });
-}
 
 export const listSentEntryInvitationsRoute = defineRoute({
   method: "get",
@@ -131,18 +109,28 @@ export const listMyEntryInvitationsRoute = defineRoute({
   errors: [401],
 });
 
-export const previewEntryInvitationRoute = previewRoute({
+export const previewEntryInvitationRoute = defineRoute({
+  method: "get",
   path: "/entry-invitations/{invitationId}",
   operationId: "previewEntryInvitation",
+  tags: ["competitions"],
   summary: "Preview a directed invitation",
   params: pathParams(["invitationId"]),
+  success: { status: 200, description: "Invitation preview", schema: EntryInvitationPreview },
+  errors: [400, 401, 403, 404, 409],
 });
 
-export const acceptEntryInvitationRoute = acceptRoute({
+export const acceptEntryInvitationRoute = defineRoute({
+  method: "post",
   path: "/entry-invitations/{invitationId}/accept",
   operationId: "acceptEntryInvitation",
+  tags: ["competitions"],
   summary: "Accept a directed invitation",
+  description: ACCEPT_DESCRIPTION,
   params: pathParams(["invitationId"]),
+  body: AcceptEntryInvitationRequest,
+  success: { status: 201, description: "Team entered", schema: AcceptEntryInvitationResponse },
+  errors: [400, 401, 403, 404, 409, 429],
 });
 
 export const declineEntryInvitationRoute = defineRoute({
@@ -156,16 +144,26 @@ export const declineEntryInvitationRoute = defineRoute({
   errors: [401, 403, 404, 409],
 });
 
-export const previewEntryInvitationLinkRoute = previewRoute({
+export const previewEntryInvitationLinkRoute = defineRoute({
+  method: "get",
   path: "/entry-invitations/links/{code}",
   operationId: "previewEntryInvitationLink",
+  tags: ["competitions"],
   summary: "Preview an invitation link",
   params: pathParams(["code"]),
+  success: { status: 200, description: "Invitation preview", schema: EntryInvitationPreview },
+  errors: [400, 401, 403, 404, 409],
 });
 
-export const acceptEntryInvitationLinkRoute = acceptRoute({
+export const acceptEntryInvitationLinkRoute = defineRoute({
+  method: "post",
   path: "/entry-invitations/links/{code}/accept",
   operationId: "acceptEntryInvitationLink",
+  tags: ["competitions"],
   summary: "Enter a team through an invitation link",
+  description: ACCEPT_DESCRIPTION,
   params: pathParams(["code"]),
+  body: AcceptEntryInvitationRequest,
+  success: { status: 201, description: "Team entered", schema: AcceptEntryInvitationResponse },
+  errors: [400, 401, 403, 404, 409, 429],
 });

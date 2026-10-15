@@ -8,12 +8,16 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
  * Runtime/test config for @futrob/api.
  * Quality (fmt/lint/check, including anti-slop) is owned by the repo-root
  * vite.config.ts. `vp lint` from this package still uses that root config.
+ *
+ * `resolve.dedupe: ["zod"]` is the preferred fix for Vitest dual-zod.
+ * It is not sufficient here; `namedSchema` still patches under `VITEST`.
  */
 export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(rootDir, "src"),
     },
+    dedupe: ["zod"],
     tsconfigPaths: true,
   },
   test: {

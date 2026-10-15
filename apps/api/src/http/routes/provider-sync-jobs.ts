@@ -1,25 +1,22 @@
-import { Hono } from "hono";
-import {
-  enqueueProviderSyncJobRequestSchema,
-  providerSyncJobResponseSchema,
-} from "@futrob/api-contracts";
+import type { Hono } from "hono";
+import { providerSyncJobResponseSchema } from "@futrob/api-contracts";
 import type { ProviderSyncJob } from "@futrob/game-data";
 import type { AppDeps } from "@/app.ts";
 import { currentRequestCorrelation, logCorrelatedInfo } from "@/context/request-correlation.ts";
-import { apiErrorResponse, validationErrorResponse } from "@/http/errors.ts";
-import { createInternalJobAuthMiddleware } from "@/http/middleware/service-auth.ts";
+import { apiErrorResponse } from "@/http/errors.ts";
+import { createInternalOpenApiRouter } from "@/http/openapi/router.ts";
+import {
+  persistProviderSyncJobRoute,
+  recoverNextProviderSyncJobRoute,
+  runProviderSyncJobRoute,
+} from "@/http/openapi/routes/game-data.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
-  const internal = new Hono();
-  internal.use("*", createInternalJobAuthMiddleware(deps.internalJobSecret));
+  const internal = createInternalOpenApiRouter(deps.internalJobSecret);
 
-  internal.post("/internal/game-data/sync-jobs", async (c) => {
-    const parsed = enqueueProviderSyncJobRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-    const input = parsed.data;
+  internal.openapi(persistProviderSyncJobRoute, async (c) => {
+    const input = c.req.valid("json");
     const job = await deps.modules.gameData.enqueueProviderSyncJob.execute({
       organizationId: input.organizationId,
       providerKey: input.providerKey,
@@ -35,13 +32,13 @@ export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(toSyncJobDto(job), 202);
   });
 
-  internal.post("/internal/game-data/sync-jobs/run-next", async () => {
+  internal.openapi(recoverNextProviderSyncJobRoute, async () => {
     const job = await deps.modules.gameData.executeProviderSyncJob.execute();
     return job ? jsonResponse(toSyncJobDto(job)) : new Response(null, { status: 204 });
   });
 
-  internal.post("/internal/game-data/sync-jobs/:jobId/run", async (c) => {
-    const jobId = c.req.param("jobId");
+  internal.openapi(runProviderSyncJobRoute, async (c) => {
+    const jobId = c.req.valid("param").jobId;
     logCorrelatedInfo("provider.sync_job.started", { jobId });
     const job = await deps.modules.gameData.executeProviderSyncJob.execute(jobId);
     logCorrelatedInfo("provider.sync_job.completed", {

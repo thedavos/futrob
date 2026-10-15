@@ -1,17 +1,11 @@
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import {
-  applyToCompetitionRequestSchema,
-  updateCompetitionCoverRequestSchema,
-  updateCompetitionCoverResponseSchema,
   applyToCompetitionResponseSchema,
   getMyCompetitionApplicationResponseSchema,
-  createCompetitionDraftRequestSchema,
   createCompetitionDraftResponseSchema,
-  exploreCompetitionsQuerySchema,
   exploreCompetitionsResponseSchema,
   getCompetitionDraftResponseSchema,
   getExploreCompetitionResponseSchema,
-  getCompetitionRankingsQuerySchema,
   getCompetitionRankingsResponseSchema,
   getCompetitionStandingsResponseSchema,
   getTeamPerformanceRankingResponseSchema,
@@ -19,23 +13,34 @@ import {
   listAccessibleCompetitionsResponseSchema,
   listOrganizationCompetitionsResponseSchema,
   listOrganizationTeamsResponseSchema,
-  updateCompetitionDraftRequestSchema,
+  updateCompetitionCoverResponseSchema,
   updateCompetitionDraftResponseSchema,
 } from "@futrob/api-contracts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { TaggedError, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
+import { apiErrorResponse, failureToHttp, isHttpMappableFailure } from "@/http/errors.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
-  apiErrorResponse,
-  failureToHttp,
-  isHttpMappableFailure,
-  validationErrorResponse,
-} from "@/http/errors.ts";
+  applyToCompetitionRoute,
+  createCompetitionDraftRoute,
+  exploreCompetitionsRoute,
+  getCompetitionDraftRoute,
+  getExploreCompetitionRoute,
+  getMyCompetitionApplicationRoute,
+  listAccessibleCompetitionsRoute,
+  listOrganizationCompetitionsRoute,
+  updateCompetitionCoverRoute,
+  updateCompetitionDraftRoute,
+} from "@/http/openapi/routes/competitions.ts";
 import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+  getCompetitionRankingsRoute,
+  getCompetitionStandingsRoute,
+  getCompetitionTeamStatisticsRoute,
+  getTeamPerformanceRankingRoute,
+} from "@/http/openapi/routes/statistics.ts";
+import { listOrganizationTeamsRoute } from "@/http/openapi/routes/teams.ts";
 import {
   competitionDraftDto,
   competitionDto,
@@ -47,13 +52,10 @@ import { jsonResponse } from "@/utils/http-response.ts";
 import { requireApiPermission } from "@/http/require-api-permission.ts";
 
 export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
-  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
 
-  secured.get("/competitions/explore", async (c) => {
-    const parsed = exploreCompetitionsQuerySchema.safeParse(c.req.query());
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-    const page = await deps.modules.competitions.explore.list(parsed.data);
+  secured.openapi(exploreCompetitionsRoute, async (c) => {
+    const page = await deps.modules.competitions.explore.list(c.req.valid("query"));
     return jsonResponse(
       exploreCompetitionsResponseSchema.parse({
         items: page.items.map(exploreCompetitionDto),
@@ -63,9 +65,9 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/competitions/explore/:competitionId", async (c) => {
+  secured.openapi(getExploreCompetitionRoute, async (c) => {
     const result = await deps.modules.competitions.explore.get(
-      asCompetitionId(c.req.param("competitionId")),
+      asCompetitionId(c.req.valid("param").competitionId),
     );
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
@@ -73,10 +75,10 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/competitions/explore/:competitionId/application", async (c) => {
+  secured.openapi(getMyCompetitionApplicationRoute, async (c) => {
     const application = await deps.modules.competitionApplications.mine({
       actorId: c.get("actorId"),
-      competitionId: asCompetitionId(c.req.param("competitionId")),
+      competitionId: asCompetitionId(c.req.valid("param").competitionId),
     });
     return jsonResponse(
       getMyCompetitionApplicationResponseSchema.parse({
@@ -85,14 +87,13 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.post("/competitions/explore/:competitionId/application", async (c) => {
-    const parsed = applyToCompetitionRequestSchema.safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+  secured.openapi(applyToCompetitionRoute, async (c) => {
+    const parsed = c.req.valid("json");
     const result = await deps.modules.competitionApplications.apply({
       actorId: c.get("actorId"),
-      competitionId: asCompetitionId(c.req.param("competitionId")),
-      teamName: parsed.data.teamName,
-      creationKey: parsed.data.creationKey,
+      competitionId: asCompetitionId(c.req.valid("param").competitionId),
+      teamName: parsed.teamName,
+      creationKey: parsed.creationKey,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
@@ -101,7 +102,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/competitions/mine", async (c) => {
+  secured.openapi(listAccessibleCompetitionsRoute, async (c) => {
     const competitions = await deps.modules.authorization.listAccessibleCompetitions.execute({
       actorId: c.get("actorId"),
     });
@@ -115,8 +116,8 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/organizations/:organizationId/competitions", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
+  secured.openapi(listOrganizationCompetitionsRoute, async (c) => {
+    const organizationId = asOrganizationId(c.req.valid("param").organizationId);
     const forbidden = await requireApiPermission(deps, {
       actorId: c.get("actorId"),
       permission: COMPETITION_PERMISSION.read,
@@ -134,17 +135,12 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.post("/organizations/:organizationId/competitions", async (c) => {
-    const parsed = createCompetitionDraftRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
+  secured.openapi(createCompetitionDraftRoute, async (c) => {
+    const organizationId = asOrganizationId(c.req.valid("param").organizationId);
     const result = await deps.modules.competitions.createDraft.execute({
       organizationId,
       actorId: c.get("actorId"),
-      ...parsed.data,
+      ...c.req.valid("json"),
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
@@ -153,16 +149,13 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.put("/organizations/:organizationId/competitions/:competitionId/cover", async (c) => {
-    const parsed = updateCompetitionCoverRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
+  secured.openapi(updateCompetitionCoverRoute, async (c) => {
+    const params = c.req.valid("param");
     const result = await deps.modules.competitions.updateCover.execute({
       actorId: c.get("actorId"),
-      organizationId: asOrganizationId(c.req.param("organizationId")),
-      competitionId: asCompetitionId(c.req.param("competitionId")),
-      cover: parsed.data.cover,
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+      cover: c.req.valid("json").cover,
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
@@ -170,8 +163,8 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get("/organizations/:organizationId/teams", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
+  secured.openapi(listOrganizationTeamsRoute, async (c) => {
+    const organizationId = asOrganizationId(c.req.valid("param").organizationId);
     const forbidden = await requireApiPermission(deps, {
       actorId: c.get("actorId"),
       permission: TEAM_PERMISSION.read,
@@ -182,9 +175,10 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(listOrganizationTeamsResponseSchema.parse({ teams: teams.map(teamDto) }));
   });
 
-  secured.get("/organizations/:organizationId/competitions/:competitionId", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const competitionId = asCompetitionId(c.req.param("competitionId"));
+  secured.openapi(getCompetitionDraftRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
     const forbidden = await requireApiPermission(deps, {
       actorId: c.get("actorId"),
       permission: COMPETITION_PERMISSION.read,
@@ -205,30 +199,29 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     return jsonResponse(getCompetitionDraftResponseSchema.parse(competitionDraftDto(draft)));
   });
 
-  secured.get(
-    "/organizations/:organizationId/competitions/:competitionId/team-performance-ranking",
-    async (c) => {
-      try {
-        const ranking = await deps.modules.statistics.useCases.getTeamPerformanceRanking.execute({
-          actorId: c.get("actorId"),
-          organizationId: asOrganizationId(c.req.param("organizationId")),
-          competitionId: asCompetitionId(c.req.param("competitionId")),
-        });
-        return jsonResponse(
-          getTeamPerformanceRankingResponseSchema.parse({
-            ranking: ranking ? { ...ranking, updatedAt: ranking.updatedAt.toISOString() } : null,
-          }),
-        );
-      } catch (error) {
-        if (TaggedError.is(error) && isHttpMappableFailure(error)) return failureToHttp(error);
-        throw error;
-      }
-    },
-  );
+  secured.openapi(getTeamPerformanceRankingRoute, async (c) => {
+    const params = c.req.valid("param");
+    try {
+      const ranking = await deps.modules.statistics.useCases.getTeamPerformanceRanking.execute({
+        actorId: c.get("actorId"),
+        organizationId: asOrganizationId(params.organizationId),
+        competitionId: asCompetitionId(params.competitionId),
+      });
+      return jsonResponse(
+        getTeamPerformanceRankingResponseSchema.parse({
+          ranking: ranking ? { ...ranking, updatedAt: ranking.updatedAt.toISOString() } : null,
+        }),
+      );
+    } catch (error) {
+      if (TaggedError.is(error) && isHttpMappableFailure(error)) return failureToHttp(error);
+      throw error;
+    }
+  });
 
-  secured.get("/organizations/:organizationId/competitions/:competitionId/standings", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const competitionId = asCompetitionId(c.req.param("competitionId"));
+  secured.openapi(getCompetitionStandingsRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
     let standings;
     try {
       standings = await deps.modules.statistics.useCases.getCompetitionStandings.execute({
@@ -258,61 +251,57 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.get(
-    "/organizations/:organizationId/competitions/:competitionId/team-statistics",
-    async (c) => {
-      const organizationId = asOrganizationId(c.req.param("organizationId"));
-      const competitionId = asCompetitionId(c.req.param("competitionId"));
-      let teams;
-      try {
-        teams = await deps.modules.statistics.useCases.getCompetitionTeamStatistics.execute({
-          actorId: c.get("actorId"),
-          organizationId,
-          competitionId,
-        });
-      } catch (error) {
-        if (TaggedError.is(error) && isHttpMappableFailure(error)) {
-          return failureToHttp(error);
-        }
-        throw error;
+  secured.openapi(getCompetitionTeamStatisticsRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
+    let teams;
+    try {
+      teams = await deps.modules.statistics.useCases.getCompetitionTeamStatistics.execute({
+        actorId: c.get("actorId"),
+        organizationId,
+        competitionId,
+      });
+    } catch (error) {
+      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
+        return failureToHttp(error);
       }
-      return jsonResponse(
-        getCompetitionTeamStatisticsResponseSchema.parse({
-          teams: teams.map((stats) => ({
-            teamId: stats.teamId,
-            competitionId: stats.competitionId,
-            organizationId: stats.organizationId,
-            matchesPlayed: stats.matchesPlayed,
-            minutes: stats.minutes,
-            totals: stats.totals,
-            averages: stats.averages,
-            per90: stats.per90,
-            partial: stats.partial,
-            sourceRevisionMax: stats.sourceRevisionMax,
-            updatedAt: stats.updatedAt.toISOString(),
-          })),
-        }),
-      );
-    },
-  );
+      throw error;
+    }
+    return jsonResponse(
+      getCompetitionTeamStatisticsResponseSchema.parse({
+        teams: teams.map((stats) => ({
+          teamId: stats.teamId,
+          competitionId: stats.competitionId,
+          organizationId: stats.organizationId,
+          matchesPlayed: stats.matchesPlayed,
+          minutes: stats.minutes,
+          totals: stats.totals,
+          averages: stats.averages,
+          per90: stats.per90,
+          partial: stats.partial,
+          sourceRevisionMax: stats.sourceRevisionMax,
+          updatedAt: stats.updatedAt.toISOString(),
+        })),
+      }),
+    );
+  });
 
-  secured.get("/organizations/:organizationId/competitions/:competitionId/rankings", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const competitionId = asCompetitionId(c.req.param("competitionId"));
-    const query = getCompetitionRankingsQuerySchema.safeParse({
-      kind: c.req.query("kind") || undefined,
-    });
-    if (!query.success) return validationErrorResponse(query.error.issues);
+  secured.openapi(getCompetitionRankingsRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
+    const query = c.req.valid("query");
     let rankings;
     try {
       rankings = await deps.modules.statistics.useCases.getCompetitionRankings.execute(
-        query.data.kind === undefined
+        query.kind === undefined
           ? { actorId: c.get("actorId"), organizationId, competitionId }
           : {
               actorId: c.get("actorId"),
               organizationId,
               competitionId,
-              kind: query.data.kind,
+              kind: query.kind,
             },
       );
     } catch (error) {
@@ -337,18 +326,15 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.patch("/organizations/:organizationId/competitions/:competitionId", async (c) => {
-    const parsed = updateCompetitionDraftRequestSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
-    const competitionId = asCompetitionId(c.req.param("competitionId"));
+  secured.openapi(updateCompetitionDraftRoute, async (c) => {
+    const params = c.req.valid("param");
+    const organizationId = asOrganizationId(params.organizationId);
+    const competitionId = asCompetitionId(params.competitionId);
     const result = await deps.modules.competitions.updateDraft.execute({
       actorId: c.get("actorId"),
       organizationId,
       competitionId,
-      ...parsed.data,
+      ...c.req.valid("json"),
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(

@@ -1,15 +1,10 @@
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import {
-  completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
-  inspectCompetitionInvitationRequestSchema,
   inspectCompetitionInvitationResponseSchema,
-  completeOrganizationOnboardingRequestSchema,
   completeOrganizationOnboardingResponseSchema,
-  completePlayerOnboardingRequestSchema,
   completePlayerOnboardingResponseSchema,
   getOnboardingStatusResponseSchema,
-  saveOnboardingProgressRequestSchema,
   saveOnboardingProgressResponseSchema,
   type OnboardingPathDto,
   type PlayerGameAccountInputDto,
@@ -25,31 +20,31 @@ import type {
   PlayerProfile,
 } from "@futrob/teams";
 import type { AppDeps } from "@/app.ts";
-import {
-  apiErrorResponse,
-  failureToHttp,
-  isHttpMappableFailure,
-  validationErrorResponse,
-} from "@/http/errors.ts";
+import { apiErrorResponse, failureToHttp, isHttpMappableFailure } from "@/http/errors.ts";
 import { TaggedError } from "@futrob/shared-kernel";
-import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
 import {
   playerExternalClubAssociationDto,
   playerGameAccountDto,
   playerProfileDto,
 } from "@/http/mappers/player.ts";
 import { competitionDraftDto } from "@/http/mappers/competition.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
+import {
+  completeInvitationOnboardingRoute,
+  completeOrganizationOnboardingRoute,
+  completePlayerOnboardingRoute,
+  getOnboardingStatusRoute,
+  inspectCompetitionInvitationRoute,
+  saveOnboardingProgressRoute,
+} from "@/http/openapi/routes/identity.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
   const { competitions, gameData, identity, organizations, teams, transaction } = deps.modules;
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
-  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
 
-  secured.get("/identity/onboarding", async (c) => {
+  secured.openapi(getOnboardingStatusRoute, async (c) => {
     const status = await identity.getOnboardingStatus.execute({ actorId: c.get("actorId") });
     return jsonResponse(
       getOnboardingStatusResponseSchema.parse({
@@ -59,15 +54,12 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.patch("/identity/onboarding", async (c) => {
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = saveOnboardingProgressRequestSchema.safeParse(json);
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(saveOnboardingProgressRoute, async (c) => {
+    const body = c.req.valid("json");
     const status = await identity.saveOnboardingProgress.execute({
       actorId: c.get("actorId"),
-      path: parsed.data.path,
-      currentStep: parsed.data.currentStep,
+      path: body.path,
+      currentStep: body.currentStep,
     });
     return jsonResponse(
       saveOnboardingProgressResponseSchema.parse({
@@ -77,11 +69,8 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.post("/identity/onboarding/organization", async (c) => {
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = completeOrganizationOnboardingRequestSchema.safeParse(json);
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(completeOrganizationOnboardingRoute, async (c) => {
+    const parsed = c.req.valid("json");
     const actorId = c.get("actorId");
     const conflict = await onboardingPathConflict(identity, actorId, "organization");
     if (conflict) return conflict;
@@ -89,9 +78,9 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     try {
       const body = await transaction.runInTransaction(async () => {
         const result = await organizations.createOrganization.execute({
-          name: parsed.data.name,
+          name: parsed.name,
           actorId,
-          timeZone: parsed.data.competition.timeZone,
+          timeZone: parsed.competition.timeZone,
           creationKey: `onboarding:organization:${actorId}`,
         });
         if (!result.isOk()) throw result.error;
@@ -99,12 +88,12 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
         const competition = await competitions.createDraft.execute({
           organizationId: result.value.organization.id,
           actorId,
-          ...parsed.data.competition,
+          ...parsed.competition,
           creationKey: `onboarding:competition:${actorId}`,
         });
         if (!competition.isOk()) throw competition.error;
 
-        const player = await ensurePlayer(teams, actorId, parsed.data.gameAccount ?? null);
+        const player = await ensurePlayer(teams, actorId, parsed.gameAccount ?? null);
         if (!player.ok) throw player.error;
 
         await identity.completeOnboarding.execute({ actorId, path: "organization" });
@@ -130,11 +119,8 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     }
   });
 
-  secured.post("/identity/onboarding/invitation", async (c) => {
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = completeInvitationOnboardingRequestSchema.safeParse(json);
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(completeInvitationOnboardingRoute, async (c) => {
+    const parsed = c.req.valid("json");
     const actorId = c.get("actorId");
     const conflict = await onboardingPathConflict(identity, actorId, "invitation");
     if (conflict) return conflict;
@@ -142,7 +128,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     try {
       const body = await transaction.runInTransaction(async () => {
         const result = await organizations.acceptInvitation.execute({
-          token: parsed.data.token,
+          token: parsed.token,
           actorId,
           requireCompetition: true,
         });
@@ -167,7 +153,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
         });
         if (!joined.isOk()) throw joined.error;
 
-        const player = await ensurePlayer(teams, actorId, parsed.data.gameAccount ?? null);
+        const player = await ensurePlayer(teams, actorId, parsed.gameAccount ?? null);
         if (!player.ok) throw player.error;
 
         await identity.completeOnboarding.execute({ actorId, path: "invitation" });
@@ -196,13 +182,10 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     }
   });
 
-  secured.post("/identity/onboarding/invitation/preview", async (c) => {
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = inspectCompetitionInvitationRequestSchema.safeParse(json);
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(inspectCompetitionInvitationRoute, async (c) => {
+    const parsed = c.req.valid("json");
     const inspected = await organizations.inspectCompetitionInvitation.execute({
-      token: parsed.data.token,
+      token: parsed.token,
       actorId: c.get("actorId"),
     });
     if (!inspected.isOk()) return failureToHttp(inspected.error);
@@ -227,16 +210,13 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     );
   });
 
-  secured.post("/identity/onboarding/player", async (c) => {
-    const json: unknown = await c.req.json().catch(() => null);
-    const parsed = completePlayerOnboardingRequestSchema.safeParse(json);
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-
+  secured.openapi(completePlayerOnboardingRoute, async (c) => {
+    const parsed = c.req.valid("json");
     const actorId = c.get("actorId");
     const conflict = await onboardingPathConflict(identity, actorId, "player");
     if (conflict) return conflict;
 
-    const locator = parsed.data.externalClub ?? null;
+    const locator = parsed.externalClub ?? null;
     let resolvedClub: ExternalClub | null = null;
     if (locator) {
       const resolved = await gameData.getExternalClub.execute(locator.providerKey, {
@@ -250,7 +230,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
 
     try {
       const body = await transaction.runInTransaction(async () => {
-        const player = await ensurePlayer(teams, actorId, parsed.data.gameAccount ?? null);
+        const player = await ensurePlayer(teams, actorId, parsed.gameAccount ?? null);
         if (!player.ok) throw player.error;
 
         let externalClubs: PlayerExternalClubAssociation[] = [];

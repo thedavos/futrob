@@ -5,6 +5,7 @@ import {
   changeOrganizationRoleRequestSchema,
   changeCompetitionRoleRequestSchema,
   competitionRoleAssignmentSchema,
+  manageSuperuserRequestSchema,
 } from "@futrob/api-contracts";
 import { namedSchema } from "@/http/openapi/named-schema.ts";
 
@@ -25,4 +26,8 @@ export const ChangeCompetitionRoleRequest = namedSchema(
 export const CompetitionRoleAssignment = namedSchema(
   "CompetitionRoleAssignment",
   competitionRoleAssignmentSchema,
+);
+export const ManageSuperuserRequest = namedSchema(
+  "ManageSuperuserRequest",
+  manageSuperuserRequestSchema,
 );

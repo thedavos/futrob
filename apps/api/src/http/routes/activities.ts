@@ -1,18 +1,15 @@
-import { Hono } from "hono";
-import {
-  listActivitiesQuerySchema,
-  listActivitiesResponseSchema,
-  type ActivityEntryDto,
-} from "@futrob/api-contracts";
+import type { Hono } from "hono";
+import { listActivitiesResponseSchema, type ActivityEntryDto } from "@futrob/api-contracts";
 import type { ActivityAudienceScope, ActivityEntry } from "@futrob/notifications";
 import { RESULT_PERMISSION } from "@futrob/results";
-import { asOrganizationId, type ActorId, type OrganizationId } from "@futrob/shared-kernel";
+import { asOrganizationId, type ActorId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
-import { failureToHttp, validationErrorResponse } from "@/http/errors.ts";
+import { failureToHttp } from "@/http/errors.ts";
+import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
-  createServiceAuthMiddleware,
-  type ServiceAuthVariables,
-} from "@/http/middleware/service-auth.ts";
+  listMyActivitiesRoute,
+  listOrganizationActivitiesRoute,
+} from "@/http/openapi/routes/notifications.ts";
 import { requireApiPermission } from "@/http/require-api-permission.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
@@ -42,32 +39,7 @@ function activityDto(entry: ActivityEntry): ActivityEntryDto {
  * represents as captain or vice-captain.
  */
 export function registerActivityRoutes(app: Hono, deps: AppDeps): void {
-  const secured = new Hono<{ Variables: ServiceAuthVariables }>();
-  secured.use("*", createServiceAuthMiddleware(deps.internalJobSecret));
-
-  /** `organizationId` comes from the path on the organization feed, never from the query. */
-  async function list(
-    query: Record<string, string>,
-    audiences: readonly ActivityAudienceScope[],
-    pathOrganizationId?: OrganizationId,
-  ): Promise<Response> {
-    const parsed = listActivitiesQuerySchema.safeParse(query);
-    if (!parsed.success) return validationErrorResponse(parsed.error.issues);
-    const { organizationId, ...filters } = parsed.data;
-    const result = await deps.modules.notifications.listActivities.execute({
-      audiences,
-      ...filters,
-      organizationId:
-        pathOrganizationId ?? (organizationId ? asOrganizationId(organizationId) : undefined),
-    });
-    if (!result.isOk()) return failureToHttp(result.error);
-    return jsonResponse(
-      listActivitiesResponseSchema.parse({
-        activities: result.value.items.map(activityDto),
-        nextCursor: result.value.nextCursor ?? null,
-      }),
-    );
-  }
+  const secured = createServiceOpenApiRouter(deps.internalJobSecret);
 
   /**
    * Teams the actor speaks for, each only in the competition where the roster gives that
@@ -89,27 +61,44 @@ export function registerActivityRoutes(app: Hono, deps: AppDeps): void {
       }));
   }
 
-  secured.get("/organizations/:organizationId/activities", async (c) => {
-    const organizationId = asOrganizationId(c.req.param("organizationId"));
+  secured.openapi(listOrganizationActivitiesRoute, async (c) => {
+    const organizationId = asOrganizationId(c.req.valid("param").organizationId);
     const forbidden = await requireApiPermission(deps, {
       actorId: c.get("actorId"),
       permission: RESULT_PERMISSION.resultApprove,
       scope: { organizationId },
     });
     if (forbidden) return forbidden;
-    return list(
-      c.req.query(),
-      [{ audience: "organization", audienceId: organizationId }],
+    const filters = c.req.valid("query");
+    const result = await deps.modules.notifications.listActivities.execute({
+      audiences: [{ audience: "organization", audienceId: organizationId }],
+      ...filters,
       organizationId,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      listActivitiesResponseSchema.parse({
+        activities: result.value.items.map(activityDto),
+        nextCursor: result.value.nextCursor ?? null,
+      }),
     );
   });
 
-  secured.get("/players/me/activities", async (c) => {
+  secured.openapi(listMyActivitiesRoute, async (c) => {
     const actorId = c.get("actorId");
-    return list(c.req.query(), [
-      { audience: "actor", audienceId: actorId },
-      ...(await representedTeams(actorId)),
-    ]);
+    const { organizationId, ...filters } = c.req.valid("query");
+    const result = await deps.modules.notifications.listActivities.execute({
+      audiences: [{ audience: "actor", audienceId: actorId }, ...(await representedTeams(actorId))],
+      ...filters,
+      organizationId: organizationId ? asOrganizationId(organizationId) : undefined,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      listActivitiesResponseSchema.parse({
+        activities: result.value.items.map(activityDto),
+        nextCursor: result.value.nextCursor ?? null,
+      }),
+    );
   });
 
   app.route("/", secured);

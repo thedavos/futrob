@@ -6,6 +6,7 @@ import {
   ChangeOrganizationRoleRequest,
   CompetitionRoleAssignment,
   EffectiveAccess,
+  ManageSuperuserRequest,
   UpsertAccessGrantRequest,
 } from "@/http/openapi/components.ts";
 import {
@@ -13,6 +14,7 @@ import {
   getEffectiveAccessQuerySchema,
   listAccessGrantsQuerySchema,
   listAccessGrantsResponseSchema,
+  manageSuperuserRequestSchema,
 } from "@futrob/api-contracts";
 
 export const getEffectiveAccessRoute = defineRoute({
@@ -99,8 +101,9 @@ export const assignSuperuserRoute = defineRoute({
   tags: ["authorization"],
   summary: "Assign an audited platform superuser",
   params: pathParams(["actorId"]),
+  body: ManageSuperuserRequest,
   success: { status: 200, description: "Assigned superuser" },
-  errors: [403],
+  errors: [400, 403],
 });
 
 export const revokeSuperuserRoute = defineRoute({
@@ -110,6 +113,7 @@ export const revokeSuperuserRoute = defineRoute({
   tags: ["authorization"],
   summary: "Revoke an audited platform superuser",
   params: pathParams(["actorId"]),
+  query: manageSuperuserRequestSchema,
   success: { status: 204, description: "Revoked superuser" },
-  errors: [403, 409],
+  errors: [400, 403, 409],
 });
