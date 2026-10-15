@@ -309,9 +309,11 @@ export const LinkLoading: Story = {
   args: { initialTab: INVITE_TEAM_TAB.link, link: { kind: "loading" } },
   play: async ({ canvasElement }) => {
     const body = screen(canvasElement);
-    await expect(await body.findByLabelText("Cargando enlace")).toBeVisible();
-    await expect(body.getByRole("button", { name: "Copiar enlace" })).toBeDisabled();
-    await expect(body.getByRole("button", { name: "Regenerar enlace" })).toBeDisabled();
+    await expect(await body.findByRole("status", { name: "Cargando enlace" })).toBeVisible();
+    await expect(body.getByText("Preparando el enlace")).toBeVisible();
+    await expect(body.queryByRole("button", { name: "Copiar enlace" })).toBeNull();
+    await expect(body.queryByRole("button", { name: "Regenerar enlace" })).toBeNull();
+    await expect(body.getByRole("button", { name: "Listo" })).toBeEnabled();
   },
 };
 

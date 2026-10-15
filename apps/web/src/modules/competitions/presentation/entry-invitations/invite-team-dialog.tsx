@@ -32,12 +32,13 @@ const styles = stylex.create({
     display: "grid",
     gridTemplateColumns: "auto minmax(0, 1fr)",
     alignItems: "start",
-    columnGap: "1rem",
-    rowGap: "0.5rem",
+    columnGap: "0.75rem",
   },
+  // 24 px glyph centred on the title's first line instead of towering over it.
   icon: {
-    width: "2.5rem",
-    height: "2.5rem",
+    width: "1.5rem",
+    height: "1.5rem",
+    marginTop: "-0.125rem",
     color: colors.foreground,
   },
   headerText: {
@@ -49,18 +50,24 @@ const styles = stylex.create({
     marginTop: "1.25rem",
     gap: "1.25rem",
   },
+  // The popover surface shares `muted` with the default pills track, so sink the track and
+  // raise the active pill to the dialog surface.
   list: {
     width: "100%",
+    backgroundColor: colors.background,
   },
   trigger: {
     flexGrow: 1,
+    backgroundColor: {
+      default: "transparent",
+      ":is([data-active])": colors.surfaceRaised,
+    },
+  },
+  // `tabs.gap` already separates the list; the dialog padding closes the panel.
+  panel: {
+    paddingBlock: 0,
   },
 });
-
-const content = applyStyles(styles.content);
-const tabs = applyStyles(styles.tabs);
-const list = applyStyles(styles.list);
-const trigger = applyStyles(styles.trigger);
 
 export interface InviteTeamDialogProps {
   readonly open: boolean;
@@ -99,7 +106,7 @@ export function InviteTeamDialog({
 }: InviteTeamDialogProps) {
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className={content.className} style={content.style}>
+      <DialogContent className={styles.content}>
         <DialogHeader>
           <div {...applyStyles(styles.header)}>
             <ShieldPlusIcon aria-hidden="true" {...applyStyles(styles.icon)} />
@@ -115,41 +122,32 @@ export function InviteTeamDialog({
           </div>
         </DialogHeader>
         <Tabs
-          className={tabs.className}
+          className={styles.tabs}
           onValueChange={(value) => {
             if (value === INVITE_TEAM_TAB.futrob || value === INVITE_TEAM_TAB.link) {
               onTabChange(value);
             }
           }}
-          style={tabs.style}
           value={tab}
           variant="pills"
         >
-          <TabsList aria-label="Forma de invitar" className={list.className} style={list.style}>
-            <TabsTrigger
-              className={trigger.className}
-              style={trigger.style}
-              value={INVITE_TEAM_TAB.futrob}
-            >
+          <TabsList aria-label="Forma de invitar" className={styles.list}>
+            <TabsTrigger className={styles.trigger} value={INVITE_TEAM_TAB.futrob}>
               Equipo en Futrob
             </TabsTrigger>
-            <TabsTrigger
-              className={trigger.className}
-              style={trigger.style}
-              value={INVITE_TEAM_TAB.link}
-            >
+            <TabsTrigger className={styles.trigger} value={INVITE_TEAM_TAB.link}>
               Por enlace
             </TabsTrigger>
             <TabsIndicator />
           </TabsList>
-          <TabsContent value={INVITE_TEAM_TAB.futrob}>
+          <TabsContent className={styles.panel} value={INVITE_TEAM_TAB.futrob}>
             <InviteTeamFutrobTab
               onInvite={onInvite}
               platformLabel={platformLabel}
               searchPlayers={searchPlayers}
             />
           </TabsContent>
-          <TabsContent value={INVITE_TEAM_TAB.link}>
+          <TabsContent className={styles.panel} value={INVITE_TEAM_TAB.link}>
             <InviteTeamLinkTab link={link} onRegenerate={onRegenerateLink} onRetry={onRetryLink} />
           </TabsContent>
         </Tabs>

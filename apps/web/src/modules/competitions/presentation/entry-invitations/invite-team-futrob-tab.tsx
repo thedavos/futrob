@@ -185,21 +185,24 @@ export function InviteTeamFutrobTab({
         </Alert>
       ) : null}
       {selected ? (
-        <div {...applyStyles(styles.body)}>
-          <InviteeCandidateCard candidate={selected} platformLabel={platformLabel} selected />
-          <div>
+        <InviteeCandidateCard
+          action={
             <Button
+              aria-label="Cambiar jugador"
               onClick={() => {
                 setSelected(null);
                 setError(null);
               }}
               type="button"
-              variant="link"
+              variant="ghost"
             >
-              Cambiar jugador
+              Cambiar
             </Button>
-          </div>
-        </div>
+          }
+          candidate={selected}
+          platformLabel={platformLabel}
+          selected
+        />
       ) : (
         <Field>
           <FieldLabel htmlFor={ids.search}>Buscar capitán</FieldLabel>

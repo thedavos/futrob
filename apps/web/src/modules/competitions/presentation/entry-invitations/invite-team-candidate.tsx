@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { EntryInviteeCandidateDto, GamePlatformDto } from "@futrob/api-contracts";
 import { applyStyles, Badge, Skeleton, typography } from "@futrob/ui";
@@ -14,6 +15,10 @@ export type InviteeSearchState =
   | { readonly kind: "error" };
 
 const styles = stylex.create({
+  // Keeps the `aria-controls` target without adding an empty grid row (and a doubled gap).
+  idle: {
+    display: "contents",
+  },
   results: {
     display: "grid",
     gap: "0.5rem",
@@ -113,7 +118,7 @@ export function InviteeSearchResults({
 }) {
   switch (state.kind) {
     case "idle":
-      return <div id={id} />;
+      return <div id={id} {...applyStyles(styles.idle)} />;
     case "loading":
       return (
         <div aria-busy="true" aria-label="Buscando jugadores" id={id} role="status">
@@ -165,11 +170,14 @@ export function InviteeCandidateCard({
   platformLabel,
   selected = false,
   onSelect,
+  action,
 }: {
   readonly candidate: EntryInviteeCandidateDto;
   readonly platformLabel: (platform: GamePlatformDto) => string;
   readonly selected?: boolean;
   readonly onSelect?: () => void;
+  /** Control shown at the end of a selected (non-interactive) card, e.g. to change the pick. */
+  readonly action?: ReactNode;
 }) {
   const title = candidate.club?.name ?? candidate.gamertag;
   const unavailable = unavailableReason(candidate);
@@ -194,6 +202,7 @@ export function InviteeCandidateCard({
       </span>
       {unavailable ? <Badge variant="neutral">{unavailable}</Badge> : null}
       {selected ? <CheckCircleIcon aria-hidden="true" {...applyStyles(styles.check)} /> : null}
+      {selected ? action : null}
     </>
   );
   if (!onSelect) {
