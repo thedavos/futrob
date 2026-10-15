@@ -53,6 +53,13 @@ caracteres, máximo 10 resultados). El resultado muestra el club EA que declaró
 Todo corre en una transacción. Un reintento con la misma `creationKey` devuelve la misma
 inscripción.
 
+**Vista previa pública del enlace.** Quien abre el enlace sin sesión ve la competición antes
+de crear cuenta. La API la sirve en `/internal/entry-invitations/links/{code}/public`, con el
+secreto de servicio y sin actor. Solo devuelve nombre, organización, edición y plataforma, o
+`unavailable` con motivo `invalid` (código desconocido o revocado, sin distinguirlos) o
+`closed` (la competición ya no admite equipos). El BFF la limita solo por IP con su propia
+política. Aceptar sigue exigiendo sesión.
+
 **Permisos.** Invitar, listar, revocar, gestionar el enlace y buscar jugadores exigen
 `competitions.invitations.manage`, además de la guarda `canEditParticipants`. Aceptar no
 exige permisos de organización: como en ADR-0019, el capitán gana acceso por su plantilla en

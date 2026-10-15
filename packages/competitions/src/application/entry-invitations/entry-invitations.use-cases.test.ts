@@ -12,6 +12,7 @@ import { FakeCompetitionRepository } from "../fake-competition-repository.test-h
 import {
   EnsureEntryInvitationLinkUseCase,
   RegenerateEntryInvitationLinkUseCase,
+  ResolvePublicEntryInvitationLinkUseCase,
 } from "./entry-invitation-link.use-cases.ts";
 import { FakeEntryInvitationRepository } from "./fake-entry-invitation-repository.test-helper.ts";
 import { InviteTeamCaptainUseCase } from "./invite-team-captain.use-case.ts";
@@ -83,6 +84,9 @@ function harness(options: { status?: CompetitionStatus; authorization?: Authoriz
   const authorization = options.authorization ?? allowAllAuthorization;
   const deps = { authorization, competitions, invitations, clock, ids, codes };
   return {
+    publish() {
+      void competitions.saveDraft(draft("published"));
+    },
     advanceDays(days: number) {
       now = new Date(createdAt.getTime() + days * 24 * 60 * 60 * 1000);
     },
@@ -93,6 +97,7 @@ function harness(options: { status?: CompetitionStatus; authorization?: Authoriz
     listSent: new ListCompetitionEntryInvitationsUseCase(deps),
     listMine: new ListMyEntryInvitationsUseCase(invitations),
     resolve: new ResolveEntryInvitationUseCase(deps),
+    resolvePublicLink: new ResolvePublicEntryInvitationLinkUseCase(deps),
     recordAcceptance: new RecordEntryInvitationAcceptanceUseCase(deps),
     decline: new DeclineEntryInvitationUseCase(deps),
   };
@@ -309,5 +314,47 @@ describe("the competition invitation link", () => {
     const resolved = await app.resolve.execute({ actorId: condor, reference: { code: "nope" } });
 
     expect(errorCode(resolved)).toBe("competitions.entry_invitation_not_found");
+  });
+});
+
+describe("the public view of an invitation link", () => {
+  it("shows the competition to a visitor who is not signed in", async () => {
+    const app = harness();
+    await app.ensureLink.execute(scope);
+
+    const resolved = await app.resolvePublicLink.execute({ code: " code-1 " });
+
+    expect(resolved.isOk() && resolved.value.competition.name).toBe("Liga Interclubes");
+  });
+
+  it("is unknown for a code that was never issued or belongs to a directed invitation", async () => {
+    const app = harness();
+    const directed = await inviteCondor(app);
+
+    const unknown = await app.resolvePublicLink.execute({ code: "nope" });
+    const byId = await app.resolvePublicLink.execute({ code: directed.id });
+
+    expect(errorCode(unknown)).toBe("competitions.entry_invitation_not_found");
+    expect(errorCode(byId)).toBe("competitions.entry_invitation_not_found");
+  });
+
+  it("reports a regenerated link as revoked", async () => {
+    const app = harness();
+    await app.ensureLink.execute(scope);
+    await app.regenerateLink.execute(scope);
+
+    const resolved = await app.resolvePublicLink.execute({ code: "code-1" });
+
+    expect(errorCode(resolved)).toBe("competitions.entry_invitation_revoked");
+  });
+
+  it("reports the competition as closed once it no longer admits teams", async () => {
+    const app = harness();
+    await app.ensureLink.execute(scope);
+    app.publish();
+
+    const resolved = await app.resolvePublicLink.execute({ code: "code-1" });
+
+    expect(errorCode(resolved)).toBe("competitions.not_editable");
   });
 });

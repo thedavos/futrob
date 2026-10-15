@@ -3,10 +3,12 @@ import {
   completeOrganizationOnboardingResponseSchema,
   entryInvitationLinkResponseSchema,
   listActivitiesResponseSchema,
+  publicEntryInvitationLinkSchema,
   sentEntryInvitationSchema,
 } from "@futrob/api-contracts";
 import {
   buildApp,
+  INTERNAL_JOB_SECRET,
   onboardingCompetition,
   serviceHeaders,
   stubFetch,
@@ -275,6 +277,126 @@ describe("apps/api http entry invitations", () => {
     const oldLink = await app.request(linkPath, { headers: serviceHeaders("actor-link-c") });
     expect(oldLink.status).toBe(400);
     expect(await oldLink.json()).toMatchObject({ code: "competitions.entry_invitation_revoked" });
+  });
+
+  it("shows a link to a signed-out visitor until it is regenerated or the competition starts", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-entry-organizer-6";
+    const { organizationId, competitionId, base } = await competition(app, organizer, {
+      min: 2,
+      max: 2,
+    });
+    const link = await parseResponse(
+      entryInvitationLinkResponseSchema,
+      await post(app, `${base}/link`, organizer),
+    );
+    const visit = (code: string) =>
+      app.request(`/api/v1/internal/entry-invitations/links/${code}/public`, {
+        headers: { Authorization: `Bearer ${INTERNAL_JOB_SECRET}` },
+      });
+
+    expect(
+      await parseResponse(publicEntryInvitationLinkSchema, await visit(link.link.code)),
+    ).toEqual({
+      state: "open",
+      competition: {
+        name: "Liga Interclubes",
+        organizationName: `Org ${organizer}`,
+        platform: onboardingCompetition.platform,
+        gameEdition: onboardingCompetition.gameEdition,
+      },
+    });
+    expect(
+      await parseResponse(publicEntryInvitationLinkSchema, await visit("unknown-code")),
+    ).toEqual({ state: "unavailable", reason: "invalid" });
+    const anonymous = await app.request(
+      `/api/v1/internal/entry-invitations/links/${link.link.code}/public`,
+    );
+    expect(anonymous.status).toBe(401);
+
+    for (const [actor, team] of [
+      ["actor-public-a", "Alfa"],
+      ["actor-public-b", "Beta"],
+    ] as const) {
+      const joined = await post(
+        app,
+        `/api/v1/entry-invitations/links/${link.link.code}/accept`,
+        actor,
+        {
+          teamName: team,
+          creationKey: `public-accept-${team}`,
+        },
+      );
+      expect(joined.status).toBe(201);
+    }
+    const published = await post(
+      app,
+      `/api/v1/organizations/${organizationId}/competitions/${competitionId}/publish`,
+      organizer,
+    );
+    expect(published.status).toBe(200);
+    expect(
+      await parseResponse(publicEntryInvitationLinkSchema, await visit(link.link.code)),
+    ).toEqual({ state: "unavailable", reason: "closed" });
+  });
+
+  it("reports a regenerated link as invalid to a signed-out visitor", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-entry-organizer-7";
+    const { base } = await competition(app, organizer);
+    const link = await parseResponse(
+      entryInvitationLinkResponseSchema,
+      await post(app, `${base}/link`, organizer),
+    );
+    await post(app, `${base}/link/regenerate`, organizer);
+
+    const visit = await app.request(
+      `/api/v1/internal/entry-invitations/links/${link.link.code}/public`,
+      { headers: { Authorization: `Bearer ${INTERNAL_JOB_SECRET}` } },
+    );
+
+    expect(await parseResponse(publicEntryInvitationLinkSchema, visit)).toEqual({
+      state: "unavailable",
+      reason: "invalid",
+    });
+  });
+
+  it("offers every EA club the player declared as a name for the team", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-entry-organizer-8";
+    const captain = "actor-entry-two-clubs";
+    const { base } = await competition(app, organizer);
+    await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(captain),
+      body: JSON.stringify({ gameAccount: null }),
+    });
+    for (const [externalClubId, name] of [
+      ["10754", "Fera Enjaulada"],
+      ["20001", "Cóndor FC"],
+    ] as const) {
+      const declared = await post(app, "/api/v1/players/me/external-club", captain, {
+        providerKey: "ea-clubs",
+        externalClubId,
+        platform: "common-gen5",
+        gameEdition: "fc26",
+        name,
+        imageUrl: null,
+      });
+      expect(declared.status).toBeLessThan(300);
+    }
+    const link = await parseResponse(
+      entryInvitationLinkResponseSchema,
+      await post(app, `${base}/link`, organizer),
+    );
+
+    const preview = await app.request(`/api/v1/entry-invitations/links/${link.link.code}`, {
+      headers: serviceHeaders(captain),
+    });
+
+    expect(await preview.json()).toMatchObject({
+      suggestedTeamNames: expect.arrayContaining(["Fera Enjaulada", "Cóndor FC"]),
+    });
   });
 
   it("keeps invitations to the competition's operators", async () => {

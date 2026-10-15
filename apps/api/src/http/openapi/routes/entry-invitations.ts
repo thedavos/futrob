@@ -8,6 +8,7 @@ import {
   InviteTeamCaptainRequest,
   ListMyEntryInvitationsResponse,
   ListSentEntryInvitationsResponse,
+  PublicEntryInvitationLink,
   SearchEntryInviteesResponse,
   SentEntryInvitation,
 } from "@/http/openapi/components.ts";
@@ -153,6 +154,23 @@ export const previewEntryInvitationLinkRoute = defineRoute({
   params: pathParams(["code"]),
   success: { status: 200, description: "Invitation preview", schema: EntryInvitationPreview },
   errors: [400, 401, 403, 404, 409],
+});
+
+export const previewPublicEntryInvitationLinkRoute = defineRoute({
+  method: "get",
+  path: "/internal/entry-invitations/links/{code}/public",
+  operationId: "previewPublicEntryInvitationLink",
+  tags: ["competitions"],
+  summary: "Preview an invitation link before signing in",
+  description:
+    "Service-only endpoint authenticated with the internal bearer secret; takes no actor. Returns presentation data only, and the same `invalid` reason for an unknown and a revoked code.",
+  params: pathParams(["code"]),
+  success: {
+    status: 200,
+    description: "What the link shows to a signed-out visitor",
+    schema: PublicEntryInvitationLink,
+  },
+  errors: [400, 401],
 });
 
 export const acceptEntryInvitationLinkRoute = defineRoute({

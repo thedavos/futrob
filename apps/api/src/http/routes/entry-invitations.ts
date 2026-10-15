@@ -4,6 +4,7 @@ import {
   entryInvitationPreviewSchema,
   listMyEntryInvitationsResponseSchema,
   listSentEntryInvitationsResponseSchema,
+  publicEntryInvitationLinkSchema,
   searchEntryInviteesResponseSchema,
   sentEntryInvitationSchema,
 } from "@futrob/api-contracts";
@@ -18,7 +19,7 @@ import type { AppDeps } from "@/app.ts";
 import { apiErrorResponse, failureToHttp } from "@/http/errors.ts";
 import { competitionApplicationDto } from "@/http/mappers/competition-entry.ts";
 import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
-import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
+import { createInternalOpenApiRouter, createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
   acceptEntryInvitationLinkRoute,
   acceptEntryInvitationRoute,
@@ -29,6 +30,7 @@ import {
   listSentEntryInvitationsRoute,
   previewEntryInvitationLinkRoute,
   previewEntryInvitationRoute,
+  previewPublicEntryInvitationLinkRoute,
   regenerateEntryInvitationLinkRoute,
   revokeEntryInvitationRoute,
   searchEntryInviteesRoute,
@@ -212,7 +214,8 @@ export function registerEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
       reference,
     });
     if (!result.isOk()) return failureToHttp(result.error);
-    const { invitation, competition, organizationName, suggestedTeamName, existing } = result.value;
+    const { invitation, competition, organizationName, suggestedTeamNames, existing } =
+      result.value;
     return jsonResponse(
       entryInvitationPreviewSchema.parse({
         invitation: {
@@ -231,7 +234,7 @@ export function registerEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
           gameEdition: competition.competition.gameEdition,
           status: competition.competition.status,
         },
-        suggestedTeamName,
+        suggestedTeamNames,
         existing: existing ? competitionApplicationDto(existing) : null,
       }),
     );
@@ -281,4 +284,38 @@ export function registerEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
   });
 
   app.route("/", secured);
+}
+
+/**
+ * Actor-free preview for signed-out visitors, called by the web BFF with the service secret.
+ * Mount before any `createServiceOpenApiRouter`, whose `*` middleware would demand an actor.
+ */
+export function registerPublicEntryInvitationRoutes(app: Hono, deps: AppDeps): void {
+  const internal = createInternalOpenApiRouter(deps.internalJobSecret);
+  internal.openapi(previewPublicEntryInvitationLinkRoute, async (c) => {
+    const result = await deps.modules.entryInvitations.acceptance.publicLinkPreview({
+      code: c.req.valid("param").code,
+    });
+    if (result.isOk()) {
+      const { competition } = result.value.competition;
+      return jsonResponse(
+        publicEntryInvitationLinkSchema.parse({
+          state: "open",
+          competition: {
+            name: competition.name,
+            organizationName: result.value.organizationName,
+            platform: competition.platform,
+            gameEdition: competition.gameEdition,
+          },
+        }),
+      );
+    }
+    return jsonResponse(
+      publicEntryInvitationLinkSchema.parse({
+        state: "unavailable",
+        reason: result.error.code === "competitions.not_editable" ? "closed" : "invalid",
+      }),
+    );
+  });
+  app.route("/", internal);
 }

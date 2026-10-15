@@ -6,6 +6,7 @@ import {
   inviteTeamCaptainRequestSchema,
   listMyEntryInvitationsResponseSchema,
   listSentEntryInvitationsResponseSchema,
+  publicEntryInvitationLinkSchema,
   searchEntryInviteesResponseSchema,
   sentEntryInvitationSchema,
 } from "@futrob/api-contracts";
@@ -31,6 +32,10 @@ export const SearchEntryInviteesResponse = namedSchema(
 export const EntryInvitationPreview = namedSchema(
   "EntryInvitationPreview",
   entryInvitationPreviewSchema,
+);
+export const PublicEntryInvitationLink = namedSchema(
+  "PublicEntryInvitationLink",
+  publicEntryInvitationLinkSchema,
 );
 export const AcceptEntryInvitationRequest = namedSchema(
   "AcceptEntryInvitationRequest",

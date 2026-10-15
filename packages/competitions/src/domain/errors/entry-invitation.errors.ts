@@ -68,4 +68,10 @@ export type ResolveEntryInvitationError =
   | CompetitionNotEditable
   | EntryInvitationEligibilityError;
 
+export type PublicEntryInvitationLinkError =
+  | EntryInvitationNotFound
+  | EntryInvitationRevoked
+  | CompetitionNotFound
+  | CompetitionNotEditable;
+
 export type DeclineEntryInvitationError = EntryInvitationNotFound | EntryInvitationEligibilityError;

@@ -2986,6 +2986,52 @@
         ]
       }
     },
+    "/internal/entry-invitations/links/{code}/public": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What the link shows to a signed-out visitor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEntryInvitationLink"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "previewPublicEntryInvitationLink",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Preview an invitation link before signing in",
+        "description": "Service-only endpoint authenticated with the internal bearer secret; takes no actor. Returns presentation data only, and the same `invalid` reason for an unknown and a revoked code."
+      }
+    },
     "/internal/game-data/providers/{providerKey}/health": {
       "get": {
         "parameters": [
@@ -14539,11 +14585,11 @@
               "status"
             ]
           },
-          "suggestedTeamName": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "suggestedTeamNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "existing": {
             "type": [
@@ -14584,7 +14630,7 @@
         "required": [
           "invitation",
           "competition",
-          "suggestedTeamName",
+          "suggestedTeamNames",
           "existing"
         ]
       },
@@ -27312,6 +27358,77 @@
           "availableAt",
           "leaseExpiresAt",
           "updatedAt"
+        ]
+      },
+      "PublicEntryInvitationLink": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open"
+                ]
+              },
+              "competition": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "organizationName": {
+                    "type": "string"
+                  },
+                  "platform": {
+                    "type": "string",
+                    "enum": [
+                      "playstation",
+                      "xbox",
+                      "pc",
+                      "nintendo-switch-1",
+                      "nintendo-switch-2"
+                    ]
+                  },
+                  "gameEdition": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "organizationName",
+                  "platform",
+                  "gameEdition"
+                ]
+              }
+            },
+            "required": [
+              "state",
+              "competition"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "unavailable"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "invalid",
+                  "closed"
+                ]
+              }
+            },
+            "required": [
+              "state",
+              "reason"
+            ]
+          }
         ]
       },
       "RankingEligibility": {

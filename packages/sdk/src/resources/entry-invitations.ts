@@ -6,6 +6,7 @@ import {
   inviteTeamCaptainRequestSchema,
   listMyEntryInvitationsResponseSchema,
   listSentEntryInvitationsResponseSchema,
+  publicEntryInvitationLinkSchema,
   searchEntryInviteesQuerySchema,
   searchEntryInviteesResponseSchema,
   sentEntryInvitationSchema,
@@ -16,6 +17,7 @@ import {
   type InviteTeamCaptainRequest,
   type ListMyEntryInvitationsResponse,
   type ListSentEntryInvitationsResponse,
+  type PublicEntryInvitationLinkDto,
   type SearchEntryInviteesResponse,
   type SentEntryInvitationDto,
 } from "@futrob/api-contracts";
@@ -147,6 +149,19 @@ export function createEntryInvitationsResource(http: HttpClient) {
         method: "GET",
         options,
         parse: (data) => entryInvitationPreviewSchema.parse(data),
+      });
+    },
+
+    /** Service-only and actor-free: what a link shows before the visitor signs in. */
+    async previewPublicLink(
+      code: string,
+      options: RequestOptions = {},
+    ): Promise<PublicEntryInvitationLinkDto> {
+      return http.request({
+        path: apiPath("internal", "entry-invitations", "links", code, "public"),
+        method: "GET",
+        options,
+        parse: (data) => publicEntryInvitationLinkSchema.parse(data),
       });
     },
 

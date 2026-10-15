@@ -109,11 +109,33 @@ export const entryInvitationPreviewSchema = z.object({
     expiresAt: z.string().datetime().nullable(),
   }),
   competition: invitedCompetitionSchema,
-  suggestedTeamName: z.string().nullable(),
+  /** Names of the EA clubs the player declared, offered as the team name; may be empty. */
+  suggestedTeamNames: z.array(z.string()),
   /** The team the player already has in this competition, if any. */
   existing: competitionApplicationSchema.nullable(),
 });
 export type EntryInvitationPreviewDto = z.infer<typeof entryInvitationPreviewSchema>;
+
+/**
+ * What anyone holding a link sees before signing in. Carries presentation data only: no
+ * ids, and the same `invalid` for an unknown and a revoked code.
+ */
+export const publicEntryInvitationLinkSchema = z.discriminatedUnion("state", [
+  z.object({
+    state: z.literal("open"),
+    competition: invitedCompetitionSchema.pick({
+      name: true,
+      organizationName: true,
+      platform: true,
+      gameEdition: true,
+    }),
+  }),
+  z.object({
+    state: z.literal("unavailable"),
+    reason: z.enum(["invalid", "closed"]),
+  }),
+]);
+export type PublicEntryInvitationLinkDto = z.infer<typeof publicEntryInvitationLinkSchema>;
 
 export const acceptEntryInvitationRequestSchema = z.object({
   teamName: z.string().trim().min(1).max(120),

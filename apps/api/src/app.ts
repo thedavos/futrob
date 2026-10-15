@@ -12,7 +12,10 @@ import { captureUnexpectedError } from "@/observability/sentry.ts";
 import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
 import { registerCompetitionRoutes } from "@/http/routes/competitions.ts";
 import { registerCompetitionParticipantRoutes } from "@/http/routes/competitions-participants.ts";
-import { registerEntryInvitationRoutes } from "@/http/routes/entry-invitations.ts";
+import {
+  registerEntryInvitationRoutes,
+  registerPublicEntryInvitationRoutes,
+} from "@/http/routes/entry-invitations.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
 import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
@@ -89,6 +92,7 @@ export function createApp(deps: AppDeps): Hono {
   registerConfirmationExpiryRoutes(v1, deps);
   registerScheduleChangeExpiryRoutes(v1, deps);
   registerCandidateRecalculationRoutes(v1, deps);
+  registerPublicEntryInvitationRoutes(v1, deps);
   registerProviderHealthRoutes(v1, deps);
   registerGameDataClubRoutes(v1, deps);
   registerCompetitionRoutes(v1, deps);

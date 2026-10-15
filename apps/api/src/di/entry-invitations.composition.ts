@@ -42,6 +42,7 @@ export function createEntryInvitations(input: {
     acceptance: new EntryInvitationAcceptanceFlow({
       transaction: input.transaction,
       resolve: invitations.resolve,
+      resolvePublicLink: invitations.resolvePublicLink,
       registerEntry: invitations.registerEntry,
       recordAcceptance: invitations.recordAcceptance,
       createApplicantTeam: input.teams.createApplicantTeam,

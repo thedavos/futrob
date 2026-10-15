@@ -11,8 +11,21 @@ import {
   ENTRY_INVITATION_STATUS,
   type EntryInvitation,
 } from "../../domain/entities/entry-invitation.ts";
-import type { ManageEntryInvitationsError } from "../../domain/errors/entry-invitation.errors.ts";
-import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
+import {
+  CompetitionNotEditable,
+  CompetitionNotFound,
+} from "../../domain/errors/competition.errors.ts";
+import {
+  EntryInvitationNotFound,
+  EntryInvitationRevoked,
+  type ManageEntryInvitationsError,
+  type PublicEntryInvitationLinkError,
+} from "../../domain/errors/entry-invitation.errors.ts";
+import { canEditParticipants } from "../../domain/policies/competition-lifecycle.ts";
+import type {
+  CompetitionDraft,
+  CompetitionRepository,
+} from "../../domain/ports/competition.repository.ts";
 import type { EntryInvitationCodePort } from "../../domain/ports/entry-invitation-code.port.ts";
 import type { EntryInvitationRepository } from "../../domain/ports/entry-invitation.repository.ts";
 import {
@@ -86,5 +99,62 @@ export class RegenerateEntryInvitationLinkUseCase {
       });
     }
     return ok(await createLink(this.deps, input));
+  }
+}
+
+/**
+ * Read-only and actor-free: the competition behind a shareable link while it still admits
+ * teams. Backs the public landing a visitor sees before signing in; accepting still goes
+ * through the actor-bound resolution.
+ */
+export class ResolvePublicEntryInvitationLinkUseCase {
+  constructor(
+    private readonly deps: {
+      readonly invitations: EntryInvitationRepository;
+      readonly competitions: CompetitionRepository;
+    },
+  ) {}
+
+  async execute(input: {
+    readonly code: string;
+  }): Promise<Result<CompetitionDraft, PublicEntryInvitationLinkError>> {
+    const invitation = await this.deps.invitations.findLinkByCode(input.code.trim());
+    if (!invitation || invitation.channel !== ENTRY_INVITATION_CHANNEL.link) {
+      return err(
+        new EntryInvitationNotFound({
+          code: "competitions.entry_invitation_not_found",
+          message: "Invitation not found",
+        }),
+      );
+    }
+    if (invitation.status !== ENTRY_INVITATION_STATUS.pending) {
+      return err(
+        new EntryInvitationRevoked({
+          code: "competitions.entry_invitation_revoked",
+          message: "The invitation was revoked",
+        }),
+      );
+    }
+    const competition = await this.deps.competitions.findById(
+      invitation.organizationId,
+      invitation.competitionId,
+    );
+    if (!competition) {
+      return err(
+        new CompetitionNotFound({
+          code: "competitions.not_found",
+          message: "Competition not found",
+        }),
+      );
+    }
+    if (!canEditParticipants(competition.competition.status)) {
+      return err(
+        new CompetitionNotEditable({
+          code: "competitions.not_editable",
+          message: "The competition no longer accepts teams",
+        }),
+      );
+    }
+    return ok(competition);
   }
 }

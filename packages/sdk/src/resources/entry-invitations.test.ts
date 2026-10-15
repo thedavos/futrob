@@ -82,6 +82,24 @@ describe("entry invitations SDK resource", () => {
 });
 
 describe("entry invitation share URLs", () => {
+  it("previews a link for a signed-out visitor under the internal path", async () => {
+    const urls: string[] = [];
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input) => {
+        urls.push(requestUrl(input));
+        return Response.json({ state: "unavailable", reason: "closed" });
+      }),
+    });
+
+    const preview = await client.entryInvitations.previewPublicLink("abc/12");
+
+    expect(preview).toEqual({ state: "unavailable", reason: "closed" });
+    expect(urls).toEqual([
+      "https://app.example.com/api/v1/internal/entry-invitations/links/abc%2F12/public",
+    ]);
+  });
+
   it("builds the browser link from the code", () => {
     expect(buildEntryInvitationShareUrl("https://futrob.app/", "Ab_9-xyz")).toBe(
       "https://futrob.app/entry-invitations/link/Ab_9-xyz",

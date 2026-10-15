@@ -193,6 +193,7 @@ export {
   type EntryInvitationEligibilityError,
   type InviteTeamCaptainError,
   type ManageEntryInvitationsError,
+  type PublicEntryInvitationLinkError,
   type ResolveEntryInvitationError,
   type RevokeEntryInvitationError,
 } from "./domain/errors/entry-invitation.errors.ts";
@@ -205,6 +206,7 @@ export {
 export {
   EnsureEntryInvitationLinkUseCase,
   RegenerateEntryInvitationLinkUseCase,
+  ResolvePublicEntryInvitationLinkUseCase,
 } from "./application/entry-invitations/entry-invitation-link.use-cases.ts";
 export {
   RevokeEntryInvitationUseCase,

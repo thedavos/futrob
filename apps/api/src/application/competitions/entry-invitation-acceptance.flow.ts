@@ -5,11 +5,13 @@ import type {
   EntryInvitation,
   EntryInvitationAlreadyDecided,
   EntryInvitationReference,
+  PublicEntryInvitationLinkError,
   RecordEntryInvitationAcceptanceUseCase,
   RegisterInvitedEntryError,
   RegisterInvitedEntryUseCase,
   ResolveEntryInvitationError,
   ResolveEntryInvitationUseCase,
+  ResolvePublicEntryInvitationLinkUseCase,
 } from "@futrob/competitions";
 import type { OrganizationRepository } from "@futrob/organizations";
 import {
@@ -42,10 +44,16 @@ export interface EntryInvitationPreview {
   readonly invitation: EntryInvitation;
   readonly competition: CompetitionDraft;
   readonly organizationName: string;
-  /** The club the actor declared, offered as the team name. */
-  readonly suggestedTeamName: string | null;
+  /** The clubs the actor declared, offered as the team name; distinct and in declared order. */
+  readonly suggestedTeamNames: readonly string[];
   /** The team the actor already has in this competition, if any. */
   readonly existing: InvitedTeam | null;
+}
+
+/** The presentation a signed-out visitor sees for a shareable link. */
+export interface PublicEntryInvitationLinkPreview {
+  readonly competition: CompetitionDraft;
+  readonly organizationName: string;
 }
 
 export type AcceptEntryInvitationError =
@@ -70,6 +78,7 @@ export class EntryInvitationAcceptanceFlow {
     private readonly deps: {
       readonly transaction: TransactionPort;
       readonly resolve: ResolveEntryInvitationUseCase;
+      readonly resolvePublicLink: ResolvePublicEntryInvitationLinkUseCase;
       readonly registerEntry: RegisterInvitedEntryUseCase;
       readonly recordAcceptance: RecordEntryInvitationAcceptanceUseCase;
       readonly createApplicantTeam: CreateApplicantTeamUseCase;
@@ -94,18 +103,30 @@ export class EntryInvitationAcceptanceFlow {
     const resolved = await this.deps.resolve.execute(input);
     if (!resolved.isOk()) return err(resolved.error);
     const { invitation, competition } = resolved.value;
-    const [organization, existing, suggestedTeamName] = await Promise.all([
+    const [organization, existing, suggestedTeamNames] = await Promise.all([
       this.deps.organizations.getById(invitation.organizationId),
       this.mine({ actorId: input.actorId, competitionId: invitation.competitionId }),
-      this.declaredClubName(input.actorId),
+      this.declaredClubNames(input.actorId),
     ]);
     return ok({
       invitation,
       competition,
       organizationName: organization?.name ?? "",
-      suggestedTeamName,
+      suggestedTeamNames,
       existing,
     });
+  }
+
+  /** Actor-free: what a link shows before the visitor signs in. */
+  async publicLinkPreview(input: {
+    readonly code: string;
+  }): Promise<Result<PublicEntryInvitationLinkPreview, PublicEntryInvitationLinkError>> {
+    const resolved = await this.deps.resolvePublicLink.execute(input);
+    if (!resolved.isOk()) return err(resolved.error);
+    const organization = await this.deps.organizations.getById(
+      resolved.value.competition.organizationId,
+    );
+    return ok({ competition: resolved.value, organizationName: organization?.name ?? "" });
   }
 
   async accept(input: {
@@ -214,10 +235,11 @@ export class EntryInvitationAcceptanceFlow {
     return entry && team ? { entry, team } : null;
   }
 
-  private async declaredClubName(actorId: ActorId): Promise<string | null> {
+  private async declaredClubNames(actorId: ActorId): Promise<readonly string[]> {
     const profile = await this.deps.profiles.findByActor(actorId);
-    if (!profile) return null;
-    const [club] = await this.deps.clubs.listByPlayerProfile(profile.id);
-    return club?.externalClubName ?? null;
+    if (!profile) return [];
+    const clubs = await this.deps.clubs.listByPlayerProfile(profile.id);
+    const names = clubs.map((club) => club.externalClubName.trim()).filter((name) => name !== "");
+    return [...new Set(names)];
   }
 }
