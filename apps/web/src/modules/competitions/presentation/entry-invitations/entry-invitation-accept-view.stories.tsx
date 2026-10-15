@@ -7,6 +7,7 @@ import {
   EntryInvitationAcceptView,
   type EntryInvitationPreviewState,
 } from "./entry-invitation-accept-view.tsx";
+import { withEntryInvitationRouter } from "./entry-invitation-story-router.tsx";
 
 function preview(overrides: Partial<EntryInvitationPreviewDto> = {}): EntryInvitationPreviewDto {
   return {
@@ -26,7 +27,7 @@ function preview(overrides: Partial<EntryInvitationPreviewDto> = {}): EntryInvit
       gameEdition: "FC 26",
       status: "draft",
     },
-    suggestedTeamName: "Cóndor FC",
+    suggestedTeamNames: ["Cóndor FC"],
     existing: null,
     ...overrides,
   };
@@ -39,6 +40,7 @@ function coded(code: string): CompetitionsClientError {
 const meta = {
   title: "Product/Competitions/Entry invitation",
   component: EntryInvitationAcceptView,
+  decorators: [withEntryInvitationRouter],
   parameters: { layout: "padded" },
   args: {
     state: { kind: "ready", preview: preview() } satisfies EntryInvitationPreviewState,
@@ -75,6 +77,47 @@ export const AcceptDirected: Story = {
   },
 };
 
+export const SeveralClubs: Story = {
+  name: "Elegir entre varios clubes EA",
+  args: {
+    state: {
+      kind: "ready",
+      preview: preview({ suggestedTeamNames: ["Cóndor FC", "Fera Enjaulada", "Los Andes"] }),
+    },
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const accept = canvas.getByRole("button", { name: "Aceptar e inscribir equipo" });
+    for (const club of ["Cóndor FC", "Fera Enjaulada", "Los Andes", "Otro nombre"]) {
+      await expect(canvas.getByRole("radio", { name: club })).not.toBeChecked();
+    }
+    await expect(canvas.queryByRole("textbox", { name: "Otro nombre" })).toBeNull();
+
+    await userEvent.click(accept);
+    await expect(canvas.getByText("Elige uno de tus clubes o escribe otro nombre.")).toBeVisible();
+    await expect(args.onAccept).not.toHaveBeenCalled();
+
+    await userEvent.click(canvas.getByRole("radio", { name: "Otro nombre" }));
+    await userEvent.type(canvas.getByRole("textbox", { name: "Otro nombre" }), "Cóndores B");
+    await userEvent.click(canvas.getByRole("radio", { name: "Fera Enjaulada" }));
+    await expect(canvas.queryByRole("textbox", { name: "Otro nombre" })).toBeNull();
+    await userEvent.click(accept);
+    await waitFor(() => expect(args.onAccept).toHaveBeenCalledWith("Fera Enjaulada"));
+  },
+};
+
+export const SeveralClubsOtherName: Story = {
+  name: "Varios clubes: otro nombre",
+  args: SeveralClubs.args,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("radio", { name: "Otro nombre" }));
+    await userEvent.type(canvas.getByRole("textbox", { name: "Otro nombre" }), "  Cóndores B ");
+    await userEvent.click(canvas.getByRole("button", { name: "Aceptar e inscribir equipo" }));
+    await waitFor(() => expect(args.onAccept).toHaveBeenCalledWith("Cóndores B"));
+  },
+};
+
 export const Decline: Story = {
   name: "Rechazar",
   play: async ({ args, canvasElement }) => {
@@ -99,7 +142,7 @@ export const SharedLink: Story = {
           message: null,
           expiresAt: null,
         },
-        suggestedTeamName: null,
+        suggestedTeamNames: [],
       }),
     },
   },
@@ -157,8 +200,70 @@ export const Revoked: Story = {
   args: { state: { kind: "error", error: coded("competitions.entry_invitation_revoked") } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("heading", { name: "Esta invitación ya no funciona" }),
+    ).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Ir a mi espacio" })).toHaveAttribute(
+      "href",
+      "/player",
+    );
+    await expect(canvas.queryByRole("textbox", { name: "Nombre de tu equipo" })).toBeNull();
+  },
+};
+
+export const Expired: Story = {
+  name: "Invitación caducada",
+  args: { state: { kind: "error", error: coded("competitions.entry_invitation_expired") } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { name: "Esta invitación caducó" })).toBeVisible();
+  },
+};
+
+export const ForAnotherPlayer: Story = {
+  name: "Invitación de otro jugador",
+  args: { state: { kind: "error", error: coded("competitions.entry_invitation_forbidden") } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("heading", { name: "Esta invitación es para otro jugador" }),
+    ).toBeVisible();
+  },
+};
+
+export const RegistrationClosed: Story = {
+  name: "Inscripciones cerradas",
+  args: { state: { kind: "error", error: coded("competitions.not_editable") } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("heading", { name: "Las inscripciones están cerradas" }),
+    ).toBeVisible();
+  },
+};
+
+export const AlreadyAnswered: Story = {
+  name: "Invitación ya respondida",
+  args: {
+    state: { kind: "error", error: coded("competitions.entry_invitation_already_decided") },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("heading", { name: "Ya respondiste esta invitación" }),
+    ).toBeVisible();
+  },
+};
+
+export const LoadFailed: Story = {
+  name: "Error al cargar",
+  args: { state: { kind: "error", error: coded("api.rate_limited") } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
     await expect(canvas.getByText("No puedes usar esta invitación")).toBeVisible();
-    await expect(canvas.getByText("El organizador desactivó esta invitación.")).toBeVisible();
+    await expect(
+      canvas.getByText("Demasiados intentos. Espera un momento y vuelve a intentarlo."),
+    ).toBeVisible();
   },
 };
 

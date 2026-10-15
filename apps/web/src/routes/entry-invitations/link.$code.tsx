@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Logo, PageHeader, PageHeaderDescription, PageHeaderTitle } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { EntryInvitationAcceptPage } from "@/modules/competitions/presentation/entry-invitations/entry-invitation-accept-page.tsx";
+import { EntryInvitationLinkPage } from "@/modules/competitions/presentation/entry-invitations/entry-invitation-link-page.tsx";
 
 const styles = stylex.create({
   main: {
@@ -33,12 +33,12 @@ const styles = stylex.create({
   },
 });
 
-export const Route = createFileRoute("/_app/entry-invitations/link/$code")({
+export const Route = createFileRoute("/entry-invitations/link/$code")({
   head: () => ({ meta: [{ title: "Inscribe tu equipo | Futrob" }] }),
-  component: EntryInvitationLinkPage,
+  component: EntryInvitationLinkRoute,
 });
 
-function EntryInvitationLinkPage() {
+function EntryInvitationLinkRoute() {
   const { code } = Route.useParams();
   const logo = applyStyles(styles.logo);
   return (
@@ -53,7 +53,7 @@ function EntryInvitationLinkPage() {
           Te compartieron una invitación para participar en una competición.
         </PageHeaderDescription>
       </PageHeader>
-      <EntryInvitationAcceptPage reference={{ code }} />
+      <EntryInvitationLinkPage code={code} />
     </main>
   );
 }

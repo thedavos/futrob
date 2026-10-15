@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import type { EntryInvitationPreviewDto, GamePlatformDto } from "@futrob/api-contracts";
 import {
@@ -8,10 +9,12 @@ import {
   AlertDescription,
   AlertTitle,
   applyStyles,
-  Badge,
   Button,
   Card,
   CardContent,
+  ChoiceGroup,
+  ChoiceGroupIndicator,
+  ChoiceGroupItem,
   Field,
   FieldDescription,
   FieldLabel,
@@ -21,9 +24,14 @@ import {
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { CheckCircleIcon, ShieldPlusIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { CheckCircleIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { CompetitionsClientError } from "../competitions-browser-client.ts";
 import { entryInvitationErrorMessage } from "./entry-invitation-copy.ts";
+import { InvitedCompetitionHeader } from "./invited-competition-header.tsx";
+import {
+  EntryInvitationUnavailable,
+  entryInvitationUnavailableReason,
+} from "./entry-invitation-unavailable.tsx";
 
 export type EntryInvitationPreviewState =
   | { readonly kind: "loading" }
@@ -31,6 +39,8 @@ export type EntryInvitationPreviewState =
   | { readonly kind: "ready"; readonly preview: EntryInvitationPreviewDto };
 
 const TEAM_NAME_MAX_LENGTH = 120;
+/** `ChoiceGroup` value for typing a name instead of using a declared club. */
+const OTHER_NAME = "__other__";
 
 const styles = stylex.create({
   body: {
@@ -40,28 +50,6 @@ const styles = stylex.create({
       default: "1.25rem",
       [media.sm]: "2rem",
     },
-  },
-  header: {
-    display: "grid",
-    gridTemplateColumns: "auto minmax(0, 1fr)",
-    alignItems: "start",
-    gap: "1rem",
-  },
-  icon: {
-    width: "2.5rem",
-    height: "2.5rem",
-    color: colors.foreground,
-  },
-  headerText: {
-    display: "grid",
-    justifyItems: "start",
-    gap: "0.375rem",
-  },
-  title: {
-    margin: 0,
-    fontSize: "1.25rem",
-    lineHeight: "1.75rem",
-    fontWeight: 600,
   },
   muted: {
     margin: 0,
@@ -86,6 +74,36 @@ const styles = stylex.create({
       [media.sm]: "row",
     },
     gap: "0.5rem",
+  },
+  fieldset: {
+    display: "grid",
+    gap: "0.75rem",
+    margin: 0,
+    borderWidth: 0,
+    padding: 0,
+  },
+  // A `<legend>` is not a grid item, so the fieldset gap never reaches it.
+  legend: {
+    marginBottom: "0.75rem",
+  },
+  clubs: {
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+    },
+  },
+  clubIndicator: {
+    position: "absolute",
+    left: "0.75rem",
+    right: "auto",
+    top: "50%",
+    marginTop: "-0.625rem",
+    width: "1.25rem",
+    height: "1.25rem",
+  },
+  clubPill: {
+    justifyContent: "center",
+    textAlign: "center",
   },
   skeletonLine: {
     height: "1.5rem",
@@ -124,7 +142,20 @@ export function EntryInvitationAcceptView({
           </CardContent>
         </Card>
       );
-    case "error":
+    case "error": {
+      const reason = entryInvitationUnavailableReason(state.error?.code ?? null);
+      if (reason) {
+        return (
+          <EntryInvitationUnavailable
+            action={
+              <Button render={<Link to="/player" />} role="link" variant="outline">
+                Ir a mi espacio
+              </Button>
+            }
+            reason={reason}
+          />
+        );
+      }
       return (
         <Alert variant="destructive">
           <WarningCircleIcon aria-hidden="true" />
@@ -134,6 +165,7 @@ export function EntryInvitationAcceptView({
           </AlertDescription>
         </Alert>
       );
+    }
     case "ready":
       return (
         <ReadyInvitation
@@ -164,9 +196,15 @@ function ReadyInvitation({
   readonly onDecline?: () => Promise<void>;
   readonly onOpenCompetition: (competitionId: string) => void;
 }) {
-  const ids = { name: useId(), hint: useId() };
+  const ids = { legend: useId(), name: useId(), hint: useId() };
   const { competition, invitation, existing } = preview;
-  const [teamName, setTeamName] = useState(preview.suggestedTeamName ?? "");
+  const clubs = preview.suggestedTeamNames;
+  // With several declared clubs the player picks one (or another name); none is preselected.
+  const choosing = clubs.length > 1;
+  const [choice, setChoice] = useState<string | null>(null);
+  const [customName, setCustomName] = useState(clubs.length === 1 ? (clubs[0] ?? "") : "");
+  const typing = !choosing || choice === OTHER_NAME;
+  const teamName = typing ? customName : (choice ?? "");
   const [pending, setPending] = useState<"accept" | "decline" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [declined, setDeclined] = useState(false);
@@ -193,7 +231,11 @@ function ReadyInvitation({
     event.preventDefault();
     const name = teamName.trim();
     if (!name) {
-      setError("Escribe el nombre de tu equipo.");
+      setError(
+        choosing && choice === null
+          ? "Elige uno de tus clubes o escribe otro nombre."
+          : "Escribe el nombre de tu equipo.",
+      );
       return;
     }
     void run("accept", () => onAccept(name));
@@ -225,22 +267,70 @@ function ReadyInvitation({
   } else {
     body = (
       <form noValidate onSubmit={submit} {...applyStyles(styles.form)}>
-        <Field>
-          <FieldLabel htmlFor={ids.name}>Nombre de tu equipo</FieldLabel>
-          <Input
-            aria-describedby={ids.hint}
-            aria-invalid={error !== null && !teamName.trim() ? true : undefined}
-            autoComplete="off"
-            id={ids.name}
-            maxLength={TEAM_NAME_MAX_LENGTH}
-            onChange={(event) => setTeamName(event.target.value)}
-            required
-            value={teamName}
-          />
-          <FieldDescription id={ids.hint}>
-            Serás su capitán y el equipo quedará inscrito en la competición.
-          </FieldDescription>
-        </Field>
+        {choosing ? (
+          <fieldset aria-describedby={ids.hint} {...applyStyles(styles.fieldset)}>
+            <legend id={ids.legend} {...applyStyles(typography.label, styles.legend)}>
+              Nombre de tu equipo
+            </legend>
+            <ChoiceGroup
+              aria-invalid={error !== null && choice === null ? true : undefined}
+              aria-labelledby={ids.legend}
+              className={styles.clubs}
+              onValueChange={(next: string) => {
+                setChoice(next);
+                setError(null);
+              }}
+              value={choice ?? ""}
+            >
+              {[...clubs, OTHER_NAME].map((value) => (
+                <ChoiceGroupItem
+                  appearance="pill"
+                  className={styles.clubPill}
+                  key={value}
+                  value={value}
+                >
+                  <ChoiceGroupIndicator {...applyStyles(styles.clubIndicator)} />
+                  {value === OTHER_NAME ? "Otro nombre" : value}
+                </ChoiceGroupItem>
+              ))}
+            </ChoiceGroup>
+            {typing ? (
+              <Field>
+                <FieldLabel htmlFor={ids.name}>Otro nombre</FieldLabel>
+                <Input
+                  aria-invalid={error !== null && !teamName.trim() ? true : undefined}
+                  autoComplete="off"
+                  id={ids.name}
+                  maxLength={TEAM_NAME_MAX_LENGTH}
+                  onChange={(event) => setCustomName(event.target.value)}
+                  required
+                  value={customName}
+                />
+              </Field>
+            ) : null}
+            <p id={ids.hint} {...applyStyles(typography.caption, styles.muted)}>
+              Usa uno de tus clubes de EA o escribe otro nombre. Serás su capitán y el equipo
+              quedará inscrito en la competición.
+            </p>
+          </fieldset>
+        ) : (
+          <Field>
+            <FieldLabel htmlFor={ids.name}>Nombre de tu equipo</FieldLabel>
+            <Input
+              aria-describedby={ids.hint}
+              aria-invalid={error !== null && !teamName.trim() ? true : undefined}
+              autoComplete="off"
+              id={ids.name}
+              maxLength={TEAM_NAME_MAX_LENGTH}
+              onChange={(event) => setCustomName(event.target.value)}
+              required
+              value={customName}
+            />
+            <FieldDescription id={ids.hint}>
+              Serás su capitán y el equipo quedará inscrito en la competición.
+            </FieldDescription>
+          </Field>
+        )}
         {error ? (
           <Alert variant="destructive">
             <WarningCircleIcon aria-hidden="true" />
@@ -274,18 +364,7 @@ function ReadyInvitation({
   return (
     <Card>
       <CardContent className={styles.body}>
-        <div {...applyStyles(styles.header)}>
-          <ShieldPlusIcon aria-hidden="true" {...applyStyles(styles.icon)} />
-          <div {...applyStyles(styles.headerText)}>
-            <h2 {...applyStyles(styles.title)}>{competition.name}</h2>
-            <p {...applyStyles(typography.caption, styles.muted)}>
-              Organiza {competition.organizationName}
-            </p>
-            <Badge variant="neutral">
-              {competition.gameEdition} · {platformLabel(competition.platform)}
-            </Badge>
-          </div>
-        </div>
+        <InvitedCompetitionHeader competition={competition} platformLabel={platformLabel} />
         {invitation.message ? (
           <blockquote {...applyStyles(typography.body, styles.quote)}>
             {invitation.message}
