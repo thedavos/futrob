@@ -1,0 +1,63 @@
+import * as stylex from "@stylexjs/stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
+
+export const styles = stylex.create({
+  section: { display: "flex", flexDirection: "column", gap: "1.5rem", minWidth: 0 },
+  header: {
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    alignItems: "end",
+    gap: "1rem",
+  },
+  copy: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+    maxWidth: "40rem",
+    minWidth: 0,
+  },
+  acting: { display: "flex", flexDirection: "column", gap: "0.5rem", minWidth: 0 },
+  sides: {
+    display: "grid",
+    gridTemplateColumns: { default: "minmax(0, 1fr)", [media.sm]: "repeat(2, minmax(0, 12rem))" },
+    gap: "0.5rem",
+  },
+  summary: { display: "flex", flexDirection: "column", gap: "0.75rem", minWidth: 0 },
+  inline: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem 1rem" },
+  status: { display: "inline-flex", alignItems: "center", gap: "0.375rem" },
+  warning: { color: colors.warning },
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    padding: 0,
+    margin: 0,
+    listStyle: "none",
+  },
+  item: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
+    paddingTop: "1rem",
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.border,
+    minWidth: 0,
+  },
+  slots: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+    padding: 0,
+    margin: 0,
+    listStyle: "none",
+  },
+  reason: { whiteSpace: "pre-wrap", overflowWrap: "anywhere" },
+  history: { display: "flex", flexDirection: "column", gap: "1rem", paddingBlock: "1rem" },
+  actions: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem" },
+  dialog: { maxWidth: "40rem" },
+  form: { display: "flex", flexDirection: "column", gap: "1.25rem", marginTop: "1.25rem" },
+  skeleton: { minHeight: "6rem", width: "100%" },
+});
