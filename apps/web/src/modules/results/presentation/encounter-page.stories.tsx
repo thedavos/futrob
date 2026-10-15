@@ -17,6 +17,12 @@ import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { encounterView, m1, m2, m3, m4, readyCandidates } from "./encounter-page.fixtures.ts";
 import { EncounterPageView, type CandidatesState, type EncounterState } from "./encounter-page.tsx";
+import { rejectionReason } from "./official-selection.fixtures.ts";
+import {
+  SELECTION_SCENARIOS,
+  useStoryTeamSelection,
+  type SelectionScenario,
+} from "./team-selection.story-state.ts";
 
 const styles = stylex.create({
   frame: {
@@ -51,6 +57,8 @@ type StoryArgs = {
   readonly scenario: Scenario;
   readonly locale: Locale;
   readonly narrow?: boolean;
+  /** Team panel of a representative; omitted for spectators. */
+  readonly selection?: SelectionScenario;
 };
 
 const noop = () => undefined;
@@ -128,19 +136,30 @@ function stateFor(scenario: Scenario): {
   }
 }
 
-function EncounterStory({ locale, narrow = false, scenario }: StoryArgs) {
+function ScenarioPage({
+  scenario,
+  selection,
+}: {
+  readonly scenario: Scenario;
+  readonly selection?: SelectionScenario;
+}) {
+  return (
+    <EncounterPageView
+      competitionId="competition-1"
+      organizationId="org-1"
+      teamSelection={useStoryTeamSelection(selection)}
+      {...stateFor(scenario)}
+    />
+  );
+}
+
+function EncounterStory({ locale, narrow = false, scenario, selection }: StoryArgs) {
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
     const encounterRoute = createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId/encounters/$encounterId",
-      component: () => (
-        <EncounterPageView
-          competitionId="competition-1"
-          organizationId="org-1"
-          {...stateFor(scenario)}
-        />
-      ),
+      component: () => <ScenarioPage scenario={scenario} selection={selection} />,
     });
     const listRoute = createRoute({
       getParentRoute: () => rootRoute,
@@ -153,7 +172,7 @@ function EncounterStory({ locale, narrow = false, scenario }: StoryArgs) {
         initialEntries: ["/orgs/org-1/competitions/competition-1/encounters/encounter-1"],
       }),
     });
-  }, [scenario]);
+  }, [scenario, selection]);
   return (
     <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
       <div {...applyProps(undefined, undefined, styles.frame, narrow && styles.narrow)}>
@@ -187,8 +206,11 @@ const meta = {
   argTypes: {
     scenario: { control: "select", options: scenarios },
     locale: { control: "inline-radio", options: ["es", "en"] },
+    selection: { control: "select", options: [undefined, ...SELECTION_SCENARIOS] },
   },
-  render: (args) => <EncounterStory key={`${args.scenario}-${args.locale}`} {...args} />,
+  render: (args) => (
+    <EncounterStory key={`${args.scenario}-${args.locale}-${args.selection}`} {...args} />
+  ),
 } satisfies Meta<StoryArgs>;
 
 export default meta;
@@ -259,6 +281,122 @@ export const Narrow360: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole("heading", { level: 1, name: "Cuervos FC vs Maderas FC" });
+    const frame = canvasElement.firstElementChild as HTMLElement;
+    await expect(frame.scrollWidth).toBeLessThanOrEqual(frame.clientWidth);
+  },
+};
+
+export const SelectionNotProposed: Story = {
+  name: "Selección: sin propuesta",
+  args: { selection: "none" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const panel = within(await canvas.findByRole("region", { name: "Selección oficial" }));
+    await expect(panel.getByText("Aún no hay propuesta")).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Proponer selección" })).toBeVisible();
+  },
+};
+
+export const SelectionPendingAsProposer: Story = {
+  name: "Selección: pendiente, como proponente",
+  args: { selection: "pendingAsProposer" },
+  play: async ({ canvasElement }) => {
+    const panel = within(
+      await within(canvasElement).findByRole("region", { name: "Selección oficial" }),
+    );
+    await expect(panel.getByText("Esperando confirmación del rival")).toBeVisible();
+    await expect(panel.queryByRole("button", { name: "Confirmar propuesta" })).toBeNull();
+  },
+};
+
+export const SelectionPendingAsRival: Story = {
+  name: "Selección: pendiente, como rival",
+  args: { selection: "pendingAsRival" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const panel = within(
+      await within(canvasElement).findByRole("region", { name: "Selección oficial" }),
+    );
+    for (const name of [
+      "Confirmar propuesta",
+      "Rechazar",
+      "Proponer alternativa",
+      "Abrir disputa",
+    ]) {
+      await expect(panel.getByRole("button", { name })).toBeVisible();
+    }
+  },
+};
+
+export const SelectionConflictRecovery: Story = {
+  name: "Selección: conflicto de versión",
+  args: { selection: "conflict" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(await canvas.findByRole("button", { name: "Rechazar" }));
+    const dialog = within(await page.findByRole("dialog", { name: "Rechazar la propuesta" }));
+    await userEvent.type(dialog.getByRole("textbox", { name: "Motivo" }), rejectionReason);
+    await userEvent.click(dialog.getByRole("button", { name: "Rechazar propuesta" }));
+    await expect(await dialog.findByText(/leíste la versión 1 y ahora está en la 2/)).toBeVisible();
+    await expect(dialog.getByRole("textbox", { name: "Motivo" })).toHaveValue(rejectionReason);
+  },
+};
+
+export const SelectionApproved: Story = {
+  name: "Selección: aprobada",
+  args: { selection: "approved" },
+};
+
+export const SelectionDisputed: Story = {
+  name: "Selección: en disputa (solo lectura)",
+  args: { selection: "disputed" },
+  parameters: { a11y: { test: "error" } },
+};
+
+export const SelectionUnderReviewWithFlags: Story = {
+  name: "Selección: revisión con avisos",
+  args: { selection: "underReview" },
+};
+
+export const SelectionReaderWithoutCommands: Story = {
+  name: "Selección: sin acciones",
+  args: { selection: "reader" },
+};
+
+export const SelectionBothSides: Story = {
+  name: "Selección: representa a ambos equipos",
+  args: { selection: "bothSides" },
+};
+
+export const SelectionForbidden: Story = {
+  name: "Selección: sin acceso",
+  args: { selection: "forbidden" },
+};
+
+export const SelectionLoading: Story = {
+  name: "Selección: cargando",
+  args: { selection: "loading" },
+};
+
+export const SelectionError: Story = {
+  name: "Selección: error",
+  args: { selection: "error" },
+};
+
+export const SelectionEnglish: Story = {
+  name: "Selection: pending as rival (EN)",
+  args: { selection: "pendingAsRival", locale: "en" },
+};
+
+export const SelectionNarrow360: Story = {
+  name: "Selección: 360 px",
+  args: { selection: "pendingAsRival", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Selección oficial" });
     const frame = canvasElement.firstElementChild as HTMLElement;
     await expect(frame.scrollWidth).toBeLessThanOrEqual(frame.clientWidth);
   },
