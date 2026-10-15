@@ -70,29 +70,27 @@ export class RecordActivityUseCase {
       encounterLabel: input.subject?.encounterLabel ?? null,
       teamName: input.subject?.teamName ?? null,
     };
-    const entries = input.recipients.map(
-      (recipient): ActivityEntry => ({
-        id: this.deps.ids.generate(),
-        organizationId: input.organizationId,
-        competitionId: input.competitionId,
-        audience: recipient.audience,
-        audienceId: recipient.audienceId,
-        kind: input.kind,
-        status: closedAt ? ACTIVITY_STATUS.closed : ACTIVITY_STATUS.open,
-        requiresAction: recipient.requiresAction,
-        resourceType: input.resource.type,
-        resourceId: input.resource.id,
-        subject,
-        actorId: input.actorId,
-        closedByActorId: null,
-        openedAt,
-        closedAt,
-        expiresAt: input.expiresAt ?? null,
-        lastEventAt: openedAt,
-        sourceName: input.source.name,
-        sourceId: input.source.id,
-      }),
-    );
+    const entries = input.recipients.map((recipient): ActivityEntry => ({
+      id: this.deps.ids.generate(),
+      organizationId: input.organizationId,
+      competitionId: input.competitionId,
+      audience: recipient.audience,
+      audienceId: recipient.audienceId,
+      kind: input.kind,
+      status: closedAt ? ACTIVITY_STATUS.closed : ACTIVITY_STATUS.open,
+      requiresAction: recipient.requiresAction,
+      resourceType: input.resource.type,
+      resourceId: input.resource.id,
+      subject,
+      actorId: input.actorId,
+      closedByActorId: null,
+      openedAt,
+      closedAt,
+      expiresAt: input.expiresAt ?? null,
+      lastEventAt: openedAt,
+      sourceName: input.source.name,
+      sourceId: input.source.id,
+    }));
     return ok(await this.deps.activities.insertIfAbsent(entries));
   }
 }

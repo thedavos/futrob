@@ -49,15 +49,13 @@ export function normalizeSlotSelection(
   }
   const slots = [...input]
     .sort((left, right) => left.officialSlot - right.officialSlot)
-    .map(
-      (entry): OfficialSlotSelection => ({
-        officialSlot: entry.officialSlot === 1 ? 1 : 2,
-        providerMatchRef: {
-          providerKey: entry.providerMatchRef.providerKey,
-          externalId: entry.providerMatchRef.externalId,
-        },
-      }),
-    );
+    .map((entry): OfficialSlotSelection => ({
+      officialSlot: entry.officialSlot === 1 ? 1 : 2,
+      providerMatchRef: {
+        providerKey: entry.providerMatchRef.providerKey,
+        externalId: entry.providerMatchRef.externalId,
+      },
+    }));
   return { ok: true, slots };
 }
 

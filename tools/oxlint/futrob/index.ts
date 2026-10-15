@@ -1,4 +1,4 @@
-import { eslintCompatPlugin } from "@oxlint/plugins";
+import { eslintCompatPlugin } from "vite-plus/lint/plugins";
 
 import { bcDependencyGraphRule } from "./rules/bc-dependency-graph.ts";
 import { noCrossModuleAdapterImportRule } from "./rules/no-cross-module-adapter-import.ts";

@@ -21,7 +21,7 @@
     "@cloudflare/workers-types": "^5.20261011.1",
     "@types/pg": "^8.23.1",
     "typescript": "6.0.2",
-    "vite-plus": "0.2.8",
+    "vite-plus": "0.3.3",
     "wrangler": "^4.151.0"
   }
 }

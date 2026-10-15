@@ -44,18 +44,14 @@ export function prefetchableWorkspaceSelections(
   model: WorkspaceSelectorModel,
 ): readonly WorkspaceSelection[] {
   return [
-    ...model.competitions.map(
-      (competition): WorkspaceSelection => ({
-        kind: WORKSPACE_SELECTION_KIND.competition,
-        competitionId: competition.competitionId,
-        organizationId: competition.organizationId,
-      }),
-    ),
-    ...model.organizations.map(
-      (organization): WorkspaceSelection => ({
-        kind: WORKSPACE_SELECTION_KIND.organization,
-        organizationId: organization.organizationId,
-      }),
-    ),
+    ...model.competitions.map((competition): WorkspaceSelection => ({
+      kind: WORKSPACE_SELECTION_KIND.competition,
+      competitionId: competition.competitionId,
+      organizationId: competition.organizationId,
+    })),
+    ...model.organizations.map((organization): WorkspaceSelection => ({
+      kind: WORKSPACE_SELECTION_KIND.organization,
+      organizationId: organization.organizationId,
+    })),
   ];
 }
