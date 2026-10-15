@@ -2,7 +2,7 @@ import * as React from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { media } from "#styles/media.stylex";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
@@ -15,8 +15,21 @@ function useTabsVariant(): TabsVariant {
   return React.useContext(TabsVariantContext);
 }
 
-type TabsProps = TabsPrimitive.Root.Props & {
+type TabsProps = Omit<TabsPrimitive.Root.Props, "className"> & {
+  className?: HostClassName | TabsPrimitive.Root.Props["className"];
   readonly variant?: TabsVariant;
+};
+
+type TabsListProps = Omit<TabsPrimitive.List.Props, "className"> & {
+  className?: HostClassName | TabsPrimitive.List.Props["className"];
+};
+
+type TabsTriggerProps = Omit<TabsPrimitive.Tab.Props, "className"> & {
+  className?: HostClassName | TabsPrimitive.Tab.Props["className"];
+};
+
+type TabsContentProps = Omit<TabsPrimitive.Panel.Props, "className"> & {
+  className?: HostClassName | TabsPrimitive.Panel.Props["className"];
 };
 
 function Tabs({ variant = "line", className, style, ...props }: TabsProps) {
@@ -159,7 +172,7 @@ const triggerVariantStyles = {
   pills: styles.triggerPills,
 } as const;
 
-function TabsList({ className, style, ...props }: TabsPrimitive.List.Props) {
+function TabsList({ className, style, ...props }: TabsListProps) {
   const variant = useTabsVariant();
 
   return (
@@ -172,7 +185,7 @@ function TabsList({ className, style, ...props }: TabsPrimitive.List.Props) {
   );
 }
 
-function TabsTrigger({ className, style, ...props }: TabsPrimitive.Tab.Props) {
+function TabsTrigger({ className, style, ...props }: TabsTriggerProps) {
   const variant = useTabsVariant();
 
   return (
@@ -211,7 +224,7 @@ function TabsIndicator({ className, style, ...props }: TabsPrimitive.Indicator.P
   }
 }
 
-function TabsContent({ className, style, ...props }: TabsPrimitive.Panel.Props) {
+function TabsContent({ className, style, ...props }: TabsContentProps) {
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"

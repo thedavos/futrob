@@ -45,10 +45,23 @@ const styles = stylex.create({
       default: null,
       ":disabled": "none",
     },
+    // Fallback for buttons disabled without the prop (e.g. inside `<fieldset disabled>`).
     opacity: {
       default: 1,
       ":disabled": 0.5,
     },
+  },
+  // Applied last for disabled buttons: a dimmed lima reads as muddy olive on graphite, so
+  // filled variants switch to a neutral fill instead of lowering opacity.
+  disabledFilled: {
+    opacity: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.muted,
+    color: colors.mutedForeground,
+  },
+  disabledPlain: {
+    opacity: 1,
+    color: colors.mutedForeground,
   },
   defaultVariant: {
     backgroundColor: {
@@ -170,6 +183,16 @@ const variantStyles = {
 } as const;
 
 export type ButtonVariant = keyof typeof variantStyles;
+
+const disabledVariantStyles = {
+  default: styles.disabledFilled,
+  outline: styles.disabledFilled,
+  secondary: styles.disabledFilled,
+  ghost: styles.disabledPlain,
+  destructive: styles.disabledFilled,
+  link: styles.disabledPlain,
+} as const;
+
 export type ButtonSize = "default" | "icon";
 
 /** Stops browsers from restoring dynamic `disabled` across reloads (SSR hydration mismatch). */
@@ -216,6 +239,7 @@ function Button({
           : size === "icon"
             ? styles.heightDefaultIcon
             : styles.heightDefault,
+        props.disabled ? disabledVariantStyles[variant] : null,
         stylex.defaultMarker(),
       )}
       {...props}

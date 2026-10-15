@@ -235,6 +235,12 @@
   padding-right: 2.75rem;
 }
 
+/* The custom clear action replaces the browser's own `type="search"` cancel button. */
+[data-slot="input-with-icon"][data-has-end-action]
+  [data-slot="input"]::-webkit-search-cancel-button {
+  appearance: none;
+}
+
 [data-slot="scroll-area-viewport"] {
   scrollbar-width: none;
 }

@@ -3,7 +3,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
@@ -44,11 +44,11 @@ const styles = stylex.create({
   },
   close: {
     position: "absolute",
-    top: "1rem",
-    right: "1rem",
+    top: "0.75rem",
+    right: "0.75rem",
     display: "inline-flex",
-    width: "2.5rem",
-    height: "2.5rem",
+    width: "var(--control-height)",
+    height: "var(--control-height)",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: "var(--corner-lg)",
@@ -77,7 +77,7 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     gap: "0.5rem",
-    paddingRight: "2.5rem",
+    paddingRight: "2.75rem",
     textAlign: "left",
   },
   footer: {
@@ -121,7 +121,8 @@ function DialogBackdrop({ className, style, ...props }: DialogPrimitive.Backdrop
   );
 }
 
-type DialogContentProps = DialogPrimitive.Popup.Props & {
+type DialogContentProps = Omit<DialogPrimitive.Popup.Props, "className"> & {
+  className?: HostClassName | DialogPrimitive.Popup.Props["className"];
   hideClose?: boolean;
 };
 
