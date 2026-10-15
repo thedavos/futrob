@@ -30,7 +30,7 @@ Preconditions:
 - **Create draft (UI).** From the competitions index empty state, choose `Nueva competición`, or open `/orgs/<organizationId>/competitions/new` with the address-bar id. Heading `Nueva competición`. Fill `Nombre de la competición` (placeholder `ej. Liga Futrob Apertura`), choose a platform under `Plataforma de la competición`, a `Región deportiva`, and a `Formato`. Choose form submit `Crear competición`. The URL becomes `/orgs/<organizationId>/competitions/<competitionId>/setup`.
 - **Setup.** The setup view is reachable. The header title is `Configurar competición` with a `Borrador` badge (not `Configurar <name>`). Stepper label `Información`, body heading `Información general`, and field `Nombre de la competición` are visible (default when `?step=` is absent). Do not claim publish, fixture, or Match Center unless you actually drive those controls in the UI.
 - **Review.** Open `?step=review`. Heading `Resumen de configuración`. Visible blocks: `Información general`, `Formato`, `Reglas`, `Participantes`, `Vista previa`, and `Lista para publicar`. Each summary block has `Editar`. The action bar has no `Continuar`; it has `Abrir inscripciones` or `Cerrar inscripciones`, and `Publicar competición`. Do not expect vueltas, equipos previstos, a reglamento, team shields, or invitation counts.
-- **Participants.** Open `?step=participants`. The action bar includes `Continuar` and `Abrir inscripciones` or `Cerrar inscripciones`. It does not include `Publicar competición`.
+- **Participants.** Open `?step=participants`. The action bar includes `Continuar` and `Abrir inscripciones` or `Cerrar inscripciones`. It does not include `Publicar competición`. The body may show `Invitar equipo`; driving invitations is not this seed.
 - **CLI twin.** From the repo root:
 
   ```bash
@@ -46,7 +46,8 @@ Preconditions:
 - Organizer onboarding creates a draft **and** an org in one finish action. `/orgs/new` is a later second org. Do not mix the two recipes without saying which entry you used.
 - `Crear competición` is hidden when `canCreate` is false. That is a permission outcome, not a missing button bug.
 - `e2e-golden-path` stops at fixture. It does not sync EA, select official matches, or publish a portal.
-- Fixture-managed encounters reject manual `snapshot-set` with 409 `fixture_managed_conflict`.
+- Fixture-managed encounters reject manual `snapshot-set` with 409 `scheduling.fixture_managed_conflict`.
+- JSON mutating API calls without `Content-Type: application/json` return 415 `api.unsupported_media_type`. The CLI SDK sets that header; do not treat a 415 from raw curl as a domain failure. Malformed JSON is 400 `api.validation_error`.
 - After `Crear organización` the URL is `/orgs/$orgId/competitions` (heading `Competiciones`, empty `Sin competiciones todavía`, CTA `Nueva competición`). `/orgs/$orgId` is a real organization home (`Crear competición`), not a stub, and is not the create redirect target.
 - On Postgres, `--actor` must be a real `actors.id` from signup. Invented ids such as `actor_demo` fail the actor foreign key.
 - Unique org names: reuse of `Verify Org <run-id>` can fail. Always include the run id.

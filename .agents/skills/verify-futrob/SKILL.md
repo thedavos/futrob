@@ -108,7 +108,9 @@ npm run cli -- <command> --actor <actorId> [--json]
 npm run cli -- e2e-golden-path --actor <actorId-from-signup>
 ```
 
-Expected domain failures (not harness bugs): `snapshot-set` → 409 `fixture_managed_conflict` on fixture-owned encounters; `provider-health` → 403 without `superusersManage`.
+Expected domain failures (not harness bugs): `snapshot-set` → 409 `scheduling.fixture_managed_conflict` on fixture-owned encounters; `provider-health` → 403 `authorization.forbidden` without `superusersManage`.
+
+JSON mutating routes require `Content-Type: application/json`. Missing or non-JSON Content-Type is 415 `api.unsupported_media_type`; malformed JSON is 400 `api.validation_error`. The CLI SDK sets that header when a body is present, so `npm run cli --` does not hit 415. Raw curl without it will.
 
 ## Evidence
 
