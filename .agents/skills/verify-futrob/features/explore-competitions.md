@@ -26,7 +26,7 @@ Preconditions:
 - At least one published competition exists if the ready list is the proof target. Publish requires two approved entries (`npm run cli -- e2e-golden-path` then `comp-explore`).
 
 - **Workspace entry.** Open `/player/competitions`. Choose `Explorar competiciones`. The URL is `/player/competitions/explore`. The heading is `Explorar competiciones`.
-- **Ready or empty.** If items exist, the status region names the count (`N competiciones`). Each card has `Ver competición` and `Compartir competición`. If none exist and the URL has no filters, the empty title is `Aún no hay competiciones publicadas`.
+- **Ready or empty.** If items exist, the status region names the count (`1 competición` / `N competiciones`). Each card has `Ver competición` and a share control whose accessible name is `Compartir competición` (icon button, not a text label). Organizer/staff of the owning org also see `Gestionar`. If none exist and the URL has no filters, the empty title is `Aún no hay competiciones publicadas`.
 - **Filtered empty (only if you can force no matches).** Set `?q=zzzzzzzz`. The empty title is `No encontramos competiciones`. Choose `Limpiar búsqueda y filtros`. The search box is empty and `q` leaves the URL.
 - **Detail.** From a card, choose `Ver competición`. The URL is `/player/competitions/<id>`. The heading is the competition name. An unknown or draft id shows `Competición no disponible`.
 - **API twin.** `npm run cli -- e2e-golden-path --actor <id>` then `npm run cli -- comp-explore --actor <id> --json`. The published id appears. `comp-explore-show <id>` returns the same name.
@@ -38,4 +38,5 @@ Preconditions:
 - Unknown or draft ids must be opened as `/player/competitions/<id>`. A bare `/competitions/<id>` is a different generic `Not Found`, not `Competición no disponible`.
 - `draft` and `archived` never appear, even with a guessed id.
 - `Gestionar` appears only for organizer/staff of the owning organization. `Tu equipo participa` is presentational; the manage route still authorizes.
-- There is no toast system. Share confirmation stays on the card or detail header.
+- There is no toast system. Card share confirmation is `Enlace copiado` in an `aria-live` region that is visually hidden (`srOnly`). The detail header control is labeled `Compartir` and swaps its visible label to `Enlace copiado` after a successful clipboard write; a clipboard-permission miss leaves the label as `Compartir`.
+- Self-registration is out of this seed. A competition in `registration` can show an apply form on detail for a visitor; organizer `Gestionar` hides that form. Do not treat a published detail with `Gestionar` as proof of apply.

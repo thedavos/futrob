@@ -9,6 +9,7 @@ AUTH_PORT=8788
 # Vite+ web binds IPv6 [::1] only. localhost resolves to that; 127.0.0.1 does not.
 WEB_URL="http://localhost:${WEB_PORT}"
 API_PING_URL="http://localhost:${API_PORT}/api/v1/meta/ping"
+API_HEALTH_URL="http://localhost:${API_PORT}/api/v1/meta/health"
 AUTH_HEALTH_URL="http://localhost:${AUTH_PORT}/meta/health"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -194,6 +195,12 @@ cmd_doctor() {
   auth_code="$(http_code "${AUTH_HEALTH_URL}")"
   echo "doctor: GET ${WEB_URL}/ → ${web_code}"
   echo "doctor: GET ${API_PING_URL} → ${api_code} $(http_body "${API_PING_URL}")"
+  local health_body
+  health_body="$(http_body "${API_HEALTH_URL}")"
+  echo "doctor: GET ${API_HEALTH_URL} → $(http_code "${API_HEALTH_URL}") ${health_body}"
+  if [[ "${health_body}" == *'"db":"skipped"'* ]]; then
+    echo "doctor: warning: API db is skipped (no DATABASE_URL). Sign-in and mutating org proofs need migrated Postgres." >&2
+  fi
   echo "doctor: GET ${AUTH_HEALTH_URL} → ${auth_code} $(http_body "${AUTH_HEALTH_URL}")"
 
   if doctor_probes; then

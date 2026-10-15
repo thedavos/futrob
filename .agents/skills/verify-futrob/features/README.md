@@ -49,4 +49,5 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 - Native mobile — auth foundation only; `AC-MOB-*` requires iOS/Android builds.
 - Onboarding invitation and organizer paths — real, but not in this seed; do not claim them via the player path.
 - Player club / game-account / invitations — live routes (`/player/ea-clubs`, `/player/game-accounts`, `/invitations/accept/*`, `/roster-invitations/accept/*`). Visible from `/player` (`Añadir club`, `Vincular cuenta`, sidebar). Not in this seed. `/player/competitions/explore` is mapped.
-- Org picker `/orgs` (`Tus organizaciones`), org competitions index `/orgs/$orgId/competitions`, and teams console `/orgs/$orgId/competitions/$competitionId/teams` — shipped operator screens. `competition-setup` covers create + wizard only; do not treat those three as proven through setup.
+- Org picker `/orgs` (`Tus organizaciones`) and teams console `/orgs/$orgId/competitions/$competitionId/teams` — shipped operator screens. `competition-setup` covers create + wizard, including the competitions-index empty CTA `Nueva competición`; do not treat the full index, org home, or teams console as proven through setup.
+- Team invitations from setup participants (`Invitar equipo`) — visible on the mapped wizard; driving invitations is not this seed.

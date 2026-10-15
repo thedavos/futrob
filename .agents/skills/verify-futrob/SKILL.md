@@ -43,7 +43,7 @@ Run first whenever anything looks off, before the first drive, after any failed 
 .agents/skills/verify-futrob/helpers/verify-futrob doctor
 ```
 
-Exit 0 only when: the three probes above succeed, and either (a) the lock file's pid/pgid still owns the listeners, or (b) attach mode is in effect and the operator owned the stack. A 200 login with a later unauthenticated BFF usually means `BETTER_AUTH_SECRET` mismatch — doctor does not catch that; the auth feature map does.
+Exit 0 only when: the three probes above succeed, and either (a) the lock file's pid/pgid still owns the listeners, or (b) attach mode is in effect and the operator owned the stack. Doctor also prints `GET /api/v1/meta/health` `db` (`ok` or `skipped`) and warns when skipped: sign-in and mutating org proofs need migrated Postgres. A 200 login with a later unauthenticated BFF usually means `BETTER_AUTH_SECRET` mismatch — doctor does not catch that; the auth feature map does.
 
 ## Drive
 
@@ -59,7 +59,7 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Landing login | button/link `Iniciar sesión` |
 | Landing signup | button/link `Crear cuenta` |
 | Hero primary CTA | `Crear cuenta` → `/signup` |
-| Hero secondary CTA | `Ver cómo funciona` → `#mecanismo` |
+| Hero secondary CTA | button `Ver cómo funciona` → `#mecanismo` |
 | Landing nav landmark | `Acceso` |
 | Login heading | `Inicia sesión` |
 | Login email | textbox `Correo electrónico` (placeholder `ejemplo@correo.com`) |
@@ -77,17 +77,19 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Skip optional onboarding | button `Omitir por ahora` |
 | Player finish | button `Entrar a mi espacio` |
 | Player home title | `Inicio` |
-| Shell identity (no club/gamertag) | `Tu espacio en Futrob` |
-| Open matches | sidebar link `Mis partidos` (header CTA, when present, is `Ver mis partidos`) |
+| Shell identity (no club/org) | `Sin organización` (`shell.identity.empty`; unused catalog `Tu espacio en Futrob` is not a control) |
+| Open matches | sidebar link `Mis partidos` (header CTA, when present, is `Ver mis partidos`). Direct URL is `/player/matches`; default `view=all` may be omitted from the query |
 | Match view radios | `Todos`, `Liga`, `Playoff`, `Amistosos` (hidden until matches can load) |
 | Open match row | link `Ver {home} {homeGoals} – {awayGoals} {away}` — not the unused string `Ver partido` |
 | Landing final CTA | below-fold `Crear cuenta` / `Iniciar sesión` under `¿Listo para poner tu competición bajo control?` |
 | Open statistics | sidebar link `Mis estadísticas` |
 | Org name | textbox `Nombre de la organización` |
 | Create org | button `Crear organización` |
-| New competition (org home) | button `Crear competición` |
+| New competition (empty index) | button `Nueva competición` on `/orgs/$orgId/competitions` when the list is empty |
+| New competition (org home) | button `Crear competición` on `/orgs/$orgId` |
 | Competition name | textbox `Nombre de la competición` |
-| Create competition | button `Crear competición` |
+| Create competition | form submit `Crear competición` (not the empty-index CTA) |
+| Setup header | `Configurar competición` (not `Configurar <name>`) |
 
 Do not drive by coordinates or tab order. After each mutation, snapshot the resulting URL and a visible heading — not only the click.
 
@@ -106,7 +108,9 @@ npm run cli -- <command> --actor <actorId> [--json]
 npm run cli -- e2e-golden-path --actor <actorId-from-signup>
 ```
 
-Expected domain failures (not harness bugs): `snapshot-set` → 409 `fixture_managed_conflict` on fixture-owned encounters; `provider-health` → 403 without `superusersManage`.
+Expected domain failures (not harness bugs): `snapshot-set` → 409 `scheduling.fixture_managed_conflict` on fixture-owned encounters; `provider-health` → 403 `authorization.forbidden` without `superusersManage`.
+
+JSON mutating routes require `Content-Type: application/json`. Missing or non-JSON Content-Type is 415 `api.unsupported_media_type`; malformed JSON is 400 `api.validation_error`. The CLI SDK sets that header when a body is present, so `npm run cli --` does not hit 415. Raw curl without it will.
 
 ## Evidence
 
@@ -150,7 +154,7 @@ All invocations are from the repo root. The script is executable.
 | Command | Purpose |
 | --- | --- |
 | `helpers/verify-futrob launch` | Start `npm run dev` if ports are free; wait until doctor-ready |
-| `helpers/verify-futrob doctor` | Read-only: ports, pids, three health probes |
+| `helpers/verify-futrob doctor` | Read-only: ports, pids, three health probes, API `db` ok/skipped |
 | `helpers/verify-futrob evidence-dir` | Print (and create) this run's evidence directory |
 | `helpers/verify-futrob cleanup` | Tear down what launch started; keep evidence |
 
@@ -162,7 +166,7 @@ These are real product destinations. Do not claim them verified through a differ
 - Match Center / official selection / confirmation (no scheduling/results UI)
 - Native iOS/Android (`AC-MOB-*` — Expo web is not that proof)
 - Superuser / provider-health admin
-- Player club / game-account / competitions / invitations (`/player/ea-clubs`, `/player/game-accounts`, `/player/competitions`, invitation accept routes)
+- Player club / game-account / invitations (`/player/ea-clubs`, `/player/game-accounts`, invitation accept routes). The player competitions **index** (`/player/competitions`, Mis competiciones) is not this seed; `/player/competitions/explore` is mapped.
 - Organizer and invitation onboarding (do not claim them via the player path)
 
 ## Maintenance
