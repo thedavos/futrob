@@ -1352,6 +1352,134 @@ const es = {
   "encounter.candidate.useIn": ({ slot }) => `Usar en partido ${slot}`,
   "encounter.candidate.usedIn": ({ slot }) => `En partido ${slot}`,
   "encounter.candidate.unused": "Sin usar",
+  "encounter.selection.title": "Selección oficial",
+  "encounter.selection.description":
+    "Propón los partidos EA que cuentan, responde a la propuesta del rival o abre una disputa. Nada es oficial hasta que el rival confirma.",
+  "encounter.selection.actingAs": "Actúas por",
+  "encounter.selection.loading": "Cargando la selección oficial…",
+  "encounter.selection.error": "No pudimos cargar la selección oficial.",
+  "encounter.selection.forbidden":
+    "No puedes ver ni operar la selección oficial de este enfrentamiento.",
+  "encounter.selection.refresh": "Actualizar selección",
+  "encounter.selection.refreshFailed":
+    "No pudimos actualizar la selección. Los datos mostrados pueden haber cambiado.",
+  "encounter.selection.empty.title": "Aún no hay propuesta",
+  "encounter.selection.empty.description":
+    "Asigna un partido EA a cada partido oficial y propón la selección al rival.",
+  "encounter.selection.status.none": "Sin propuesta",
+  "encounter.selection.status.awaiting_provider_data": "Esperando datos del proveedor",
+  "encounter.selection.status.candidates_available": "Candidatos disponibles",
+  "encounter.selection.status.selection_in_progress": "Selección en curso",
+  "encounter.selection.status.awaiting_opponent_confirmation": "Esperando confirmación del rival",
+  "encounter.selection.status.confirmed": "Confirmada",
+  "encounter.selection.status.disputed": "En disputa",
+  "encounter.selection.status.organizer_review": "En revisión de la organización",
+  "encounter.selection.status.approved": "Aprobada",
+  "encounter.selection.status.voided": "Anulada",
+  "encounter.selection.version": ({ version }) => `Versión ${version}`,
+  "encounter.selection.round": ({ round }) => `Ronda ${round}`,
+  "encounter.selection.deadline": ({ date }) => `El rival puede responder hasta ${date}`,
+  "encounter.selection.approved": "Resultado oficial aprobado",
+  "encounter.selection.notOfficial": "Todavía no es un resultado oficial y no genera estadísticas.",
+  "encounter.selection.noCommands": "No hay acciones disponibles para tu equipo en este estado.",
+  "encounter.selection.dispute.title": "Disputa",
+  "encounter.selection.dispute.status.open": "Abierta",
+  "encounter.selection.dispute.status.under_review": "En revisión",
+  "encounter.selection.dispute.status.resolved": "Resuelta",
+  "encounter.selection.dispute.openedBy": ({ team }) => `Abierta por ${team}`,
+  "encounter.selection.flags.title": "Avisos de integridad",
+  "encounter.selection.flags.provider_data_incomplete": ({ match }) =>
+    `Datos incompletos del proveedor en el partido EA ${match}`,
+  "encounter.selection.flags.provider_match_disconnected": ({ match }) =>
+    `Hubo desconexión en el partido EA ${match}`,
+  "encounter.selection.proposals.title": "Propuestas",
+  "encounter.selection.proposal.label": ({ sequence, round }) =>
+    `Propuesta ${sequence} · ronda ${round}`,
+  "encounter.selection.proposal.current": "Vigente",
+  "encounter.selection.proposal.superseded": "Reemplazada",
+  "encounter.selection.proposal.by": ({ team }) => `De ${team}`,
+  "encounter.selection.slot.score": ({ slot, home, homeGoals, awayGoals, away }) =>
+    `Partido ${slot}: ${home} ${homeGoals}–${awayGoals} ${away}`,
+  "encounter.selection.slot.unmatched": ({ slot, match }) =>
+    `Partido ${slot}: partido EA ${match}, jugado por otros clubes`,
+  "encounter.selection.slot.missing": ({ slot, match }) =>
+    `Partido ${slot}: partido EA ${match}, ya no figura entre los candidatos`,
+  "encounter.selection.slot.empty": ({ slot }) => `Partido ${slot}: sin partido EA asignado`,
+  "encounter.selection.history.title": "Historial de la selección",
+  "encounter.selection.history.byOperator": "Organización",
+  "encounter.selection.history.bySystem": "Sistema",
+  "encounter.selection.history.action.proposed": "Propuesta enviada",
+  "encounter.selection.history.action.confirmed": "Propuesta confirmada",
+  "encounter.selection.history.action.approved": "Resultado aprobado",
+  "encounter.selection.history.action.integrity_review_required":
+    "Revisión de integridad requerida",
+  "encounter.selection.history.action.rejected": "Propuesta rechazada",
+  "encounter.selection.history.action.alternative_proposed": "Alternativa propuesta",
+  "encounter.selection.history.action.dispute_opened": "Disputa abierta",
+  "encounter.selection.history.action.review_started": "Revisión iniciada",
+  "encounter.selection.history.action.dispute_resolved_approved": "Disputa resuelta con aprobación",
+  "encounter.selection.history.action.returned_to_selection": "Devuelta a selección",
+  "encounter.selection.history.action.voided": "Resultado anulado",
+  "encounter.selection.history.action.reference_reuse_rejected":
+    "Partido EA ya usado en otro enfrentamiento",
+  "encounter.selection.history.action.legacy_review_required":
+    "Revisión requerida por datos anteriores",
+  "encounter.selection.history.action.confirmation_expired": "Plazo de confirmación vencido",
+  "encounter.selection.team.unknown": "Equipo sin identificar",
+  "encounter.selection.command.propose.trigger": "Proponer selección",
+  "encounter.selection.command.propose.title": "Proponer la selección al rival",
+  "encounter.selection.command.propose.description":
+    "El rival recibirá estos partidos EA para confirmarlos, rechazarlos o proponer otros.",
+  "encounter.selection.command.propose.submit": "Enviar propuesta",
+  "encounter.selection.command.propose.success": "Propuesta enviada al rival.",
+  "encounter.selection.command.confirm.trigger": "Confirmar propuesta",
+  "encounter.selection.command.confirm.title": "Confirmar la propuesta del rival",
+  "encounter.selection.command.confirm.description":
+    "Si no hay avisos de integridad, la selección queda aprobada como resultado oficial.",
+  "encounter.selection.command.confirm.submit": "Confirmar",
+  "encounter.selection.command.confirm.success": "Propuesta confirmada.",
+  "encounter.selection.command.reject.trigger": "Rechazar",
+  "encounter.selection.command.reject.title": "Rechazar la propuesta",
+  "encounter.selection.command.reject.description":
+    "La selección pasa a disputa y la organización decide. Nada se vuelve oficial.",
+  "encounter.selection.command.reject.submit": "Rechazar propuesta",
+  "encounter.selection.command.reject.success":
+    "Propuesta rechazada. La selección queda en disputa.",
+  "encounter.selection.command.propose_alternative.trigger": "Proponer alternativa",
+  "encounter.selection.command.propose_alternative.title": "Proponer otros partidos EA",
+  "encounter.selection.command.propose_alternative.description":
+    "Tu alternativa reemplaza la propuesta vigente y el rival deberá responderla.",
+  "encounter.selection.command.propose_alternative.submit": "Enviar alternativa",
+  "encounter.selection.command.propose_alternative.success": "Alternativa enviada al rival.",
+  "encounter.selection.command.open_dispute.trigger": "Abrir disputa",
+  "encounter.selection.command.open_dispute.title": "Abrir una disputa",
+  "encounter.selection.command.open_dispute.description":
+    "La organización revisará el caso. Mientras tanto, nada se vuelve oficial.",
+  "encounter.selection.command.open_dispute.submit": "Abrir disputa",
+  "encounter.selection.command.open_dispute.success": "Disputa abierta.",
+  "encounter.selection.dialog.submitting": "Enviando…",
+  "encounter.selection.dialog.cancel": "Cancelar",
+  "encounter.selection.dialog.retry": "Reintentar",
+  "encounter.selection.dialog.slots": "Partidos que envías",
+  "encounter.selection.dialog.slotsIncomplete":
+    "Asigna un partido EA a cada partido oficial antes de enviar.",
+  "encounter.selection.dialog.target": "Propuesta a la que respondes",
+  "encounter.selection.reason.label": "Motivo",
+  "encounter.selection.reason.help":
+    "Obligatorio. Lo verán el rival y la organización. Máximo 1000 caracteres.",
+  "encounter.selection.reason.required": "Escribe un motivo para continuar.",
+  "encounter.selection.conflict": ({ from, to }) =>
+    `La selección cambió: leíste la versión ${from} y ahora está en la ${to}. Revisa el estado actual; tu borrador se conserva y no se reenvió nada.`,
+  "encounter.selection.conflictStale": ({ from }) =>
+    `La selección cambió desde la versión ${from}. Actualiza para ver el estado actual; tu borrador se conserva.`,
+  "encounter.selection.unavailable": "Esta acción ya no está disponible en el estado actual.",
+  "encounter.selection.unknown":
+    "No sabemos si se guardó porque falló la conexión. Reintentar envía la misma solicitud y no la duplica.",
+  "errors.results.reason_required": "Escribe un motivo para continuar.",
+  "errors.results.invalid_selection":
+    "La selección no es válida. Revisa los partidos EA asignados.",
+  "errors.results.duplicate_provider_match":
+    "Usaste el mismo partido EA en dos partidos oficiales.",
   "landing.footer.legal": "© 2026 Futrob",
 } satisfies Record<string, Message>;
 
@@ -1390,6 +1518,29 @@ export interface MessageParamsByKey {
   readonly "encounter.candidate.players": { readonly count: number };
   readonly "encounter.candidate.useIn": { readonly slot: number };
   readonly "encounter.candidate.usedIn": { readonly slot: number };
+  readonly "encounter.selection.version": { readonly version: number };
+  readonly "encounter.selection.round": { readonly round: number };
+  readonly "encounter.selection.deadline": { readonly date: string };
+  readonly "encounter.selection.dispute.openedBy": { readonly team: string };
+  readonly "encounter.selection.flags.provider_data_incomplete": { readonly match: string };
+  readonly "encounter.selection.flags.provider_match_disconnected": { readonly match: string };
+  readonly "encounter.selection.proposal.label": {
+    readonly sequence: number;
+    readonly round: number;
+  };
+  readonly "encounter.selection.proposal.by": { readonly team: string };
+  readonly "encounter.selection.slot.score": {
+    readonly slot: number;
+    readonly home: string;
+    readonly homeGoals: number;
+    readonly awayGoals: number;
+    readonly away: string;
+  };
+  readonly "encounter.selection.slot.unmatched": { readonly slot: number; readonly match: string };
+  readonly "encounter.selection.slot.missing": { readonly slot: number; readonly match: string };
+  readonly "encounter.selection.slot.empty": { readonly slot: number };
+  readonly "encounter.selection.conflict": { readonly from: number; readonly to: number };
+  readonly "encounter.selection.conflictStale": { readonly from: number };
   readonly "common.seconds": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
@@ -2851,6 +3002,129 @@ const en: Catalog = {
   "encounter.candidate.useIn": ({ slot }) => `Use in match ${slot}`,
   "encounter.candidate.usedIn": ({ slot }) => `In match ${slot}`,
   "encounter.candidate.unused": "Unused",
+  "encounter.selection.title": "Official selection",
+  "encounter.selection.description":
+    "Propose the EA matches that count, answer the opponent's proposal, or open a dispute. Nothing is official until the opponent confirms.",
+  "encounter.selection.actingAs": "Acting for",
+  "encounter.selection.loading": "Loading the official selection…",
+  "encounter.selection.error": "We couldn't load the official selection.",
+  "encounter.selection.forbidden": "You can't view or act on this encounter's official selection.",
+  "encounter.selection.refresh": "Refresh selection",
+  "encounter.selection.refreshFailed":
+    "We couldn't refresh the selection. What you see may have changed.",
+  "encounter.selection.empty.title": "No proposal yet",
+  "encounter.selection.empty.description":
+    "Assign an EA match to every official match and propose the selection to the opponent.",
+  "encounter.selection.status.none": "No proposal",
+  "encounter.selection.status.awaiting_provider_data": "Waiting for provider data",
+  "encounter.selection.status.candidates_available": "Candidates available",
+  "encounter.selection.status.selection_in_progress": "Selection in progress",
+  "encounter.selection.status.awaiting_opponent_confirmation":
+    "Waiting for the opponent to confirm",
+  "encounter.selection.status.confirmed": "Confirmed",
+  "encounter.selection.status.disputed": "Disputed",
+  "encounter.selection.status.organizer_review": "Under organizer review",
+  "encounter.selection.status.approved": "Approved",
+  "encounter.selection.status.voided": "Voided",
+  "encounter.selection.version": ({ version }) => `Version ${version}`,
+  "encounter.selection.round": ({ round }) => `Round ${round}`,
+  "encounter.selection.deadline": ({ date }) => `The opponent can answer until ${date}`,
+  "encounter.selection.approved": "Official result approved",
+  "encounter.selection.notOfficial": "Not an official result yet, and it produces no statistics.",
+  "encounter.selection.noCommands": "Your team has no actions available in this state.",
+  "encounter.selection.dispute.title": "Dispute",
+  "encounter.selection.dispute.status.open": "Open",
+  "encounter.selection.dispute.status.under_review": "Under review",
+  "encounter.selection.dispute.status.resolved": "Resolved",
+  "encounter.selection.dispute.openedBy": ({ team }) => `Opened by ${team}`,
+  "encounter.selection.flags.title": "Integrity warnings",
+  "encounter.selection.flags.provider_data_incomplete": ({ match }) =>
+    `Incomplete provider data in EA match ${match}`,
+  "encounter.selection.flags.provider_match_disconnected": ({ match }) =>
+    `A disconnect happened in EA match ${match}`,
+  "encounter.selection.proposals.title": "Proposals",
+  "encounter.selection.proposal.label": ({ sequence, round }) =>
+    `Proposal ${sequence} · round ${round}`,
+  "encounter.selection.proposal.current": "Current",
+  "encounter.selection.proposal.superseded": "Replaced",
+  "encounter.selection.proposal.by": ({ team }) => `From ${team}`,
+  "encounter.selection.slot.score": ({ slot, home, homeGoals, awayGoals, away }) =>
+    `Match ${slot}: ${home} ${homeGoals}–${awayGoals} ${away}`,
+  "encounter.selection.slot.unmatched": ({ slot, match }) =>
+    `Match ${slot}: EA match ${match}, played by other clubs`,
+  "encounter.selection.slot.missing": ({ slot, match }) =>
+    `Match ${slot}: EA match ${match}, no longer among the candidates`,
+  "encounter.selection.slot.empty": ({ slot }) => `Match ${slot}: no EA match assigned`,
+  "encounter.selection.history.title": "Selection history",
+  "encounter.selection.history.byOperator": "Organization",
+  "encounter.selection.history.bySystem": "System",
+  "encounter.selection.history.action.proposed": "Proposal sent",
+  "encounter.selection.history.action.confirmed": "Proposal confirmed",
+  "encounter.selection.history.action.approved": "Result approved",
+  "encounter.selection.history.action.integrity_review_required": "Integrity review required",
+  "encounter.selection.history.action.rejected": "Proposal rejected",
+  "encounter.selection.history.action.alternative_proposed": "Alternative proposed",
+  "encounter.selection.history.action.dispute_opened": "Dispute opened",
+  "encounter.selection.history.action.review_started": "Review started",
+  "encounter.selection.history.action.dispute_resolved_approved": "Dispute resolved with approval",
+  "encounter.selection.history.action.returned_to_selection": "Returned to selection",
+  "encounter.selection.history.action.voided": "Result voided",
+  "encounter.selection.history.action.reference_reuse_rejected":
+    "EA match already used in another encounter",
+  "encounter.selection.history.action.legacy_review_required": "Review required for earlier data",
+  "encounter.selection.history.action.confirmation_expired": "Confirmation window expired",
+  "encounter.selection.team.unknown": "Unidentified team",
+  "encounter.selection.command.propose.trigger": "Propose selection",
+  "encounter.selection.command.propose.title": "Propose the selection to the opponent",
+  "encounter.selection.command.propose.description":
+    "The opponent gets these EA matches to confirm, reject, or replace with others.",
+  "encounter.selection.command.propose.submit": "Send proposal",
+  "encounter.selection.command.propose.success": "Proposal sent to the opponent.",
+  "encounter.selection.command.confirm.trigger": "Confirm proposal",
+  "encounter.selection.command.confirm.title": "Confirm the opponent's proposal",
+  "encounter.selection.command.confirm.description":
+    "Without integrity warnings, the selection is approved as the official result.",
+  "encounter.selection.command.confirm.submit": "Confirm",
+  "encounter.selection.command.confirm.success": "Proposal confirmed.",
+  "encounter.selection.command.reject.trigger": "Reject",
+  "encounter.selection.command.reject.title": "Reject the proposal",
+  "encounter.selection.command.reject.description":
+    "The selection goes to dispute and the organization decides. Nothing becomes official.",
+  "encounter.selection.command.reject.submit": "Reject proposal",
+  "encounter.selection.command.reject.success": "Proposal rejected. The selection is now disputed.",
+  "encounter.selection.command.propose_alternative.trigger": "Propose alternative",
+  "encounter.selection.command.propose_alternative.title": "Propose other EA matches",
+  "encounter.selection.command.propose_alternative.description":
+    "Your alternative replaces the current proposal and the opponent has to answer it.",
+  "encounter.selection.command.propose_alternative.submit": "Send alternative",
+  "encounter.selection.command.propose_alternative.success": "Alternative sent to the opponent.",
+  "encounter.selection.command.open_dispute.trigger": "Open dispute",
+  "encounter.selection.command.open_dispute.title": "Open a dispute",
+  "encounter.selection.command.open_dispute.description":
+    "The organization reviews the case. Meanwhile nothing becomes official.",
+  "encounter.selection.command.open_dispute.submit": "Open dispute",
+  "encounter.selection.command.open_dispute.success": "Dispute opened.",
+  "encounter.selection.dialog.submitting": "Sending…",
+  "encounter.selection.dialog.cancel": "Cancel",
+  "encounter.selection.dialog.retry": "Try again",
+  "encounter.selection.dialog.slots": "Matches you're sending",
+  "encounter.selection.dialog.slotsIncomplete":
+    "Assign an EA match to every official match before sending.",
+  "encounter.selection.dialog.target": "Proposal you're answering",
+  "encounter.selection.reason.label": "Reason",
+  "encounter.selection.reason.help":
+    "Required. The opponent and the organization will see it. Up to 1000 characters.",
+  "encounter.selection.reason.required": "Write a reason to continue.",
+  "encounter.selection.conflict": ({ from, to }) =>
+    `The selection changed: you read version ${from} and it's now at version ${to}. Check the current state; your draft is kept and nothing was resent.`,
+  "encounter.selection.conflictStale": ({ from }) =>
+    `The selection changed since version ${from}. Refresh to see the current state; your draft is kept.`,
+  "encounter.selection.unavailable": "This action is no longer available in the current state.",
+  "encounter.selection.unknown":
+    "We don't know whether it was saved because the connection failed. Trying again sends the same request without duplicating it.",
+  "errors.results.reason_required": "Write a reason to continue.",
+  "errors.results.invalid_selection": "The selection isn't valid. Check the assigned EA matches.",
+  "errors.results.duplicate_provider_match": "You used the same EA match in two official matches.",
   "landing.footer.legal": "© 2026 Futrob",
 };
 

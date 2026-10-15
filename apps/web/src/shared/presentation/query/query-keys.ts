@@ -30,6 +30,14 @@ export const queryKeys = {
       [...queryKeys.encounters.all, "view", organizationId, encounterId] as const,
     candidates: (encounterId: string) =>
       [...queryKeys.encounters.all, "candidates", encounterId] as const,
+    officialSelection: (organizationId: string, encounterId: string, actingTeamId: string) =>
+      [
+        ...queryKeys.encounters.all,
+        "official-selection",
+        organizationId,
+        encounterId,
+        actingTeamId,
+      ] as const,
   },
   identity: {
     all: ["identity"] as const,

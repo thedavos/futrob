@@ -40,6 +40,8 @@ function serve(routes: Record<string, () => Response | Promise<Response>>) {
 const VIEW_PATH = "/api/v1/organizations/org-1/encounters/encounter-1";
 const SCHEDULE_CHANGES_PATH = "/api/v1/encounters/encounter-1/schedule-change-requests";
 const CANDIDATES_PATH = "/api/v1/encounters/encounter-1/candidates";
+const accessPath = (teamId: string) =>
+  `/api/v1/authorization/effective-access?organizationId=org-1&competitionId=competition-1&teamId=${teamId}&encounterId=encounter-1&permissions=encounters.official-selection.propose`;
 
 function ForgetFromOtherTabs({ queryClient }: { readonly queryClient: QueryClient }) {
   useForgetIdentityFromOtherTabs(queryClient);
@@ -110,6 +112,8 @@ describe("Encounter page", () => {
     expect(sent).toEqual([
       { method: "GET", path: VIEW_PATH },
       { method: "GET", path: CANDIDATES_PATH },
+      { method: "GET", path: accessPath("team-home") },
+      { method: "GET", path: accessPath("team-away") },
       { method: "GET", path: SCHEDULE_CHANGES_PATH },
     ]);
   });
@@ -263,6 +267,12 @@ describe("Encounter page", () => {
         .slice(before)
         .map((request) => `${request.method} ${request.path}`)
         .sort(),
-    ).toEqual([`GET ${CANDIDATES_PATH}`, `GET ${SCHEDULE_CHANGES_PATH}`, `GET ${VIEW_PATH}`]);
+    ).toEqual([
+      `GET ${accessPath("team-away")}`,
+      `GET ${accessPath("team-home")}`,
+      `GET ${CANDIDATES_PATH}`,
+      `GET ${SCHEDULE_CHANGES_PATH}`,
+      `GET ${VIEW_PATH}`,
+    ]);
   });
 });

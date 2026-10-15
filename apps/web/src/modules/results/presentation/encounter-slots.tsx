@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { EncounterViewDto } from "@futrob/api-contracts";
 import { applyStyles, Button, Caption, Heading, Text } from "@futrob/ui";
 import { InfoIcon, SoccerBallIcon, WarningIcon, XIcon } from "@phosphor-icons/react";
@@ -74,9 +75,10 @@ export function SeriesPreviewPanel({
   readonly t: Translator;
   readonly view: EncounterViewDto;
 }) {
+  const id = useId();
   return (
-    <div aria-labelledby="encounter-preview" role="region" {...applyStyles(styles.preview)}>
-      <Heading as="h3" id="encounter-preview">
+    <div aria-labelledby={id} role="region" {...applyStyles(styles.preview)}>
+      <Heading as="h3" id={id}>
         {t("encounter.preview.title")}
       </Heading>
       <SeriesPreviewBody series={series} t={t} view={view} />

@@ -7,6 +7,7 @@ import {
   useEncounterCandidatesQuery,
   useEncounterViewQuery,
 } from "./encounter-queries.ts";
+import { useTeamSelection } from "./team-selection-queries.ts";
 
 export function EncounterRoute({
   competitionId,
@@ -22,6 +23,11 @@ export function EncounterRoute({
   const belongsHere = view?.competition.id === competitionId;
   const scheduleChanges = useScheduleChanges(encounterId, belongsHere);
   const candidatesQuery = useEncounterCandidatesQuery(encounterId, belongsHere);
+  const teamSelection = useTeamSelection({
+    encounter: belongsHere ? view : undefined,
+    encounterId,
+    organizationId,
+  });
 
   const encounter: EncounterState = (() => {
     if (viewQuery.isError) {
@@ -54,6 +60,7 @@ export function EncounterRoute({
     <EncounterPageView
       candidates={candidates}
       scheduleChanges={scheduleChanges}
+      teamSelection={teamSelection}
       competitionId={competitionId}
       encounter={encounter}
       organizationId={organizationId}
