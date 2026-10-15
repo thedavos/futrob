@@ -211,7 +211,7 @@ export const FutrobSearchNeedsThreeCharacters: Story = {
 export const FutrobNoResults: Story = {
   name: "Equipo en Futrob: sin resultados",
   args: {
-    searchPlayers: fn(async (_query: string): Promise<readonly EntryInviteeCandidateDto[]> => []),
+    searchPlayers: fn(async (_query: string): Promise<EntryInviteeCandidateDto[]> => []),
   },
   play: async ({ canvasElement }) => {
     const body = screen(canvasElement);
