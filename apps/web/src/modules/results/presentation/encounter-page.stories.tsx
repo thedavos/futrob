@@ -460,7 +460,9 @@ export const ReviewOrganizerReview: Story = {
     await userEvent.click(
       dialog.getByRole("radio", { name: "Propuesta 2 · ronda 1 · De Maderas FC" }),
     );
-    await expect(dialog.getByText("Hubo desconexión en el partido EA m-3")).toBeVisible();
+    await waitFor(() =>
+      expect(dialog.getByText("Hubo desconexión en el partido EA m-3")).toBeVisible(),
+    );
     await expect(
       dialog.getByRole("checkbox", {
         name: "Revisé los avisos de integridad y apruebo igualmente",
