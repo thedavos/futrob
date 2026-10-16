@@ -1,6 +1,14 @@
 "use client";
 
-import { useId, useRef, useState, type Dispatch, type FormEvent } from "react";
+import {
+  useId,
+  useRef,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import type {
   EncounterCandidateDto,
   EncounterViewDto,
@@ -28,148 +36,129 @@ import {
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import type { EncounterPreview } from "./encounter-preview.ts";
 import { SeriesPreviewPanel } from "./encounter-slots.tsx";
+import { REASON_MAX_LENGTH, type Submission } from "./selection-draft.ts";
 import {
   needsReason,
   needsSlots,
-  REASON_MAX_LENGTH,
-  type DraftEvent,
-  type IntentCheck,
-  type SelectionDraft,
   type TeamCommand,
-} from "./selection-draft.ts";
+  type TeamDraft,
+  type TeamDraftEvent,
+  type TeamIntentCheck,
+} from "./team-selection-draft.ts";
 import { ProposalSlots, SlotLines } from "./selection-record.tsx";
 import { styles } from "./selection.styles.ts";
 
-type Missing = Extract<IntentCheck, { ok: false }>["missing"];
-
-export type SelectionCommandDialogProps = {
-  readonly command: TeamCommand;
+/**
+ * Dialog frame every selection command shares: one form, the reconciliation notice and
+ * a submit that stays disabled while an attempt is in flight. Escape and Cancel close
+ * it unless a request is pending; focus then goes to `finalFocus`.
+ */
+export function CommandDialog({
+  available,
+  children,
+  description,
+  finalFocus,
+  onClose,
+  onSubmit,
+  open,
+  readVersion,
+  submission,
+  submitLabel,
+  t,
+  title,
+  unknown,
+}: {
   /** Whether the state just read still allows the command. */
   readonly available: boolean;
-  readonly candidates: readonly EncounterCandidateDto[];
-  readonly dispatch: Dispatch<DraftEvent>;
-  readonly draft: SelectionDraft;
-  readonly encounter: EncounterViewDto;
+  readonly children: ReactNode;
+  readonly description: string;
   readonly finalFocus: () => HTMLElement | null;
-  /** Starts the command; returns the first missing input instead when it cannot. */
-  readonly onSubmit: () => Missing | null;
-  readonly preview: EncounterPreview;
+  readonly onClose: () => void;
+  readonly onSubmit: () => void;
+  readonly open: boolean;
   readonly readVersion: number;
+  readonly submission: Submission<unknown>;
+  readonly submitLabel: string;
   readonly t: Translator;
-  readonly target: OfficialSelectionProposalDto | null;
-};
+  readonly title: string;
+  /** The last attempt of this command has an unknown outcome; submitting replays it. */
+  readonly unknown: boolean;
+}) {
+  const pending = submission.status === "pending";
 
-export function SelectionCommandDialog(props: SelectionCommandDialogProps) {
-  const { command, dispatch, draft, finalFocus, t } = props;
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onSubmit();
+  }
+
   return (
-    <Dialog
-      open={draft.open === command}
-      onOpenChange={(open) => dispatch(open ? { type: "open", command } : { type: "close" })}
-    >
+    <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
       <DialogContent finalFocus={finalFocus} {...applyStyles(styles.dialog)}>
         <DialogHeader>
-          <DialogTitle>{t(`encounter.selection.command.${command}.title`)}</DialogTitle>
-          <DialogDescription>
-            {t(`encounter.selection.command.${command}.description`)}
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <CommandForm {...props} />
+        <form aria-busy={pending} noValidate onSubmit={submit} {...applyStyles(styles.form)}>
+          {children}
+          <SubmissionNotice
+            available={available}
+            readVersion={readVersion}
+            submission={submission}
+            t={t}
+            unknown={unknown}
+          />
+          <DialogFooter>
+            <DialogClose disabled={pending} render={<Button variant="outline" />}>
+              {t("encounter.selection.dialog.cancel")}
+            </DialogClose>
+            <Button type="submit" disabled={pending || !available}>
+              {pending
+                ? t("encounter.selection.dialog.submitting")
+                : unknown
+                  ? t("encounter.selection.dialog.retry")
+                  : submitLabel}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
 }
 
-function CommandForm({
-  available,
-  candidates,
-  command,
-  dispatch,
-  draft,
-  encounter,
-  onSubmit,
-  preview,
-  readVersion,
+export function ReasonField({
+  disabled,
+  help,
+  inputRef,
+  invalid,
+  onChange,
   t,
-  target,
-}: SelectionCommandDialogProps) {
+  value,
+}: {
+  readonly disabled: boolean;
+  readonly help: string;
+  readonly inputRef: RefObject<HTMLTextAreaElement | null>;
+  readonly invalid: boolean;
+  readonly onChange: (text: string) => void;
+  readonly t: Translator;
+  readonly value: string;
+}) {
   const id = useId();
-  const reasonInput = useRef<HTMLTextAreaElement>(null);
-  const [missing, setMissing] = useState<Missing | null>(null);
-  const { submission } = draft;
-  const pending = submission.status === "pending";
-  const unknown = submission.status === "unknown" && submission.attempt.intent.kind === command;
-  const slotsIncomplete = preview.slots.some((slot) => slot.kind === "unassigned");
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const result = onSubmit();
-    setMissing(result);
-    if (result === "reason") reasonInput.current?.focus();
-  }
-
   return (
-    <form aria-busy={pending} noValidate onSubmit={submit} {...applyStyles(styles.form)}>
-      {target && command !== "propose" ? (
-        <div aria-label={t("encounter.selection.dialog.target")} role="group">
-          <Text look="label">{t("encounter.selection.dialog.target")}</Text>
-          <ProposalSlots candidates={candidates} encounter={encounter} slots={target.slots} t={t} />
-        </div>
-      ) : null}
-      {needsSlots(command) ? (
-        <div aria-label={t("encounter.selection.dialog.slots")} role="group">
-          <Text look="label">{t("encounter.selection.dialog.slots")}</Text>
-          <SlotLines encounter={encounter} previews={preview.slots} sent={[]} t={t} />
-          {slotsIncomplete ? (
-            <Text role={missing === "slots" ? "alert" : undefined} className={styles.warning}>
-              {t("encounter.selection.dialog.slotsIncomplete")}
-            </Text>
-          ) : null}
-          <SeriesPreviewPanel series={preview.series} t={t} view={encounter} />
-        </div>
-      ) : null}
-      {needsReason(command) ? (
-        <Field disabled={pending} invalid={missing === "reason"}>
-          <FieldLabel htmlFor={`${id}-reason`}>{t("encounter.selection.reason.label")}</FieldLabel>
-          <Textarea
-            ref={reasonInput}
-            id={`${id}-reason`}
-            required
-            maxLength={REASON_MAX_LENGTH}
-            value={draft.reasons[command]}
-            onChange={(event) =>
-              dispatch({ type: "edit_reason", command, text: event.target.value })
-            }
-            aria-describedby={`${id}-reason-help`}
-            aria-invalid={missing === "reason"}
-          />
-          <FieldDescription id={`${id}-reason-help`}>
-            {t("encounter.selection.reason.help")}
-          </FieldDescription>
-          {missing === "reason" ? (
-            <FieldError match>{t("encounter.selection.reason.required")}</FieldError>
-          ) : null}
-        </Field>
-      ) : null}
-      <SubmissionNotice
-        available={available}
-        readVersion={readVersion}
-        submission={submission}
-        t={t}
-        unknown={unknown}
+    <Field disabled={disabled} invalid={invalid}>
+      <FieldLabel htmlFor={`${id}-reason`}>{t("encounter.selection.reason.label")}</FieldLabel>
+      <Textarea
+        ref={inputRef}
+        id={`${id}-reason`}
+        required
+        maxLength={REASON_MAX_LENGTH}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        aria-describedby={`${id}-reason-help`}
+        aria-invalid={invalid}
       />
-      <DialogFooter>
-        <DialogClose disabled={pending} render={<Button variant="outline" />}>
-          {t("encounter.selection.dialog.cancel")}
-        </DialogClose>
-        <Button type="submit" disabled={pending || !available}>
-          {pending
-            ? t("encounter.selection.dialog.submitting")
-            : unknown
-              ? t("encounter.selection.dialog.retry")
-              : t(`encounter.selection.command.${command}.submit`)}
-        </Button>
-      </DialogFooter>
-    </form>
+      <FieldDescription id={`${id}-reason-help`}>{help}</FieldDescription>
+      {invalid ? <FieldError match>{t("encounter.selection.reason.required")}</FieldError> : null}
+    </Field>
   );
 }
 
@@ -182,7 +171,7 @@ function SubmissionNotice({
 }: {
   readonly available: boolean;
   readonly readVersion: number;
-  readonly submission: SelectionDraft["submission"];
+  readonly submission: Submission<unknown>;
   readonly t: Translator;
   readonly unknown: boolean;
 }) {
@@ -208,5 +197,100 @@ function SubmissionNotice({
         ))}
       </AlertDescription>
     </Alert>
+  );
+}
+
+type Missing = Extract<TeamIntentCheck, { ok: false }>["missing"];
+
+export type SelectionCommandDialogProps = {
+  readonly command: TeamCommand;
+  /** Whether the state just read still allows the command. */
+  readonly available: boolean;
+  readonly candidates: readonly EncounterCandidateDto[];
+  readonly dispatch: Dispatch<TeamDraftEvent>;
+  readonly draft: TeamDraft;
+  readonly encounter: EncounterViewDto;
+  readonly finalFocus: () => HTMLElement | null;
+  /** Starts the command; returns the first missing input instead when it cannot. */
+  readonly onSubmit: () => Missing | null;
+  readonly preview: EncounterPreview;
+  readonly readVersion: number;
+  readonly t: Translator;
+  readonly target: OfficialSelectionProposalDto | null;
+};
+
+/** A Team command: the proposal it answers, the slots it sends and its reason. */
+export function SelectionCommandDialog({
+  available,
+  candidates,
+  command,
+  dispatch,
+  draft,
+  encounter,
+  finalFocus,
+  onSubmit,
+  preview,
+  readVersion,
+  t,
+  target,
+}: SelectionCommandDialogProps) {
+  const reasonInput = useRef<HTMLTextAreaElement>(null);
+  const [missing, setMissing] = useState<Missing | null>(null);
+  const { submission } = draft;
+  const pending = submission.status === "pending";
+  const slotsIncomplete = preview.slots.some((slot) => slot.kind === "unassigned");
+
+  return (
+    <CommandDialog
+      available={available}
+      description={t(`encounter.selection.command.${command}.description`)}
+      finalFocus={finalFocus}
+      onClose={() => {
+        setMissing(null);
+        dispatch({ type: "close" });
+      }}
+      onSubmit={() => {
+        const result = onSubmit();
+        setMissing(result);
+        if (result === "reason") reasonInput.current?.focus();
+      }}
+      open={draft.open === command}
+      readVersion={readVersion}
+      submission={submission}
+      submitLabel={t(`encounter.selection.command.${command}.submit`)}
+      t={t}
+      title={t(`encounter.selection.command.${command}.title`)}
+      unknown={submission.status === "unknown" && submission.attempt.intent.kind === command}
+    >
+      {target && command !== "propose" ? (
+        <div aria-label={t("encounter.selection.dialog.target")} role="group">
+          <Text look="label">{t("encounter.selection.dialog.target")}</Text>
+          <ProposalSlots candidates={candidates} encounter={encounter} slots={target.slots} t={t} />
+        </div>
+      ) : null}
+      {needsSlots(command) ? (
+        <div aria-label={t("encounter.selection.dialog.slots")} role="group">
+          <Text look="label">{t("encounter.selection.dialog.slots")}</Text>
+          <SlotLines encounter={encounter} previews={preview.slots} sent={[]} t={t} />
+          {slotsIncomplete ? (
+            <Text role={missing === "slots" ? "alert" : undefined} className={styles.warning}>
+              {t("encounter.selection.dialog.slotsIncomplete")}
+            </Text>
+          ) : null}
+          <SeriesPreviewPanel series={preview.series} t={t} view={encounter} />
+        </div>
+      ) : null}
+      {needsReason(command) ? (
+        <ReasonField
+          disabled={pending}
+          help={t("encounter.selection.reason.help")}
+          inputRef={reasonInput}
+          invalid={missing === "reason"}
+          onChange={(text) => dispatch({ type: "edit_reason", command, text })}
+          t={t}
+          value={draft.input.reasons[command]}
+        />
+      ) : null}
+    </CommandDialog>
   );
 }
