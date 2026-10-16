@@ -128,7 +128,11 @@ function TableFooter({ className, style, ...props }: React.ComponentProps<"tfoot
   );
 }
 
-function TableRow({ className, style, ...props }: React.ComponentProps<"tr">) {
+function TableRow({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"tr">, "className"> & { className?: HostClassName }) {
   return <tr data-slot="table-row" {...applyProps(className, style, styles.row)} {...props} />;
 }
 
