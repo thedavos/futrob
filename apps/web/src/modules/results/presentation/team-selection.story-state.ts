@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { OfficialSelectionViewDto } from "@futrob/api-contracts";
 import {
+  alternativeSelection,
   approvedSelection,
   disputedSelection,
   noSelection,
@@ -17,6 +18,7 @@ export const SELECTION_SCENARIOS = [
   "conflict",
   "approved",
   "disputed",
+  "alternative",
   "underReview",
   "reader",
   "bothSides",
@@ -38,6 +40,7 @@ const VIEWS = {
   conflict: { away: pendingSelection([...ANSWERS]) },
   approved: { away: approvedSelection() },
   disputed: { away: disputedSelection() },
+  alternative: { away: alternativeSelection() },
   underReview: { home: underReviewWithFlags() },
   reader: { home: pendingSelection([]) },
   bothSides: { home: pendingSelection(["open_dispute"]), away: pendingSelection([...ANSWERS]) },

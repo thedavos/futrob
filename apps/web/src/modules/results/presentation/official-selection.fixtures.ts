@@ -40,6 +40,8 @@ export const homeProposal: OfficialSelectionProposalDto = {
   confirmationDeadline: "2026-09-18T03:00:00.000Z",
 };
 
+export const alternativeReason = "El partido 2 fue el de las 20:50, no el de las 20:40.";
+
 /** Maderas (away) answers with m-1 and m-3 instead. */
 export const awayAlternative: OfficialSelectionProposalDto = {
   id: "proposal-2",
@@ -49,7 +51,7 @@ export const awayAlternative: OfficialSelectionProposalDto = {
   proposedByActorId: "actor-away-captain",
   slots: slots("m-1", "m-3"),
   supersedesProposalId: "proposal-1",
-  reason: "El partido 2 fue el de las 20:50, no el de las 20:40.",
+  reason: alternativeReason,
   createdAt: "2026-09-17T04:00:00.000Z",
   confirmationDeadline: "2026-09-18T04:00:00.000Z",
 };
@@ -154,17 +156,41 @@ export function disputedSelection(): OfficialSelectionViewDto {
   };
 }
 
-export function alternativeSelection(
-  allowedActions: OfficialSelectionViewDto["allowedActions"] = ["open_dispute"],
-): OfficialSelectionViewDto {
+/**
+ * As served after Maderas answers m-1/m-2 with m-1/m-3: a different selection does not
+ * go back to Cuervos. It opens a dispute for the organization, keeps both proposals and
+ * leaves no Team command.
+ */
+export function alternativeSelection(): OfficialSelectionViewDto {
+  const dispute = {
+    id: "dispute-1",
+    status: "open" as const,
+    openedByActorId: "actor-away-captain",
+    openedByTeamId: "team-away",
+    openedReason: alternativeReason,
+    openedAt: awayAlternative.createdAt,
+    reviewStartedAt: null,
+    resolvedAt: null,
+    resolution: null,
+    resolutionProposalId: null,
+    resolutionReason: null,
+  };
   return {
-    ...noSelection(allowedActions),
-    selection: selection("awaiting_opponent_confirmation", 2, "proposal-2"),
+    ...noSelection([]),
+    selection: selection("disputed", 2, "proposal-2"),
     proposals: [homeProposal, awayAlternative],
     actions: [
       action("action-1", "proposed", 1, "team-home"),
-      action("action-2", "alternative_proposed", 2, "team-away", awayAlternative.reason),
+      {
+        ...action("action-2", "alternative_proposed", 2, "team-away", alternativeReason),
+        proposalId: "proposal-2",
+        fromStatus: "awaiting_opponent_confirmation",
+        toStatus: "disputed",
+        details: { disputeId: "dispute-1" },
+      },
     ],
+    disputes: [dispute],
+    activeDispute: dispute,
   };
 }
 
@@ -229,7 +255,7 @@ const openDispute = {
 const contestedActions = [
   action("action-1", "proposed", 1, "team-home"),
   {
-    ...action("action-2", "alternative_proposed", 2, "team-away", awayAlternative.reason),
+    ...action("action-2", "alternative_proposed", 2, "team-away", alternativeReason),
     proposalId: "proposal-2",
   },
   { ...action("action-3", "rejected", 3, "team-home", disputeReason), proposalId: "proposal-2" },

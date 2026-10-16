@@ -10,6 +10,7 @@ import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { encounterView, m1, m2, m3, readyCandidates } from "./encounter-page.fixtures.ts";
 import { EncounterRoute } from "./encounter-route.tsx";
 import {
+  alternativeReason,
   alternativeSelection,
   approvedSelection,
   commandResponse,
@@ -125,6 +126,11 @@ async function useIn(user: UserEvent, candidate: RegExp, slot: 1 | 2) {
   await user.click(within(row).getByRole("button", { name: `Usar en partido ${slot}` }));
 }
 
+const ALTERNATIVE_DESCRIPTION =
+  "Si eliges los mismos partidos de la propuesta vigente, cuenta como confirmación. Si eliges otros, la selección pasa a disputa y la organización decide cuáles cuentan.";
+const ALTERNATIVE_SENT =
+  "Alternativa enviada. Si coincide con la propuesta vigente, cuenta como confirmación; si no, la organización resolverá la disputa.";
+
 const M1 = /^Cuervos EA contra Maderas EA, lun, 14 sept, 20:05/;
 const M2 = /^Maderas EA contra Cuervos EA/;
 const M3 = /^Cuervos EA contra Maderas EA, lun, 14 sept, 20:50/;
@@ -226,7 +232,7 @@ describe("Team negotiation in the Match Center", () => {
     ]);
   });
 
-  it("B rejects with a reason and the case is disputed, not official; an alternative m-1/m-3 keeps both proposals", async () => {
+  it("B rejects with a reason and the case is disputed, not official; an alternative m-1/m-3 sends both proposals to the organizer", async () => {
     const user = userEvent.setup();
     const views: Partial<Record<Team, OfficialSelectionViewDto>> = {
       "team-away": pendingSelection([...ANSWERS]),
@@ -281,10 +287,11 @@ describe("Team negotiation in the Match Center", () => {
     await useIn(user, M3, 2);
     await user.click(await screen.findByRole("button", { name: "Proponer alternativa" }));
     const counter = dialog("Proponer otros partidos EA");
-    await user.type(counter.getByRole("textbox", { name: "Motivo" }), "El 2 fue a las 20:50.");
+    expect(counter.getByText(ALTERNATIVE_DESCRIPTION)).toBeTruthy();
+    await user.type(counter.getByRole("textbox", { name: "Motivo" }), alternativeReason);
     await user.click(counter.getByRole("button", { name: "Enviar alternativa" }));
 
-    expect(await screen.findByText("Alternativa enviada al rival.")).toBeTruthy();
+    expect(await screen.findByText(ALTERNATIVE_SENT)).toBeTruthy();
     expect(posts).toEqual([
       {
         path: "/proposals/proposal-1/alternative",
@@ -292,7 +299,7 @@ describe("Team negotiation in the Match Center", () => {
           actingTeamId: "team-away",
           expectedVersion: 1,
           commandKey: expect.any(String),
-          reason: "El 2 fue a las 20:50.",
+          reason: alternativeReason,
           selections: [
             { officialSlot: 1, providerMatchRef: { providerKey: "ea-clubs", externalId: "m-1" } },
             { officialSlot: 2, providerMatchRef: { providerKey: "ea-clubs", externalId: "m-3" } },
@@ -300,12 +307,52 @@ describe("Team negotiation in the Match Center", () => {
         },
       },
     ]);
+    expect(await panel().findByText("En disputa")).toBeTruthy();
+    const opened = within(panel().getByRole("group", { name: "Disputa" }));
+    expect(opened.getByText("Disputa · Abierta")).toBeTruthy();
+    expect(opened.getByText("Abierta por Maderas FC")).toBeTruthy();
+    expect(opened.getByText(alternativeReason)).toBeTruthy();
+    expect(
+      panel().getByText("No hay acciones disponibles para tu equipo en este estado."),
+    ).toBeTruthy();
+    for (const name of ["Confirmar propuesta", "Rechazar", "Proponer alternativa"]) {
+      expect(panel().queryByRole("button", { name })).toBeNull();
+    }
     const first = proposal("Propuesta 1 · ronda 1");
     expect(first.getByText("Reemplazada")).toBeTruthy();
     expect(first.getByText("Partido 2: Cuervos FC 0–2 Maderas FC")).toBeTruthy();
     const second = proposal("Propuesta 2 · ronda 1");
     expect(second.getByText("Vigente")).toBeTruthy();
     expect(second.getByText("Partido 2: Cuervos FC 3–3 Maderas FC")).toBeTruthy();
+  });
+
+  it("an alternative the server takes as the same selection shows the confirmed result it serves", async () => {
+    const user = userEvent.setup();
+    const views: Partial<Record<Team, OfficialSelectionViewDto>> = {
+      "team-away": pendingSelection([...ANSWERS]),
+    };
+    serve({
+      speaksFor: ["team-away"],
+      views,
+      commands: {
+        "/proposals/proposal-1/alternative": () => {
+          views["team-away"] = approvedSelection();
+          return Response.json(commandResponse(approvedSelection()));
+        },
+      },
+    });
+    renderEncounter();
+    await useIn(user, M1, 1);
+    await useIn(user, M2, 2);
+    await user.click(await screen.findByRole("button", { name: "Proponer alternativa" }));
+    const counter = dialog("Proponer otros partidos EA");
+    await user.type(counter.getByRole("textbox", { name: "Motivo" }), "Son los mismos.");
+    await user.click(counter.getByRole("button", { name: "Enviar alternativa" }));
+
+    expect(await screen.findByText(ALTERNATIVE_SENT)).toBeTruthy();
+    expect(await panel().findByText("Resultado oficial aprobado")).toBeTruthy();
+    expect(panel().queryByText("En disputa")).toBeNull();
+    expect(panel().queryByRole("group", { name: "Disputa" })).toBeNull();
   });
 
   it("a 409 reloads version 2, keeps the reason and resends nothing; the next submit is accepted once with a new key", async () => {
