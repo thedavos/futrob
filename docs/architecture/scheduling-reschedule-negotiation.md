@@ -264,6 +264,15 @@ el resultado histórico. El DTO expone `actions` y `allowedActions`; `resolve` s
 para el actor autorizado sobre una solicitud `escalated`. La sección operativa se compone
 sobre el Encounter canónico de #116 / PR #154.
 
+Capacidades del actor (#124): la lectura (lista y detalle) calcula en `@futrob/scheduling`,
+con la hora de la API, qué comandos pasarían por permiso, estado, plazo y protección de
+resultado. Cada solicitud trae `allowedActions`, `respondAs` (el `responder` de accept y
+reject) y `blockedActions`; accept, reject y counter aparecen exactamente una vez entre
+ambas listas. La lista añade `creation`: Teams por los que el actor puede pedir y cada
+alcance con su inicio actual y su `blockedReason`. El aviso mínimo y las carreras de
+versión no se predicen y siguen llegando como errores. Las respuestas de crear y de los
+comandos llevan capacidades vacías; el cliente vuelve a leer la lista.
+
 Límites operativos: backlog de más de 50 casos requiere varios barridos. La indisponibilidad
 del actor o del runner retrasa la escalada visible, pero no abre la ventana de respuesta.
 El handoff existente recupera el recálculo de candidatos; no se afirma entrega de correo.

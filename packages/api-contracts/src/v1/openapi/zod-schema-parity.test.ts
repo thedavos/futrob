@@ -6,7 +6,10 @@ import {
   encounterScheduleSnapshotSchema,
   listEncounterCandidatesResponseSchema,
 } from "../encounters/schemas.ts";
-import { scheduleChangeRequestSchema } from "../encounters/schemas.ts";
+import {
+  listScheduleChangeRequestsResponseSchema,
+  scheduleChangeRequestSchema,
+} from "../encounters/schedule-change-requests.ts";
 import { providerSyncJobResponseSchema } from "../game-data/schemas.ts";
 import {
   officialSelectionCommandResponseSchema,
@@ -31,6 +34,7 @@ describe("Zod and OpenAPI required/enum parity", () => {
       ["OfficialSelectionCommandResponse", officialSelectionCommandResponseSchema, "output"],
       ["ProposeOfficialSelectionRequest", proposeOfficialSelectionRequestSchema, "input"],
       ["ScheduleChangeRequest", scheduleChangeRequestSchema, "output"],
+      ["ListScheduleChangeRequestsResponse", listScheduleChangeRequestsResponseSchema, "output"],
       ["ProviderSyncJobResponse", providerSyncJobResponseSchema, "output"],
     ] as const;
 
