@@ -170,6 +170,172 @@ export function underReviewWithFlags(): OfficialSelectionViewDto {
   };
 }
 
+/*
+ * Operator case: Cuervos proposed X/Y (m-1/m-2), Maderas answered X/Z (m-1/m-3) and
+ * Cuervos rejected X/Z, which opened the dispute. Reasons arrive already redacted.
+ */
+
+/** As served: the server replaced a phone and an email; the markup is literal text. */
+export const disputeReason =
+  "El partido 2 de su alternativa fue un amistoso. Hablamos al [REDACTED] y a [REDACTED]. <b>Urgente</b>";
+export const reviewReason = "Reviso las capturas de ambos equipos.";
+export const approvalReason = "Las capturas confirman que el 2 se jugó a las 20:50.";
+export const returnReason = "Ninguna propuesta coincide con el horario oficial.";
+
+const operatorAction = (
+  id: string,
+  type: OfficialSelectionActionDto["type"],
+  versionAfter: number,
+  proposalId: string | null,
+  reason: string,
+  details: OfficialSelectionActionDto["details"] = null,
+): OfficialSelectionActionDto => ({
+  id,
+  proposalId,
+  type,
+  fromStatus: null,
+  toStatus: null,
+  versionBefore: versionAfter - 1,
+  versionAfter,
+  actorId: "actor-operator",
+  teamId: null,
+  capacity: "operator",
+  reason,
+  officialResultId: null,
+  details,
+  occurredAt: `2026-09-17T0${2 + versionAfter}:30:00.000Z`,
+});
+
+const openDispute = {
+  id: "dispute-1",
+  status: "open" as const,
+  openedByActorId: "actor-home-captain",
+  openedByTeamId: "team-home",
+  openedReason: disputeReason,
+  openedAt: "2026-09-17T05:00:00.000Z",
+  reviewStartedAt: null,
+  resolvedAt: null,
+  resolution: null,
+  resolutionProposalId: null,
+  resolutionReason: null,
+};
+
+const contestedActions = [
+  action("action-1", "proposed", 1, "team-home"),
+  {
+    ...action("action-2", "alternative_proposed", 2, "team-away", awayAlternative.reason),
+    proposalId: "proposal-2",
+  },
+  { ...action("action-3", "rejected", 3, "team-home", disputeReason), proposalId: "proposal-2" },
+];
+
+export function disputeCase(
+  allowedActions: OfficialSelectionViewDto["allowedActions"] = ["review_dispute"],
+  version = 3,
+): OfficialSelectionViewDto {
+  return {
+    ...noSelection(allowedActions),
+    selection: selection("disputed", version, "proposal-2"),
+    proposals: [homeProposal, awayAlternative],
+    actions: contestedActions,
+    disputes: [openDispute],
+    activeDispute: openDispute,
+  };
+}
+
+export function reviewCase({
+  allowedActions = ["resolve_dispute"],
+  integrityFlags = [],
+  version = 4,
+}: Partial<Pick<OfficialSelectionViewDto, "allowedActions" | "integrityFlags">> & {
+  readonly version?: number;
+} = {}): OfficialSelectionViewDto {
+  const dispute = {
+    ...openDispute,
+    status: "under_review" as const,
+    reviewStartedAt: "2026-09-17T06:30:00.000Z",
+  };
+  return {
+    ...disputeCase(allowedActions),
+    selection: selection("organizer_review", version, "proposal-2"),
+    actions: [
+      ...contestedActions,
+      operatorAction("action-4", "review_started", 4, "proposal-2", reviewReason, {
+        disputeId: "dispute-1",
+      }),
+    ],
+    disputes: [dispute],
+    activeDispute: dispute,
+    integrityFlags,
+  };
+}
+
+/** m-3 dropped a player: approving X/Z needs the acknowledgement, X/Y does not. */
+export const m3Disconnected = [
+  { code: "provider_match_disconnected" as const, providerMatchRef: ref("m-3") },
+];
+
+/** The operator approved `proposal`, X/Z by default, and the case is official. */
+export function resolvedByApproval(
+  proposal: OfficialSelectionProposalDto = awayAlternative,
+): OfficialSelectionViewDto {
+  const review = reviewCase();
+  const dispute = {
+    ...openDispute,
+    status: "resolved" as const,
+    reviewStartedAt: "2026-09-17T06:30:00.000Z",
+    resolvedAt: "2026-09-17T07:30:00.000Z",
+    resolution: "approved_proposal" as const,
+    resolutionProposalId: proposal.id,
+    resolutionReason: approvalReason,
+  };
+  return {
+    ...review,
+    selection: selection("approved", 5, proposal.id),
+    actions: [
+      ...review.actions,
+      {
+        ...operatorAction("action-5", "dispute_resolved_approved", 5, proposal.id, approvalReason, {
+          selectedProposalId: proposal.id,
+          disputeId: "dispute-1",
+        }),
+        officialResultId: "result-1",
+      },
+    ],
+    disputes: [dispute],
+    activeDispute: null,
+    approvedResultId: "result-1",
+    integrityFlags: [],
+    allowedActions: ["void"],
+  };
+}
+
+export function returnedToSelection(): OfficialSelectionViewDto {
+  const review = reviewCase();
+  const dispute = {
+    ...openDispute,
+    status: "resolved" as const,
+    reviewStartedAt: "2026-09-17T06:30:00.000Z",
+    resolvedAt: "2026-09-17T07:30:00.000Z",
+    resolution: "returned_to_selection" as const,
+    resolutionReason: returnReason,
+  };
+  return {
+    ...review,
+    selection: { ...selection("selection_in_progress", 5, null), round: 2 },
+    actions: [
+      ...review.actions,
+      operatorAction("action-5", "returned_to_selection", 5, "proposal-2", returnReason, {
+        disputeId: "dispute-1",
+      }),
+    ],
+    disputes: [dispute],
+    activeDispute: null,
+    integrityFlags: [],
+    allowedActions: [],
+  };
+}
+
 export function commandResponse(view: OfficialSelectionViewDto): OfficialSelectionCommandResponse {
   if (!view.selection) throw new Error("A command always leaves a selection behind");
   return {
