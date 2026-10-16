@@ -67,6 +67,7 @@ export function ScheduleChangeCreateForm({
   teamName,
   create,
   headingRef,
+  paused,
   onCancel,
   onClosed,
 }: {
@@ -76,6 +77,8 @@ export function ScheduleChangeCreateForm({
   readonly teamName: (id: string) => string;
   readonly create: (body: CreateScheduleChangeRequestBody) => Promise<void>;
   readonly headingRef: Ref<HTMLHeadingElement>;
+  /** The last reread failed: keep the draft and its key, but send only after a good read. */
+  readonly paused: boolean;
   readonly onCancel: () => void;
   /** The request was sent, or refused in a way the form cannot fix; the message explains. */
   readonly onClosed: (message: string, outcome: "sent" | "refused") => void;
@@ -99,7 +102,7 @@ export function ScheduleChangeCreateForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (inFlight.current) return;
+    if (inFlight.current || paused) return;
     setFailure(null);
     const proposedWallTime = competitionWallTime(localTime);
     if (!proposedWallTime || !resolutionInstant(localTime, timeZone)) {
@@ -259,8 +262,9 @@ export function ScheduleChangeCreateForm({
       {failure && failure.field === null ? (
         <Text role="alert">{recoveryText(failure, t)}</Text>
       ) : null}
+      {paused ? <Caption>{t("reschedule.paused")}</Caption> : null}
       <div {...applyStyles(styles.actions)}>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending || paused}>
           {t(pending ? "reschedule.create.sending" : "reschedule.create.submit")}
         </Button>
         <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>

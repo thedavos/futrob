@@ -56,6 +56,7 @@ export function ScheduleChangeResponses({
   teamName,
   commands,
   currentStart,
+  paused,
   onOpen,
   onClosed,
 }: {
@@ -65,6 +66,8 @@ export function ScheduleChangeResponses({
   readonly teamName: (id: string) => string;
   readonly commands: Pick<ScheduleChangeCommands, Action>;
   readonly currentStart: string;
+  /** The last reread failed: keep the draft and its key, but send only after a good read. */
+  readonly paused: boolean;
   readonly onOpen: () => void;
   /** The draft closed after a command: announce success, or explain a refusal. */
   readonly onClosed: (message: string, outcome: "sent" | "refused") => void;
@@ -136,7 +139,7 @@ export function ScheduleChangeResponses({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (inFlight.current || draft.kind === "idle" || stale) return;
+    if (inFlight.current || draft.kind === "idle" || stale || paused) return;
     setFailure(null);
     const target = { requestId: request.id, proposalId: draft.target.proposalId };
     const expectedVersion = draft.target.version;
@@ -317,11 +320,12 @@ export function ScheduleChangeResponses({
             </>
           ) : null}
           {stale ? <Text role="status">{t("reschedule.stale")}</Text> : null}
+          {paused && !stale ? <Caption>{t("reschedule.paused")}</Caption> : null}
           {failure && failure.field === null ? (
             <Text role="alert">{recoveryText(failure, t)}</Text>
           ) : null}
           <div {...applyStyles(styles.actions)}>
-            <Button type="submit" disabled={pending || stale}>
+            <Button type="submit" disabled={pending || stale || paused}>
               {t(`reschedule.${draft.kind}.${pending ? "sending" : "submit"}`)}
             </Button>
             <Button type="button" variant="ghost" disabled={pending} onClick={cancel}>

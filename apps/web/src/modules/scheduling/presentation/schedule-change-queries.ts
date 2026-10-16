@@ -25,16 +25,21 @@ export function useScheduleChanges(encounterId: string, enabled: boolean): Sched
   if (refused) return { kind: "forbidden" };
   if (query.data) {
     // Success or failure, the hero, slots and list must show what the server now holds.
+    const reread = () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.encounters.all }),
+        client.invalidateQueries({ queryKey: queryKeys.competitions.all }),
+        client.invalidateQueries({ queryKey: queryKeys.players.meNextEncounter() }),
+      ]);
     const run = async <Result>(command: () => Promise<Result>): Promise<void> => {
       try {
         await command();
-      } finally {
-        await Promise.all([
-          client.invalidateQueries({ queryKey: queryKeys.encounters.all }),
-          client.invalidateQueries({ queryKey: queryKeys.competitions.all }),
-          client.invalidateQueries({ queryKey: queryKeys.players.meNextEncounter() }),
-        ]);
+      } catch (error) {
+        // A failure reaches the form now; the reread (and its retries) must not hold it back.
+        void reread();
+        throw error;
       }
+      await reread();
     };
     const api = scheduleChangeBrowserClient();
     const commands: ScheduleChangeCommands = {

@@ -26,12 +26,14 @@ export function scheduleChangeServer(initial: {
   const sent: { readonly path: string; readonly body: unknown }[] = [];
   const handlers = new Map<string, Handler>();
   let reads = 0;
+  let offline = false;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = input instanceof Request ? input.url : input.toString();
       if (path === PATH && init?.method === "GET") {
         reads += 1;
+        if (offline) throw new TypeError("Network interrupted");
         return Response.json({ requests: state.requests, creation: state.creation });
       }
       const handler = handlers.get(path);
@@ -51,6 +53,10 @@ export function scheduleChangeServer(initial: {
     sent,
     reads: () => reads,
     on: (path: string, handler: Handler) => handlers.set(path, handler),
+    /** While offline, every list read fails the way a dropped connection does. */
+    setOffline: (value: boolean) => {
+      offline = value;
+    },
   };
 }
 

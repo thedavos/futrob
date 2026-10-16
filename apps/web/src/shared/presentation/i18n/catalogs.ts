@@ -22,6 +22,7 @@ const es = {
   "reschedule.refresh": "Actualizar reprogramaciones",
   "reschedule.refreshFailed":
     "No pudimos actualizar el historial. Los datos mostrados pueden haber cambiado.",
+  "reschedule.paused": "Actualiza las reprogramaciones para enviar. Tu borrador se conserva.",
   "reschedule.status.open": "En negociación",
   "reschedule.status.accepted": "Horario aplicado por consentimiento",
   "reschedule.status.rejected": "Rechazada",
@@ -1550,6 +1551,7 @@ const en: Catalog = {
   "reschedule.refresh": "Refresh reschedule requests",
   "reschedule.refreshFailed":
     "We could not refresh the history. The displayed data may have changed.",
+  "reschedule.paused": "Refresh the reschedule requests to send. Your draft is kept.",
   "reschedule.status.open": "In negotiation",
   "reschedule.status.accepted": "Schedule applied by consent",
   "reschedule.status.rejected": "Rejected",

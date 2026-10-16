@@ -83,24 +83,23 @@ export function ScheduleChangeRequestItem({
         <Text className={styles.reason}>{current.reason}</Text>
       </div>
       {notice ? <Text role="alert">{notice}</Text> : null}
-      {refreshFailed ? null : (
-        <ScheduleChangeResponses
-          request={request}
-          view={view}
-          format={format}
-          teamName={teamName}
-          commands={commands}
-          currentStart={currentStart}
-          onOpen={() => setNotice(null)}
-          onClosed={(message, outcome) => {
-            if (outcome === "sent") {
-              setNotice(null);
-              announce(message);
-            } else setNotice(message);
-            summary.current?.focus();
-          }}
-        />
-      )}
+      <ScheduleChangeResponses
+        request={request}
+        view={view}
+        format={format}
+        teamName={teamName}
+        commands={commands}
+        currentStart={currentStart}
+        paused={refreshFailed}
+        onOpen={() => setNotice(null)}
+        onClosed={(message, outcome) => {
+          if (outcome === "sent") {
+            setNotice(null);
+            announce(message);
+          } else setNotice(message);
+          summary.current?.focus();
+        }}
+      />
       <Collapsible>
         <CollapsibleTrigger>{t("reschedule.history")}</CollapsibleTrigger>
         <CollapsibleContent>

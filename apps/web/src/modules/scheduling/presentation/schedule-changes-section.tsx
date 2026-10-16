@@ -82,7 +82,7 @@ export function ScheduleChangesSection({
   const teamName = (id: string) =>
     id === view.home.teamId ? view.home.name : id === view.away.teamId ? view.away.name : id;
   const blocks = state.kind === "ready" ? creationBlocks(state.creation, teamName, t) : [];
-  const canCreate = state.kind === "ready" && blocks.length === 0 && !state.refreshFailed;
+  const canCreate = state.kind === "ready" && blocks.length === 0;
   const formOpen = creating && canCreate;
 
   function openCreate() {
@@ -134,6 +134,7 @@ export function ScheduleChangesSection({
           teamName={teamName}
           create={state.commands.create}
           headingRef={createHeading}
+          paused={state.refreshFailed}
           onCancel={cancelCreate}
           onClosed={(message, outcome) => {
             setCreating(false);

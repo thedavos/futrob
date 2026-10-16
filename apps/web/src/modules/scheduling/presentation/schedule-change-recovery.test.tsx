@@ -6,11 +6,12 @@ import {
   acceptScheduleChangeProposalRequestSchema,
   type ScheduleChangeRequestDto,
 } from "@futrob/api-contracts";
-import { noCreation, openScheduleChange } from "./schedule-changes.fixtures.ts";
+import { captainCreation, noCreation, openScheduleChange } from "./schedule-changes.fixtures.ts";
 import {
   apiError,
   command,
   mountSection,
+  PATH,
   scheduleChangeServer,
 } from "./schedule-changes.test-server.tsx";
 
@@ -98,6 +99,70 @@ describe("reschedule command recovery", () => {
     expect(api.sent.length).toBe(2);
     expect(api.sent[1]!.body).toEqual(api.sent[0]!.body);
   });
+
+  it.each([
+    {
+      form: "counter",
+      path: command("counter"),
+      open: "Contraproponer",
+      reason: "Motivo de la contrapropuesta",
+      submit: "Enviar contrapropuesta",
+    },
+    {
+      form: "create",
+      path: PATH,
+      open: "Solicitar reprogramación",
+      reason: "Motivo para el rival",
+      submit: "Enviar solicitud",
+    },
+  ])(
+    "keeps the $form draft and its key when the command and the reread both fail",
+    async ({ path, open, reason, submit }) => {
+      const user = userEvent.setup();
+      const api = scheduleChangeServer({
+        requests: [openScheduleChange()],
+        creation: captainCreation(),
+      });
+      api.on(path, () => {
+        api.setOffline(true);
+        throw new TypeError("Network interrupted");
+      });
+      mountSection();
+      await user.click(await screen.findByRole("button", { name: open }));
+      await user.type(screen.getByLabelText("Nueva fecha y hora"), "2026-10-11T15:00");
+      await user.type(screen.getByRole("textbox", { name: reason }), "Viaje");
+      await user.click(screen.getByRole("button", { name: submit }));
+
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "No pudimos enviar la acción. Vuelve a intentarlo; no se aplicará dos veces.",
+      );
+      // The list query retries a dropped read twice (1 s, then 2 s) before it reports the failure.
+      await screen.findByText(
+        "Actualiza las reprogramaciones para enviar. Tu borrador se conserva.",
+        {},
+        { timeout: 6000 },
+      );
+      expect(screen.getByRole("button", { name: submit }).hasAttribute("disabled")).toBe(true);
+      expect((screen.getByLabelText("Nueva fecha y hora") as HTMLInputElement).value).toBe(
+        "2026-10-11T15:00",
+      );
+      expect((screen.getByRole("textbox", { name: reason }) as HTMLTextAreaElement).value).toBe(
+        "Viaje",
+      );
+
+      api.setOffline(false);
+      api.on(path, () => apiError(409, "scheduling.schedule_change_request_closed"));
+      await user.click(screen.getByRole("button", { name: "Actualizar reprogramaciones" }));
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: submit }).hasAttribute("disabled")).toBe(false),
+      );
+      await user.click(screen.getByRole("button", { name: submit }));
+
+      await waitFor(() => expect(api.sent.length).toBe(2));
+      expect(api.sent[1]!.body).toEqual(api.sent[0]!.body);
+    },
+    15_000,
+  );
 
   it.each([
     [
