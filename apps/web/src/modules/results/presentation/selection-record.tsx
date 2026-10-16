@@ -16,13 +16,8 @@ import {
   WarningIcon,
 } from "@phosphor-icons/react";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
-import {
-  assignmentsOf,
-  previewEncounter,
-  type SlotPreview,
-  type SlotSelection,
-} from "./encounter-preview.ts";
 import { currentProposalOf } from "./selection-draft.ts";
+import { ProposalSlots } from "./selection-slots.tsx";
 import { styles } from "./selection.styles.ts";
 
 /*
@@ -216,89 +211,6 @@ export function SelectionProposalList({
       </ol>
     </section>
   );
-}
-
-type ProposalSlotsProps = {
-  readonly candidates: readonly EncounterCandidateDto[];
-  readonly encounter: EncounterViewDto;
-  readonly slots: readonly SlotSelection[];
-  readonly t: Translator;
-};
-
-/** Each slot resolved to its candidate's score; the provider reference when it is gone. */
-export function proposalSlotTexts({ candidates, encounter, slots, t }: ProposalSlotsProps) {
-  return previewEncounter(encounter, candidates, assignmentsOf(slots)).slots.map((preview) =>
-    slotLine(preview, slots, encounter, t),
-  );
-}
-
-export function ProposalSlots(props: ProposalSlotsProps) {
-  return (
-    <ul {...applyStyles(styles.slots)}>
-      {proposalSlotTexts(props).map((line) => (
-        <li key={line}>
-          <Text tone="default">{line}</Text>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/** One line per official slot; `sent` names references the candidate list no longer has. */
-export function SlotLines({
-  encounter,
-  previews,
-  sent,
-  t,
-}: {
-  readonly encounter: EncounterViewDto;
-  readonly previews: readonly SlotPreview[];
-  readonly sent: readonly SlotSelection[];
-  readonly t: Translator;
-}) {
-  return (
-    <ul {...applyStyles(styles.slots)}>
-      {previews.map((preview) => (
-        <li key={preview.slot}>
-          <Text tone="default">{slotLine(preview, sent, encounter, t)}</Text>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function slotLine(
-  preview: SlotPreview,
-  slots: readonly SlotSelection[],
-  encounter: EncounterViewDto,
-  t: Translator,
-): string {
-  const slot = preview.slot;
-  switch (preview.kind) {
-    case "scored":
-      return t("encounter.selection.slot.score", {
-        slot,
-        home: encounter.home.name,
-        homeGoals: preview.score.home,
-        awayGoals: preview.score.away,
-        away: encounter.away.name,
-      });
-    case "unmatched":
-      return t("encounter.selection.slot.unmatched", {
-        slot,
-        match: preview.candidate.reference.externalId,
-      });
-    case "unassigned": {
-      const sent = slots.find((selection) => selection.officialSlot === slot);
-      return sent
-        ? t("encounter.selection.slot.missing", { slot, match: sent.providerMatchRef.externalId })
-        : t("encounter.selection.slot.empty", { slot });
-    }
-    default: {
-      const exhaustive: never = preview;
-      return exhaustive;
-    }
-  }
 }
 
 export function SelectionHistory({

@@ -7,13 +7,15 @@ import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { OfficialSelectionViewDto } from "@futrob/api-contracts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { encounterView, m1, m2, m3, readyCandidates } from "./encounter-page.fixtures.ts";
+import { encounterView, m1, m2, m3, m5, readyCandidates } from "./encounter-page.fixtures.ts";
 import { EncounterRoute } from "./encounter-route.tsx";
 import {
   approvalReason,
+  awayRematch,
   commandResponse,
   disputeCase,
   disputeReason,
+  homeProposal,
   m3Disconnected,
   resolvedByApproval,
   returnedToSelection,
@@ -70,7 +72,7 @@ function serve(config: {
         return Response.json(encounterView());
       }
       if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
-        return Response.json(readyCandidates([m1, m2, m3]));
+        return Response.json(readyCandidates([m1, m2, m3, m5]));
       }
       if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
         return Response.json({ requests: [] });
@@ -203,6 +205,36 @@ describe("Operator dispute review in the Match Center", () => {
     await waitFor(() =>
       expect(document.activeElement).toBe(screen.getByRole("heading", { name: REVIEW })),
     );
+  });
+
+  it("tells apart proposals whose match 2 shares clubs and score by the EA match and its time", async () => {
+    const user = userEvent.setup();
+    serve({
+      approves: true,
+      dossier: { current: { ...reviewCase(), proposals: [homeProposal, awayRematch] } },
+    });
+    renderEncounter();
+
+    const panel = await findReview();
+    const M2 = "Partido EA m-2 · jugado mié, 16 sept, 20:40";
+    const M5 = "Partido EA m-5 · jugado mié, 16 sept, 21:40";
+    expect(within(await panel.findByRole("listitem", { name: X_Y })).getByText(M2)).toBeTruthy();
+    expect(within(panel.getByRole("listitem", { name: X_Z })).getByText(M5)).toBeTruthy();
+
+    await user.click(panel.getByRole("button", { name: "Aprobar una propuesta" }));
+    const approve = dialog("Aprobar una propuesta");
+    const xy = approve.getByRole("radio", { name: `${X_Y} · De Cuervos FC` });
+    const xz = approve.getByRole("radio", { name: `${X_Z} · De Maderas FC` });
+    expect(within(xy).getByText(M2)).toBeTruthy();
+    expect(within(xy).queryByText(M5)).toBeNull();
+    expect(within(xz).getByText(M5)).toBeTruthy();
+    expect(within(xz).queryByText(M2)).toBeNull();
+    expect(xy.textContent).not.toBe(xz.textContent);
+
+    await user.click(xz);
+    const summary = within(approve.getByRole("group", { name: "Se aprobará" }));
+    expect(summary.getByText(M5)).toBeTruthy();
+    expect(summary.queryByText(M2)).toBeNull();
   });
 
   it("returning needs a reason, then shows selection in progress with it; history keeps the rejection and the resolution", async () => {

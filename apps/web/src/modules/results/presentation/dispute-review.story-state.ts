@@ -3,7 +3,9 @@ import type { OfficialSelectionViewDto } from "@futrob/api-contracts";
 import type { DisputeReviewState } from "./dispute-review-section.tsx";
 import type { OperatorIntent } from "./dispute-review-draft.ts";
 import {
+  awayRematch,
   disputeCase,
+  homeProposal,
   m3Disconnected,
   resolvedByApproval,
   returnedToSelection,
@@ -16,6 +18,7 @@ export const REVIEW_SCENARIOS = [
   "forbidden",
   "disputed",
   "organizerReview",
+  "rematch",
   "approved",
   "returned",
   "conflict",
@@ -38,6 +41,7 @@ const FIRST_VIEW = {
   forbidden: reviewCase(),
   disputed: disputeCase(),
   organizerReview: reviewCase({ integrityFlags: m3Disconnected }),
+  rematch: { ...reviewCase(), proposals: [homeProposal, awayRematch] },
   approved: resolvedByApproval(),
   returned: returnedToSelection(),
   conflict: reviewCase(),

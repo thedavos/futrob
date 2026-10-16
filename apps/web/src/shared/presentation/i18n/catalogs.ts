@@ -1400,10 +1400,11 @@ const es = {
   "encounter.selection.proposal.by": ({ team }) => `De ${team}`,
   "encounter.selection.slot.score": ({ slot, home, homeGoals, awayGoals, away }) =>
     `Partido ${slot}: ${home} ${homeGoals}–${awayGoals} ${away}`,
-  "encounter.selection.slot.unmatched": ({ slot, match }) =>
-    `Partido ${slot}: partido EA ${match}, jugado por otros clubes`,
-  "encounter.selection.slot.missing": ({ slot, match }) =>
-    `Partido ${slot}: partido EA ${match}, ya no figura entre los candidatos`,
+  "encounter.selection.slot.unmatched": ({ slot }) => `Partido ${slot}: jugado por otros clubes`,
+  "encounter.selection.slot.missing": ({ slot }) =>
+    `Partido ${slot}: ya no figura entre los candidatos`,
+  "encounter.selection.slot.match": ({ match }) => `Partido EA ${match}`,
+  "encounter.selection.slot.played": ({ match, time }) => `Partido EA ${match} · jugado ${time}`,
   "encounter.selection.slot.empty": ({ slot }) => `Partido ${slot}: sin partido EA asignado`,
   "encounter.selection.history.title": "Historial de la selección",
   "encounter.selection.history.byOperator": "Organización",
@@ -1605,8 +1606,10 @@ export interface MessageParamsByKey {
     readonly awayGoals: number;
     readonly away: string;
   };
-  readonly "encounter.selection.slot.unmatched": { readonly slot: number; readonly match: string };
-  readonly "encounter.selection.slot.missing": { readonly slot: number; readonly match: string };
+  readonly "encounter.selection.slot.unmatched": { readonly slot: number };
+  readonly "encounter.selection.slot.missing": { readonly slot: number };
+  readonly "encounter.selection.slot.match": { readonly match: string };
+  readonly "encounter.selection.slot.played": { readonly match: string; readonly time: string };
   readonly "encounter.selection.slot.empty": { readonly slot: number };
   readonly "encounter.selection.conflict": { readonly from: number; readonly to: number };
   readonly "encounter.selection.conflictStale": { readonly from: number };
@@ -3121,10 +3124,10 @@ const en: Catalog = {
   "encounter.selection.proposal.by": ({ team }) => `From ${team}`,
   "encounter.selection.slot.score": ({ slot, home, homeGoals, awayGoals, away }) =>
     `Match ${slot}: ${home} ${homeGoals}–${awayGoals} ${away}`,
-  "encounter.selection.slot.unmatched": ({ slot, match }) =>
-    `Match ${slot}: EA match ${match}, played by other clubs`,
-  "encounter.selection.slot.missing": ({ slot, match }) =>
-    `Match ${slot}: EA match ${match}, no longer among the candidates`,
+  "encounter.selection.slot.unmatched": ({ slot }) => `Match ${slot}: played by other clubs`,
+  "encounter.selection.slot.missing": ({ slot }) => `Match ${slot}: no longer among the candidates`,
+  "encounter.selection.slot.match": ({ match }) => `EA match ${match}`,
+  "encounter.selection.slot.played": ({ match, time }) => `EA match ${match} · played ${time}`,
   "encounter.selection.slot.empty": ({ slot }) => `Match ${slot}: no EA match assigned`,
   "encounter.selection.history.title": "Selection history",
   "encounter.selection.history.byOperator": "Organization",

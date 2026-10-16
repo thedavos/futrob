@@ -15,7 +15,7 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { encounterView, m1, m2, m3, m4, readyCandidates } from "./encounter-page.fixtures.ts";
+import { encounterView, m1, m2, m3, m4, m5, readyCandidates } from "./encounter-page.fixtures.ts";
 import { EncounterPageView, type CandidatesState, type EncounterState } from "./encounter-page.tsx";
 import {
   REVIEW_SCENARIOS,
@@ -88,7 +88,7 @@ function stateFor(scenario: Scenario): {
   readonly candidates: CandidatesState;
 } {
   const ready = (view = encounterView()): EncounterState => ({ kind: "ready", view });
-  const list = candidatesReady(readyCandidates([m1, m3, m2, m4]));
+  const list = candidatesReady(readyCandidates([m1, m3, m2, m4, m5]));
   switch (scenario) {
     case "aggregate":
       return { encounter: ready(), candidates: list };
@@ -468,6 +468,22 @@ export const ReviewOrganizerReview: Story = {
         name: "Revisé los avisos de integridad y apruebo igualmente",
       }),
     ).toBeVisible();
+  },
+};
+
+export const ReviewRematch: Story = {
+  name: "Revisión: mismo marcador, otro partido EA",
+  args: { review: "rematch" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    const panel = within(await within(canvasElement).findByRole("region", { name: REVIEW }));
+    await userEvent.click(panel.getByRole("button", { name: "Aprobar una propuesta" }));
+    const dialog = within(await page.findByRole("dialog", { name: "Aprobar una propuesta" }));
+    const first = dialog.getByRole("radio", { name: "Propuesta 1 · ronda 1 · De Cuervos FC" });
+    const second = dialog.getByRole("radio", { name: "Propuesta 2 · ronda 1 · De Maderas FC" });
+    await waitFor(() => expect(within(first).getByText(/^Partido EA m-2 · jugado/)).toBeVisible());
+    await expect(within(second).getByText(/^Partido EA m-5 · jugado/)).toBeVisible();
   },
 };
 
