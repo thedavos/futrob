@@ -11,6 +11,7 @@
     "test": "vp test"
   },
   "dependencies": {
+    "@futrob/identity": "0.1.0",
     "@futrob/shared-kernel": "0.1.0"
   },
   "devDependencies": {

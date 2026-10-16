@@ -142,4 +142,23 @@ analytics.snapshot-generated
 
 ## Persistencia
 
-Los adapters de persistencia de producto viven en `apps/api` y usan Postgres o stores in-memory de desarrollo. `apps/auth` es el único escritor de las tablas de identidad (`auth_*`, `actors`, `identity_subjects`), que viven en el mismo Postgres y su historia de migraciones en `apps/api/migrations` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); `apps/web` conserva infraestructura BFF/Workers (solo escribe `app_rate_limit_windows`) y `apps/mobile` no accede directamente a ninguna persistencia. Cambiar de plataforma no mueve el dominio fuera de packages.
+Los adapters de persistencia de producto viven en `apps/api` y usan Postgres o stores in-memory de desarrollo. `apps/auth` es el único escritor de las tablas de identidad (`auth_*`, `actors`, `identity_subjects`, `actor_contact_profiles`), que viven en el mismo Postgres y su historia de migraciones en `apps/api/migrations` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); `apps/web` conserva infraestructura BFF/Workers (solo escribe `app_rate_limit_windows`) y `apps/mobile` no accede directamente a ninguna persistencia. Cambiar de plataforma no mueve el dominio fuera de packages.
+
+### Directorio de miembros de organización
+
+`organizations` autoriza el directorio con `organizations.memberships.read` y usa
+`ActorContactReader`, API pública de `identity`, para enriquecer solo los actores
+miembros. `apps/auth` mantiene la proyección `actor_contact_profiles` al crear una
+sesión y al actualizar nombre o correo. La migración realiza el backfill de las
+identidades existentes; la API de producto solo lee esta proyección.
+
+El directorio devuelve el conjunto completo hasta 500 miembros, ordenados por fecha
+de incorporación y actor. Lee 501 filas para rechazar el exceso antes del
+enriquecimiento. La búsqueda y el filtro de rol se ejecutan sobre ese conjunto
+en el navegador. El catálogo de competiciones se limita a 100, con lectura de una
+fila adicional y error tipado si se supera. Así el resumen evalúa como máximo
+50 100 pares actor/competición incluyendo al solicitante. Las lecturas de grants,
+asignaciones, plantillas y roles de plataforma se agrupan por los actores acotados.
+El adapter de autorización compone los repositorios públicos de cada propietario
+y reutiliza `resolvePermission`; no revela nombres ni IDs de competiciones que el
+solicitante no pueda leer.

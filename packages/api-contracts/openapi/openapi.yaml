@@ -5134,6 +5134,172 @@ paths:
                         - key
               required:
                 - logo
+  /organizations/{organizationId}/members:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+      responses:
+        "200":
+          description: Complete member directory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actorId:
+                          type: string
+                          minLength: 1
+                        displayName:
+                          type:
+                            - string
+                            - "null"
+                        email:
+                          type:
+                            - string
+                            - "null"
+                        role:
+                          type: string
+                          enum:
+                            - organizer
+                            - staff
+                            - member
+                        joinedAt:
+                          type: string
+                          format: date-time
+                        access:
+                          oneOf:
+                            - type: object
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - none
+                              required:
+                                - kind
+                            - type: object
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - inherited
+                              required:
+                                - kind
+                            - type: object
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - assigned
+                                competitions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      id:
+                                        type: string
+                                        minLength: 1
+                                      name:
+                                        type: string
+                                        minLength: 1
+                                      read:
+                                        type: string
+                                        enum:
+                                          - allowed
+                                          - denied
+                                      role:
+                                        type:
+                                          - string
+                                          - "null"
+                                        enum:
+                                          - staff
+                                          - captain
+                                          - vice_captain
+                                          - player
+                                          - null
+                                    required:
+                                      - id
+                                      - name
+                                      - read
+                                      - role
+                              required:
+                                - kind
+                                - competitions
+                            - type: object
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - inherited-with-restriction
+                                competitions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      id:
+                                        type: string
+                                        minLength: 1
+                                      name:
+                                        type: string
+                                        minLength: 1
+                                      read:
+                                        type: string
+                                        enum:
+                                          - allowed
+                                          - denied
+                                      role:
+                                        type:
+                                          - string
+                                          - "null"
+                                        enum:
+                                          - staff
+                                          - captain
+                                          - vice_captain
+                                          - player
+                                          - null
+                                    required:
+                                      - id
+                                      - name
+                                      - read
+                                      - role
+                              required:
+                                - kind
+                                - competitions
+                      required:
+                        - actorId
+                        - displayName
+                        - email
+                        - role
+                        - joinedAt
+                        - access
+                    maxItems: 500
+                required:
+                  - members
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400": &a94
+          $ref: "#/components/responses/ApiError"
+        "401": *a94
+        "403": *a94
+        "404": *a94
+        "409": *a94
+      operationId: listOrganizationMembers
+      tags:
+        - organizations
+      summary: Read the complete organization member directory (requires
+        organizations.memberships.read)
+      description: Returns at most 500 members. Rejects directories above 500 members
+        or 100 competitions. Query parameters are not supported.
   /organizations/{organizationId}/members/{actorId}/role:
     patch:
       parameters:
@@ -5154,10 +5320,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a94
+        "403": &a95
           $ref: "#/components/responses/ApiError"
-        "404": *a94
-        "409": *a94
+        "404": *a95
+        "409": *a95
       operationId: changeOrganizationRole
       tags:
         - authorization
@@ -5187,11 +5353,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a95
+        "400": &a96
           $ref: "#/components/responses/ApiError"
-        "401": *a95
-        "403": *a95
-        "409": *a95
+        "401": *a96
+        "403": *a96
+        "409": *a96
       operationId: createOrganizationTeam
       tags:
         - teams
@@ -5245,9 +5411,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a96
+        "401": &a97
           $ref: "#/components/responses/ApiError"
-        "403": *a96
+        "403": *a97
       operationId: listOrganizationTeams
       tags:
         - teams
@@ -5276,11 +5442,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a97
+        "400": &a98
           $ref: "#/components/responses/ApiError"
-        "401": *a97
-        "403": *a97
-        "404": *a97
+        "401": *a98
+        "403": *a98
+        "404": *a98
       operationId: connectOrganizationTeamExternalClub
       tags:
         - teams
@@ -5314,9 +5480,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a98
+        "401": &a99
           $ref: "#/components/responses/ApiError"
-        "403": *a98
+        "403": *a99
       operationId: getOrganizationTeamExternalClub
       tags:
         - teams
@@ -5364,11 +5530,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a99
+        "400": &a100
           $ref: "#/components/responses/ApiError"
-        "401": *a99
-        "404": *a99
-        "409": *a99
+        "401": *a100
+        "404": *a100
+        "409": *a100
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptOrganizationInvitation
@@ -5478,9 +5644,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a100
+        "400": &a101
           $ref: "#/components/responses/ApiError"
-        "401": *a100
+        "401": *a101
       operationId: checkOrganizationNameAvailability
       tags:
         - organizations
@@ -5546,9 +5712,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a101
+        "400": &a102
           $ref: "#/components/responses/ApiError"
-        "401": *a101
+        "401": *a102
       operationId: checkOrganizationSlugAvailability
       tags:
         - organizations
@@ -5603,11 +5769,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a102
+        "400": &a103
           $ref: "#/components/responses/ApiError"
-        "401": *a102
-        "403": *a102
-        "404": *a102
+        "401": *a103
+        "403": *a103
+        "404": *a103
       operationId: setMyActiveTeam
       tags:
         - teams
@@ -5678,9 +5844,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a103
+        "400": &a104
           $ref: "#/components/responses/ApiError"
-        "401": *a103
+        "401": *a104
       operationId: listMyActivities
       tags:
         - notifications
@@ -5720,10 +5886,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a104
+        "400": &a105
           $ref: "#/components/responses/ApiError"
-        "401": *a104
-        "404": *a104
+        "401": *a105
+        "404": *a105
       operationId: associateMyPlayerExternalClub
       tags:
         - players
@@ -5748,9 +5914,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a105
+        "400": &a106
           $ref: "#/components/responses/ApiError"
-        "401": *a105
+        "401": *a106
       operationId: addMyPlayerGameAccount
       tags:
         - players
@@ -5783,11 +5949,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a106
+        "400": &a107
           $ref: "#/components/responses/ApiError"
-        "401": *a106
-        "404": *a106
-        "409": *a106
+        "401": *a107
+        "404": *a107
+        "409": *a107
       operationId: updateMyPlayerGameAccount
       tags:
         - players
@@ -5830,10 +5996,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a107
+        "400": &a108
           $ref: "#/components/responses/ApiError"
-        "401": *a107
-        "503": *a107
+        "401": *a108
+        "503": *a108
       operationId: getMyGameProfile
       tags:
         - players
@@ -5899,10 +6065,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a108
+        "400": &a109
           $ref: "#/components/responses/ApiError"
-        "401": *a108
-        "403": *a108
+        "401": *a109
+        "403": *a109
       operationId: getMyMatches
       tags:
         - players
@@ -5952,11 +6118,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a109
+        "400": &a110
           $ref: "#/components/responses/ApiError"
-        "401": *a109
-        "403": *a109
-        "502": *a109
+        "401": *a110
+        "403": *a110
+        "502": *a110
       operationId: getMyRecentMatches
       tags:
         - players
@@ -5998,12 +6164,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a110
+        "400": &a111
           $ref: "#/components/responses/ApiError"
-        "401": *a110
-        "403": *a110
-        "502": *a110
-        "503": *a110
+        "401": *a111
+        "403": *a111
+        "502": *a111
+        "503": *a111
       operationId: getMyRecentMatch
       tags:
         - players
@@ -6181,9 +6347,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a111
+        "401": &a112
           $ref: "#/components/responses/ApiError"
-        "403": *a111
+        "403": *a112
       operationId: getMyStatistics
       tags:
         - players
@@ -6282,12 +6448,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a112
+        "400": &a113
           $ref: "#/components/responses/ApiError"
-        "401": *a112
-        "403": *a112
-        "404": *a112
-        "409": *a112
+        "401": *a113
+        "403": *a113
+        "404": *a113
+        "409": *a113
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: respondToRosterInvitation
@@ -6321,11 +6487,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a113
+        "400": &a114
           $ref: "#/components/responses/ApiError"
-        "401": *a113
-        "404": *a113
-        "409": *a113
+        "401": *a114
+        "404": *a114
+        "409": *a114
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptRosterInvitation
@@ -21267,7 +21433,7 @@ components:
     ApiError:
       description: API error
       headers:
-        X-Request-ID: &a114
+        X-Request-ID: &a115
           $ref: "#/components/headers/RequestId"
       content:
         application/json:
@@ -21276,7 +21442,7 @@ components:
     RateLimited:
       description: Rate limit exceeded
       headers:
-        X-Request-ID: *a114
+        X-Request-ID: *a115
         Retry-After:
           $ref: "#/components/headers/RetryAfter"
       content:

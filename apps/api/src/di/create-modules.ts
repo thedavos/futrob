@@ -48,6 +48,7 @@ import {
 import type { Pool } from "pg";
 import { createGameDataModule } from "./game-data.module.ts";
 import { createIdentityModule } from "./identity.module.ts";
+import { createOrganizationMemberDirectory } from "./organization-members.composition.ts";
 import { createOrganizationsModule } from "./organizations.module.ts";
 import { createEntryInvitations } from "./entry-invitations.composition.ts";
 import { createCompetitionsModule } from "./competitions.module.ts";
@@ -362,6 +363,14 @@ export function createModules(input: CreateModulesInput): AppModules {
     organizations: organizations.repositories.organizations,
   });
 
+  const listOrganizationMembers = createOrganizationMemberDirectory({
+    authorization: deferredAuthorization,
+    organizations,
+    identity,
+    competitions,
+    teams,
+  });
+
   return {
     activityCommands: activityFeed.commands,
     authorization,
@@ -392,7 +401,10 @@ export function createModules(input: CreateModulesInput): AppModules {
     getEncounterView,
     identity,
     notifications: activityFeed.notifications,
-    organizations,
+    organizations: {
+      ...organizations,
+      listOrganizationMembers,
+    },
     results,
     scheduling,
     statistics,

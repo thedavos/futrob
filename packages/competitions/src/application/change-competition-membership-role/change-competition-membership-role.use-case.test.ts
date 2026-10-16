@@ -156,6 +156,10 @@ function membershipRepository(
     },
     findByCompetitionAndActor: async () => current,
     listByActor: async (actorId) => (current?.actorId === actorId ? [current] : []),
+    listForOrganizationActors: async (organizationId, actorIds) =>
+      current && current.organizationId === organizationId && actorIds.includes(current.actorId)
+        ? [current]
+        : [],
   };
 }
 

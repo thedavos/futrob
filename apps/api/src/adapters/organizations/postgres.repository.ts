@@ -112,6 +112,21 @@ export class PostgresMembershipRepository implements MembershipRepository {
     return row ? rehydrateMembership(membershipRowSchema.parse(row)) : null;
   }
 
+  async listByOrganization(
+    organizationId: OrganizationId,
+    limit: number,
+  ): Promise<readonly OrganizationMembership[]> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT organization_id, actor_id, role, created_at
+       FROM organization_memberships
+       WHERE organization_id = $1
+       ORDER BY created_at ASC, actor_id ASC
+       LIMIT $2`,
+      [organizationId, limit],
+    );
+    return result.rows.map((row) => rehydrateMembership(membershipRowSchema.parse(row)));
+  }
+
   async updateRole(membership: OrganizationMembership): Promise<OrganizationMembership> {
     const result = await getPgExecutor(this.pool).query(
       `UPDATE organization_memberships SET role = $3

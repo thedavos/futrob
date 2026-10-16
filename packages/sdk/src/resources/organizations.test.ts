@@ -101,3 +101,39 @@ describe("organizations SDK resource profile methods", () => {
     expect(requests).toEqual([]);
   });
 });
+
+describe("organizations SDK member directory", () => {
+  it("reads the public encoded path without query inputs and parses restricted access", async () => {
+    const payload = {
+      members: [
+        {
+          actorId: "actor-a",
+          displayName: null,
+          email: null,
+          role: "member",
+          joinedAt: "2026-01-01T00:00:00.000Z",
+          access: {
+            kind: "inherited-with-restriction",
+            competitions: [{ id: "comp-a", name: "Copa", read: "denied", role: null }],
+          },
+        },
+      ],
+    };
+    const { client, requests } = recordingClient(payload);
+    expect(
+      await client.organizations.listMembers("org 1/x", { signal: new AbortController().signal }),
+    ).toEqual(payload);
+    expect(requests).toEqual([
+      {
+        url: "https://app.example.com/api/v1/organizations/org%201%2Fx/members",
+        method: "GET",
+        body: null,
+      },
+    ]);
+  });
+
+  it("rejects an incomplete or invalid directory response", async () => {
+    const { client } = recordingClient({ members: [{ actorId: "actor-a" }] });
+    await expect(client.organizations.listMembers("org-a")).rejects.toThrow();
+  });
+});
