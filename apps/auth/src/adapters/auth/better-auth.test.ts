@@ -32,3 +32,38 @@ describe("createActorProvisioningHooks", () => {
     expect(ensureActorForSubject).toHaveBeenCalledTimes(2);
   });
 });
+
+it("synchronizes contacts after provisioning and after name or email updates", async () => {
+  const events: string[] = [];
+  const hooks = createActorProvisioningHooks(
+    {
+      ensureActorForSubject: async () => {
+        events.push("provision");
+        return asActorId("actor-1");
+      },
+    },
+    {
+      syncCredentialUser: async (userId) => {
+        events.push(`contact:${userId}`);
+      },
+    },
+  );
+  await hooks.session.create.before({ userId: "user-1" });
+  expect(events).toEqual(["provision", "contact:user-1"]);
+  await hooks.user.update.after({ id: "user-1" });
+  expect(events).toEqual(["provision", "contact:user-1", "contact:user-1"]);
+});
+
+it("does not issue a session when the contact projection fails", async () => {
+  const hooks = createActorProvisioningHooks(
+    { ensureActorForSubject: async () => asActorId("actor-1") },
+    {
+      syncCredentialUser: async () => {
+        throw new Error("projection unavailable");
+      },
+    },
+  );
+  await expect(hooks.session.create.before({ userId: "user-1" })).rejects.toThrow(
+    "projection unavailable",
+  );
+});
