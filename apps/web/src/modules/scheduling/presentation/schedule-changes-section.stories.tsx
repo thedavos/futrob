@@ -8,7 +8,7 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { encounterView } from "@/modules/results/presentation/encounter-page.fixtures.ts";
-import { escalatedScheduleChange } from "./schedule-changes.fixtures.ts";
+import { escalatedScheduleChange, noCreation } from "./schedule-changes.fixtures.ts";
 import { ScheduleChangesSection, type ScheduleChangesState } from "./schedule-changes-section.tsx";
 
 const styles = stylex.create({
@@ -36,6 +36,7 @@ type Scenario =
   | "pending";
 type Args = { readonly scenario: Scenario; readonly locale: Locale; readonly narrow?: boolean };
 const noop = () => undefined;
+const noCommand = async () => undefined;
 
 function ResolutionStory({ scenario, locale, narrow }: Args) {
   const [request, setRequest] = useState(() =>
@@ -56,37 +57,44 @@ function ResolutionStory({ scenario, locale, narrow }: Args) {
             refreshing: false,
             refreshFailed: scenario === "refreshFailed",
             refresh: noop,
-            resolve: async (_requestId, input) => {
-              if (scenario === "pending") await new Promise<void>(() => undefined);
-              if (scenario === "conflict")
-                throw new FutrobApiError({
-                  status: 409,
-                  body: {
-                    code: "scheduling.schedule_change_concurrency_conflict",
-                    messageKey: "errors.scheduling.schedule_change_concurrency_conflict",
-                  },
-                });
-              setRequest((current) => ({
-                ...current,
-                status: "resolved_by_organizer",
-                version: current.version + 1,
-                allowedActions: [],
-                actions: [
-                  ...current.actions,
-                  {
-                    id: "resolution-1",
-                    kind: "schedule_change_resolved",
-                    actorId: "organizer-1",
-                    authority: "organizer",
-                    proposalId: input.proposalId,
-                    fromVersion: input.expectedVersion,
-                    toVersion: input.expectedVersion + 1,
-                    responseDeadline: "2026-11-01T22:00:00.000Z",
-                    processedAt: "2026-11-02T09:00:00.000Z",
-                    resolution: input.resolution,
-                  },
-                ],
-              }));
+            creation: noCreation,
+            commands: {
+              create: noCommand,
+              accept: noCommand,
+              reject: noCommand,
+              counter: noCommand,
+              resolve: async (_requestId, input) => {
+                if (scenario === "pending") await new Promise<void>(() => undefined);
+                if (scenario === "conflict")
+                  throw new FutrobApiError({
+                    status: 409,
+                    body: {
+                      code: "scheduling.schedule_change_concurrency_conflict",
+                      messageKey: "errors.scheduling.schedule_change_concurrency_conflict",
+                    },
+                  });
+                setRequest((current) => ({
+                  ...current,
+                  status: "resolved_by_organizer",
+                  version: current.version + 1,
+                  allowedActions: [],
+                  actions: [
+                    ...current.actions,
+                    {
+                      id: "resolution-1",
+                      kind: "schedule_change_resolved",
+                      actorId: "organizer-1",
+                      authority: "organizer",
+                      proposalId: input.proposalId,
+                      fromVersion: input.expectedVersion,
+                      toVersion: input.expectedVersion + 1,
+                      responseDeadline: "2026-11-01T22:00:00.000Z",
+                      processedAt: "2026-11-02T09:00:00.000Z",
+                      resolution: input.resolution,
+                    },
+                  ],
+                }));
+              },
             },
           };
   return (
@@ -104,7 +112,7 @@ function ResolutionStory({ scenario, locale, narrow }: Args) {
   );
 }
 const meta = {
-  title: "Product/Competition/Encounter Rescheduling",
+  title: "Product/Competition/Encounter Rescheduling/Organizer",
   parameters: { layout: "fullscreen" },
   args: { scenario: "escalated", locale: "es" },
   argTypes: {
