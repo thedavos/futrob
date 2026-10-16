@@ -34,6 +34,7 @@ import type {
 } from "./schedule-change-decision.ts";
 import {
   createScheduleChangeProposal,
+  isRivalOfProposal,
   type ScheduleChangeProposal,
 } from "./schedule-change-proposal.ts";
 
@@ -255,14 +256,7 @@ export function consentToScheduleChange(
   if (prepared.isErr()) return err(prepared.error);
   const { proposal } = prepared.value;
 
-  const consents = consentsFor(request, proposal.id);
-  if (
-    consents.some(
-      (decision) =>
-        decision.responder.authority === input.responder.authority ||
-        decision.actorId === input.actorId,
-    )
-  ) {
+  if (hasConsentedToScheduleChange(request, proposal.id, input.responder, input.actorId)) {
     return err(
       new ScheduleChangeConsentAlreadyRecorded({
         code: "scheduling.schedule_change_consent_already_recorded",
@@ -273,7 +267,9 @@ export function consentToScheduleChange(
   }
 
   const decision = buildDecision(request, proposal.id, "consent", input);
-  const granted = new Set([...consents, decision].map((entry) => entry.responder.authority));
+  const granted = new Set(
+    [...consentsFor(request, proposal.id), decision].map((entry) => entry.responder.authority),
+  );
   const accepted = input.requiredAuthorities.every((authority) => granted.has(authority));
   return ok(
     nextTransition(request, input.now, {
@@ -321,8 +317,10 @@ export function counterScheduleChange(
   const current = checkScheduleChangeTarget(request, input.target);
   if (current.isErr()) return err(current.error);
   if (
-    input.proposal.proposedByTeamId === current.value.proposedByTeamId ||
-    input.proposal.proposedByActorId === current.value.proposedByActorId
+    !isRivalOfProposal(current.value, {
+      teamId: input.proposal.proposedByTeamId,
+      actorId: input.proposal.proposedByActorId,
+    })
   ) {
     return err(selfResponseForbidden());
   }
@@ -358,16 +356,28 @@ function prepareDecision(
   }
   if (
     input.responder.authority === "rival_team" &&
-    (input.responder.teamId === proposal.proposedByTeamId ||
-      input.actorId === proposal.proposedByActorId)
+    !isRivalOfProposal(proposal, { teamId: input.responder.teamId, actorId: input.actorId })
   ) {
     return err(selfResponseForbidden());
   }
   return ok({ proposal });
 }
 
+/** An authority, and an actor in any capacity, consents to one proposal at most once. */
+export function hasConsentedToScheduleChange(
+  request: Pick<ScheduleChangeRequest, "decisions">,
+  proposalId: string,
+  responder: Pick<ScheduleChangeResponder, "authority">,
+  actorId: ActorId,
+): boolean {
+  return consentsFor(request, proposalId).some(
+    (decision) =>
+      decision.responder.authority === responder.authority || decision.actorId === actorId,
+  );
+}
+
 function consentsFor(
-  request: ScheduleChangeRequest,
+  request: Pick<ScheduleChangeRequest, "decisions">,
   proposalId: string,
 ): readonly ScheduleChangeDecision[] {
   return request.decisions.filter(
