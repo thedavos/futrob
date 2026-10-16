@@ -1480,6 +1480,75 @@ const es = {
     "La selección no es válida. Revisa los partidos EA asignados.",
   "errors.results.duplicate_provider_match":
     "Usaste el mismo partido EA en dos partidos oficiales.",
+  "encounter.selection.proposal.approved": "Aprobada",
+  "encounter.selection.proposal.closedRound": "Ronda cerrada",
+  "encounter.selection.history.selected": ({ proposal }) => `Propuesta elegida: ${proposal}`,
+  "encounter.selection.history.acknowledged": ({ count }) =>
+    count === 1 ? "1 aviso de integridad reconocido" : `${count} avisos de integridad reconocidos`,
+  "encounter.selection.outcome.approved": "Partidos aprobados",
+  "encounter.selection.outcome.byAgreement": "por acuerdo de los equipos",
+  "encounter.selection.outcome.byOperator": "por resolución de la organización",
+  "encounter.selection.outcome.resolution": "Última resolución",
+  "encounter.selection.outcome.approved_proposal": "La organización aprobó una propuesta.",
+  "encounter.selection.outcome.returned_to_selection":
+    "La organización devolvió el caso a selección. Los equipos deben acordar una propuesta nueva.",
+  "encounter.review.title": "Revisión de la organización",
+  "encounter.review.description":
+    "Revisa la disputa, toma el caso y decide. Solo lo ve quien aprueba resultados y no se publica.",
+  "encounter.review.loading": "Cargando el expediente…",
+  "encounter.review.error": "No pudimos cargar el expediente.",
+  "encounter.review.forbidden": "No puedes revisar disputas de este enfrentamiento.",
+  "encounter.review.refresh": "Actualizar expediente",
+  "encounter.review.refreshFailed":
+    "No pudimos actualizar el expediente. Los datos mostrados pueden haber cambiado.",
+  "encounter.review.tabs.label": "Expediente",
+  "encounter.review.tabs.case": "Caso actual",
+  "encounter.review.tabs.history": "Historial",
+  "encounter.review.empty": "Aún no hay propuestas en este enfrentamiento.",
+  "encounter.review.historyEmpty": "Todavía no hay acciones registradas.",
+  "encounter.review.noCommands":
+    "No hay decisiones pendientes para la organización en este estado.",
+  "encounter.review.reason.help":
+    "Obligatorio. Queda en el historial y lo verán ambos equipos. Máximo 1000 caracteres.",
+  "encounter.review.command.review_dispute.trigger": "Tomar el caso",
+  "encounter.review.command.review_dispute.title": "Tomar el caso",
+  "encounter.review.command.review_dispute.description":
+    "La disputa pasa a revisión de la organización y los equipos ya no pueden cambiarla. Tomar el caso no aprueba nada.",
+  "encounter.review.command.review_dispute.submit": "Tomar el caso",
+  "encounter.review.command.review_dispute.success":
+    "Tomaste el caso. Está en revisión de la organización.",
+  "encounter.review.command.approve_proposal.trigger": "Aprobar una propuesta",
+  "encounter.review.command.approve_proposal.title": "Aprobar una propuesta",
+  "encounter.review.command.approve_proposal.description":
+    "La propuesta que elijas pasa a ser el resultado oficial y genera estadísticas.",
+  "encounter.review.command.approve_proposal.submit": "Aprobar propuesta",
+  "encounter.review.command.approve_proposal.success":
+    "Propuesta aprobada. El resultado ya es oficial.",
+  "encounter.review.command.return_to_selection.trigger": "Devolver a selección",
+  "encounter.review.command.return_to_selection.title": "Devolver el caso a selección",
+  "encounter.review.command.return_to_selection.description":
+    "Las propuestas de esta ronda se cierran y los equipos deben acordar una selección nueva.",
+  "encounter.review.command.return_to_selection.submit": "Devolver a selección",
+  "encounter.review.command.return_to_selection.success": "Caso devuelto a selección.",
+  "encounter.review.dialog.dispute": "Disputa que tomas",
+  "encounter.review.dialog.choose": "Propuesta que apruebas",
+  "encounter.review.dialog.chooseRequired": "Elige la propuesta que vas a aprobar.",
+  "encounter.review.dialog.willApprove": "Se aprobará",
+  "encounter.review.dialog.flags": "Avisos de integridad de esta propuesta",
+  "encounter.review.dialog.acknowledge": "Revisé los avisos de integridad y apruebo igualmente",
+  "encounter.review.dialog.acknowledgeRequired":
+    "Confirma que revisaste los avisos de integridad para aprobar.",
+  "encounter.review.dialog.willClose": "Propuestas que se cierran",
+  "encounter.review.dialog.noResult": "No se crea ningún resultado oficial.",
+  "errors.results.integrity_flags_not_acknowledged":
+    "Esta propuesta tiene avisos de integridad. Confirma que los revisaste para aprobarla.",
+  "errors.results.reference_already_claimed":
+    "Un partido EA de esta propuesta ya cuenta en otro enfrentamiento.",
+  "errors.results.candidate_not_associated":
+    "Un partido EA de esta propuesta ya no es candidato de este enfrentamiento.",
+  "errors.results.provider_match_snapshot_missing":
+    "Faltan los datos de un partido EA de esta propuesta. Inténtalo más tarde.",
+  "errors.results.proposal_not_found": "Esa propuesta ya no pertenece a la ronda actual.",
   "landing.footer.legal": "© 2026 Futrob",
 } satisfies Record<string, Message>;
 
@@ -1541,6 +1610,8 @@ export interface MessageParamsByKey {
   readonly "encounter.selection.slot.empty": { readonly slot: number };
   readonly "encounter.selection.conflict": { readonly from: number; readonly to: number };
   readonly "encounter.selection.conflictStale": { readonly from: number };
+  readonly "encounter.selection.history.selected": { readonly proposal: string };
+  readonly "encounter.selection.history.acknowledged": { readonly count: number };
   readonly "common.seconds": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
@@ -3125,6 +3196,74 @@ const en: Catalog = {
   "errors.results.reason_required": "Write a reason to continue.",
   "errors.results.invalid_selection": "The selection isn't valid. Check the assigned EA matches.",
   "errors.results.duplicate_provider_match": "You used the same EA match in two official matches.",
+  "encounter.selection.proposal.approved": "Approved",
+  "encounter.selection.proposal.closedRound": "Closed round",
+  "encounter.selection.history.selected": ({ proposal }) => `Chosen proposal: ${proposal}`,
+  "encounter.selection.history.acknowledged": ({ count }) =>
+    count === 1 ? "1 integrity warning acknowledged" : `${count} integrity warnings acknowledged`,
+  "encounter.selection.outcome.approved": "Approved matches",
+  "encounter.selection.outcome.byAgreement": "by agreement between the teams",
+  "encounter.selection.outcome.byOperator": "by organization decision",
+  "encounter.selection.outcome.resolution": "Latest decision",
+  "encounter.selection.outcome.approved_proposal": "The organization approved a proposal.",
+  "encounter.selection.outcome.returned_to_selection":
+    "The organization returned the case to selection. The teams have to agree on a new proposal.",
+  "encounter.review.title": "Organization review",
+  "encounter.review.description":
+    "Review the dispute, take the case and decide. Only people who approve results see this, and it's never published.",
+  "encounter.review.loading": "Loading the case file…",
+  "encounter.review.error": "We couldn't load the case file.",
+  "encounter.review.forbidden": "You can't review disputes for this encounter.",
+  "encounter.review.refresh": "Refresh case file",
+  "encounter.review.refreshFailed":
+    "We couldn't refresh the case file. What you see may have changed.",
+  "encounter.review.tabs.label": "Case file",
+  "encounter.review.tabs.case": "Current case",
+  "encounter.review.tabs.history": "History",
+  "encounter.review.empty": "No proposals in this encounter yet.",
+  "encounter.review.historyEmpty": "No actions recorded yet.",
+  "encounter.review.noCommands": "The organization has no decisions pending in this state.",
+  "encounter.review.reason.help":
+    "Required. It stays in the history and both teams will see it. Up to 1000 characters.",
+  "encounter.review.command.review_dispute.trigger": "Take the case",
+  "encounter.review.command.review_dispute.title": "Take the case",
+  "encounter.review.command.review_dispute.description":
+    "The dispute moves to organization review and the teams can no longer change it. Taking the case approves nothing.",
+  "encounter.review.command.review_dispute.submit": "Take the case",
+  "encounter.review.command.review_dispute.success":
+    "You took the case. It's now under organization review.",
+  "encounter.review.command.approve_proposal.trigger": "Approve a proposal",
+  "encounter.review.command.approve_proposal.title": "Approve a proposal",
+  "encounter.review.command.approve_proposal.description":
+    "The proposal you choose becomes the official result and produces statistics.",
+  "encounter.review.command.approve_proposal.submit": "Approve proposal",
+  "encounter.review.command.approve_proposal.success":
+    "Proposal approved. The result is now official.",
+  "encounter.review.command.return_to_selection.trigger": "Return to selection",
+  "encounter.review.command.return_to_selection.title": "Return the case to selection",
+  "encounter.review.command.return_to_selection.description":
+    "This round's proposals close and the teams have to agree on a new selection.",
+  "encounter.review.command.return_to_selection.submit": "Return to selection",
+  "encounter.review.command.return_to_selection.success": "Case returned to selection.",
+  "encounter.review.dialog.dispute": "Dispute you're taking",
+  "encounter.review.dialog.choose": "Proposal you're approving",
+  "encounter.review.dialog.chooseRequired": "Choose the proposal you're approving.",
+  "encounter.review.dialog.willApprove": "Will be approved",
+  "encounter.review.dialog.flags": "Integrity warnings for this proposal",
+  "encounter.review.dialog.acknowledge": "I reviewed the integrity warnings and approve anyway",
+  "encounter.review.dialog.acknowledgeRequired":
+    "Confirm you reviewed the integrity warnings to approve.",
+  "encounter.review.dialog.willClose": "Proposals that close",
+  "encounter.review.dialog.noResult": "No official result is created.",
+  "errors.results.integrity_flags_not_acknowledged":
+    "This proposal has integrity warnings. Confirm you reviewed them to approve it.",
+  "errors.results.reference_already_claimed":
+    "An EA match in this proposal already counts in another encounter.",
+  "errors.results.candidate_not_associated":
+    "An EA match in this proposal is no longer a candidate for this encounter.",
+  "errors.results.provider_match_snapshot_missing":
+    "Data for an EA match in this proposal is missing. Try again later.",
+  "errors.results.proposal_not_found": "That proposal no longer belongs to the current round.",
   "landing.footer.legal": "© 2026 Futrob",
 };
 

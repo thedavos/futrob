@@ -32,6 +32,7 @@ import {
   ScheduleChangesSection,
   type ScheduleChangesState,
 } from "@/modules/scheduling/presentation/schedule-changes-section.tsx";
+import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
 import { CandidatesSection } from "./encounter-candidates.tsx";
 import { previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
@@ -63,11 +64,14 @@ export type CandidatesState =
 export function EncounterPageView({
   candidates,
   competitionId,
+  disputeReview,
   encounter,
   organizationId,
   scheduleChanges,
   teamSelection,
 }: {
+  /** Organization review panel; only an actor who approves results gets one. */
+  readonly disputeReview?: DisputeReviewState;
   readonly scheduleChanges?: ScheduleChangesState;
   readonly teamSelection?: TeamSelectionState;
   readonly candidates: CandidatesState;
@@ -128,6 +132,7 @@ export function EncounterPageView({
       return (
         <EncounterReady
           candidates={candidates}
+          disputeReview={disputeReview}
           scheduleChanges={scheduleChanges}
           encountersLink={encountersLink}
           teamSelection={teamSelection}
@@ -143,12 +148,14 @@ export function EncounterPageView({
 
 function EncounterReady({
   candidates,
+  disputeReview,
   encountersLink,
   scheduleChanges,
   teamSelection,
   view,
 }: {
   readonly candidates: CandidatesState;
+  readonly disputeReview?: DisputeReviewState;
   readonly encountersLink: ReactElement;
   readonly scheduleChanges?: ScheduleChangesState;
   readonly teamSelection?: TeamSelectionState;
@@ -192,6 +199,9 @@ function EncounterReady({
           preview={preview}
           state={teamSelection}
         />
+      ) : null}
+      {disputeReview ? (
+        <DisputeReviewSection candidates={candidateList} encounter={view} state={disputeReview} />
       ) : null}
       <section aria-labelledby="encounter-slots" {...applyStyles(styles.section)}>
         <div {...applyStyles(styles.sectionCopy)}>

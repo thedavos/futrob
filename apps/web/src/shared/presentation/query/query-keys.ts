@@ -38,6 +38,9 @@ export const queryKeys = {
         encounterId,
         actingTeamId,
       ] as const,
+    /** The operator's dossier: never shares a cache entry with a Team read. */
+    operatorSelection: (organizationId: string, encounterId: string) =>
+      [...queryKeys.encounters.all, "operator-selection", organizationId, encounterId] as const,
   },
   identity: {
     all: ["identity"] as const,

@@ -28,6 +28,17 @@ export const styles = stylex.create({
   inline: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem 1rem" },
   status: { display: "inline-flex", alignItems: "center", gap: "0.375rem" },
   warning: { color: colors.warning },
+  danger: { color: colors.danger },
+  option: { justifyContent: "flex-start", textAlign: "start", alignItems: "flex-start" },
+  optionBody: { display: "flex", flexDirection: "column", gap: "0.25rem", minWidth: 0 },
+  check: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    minHeight: "var(--control-height)",
+  },
+  checkLabel: { flexGrow: 1, paddingBlock: "0.75rem", cursor: "pointer" },
+  tabs: { minWidth: 0 },
   list: {
     display: "flex",
     flexDirection: "column",

@@ -215,7 +215,7 @@ describe("Team negotiation in the Match Center", () => {
     );
 
     expect(await panel().findByText("Resultado oficial aprobado")).toBeTruthy();
-    expect(panel().getByText("Aprobada")).toBeTruthy();
+    expect(proposal("Propuesta 1 · ronda 1").getByText("Aprobada")).toBeTruthy();
     expect(posts).toEqual([
       {
         path: "/proposals/proposal-1/confirm",
