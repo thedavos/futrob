@@ -101,12 +101,21 @@ export {
   ListScheduleChangeRequestsUseCase,
   type ListScheduleChangeRequestsError,
   type ListScheduleChangeRequestsInput,
+  type ListScheduleChangeRequestsOutput,
 } from "./application/list-schedule-change-requests.use-case.ts";
 export {
   GetScheduleChangeRequestUseCase,
   type GetScheduleChangeRequestError,
   type GetScheduleChangeRequestInput,
+  type ScheduleChangeRequestView,
 } from "./application/get-schedule-change-request.use-case.ts";
+export type {
+  ScheduleChangeAllowedAction,
+  ScheduleChangeCreationOptions,
+  ScheduleChangeRequestCapabilities,
+  ScheduleChangeResponseAction,
+  ScheduleChangeResponseBlock,
+} from "./domain/policies/schedule-change-capabilities.ts";
 export {
   AcceptScheduleChangeProposalUseCase,
   type AcceptScheduleChangeProposalDeps,

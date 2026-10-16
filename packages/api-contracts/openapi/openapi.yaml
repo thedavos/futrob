@@ -723,7 +723,8 @@ paths:
         future. A violation is 409 `scheduling.reschedule_notice_not_met`, with
         `details.anchor` equal to `current` or `proposed` (current takes
         priority). No request, consent, schedule or quota changes persist on
-        denial. Recorded replays do not revalidate notice. "
+        denial. Recorded replays do not revalidate notice. The response carries
+        empty capabilities; read the list for them."
       requestBody:
         required: true
         content:
@@ -756,6 +757,16 @@ paths:
         - encounters
       summary: List authorized schedule-change requests for an encounter, including
         closed history
+      description: Computed for the authenticated actor at API time. Each request
+        lists `allowedActions` and `blockedActions` (accept, reject and counter
+        each appear in exactly one) plus `respondAs`, the responder accept and
+        reject must send. `resolve` is allowed only on an escalated request for
+        an actor with encounters.reschedule.resolve. A response is blocked once
+        API time reaches the current proposal's `responseDeadline`, even before
+        the expiry runner escalates it. `creation` lists the Teams the actor may
+        request for and every scope with its current start, each with a
+        `blockedReason`. Minimum notice and version races are not predicted; the
+        commands still return them as errors.
   /encounters/{encounterId}/schedule-change-requests/{requestId}:
     get:
       parameters:
@@ -788,12 +799,12 @@ paths:
         - encounters
       summary: Read one schedule-change request with proposals, decisions, application
         and operator audit
-      description: "Includes allowedActions: resolve only for an escalated request
-        when the authenticated actor has encounters.reschedule.resolve. Readable
-        by actors who can read the Encounter; anyone else gets 404
+      description: Includes `allowedActions`, `respondAs` and `blockedActions` for the
+        authenticated actor, computed as in the list. Readable by actors who can
+        read the Encounter; anyone else gets 404
         `scheduling.schedule_change_encounter_not_found`. An unknown request, or
         one of another Encounter, is 404
-        `scheduling.schedule_change_request_not_found`."
+        `scheduling.schedule_change_request_not_found`.
   /encounters/{encounterId}/schedule-change-requests/{requestId}/proposals/{proposalId}/accept:
     post:
       parameters:
@@ -15389,7 +15400,57 @@ components:
                 items:
                   type: string
                   enum:
+                    - accept
+                    - reject
+                    - counter
                     - resolve
+              respondAs:
+                oneOf:
+                  - type: object
+                    properties:
+                      authority:
+                        type: string
+                        enum:
+                          - rival_team
+                      teamId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - authority
+                      - teamId
+                  - type: object
+                    properties:
+                      authority:
+                        type: string
+                        enum:
+                          - organizer
+                    required:
+                      - authority
+                  - type: "null"
+              blockedActions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action:
+                      type: string
+                      enum:
+                        - accept
+                        - reject
+                        - counter
+                    reason:
+                      type: string
+                      enum:
+                        - request_closed
+                        - response_window_closed
+                        - own_proposal
+                        - permission
+                        - already_consented
+                        - rescheduling_disabled
+                        - result_protected
+                  required:
+                    - action
+                    - reason
               application:
                 type:
                   - object
@@ -15471,11 +15532,94 @@ components:
               - decisions
               - actions
               - allowedActions
+              - respondAs
+              - blockedActions
               - application
               - createdAt
               - updatedAt
+        creation:
+          type: object
+          properties:
+            blockedReason:
+              type:
+                - string
+                - "null"
+              enum:
+                - permission
+                - rescheduling_disabled
+                - null
+            teams:
+              type: array
+              items:
+                type: object
+                properties:
+                  teamId:
+                    type: string
+                    minLength: 1
+                  blockedReason:
+                    type:
+                      - string
+                      - "null"
+                    enum:
+                      - limit_reached
+                      - null
+                required:
+                  - teamId
+                  - blockedReason
+            scopes:
+              type: array
+              items:
+                type: object
+                properties:
+                  scope:
+                    oneOf:
+                      - type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - entire_encounter
+                        required:
+                          - type
+                      - type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - official_match
+                          officialSlot:
+                            anyOf:
+                              - type: number
+                                enum:
+                                  - 1
+                              - type: number
+                                enum:
+                                  - 2
+                        required:
+                          - type
+                          - officialSlot
+                  currentStartAt:
+                    type: string
+                    format: date-time
+                  blockedReason:
+                    type:
+                      - string
+                      - "null"
+                    enum:
+                      - active_request_exists
+                      - result_protected
+                      - null
+                required:
+                  - scope
+                  - currentStartAt
+                  - blockedReason
+          required:
+            - blockedReason
+            - teams
+            - scopes
       required:
         - requests
+        - creation
     ListSentEntryInvitationsResponse:
       type: object
       properties:
@@ -19773,7 +19917,57 @@ components:
               items:
                 type: string
                 enum:
+                  - accept
+                  - reject
+                  - counter
                   - resolve
+            respondAs:
+              oneOf:
+                - type: object
+                  properties:
+                    authority:
+                      type: string
+                      enum:
+                        - rival_team
+                    teamId:
+                      type: string
+                      minLength: 1
+                  required:
+                    - authority
+                    - teamId
+                - type: object
+                  properties:
+                    authority:
+                      type: string
+                      enum:
+                        - organizer
+                  required:
+                    - authority
+                - type: "null"
+            blockedActions:
+              type: array
+              items:
+                type: object
+                properties:
+                  action:
+                    type: string
+                    enum:
+                      - accept
+                      - reject
+                      - counter
+                  reason:
+                    type: string
+                    enum:
+                      - request_closed
+                      - response_window_closed
+                      - own_proposal
+                      - permission
+                      - already_consented
+                      - rescheduling_disabled
+                      - result_protected
+                required:
+                  - action
+                  - reason
             application:
               type:
                 - object
@@ -19855,6 +20049,8 @@ components:
             - decisions
             - actions
             - allowedActions
+            - respondAs
+            - blockedActions
             - application
             - createdAt
             - updatedAt
@@ -20125,7 +20321,57 @@ components:
           items:
             type: string
             enum:
+              - accept
+              - reject
+              - counter
               - resolve
+        respondAs:
+          oneOf:
+            - type: object
+              properties:
+                authority:
+                  type: string
+                  enum:
+                    - rival_team
+                teamId:
+                  type: string
+                  minLength: 1
+              required:
+                - authority
+                - teamId
+            - type: object
+              properties:
+                authority:
+                  type: string
+                  enum:
+                    - organizer
+              required:
+                - authority
+            - type: "null"
+        blockedActions:
+          type: array
+          items:
+            type: object
+            properties:
+              action:
+                type: string
+                enum:
+                  - accept
+                  - reject
+                  - counter
+              reason:
+                type: string
+                enum:
+                  - request_closed
+                  - response_window_closed
+                  - own_proposal
+                  - permission
+                  - already_consented
+                  - rescheduling_disabled
+                  - result_protected
+            required:
+              - action
+              - reason
         application:
           type:
             - object
@@ -20207,6 +20453,8 @@ components:
         - decisions
         - actions
         - allowedActions
+        - respondAs
+        - blockedActions
         - application
         - createdAt
         - updatedAt

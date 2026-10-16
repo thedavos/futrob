@@ -1,16 +1,51 @@
 import {
   currentScheduleChangeProposal,
+  type ListScheduleChangeRequestsOutput,
+  type RescheduleScope,
   type ScheduleChangeCommandOutput,
   type ScheduleChangeRequest,
+  type ScheduleChangeRequestCapabilities,
+  type ScheduleChangeResponder,
 } from "@futrob/scheduling";
 import type {
+  ListScheduleChangeRequestsResponse,
   ScheduleChangeCommandResponse,
   ScheduleChangeRequestDto,
 } from "@futrob/api-contracts";
 
+/** Create and command responses carry no capabilities; clients refetch the list. */
+const NO_CAPABILITIES: ScheduleChangeRequestCapabilities = {
+  allowedActions: [],
+  respondAs: null,
+  blockedActions: [],
+};
+
+export function toScheduleChangeListResponse(
+  output: ListScheduleChangeRequestsOutput,
+): ListScheduleChangeRequestsResponse {
+  const { creation } = output;
+  return {
+    requests: output.requests.map((view) =>
+      toScheduleChangeRequestDto(view.request, view.capabilities),
+    ),
+    creation: {
+      blockedReason: creation.blockedReason,
+      teams: creation.teams.map((team) => ({
+        teamId: team.teamId,
+        blockedReason: team.blockedReason,
+      })),
+      scopes: creation.scopes.map((option) => ({
+        scope: toScopeDto(option.scope),
+        currentStartAt: option.currentStartAt.toISOString(),
+        blockedReason: option.blockedReason,
+      })),
+    },
+  };
+}
+
 export function toScheduleChangeRequestDto(
   request: ScheduleChangeRequest,
-  allowedActions: ScheduleChangeRequestDto["allowedActions"] = [],
+  capabilities: ScheduleChangeRequestCapabilities = NO_CAPABILITIES,
 ): ScheduleChangeRequestDto {
   const { application } = request;
   return {
@@ -20,10 +55,7 @@ export function toScheduleChangeRequestDto(
     encounterId: request.encounterId,
     requestingTeamId: request.requestingTeamId,
     initiatedByActorId: request.initiatedByActorId,
-    scope:
-      request.scope.type === "entire_encounter"
-        ? { type: "entire_encounter" }
-        : { type: "official_match", officialSlot: request.scope.officialSlot },
+    scope: toScopeDto(request.scope),
     status: request.status,
     version: request.version,
     currentProposalId: currentScheduleChangeProposal(request).id,
@@ -41,15 +73,14 @@ export function toScheduleChangeRequestDto(
       proposalId: decision.proposalId,
       requestVersion: decision.requestVersion,
       kind: decision.kind,
-      responder:
-        decision.responder.authority === "rival_team"
-          ? { authority: "rival_team", teamId: decision.responder.teamId }
-          : { authority: "organizer" },
+      responder: toResponderDto(decision.responder),
       actorId: decision.actorId,
       reason: decision.reason,
       createdAt: decision.createdAt.toISOString(),
     })),
-    allowedActions,
+    allowedActions: [...capabilities.allowedActions],
+    respondAs: capabilities.respondAs && toResponderDto(capabilities.respondAs),
+    blockedActions: [...capabilities.blockedActions],
     actions: request.actions.map((action) => ({
       ...action,
       responseDeadline: action.responseDeadline.toISOString(),
@@ -87,4 +118,18 @@ export function toScheduleChangeCommandResponse(
   output: ScheduleChangeCommandOutput,
 ): ScheduleChangeCommandResponse {
   return { request: toScheduleChangeRequestDto(output.request), replayed: output.replayed };
+}
+
+function toScopeDto(scope: RescheduleScope): ScheduleChangeRequestDto["scope"] {
+  return scope.type === "entire_encounter"
+    ? { type: "entire_encounter" }
+    : { type: "official_match", officialSlot: scope.officialSlot };
+}
+
+function toResponderDto(
+  responder: ScheduleChangeResponder,
+): NonNullable<ScheduleChangeRequestDto["respondAs"]> {
+  return responder.authority === "rival_team"
+    ? { authority: "rival_team", teamId: responder.teamId }
+    : { authority: "organizer" };
 }

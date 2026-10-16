@@ -100,6 +100,8 @@ export const listScheduleChangeRequestsRoute = defineRoute({
   operationId: "listScheduleChangeRequests",
   tags: ["encounters"],
   summary: "List authorized schedule-change requests for an encounter, including closed history",
+  description:
+    "Computed for the authenticated actor at API time. Each request lists `allowedActions` and `blockedActions` (accept, reject and counter each appear in exactly one) plus `respondAs`, the responder accept and reject must send. `resolve` is allowed only on an escalated request for an actor with encounters.reschedule.resolve. A response is blocked once API time reaches the current proposal's `responseDeadline`, even before the expiry runner escalates it. `creation` lists the Teams the actor may request for and every scope with its current start, each with a `blockedReason`. Minimum notice and version races are not predicted; the commands still return them as errors.",
   params: pathParams(["encounterId"]),
   success: {
     status: 200,
@@ -116,7 +118,7 @@ export const createScheduleChangeRequestRoute = defineRoute({
   tags: ["encounters"],
   summary: "Create a schedule-change request without changing the fixture",
   description:
-    "The proposal stores its UTC responseDeadline anchored to API createdAt plus the stage's rescheduleProposalExpiryHours (integer 1–72, default 12). It differs from minimum notice. An escalated request remains active and blocks incompatible requests. Create, counter and accept revalidate the stage's current minimum notice against the current and proposed times of every affected slot, including organizer consent. The exact boundary is inclusive; current times at or before now are exempt. Zero disables notice only: proposed dates must still be strictly future. A violation is 409 `scheduling.reschedule_notice_not_met`, with `details.anchor` equal to `current` or `proposed` (current takes priority). No request, consent, schedule or quota changes persist on denial. Recorded replays do not revalidate notice. ",
+    "The proposal stores its UTC responseDeadline anchored to API createdAt plus the stage's rescheduleProposalExpiryHours (integer 1–72, default 12). It differs from minimum notice. An escalated request remains active and blocks incompatible requests. Create, counter and accept revalidate the stage's current minimum notice against the current and proposed times of every affected slot, including organizer consent. The exact boundary is inclusive; current times at or before now are exempt. Zero disables notice only: proposed dates must still be strictly future. A violation is 409 `scheduling.reschedule_notice_not_met`, with `details.anchor` equal to `current` or `proposed` (current takes priority). No request, consent, schedule or quota changes persist on denial. Recorded replays do not revalidate notice. The response carries empty capabilities; read the list for them.",
   params: pathParams(["encounterId"]),
   body: CreateScheduleChangeRequest,
   success: {
@@ -135,7 +137,7 @@ export const getScheduleChangeRequestRoute = defineRoute({
   summary:
     "Read one schedule-change request with proposals, decisions, application and operator audit",
   description:
-    "Includes allowedActions: resolve only for an escalated request when the authenticated actor has encounters.reschedule.resolve. Readable by actors who can read the Encounter; anyone else gets 404 `scheduling.schedule_change_encounter_not_found`. An unknown request, or one of another Encounter, is 404 `scheduling.schedule_change_request_not_found`.",
+    "Includes `allowedActions`, `respondAs` and `blockedActions` for the authenticated actor, computed as in the list. Readable by actors who can read the Encounter; anyone else gets 404 `scheduling.schedule_change_encounter_not_found`. An unknown request, or one of another Encounter, is 404 `scheduling.schedule_change_request_not_found`.",
   params: pathParams(["encounterId", "requestId"]),
   success: {
     status: 200,

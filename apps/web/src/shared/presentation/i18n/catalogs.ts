@@ -22,6 +22,7 @@ const es = {
   "reschedule.refresh": "Actualizar reprogramaciones",
   "reschedule.refreshFailed":
     "No pudimos actualizar el historial. Los datos mostrados pueden haber cambiado.",
+  "reschedule.paused": "Actualiza las reprogramaciones para enviar. Tu borrador se conserva.",
   "reschedule.status.open": "En negociación",
   "reschedule.status.accepted": "Horario aplicado por consentimiento",
   "reschedule.status.rejected": "Rechazada",
@@ -67,6 +68,89 @@ const es = {
   "reschedule.success": "Resolución guardada. El historial refleja el cierre.",
   "reschedule.conflict":
     "La solicitud cambió. Se ha actualizado el historial; revisa su estado antes de volver a resolver.",
+  "reschedule.currentStart": "Horario actual",
+  "reschedule.preview": "Se guardará como",
+  "reschedule.create.open": "Solicitar reprogramación",
+  "reschedule.create.title": "Nueva solicitud de reprogramación",
+  "reschedule.create.team": "Equipo que solicita",
+  "reschedule.create.actingAs": "Solicitas en nombre de {team}",
+  "reschedule.create.scope": "Qué se mueve",
+  "reschedule.create.currentStart": "Ahora: {date}",
+  "reschedule.create.reason": "Motivo para el rival",
+  "reschedule.create.reasonRequired": "Escribe un motivo para el rival.",
+  "reschedule.create.help":
+    "El rival debe aceptar antes del plazo. Si no responde, la solicitud pasa al organizador: el silencio no cuenta como aceptación.",
+  "reschedule.create.submit": "Enviar solicitud",
+  "reschedule.create.sending": "Enviando solicitud…",
+  "reschedule.create.success": "Solicitud enviada. El horario no cambia hasta que el rival acepte.",
+  "reschedule.create.blocked.permission":
+    "Solo el capitán de un equipo de este enfrentamiento puede solicitar una reprogramación.",
+  "reschedule.create.blocked.rescheduling_disabled":
+    "Esta competición no permite reprogramaciones.",
+  "reschedule.create.blocked.limit_reached": "{team} ya usó todas sus reprogramaciones.",
+  "reschedule.create.blocked.active_request_exists":
+    "Ya hay una solicitud activa que incluye este horario.",
+  "reschedule.create.blocked.result_protected":
+    "Tiene un resultado aprobado; su horario ya no se puede mover.",
+  "reschedule.recovery.review":
+    "La propuesta cambió. Revisa la propuesta actual antes de responder.",
+  "reschedule.recovery.windowClosed":
+    "Tu respuesta llegó después del plazo y no se registró. El organizador decide la solicitud.",
+  "reschedule.recovery.resultProtected":
+    "Hay un resultado aprobado en este horario; ya no se puede mover.",
+  "reschedule.recovery.disabled": "Esta competición ya no permite reprogramaciones.",
+  "reschedule.recovery.limitReached": "Tu equipo ya usó todas sus reprogramaciones.",
+  "reschedule.recovery.permission": "Ya no tienes permiso para esta acción. Actualizamos la lista.",
+  "reschedule.recovery.activeRequest":
+    "Ya hay una solicitud activa para este horario. Revísala en la lista.",
+  "reschedule.recovery.noticeProposed":
+    "La nueva fecha no respeta la antelación mínima. Elige una fecha más lejana.",
+  "reschedule.recovery.noticeCurrent":
+    "El partido está demasiado cerca para reprogramarlo; el horario actual se mantiene.",
+  "reschedule.recovery.acceptNotice":
+    "La fecha propuesta ya no respeta la antelación mínima. Contrapropón otra fecha o rechaza la propuesta.",
+  "reschedule.recovery.acceptPast":
+    "La fecha propuesta ya pasó. Contrapropón otra fecha o rechaza la propuesta.",
+  "reschedule.recovery.dateRejected": "Elige una fecha futura, distinta del horario actual.",
+  "reschedule.recovery.network":
+    "No pudimos enviar la acción. Vuelve a intentarlo; no se aplicará dos veces.",
+  "reschedule.respondAs": "Respondes como {team}",
+  "reschedule.accept.open": "Aceptar",
+  "reschedule.accept.title": "Aceptar la propuesta",
+  "reschedule.accept.body": "{scope} pasa de {from} a {to}.",
+  "reschedule.accept.submit": "Confirmar aceptación",
+  "reschedule.accept.sending": "Aceptando…",
+  "reschedule.accept.success":
+    "Aceptación registrada. El estado de la solicitud indica si el horario ya cambió.",
+  "reschedule.reject.open": "Rechazar",
+  "reschedule.reject.title": "Rechazar la propuesta",
+  "reschedule.reject.body": "Se mantiene el horario actual: {date}.",
+  "reschedule.reject.reason": "Motivo (opcional)",
+  "reschedule.reject.submit": "Confirmar rechazo",
+  "reschedule.reject.sending": "Rechazando…",
+  "reschedule.reject.success": "Propuesta rechazada. Se mantiene el horario actual.",
+  "reschedule.counter.open": "Contraproponer",
+  "reschedule.counter.title": "Contraproponer otra fecha",
+  "reschedule.counter.actingAs": "Contrapropones como {team}",
+  "reschedule.counter.body": "{team} tendrá que dar su consentimiento de nuevo.",
+  "reschedule.counter.reason": "Motivo de la contrapropuesta",
+  "reschedule.counter.reasonRequired": "Escribe un motivo para la contrapropuesta.",
+  "reschedule.counter.submit": "Enviar contrapropuesta",
+  "reschedule.counter.sending": "Enviando contrapropuesta…",
+  "reschedule.counter.success": "Contrapropuesta enviada. {team} debe responder antes del plazo.",
+  "reschedule.blocked.response_window_closed":
+    "El plazo de respuesta venció. La solicitud pasa al organizador; el silencio no cuenta como aceptación.",
+  "reschedule.blocked.own_proposal":
+    "Tu equipo hizo esta propuesta. Espera la respuesta del rival.",
+  "reschedule.blocked.permission":
+    "Solo el capitán rival o el organizador pueden responder a esta propuesta.",
+  "reschedule.blocked.already_consented": "Ya diste tu consentimiento a esta propuesta.",
+  "reschedule.blocked.rescheduling_disabled":
+    "La competición no permite reprogramar, así que no puedes aceptar ni contraproponer.",
+  "reschedule.blocked.result_protected":
+    "Hay un resultado aprobado en este horario, así que no puedes aceptar ni contraproponer.",
+  "reschedule.stale":
+    "La propuesta cambió mientras respondías. Cancela y revisa la propuesta actual.",
   "errors.scheduling.schedule_change_response_window_closed":
     "El plazo de respuesta venció. El organizador debe resolver la solicitud.",
   "errors.scheduling.schedule_change_not_escalated":
@@ -1290,6 +1374,15 @@ export interface MessageParamsByKey {
   "reschedule.expiredAt": { deadline: string; processed: string };
   "reschedule.resolvedAt": { date: string; actor: string };
   "reschedule.zone": { zone: string };
+  "reschedule.create.actingAs": { team: string };
+  "reschedule.create.currentStart": { date: string };
+  "reschedule.create.blocked.limit_reached": { team: string };
+  "reschedule.respondAs": { team: string };
+  "reschedule.accept.body": { scope: string; from: string; to: string };
+  "reschedule.reject.body": { date: string };
+  "reschedule.counter.actingAs": { team: string };
+  "reschedule.counter.body": { team: string };
+  "reschedule.counter.success": { team: string };
   readonly "encounter.title": { readonly home: string; readonly away: string };
   readonly "encounter.round": { readonly number: number };
   readonly "encounter.roundOf": { readonly number: number; readonly total: number };
@@ -1458,6 +1551,7 @@ const en: Catalog = {
   "reschedule.refresh": "Refresh reschedule requests",
   "reschedule.refreshFailed":
     "We could not refresh the history. The displayed data may have changed.",
+  "reschedule.paused": "Refresh the reschedule requests to send. Your draft is kept.",
   "reschedule.status.open": "In negotiation",
   "reschedule.status.accepted": "Schedule applied by consent",
   "reschedule.status.rejected": "Rejected",
@@ -1505,6 +1599,89 @@ const en: Catalog = {
   "reschedule.success": "Resolution saved. The history reflects the closed request.",
   "reschedule.conflict":
     "The request changed. The history has been refreshed; review its state before resolving again.",
+  "reschedule.currentStart": "Current kickoff",
+  "reschedule.preview": "Saved as",
+  "reschedule.create.open": "Request reschedule",
+  "reschedule.create.title": "New reschedule request",
+  "reschedule.create.team": "Requesting Team",
+  "reschedule.create.actingAs": "You request on behalf of {team}",
+  "reschedule.create.scope": "What moves",
+  "reschedule.create.currentStart": "Now: {date}",
+  "reschedule.create.reason": "Reason for the rival",
+  "reschedule.create.reasonRequired": "Enter a reason for the rival.",
+  "reschedule.create.help":
+    "The rival must accept before the deadline. If they do not answer, the request goes to the organizer: silence is not acceptance.",
+  "reschedule.create.submit": "Send request",
+  "reschedule.create.sending": "Sending request…",
+  "reschedule.create.success": "Request sent. The schedule stays the same until the rival accepts.",
+  "reschedule.create.blocked.permission":
+    "Only a captain of a Team in this encounter can request a reschedule.",
+  "reschedule.create.blocked.rescheduling_disabled":
+    "This competition does not allow rescheduling.",
+  "reschedule.create.blocked.limit_reached": "{team} has used all its reschedules.",
+  "reschedule.create.blocked.active_request_exists":
+    "An active request already covers this kickoff.",
+  "reschedule.create.blocked.result_protected":
+    "It has an approved result; its kickoff can no longer move.",
+  "reschedule.recovery.review":
+    "The proposal changed. Review the current proposal before answering.",
+  "reschedule.recovery.windowClosed":
+    "Your answer arrived after the deadline and was not recorded. The organizer decides the request.",
+  "reschedule.recovery.resultProtected":
+    "This kickoff has an approved result and can no longer move.",
+  "reschedule.recovery.disabled": "This competition no longer allows rescheduling.",
+  "reschedule.recovery.limitReached": "Your Team has used all its reschedules.",
+  "reschedule.recovery.permission":
+    "You no longer have permission for this action. The list has been refreshed.",
+  "reschedule.recovery.activeRequest":
+    "An active request already covers this kickoff. Review it in the list.",
+  "reschedule.recovery.noticeProposed":
+    "The new date does not meet the minimum notice. Choose a later date.",
+  "reschedule.recovery.noticeCurrent":
+    "The match is too close to reschedule; the current kickoff stays.",
+  "reschedule.recovery.acceptNotice":
+    "The proposed date no longer meets the minimum notice. Counter with another date or reject the proposal.",
+  "reschedule.recovery.acceptPast":
+    "The proposed date has passed. Counter with another date or reject the proposal.",
+  "reschedule.recovery.dateRejected": "Choose a future date that differs from the current kickoff.",
+  "reschedule.recovery.network":
+    "We could not send the action. Try again; it will not apply twice.",
+  "reschedule.respondAs": "You respond as {team}",
+  "reschedule.accept.open": "Accept",
+  "reschedule.accept.title": "Accept the proposal",
+  "reschedule.accept.body": "{scope} moves from {from} to {to}.",
+  "reschedule.accept.submit": "Confirm acceptance",
+  "reschedule.accept.sending": "Accepting…",
+  "reschedule.accept.success":
+    "Acceptance recorded. The request status shows whether the schedule has moved.",
+  "reschedule.reject.open": "Reject",
+  "reschedule.reject.title": "Reject the proposal",
+  "reschedule.reject.body": "The current schedule stays: {date}.",
+  "reschedule.reject.reason": "Reason (optional)",
+  "reschedule.reject.submit": "Confirm rejection",
+  "reschedule.reject.sending": "Rejecting…",
+  "reschedule.reject.success": "Proposal rejected. The current schedule stays.",
+  "reschedule.counter.open": "Counter",
+  "reschedule.counter.title": "Counter with another date",
+  "reschedule.counter.actingAs": "You counter as {team}",
+  "reschedule.counter.body": "{team} will need to consent again.",
+  "reschedule.counter.reason": "Counter reason",
+  "reschedule.counter.reasonRequired": "Enter a reason for the counter.",
+  "reschedule.counter.submit": "Send counter",
+  "reschedule.counter.sending": "Sending counter…",
+  "reschedule.counter.success": "Counter sent. {team} must answer before the deadline.",
+  "reschedule.blocked.response_window_closed":
+    "The response window closed. The request goes to the organizer; silence is not acceptance.",
+  "reschedule.blocked.own_proposal": "Your Team made this proposal. Wait for the rival's answer.",
+  "reschedule.blocked.permission":
+    "Only the rival captain or the organizer can answer this proposal.",
+  "reschedule.blocked.already_consented": "You already consented to this proposal.",
+  "reschedule.blocked.rescheduling_disabled":
+    "The competition does not allow rescheduling, so you cannot accept or counter.",
+  "reschedule.blocked.result_protected":
+    "This kickoff has an approved result, so you cannot accept or counter.",
+  "reschedule.stale":
+    "The proposal changed while you were answering. Cancel and review the current proposal.",
   "errors.scheduling.schedule_change_response_window_closed":
     "The response window closed. The organizer must resolve the request.",
   "errors.scheduling.schedule_change_not_escalated":

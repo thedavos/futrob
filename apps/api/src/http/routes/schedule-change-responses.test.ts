@@ -4,8 +4,10 @@ import {
   completeOrganizationOnboardingResponseSchema,
   encounterScheduleSnapshotSchema,
   fixturePlanSchema,
+  listScheduleChangeRequestsResponseSchema,
   scheduleChangeCommandResponseSchema,
   scheduleChangeRequestSchema,
+  type ScheduleChangeRequestDto,
 } from "@futrob/api-contracts";
 import {
   asActorId,
@@ -42,6 +44,13 @@ const limaSix = (day: number) => ({ year: 2099, month: 1, day, hour: 18, minute:
 
 const requestOf = async (response: Response) =>
   scheduleChangeRequestSchema.parse(await response.json());
+/** The request as stored; create responses leave the reader's capabilities empty. */
+const stateOf = (request: ScheduleChangeRequestDto): ScheduleChangeRequestDto => ({
+  ...request,
+  allowedActions: [],
+  respondAs: null,
+  blockedActions: [],
+});
 const commandOf = async (response: Response) =>
   scheduleChangeCommandResponseSchema.parse(await response.json());
 const failureOf = async (response: Response) => ({
@@ -211,6 +220,64 @@ describe.each([
   }
 
   it.skipIf(skip)(
+    "lists what the session actor may do with each request and with a new one",
+    async () => {
+      const flow = await seed();
+      const created = await flow.create(15);
+      const listAs = async (actorId: string) =>
+        listScheduleChangeRequestsResponseSchema.parse(
+          await (await flow.send(actorId, "GET", flow.requestsPath)).json(),
+        );
+      const capabilitiesOf = (list: Awaited<ReturnType<typeof listAs>>) =>
+        list.requests.map(({ id, allowedActions, respondAs, blockedActions }) => ({
+          id,
+          allowedActions,
+          respondAs,
+          blockedActions,
+        }));
+      const every = (reason: string) =>
+        ["accept", "reject", "counter"].map((action) => ({ action, reason }));
+
+      const rival = await listAs(flow.actors.awayCaptain);
+      expect(capabilitiesOf(rival)).toEqual([
+        {
+          id: created.id,
+          allowedActions: ["accept", "reject", "counter"],
+          respondAs: { authority: "rival_team", teamId: flow.away },
+          blockedActions: [],
+        },
+      ]);
+      expect(rival.creation.blockedReason).toBeNull();
+      expect(rival.creation.teams).toEqual([{ teamId: flow.away, blockedReason: null }]);
+      expect(rival.creation.scopes[0]).toEqual({
+        scope: { type: "entire_encounter" },
+        currentStartAt: D0,
+        blockedReason: "active_request_exists",
+      });
+
+      expect(capabilitiesOf(await listAs(flow.actors.homeCaptain))).toEqual([
+        {
+          id: created.id,
+          allowedActions: [],
+          respondAs: null,
+          blockedActions: every("own_proposal"),
+        },
+      ]);
+
+      const player = await listAs(flow.actors.awayPlayer);
+      expect(capabilitiesOf(player)).toEqual([
+        {
+          id: created.id,
+          allowedActions: [],
+          respondAs: null,
+          blockedActions: every("permission"),
+        },
+      ]);
+      expect(player.creation).toMatchObject({ blockedReason: "permission", teams: [] });
+    },
+  );
+
+  it.skipIf(skip)(
     "returns notice anchors through HTTP and preserves state until an exact-boundary retry",
     async () => {
       const flow = await seed();
@@ -235,8 +302,10 @@ describe.each([
         details: { anchor: "current" },
       });
       expect(
-        await (await flow.send(flow.actors.homeCaptain, "GET", flow.requestsPath)).json(),
-      ).toEqual({ requests: [] });
+        listScheduleChangeRequestsResponseSchema.parse(
+          await (await flow.send(flow.actors.homeCaptain, "GET", flow.requestsPath)).json(),
+        ).requests,
+      ).toEqual([]);
       expect((await flow.snapshot()).scheduledStartAt).toBe("2099-01-10T23:00:00.000Z");
 
       flow.setNow("2099-01-10T11:00:00.000Z");
@@ -267,9 +336,11 @@ describe.each([
         details: { anchor: "current" },
       });
       expect(
-        await (
-          await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`)
-        ).json(),
+        stateOf(
+          await requestOf(
+            await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`),
+          ),
+        ),
       ).toEqual(created);
       expect((await flow.snapshot()).scheduledStartAt).toBe("2099-01-10T23:00:00.000Z");
 
@@ -325,9 +396,11 @@ describe.each([
         details: { anchor: "proposed" },
       });
       expect(
-        await (
-          await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`)
-        ).json(),
+        stateOf(
+          await requestOf(
+            await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`),
+          ),
+        ),
       ).toEqual(created);
       flow.setNow("2099-01-09T12:00:00.000Z");
       const counterResponse = await flow.command(

@@ -1,31 +1,50 @@
 "use client";
 
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type {
+  AcceptScheduleChangeProposalRequest,
+  CounterScheduleChangeProposalRequest,
+  CreateScheduleChangeRequestBody,
   EncounterViewDto,
+  RejectScheduleChangeProposalRequest,
   ResolveScheduleChangeRequestBody,
+  ScheduleChangeCreationOptionsDto,
   ScheduleChangeRequestDto,
 } from "@futrob/api-contracts";
-import {
-  applyStyles,
-  Badge,
-  Button,
-  Caption,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  SectionTitle,
-  Skeleton,
-  Text,
-} from "@futrob/ui";
+import { applyStyles, Button, Caption, SectionTitle, Skeleton, Text } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { ScheduleResolutionForm } from "./schedule-resolution-form.tsx";
-import { ScheduleChangeHistory } from "./schedule-change-history.tsx";
+import { creationBlocks, ScheduleChangeCreateForm } from "./schedule-change-create-form.tsx";
+import { ScheduleChangeRequestItem } from "./schedule-change-request-item.tsx";
 import { styles } from "./schedule-changes.styles.ts";
 
 export type ResolveScheduleChange = (
   requestId: string,
   input: ResolveScheduleChangeRequestBody,
 ) => Promise<void>;
+
+export interface ProposalTarget {
+  readonly requestId: string;
+  readonly proposalId: string;
+}
+
+/** Every command rereads the Encounter, the list, competitions and the next Encounter. */
+export interface ScheduleChangeCommands {
+  readonly create: (body: CreateScheduleChangeRequestBody) => Promise<void>;
+  readonly accept: (
+    target: ProposalTarget,
+    body: AcceptScheduleChangeProposalRequest,
+  ) => Promise<void>;
+  readonly reject: (
+    target: ProposalTarget,
+    body: RejectScheduleChangeProposalRequest,
+  ) => Promise<void>;
+  readonly counter: (
+    target: ProposalTarget,
+    body: CounterScheduleChangeProposalRequest,
+  ) => Promise<void>;
+  readonly resolve: ResolveScheduleChange;
+}
 
 export type ScheduleChangesState =
   | { readonly kind: "loading" }
@@ -34,10 +53,11 @@ export type ScheduleChangesState =
   | {
       readonly kind: "ready";
       readonly requests: readonly ScheduleChangeRequestDto[];
+      readonly creation: ScheduleChangeCreationOptionsDto;
       readonly refreshing: boolean;
       readonly refreshFailed: boolean;
       readonly refresh: () => void;
-      readonly resolve: ResolveScheduleChange;
+      readonly commands: ScheduleChangeCommands;
     };
 
 export function ScheduleChangesSection({
@@ -48,6 +68,12 @@ export function ScheduleChangesSection({
   readonly view: EncounterViewDto;
 }) {
   const { locale, t } = useI18n();
+  const [creating, setCreating] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const createTrigger = useRef<HTMLButtonElement>(null);
+  const createHeading = useRef<HTMLHeadingElement>(null);
+  const sectionTitle = useRef<HTMLHeadingElement>(null);
   const format = new Intl.DateTimeFormat(locale, {
     timeZone: view.competition.timeZone,
     dateStyle: "medium",
@@ -55,19 +81,69 @@ export function ScheduleChangesSection({
   });
   const teamName = (id: string) =>
     id === view.home.teamId ? view.home.name : id === view.away.teamId ? view.away.name : id;
+  const blocks = state.kind === "ready" ? creationBlocks(state.creation, teamName, t) : [];
+  const canCreate = state.kind === "ready" && blocks.length === 0;
+  const formOpen = creating && canCreate;
+
+  function openCreate() {
+    setNotice(null);
+    flushSync(() => setCreating(true));
+    createHeading.current?.focus();
+  }
+  function cancelCreate() {
+    setCreating(false);
+    createTrigger.current?.focus();
+  }
+
   return (
     <section aria-labelledby="encounter-rescheduling" {...applyStyles(styles.section)}>
       <div {...applyStyles(styles.header)}>
         <div {...applyStyles(styles.copy)}>
-          <SectionTitle id="encounter-rescheduling">{t("reschedule.title")}</SectionTitle>
+          <SectionTitle id="encounter-rescheduling" ref={sectionTitle} tabIndex={-1}>
+            {t("reschedule.title")}
+          </SectionTitle>
           <Caption>{t("reschedule.description")}</Caption>
         </div>
         {state.kind === "ready" ? (
-          <Button variant="outline" disabled={state.refreshing} onClick={state.refresh}>
-            {t("reschedule.refresh")}
-          </Button>
+          <div {...applyStyles(styles.actions)}>
+            {canCreate ? (
+              <Button
+                ref={createTrigger}
+                aria-expanded={formOpen}
+                onClick={formOpen ? cancelCreate : openCreate}
+              >
+                {t("reschedule.create.open")}
+              </Button>
+            ) : null}
+            <Button variant="outline" disabled={state.refreshing} onClick={state.refresh}>
+              {t("reschedule.refresh")}
+            </Button>
+          </div>
         ) : null}
       </div>
+      <Text role="status">{announcement}</Text>
+      {state.kind === "ready" && !canCreate && !state.refreshFailed
+        ? blocks.map((reason) => <Caption key={reason}>{reason}</Caption>)
+        : null}
+      {notice ? <Text role="alert">{notice}</Text> : null}
+      {state.kind === "ready" && formOpen ? (
+        <ScheduleChangeCreateForm
+          creation={state.creation}
+          timeZone={view.competition.timeZone}
+          format={format}
+          teamName={teamName}
+          create={state.commands.create}
+          headingRef={createHeading}
+          paused={state.refreshFailed}
+          onCancel={cancelCreate}
+          onClosed={(message, outcome) => {
+            setCreating(false);
+            if (outcome === "sent") setAnnouncement(message);
+            else setNotice(message);
+            sectionTitle.current?.focus();
+          }}
+        />
+      ) : null}
       {state.kind === "loading" ? (
         <div aria-busy="true">
           <Caption>{t("reschedule.loading")}</Caption>
@@ -96,64 +172,18 @@ export function ScheduleChangesSection({
       ) : null}
       {state.kind === "ready" ? (
         <ol aria-label={t("reschedule.title")} {...applyStyles(styles.list)}>
-          {state.requests.map((request) => {
-            const current = request.proposals.find(
-              (proposal) => proposal.id === request.currentProposalId,
-            )!;
-            const canResolve =
-              request.status === "escalated" &&
-              request.allowedActions.includes("resolve") &&
-              !state.refreshFailed;
-            return (
-              <li key={request.id} {...applyStyles(styles.request)}>
-                <div {...applyStyles(styles.inline)}>
-                  <Badge variant={request.status === "escalated" ? "warning" : "neutral"}>
-                    {t(`reschedule.status.${request.status}`)}
-                  </Badge>
-                  <Text tone="default" weight="medium">
-                    {request.scope.type === "entire_encounter"
-                      ? t("reschedule.scope.encounter")
-                      : t("reschedule.scope.slot", { slot: request.scope.officialSlot })}
-                  </Text>
-                  <Caption>
-                    {t("reschedule.requestedBy", { team: teamName(request.requestingTeamId) })}
-                  </Caption>
-                </div>
-                <div {...applyStyles(styles.meta)}>
-                  <Text tone="default">
-                    {t("reschedule.proposedStart")}:{" "}
-                    <time dateTime={current.proposedStartAt}>
-                      {format.format(new Date(current.proposedStartAt))}
-                    </time>
-                  </Text>
-                  <Caption>
-                    {t("reschedule.deadline", {
-                      date: format.format(new Date(current.responseDeadline)),
-                    })}
-                  </Caption>
-                  <Caption>{t("reschedule.zone", { zone: view.competition.timeZone })}</Caption>
-                  <Text className={styles.reason}>{current.reason}</Text>
-                </div>
-                <Collapsible>
-                  <CollapsibleTrigger>{t("reschedule.history")}</CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <ScheduleChangeHistory format={format} request={request} teamName={teamName} />
-                  </CollapsibleContent>
-                </Collapsible>
-                {canResolve ? (
-                  <ScheduleResolutionForm
-                    key={`${request.id}:${request.version}`}
-                    request={request}
-                    resolve={state.resolve}
-                    view={view}
-                  />
-                ) : request.status === "escalated" &&
-                  !request.allowedActions.includes("resolve") ? (
-                  <Caption>{t("reschedule.noPermission")}</Caption>
-                ) : null}
-              </li>
-            );
-          })}
+          {state.requests.map((request) => (
+            <ScheduleChangeRequestItem
+              key={request.id}
+              request={request}
+              view={view}
+              format={format}
+              teamName={teamName}
+              commands={state.commands}
+              refreshFailed={state.refreshFailed}
+              announce={setAnnouncement}
+            />
+          ))}
         </ol>
       ) : null}
     </section>

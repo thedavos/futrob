@@ -7,7 +7,7 @@ import {
   listScheduleChangeRequestsResponseSchema,
   scheduleChangeRequestSchema,
   resolveScheduleChangeRequestSchema,
-} from "./schemas.ts";
+} from "./index.ts";
 
 const encounter = {
   encounterId: "encounter-1",
@@ -140,6 +140,8 @@ const scheduleChangeRequest = {
   decisions: [],
   actions: [],
   allowedActions: [],
+  respondAs: null,
+  blockedActions: [],
   application: null,
   createdAt: "2026-09-14T20:00:00.000Z",
   updatedAt: "2026-09-14T20:00:00.000Z",
@@ -177,8 +179,12 @@ describe("schedule change request contracts", () => {
     expect(
       listScheduleChangeRequestsResponseSchema.parse({
         requests: [{ ...scheduleChangeRequest, status: "rejected", idempotencyKey: "secret" }],
+        creation: { blockedReason: "permission", teams: [], scopes: [] },
       }),
-    ).toEqual({ requests: [{ ...scheduleChangeRequest, status: "rejected" }] });
+    ).toEqual({
+      requests: [{ ...scheduleChangeRequest, status: "rejected" }],
+      creation: { blockedReason: "permission", teams: [], scopes: [] },
+    });
     expect(scheduleChangeRequestSchema.parse(scheduleChangeRequest)).not.toHaveProperty(
       "idempotencyKey",
     );

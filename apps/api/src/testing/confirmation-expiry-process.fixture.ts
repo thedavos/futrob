@@ -1,3 +1,4 @@
+import "@/http/openapi/zod-openapi-setup.ts";
 import { serve } from "@hono/node-server";
 import { Pool } from "pg";
 import { createApp } from "@/app.ts";

@@ -28,9 +28,23 @@ const requestDto = {
   decisions: [],
   actions: [],
   allowedActions: [],
+  respondAs: null,
+  blockedActions: [],
   application: null,
   createdAt: "2026-09-14T20:00:00.000Z",
   updatedAt: "2026-09-14T20:00:00.000Z",
+};
+
+const listedCreation = {
+  blockedReason: null,
+  teams: [{ teamId: "team-away", blockedReason: null }],
+  scopes: [
+    {
+      scope: { type: "entire_encounter" as const },
+      currentStartAt: "2099-01-10T23:00:00.000Z",
+      blockedReason: "active_request_exists" as const,
+    },
+  ],
 };
 
 const createBody = {
@@ -70,12 +84,16 @@ describe("createFutrobClient encounters schedule-change-requests", () => {
         expect(init?.method).toBe("GET");
         return Response.json({
           requests: [{ ...requestDto, status: "rejected", idempotencyKey: "secret" }],
+          creation: listedCreation,
         });
       }),
     });
 
     const listed = await client.encounters.listScheduleChangeRequests("encounter-1");
-    expect(listed.requests).toEqual([{ ...requestDto, status: "rejected" }]);
+    expect(listed).toEqual({
+      requests: [{ ...requestDto, status: "rejected" }],
+      creation: listedCreation,
+    });
     expect(listed.requests[0]).not.toHaveProperty("idempotencyKey");
   });
 
