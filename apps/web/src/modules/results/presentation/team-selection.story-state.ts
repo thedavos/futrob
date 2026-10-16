@@ -72,7 +72,6 @@ export function useStoryTeamSelection(
     read: {
       kind: "ready",
       view,
-      actingTeamId: side === "home" ? "team-home" : "team-away",
       refreshing: false,
       refreshFailed: false,
       refresh: noop,

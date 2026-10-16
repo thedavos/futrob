@@ -37,7 +37,7 @@ import { previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 import { RetryAlert, type Formats } from "./encounter-parts.tsx";
 import { OfficialSlotRow, SeriesPreviewPanel } from "./encounter-slots.tsx";
-import { EMPTY_DRAFT, selectionDraftReducer } from "./selection-draft.ts";
+import { EMPTY_TEAM_DRAFT, teamDraftReducer } from "./team-selection-draft.ts";
 import { TeamSelectionSection, type TeamSelectionState } from "./team-selection-section.tsx";
 
 export type EncounterState =
@@ -155,8 +155,8 @@ function EncounterReady({
   readonly view: EncounterViewDto;
 }) {
   const { locale, t } = useI18n();
-  const [draft, dispatch] = useReducer(selectionDraftReducer, EMPTY_DRAFT);
-  const { assignments } = draft;
+  const [draft, dispatch] = useReducer(teamDraftReducer, EMPTY_TEAM_DRAFT);
+  const { assignments } = draft.input;
   const formats: Formats = {
     kickoff: new Intl.DateTimeFormat(locale, {
       timeZone: view.competition.timeZone,

@@ -1,27 +1,27 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { OfficialSelectionViewDto } from "@futrob/api-contracts";
 import type { SlotSelection } from "./encounter-preview.ts";
+import { beginAttempt, type Attempt } from "./selection-draft.ts";
 import {
-  beginAttempt,
-  buildIntent,
-  EMPTY_DRAFT,
-  selectionDraftReducer,
+  buildTeamIntent,
+  EMPTY_TEAM_DRAFT,
   teamCommandsFor,
-  type Attempt,
-  type DraftEvent,
-  type SelectionDraft,
-} from "./selection-draft.ts";
+  teamDraftReducer,
+  type TeamDraft,
+  type TeamDraftEvent,
+  type TeamIntent,
+} from "./team-selection-draft.ts";
 
-const reject: Attempt = {
+const reject: Attempt<TeamIntent> = {
   intent: { kind: "reject", proposalId: "proposal-1", reason: "Slot 2 was a friendly" },
   expectedVersion: 1,
   commandKey: "key-a",
 };
 
-const run = (...events: DraftEvent[]): SelectionDraft =>
-  events.reduce(selectionDraftReducer, EMPTY_DRAFT);
+const run = (...events: TeamDraftEvent[]): TeamDraft =>
+  events.reduce(teamDraftReducer, EMPTY_TEAM_DRAFT);
 
-const typedReject = (): SelectionDraft =>
+const typedReject = (): TeamDraft =>
   run(
     { type: "assign", slot: 1, key: "ea-clubs:m-1" },
     { type: "open", command: "reject" },
@@ -29,16 +29,16 @@ const typedReject = (): SelectionDraft =>
     { type: "started", attempt: reject },
   );
 
-describe("selection draft", () => {
+describe("Team selection draft", () => {
   it("does not start a second attempt while one is pending", () => {
     const draft = typedReject();
     expect(draft.submission).toEqual({ status: "pending", attempt: reject });
     expect(beginAttempt(draft.submission, reject.intent, 1, "key-b")).toBeNull();
-    expect(selectionDraftReducer(draft, { type: "close" }).open).toBe("reject");
+    expect(teamDraftReducer(draft, { type: "close" }).open).toBe("reject");
   });
 
   it("replays an unknown outcome with the same key and version; a changed reason gets a new key", () => {
-    const draft = selectionDraftReducer(typedReject(), {
+    const draft = teamDraftReducer(typedReject(), {
       type: "settled",
       outcome: { ok: false, failure: "unknown", code: null },
     });
@@ -69,14 +69,14 @@ describe("selection draft", () => {
   });
 
   it("after a conflict keeps the typed reason and slot choices and sends the next submit fresh", () => {
-    const draft = selectionDraftReducer(typedReject(), {
+    const draft = teamDraftReducer(typedReject(), {
       type: "settled",
       outcome: { ok: false, failure: "conflict", code: "results.selection_version_conflict" },
     });
     expect(draft.submission).toEqual({ status: "conflict", readVersion: 1 });
     expect(draft.open).toBe("reject");
-    expect(draft.reasons.reject).toBe("Slot 2 was a friendly");
-    expect(draft.assignments).toEqual({ 1: "ea-clubs:m-1", 2: null });
+    expect(draft.input.reasons.reject).toBe("Slot 2 was a friendly");
+    expect(draft.input.assignments).toEqual({ 1: "ea-clubs:m-1", 2: null });
     expect(beginAttempt(draft.submission, reject.intent, 2, "key-b")).toEqual({
       ...reject,
       expectedVersion: 2,
@@ -85,18 +85,18 @@ describe("selection draft", () => {
   });
 
   it("clears the draft and announces the command on success", () => {
-    const draft = selectionDraftReducer(typedReject(), { type: "settled", outcome: { ok: true } });
-    expect(draft).toEqual({ ...EMPTY_DRAFT, accepted: "reject" });
+    const draft = teamDraftReducer(typedReject(), { type: "settled", outcome: { ok: true } });
+    expect(draft).toEqual({ ...EMPTY_TEAM_DRAFT, accepted: "reject" });
   });
 
   it("closes and stops sending once the server refuses the actor", () => {
-    const draft = selectionDraftReducer(typedReject(), {
+    const draft = teamDraftReducer(typedReject(), {
       type: "settled",
       outcome: { ok: false, failure: "refused", code: "results.official_selection_forbidden" },
     });
     expect(draft.open).toBeNull();
     expect(beginAttempt(draft.submission, reject.intent, 1, "key-b")).toBeNull();
-    expect(selectionDraftReducer(draft, { type: "open", command: "reject" }).open).toBeNull();
+    expect(teamDraftReducer(draft, { type: "open", command: "reject" }).open).toBeNull();
   });
 
   it("requires every official slot for a proposal and a nonblank reason for a rejection", () => {
@@ -104,19 +104,19 @@ describe("selection draft", () => {
       officialSlot: 1,
       providerMatchRef: { providerKey: "ea-clubs", externalId: "m-1" },
     };
-    expect(buildIntent("propose", { proposalId: null, selections: null, reason: "" })).toEqual({
+    expect(buildTeamIntent("propose", { proposalId: null, selections: null, reason: "" })).toEqual({
       ok: false,
       missing: "slots",
     });
-    expect(buildIntent("propose", { proposalId: null, selections: [m1], reason: "" })).toEqual({
+    expect(buildTeamIntent("propose", { proposalId: null, selections: [m1], reason: "" })).toEqual({
       ok: true,
       intent: { kind: "propose", selections: [m1] },
     });
     expect(
-      buildIntent("reject", { proposalId: "proposal-1", selections: null, reason: "   " }),
+      buildTeamIntent("reject", { proposalId: "proposal-1", selections: null, reason: "   " }),
     ).toEqual({ ok: false, missing: "reason" });
     expect(
-      buildIntent("reject", { proposalId: "proposal-1", selections: null, reason: " Late " }),
+      buildTeamIntent("reject", { proposalId: "proposal-1", selections: null, reason: " Late " }),
     ).toEqual({ ok: true, intent: { kind: "reject", proposalId: "proposal-1", reason: "Late" } });
   });
 });

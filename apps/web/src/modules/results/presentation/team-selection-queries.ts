@@ -1,28 +1,17 @@
 import { useState } from "react";
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import type { EncounterViewDto, OfficialSelectionCommandResponse } from "@futrob/api-contracts";
 import { RESULT_PERMISSION } from "@futrob/results";
-import { FutrobApiError } from "@futrob/sdk";
 import { allowedPermissionSet, getEffectiveAccess } from "@/context/permissions.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { officialSelectionBrowserClient } from "./official-selection-browser-client.ts";
-import type { Attempt, CommandOutcome, Failure } from "./selection-draft.ts";
+import { useSelectionRead } from "./official-selection-queries.ts";
+import type { Attempt } from "./selection-draft.ts";
+import type { TeamIntent } from "./team-selection-draft.ts";
 import type { TeamSelectionState, TeamSide } from "./team-selection-section.tsx";
 
 const SIDES: readonly TeamSide[] = ["home", "away"];
 const SPEAKS_FOR_TEAM = [RESULT_PERMISSION.officialSelectionPropose];
-
-const isRefusal = (error: Error | null) =>
-  error instanceof FutrobApiError && [401, 403, 404].includes(error.status);
-
-/** Network failures and 5xx leave the outcome unknown: the server may have applied it. */
-function failureOf(error: Error): Failure {
-  if (!(error instanceof FutrobApiError)) return "unknown";
-  if (error.status === 409) return "conflict";
-  if (isRefusal(error)) return "refused";
-  if (error.status === 400 || error.status === 422) return "invalid";
-  return "unknown";
-}
 
 /**
  * The Team panel for the signed-in actor. Which side the actor speaks for comes from
@@ -39,7 +28,6 @@ export function useTeamSelection({
   readonly encounterId: string;
   readonly organizationId: string;
 }): TeamSelectionState {
-  const queryClient = useQueryClient();
   const [chosen, setChosen] = useState<TeamSide | null>(null);
   const access = useQueries({
     queries: (encounter ? SIDES : []).map((side) => {
@@ -61,70 +49,31 @@ export function useTeamSelection({
     return answer?.isSuccess && allowedPermissionSet(answer.data).has(SPEAKS_FOR_TEAM[0]!);
   });
   const side = chosen && sides.includes(chosen) ? chosen : (sides[0] ?? null);
-  const actingTeamId = encounter && side ? encounter[side].teamId : null;
+  const actingTeamId = encounter && side ? encounter[side].teamId : "";
 
-  const query = useQuery({
-    queryKey: queryKeys.encounters.officialSelection(
-      organizationId,
-      encounterId,
-      actingTeamId ?? "",
-    ),
-    queryFn: ({ signal }) =>
+  const read = useSelectionRead<TeamIntent>({
+    enabled: actingTeamId !== "",
+    queryKey: queryKeys.encounters.officialSelection(organizationId, encounterId, actingTeamId),
+    read: (signal) =>
       officialSelectionBrowserClient().getTeamOfficialSelection(
         organizationId,
         encounterId,
-        { actingTeamId: actingTeamId ?? "" },
+        { actingTeamId },
         { signal },
       ),
-    enabled: actingTeamId !== null,
-    retry: (failureCount, error) => !isRefusal(error) && failureCount < 2,
+    send: (attempt) => sendCommand(organizationId, encounterId, actingTeamId, attempt),
   });
 
   const settled = access.every((answer) => answer.isSuccess || answer.isError);
   if (!settled || !side || !actingTeamId) return { kind: "hidden" };
-  const acting = { side, sides, choose: setChosen };
-  const refresh = () => void query.refetch();
-
-  if (query.isError && isRefusal(query.error))
-    return { kind: "visible", acting, read: { kind: "forbidden" } };
-  if (query.data) {
-    return {
-      kind: "visible",
-      acting,
-      read: {
-        kind: "ready",
-        view: query.data,
-        actingTeamId,
-        refreshing: query.isFetching,
-        refreshFailed: query.isRefetchError,
-        refresh,
-        submit: async (attempt: Attempt): Promise<CommandOutcome> => {
-          try {
-            await sendCommand(organizationId, encounterId, actingTeamId, attempt);
-          } catch (error) {
-            const failure = error instanceof Error ? failureOf(error) : "unknown";
-            if (failure === "conflict") await query.refetch();
-            return {
-              ok: false,
-              failure,
-              code: error instanceof FutrobApiError ? error.code : null,
-            };
-          }
-          await queryClient.invalidateQueries({ queryKey: queryKeys.encounters.all });
-          return { ok: true };
-        },
-      },
-    };
-  }
-  if (query.isError) return { kind: "visible", acting, read: { kind: "error", retry: refresh } };
-  return { kind: "visible", acting, read: { kind: "loading" } };
+  return { kind: "visible", acting: { side, sides, choose: setChosen }, read };
 }
 
 function sendCommand(
   organizationId: string,
   encounterId: string,
   actingTeamId: string,
-  { intent, expectedVersion, commandKey }: Attempt,
+  { intent, expectedVersion, commandKey }: Attempt<TeamIntent>,
 ): Promise<OfficialSelectionCommandResponse> {
   const results = officialSelectionBrowserClient();
   const base = { actingTeamId, expectedVersion, commandKey };

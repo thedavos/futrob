@@ -1,11 +1,7 @@
 "use client";
 
 import { useRef, type Dispatch, type RefObject } from "react";
-import type {
-  EncounterCandidateDto,
-  EncounterViewDto,
-  OfficialSelectionViewDto,
-} from "@futrob/api-contracts";
+import type { EncounterCandidateDto, EncounterViewDto } from "@futrob/api-contracts";
 import {
   applyStyles,
   Button,
@@ -23,26 +19,24 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { selectionsFor, type EncounterPreview } from "./encounter-preview.ts";
 import { RetryAlert } from "./encounter-parts.tsx";
 import { SelectionCommandDialog } from "./selection-command-dialog.tsx";
+import { currentProposalOf, readVersionOf, type SelectionRead } from "./selection-draft.ts";
 import {
-  beginAttempt,
-  buildIntent,
-  currentProposalOf,
+  buildTeamIntent,
   needsReason,
-  readVersionOf,
   teamCommandsFor,
   TEAM_COMMANDS,
-  type Attempt,
-  type CommandOutcome,
-  type DraftEvent,
-  type SelectionDraft,
   type TeamCommand,
-} from "./selection-draft.ts";
+  type TeamDraft,
+  type TeamDraftEvent,
+  type TeamIntent,
+} from "./team-selection-draft.ts";
 import {
   SelectionHistory,
   SelectionProposalList,
   SelectionStatusSummary,
 } from "./selection-record.tsx";
 import { styles } from "./selection.styles.ts";
+import { useCommandAttempt } from "./use-command-attempt.ts";
 
 export type TeamSide = "home" | "away";
 
@@ -53,24 +47,14 @@ export type ActingTeam = {
   readonly choose: (side: TeamSide) => void;
 };
 
-export type SelectionRead =
-  | { readonly kind: "loading" }
-  | { readonly kind: "forbidden" }
-  | { readonly kind: "error"; readonly retry: () => void }
-  | {
-      readonly kind: "ready";
-      readonly view: OfficialSelectionViewDto;
-      readonly actingTeamId: string;
-      readonly refreshing: boolean;
-      readonly refreshFailed: boolean;
-      readonly refresh: () => void;
-      readonly submit: (attempt: Attempt) => Promise<CommandOutcome>;
-    };
-
 /** `hidden` covers both "not a representative" and "not known yet": nothing renders. */
 export type TeamSelectionState =
   | { readonly kind: "hidden" }
-  | { readonly kind: "visible"; readonly acting: ActingTeam; readonly read: SelectionRead };
+  | {
+      readonly kind: "visible";
+      readonly acting: ActingTeam;
+      readonly read: SelectionRead<TeamIntent>;
+    };
 
 export function TeamSelectionSection({
   candidates,
@@ -81,8 +65,8 @@ export function TeamSelectionSection({
   state,
 }: {
   readonly candidates: readonly EncounterCandidateDto[];
-  readonly dispatch: Dispatch<DraftEvent>;
-  readonly draft: SelectionDraft;
+  readonly dispatch: Dispatch<TeamDraftEvent>;
+  readonly draft: TeamDraft;
   readonly encounter: EncounterViewDto;
   readonly preview: EncounterPreview;
   readonly state: TeamSelectionState;
@@ -137,6 +121,7 @@ export function TeamSelectionSection({
           heading={heading}
           preview={preview}
           read={read}
+          actingTeamId={encounter[acting.side].teamId}
         />
       ) : null}
     </section>
@@ -178,6 +163,7 @@ function ActingAs({
 }
 
 function SelectionReady({
+  actingTeamId,
   candidates,
   dispatch,
   draft,
@@ -188,19 +174,20 @@ function SelectionReady({
   read,
 }: {
   readonly candidates: readonly EncounterCandidateDto[];
-  readonly dispatch: Dispatch<DraftEvent>;
-  readonly draft: SelectionDraft;
+  readonly dispatch: Dispatch<TeamDraftEvent>;
+  readonly draft: TeamDraft;
   readonly encounter: EncounterViewDto;
   readonly format: Intl.DateTimeFormat;
   readonly heading: RefObject<HTMLHeadingElement | null>;
   readonly preview: EncounterPreview;
-  readonly read: Extract<SelectionRead, { kind: "ready" }>;
+  readonly read: Extract<SelectionRead<TeamIntent>, { kind: "ready" }>;
+  readonly actingTeamId: string;
 }) {
   const { t } = useI18n();
   const triggers = useRef<Partial<Record<TeamCommand, HTMLButtonElement | null>>>({});
-  const inFlight = useRef(false);
+  const send = useCommandAttempt<TeamCommand, TeamIntent>(dispatch);
   const { view } = read;
-  const allowed = teamCommandsFor(view, read.actingTeamId);
+  const allowed = teamCommandsFor(view, actingTeamId);
   const target = currentProposalOf(view);
   const readVersion = readVersionOf(view);
   const shown = TEAM_COMMANDS.filter(
@@ -208,29 +195,13 @@ function SelectionReady({
   );
 
   function submit(command: TeamCommand) {
-    const checked = buildIntent(command, {
+    const checked = buildTeamIntent(command, {
       proposalId: target?.id ?? null,
-      selections: selectionsFor(encounter, candidates, draft.assignments),
-      reason: needsReason(command) ? draft.reasons[command] : "",
+      selections: selectionsFor(encounter, candidates, draft.input.assignments),
+      reason: needsReason(command) ? draft.input.reasons[command] : "",
     });
     if (!checked.ok) return checked.missing;
-    if (inFlight.current || !allowed.includes(command)) return null;
-    const attempt = beginAttempt(
-      draft.submission,
-      checked.intent,
-      readVersion,
-      crypto.randomUUID(),
-    );
-    if (!attempt) return null;
-    inFlight.current = true;
-    dispatch({ type: "started", attempt });
-    void read
-      .submit(attempt)
-      .catch((): CommandOutcome => ({ ok: false, failure: "unknown", code: null }))
-      .then((outcome) => {
-        inFlight.current = false;
-        dispatch({ type: "settled", outcome });
-      });
+    if (allowed.includes(command)) send(draft.submission, checked.intent, readVersion, read.submit);
     return null;
   }
 
