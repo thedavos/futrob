@@ -9,13 +9,25 @@ import type { Attempt, CommandOutcome, Failure, SelectionRead } from "./selectio
 
 const REFUSED = [401, 403, 404];
 
+/**
+ * 409 answers that are not about the version or status the user read: a reload cannot
+ * fix them, so they are explained instead of reconciled.
+ */
+const NOT_A_CONFLICT = new Set([
+  "results.integrity_flags_not_acknowledged",
+  "results.reference_already_claimed",
+  "results.candidate_not_associated",
+  "results.provider_match_snapshot_missing",
+]);
+
 const isRefusal = (error: Error | null) =>
   error instanceof FutrobApiError && REFUSED.includes(error.status);
 
 /** Network failures and 5xx leave the outcome unknown: the server may have applied it. */
 function failureOf(error: Error): Failure {
   if (!(error instanceof FutrobApiError)) return "unknown";
-  if (error.status === 409) return "conflict";
+  if (error.code === "results.proposal_not_found") return "invalid";
+  if (error.status === 409) return NOT_A_CONFLICT.has(error.code) ? "invalid" : "conflict";
   if (REFUSED.includes(error.status)) return "refused";
   if (error.status === 400 || error.status === 422) return "invalid";
   return "unknown";

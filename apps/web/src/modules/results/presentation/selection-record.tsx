@@ -1,8 +1,9 @@
-import type { ComponentProps } from "react";
+import { useId, type ComponentProps } from "react";
 import type {
   EncounterCandidateDto,
   EncounterViewDto,
   OfficialSelectionActionDto,
+  OfficialSelectionProposalDto,
   OfficialSelectionViewDto,
 } from "@futrob/api-contracts";
 import { applyStyles, Badge, Caption, Heading, Text, type Icon } from "@futrob/ui";
@@ -136,6 +137,36 @@ export function SelectionStatusSummary({ view, encounter, format, t }: Selection
   );
 }
 
+const STANDING = {
+  approved: { variant: "approved", label: "encounter.selection.proposal.approved" },
+  current: { variant: "emphasis", label: "encounter.selection.proposal.current" },
+  closed_round: { variant: "outline", label: "encounter.selection.proposal.closedRound" },
+  superseded: { variant: "outline", label: "encounter.selection.proposal.superseded" },
+} as const satisfies Record<
+  string,
+  {
+    readonly variant: ComponentProps<typeof Badge>["variant"];
+    readonly label: `encounter.selection.proposal.${string}`;
+  }
+>;
+
+function standingOf(view: OfficialSelectionViewDto, proposal: OfficialSelectionProposalDto) {
+  const selection = view.selection;
+  if (proposal.id === selection?.currentProposalId) {
+    return selection.status === "approved" ? STANDING.approved : STANDING.current;
+  }
+  return selection && proposal.round < selection.round
+    ? STANDING.closed_round
+    : STANDING.superseded;
+}
+
+export function proposalLabel(proposal: OfficialSelectionProposalDto, t: Translator) {
+  return t("encounter.selection.proposal.label", {
+    sequence: proposal.sequence,
+    round: proposal.round,
+  });
+}
+
 export function SelectionProposalList({
   candidates,
   encounter,
@@ -143,35 +174,27 @@ export function SelectionProposalList({
   t,
   view,
 }: SelectionRecordProps & { readonly candidates: readonly EncounterCandidateDto[] }) {
+  const id = useId();
   const teamName = teamNameIn(encounter, t);
-  const currentId = view.selection?.currentProposalId ?? null;
   const proposals = [...view.proposals].sort(
     (a, b) => b.round - a.round || b.sequence - a.sequence,
   );
   return (
-    <section aria-labelledby="selection-proposals" {...applyStyles(styles.summary)}>
-      <Heading as="h3" id="selection-proposals">
+    <section aria-labelledby={`${id}-proposals`} {...applyStyles(styles.summary)}>
+      <Heading as="h3" id={`${id}-proposals`}>
         {t("encounter.selection.proposals.title")}
       </Heading>
       <ol {...applyStyles(styles.list)}>
         {proposals.map((proposal) => {
-          const label = t("encounter.selection.proposal.label", {
-            sequence: proposal.sequence,
-            round: proposal.round,
-          });
+          const label = proposalLabel(proposal, t);
+          const standing = standingOf(view, proposal);
           return (
             <li aria-label={label} key={proposal.id} {...applyStyles(styles.item)}>
               <div {...applyStyles(styles.inline)}>
                 <Text tone="default" weight="medium">
                   {label}
                 </Text>
-                <Badge variant={proposal.id === currentId ? "emphasis" : "outline"}>
-                  {t(
-                    proposal.id === currentId
-                      ? "encounter.selection.proposal.current"
-                      : "encounter.selection.proposal.superseded",
-                  )}
-                </Badge>
+                <Badge variant={standing.variant}>{t(standing.label)}</Badge>
               </div>
               <Caption>
                 {t("encounter.selection.proposal.by", { team: teamName(proposal.proposingTeamId) })}{" "}
@@ -195,20 +218,30 @@ export function SelectionProposalList({
   );
 }
 
-/** Each slot resolved to its candidate's score; the provider reference when it is gone. */
-export function ProposalSlots({
-  candidates,
-  encounter,
-  slots,
-  t,
-}: {
+type ProposalSlotsProps = {
   readonly candidates: readonly EncounterCandidateDto[];
   readonly encounter: EncounterViewDto;
   readonly slots: readonly SlotSelection[];
   readonly t: Translator;
-}) {
-  const previews = previewEncounter(encounter, candidates, assignmentsOf(slots)).slots;
-  return <SlotLines encounter={encounter} previews={previews} sent={slots} t={t} />;
+};
+
+/** Each slot resolved to its candidate's score; the provider reference when it is gone. */
+export function proposalSlotTexts({ candidates, encounter, slots, t }: ProposalSlotsProps) {
+  return previewEncounter(encounter, candidates, assignmentsOf(slots)).slots.map((preview) =>
+    slotLine(preview, slots, encounter, t),
+  );
+}
+
+export function ProposalSlots(props: ProposalSlotsProps) {
+  return (
+    <ul {...applyStyles(styles.slots)}>
+      {proposalSlotTexts(props).map((line) => (
+        <li key={line}>
+          <Text tone="default">{line}</Text>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /** One line per official slot; `sent` names references the candidate list no longer has. */
@@ -272,11 +305,14 @@ export function SelectionHistory({
   actions,
   encounter,
   format,
+  proposals,
   t,
 }: {
   readonly actions: readonly OfficialSelectionActionDto[];
   readonly encounter: EncounterViewDto;
   readonly format: Intl.DateTimeFormat;
+  /** Resolves the proposal an operator chose to its label. */
+  readonly proposals: readonly OfficialSelectionProposalDto[];
   readonly t: Translator;
 }) {
   const teamName = teamNameIn(encounter, t);
@@ -288,23 +324,100 @@ export function SelectionHistory({
             ? "encounter.selection.history.byOperator"
             : "encounter.selection.history.bySystem",
         );
+  const chosen = (action: OfficialSelectionActionDto) =>
+    proposals.find((proposal) => proposal.id === action.details?.selectedProposalId);
   return (
     <ol
       aria-label={t("encounter.selection.history.title")}
       {...applyStyles(styles.history, styles.list)}
     >
-      {[...actions].reverse().map((action) => (
-        <li key={action.id} {...applyStyles(styles.summary)}>
-          <Text tone="default" weight="medium">
-            {t(`encounter.selection.history.action.${action.type}`)}
-          </Text>
-          <Caption>
-            {by(action)} ·{" "}
-            <time dateTime={action.occurredAt}>{format.format(new Date(action.occurredAt))}</time>
-          </Caption>
-          {action.reason ? <Text className={styles.reason}>{action.reason}</Text> : null}
-        </li>
-      ))}
+      {[...actions].reverse().map((action) => {
+        const selected = chosen(action);
+        const acknowledged = action.details?.acknowledgedFlags?.length ?? 0;
+        return (
+          <li key={action.id} {...applyStyles(styles.summary)}>
+            <Text tone="default" weight="medium">
+              {t(`encounter.selection.history.action.${action.type}`)}
+            </Text>
+            <Caption>
+              {by(action)} ·{" "}
+              <time dateTime={action.occurredAt}>{format.format(new Date(action.occurredAt))}</time>
+            </Caption>
+            {selected ? (
+              <Caption>
+                {t("encounter.selection.history.selected", {
+                  proposal: proposalLabel(selected, t),
+                })}
+              </Caption>
+            ) : null}
+            {acknowledged > 0 ? (
+              <Caption>
+                {t("encounter.selection.history.acknowledged", { count: acknowledged })}
+              </Caption>
+            ) : null}
+            {action.reason ? <Text className={styles.reason}>{action.reason}</Text> : null}
+          </li>
+        );
+      })}
     </ol>
+  );
+}
+
+/**
+ * How the case ended last: the operator's latest resolution and, once approved, the
+ * slots that became official and on what basis.
+ */
+export function SelectionOutcome({
+  candidates,
+  encounter,
+  format,
+  t,
+  view,
+}: SelectionRecordProps & { readonly candidates: readonly EncounterCandidateDto[] }) {
+  const resolved = view.disputes.filter((dispute) => dispute.status === "resolved").at(-1);
+  const approved = view.selection?.status === "approved" ? currentProposalOf(view) : null;
+  const byOperator =
+    approved !== null &&
+    resolved?.resolution === "approved_proposal" &&
+    resolved.resolutionProposalId === approved.id;
+  if (!resolved && !approved) return null;
+  return (
+    <div {...applyStyles(styles.summary)}>
+      {approved ? (
+        <div aria-label={t("encounter.selection.outcome.approved")} role="group">
+          <Text look="label">{t("encounter.selection.outcome.approved")}</Text>
+          <Caption>
+            {proposalLabel(approved, t)} ·{" "}
+            {t(
+              byOperator
+                ? "encounter.selection.outcome.byOperator"
+                : "encounter.selection.outcome.byAgreement",
+            )}
+          </Caption>
+          <ProposalSlots
+            candidates={candidates}
+            encounter={encounter}
+            slots={approved.slots}
+            t={t}
+          />
+        </div>
+      ) : null}
+      {resolved?.resolution ? (
+        <div aria-label={t("encounter.selection.outcome.resolution")} role="group">
+          <Text look="label">{t("encounter.selection.outcome.resolution")}</Text>
+          <Text tone="default">{t(`encounter.selection.outcome.${resolved.resolution}`)}</Text>
+          {resolved.resolvedAt ? (
+            <Caption>
+              <time dateTime={resolved.resolvedAt}>
+                {format.format(new Date(resolved.resolvedAt))}
+              </time>
+            </Caption>
+          ) : null}
+          {resolved.resolutionReason ? (
+            <Text className={styles.reason}>{resolved.resolutionReason}</Text>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }

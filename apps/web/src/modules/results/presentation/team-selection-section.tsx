@@ -237,7 +237,7 @@ function SelectionReady({
       ) : (
         <Caption>{t("encounter.selection.noCommands")}</Caption>
       )}
-      {shown.map((command) => (
+      {TEAM_COMMANDS.map((command) => (
         <SelectionCommandDialog
           available={allowed.includes(command)}
           candidates={candidates}
@@ -246,8 +246,9 @@ function SelectionReady({
           draft={draft}
           encounter={encounter}
           finalFocus={() => {
+            // After a success the refetched view may drop the trigger right after closing.
             const trigger = triggers.current[command];
-            return trigger?.isConnected ? trigger : heading.current;
+            return draft.accepted !== command && trigger?.isConnected ? trigger : heading.current;
           }}
           key={command}
           onSubmit={() => submit(command)}
@@ -270,7 +271,13 @@ function SelectionReady({
         <Collapsible>
           <CollapsibleTrigger>{t("encounter.selection.history.title")}</CollapsibleTrigger>
           <CollapsibleContent>
-            <SelectionHistory actions={view.actions} encounter={encounter} format={format} t={t} />
+            <SelectionHistory
+              actions={view.actions}
+              encounter={encounter}
+              format={format}
+              proposals={view.proposals}
+              t={t}
+            />
           </CollapsibleContent>
         </Collapsible>
       ) : null}

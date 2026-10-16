@@ -1,6 +1,7 @@
 "use client";
 
 import { useScheduleChanges } from "@/modules/scheduling/presentation/schedule-change-queries.ts";
+import { useDisputeReview } from "./dispute-review-queries.ts";
 import { EncounterPageView, type CandidatesState, type EncounterState } from "./encounter-page.tsx";
 import {
   isRefusal,
@@ -24,6 +25,12 @@ export function EncounterRoute({
   const scheduleChanges = useScheduleChanges(encounterId, belongsHere);
   const candidatesQuery = useEncounterCandidatesQuery(encounterId, belongsHere);
   const teamSelection = useTeamSelection({
+    encounter: belongsHere ? view : undefined,
+    encounterId,
+    organizationId,
+  });
+
+  const disputeReview = useDisputeReview({
     encounter: belongsHere ? view : undefined,
     encounterId,
     organizationId,
@@ -59,6 +66,7 @@ export function EncounterRoute({
   return (
     <EncounterPageView
       candidates={candidates}
+      disputeReview={disputeReview}
       scheduleChanges={scheduleChanges}
       teamSelection={teamSelection}
       competitionId={competitionId}
