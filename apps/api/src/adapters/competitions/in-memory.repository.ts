@@ -92,6 +92,15 @@ export class InMemoryCompetitionRepository implements CompetitionRepository {
       .sort(compareByTime((item) => item.updatedAt, TIME_SORT_DIRECTION.desc));
   }
 
+  async listNamesByOrganization(organizationId: OrganizationId, limit: number) {
+    return [...this.byId.values()]
+      .map((draft) => draft.competition)
+      .filter((competition) => competition.organizationId === organizationId)
+      .sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))
+      .slice(0, limit)
+      .map((competition) => ({ id: competition.id, name: competition.name }));
+  }
+
   all(): readonly CompetitionDraft[] {
     return [...this.byId.values()];
   }
@@ -122,5 +131,17 @@ export class InMemoryCompetitionMembershipRepository implements CompetitionMembe
 
   async listByActor(actorId: ActorId): Promise<readonly CompetitionMembership[]> {
     return [...this.rows.values()].filter((membership) => membership.actorId === actorId);
+  }
+
+  async listForOrganizationActors(
+    organizationId: OrganizationId,
+    actorIds: readonly ActorId[],
+  ): Promise<readonly CompetitionMembership[]> {
+    if (actorIds.length === 0) return [];
+    const wanted = new Set(actorIds);
+    return [...this.rows.values()].filter(
+      (membership) =>
+        membership.organizationId === organizationId && wanted.has(membership.actorId),
+    );
   }
 }

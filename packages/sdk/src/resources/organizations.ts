@@ -1,4 +1,6 @@
 import {
+  listOrganizationMembersResponseSchema,
+  type ListOrganizationMembersResponse,
   acceptInvitationRequestSchema,
   acceptInvitationResponseSchema,
   createCompetitionInvitationRequestSchema,
@@ -37,6 +39,18 @@ import { apiPath } from "../internal/path.ts";
 
 export function createOrganizationsResource(http: HttpClient) {
   return {
+    async listMembers(
+      organizationId: string,
+      options: RequestOptions = {},
+    ): Promise<ListOrganizationMembersResponse> {
+      return http.request({
+        path: apiPath("organizations", organizationId, "members"),
+        method: "GET",
+        options,
+        parse: (data) => listOrganizationMembersResponseSchema.parse(data),
+      });
+    },
+
     async listMine(options: RequestOptions = {}): Promise<ListMyMembershipsResponse> {
       return http.request({
         path: "/organizations/mine",

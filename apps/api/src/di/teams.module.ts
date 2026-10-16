@@ -34,6 +34,7 @@ import {
   type PlayerExternalClubAssociationRepository,
   type PlayerDirectoryReader,
   type PlayerGameAccountRepository,
+  type OrganizationRosterActorReader,
   type PlayerProfileRepository,
   type RosterCapacityPort,
   type RosterEntryGatePort,
@@ -78,6 +79,10 @@ import {
   PostgresRosterMutationPort,
 } from "@/adapters/teams/roster-mutation.port.ts";
 import {
+  InMemoryOrganizationRosterActorReader,
+  PostgresOrganizationRosterActorReader,
+} from "@/adapters/teams/organization-roster-actor.reader.ts";
+import {
   InMemoryActiveTeamPreferenceRepository,
   InMemoryCompetitionRosterMembershipRepository,
   InMemoryTeamRepository,
@@ -98,6 +103,7 @@ export function createTeamsModule(input: {
   let associations: PlayerExternalClubAssociationRepository;
   let teams: TeamRepository;
   let rosters: CompetitionRosterMembershipRepository;
+  let rosterActors: OrganizationRosterActorReader;
   let preferences: ActiveTeamPreferenceRepository;
   let rosterStates: CompetitionRosterStateRepository;
   let connections: ExternalClubConnectionRepository;
@@ -111,6 +117,7 @@ export function createTeamsModule(input: {
     associations = new PostgresPlayerExternalClubAssociationRepository(input.pool);
     teams = new PostgresTeamRepository(input.pool);
     rosters = new PostgresCompetitionRosterMembershipRepository(input.pool);
+    rosterActors = new PostgresOrganizationRosterActorReader(input.pool);
     preferences = new PostgresActiveTeamPreferenceRepository(input.pool);
     rosterStates = new PostgresCompetitionRosterStateRepository(input.pool);
     connections = new PostgresExternalClubConnectionRepository(input.pool);
@@ -118,12 +125,15 @@ export function createTeamsModule(input: {
     rosterMutations = new PostgresRosterMutationPort(input.pool, input.transaction);
     directory = new PostgresPlayerDirectoryReader(input.pool);
   } else {
-    profiles = new InMemoryPlayerProfileRepository();
+    const inMemoryProfiles = new InMemoryPlayerProfileRepository();
+    profiles = inMemoryProfiles;
     const inMemoryAccounts = new InMemoryPlayerGameAccountRepository();
     accounts = inMemoryAccounts;
     associations = new InMemoryPlayerExternalClubAssociationRepository();
     teams = new InMemoryTeamRepository();
-    rosters = new InMemoryCompetitionRosterMembershipRepository();
+    const inMemoryRosters = new InMemoryCompetitionRosterMembershipRepository();
+    rosters = inMemoryRosters;
+    rosterActors = new InMemoryOrganizationRosterActorReader(inMemoryRosters, inMemoryProfiles);
     preferences = new InMemoryActiveTeamPreferenceRepository();
     rosterStates = new InMemoryCompetitionRosterStateRepository();
     connections = new InMemoryExternalClubConnectionRepository();
@@ -268,6 +278,7 @@ export function createTeamsModule(input: {
       profiles,
       teams,
       rosters,
+      rosterActors,
       rosterStates,
       connections,
       accounts,

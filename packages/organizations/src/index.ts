@@ -11,6 +11,12 @@ export {
   type RedeemPolicy,
 } from "./domain/entities/organization-invitation.ts";
 export type { OrganizationMembership } from "./domain/entities/organization-membership.ts";
+export type {
+  MemberCompetitionAccess,
+  MemberCompetitionAssignment,
+  MemberCompetitionRole,
+  OrganizationMemberRecord,
+} from "./domain/entities/organization-member-record.ts";
 export {
   DEFAULT_ORGANIZATION_LOGO,
   organizationLogoKeyPrefix,
@@ -47,6 +53,10 @@ export {
   isOrganizationInviteRole,
 } from "./domain/value-objects/organization-membership-role.ts";
 export {
+  MEMBER_DIRECTORY_CATALOG_LIMIT,
+  MEMBER_DIRECTORY_MEMBER_LIMIT,
+} from "./domain/policies/member-directory-limits.ts";
+export {
   ORGANIZATION_PERMISSION,
   ORGANIZATION_PERMISSIONS,
   ORGANIZATION_ROLE_PERMISSIONS,
@@ -62,6 +72,7 @@ export type {
 } from "./domain/ports/invitation.repository.ts";
 export type { InvitationTokenPort } from "./domain/ports/invitation-token.port.ts";
 export type { MembershipRepository } from "./domain/ports/membership.repository.ts";
+export type { OrganizationMemberAccessSummarizer } from "./domain/ports/organization-member-access.summarizer.ts";
 export type { OrganizationRepository } from "./domain/ports/organization.repository.ts";
 export type {
   AccessGrantRepository,
@@ -93,6 +104,11 @@ export {
   OrganizationSlugConflict,
   type CreateOrganizationError,
 } from "./domain/errors/organization.errors.ts";
+export {
+  OrganizationMemberDirectoryCatalogLimitReached,
+  OrganizationMemberDirectoryLimitReached,
+  type ListOrganizationMembersError,
+} from "./domain/errors/organization-member.errors.ts";
 export {
   AccessGrantNotFound,
   AuthorizationForbidden,
@@ -139,6 +155,11 @@ export {
   ListMembershipsForActorUseCase,
   type ListMembershipsForActorInput,
 } from "./application/list-memberships-for-actor/list-memberships-for-actor.use-case.ts";
+export {
+  ListOrganizationMembersUseCase,
+  type ListOrganizationMembersInput,
+  type ListOrganizationMembersResult,
+} from "./application/list-organization-members/list-organization-members.use-case.ts";
 export {
   CreateInvitationUseCase,
   type CreateInvitationInput,

@@ -76,6 +76,9 @@ class Competitions implements CompetitionRepository {
   async listByOrganization() {
     return this.draft ? [this.draft.competition] : [];
   }
+  async listNamesByOrganization() {
+    return this.draft ? [{ id: this.draft.competition.id, name: this.draft.competition.name }] : [];
+  }
 }
 
 class Entries implements CompetitionEntryRepository {
