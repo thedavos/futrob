@@ -1449,9 +1449,10 @@ const es = {
   "encounter.selection.command.propose_alternative.trigger": "Proponer alternativa",
   "encounter.selection.command.propose_alternative.title": "Proponer otros partidos EA",
   "encounter.selection.command.propose_alternative.description":
-    "Tu alternativa reemplaza la propuesta vigente y el rival deberá responderla.",
+    "Si eliges los mismos partidos de la propuesta vigente, cuenta como confirmación. Si eliges otros, la selección pasa a disputa y la organización decide cuáles cuentan.",
   "encounter.selection.command.propose_alternative.submit": "Enviar alternativa",
-  "encounter.selection.command.propose_alternative.success": "Alternativa enviada al rival.",
+  "encounter.selection.command.propose_alternative.success":
+    "Alternativa enviada. Si coincide con la propuesta vigente, cuenta como confirmación; si no, la organización resolverá la disputa.",
   "encounter.selection.command.open_dispute.trigger": "Abrir disputa",
   "encounter.selection.command.open_dispute.title": "Abrir una disputa",
   "encounter.selection.command.open_dispute.description":
@@ -3169,9 +3170,10 @@ const en: Catalog = {
   "encounter.selection.command.propose_alternative.trigger": "Propose alternative",
   "encounter.selection.command.propose_alternative.title": "Propose other EA matches",
   "encounter.selection.command.propose_alternative.description":
-    "Your alternative replaces the current proposal and the opponent has to answer it.",
+    "Choosing the same matches as the current proposal counts as confirming it. Choosing others sends the selection to dispute, and the organization decides which count.",
   "encounter.selection.command.propose_alternative.submit": "Send alternative",
-  "encounter.selection.command.propose_alternative.success": "Alternative sent to the opponent.",
+  "encounter.selection.command.propose_alternative.success":
+    "Alternative sent. If it matches the current proposal, it counts as a confirmation; otherwise the organization resolves the dispute.",
   "encounter.selection.command.open_dispute.trigger": "Open dispute",
   "encounter.selection.command.open_dispute.title": "Open a dispute",
   "encounter.selection.command.open_dispute.description":

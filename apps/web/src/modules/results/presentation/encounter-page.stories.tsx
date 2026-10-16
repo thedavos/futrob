@@ -22,7 +22,12 @@ import {
   useStoryDisputeReview,
   type ReviewScenario,
 } from "./dispute-review.story-state.ts";
-import { approvalReason, disputeReason, rejectionReason } from "./official-selection.fixtures.ts";
+import {
+  alternativeReason,
+  approvalReason,
+  disputeReason,
+  rejectionReason,
+} from "./official-selection.fixtures.ts";
 import {
   SELECTION_SCENARIOS,
   useStoryTeamSelection,
@@ -368,6 +373,24 @@ export const SelectionDisputed: Story = {
   name: "Selección: en disputa (solo lectura)",
   args: { selection: "disputed" },
   parameters: { a11y: { test: "error" } },
+};
+
+export const SelectionAlternativeDisputed: Story = {
+  name: "Selección: alternativa distinta, en disputa",
+  args: { selection: "alternative" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const panel = within(
+      await within(canvasElement).findByRole("region", { name: "Selección oficial" }),
+    );
+    await expect(panel.getByText("En disputa")).toBeVisible();
+    await expect(
+      within(panel.getByRole("group", { name: "Disputa" })).getByText(alternativeReason),
+    ).toBeVisible();
+    await expect(panel.getByRole("listitem", { name: "Propuesta 1 · ronda 1" })).toBeVisible();
+    await expect(panel.getByRole("listitem", { name: "Propuesta 2 · ronda 1" })).toBeVisible();
+    await expect(panel.queryByRole("button", { name: "Confirmar propuesta" })).toBeNull();
+  },
 };
 
 export const SelectionUnderReviewWithFlags: Story = {
