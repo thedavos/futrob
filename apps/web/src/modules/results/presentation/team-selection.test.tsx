@@ -210,9 +210,11 @@ describe("Team negotiation in the Match Center", () => {
     });
     renderEncounter();
     await user.click(await screen.findByRole("button", { name: "Confirmar propuesta" }));
-    await user.click(
-      dialog("Confirmar la propuesta del rival").getByRole("button", { name: "Confirmar" }),
-    );
+    const confirm = dialog("Confirmar la propuesta del rival");
+    const target = within(confirm.getByRole("group", { name: "Propuesta a la que respondes" }));
+    expect(target.getByText("Partido EA m-1 · jugado lun, 14 sept, 20:05")).toBeTruthy();
+    expect(target.getByText("Partido EA m-2 · jugado mié, 16 sept, 20:40")).toBeTruthy();
+    await user.click(confirm.getByRole("button", { name: "Confirmar" }));
 
     expect(await panel().findByText("Resultado oficial aprobado")).toBeTruthy();
     expect(proposal("Propuesta 1 · ronda 1").getByText("Aprobada")).toBeTruthy();

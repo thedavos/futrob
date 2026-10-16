@@ -65,6 +65,7 @@ export const styles = stylex.create({
     margin: 0,
     listStyle: "none",
   },
+  slot: { display: "flex", flexDirection: "column", gap: "0.125rem", minWidth: 0 },
   reason: { whiteSpace: "pre-wrap", overflowWrap: "anywhere" },
   history: { display: "flex", flexDirection: "column", gap: "1rem", paddingBlock: "1rem" },
   actions: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem" },

@@ -28,12 +28,8 @@ import {
 } from "./dispute-review-draft.ts";
 import { CommandDialog, ReasonField } from "./selection-command-dialog.tsx";
 import { currentProposalOf } from "./selection-draft.ts";
-import {
-  ProposalSlots,
-  proposalLabel,
-  proposalSlotTexts,
-  teamNameIn,
-} from "./selection-record.tsx";
+import { proposalLabel, teamNameIn } from "./selection-record.tsx";
+import { ProposalSlots, proposalSlotLines } from "./selection-slots.tsx";
 import { styles } from "./selection.styles.ts";
 
 type Missing = Extract<OperatorIntentCheck, { ok: false }>["missing"];
@@ -202,13 +198,16 @@ function ApprovalChoice({
                 <span {...applyStyles(styles.optionBody)}>
                   <span {...applyStyles(typography.label)}>{label}</span>
                   <span id={`${id}-${proposal.id}`} {...applyStyles(styles.optionBody)}>
-                    {proposalSlotTexts({
+                    {proposalSlotLines({
                       candidates,
                       encounter,
                       slots: proposal.slots,
                       t,
                     }).map((line) => (
-                      <span key={line}>{line}</span>
+                      <span key={line.slot} {...applyStyles(styles.slot)}>
+                        <span>{line.summary}</span>
+                        {line.match ? <Caption as="span">{line.match}</Caption> : null}
+                      </span>
                     ))}
                   </span>
                 </span>

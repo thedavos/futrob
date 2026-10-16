@@ -54,6 +54,12 @@ export const awayAlternative: OfficialSelectionProposalDto = {
   confirmationDeadline: "2026-09-18T04:00:00.000Z",
 };
 
+/** Maderas answers with m-5 for match 2: same clubs and score as Cuervos' m-2. */
+export const awayRematch: OfficialSelectionProposalDto = {
+  ...awayAlternative,
+  slots: slots("m-1", "m-5"),
+};
+
 const action = (
   id: string,
   type: OfficialSelectionActionDto["type"],

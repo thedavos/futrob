@@ -45,7 +45,7 @@ import {
   type TeamDraftEvent,
   type TeamIntentCheck,
 } from "./team-selection-draft.ts";
-import { ProposalSlots, SlotLines } from "./selection-record.tsx";
+import { ProposalSlots, SlotLines } from "./selection-slots.tsx";
 import { styles } from "./selection.styles.ts";
 
 /**
@@ -271,7 +271,7 @@ export function SelectionCommandDialog({
       {needsSlots(command) ? (
         <div aria-label={t("encounter.selection.dialog.slots")} role="group">
           <Text look="label">{t("encounter.selection.dialog.slots")}</Text>
-          <SlotLines encounter={encounter} previews={preview.slots} sent={[]} t={t} />
+          <SlotLines encounter={encounter} previews={preview.slots} t={t} />
           {slotsIncomplete ? (
             <Text role={missing === "slots" ? "alert" : undefined} className={styles.warning}>
               {t("encounter.selection.dialog.slotsIncomplete")}
