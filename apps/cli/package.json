@@ -20,7 +20,7 @@
     "@futrob/sdk": "0.1.0",
     "@futrob/shared-kernel": "0.1.0",
     "@futrob/test-support": "0.1.0",
-    "effect": "^3.22.1"
+    "effect": "^4.0.4"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
