@@ -163,10 +163,9 @@ export const FutrobInvite: Story = {
     await userEvent.type(await body.findByRole("searchbox", { name: "Buscar capitán" }), "Con");
     await userEvent.click(await body.findByRole("button", { name: /Cóndor FC/ }));
     await expect(body.getByText("1 jugador seleccionado")).toBeVisible();
-    await userEvent.type(
-      body.getByRole("textbox", { name: "Mensaje" }),
-      "¡Hola! Nos gustaría contar con Cóndor FC.",
-    );
+    const messageField = body.getByRole("textbox", { name: "Mensaje" });
+    await waitFor(() => expect(messageField).toHaveFocus());
+    await userEvent.type(messageField, "¡Hola! Nos gustaría contar con Cóndor FC.");
     await userEvent.click(body.getByRole("button", { name: "Enviar invitación" }));
     await waitFor(() =>
       expect(args.onInvite).toHaveBeenCalledWith({

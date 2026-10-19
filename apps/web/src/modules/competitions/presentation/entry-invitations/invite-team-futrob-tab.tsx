@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as stylex from "@stylexjs/stylex";
 import type { EntryInviteeCandidateDto, GamePlatformDto } from "@futrob/api-contracts";
@@ -113,6 +114,7 @@ export function InviteTeamFutrobTab({
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messageField = useRef<HTMLTextAreaElement>(null);
   const [selected, setSelected] = useState<EntryInviteeCandidateDto | null>(null);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -240,8 +242,12 @@ export function InviteTeamFutrobTab({
         <InviteeSearchResults
           id={ids.results}
           onSelect={(candidate) => {
-            setSelected(candidate);
-            setError(null);
+            // The picked result unmounts; without a target the dialog takes focus back.
+            flushSync(() => {
+              setSelected(candidate);
+              setError(null);
+            });
+            messageField.current?.focus();
           }}
           platformLabel={platformLabel}
           state={search}
@@ -258,6 +264,7 @@ export function InviteTeamFutrobTab({
             id={ids.message}
             maxLength={ENTRY_INVITATION_MESSAGE_MAX_LENGTH}
             onChange={(event) => setMessage(event.target.value)}
+            ref={messageField}
             placeholder={`¡Hola! Nos gustaría contar con tu equipo.`}
             rows={3}
             value={message}
