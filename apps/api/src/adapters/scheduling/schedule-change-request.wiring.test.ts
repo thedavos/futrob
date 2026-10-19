@@ -101,7 +101,7 @@ describe("createSchedulingModule schedule change requests", () => {
     const listed = await scheduling.listScheduleChangeRequests.execute({ actorId, encounterId });
     expect(listed.isOk()).toBe(true);
     if (listed.isErr()) throw listed.error;
-    expect(listed.value).toEqual([created.value]);
+    expect(listed.value.requests.map((view) => view.request)).toEqual([created.value]);
     expect(events).toHaveLength(1);
     expect(events[0]?.eventName).toBe("scheduling.reschedule-requested");
 

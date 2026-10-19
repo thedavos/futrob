@@ -1,20 +1,27 @@
+import type { CreateScheduleChangeRequestBody } from "@futrob/api-contracts";
 import { interpretCompetitionWallTime } from "@futrob/scheduling";
 
-export function resolutionInstant(value: string, timeZone: string): string | null {
+export type CompetitionWallTime = CreateScheduleChangeRequestBody["proposedWallTime"];
+
+/** Reads a `datetime-local` value as written, never through the browser's time zone. */
+export function competitionWallTime(value: string): CompetitionWallTime | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
   if (!match) return null;
   const [, year, month, day, hour, minute] = match;
-  const interpreted = interpretCompetitionWallTime({
-    wallTime: {
-      year: Number(year),
-      month: Number(month),
-      day: Number(day),
-      hour: Number(hour),
-      minute: Number(minute),
-      second: 0,
-    },
-    timeZone,
-  });
+  return {
+    year: Number(year),
+    month: Number(month),
+    day: Number(day),
+    hour: Number(hour),
+    minute: Number(minute),
+    second: 0,
+  };
+}
+
+export function resolutionInstant(value: string, timeZone: string): string | null {
+  const wallTime = competitionWallTime(value);
+  if (!wallTime) return null;
+  const interpreted = interpretCompetitionWallTime({ wallTime, timeZone });
   return interpreted.isOk() ? interpreted.value.toISOString() : null;
 }
 

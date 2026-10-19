@@ -23,6 +23,7 @@ import {
   reviewCase,
   reviewReason,
 } from "./official-selection.fixtures.ts";
+import { noCreation } from "@/modules/scheduling/presentation/schedule-changes.fixtures.ts";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
@@ -75,7 +76,7 @@ function serve(config: {
         return Response.json(readyCandidates([m1, m2, m3, m5]));
       }
       if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
-        return Response.json({ requests: [] });
+        return Response.json({ requests: [], creation: noCreation });
       }
       if (url.pathname === DOSSIER && method === "GET") {
         dossierReads += 1;

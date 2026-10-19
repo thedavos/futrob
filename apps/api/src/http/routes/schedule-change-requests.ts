@@ -4,12 +4,7 @@ import {
   scheduleChangeRequestSchema,
   type acceptScheduleChangeProposalRequestSchema,
 } from "@futrob/api-contracts";
-import {
-  ENCOUNTER_PERMISSION,
-  type ScheduleChangeCommandOutput,
-  type ScheduleChangeResponder,
-  type ScheduleChangeRequest,
-} from "@futrob/scheduling";
+import type { ScheduleChangeCommandOutput, ScheduleChangeResponder } from "@futrob/scheduling";
 import { asEncounterId, asTeamId, type Result } from "@futrob/shared-kernel";
 import { type Context, type Hono } from "hono";
 import type { z } from "zod";
@@ -18,6 +13,7 @@ import { apiErrorResponse, failureToHttp, type HttpMappableFailure } from "@/htt
 import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
 import {
   toScheduleChangeCommandResponse,
+  toScheduleChangeListResponse,
   toScheduleChangeRequestDto,
 } from "@/http/mappers/schedule-change-request.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
@@ -79,22 +75,6 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     };
   }
 
-  async function requestDto(c: SecuredContext, request: ScheduleChangeRequest) {
-    const access =
-      request.status === "escalated"
-        ? await deps.modules.authorization.port.decide({
-            actorId: c.get("actorId"),
-            permission: ENCOUNTER_PERMISSION.rescheduleResolve,
-            scope: {
-              organizationId: request.organizationId,
-              competitionId: request.competitionId,
-              encounterId: request.encounterId,
-            },
-          })
-        : null;
-    return toScheduleChangeRequestDto(request, access?.allowed ? ["resolve"] : []);
-  }
-
   secured.openapi(listScheduleChangeRequestsRoute, async (c) => {
     const result = await scheduling.listScheduleChangeRequests.execute({
       actorId: c.get("actorId"),
@@ -102,9 +82,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     });
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(
-      listScheduleChangeRequestsResponseSchema.parse({
-        requests: await Promise.all(result.value.map((request) => requestDto(c, request))),
-      }),
+      listScheduleChangeRequestsResponseSchema.parse(toScheduleChangeListResponse(result.value)),
     );
   });
 
@@ -127,7 +105,9 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
       idempotencyKey: parsed.idempotencyKey,
     });
     if (result.isErr()) return failureToHttp(result.error);
-    return jsonResponse(scheduleChangeRequestSchema.parse(await requestDto(c, result.value)));
+    return jsonResponse(
+      scheduleChangeRequestSchema.parse(toScheduleChangeRequestDto(result.value)),
+    );
   });
 
   secured.openapi(getScheduleChangeRequestRoute, async (c) => {
@@ -138,7 +118,10 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
       requestId: params.requestId,
     });
     if (result.isErr()) return failureToHttp(result.error);
-    return jsonResponse(scheduleChangeRequestSchema.parse(await requestDto(c, result.value)));
+    const { request, capabilities } = result.value;
+    return jsonResponse(
+      scheduleChangeRequestSchema.parse(toScheduleChangeRequestDto(request, capabilities)),
+    );
   });
 
   secured.openapi(resolveScheduleChangeRequestRoute, async (c) => {

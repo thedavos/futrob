@@ -38,7 +38,7 @@ describe("schedule-change-request HTTP", () => {
       listScheduleChangeRequestsResponseSchema,
       await app.request(path, { headers: serviceHeaders(organizer) }),
     );
-    expect(emptyList).toEqual({ requests: [] });
+    expect(emptyList.requests).toEqual([]);
 
     const created = await app.request(path, {
       method: "POST",

@@ -188,16 +188,8 @@ export function createSchedulingModule(input: {
       ...negotiation,
       timeZones,
     }),
-    listScheduleChangeRequests: new ListScheduleChangeRequestsUseCase({
-      authorization: input.authorization,
-      encounters,
-      requests: scheduleChangeRequests,
-    }),
-    getScheduleChangeRequest: new GetScheduleChangeRequestUseCase({
-      authorization: input.authorization,
-      encounters,
-      requests: scheduleChangeRequests,
-    }),
+    listScheduleChangeRequests: new ListScheduleChangeRequestsUseCase(negotiation),
+    getScheduleChangeRequest: new GetScheduleChangeRequestUseCase(negotiation),
     getFixture: new GetCompetitionFixtureUseCase({
       authorization: input.authorization,
       fixtures: fixturePlans,

@@ -11,6 +11,10 @@ import {
   useForgetIdentityFromOtherTabs,
 } from "@/shared/presentation/query/identity-change.ts";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
+import {
+  captainCreation,
+  openScheduleChange,
+} from "@/modules/scheduling/presentation/schedule-changes.fixtures.ts";
 import { encounterView, m1, m2, m3, readyCandidates as ready } from "./encounter-page.fixtures.ts";
 import { EncounterRoute } from "./encounter-route.tsx";
 
@@ -25,14 +29,14 @@ vi.mock("@tanstack/react-router", () => ({
 type Sent = { readonly method: string; readonly path: string };
 let sent: Sent[];
 
-function serve(routes: Record<string, () => Response | Promise<Response>>) {
+function serve(routes: Record<string, (init?: RequestInit) => Response | Promise<Response>>) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       sent.push({ method: init?.method ?? "GET", path });
       const route = routes[path];
-      return route ? route() : Response.json({ code: "api.not_found" }, { status: 404 });
+      return route ? route(init) : Response.json({ code: "api.not_found" }, { status: 404 });
     }),
   );
 }
@@ -278,5 +282,53 @@ describe("Encounter page", () => {
       `GET ${SCHEDULE_CHANGES_PATH}`,
       `GET ${VIEW_PATH}`,
     ]);
+  });
+  it("moves only slot 2 when the captain asks for Partido 2; slot 1 keeps its kickoff", async () => {
+    const user = userEvent.setup();
+    let view = encounterView();
+    const created: unknown[] = [];
+    serve({
+      [VIEW_PATH]: () => Response.json(view),
+      [CANDIDATES_PATH]: () => Response.json(ready([])),
+      [SCHEDULE_CHANGES_PATH]: (init) => {
+        if (init?.method !== "POST") {
+          return Response.json({ requests: [], creation: captainCreation() });
+        }
+        created.push(JSON.parse(String(init.body)));
+        // The server state once the rival consents: only slot 2 moved.
+        view = encounterView({
+          officialMatches: [
+            { officialSlot: 1, scheduledStartAt: "2026-09-15T01:00:00.000Z" },
+            { officialSlot: 2, scheduledStartAt: "2026-09-18T01:30:00.000Z" },
+          ],
+        });
+        return Response.json(
+          openScheduleChange({ scope: { type: "official_match", officialSlot: 2 } }),
+          { status: 201 },
+        );
+      },
+    });
+    renderEncounter();
+
+    await user.click(await screen.findByRole("button", { name: "Solicitar reprogramación" }));
+    await user.click(screen.getByRole("radio", { name: "Partido 2" }));
+    await user.type(screen.getByLabelText("Nueva fecha y hora"), "2026-09-17T20:30");
+    await user.type(screen.getByRole("textbox", { name: "Motivo para el rival" }), "Viaje");
+    await user.click(screen.getByRole("button", { name: "Enviar solicitud" }));
+
+    await screen.findByText("Solicitud enviada. El horario no cambia hasta que el rival acepte.");
+    expect(created).toEqual([
+      {
+        requestingTeamId: "team-home",
+        scope: { type: "official_match", officialSlot: 2 },
+        proposedWallTime: { year: 2026, month: 9, day: 17, hour: 20, minute: 30, second: 0 },
+        reason: "Viaje",
+        timeZone: "America/Lima",
+        idempotencyKey: expect.any(String),
+      },
+    ]);
+    const kickoff = (slot: string) => slotRow(slot).querySelector("time")?.getAttribute("datetime");
+    await waitFor(() => expect(kickoff("Partido 2")).toBe("2026-09-18T01:30:00.000Z"));
+    expect(kickoff("Partido 1")).toBe("2026-09-15T01:00:00.000Z");
   });
 });

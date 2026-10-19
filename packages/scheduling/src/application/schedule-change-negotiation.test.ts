@@ -20,8 +20,11 @@ import {
   CounterScheduleChangeProposalUseCase,
   CreateScheduleChangeRequestUseCase,
   ENCOUNTER_PERMISSION,
+  ExpireScheduleChangeProposalUseCase,
+  GetScheduleChangeRequestUseCase,
   ListScheduleChangeRequestsUseCase,
   RejectScheduleChangeProposalUseCase,
+  ResolveScheduleChangeRequestUseCase,
   asFixtureStageId,
   createInitialScheduleChangeRequest,
   type CompetitionRescheduleRules,
@@ -168,6 +171,7 @@ function negotiation(
     readonly slots?: readonly [string, string];
     readonly maxReschedulesPerTeam?: number;
     readonly proposalExpiryHours?: number;
+    readonly allowRescheduling?: boolean;
   } = {},
 ) {
   const requests = new MemoryRequests();
@@ -197,6 +201,8 @@ function negotiation(
   grants.allow(organizer, ENCOUNTER_PERMISSION.rescheduleResolve);
 
   let minimumNoticeHours = 12;
+  const protectedScopes: RescheduleScope[] = [];
+  let allowRescheduling = options.allowRescheduling ?? true;
   let sequence = 0;
   let now = new Date("2026-10-01T12:00:00.000Z");
   const encounters = {
@@ -211,7 +217,10 @@ function negotiation(
   const deps = {
     authorization: grants,
     clock: { now: () => new Date(now) },
-    editGuard: { canRequestScheduleChange: async () => true },
+    editGuard: {
+      canRequestScheduleChange: async (input: { readonly scope: RescheduleScope }) =>
+        !protectedScopes.some((scope) => JSON.stringify(scope) === JSON.stringify(input.scope)),
+    },
     encounters,
     ids: { generate: () => `id-${++sequence}` },
     matches: {
@@ -231,7 +240,7 @@ function negotiation(
     requests,
     rules: {
       getRules: async () => ({
-        allowRescheduling: true,
+        allowRescheduling,
         maxReschedulesPerTeam: options.maxReschedulesPerTeam ?? 2,
         minimumNoticeHours,
         proposalExpiryHours: options.proposalExpiryHours ?? 12,
@@ -250,6 +259,9 @@ function negotiation(
   const reject = new RejectScheduleChangeProposalUseCase(deps);
   const counter = new CounterScheduleChangeProposalUseCase(deps);
   const list = new ListScheduleChangeRequestsUseCase(deps);
+  const get = new GetScheduleChangeRequestUseCase(deps);
+  const expire = new ExpireScheduleChangeProposalUseCase(deps);
+  const resolve = new ResolveScheduleChangeRequestUseCase(deps);
   const target = { organizationId, competitionId, encounterId };
 
   return {
@@ -291,7 +303,32 @@ function negotiation(
         reason: "Stadium unavailable",
       });
     },
-    allRequests: () => list.execute({ ...target, actorId: organizer }).then(unwrap),
+    allRequests: async () =>
+      unwrap(await list.execute({ ...target, actorId: organizer })).requests.map(
+        (view) => view.request,
+      ),
+    listAs: async (actorId: ActorId) => unwrap(await list.execute({ ...target, actorId })),
+    getAs: async (actorId: ActorId, requestId = "id-1") =>
+      unwrap(await get.execute({ ...target, actorId, requestId })),
+    expire: () =>
+      expire.execute({ organizationId, encounterId, requestId: "id-1", actorId: organizer }),
+    keepSchedule(actorId: ActorId, at: { proposalId: string; version: number }) {
+      return resolve.execute({
+        ...target,
+        actorId,
+        requestId: "id-1",
+        proposalId: at.proposalId,
+        expectedVersion: at.version,
+        commandKey: `resolve-${actorId}`,
+        resolution: { outcome: "schedule_kept", reason: "Keep the fixture" },
+      });
+    },
+    setRescheduling(allowed: boolean) {
+      allowRescheduling = allowed;
+    },
+    protectScope(scope: RescheduleScope) {
+      protectedScopes.push(scope);
+    },
     appliedCount: () => deps.rules.countAppliedReschedules({ teamId: teamA }),
     allEvents: () => events,
     advanceClock(ms: number) {
@@ -371,9 +408,9 @@ function negotiation(
     },
     async stored(): Promise<ScheduleChangeRequest> {
       const listed = unwrap(await list.execute({ ...target, actorId: organizer }));
-      const [request] = listed;
-      if (!request) throw new Error("request missing");
-      return request;
+      const [view] = listed.requests;
+      if (!view) throw new Error("request missing");
+      return view.request;
     },
     receipts: () => requests.receipts,
     encounterStart: async () =>
@@ -1266,5 +1303,321 @@ describe("minimum reschedule notice — validated V6 behavior", () => {
       decisions: [{ kind: "consent", authority: "organizer", requestVersion: 2 }],
     });
     expect(await observe(flow)).toEqual(prior);
+  });
+});
+
+describe("what each actor may do with a schedule change", () => {
+  const spectator = asActorId("spectator-1");
+  const staff = asActorId("staff-1");
+  const DEADLINE = "2026-10-02T00:00:00.000Z";
+  const every = (reason: string) =>
+    (["accept", "reject", "counter"] as const).map((action) => ({ action, reason }));
+  const firstProposal = (request: ScheduleChangeRequest) => ({
+    proposalId: request.proposals[0].id,
+    version: request.version,
+  });
+
+  /** Staff that resolves and approves for the organizer without speaking for any Team. */
+  function withObservers(flow: ReturnType<typeof negotiation>) {
+    flow.grants.allow(spectator, ENCOUNTER_PERMISSION.read);
+    flow.grants.allow(staff, ENCOUNTER_PERMISSION.read);
+    flow.grants.allow(staff, ENCOUNTER_PERMISSION.rescheduleResolve);
+    return flow;
+  }
+
+  async function capabilitiesOf(flow: ReturnType<typeof negotiation>, actorId: ActorId) {
+    const listed = await flow.listAs(actorId);
+    const fetched = await flow.getAs(actorId);
+    expect(listed.requests.map((view) => view.capabilities)).toEqual([fetched.capabilities]);
+    return fetched.capabilities;
+  }
+
+  it("offers the rival captain every response until the deadline and none from it", async () => {
+    const flow = negotiation();
+    const created = await flow.propose(11);
+    flow.setClock("2026-10-01T23:59:59.999Z");
+
+    expect(await capabilitiesOf(flow, captainB)).toEqual({
+      allowedActions: ["accept", "reject", "counter"],
+      respondAs: { authority: "rival_team", teamId: teamB },
+      blockedActions: [],
+    });
+
+    flow.setClock(DEADLINE);
+    expect((await flow.stored()).status).toBe("open");
+    expect(await capabilitiesOf(flow, captainB)).toEqual({
+      allowedActions: [],
+      respondAs: null,
+      blockedActions: every("response_window_closed"),
+    });
+    expect(errorCode(await flow.accept(captainB, asRival(teamB), firstProposal(created)))).toBe(
+      "scheduling.schedule_change_response_window_closed",
+    );
+
+    flow.setClock("2026-10-01T23:59:59.999Z");
+    expect(
+      unwrap(await flow.accept(captainB, asRival(teamB), firstProposal(created))).request.status,
+    ).toBe("accepted");
+  });
+
+  it("blocks the proposing captain as its own rival and a reader as lacking permission", async () => {
+    const flow = withObservers(negotiation());
+    const created = await flow.propose(11);
+
+    expect(await capabilitiesOf(flow, captainA)).toEqual({
+      allowedActions: [],
+      respondAs: null,
+      blockedActions: every("own_proposal"),
+    });
+    expect(errorCode(await flow.counter(captainA, teamA, firstProposal(created), 12))).toBe(
+      "scheduling.schedule_change_self_response_forbidden",
+    );
+
+    expect(await capabilitiesOf(flow, spectator)).toEqual({
+      allowedActions: [],
+      respondAs: null,
+      blockedActions: every("permission"),
+    });
+    expect(errorCode(await flow.reject(spectator, asRival(teamB), firstProposal(created)))).toBe(
+      "authorization.forbidden",
+    );
+  });
+
+  it("hands the responses to the original requester once the rival counters", async () => {
+    const flow = negotiation();
+    const created = await flow.propose(11);
+    unwrap(await flow.counter(captainB, teamB, firstProposal(created), 12));
+
+    expect(await capabilitiesOf(flow, captainA)).toEqual({
+      allowedActions: ["accept", "reject", "counter"],
+      respondAs: { authority: "rival_team", teamId: teamA },
+      blockedActions: [],
+    });
+    expect(await capabilitiesOf(flow, captainB)).toEqual({
+      allowedActions: [],
+      respondAs: null,
+      blockedActions: every("own_proposal"),
+    });
+  });
+
+  it("keeps reject available when an approved result protects the requested scope", async () => {
+    const flow = negotiation();
+    const created = await flow.propose(11);
+    flow.protectScope({ type: "entire_encounter" });
+
+    expect(await capabilitiesOf(flow, captainB)).toEqual({
+      allowedActions: ["reject"],
+      respondAs: { authority: "rival_team", teamId: teamB },
+      blockedActions: [
+        { action: "accept", reason: "result_protected" },
+        { action: "counter", reason: "result_protected" },
+      ],
+    });
+    expect(errorCode(await flow.accept(captainB, asRival(teamB), firstProposal(created)))).toBe(
+      "scheduling.encounter_not_editable_for_schedule_change",
+    );
+    expect(
+      unwrap(await flow.reject(captainB, asRival(teamB), firstProposal(created))).request.status,
+    ).toBe("rejected");
+  });
+
+  it("blocks accept and counter while rescheduling is disabled, but not reject", async () => {
+    const flow = negotiation();
+    const created = await flow.propose(11);
+    flow.setRescheduling(false);
+
+    expect(await capabilitiesOf(flow, captainB)).toEqual({
+      allowedActions: ["reject"],
+      respondAs: { authority: "rival_team", teamId: teamB },
+      blockedActions: [
+        { action: "accept", reason: "rescheduling_disabled" },
+        { action: "counter", reason: "rescheduling_disabled" },
+      ],
+    });
+    expect(errorCode(await flow.counter(captainB, teamB, firstProposal(created), 12))).toBe(
+      "scheduling.rescheduling_disabled",
+    );
+    expect(
+      unwrap(await flow.reject(captainB, asRival(teamB), firstProposal(created))).request.status,
+    ).toBe("rejected");
+  });
+
+  it("lets organizer staff approve only when the competition requires it", async () => {
+    const opponentOnly = withObservers(negotiation());
+    await opponentOnly.propose(11);
+    expect(await capabilitiesOf(opponentOnly, staff)).toEqual({
+      allowedActions: [],
+      respondAs: null,
+      blockedActions: every("permission"),
+    });
+
+    const organizerOnly = withObservers(
+      negotiation({ requiresOpponentApproval: false, requiresOrganizerApproval: true }),
+    );
+    const created = await organizerOnly.propose(11);
+    expect(await capabilitiesOf(organizerOnly, staff)).toEqual({
+      allowedActions: ["accept", "reject"],
+      respondAs: { authority: "organizer" },
+      blockedActions: [{ action: "counter", reason: "permission" }],
+    });
+    expect(await capabilitiesOf(organizerOnly, captainB)).toEqual({
+      allowedActions: ["counter"],
+      respondAs: null,
+      blockedActions: [
+        { action: "accept", reason: "permission" },
+        { action: "reject", reason: "permission" },
+      ],
+    });
+    expect(
+      unwrap(await organizerOnly.accept(staff, asOrganizer, firstProposal(created))).request.status,
+    ).toBe("accepted");
+  });
+
+  it("blocks a second consent from the same authority and leaves the other one open", async () => {
+    const flow = withObservers(
+      negotiation({ requiresOpponentApproval: true, requiresOrganizerApproval: true }),
+    );
+    const created = await flow.propose(11);
+    unwrap(await flow.accept(staff, asOrganizer, firstProposal(created)));
+    const at = { proposalId: created.proposals[0].id, version: 2 };
+
+    expect(await capabilitiesOf(flow, staff)).toEqual({
+      allowedActions: ["reject"],
+      respondAs: { authority: "organizer" },
+      blockedActions: [
+        { action: "accept", reason: "already_consented" },
+        { action: "counter", reason: "permission" },
+      ],
+    });
+    expect(errorCode(await flow.accept(staff, asOrganizer, at, "again"))).toBe(
+      "scheduling.schedule_change_consent_already_recorded",
+    );
+    expect(await capabilitiesOf(flow, captainB)).toMatchObject({
+      allowedActions: ["accept", "reject", "counter"],
+    });
+    expect(unwrap(await flow.accept(captainB, asRival(teamB), at)).request.status).toBe("accepted");
+  });
+
+  it("offers resolve to organizer staff once the request escalates, not before", async () => {
+    const flow = withObservers(negotiation());
+    const created = await flow.propose(11);
+    expect((await capabilitiesOf(flow, staff)).allowedActions).toEqual([]);
+
+    flow.setClock(DEADLINE);
+    expect(unwrap(await flow.expire())).toEqual({ status: "escalated" });
+    expect(await capabilitiesOf(flow, staff)).toEqual({
+      allowedActions: ["resolve"],
+      respondAs: null,
+      blockedActions: every("request_closed"),
+    });
+    expect(await capabilitiesOf(flow, captainB)).toEqual({
+      allowedActions: [],
+      respondAs: null,
+      blockedActions: every("request_closed"),
+    });
+    expect(
+      unwrap(await flow.keepSchedule(staff, { proposalId: created.proposals[0].id, version: 2 }))
+        .request.status,
+    ).toBe("resolved_by_organizer");
+  });
+
+  describe("creating a request", () => {
+    const SLOT_2 = "2026-10-10T21:00:00.000Z";
+
+    it("offers the captain their Team and every scope with its current start", async () => {
+      const flow = negotiation(OPPONENT_ONLY, { slots: [D0, SLOT_2] });
+
+      expect((await flow.listAs(captainA)).creation).toEqual({
+        blockedReason: null,
+        teams: [{ teamId: teamA, blockedReason: null }],
+        scopes: [
+          {
+            scope: { type: "entire_encounter" },
+            currentStartAt: new Date(D0),
+            blockedReason: null,
+          },
+          {
+            scope: { type: "official_match", officialSlot: 1 },
+            currentStartAt: new Date(D0),
+            blockedReason: null,
+          },
+          {
+            scope: { type: "official_match", officialSlot: 2 },
+            currentStartAt: new Date(SLOT_2),
+            blockedReason: null,
+          },
+        ],
+      });
+    });
+
+    it("blocks the scopes an active slot-2 request overlaps and keeps slot 1 open", async () => {
+      const flow = negotiation(OPPONENT_ONLY, { slots: [D0, SLOT_2] });
+      await flow.propose(11, { scope: { type: "official_match", officialSlot: 2 } });
+
+      expect(
+        (await flow.listAs(captainB)).creation.scopes.map(({ scope, blockedReason }) => ({
+          scope,
+          blockedReason,
+        })),
+      ).toEqual([
+        { scope: { type: "entire_encounter" }, blockedReason: "active_request_exists" },
+        { scope: { type: "official_match", officialSlot: 1 }, blockedReason: null },
+        {
+          scope: { type: "official_match", officialSlot: 2 },
+          blockedReason: "active_request_exists",
+        },
+      ]);
+      await expect(
+        flow.propose(12, { scope: { type: "official_match", officialSlot: 2 }, key: "again" }),
+      ).rejects.toThrow("scheduling.active_schedule_change_request_exists");
+      expect(
+        (
+          await flow.propose(12, {
+            scope: { type: "official_match", officialSlot: 1 },
+            key: "create-slot-1",
+          })
+        ).status,
+      ).toBe("open");
+    });
+
+    it("marks a scope with an approved result as protected", async () => {
+      const flow = negotiation(OPPONENT_ONLY, { slots: [D0, SLOT_2] });
+      flow.protectScope({ type: "official_match", officialSlot: 1 });
+
+      expect(
+        (await flow.listAs(captainA)).creation.scopes.map((option) => option.blockedReason),
+      ).toEqual([null, "result_protected", null]);
+    });
+
+    it("blocks a Team that used its reschedules and leaves the other Team free", async () => {
+      const spent = negotiation(OPPONENT_ONLY, { maxReschedulesPerTeam: 0 });
+      expect((await spent.listAs(captainA)).creation.teams).toEqual([
+        { teamId: teamA, blockedReason: "limit_reached" },
+      ]);
+      expect(errorCode(await spent.createAt("2026-10-11T20:00:00.000Z"))).toBe(
+        "scheduling.reschedule_limit_reached",
+      );
+
+      const fresh = negotiation(OPPONENT_ONLY, { maxReschedulesPerTeam: 1 });
+      expect((await fresh.listAs(captainA)).creation.teams).toEqual([
+        { teamId: teamA, blockedReason: null },
+      ]);
+    });
+
+    it("blocks the whole form for a reader without a Team and while rescheduling is off", async () => {
+      const flow = withObservers(negotiation());
+      expect((await flow.listAs(spectator)).creation).toMatchObject({
+        blockedReason: "permission",
+        teams: [],
+      });
+
+      const disabled = negotiation(OPPONENT_ONLY, { allowRescheduling: false });
+      expect((await disabled.listAs(captainA)).creation.blockedReason).toBe(
+        "rescheduling_disabled",
+      );
+      expect(errorCode(await disabled.createAt("2026-10-11T20:00:00.000Z"))).toBe(
+        "scheduling.rescheduling_disabled",
+      );
+    });
   });
 });
