@@ -380,7 +380,8 @@ export const RestrictedAccess: Story = {
   args: { restrictedAccess: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole("row", { name: /Marcos Díaz/ }));
+    const members = within(canvas.getByRole("region", { name: "Miembros" }));
+    await userEvent.click(members.getByRole("row", { name: /Marcos Díaz/ }));
     const detail = within(canvas.getByRole("region", { name: "Detalle del miembro" }));
     await expect(detail.getByText("Acceso heredado con restricciones")).toBeVisible();
     await expect(detail.getByText("Sin permiso de lectura")).toBeVisible();
