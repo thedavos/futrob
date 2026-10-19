@@ -7924,6 +7924,257 @@
         }
       }
     },
+    "/organizations/{organizationId}/members": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Complete member directory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "members": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "actorId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "displayName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "email": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "organizer",
+                              "staff",
+                              "member"
+                            ]
+                          },
+                          "joinedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "access": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "none"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "inherited"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "assigned"
+                                    ]
+                                  },
+                                  "competitions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "name": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "read": {
+                                          "type": "string",
+                                          "enum": [
+                                            "allowed",
+                                            "denied"
+                                          ]
+                                        },
+                                        "role": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "enum": [
+                                            "staff",
+                                            "captain",
+                                            "vice_captain",
+                                            "player",
+                                            null
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "name",
+                                        "read",
+                                        "role"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "competitions"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "inherited-with-restriction"
+                                    ]
+                                  },
+                                  "competitions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "name": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "read": {
+                                          "type": "string",
+                                          "enum": [
+                                            "allowed",
+                                            "denied"
+                                          ]
+                                        },
+                                        "role": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "enum": [
+                                            "staff",
+                                            "captain",
+                                            "vice_captain",
+                                            "player",
+                                            null
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "name",
+                                        "read",
+                                        "role"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "competitions"
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "actorId",
+                          "displayName",
+                          "email",
+                          "role",
+                          "joinedAt",
+                          "access"
+                        ]
+                      },
+                      "maxItems": 500
+                    }
+                  },
+                  "required": [
+                    "members"
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listOrganizationMembers",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Read the complete organization member directory (requires organizations.memberships.read)",
+        "description": "Returns at most 500 members. Rejects directories above 500 members or 100 competitions. Query parameters are not supported."
+      }
+    },
     "/organizations/{organizationId}/members/{actorId}/role": {
       "patch": {
         "parameters": [

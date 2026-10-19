@@ -720,8 +720,31 @@ El inicio de organización incluye la sección **Actividad reciente**: las últi
 - Equipos
 - Jugadores
 - Invitaciones
-- Organización (miembros, roles)
+- Miembros y roles
 - Ajustes
+
+#### Miembros y roles
+
+La página conserva la cabecera y el CTA «Invitar miembro», condicionado por permisos.
+Debajo compone tres secciones: listado a la izquierda, detalle del miembro seleccionado
+a la derecha y «Cambios recientes» a todo el ancho. En anchuras estrechas se apilan
+en ese orden, según el espacio disponible en el contenido.
+El gap entre secciones y la distancia de la cabecera de página al contenido son
+16 px (`1rem`), como en Inicio.
+
+- El listado con datos ofrece búsqueda por nombre/correo, filtro de rol y tabla con
+  Miembro, Rol, Accesos a competiciones y Acciones. La selección por fila, teclado
+  o «Ver detalle» actualiza el panel de detalle sin cambiar de ruta.
+- Sin selección, el detalle explica «Selecciona un miembro». Al seleccionar muestra
+  identidad, rol de organización, incorporación y alcance de los accesos competitivos.
+- «Cambios recientes» muestra Cambio, Realizado por y Fecha; sus filas son de solo lectura.
+- Listado e historial tienen carga, vacío, permiso y error locales. Los filtros se
+  conservan sin coincidencias y pueden limpiarse. Un fallo de actualización conserva
+  los datos anteriores. Si falta la integración de lectura, se explica la indisponibilidad;
+  los datos de demostración se limitan a Storybook.
+- En esta página, incluidos menús y diálogo, el peso mínimo de texto es medium (500).
+  La fila seleccionada conserva su fondo habitual y se identifica con una barra lateral
+  `primary` de 3 px y el nombre en peso 600. Conserva el estado accesible y el foco de teclado.
 
 #### Inicio de organización
 

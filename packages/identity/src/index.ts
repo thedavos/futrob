@@ -1,3 +1,5 @@
+export type { ActorContact } from "./domain/entities/actor-contact.ts";
+export type { ActorContactReader } from "./domain/ports/actor-contact.reader.ts";
 export type { ActorProvisionerPort } from "./domain/ports/actor-provisioner.port.ts";
 export type { ActorOnboardingPort } from "./domain/ports/actor-onboarding.port.ts";
 export { InvalidOnboardingProgress } from "./domain/errors/onboarding.errors.ts";

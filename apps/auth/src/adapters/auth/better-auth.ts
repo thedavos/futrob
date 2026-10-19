@@ -11,15 +11,31 @@ import {
   credentialSubject,
   findActorIdForSubject,
 } from "./actor-provisioner.ts";
+import { syncCredentialUserContact } from "./actor-contact-profile.ts";
 
 export type { AuthEnv };
 
-export function createActorProvisioningHooks(actorProvisioner: ActorProvisionerPort) {
+export interface ActorContactSync {
+  syncCredentialUser(userId: string): Promise<void>;
+}
+
+export function createActorProvisioningHooks(
+  actorProvisioner: ActorProvisionerPort,
+  contacts?: ActorContactSync,
+) {
   return {
     session: {
       create: {
         before: async (session: { readonly userId: string }) => {
           await actorProvisioner.ensureActorForSubject(credentialSubject(session.userId));
+          await contacts?.syncCredentialUser(session.userId);
+        },
+      },
+    },
+    user: {
+      update: {
+        after: async (user: { readonly id: string }) => {
+          await contacts?.syncCredentialUser(user.id);
         },
       },
     },
@@ -74,7 +90,9 @@ export function createAuth(input: {
     },
     // Provision before a session is issued. If the database fails, sign-in can be
     // retried and repairs an existing Better Auth user instead of stranding it.
-    databaseHooks: createActorProvisioningHooks(actorProvisioner),
+    databaseHooks: createActorProvisioningHooks(actorProvisioner, {
+      syncCredentialUser: (userId) => syncCredentialUserContact(input.db, userId),
+    }),
     plugins: [
       // `bearer()` lets native clients (apps/mobile) present the session token
       // via `Authorization: Bearer <token>`; browsers keep using cookies.

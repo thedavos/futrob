@@ -17,6 +17,7 @@ describe("ListMembershipsForActorUseCase", () => {
     const useCase = new ListMembershipsForActorUseCase({
       add: async () => undefined,
       findByActor: async (receivedActorId) => (receivedActorId === actorId ? memberships : []),
+      listByOrganization: async () => [],
       findByOrgAndActor: async () => null,
       updateRole: async (membership) => membership,
       updateRoleProtectingLastOrganizer: async (membership) => membership,

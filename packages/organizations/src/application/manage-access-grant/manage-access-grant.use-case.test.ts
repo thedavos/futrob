@@ -143,6 +143,7 @@ function dependencies(
     memberships: {
       add: async () => undefined,
       findByActor: async () => [],
+      listByOrganization: async () => [],
       findByOrgAndActor: async (
         requestedOrganizationId: typeof organizationId,
         requestedActorId: typeof targetActorId,
@@ -199,6 +200,7 @@ function grantRepository(initial?: AccessGrant): AccessGrantRepository & {
           row.scopeId === input.scopeId,
       ) ?? null,
     listForActorAndScopes: async () => [],
+    listForOrganizationActors: async () => [],
     listForScope: async (requestedOrganizationId, scopeType, scopeId, actorId) =>
       [...rows.values()].filter(
         (row) =>

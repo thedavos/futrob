@@ -1,5 +1,6 @@
 import {
   asActorId,
+  compareTime,
   Panic,
   type ActorId,
   type ClockPort,
@@ -198,6 +199,16 @@ export class FakeMembershipRepository implements MembershipRepository {
     );
   }
 
+  async listByOrganization(
+    organizationId: OrganizationId,
+    limit: number,
+  ): Promise<readonly OrganizationMembership[]> {
+    return this.rows
+      .filter((row) => row.organizationId === organizationId)
+      .sort((left, right) => compareMembershipOrder(left, right))
+      .slice(0, limit);
+  }
+
   async updateRole(membership: OrganizationMembership): Promise<OrganizationMembership> {
     const index = this.rows.findIndex(
       (row) =>
@@ -230,6 +241,17 @@ export class FakeMembershipRepository implements MembershipRepository {
     return this.rows.filter((row) => row.organizationId === organizationId && row.role === role)
       .length;
   }
+}
+
+function compareMembershipOrder(
+  left: OrganizationMembership,
+  right: OrganizationMembership,
+): number {
+  const byTime = compareTime(left.createdAt, right.createdAt);
+  if (byTime !== 0) return byTime;
+  if (left.actorId < right.actorId) return -1;
+  if (left.actorId > right.actorId) return 1;
+  return 0;
 }
 
 export class FakeInvitationRepository implements InvitationRepository {

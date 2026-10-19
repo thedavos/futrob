@@ -14,6 +14,7 @@ import type { ActivityCommands } from "@/application/notifications/activity-comm
 import type { SchedulingModule } from "./scheduling.module.ts";
 import type { GameDataModule } from "./game-data.module.ts";
 import type { IdentityModule } from "./identity.module.ts";
+import type { ListOrganizationMembersUseCase } from "@futrob/organizations";
 import type { OrganizationsModule } from "./organizations.module.ts";
 import type { CompetitionsModule } from "./competitions.module.ts";
 import type { TeamsModule } from "./teams.module.ts";
@@ -45,7 +46,9 @@ export interface AppModules {
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
   readonly notifications: NotificationsModule;
-  readonly organizations: OrganizationsModule;
+  readonly organizations: OrganizationsModule & {
+    readonly listOrganizationMembers: ListOrganizationMembersUseCase;
+  };
   readonly results: ResultsModule;
   readonly scheduling: SchedulingModule;
   readonly statistics: StatisticsModule;

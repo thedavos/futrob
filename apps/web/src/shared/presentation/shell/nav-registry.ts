@@ -75,7 +75,7 @@ function personalGeneralNav(t: Translator): readonly ShellNavItem[] {
   ];
 }
 
-function organizationGeneralNav(organizationId: string): readonly ShellNavItem[] {
+function organizationGeneralNav(organizationId: string, t: Translator): readonly ShellNavItem[] {
   const base = `/orgs/${organizationId}`;
   return [
     {
@@ -116,10 +116,10 @@ function organizationGeneralNav(organizationId: string): readonly ShellNavItem[]
     },
     {
       id: "organization",
-      label: "Organización",
+      label: t("pages.organization.members.title"),
       href: `${base}/settings/members`,
       icon: "organization",
-      requiredPermission: ORGANIZATION_PERMISSION.rolesManage,
+      requiredPermission: ORGANIZATION_PERMISSION.membershipsRead,
     },
     {
       id: "settings",
@@ -255,7 +255,7 @@ export function generalNavFor(
       id: NAV_SECTION.general,
       label: "General",
       items: filterByPermission(
-        organizationGeneralNav(selection.organizationId),
+        organizationGeneralNav(selection.organizationId, t),
         allowedPermissions,
       ),
     };

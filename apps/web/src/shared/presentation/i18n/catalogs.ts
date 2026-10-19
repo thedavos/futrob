@@ -1029,8 +1029,87 @@ const es = {
   "pages.organization.invitations.subtitle":
     "Invitaciones enviadas a staff y miembros de tu organización, con su estado.",
   "pages.organization.members.title": "Miembros y roles",
-  "pages.organization.members.subtitle":
-    "Quién forma parte de tu organización y qué puede hacer cada persona.",
+  "pages.organization.members.subtitle": "Administra los miembros y sus accesos autorizados",
+  "organizations.members.invite": "Invitar miembro",
+  "organizations.members.inviteDescription":
+    "Elige su rol y genera un enlace para que se una a tu organización.",
+  "organizations.members.role": "Rol en la organización",
+  "organizations.members.memberHint":
+    "Acceso básico a la organización. No concede acceso a todas sus competiciones.",
+  "organizations.members.staffHint":
+    "Puede operar las competiciones y gestionar invitaciones de la organización.",
+  "organizations.members.createLink": "Generar enlace",
+  "organizations.members.creating": "Generando enlace…",
+  "organizations.members.inviteFailed": "No pudimos crear la invitación. Inténtalo nuevamente.",
+  "organizations.members.inviteCreated": "Invitación creada",
+  "organizations.members.inviteLink": "Enlace de invitación",
+  "organizations.members.inviteLinkHint":
+    "Comparte este enlace con la persona que quieres invitar. Solo se puede usar una vez.",
+  "organizations.members.copy": "Copiar enlace",
+  "organizations.members.copied": "Enlace copiado",
+  "organizations.members.done": "Listo",
+  "organizations.members.list.title": "Miembros",
+  "organizations.members.list.description":
+    "Consulta los miembros de la organización y sus accesos.",
+  "organizations.members.list.loading": "Cargando miembros…",
+  "organizations.members.list.error": "No se pudo cargar el listado de miembros.",
+  "organizations.members.list.denied":
+    "No tienes permiso para consultar los miembros de esta organización.",
+  "organizations.members.list.unavailableTitle": "Listado no disponible",
+  "organizations.members.list.unavailable":
+    "Este espacio mostrará los miembros de la organización, sus roles y sus accesos.",
+  "organizations.members.list.emptyTitle": "No hay miembros para mostrar",
+  "organizations.members.list.empty": "Los miembros aparecerán aquí cuando acepten una invitación.",
+  "organizations.members.list.noMatches": "No hay coincidencias",
+  "organizations.members.list.noMatchesHint":
+    "Prueba otro rol o limpia los filtros para ver todos los miembros.",
+  "organizations.members.list.noMatchesFor":
+    "Ningún miembro coincide con «{query}». Cambia la búsqueda o limpia los filtros.",
+  "organizations.members.search": "Buscar miembros",
+  "organizations.members.roleFilter": "Rol",
+  "organizations.members.allRoles": "Todos los roles",
+  "organizations.members.member": "Miembro",
+  "organizations.members.competitionAccess": "Accesos a competiciones",
+  "organizations.members.unknownName": "Miembro sin nombre",
+  "organizations.members.accessDenied": "Sin permiso de lectura",
+  "organizations.members.authorizedAccess": "Acceso autorizado",
+  "organizations.members.restrictedAccess": "Acceso heredado con restricciones",
+  "organizations.members.noVisibleCompetitions": "No hay competiciones visibles para mostrar",
+  "organizations.members.allCompetitions": "Todas las competiciones",
+  "organizations.members.noCompetitions": "Sin accesos asignados",
+  "organizations.members.actions": "Acciones",
+  "organizations.members.actionsFor": "Acciones de {name}",
+  "organizations.members.viewDetails": "Ver detalle",
+  "organizations.members.clearFilters": "Limpiar filtros",
+  "organizations.members.detail.title": "Detalle del miembro",
+  "organizations.members.detail.description": "Datos del miembro y alcance de sus accesos.",
+  "organizations.members.detail.emptyTitle": "Selecciona un miembro",
+  "organizations.members.detail.empty":
+    "Elige una fila del listado para consultar su rol y sus accesos.",
+  "organizations.members.emailUnavailable": "Correo no disponible",
+  "organizations.members.joinedAt": "Miembro desde",
+  "organizations.members.dateUnavailable": "Fecha no disponible",
+  "organizations.members.changes.title": "Cambios recientes",
+  "organizations.members.changes.description": "Últimos cambios de miembros, roles y accesos.",
+  "organizations.members.changes.change": "Cambio",
+  "organizations.members.changes.performedBy": "Realizado por",
+  "organizations.members.changes.date": "Fecha",
+  "organizations.members.changes.loading": "Cargando cambios recientes…",
+  "organizations.members.changes.error": "No se pudieron cargar los cambios recientes.",
+  "organizations.members.changes.denied":
+    "No tienes permiso para consultar el historial de cambios de esta organización.",
+  "organizations.members.changes.unavailableTitle": "Historial no disponible",
+  "organizations.members.changes.unavailable":
+    "Este espacio mostrará los cambios de miembros, roles y accesos.",
+  "organizations.members.changes.emptyTitle": "Sin cambios recientes",
+  "organizations.members.changes.empty":
+    "Los cambios en miembros, roles y accesos se registrarán aquí.",
+  "organizations.members.deniedTitle": "Acceso restringido",
+  "organizations.members.refreshing": "Actualizando…",
+  "organizations.members.refreshFailed":
+    "No se pudo actualizar esta sección. Se muestran los últimos datos disponibles.",
+  "organizations.members.copyFailed":
+    "No pudimos copiar el enlace. Puedes seleccionarlo y copiarlo manualmente.",
   "pages.organization.settings.title": "Ajustes",
   "pages.organization.settings.subtitle": "Nombre y preferencias de tu organización.",
   "org.home.description": "Vista general de tu organización",
@@ -1364,6 +1443,8 @@ export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "organizations.members.actionsFor": { readonly name: string };
+  readonly "organizations.members.list.noMatchesFor": { readonly query: string };
   "reschedule.scope.slot": { slot: number };
   "reschedule.requestedBy": { team: string };
   "reschedule.proposedBy": { team: string };
@@ -2550,8 +2631,85 @@ const en: Catalog = {
   "pages.organization.invitations.subtitle":
     "Invitations sent to your organization's staff and members, with their status.",
   "pages.organization.members.title": "Members and roles",
-  "pages.organization.members.subtitle":
-    "Who belongs to your organization and what each person can do.",
+  "pages.organization.members.subtitle": "Manage members and their authorized access",
+  "organizations.members.invite": "Invite member",
+  "organizations.members.inviteDescription":
+    "Choose their role and generate a link to join your organization.",
+  "organizations.members.role": "Organization role",
+  "organizations.members.memberHint":
+    "Basic organization access. Does not grant access to all its competitions.",
+  "organizations.members.staffHint":
+    "Can operate competitions and manage organization invitations.",
+  "organizations.members.createLink": "Generate link",
+  "organizations.members.creating": "Generating link…",
+  "organizations.members.inviteFailed": "We couldn't create the invitation. Please try again.",
+  "organizations.members.inviteCreated": "Invitation created",
+  "organizations.members.inviteLink": "Invitation link",
+  "organizations.members.inviteLinkHint":
+    "Share this link with the person you want to invite. It can only be used once.",
+  "organizations.members.copy": "Copy link",
+  "organizations.members.copied": "Link copied",
+  "organizations.members.done": "Done",
+  "organizations.members.list.title": "Members",
+  "organizations.members.list.description": "View organization members and their access.",
+  "organizations.members.list.loading": "Loading members…",
+  "organizations.members.list.error": "Unable to load the member list.",
+  "organizations.members.list.denied":
+    "You don't have permission to view this organization's members.",
+  "organizations.members.list.unavailableTitle": "Member list unavailable",
+  "organizations.members.list.unavailable":
+    "Organization members, their roles and their access will appear here.",
+  "organizations.members.list.emptyTitle": "No members to show",
+  "organizations.members.list.empty": "Members will appear here after they accept an invitation.",
+  "organizations.members.list.noMatches": "No matching members",
+  "organizations.members.list.noMatchesHint":
+    "Try another role or clear the filters to see all members.",
+  "organizations.members.list.noMatchesFor":
+    "No members match “{query}”. Change your search or clear the filters.",
+  "organizations.members.search": "Search members",
+  "organizations.members.roleFilter": "Role",
+  "organizations.members.allRoles": "All roles",
+  "organizations.members.member": "Member",
+  "organizations.members.competitionAccess": "Competition access",
+  "organizations.members.unknownName": "Unnamed member",
+  "organizations.members.accessDenied": "Read access denied",
+  "organizations.members.authorizedAccess": "Authorized access",
+  "organizations.members.restrictedAccess": "Inherited access with restrictions",
+  "organizations.members.noVisibleCompetitions": "No visible competitions to display",
+  "organizations.members.allCompetitions": "All competitions",
+  "organizations.members.noCompetitions": "No assigned access",
+  "organizations.members.actions": "Actions",
+  "organizations.members.actionsFor": "Actions for {name}",
+  "organizations.members.viewDetails": "View details",
+  "organizations.members.clearFilters": "Clear filters",
+  "organizations.members.detail.title": "Member details",
+  "organizations.members.detail.description": "Member information and scope of access.",
+  "organizations.members.detail.emptyTitle": "Select a member",
+  "organizations.members.detail.empty": "Select a row from the list to view their role and access.",
+  "organizations.members.emailUnavailable": "Email unavailable",
+  "organizations.members.joinedAt": "Member since",
+  "organizations.members.dateUnavailable": "Date unavailable",
+  "organizations.members.changes.title": "Recent changes",
+  "organizations.members.changes.description": "Latest changes to members, roles and access.",
+  "organizations.members.changes.change": "Change",
+  "organizations.members.changes.performedBy": "Performed by",
+  "organizations.members.changes.date": "Date",
+  "organizations.members.changes.loading": "Loading recent changes…",
+  "organizations.members.changes.error": "Unable to load recent changes.",
+  "organizations.members.changes.denied":
+    "You don't have permission to view this organization's change history.",
+  "organizations.members.changes.unavailableTitle": "Change history unavailable",
+  "organizations.members.changes.unavailable":
+    "Changes to members, roles and access will appear here.",
+  "organizations.members.changes.emptyTitle": "No recent changes",
+  "organizations.members.changes.empty":
+    "Changes to members, roles and access will be recorded here.",
+  "organizations.members.deniedTitle": "Access restricted",
+  "organizations.members.refreshing": "Updating…",
+  "organizations.members.refreshFailed":
+    "Unable to update this section. The latest available data is shown.",
+  "organizations.members.copyFailed":
+    "We couldn't copy the link. You can select it and copy it manually.",
   "pages.organization.settings.title": "Settings",
   "pages.organization.settings.subtitle": "Your organization's name and preferences.",
   "org.home.description": "Overview of your organization",

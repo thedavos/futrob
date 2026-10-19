@@ -140,6 +140,7 @@ function platformRoles(actorId: ReturnType<typeof asActorId>): PlatformRoleRepos
   };
   return {
     findSuperuser: async (requested) => (requested === actorId ? assignment : null),
+    listSuperusersAmong: async (actorIds) => (actorIds.includes(actorId) ? [assignment] : []),
     countSuperusers: async () => 1,
     assignInitialSuperuserIfEmpty: async () => null,
     assignSuperuser: async (value) => value,

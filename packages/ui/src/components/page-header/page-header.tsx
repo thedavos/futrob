@@ -111,7 +111,11 @@ function PageHeaderDescription({ className, style, ...props }: ComponentProps<"p
   );
 }
 
-function PageHeaderActions({ className, style, ...props }: ComponentProps<"div">) {
+function PageHeaderActions({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div
       data-slot="page-header-actions"
