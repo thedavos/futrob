@@ -9,6 +9,10 @@ export interface MembershipRepository {
     organizationId: OrganizationId,
     actorId: ActorId,
   ): Promise<OrganizationMembership | null>;
+  listByOrganization(
+    organizationId: OrganizationId,
+    limit: number,
+  ): Promise<readonly OrganizationMembership[]>;
   updateRole(membership: OrganizationMembership): Promise<OrganizationMembership>;
   updateRoleProtectingLastOrganizer(
     membership: OrganizationMembership,

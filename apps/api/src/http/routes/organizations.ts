@@ -1,5 +1,6 @@
 import type { Hono } from "hono";
 import {
+  listOrganizationMembersResponseSchema,
   acceptInvitationResponseSchema,
   createInvitationResponseSchema,
   createOrganizationResponseSchema,
@@ -21,6 +22,7 @@ import {
   createOrganizationInvitationRoute,
   createOrganizationRoute,
   getOrganizationProfileRoute,
+  listOrganizationMembersRoute,
   listMyOrganizationsRoute,
   resolvePostAuthDestinationRoute,
   setOrganizationLogoRoute,
@@ -109,6 +111,31 @@ export function registerOrganizationRoutes(app: Hono, deps: AppDeps): void {
           organizationId: body.organizationId ? asOrganizationId(body.organizationId) : undefined,
         }),
       ),
+    );
+  });
+
+  secured.openapi(listOrganizationMembersRoute, async (c) => {
+    const result = await organizations.listOrganizationMembers.execute({
+      organizationId: asOrganizationId(c.req.valid("param").organizationId),
+      actorId: c.get("actorId"),
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      listOrganizationMembersResponseSchema.parse({
+        members: result.value.members.map((member) => ({
+          ...member,
+          joinedAt: member.joinedAt.toISOString(),
+          access:
+            member.access.kind === "assigned" || member.access.kind === "inherited-with-restriction"
+              ? {
+                  kind: member.access.kind,
+                  competitions: member.access.competitions.map(
+                    ({ competitionId, ...assignment }) => ({ id: competitionId, ...assignment }),
+                  ),
+                }
+              : member.access,
+        })),
+      }),
     );
   });
 

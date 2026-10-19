@@ -1,4 +1,12 @@
 export {
+  listOrganizationMembersQuerySchema,
+  memberCompetitionAssignmentSchema,
+  memberCompetitionAccessSchema,
+  organizationMemberSchema,
+  listOrganizationMembersResponseSchema,
+  type OrganizationMemberDto,
+  type MemberCompetitionAccessDto,
+  type ListOrganizationMembersResponse,
   orgMembershipRoleSchema,
   organizationInviteRoleSchema,
   competitionInviteRoleSchema,

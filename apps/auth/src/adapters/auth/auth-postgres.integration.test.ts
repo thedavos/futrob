@@ -9,9 +9,10 @@ import { CryptoIdGenerator } from "../../id-generator.ts";
 import { buildAuthEnv } from "../../auth-env.ts";
 import { isAuthSchemaReady } from "../../auth-readiness.ts";
 import { ensureActorForSubject, credentialSubject } from "./actor-provisioner.ts";
+import { upsertActorContactProfile } from "./actor-contact-profile.ts";
 import { createAuth } from "./better-auth.ts";
 import { createAuthDb } from "./database.ts";
-import { authSchema, identitySubjects, actors } from "./drizzle-schema.ts";
+import { authSchema, identitySubjects, actors, actorContactProfiles } from "./drizzle-schema.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = describe.skipIf(!databaseUrl);
@@ -45,11 +46,12 @@ suite("auth on product Postgres (migration 0043)", () => {
         "auth_rate_limits",
         "actors",
         "identity_subjects",
+        "actor_contact_profiles",
       ]);
       await expect(isAuthSchemaReady(client)).resolves.toBe(true);
       await client.end();
     });
-  });
+  }, 30_000);
 
   it("provisions exactly one actor per subject under concurrent sign-ins", async () => {
     await withSchema(async ({ connect }) => {
@@ -68,7 +70,7 @@ suite("auth on product Postgres (migration 0043)", () => {
       expect(await db.select().from(identitySubjects)).toHaveLength(1);
       await Promise.all(clients.map((client) => client.end()));
     });
-  });
+  }, 30_000);
 
   it("signs up, then get-session returns the provisioned actorId", async () => {
     await withSchema(async ({ connect }) => {
@@ -107,13 +109,44 @@ suite("auth on product Postgres (migration 0043)", () => {
       expect(body.user.email).toBe(email);
       expect(body.actorId).toEqual(expect.any(String));
 
+      const db = createAuthDb(client);
+      const [original] = await db.select().from(actorContactProfiles);
+      expect(original).toMatchObject({ actorId: body.actorId, displayName: "Captain", email });
+      const update = await auth.handler(
+        new Request("http://localhost:3000/api/auth/update-user", {
+          method: "POST",
+          headers: { cookie, "content-type": "application/json", origin: "http://localhost:3000" },
+          body: JSON.stringify({ name: "Updated Captain" }),
+        }),
+      );
+      expect(update.status).toBe(200);
+      expect(await db.select().from(actorContactProfiles)).toMatchObject([
+        { actorId: body.actorId, displayName: "Updated Captain", email },
+      ]);
+      // A sign-in sync that read the user before the update resumes after it.
+      await upsertActorContactProfile(db, original!);
+      expect(await db.select().from(actorContactProfiles)).toMatchObject([
+        { actorId: body.actorId, displayName: "Updated Captain", email },
+      ]);
+      await db.delete(actorContactProfiles);
+      const signIn = await auth.handler(
+        new Request("http://localhost:3000/api/auth/sign-in/email", {
+          method: "POST",
+          headers: { "content-type": "application/json", origin: "http://localhost:3000" },
+          body: JSON.stringify({ email, password: "password-at-least-8" }),
+        }),
+      );
+      expect(signIn.status).toBe(200);
+      expect(await db.select().from(actorContactProfiles)).toMatchObject([
+        { actorId: body.actorId, displayName: "Updated Captain", email },
+      ]);
       const anonymous = await auth.handler(
         new Request("http://localhost:3000/api/auth/get-session"),
       );
       expect(await anonymous.json()).toBeNull();
       await client.end();
     });
-  });
+  }, 30_000);
 });
 
 async function withSchema(
@@ -137,6 +170,12 @@ async function withSchema(
     await setup.query(
       await readFile(
         resolve(import.meta.dirname, "../../../../api/migrations/0043_auth_and_actors.sql"),
+        "utf8",
+      ),
+    );
+    await setup.query(
+      await readFile(
+        resolve(import.meta.dirname, "../../../../api/migrations/0056_actor_contact_profiles.sql"),
         "utf8",
       ),
     );

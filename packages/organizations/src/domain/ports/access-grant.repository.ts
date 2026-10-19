@@ -30,12 +30,17 @@ export interface AccessGrantRepository {
     scopeId: string,
     actorId?: ActorId,
   ): Promise<readonly AccessGrant[]>;
+  listForOrganizationActors(
+    organizationId: OrganizationId,
+    actorIds: readonly ActorId[],
+  ): Promise<readonly AccessGrant[]>;
   upsert(grant: AccessGrant): Promise<AccessGrant>;
   delete(organizationId: OrganizationId | null, id: string): Promise<boolean>;
 }
 
 export interface PlatformRoleRepository {
   findSuperuser(actorId: ActorId): Promise<PlatformRoleAssignment | null>;
+  listSuperusersAmong(actorIds: readonly ActorId[]): Promise<readonly PlatformRoleAssignment[]>;
   countSuperusers(): Promise<number>;
   assignInitialSuperuserIfEmpty(
     assignment: PlatformRoleAssignment,

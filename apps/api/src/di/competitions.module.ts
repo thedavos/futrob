@@ -1,3 +1,4 @@
+import { PostgresCompetitionMembershipRepository } from "@/adapters/competitions/postgres-membership.repository.ts";
 import { randomUUID } from "node:crypto";
 import {
   ApproveCompetitionEntryUseCase,
@@ -63,10 +64,7 @@ import {
   InMemoryCompetitionRepository,
 } from "@/adapters/competitions/in-memory.repository.ts";
 import { PostgresCompetitionDiscoveryReader } from "@/adapters/competitions/postgres-discovery.reader.ts";
-import {
-  PostgresCompetitionMembershipRepository,
-  PostgresCompetitionRepository,
-} from "@/adapters/competitions/postgres.repository.ts";
+import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { contextualCompetitionRolePermissions } from "@/adapters/authorization/contextual-authorization.adapter.ts";
 import { ExploreCompetitionsQuery } from "@/application/discovery/explore-competitions.query.ts";
 

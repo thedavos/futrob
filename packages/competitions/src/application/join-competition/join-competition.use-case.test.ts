@@ -38,6 +38,17 @@ class FakeMembershipRepository implements CompetitionMembershipRepository {
   async listByActor(requestedActorId: typeof actorId) {
     return [...this.rows.values()].filter((membership) => membership.actorId === requestedActorId);
   }
+
+  async listForOrganizationActors(
+    requestedOrganizationId: typeof organizationId,
+    actorIds: readonly (typeof actorId)[],
+  ) {
+    const wanted = new Set(actorIds);
+    return [...this.rows.values()].filter(
+      (membership) =>
+        membership.organizationId === requestedOrganizationId && wanted.has(membership.actorId),
+    );
+  }
 }
 
 const competitionDraft: CompetitionDraft = {
