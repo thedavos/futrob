@@ -9,6 +9,7 @@ import { CryptoIdGenerator } from "../../id-generator.ts";
 import { buildAuthEnv } from "../../auth-env.ts";
 import { isAuthSchemaReady } from "../../auth-readiness.ts";
 import { ensureActorForSubject, credentialSubject } from "./actor-provisioner.ts";
+import { upsertActorContactProfile } from "./actor-contact-profile.ts";
 import { createAuth } from "./better-auth.ts";
 import { createAuthDb } from "./database.ts";
 import { authSchema, identitySubjects, actors, actorContactProfiles } from "./drizzle-schema.ts";
@@ -109,9 +110,8 @@ suite("auth on product Postgres (migration 0043)", () => {
       expect(body.actorId).toEqual(expect.any(String));
 
       const db = createAuthDb(client);
-      expect(await db.select().from(actorContactProfiles)).toMatchObject([
-        { actorId: body.actorId, displayName: "Captain", email },
-      ]);
+      const [original] = await db.select().from(actorContactProfiles);
+      expect(original).toMatchObject({ actorId: body.actorId, displayName: "Captain", email });
       const update = await auth.handler(
         new Request("http://localhost:3000/api/auth/update-user", {
           method: "POST",
@@ -120,6 +120,11 @@ suite("auth on product Postgres (migration 0043)", () => {
         }),
       );
       expect(update.status).toBe(200);
+      expect(await db.select().from(actorContactProfiles)).toMatchObject([
+        { actorId: body.actorId, displayName: "Updated Captain", email },
+      ]);
+      // A sign-in sync that read the user before the update resumes after it.
+      await upsertActorContactProfile(db, original!);
       expect(await db.select().from(actorContactProfiles)).toMatchObject([
         { actorId: body.actorId, displayName: "Updated Captain", email },
       ]);

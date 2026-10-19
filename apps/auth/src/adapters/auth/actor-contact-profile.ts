@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { ActorId } from "@futrob/shared-kernel";
 import type { AuthDb } from "./database.ts";
 import { actorContactProfiles, authUsers } from "./drizzle-schema.ts";
@@ -28,6 +28,8 @@ export async function upsertActorContactProfile(
         email: input.email,
         updatedAt: input.updatedAt,
       },
+      // A sync that read an older auth_users row must not overwrite a newer projection.
+      setWhere: sql`${actorContactProfiles.updatedAt} <= excluded.updated_at`,
     });
 }
 
