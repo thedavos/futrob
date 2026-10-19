@@ -8,15 +8,31 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { encounterView, m1, m2, m3, m4, readyCandidates } from "./encounter-page.fixtures.ts";
+import { encounterView, m1, m2, m3, m4, m5, readyCandidates } from "./encounter-page.fixtures.ts";
 import { EncounterPageView, type CandidatesState, type EncounterState } from "./encounter-page.tsx";
+import {
+  REVIEW_SCENARIOS,
+  useStoryDisputeReview,
+  type ReviewScenario,
+} from "./dispute-review.story-state.ts";
+import {
+  alternativeReason,
+  approvalReason,
+  disputeReason,
+  rejectionReason,
+} from "./official-selection.fixtures.ts";
+import {
+  SELECTION_SCENARIOS,
+  useStoryTeamSelection,
+  type SelectionScenario,
+} from "./team-selection.story-state.ts";
 
 const styles = stylex.create({
   frame: {
@@ -51,6 +67,10 @@ type StoryArgs = {
   readonly scenario: Scenario;
   readonly locale: Locale;
   readonly narrow?: boolean;
+  /** Team panel of a representative; omitted for spectators. */
+  readonly selection?: SelectionScenario;
+  /** Organization review panel of a results approver; omitted for everyone else. */
+  readonly review?: ReviewScenario;
 };
 
 const noop = () => undefined;
@@ -73,7 +93,7 @@ function stateFor(scenario: Scenario): {
   readonly candidates: CandidatesState;
 } {
   const ready = (view = encounterView()): EncounterState => ({ kind: "ready", view });
-  const list = candidatesReady(readyCandidates([m1, m3, m2, m4]));
+  const list = candidatesReady(readyCandidates([m1, m3, m2, m4, m5]));
   switch (scenario) {
     case "aggregate":
       return { encounter: ready(), candidates: list };
@@ -128,19 +148,33 @@ function stateFor(scenario: Scenario): {
   }
 }
 
-function EncounterStory({ locale, narrow = false, scenario }: StoryArgs) {
+function ScenarioPage({
+  review,
+  scenario,
+  selection,
+}: {
+  readonly review?: ReviewScenario;
+  readonly scenario: Scenario;
+  readonly selection?: SelectionScenario;
+}) {
+  return (
+    <EncounterPageView
+      competitionId="competition-1"
+      disputeReview={useStoryDisputeReview(review)}
+      organizationId="org-1"
+      teamSelection={useStoryTeamSelection(selection)}
+      {...stateFor(scenario)}
+    />
+  );
+}
+
+function EncounterStory({ locale, narrow = false, review, scenario, selection }: StoryArgs) {
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
     const encounterRoute = createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId/encounters/$encounterId",
-      component: () => (
-        <EncounterPageView
-          competitionId="competition-1"
-          organizationId="org-1"
-          {...stateFor(scenario)}
-        />
-      ),
+      component: () => <ScenarioPage review={review} scenario={scenario} selection={selection} />,
     });
     const listRoute = createRoute({
       getParentRoute: () => rootRoute,
@@ -153,7 +187,7 @@ function EncounterStory({ locale, narrow = false, scenario }: StoryArgs) {
         initialEntries: ["/orgs/org-1/competitions/competition-1/encounters/encounter-1"],
       }),
     });
-  }, [scenario]);
+  }, [review, scenario, selection]);
   return (
     <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
       <div {...applyProps(undefined, undefined, styles.frame, narrow && styles.narrow)}>
@@ -187,8 +221,15 @@ const meta = {
   argTypes: {
     scenario: { control: "select", options: scenarios },
     locale: { control: "inline-radio", options: ["es", "en"] },
+    selection: { control: "select", options: [undefined, ...SELECTION_SCENARIOS] },
+    review: { control: "select", options: [undefined, ...REVIEW_SCENARIOS] },
   },
-  render: (args) => <EncounterStory key={`${args.scenario}-${args.locale}`} {...args} />,
+  render: (args) => (
+    <EncounterStory
+      key={`${args.scenario}-${args.locale}-${args.selection}-${args.review}`}
+      {...args}
+    />
+  ),
 } satisfies Meta<StoryArgs>;
 
 export default meta;
@@ -259,6 +300,279 @@ export const Narrow360: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole("heading", { level: 1, name: "Cuervos FC vs Maderas FC" });
+    const frame = canvasElement.firstElementChild as HTMLElement;
+    await expect(frame.scrollWidth).toBeLessThanOrEqual(frame.clientWidth);
+  },
+};
+
+export const SelectionNotProposed: Story = {
+  name: "Selección: sin propuesta",
+  args: { selection: "none" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const panel = within(await canvas.findByRole("region", { name: "Selección oficial" }));
+    await expect(panel.getByText("Aún no hay propuesta")).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Proponer selección" })).toBeVisible();
+  },
+};
+
+export const SelectionPendingAsProposer: Story = {
+  name: "Selección: pendiente, como proponente",
+  args: { selection: "pendingAsProposer" },
+  play: async ({ canvasElement }) => {
+    const panel = within(
+      await within(canvasElement).findByRole("region", { name: "Selección oficial" }),
+    );
+    await expect(panel.getByText("Esperando confirmación del rival")).toBeVisible();
+    await expect(panel.queryByRole("button", { name: "Confirmar propuesta" })).toBeNull();
+  },
+};
+
+export const SelectionPendingAsRival: Story = {
+  name: "Selección: pendiente, como rival",
+  args: { selection: "pendingAsRival" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const panel = within(
+      await within(canvasElement).findByRole("region", { name: "Selección oficial" }),
+    );
+    for (const name of [
+      "Confirmar propuesta",
+      "Rechazar",
+      "Proponer alternativa",
+      "Abrir disputa",
+    ]) {
+      await expect(panel.getByRole("button", { name })).toBeVisible();
+    }
+  },
+};
+
+export const SelectionConflictRecovery: Story = {
+  name: "Selección: conflicto de versión",
+  args: { selection: "conflict" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(await canvas.findByRole("button", { name: "Rechazar" }));
+    const dialog = within(await page.findByRole("dialog", { name: "Rechazar la propuesta" }));
+    await userEvent.type(dialog.getByRole("textbox", { name: "Motivo" }), rejectionReason);
+    await userEvent.click(dialog.getByRole("button", { name: "Rechazar propuesta" }));
+    await expect(await dialog.findByText(/leíste la versión 1 y ahora está en la 2/)).toBeVisible();
+    await expect(dialog.getByRole("textbox", { name: "Motivo" })).toHaveValue(rejectionReason);
+  },
+};
+
+export const SelectionApproved: Story = {
+  name: "Selección: aprobada",
+  args: { selection: "approved" },
+};
+
+export const SelectionDisputed: Story = {
+  name: "Selección: en disputa (solo lectura)",
+  args: { selection: "disputed" },
+  parameters: { a11y: { test: "error" } },
+};
+
+export const SelectionAlternativeDisputed: Story = {
+  name: "Selección: alternativa distinta, en disputa",
+  args: { selection: "alternative" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const panel = within(
+      await within(canvasElement).findByRole("region", { name: "Selección oficial" }),
+    );
+    await expect(panel.getByText("En disputa")).toBeVisible();
+    await expect(
+      within(panel.getByRole("group", { name: "Disputa" })).getByText(alternativeReason),
+    ).toBeVisible();
+    await expect(panel.getByRole("listitem", { name: "Propuesta 1 · ronda 1" })).toBeVisible();
+    await expect(panel.getByRole("listitem", { name: "Propuesta 2 · ronda 1" })).toBeVisible();
+    await expect(panel.queryByRole("button", { name: "Confirmar propuesta" })).toBeNull();
+  },
+};
+
+export const SelectionUnderReviewWithFlags: Story = {
+  name: "Selección: revisión con avisos",
+  args: { selection: "underReview" },
+};
+
+export const SelectionReaderWithoutCommands: Story = {
+  name: "Selección: sin acciones",
+  args: { selection: "reader" },
+};
+
+export const SelectionBothSides: Story = {
+  name: "Selección: representa a ambos equipos",
+  args: { selection: "bothSides" },
+};
+
+export const SelectionForbidden: Story = {
+  name: "Selección: sin acceso",
+  args: { selection: "forbidden" },
+};
+
+export const SelectionLoading: Story = {
+  name: "Selección: cargando",
+  args: { selection: "loading" },
+};
+
+export const SelectionError: Story = {
+  name: "Selección: error",
+  args: { selection: "error" },
+};
+
+export const SelectionEnglish: Story = {
+  name: "Selection: pending as rival (EN)",
+  args: { selection: "pendingAsRival", locale: "en" },
+};
+
+export const SelectionNarrow360: Story = {
+  name: "Selección: 360 px",
+  args: { selection: "pendingAsRival", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Selección oficial" });
+    const frame = canvasElement.firstElementChild as HTMLElement;
+    await expect(frame.scrollWidth).toBeLessThanOrEqual(frame.clientWidth);
+  },
+};
+
+const REVIEW = "Revisión de la organización";
+
+export const ReviewLoading: Story = {
+  name: "Revisión: cargando",
+  args: { review: "loading" },
+};
+
+export const ReviewForbidden: Story = {
+  name: "Revisión: sin acceso",
+  args: { review: "forbidden" },
+  play: async ({ canvasElement }) => {
+    const panel = within(await within(canvasElement).findByRole("region", { name: REVIEW }));
+    await expect(
+      panel.getByText("No puedes revisar disputas de este enfrentamiento."),
+    ).toBeVisible();
+    await expect(panel.queryByRole("tab")).toBeNull();
+  },
+};
+
+export const ReviewDisputed: Story = {
+  name: "Revisión: en disputa, tomar el caso",
+  args: { review: "disputed" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const panel = within(await within(canvasElement).findByRole("region", { name: REVIEW }));
+    await expect(panel.getByText("En disputa")).toBeVisible();
+    await expect(panel.getByText(disputeReason)).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Tomar el caso" })).toBeVisible();
+  },
+};
+
+export const ReviewOrganizerReview: Story = {
+  name: "Revisión: aprobar con avisos o devolver",
+  args: { review: "organizerReview" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    const panel = within(await within(canvasElement).findByRole("region", { name: REVIEW }));
+    await expect(panel.getByRole("button", { name: "Devolver a selección" })).toBeVisible();
+    await userEvent.click(panel.getByRole("button", { name: "Aprobar una propuesta" }));
+    const dialog = within(await page.findByRole("dialog", { name: "Aprobar una propuesta" }));
+    await userEvent.click(
+      dialog.getByRole("radio", { name: "Propuesta 2 · ronda 1 · De Maderas FC" }),
+    );
+    await waitFor(() =>
+      expect(dialog.getByText("Hubo desconexión en el partido EA m-3")).toBeVisible(),
+    );
+    await expect(
+      dialog.getByRole("checkbox", {
+        name: "Revisé los avisos de integridad y apruebo igualmente",
+      }),
+    ).toBeVisible();
+  },
+};
+
+export const ReviewRematch: Story = {
+  name: "Revisión: mismo marcador, otro partido EA",
+  args: { review: "rematch" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    const panel = within(await within(canvasElement).findByRole("region", { name: REVIEW }));
+    await userEvent.click(panel.getByRole("button", { name: "Aprobar una propuesta" }));
+    const dialog = within(await page.findByRole("dialog", { name: "Aprobar una propuesta" }));
+    const first = dialog.getByRole("radio", { name: "Propuesta 1 · ronda 1 · De Cuervos FC" });
+    const second = dialog.getByRole("radio", { name: "Propuesta 2 · ronda 1 · De Maderas FC" });
+    await waitFor(() => expect(within(first).getByText(/^Partido EA m-2 · jugado/)).toBeVisible());
+    await expect(within(second).getByText(/^Partido EA m-5 · jugado/)).toBeVisible();
+  },
+};
+
+export const ReviewApproved: Story = {
+  name: "Revisión: aprobada X/Z, con historial",
+  args: { review: "approved" },
+  play: async ({ canvasElement }) => {
+    const panel = within(await within(canvasElement).findByRole("region", { name: REVIEW }));
+    await expect(panel.getByRole("group", { name: "Partidos aprobados" })).toBeVisible();
+    await userEvent.click(panel.getByRole("tab", { name: "Historial" }));
+    await waitFor(() => expect(panel.getByText("Disputa resuelta con aprobación")).toBeVisible());
+  },
+};
+
+export const ReviewReturned: Story = {
+  name: "Revisión: devuelta a selección",
+  args: { review: "returned" },
+};
+
+export const ReviewConflict: Story = {
+  name: "Revisión: conflicto de versión",
+  args: { review: "conflict" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    const panel = within(await within(canvasElement).findByRole("region", { name: REVIEW }));
+    await userEvent.click(panel.getByRole("button", { name: "Aprobar una propuesta" }));
+    const dialog = within(await page.findByRole("dialog", { name: "Aprobar una propuesta" }));
+    await userEvent.click(
+      dialog.getByRole("radio", { name: "Propuesta 2 · ronda 1 · De Maderas FC" }),
+    );
+    await userEvent.type(dialog.getByRole("textbox", { name: "Motivo" }), approvalReason);
+    await userEvent.click(dialog.getByRole("button", { name: "Aprobar propuesta" }));
+    await expect(await dialog.findByText(/leíste la versión 4 y ahora está en la 5/)).toBeVisible();
+    await expect(dialog.getByRole("textbox", { name: "Motivo" })).toHaveValue(approvalReason);
+  },
+};
+
+export const ReviewServerFailure: Story = {
+  name: "Revisión: fallo del servidor y reintento",
+  args: { review: "failure" },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    const panel = within(await within(canvasElement).findByRole("region", { name: REVIEW }));
+    await userEvent.click(panel.getByRole("button", { name: "Devolver a selección" }));
+    const dialog = within(
+      await page.findByRole("dialog", { name: "Devolver el caso a selección" }),
+    );
+    await userEvent.type(dialog.getByRole("textbox", { name: "Motivo" }), "Fuera de horario.");
+    await userEvent.click(dialog.getByRole("button", { name: "Devolver a selección" }));
+    await expect(await dialog.findByRole("button", { name: "Reintentar" })).toBeVisible();
+    await expect(dialog.getByRole("textbox", { name: "Motivo" })).toHaveValue("Fuera de horario.");
+  },
+};
+
+export const ReviewEnglish: Story = {
+  name: "Review: organizer review (EN)",
+  args: { review: "organizerReview", locale: "en" },
+};
+
+export const ReviewNarrow360: Story = {
+  name: "Revisión: 360 px",
+  args: { review: "organizerReview", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: REVIEW });
     const frame = canvasElement.firstElementChild as HTMLElement;
     await expect(frame.scrollWidth).toBeLessThanOrEqual(frame.clientWidth);
   },

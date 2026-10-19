@@ -1,4 +1,9 @@
-import type { EncounterCandidateDto, EncounterViewDto } from "@futrob/api-contracts";
+import {
+  officialSlotSelectionSchema,
+  type EncounterCandidateDto,
+  type EncounterViewDto,
+  type ProposeOfficialSelectionRequest,
+} from "@futrob/api-contracts";
 
 export type OfficialSlot = 1 | 2;
 
@@ -39,8 +44,52 @@ export type EncounterPreview = {
   readonly series: SeriesPreview;
 };
 
+/** One official slot bound to a provider match, as the selection commands send it. */
+export type SlotSelection = ProposeOfficialSelectionRequest["selections"][number];
+
+export function referenceKey(reference: {
+  readonly providerKey: string;
+  readonly externalId: string;
+}): string {
+  return `${reference.providerKey}:${reference.externalId}`;
+}
+
 export function candidateKey(candidate: EncounterCandidateDto): string {
-  return `${candidate.reference.providerKey}:${candidate.reference.externalId}`;
+  return referenceKey(candidate.reference);
+}
+
+/** The assignments a persisted proposal describes, so it previews like a local draft. */
+export function assignmentsOf(slots: readonly SlotSelection[]): SlotAssignments {
+  const keyIn = (slot: OfficialSlot) => {
+    const match = slots.find((selection) => selection.officialSlot === slot);
+    return match ? referenceKey(match.providerMatchRef) : null;
+  };
+  return { 1: keyIn(1), 2: keyIn(2) };
+}
+
+/**
+ * The selections a proposal sends: every official slot bound to a listed candidate's
+ * reference. `null` while any slot is empty, points at a candidate no longer listed, or
+ * names a provider the selection contract does not accept.
+ */
+export function selectionsFor(
+  view: Pick<EncounterViewDto, "officialMatches">,
+  candidates: readonly EncounterCandidateDto[],
+  assignments: SlotAssignments,
+): SlotSelection[] | null {
+  const byKey = new Map(candidates.map((candidate) => [candidateKey(candidate), candidate]));
+  const selections: SlotSelection[] = [];
+  for (const { officialSlot } of view.officialMatches) {
+    const key = assignments[officialSlot];
+    const candidate = key === null ? undefined : byKey.get(key);
+    const selection = officialSlotSelectionSchema.safeParse({
+      officialSlot,
+      providerMatchRef: candidate?.reference,
+    });
+    if (!selection.success) return null;
+    selections.push(selection.data);
+  }
+  return selections;
 }
 
 /** Puts `key` in `slot`, taking it out of any other slot; choosing it again clears the slot. */
