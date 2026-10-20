@@ -5,6 +5,7 @@ import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
+import { media } from "#styles/media.stylex";
 import { typography } from "#styles/typography";
 
 const styles = stylex.create({
@@ -29,10 +30,17 @@ const styles = stylex.create({
     transitionProperty: "opacity, scale",
     transitionDuration: "var(--duration-normal)",
     transitionTimingFunction: "var(--ease-emphasized)",
+    // A 0.95 entrance scale turns a 44px row into a 41.8px hit target. Touch
+    // keeps scale at 1 so the open menu stays on the control-height contract.
     scale: {
       default: 1,
       ":is([data-starting-style])": 0.95,
       ":is([data-ending-style])": 0.95,
+      [media.maxSm]: {
+        default: 1,
+        ":is([data-starting-style])": 1,
+        ":is([data-ending-style])": 1,
+      },
     },
   },
   label: {
@@ -42,7 +50,7 @@ const styles = stylex.create({
   },
   item: {
     display: "flex",
-    minHeight: "2.75rem",
+    minHeight: "var(--control-height)",
     cursor: "pointer",
     alignItems: "center",
     gap: "0.5rem",
