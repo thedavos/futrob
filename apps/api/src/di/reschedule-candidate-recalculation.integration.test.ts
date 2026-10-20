@@ -33,6 +33,8 @@ const SEEDED_AT = new Date("2026-10-01T12:00:00.000Z");
 // America/Lima is UTC-5, so 15:00 local is 20:00Z.
 const T = "2026-10-20T20:00:00.000Z";
 const T_PLUS_24H = "2026-10-21T20:00:00.000Z";
+// Requests are made two weeks before T, well outside the 12 h minimum notice.
+const REQUESTED_AT = new Date("2026-10-06T12:00:00.000Z");
 const ORG = asOrganizationId("org-reschedule");
 const COMPETITION = asCompetitionId("competition-reschedule");
 const ENCOUNTER = asEncounterId("encounter-reschedule");
@@ -52,6 +54,8 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
   beforeEach(async () => {
     isolated = await createIsolatedSchema(databaseUrl ?? "", "reschedule_recalculation");
     await migrateIsolatedSchema(isolated.pool);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(REQUESTED_AT);
   }, TEST_TIMEOUT_MS);
 
   afterEach(async () => {
@@ -157,7 +161,6 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
           match("m-3", "2026-10-21T20:10:00.000Z"),
         ],
       });
-      vi.useFakeTimers({ toFake: ["Date"] });
       let release = () => {};
       const released = new Promise<void>((resolve) => {
         release = resolve;
@@ -180,7 +183,7 @@ suite("candidate recalculation after an applied reschedule on Postgres", () => {
       });
 
       // The slow accept reads its clock first and stays uncommitted inside its transaction.
-      vi.setSystemTime(new Date("2026-10-06T12:00:00.000Z"));
+      vi.setSystemTime(REQUESTED_AT);
       const slow = reschedule(modules, { type: "entire_encounter" }, { day: 21, hour: 15 });
       await holding;
       vi.setSystemTime(new Date("2026-10-06T13:00:00.000Z"));
