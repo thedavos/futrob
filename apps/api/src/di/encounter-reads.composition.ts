@@ -1,4 +1,4 @@
-import type { AuthorizationPort, ClockPort } from "@futrob/shared-kernel";
+import type { AuthorizationBatchPort, AuthorizationPort, ClockPort } from "@futrob/shared-kernel";
 import type { EncounterSummaryDependencies } from "@/application/scheduling/encounter-summary.ts";
 import { GetEncounterViewUseCase } from "@/application/scheduling/get-encounter-view.use-case.ts";
 import { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
@@ -10,7 +10,7 @@ import type { SchedulingModule } from "./scheduling.module.ts";
 import type { TeamsModule } from "./teams.module.ts";
 
 export function createEncounterReads(input: {
-  readonly authorization: AuthorizationPort;
+  readonly authorization: AuthorizationPort & AuthorizationBatchPort;
   readonly clock: ClockPort;
   readonly competitions: CompetitionsModule;
   readonly teams: TeamsModule;

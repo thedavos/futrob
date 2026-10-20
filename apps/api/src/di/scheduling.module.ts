@@ -59,6 +59,7 @@ import {
   PostgresFixtureAuditPort,
 } from "@/adapters/scheduling/fixture-editing.adapters.ts";
 import { CompetitionRescheduleRulesAdapter } from "@/adapters/scheduling/competition-reschedule-rules.adapter.ts";
+import type { EncounterAuthorizationReader } from "@/adapters/authorization/contextual-authorization.adapter.ts";
 import { CompetitionTimeZoneAdapter } from "@/adapters/scheduling/competition-time-zone.adapter.ts";
 import {
   InMemoryScheduleChangeRequestRepository,
@@ -83,6 +84,7 @@ export function createSchedulingModule(input: {
     : new InMemoryEncounterScheduleRepository();
   const encounters: EncounterScheduleRepository = encounterStore;
   const encounterWindow: EncounterWindowReaderPort = encounterStore;
+  const encounterAuthorization: EncounterAuthorizationReader = encounterStore;
   const officialMatches: OfficialMatchRepository = input.pool
     ? new PostgresOfficialMatchRepository(input.pool)
     : new InMemoryOfficialMatchRepository();
@@ -127,6 +129,7 @@ export function createSchedulingModule(input: {
   return {
     encounters,
     encounterWindow,
+    encounterAuthorization,
     officialMatches,
     fixturePlans,
     scheduleChangeRequests,

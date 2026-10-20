@@ -3,6 +3,7 @@ import type { OfficialResult } from "@futrob/results";
 import { ENCOUNTER_PERMISSION, type FixtureEncounter, type FixturePlan } from "@futrob/scheduling";
 import type {
   ActorId,
+  AuthorizationBatchPort,
   AuthorizationPort,
   ClockPort,
   CompetitionId,
@@ -35,7 +36,7 @@ export type CompetitionEncounters = {
 };
 
 export type ListCompetitionEncountersDependencies = {
-  readonly authorization: Pick<AuthorizationPort, "decide">;
+  readonly authorization: Pick<AuthorizationPort, "decide"> & AuthorizationBatchPort;
   readonly clock: ClockPort;
   readonly competitions: {
     findById(
@@ -68,9 +69,10 @@ type PairedEncounter = {
 };
 
 /**
- * The Encounters of the competition's active fixture with both Teams known. Staff
- * with `encounters.read` on the competition see all of them; anyone else sees the
- * Encounters they may read one by one. Null hides a missing or unreadable competition.
+ * The Encounters of the competition's active fixture with both Teams known that the
+ * actor may read. Every Encounter is decided on its own scope, so a specific deny
+ * hides it even from staff, in one batched decision. Null hides a missing or
+ * unreadable competition.
  */
 export class ListCompetitionEncountersUseCase {
   constructor(private readonly deps: ListCompetitionEncountersDependencies) {}
@@ -84,19 +86,18 @@ export class ListCompetitionEncountersUseCase {
     if (!draft) return null;
     const scope = { organizationId: input.organizationId, competitionId: input.competitionId };
 
-    const [staff, plans] = await Promise.all([
-      this.deps.authorization.decide({
-        actorId: input.actorId,
-        permission: ENCOUNTER_PERMISSION.read,
-        scope,
-      }),
-      this.deps.fixturePlans.listActive(input.organizationId, input.competitionId),
-    ]);
+    const plans = await this.deps.fixturePlans.listActive(
+      input.organizationId,
+      input.competitionId,
+    );
     const paired = plans.flatMap(pairedEncounters);
-    const readable = staff.allowed
-      ? paired
-      : await this.readableOneByOne(input.actorId, scope, paired);
-    if (!staff.allowed && readable.length === 0) {
+    const decisions = await this.deps.authorization.decideEach({
+      actorId: input.actorId,
+      permission: ENCOUNTER_PERMISSION.read,
+      scopes: paired.map((entry) => ({ ...scope, encounterId: entry.encounter.id })),
+    });
+    const readable = paired.filter((_, index) => decisions[index]?.allowed === true);
+    if (readable.length === 0) {
       const competitionRead = await this.deps.authorization.decide({
         actorId: input.actorId,
         permission: COMPETITION_PERMISSION.read,
@@ -152,23 +153,6 @@ export class ListCompetitionEncountersUseCase {
           compareTime(a.scheduledStartAt, b.scheduledStartAt) || a.round.number - b.round.number,
       ),
     };
-  }
-
-  private async readableOneByOne(
-    actorId: ActorId,
-    scope: { readonly organizationId: OrganizationId; readonly competitionId: CompetitionId },
-    paired: readonly PairedEncounter[],
-  ): Promise<PairedEncounter[]> {
-    const decisions = await Promise.all(
-      paired.map((entry) =>
-        this.deps.authorization.decide({
-          actorId,
-          permission: ENCOUNTER_PERMISSION.read,
-          scope: { ...scope, encounterId: entry.encounter.id },
-        }),
-      ),
-    );
-    return paired.filter((_, index) => decisions[index]?.allowed === true);
   }
 
   private async teamNames(

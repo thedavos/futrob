@@ -28,6 +28,7 @@ import {
   InMemoryTeamRepository,
 } from "@/adapters/teams/team-roster.repositories.ts";
 import { InMemoryPlayerProfileRepository } from "@/adapters/teams/in-memory.repository.ts";
+import { InMemoryEncounterScheduleRepository } from "@/adapters/scheduling/encounter-schedule.repository.ts";
 import { createInMemoryAuthorizationStore } from "./in-memory.repository.ts";
 import { ContextualAuthorizationAdapter } from "./contextual-authorization.adapter.ts";
 
@@ -80,6 +81,7 @@ export type RbacMatrixIds = {
 export type RbacMatrixFixture = {
   readonly authorization: ContextualAuthorizationAdapter;
   readonly entries: InMemoryCompetitionEntryRepository;
+  readonly encounters: InMemoryEncounterScheduleRepository;
   readonly grants: ReturnType<typeof createInMemoryAuthorizationStore>["grants"];
   readonly ids: RbacMatrixIds;
   readonly actors: Record<RbacActorKey, ActorId>;
@@ -300,6 +302,23 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
     createdAt: RBAC_MATRIX_NOW,
   });
 
+  const encounters = new InMemoryEncounterScheduleRepository();
+  for (const [encounterId, competitionId] of [
+    [ids.encounterId, ids.compA],
+    [ids.siblingEncounterId, ids.compSibling],
+  ] as const) {
+    await encounters.upsert({
+      encounterId,
+      organizationId: ids.orgA,
+      competitionId,
+      stageId: asFixtureStageId("stage-1"),
+      homeTeamId: ids.teamA,
+      awayTeamId: ids.teamRival,
+      scheduledStartAt: RBAC_MATRIX_NOW,
+      officialMatchCount: 2,
+    });
+  }
+
   const authorization = new ContextualAuthorizationAdapter({
     organizations: organizationRepository,
     organizationMemberships,
@@ -311,35 +330,7 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
     rosters,
     grants: store.grants,
     platformRoles: store.platformRoles,
-    encounters: {
-      findById: async (id) => {
-        if (id === ids.encounterId) {
-          return {
-            encounterId: ids.encounterId,
-            organizationId: ids.orgA,
-            competitionId: ids.compA,
-            stageId: asFixtureStageId("stage-1"),
-            homeTeamId: ids.teamA,
-            awayTeamId: ids.teamRival,
-            scheduledStartAt: RBAC_MATRIX_NOW,
-            officialMatchCount: 2 as const,
-          };
-        }
-        if (id === ids.siblingEncounterId) {
-          return {
-            encounterId: ids.siblingEncounterId,
-            organizationId: ids.orgA,
-            competitionId: ids.compSibling,
-            stageId: asFixtureStageId("stage-1"),
-            homeTeamId: ids.teamA,
-            awayTeamId: ids.teamRival,
-            scheduledStartAt: RBAC_MATRIX_NOW,
-            officialMatchCount: 2 as const,
-          };
-        }
-        return null;
-      },
-    },
+    encounters,
   });
 
   const scope = (key: RbacScopeKey): AuthorizationScope => {
@@ -410,5 +401,5 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
     }
   };
 
-  return { authorization, entries, grants: store.grants, ids, actors, scope };
+  return { authorization, entries, encounters, grants: store.grants, ids, actors, scope };
 }

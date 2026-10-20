@@ -109,14 +109,17 @@ function dependencies(
   } = {},
 ): ListCompetitionEncountersDependencies {
   const allow = options.allow ?? (() => true);
+  const decide = (request: AuthorizationRequest) => ({
+    allowed: allow(request),
+    permission: request.permission,
+    scope: request.scope,
+    reason: allow(request) ? ("allowed" as const) : ("no-assignment" as const),
+  });
   return {
     authorization: {
-      decide: async (request) => ({
-        allowed: allow(request),
-        permission: request.permission,
-        scope: request.scope,
-        reason: allow(request) ? "allowed" : "no-assignment",
-      }),
+      decide: async (request) => decide(request),
+      decideEach: async ({ actorId: actor, permission, scopes }) =>
+        scopes.map((scope) => decide({ actorId: actor, permission, scope })),
     },
     clock: { now: () => new Date("2026-10-20T00:30:00.000Z") },
     competitions: {
