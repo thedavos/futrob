@@ -27,6 +27,10 @@ const styles = stylex.create({
     gap: "0.375rem",
   },
   link: {
+    // Narrow (touch) layouts give the link the 44px touch target of every other control.
+    display: { default: null, [media.maxSm]: "inline-flex" },
+    alignItems: { default: null, [media.maxSm]: "center" },
+    minHeight: { default: null, [media.maxSm]: "var(--control-height-touch)" },
     borderRadius: "var(--corner-sm)",
     color: {
       default: colors.mutedForeground,

@@ -50,7 +50,7 @@ import { styles } from "./selection.styles.ts";
 
 /**
  * Dialog frame every selection command shares: one form, the reconciliation notice and
- * a submit that stays disabled while an attempt is in flight. Escape and Cancel close
+ * a submit that stays disabled, yet focusable, while an attempt is in flight. Escape and Cancel close
  * it unless a request is pending; focus then goes to `finalFocus`.
  */
 export function CommandDialog({
@@ -88,12 +88,17 @@ export function CommandDialog({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending || !available) return;
     onSubmit();
   }
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
-      <DialogContent finalFocus={finalFocus} {...applyStyles(styles.dialog)}>
+      <DialogContent
+        closeLabel={t("common.close")}
+        finalFocus={finalFocus}
+        {...applyStyles(styles.dialog)}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -111,7 +116,9 @@ export function CommandDialog({
             <DialogClose disabled={pending} render={<Button variant="outline" />}>
               {t("encounter.selection.dialog.cancel")}
             </DialogClose>
-            <Button type="submit" disabled={pending || !available}>
+            {/* Stays focusable while disabled: the focused submit must not drop focus to the
+                page while the request is pending or after a conflict disables it. */}
+            <Button type="submit" disabled={pending || !available} focusableWhenDisabled>
               {pending
                 ? t("encounter.selection.dialog.submitting")
                 : unknown

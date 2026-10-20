@@ -69,9 +69,7 @@ import {
 import { createResultsModule } from "./results.module.ts";
 import { createActivityFeed } from "./notifications.module.ts";
 import { createStatisticsModule } from "./statistics.module.ts";
-import type { EncounterSummaryDependencies } from "@/application/scheduling/encounter-summary.ts";
-import { GetEncounterViewUseCase } from "@/application/scheduling/get-encounter-view.use-case.ts";
-import { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
+import { createEncounterReads } from "./encounter-reads.composition.ts";
 import {
   GetTeamRosterManagementUseCase,
   ListTeamRosterManagementUseCase,
@@ -317,23 +315,14 @@ export function createModules(input: CreateModulesInput): AppModules {
     activity: activityFeed.selection,
   });
 
-  const encounterSummaryDeps: EncounterSummaryDependencies = {
-    competitions: competitions.repository,
-    teams: { findById: teams.repositories.teams.findById.bind(teams.repositories.teams) },
-    connections: teams.repositories.connections,
-    getExternalClub: (providerKey, input) => gameData.getExternalClub.execute(providerKey, input),
-    fixturePlans: scheduling.fixturePlans,
-  };
-  const getMyNextEncounter = new GetMyNextEncounterUseCase({
-    ...encounterSummaryDeps,
+  const { getMyNextEncounter, getEncounterView, listCompetitionEncounters } = createEncounterReads({
+    authorization: deferredAuthorization,
     clock,
-    profiles: teams.repositories.profiles,
-    rosters: teams.repositories.rosters,
-    encounters: scheduling.encounters,
-  });
-  const getEncounterView = new GetEncounterViewUseCase({
-    ...encounterSummaryDeps,
-    officialMatches: scheduling.officialMatches,
+    competitions,
+    teams,
+    gameData,
+    scheduling,
+    results,
   });
 
   const voidOfficialResultAndUnproject = createVoidOfficialResultAndUnproject({
@@ -399,6 +388,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     gameData,
     getMyNextEncounter,
     getEncounterView,
+    listCompetitionEncounters,
     identity,
     notifications: activityFeed.notifications,
     organizations: {

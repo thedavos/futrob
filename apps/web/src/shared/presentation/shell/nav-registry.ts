@@ -134,31 +134,42 @@ function organizationGeneralNav(organizationId: string, t: Translator): readonly
 function personalCompetitionContext(
   organizationId: string | null,
   competitionId: string,
+  t: Translator,
 ): readonly ShellNavItem[] {
   const base = organizationId
     ? `/orgs/${organizationId}/competitions/${competitionId}`
     : `/player/competitions/${competitionId}`;
   return [
-    { id: "overview", label: "Resumen", href: base, icon: "overview" },
-    { id: "matches", label: "Partidos", href: `${base}/matches`, icon: "matches" },
-    { id: "stats", label: "Estadísticas", href: `${base}/stats`, icon: "statistics" },
+    { id: "overview", label: t("shell.nav.competition.overview"), href: base, icon: "overview" },
+    {
+      id: "matches",
+      label: t("pages.competitionPlayer.matches.title"),
+      href: `${base}/matches`,
+      icon: "matches",
+    },
+    {
+      id: "stats",
+      label: t("pages.competitionPlayer.stats.title"),
+      href: `${base}/stats`,
+      icon: "statistics",
+    },
     {
       id: "team",
-      label: "Mi equipo",
+      label: t("pages.competitionPlayer.team.title"),
       href: `${base}/team`,
       icon: "teams",
       requiredPermission: TEAM_PERMISSION.read,
     },
     {
       id: "roster",
-      label: "Plantilla",
+      label: t("shell.nav.competition.roster"),
       href: `${base}/team/roster`,
       icon: "players",
       requiredPermission: TEAM_PERMISSION.rosterManage,
     },
     {
       id: "team-invitations",
-      label: "Invitaciones del equipo",
+      label: t("shell.nav.competition.teamInvitations"),
       href: `${base}/team/invitations`,
       icon: "invitations",
       requiredPermission: TEAM_PERMISSION.invitationsManage,
@@ -169,75 +180,76 @@ function personalCompetitionContext(
 function organizationCompetitionContext(
   organizationId: string,
   competitionId: string,
+  t: Translator,
 ): readonly ShellNavItem[] {
   const base = `/orgs/${organizationId}/competitions/${competitionId}`;
   return [
     {
       id: "overview",
-      label: "Resumen",
+      label: t("shell.nav.competition.overview"),
       href: base,
       icon: "overview",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "fixture",
-      label: "Calendario",
+      label: t("pages.competition.fixture.title"),
       href: `${base}/fixture`,
       icon: "fixture",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "encounters",
-      label: "Enfrentamientos",
+      label: t("pages.competition.encounters.title"),
       href: `${base}/encounters`,
       icon: "encounters",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "standings",
-      label: "Clasificación",
+      label: t("pages.competition.standings.title"),
       href: `${base}/standings`,
       icon: "standings",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "bracket",
-      label: "Bracket",
+      label: t("pages.competition.bracket.title"),
       href: `${base}/bracket`,
       icon: "bracket",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "rankings",
-      label: "Rankings",
+      label: t("pages.competition.rankings.title"),
       href: `${base}/rankings`,
       icon: "rankings",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "teams",
-      label: "Equipos",
+      label: t("shell.nav.competition.teams"),
       href: `${base}/teams`,
       icon: "teams",
       requiredPermission: TEAM_PERMISSION.read,
     },
     {
       id: "disputes",
-      label: "Disputas",
+      label: t("pages.competition.disputes.title"),
       href: `${base}/disputes`,
       icon: "disputes",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "analytics",
-      label: "Analíticas",
+      label: t("pages.competition.analytics.title"),
       href: `${base}/analytics`,
       icon: "analytics",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
     {
       id: "rules",
-      label: "Reglamento",
+      label: t("pages.competition.rules.title"),
       href: `${base}/rules`,
       icon: "rules",
       requiredPermission: COMPETITION_PERMISSION.read,
@@ -271,25 +283,26 @@ export function generalNavFor(
 export function contextNavFor(
   selection: WorkspaceSelection,
   allowedPermissions?: ReadonlySet<string>,
+  t: Translator = createTranslator("es"),
 ): ShellNavSection {
   if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
     const isOrgOperator =
       selection.organizationId != null &&
       allowedPermissions?.has(COMPETITION_PERMISSION.update) === true;
     const items = isOrgOperator
-      ? organizationCompetitionContext(selection.organizationId!, selection.competitionId)
-      : personalCompetitionContext(selection.organizationId, selection.competitionId);
+      ? organizationCompetitionContext(selection.organizationId!, selection.competitionId, t)
+      : personalCompetitionContext(selection.organizationId, selection.competitionId, t);
 
     return {
       id: NAV_SECTION.context,
-      label: "Contexto activo",
+      label: t("shell.nav.context"),
       items: filterByPermission(items, allowedPermissions),
     };
   }
 
   return {
     id: NAV_SECTION.context,
-    label: "Contexto activo",
+    label: t("shell.nav.context"),
     items: [],
   };
 }

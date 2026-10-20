@@ -1,7 +1,9 @@
 import {
   encounterViewSchema,
+  listCompetitionEncountersResponseSchema,
   listEncounterCandidatesResponseSchema,
   type EncounterViewDto,
+  type ListCompetitionEncountersResponse,
   type ListEncounterCandidatesResponse,
   type RequestId,
 } from "@futrob/api-contracts";
@@ -28,6 +30,18 @@ export const encounterBrowserClient = {
       method: "GET",
       schema: encounterViewSchema,
       fallbackCode: "scheduling.encounter_load_failed",
+      createError,
+    });
+  },
+  listCompetitionEncounters(
+    organizationId: string,
+    competitionId: string,
+  ): Promise<ListCompetitionEncountersResponse> {
+    return requestBrowserJson({
+      path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/encounters`,
+      method: "GET",
+      schema: listCompetitionEncountersResponseSchema,
+      fallbackCode: "scheduling.encounters_load_failed",
       createError,
     });
   },

@@ -38,7 +38,7 @@ export function createAuthorizationModule(input: {
     rosters: input.teams.repositories.rosters,
     grants: input.organizations.repositories.grants,
     platformRoles: input.organizations.repositories.platformRoles,
-    encounters: input.scheduling.encounters,
+    encounters: input.scheduling.encounterAuthorization,
   });
   const shared = {
     authorization,

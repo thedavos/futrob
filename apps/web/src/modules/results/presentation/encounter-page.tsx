@@ -279,14 +279,14 @@ function EncounterHero({
     <Card {...applyStyles(styles.hero)}>
       <MatchPitchSurface away={crest(view.away)} home={crest(view.home)}>
         <div {...applyStyles(styles.heroBody)}>
-          <div {...applyStyles(styles.matchup)}>
+          <div {...applyStyles(styles.matchup, styles.scrim)}>
             <TeamIdentity label={t("encounter.side.home")} side={view.home} />
             <span aria-hidden="true" {...applyStyles(styles.vs)}>
               {t("encounter.vs")}
             </span>
             <TeamIdentity label={t("encounter.side.away")} side={view.away} />
           </div>
-          <div {...applyStyles(styles.heroMeta)}>
+          <div {...applyStyles(styles.heroMeta, styles.scrim)}>
             <Badge className={styles.roundBadge} variant="neutral">
               {view.round
                 ? `${view.competition.name} · ${

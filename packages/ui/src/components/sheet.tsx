@@ -66,8 +66,8 @@ const styles = stylex.create({
     top: "1rem",
     right: "1rem",
     display: "inline-flex",
-    width: "2.5rem",
-    height: "2.5rem",
+    width: "var(--control-height)",
+    height: "var(--control-height)",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: "var(--corner-lg)",
@@ -157,8 +157,9 @@ function SheetContent({
   className,
   style,
   side = "right",
+  closeLabel = "Cerrar",
   ...props
-}: DialogPrimitive.Popup.Props & { side?: SheetSide }) {
+}: DialogPrimitive.Popup.Props & { side?: SheetSide; closeLabel?: string }) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop {...applyProps(undefined, undefined, styles.backdrop)} />
@@ -169,7 +170,7 @@ function SheetContent({
       >
         {children}
         <DialogPrimitive.Close
-          aria-label="Cerrar"
+          aria-label={closeLabel}
           {...applyProps(undefined, undefined, styles.close)}
         >
           <XIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.closeIcon)} />
