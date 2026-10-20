@@ -2,10 +2,31 @@ import { describe, expect, it } from "vite-plus/test";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { TEAM_PERMISSION } from "@futrob/teams";
-import { contextNavFor, generalNavFor } from "./nav-registry.ts";
+import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
+import { accountNavItems, contextNavFor, generalNavFor } from "./nav-registry.ts";
 import { WORKSPACE_SELECTION_KIND } from "./workspace-selection.ts";
 
 describe("generalNavFor", () => {
+  it("uses the active locale for personal navigation and the account menu", () => {
+    const english = createTranslator("en");
+    const personal = generalNavFor({ kind: WORKSPACE_SELECTION_KIND.personal }, undefined, english);
+    expect(personal.items.map((item) => item.label)).toEqual([
+      "Home",
+      "Competitions",
+      "Game data",
+      "My matches",
+      "My statistics",
+      "Invitations",
+    ]);
+    expect(accountNavItems(english).map((item) => item.label)).toEqual([
+      "Profile",
+      "Send feedback",
+      "Contact us",
+      "Settings",
+    ]);
+    expect(accountNavItems().map((item) => item.label)).toContain("Perfil");
+  });
+
   it("filters organization items by effective permissions only", () => {
     const section = generalNavFor(
       {
