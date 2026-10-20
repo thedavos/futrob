@@ -6,6 +6,7 @@ import {
   CreateScheduleChangeRequest,
   EncounterScheduleSnapshot,
   EncounterView,
+  ListCompetitionEncountersResponse,
   ListEncounterCandidatesResponse,
   ListScheduleChangeRequestsResponse,
   RejectScheduleChangeProposalRequest,
@@ -42,6 +43,21 @@ export const getEncounterViewRoute = defineRoute({
     status: 200,
     description: "The Encounter as an actor with `encounters.read` sees it",
     schema: EncounterView,
+  },
+  errors: [401, 404],
+});
+
+export const listCompetitionEncountersRoute = defineRoute({
+  method: "get",
+  path: "/organizations/{organizationId}/competitions/{competitionId}/encounters",
+  operationId: "listCompetitionEncounters",
+  tags: ["encounters"],
+  summary: "List the active fixture's Encounters the actor may read, with both Teams and status",
+  params: pathParams(["organizationId", "competitionId"]),
+  success: {
+    status: 200,
+    description: "Encounters earliest first, in the competition time zone's frame",
+    schema: ListCompetitionEncountersResponse,
   },
   errors: [401, 404],
 });

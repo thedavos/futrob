@@ -407,7 +407,7 @@ describe("Team negotiation in the Match Center", () => {
     expect(posts[1]?.body.commandKey).not.toBe(posts[0]?.body.commandKey);
   });
 
-  it("after a 409 that leaves nothing to answer, keeps the text and disables the submit", async () => {
+  it("after a 409 that leaves nothing to answer, keeps the text, focus and a disabled submit", async () => {
     const user = userEvent.setup();
     const views: Partial<Record<Team, OfficialSelectionViewDto>> = {
       "team-away": pendingSelection([...ANSWERS]),
@@ -435,9 +435,10 @@ describe("Team negotiation in the Match Center", () => {
     expect(reject.getByRole<HTMLTextAreaElement>("textbox", { name: "Motivo" }).value).toBe(
       rejectionReason,
     );
-    expect(
-      reject.getByRole<HTMLButtonElement>("button", { name: "Rechazar propuesta" }).disabled,
-    ).toBe(true);
+    const submit = reject.getByRole("button", { name: "Rechazar propuesta" });
+    expect(submit.getAttribute("aria-disabled")).toBe("true");
+    expect(document.activeElement).toBe(submit);
+    await user.click(submit);
     expect(posts).toHaveLength(1);
   });
 

@@ -4594,6 +4594,59 @@
         }
       }
     },
+    "/organizations/{organizationId}/competitions/{competitionId}/encounters": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Encounters earliest first, in the competition time zone's frame",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCompetitionEncountersResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listCompetitionEncounters",
+        "tags": [
+          "encounters"
+        ],
+        "summary": "List the active fixture's Encounters the actor may read, with both Teams and status"
+      }
+    },
     "/organizations/{organizationId}/competitions/{competitionId}/entries": {
       "post": {
         "parameters": [
@@ -11594,6 +11647,106 @@
           "region",
           "timeZone",
           "format"
+        ]
+      },
+      "CompetitionEncounter": {
+        "type": "object",
+        "properties": {
+          "encounterId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "round": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "total": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "number",
+              "total"
+            ]
+          },
+          "scheduledStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "officialMatchCount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [
+                  1
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  2
+                ]
+              }
+            ]
+          },
+          "home": {
+            "type": "object",
+            "properties": {
+              "teamId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "teamId",
+              "name"
+            ]
+          },
+          "away": {
+            "type": "object",
+            "properties": {
+              "teamId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "teamId",
+              "name"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "awaiting_result",
+              "official"
+            ]
+          }
+        },
+        "required": [
+          "encounterId",
+          "round",
+          "scheduledStartAt",
+          "officialMatchCount",
+          "home",
+          "away",
+          "status"
         ]
       },
       "CompetitionEntry": {
@@ -22042,6 +22195,140 @@
         "required": [
           "activities",
           "nextCursor"
+        ]
+      },
+      "ListCompetitionEncountersResponse": {
+        "type": "object",
+        "properties": {
+          "competition": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timeZone": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "timeZone"
+            ]
+          },
+          "encounters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "encounterId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "round": {
+                  "type": "object",
+                  "properties": {
+                    "number": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "total": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "number",
+                    "total"
+                  ]
+                },
+                "scheduledStartAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "officialMatchCount": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "enum": [
+                        1
+                      ]
+                    },
+                    {
+                      "type": "number",
+                      "enum": [
+                        2
+                      ]
+                    }
+                  ]
+                },
+                "home": {
+                  "type": "object",
+                  "properties": {
+                    "teamId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "teamId",
+                    "name"
+                  ]
+                },
+                "away": {
+                  "type": "object",
+                  "properties": {
+                    "teamId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "teamId",
+                    "name"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "scheduled",
+                    "awaiting_result",
+                    "official"
+                  ]
+                }
+              },
+              "required": [
+                "encounterId",
+                "round",
+                "scheduledStartAt",
+                "officialMatchCount",
+                "home",
+                "away",
+                "status"
+              ]
+            }
+          }
+        },
+        "required": [
+          "competition",
+          "encounters"
         ]
       },
       "ListEncounterCandidatesResponse": {

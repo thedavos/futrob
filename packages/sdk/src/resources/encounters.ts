@@ -14,6 +14,8 @@ import {
   fixturePlanSchema,
   type FixturePlanDto,
   generateCompetitionFixtureRequestSchema,
+  listCompetitionEncountersResponseSchema,
+  type ListCompetitionEncountersResponse,
   type GenerateCompetitionFixtureRequest,
   listScheduleChangeRequestsResponseSchema,
   type ListScheduleChangeRequestsResponse,
@@ -43,6 +45,18 @@ export function createEncountersResource(http: HttpClient) {
         method: "GET",
         options,
         parse: (data) => encounterViewSchema.parse(data),
+      });
+    },
+    async listByCompetition(
+      organizationId: string,
+      competitionId: string,
+      options: RequestOptions = {},
+    ): Promise<ListCompetitionEncountersResponse> {
+      return http.request({
+        path: apiPath("organizations", organizationId, "competitions", competitionId, "encounters"),
+        method: "GET",
+        options,
+        parse: (data) => listCompetitionEncountersResponseSchema.parse(data),
       });
     },
     async getScheduleSnapshot(

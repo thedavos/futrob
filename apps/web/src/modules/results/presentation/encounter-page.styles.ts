@@ -36,6 +36,12 @@ export const styles = stylex.create({
     width: "100%",
     maxWidth: "40rem",
   },
+  // Contrast layer: the pitch artwork's lime diagonal can cross any text in the hero.
+  scrim: {
+    padding: { default: "0.75rem", [media.sm]: "1rem 1.5rem" },
+    borderRadius: "var(--corner-xl)",
+    backgroundColor: "color-mix(in oklab, var(--surface) 88%, transparent)",
+  },
   team: {
     display: "flex",
     flexDirection: "column",

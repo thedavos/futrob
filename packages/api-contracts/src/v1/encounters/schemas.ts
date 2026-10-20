@@ -211,6 +211,47 @@ export const encounterViewSchema = nextEncounterSchema.extend({
 
 export type EncounterViewDto = z.infer<typeof encounterViewSchema>;
 
+/**
+ * Where an Encounter stands from the competition list: `official` once an approved
+ * official result exists, `awaiting_result` after its start without one.
+ */
+export const competitionEncounterStatusSchema = z.enum([
+  "scheduled",
+  "awaiting_result",
+  "official",
+]);
+
+export type CompetitionEncounterStatusDto = z.infer<typeof competitionEncounterStatusSchema>;
+
+export const competitionEncounterSchema = z.object({
+  encounterId: z.string().min(1),
+  round: z.object({
+    number: z.number().int().positive(),
+    total: z.number().int().positive().nullable(),
+  }),
+  scheduledStartAt: z.string().datetime(),
+  officialMatchCount: z.union([z.literal(1), z.literal(2)]),
+  home: z.object({ teamId: z.string().min(1), name: z.string().min(1) }),
+  away: z.object({ teamId: z.string().min(1), name: z.string().min(1) }),
+  status: competitionEncounterStatusSchema,
+});
+
+export type CompetitionEncounterDto = z.infer<typeof competitionEncounterSchema>;
+
+/** Encounters of the competition's active fixture the actor may read, earliest first. */
+export const listCompetitionEncountersResponseSchema = z.object({
+  competition: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    timeZone: z.string().min(1),
+  }),
+  encounters: z.array(competitionEncounterSchema),
+});
+
+export type ListCompetitionEncountersResponse = z.infer<
+  typeof listCompetitionEncountersResponseSchema
+>;
+
 export const encounterCandidateTeamSchema = z.object({
   externalClubId: z.string().min(1),
   name: z.string().min(1),

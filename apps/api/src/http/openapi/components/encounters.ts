@@ -1,6 +1,8 @@
 import {
   encounterScheduleSnapshotSchema,
   encounterViewSchema,
+  competitionEncounterSchema,
+  listCompetitionEncountersResponseSchema,
   encounterCandidateTeamSchema,
   encounterCandidateSchema,
   listEncounterCandidatesResponseSchema,
@@ -21,6 +23,11 @@ export const EncounterScheduleSnapshot = namedSchema(
   encounterScheduleSnapshotSchema,
 );
 export const EncounterView = namedSchema("EncounterView", encounterViewSchema);
+export const CompetitionEncounter = namedSchema("CompetitionEncounter", competitionEncounterSchema);
+export const ListCompetitionEncountersResponse = namedSchema(
+  "ListCompetitionEncountersResponse",
+  listCompetitionEncountersResponseSchema,
+);
 export const EncounterCandidateTeam = namedSchema(
   "EncounterCandidateTeam",
   encounterCandidateTeamSchema,

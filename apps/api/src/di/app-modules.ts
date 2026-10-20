@@ -4,6 +4,7 @@ import type { RunScheduleChangeExpiry } from "@/application/scheduling/run-sched
 import type { RecalculateRescheduledCandidates } from "@/application/results/recalculate-rescheduled-candidates.ts";
 import type { GetEncounterViewUseCase } from "@/application/scheduling/get-encounter-view.use-case.ts";
 import type { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
+import type { ListCompetitionEncountersUseCase } from "@/application/scheduling/list-competition-encounters.use-case.ts";
 import type {
   GetTeamRosterManagementUseCase,
   ListTeamRosterManagementUseCase,
@@ -43,6 +44,7 @@ export interface AppModules {
   readonly voidOfficialResultAndUnproject: VoidOfficialResultAndUnproject;
   readonly getMyNextEncounter: GetMyNextEncounterUseCase;
   readonly getEncounterView: GetEncounterViewUseCase;
+  readonly listCompetitionEncounters: ListCompetitionEncountersUseCase;
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
   readonly notifications: NotificationsModule;

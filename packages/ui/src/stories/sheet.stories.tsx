@@ -50,6 +50,20 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const EnglishCloseLabel: Story = {
+  render: () => (
+    <Sheet>
+      <SheetTrigger render={<Button variant="outline" />}>Open navigation</SheetTrigger>
+      <SheetContent closeLabel="Close">
+        <SheetHeader>
+          <SheetTitle>Navigation</SheetTitle>
+          <SheetDescription>Close this panel to return to the encounter.</SheetDescription>
+        </SheetHeader>
+      </SheetContent>
+    </Sheet>
+  ),
+};
+
 export const Playground: Story = {
   render: () => (
     <Sheet>

@@ -139,7 +139,7 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
     >
       <ShellActionBarProvider>
         <a href="#app-main" {...applyStyles(styles.skipLink)}>
-          Saltar al contenido
+          {t("shell.skipToContent")}
         </a>
         <DesktopSidebar
           allowedPermissions={selectionState.allowedPermissions}

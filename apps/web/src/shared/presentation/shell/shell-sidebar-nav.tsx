@@ -162,6 +162,7 @@ export function DesktopSidebar(props: ShellSidebarProps) {
 }
 
 export function MobileNav(props: ShellSidebarProps & { readonly title: string }) {
+  const { t } = useI18n();
   const { openMobile, setOpenMobile } = useSidebar();
   const sheet = applyStyles(styles.sheet);
   const sheetBody = applyStyles(styles.sheetBody);
@@ -170,13 +171,18 @@ export function MobileNav(props: ShellSidebarProps & { readonly title: string })
     <>
       <Sheet onOpenChange={setOpenMobile} open={openMobile}>
         <SheetTrigger
-          render={<Button aria-label="Abrir navegación" size="icon" variant="outline" />}
+          render={<Button aria-label={t("shell.nav.open")} size="icon" variant="outline" />}
         >
           <ListIcon aria-hidden="true" />
         </SheetTrigger>
-        <SheetContent className={sheet.className} side="left" style={sheet.style}>
+        <SheetContent
+          closeLabel={t("common.close")}
+          className={sheet.className}
+          side="left"
+          style={sheet.style}
+        >
           <SheetHeader>
-            <SheetTitle>Navegación</SheetTitle>
+            <SheetTitle>{t("shell.nav.title")}</SheetTitle>
           </SheetHeader>
           <SheetBody className={sheetBody.className} style={sheetBody.style}>
             <div {...applyStyles(styles.sheetColumn)}>
@@ -212,7 +218,7 @@ function ShellSidebarBody({
   const { t } = useI18n();
   const compact = collapsed && !forceExpanded;
   const general = generalNavFor(selection, allowedPermissions, t);
-  const context = contextNavFor(selection, allowedPermissions);
+  const context = contextNavFor(selection, allowedPermissions, t);
   const footerItems = context.items.length > 0 ? context.items : general.items;
   const showCollapseControl = !forceExpanded;
   const header = applyStyles(compact ? styles.headerCompact : styles.headerExpanded);

@@ -33,6 +33,20 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const EnglishCloseLabel: Story = {
+  render: () => (
+    <Dialog>
+      <DialogTrigger render={<Button variant="outline" />}>Review result</DialogTrigger>
+      <DialogContent closeLabel="Close">
+        <DialogHeader>
+          <DialogTitle>Review result</DialogTitle>
+          <DialogDescription>Close this dialog to return to the encounter.</DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  ),
+};
+
 export const Playground: Story = {
   render: () => (
     <Dialog>

@@ -124,6 +124,7 @@ function DialogBackdrop({ className, style, ...props }: DialogPrimitive.Backdrop
 type DialogContentProps = Omit<DialogPrimitive.Popup.Props, "className"> & {
   className?: HostClassName | DialogPrimitive.Popup.Props["className"];
   hideClose?: boolean;
+  closeLabel?: string;
 };
 
 function DialogContent({
@@ -131,6 +132,7 @@ function DialogContent({
   className,
   style,
   hideClose = false,
+  closeLabel = "Cerrar",
   ...props
 }: DialogContentProps) {
   return (
@@ -145,7 +147,7 @@ function DialogContent({
           {children}
           {!hideClose && (
             <DialogPrimitive.Close
-              aria-label="Cerrar"
+              aria-label={closeLabel}
               {...applyProps(undefined, undefined, styles.close)}
             >
               <XIcon aria-hidden="true" {...applyProps(undefined, undefined, styles.closeIcon)} />

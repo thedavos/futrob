@@ -1,4 +1,8 @@
-import { encounterViewSchema, listEncounterCandidatesResponseSchema } from "@futrob/api-contracts";
+import {
+  encounterViewSchema,
+  listCompetitionEncountersResponseSchema,
+  listEncounterCandidatesResponseSchema,
+} from "@futrob/api-contracts";
 import type { FutrobClient } from "@futrob/sdk";
 import {
   productApiBffErrorResponse,
@@ -21,6 +25,20 @@ export function handleGetEncounterView(
     const { client } = await connect(request);
     return encounterViewSchema.parse(
       await client.encounters.getView(scope.organizationId, scope.encounterId),
+    );
+  });
+}
+
+/** The competition's Encounters the session actor may open. */
+export function handleListCompetitionEncounters(
+  request: Request,
+  scope: Readonly<{ organizationId: string; competitionId: string }>,
+  connect: ConnectProductApi,
+): Promise<Response> {
+  return respond(async () => {
+    const { client } = await connect(request);
+    return listCompetitionEncountersResponseSchema.parse(
+      await client.encounters.listByCompetition(scope.organizationId, scope.competitionId),
     );
   });
 }

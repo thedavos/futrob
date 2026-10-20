@@ -91,7 +91,7 @@ const es = {
   "reschedule.create.blocked.active_request_exists":
     "Ya hay una solicitud activa que incluye este horario.",
   "reschedule.create.blocked.result_protected":
-    "Tiene un resultado aprobado; su horario ya no se puede mover.",
+    "Hay una selección de resultados protegida; su horario no se puede mover.",
   "reschedule.recovery.review":
     "La propuesta cambió. Revisa la propuesta actual antes de responder.",
   "reschedule.recovery.windowClosed":
@@ -1224,6 +1224,15 @@ const es = {
   "captain.invitations.empty.description":
     "Usa «Invitar» para generar un enlace y compártelo con el jugador. Al aceptarlo, entra en tu plantilla.",
   "common.cancel": "Cancelar",
+  "common.close": "Cerrar",
+  "shell.nav.open": "Abrir navegación",
+  "shell.nav.title": "Navegación",
+  "shell.nav.context": "Contexto activo",
+  "shell.nav.competition.overview": "Resumen",
+  "shell.nav.competition.teams": "Equipos",
+  "shell.nav.competition.roster": "Plantilla",
+  "shell.nav.competition.teamInvitations": "Invitaciones del equipo",
+  "shell.skipToContent": "Saltar al contenido",
   "roster.role.player": "Jugador",
   "roster.role.captain": "Capitán",
   "roster.role.vice_captain": "Subcapitán",
@@ -1381,6 +1390,22 @@ const es = {
   "encounter.forbidden.description":
     "Tu cuenta no tiene permiso para ver este enfrentamiento. Pide acceso a la organización.",
   "encounter.backToEncounters": "Volver a enfrentamientos",
+  "encounters.list.label": "Enfrentamientos de la competición",
+  "encounters.list.loading": "Cargando enfrentamientos",
+  "encounters.list.error": "No pudimos cargar los enfrentamientos.",
+  "encounters.list.timeZone": ({ zone }) => `Horarios en ${zone}`,
+  "encounters.list.open": ({ home, away }) => `Abrir ${home} vs ${away}`,
+  "encounters.list.slots": ({ count }) =>
+    count === 1 ? "1 partido oficial" : `${count} partidos oficiales`,
+  "encounters.list.status.scheduled": "Programado",
+  "encounters.list.status.awaiting_result": "Pendiente de resultado",
+  "encounters.list.status.official": "Resultado oficial",
+  "encounters.list.empty.title": "Aún no hay enfrentamientos",
+  "encounters.list.empty.description":
+    "Aparecerán aquí cuando la competición tenga un calendario con ambos equipos definidos.",
+  "encounters.list.notFound.title": "Competición no disponible",
+  "encounters.list.notFound.description":
+    "No existe en esta organización o tu cuenta no tiene acceso a sus enfrentamientos.",
   "encounter.slots.title": "Partidos oficiales",
   "encounter.slots.description":
     "Cada partido tiene su propio horario. Asigna un partido EA para ver el resultado antes de proponerlo.",
@@ -1667,6 +1692,9 @@ export interface MessageParamsByKey {
   readonly "encounter.round": { readonly number: number };
   readonly "encounter.roundOf": { readonly number: number; readonly total: number };
   readonly "encounter.timeZone": { readonly zone: string };
+  readonly "encounters.list.timeZone": { readonly zone: string };
+  readonly "encounters.list.open": { readonly home: string; readonly away: string };
+  readonly "encounters.list.slots": { readonly count: number };
   readonly "encounter.slot.label": { readonly slot: number };
   readonly "encounter.slot.clear": { readonly slot: number };
   readonly "encounter.outcome.win": { readonly team: string };
@@ -1929,7 +1957,7 @@ const en: Catalog = {
   "reschedule.create.blocked.active_request_exists":
     "An active request already covers this kickoff.",
   "reschedule.create.blocked.result_protected":
-    "It has an approved result; its kickoff can no longer move.",
+    "A protected result selection prevents changes to this kickoff.",
   "reschedule.recovery.review":
     "The proposal changed. Review the current proposal before answering.",
   "reschedule.recovery.windowClosed":
@@ -3044,6 +3072,15 @@ const en: Catalog = {
   "captain.invitations.empty.description":
     "Use Invite to generate a link and share it with the player. Once they accept, they join your roster.",
   "common.cancel": "Cancel",
+  "common.close": "Close",
+  "shell.nav.open": "Open navigation",
+  "shell.nav.title": "Navigation",
+  "shell.nav.context": "Active context",
+  "shell.nav.competition.overview": "Overview",
+  "shell.nav.competition.teams": "Teams",
+  "shell.nav.competition.roster": "Roster",
+  "shell.nav.competition.teamInvitations": "Team invitations",
+  "shell.skipToContent": "Skip to content",
   "roster.role.player": "Player",
   "roster.role.captain": "Captain",
   "roster.role.vice_captain": "Vice-captain",
@@ -3199,6 +3236,22 @@ const en: Catalog = {
   "encounter.forbidden.description":
     "Your account isn't allowed to view this encounter. Ask the organization for access.",
   "encounter.backToEncounters": "Back to encounters",
+  "encounters.list.label": "Competition encounters",
+  "encounters.list.loading": "Loading encounters",
+  "encounters.list.error": "We couldn't load the encounters.",
+  "encounters.list.timeZone": ({ zone }) => `Times in ${zone}`,
+  "encounters.list.open": ({ home, away }) => `Open ${home} vs ${away}`,
+  "encounters.list.slots": ({ count }) =>
+    count === 1 ? "1 official match" : `${count} official matches`,
+  "encounters.list.status.scheduled": "Scheduled",
+  "encounters.list.status.awaiting_result": "Awaiting result",
+  "encounters.list.status.official": "Official result",
+  "encounters.list.empty.title": "No encounters yet",
+  "encounters.list.empty.description":
+    "They'll appear here once the competition has a fixture with both teams set.",
+  "encounters.list.notFound.title": "Competition unavailable",
+  "encounters.list.notFound.description":
+    "It isn't part of this organization, or your account can't access its encounters.",
   "encounter.slots.title": "Official matches",
   "encounter.slots.description":
     "Each match has its own kickoff. Assign an EA match to see the result before you propose it.",

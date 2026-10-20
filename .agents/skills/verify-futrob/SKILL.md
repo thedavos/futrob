@@ -163,7 +163,6 @@ All invocations are from the repo root. The script is executable.
 These are real product destinations. Do not claim them verified through a different path:
 
 - Public competition portal (no public routes yet)
-- Match Center / official selection / confirmation (no scheduling/results UI)
 - Native iOS/Android (`AC-MOB-*` — Expo web is not that proof)
 - Superuser / provider-health admin
 - Player club / game-account / invitations (`/player/ea-clubs`, `/player/game-accounts`, invitation accept routes). The player competitions **index** (`/player/competitions`, Mis competiciones) is not this seed; `/player/competitions/explore` is mapped.
