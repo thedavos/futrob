@@ -154,8 +154,9 @@ export type ShellSidebarProps = {
 };
 
 export function DesktopSidebar(props: ShellSidebarProps) {
+  const { t } = useI18n();
   return (
-    <Sidebar aria-label="Navegación principal">
+    <Sidebar aria-label={t("shell.sidebar.label")}>
       <ShellSidebarBody {...props} />
     </Sidebar>
   );
@@ -234,7 +235,7 @@ function ShellSidebarBody({
           <AccountMenu compact={compact} />
           {showCollapseControl ? (
             <Button
-              aria-label={collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
+              aria-label={collapsed ? t("shell.sidebar.expand") : t("shell.sidebar.collapse")}
               className={compact ? undefined : collapse.className}
               dense
               onClick={toggleCollapsed}

@@ -19,6 +19,7 @@ import { CaretDownIcon } from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
 import { announceIdentityChange } from "@/shared/presentation/query/identity-change.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { accountNavItems } from "@/shared/presentation/shell/nav-registry.ts";
 
 const styles = stylex.create({
@@ -85,10 +86,12 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
   const session = authClient.useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const user = session.data?.user;
-  const name = user?.name?.trim() || user?.email || "Cuenta";
-  const shortName = abbreviatedDisplayName(name);
-  const items = accountNavItems();
+  const fallbackName = t("shell.account.fallback");
+  const name = user?.name?.trim() || user?.email || fallbackName;
+  const shortName = abbreviatedDisplayName(name, fallbackName);
+  const items = accountNavItems(t);
   const trigger = applyStyles(compact ? styles.triggerCompact : styles.triggerExpanded);
   const triggerStyle = compact
     ? trigger.style
@@ -102,7 +105,7 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="Abrir menú de cuenta"
+        aria-label={t("shell.account.open")}
         render={
           <Button
             className={trigger.className}
@@ -161,15 +164,15 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
             });
           }}
         >
-          Cerrar sesión
+          {t("shell.account.signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-function abbreviatedDisplayName(name: string): string {
+function abbreviatedDisplayName(name: string, fallback: string): string {
   const trimmed = name.trim();
-  if (!trimmed) return "Cuenta";
+  if (!trimmed) return fallback;
   if (trimmed.includes("@")) {
     const local = trimmed.slice(0, trimmed.indexOf("@")) || trimmed;
     return local.length > 12 ? `${local.slice(0, 10)}…` : local;
